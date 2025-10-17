@@ -26,6 +26,36 @@ except Exception:
     keyboard = None  # type: ignore
 
 from win_input import tap
+
+
+class ToolTip:
+    """Simple tooltip helper for Tkinter widgets."""
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+    
+    def show_tooltip(self, event=None):
+        if self.tooltip_window or not self.text:
+            return
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        label = tk.Label(tw, text=self.text, justify='left',
+                        background="#ffffe0", relief='solid', borderwidth=1,
+                        font=("tahoma", "8", "normal"), padx=4, pady=2)
+        label.pack()
+    
+    def hide_tooltip(self, event=None):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
+
+
 LANG: Dict[str, Dict[str, str]] = {
     'en': {
         'app_title': 'Cabal Auto Manager',
@@ -63,6 +93,10 @@ LANG: Dict[str, Dict[str, str]] = {
         'bring_fail': 'Unable to bring to front',
         'invalid_hunt': 'Invalid hunt config: {e}',
         'no_windows': 'No window matched',
+        'error_title': 'Error',
+        'error_copy_image': 'Failed to copy image: {exc}',
+        'error_pil_required': 'PIL required for preview',
+        'error_preview': 'Preview error: {exc}',
         'monster_section': 'Monster library',
         'monster_list': 'Monsters:',
         'monster_name': 'Name:',
@@ -114,6 +148,14 @@ LANG: Dict[str, Dict[str, str]] = {
         'hunt_monster_select': 'Quick select monster:',
         'hunt_monster_auto_applied': 'Auto-applied: {name}',
         'hunt_template_active': 'Active template: {name}',
+        'tooltip_threshold': 'Match confidence: 0.0 (any) to 1.0 (exact). Higher = stricter matching. Recommended: 0.80-0.90',
+        'tooltip_region_strategy': 'Window: use game window bounds\nCustom: use specific region below',
+        'tooltip_window_bounds': 'Game window area (Left, Top, Width, Height). Leave blank to auto-detect.',
+        'tooltip_lost_timeout': 'Keep attacking this long after losing visual on target (prevents premature target switch)',
+        'tooltip_attack_duration': 'Minimum attack time even if target lost early (ensures skill combos complete)',
+        'error_invalid_number': 'Invalid number: {field}',
+        'error_value_must_be_positive': '{field} must be greater than 0',
+        'error_threshold_range': 'Threshold must be between 0.0 and 1.0',
         'skill_section': 'Skill library',
         'skill_list': 'Skills:',
         'skill_name': 'Name:',
@@ -173,6 +215,16 @@ LANG: Dict[str, Dict[str, str]] = {
         'hunt_running': 'Đang săn…',
         'hunt_stopped': 'Đã dừng săn',
         'selected_window': 'Đã chọn cửa sổ: {title}',
+        'bring_ok': 'Đã đưa lên trên',
+        'bring_fail': 'Không thể đưa lên trên',
+        'invalid_hunt': 'Cấu hình săn không hợp lệ: {e}',
+        'no_windows': 'Không tìm thấy cửa sổ',
+        'error_title': 'Lỗi',
+        'error_copy_image': 'Không sao chép được ảnh: {exc}',
+        'error_pil_required': 'Cần cài PIL để xem trước',
+        'error_preview': 'Lỗi xem trước: {exc}',
+        'hunt_stopped': 'Đã dừng săn',
+        'selected_window': 'Đã chọn cửa sổ: {title}',
         'bring_ok': 'Đã đưa lên trước',
         'bring_fail': 'Không đưa lên trước được',
         'invalid_hunt': 'Cấu hình săn không hợp lệ: {e}',
@@ -228,6 +280,14 @@ LANG: Dict[str, Dict[str, str]] = {
         'hunt_monster_select': 'Chọn nhanh quái:',
         'hunt_monster_auto_applied': 'Đã tự động áp dụng: {name}',
         'hunt_template_active': 'Template đang dùng: {name}',
+        'tooltip_threshold': 'Độ khớp: 0.0 (bất kỳ) đến 1.0 (chính xác). Cao hơn = khớp chặt hơn. Khuyến nghị: 0.80-0.90',
+        'tooltip_region_strategy': 'Window: dùng biên cửa sổ game\nCustom: dùng vùng cụ thể bên dưới',
+        'tooltip_window_bounds': 'Vùng cửa sổ game (Trái, Trên, Rộng, Cao). Để trống để tự phát hiện.',
+        'tooltip_lost_timeout': 'Tiếp tục đánh trong khoảng thời gian này sau khi mất hình ảnh mục tiêu (tránh đổi mục tiêu quá sớm)',
+        'tooltip_attack_duration': 'Thời gian đánh tối thiểu ngay cả khi mất mục tiêu sớm (đảm bảo combo kỹ năng hoàn tất)',
+        'error_invalid_number': 'Số không hợp lệ: {field}',
+        'error_value_must_be_positive': '{field} phải lớn hơn 0',
+        'error_threshold_range': 'Threshold phải từ 0.0 đến 1.0',
         'skill_section': 'Thư viện kỹ năng',
         'skill_list': 'Danh sách kỹ năng:',
         'skill_name': 'Tên kỹ năng:',
@@ -582,6 +642,7 @@ class App(tk.Tk):
         self.monster_template_preview_label = None
         self.monster_template_preview_image = None
         self._monster_template_path_trace = None
+        self._thumbnail_cache = {}  # path -> PhotoImage cache
         self.monster_bounds_vars = {
             'left': tk.StringVar(),
             'top': tk.StringVar(),
@@ -670,11 +731,15 @@ class App(tk.Tk):
 
         tk.Label(frm, text=self._t('lost_timeout')).grid(row=6, column=0, sticky='e', pady=(8,0))
         self.lost_timeout_var = tk.StringVar(value=str(self.hunt_cfg.get('lost_timeout_sec', 1.2)))
-        tk.Entry(frm, textvariable=self.lost_timeout_var, width=8).grid(row=6, column=1, sticky='w', pady=(8,0))
+        lost_timeout_entry = tk.Entry(frm, textvariable=self.lost_timeout_var, width=8)
+        lost_timeout_entry.grid(row=6, column=1, sticky='w', pady=(8,0))
+        ToolTip(lost_timeout_entry, self._t('tooltip_lost_timeout'))
 
         tk.Label(frm, text=self._t('attack_duration')).grid(row=6, column=2, sticky='e', pady=(8,0))
         self.attack_duration_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_min_duration_sec', 1.5)))
-        tk.Entry(frm, textvariable=self.attack_duration_var, width=8).grid(row=6, column=3, sticky='w', pady=(8,0))
+        attack_duration_entry = tk.Entry(frm, textvariable=self.attack_duration_var, width=8)
+        attack_duration_entry.grid(row=6, column=3, sticky='w', pady=(8,0))
+        ToolTip(attack_duration_entry, self._t('tooltip_attack_duration'))
 
         # Template & Region
         tk.Label(frm, text=self._t('template')).grid(row=7, column=0, sticky='e')
@@ -1035,18 +1100,64 @@ class App(tk.Tk):
             self.hunt_cfg = cfg
             self.hunt_status.set('Saved hunt_config.json')
         except Exception as e:
-            messagebox.showerror('Error', self._t('invalid_hunt').format(e=e))
+            messagebox.showerror(self._t('error_title'), self._t('invalid_hunt').format(e=e))
 
     def _hunt_from_ui(self):
         title = self.win_title_var.get().strip()
         target_key = self.target_key_var.get().strip() or 'TAB'
         attack_keys = [k.strip() for k in self.attack_keys_var.get().split(',') if k.strip()]
-        press_ms = int(float(self.attack_press_var.get()))
-        cycle_d = float(self.target_cycle_var.get())
-        search_i = float(self.search_interval_var.get())
-        attack_i = float(self.attack_interval_var.get())
-        lost_timeout = float(self.lost_timeout_var.get())
-        attack_min_duration = float(self.attack_duration_var.get())
+        
+        # Validate numeric inputs
+        try:
+            press_ms = int(float(self.attack_press_var.get()))
+        except ValueError:
+            raise ValueError(self._t('error_invalid_number').format(field='attack_press_ms'))
+        
+        try:
+            cycle_d = float(self.target_cycle_var.get())
+            if cycle_d <= 0:
+                raise ValueError(self._t('error_value_must_be_positive').format(field='target_cycle_delay'))
+        except ValueError as e:
+            if 'must be' in str(e):
+                raise
+            raise ValueError(self._t('error_invalid_number').format(field='target_cycle_delay'))
+        
+        try:
+            search_i = float(self.search_interval_var.get())
+            if search_i <= 0:
+                raise ValueError(self._t('error_value_must_be_positive').format(field='search_interval'))
+        except ValueError as e:
+            if 'must be' in str(e):
+                raise
+            raise ValueError(self._t('error_invalid_number').format(field='search_interval'))
+        
+        try:
+            attack_i = float(self.attack_interval_var.get())
+            if attack_i <= 0:
+                raise ValueError(self._t('error_value_must_be_positive').format(field='attack_interval'))
+        except ValueError as e:
+            if 'must be' in str(e):
+                raise
+            raise ValueError(self._t('error_invalid_number').format(field='attack_interval'))
+        
+        try:
+            lost_timeout = float(self.lost_timeout_var.get())
+            if lost_timeout <= 0:
+                raise ValueError(self._t('error_value_must_be_positive').format(field='lost_timeout'))
+        except ValueError as e:
+            if 'must be' in str(e):
+                raise
+            raise ValueError(self._t('error_invalid_number').format(field='lost_timeout'))
+        
+        try:
+            attack_min_duration = float(self.attack_duration_var.get())
+            if attack_min_duration <= 0:
+                raise ValueError(self._t('error_value_must_be_positive').format(field='attack_min_duration'))
+        except ValueError as e:
+            if 'must be' in str(e):
+                raise
+            raise ValueError(self._t('error_invalid_number').format(field='attack_min_duration'))
+        
         template = self.template_var.get().strip()
         # Region
         region = None
@@ -1117,10 +1228,19 @@ class App(tk.Tk):
             label.configure(image='', text=os.path.basename(path))
             self.monster_template_preview_image = None
             return
+        
+        # Check cache first
+        if path in self._thumbnail_cache:
+            photo = self._thumbnail_cache[path]
+            label.configure(image=photo, text='')
+            self.monster_template_preview_image = photo
+            return
+        
         try:
             img = Image.open(path)
             img.thumbnail((96, 96))
             photo = ImageTk.PhotoImage(img)
+            self._thumbnail_cache[path] = photo  # Cache it
             label.configure(image=photo, text='')
             self.monster_template_preview_image = photo
         except Exception:
@@ -1283,7 +1403,7 @@ class App(tk.Tk):
                     path = str(target_path)
                     
             except Exception as exc:
-                messagebox.showerror(self._t('monster_section'), f'Failed to copy image: {exc}')
+                messagebox.showerror(self._t('monster_section'), self._t('error_copy_image').format(exc=exc))
                 return
         
         self.monster_template_path_var.set(path)
@@ -1363,7 +1483,7 @@ class App(tk.Tk):
             return
         
         if Image is None or ImageTk is None or ImageDraw is None:
-            messagebox.showerror(self._t('monster_section'), 'PIL required for preview')
+            messagebox.showerror(self._t('monster_section'), self._t('error_pil_required'))
             return
 
         try:
@@ -1416,7 +1536,7 @@ class App(tk.Tk):
             tk.Button(preview_win, text=self._t('close'), command=preview_win.destroy).pack(pady=10)
             
         except Exception as exc:
-            messagebox.showerror(self._t('monster_section'), f'Preview error: {exc}')
+            messagebox.showerror(self._t('monster_section'), self._t('error_preview').format(exc=exc))
 
     def _monster_clear_form(self):
         if hasattr(self, 'monster_name_var'):
@@ -1544,7 +1664,9 @@ class App(tk.Tk):
 
         bounds_frame = tk.Frame(detail)
         bounds_frame.grid(row=4, column=0, sticky='w', pady=(8,0))
-        tk.Label(bounds_frame, text=self._t('monster_bounds')).grid(row=0, column=0, columnspan=5, sticky='w')
+        bounds_label = tk.Label(bounds_frame, text=self._t('monster_bounds'))
+        bounds_label.grid(row=0, column=0, columnspan=5, sticky='w')
+        ToolTip(bounds_label, self._t('tooltip_window_bounds'))
         headings = ['L', 'T', 'W', 'H']
         for idx, title in enumerate(headings):
             tk.Label(bounds_frame, text=title).grid(row=1, column=idx, padx=(0,4), sticky='w')
@@ -1588,7 +1710,9 @@ class App(tk.Tk):
         tk.Button(template_form, text=self._t('monster_template_browse'), command=self.on_monster_template_import).grid(row=1, column=2, padx=(6,0), pady=(6,0))
 
         tk.Label(template_form, text=self._t('monster_template_threshold')).grid(row=2, column=0, sticky='e')
-        tk.Entry(template_form, textvariable=self.monster_template_threshold_var, width=8).grid(row=2, column=1, sticky='w', padx=(4,0))
+        threshold_entry = tk.Entry(template_form, textvariable=self.monster_template_threshold_var, width=8)
+        threshold_entry.grid(row=2, column=1, sticky='w', padx=(4,0))
+        ToolTip(threshold_entry, self._t('tooltip_threshold'))
         tk.Label(template_form, text=self._t('monster_template_threshold_hint'), fg='gray').grid(row=3, column=0, columnspan=3, sticky='w')
 
         region_frame = tk.Frame(template_form)
@@ -2220,6 +2344,14 @@ class App(tk.Tk):
             label.config(image='', text=self._t('skill_no_image'))
             self.skill_preview_image = None
             return
+        
+        # Check cache first
+        if path in self._thumbnail_cache:
+            photo = self._thumbnail_cache[path]
+            label.config(image=photo, text='')
+            self.skill_preview_image = photo
+            return
+        
         try:
             if Image is not None and ImageTk is not None:
                 img = Image.open(path)
@@ -2227,6 +2359,7 @@ class App(tk.Tk):
                 photo = ImageTk.PhotoImage(img)
             else:
                 photo = tk.PhotoImage(file=path)
+            self._thumbnail_cache[path] = photo  # Cache it
             label.config(image=photo, text='')
             self.skill_preview_image = photo
         except Exception:
