@@ -5,7 +5,8 @@
   "attack_keys": [
     "1",
     "2",
-    "F1"
+    "3",
+    "4"
   ],
   "attack_press_ms": 5000,
   "target_cycle_delay": 10.0,
@@ -20,33 +21,41 @@
   ],
   "confidence": 0.85,
   "grayscale": true,
-  "lost_timeout_sec": 15.45,
-  "attack_min_duration_sec": 51705.15,
+  "lost_timeout_sec": 10.32,
+  "attack_min_duration_sec": 10.32,
   "bring_to_front_each_cycle": true,
   "skill_slots": [
     {
-      "name": "Skill 1",
+      "name": "Dark Explosion",
       "key": "1",
       "type": "attack",
-      "cooldown": 0.0,
-      "cast_time": 0.0,
-      "image": ""
+      "cooldown": 1.9,
+      "cast_time": 1.7,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
     },
     {
-      "name": "Skill 2",
+      "name": "Bone Javelin",
       "key": "2",
       "type": "attack",
-      "cooldown": 0.0,
-      "cast_time": 0.0,
-      "image": ""
+      "cooldown": 2.4,
+      "cast_time": 1.5,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
     },
     {
-      "name": "Buff",
-      "key": "F1",
+      "name": "Skull Shooter",
+      "key": "3",
       "type": "attack",
-      "cooldown": 0.0,
-      "cast_time": 0.0,
-      "image": ""
+      "cooldown": 2.2,
+      "cast_time": 1.5,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231935.png"
+    },
+    {
+      "name": "Regeneration",
+      "key": "4",
+      "type": "buff",
+      "cooldown": 2.2,
+      "cast_time": 1.0,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231921.png"
     }
   ]
 }
