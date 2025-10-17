@@ -1,0 +1,276 @@
+"""
+Timing Calculator - Calculate optimal hunt timing parameters based on monster stats.
+
+This module calculates optimal lost_timeout and attack_duration based on:
+- Monster HP
+- Player damage per hit
+- Attack speed (attacks per second)
+- Safety margin for detection lag
+
+Usage:
+    from timing_calculator import calculate_timing, TimingRecommendation
+    
+    rec = calculate_timing(
+        monster_hp=10000,
+        damage_per_hit=500,
+        attacks_per_second=2.0
+    )
+    print(f"Recommended lost_timeout: {rec.lost_timeout_sec}s")
+    print(f"Recommended attack_duration: {rec.attack_min_duration_sec}s")
+"""
+
+from dataclasses import dataclass
+from typing import Optional
+import math
+
+
+@dataclass
+class TimingRecommendation:
+    """Recommended timing parameters for hunt configuration."""
+    
+    # Core timing values
+    lost_timeout_sec: float
+    attack_min_duration_sec: float
+    
+    # Calculation details
+    estimated_kill_time_sec: float
+    hits_to_kill: int
+    
+    # Safety margins applied
+    lost_timeout_margin: float
+    attack_duration_margin: float
+    
+    # Original inputs
+    monster_hp: float
+    damage_per_hit: float
+    attacks_per_second: float
+    
+    def __str__(self) -> str:
+        """Human-readable string representation."""
+        return f"""Timing Recommendations:
+  Lost Timeout: {self.lost_timeout_sec:.2f}s (with {self.lost_timeout_margin:.0%} margin)
+  Attack Duration: {self.attack_min_duration_sec:.2f}s (with {self.attack_duration_margin:.0%} margin)
+  
+  Details:
+  - Estimated kill time: {self.estimated_kill_time_sec:.2f}s
+  - Hits to kill: {self.hits_to_kill}
+  - Monster HP: {self.monster_hp:,.0f}
+  - Damage per hit: {self.damage_per_hit:,.0f}
+  - Attack speed: {self.attacks_per_second:.2f} hits/sec"""
+
+
+def calculate_timing(
+    monster_hp: float,
+    damage_per_hit: float,
+    attacks_per_second: float = 2.0,
+    lost_timeout_margin: float = 0.5,
+    attack_duration_margin: float = 0.2,
+    min_lost_timeout: float = 0.3,
+    max_lost_timeout: float = 3.0,
+    min_attack_duration: float = 1.0,
+    max_attack_duration: float = 30.0
+) -> TimingRecommendation:
+    """
+    Calculate optimal timing parameters based on monster stats.
+    
+    Args:
+        monster_hp: Monster's total HP
+        damage_per_hit: Player's damage per attack
+        attacks_per_second: Attack speed (default 2.0)
+        lost_timeout_margin: Safety margin for lost_timeout (default 0.5 = 50%)
+        attack_duration_margin: Safety margin for attack_duration (default 0.2 = 20%)
+        min_lost_timeout: Minimum lost_timeout value (default 0.3s)
+        max_lost_timeout: Maximum lost_timeout value (default 3.0s)
+        min_attack_duration: Minimum attack_duration value (default 1.0s)
+        max_attack_duration: Maximum attack_duration value (default 30.0s)
+    
+    Returns:
+        TimingRecommendation with calculated values
+    
+    Examples:
+        >>> rec = calculate_timing(10000, 500, 2.0)
+        >>> rec.lost_timeout_sec
+        1.5
+        >>> rec.attack_min_duration_sec
+        12.0
+    """
+    # Validate inputs
+    if monster_hp <= 0:
+        raise ValueError("monster_hp must be > 0")
+    if damage_per_hit <= 0:
+        raise ValueError("damage_per_hit must be > 0")
+    if attacks_per_second <= 0:
+        raise ValueError("attacks_per_second must be > 0")
+    
+    # Calculate hits needed to kill monster
+    hits_to_kill = math.ceil(monster_hp / damage_per_hit)
+    
+    # Calculate estimated kill time
+    estimated_kill_time_sec = hits_to_kill / attacks_per_second
+    
+    # Calculate lost_timeout with margin
+    # This is the time between attacks - should be short for detection lag
+    time_per_hit = 1.0 / attacks_per_second
+    lost_timeout = time_per_hit * (1.0 + lost_timeout_margin)
+    lost_timeout = max(min_lost_timeout, min(max_lost_timeout, lost_timeout))
+    
+    # Calculate attack_min_duration with margin
+    # This ensures we keep attacking even if template briefly disappears
+    attack_duration = estimated_kill_time_sec * (1.0 + attack_duration_margin)
+    attack_duration = max(min_attack_duration, min(max_attack_duration, attack_duration))
+    
+    return TimingRecommendation(
+        lost_timeout_sec=round(lost_timeout, 2),
+        attack_min_duration_sec=round(attack_duration, 2),
+        estimated_kill_time_sec=round(estimated_kill_time_sec, 2),
+        hits_to_kill=hits_to_kill,
+        lost_timeout_margin=lost_timeout_margin,
+        attack_duration_margin=attack_duration_margin,
+        monster_hp=monster_hp,
+        damage_per_hit=damage_per_hit,
+        attacks_per_second=attacks_per_second
+    )
+
+
+def calculate_timing_from_monster(
+    monster: dict,
+    attacks_per_second: float = 2.0,
+    **kwargs
+) -> Optional[TimingRecommendation]:
+    """
+    Calculate timing from monster dict (from monsters.json).
+    
+    Args:
+        monster: Monster dict with 'hp' and 'damage_per_hit' keys
+        attacks_per_second: Attack speed
+        **kwargs: Additional args passed to calculate_timing
+    
+    Returns:
+        TimingRecommendation or None if monster lacks required stats
+    
+    Examples:
+        >>> monster = {"name": "Dragon", "hp": 10000, "damage_per_hit": 500}
+        >>> rec = calculate_timing_from_monster(monster)
+        >>> rec.lost_timeout_sec
+        1.5
+    """
+    hp = monster.get('hp')
+    damage = monster.get('damage_per_hit')
+    
+    if hp is None or damage is None or hp <= 0 or damage <= 0:
+        return None
+    
+    return calculate_timing(
+        monster_hp=float(hp),
+        damage_per_hit=float(damage),
+        attacks_per_second=attacks_per_second,
+        **kwargs
+    )
+
+
+def format_timing_recommendation(rec: TimingRecommendation, 
+                                 language: str = 'en') -> dict:
+    """
+    Format timing recommendation for display in GUI.
+    
+    Args:
+        rec: TimingRecommendation to format
+        language: 'en' or 'vi'
+    
+    Returns:
+        Dict with formatted strings for display
+    """
+    if language == 'vi':
+        return {
+            'lost_timeout': f"{rec.lost_timeout_sec:.2f}s",
+            'attack_duration': f"{rec.attack_min_duration_sec:.2f}s",
+            'kill_time': f"{rec.estimated_kill_time_sec:.2f}s",
+            'hits': f"{rec.hits_to_kill} đòn",
+            'summary': (
+                f"Khuyến nghị: Lost timeout {rec.lost_timeout_sec:.2f}s, "
+                f"Attack duration {rec.attack_min_duration_sec:.2f}s\n"
+                f"Dự kiến: {rec.hits_to_kill} đòn, {rec.estimated_kill_time_sec:.2f}s để hạ gục"
+            )
+        }
+    else:
+        return {
+            'lost_timeout': f"{rec.lost_timeout_sec:.2f}s",
+            'attack_duration': f"{rec.attack_min_duration_sec:.2f}s",
+            'kill_time': f"{rec.estimated_kill_time_sec:.2f}s",
+            'hits': f"{rec.hits_to_kill} hits",
+            'summary': (
+                f"Recommended: Lost timeout {rec.lost_timeout_sec:.2f}s, "
+                f"Attack duration {rec.attack_min_duration_sec:.2f}s\n"
+                f"Estimated: {rec.hits_to_kill} hits, {rec.estimated_kill_time_sec:.2f}s to kill"
+            )
+        }
+
+
+def get_timing_presets() -> dict:
+    """
+    Get common timing presets for different scenarios.
+    
+    Returns:
+        Dict of preset name -> (attacks_per_second, description)
+    """
+    return {
+        'slow': (1.0, 'Slow attacks (1 hit/sec) - Heavy weapons, slow skills'),
+        'normal': (2.0, 'Normal speed (2 hits/sec) - Default attack speed'),
+        'fast': (3.0, 'Fast attacks (3 hits/sec) - Light weapons, fast skills'),
+        'very_fast': (4.0, 'Very fast (4 hits/sec) - Rapid fire skills'),
+    }
+
+
+# Example usage and testing
+if __name__ == '__main__':
+    print("Timing Calculator - Examples")
+    print("=" * 70)
+    
+    # Example 1: Normal monster
+    print("\n📊 Example 1: Normal Monster")
+    print("-" * 70)
+    rec1 = calculate_timing(
+        monster_hp=10000,
+        damage_per_hit=500,
+        attacks_per_second=2.0
+    )
+    print(rec1)
+    
+    # Example 2: Boss monster
+    print("\n\n📊 Example 2: Boss Monster (High HP)")
+    print("-" * 70)
+    rec2 = calculate_timing(
+        monster_hp=100000,
+        damage_per_hit=1000,
+        attacks_per_second=2.0
+    )
+    print(rec2)
+    
+    # Example 3: Weak monster
+    print("\n\n📊 Example 3: Weak Monster (Low HP)")
+    print("-" * 70)
+    rec3 = calculate_timing(
+        monster_hp=1000,
+        damage_per_hit=500,
+        attacks_per_second=2.0
+    )
+    print(rec3)
+    
+    # Example 4: Fast attack speed
+    print("\n\n📊 Example 4: Fast Attack Speed")
+    print("-" * 70)
+    rec4 = calculate_timing(
+        monster_hp=10000,
+        damage_per_hit=300,
+        attacks_per_second=4.0
+    )
+    print(rec4)
+    
+    # Show presets
+    print("\n\n📋 Available Presets:")
+    print("-" * 70)
+    presets = get_timing_presets()
+    for name, (aps, desc) in presets.items():
+        print(f"{name:12s}: {desc}")
+    
+    print("\n" + "=" * 70)

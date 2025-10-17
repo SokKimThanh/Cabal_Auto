@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 9 Complete - OpenCV Integration)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 10 Complete - HP/Damage Timing Recommendations)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -222,10 +222,31 @@ E:\Cabal_Auto
 			- Both methods work, OpenCV provides better accuracy tracking
 		• **Integration ready**: template_matcher.py provides drop-in replacement for hunt system
 		• **Performance**: OpenCV ~100-115ms per match, grayscale optimization enabled
+	- Sprint 10 (Hoàn tất 2025-10-18): HP/Damage Timing Recommendations
+		• **timing_calculator.py**: Module tính toán timing parameters (~280 lines)
+			- calculate_timing(): Calculate lost_timeout và attack_min_duration based on monster stats
+			- TimingRecommendation dataclass: lost_timeout_sec, attack_min_duration_sec, estimated_kill_time, hits_to_kill
+			- calculate_timing_from_monster(): Helper for monsters.json dict
+			- format_timing_recommendation(): Format output cho EN/VI display
+			- get_timing_presets(): Attack speed presets (slow/normal/fast/very_fast)
+		• **Algorithm logic**:
+			- hits_to_kill = ceil(monster_hp / damage_per_hit)
+			- estimated_kill_time = hits_to_kill / attacks_per_second
+			- lost_timeout = (1/attack_speed) * (1 + margin) - clamped to 0.3-3.0s
+			- attack_duration = kill_time * (1 + margin) - clamped to 1.0-30.0s
+			- Safety margins: 50% for lost_timeout, 20% for attack_duration
+		• **GUI Integration**:
+			- "Calculate Timing" button trong Monster Manager next to HP/Damage fields
+			- on_monster_calculate_timing(): Dialog với attack speed presets
+			- Radio buttons: slow (1 hit/s), normal (2 hit/s), fast (3 hit/s), very_fast (4 hit/s), custom
+			- Real-time calculation và display recommendations
+			- Shows: lost_timeout, attack_duration, kill_time, hits_to_kill with detailed explanation
+		• **Localization**: monster_calculate_timing, monster_timing_title, monster_timing_no_stats (EN/VI)
+		• **Benefits**: Data-driven timing optimization, eliminates guesswork, adapts to different monster types
 - Tiếp theo:
 	- Kỹ năng: tiếp tục refactor editor + runtime theo schema mới, auto-copy ảnh, migration `skills.json`.
-	- HP/Damage estimation integration: sử dụng monster stats để recommend optimal timing parameters.
 	- Integrate template_matcher.py vào auto_hunt.py và app_gui.py cho better confidence tracking.
+	- Add "Apply to Hunt Config" button trong timing calculator để auto-fill hunt_config.json.
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
@@ -348,23 +369,59 @@ E:\Cabal_Auto
   - Better debugging với actual match scores
   - No dependency issues với Python 3.14
 
-🎯 TỔNG KẾT SPRINT 1-9:
+✅ HOÀN TẤT SPRINT 10: HP/Damage Timing Recommendations
+- **timing_calculator.py module** (~280 lines):
+  - TimingRecommendation dataclass với lost_timeout_sec, attack_min_duration_sec, estimated_kill_time_sec, hits_to_kill
+  - calculate_timing(): Core algorithm calculates optimal timing based on monster HP, damage per hit, attack speed
+  - Algorithm: hits_to_kill = ceil(hp/damage), kill_time = hits/attack_speed
+  - Safety margins: lost_timeout +50%, attack_duration +20%
+  - Clamping: lost_timeout 0.3-3.0s, attack_duration 1.0-30.0s
+  - calculate_timing_from_monster(): Helper for monsters.json dict
+  - format_timing_recommendation(): Localized formatting (EN/VI)
+  - get_timing_presets(): Attack speed presets (slow/normal/fast/very_fast)
+- **GUI Integration** trong Monster Manager:
+  - "Calculate Timing" button bên cạnh HP/Damage fields
+  - on_monster_calculate_timing(): Dialog với attack speed selection
+  - Radio button presets:
+    • Slow: 1.0 hits/sec (heavy weapons)
+    • Normal: 2.0 hits/sec (default)
+    • Fast: 3.0 hits/sec (light weapons)
+    • Very Fast: 4.0 hits/sec (rapid fire)
+    • Custom: User-defined attack speed
+  - Real-time calculation update on preset change
+  - Display results: Timing recommendations, estimated kill time, hits to kill, detailed explanation
+- **Example calculations**:
+  - Normal monster (10k HP, 500 dmg, 2.0 aps): lost_timeout=0.75s, attack_duration=12.0s
+  - Boss monster (100k HP, 1k dmg, 2.0 aps): lost_timeout=0.75s, attack_duration=30.0s (capped)
+  - Weak monster (1k HP, 500 dmg, 2.0 aps): lost_timeout=0.75s, attack_duration=1.2s
+  - Fast attacks (10k HP, 300 dmg, 4.0 aps): lost_timeout=0.38s, attack_duration=10.2s
+- **Localization**: 3 new strings added (monster_calculate_timing, monster_timing_title, monster_timing_no_stats)
+- **Benefits**:
+  - Data-driven optimization eliminates timing guesswork
+  - Adapts to different monster HP/damage profiles
+  - Safety margins prevent premature search mode switching
+  - User-friendly GUI với preset selection
+  - Supports custom attack speeds cho different character builds
+
+🎯 TỔNG KẾT SPRINT 1-10:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
 - Sprint 7: Test Recognition với live matching, result preview, troubleshooting tips
 - Sprint 8: Enhanced Logging System với dual logging (human-readable + structured JSON), session tracking, state transitions
 - Sprint 9: OpenCV Integration với compatibility testing, unified template matcher interface, performance comparison
-- **System ready for production**: Complete workflow - capture → test → save → hunt → monitor logs với OpenCV accuracy
+- Sprint 10: HP/Damage Timing Recommendations với automatic calculation, attack speed presets, GUI integration
+- **System ready for production**: Complete workflow - capture → test → save → calculate timing → hunt → monitor logs với data-driven optimization
 
 📊 CODE METRICS:
-- app_gui.py: ~3,040 lines (logger integration complete)
+- app_gui.py: ~3,140 lines (+100 lines timing integration)
 - auto_hunt.py: ~215 lines (logger integration complete)
 - hunt_logger.py: ~300 lines (dual logging system)
-- opencv_test.py: ~340 lines (NEW - comparison testing)
-- template_matcher.py: ~220 lines (NEW - unified interface)
-- Total project: ~4,115 lines (+560 lines Sprint 9)
-- Localization: 170+ strings với EN/VI parity
+- opencv_test.py: ~340 lines (comparison testing)
+- template_matcher.py: ~220 lines (unified interface)
+- timing_calculator.py: ~280 lines (NEW - timing recommendations)
+- Total project: ~4,495 lines (+380 lines Sprint 10)
+- Localization: 173+ strings với EN/VI parity (+3 timing strings)
 - Dependencies: pyautogui, PIL, tkinter, logging, opencv-python 4.12.0, numpy 2.3.4
 
 🔧 TECHNICAL HIGHLIGHTS:

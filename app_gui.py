@@ -27,6 +27,7 @@ except Exception:
 
 from win_input import tap
 from hunt_logger import get_hunt_logger
+from timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
 
 
 class ToolTip:
@@ -103,6 +104,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_name': 'Name:',
         'monster_hp': 'HP:',
         'monster_damage': 'Damage per hit:',
+        'monster_calculate_timing': 'Calculate Timing',
+        'monster_timing_title': 'Timing Recommendations',
+        'monster_timing_no_stats': 'Please enter HP and Damage per hit values first.',
         'monster_template': 'Template:',
     'monster_description': 'Description:',
     'monster_description_hint': 'Optional notes about this monster or spawn location.',
@@ -247,6 +251,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_name': 'Tên:',
         'monster_hp': 'HP:',
         'monster_damage': 'Sát thương mỗi đòn:',
+        'monster_calculate_timing': 'Tính thời gian',
+        'monster_timing_title': 'Khuyến nghị thời gian',
+        'monster_timing_no_stats': 'Vui lòng nhập HP và Sát thương trước.',
         'monster_template': 'Ảnh template:',
     'monster_description': 'Mô tả:',
     'monster_description_hint': 'Ghi chú thêm về quái hoặc vị trí spawn (tùy chọn).',
@@ -1934,6 +1941,8 @@ class App(tk.Tk):
 
         tk.Label(info_frame, text=self._t('monster_damage')).grid(row=1, column=2, sticky='e', pady=(6,0))
         tk.Entry(info_frame, textvariable=self.monster_damage_var, width=12).grid(row=1, column=3, sticky='we', padx=(4,0), pady=(6,0))
+        
+        tk.Button(info_frame, text=self._t('monster_calculate_timing'), command=self.on_monster_calculate_timing).grid(row=1, column=4, padx=(8,0), pady=(6,0))
 
         desc_label = tk.Label(detail, text=self._t('monster_description'))
         desc_label.grid(row=1, column=0, sticky='w', pady=(8,0))
@@ -2342,6 +2351,111 @@ class App(tk.Tk):
         self.monster_selected_name = next_name
         self._refresh_monster_list(select_name=next_name)
         self.hunt_status.set(self._t('monster_deleted'))
+
+    def on_monster_calculate_timing(self):
+        """Calculate and display timing recommendations based on monster HP and damage."""
+        try:
+            # Get HP and damage from form
+            hp_str = self.monster_hp_var.get().strip()
+            damage_str = self.monster_damage_var.get().strip()
+            
+            if not hp_str or not damage_str:
+                messagebox.showinfo(
+                    self._t('monster_timing_title'),
+                    self._t('monster_timing_no_stats')
+                )
+                return
+            
+            hp = float(hp_str)
+            damage = float(damage_str)
+            
+            if hp <= 0 or damage <= 0:
+                messagebox.showerror(
+                    self._t('monster_timing_title'),
+                    'HP and Damage must be greater than 0.'
+                )
+                return
+            
+            # Create dialog for attack speed selection
+            dialog = tk.Toplevel(self)
+            dialog.title(self._t('monster_timing_title'))
+            dialog.geometry('500x400')
+            dialog.transient(self)
+            dialog.grab_set()
+            
+            # Attack speed selection
+            speed_frame = tk.LabelFrame(dialog, text='Attack Speed Preset', padx=10, pady=10)
+            speed_frame.pack(fill='x', padx=10, pady=10)
+            
+            speed_var = tk.StringVar(value='normal')
+            presets = get_timing_presets()
+            
+            for preset_name, (aps, desc) in presets.items():
+                rb = tk.Radiobutton(
+                    speed_frame,
+                    text=f"{preset_name.replace('_', ' ').title()}: {desc}",
+                    variable=speed_var,
+                    value=preset_name
+                )
+                rb.pack(anchor='w', pady=2)
+            
+            # Custom speed
+            custom_frame = tk.Frame(speed_frame)
+            custom_frame.pack(fill='x', pady=(10,0))
+            tk.Radiobutton(
+                custom_frame,
+                text='Custom:',
+                variable=speed_var,
+                value='custom'
+            ).pack(side='left')
+            custom_speed_var = tk.StringVar(value='2.0')
+            tk.Entry(custom_frame, textvariable=custom_speed_var, width=8).pack(side='left', padx=5)
+            tk.Label(custom_frame, text='attacks/sec').pack(side='left')
+            
+            # Result text
+            result_frame = tk.LabelFrame(dialog, text='Recommendations', padx=10, pady=10)
+            result_frame.pack(fill='both', expand=True, padx=10, pady=10)
+            
+            result_text = tk.Text(result_frame, width=60, height=12, wrap='word')
+            result_text.pack(fill='both', expand=True)
+            
+            def update_recommendations():
+                """Calculate and display recommendations."""
+                try:
+                    preset = speed_var.get()
+                    if preset == 'custom':
+                        aps = float(custom_speed_var.get())
+                    else:
+                        aps = presets[preset][0]
+                    
+                    # Calculate timing
+                    rec = calculate_timing(hp, damage, aps)
+                    formatted = format_timing_recommendation(rec, self.language)
+                    
+                    # Display results
+                    result_text.delete('1.0', tk.END)
+                    result_text.insert('1.0', f"{rec}\n\n")
+                    result_text.insert(tk.END, "=" * 60 + "\n")
+                    result_text.insert(tk.END, formatted['summary'])
+                    
+                except Exception as e:
+                    result_text.delete('1.0', tk.END)
+                    result_text.insert('1.0', f'Error: {e}')
+            
+            # Buttons
+            btn_frame = tk.Frame(dialog)
+            btn_frame.pack(fill='x', padx=10, pady=(0,10))
+            
+            tk.Button(btn_frame, text='Calculate' if self.language == 'en' else 'Tính toán',
+                     command=update_recommendations).pack(side='left', padx=5)
+            tk.Button(btn_frame, text='Close' if self.language == 'en' else 'Đóng',
+                     command=dialog.destroy).pack(side='left', padx=5)
+            
+            # Initial calculation
+            update_recommendations()
+            
+        except Exception as e:
+            messagebox.showerror(self._t('monster_timing_title'), f'Error: {e}')
 
     def on_monster_estimate(self):
         try:
