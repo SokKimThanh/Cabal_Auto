@@ -6,6 +6,7 @@ import pyautogui
 
 from win_input import tap
 from hunt_logger import get_hunt_logger
+from template_matcher import locate_template
 
 CONFIG_PATH = Path(__file__).with_name('hunt_config.json')
 
@@ -18,11 +19,11 @@ def load_cfg():
 def locate_target(cfg):
     """
     Try to locate the target frame on screen using templates[] or fallback to template_path.
+    Uses template_matcher.locate_template() for accurate confidence tracking with OpenCV.
+    
     Returns a tuple (box, template_info) or (None, None).
     box: (left, top, width, height) or None
-    template_info: {'name': ..., 'path': ..., 'threshold': ...} or None
-    
-    Note: Without OpenCV, confidence will be ignored and fallback locate is used.
+    template_info: {'name': ..., 'path': ..., 'threshold': ..., 'confidence': ...} or None
     """
     # Try new templates[] array first
     templates = cfg.get('templates', [])
@@ -34,7 +35,6 @@ def locate_target(cfg):
                 continue
             
             threshold = tmpl.get('threshold', 0.85)
-            grayscale = tmpl.get('grayscale', True)
             
             # Determine region: use template's region if custom, else window_bounds
             region_strategy = tmpl.get('region_strategy', 'window')
@@ -49,53 +49,31 @@ def locate_target(cfg):
             else:
                 region = None
             
-            box = _try_locate_image(path, region, grayscale, threshold)
+            # Use template_matcher for accurate confidence tracking
+            box, confidence = locate_template(path, region, threshold, method='auto')
             if box:
-                return box, {'name': tmpl.get('name', ''), 'path': path, 'threshold': threshold}
+                return box, {
+                    'name': tmpl.get('name', ''), 
+                    'path': path, 
+                    'threshold': threshold,
+                    'confidence': confidence
+                }
         
         # No match found in templates
         return None, None
     
     # Fallback to legacy template_path
-    region = cfg.get('region')  # [left, top, width, height] or None
+    region_list = cfg.get('region')  # [left, top, width, height] or None
+    region = tuple(region_list) if region_list else None
     template = cfg.get('template_path')
-    grayscale = bool(cfg.get('grayscale', True))
-    confidence = cfg.get('confidence', None)
+    threshold = cfg.get('confidence', 0.8)
 
     if not template or not Path(template).exists():
         return None, None
 
-    box = _try_locate_image(template, region, grayscale, confidence)
-    return box, {'path': template, 'threshold': confidence} if box else (None, None)
-
-
-def _try_locate_image(template_path, region, grayscale, confidence):
-    """
-    Helper to locate a single image on screen.
-    Returns box (left, top, width, height) or None.
-    """
-    try:
-        # If OpenCV installed, use confidence
-        if hasattr(pyautogui, 'locateOnScreen'):
-            if region:
-                box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale, confidence=confidence)
-            else:
-                box = pyautogui.locateOnScreen(template_path, grayscale=grayscale, confidence=confidence)
-            return box
-    except TypeError:
-        # confidence not supported without opencv; retry without it
-        try:
-            if region:
-                box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale)
-            else:
-                box = pyautogui.locateOnScreen(template_path, grayscale=grayscale)
-            return box
-        except Exception:
-            return None
-    except Exception:
-        return None
-
-    return None
+    # Use template_matcher for accurate confidence tracking
+    box, confidence = locate_template(template, region, threshold, method='auto')
+    return (box, {'path': template, 'threshold': threshold, 'confidence': confidence}) if box else (None, None)
 
 
 def bring_window_to_front(title_substring: str) -> bool:
@@ -164,7 +142,7 @@ def main():
                             state = 'attack'
                             attack_start_time = now
                         
-                        # Log the match
+                        # Log the match with accurate confidence from template_matcher
                         template_name = match_info.get('name') or match_info.get('path', 'unknown')
                         threshold = match_info.get('threshold', 0.8)
                         confidence = match_info.get('confidence', 0.0)
@@ -172,7 +150,7 @@ def main():
                         logger.log_match(template_name, box, threshold, confidence, monster_name)
                         
                         print(f"[Match] Template: {template_name}, " +
-                              f"Threshold: {threshold}, Box: {box}")
+                              f"Threshold: {threshold:.2f}, Confidence: {confidence:.3f}, Box: {box}")
                         last_match_info = match_info
                 elif not have_target and last_match_info:
                     # State transition: attack -> search

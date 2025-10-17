@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 10 Complete - HP/Damage Timing Recommendations)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 12 Complete - Template Matcher Integration)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -243,10 +243,58 @@ E:\Cabal_Auto
 			- Shows: lost_timeout, attack_duration, kill_time, hits_to_kill with detailed explanation
 		• **Localization**: monster_calculate_timing, monster_timing_title, monster_timing_no_stats (EN/VI)
 		• **Benefits**: Data-driven timing optimization, eliminates guesswork, adapts to different monster types
+	- Sprint 11 (Hoàn tất 2025-10-18): Skills Migration & Auto-Copy Images
+		• **skill_migrator.py**: Migration tool (~220 lines) to update skills.json schema
+			- SkillMigrator class với automated migration workflow
+			- sanitize_filename(): Convert skill names to safe slugs (lowercase, alphanumeric + underscore)
+			- copy_image_to_project(): Copy images from absolute paths to assets/images/skills/ với unique timestamps
+			- migrate_skill(): Add new schema fields (duration_sec, pre_refresh_sec, hold_ms)
+			- validate_schema(): Verify all required fields and types
+		• **New schema fields**:
+			- duration_sec: Buff uptime in seconds (0 for attack skills)
+			- pre_refresh_sec: When to recast buff before expiration (0 = no auto-refresh)
+			- hold_ms: Optional key hold time override (null = use cast_time * 1000)
+			- image: Converted from absolute paths to relative paths in assets/images/skills/
+		• **Migration workflow**:
+			1. Backup original skills.json to skills.json.backup
+			2. For each skill: Add new fields với defaults (duration_sec=0, pre_refresh_sec=0, hold_ms=null)
+			3. Copy images from absolute paths (C:/Users/...) to project (assets/images/skills/skill_name_timestamp.png)
+			4. Update image paths to relative paths
+			5. Validate schema (required fields, type checking)
+			6. Save migrated skills.json
+		• **Results**:
+			- ✅ 4 skills migrated successfully (3 attack, 1 buff)
+			- ✅ 4 images copied to assets/images/skills/
+			- ✅ Backup created (skills.json.backup)
+			- ✅ All skills validated with correct schema
+			- ⚠️ Buff skills need manual duration_sec/pre_refresh_sec setup
+		• **Filename format**: `{skill_slug}_{timestamp_ms}.png` (e.g., dark_explosion_1760739255497.png)
+		• **Benefits**: Portable project (no external image dependencies), unique filenames (no conflicts), safe migration với backup
+	- Sprint 12 (Hoàn tất 2025-10-18): Template Matcher Integration
+		• **Integration với auto_hunt.py và app_gui.py**: Replace PyAutoGUI-only matching với template_matcher.locate_template()
+		• **Benefits**:
+			- Accurate confidence tracking: OpenCV returns actual float confidence (0.0-1.0) thay vì boolean match
+			- Better threshold tuning: Real confidence values giúp optimize threshold cho từng template
+			- Faster performance: OpenCV matching (~100-115ms) với grayscale optimization
+			- Unified interface: Single API cho both OpenCV và PyAutoGUI fallback
+		• **Changes in auto_hunt.py**:
+			- Import template_matcher.locate_template()
+			- Replace _try_locate_image() với locate_template() calls trong locate_target()
+			- Returns (box, confidence) tuple với actual confidence values
+			- Updated print statement: Show confidence in [Match] logs (f"Confidence: {confidence:.3f}")
+		• **Changes in app_gui.py**:
+			- Import template_matcher.locate_template()
+			- Replace _try_locate_image() method với locate_template() calls trong _hunt_locate_target()
+			- Returns (box, confidence) tuple với actual confidence values
+			- Updated GUI status: Display confidence in status bar (f"Target: {template_name} (conf: {confidence:.3f})")
+		• **Backward compatible**: Fallback to PyAutoGUI nếu OpenCV không có, no breaking changes
+		• **Logging enhanced**: hunt_logger.log_match() receives accurate confidence values từ OpenCV
+		• **Code changes**:
+			- auto_hunt.py: +2 lines import, ~30 lines refactored in locate_target()
+			- app_gui.py: +2 lines import, ~25 lines refactored in _hunt_locate_target()
 - Tiếp theo:
-	- Kỹ năng: tiếp tục refactor editor + runtime theo schema mới, auto-copy ảnh, migration `skills.json`.
-	- Integrate template_matcher.py vào auto_hunt.py và app_gui.py cho better confidence tracking.
 	- Add "Apply to Hunt Config" button trong timing calculator để auto-fill hunt_config.json.
+	- Skill runtime refactor: Implement duration/pre-refresh logic cho buff auto-casting.
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
@@ -403,7 +451,54 @@ E:\Cabal_Auto
   - User-friendly GUI với preset selection
   - Supports custom attack speeds cho different character builds
 
-🎯 TỔNG KẾT SPRINT 1-10:
+✅ HOÀN TẤT SPRINT 11: Skills Migration & Auto-Copy Images
+- **skill_migrator.py module** (~220 lines):
+  - SkillMigrator class với complete migration workflow
+  - sanitize_filename(): Convert skill names to safe slugs (lowercase, alphanumeric, underscores)
+  - copy_image_to_project(): Copy images from external paths to assets/images/skills/
+  - migrate_skill(): Add new schema fields với defaults
+  - validate_schema(): Complete validation với type checking
+  - print_summary(): Migration statistics and recommendations
+- **Schema migration**:
+  - Added fields:
+    • duration_sec: Buff uptime in seconds (default: 0.0 for attacks)
+    • pre_refresh_sec: Recast timing before buff expires (default: 0.0)
+    • hold_ms: Optional key hold override (default: null - uses cast_time*1000)
+  - Image paths: Converted from absolute (C:/Users/...) to relative (assets/images/skills/...)
+  - Backward compatible: Existing cooldown, cast_time, key, type fields preserved
+- **Migration workflow**:
+  1. Automatic backup: skills.json → skills.json.backup
+  2. Load existing skills from skills.json
+  3. For each skill:
+     - Add new fields với smart defaults
+     - Copy image file to assets/images/skills/ với unique filename
+     - Update image path to relative path
+     - Validate schema compliance
+  4. Save migrated skills.json
+  5. Validate all skills và generate summary
+- **Filename generation**:
+  - Format: `{skill_slug}_{timestamp_ms}.png`
+  - Example: dark_explosion_1760739255497.png
+  - Slug: Lowercase skill name, spaces → underscores, special chars removed
+  - Timestamp: Milliseconds since epoch for uniqueness
+- **Migration results** (test run):
+  - ✅ 4 skills migrated (3 attack + 1 buff)
+  - ✅ 4 images copied successfully
+  - ✅ Backup created (skills.json.backup)
+  - ✅ All skills validated with correct types
+  - ⚠️ Buff skills flagged for manual duration setup (duration_sec, pre_refresh_sec)
+- **Validation checks**:
+  - Required fields present: name, key, type, cooldown, cast_time, duration_sec, pre_refresh_sec
+  - Type checking: Numeric fields are float/int, hold_ms is numeric or null
+  - Error reporting: Missing fields and type errors clearly identified
+- **Benefits**:
+  - Portable project: No external image dependencies
+  - Unique filenames: Timestamp-based, no conflicts
+  - Safe migration: Automatic backup before changes
+  - Validation: Ensures schema compliance
+  - Future-proof: Schema ready for buff/attack runtime separation
+
+🎯 TỔNG KẾT SPRINT 1-12:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
@@ -411,18 +506,22 @@ E:\Cabal_Auto
 - Sprint 8: Enhanced Logging System với dual logging (human-readable + structured JSON), session tracking, state transitions
 - Sprint 9: OpenCV Integration với compatibility testing, unified template matcher interface, performance comparison
 - Sprint 10: HP/Damage Timing Recommendations với automatic calculation, attack speed presets, GUI integration
-- **System ready for production**: Complete workflow - capture → test → save → calculate timing → hunt → monitor logs với data-driven optimization
+- Sprint 11: Skills Migration & Auto-Copy với schema update, image portability, automated backup
+- Sprint 12: Template Matcher Integration với accurate confidence tracking từ OpenCV, unified interface cho hunt system
+- **System production-ready**: Complete workflow - capture → test → save → calculate timing → hunt với accurate confidence → monitor logs với portable assets và data-driven optimization
 
 📊 CODE METRICS:
-- app_gui.py: ~3,140 lines (+100 lines timing integration)
-- auto_hunt.py: ~215 lines (logger integration complete)
+- app_gui.py: ~3,130 lines (template_matcher integration, removed _try_locate_image method)
+- auto_hunt.py: ~190 lines (template_matcher integration, removed _try_locate_image function)
 - hunt_logger.py: ~300 lines (dual logging system)
 - opencv_test.py: ~340 lines (comparison testing)
-- template_matcher.py: ~220 lines (unified interface)
-- timing_calculator.py: ~280 lines (NEW - timing recommendations)
-- Total project: ~4,495 lines (+380 lines Sprint 10)
-- Localization: 173+ strings với EN/VI parity (+3 timing strings)
+- template_matcher.py: ~220 lines (unified interface - NOW INTEGRATED)
+- timing_calculator.py: ~280 lines (timing recommendations)
+- skill_migrator.py: ~220 lines (skills migration tool)
+- Total project: ~4,680 lines (code simplified với unified template matching)
+- Localization: 173+ strings với EN/VI parity
 - Dependencies: pyautogui, PIL, tkinter, logging, opencv-python 4.12.0, numpy 2.3.4
+- Assets: 4 skill images in assets/images/skills/ (portable, no external dependencies)
 
 🔧 TECHNICAL HIGHLIGHTS:
 - ToolTip implementation: Lightweight Toplevel window với Enter/Leave bindings
@@ -468,7 +567,7 @@ E:\Cabal_Auto
     - test_pyautogui_match(): pyautogui.locateOnScreen() với confidence fallback
     - compare_methods(): Multi-iteration testing với statistics và recommendations
     - Performance metrics: Average time, detection rate, confidence tracking
-  • **template_matcher.py**: Unified interface (~220 lines)
+  • **template_matcher.py**: Unified interface (~220 lines) - ✅ INTEGRATED in Sprint 12
     - locate_template_opencv(): Direct OpenCV matching với accurate confidence values
     - locate_template_pyautogui(): PyAutoGUI fallback matching
     - locate_template(method='auto'): Auto-select best available method (prefers OpenCV)
@@ -480,9 +579,17 @@ E:\Cabal_Auto
   • **Benefits**:
     - Accurate confidence values cho better threshold tuning
     - Faster performance với grayscale optimization
-    - Drop-in replacement interface ready for hunt system integration
+    - ✅ Now integrated into hunt system (Sprint 12)
   • **Dependencies**: numpy 2.3.4 (prebuilt wheel), opencv-python 4.12.0 (cp37-abi3 wheel)
-
+- Template Matcher Integration (Sprint 12):
+  • **Hunt system integration**: auto_hunt.py và app_gui.py now use template_matcher.locate_template()
+  • **Accurate confidence tracking**: Real float values (0.0-1.0) from OpenCV displayed in logs và GUI status
+  • **Code simplification**: Removed duplicate _try_locate_image() implementations, unified to single template_matcher interface
+  • **Enhanced logging**: hunt_logger receives actual confidence values cho better debugging
+  • **Display improvements**: 
+    - CLI: Print statements show threshold và confidence (f"Threshold: {threshold:.2f}, Confidence: {confidence:.3f}")
+    - GUI: Status bar shows confidence (f"Target: {template_name} (conf: {confidence:.3f})")
+  • **Backward compatible**: Fallback to PyAutoGUI nếu OpenCV không có
 - Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack.
 - Kỹ năng: workflow đã chốt (skill_slots → attack_keys, duration/pre-refresh/hold_ms, auto copy ảnh) — sẽ tiếp tục triển khai/migrate.

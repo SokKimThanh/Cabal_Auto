@@ -13,6 +13,8 @@ import pyautogui
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from template_matcher import locate_template
+
 try:
     from PIL import Image, ImageTk, ImageDraw  # type: ignore
 except Exception:
@@ -1060,6 +1062,7 @@ class App(tk.Tk):
     def _hunt_locate_target(self, cfg):
         """
         Try to locate target using templates[] or fallback to template_path.
+        Uses template_matcher.locate_template() for accurate confidence tracking with OpenCV.
         Returns tuple (box, match_info) or (None, None).
         """
         # Try new templates[] array first
@@ -1072,7 +1075,6 @@ class App(tk.Tk):
                     continue
                 
                 threshold = tmpl.get('threshold', 0.85)
-                grayscale = tmpl.get('grayscale', True)
                 
                 # Determine region
                 region_strategy = tmpl.get('region_strategy', 'window')
@@ -1087,43 +1089,29 @@ class App(tk.Tk):
                 else:
                     region = None
                 
-                box = self._try_locate_image(path, region, grayscale, threshold)
+                # Use template_matcher for accurate confidence tracking
+                box, confidence = locate_template(path, region, threshold, method='auto')
                 if box:
-                    return box, {'name': tmpl.get('name', ''), 'path': path, 'threshold': threshold}
+                    return box, {
+                        'name': tmpl.get('name', ''), 
+                        'path': path, 
+                        'threshold': threshold,
+                        'confidence': confidence
+                    }
             
             return None, None
         
         # Fallback to legacy template_path
-        region = cfg.get('region')
+        region_list = cfg.get('region')
+        region = tuple(region_list) if region_list else None
         template = cfg.get('template_path')
-        grayscale = bool(cfg.get('grayscale', True))
-        confidence = cfg.get('confidence', None)
+        threshold = cfg.get('confidence', 0.8)
         if not template or not Path(template).exists():
             return None, None
         
-        box = self._try_locate_image(template, region, grayscale, confidence)
-        return (box, {'path': template, 'threshold': confidence}) if box else (None, None)
-
-    def _try_locate_image(self, template_path, region, grayscale, confidence):
-        """Helper to locate a single image on screen."""
-        try:
-            if region:
-                box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale, confidence=confidence)
-            else:
-                box = pyautogui.locateOnScreen(template_path, grayscale=grayscale, confidence=confidence)
-            return box
-        except TypeError:
-            # Retry without confidence when OpenCV absent
-            try:
-                if region:
-                    box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale)
-                else:
-                    box = pyautogui.locateOnScreen(template_path, grayscale=grayscale)
-                return box
-            except Exception:
-                return None
-        except Exception:
-            return None
+        # Use template_matcher for accurate confidence tracking
+        box, confidence = locate_template(template, region, threshold, method='auto')
+        return (box, {'path': template, 'threshold': threshold, 'confidence': confidence}) if box else (None, None)
 
     def on_hunt_save(self):
         try:
@@ -3013,7 +3001,7 @@ class App(tk.Tk):
                         if box is not None:
                             have_target = True
                             last_seen = now
-                            # Log template match
+                            # Log template match with accurate confidence from template_matcher
                             if match_info and last_match_info != match_info:
                                 # Log match details
                                 template_name = match_info.get('name') or Path(match_info.get('path', '')).stem
@@ -3022,7 +3010,7 @@ class App(tk.Tk):
                                 monster_name = match_info.get('monster_name', '')
                                 logger.log_match(template_name, box, threshold, confidence, monster_name)
                                 
-                                status_msg = f"Target: {template_name}"
+                                status_msg = f"Target: {template_name} (conf: {confidence:.3f})"
                                 self.hunt_status.set(status_msg)
                                 last_match_info = match_info
                         else:
