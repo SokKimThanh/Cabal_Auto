@@ -11,3 +11,35 @@
 2025-10-18 04:39:48 | INFO | [STATE] attack → search | Reason: Target lost timeout
 2025-10-18 04:39:48 | INFO | [STOP] Hunt stopped | Reason: manual | Duration: 0.0s
 2025-10-18 04:39:48 | INFO | ================================================================================
+2025-10-18 06:24:37 | INFO | ================================================================================
+2025-10-18 06:24:37 | INFO | Hunt Session Started: 2025-10-18 06:24:37
+2025-10-18 06:24:37 | INFO | ================================================================================
+2025-10-18 06:24:37 | INFO | [START] Hunt started
+2025-10-18 06:24:37 | INFO | Window: CABAL
+2025-10-18 06:24:37 | INFO | Templates: 5 configured
+2025-10-18 06:24:37 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 06:24:38 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.93
+2025-10-18 06:24:40 | INFO | [STATE] search → attack | Reason: target_found
+2025-10-18 06:24:40 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.97
+2025-10-18 06:24:47 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.96
+2025-10-18 06:24:52 | INFO | [LOST] Target lost | Template: Coc Go 5 | Tracked for: 13.8s
+2025-10-18 06:24:56 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.90
+2025-10-18 06:25:01 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.91
+2025-10-18 06:25:06 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.86
+2025-10-18 06:25:10 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.89
+2025-10-18 06:25:15 | INFO | [LOST] Target lost | Template: Coc Go 5 | Tracked for: 37.3s
+2025-10-18 06:25:20 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.94
+2025-10-18 06:25:25 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.96
+2025-10-18 06:25:29 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.94
+2025-10-18 06:25:34 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.96
+2025-10-18 06:25:39 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.96
+2025-10-18 06:25:43 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.88
+2025-10-18 06:25:48 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.96
+2025-10-18 06:25:53 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 387, 167, 264) | Center: (1105, 519) | Threshold: 0.85 | Confidence: 0.92
+2025-10-18 06:25:57 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 385, 167, 264) | Center: (1105, 517) | Threshold: 0.85 | Confidence: 0.86
+2025-10-18 06:26:02 | INFO | [MATCH] Template: Coc Go 5 | Box: (1022, 386, 167, 264) | Center: (1105, 518) | Threshold: 0.85 | Confidence: 0.91
+2025-10-18 06:26:07 | INFO | [LOST] Target lost | Template: Coc Go 5 | Tracked for: 88.7s
+2025-10-18 06:26:11 | INFO | [MATCH] Template: Coc Go 5 | Box: (1064, 367, 167, 264) | Center: (1147, 499) | Threshold: 0.85 | Confidence: 0.90
+2025-10-18 06:26:16 | INFO | [MATCH] Template: Coc Go 5 | Box: (1064, 367, 167, 264) | Center: (1147, 499) | Threshold: 0.85 | Confidence: 0.92
+2025-10-18 06:26:20 | INFO | [STOP] Hunt stopped | Reason: manual_stop | Duration: 103.1s
+2025-10-18 06:26:20 | INFO | ================================================================================
