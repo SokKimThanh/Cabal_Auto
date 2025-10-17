@@ -50,6 +50,17 @@
           "width": 204,
           "height": 217
         }
+      },
+      {
+        "name": "Coc Go 5",
+        "path": "assets/images/monsters/coc_go__capture_1760738437748.png",
+        "threshold": 0.85,
+        "region": {
+          "left": 1074,
+          "top": 456,
+          "width": 204,
+          "height": 217
+        }
       }
     ]
   },
