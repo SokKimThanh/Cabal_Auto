@@ -37,6 +37,8 @@ LANG = {
         'target_key': 'Target key:', 'attack_keys': 'Attack keys (, sep):',
         'press_ms': 'Press ms:', 'target_cycle': 'Target cycle (s):',
         'search_interval': 'Search interval (s):', 'attack_interval': 'Attack interval (s):',
+    'lost_timeout': 'Keep attacking for (s) after target lost:',
+    'attack_duration': 'Minimum attack duration (s):',
         'template': 'Template:', 'browse': 'Browse',
         'region_l': 'Region: L', 't': 'T', 'w': 'W', 'h': 'H',
         'pick_tl': 'Pick TL (3s)', 'pick_br': 'Pick BR (3s)',
@@ -66,6 +68,8 @@ LANG = {
         'target_key': 'Phím chọn mục tiêu:', 'attack_keys': 'Phím đánh (cách nhau bằng dấu phẩy):',
         'press_ms': 'Giữ phím (ms):', 'target_cycle': 'Chu kỳ đổi mục tiêu (s):',
         'search_interval': 'Chu kỳ tìm (s):', 'attack_interval': 'Chu kỳ đánh (s):',
+    'lost_timeout': 'Giữ đánh thêm (giây) sau khi mất dấu:',
+    'attack_duration': 'Thời gian đánh tối thiểu (giây):',
         'template': 'Ảnh mẫu:', 'browse': 'Chọn ảnh',
         'region_l': 'Vùng tìm: L', 't': 'T', 'w': 'R', 'h': 'D',
         'pick_tl': 'Chọn góc TL (3s)', 'pick_br': 'Chọn góc BR (3s)',
@@ -113,7 +117,8 @@ def load_hunt_config():
         "region": None,
         "confidence": 0.85,
         "grayscale": True,
-    "lost_timeout_sec": 0.8,
+        "lost_timeout_sec": 1.2,
+        "attack_min_duration_sec": 1.5,
     "bring_to_front_each_cycle": False
     }
     if HUNT_CONFIG_PATH.exists():
@@ -227,37 +232,45 @@ class App(tk.Tk):
         self.attack_interval_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_interval', 0.15)))
         tk.Entry(frm, textvariable=self.attack_interval_var, width=8).grid(row=5, column=3, sticky='w')
 
-        # Template & Region
-        tk.Label(frm, text=self._t('template')).grid(row=6, column=0, sticky='e', pady=(8,0))
-        self.template_var = tk.StringVar(value=str(self.hunt_cfg.get('template_path', 'assets/images/target_frame.png')))
-        tk.Entry(frm, textvariable=self.template_var, width=36).grid(row=6, column=1, columnspan=2, sticky='w', pady=(8,0))
-        tk.Button(frm, text=self._t('browse'), command=self.on_hunt_browse_template).grid(row=6, column=3, pady=(8,0))
+        tk.Label(frm, text=self._t('lost_timeout')).grid(row=6, column=0, sticky='e', pady=(8,0))
+        self.lost_timeout_var = tk.StringVar(value=str(self.hunt_cfg.get('lost_timeout_sec', 1.2)))
+        tk.Entry(frm, textvariable=self.lost_timeout_var, width=8).grid(row=6, column=1, sticky='w', pady=(8,0))
 
-        tk.Label(frm, text=self._t('region_l')).grid(row=7, column=0, sticky='e')
+        tk.Label(frm, text=self._t('attack_duration')).grid(row=6, column=2, sticky='e', pady=(8,0))
+        self.attack_duration_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_min_duration_sec', 1.5)))
+        tk.Entry(frm, textvariable=self.attack_duration_var, width=8).grid(row=6, column=3, sticky='w', pady=(8,0))
+
+        # Template & Region
+        tk.Label(frm, text=self._t('template')).grid(row=7, column=0, sticky='e')
+        self.template_var = tk.StringVar(value=str(self.hunt_cfg.get('template_path', 'assets/images/target_frame.png')))
+        tk.Entry(frm, textvariable=self.template_var, width=36).grid(row=7, column=1, columnspan=2, sticky='w')
+        tk.Button(frm, text=self._t('browse'), command=self.on_hunt_browse_template).grid(row=7, column=3)
+
+        tk.Label(frm, text=self._t('region_l')).grid(row=8, column=0, sticky='e')
         region = self.hunt_cfg.get('region') or ["", "", "", ""]
         self.reg_l = tk.StringVar(value=str(region[0]) if region[0] != "" else "")
         self.reg_t = tk.StringVar(value=str(region[1]) if region[1] != "" else "")
         self.reg_w = tk.StringVar(value=str(region[2]) if region[2] != "" else "")
         self.reg_h = tk.StringVar(value=str(region[3]) if region[3] != "" else "")
-        tk.Entry(frm, textvariable=self.reg_l, width=6).grid(row=7, column=1, sticky='w')
-        tk.Label(frm, text=self._t('t')).grid(row=7, column=1, sticky='e', padx=(48,0))
-        tk.Entry(frm, textvariable=self.reg_t, width=6).grid(row=7, column=2, sticky='w')
-        tk.Label(frm, text=self._t('w')).grid(row=7, column=2, sticky='e', padx=(48,0))
-        tk.Entry(frm, textvariable=self.reg_w, width=6).grid(row=7, column=3, sticky='w')
-        tk.Label(frm, text=self._t('h')).grid(row=7, column=3, sticky='e', padx=(48,0))
-        tk.Entry(frm, textvariable=self.reg_h, width=6).grid(row=7, column=3, sticky='e', padx=(24,0))
+        tk.Entry(frm, textvariable=self.reg_l, width=6).grid(row=8, column=1, sticky='w')
+        tk.Label(frm, text=self._t('t')).grid(row=8, column=1, sticky='e', padx=(48,0))
+        tk.Entry(frm, textvariable=self.reg_t, width=6).grid(row=8, column=2, sticky='w')
+        tk.Label(frm, text=self._t('w')).grid(row=8, column=2, sticky='e', padx=(48,0))
+        tk.Entry(frm, textvariable=self.reg_w, width=6).grid(row=8, column=3, sticky='w')
+        tk.Label(frm, text=self._t('h')).grid(row=8, column=3, sticky='e', padx=(48,0))
+        tk.Entry(frm, textvariable=self.reg_h, width=6).grid(row=8, column=3, sticky='e', padx=(24,0))
 
         self.bring_front_var = tk.BooleanVar(value=bool(self.hunt_cfg.get('bring_to_front_each_cycle', False)))
-        tk.Checkbutton(frm, text=self._t('bring_each_cycle'), variable=self.bring_front_var).grid(row=8, column=0, columnspan=4, sticky='w', pady=(6,0))
+        tk.Checkbutton(frm, text=self._t('bring_each_cycle'), variable=self.bring_front_var).grid(row=9, column=0, columnspan=4, sticky='w', pady=(6,0))
 
         pick_frame = tk.Frame(frm)
-        pick_frame.grid(row=9, column=0, columnspan=4, pady=(6,0))
+        pick_frame.grid(row=10, column=0, columnspan=4, pady=(6,0))
         tk.Button(pick_frame, text=self._t('pick_tl'), command=lambda: self.on_hunt_pick_corner('tl')).pack(side='left')
         tk.Button(pick_frame, text=self._t('pick_br'), command=lambda: self.on_hunt_pick_corner('br')).pack(side='left', padx=(8,0))
 
         # Hunt buttons
         hbtn = tk.Frame(frm)
-        hbtn.grid(row=10, column=0, columnspan=4, pady=(12,0))
+        hbtn.grid(row=11, column=0, columnspan=4, pady=(12,0))
         tk.Button(hbtn, text=self._t('save_hunt'), command=self.on_hunt_save).pack(side='left')
         self.hunt_start_btn = tk.Button(hbtn, text=self._t('start_hunt'), command=self.on_hunt_start)
         self.hunt_start_btn.pack(side='left', padx=(8,0))
@@ -266,7 +279,7 @@ class App(tk.Tk):
 
         # Status
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
-        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=11, column=0, columnspan=4, pady=(8,0))
+        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=12, column=0, columnspan=4, pady=(8,0))
 
         for i in range(4):
             frm.grid_columnconfigure(i, weight=1)
@@ -502,6 +515,8 @@ class App(tk.Tk):
         cycle_d = float(self.target_cycle_var.get())
         search_i = float(self.search_interval_var.get())
         attack_i = float(self.attack_interval_var.get())
+        lost_timeout = float(self.lost_timeout_var.get())
+        attack_min_duration = float(self.attack_duration_var.get())
         template = self.template_var.get().strip()
         # Region
         region = None
@@ -520,7 +535,8 @@ class App(tk.Tk):
             "region": region,
             "confidence": float(self.hunt_cfg.get('confidence', 0.85)),
             "grayscale": bool(self.hunt_cfg.get('grayscale', True)),
-            "lost_timeout_sec": float(self.hunt_cfg.get('lost_timeout_sec', 0.8)),
+            "lost_timeout_sec": lost_timeout,
+            "attack_min_duration_sec": attack_min_duration,
             "bring_to_front_each_cycle": bool(self.bring_front_var.get())
         }
         return cfg
@@ -571,7 +587,9 @@ class App(tk.Tk):
                 have_target = False
                 mode = 'search'
                 last_seen = 0.0
+                attack_started = 0.0
                 lost_timeout = float(cfg.get('lost_timeout_sec', 0.8))
+                attack_min_duration = float(cfg.get('attack_min_duration_sec', 1.5))
                 while self.hunt_running:
                     now = time.time()
                     if cfg.get('bring_to_front_each_cycle'):
@@ -599,13 +617,14 @@ class App(tk.Tk):
                     if mode == 'search':
                         if have_target:
                             mode = 'attack'
+                            attack_started = now
                             continue
                         tap(cfg['target_key'])
                         time.sleep(float(cfg['target_cycle_delay']))
                         continue
 
                     # mode == 'attack'
-                    if have_target or (now - last_seen) <= lost_timeout:
+                    if have_target or (now - last_seen) <= lost_timeout or (now - attack_started) <= attack_min_duration:
                         for k in cfg['attack_keys']:
                             if not self.hunt_running:
                                 break
