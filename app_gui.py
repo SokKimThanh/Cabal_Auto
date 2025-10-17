@@ -111,6 +111,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_duplicate': 'Monster name already exists',
     'hunt_window_bounds': 'Saved window bounds: {value}',
     'hunt_window_bounds_none': 'Saved window bounds: not set',
+        'hunt_monster_select': 'Quick select monster:',
+        'hunt_monster_auto_applied': 'Auto-applied: {name}',
+        'hunt_template_active': 'Active template: {name}',
         'skill_section': 'Skill library',
         'skill_list': 'Skills:',
         'skill_name': 'Name:',
@@ -222,6 +225,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_duplicate': 'Tên quái đã tồn tại',
     'hunt_window_bounds': 'Vùng cửa sổ đã lưu: {value}',
     'hunt_window_bounds_none': 'Vùng cửa sổ đã lưu: chưa có',
+        'hunt_monster_select': 'Chọn nhanh quái:',
+        'hunt_monster_auto_applied': 'Đã tự động áp dụng: {name}',
+        'hunt_template_active': 'Template đang dùng: {name}',
         'skill_section': 'Thư viện kỹ năng',
         'skill_list': 'Danh sách kỹ năng:',
         'skill_name': 'Tên kỹ năng:',
@@ -713,7 +719,7 @@ class App(tk.Tk):
         monster_bar = tk.Frame(frm)
         monster_bar.grid(row=13, column=0, columnspan=4, sticky='we', pady=(12,0))
         monster_bar.grid_columnconfigure(1, weight=1)
-        tk.Label(monster_bar, text=self._t('monster_section')).grid(row=0, column=0, sticky='w')
+        tk.Label(monster_bar, text=self._t('hunt_monster_select')).grid(row=0, column=0, sticky='w')
         self.monster_select_var = tk.StringVar(value=self.monster_selected_name or '')
         self.monster_select_combo = ttk.Combobox(monster_bar, textvariable=self.monster_select_var, state='readonly', width=28)
         self.monster_select_combo.grid(row=0, column=1, sticky='we', padx=(6,0))
@@ -1672,6 +1678,7 @@ class App(tk.Tk):
         self._refresh_monster_select_options(self.monster_selected_name)
 
     def on_monster_select_change(self, _evt=None):
+        """Auto-apply monster config when selected from Hunt tab dropdown."""
         if not hasattr(self, 'monster_select_var'):
             return
         name = self.monster_select_var.get().strip()
@@ -1682,10 +1689,57 @@ class App(tk.Tk):
                 break
         self.monster_selected_index = idx if idx is not None else None
         self.monster_selected_name = name if idx is not None else None
+        
         if idx is not None:
-            self._update_monster_estimate_label(self.monsters[idx])
+            monster = self.monsters[idx]
+            self._update_monster_estimate_label(monster)
+            # Auto-apply monster config (templates, window_bounds, timing recommendations)
+            self._apply_monster_to_hunt_quick(monster)
         elif hasattr(self, 'monster_estimate_var'):
             self.monster_estimate_var.set('')
+
+    def _apply_monster_to_hunt_quick(self, monster):
+        """Apply monster templates and recommended settings to hunt config without opening manager."""
+        # Apply window_bounds
+        bounds = _normalize_window_bounds(monster.get('window_bounds'))
+        self.current_window_bounds = bounds
+        self.hunt_cfg['window_bounds'] = bounds
+        self._update_window_bounds_display()
+        
+        # Apply templates[] array
+        templates = _sanitize_templates(monster.get('templates'))
+        if templates:
+            self.hunt_cfg['templates'] = templates
+            # Set legacy template_path to first template
+            try:
+                first_path = templates[0].get('path')
+                if first_path:
+                    self.template_var.set(first_path)
+                    self.hunt_cfg['template_path'] = first_path
+            except Exception:
+                pass
+        elif monster.get('template'):
+            # Fallback to old single template field
+            self.template_var.set(monster['template'])
+            self.hunt_cfg['template_path'] = monster['template']
+            self.hunt_cfg['templates'] = []
+        
+        # Apply recommended timing (if monster has HP/damage stats)
+        try:
+            stats = self._calculate_monster_estimate(monster)
+            attack_min, lost_timeout = self._recommend_attack_settings(stats)
+            self.attack_duration_var.set(f'{attack_min:.2f}')
+            self.lost_timeout_var.set(f'{lost_timeout:.2f}')
+        except Exception:
+            pass  # Monster may not have complete stats, skip recommendations
+        
+        # Show brief notification
+        if hasattr(self, 'hunt_status'):
+            template_count = len(templates) if templates else (1 if monster.get('template') else 0)
+            msg = self._t('hunt_monster_auto_applied').format(name=monster.get('name', ''))
+            if template_count > 0:
+                msg += f" ({template_count} template{'s' if template_count > 1 else ''})"
+            self.hunt_status.set(msg)
 
     def on_monster_apply_from_select(self):
         if not hasattr(self, 'monster_select_var'):
