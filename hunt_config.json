@@ -1,6 +1,6 @@
 {
   "window_title": "CABAL",
-  "window_pid": 25916,
+  "window_pid": null,
   "target_key": "z",
   "attack_keys": [
     "1",
@@ -21,9 +21,10 @@
   ],
   "confidence": 0.85,
   "grayscale": true,
-  "lost_timeout_sec": 10.32,
-  "attack_min_duration_sec": 10.32,
+  "lost_timeout_sec": 15.45,
+  "attack_min_duration_sec": 51555.15,
   "bring_to_front_each_cycle": true,
+  "window_bounds": null,
   "skill_slots": [
     {
       "name": "Dark Explosion",
