@@ -10,153 +10,118 @@ from typing import Dict, List, Optional
 
 import pyautogui
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import filedialog, messagebox, ttk
 
-from win_input import tap
+try:
+    from PIL import Image, ImageTk  # type: ignore
+except Exception:
+    Image = None
+    ImageTk = None
 
 try:
     import keyboard  # type: ignore
 except Exception:
     keyboard = None  # type: ignore
 
-try:
-    from PIL import Image, ImageTk  # type: ignore
-except Exception:
-    Image = None  # type: ignore
-    ImageTk = None  # type: ignore
-# Simple i18n dictionary
-LANG = {
+from win_input import tap
+LANG: Dict[str, Dict[str, str]] = {
     'en': {
-        'app_title': 'Cabal Auto GUI',
-        'tab_click': 'Click',
-        'tab_hunt': 'Hunt',
+        'app_title': 'Cabal Auto Manager',
         'language': 'Language',
-        'lang_en': 'English',
-        'lang_vi': 'Tiếng Việt',
-        'x': 'X',
-        'y': 'Y',
-        'interval': 'Interval (s)',
-        'pick': 'Pick (3s)',
-        'always_on_top': 'Always on top',
-        'start': 'Start',
-        'stop': 'Stop',
-        'save_config': 'Save Config',
-        'ready': 'Ready',
-        'stopped': 'Stopped',
-        'failsafe_stopped': 'FAILSAFE triggered. Stopped.',
-        'pick_in': 'Pick in {i}... Move mouse to target',
-        'picked': 'Picked: ({x}, {y})',
-        'pick_error': 'Pick error: {e}',
+        'tab_hunt': 'Hunt',
         'window_title_contains': 'Window title contains:',
-        'find_windows': 'Find Windows',
-        'bring_to_front': 'Bring To Front',
-        'bring_each_cycle': 'Force focus every cycle (use only if needed)',
+        'find_windows': 'Find windows',
+        'bring_to_front': 'Bring to front',
+        'win_list_label': 'Filtered window list:',
         'target_key': 'Target key:',
-        'attack_keys': 'Attack keys (, sep):',
-        'press_ms': 'Press ms:',
+        'attack_keys': 'Attack keys (comma separated):',
+        'press_ms': 'Key press (ms):',
         'target_cycle': 'Target cycle (s):',
         'search_interval': 'Search interval (s):',
         'attack_interval': 'Attack interval (s):',
-        'lost_timeout': 'Keep attacking for (s) after target lost:',
+        'lost_timeout': 'Extra attack after lost (s):',
         'attack_duration': 'Minimum attack duration (s):',
-        'template': 'Template:',
+        'template': 'Target template:',
         'browse': 'Browse',
-        'region_l': 'Region: L',
+        'region_l': 'Region L',
         't': 'T',
         'w': 'W',
         'h': 'H',
-        'pick_tl': 'Pick TL (3s)',
-        'pick_br': 'Pick BR (3s)',
-        'save_hunt': 'Save Hunt Config',
-        'start_hunt': 'Start Hunt',
-        'stop_hunt': 'Stop Hunt',
-        'hunt_idle': 'Hunt idle',
-        'hunt_running': 'Hunt running',
+        'bring_each_cycle': 'Bring window to front each loop (only if needed)',
+        'pick_tl': 'Pick top-left (3s)',
+        'pick_br': 'Pick bottom-right (3s)',
+        'save_hunt': 'Save hunt config',
+        'start_hunt': 'Start hunt',
+        'stop_hunt': 'Stop hunt',
+        'hunt_idle': 'Ready to hunt',
+        'hunt_running': 'Hunting…',
         'hunt_stopped': 'Hunt stopped',
         'selected_window': 'Selected window: {title}',
         'bring_ok': 'Brought to front',
-        'bring_fail': 'Bring to front failed',
-        'invalid_input': 'Invalid input: {e}',
+        'bring_fail': 'Unable to bring to front',
         'invalid_hunt': 'Invalid hunt config: {e}',
-        'no_windows': 'No matching windows found',
-        'warn_pygetwindow': 'pygetwindow not available',
-        'win_list_label': 'Windows (filtered):',
-        'monster_section': 'Monster Library',
-        'monster_list': 'Saved monsters:',
+        'no_windows': 'No window matched',
+        'monster_section': 'Monster library',
+        'monster_list': 'Monsters:',
         'monster_name': 'Name:',
         'monster_hp': 'HP:',
         'monster_damage': 'Damage per hit:',
-        'monster_template': 'Template image:',
-        'monster_new': 'New',
-        'monster_save': 'Save monster',
+        'monster_template': 'Template:',
+        'monster_new': 'Create',
+        'monster_save': 'Save',
         'monster_delete': 'Delete',
-        'monster_use_template': 'Use for hunt',
+        'monster_use_template': 'Apply to hunt',
         'monster_estimate': 'Estimate kill time',
-        'monster_estimate_result': 'Estimated kill time: {time:.2f}s (DPS {dps:.1f})',
-    'monster_estimate_detail': '{base} -> attack {attack:.2f}s, lost {lost:.2f}s',
+        'monster_estimate_result': 'Estimated time: {time:.2f}s (DPS {dps:.1f})',
+        'monster_estimate_detail': '{base} -> minimum attack {attack:.2f}s, keep hitting {lost:.2f}s',
         'monster_saved': 'Monster saved',
         'monster_deleted': 'Monster deleted',
         'monster_invalid': 'Invalid monster data: {e}',
-        'monster_not_selected': 'Select a monster first',
-    'monster_applied': 'Applied monster to hunt config',
-    'monster_duplicate': 'Monster name already exists',
-    'skill_section': 'Skill Library',
-    'skill_list': 'Skills:',
-    'skill_name': 'Name:',
-    'skill_key': 'Key:',
-    'skill_type': 'Type:',
-    'skill_type_attack': 'Attack',
-    'skill_type_buff': 'Buff',
-    'skill_cooldown': 'Cooldown (s):',
-    'skill_cast_time': 'Cast time (s):',
-    'skill_image': 'Image path:',
-    'skill_no_image': 'No preview',
-    'skill_image_error': 'Preview failed',
-    'skill_new': 'New skill',
-    'skill_save': 'Save skill',
-    'skill_delete': 'Delete skill',
-    'skill_saved': 'Skill saved',
-    'skill_deleted': 'Skill deleted',
-    'skill_invalid': 'Invalid skill data: {e}',
-    'skill_not_selected': 'Select a skill first',
-    'skill_slots': 'Skill rotation',
-    'skill_slot_label': 'Slot {i}:',
-    'skill_slot_clear': 'Clear',
-    'skill_estimate_missing': 'Missing skill data',
-    'skill_duplicate': 'Skill name already exists',
+        'monster_not_selected': 'Pick a monster first',
+        'monster_applied': 'Applied to hunt config',
+        'monster_duplicate': 'Monster name already exists',
+        'skill_section': 'Skill library',
+        'skill_list': 'Skills:',
+        'skill_name': 'Name:',
+        'skill_key': 'Key:',
+        'skill_type': 'Type:',
+        'skill_type_attack': 'Attack',
+        'skill_type_buff': 'Buff',
+        'skill_cooldown': 'Cooldown (s):',
+        'skill_cast_time': 'Cast time (s):',
+        'skill_image': 'Skill image:',
+        'skill_no_image': 'No image',
+        'skill_image_error': 'Cannot preview image',
+        'skill_new': 'Create',
+        'skill_save': 'Save',
+        'skill_delete': 'Delete',
+        'skill_saved': 'Skill saved',
+        'skill_deleted': 'Skill deleted',
+        'skill_invalid': 'Invalid skill data: {e}',
+        'skill_not_selected': 'Pick a skill first',
+        'skill_slots': 'Skill slots',
+        'skill_slot_label': 'Slot {i}:',
+        'skill_slot_clear': 'Clear',
+        'skill_estimate_missing': 'Missing skill info',
+        'skill_duplicate': 'Skill name already exists',
+        'manage_button': 'Manage…',
+        'skill_manage': 'Manage skills…',
     },
     'vi': {
-        'app_title': 'Cabal Auto GUI',
-        'tab_click': 'Click',
-        'tab_hunt': 'Săn quái',
+        'app_title': 'Trợ lý săn Cabal',
         'language': 'Ngôn ngữ',
-        'lang_en': 'English',
-        'lang_vi': 'Tiếng Việt',
-        'x': 'X',
-        'y': 'Y',
-        'interval': 'Khoảng (giây)',
-        'pick': 'Lấy tọa độ (3s)',
-        'always_on_top': 'Luôn nổi (Always on top)',
-        'start': 'Bắt đầu',
-        'stop': 'Dừng',
-        'save_config': 'Lưu cấu hình',
-        'ready': 'Sẵn sàng',
-        'stopped': 'Đã dừng',
-        'failsafe_stopped': 'Đã dừng (FAILSAFE)',
-        'pick_in': 'Lấy sau {i}s... Di chuột đến vị trí',
-        'picked': 'Đã lấy: ({x}, {y})',
-        'pick_error': 'Lỗi lấy tọa độ: {e}',
+        'tab_hunt': 'Săn',
         'window_title_contains': 'Tiêu đề cửa sổ chứa:',
         'find_windows': 'Tìm cửa sổ',
         'bring_to_front': 'Đưa lên trước',
-        'bring_each_cycle': 'Đưa cửa sổ lên mỗi vòng (chỉ dùng khi cần)',
+        'win_list_label': 'Danh sách cửa sổ (đã lọc):',
         'target_key': 'Phím chọn mục tiêu:',
         'attack_keys': 'Phím đánh (cách nhau bằng dấu phẩy):',
         'press_ms': 'Giữ phím (ms):',
         'target_cycle': 'Chu kỳ đổi mục tiêu (s):',
         'search_interval': 'Chu kỳ tìm (s):',
         'attack_interval': 'Chu kỳ đánh (s):',
-        'lost_timeout': 'Giữ đánh thêm (giây) sau khi mất dấu:',
+        'lost_timeout': 'Giữ đánh thêm (giây):',
         'attack_duration': 'Thời gian đánh tối thiểu (giây):',
         'template': 'Ảnh mẫu:',
         'browse': 'Chọn ảnh',
@@ -164,22 +129,20 @@ LANG = {
         't': 'T',
         'w': 'R',
         'h': 'D',
-        'pick_tl': 'Chọn góc TL (3s)',
-        'pick_br': 'Chọn góc BR (3s)',
+        'bring_each_cycle': 'Đưa cửa sổ lên mỗi vòng (chỉ dùng khi cần)',
+        'pick_tl': 'Chọn góc trái trên (3s)',
+        'pick_br': 'Chọn góc phải dưới (3s)',
         'save_hunt': 'Lưu cấu hình săn',
-        'start_hunt': 'Chạy săn',
+        'start_hunt': 'Bắt đầu săn',
         'stop_hunt': 'Dừng săn',
         'hunt_idle': 'Sẵn sàng săn',
-        'hunt_running': 'Đang săn',
+        'hunt_running': 'Đang săn…',
         'hunt_stopped': 'Đã dừng săn',
         'selected_window': 'Đã chọn cửa sổ: {title}',
         'bring_ok': 'Đã đưa lên trước',
         'bring_fail': 'Không đưa lên trước được',
-        'invalid_input': 'Dữ liệu không hợp lệ: {e}',
         'invalid_hunt': 'Cấu hình săn không hợp lệ: {e}',
         'no_windows': 'Không tìm thấy cửa sổ phù hợp',
-        'warn_pygetwindow': 'Chưa có pygetwindow',
-        'win_list_label': 'Danh sách cửa sổ (đã lọc):',
         'monster_section': 'Thư viện quái',
         'monster_list': 'Danh sách quái:',
         'monster_name': 'Tên:',
@@ -187,43 +150,45 @@ LANG = {
         'monster_damage': 'Sát thương mỗi đòn:',
         'monster_template': 'Ảnh template:',
         'monster_new': 'Tạo mới',
-        'monster_save': 'Lưu quái',
+        'monster_save': 'Lưu',
         'monster_delete': 'Xóa',
-        'monster_use_template': 'Dùng cho săn',
+        'monster_use_template': 'Áp dụng săn',
         'monster_estimate': 'Tính thời gian hạ',
         'monster_estimate_result': 'Thời gian ước tính: {time:.2f}s (DPS {dps:.1f})',
-    'monster_estimate_detail': '{base} -> đánh tối thiểu {attack:.2f}s, giữ thêm {lost:.2f}s',
+        'monster_estimate_detail': '{base} -> đánh tối thiểu {attack:.2f}s, giữ thêm {lost:.2f}s',
         'monster_saved': 'Đã lưu quái',
         'monster_deleted': 'Đã xóa quái',
         'monster_invalid': 'Thông tin quái không hợp lệ: {e}',
         'monster_not_selected': 'Hãy chọn một quái trước',
-    'monster_applied': 'Đã áp dụng vào cấu hình săn',
-    'monster_duplicate': 'Tên quái đã tồn tại',
-    'skill_section': 'Thư viện kỹ năng',
-    'skill_list': 'Danh sách kỹ năng:',
-    'skill_name': 'Tên kỹ năng:',
-    'skill_key': 'Phím:',
-    'skill_type': 'Loại:',
-    'skill_type_attack': 'Tấn công',
-    'skill_type_buff': 'Buff',
-    'skill_cooldown': 'Hồi chiêu (giây):',
-    'skill_cast_time': 'Thi triển (giây):',
-    'skill_image': 'Ảnh kỹ năng:',
-    'skill_no_image': 'Chưa có ảnh',
-    'skill_image_error': 'Không xem được ảnh',
-    'skill_new': 'Tạo kỹ năng',
-    'skill_save': 'Lưu kỹ năng',
-    'skill_delete': 'Xóa kỹ năng',
-    'skill_saved': 'Đã lưu kỹ năng',
-    'skill_deleted': 'Đã xóa kỹ năng',
-    'skill_invalid': 'Thông tin kỹ năng không hợp lệ: {e}',
-    'skill_not_selected': 'Hãy chọn một kỹ năng trước',
-    'skill_slots': 'Thiết lập kỹ năng',
-    'skill_slot_label': 'Ô {i}:',
-    'skill_slot_clear': 'Xóa',
-    'skill_estimate_missing': 'Thiếu thông tin kỹ năng',
-    'skill_duplicate': 'Tên kỹ năng đã tồn tại',
-    }
+        'monster_applied': 'Đã áp dụng vào cấu hình săn',
+        'monster_duplicate': 'Tên quái đã tồn tại',
+        'skill_section': 'Thư viện kỹ năng',
+        'skill_list': 'Danh sách kỹ năng:',
+        'skill_name': 'Tên kỹ năng:',
+        'skill_key': 'Phím:',
+        'skill_type': 'Loại:',
+        'skill_type_attack': 'Tấn công',
+        'skill_type_buff': 'Buff',
+        'skill_cooldown': 'Hồi chiêu (giây):',
+        'skill_cast_time': 'Thi triển (giây):',
+        'skill_image': 'Ảnh kỹ năng:',
+        'skill_no_image': 'Chưa có ảnh',
+        'skill_image_error': 'Không xem được ảnh',
+        'skill_new': 'Tạo kỹ năng',
+        'skill_save': 'Lưu',
+        'skill_delete': 'Xóa',
+        'skill_saved': 'Đã lưu kỹ năng',
+        'skill_deleted': 'Đã xóa kỹ năng',
+        'skill_invalid': 'Thông tin kỹ năng không hợp lệ: {e}',
+        'skill_not_selected': 'Hãy chọn một kỹ năng trước',
+        'skill_slots': 'Thiết lập kỹ năng',
+        'skill_slot_label': 'Ô {i}:',
+        'skill_slot_clear': 'Xóa',
+        'skill_estimate_missing': 'Thiếu thông tin kỹ năng',
+        'skill_duplicate': 'Tên kỹ năng đã tồn tại',
+        'manage_button': 'Quản lý…',
+        'skill_manage': 'Quản lý kỹ năng…',
+    },
 }
 
 CONFIG_PATH = Path(__file__).with_name('config.json')
@@ -439,6 +404,23 @@ class App(tk.Tk):
         self.skill_slot_boxes = []
         self.skill_slot_count = 6
         self.skill_slot_saved_names = [slot.get('name', '') for slot in self.hunt_cfg.get('skill_slots', []) if isinstance(slot, dict) and slot.get('name')]
+        self.monster_manager_win = None
+        self.skill_manager_win = None
+        self.monster_listbox = None
+        self.monster_name_var = tk.StringVar()
+        self.monster_hp_var = tk.StringVar()
+        self.monster_damage_var = tk.StringVar()
+        self.monster_template_var = tk.StringVar()
+        self.monster_estimate_var = tk.StringVar(value='')
+        self.skill_listbox = None
+        self.skill_name_var = tk.StringVar()
+        self.skill_key_var = tk.StringVar()
+        self.skill_type_var = tk.StringVar(value=self._t('skill_type_attack'))
+        self.skill_cooldown_var = tk.StringVar()
+        self.skill_cast_time_var = tk.StringVar()
+        self.skill_image_var = tk.StringVar()
+        self.skill_preview_label = None
+        self._skill_image_trace = None
 
         pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
 
@@ -561,107 +543,28 @@ class App(tk.Tk):
         self.hunt_stop_btn = tk.Button(hbtn, text=self._t('stop_hunt'), command=self.on_hunt_stop, state='disabled')
         self.hunt_stop_btn.pack(side='left', padx=(8,0))
 
-        # Monster library
-        monster_frame = tk.LabelFrame(frm, text=self._t('monster_section'), padx=8, pady=6)
-        monster_frame.grid(row=12, column=0, columnspan=4, sticky='we', pady=(12,0))
-        monster_frame.grid_columnconfigure(0, weight=1)
-        monster_frame.grid_columnconfigure(3, weight=1)
-        monster_frame.grid_rowconfigure(1, weight=1)
+        # Monster quick apply
+        monster_bar = tk.Frame(frm)
+        monster_bar.grid(row=12, column=0, columnspan=4, sticky='we', pady=(12,0))
+        monster_bar.grid_columnconfigure(1, weight=1)
+        tk.Label(monster_bar, text=self._t('monster_section')).grid(row=0, column=0, sticky='w')
+        self.monster_select_var = tk.StringVar(value=self.monster_selected_name or '')
+        self.monster_select_combo = ttk.Combobox(monster_bar, textvariable=self.monster_select_var, state='readonly', width=28)
+        self.monster_select_combo.grid(row=0, column=1, sticky='we', padx=(6,0))
+        self.monster_select_combo.bind('<<ComboboxSelected>>', self.on_monster_select_change)
+        tk.Button(monster_bar, text=self._t('monster_use_template'), command=self.on_monster_apply_from_select).grid(row=0, column=2, padx=(6,0))
+        tk.Button(monster_bar, text=self._t('manage_button'), command=self._open_monster_manager).grid(row=0, column=3, padx=(6,0))
+        self.monster_estimate_var.set('')
+        tk.Label(monster_bar, textvariable=self.monster_estimate_var, fg='gray').grid(row=1, column=0, columnspan=4, sticky='w', pady=(6,0))
 
-        tk.Label(monster_frame, text=self._t('monster_list')).grid(row=0, column=0, sticky='w')
-        self.monster_listbox = tk.Listbox(monster_frame, height=6, exportselection=False)
-        self.monster_listbox.grid(row=1, column=0, rowspan=5, sticky='nswe', padx=(0,4))
-        monster_scroll = tk.Scrollbar(monster_frame, orient='vertical', command=self.monster_listbox.yview)
-        monster_scroll.grid(row=1, column=1, rowspan=5, sticky='ns')
-        self.monster_listbox.config(yscrollcommand=monster_scroll.set)
-        self.monster_listbox.bind('<<ListboxSelect>>', self.on_monster_selected)
+        # Skill slots selection
+        skill_header = tk.Frame(frm)
+        skill_header.grid(row=13, column=0, columnspan=4, sticky='we', pady=(12,0))
+        tk.Label(skill_header, text=self._t('skill_slots')).pack(side='left')
+        tk.Button(skill_header, text=self._t('skill_manage'), command=self._open_skill_manager).pack(side='left', padx=(6,0))
 
-        tk.Label(monster_frame, text=self._t('monster_name')).grid(row=0, column=2, sticky='e')
-        self.monster_name_var = tk.StringVar()
-        tk.Entry(monster_frame, textvariable=self.monster_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
-
-        tk.Label(monster_frame, text=self._t('monster_hp')).grid(row=1, column=2, sticky='e', pady=(2,0))
-        self.monster_hp_var = tk.StringVar()
-        tk.Entry(monster_frame, textvariable=self.monster_hp_var, width=14).grid(row=1, column=3, sticky='we', padx=(4,0), pady=(2,0))
-
-        tk.Label(monster_frame, text=self._t('monster_damage')).grid(row=2, column=2, sticky='e')
-        self.monster_damage_var = tk.StringVar()
-        tk.Entry(monster_frame, textvariable=self.monster_damage_var, width=14).grid(row=2, column=3, sticky='we', padx=(4,0))
-        tk.Button(monster_frame, text=self._t('monster_estimate'), command=self.on_monster_estimate).grid(row=2, column=4, padx=(8,0))
-
-        self.monster_estimate_var = tk.StringVar(value='')
-        tk.Label(monster_frame, textvariable=self.monster_estimate_var, fg='gray').grid(row=3, column=2, columnspan=3, sticky='w', pady=(4,0))
-
-        tk.Label(monster_frame, text=self._t('monster_template')).grid(row=4, column=2, sticky='e')
-        self.monster_template_var = tk.StringVar()
-        tk.Entry(monster_frame, textvariable=self.monster_template_var, width=24).grid(row=4, column=3, sticky='we', padx=(4,0))
-        tk.Button(monster_frame, text=self._t('browse'), command=self.on_monster_browse_template).grid(row=4, column=4, padx=(8,0))
-
-        btn_frame = tk.Frame(monster_frame)
-        btn_frame.grid(row=5, column=2, columnspan=3, sticky='w', pady=(8,0))
-        tk.Button(btn_frame, text=self._t('monster_new'), command=self.on_monster_new).pack(side='left')
-        tk.Button(btn_frame, text=self._t('monster_save'), command=self.on_monster_save).pack(side='left', padx=(6,0))
-        tk.Button(btn_frame, text=self._t('monster_delete'), command=self.on_monster_delete).pack(side='left', padx=(6,0))
-        tk.Button(btn_frame, text=self._t('monster_use_template'), command=self.on_monster_use_for_hunt).pack(side='left', padx=(12,0))
-
-        self._refresh_monster_list()
-
-        # Skill library
-        skill_frame = tk.LabelFrame(frm, text=self._t('skill_section'), padx=8, pady=6)
-        skill_frame.grid(row=13, column=0, columnspan=4, sticky='we', pady=(12,0))
-        skill_frame.grid_columnconfigure(0, weight=1)
-        skill_frame.grid_columnconfigure(3, weight=1)
-        skill_frame.grid_rowconfigure(1, weight=1)
-
-        tk.Label(skill_frame, text=self._t('skill_list')).grid(row=0, column=0, sticky='w')
-        self.skill_listbox = tk.Listbox(skill_frame, height=6, exportselection=False)
-        self.skill_listbox.grid(row=1, column=0, rowspan=5, sticky='nswe', padx=(0,4))
-        skill_scroll = tk.Scrollbar(skill_frame, orient='vertical', command=self.skill_listbox.yview)
-        skill_scroll.grid(row=1, column=1, rowspan=5, sticky='ns')
-        self.skill_listbox.config(yscrollcommand=skill_scroll.set)
-        self.skill_listbox.bind('<<ListboxSelect>>', self.on_skill_selected)
-
-        tk.Label(skill_frame, text=self._t('skill_name')).grid(row=0, column=2, sticky='e')
-        self.skill_name_var = tk.StringVar()
-        tk.Entry(skill_frame, textvariable=self.skill_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
-
-        tk.Label(skill_frame, text=self._t('skill_key')).grid(row=1, column=2, sticky='e', pady=(2,0))
-        self.skill_key_var = tk.StringVar()
-        tk.Entry(skill_frame, textvariable=self.skill_key_var, width=12).grid(row=1, column=3, sticky='w', padx=(4,0), pady=(2,0))
-
-        tk.Label(skill_frame, text=self._t('skill_type')).grid(row=2, column=2, sticky='e')
-        self.skill_type_var = tk.StringVar()
-        self.skill_type_var.set(self._t('skill_type_attack'))
-        self.skill_type_combo = ttk.Combobox(skill_frame, textvariable=self.skill_type_var, state='readonly', width=14)
-        self.skill_type_combo['values'] = (self._t('skill_type_attack'), self._t('skill_type_buff'))
-        self.skill_type_combo.grid(row=2, column=3, sticky='w', padx=(4,0))
-
-        tk.Label(skill_frame, text=self._t('skill_cooldown')).grid(row=3, column=2, sticky='e')
-        self.skill_cooldown_var = tk.StringVar()
-        tk.Entry(skill_frame, textvariable=self.skill_cooldown_var, width=12).grid(row=3, column=3, sticky='w', padx=(4,0))
-
-        tk.Label(skill_frame, text=self._t('skill_cast_time')).grid(row=4, column=2, sticky='e')
-        self.skill_cast_time_var = tk.StringVar()
-        tk.Entry(skill_frame, textvariable=self.skill_cast_time_var, width=12).grid(row=4, column=3, sticky='w', padx=(4,0))
-
-        tk.Label(skill_frame, text=self._t('skill_image')).grid(row=5, column=2, sticky='e')
-        self.skill_image_var = tk.StringVar()
-        tk.Entry(skill_frame, textvariable=self.skill_image_var, width=24).grid(row=5, column=3, sticky='we', padx=(4,0))
-        tk.Button(skill_frame, text=self._t('browse'), command=self.on_skill_browse_image).grid(row=5, column=4, padx=(8,0))
-
-        self.skill_preview_label = tk.Label(skill_frame, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
-        self.skill_preview_label.grid(row=1, column=4, rowspan=4, sticky='nswe', padx=(8,0))
-        self.skill_image_var.trace_add('write', lambda *_: self._update_skill_preview(self.skill_image_var.get()))
-
-        skill_btn_frame = tk.Frame(skill_frame)
-        skill_btn_frame.grid(row=6, column=2, columnspan=3, sticky='w', pady=(8,0))
-        tk.Button(skill_btn_frame, text=self._t('skill_new'), command=self.on_skill_new).pack(side='left')
-        tk.Button(skill_btn_frame, text=self._t('skill_save'), command=self.on_skill_save).pack(side='left', padx=(6,0))
-        tk.Button(skill_btn_frame, text=self._t('skill_delete'), command=self.on_skill_delete).pack(side='left', padx=(6,0))
-
-        # Skill slots
-        slot_frame = tk.LabelFrame(frm, text=self._t('skill_slots'), padx=8, pady=6)
-        slot_frame.grid(row=14, column=0, columnspan=4, sticky='we', pady=(12,0))
+        slot_frame = tk.Frame(frm)
+        slot_frame.grid(row=14, column=0, columnspan=4, sticky='we')
         slot_frame.grid_columnconfigure(1, weight=1)
         self.skill_slot_vars = []
         self.skill_slot_boxes = []
@@ -676,7 +579,7 @@ class App(tk.Tk):
             tk.Button(slot_frame, text=self._t('skill_slot_clear'), command=lambda v=var: self._clear_skill_slot(v)).grid(row=idx, column=2, padx=(6,0))
             self.skill_slot_boxes.append(cmb)
 
-        self._refresh_skill_list()
+        self._refresh_monster_select_options()
         self._load_skill_slots_from_cfg()
 
         # Status
@@ -985,33 +888,155 @@ class App(tk.Tk):
             self.monster_template_var.set(monster.get('template', ''))
         self._update_monster_estimate_label(monster)
 
+    def _open_monster_manager(self):
+        if self.monster_manager_win is not None and self.monster_manager_win.winfo_exists():
+            try:
+                self.monster_manager_win.deiconify()
+                self.monster_manager_win.lift()
+                self.monster_manager_win.focus_set()
+            except Exception:
+                pass
+            return
+
+        win = tk.Toplevel(self)
+        win.title(self._t('monster_section'))
+        win.resizable(False, False)
+        self.monster_manager_win = win
+
+        def _on_close():
+            if self.monster_manager_win is win:
+                self.monster_manager_win = None
+            self.monster_listbox = None
+            win.destroy()
+
+        win.protocol('WM_DELETE_WINDOW', _on_close)
+        container = tk.Frame(win, padx=10, pady=10)
+        container.grid(row=0, column=0, sticky='nsew')
+        win.grid_columnconfigure(0, weight=1)
+        win.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_columnconfigure(3, weight=1)
+        container.grid_rowconfigure(1, weight=1)
+
+        tk.Label(container, text=self._t('monster_list')).grid(row=0, column=0, sticky='w')
+        self.monster_listbox = tk.Listbox(container, height=10, exportselection=False)
+        self.monster_listbox.grid(row=1, column=0, rowspan=6, sticky='nswe', padx=(0,4))
+        monster_scroll = tk.Scrollbar(container, orient='vertical', command=self.monster_listbox.yview)
+        monster_scroll.grid(row=1, column=1, rowspan=6, sticky='ns')
+        self.monster_listbox.config(yscrollcommand=monster_scroll.set)
+        self.monster_listbox.bind('<<ListboxSelect>>', self.on_monster_selected)
+
+        tk.Label(container, text=self._t('monster_name')).grid(row=0, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.monster_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
+
+        tk.Label(container, text=self._t('monster_hp')).grid(row=1, column=2, sticky='e', pady=(2,0))
+        tk.Entry(container, textvariable=self.monster_hp_var, width=14).grid(row=1, column=3, sticky='we', padx=(4,0), pady=(2,0))
+
+        tk.Label(container, text=self._t('monster_damage')).grid(row=2, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.monster_damage_var, width=14).grid(row=2, column=3, sticky='we', padx=(4,0))
+        tk.Button(container, text=self._t('monster_estimate'), command=self.on_monster_estimate).grid(row=2, column=4, padx=(8,0))
+
+        tk.Label(container, text=self._t('monster_template')).grid(row=3, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.monster_template_var, width=24).grid(row=3, column=3, sticky='we', padx=(4,0))
+        tk.Button(container, text=self._t('browse'), command=self.on_monster_browse_template).grid(row=3, column=4, padx=(8,0))
+
+        btn_frame = tk.Frame(container)
+        btn_frame.grid(row=4, column=2, columnspan=3, sticky='w', pady=(8,0))
+        tk.Button(btn_frame, text=self._t('monster_new'), command=self.on_monster_new).pack(side='left')
+        tk.Button(btn_frame, text=self._t('monster_save'), command=self.on_monster_save).pack(side='left', padx=(6,0))
+        tk.Button(btn_frame, text=self._t('monster_delete'), command=self.on_monster_delete).pack(side='left', padx=(6,0))
+        tk.Button(btn_frame, text=self._t('monster_use_template'), command=self.on_monster_use_for_hunt).pack(side='left', padx=(12,0))
+
+        tk.Label(container, textvariable=self.monster_estimate_var, fg='gray').grid(row=5, column=2, columnspan=3, sticky='w', pady=(6,0))
+
+        self._refresh_monster_list(select_name=self.monster_selected_name)
+
+    def _refresh_monster_select_options(self, select_name: Optional[str] = None):
+        if select_name is not None:
+            self.monster_selected_name = select_name
+        names = [monster['name'] for monster in self.monsters]
+        combo = getattr(self, 'monster_select_combo', None)
+        if combo is not None:
+            combo['values'] = names
+            target_name = self.monster_selected_name or (select_name if select_name in names else None)
+            current = self.monster_select_var.get() if hasattr(self, 'monster_select_var') else ''
+            if target_name and target_name in names:
+                self.monster_select_var.set(target_name)
+            elif current not in names:
+                self.monster_select_var.set(names[0] if names else '')
+        self.on_monster_select_change()
+
     def _refresh_monster_list(self, select_name=None):
         if select_name is not None:
             self.monster_selected_name = select_name
-        if not hasattr(self, 'monster_listbox'):
-            return
-        self.monster_listbox.delete(0, tk.END)
-        for monster in self.monsters:
-            self.monster_listbox.insert(tk.END, monster['name'])
+        listbox = getattr(self, 'monster_listbox', None)
         idx = None
-        if self.monster_selected_name:
-            for i, monster in enumerate(self.monsters):
-                if monster['name'] == self.monster_selected_name:
-                    idx = i
-                    break
-        if idx is None and self.monsters and self.monster_selected_name is None:
-            idx = 0
-        if idx is not None and idx < len(self.monsters):
-            self.monster_listbox.selection_clear(0, tk.END)
-            self.monster_listbox.selection_set(idx)
-            self.monster_listbox.activate(idx)
-            self.monster_selected_index = idx
-            self.monster_selected_name = self.monsters[idx]['name']
-            self._monster_fill_form(self.monsters[idx])
+        if listbox is not None:
+            listbox.delete(0, tk.END)
+            for monster in self.monsters:
+                listbox.insert(tk.END, monster['name'])
+            if self.monster_selected_name:
+                for i, monster in enumerate(self.monsters):
+                    if monster['name'] == self.monster_selected_name:
+                        idx = i
+                        break
+            if idx is None and self.monsters and self.monster_selected_name is None:
+                idx = 0
+            if idx is not None and idx < len(self.monsters):
+                listbox.selection_clear(0, tk.END)
+                listbox.selection_set(idx)
+                listbox.activate(idx)
+                self.monster_selected_index = idx
+                self.monster_selected_name = self.monsters[idx]['name']
+                self._monster_fill_form(self.monsters[idx])
+            else:
+                listbox.selection_clear(0, tk.END)
+                self.monster_selected_index = None
+                self._monster_clear_form()
         else:
-            self.monster_listbox.selection_clear(0, tk.END)
-            self.monster_selected_index = None
-            self._monster_clear_form()
+            if self.monster_selected_name:
+                for i, monster in enumerate(self.monsters):
+                    if monster['name'] == self.monster_selected_name:
+                        idx = i
+                        break
+            self.monster_selected_index = idx if idx is not None else None
+        self._refresh_monster_select_options(self.monster_selected_name)
+
+    def on_monster_select_change(self, _evt=None):
+        if not hasattr(self, 'monster_select_var'):
+            return
+        name = self.monster_select_var.get().strip()
+        idx = None
+        for i, monster in enumerate(self.monsters):
+            if monster['name'] == name:
+                idx = i
+                break
+        self.monster_selected_index = idx if idx is not None else None
+        self.monster_selected_name = name if idx is not None else None
+        if idx is not None:
+            self._update_monster_estimate_label(self.monsters[idx])
+        elif hasattr(self, 'monster_estimate_var'):
+            self.monster_estimate_var.set('')
+
+    def on_monster_apply_from_select(self):
+        if not hasattr(self, 'monster_select_var'):
+            return
+        name = self.monster_select_var.get().strip()
+        if not name:
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_not_selected'))
+            return
+        idx = None
+        for i, monster in enumerate(self.monsters):
+            if monster['name'] == name:
+                idx = i
+                break
+        if idx is None:
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_not_selected'))
+            return
+        self.monster_selected_index = idx
+        self.monster_selected_name = name
+        self._update_monster_estimate_label(self.monsters[idx])
+        self.on_monster_use_for_hunt()
 
     def _read_monster_form(self):
         if not hasattr(self, 'monster_name_var'):
@@ -1098,6 +1123,8 @@ class App(tk.Tk):
             self.monster_template_var.set(path)
 
     def on_monster_selected(self, _evt=None):
+        if not self.monster_listbox:
+            return
         try:
             idxs = self.monster_listbox.curselection()
             if not idxs:
@@ -1115,7 +1142,7 @@ class App(tk.Tk):
     def on_monster_new(self):
         self.monster_selected_index = None
         self.monster_selected_name = None
-        if hasattr(self, 'monster_listbox'):
+        if self.monster_listbox:
             self.monster_listbox.selection_clear(0, tk.END)
         self._monster_clear_form()
 
@@ -1209,6 +1236,17 @@ class App(tk.Tk):
             return 'buff'
         return 'attack'
 
+    def _ensure_skill_image_trace(self):
+        if self._skill_image_trace:
+            return
+
+        def _trace(*_ignored):
+            self._update_skill_preview(self.skill_image_var.get())
+
+        self._skill_image_trace = self.skill_image_var.trace_add('write', _trace)
+        # Sync immediately for current value
+        self._update_skill_preview(self.skill_image_var.get())
+
     def _skill_clear_form(self):
         if hasattr(self, 'skill_name_var'):
             self.skill_name_var.set('')
@@ -1245,31 +1283,112 @@ class App(tk.Tk):
     def _refresh_skill_list(self, select_name=None):
         if select_name is not None:
             self.skill_selected_name = select_name
-        if not hasattr(self, 'skill_listbox'):
-            return
-        self.skill_listbox.delete(0, tk.END)
-        for skill in self.skills:
-            self.skill_listbox.insert(tk.END, skill['name'])
+        listbox = getattr(self, 'skill_listbox', None)
         idx = None
-        if self.skill_selected_name:
-            for i, skill in enumerate(self.skills):
-                if skill['name'] == self.skill_selected_name:
-                    idx = i
-                    break
-        if idx is None and self.skills and self.skill_selected_name is None:
-            idx = 0
-        if idx is not None and idx < len(self.skills):
-            self.skill_listbox.selection_clear(0, tk.END)
-            self.skill_listbox.selection_set(idx)
-            self.skill_listbox.activate(idx)
-            self.skill_selected_index = idx
-            self.skill_selected_name = self.skills[idx]['name']
-            self._skill_fill_form(self.skills[idx])
+        if listbox is not None:
+            listbox.delete(0, tk.END)
+            for skill in self.skills:
+                listbox.insert(tk.END, skill['name'])
+            if self.skill_selected_name:
+                for i, skill in enumerate(self.skills):
+                    if skill['name'] == self.skill_selected_name:
+                        idx = i
+                        break
+            if idx is None and self.skills and self.skill_selected_name is None:
+                idx = 0
+            if idx is not None and idx < len(self.skills):
+                listbox.selection_clear(0, tk.END)
+                listbox.selection_set(idx)
+                listbox.activate(idx)
+                self.skill_selected_index = idx
+                self.skill_selected_name = self.skills[idx]['name']
+                self._skill_fill_form(self.skills[idx])
+            else:
+                listbox.selection_clear(0, tk.END)
+                self.skill_selected_index = None
+                self._skill_clear_form()
         else:
-            self.skill_listbox.selection_clear(0, tk.END)
-            self.skill_selected_index = None
-            self._skill_clear_form()
+            if self.skill_selected_name:
+                for i, skill in enumerate(self.skills):
+                    if skill['name'] == self.skill_selected_name:
+                        idx = i
+                        break
+            self.skill_selected_index = idx if idx is not None else None
         self._refresh_skill_slots_options()
+
+    def _open_skill_manager(self):
+        if self.skill_manager_win is not None and self.skill_manager_win.winfo_exists():
+            try:
+                self.skill_manager_win.deiconify()
+                self.skill_manager_win.lift()
+                self.skill_manager_win.focus_set()
+            except Exception:
+                pass
+            return
+
+        win = tk.Toplevel(self)
+        win.title(self._t('skill_section'))
+        win.resizable(False, False)
+        self.skill_manager_win = win
+
+        def _on_close():
+            if self.skill_manager_win is win:
+                self.skill_manager_win = None
+            self.skill_listbox = None
+            self.skill_preview_label = None
+            win.destroy()
+
+        win.protocol('WM_DELETE_WINDOW', _on_close)
+        container = tk.Frame(win, padx=10, pady=10)
+        container.grid(row=0, column=0, sticky='nsew')
+        win.grid_columnconfigure(0, weight=1)
+        win.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_columnconfigure(4, weight=1)
+        container.grid_rowconfigure(1, weight=1)
+
+        tk.Label(container, text=self._t('skill_list')).grid(row=0, column=0, sticky='w')
+        self.skill_listbox = tk.Listbox(container, height=10, exportselection=False)
+        self.skill_listbox.grid(row=1, column=0, rowspan=6, sticky='nswe', padx=(0,4))
+        skill_scroll = tk.Scrollbar(container, orient='vertical', command=self.skill_listbox.yview)
+        skill_scroll.grid(row=1, column=1, rowspan=6, sticky='ns')
+        self.skill_listbox.config(yscrollcommand=skill_scroll.set)
+        self.skill_listbox.bind('<<ListboxSelect>>', self.on_skill_selected)
+
+        tk.Label(container, text=self._t('skill_name')).grid(row=0, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.skill_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
+
+        tk.Label(container, text=self._t('skill_key')).grid(row=1, column=2, sticky='e', pady=(2,0))
+        tk.Entry(container, textvariable=self.skill_key_var, width=12).grid(row=1, column=3, sticky='w', padx=(4,0), pady=(2,0))
+
+        tk.Label(container, text=self._t('skill_type')).grid(row=2, column=2, sticky='e')
+        self.skill_type_combo = ttk.Combobox(container, textvariable=self.skill_type_var, state='readonly', width=14)
+        self.skill_type_combo['values'] = (self._t('skill_type_attack'), self._t('skill_type_buff'))
+        self.skill_type_combo.grid(row=2, column=3, sticky='w', padx=(4,0))
+        current_type = self._skill_type_from_label(self.skill_type_var.get() or self._t('skill_type_attack'))
+        self.skill_type_var.set(self._skill_type_label(current_type))
+
+        tk.Label(container, text=self._t('skill_cooldown')).grid(row=3, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.skill_cooldown_var, width=12).grid(row=3, column=3, sticky='w', padx=(4,0))
+
+        tk.Label(container, text=self._t('skill_cast_time')).grid(row=4, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.skill_cast_time_var, width=12).grid(row=4, column=3, sticky='w', padx=(4,0))
+
+        tk.Label(container, text=self._t('skill_image')).grid(row=5, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.skill_image_var, width=24).grid(row=5, column=3, sticky='we', padx=(4,0))
+        tk.Button(container, text=self._t('browse'), command=self.on_skill_browse_image).grid(row=5, column=4, padx=(8,0))
+
+        self.skill_preview_label = tk.Label(container, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
+        self.skill_preview_label.grid(row=1, column=4, rowspan=4, sticky='nswe', padx=(8,0))
+        self._ensure_skill_image_trace()
+
+        btn_frame = tk.Frame(container)
+        btn_frame.grid(row=6, column=2, columnspan=3, sticky='w', pady=(8,0))
+        tk.Button(btn_frame, text=self._t('skill_new'), command=self.on_skill_new).pack(side='left')
+        tk.Button(btn_frame, text=self._t('skill_save'), command=self.on_skill_save).pack(side='left', padx=(6,0))
+        tk.Button(btn_frame, text=self._t('skill_delete'), command=self.on_skill_delete).pack(side='left', padx=(6,0))
+
+        self._refresh_skill_list(select_name=self.skill_selected_name)
 
     def _refresh_skill_slots_options(self):
         if not hasattr(self, 'skill_slot_boxes'):
@@ -1327,11 +1446,12 @@ class App(tk.Tk):
         self._update_attack_keys_from_slots()
 
     def _update_skill_preview(self, path):
-        if not hasattr(self, 'skill_preview_label'):
+        label = getattr(self, 'skill_preview_label', None)
+        if not label:
             return
         path = (path or '').strip()
         if not path:
-            self.skill_preview_label.config(image='', text=self._t('skill_no_image'))
+            label.config(image='', text=self._t('skill_no_image'))
             self.skill_preview_image = None
             return
         try:
@@ -1341,10 +1461,10 @@ class App(tk.Tk):
                 photo = ImageTk.PhotoImage(img)
             else:
                 photo = tk.PhotoImage(file=path)
-            self.skill_preview_label.config(image=photo, text='')
+            label.config(image=photo, text='')
             self.skill_preview_image = photo
         except Exception:
-            self.skill_preview_label.config(image='', text=self._t('skill_image_error'))
+            label.config(image='', text=self._t('skill_image_error'))
             self.skill_preview_image = None
 
     def _update_attack_keys_from_slots(self):
@@ -1371,6 +1491,8 @@ class App(tk.Tk):
             self.skill_image_var.set(path)
 
     def on_skill_selected(self, _evt=None):
+        if not self.skill_listbox:
+            return
         try:
             idxs = self.skill_listbox.curselection()
             if not idxs:
@@ -1414,7 +1536,7 @@ class App(tk.Tk):
     def on_skill_new(self):
         self.skill_selected_index = None
         self.skill_selected_name = None
-        if hasattr(self, 'skill_listbox'):
+        if self.skill_listbox:
             self.skill_listbox.selection_clear(0, tk.END)
         self._skill_clear_form()
 

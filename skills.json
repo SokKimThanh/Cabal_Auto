@@ -1,5 +1,26 @@
 [
-  { "name": "Skill 1", "key": "1", "cooldown_sec": 2.0, "press_ms": 60, "enabled": true },
-  { "name": "Skill 2", "key": "2", "cooldown_sec": 3.0, "press_ms": 60, "enabled": false },
-  { "name": "Buff",    "key": "F1", "cooldown_sec": 30.0, "press_ms": 80, "enabled": false }
+  {
+    "name": "Skill 1",
+    "key": "1",
+    "type": "attack",
+    "cooldown": 0.0,
+    "cast_time": 0.0,
+    "image": ""
+  },
+  {
+    "name": "Skill 2",
+    "key": "2",
+    "type": "attack",
+    "cooldown": 0.0,
+    "cast_time": 0.0,
+    "image": ""
+  },
+  {
+    "name": "Buff",
+    "key": "F1",
+    "type": "attack",
+    "cooldown": 0.0,
+    "cast_time": 0.0,
+    "image": ""
+  }
 ]
