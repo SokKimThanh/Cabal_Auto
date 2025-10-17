@@ -4,6 +4,7 @@ import math
 import os
 import threading
 import time
+import copy
 from ctypes import wintypes
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -72,8 +73,25 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_bounds': 'Window bounds (L,T,W,H):',
     'monster_bounds_hint': 'Leave blank to auto-detect during hunt.',
     'monster_bounds_clear': 'Clear bounds',
-    'monster_open_templates': 'Manage templates…',
-    'monster_template_stub': 'Template management UI is coming soon.',
+    'monster_open_templates': 'Quick-add template…',
+    'monster_templates': 'Templates',
+    'monster_template_list': 'Template variants:',
+    'monster_template_name': 'Label:',
+    'monster_template_path': 'Image path:',
+    'monster_template_threshold': 'Threshold:',
+    'monster_template_threshold_hint': 'Match score between 0 and 1 (default 0.85).',
+    'monster_template_region': 'Region override (L,T,W,H):',
+    'monster_template_region_hint': 'Leave blank to reuse hunt window bounds.',
+    'monster_template_browse': 'Browse image…',
+    'monster_template_add': 'Add',
+    'monster_template_update': 'Update',
+    'monster_template_delete': 'Delete',
+    'monster_template_invalid': 'Invalid template data: {e}',
+    'monster_template_not_selected': 'Pick a template first',
+    'monster_template_duplicate': 'Template name already exists',
+    'monster_template_added': 'Template added',
+    'monster_template_saved': 'Template updated',
+    'monster_template_removed': 'Template removed',
         'monster_new': 'Create',
         'monster_save': 'Save',
         'monster_delete': 'Delete',
@@ -163,8 +181,25 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_bounds': 'Biên cửa sổ (L,T,R,D):',
     'monster_bounds_hint': 'Để trống để hệ thống tự dò khi chạy săn.',
     'monster_bounds_clear': 'Xóa biên',
-    'monster_open_templates': 'Quản lý ảnh mẫu…',
-    'monster_template_stub': 'Giao diện quản lý ảnh mẫu sẽ có trong bản kế tiếp.',
+    'monster_open_templates': 'Thêm ảnh mẫu nhanh…',
+    'monster_templates': 'Ảnh mẫu',
+    'monster_template_list': 'Danh sách ảnh mẫu:',
+    'monster_template_name': 'Tên hiển thị:',
+    'monster_template_path': 'Đường dẫn ảnh:',
+    'monster_template_threshold': 'Ngưỡng:',
+    'monster_template_threshold_hint': 'Điểm khớp từ 0 đến 1 (mặc định 0.85).',
+    'monster_template_region': 'Vùng ghi đè (L,T,R,D):',
+    'monster_template_region_hint': 'Để trống để dùng lại biên cửa sổ săn.',
+    'monster_template_browse': 'Chọn ảnh…',
+    'monster_template_add': 'Thêm',
+    'monster_template_update': 'Cập nhật',
+    'monster_template_delete': 'Xóa',
+    'monster_template_invalid': 'Thông tin ảnh mẫu không hợp lệ: {e}',
+    'monster_template_not_selected': 'Hãy chọn một ảnh mẫu trước',
+    'monster_template_duplicate': 'Tên ảnh mẫu đã tồn tại',
+    'monster_template_added': 'Đã thêm ảnh mẫu',
+    'monster_template_saved': 'Đã cập nhật ảnh mẫu',
+    'monster_template_removed': 'Đã xóa ảnh mẫu',
         'monster_new': 'Tạo mới',
         'monster_save': 'Lưu',
         'monster_delete': 'Xóa',
@@ -236,6 +271,51 @@ def _normalize_window_bounds(value):
     return None
 
 
+def _normalize_template_entry(item):
+    if not isinstance(item, dict):
+        return None
+    path = str(item.get('path', '') or '').strip()
+    if not path:
+        return None
+    name = str(item.get('name', '') or '').strip()
+    if not name:
+        try:
+            name = Path(path).stem
+        except Exception:
+            name = 'template'
+    try:
+        threshold = float(item.get('threshold', 0.85))
+    except (TypeError, ValueError):
+        threshold = 0.85
+    if not math.isfinite(threshold):
+        threshold = 0.85
+    threshold = max(0.0, min(threshold, 1.0))
+    region = _normalize_window_bounds(item.get('region'))
+    region_strategy = str(item.get('region_strategy', '') or '').strip()
+    grayscale = item.get('grayscale')
+    tmpl = {
+        'name': name,
+        'path': path,
+        'threshold': threshold,
+        'region': region,
+    }
+    if region_strategy:
+        tmpl['region_strategy'] = region_strategy
+    if grayscale is not None:
+        tmpl['grayscale'] = bool(grayscale)
+    return tmpl
+
+
+def _sanitize_templates(value):
+    templates = []
+    if isinstance(value, list):
+        for entry in value:
+            normalized = _normalize_template_entry(entry)
+            if normalized:
+                templates.append(normalized)
+    return templates
+
+
 def load_monster_library():
     if not MONSTER_DB_PATH.exists():
         return []
@@ -260,7 +340,7 @@ def load_monster_library():
                 template = str(item.get('template', '') or '').strip()
                 description = str(item.get('description', '') or '').strip()
                 window_bounds = _normalize_window_bounds(item.get('window_bounds'))
-                templates = item.get('templates') if isinstance(item.get('templates'), list) else []
+                templates = _sanitize_templates(item.get('templates'))
                 monsters.append({
                     'name': name,
                     'hp': hp,
@@ -291,7 +371,7 @@ def save_monster_library(monsters):
         template = str(item.get('template', '') or '').strip()
         description = str(item.get('description', '') or '').strip()
         window_bounds = _normalize_window_bounds(item.get('window_bounds'))
-        templates = item.get('templates') if isinstance(item.get('templates'), list) else []
+        templates = _sanitize_templates(item.get('templates'))
         safe.append({
             'name': name,
             'hp': hp,
@@ -474,6 +554,21 @@ class App(tk.Tk):
         self.skill_preview_label = None
         self._skill_image_trace = None
         self.monster_description_text = None
+        self.monster_template_working = []
+        self.monster_template_selected_index = None
+        self.monster_template_listbox = None
+        self.monster_template_name_var = tk.StringVar()
+        self.monster_template_path_var = tk.StringVar()
+        self.monster_template_threshold_var = tk.StringVar(value='0.85')
+        self.monster_template_region_vars = {
+            'left': tk.StringVar(),
+            'top': tk.StringVar(),
+            'width': tk.StringVar(),
+            'height': tk.StringVar(),
+        }
+        self.monster_template_preview_label = None
+        self.monster_template_preview_image = None
+        self._monster_template_path_trace = None
         self.monster_bounds_vars = {
             'left': tk.StringVar(),
             'top': tk.StringVar(),
@@ -943,6 +1038,225 @@ class App(tk.Tk):
         for var in self.monster_bounds_vars.values():
             var.set('')
 
+    def _ensure_monster_template_path_trace(self):
+        if self._monster_template_path_trace:
+            return
+
+        def _trace(*_ignored):
+            self._monster_template_update_preview(self.monster_template_path_var.get())
+
+        self._monster_template_path_trace = self.monster_template_path_var.trace_add('write', _trace)
+
+    def _monster_template_update_preview(self, path):
+        label = getattr(self, 'monster_template_preview_label', None)
+        if not label:
+            return
+        path = (path or '').strip()
+        if not path:
+            label.configure(image='', text=self._t('skill_no_image'))
+            self.monster_template_preview_image = None
+            return
+        if Image is None or ImageTk is None:
+            label.configure(image='', text=os.path.basename(path))
+            self.monster_template_preview_image = None
+            return
+        try:
+            img = Image.open(path)
+            img.thumbnail((96, 96))
+            photo = ImageTk.PhotoImage(img)
+            label.configure(image=photo, text='')
+            self.monster_template_preview_image = photo
+        except Exception:
+            label.configure(image='', text=self._t('skill_image_error'))
+            self.monster_template_preview_image = None
+
+    def _monster_template_clear_form(self):
+        self.monster_template_name_var.set('')
+        self.monster_template_path_var.set('')
+        self.monster_template_threshold_var.set('0.85')
+        for var in self.monster_template_region_vars.values():
+            var.set('')
+        self._monster_template_update_preview('')
+
+    def _monster_template_fill_form(self, template):
+        if not template:
+            self._monster_template_clear_form()
+            return
+        self.monster_template_name_var.set(template.get('name', ''))
+        self.monster_template_path_var.set(template.get('path', ''))
+        threshold = template.get('threshold', '')
+        if threshold == '' or threshold is None:
+            self.monster_template_threshold_var.set('0.85')
+        else:
+            self.monster_template_threshold_var.set(self._format_number(threshold))
+        region = template.get('region') if isinstance(template.get('region'), dict) else None
+        for key, var in self.monster_template_region_vars.items():
+            if region and key in region:
+                var.set(str(region.get(key, '')))
+            else:
+                var.set('')
+        self._monster_template_update_preview(template.get('path', ''))
+
+    def _monster_template_read_form(self):
+        name = self.monster_template_name_var.get().strip()
+        if not name:
+            raise ValueError('name required')
+        path = self.monster_template_path_var.get().strip()
+        if not path:
+            raise ValueError('path required')
+        try:
+            threshold_raw = self.monster_template_threshold_var.get().strip()
+            threshold = float(threshold_raw or 0.85)
+        except Exception as exc:
+            raise ValueError(exc)
+        if not math.isfinite(threshold):
+            threshold = 0.85
+        threshold = max(0.0, min(threshold, 1.0))
+        region_input = {k: v.get().strip() for k, v in self.monster_template_region_vars.items()}
+        region = None
+        if any(region_input.values()):
+            if not all(region_input.values()):
+                raise ValueError('region requires 4 numbers')
+            try:
+                region_vals = {k: int(region_input[k]) for k in ('left', 'top', 'width', 'height')}
+            except ValueError as exc:
+                raise ValueError(f'invalid region: {exc}')
+            if region_vals['width'] <= 0 or region_vals['height'] <= 0:
+                raise ValueError('region width/height must be positive')
+            region = region_vals
+        data = {
+            'name': name,
+            'path': path,
+            'threshold': threshold,
+        }
+        if region:
+            data['region'] = region
+        return data
+
+    def _refresh_monster_template_list(self, select_index: Optional[int] = None):
+        listbox = getattr(self, 'monster_template_listbox', None)
+        if listbox is None:
+            return
+        listbox.delete(0, tk.END)
+        for idx, tmpl in enumerate(self.monster_template_working):
+            label = tmpl.get('name') or f'Template {idx + 1}'
+            threshold = tmpl.get('threshold')
+            if threshold is not None and threshold != '':
+                try:
+                    label += f" ({float(threshold):.2f})"
+                except Exception:
+                    pass
+            listbox.insert(tk.END, label)
+        if self.monster_template_working:
+            idx = self.monster_template_selected_index if select_index is None else select_index
+            if idx is None:
+                idx = 0
+            idx = int(max(0, min(int(idx), len(self.monster_template_working) - 1)))
+            select_index = idx
+            listbox.selection_clear(0, tk.END)
+            listbox.selection_set(select_index)
+            listbox.activate(select_index)
+            self.monster_template_selected_index = select_index
+            self._monster_template_fill_form(self.monster_template_working[select_index])
+        else:
+            self.monster_template_selected_index = None
+            self._monster_template_clear_form()
+        if self.monster_template_working:
+            first_path = self.monster_template_working[0].get('path', '')
+            if first_path:
+                self.monster_template_var.set(first_path)
+            listbox.see(self.monster_template_selected_index)
+
+    def on_monster_template_selected(self, _evt=None):
+        listbox = getattr(self, 'monster_template_listbox', None)
+        if not listbox:
+            return
+        try:
+            idxs = listbox.curselection()
+            if not idxs:
+                self.monster_template_selected_index = None
+                self._monster_template_clear_form()
+                return
+            idx = idxs[0]
+            if idx >= len(self.monster_template_working):
+                return
+            self.monster_template_selected_index = idx
+            self._monster_template_fill_form(self.monster_template_working[idx])
+        except Exception:
+            pass
+
+    def on_monster_template_import(self):
+        path = filedialog.askopenfilename(title=self._t('monster_template_browse'), filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
+        if path:
+            self.monster_template_path_var.set(path)
+            if not self.monster_template_name_var.get().strip():
+                try:
+                    self.monster_template_name_var.set(Path(path).stem)
+                except Exception:
+                    self.monster_template_name_var.set('template')
+
+    def on_monster_template_add(self):
+        try:
+            data = self._monster_template_read_form()
+            normalized = _normalize_template_entry(data)
+            if not normalized:
+                raise ValueError('path required')
+        except Exception as exc:
+            messagebox.showerror(self._t('monster_section'), self._t('monster_template_invalid').format(e=exc))
+            return
+        for existing in self.monster_template_working:
+            if existing.get('name', '').lower() == normalized['name'].lower():
+                messagebox.showerror(self._t('monster_section'), self._t('monster_template_duplicate'))
+                return
+        self.monster_template_working.append(normalized)
+        self.monster_template_selected_index = len(self.monster_template_working) - 1
+        self._refresh_monster_template_list(self.monster_template_selected_index)
+        self.hunt_status.set(self._t('monster_template_added'))
+
+    def on_monster_template_update(self):
+        if self.monster_template_selected_index is None or self.monster_template_selected_index >= len(self.monster_template_working):
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_template_not_selected'))
+            return
+        try:
+            data = self._monster_template_read_form()
+            normalized = _normalize_template_entry(data)
+            if not normalized:
+                raise ValueError('path required')
+        except Exception as exc:
+            messagebox.showerror(self._t('monster_section'), self._t('monster_template_invalid').format(e=exc))
+            return
+        for idx, existing in enumerate(self.monster_template_working):
+            if idx == self.monster_template_selected_index:
+                continue
+            if existing.get('name', '').lower() == normalized['name'].lower():
+                messagebox.showerror(self._t('monster_section'), self._t('monster_template_duplicate'))
+                return
+        self.monster_template_working[self.monster_template_selected_index] = normalized
+        self._refresh_monster_template_list(self.monster_template_selected_index)
+        self.hunt_status.set(self._t('monster_template_saved'))
+
+    def on_monster_template_delete(self):
+        if self.monster_template_selected_index is None or self.monster_template_selected_index >= len(self.monster_template_working):
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_template_not_selected'))
+            return
+        self.monster_template_working.pop(self.monster_template_selected_index)
+        self.monster_template_selected_index = None
+        self._refresh_monster_template_list()
+        self.hunt_status.set(self._t('monster_template_removed'))
+
+    def on_monster_template_quick_add(self):
+        path = filedialog.askopenfilename(title=self._t('monster_template_browse'), filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
+        if not path:
+            return
+        self.monster_template_path_var.set(path)
+        if not self.monster_template_name_var.get().strip():
+            try:
+                self.monster_template_name_var.set(Path(path).stem)
+            except Exception:
+                self.monster_template_name_var.set('template')
+        if not self.monster_template_threshold_var.get().strip():
+            self.monster_template_threshold_var.set('0.85')
+
     def _monster_clear_form(self):
         if hasattr(self, 'monster_name_var'):
             self.monster_name_var.set('')
@@ -957,6 +1271,10 @@ class App(tk.Tk):
         self._monster_desc_set('')
         for var in self.monster_bounds_vars.values():
             var.set('')
+        self.monster_template_working = []
+        self.monster_template_selected_index = None
+        self._monster_template_clear_form()
+        self._refresh_monster_template_list()
 
     def _format_number(self, value):
         try:
@@ -986,6 +1304,9 @@ class App(tk.Tk):
                 var.set(str(bounds.get(key, '')))
             else:
                 var.set('')
+        self.monster_template_working = copy.deepcopy(_sanitize_templates(monster.get('templates')))
+        self.monster_template_selected_index = None
+        self._refresh_monster_template_list()
         self._update_monster_estimate_label(monster)
 
     def _open_monster_manager(self):
@@ -1008,6 +1329,9 @@ class App(tk.Tk):
                 self.monster_manager_win = None
             self.monster_listbox = None
             self.monster_description_text = None
+            self.monster_template_listbox = None
+            self.monster_template_preview_label = None
+            self.monster_template_preview_image = None
             win.destroy()
 
         win.protocol('WM_DELETE_WINDOW', _on_close)
@@ -1034,6 +1358,7 @@ class App(tk.Tk):
         detail = tk.Frame(container)
         detail.grid(row=0, column=1, sticky='nsew', padx=(16,0))
         detail.grid_columnconfigure(1, weight=1)
+        detail.grid_rowconfigure(6, weight=1)
 
         info_frame = tk.Frame(detail)
         info_frame.grid(row=0, column=0, sticky='we')
@@ -1075,12 +1400,63 @@ class App(tk.Tk):
         tk.Label(template_frame, text=self._t('monster_template')).grid(row=0, column=0, sticky='e')
         tk.Entry(template_frame, textvariable=self.monster_template_var, width=32).grid(row=0, column=1, sticky='we', padx=(4,0))
         tk.Button(template_frame, text=self._t('browse'), command=self.on_monster_browse_template).grid(row=0, column=2, padx=(6,0))
-        tk.Button(template_frame, text=self._t('monster_open_templates'), command=self.on_monster_manage_templates).grid(row=1, column=1, sticky='w', pady=(6,0))
+        tk.Button(template_frame, text=self._t('monster_open_templates'), command=self.on_monster_template_quick_add).grid(row=1, column=1, sticky='w', pady=(6,0))
 
-        tk.Label(detail, textvariable=self.monster_estimate_var, fg='gray', wraplength=360, justify='left').grid(row=6, column=0, sticky='we', pady=(8,0))
+        templates_panel = tk.LabelFrame(detail, text=self._t('monster_templates'))
+        templates_panel.grid(row=6, column=0, sticky='nsew', pady=(8,0))
+        templates_panel.grid_columnconfigure(2, weight=1)
+        templates_panel.grid_rowconfigure(0, weight=1)
+
+        self.monster_template_listbox = tk.Listbox(templates_panel, height=8, width=26, exportselection=False)
+        self.monster_template_listbox.grid(row=0, column=0, rowspan=5, sticky='nsw')
+        template_scroll = tk.Scrollbar(templates_panel, orient='vertical', command=self.monster_template_listbox.yview)
+        template_scroll.grid(row=0, column=1, rowspan=5, sticky='ns')
+        self.monster_template_listbox.config(yscrollcommand=template_scroll.set)
+        self.monster_template_listbox.bind('<<ListboxSelect>>', self.on_monster_template_selected)
+
+        template_form = tk.Frame(templates_panel)
+        template_form.grid(row=0, column=2, sticky='nsew', padx=(12,0))
+        template_form.grid_columnconfigure(1, weight=1)
+
+        tk.Label(template_form, text=self._t('monster_template_name')).grid(row=0, column=0, sticky='e')
+        tk.Entry(template_form, textvariable=self.monster_template_name_var, width=24).grid(row=0, column=1, sticky='we', padx=(4,0))
+
+        tk.Label(template_form, text=self._t('monster_template_path')).grid(row=1, column=0, sticky='e', pady=(6,0))
+        tk.Entry(template_form, textvariable=self.monster_template_path_var, width=24).grid(row=1, column=1, sticky='we', padx=(4,0), pady=(6,0))
+        self._ensure_monster_template_path_trace()
+        tk.Button(template_form, text=self._t('monster_template_browse'), command=self.on_monster_template_import).grid(row=1, column=2, padx=(6,0), pady=(6,0))
+
+        tk.Label(template_form, text=self._t('monster_template_threshold')).grid(row=2, column=0, sticky='e')
+        tk.Entry(template_form, textvariable=self.monster_template_threshold_var, width=8).grid(row=2, column=1, sticky='w', padx=(4,0))
+        tk.Label(template_form, text=self._t('monster_template_threshold_hint'), fg='gray').grid(row=3, column=0, columnspan=3, sticky='w')
+
+        region_frame = tk.Frame(template_form)
+        region_frame.grid(row=4, column=0, columnspan=3, sticky='w', pady=(8,0))
+        tk.Label(region_frame, text=self._t('monster_template_region')).grid(row=0, column=0, columnspan=5, sticky='w')
+        headers = ['L', 'T', 'W', 'H']
+        for idx, title in enumerate(headers):
+            tk.Label(region_frame, text=title).grid(row=1, column=idx, padx=(0,4), sticky='w')
+        tk.Entry(region_frame, textvariable=self.monster_template_region_vars['left'], width=5).grid(row=2, column=0, padx=(0,4))
+        tk.Entry(region_frame, textvariable=self.monster_template_region_vars['top'], width=5).grid(row=2, column=1, padx=(0,4))
+        tk.Entry(region_frame, textvariable=self.monster_template_region_vars['width'], width=5).grid(row=2, column=2, padx=(0,4))
+        tk.Entry(region_frame, textvariable=self.monster_template_region_vars['height'], width=5).grid(row=2, column=3, padx=(0,8))
+        tk.Label(region_frame, text=self._t('monster_template_region_hint'), fg='gray').grid(row=3, column=0, columnspan=5, sticky='w', pady=(4,0))
+
+        preview_frame = tk.Frame(template_form)
+        preview_frame.grid(row=5, column=0, columnspan=3, sticky='w', pady=(8,0))
+        self.monster_template_preview_label = tk.Label(preview_frame, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
+        self.monster_template_preview_label.pack(side='left')
+
+        tmpl_btn_frame = tk.Frame(template_form)
+        tmpl_btn_frame.grid(row=6, column=0, columnspan=3, sticky='w', pady=(8,0))
+        tk.Button(tmpl_btn_frame, text=self._t('monster_template_add'), command=self.on_monster_template_add).pack(side='left')
+        tk.Button(tmpl_btn_frame, text=self._t('monster_template_update'), command=self.on_monster_template_update).pack(side='left', padx=(6,0))
+        tk.Button(tmpl_btn_frame, text=self._t('monster_template_delete'), command=self.on_monster_template_delete).pack(side='left', padx=(6,0))
+
+        tk.Label(detail, textvariable=self.monster_estimate_var, fg='gray', wraplength=360, justify='left').grid(row=7, column=0, sticky='we', pady=(8,0))
 
         btn_frame = tk.Frame(detail)
-        btn_frame.grid(row=7, column=0, sticky='w', pady=(12,0))
+        btn_frame.grid(row=8, column=0, sticky='w', pady=(12,0))
         tk.Button(btn_frame, text=self._t('monster_new'), command=self.on_monster_new).pack(side='left')
         tk.Button(btn_frame, text=self._t('monster_save'), command=self.on_monster_save).pack(side='left', padx=(6,0))
         tk.Button(btn_frame, text=self._t('monster_delete'), command=self.on_monster_delete).pack(side='left', padx=(6,0))
@@ -1205,11 +1581,7 @@ class App(tk.Tk):
             if width <= 0 or height <= 0:
                 raise ValueError('window bounds width/height must be positive')
             window_bounds = {'left': left, 'top': top, 'width': width, 'height': height}
-        templates = []
-        if self.monster_selected_index is not None and 0 <= self.monster_selected_index < len(self.monsters):
-            current_templates = self.monsters[self.monster_selected_index].get('templates')
-            if isinstance(current_templates, list):
-                templates = current_templates
+        templates = copy.deepcopy(_sanitize_templates(self.monster_template_working))
         return {
             'name': name,
             'hp': hp,
@@ -1282,9 +1654,6 @@ class App(tk.Tk):
         path = filedialog.askopenfilename(title='Select template image', filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
         if path:
             self.monster_template_var.set(path)
-
-    def on_monster_manage_templates(self):
-        messagebox.showinfo(self._t('monster_section'), self._t('monster_template_stub'))
 
     def on_monster_selected(self, _evt=None):
         if not self.monster_listbox:
@@ -1374,6 +1743,14 @@ class App(tk.Tk):
         monster = self.monsters[self.monster_selected_index]
         if monster.get('template'):
             self.template_var.set(monster['template'])
+        elif monster.get('templates'):
+            try:
+                first_template = monster['templates'][0]
+                path = first_template.get('path') if isinstance(first_template, dict) else None
+                if path:
+                    self.template_var.set(path)
+            except Exception:
+                pass
         bounds = _normalize_window_bounds(monster.get('window_bounds'))
         self.current_window_bounds = bounds
         self.hunt_cfg['window_bounds'] = bounds
