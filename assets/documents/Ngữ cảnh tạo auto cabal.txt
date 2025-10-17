@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 12 Complete - Template Matcher Integration)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 13 Complete - Apply Timing to Hunt Config)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -292,8 +292,32 @@ E:\Cabal_Auto
 		• **Code changes**:
 			- auto_hunt.py: +2 lines import, ~30 lines refactored in locate_target()
 			- app_gui.py: +2 lines import, ~25 lines refactored in _hunt_locate_target()
+	- Sprint 13 (Hoàn tất 2025-10-18): Apply Timing to Hunt Config
+		• **"Apply to Hunt Config" button**: Added green button trong timing calculator dialog
+		• **Workflow**:
+			1. User calculates timing recommendations với monster HP/damage và attack speed
+			2. Click "Apply to Hunt Config" button
+			3. Automatically updates hunt_config.json với lost_timeout_sec và attack_min_duration_sec
+			4. Updates Hunt tab UI fields (lost_timeout_var, attack_duration_var)
+			5. Saves config to file với save_hunt_config()
+			6. Shows success message với applied values
+		• **Features**:
+			- Store current_rec in closure để Apply button access
+			- Validation: Shows warning nếu chưa calculate timing
+			- Dual-language support: EN/VI messages
+			- Visual feedback: Green button color (#4CAF50), success messagebox
+			- Status bar update: Display applied values
+			- Auto-save: Config immediately saved to hunt_config.json
+		• **Benefits**:
+			- One-click workflow: Calculate → Apply → Ready to hunt
+			- No manual copying: Eliminates error-prone manual entry
+			- Instant feedback: Success message confirms values applied
+			- Persistent: Config saved to file for future sessions
+		• **Code changes**:
+			- app_gui.py: +60 lines in on_monster_calculate_timing()
+			- New function: apply_to_hunt_config() within dialog scope
+			- current_rec dict to store recommendation between Calculate and Apply
 - Tiếp theo:
-	- Add "Apply to Hunt Config" button trong timing calculator để auto-fill hunt_config.json.
 	- Skill runtime refactor: Implement duration/pre-refresh logic cho buff auto-casting.
 
 ============================
@@ -498,7 +522,7 @@ E:\Cabal_Auto
   - Validation: Ensures schema compliance
   - Future-proof: Schema ready for buff/attack runtime separation
 
-🎯 TỔNG KẾT SPRINT 1-12:
+🎯 TỔNG KẾT SPRINT 1-13:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
@@ -508,17 +532,18 @@ E:\Cabal_Auto
 - Sprint 10: HP/Damage Timing Recommendations với automatic calculation, attack speed presets, GUI integration
 - Sprint 11: Skills Migration & Auto-Copy với schema update, image portability, automated backup
 - Sprint 12: Template Matcher Integration với accurate confidence tracking từ OpenCV, unified interface cho hunt system
-- **System production-ready**: Complete workflow - capture → test → save → calculate timing → hunt với accurate confidence → monitor logs với portable assets và data-driven optimization
+- Sprint 13: Apply Timing to Hunt Config với one-click workflow từ timing calculator đến hunt_config.json
+- **System production-ready**: Complete workflow - capture → test → save → calculate timing → apply to hunt → hunt với accurate confidence → monitor logs với portable assets và data-driven optimization
 
 📊 CODE METRICS:
-- app_gui.py: ~3,130 lines (template_matcher integration, removed _try_locate_image method)
+- app_gui.py: ~3,190 lines (+60 lines Apply to Hunt Config feature)
 - auto_hunt.py: ~190 lines (template_matcher integration, removed _try_locate_image function)
 - hunt_logger.py: ~300 lines (dual logging system)
 - opencv_test.py: ~340 lines (comparison testing)
 - template_matcher.py: ~220 lines (unified interface - NOW INTEGRATED)
 - timing_calculator.py: ~280 lines (timing recommendations)
 - skill_migrator.py: ~220 lines (skills migration tool)
-- Total project: ~4,680 lines (code simplified với unified template matching)
+- Total project: ~4,740 lines (+60 lines Sprint 13)
 - Localization: 173+ strings với EN/VI parity
 - Dependencies: pyautogui, PIL, tkinter, logging, opencv-python 4.12.0, numpy 2.3.4
 - Assets: 4 skill images in assets/images/skills/ (portable, no external dependencies)
@@ -590,6 +615,30 @@ E:\Cabal_Auto
     - CLI: Print statements show threshold và confidence (f"Threshold: {threshold:.2f}, Confidence: {confidence:.3f}")
     - GUI: Status bar shows confidence (f"Target: {template_name} (conf: {confidence:.3f})")
   • **Backward compatible**: Fallback to PyAutoGUI nếu OpenCV không có
+- Apply Timing to Hunt Config (Sprint 13):
+  • **One-click workflow**: Calculate timing recommendations → Apply to hunt_config.json với single button click
+  • **"Apply to Hunt Config" button**: Green button (#4CAF50) trong timing calculator dialog
+  • **Automatic updates**:
+    - hunt_config.json: lost_timeout_sec và attack_min_duration_sec fields
+    - Hunt tab UI: lost_timeout_var và attack_duration_var entries
+    - Status bar: Display applied values confirmation
+  • **Workflow**:
+    1. User opens timing calculator từ Monster Manager
+    2. Enters HP/damage, selects attack speed preset
+    3. Clicks Calculate to see recommendations
+    4. Clicks "Apply to Hunt Config" to auto-fill values
+    5. Success message confirms application
+    6. Config saved to hunt_config.json
+  • **Features**:
+    - Validation: Warning nếu chưa calculate
+    - Dual-language: EN/VI messages
+    - Visual feedback: Green button, success messagebox
+    - Persistent: Config immediately saved to file
+  • **Benefits**:
+    - Eliminates manual copying errors
+    - Instant config update
+    - Ready to hunt immediately
+    - No need to remember calculated values
 - Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack.
 - Kỹ năng: workflow đã chốt (skill_slots → attack_keys, duration/pre-refresh/hold_ms, auto copy ảnh) — sẽ tiếp tục triển khai/migrate.

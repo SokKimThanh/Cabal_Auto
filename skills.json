@@ -5,10 +5,7 @@
     "type": "attack",
     "cooldown": 1.9,
     "cast_time": 1.7,
-    "image": "assets/images/skills/dark_explosion_1760739255497.png",
-    "duration_sec": 0.0,
-    "pre_refresh_sec": 0.0,
-    "hold_ms": null
+    "image": "assets/images/skills/dark_explosion_1760739255497.png"
   },
   {
     "name": "Bone Javelin",
@@ -16,10 +13,7 @@
     "type": "attack",
     "cooldown": 2.4,
     "cast_time": 1.5,
-    "image": "assets/images/skills/bone_javelin_1760739255498.png",
-    "duration_sec": 0.0,
-    "pre_refresh_sec": 0.0,
-    "hold_ms": null
+    "image": "assets/images/skills/bone_javelin_1760739255498.png"
   },
   {
     "name": "Regeneration",
@@ -27,10 +21,7 @@
     "type": "buff",
     "cooldown": 2.2,
     "cast_time": 1.0,
-    "image": "assets/images/skills/regeneration_1760739255499.png",
-    "duration_sec": 0.0,
-    "pre_refresh_sec": 0.0,
-    "hold_ms": null
+    "image": "assets/images/skills/regeneration_1760739255499.png"
   },
   {
     "name": "Skull Shooter",
@@ -38,9 +29,14 @@
     "type": "attack",
     "cooldown": 2.2,
     "cast_time": 1.5,
-    "image": "assets/images/skills/skull_shooter_1760739255501.png",
-    "duration_sec": 0.0,
-    "pre_refresh_sec": 0.0,
-    "hold_ms": null
+    "image": "assets/images/skills/skull_shooter_1760739255501.png"
+  },
+  {
+    "name": "bon loi chuong",
+    "key": "5",
+    "type": "attack",
+    "cooldown": 1.0,
+    "cast_time": 1.0,
+    "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 155515.png"
   }
 ]

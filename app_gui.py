@@ -2407,6 +2407,9 @@ class App(tk.Tk):
             result_text = tk.Text(result_frame, width=60, height=12, wrap='word')
             result_text.pack(fill='both', expand=True)
             
+            # Store current recommendation for Apply button
+            current_rec = {'rec': None}
+            
             def update_recommendations():
                 """Calculate and display recommendations."""
                 try:
@@ -2418,6 +2421,7 @@ class App(tk.Tk):
                     
                     # Calculate timing
                     rec = calculate_timing(hp, damage, aps)
+                    current_rec['rec'] = rec  # Store for Apply button
                     formatted = format_timing_recommendation(rec, self.language)
                     
                     # Display results
@@ -2429,6 +2433,55 @@ class App(tk.Tk):
                 except Exception as e:
                     result_text.delete('1.0', tk.END)
                     result_text.insert('1.0', f'Error: {e}')
+                    current_rec['rec'] = None
+            
+            def apply_to_hunt_config():
+                """Apply current recommendations to hunt_config.json."""
+                if current_rec['rec'] is None:
+                    messagebox.showwarning(
+                        self._t('monster_timing_title'),
+                        'Please calculate timing first.' if self.language == 'en' else 'Vui lòng tính toán trước.'
+                    )
+                    return
+                
+                try:
+                    rec = current_rec['rec']
+                    
+                    # Update hunt config
+                    self.hunt_cfg['lost_timeout_sec'] = rec.lost_timeout_sec
+                    self.hunt_cfg['attack_min_duration_sec'] = rec.attack_min_duration_sec
+                    
+                    # Update UI
+                    self.lost_timeout_var.set(f'{rec.lost_timeout_sec:.2f}')
+                    self.attack_duration_var.set(f'{rec.attack_min_duration_sec:.2f}')
+                    
+                    # Save to file
+                    save_hunt_config(self.hunt_cfg)
+                    
+                    # Show success message
+                    msg = (f'Applied to Hunt Config:\n\n'
+                           f'Lost Timeout: {rec.lost_timeout_sec:.2f}s\n'
+                           f'Attack Duration: {rec.attack_min_duration_sec:.2f}s\n\n'
+                           f'Config saved to hunt_config.json' if self.language == 'en' else
+                           f'Đã áp dụng vào Hunt Config:\n\n'
+                           f'Lost Timeout: {rec.lost_timeout_sec:.2f}s\n'
+                           f'Attack Duration: {rec.attack_min_duration_sec:.2f}s\n\n'
+                           f'Config đã lưu vào hunt_config.json')
+                    
+                    messagebox.showinfo(
+                        self._t('monster_timing_title'),
+                        msg
+                    )
+                    
+                    self.hunt_status.set(
+                        f'Timing applied: lost={rec.lost_timeout_sec:.2f}s, attack={rec.attack_min_duration_sec:.2f}s'
+                    )
+                    
+                except Exception as e:
+                    messagebox.showerror(
+                        self._t('error_title'),
+                        f'Failed to apply: {e}'
+                    )
             
             # Buttons
             btn_frame = tk.Frame(dialog)
@@ -2436,6 +2489,8 @@ class App(tk.Tk):
             
             tk.Button(btn_frame, text='Calculate' if self.language == 'en' else 'Tính toán',
                      command=update_recommendations).pack(side='left', padx=5)
+            tk.Button(btn_frame, text='Apply to Hunt Config' if self.language == 'en' else 'Áp dụng vào Hunt',
+                     command=apply_to_hunt_config, bg='#4CAF50', fg='white').pack(side='left', padx=5)
             tk.Button(btn_frame, text='Close' if self.language == 'en' else 'Đóng',
                      command=dialog.destroy).pack(side='left', padx=5)
             
