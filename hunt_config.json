@@ -1,6 +1,6 @@
 {
   "window_title": "CABAL",
-  "window_pid": null,
+  "window_pid": 26572,
   "target_key": "z",
   "attack_keys": [
     "1",
@@ -12,7 +12,7 @@
   "target_cycle_delay": 10.0,
   "search_interval": 0.25,
   "attack_interval": 0.15,
-  "template_path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 182938.png",
+  "template_path": "assets/images/monsters/coc_go__capture_1760736387994.png",
   "region": [
     174,
     87,
@@ -27,10 +27,37 @@
   "window_bounds": null,
   "templates": [
     {
-      "name": "Coc Go",
-      "path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 182938.png",
+      "name": "Coc Go 2",
+      "path": "assets/images/monsters/coc_go__capture_1760736387994.png",
       "threshold": 0.85,
-      "region": null
+      "region": {
+        "left": 1074,
+        "top": 456,
+        "width": 204,
+        "height": 217
+      }
+    },
+    {
+      "name": "Coc Go",
+      "path": "assets/images/monsters/coc_go__capture_1760736475823.png",
+      "threshold": 0.85,
+      "region": {
+        "left": 1074,
+        "top": 456,
+        "width": 204,
+        "height": 217
+      }
+    },
+    {
+      "name": "Coc Go 3",
+      "path": "assets/images/monsters/coc_go__capture_1760736536758.png",
+      "threshold": 0.85,
+      "region": {
+        "left": 1074,
+        "top": 456,
+        "width": 204,
+        "height": 217
+      }
     }
   ],
   "skill_slots": [

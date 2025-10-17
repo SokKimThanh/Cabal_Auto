@@ -125,6 +125,12 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_template_capture_success': 'Screenshot saved: {filename}',
     'monster_template_capture_cancelled': 'Capture cancelled',
     'monster_template_preview_overlay': 'Preview with overlay',
+    'monster_template_test_recognition': 'Test Recognition',
+    'monster_template_test_hint': 'Test template matching on current screen',
+    'monster_template_test_running': 'Testing recognition...',
+    'monster_template_test_found': 'Match found at ({x}, {y}) - Confidence: {conf:.2f}',
+    'monster_template_test_not_found': 'No match found (threshold: {threshold})',
+    'monster_template_test_error': 'Test failed: {error}',
     'monster_template_no_image': 'No template image selected',
     'monster_template_add': 'Add',
     'monster_template_update': 'Update',
@@ -263,6 +269,12 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_template_capture_success': 'Đã lưu ảnh: {filename}',
     'monster_template_capture_cancelled': 'Đã hủy chụp',
     'monster_template_preview_overlay': 'Xem trước với overlay',
+    'monster_template_test_recognition': 'Kiểm tra nhận diện',
+    'monster_template_test_hint': 'Test khớp ảnh mẫu trên màn hình hiện tại',
+    'monster_template_test_running': 'Đang kiểm tra...',
+    'monster_template_test_found': 'Tìm thấy tại ({x}, {y}) - Độ khớp: {conf:.2f}',
+    'monster_template_test_not_found': 'Không tìm thấy (ngưỡng: {threshold})',
+    'monster_template_test_error': 'Lỗi kiểm tra: {error}',
     'monster_template_no_image': 'Chưa chọn ảnh mẫu',
     'monster_template_add': 'Thêm',
     'monster_template_update': 'Cập nhật',
@@ -1678,6 +1690,132 @@ class App(tk.Tk):
         except Exception as exc:
             messagebox.showerror(self._t('monster_section'), self._t('error_preview').format(exc=exc))
 
+    def on_monster_template_test_recognition(self):
+        """Test template matching on current screen."""
+        template_path = self.monster_template_path_var.get().strip()
+        if not template_path or not Path(template_path).exists():
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_template_no_image'))
+            return
+        
+        try:
+            import pyautogui
+            import time as time_module
+        except ImportError as exc:
+            messagebox.showerror(self._t('monster_section'), f'Missing library: {exc}')
+            return
+        
+        # Get threshold
+        try:
+            threshold_str = self.monster_template_threshold_var.get().strip()
+            threshold = float(threshold_str) if threshold_str else 0.85
+            threshold = max(0.0, min(threshold, 1.0))
+        except ValueError:
+            threshold = 0.85
+        
+        # Get region if specified
+        region_input = {k: v.get().strip() for k, v in self.monster_template_region_vars.items()}
+        region = None
+        if all(region_input.values()):
+            try:
+                region = tuple([int(region_input[k]) for k in ('left', 'top', 'width', 'height')])
+            except ValueError:
+                pass
+        
+        # Show status
+        self.hunt_status.set(self._t('monster_template_test_running'))
+        self.update()
+        
+        # Minimize window briefly
+        if self.monster_manager_win:
+            self.monster_manager_win.iconify()
+        
+        time_module.sleep(0.5)  # Brief pause
+        
+        try:
+            # Try to locate on screen
+            result = None
+            confidence_val = None
+            
+            # PyAutoGUI locate
+            if region:
+                result = pyautogui.locateOnScreen(template_path, confidence=threshold, region=region, grayscale=True)
+            else:
+                result = pyautogui.locateOnScreen(template_path, confidence=threshold, grayscale=True)
+            
+            # Restore window
+            if self.monster_manager_win:
+                self.monster_manager_win.deiconify()
+            
+            if result:
+                # Get center coordinates
+                center_x = result.left + result.width // 2
+                center_y = result.top + result.height // 2
+                
+                # PyAutoGUI doesn't return confidence, use threshold as approximation
+                confidence_val = threshold
+                
+                message = self._t('monster_template_test_found').format(
+                    x=center_x, 
+                    y=center_y, 
+                    conf=confidence_val
+                )
+                
+                # Show result with visual overlay
+                result_win = tk.Toplevel(self)
+                result_win.title(self._t('monster_template_test_recognition'))
+                result_win.geometry('400x300')
+                
+                tk.Label(result_win, text="✅ " + message, fg='green', font=('Arial', 10, 'bold')).pack(pady=10)
+                
+                details = f"Box: ({result.left}, {result.top}, {result.width}, {result.height})\n"
+                details += f"Center: ({center_x}, {center_y})\n"
+                details += f"Threshold: {threshold:.2f}\n"
+                if region:
+                    details += f"Region: {region}"
+                
+                tk.Label(result_win, text=details, justify='left', font=('Courier', 9)).pack(pady=10)
+                
+                # Try to capture and show the match
+                try:
+                    screenshot = pyautogui.screenshot(region=(result.left, result.top, result.width, result.height))
+                    screenshot.thumbnail((200, 200))
+                    
+                    if ImageTk:
+                        photo = ImageTk.PhotoImage(screenshot)
+                        img_label = tk.Label(result_win, image=photo)
+                        img_label._photo_ref = photo
+                        img_label.pack(pady=10)
+                except Exception:
+                    pass
+                
+                tk.Button(result_win, text=self._t('close'), command=result_win.destroy).pack(pady=10)
+                
+                self.hunt_status.set(message)
+                
+            else:
+                # Restore window
+                if self.monster_manager_win:
+                    self.monster_manager_win.deiconify()
+                
+                message = self._t('monster_template_test_not_found').format(threshold=threshold)
+                messagebox.showinfo(
+                    self._t('monster_template_test_recognition'),
+                    message + "\n\nTry:\n• Lower threshold\n• Adjust region\n• Ensure target is visible"
+                )
+                self.hunt_status.set(message)
+                
+        except Exception as exc:
+            # Restore window
+            if self.monster_manager_win:
+                try:
+                    self.monster_manager_win.deiconify()
+                except Exception:
+                    pass
+            
+            error_msg = self._t('monster_template_test_error').format(error=str(exc))
+            messagebox.showerror(self._t('monster_section'), error_msg)
+            self.hunt_status.set(error_msg)
+
     def _monster_clear_form(self):
         if hasattr(self, 'monster_name_var'):
             self.monster_name_var.set('')
@@ -1874,7 +2012,11 @@ class App(tk.Tk):
         preview_frame.grid(row=5, column=0, columnspan=3, sticky='w', pady=(8,0))
         self.monster_template_preview_label = tk.Label(preview_frame, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
         self.monster_template_preview_label.pack(side='left')
-        tk.Button(preview_frame, text=self._t('monster_template_preview_overlay'), command=self.on_monster_template_preview_overlay).pack(side='left', padx=(8,0))
+        
+        preview_btn_frame = tk.Frame(preview_frame)
+        preview_btn_frame.pack(side='left', padx=(8,0))
+        tk.Button(preview_btn_frame, text=self._t('monster_template_preview_overlay'), command=self.on_monster_template_preview_overlay).pack(side='top', anchor='w')
+        tk.Button(preview_btn_frame, text=self._t('monster_template_test_recognition'), command=self.on_monster_template_test_recognition).pack(side='top', anchor='w', pady=(4,0))
 
         tmpl_btn_frame = tk.Frame(template_form)
         tmpl_btn_frame.grid(row=6, column=0, columnspan=3, sticky='w', pady=(8,0))

@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 6 Complete - Screenshot Capture)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 7 Complete - Test Recognition)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -178,15 +178,21 @@ E:\Cabal_Auto
 		• **Workflow**: Minimize window → đợi 3s → pyautogui.screenshot() → fullscreen selection overlay (alpha=0.3, red rectangle) → crop → save to assets/images/monsters/
 		• **Smart features**: Auto-generate filename từ monster name + timestamp, sanitize filename, auto-fill path (relative) và region coordinates vào form, minimum 10x10 validation
 		• **UX**: Instructions dialog trước khi capture, ESC để cancel, status updates (wait/select/success/cancelled), dual-language support
+	- Sprint 7 (Hoàn tất 2025-10-18): Test Recognition
+		• **Test Recognition button**: Nút "Test Recognition" / "Kiểm tra nhận diện" bên dưới Preview với Overlay trong template panel
+		• **Workflow**: Get threshold/region từ form → Minimize window → Wait 0.5s → pyautogui.locateOnScreen() → Restore window → Show results
+		• **Success result window**: Hiển thị ✅ match found với coordinates (center), box dimensions, threshold used, thumbnail của matched region (200x200 preview)
+		• **Failure handling**: Info dialog với suggestions (lower threshold, adjust region, ensure target visible), status update
+		• **Features**: Support region-based search, grayscale matching, confidence display, visual feedback với screenshot thumbnail
+		• **UX**: Status updates (running/found/not found/error), dual-language messages, helpful troubleshooting tips
 - Tiếp theo:
-	- Thêm tính năng "Test Recognition" trong Monster Manager: chạy thử nhận diện trên ảnh/screenshot hiện tại để kiểm tra threshold, hiển thị match results với coordinates và confidence.
 	- Logging nâng cao: ghi file log với timestamp, tọa độ khớp, template name, confidence (nếu dùng OpenCV).
 	- Test với OpenCV trên Python 3.10/3.11 để so sánh độ chính xác confidence matching vs PyAutoGUI fallback.
 	- Kỹ năng: tiếp tục refactor editor + runtime theo schema mới, auto-copy ảnh, migration `skills.json`.
 	- HP/Damage estimation integration: sử dụng monster stats để recommend optimal timing parameters.
 
 ============================
-🔄 Tổng kết cập nhật (2025-10-18 - Sprint 6 Complete)
+🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
 ============================
 ✅ HOÀN TẤT SPRINT 5: UX Polish & Optimization
 - **Tooltips**: ToolTip class với hover hints cho các trường phức tạp (threshold, window_bounds, lost_timeout, attack_duration). Dual-language support (EN/VI).
@@ -207,17 +213,37 @@ E:\Cabal_Auto
 - **Validation & UX**: Minimum 10x10 region, status updates, dual-language messages, error handling
 - **Code**: `on_monster_template_capture()` method với pyautogui integration, Canvas selection UI, PIL image cropping
 
-🎯 TỔNG KẾT SPRINT 1-6:
+✅ HOÀN TẤT SPRINT 7: Test Recognition
+- **Test Recognition button**: Nút mới bên dưới "Preview with overlay" trong template panel - vertical button layout
+- **Template matching test**: 
+  - Read threshold và region từ template form
+  - Minimize window → Wait 0.5s → pyautogui.locateOnScreen()
+  - Support both full screen và region-based search
+  - Grayscale matching cho better performance
+- **Success result window**:
+  - ✅ Green message với coordinates và confidence
+  - Box info: (left, top, width, height) và center point
+  - Threshold used và region (if applicable)
+  - 200x200 thumbnail preview của matched area
+- **Failure handling**:
+  - Info dialog với clear message và troubleshooting suggestions
+  - Tips: Lower threshold, adjust region, ensure target visible
+  - Status bar update với threshold info
+- **Error handling**: Try-catch với window restore, localized error messages
+- **Code**: `on_monster_template_test_recognition()` method ~120 lines với pyautogui.locateOnScreen(), result window creation, thumbnail generation
+
+🎯 TỔNG KẾT SPRINT 1-7:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
-- **System ready for production**: Full-featured template management workflow từ capture đến save
+- Sprint 7: Test Recognition với live matching, result preview, troubleshooting tips
+- **System ready for production**: Complete template management workflow - capture → test → save → hunt
 
 📊 CODE METRICS:
-- app_gui.py: ~2,850 lines (+150 lines cho screenshot capture)
-- Localization: 160+ strings với EN/VI parity (thêm capture_* strings)
-- New features: Screenshot capture với Canvas overlay, region selection, auto-fill
-- Dependencies: pyautogui (screenshot), PIL (crop/save), tkinter Canvas (selection UI)
+- app_gui.py: ~3,000 lines (+120 lines cho test recognition)
+- Localization: 170+ strings với EN/VI parity (thêm test_* strings)
+- New features: Test Recognition với pyautogui.locateOnScreen(), result window, thumbnail preview
+- Dependencies: pyautogui (screenshot + locateOnScreen), PIL (crop/save), tkinter (UI)
 
 🔧 TECHNICAL HIGHLIGHTS:
 - ToolTip implementation: Lightweight Toplevel window với Enter/Leave bindings
@@ -231,6 +257,13 @@ E:\Cabal_Auto
   • pyautogui.screenshot() cho full screen capture, PIL crop() cho region extraction
   • Automatic filename generation với sanitization và timestamp uniqueness
   • Region coordinate auto-fill vào template form (left, top, width, height)
+- Test Recognition:
+  • pyautogui.locateOnScreen() với threshold và region support
+  • Window minimize/restore để test trên live screen
+  • Result window với match info: coordinates (box + center), confidence, thumbnail preview
+  • Failure handling với troubleshooting suggestions
+  • Status bar integration cho real-time feedback
+  • Error handling với window restore guarantee
 
 - Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack.
