@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Hunt GUI & Monster Templates Sprint 2)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Hunt GUI & Monster Templates Sprint 3)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -147,8 +147,8 @@ E:\Cabal_Auto
 
 🧩 Kế hoạch UI nhận diện quái (bắt đầu 2025-10-17)
 - Sprint 1 (Hoàn thành 2025-10-17): dựng frame “Quản lý quái” riêng trong GUI (sidebar danh sách quái, form chi tiết). Cho phép CRUD cơ bản (thêm/sửa/xóa quái), nhập mô tả và lưu `window_bounds`.
-- Sprint 2 (Hoàn thành 2025-10-18): thêm panel “Templates” trong form quái với CRUD mẫu: nhập tên, chọn ảnh, duyệt/browse, thiết lập `threshold`, `region_strategy` và `region` override. Đồng bộ lưu vào `monsters.json`, hiển thị preview đường dẫn và đảm bảo tương thích với cấu trúc cũ.
-- Sprint 3: tích hợp preview trực quan (hiển thị `window_bounds` + overlay region). Ưu tiên logic đọc cấu hình mới → cập nhật `monsters.json` schema (`templates[]`, `window_bounds`, metadata khác).
+- Sprint 2 (Hoàn thành 2025-10-18): thêm panel "Templates" trong form quái với CRUD mẫu: nhập tên, chọn ảnh, duyệt/browse, thiết lập `threshold`, `region_strategy` và `region` override. Đồng bộ lưu vào `monsters.json`, hiển thị preview đường dẫn và đảm bảo tương thích với cấu trúc cũ.
+- Sprint 3 (Hoàn thành 2025-10-18): tích hợp preview trực quan với nút "Preview with overlay" vẽ window_bounds (màu xanh) và region (màu đỏ) lên ảnh template. Workflow nhập ảnh tự động sao chép vào `assets/images/monsters/` với tên unique và lưu đường dẫn tương đối. Refactor vòng Hunt (`auto_hunt.py` + `app_gui.py`) để dùng `templates[]` với threshold/region_strategy riêng mỗi mẫu; ưu tiên tìm theo thứ tự, fallback `template_path` cũ. Logging match info (template name, threshold, box) trong console và GUI status.
 - Sprint 4: kết nối Hunt tab với schema mới: selector quái lấy templates đa mẫu, runtime ưu tiên OpenCV (khi khả dụng) và fallback PyAutoGUI. Bổ sung logging kết quả nhận diện để debug.
 - Sprint 5: polish UX (localization label, validate ngưỡng, tooltip hướng dẫn), tối ưu load ảnh (cache thumbnail) và chuẩn bị test regression cho vòng Hunt.
 
@@ -161,19 +161,22 @@ E:\Cabal_Auto
 🧭 Hướng phát triển tiếp theo
 - Đã xong:
 	- Bước 1: mở rộng `monsters.json` để lưu `templates[]` và `window_bounds`.
-	- Bước 2: hoàn tất cửa sổ “Quản lý quái” với panel Templates (CRUD mẫu, threshold, region override).
+	- Bước 2: hoàn tất cửa sổ "Quản lý quái" với panel Templates (CRUD mẫu, threshold, region override).
+	- Bước 3: preview overlay, refactor runtime dùng `templates[]`, auto-copy ảnh vào dự án, logging match info.
 - Tiếp theo:
-	- Bước 3: refactor vòng Hunt dùng danh sách `templates[]` (thử ưu tiên OpenCV trên Python 3.10/3.11, fallback PyAutoGUI). Duy trì tương thích `template_path` cũ như fallback.
-	- Tích hợp preview overlay (Sprint 3): vẽ `window_bounds` và region của template trên ảnh/screenshot.
-	- Triển khai workflow sao chép ảnh vào thư mục dự án (assets/images/monsters), lưu đường dẫn tương đối; dọn dẹp ảnh cũ an toàn khi thay thế.
-	- Logging kết quả nhận diện (điểm khớp, template trúng) để debug; thêm lựa chọn không minimize GUI khi Start; expose `lost_timeout_sec` trong UI.
+	- Sprint 4: kết nối Monster selector với Hunt tab để tự động load templates[] + window_bounds khi chọn quái; thử OpenCV trên Python 3.10/3.11 để bật confidence matching chính xác hơn.
+	- Triển khai chức năng chụp ảnh nhanh từ cửa sổ game (screenshot region) thay vì chỉ browse file.
+	- Logging nâng cao: ghi lại tọa độ khớp, thời gian tìm thấy, % confidence (nếu dùng OpenCV) vào file log.
 	- Kỹ năng: tiếp tục refactor editor + runtime theo schema mới, auto-copy ảnh, migration `skills.json`.
+	- Expose `lost_timeout_sec` + `attack_min_duration_sec` trong UI Hunt tab thay vì chỉ qua code.
+	- Sprint 5: polish UX (tooltips, validation threshold, localize missing strings), optimize thumbnail loading.
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18)
 ============================
-- Hoàn tất Sprint 2 quản lý quái: panel Templates với CRUD mẫu, threshold và region override; lưu `description`, `window_bounds` và `templates[]` vào `monsters.json`.
-- Tương thích ngược: nơi còn dùng `template_path`, tạm thời lấy template đầu tiên từ `templates[]` làm mặc định.
+- Hoàn tất Sprint 3 quản lý quái: nút "Preview with overlay" hiển thị window_bounds + region trên ảnh; workflow nhập ảnh tự động copy vào `assets/images/monsters/` với tên unique; runtime Hunt (`auto_hunt.py`, `app_gui.py`) refactor để dùng `templates[]`, thử từng mẫu với threshold riêng, fallback legacy `template_path`; logging match info (tên template, threshold, box) trong console và GUI status.
+- Sprint 1 & 2 (đã xong trước): CRUD monster, CRUD template, lưu `description`, `window_bounds`, `templates[]` vào `monsters.json`.
+- Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack với `lost_timeout_sec`.
-- Chuẩn bị Sprint 3: preview overlay, refactor runtime để thử nhiều template theo thứ tự, logging kết quả; cân nhắc bật OpenCV trên Python 3.10/3.11.
+- Chuẩn bị Sprint 4: tích hợp Monster selector trực tiếp vào Hunt tab, chụp nhanh screenshot, nâng cấp logging, thử OpenCV trên Python 3.10/3.11.
 - Kỹ năng: workflow đã chốt (skill_slots → attack_keys, duration/pre-refresh/hold_ms, auto copy ảnh) — sẽ tiếp tục triển khai/migrate.

@@ -14,10 +14,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 try:
-    from PIL import Image, ImageTk  # type: ignore
+    from PIL import Image, ImageTk, ImageDraw  # type: ignore
 except Exception:
     Image = None
     ImageTk = None
+    ImageDraw = None
 
 try:
     import keyboard  # type: ignore
@@ -83,6 +84,8 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_template_region': 'Region override (L,T,W,H):',
     'monster_template_region_hint': 'Leave blank to reuse hunt window bounds.',
     'monster_template_browse': 'Browse image…',
+    'monster_template_preview_overlay': 'Preview with overlay',
+    'monster_template_no_image': 'No template image selected',
     'monster_template_add': 'Add',
     'monster_template_update': 'Update',
     'monster_template_delete': 'Delete',
@@ -97,6 +100,7 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_delete': 'Delete',
         'monster_use_template': 'Apply to hunt',
         'monster_estimate': 'Estimate kill time',
+        'close': 'Close',
         'monster_estimate_result': 'Estimated time: {time:.2f}s (DPS {dps:.1f})',
         'monster_estimate_detail': '{base} -> minimum attack {attack:.2f}s, keep hitting {lost:.2f}s',
         'monster_saved': 'Monster saved',
@@ -191,6 +195,8 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_template_region': 'Vùng ghi đè (L,T,R,D):',
     'monster_template_region_hint': 'Để trống để dùng lại biên cửa sổ săn.',
     'monster_template_browse': 'Chọn ảnh…',
+    'monster_template_preview_overlay': 'Xem trước với overlay',
+    'monster_template_no_image': 'Chưa chọn ảnh mẫu',
     'monster_template_add': 'Thêm',
     'monster_template_update': 'Cập nhật',
     'monster_template_delete': 'Xóa',
@@ -205,6 +211,7 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_delete': 'Xóa',
         'monster_use_template': 'Áp dụng săn',
         'monster_estimate': 'Tính thời gian hạ',
+        'close': 'Đóng',
         'monster_estimate_result': 'Thời gian ước tính: {time:.2f}s (DPS {dps:.1f})',
         'monster_estimate_detail': '{base} -> đánh tối thiểu {attack:.2f}s, giữ thêm {lost:.2f}s',
         'monster_saved': 'Đã lưu quái',
@@ -948,24 +955,67 @@ class App(tk.Tk):
         return results
 
     def _hunt_locate_target(self, cfg):
+        """
+        Try to locate target using templates[] or fallback to template_path.
+        Returns tuple (box, match_info) or (None, None).
+        """
+        # Try new templates[] array first
+        templates = cfg.get('templates', [])
+        if templates:
+            window_bounds = cfg.get('window_bounds')
+            for tmpl in templates:
+                path = tmpl.get('path', '')
+                if not path or not Path(path).exists():
+                    continue
+                
+                threshold = tmpl.get('threshold', 0.85)
+                grayscale = tmpl.get('grayscale', True)
+                
+                # Determine region
+                region_strategy = tmpl.get('region_strategy', 'window')
+                if region_strategy == 'custom' and tmpl.get('region'):
+                    reg_dict = tmpl['region']
+                    region = (reg_dict.get('left', 0), reg_dict.get('top', 0), 
+                             reg_dict.get('width', 0), reg_dict.get('height', 0))
+                elif window_bounds:
+                    wb = window_bounds
+                    region = (wb.get('left', 0), wb.get('top', 0), 
+                             wb.get('width', 0), wb.get('height', 0))
+                else:
+                    region = None
+                
+                box = self._try_locate_image(path, region, grayscale, threshold)
+                if box:
+                    return box, {'name': tmpl.get('name', ''), 'path': path, 'threshold': threshold}
+            
+            return None, None
+        
+        # Fallback to legacy template_path
         region = cfg.get('region')
         template = cfg.get('template_path')
         grayscale = bool(cfg.get('grayscale', True))
+        confidence = cfg.get('confidence', None)
         if not template or not Path(template).exists():
-            return None
+            return None, None
+        
+        box = self._try_locate_image(template, region, grayscale, confidence)
+        return (box, {'path': template, 'threshold': confidence}) if box else (None, None)
+
+    def _try_locate_image(self, template_path, region, grayscale, confidence):
+        """Helper to locate a single image on screen."""
         try:
             if region:
-                box = pyautogui.locateOnScreen(template, region=tuple(region), grayscale=grayscale, confidence=cfg.get('confidence', None))
+                box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale, confidence=confidence)
             else:
-                box = pyautogui.locateOnScreen(template, grayscale=grayscale, confidence=cfg.get('confidence', None))
+                box = pyautogui.locateOnScreen(template_path, grayscale=grayscale, confidence=confidence)
             return box
         except TypeError:
             # Retry without confidence when OpenCV absent
             try:
                 if region:
-                    box = pyautogui.locateOnScreen(template, region=tuple(region), grayscale=grayscale)
+                    box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale)
                 else:
-                    box = pyautogui.locateOnScreen(template, grayscale=grayscale)
+                    box = pyautogui.locateOnScreen(template_path, grayscale=grayscale)
                 return box
             except Exception:
                 return None
@@ -1013,6 +1063,7 @@ class App(tk.Tk):
             "attack_min_duration_sec": attack_min_duration,
             "bring_to_front_each_cycle": bool(self.bring_front_var.get()),
             "window_bounds": self.current_window_bounds,
+            "templates": self.hunt_cfg.get('templates', []),
         }
         slots = self._collect_skill_slots()
         cfg['skill_slots'] = slots
@@ -1186,14 +1237,55 @@ class App(tk.Tk):
             pass
 
     def on_monster_template_import(self):
+        """Import template image with option to copy to project assets."""
         path = filedialog.askopenfilename(title=self._t('monster_template_browse'), filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
-        if path:
-            self.monster_template_path_var.set(path)
-            if not self.monster_template_name_var.get().strip():
+        if not path:
+            return
+        
+        # Ask if user wants to copy to project
+        copy_to_project = messagebox.askyesno(
+            self._t('monster_section'),
+            'Copy image to project assets folder?\n\nYes: copy to assets/images/monsters/\nNo: use original path',
+            default='yes'
+        )
+        
+        if copy_to_project:
+            try:
+                # Create target directory
+                assets_dir = Path(__file__).parent / 'assets' / 'images' / 'monsters'
+                assets_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Generate unique filename
+                import time as time_module
+                monster_name = self.monster_name_var.get().strip() or 'monster'
+                # Sanitize monster name for filename
+                safe_name = ''.join(c if c.isalnum() or c in ('_', '-') else '_' for c in monster_name.lower())
+                timestamp = int(time_module.time() * 1000)
+                ext = Path(path).suffix or '.png'
+                new_filename = f"{safe_name}_{timestamp}{ext}"
+                target_path = assets_dir / new_filename
+                
+                # Copy file
+                import shutil
+                shutil.copy2(path, target_path)
+                
+                # Use relative path
                 try:
-                    self.monster_template_name_var.set(Path(path).stem)
+                    relative_path = target_path.relative_to(Path(__file__).parent)
+                    path = str(relative_path).replace('\\', '/')
                 except Exception:
-                    self.monster_template_name_var.set('template')
+                    path = str(target_path)
+                    
+            except Exception as exc:
+                messagebox.showerror(self._t('monster_section'), f'Failed to copy image: {exc}')
+                return
+        
+        self.monster_template_path_var.set(path)
+        if not self.monster_template_name_var.get().strip():
+            try:
+                self.monster_template_name_var.set(Path(path).stem)
+            except Exception:
+                self.monster_template_name_var.set('template')
 
     def on_monster_template_add(self):
         try:
@@ -1256,6 +1348,69 @@ class App(tk.Tk):
                 self.monster_template_name_var.set('template')
         if not self.monster_template_threshold_var.get().strip():
             self.monster_template_threshold_var.set('0.85')
+
+    def on_monster_template_preview_overlay(self):
+        """Show preview window with template image, window_bounds and region overlay."""
+        template_path = self.monster_template_path_var.get().strip()
+        if not template_path or not Path(template_path).exists():
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_template_no_image'))
+            return
+        
+        if Image is None or ImageTk is None or ImageDraw is None:
+            messagebox.showerror(self._t('monster_section'), 'PIL required for preview')
+            return
+
+        try:
+            # Load template image
+            img = Image.open(template_path).convert('RGB')
+            draw = ImageDraw.Draw(img)
+            
+            # Draw window_bounds if available
+            wb = _normalize_window_bounds({
+                k: v.get().strip() for k, v in self.monster_bounds_vars.items()
+            })
+            if wb:
+                # Draw window bounds in blue
+                left, top = wb.get('left', 0), wb.get('top', 0)
+                width, height = wb.get('width', 0), wb.get('height', 0)
+                draw.rectangle([left, top, left + width, top + height], outline='blue', width=2)
+                draw.text((left + 5, top + 5), 'Window Bounds', fill='blue')
+            
+            # Draw region if custom
+            region_input = {k: v.get().strip() for k, v in self.monster_template_region_vars.items()}
+            region = None
+            if any(region_input.values()):
+                region = _normalize_window_bounds(region_input)  # reuse same normalization
+                if region:
+                    rl, rt = region.get('left', 0), region.get('top', 0)
+                    rw, rh = region.get('width', 0), region.get('height', 0)
+                    draw.rectangle([rl, rt, rl + rw, rt + rh], outline='red', width=3)
+                    draw.text((rl + 5, rt + 5), 'Region', fill='red')
+            
+            # Show in new window
+            preview_win = tk.Toplevel(self)
+            preview_win.title(self._t('monster_template_preview_overlay'))
+            preview_win.geometry('800x600')
+            
+            # Scale to fit
+            img.thumbnail((780, 550))
+            photo = ImageTk.PhotoImage(img)
+            
+            label = tk.Label(preview_win, image=photo)
+            label._photo_ref = photo  # keep reference
+            label.pack(pady=10)
+            
+            info_text = f"Template: {Path(template_path).name}"
+            if wb:
+                info_text += f"\nWindow Bounds: {wb}"
+            if region:
+                info_text += f"\nRegion: {region}"
+            
+            tk.Label(preview_win, text=info_text, justify='left').pack()
+            tk.Button(preview_win, text=self._t('close'), command=preview_win.destroy).pack(pady=10)
+            
+        except Exception as exc:
+            messagebox.showerror(self._t('monster_section'), f'Preview error: {exc}')
 
     def _monster_clear_form(self):
         if hasattr(self, 'monster_name_var'):
@@ -1446,6 +1601,7 @@ class App(tk.Tk):
         preview_frame.grid(row=5, column=0, columnspan=3, sticky='w', pady=(8,0))
         self.monster_template_preview_label = tk.Label(preview_frame, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
         self.monster_template_preview_label.pack(side='left')
+        tk.Button(preview_frame, text=self._t('monster_template_preview_overlay'), command=self.on_monster_template_preview_overlay).pack(side='left', padx=(8,0))
 
         tmpl_btn_frame = tk.Frame(template_form)
         tmpl_btn_frame.grid(row=6, column=0, columnspan=3, sticky='w', pady=(8,0))
@@ -1741,20 +1897,31 @@ class App(tk.Tk):
             messagebox.showinfo(self._t('monster_section'), self._t('monster_not_selected'))
             return
         monster = self.monsters[self.monster_selected_index]
-        if monster.get('template'):
-            self.template_var.set(monster['template'])
-        elif monster.get('templates'):
-            try:
-                first_template = monster['templates'][0]
-                path = first_template.get('path') if isinstance(first_template, dict) else None
-                if path:
-                    self.template_var.set(path)
-            except Exception:
-                pass
+        
+        # Apply window_bounds
         bounds = _normalize_window_bounds(monster.get('window_bounds'))
         self.current_window_bounds = bounds
         self.hunt_cfg['window_bounds'] = bounds
         self._update_window_bounds_display()
+        
+        # Apply templates[] array to config
+        templates = _sanitize_templates(monster.get('templates'))
+        if templates:
+            self.hunt_cfg['templates'] = templates
+            # Also set legacy template_path to first template for backward compat
+            try:
+                first_path = templates[0].get('path')
+                if first_path:
+                    self.template_var.set(first_path)
+                    self.hunt_cfg['template_path'] = first_path
+            except Exception:
+                pass
+        elif monster.get('template'):
+            # Fallback to old single template field
+            self.template_var.set(monster['template'])
+            self.hunt_cfg['template_path'] = monster['template']
+            self.hunt_cfg['templates'] = []
+        
         try:
             stats = self._calculate_monster_estimate(monster)
         except Exception as e:
@@ -2234,6 +2401,7 @@ class App(tk.Tk):
                 attack_min_duration = float(cfg.get('attack_min_duration_sec', 1.5))
                 skill_runtime = self._prepare_skill_runtime(cfg)
                 has_attack_skills = any(skill.get('type', 'attack') != 'buff' for skill in skill_runtime)
+                last_match_info = None
                 while self.hunt_running:
                     now = time.time()
                     if cfg.get('bring_to_front_each_cycle'):
@@ -2248,14 +2416,22 @@ class App(tk.Tk):
                         if not ok:
                             self._bring_window_to_front(cfg.get('window_title', 'Cabal'))
 
-                    # periodic detection
+                    # periodic detection with multi-template support
                     if now - last_search >= float(cfg['search_interval']):
-                        box = self._hunt_locate_target(cfg)
+                        box, match_info = self._hunt_locate_target(cfg)
                         if box is not None:
                             have_target = True
                             last_seen = now
+                            # Log template match
+                            if match_info and last_match_info != match_info:
+                                status_msg = f"Target: {match_info.get('name') or Path(match_info.get('path', '')).stem}"
+                                self.hunt_status.set(status_msg)
+                                last_match_info = match_info
                         else:
                             have_target = False
+                            if last_match_info:
+                                self.hunt_status.set(self._t('hunt_running'))
+                                last_match_info = None
                         last_search = now
 
                     if skill_runtime:

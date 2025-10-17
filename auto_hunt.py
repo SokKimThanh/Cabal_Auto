@@ -16,32 +16,78 @@ def load_cfg():
 
 def locate_target(cfg):
     """
-    Try to locate the target frame on screen.
-    Returns a box (left, top, width, height) or None.
+    Try to locate the target frame on screen using templates[] or fallback to template_path.
+    Returns a tuple (box, template_info) or (None, None).
+    box: (left, top, width, height) or None
+    template_info: {'name': ..., 'path': ..., 'threshold': ...} or None
+    
     Note: Without OpenCV, confidence will be ignored and fallback locate is used.
     """
+    # Try new templates[] array first
+    templates = cfg.get('templates', [])
+    if templates:
+        window_bounds = cfg.get('window_bounds')  # fallback region from monster
+        for tmpl in templates:
+            path = tmpl.get('path', '')
+            if not path or not Path(path).exists():
+                continue
+            
+            threshold = tmpl.get('threshold', 0.85)
+            grayscale = tmpl.get('grayscale', True)
+            
+            # Determine region: use template's region if custom, else window_bounds
+            region_strategy = tmpl.get('region_strategy', 'window')
+            if region_strategy == 'custom' and tmpl.get('region'):
+                reg_dict = tmpl['region']
+                region = (reg_dict.get('left', 0), reg_dict.get('top', 0), 
+                         reg_dict.get('width', 0), reg_dict.get('height', 0))
+            elif window_bounds:
+                wb = window_bounds
+                region = (wb.get('left', 0), wb.get('top', 0), 
+                         wb.get('width', 0), wb.get('height', 0))
+            else:
+                region = None
+            
+            box = _try_locate_image(path, region, grayscale, threshold)
+            if box:
+                return box, {'name': tmpl.get('name', ''), 'path': path, 'threshold': threshold}
+        
+        # No match found in templates
+        return None, None
+    
+    # Fallback to legacy template_path
     region = cfg.get('region')  # [left, top, width, height] or None
     template = cfg.get('template_path')
     grayscale = bool(cfg.get('grayscale', True))
+    confidence = cfg.get('confidence', None)
 
     if not template or not Path(template).exists():
-        return None
+        return None, None
 
+    box = _try_locate_image(template, region, grayscale, confidence)
+    return box, {'path': template, 'threshold': confidence} if box else (None, None)
+
+
+def _try_locate_image(template_path, region, grayscale, confidence):
+    """
+    Helper to locate a single image on screen.
+    Returns box (left, top, width, height) or None.
+    """
     try:
         # If OpenCV installed, use confidence
         if hasattr(pyautogui, 'locateOnScreen'):
             if region:
-                box = pyautogui.locateOnScreen(template, region=tuple(region), grayscale=grayscale, confidence=cfg.get('confidence', None))
+                box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale, confidence=confidence)
             else:
-                box = pyautogui.locateOnScreen(template, grayscale=grayscale, confidence=cfg.get('confidence', None))
+                box = pyautogui.locateOnScreen(template_path, grayscale=grayscale, confidence=confidence)
             return box
     except TypeError:
         # confidence not supported without opencv; retry without it
         try:
             if region:
-                box = pyautogui.locateOnScreen(template, region=tuple(region), grayscale=grayscale)
+                box = pyautogui.locateOnScreen(template_path, region=tuple(region), grayscale=grayscale)
             else:
-                box = pyautogui.locateOnScreen(template, grayscale=grayscale)
+                box = pyautogui.locateOnScreen(template_path, grayscale=grayscale)
             return box
         except Exception:
             return None
@@ -92,16 +138,25 @@ def main():
 
     last_search = 0.0
     have_target = False
+    last_match_info = None
 
     try:
         while True:
             now = time.time()
             if now - last_search >= search_interval:
-                box = locate_target(cfg)
+                box, match_info = locate_target(cfg)
                 have_target = box is not None
                 last_search = now
-                # Debug print minimal
-                # print('target', have_target)
+                
+                # Log template match details
+                if have_target and match_info:
+                    if last_match_info != match_info:
+                        print(f"[Match] Template: {match_info.get('name') or match_info.get('path', 'unknown')}, " +
+                              f"Threshold: {match_info.get('threshold', 'N/A')}, Box: {box}")
+                        last_match_info = match_info
+                elif not have_target and last_match_info:
+                    print("[Lost] Target lost")
+                    last_match_info = None
 
             if not have_target:
                 # cycle target key to find next
