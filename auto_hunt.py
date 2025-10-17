@@ -7,6 +7,7 @@ import pyautogui
 from win_input import tap
 from hunt_logger import get_hunt_logger
 from template_matcher import locate_template
+from skill_runtime import SkillRuntime
 
 CONFIG_PATH = Path(__file__).with_name('hunt_config.json')
 
@@ -111,6 +112,18 @@ def main():
     if bring_front:
         bring_window_to_front(window_title)
 
+    # Initialize skill runtime if skills.json exists
+    skill_runtime = None
+    skills_path = Path(__file__).parent / 'skills.json'
+    if skills_path.exists():
+        try:
+            with open(skills_path, 'r', encoding='utf-8') as f:
+                skills_data = json.load(f)
+            skill_runtime = SkillRuntime(skills_data)
+            print(f'Skill runtime initialized: {len(skill_runtime.attack_skills)} attacks, {len(skill_runtime.buff_skills)} buffs')
+        except Exception as e:
+            print(f'Warning: Could not load skill runtime: {e}')
+
     # Initialize logger
     logger = get_hunt_logger()
     logger.log_hunt_start(cfg)
@@ -166,16 +179,37 @@ def main():
                     print("[Lost] Target lost")
                     last_match_info = None
 
+            # Cast buff skills (always, regardless of combat state)
+            if skill_runtime:
+                buff_key = skill_runtime.get_buff_to_cast(now)
+                if buff_key:
+                    buff_info = skill_runtime.get_skill_info(buff_key)
+                    hold_time = buff_info.get_hold_time_ms() if buff_info else attack_press_ms
+                    tap(buff_key, hold_time)
+                    skill_runtime.mark_cast(buff_key, now)
+                    print(f"[Buff] Cast {buff_info.name if buff_info else buff_key}")
+
             if not have_target:
                 # cycle target key to find next
                 tap(target_key)
                 time.sleep(target_cycle_delay)
                 continue
 
-            # We have a target, execute attack keys in sequence
-            for k in attack_keys:
-                tap(k, attack_press_ms)
-                time.sleep(attack_interval)
+            # We have a target, execute attack skills
+            if skill_runtime:
+                # Use skill runtime for intelligent attack rotation
+                attack_key = skill_runtime.get_attack_to_cast(now)
+                if attack_key:
+                    attack_info = skill_runtime.get_skill_info(attack_key)
+                    hold_time = attack_info.get_hold_time_ms() if attack_info else attack_press_ms
+                    tap(attack_key, hold_time)
+                    skill_runtime.mark_cast(attack_key, now)
+                    time.sleep(attack_interval)
+            else:
+                # Fallback to legacy attack_keys sequence
+                for k in attack_keys:
+                    tap(k, attack_press_ms)
+                    time.sleep(attack_interval)
 
             # Small delay before next search/attack cycle
             time.sleep(0.05)

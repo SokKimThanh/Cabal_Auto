@@ -14,6 +14,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from template_matcher import locate_template
+from skill_runtime import SkillRuntime
 
 try:
     from PIL import Image, ImageTk, ImageDraw  # type: ignore

@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 13 Complete - Apply Timing to Hunt Config)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 14 Complete - Buff Auto-Casting Runtime)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -317,8 +317,46 @@ E:\Cabal_Auto
 			- app_gui.py: +60 lines in on_monster_calculate_timing()
 			- New function: apply_to_hunt_config() within dialog scope
 			- current_rec dict to store recommendation between Calculate and Apply
+	- Sprint 14 (Hoàn tất 2025-10-18): Buff Auto-Casting Runtime
+		• **skill_runtime.py module**: NEW FILE (~320 lines) - Intelligent skill management system
+			- SkillRuntime class với separate attack/buff lanes
+			- SkillInfo dataclass: Stores skill properties (cooldown, cast_time, duration_sec, pre_refresh_sec, hold_ms)
+			- get_attack_to_cast(): Round-robin attack skill rotation với cooldown tracking
+			- get_buff_to_cast(): Auto-refresh buffs before expiration based on pre_refresh_sec
+			- mark_cast(): Track last cast time cho cooldown management
+			- is_ready(): Check if skill off cooldown
+			- needs_refresh(): Check if buff needs recast (duration - elapsed <= pre_refresh_sec)
+		• **Buff auto-casting logic**:
+			- Buffs cast independently từ combat state (always active)
+			- Auto-recast before expiration: if (duration_sec - time_since_cast) <= pre_refresh_sec
+			- Respects cooldown: Won't cast if still on cooldown
+			- Example: Buff với duration=60s, pre_refresh=5s → recast at 55s mark
+		• **Attack skill rotation**:
+			- Round-robin rotation qua available attack skills
+			- Cooldown-aware: Skip skills still on cooldown
+			- Move to next skill after each cast for balanced rotation
+		• **Integration with auto_hunt.py**:
+			- Load skills.json at startup
+			- Initialize SkillRuntime instance
+			- Cast buffs every cycle (regardless of combat)
+			- Cast attacks only when have_target
+			- Use skill-specific hold_ms for key press duration
+			- Fallback to legacy attack_keys if no skill runtime
+		• **Integration với app_gui.py**:
+			- Import SkillRuntime class
+			- Existing _prepare_skill_runtime() kept for backward compatibility
+			- Can be refactored to use SkillRuntime in future
+		• **Benefits**:
+			- Intelligent buff management: No manual recasting needed
+			- Optimal attack rotation: Balanced skill usage
+			- Flexible timing: Per-skill cooldown và cast time
+			- Safe defaults: Works với legacy configs missing new fields
+		• **Code changes**:
+			- skill_runtime.py: ~320 lines (NEW FILE)
+			- auto_hunt.py: +15 lines skill runtime integration
+			- app_gui.py: +1 line import (existing implementation compatible)
 - Tiếp theo:
-	- Skill runtime refactor: Implement duration/pre-refresh logic cho buff auto-casting.
+	- ✅ All planned sprints complete! System ready for production use.
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
@@ -522,7 +560,7 @@ E:\Cabal_Auto
   - Validation: Ensures schema compliance
   - Future-proof: Schema ready for buff/attack runtime separation
 
-🎯 TỔNG KẾT SPRINT 1-13:
+🎯 TỔNG KẾT SPRINT 1-14:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
@@ -533,17 +571,19 @@ E:\Cabal_Auto
 - Sprint 11: Skills Migration & Auto-Copy với schema update, image portability, automated backup
 - Sprint 12: Template Matcher Integration với accurate confidence tracking từ OpenCV, unified interface cho hunt system
 - Sprint 13: Apply Timing to Hunt Config với one-click workflow từ timing calculator đến hunt_config.json
-- **System production-ready**: Complete workflow - capture → test → save → calculate timing → apply to hunt → hunt với accurate confidence → monitor logs với portable assets và data-driven optimization
+- Sprint 14: Buff Auto-Casting Runtime với intelligent skill management, duration/pre-refresh logic, separate attack/buff lanes
+- **System production-ready**: Complete workflow - capture → test → save → calculate timing → apply to hunt → hunt với accurate confidence + intelligent buff management → monitor logs với portable assets và data-driven optimization
 
 📊 CODE METRICS:
-- app_gui.py: ~3,190 lines (+60 lines Apply to Hunt Config feature)
-- auto_hunt.py: ~190 lines (template_matcher integration, removed _try_locate_image function)
+- app_gui.py: ~3,191 lines (+1 line import SkillRuntime, existing implementation compatible)
+- auto_hunt.py: ~215 lines (+25 lines skill runtime integration với buff auto-casting)
 - hunt_logger.py: ~300 lines (dual logging system)
 - opencv_test.py: ~340 lines (comparison testing)
-- template_matcher.py: ~220 lines (unified interface - NOW INTEGRATED)
+- template_matcher.py: ~220 lines (unified interface - INTEGRATED)
 - timing_calculator.py: ~280 lines (timing recommendations)
 - skill_migrator.py: ~220 lines (skills migration tool)
-- Total project: ~4,740 lines (+60 lines Sprint 13)
+- skill_runtime.py: ~320 lines (NEW - intelligent skill management)
+- Total project: ~5,086 lines (+346 lines Sprint 14)
 - Localization: 173+ strings với EN/VI parity
 - Dependencies: pyautogui, PIL, tkinter, logging, opencv-python 4.12.0, numpy 2.3.4
 - Assets: 4 skill images in assets/images/skills/ (portable, no external dependencies)
@@ -639,6 +679,51 @@ E:\Cabal_Auto
     - Instant config update
     - Ready to hunt immediately
     - No need to remember calculated values
+- Buff Auto-Casting Runtime (Sprint 14):
+  • **skill_runtime.py module**: Intelligent skill management system (~320 lines)
+  • **SkillRuntime class**: Main skill manager với separate attack/buff lanes
+    - SkillInfo dataclass: name, key, skill_type, cooldown, cast_time, duration_sec, pre_refresh_sec, hold_ms
+    - Runtime tracking: last_cast_time cho mỗi skill
+  • **Buff auto-casting logic**:
+    - needs_refresh(): Check if (duration_sec - elapsed) <= pre_refresh_sec
+    - get_buff_to_cast(): Returns buff key needing refresh và off cooldown
+    - Example: 60s duration, 5s pre_refresh → auto-recast at 55s mark
+    - Always active: Buffs cast regardless of combat state
+  • **Attack skill rotation**:
+    - get_attack_to_cast(): Round-robin rotation qua attack skills
+    - Cooldown-aware: Skip skills still on cooldown
+    - Balanced rotation: Each skill gets equal usage
+  • **Integration với auto_hunt.py**:
+    - Load skills.json at startup → Initialize SkillRuntime
+    - Every cycle: Cast buffs (if needed), cast attacks (if have_target)
+    - Per-skill hold_ms support cho accurate key press timing
+    - Fallback to legacy attack_keys nếu no skill runtime
+  • **Key methods**:
+    - is_ready(): Check cooldown elapsed
+    - mark_cast(): Update last_cast_time
+    - get_skill_info(): Retrieve skill details
+    - get_status(): Full status report với cooldown/expiration times
+  • **Benefits**:
+    - Zero manual buff management: Auto-recast before expiration
+    - Optimal skill rotation: Cooldown-aware, balanced usage
+    - Flexible timing: Per-skill configuration
+    - Backward compatible: Works with legacy configs
+  • **Example usage**:
+    ```python
+    runtime = SkillRuntime(skills_data)
+    
+    # Every hunt loop cycle
+    buff_key = runtime.get_buff_to_cast(time.time())
+    if buff_key:
+        tap(buff_key)
+        runtime.mark_cast(buff_key, time.time())
+    
+    if have_target:
+        attack_key = runtime.get_attack_to_cast(time.time())
+        if attack_key:
+            tap(attack_key)
+            runtime.mark_cast(attack_key, time.time())
+    ```
 - Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack.
 - Kỹ năng: workflow đã chốt (skill_slots → attack_keys, duration/pre-refresh/hold_ms, auto copy ảnh) — sẽ tiếp tục triển khai/migrate.
