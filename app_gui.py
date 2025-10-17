@@ -26,6 +26,7 @@ except Exception:
     keyboard = None  # type: ignore
 
 from win_input import tap
+from hunt_logger import get_hunt_logger
 
 
 class ToolTip:
@@ -2838,6 +2839,7 @@ class App(tk.Tk):
         self.hunt_status.set(self._t('hunt_running'))
 
         def worker():
+            logger = get_hunt_logger()
             try:
                 # Focus the target window; minimize GUI only if focus succeeded
                 try:
@@ -2863,6 +2865,9 @@ class App(tk.Tk):
                         self._stop_hotkey = keyboard.add_hotkey('f9', lambda: setattr(self, 'hunt_running', False))
                     except Exception:
                         self._stop_hotkey = None
+
+                # Start logging
+                logger.log_hunt_start(cfg)
 
                 last_search = 0.0
                 have_target = False
@@ -2896,12 +2901,25 @@ class App(tk.Tk):
                             last_seen = now
                             # Log template match
                             if match_info and last_match_info != match_info:
-                                status_msg = f"Target: {match_info.get('name') or Path(match_info.get('path', '')).stem}"
+                                # Log match details
+                                template_name = match_info.get('name') or Path(match_info.get('path', '')).stem
+                                threshold = match_info.get('threshold', 0.8)
+                                confidence = match_info.get('confidence', 0.0)
+                                monster_name = match_info.get('monster_name', '')
+                                logger.log_match(template_name, box, threshold, confidence, monster_name)
+                                
+                                status_msg = f"Target: {template_name}"
                                 self.hunt_status.set(status_msg)
                                 last_match_info = match_info
                         else:
                             have_target = False
                             if last_match_info:
+                                # Log target lost
+                                duration = now - attack_started if mode == 'attack' else 0
+                                template_name = last_match_info.get('name') or Path(last_match_info.get('path', '')).stem
+                                monster_name = last_match_info.get('monster_name', '')
+                                logger.log_lost(template_name, monster_name, duration)
+                                
                                 self.hunt_status.set(self._t('hunt_running'))
                                 last_match_info = None
                         last_search = now
@@ -2911,6 +2929,7 @@ class App(tk.Tk):
 
                     if mode == 'search':
                         if have_target:
+                            logger.log_state_change('search', 'attack', 'target_found')
                             mode = 'attack'
                             attack_started = now
                             continue
@@ -2924,6 +2943,7 @@ class App(tk.Tk):
                         if skill_runtime and has_attack_skills:
                             self._try_cast_skills(skill_runtime, now, target_active, attack_phase=True)
                             if not target_active:
+                                logger.log_state_change('attack', 'search', 'lost_timeout')
                                 mode = 'search'
                                 time.sleep(0.05)
                                 continue
@@ -2938,10 +2958,17 @@ class App(tk.Tk):
                                 pass
                             time.sleep(float(cfg['attack_interval']))
                     else:
+                        logger.log_state_change('attack', 'search', 'lost_timeout')
                         mode = 'search'
                         time.sleep(0.05)
                     time.sleep(0.02)
+            except Exception as e:
+                logger.log_error(f'Hunt error: {str(e)}')
+                logger.log_hunt_stop('error')
             finally:
+                if not hasattr(logger, '_stop_logged') or not logger._stop_logged:
+                    logger.log_hunt_stop('manual_stop')
+                    logger._stop_logged = True
                 self.hunt_running = False
                 self.after(0, self._after_hunt_stop)
 

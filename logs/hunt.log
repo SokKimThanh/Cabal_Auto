@@ -1,0 +1,13 @@
+2025-10-18 04:39:48 | INFO | ================================================================================
+2025-10-18 04:39:48 | INFO | Hunt Session Started: 2025-10-18 04:39:48
+2025-10-18 04:39:48 | INFO | ================================================================================
+2025-10-18 04:39:48 | INFO | [START] Hunt started
+2025-10-18 04:39:48 | INFO | Window: CABAL
+2025-10-18 04:39:48 | INFO | Templates: 2 configured
+2025-10-18 04:39:48 | INFO | Timing: search=0.2s, attack=0.15s
+2025-10-18 04:39:48 | INFO | [STATE] search → attack | Reason: Target found
+2025-10-18 04:39:48 | INFO | [MATCH] Template: goc-45 | Monster: Coc go~ | Box: (100, 200, 50, 60) | Center: (125, 230) | Threshold: 0.85 | Confidence: 0.92
+2025-10-18 04:39:48 | INFO | [LOST] Target lost | Template: goc-45 | Monster: Coc go~ | Tracked for: 5.3s
+2025-10-18 04:39:48 | INFO | [STATE] attack → search | Reason: Target lost timeout
+2025-10-18 04:39:48 | INFO | [STOP] Hunt stopped | Reason: manual | Duration: 0.0s
+2025-10-18 04:39:48 | INFO | ================================================================================

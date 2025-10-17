@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 7 Complete - Test Recognition)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 8 Complete - Enhanced Logging System)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -185,6 +185,23 @@ E:\Cabal_Auto
 		• **Failure handling**: Info dialog với suggestions (lower threshold, adjust region, ensure target visible), status update
 		• **Features**: Support region-based search, grayscale matching, confidence display, visual feedback với screenshot thumbnail
 		• **UX**: Status updates (running/found/not found/error), dual-language messages, helpful troubleshooting tips
+	- Sprint 8 (Hoàn tất 2025-10-18): Enhanced Logging System
+		• **hunt_logger.py module**: Centralized logging module (~300 lines) với HuntLogger class
+		• **Dual logging outputs**:
+			- hunt.log: Human-readable formatted text (RotatingFileHandler, 10MB max, 5 backups)
+			- hunt_structured.jsonl: JSON Lines format cho programmatic analysis (one JSON object per line)
+		• **Logger methods**:
+			- log_match(template_name, box, threshold, confidence, monster_name): Log template matches với coordinates + confidence
+			- log_lost(template_name, monster_name, duration): Log target lost events với attack duration tracking
+			- log_state_change(old_state, new_state, reason): Log search ↔ attack state transitions
+			- log_hunt_start(config), log_hunt_stop(reason): Session lifecycle với config snapshot
+			- log_error(), log_info(), log_debug(): Standard logging levels
+		• **Integration**:
+			- auto_hunt.py: Logger calls trong main hunt loop - log matches, lost events, state changes, session start/stop
+			- app_gui.py: Logger integration trong GUI hunt thread - match logging, state transitions, error handling
+		• **Session tracking**: Start timestamp, session duration, structured event logging với ISO8601 timestamps
+		• **Thread-safe**: Global logger instance với get_hunt_logger(), reset_hunt_logger()
+		• **Production features**: Automatic log rotation, separate structured logs cho parsing/analysis tools, comprehensive error logging
 - Tiếp theo:
 	- Logging nâng cao: ghi file log với timestamp, tọa độ khớp, template name, confidence (nếu dùng OpenCV).
 	- Test với OpenCV trên Python 3.10/3.11 để so sánh độ chính xác confidence matching vs PyAutoGUI fallback.
@@ -232,18 +249,67 @@ E:\Cabal_Auto
 - **Error handling**: Try-catch với window restore, localized error messages
 - **Code**: `on_monster_template_test_recognition()` method ~120 lines với pyautogui.locateOnScreen(), result window creation, thumbnail generation
 
-🎯 TỔNG KẾT SPRINT 1-7:
+✅ HOÀN TẤT SPRINT 8: Enhanced Logging System
+- **hunt_logger.py module**: NEW FILE (~300 lines) - Centralized logging cho Hunt operations
+  - HuntLogger class với RotatingFileHandler (10MB max, 5 backups)
+  - Global instance management: get_hunt_logger(), reset_hunt_logger()
+  - Session tracking với start timestamp
+- **Dual logging strategy**:
+  - hunt.log: Human-readable formatted text cho quick debugging
+    • Format: `[2025-10-18 14:30:45] [INFO] Hunt started - Window: Cabal, Templates: 3`
+    • Auto-rotation khi đạt 10MB, giữ 5 backup files
+  - hunt_structured.jsonl: JSON Lines format cho programmatic parsing
+    • One JSON object per line: `{"timestamp": "2025-10-18T14:30:45", "event": "match", "template": "dragon_head", ...}`
+    • Parse dễ dàng với `json.loads()` per line - ideal cho analysis tools
+- **Logger methods**:
+  - log_match(template_name, box, threshold, confidence, monster_name): Log template matches với full details
+  - log_lost(template_name, monster_name, duration): Target lost với attack duration
+  - log_state_change(old_state, new_state, reason): search ↔ attack transitions với reason ('target_found', 'lost_timeout')
+  - log_hunt_start(config): Session start với config snapshot (window, templates, timing)
+  - log_hunt_stop(reason): Session end với reason ('manual_stop', 'error')
+  - log_error(message), log_info(message), log_debug(message): Standard logging levels
+- **Integration points**:
+  - auto_hunt.py (CLI script):
+    • Import hunt_logger, get logger instance
+    • log_hunt_start() at hunt start với config
+    • log_match() when target found với template info
+    • log_lost() when target lost với duration
+    • log_state_change() on search/attack transitions
+    • log_hunt_stop() on manual stop (Ctrl+C) hoặc error
+  - app_gui.py (GUI hunt thread):
+    • Import hunt_logger at module level
+    • Logger instance trong worker thread
+    • log_hunt_start() khi hunt thread starts
+    • log_match()/log_lost() trong detection loop với template details
+    • log_state_change() on mode transitions với reason
+    • log_hunt_stop() trong finally block (manual/error)
+    • Error handling với log_error() trước khi raise
+- **Production features**:
+  - Thread-safe logging với Python logging module
+  - Automatic log rotation - không lo disk full
+  - Structured JSON cho automated analysis/monitoring
+  - Session correlation với timestamps
+  - Comprehensive error logging với stack traces
+- **Code metrics**: 
+  - hunt_logger.py: ~300 lines (new file)
+  - auto_hunt.py: +35 lines cho logger integration
+  - app_gui.py: +40 lines cho logger integration trong GUI thread
+
+🎯 TỔNG KẾT SPRINT 1-8:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
 - Sprint 7: Test Recognition với live matching, result preview, troubleshooting tips
-- **System ready for production**: Complete template management workflow - capture → test → save → hunt
+- Sprint 8: Enhanced Logging System với dual logging (human-readable + structured JSON), session tracking, state transitions
+- **System ready for production**: Complete template management workflow - capture → test → save → hunt → monitor logs
 
 📊 CODE METRICS:
-- app_gui.py: ~3,000 lines (+120 lines cho test recognition)
-- Localization: 170+ strings với EN/VI parity (thêm test_* strings)
-- New features: Test Recognition với pyautogui.locateOnScreen(), result window, thumbnail preview
-- Dependencies: pyautogui (screenshot + locateOnScreen), PIL (crop/save), tkinter (UI)
+- app_gui.py: ~3,040 lines (+40 lines cho logger integration)
+- auto_hunt.py: ~215 lines (+35 lines cho logger integration)
+- hunt_logger.py: ~300 lines (NEW MODULE)
+- Total project: ~3,555 lines (excluding venv, assets)
+- Localization: 170+ strings với EN/VI parity
+- Dependencies: pyautogui (screenshot + locateOnScreen), PIL (crop/save), tkinter (UI), logging (rotating file handler)
 
 🔧 TECHNICAL HIGHLIGHTS:
 - ToolTip implementation: Lightweight Toplevel window với Enter/Leave bindings
@@ -264,6 +330,24 @@ E:\Cabal_Auto
   • Failure handling với troubleshooting suggestions
   • Status bar integration cho real-time feedback
   • Error handling với window restore guarantee
+- Enhanced Logging System (Sprint 8):
+  • **hunt_logger.py**: Centralized logging module với HuntLogger class
+  • **Dual logging outputs**:
+    - hunt.log: Human-readable formatted text (10MB rotating, 5 backups)
+    - hunt_structured.jsonl: JSON Lines format cho programmatic parsing
+  • **Logger methods**:
+    - log_match(): Template match với coordinates, threshold, confidence, monster name
+    - log_lost(): Target lost với duration tracking
+    - log_state_change(): search ↔ attack transitions với reason
+    - log_hunt_start(config): Session start với config snapshot
+    - log_hunt_stop(reason): Session end với reason ('manual_stop', 'error')
+    - log_error(), log_info(), log_debug(): Standard logging levels
+  • **Integration**:
+    - auto_hunt.py: Logger calls trong main hunt loop, session lifecycle tracking
+    - app_gui.py: Logger calls trong GUI hunt thread, state transitions, error handling
+  • **Session tracking**: Start timestamp, session duration, structured event logging
+  • **Thread-safe**: Global logger instance với get_hunt_logger(), reset_hunt_logger()
+  • **Production-ready**: Automatic log rotation, separate structured logs cho analysis tools
 
 - Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack.

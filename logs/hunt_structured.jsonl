@@ -1,0 +1,6 @@
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "TAB", "attack_keys": ["1", "2", "3"], "search_interval": 0.2, "attack_interval": 0.15, "lost_timeout_sec": 1.2, "attack_min_duration_sec": 1.5, "template_count": 2}, "timestamp": "2025-10-18T04:39:48.564460"}
+{"event": "STATE_CHANGE", "old_state": "search", "new_state": "attack", "reason": "Target found", "timestamp": "2025-10-18T04:39:48.564986"}
+{"event": "MATCH", "template": "goc-45", "monster": "Coc go~", "box": {"left": 100, "top": 200, "width": 50, "height": 60}, "center": {"x": 125, "y": 230}, "threshold": 0.85, "confidence": 0.92, "timestamp": "2025-10-18T04:39:48.565672"}
+{"event": "LOST", "template": "goc-45", "monster": "Coc go~", "duration": 5.3, "timestamp": "2025-10-18T04:39:48.567132"}
+{"event": "STATE_CHANGE", "old_state": "attack", "new_state": "search", "reason": "Target lost timeout", "timestamp": "2025-10-18T04:39:48.567607"}
+{"event": "HUNT_STOP", "reason": "manual", "duration_sec": 0.00464, "timestamp": "2025-10-18T04:39:48.568473"}

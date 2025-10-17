@@ -5,6 +5,7 @@ from pathlib import Path
 import pyautogui
 
 from win_input import tap
+from hunt_logger import get_hunt_logger
 
 CONFIG_PATH = Path(__file__).with_name('hunt_config.json')
 
@@ -132,6 +133,10 @@ def main():
     if bring_front:
         bring_window_to_front(window_title)
 
+    # Initialize logger
+    logger = get_hunt_logger()
+    logger.log_hunt_start(cfg)
+
     print('Auto Hunt started')
     print(f'Template: {template_path}')
     print('Press Ctrl+C to stop')
@@ -139,6 +144,8 @@ def main():
     last_search = 0.0
     have_target = False
     last_match_info = None
+    state = 'search'  # Track state for logging
+    attack_start_time = None
 
     try:
         while True:
@@ -151,10 +158,33 @@ def main():
                 # Log template match details
                 if have_target and match_info:
                     if last_match_info != match_info:
-                        print(f"[Match] Template: {match_info.get('name') or match_info.get('path', 'unknown')}, " +
-                              f"Threshold: {match_info.get('threshold', 'N/A')}, Box: {box}")
+                        # State transition: search -> attack
+                        if state == 'search':
+                            logger.log_state_change('search', 'attack', 'target_found')
+                            state = 'attack'
+                            attack_start_time = now
+                        
+                        # Log the match
+                        template_name = match_info.get('name') or match_info.get('path', 'unknown')
+                        threshold = match_info.get('threshold', 0.8)
+                        confidence = match_info.get('confidence', 0.0)
+                        monster_name = match_info.get('monster_name', '')
+                        logger.log_match(template_name, box, threshold, confidence, monster_name)
+                        
+                        print(f"[Match] Template: {template_name}, " +
+                              f"Threshold: {threshold}, Box: {box}")
                         last_match_info = match_info
                 elif not have_target and last_match_info:
+                    # State transition: attack -> search
+                    if state == 'attack':
+                        duration = now - attack_start_time if attack_start_time else 0
+                        template_name = last_match_info.get('name') or last_match_info.get('path', 'unknown')
+                        monster_name = last_match_info.get('monster_name', '')
+                        logger.log_lost(template_name, monster_name, duration)
+                        logger.log_state_change('attack', 'search', 'target_lost')
+                        state = 'search'
+                        attack_start_time = None
+                    
                     print("[Lost] Target lost")
                     last_match_info = None
 
@@ -172,7 +202,13 @@ def main():
             # Small delay before next search/attack cycle
             time.sleep(0.05)
     except KeyboardInterrupt:
+        logger.log_hunt_stop('manual_stop')
         print('Auto Hunt stopped')
+    except Exception as e:
+        logger.log_error(f'Hunt error: {str(e)}')
+        logger.log_hunt_stop('error')
+        print(f'Error: {e}')
+        raise
 
 
 if __name__ == '__main__':
