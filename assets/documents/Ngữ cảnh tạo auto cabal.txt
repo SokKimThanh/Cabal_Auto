@@ -88,7 +88,14 @@ E:\Cabal_Auto
 - Nếu mất ảnh mục tiêu liên tục quá lost_timeout_sec: quay lại chế độ tìm, tránh đổi mục tiêu quá sớm.
 - Có thể cấu hình đưa cửa sổ game lên trước mỗi vòng để tăng độ tin cậy nhập phím.
 
-🪟 Focus đúng cửa sổ game (PID/HWND)
+� Quản lý kỹ năng (cập nhật 2025-10-17)
+- attack_keys trong hunt_config sẽ được sinh tự động từ danh sách skill_slots; textbox hiện tại chuyển thành read-only, chỉ mở chế độ chỉnh tay (advanced override) khi thực sự cần.
+- Schema skill mở rộng: giữ `cooldown` và `cast_time`, bổ sung `duration_sec` (buff uptime), `pre_refresh_sec` (thời điểm recast trước khi hết buff) và `hold_ms` (ép thời gian giữ phím khi khác cast_time); runtime sẽ tách lane attack/buff để áp lịch chính xác.
+- Khi người dùng chọn ảnh kỹ năng, chương trình sao chép về `assets/images/skills/<slug>.png` (slug từ tên + timestamp) và lưu đường dẫn tương đối trong skills.json để tránh liên kết tới thư mục cá nhân.
+- Nếu người dùng thay ảnh, xóa bản sao cũ trong thư mục dự án nhưng tuyệt đối không xóa file gốc của họ.
+- Khi migrate dữ liệu cũ, đặt mặc định `duration_sec = 0`, `pre_refresh_sec = 0` và bỏ qua `hold_ms` để không phá vỡ skill đang có.
+
+�🪟 Focus đúng cửa sổ game (PID/HWND)
 - GUI liệt kê danh sách cửa sổ (lọc theo từ khóa), kèm PID và (tùy) tên process.
 - Ưu tiên focus theo HWND hoặc PID (chính xác hơn tiêu đề). Sau khi focus thành công, GUI sẽ minimize.
 - Có nút Bring To Front để thử đưa game lên foreground trước khi Start Hunt.
@@ -103,6 +110,13 @@ E:\Cabal_Auto
 - Mặc định vùng tìm là toàn bộ cửa sổ game (lưu `window_bounds`); vẫn cho phép đặt region tùy quái để tối ưu tốc độ.
 - Nếu dùng Python 3.10/3.11 + opencv-python: có thể đặt confidence/grayscale để nhận diện chắc hơn; hiện tại fallback pyautogui.
 
+🧩 Kế hoạch UI nhận diện quái (bắt đầu 2025-10-17)
+- Sprint 1: dựng frame “Quản lý quái” riêng trong GUI (sidebar danh sách quái, form chi tiết, nút mở thư viện ảnh). Cho phép CRUD basic (thêm/sửa/xóa quái, nhập mô tả, lưu `window_bounds`).
+- Sprint 2: thêm panel “Templates” trong form quái: liệt kê các mẫu hiện có (thumbnail + threshold + region override). Hỗ trợ import ảnh, chụp nhanh từ cửa sổ game (mock trước với file picker), chỉnh threshold, set `region_strategy`.
+- Sprint 3: tích hợp preview trực quan (hiển thị `window_bounds` + overlay region). Ưu tiên logic đọc cấu hình mới → cập nhật `monsters.json` schema (`templates[]`, `window_bounds`, metadata khác).
+- Sprint 4: kết nối Hunt tab với schema mới: selector quái lấy templates đa mẫu, runtime ưu tiên OpenCV (khi khả dụng) và fallback PyAutoGUI. Bổ sung logging kết quả nhận diện để debug.
+- Sprint 5: polish UX (localization label, validate ngưỡng, tooltip hướng dẫn), tối ưu load ảnh (cache thumbnail) và chuẩn bị test regression cho vòng Hunt.
+
 🛠️ Khắc phục sự cố nhanh
 - Phím đi vào GUI thay vì game: dùng Bring To Front, chọn đúng PID/HWND, đảm bảo GUI đã minimize.
 - Global hotkey không bắt được: chạy VS Code/PowerShell As Administrator.
@@ -114,6 +128,8 @@ E:\Cabal_Auto
 - Bước 2: xây dựng cửa sổ “Quản lý quái”/“Thư viện ảnh” với CRUD ảnh, preview, tùy chọn chụp từ cửa sổ game.
 - Bước 3: refactor vòng hunt dùng danh sách template (ưu tiên OpenCV nếu hạ Python xuống 3.10/3.11).
 - Tiếp tục: expose lost_timeout_sec, tuỳ chọn không minimize GUI khi Start, logging, cân nhắc Python 3.10/3.11 để bật OpenCV confidence.
+- Bổ sung: refactor trình chỉnh sửa kỹ năng và runtime theo schema mới, triển khai auto-copy ảnh + migration `skills.json`.
+- Kế hoạch UX quái: đang bước Sprint 1 dựng frame “Quản lý quái”, chuẩn bị cho CRUD đa template.
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-17)
@@ -123,3 +139,5 @@ E:\Cabal_Auto
 - Thư viện quái/kỹ năng đã tách quản lý riêng; hunt tab chỉ giữ selector + trạng thái áp dụng quái/kỹ năng.
 - Định hướng triển khai thư viện ảnh đa mẫu cho quái: mở rộng schema, UI chụp/nhập template, lưu `window_bounds`.
 - Bổ sung script bàn phím (win_input.py, main_skills.py) và Hunt CLI (auto_hunt.py) cùng cấu hình (skills.json, hunt_config.json); README đã cập nhật hướng dẫn.
+- Mới: chốt workflow kỹ năng (skill_slots → attack_keys, trường duration/pre-refresh/hold_ms, auto copy ảnh vào assets) để triển khai đợt tiếp theo.
+- Khởi động Sprint 1 UI nhận diện quái: thêm frame quản lý quái, form chi tiết và chuẩn hóa lưu `window_bounds`.
