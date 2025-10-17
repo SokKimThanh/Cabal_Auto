@@ -1,8 +1,9 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-17, refresh GUI Hunt)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-17, hunt GUI & monster vision plan)
 
 🎯 Mục tiêu
-- Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), có thể mở rộng nhận diện ảnh.
+- Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
 - Cung cấp GUI Hunt ổn định: chọn đúng cửa sổ game theo PID/HWND, đưa lên trước, thu nhỏ GUI để phím vào game, có hotkey dừng toàn cục.
+- Thiết kế lại quản lý quái/thư viện ảnh: CRUD tách riêng, hỗ trợ nhiều template 2D mỗi quái và lưu vùng cửa sổ.
 
 🛠️ Môi trường hiện tại
 - Hệ điều hành: Windows
@@ -50,9 +51,10 @@ E:\Cabal_Auto
 	- target_cycle_delay: độ trễ giữa các lần nhấn target_key khi đang tìm (s)
 	- search_interval, attack_interval: chu kỳ quét ảnh/đánh (s)
 	- lost_timeout_sec: thời gian mất dấu mục tiêu trước khi quay lại tìm (s)
-	- template_path: đường dẫn ảnh template (khung target/bộ chỉ thị ổn định)
-	- region: [left, top, width, height] để giới hạn tìm kiếm (khuyến nghị)
+	- template_path: đường dẫn ảnh template (tạm dùng trước khi hoàn tất thư viện template đa ảnh)
+	- region: [left, top, width, height] để giới hạn tìm kiếm (sẽ chuyển sang cơ chế mặc định theo biên cửa sổ)
 	- confidence, grayscale: tham số cho OpenCV nếu có
+	- window_bounds (định hướng mới): {left, top, width, height} lưu biên cửa sổ game để mặc định vùng tìm kiếm
 	- bring_to_front_each_cycle: true/false, có đưa game lên trước mỗi vòng hay không
 
 ▶️ Cách chạy (PowerShell)
@@ -96,9 +98,10 @@ E:\Cabal_Auto
 - Tab Click đã được loại bỏ. Chỉ còn tab Hunt để đơn giản hóa và tránh xung đột phím (TAB) làm chuyển tab.
 
 🧪 Chuẩn bị template và region
-- Chụp màn hình khi đã lock mục tiêu; cắt phần UI ổn định (khung/badge) làm template.
-- Giới hạn vùng tìm (region) quanh khu vực UI đó để tăng tốc và giảm nhầm lẫn.
-- Nếu dùng Python 3.10/3.11 + opencv-python: có thể đặt confidence/grayscale để nhận diện chắc hơn.
+- Thư viện ảnh mới: mỗi quái lưu nhiều template (góc/camera khác nhau) với ngưỡng confidence riêng (~0.8).
+- Template được quản lý trong `monster_templates/` (định hướng) và liên kết trực tiếp với quái trong `monsters.json`.
+- Mặc định vùng tìm là toàn bộ cửa sổ game (lưu `window_bounds`); vẫn cho phép đặt region tùy quái để tối ưu tốc độ.
+- Nếu dùng Python 3.10/3.11 + opencv-python: có thể đặt confidence/grayscale để nhận diện chắc hơn; hiện tại fallback pyautogui.
 
 🛠️ Khắc phục sự cố nhanh
 - Phím đi vào GUI thay vì game: dùng Bring To Front, chọn đúng PID/HWND, đảm bảo GUI đã minimize.
@@ -107,16 +110,16 @@ E:\Cabal_Auto
 - Game không nhận phím: anti-cheat có thể chặn. SendInput thường tốt hơn pyautogui. Chạy As Admin có thể giúp nhưng không đảm bảo vượt mọi hạn chế.
 
 🧭 Hướng phát triển tiếp theo
-- Expose thêm lost_timeout_sec trong GUI để người dùng tự chỉnh.
-- Tuỳ chọn không minimize GUI khi Start (cho mục đích debug).
-- Di chuyển môi trường sang Python 3.10/3.11 để bật OpenCV confidence.
-- Ghi log tóm tắt (bắt đầu/kết thúc, số lần nhận diện, thời gian đánh) để dễ tinh chỉnh.
+- Bước 1: mở rộng `monsters.json` để lưu `templates[]` (path, threshold, region_strategy) và `window_bounds`.
+- Bước 2: xây dựng cửa sổ “Quản lý quái”/“Thư viện ảnh” với CRUD ảnh, preview, tùy chọn chụp từ cửa sổ game.
+- Bước 3: refactor vòng hunt dùng danh sách template (ưu tiên OpenCV nếu hạ Python xuống 3.10/3.11).
+- Tiếp tục: expose lost_timeout_sec, tuỳ chọn không minimize GUI khi Start, logging, cân nhắc Python 3.10/3.11 để bật OpenCV confidence.
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-17)
 ============================
-- Đã bổ sung GUI Hunt chỉ một tab, liệt kê PID/HWND, Bring To Front, minimize khi chạy.
-- Thêm hotkey F9 dừng toàn cục; ESC dừng trong GUI.
-- Áp dụng state machine: search → attack → search với lost_timeout_sec để không đổi mục tiêu sớm.
-- Bổ sung script bàn phím (win_input.py, main_skills.py) và Hunt CLI (auto_hunt.py) cùng cấu hình (skills.json, hunt_config.json).
-- README đã cập nhật hướng dẫn dùng GUI Hunt, cách chụp template, và troubleshooting.
+- GUI Hunt rút gọn chỉ một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy.
+- Global hotkey F9 dừng toàn cục; ESC dừng trong GUI; state machine search ↔ attack với lost_timeout_sec.
+- Thư viện quái/kỹ năng đã tách quản lý riêng; hunt tab chỉ giữ selector + trạng thái áp dụng quái/kỹ năng.
+- Định hướng triển khai thư viện ảnh đa mẫu cho quái: mở rộng schema, UI chụp/nhập template, lưu `window_bounds`.
+- Bổ sung script bàn phím (win_input.py, main_skills.py) và Hunt CLI (auto_hunt.py) cùng cấu hình (skills.json, hunt_config.json); README đã cập nhật hướng dẫn.

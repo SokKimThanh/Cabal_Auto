@@ -1,11 +1,11 @@
 {
   "window_title": "CABAL",
-  "window_pid": 23516,
+  "window_pid": 25916,
   "target_key": "z",
   "attack_keys": [
     "1",
     "2",
-    "3"
+    "F1"
   ],
   "attack_press_ms": 5000,
   "target_cycle_delay": 10.0,
@@ -21,6 +21,32 @@
   "confidence": 0.85,
   "grayscale": true,
   "lost_timeout_sec": 15.45,
-  "attack_min_duration_sec": 41258.49,
-  "bring_to_front_each_cycle": true
+  "attack_min_duration_sec": 51705.15,
+  "bring_to_front_each_cycle": true,
+  "skill_slots": [
+    {
+      "name": "Skill 1",
+      "key": "1",
+      "type": "attack",
+      "cooldown": 0.0,
+      "cast_time": 0.0,
+      "image": ""
+    },
+    {
+      "name": "Skill 2",
+      "key": "2",
+      "type": "attack",
+      "cooldown": 0.0,
+      "cast_time": 0.0,
+      "image": ""
+    },
+    {
+      "name": "Buff",
+      "key": "F1",
+      "type": "attack",
+      "cooldown": 0.0,
+      "cast_time": 0.0,
+      "image": ""
+    }
+  ]
 }
