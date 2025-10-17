@@ -118,6 +118,12 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_template_region': 'Region override (L,T,W,H):',
     'monster_template_region_hint': 'Leave blank to reuse hunt window bounds.',
     'monster_template_browse': 'Browse image…',
+    'monster_template_capture': 'Capture screenshot',
+    'monster_template_capture_hint': 'Instructions:\n1. Click button and wait 3s\n2. Select region by dragging rectangle\n3. Image will be saved automatically',
+    'monster_template_capture_wait': 'Position window... (3s)',
+    'monster_template_capture_select': 'Drag to select region...',
+    'monster_template_capture_success': 'Screenshot saved: {filename}',
+    'monster_template_capture_cancelled': 'Capture cancelled',
     'monster_template_preview_overlay': 'Preview with overlay',
     'monster_template_no_image': 'No template image selected',
     'monster_template_add': 'Add',
@@ -250,6 +256,12 @@ LANG: Dict[str, Dict[str, str]] = {
     'monster_template_region': 'Vùng ghi đè (L,T,R,D):',
     'monster_template_region_hint': 'Để trống để dùng lại biên cửa sổ săn.',
     'monster_template_browse': 'Chọn ảnh…',
+    'monster_template_capture': 'Chụp màn hình',
+    'monster_template_capture_hint': 'Hướng dẫn:\n1. Nhấn nút và đợi 3 giây\n2. Chọn vùng bằng cách kéo hình chữ nhật\n3. Ảnh sẽ tự động lưu',
+    'monster_template_capture_wait': 'Chuẩn bị cửa sổ... (3s)',
+    'monster_template_capture_select': 'Kéo để chọn vùng...',
+    'monster_template_capture_success': 'Đã lưu ảnh: {filename}',
+    'monster_template_capture_cancelled': 'Đã hủy chụp',
     'monster_template_preview_overlay': 'Xem trước với overlay',
     'monster_template_no_image': 'Chưa chọn ảnh mẫu',
     'monster_template_add': 'Thêm',
@@ -1413,6 +1425,134 @@ class App(tk.Tk):
             except Exception:
                 self.monster_template_name_var.set('template')
 
+    def on_monster_template_capture(self):
+        """Capture screenshot region and save to assets."""
+        try:
+            import pyautogui
+            import time as time_module
+            from pathlib import Path
+        except ImportError as exc:
+            messagebox.showerror(self._t('monster_section'), f'Missing library: {exc}')
+            return
+        
+        # Show instructions
+        messagebox.showinfo(
+            self._t('monster_section'),
+            self._t('monster_template_capture_hint')
+        )
+        
+        # Minimize this window to allow user to see game
+        self.monster_manager_win.iconify()
+        
+        # Wait 3 seconds
+        self.hunt_status.set(self._t('monster_template_capture_wait'))
+        self.update()
+        time_module.sleep(3)
+        
+        # Capture full screen first
+        try:
+            screenshot = pyautogui.screenshot()
+        except Exception as exc:
+            self.monster_manager_win.deiconify()
+            messagebox.showerror(self._t('monster_section'), f'Screenshot failed: {exc}')
+            return
+        
+        # Create selection window
+        self.monster_manager_win.deiconify()
+        selector = tk.Toplevel(self.monster_manager_win)
+        selector.title(self._t('monster_template_capture_select'))
+        selector.attributes('-fullscreen', True)
+        selector.attributes('-alpha', 0.3)
+        selector.attributes('-topmost', True)
+        selector.configure(bg='black')
+        
+        # Variables for selection
+        selection = {'start': None, 'end': None, 'cancelled': False}
+        canvas = tk.Canvas(selector, cursor='cross', bg='black', highlightthickness=0)
+        canvas.pack(fill='both', expand=True)
+        rect_id = None
+        
+        def on_mouse_down(event):
+            selection['start'] = (event.x, event.y)
+        
+        def on_mouse_move(event):
+            nonlocal rect_id
+            if selection['start']:
+                if rect_id:
+                    canvas.delete(rect_id)
+                x1, y1 = selection['start']
+                rect_id = canvas.create_rectangle(x1, y1, event.x, event.y, outline='red', width=2)
+        
+        def on_mouse_up(event):
+            selection['end'] = (event.x, event.y)
+            selector.destroy()
+        
+        def on_escape(event):
+            selection['cancelled'] = True
+            selector.destroy()
+        
+        canvas.bind('<Button-1>', on_mouse_down)
+        canvas.bind('<B1-Motion>', on_mouse_move)
+        canvas.bind('<ButtonRelease-1>', on_mouse_up)
+        selector.bind('<Escape>', on_escape)
+        
+        selector.wait_window()
+        
+        # Check if cancelled
+        if selection['cancelled'] or not selection['start'] or not selection['end']:
+            self.hunt_status.set(self._t('monster_template_capture_cancelled'))
+            return
+        
+        # Calculate region
+        x1, y1 = selection['start']
+        x2, y2 = selection['end']
+        left = min(x1, x2)
+        top = min(y1, y2)
+        width = abs(x2 - x1)
+        height = abs(y2 - y1)
+        
+        if width < 10 or height < 10:
+            messagebox.showwarning(self._t('monster_section'), 'Region too small (min 10x10)')
+            return
+        
+        # Crop screenshot
+        cropped = screenshot.crop((left, top, left + width, top + height))
+        
+        # Save to assets
+        try:
+            assets_dir = Path(__file__).parent / 'assets' / 'images' / 'monsters'
+            assets_dir.mkdir(parents=True, exist_ok=True)
+            
+            monster_name = self.monster_name_var.get().strip() or 'monster'
+            safe_name = ''.join(c if c.isalnum() or c in ('_', '-') else '_' for c in monster_name.lower())
+            timestamp = int(time_module.time() * 1000)
+            filename = f"{safe_name}_capture_{timestamp}.png"
+            target_path = assets_dir / filename
+            
+            cropped.save(target_path, 'PNG')
+            
+            # Use relative path
+            try:
+                relative_path = target_path.relative_to(Path(__file__).parent)
+                path_str = str(relative_path).replace('\\', '/')
+            except Exception:
+                path_str = str(target_path)
+            
+            # Set to form
+            self.monster_template_path_var.set(path_str)
+            
+            # Auto-fill region if blank
+            if not any(v.get().strip() for v in self.monster_template_region_vars.values()):
+                self.monster_template_region_vars['left'].set(str(left))
+                self.monster_template_region_vars['top'].set(str(top))
+                self.monster_template_region_vars['width'].set(str(width))
+                self.monster_template_region_vars['height'].set(str(height))
+            
+            self.hunt_status.set(self._t('monster_template_capture_success').format(filename=filename))
+            
+        except Exception as exc:
+            messagebox.showerror(self._t('monster_section'), f'Save failed: {exc}')
+
     def on_monster_template_add(self):
         try:
             data = self._monster_template_read_form()
@@ -1707,7 +1847,10 @@ class App(tk.Tk):
         tk.Label(template_form, text=self._t('monster_template_path')).grid(row=1, column=0, sticky='e', pady=(6,0))
         tk.Entry(template_form, textvariable=self.monster_template_path_var, width=24).grid(row=1, column=1, sticky='we', padx=(4,0), pady=(6,0))
         self._ensure_monster_template_path_trace()
-        tk.Button(template_form, text=self._t('monster_template_browse'), command=self.on_monster_template_import).grid(row=1, column=2, padx=(6,0), pady=(6,0))
+        path_btn_frame = tk.Frame(template_form)
+        path_btn_frame.grid(row=1, column=2, padx=(6,0), pady=(6,0))
+        tk.Button(path_btn_frame, text=self._t('monster_template_browse'), command=self.on_monster_template_import).pack(side='left')
+        tk.Button(path_btn_frame, text=self._t('monster_template_capture'), command=self.on_monster_template_capture).pack(side='left', padx=(4,0))
 
         tk.Label(template_form, text=self._t('monster_template_threshold')).grid(row=2, column=0, sticky='e')
         threshold_entry = tk.Entry(template_form, textvariable=self.monster_template_threshold_var, width=8)

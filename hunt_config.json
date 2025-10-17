@@ -25,6 +25,14 @@
   "attack_min_duration_sec": 51555.15,
   "bring_to_front_each_cycle": true,
   "window_bounds": null,
+  "templates": [
+    {
+      "name": "Coc Go",
+      "path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 182938.png",
+      "threshold": 0.85,
+      "region": null
+    }
+  ],
   "skill_slots": [
     {
       "name": "Dark Explosion",
