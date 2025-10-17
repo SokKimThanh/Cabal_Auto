@@ -185,6 +185,10 @@ LANG: Dict[str, Dict[str, str]] = {
         'skill_type_buff': 'Buff',
         'skill_cooldown': 'Cooldown (s):',
         'skill_cast_time': 'Cast time (s):',
+        'skill_duration': 'Buff duration (s):',
+        'skill_pre_refresh': 'Pre-refresh (s):',
+        'skill_duration_hint': 'How long the buff lasts (0 for attack skills)',
+        'skill_pre_refresh_hint': 'Recast before expiration (e.g., 5s = recast 5s early)',
         'skill_image': 'Skill image:',
         'skill_no_image': 'No image',
         'skill_image_error': 'Cannot preview image',
@@ -332,6 +336,10 @@ LANG: Dict[str, Dict[str, str]] = {
         'skill_type_buff': 'Buff',
         'skill_cooldown': 'Hồi chiêu (giây):',
         'skill_cast_time': 'Thi triển (giây):',
+        'skill_duration': 'Thời gian duy trì (giây):',
+        'skill_pre_refresh': 'Cast lại trước (giây):',
+        'skill_duration_hint': 'Thời gian buff tồn tại (0 nếu là skill tấn công)',
+        'skill_pre_refresh_hint': 'Cast lại trước khi hết (VD: 5 giây = cast lại sớm 5s)',
         'skill_image': 'Ảnh kỹ năng:',
         'skill_no_image': 'Chưa có ảnh',
         'skill_image_error': 'Không xem được ảnh',
@@ -658,6 +666,8 @@ class App(tk.Tk):
         self.skill_type_var = tk.StringVar(value=self._t('skill_type_attack'))
         self.skill_cooldown_var = tk.StringVar()
         self.skill_cast_time_var = tk.StringVar()
+        self.skill_duration_var = tk.StringVar()
+        self.skill_pre_refresh_var = tk.StringVar()
         self.skill_image_var = tk.StringVar()
         self.skill_preview_label = None
         self._skill_image_trace = None
@@ -2592,9 +2602,14 @@ class App(tk.Tk):
             self.skill_cooldown_var.set('')
         if hasattr(self, 'skill_cast_time_var'):
             self.skill_cast_time_var.set('')
+        if hasattr(self, 'skill_duration_var'):
+            self.skill_duration_var.set('')
+        if hasattr(self, 'skill_pre_refresh_var'):
+            self.skill_pre_refresh_var.set('')
         if hasattr(self, 'skill_image_var'):
             self.skill_image_var.set('')
         self._update_skill_preview('')
+        self._toggle_buff_fields()
 
     def _skill_fill_form(self, skill):
         if not skill:
@@ -2610,9 +2625,14 @@ class App(tk.Tk):
             self.skill_cooldown_var.set(self._format_number(skill.get('cooldown', '')))
         if hasattr(self, 'skill_cast_time_var'):
             self.skill_cast_time_var.set(self._format_number(skill.get('cast_time', '')))
+        if hasattr(self, 'skill_duration_var'):
+            self.skill_duration_var.set(self._format_number(skill.get('duration_sec', '')))
+        if hasattr(self, 'skill_pre_refresh_var'):
+            self.skill_pre_refresh_var.set(self._format_number(skill.get('pre_refresh_sec', '')))
         if hasattr(self, 'skill_image_var'):
             self.skill_image_var.set(skill.get('image', ''))
         self._update_skill_preview(skill.get('image', ''))
+        self._toggle_buff_fields()
 
     def _refresh_skill_list(self, select_name=None):
         if select_name is not None:
@@ -2699,6 +2719,7 @@ class App(tk.Tk):
         self.skill_type_combo = ttk.Combobox(container, textvariable=self.skill_type_var, state='readonly', width=14)
         self.skill_type_combo['values'] = (self._t('skill_type_attack'), self._t('skill_type_buff'))
         self.skill_type_combo.grid(row=2, column=3, sticky='w', padx=(4,0))
+        self.skill_type_combo.bind('<<ComboboxSelected>>', self._on_skill_type_changed)
         current_type = self._skill_type_from_label(self.skill_type_var.get() or self._t('skill_type_attack'))
         self.skill_type_var.set(self._skill_type_label(current_type))
 
@@ -2708,21 +2729,58 @@ class App(tk.Tk):
         tk.Label(container, text=self._t('skill_cast_time')).grid(row=4, column=2, sticky='e')
         tk.Entry(container, textvariable=self.skill_cast_time_var, width=12).grid(row=4, column=3, sticky='w', padx=(4,0))
 
-        tk.Label(container, text=self._t('skill_image')).grid(row=5, column=2, sticky='e')
-        tk.Entry(container, textvariable=self.skill_image_var, width=24).grid(row=5, column=3, sticky='we', padx=(4,0))
-        tk.Button(container, text=self._t('browse'), command=self.on_skill_browse_image).grid(row=5, column=4, padx=(8,0))
+        # Buff-specific fields (will be shown/hidden based on skill type)
+        self.skill_duration_label = tk.Label(container, text=self._t('skill_duration'))
+        self.skill_duration_entry = tk.Entry(container, textvariable=self.skill_duration_var, width=12)
+        ToolTip(self.skill_duration_entry, self._t('skill_duration_hint'))
+        
+        self.skill_pre_refresh_label = tk.Label(container, text=self._t('skill_pre_refresh'))
+        self.skill_pre_refresh_entry = tk.Entry(container, textvariable=self.skill_pre_refresh_var, width=12)
+        ToolTip(self.skill_pre_refresh_entry, self._t('skill_pre_refresh_hint'))
+
+        tk.Label(container, text=self._t('skill_image')).grid(row=7, column=2, sticky='e')
+        tk.Entry(container, textvariable=self.skill_image_var, width=24).grid(row=7, column=3, sticky='we', padx=(4,0))
+        tk.Button(container, text=self._t('browse'), command=self.on_skill_browse_image).grid(row=7, column=4, padx=(8,0))
 
         self.skill_preview_label = tk.Label(container, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
-        self.skill_preview_label.grid(row=1, column=4, rowspan=4, sticky='nswe', padx=(8,0))
+        self.skill_preview_label.grid(row=1, column=4, rowspan=6, sticky='nswe', padx=(8,0))
         self._ensure_skill_image_trace()
 
         btn_frame = tk.Frame(container)
-        btn_frame.grid(row=6, column=2, columnspan=3, sticky='w', pady=(8,0))
+        btn_frame.grid(row=8, column=2, columnspan=3, sticky='w', pady=(8,0))
         tk.Button(btn_frame, text=self._t('skill_new'), command=self.on_skill_new).pack(side='left')
         tk.Button(btn_frame, text=self._t('skill_save'), command=self.on_skill_save).pack(side='left', padx=(6,0))
         tk.Button(btn_frame, text=self._t('skill_delete'), command=self.on_skill_delete).pack(side='left', padx=(6,0))
 
         self._refresh_skill_list(select_name=self.skill_selected_name)
+        
+        # Initialize buff fields visibility
+        self._toggle_buff_fields()
+
+    def _on_skill_type_changed(self, event=None):
+        """Handle skill type change to show/hide buff-specific fields."""
+        self._toggle_buff_fields()
+    
+    def _toggle_buff_fields(self):
+        """Show/hide buff duration fields based on skill type."""
+        if not hasattr(self, 'skill_duration_label'):
+            return
+        
+        skill_type = self._skill_type_from_label(self.skill_type_var.get())
+        is_buff = (skill_type == 'buff')
+        
+        if is_buff:
+            # Show buff fields
+            self.skill_duration_label.grid(row=5, column=2, sticky='e')
+            self.skill_duration_entry.grid(row=5, column=3, sticky='w', padx=(4,0))
+            self.skill_pre_refresh_label.grid(row=6, column=2, sticky='e')
+            self.skill_pre_refresh_entry.grid(row=6, column=3, sticky='w', padx=(4,0))
+        else:
+            # Hide buff fields
+            self.skill_duration_label.grid_forget()
+            self.skill_duration_entry.grid_forget()
+            self.skill_pre_refresh_label.grid_forget()
+            self.skill_pre_refresh_entry.grid_forget()
 
     def _refresh_skill_slots_options(self):
         if not hasattr(self, 'skill_slot_boxes'):
@@ -2864,8 +2922,34 @@ class App(tk.Tk):
         try:
             cooldown = float(self.skill_cooldown_var.get() or 0)
             cast_time = float(self.skill_cast_time_var.get() or 0)
+            
+            # Buff-specific fields
+            duration_sec = 0.0
+            pre_refresh_sec = 0.0
+            
+            if skill_type == 'buff':
+                # Validate buff duration is required for buff skills
+                duration_str = self.skill_duration_var.get().strip() if hasattr(self, 'skill_duration_var') else ''
+                if not duration_str:
+                    raise ValueError('Buff duration is required for buff skills')
+                duration_sec = float(duration_str)
+                if duration_sec <= 0:
+                    raise ValueError('Buff duration must be greater than 0')
+                
+                # Pre-refresh is optional but should be validated if provided
+                pre_refresh_str = self.skill_pre_refresh_var.get().strip() if hasattr(self, 'skill_pre_refresh_var') else ''
+                if pre_refresh_str:
+                    pre_refresh_sec = float(pre_refresh_str)
+                    if pre_refresh_sec < 0:
+                        raise ValueError('Pre-refresh time cannot be negative')
+                    if pre_refresh_sec >= duration_sec:
+                        raise ValueError('Pre-refresh time must be less than buff duration')
+            
+        except ValueError as exc:
+            raise exc
         except Exception as exc:
             raise ValueError(exc)
+        
         image = self.skill_image_var.get().strip() if hasattr(self, 'skill_image_var') else ''
         return {
             'name': name,
@@ -2873,6 +2957,9 @@ class App(tk.Tk):
             'type': skill_type,
             'cooldown': max(cooldown, 0.0),
             'cast_time': max(cast_time, 0.0),
+            'duration_sec': duration_sec,
+            'pre_refresh_sec': pre_refresh_sec,
+            'hold_ms': None,  # Keep existing schema field
             'image': image,
         }
 

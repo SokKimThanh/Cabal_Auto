@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 14 Complete - Buff Auto-Casting Runtime)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 15 Complete - Buff Duration GUI Fields)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -91,9 +91,22 @@ E:\Cabal_Auto
 - Nếu mất ảnh mục tiêu liên tục quá lost_timeout_sec: quay lại chế độ tìm, tránh đổi mục tiêu quá sớm.
 - Có thể cấu hình đưa cửa sổ game lên trước mỗi vòng để tăng độ tin cậy nhập phím.
 
-� Quản lý kỹ năng (cập nhật 2025-10-17)
+🎮 Quản lý kỹ năng (cập nhật 2025-10-18)
 - attack_keys trong hunt_config sẽ được sinh tự động từ danh sách skill_slots; textbox hiện tại chuyển thành read-only, chỉ mở chế độ chỉnh tay (advanced override) khi thực sự cần.
 - Schema skill mở rộng: giữ `cooldown` và `cast_time`, bổ sung `duration_sec` (buff uptime), `pre_refresh_sec` (thời điểm recast trước khi hết buff) và `hold_ms` (ép thời gian giữ phím khi khác cast_time); runtime sẽ tách lane attack/buff để áp lịch chính xác.
+- **GUI Buff Fields (Sprint 15 - 2025-10-18)**:
+  • Các trường `duration_sec` và `pre_refresh_sec` được tích hợp vào Skills Manager GUI
+  • **Dynamic visibility**: Các trường buff tự động hiện khi chọn skill type = "Buff", ẩn khi chọn "Attack"
+  • **Validation rules**:
+    - duration_sec: BẮT BUỘC cho buff skills, phải > 0
+    - pre_refresh_sec: Tùy chọn, phải < duration_sec nếu có nhập
+    - Attack skills: Tự động set duration_sec = 0, pre_refresh_sec = 0
+  • **Tooltips**: Hover hints giải thích ý nghĩa của từng trường (EN/VI)
+  • **Smart form handling**: 
+    - _toggle_buff_fields(): Show/hide buff fields dựa trên skill type
+    - _on_skill_type_changed(): Event handler khi thay đổi loại skill
+    - _read_skill_form(): Validate buff duration bắt buộc cho buff skills
+    - _skill_fill_form(): Auto-populate duration/pre_refresh từ skills.json
 - Khi người dùng chọn ảnh kỹ năng, chương trình sao chép về `assets/images/skills/<slug>.png` (slug từ tên + timestamp) và lưu đường dẫn tương đối trong skills.json để tránh liên kết tới thư mục cá nhân.
 - Nếu người dùng thay ảnh, xóa bản sao cũ trong thư mục dự án nhưng tuyệt đối không xóa file gốc của họ.
 - Khi migrate dữ liệu cũ, đặt mặc định `duration_sec = 0`, `pre_refresh_sec = 0` và bỏ qua `hold_ms` để không phá vỡ skill đang có.
@@ -355,8 +368,41 @@ E:\Cabal_Auto
 			- skill_runtime.py: ~320 lines (NEW FILE)
 			- auto_hunt.py: +15 lines skill runtime integration
 			- app_gui.py: +1 line import (existing implementation compatible)
+	- Sprint 15 (Hoàn tất 2025-10-18): Buff Duration GUI Fields
+		• **Dynamic buff fields trong Skills Manager**: Thêm UI fields cho duration_sec và pre_refresh_sec
+		• **Smart visibility toggle**:
+			- Khi skill type = "Buff": Hiện các trường Duration và Pre-refresh với tooltips
+			- Khi skill type = "Attack": Ẩn các trường buff, auto-set duration=0
+		• **Validation logic**:
+			- duration_sec: BẮT BUỘC cho buff skills, phải > 0
+			- pre_refresh_sec: Tùy chọn, nếu nhập phải < duration_sec
+			- Attack skills: Auto-set duration_sec=0, pre_refresh_sec=0
+		• **UI Components**:
+			- skill_duration_label + skill_duration_entry (row 5, hidden for attacks)
+			- skill_pre_refresh_label + skill_pre_refresh_entry (row 6, hidden for attacks)
+			- ToolTip hints: "How long the buff lasts" / "Recast before expiration"
+		• **Form handling**:
+			- _toggle_buff_fields(): Show/hide based on skill type
+			- _on_skill_type_changed(): Event handler on combobox selection
+			- _read_skill_form(): Validate buff duration required for buffs
+			- _skill_fill_form(): Auto-populate from skills.json
+			- _skill_clear_form(): Clear all fields including buff fields
+		• **Localization**: 4 new strings (EN/VI):
+			- skill_duration, skill_pre_refresh
+			- skill_duration_hint, skill_pre_refresh_hint
+		• **Benefits**:
+			- User-friendly: Fields only shown when relevant
+			- Data integrity: Validation ensures correct buff configuration
+			- Seamless workflow: Auto-toggle on skill type change
+			- Production-ready: All buff skills can now be configured in GUI
+		• **Code changes**:
+			- app_gui.py: +80 lines (localization, UI widgets, validation logic)
+			- 2 new StringVars: skill_duration_var, skill_pre_refresh_var
+			- 4 new UI widgets: 2 labels + 2 entries with tooltips
+			- Enhanced _read_skill_form() với buff validation
 - Tiếp theo:
-	- ✅ All planned sprints complete! System ready for production use.
+	- ✅ Sprint 15 complete! Buff duration GUI fields fully integrated.
+	- Next potential enhancements: Skill preview with buff timer display, bulk skill editing, skill presets
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
@@ -560,7 +606,7 @@ E:\Cabal_Auto
   - Validation: Ensures schema compliance
   - Future-proof: Schema ready for buff/attack runtime separation
 
-🎯 TỔNG KẾT SPRINT 1-14:
+🎯 TỔNG KẾT SPRINT 1-15:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
@@ -572,19 +618,20 @@ E:\Cabal_Auto
 - Sprint 12: Template Matcher Integration với accurate confidence tracking từ OpenCV, unified interface cho hunt system
 - Sprint 13: Apply Timing to Hunt Config với one-click workflow từ timing calculator đến hunt_config.json
 - Sprint 14: Buff Auto-Casting Runtime với intelligent skill management, duration/pre-refresh logic, separate attack/buff lanes
-- **System production-ready**: Complete workflow - capture → test → save → calculate timing → apply to hunt → hunt với accurate confidence + intelligent buff management → monitor logs với portable assets và data-driven optimization
+- Sprint 15: Buff Duration GUI Fields với dynamic visibility, validation, tooltips - complete skill configuration in GUI
+- **System production-ready**: Complete workflow - capture → test → save → calculate timing → apply to hunt → configure buff skills in GUI → hunt với accurate confidence + intelligent buff management → monitor logs với portable assets và data-driven optimization
 
 📊 CODE METRICS:
-- app_gui.py: ~3,191 lines (+1 line import SkillRuntime, existing implementation compatible)
+- app_gui.py: ~3,271 lines (+80 lines Sprint 15 - buff duration GUI fields)
 - auto_hunt.py: ~215 lines (+25 lines skill runtime integration với buff auto-casting)
 - hunt_logger.py: ~300 lines (dual logging system)
 - opencv_test.py: ~340 lines (comparison testing)
 - template_matcher.py: ~220 lines (unified interface - INTEGRATED)
 - timing_calculator.py: ~280 lines (timing recommendations)
 - skill_migrator.py: ~220 lines (skills migration tool)
-- skill_runtime.py: ~320 lines (NEW - intelligent skill management)
-- Total project: ~5,086 lines (+346 lines Sprint 14)
-- Localization: 173+ strings với EN/VI parity
+- skill_runtime.py: ~320 lines (intelligent skill management)
+- Total project: ~5,166 lines (+80 lines Sprint 15)
+- Localization: 177+ strings với EN/VI parity (added 4 skill buff strings)
 - Dependencies: pyautogui, PIL, tkinter, logging, opencv-python 4.12.0, numpy 2.3.4
 - Assets: 4 skill images in assets/images/skills/ (portable, no external dependencies)
 
@@ -724,6 +771,30 @@ E:\Cabal_Auto
             tap(attack_key)
             runtime.mark_cast(attack_key, time.time())
     ```
+- Buff Duration GUI Fields (Sprint 15):
+  • **Dynamic visibility system**:
+    - _toggle_buff_fields(): Grid/forget widgets based on skill type
+    - _on_skill_type_changed(): Event handler on Combobox selection
+    - Real-time toggle: No page reload needed
+  • **Form validation**:
+    - _read_skill_form(): Enhanced validation với buff-specific checks
+    - Required field check: duration_sec must be > 0 for buffs
+    - Logical validation: pre_refresh_sec < duration_sec
+    - Auto-defaults: Attack skills get duration=0, pre_refresh=0
+  • **UI layout**:
+    - Buff fields inserted at rows 5-6 (between cast_time and image)
+    - Image field moved to row 7 to accommodate buff fields
+    - Preview label rowspan increased to 6 for visual balance
+    - Button frame moved to row 8
+  • **Tooltips integration**:
+    - ToolTip class applied to buff entries
+    - Hover hints explain purpose and valid ranges
+    - Dual-language support (EN/VI)
+  • **Benefits**:
+    - Clean UI: Only relevant fields shown
+    - Data integrity: Validation prevents invalid configs
+    - User-friendly: Tooltips guide proper configuration
+    - Seamless workflow: Auto-toggle on type change
 - Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack.
-- Kỹ năng: workflow đã chốt (skill_slots → attack_keys, duration/pre-refresh/hold_ms, auto copy ảnh) — sẽ tiếp tục triển khai/migrate.
+- Kỹ năng: workflow đã chốt (skill_slots → attack_keys, duration/pre-refresh/hold_ms, auto copy ảnh, ✅ GUI buff fields integrated Sprint 15).
