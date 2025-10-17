@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pyautogui
 
-from win_input import tap
-from hunt_logger import get_hunt_logger
-from template_matcher import locate_template
-from skill_runtime import SkillRuntime
+from lib.win_input import tap
+from lib.hunt_logger import get_hunt_logger
+from lib.template_matcher import locate_template
+from lib.skill_runtime import SkillRuntime
 
-CONFIG_PATH = Path(__file__).with_name('hunt_config.json')
+CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
 
 
 def load_cfg():
@@ -114,7 +114,7 @@ def main():
 
     # Initialize skill runtime if skills.json exists
     skill_runtime = None
-    skills_path = Path(__file__).parent / 'skills.json'
+    skills_path = Path(__file__).parent / 'data' / 'skills.json'
     if skills_path.exists():
         try:
             with open(skills_path, 'r', encoding='utf-8') as f:

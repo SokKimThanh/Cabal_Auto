@@ -13,8 +13,8 @@ import pyautogui
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from template_matcher import locate_template
-from skill_runtime import SkillRuntime
+from lib.template_matcher import locate_template
+from lib.skill_runtime import SkillRuntime
 
 try:
     from PIL import Image, ImageTk, ImageDraw  # type: ignore
@@ -28,9 +28,9 @@ try:
 except Exception:
     keyboard = None  # type: ignore
 
-from win_input import tap
-from hunt_logger import get_hunt_logger
-from timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
+from lib.win_input import tap
+from lib.hunt_logger import get_hunt_logger
+from lib.timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
 
 
 class ToolTip:
@@ -360,10 +360,10 @@ LANG: Dict[str, Dict[str, str]] = {
     },
 }
 
-CONFIG_PATH = Path(__file__).with_name('config.json')
-HUNT_CONFIG_PATH = Path(__file__).with_name('hunt_config.json')
-MONSTER_DB_PATH = Path(__file__).with_name('monsters.json')
-SKILL_DB_PATH = Path(__file__).with_name('skills.json')
+CONFIG_PATH = Path(__file__).parent / 'data' / 'config.json'
+HUNT_CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
+MONSTER_DB_PATH = Path(__file__).parent / 'data' / 'monsters.json'
+SKILL_DB_PATH = Path(__file__).parent / 'data' / 'skills.json'
 
 
 def _normalize_window_bounds(value):
