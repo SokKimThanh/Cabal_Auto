@@ -67,6 +67,13 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_hp': 'HP:',
         'monster_damage': 'Damage per hit:',
         'monster_template': 'Template:',
+    'monster_description': 'Description:',
+    'monster_description_hint': 'Optional notes about this monster or spawn location.',
+    'monster_bounds': 'Window bounds (L,T,W,H):',
+    'monster_bounds_hint': 'Leave blank to auto-detect during hunt.',
+    'monster_bounds_clear': 'Clear bounds',
+    'monster_open_templates': 'Manage templates…',
+    'monster_template_stub': 'Template management UI is coming soon.',
         'monster_new': 'Create',
         'monster_save': 'Save',
         'monster_delete': 'Delete',
@@ -80,6 +87,8 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_not_selected': 'Pick a monster first',
         'monster_applied': 'Applied to hunt config',
         'monster_duplicate': 'Monster name already exists',
+    'hunt_window_bounds': 'Saved window bounds: {value}',
+    'hunt_window_bounds_none': 'Saved window bounds: not set',
         'skill_section': 'Skill library',
         'skill_list': 'Skills:',
         'skill_name': 'Name:',
@@ -149,6 +158,13 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_hp': 'HP:',
         'monster_damage': 'Sát thương mỗi đòn:',
         'monster_template': 'Ảnh template:',
+    'monster_description': 'Mô tả:',
+    'monster_description_hint': 'Ghi chú thêm về quái hoặc vị trí spawn (tùy chọn).',
+    'monster_bounds': 'Biên cửa sổ (L,T,R,D):',
+    'monster_bounds_hint': 'Để trống để hệ thống tự dò khi chạy săn.',
+    'monster_bounds_clear': 'Xóa biên',
+    'monster_open_templates': 'Quản lý ảnh mẫu…',
+    'monster_template_stub': 'Giao diện quản lý ảnh mẫu sẽ có trong bản kế tiếp.',
         'monster_new': 'Tạo mới',
         'monster_save': 'Lưu',
         'monster_delete': 'Xóa',
@@ -162,6 +178,8 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_not_selected': 'Hãy chọn một quái trước',
         'monster_applied': 'Đã áp dụng vào cấu hình săn',
         'monster_duplicate': 'Tên quái đã tồn tại',
+    'hunt_window_bounds': 'Vùng cửa sổ đã lưu: {value}',
+    'hunt_window_bounds_none': 'Vùng cửa sổ đã lưu: chưa có',
         'skill_section': 'Thư viện kỹ năng',
         'skill_list': 'Danh sách kỹ năng:',
         'skill_name': 'Tên kỹ năng:',
@@ -197,6 +215,27 @@ MONSTER_DB_PATH = Path(__file__).with_name('monsters.json')
 SKILL_DB_PATH = Path(__file__).with_name('skills.json')
 
 
+def _normalize_window_bounds(value):
+    keys = ('left', 'top', 'width', 'height')
+    if isinstance(value, dict):
+        try:
+            normalized = {k: int(value.get(k, 0)) for k in keys}
+        except (TypeError, ValueError):
+            return None
+        if normalized['width'] <= 0 or normalized['height'] <= 0:
+            return None
+        return normalized
+    if isinstance(value, (list, tuple)) and len(value) == 4:
+        try:
+            left, top, width, height = [int(v) for v in value]
+        except (TypeError, ValueError):
+            return None
+        if width <= 0 or height <= 0:
+            return None
+        return {'left': left, 'top': top, 'width': width, 'height': height}
+    return None
+
+
 def load_monster_library():
     if not MONSTER_DB_PATH.exists():
         return []
@@ -219,11 +258,17 @@ def load_monster_library():
                 if hp <= 0 or dmg <= 0:
                     continue
                 template = str(item.get('template', '') or '').strip()
+                description = str(item.get('description', '') or '').strip()
+                window_bounds = _normalize_window_bounds(item.get('window_bounds'))
+                templates = item.get('templates') if isinstance(item.get('templates'), list) else []
                 monsters.append({
                     'name': name,
                     'hp': hp,
                     'damage_per_hit': dmg,
                     'template': template,
+                    'description': description,
+                    'window_bounds': window_bounds,
+                    'templates': templates,
                 })
         return monsters
     except Exception:
@@ -244,11 +289,17 @@ def save_monster_library(monsters):
         except (TypeError, ValueError):
             continue
         template = str(item.get('template', '') or '').strip()
+        description = str(item.get('description', '') or '').strip()
+        window_bounds = _normalize_window_bounds(item.get('window_bounds'))
+        templates = item.get('templates') if isinstance(item.get('templates'), list) else []
         safe.append({
             'name': name,
             'hp': hp,
             'damage_per_hit': dmg,
             'template': template,
+            'description': description,
+            'window_bounds': window_bounds,
+            'templates': templates,
         })
     with open(MONSTER_DB_PATH, 'w', encoding='utf-8') as f:
         json.dump(safe, f, ensure_ascii=False, indent=2)
@@ -356,7 +407,8 @@ def load_hunt_config():
         "lost_timeout_sec": 1.2,
         "attack_min_duration_sec": 1.5,
     "bring_to_front_each_cycle": False,
-        "skill_slots": []
+        "skill_slots": [],
+        "window_bounds": None,
     }
     if HUNT_CONFIG_PATH.exists():
         try:
@@ -421,6 +473,16 @@ class App(tk.Tk):
         self.skill_image_var = tk.StringVar()
         self.skill_preview_label = None
         self._skill_image_trace = None
+        self.monster_description_text = None
+        self.monster_bounds_vars = {
+            'left': tk.StringVar(),
+            'top': tk.StringVar(),
+            'width': tk.StringVar(),
+            'height': tk.StringVar(),
+        }
+        self.current_window_bounds = _normalize_window_bounds(self.hunt_cfg.get('window_bounds'))
+        self.hunt_cfg['window_bounds'] = self.current_window_bounds
+        self.window_bounds_display_var = tk.StringVar(value='')
 
         pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
 
@@ -526,17 +588,19 @@ class App(tk.Tk):
         tk.Label(frm, text=self._t('h')).grid(row=8, column=3, sticky='e', padx=(48,0))
         tk.Entry(frm, textvariable=self.reg_h, width=6).grid(row=8, column=3, sticky='e', padx=(24,0))
 
+        tk.Label(frm, textvariable=self.window_bounds_display_var, fg='gray').grid(row=9, column=0, columnspan=4, sticky='w', pady=(6,0))
+
         self.bring_front_var = tk.BooleanVar(value=bool(self.hunt_cfg.get('bring_to_front_each_cycle', False)))
-        tk.Checkbutton(frm, text=self._t('bring_each_cycle'), variable=self.bring_front_var).grid(row=9, column=0, columnspan=4, sticky='w', pady=(6,0))
+        tk.Checkbutton(frm, text=self._t('bring_each_cycle'), variable=self.bring_front_var).grid(row=10, column=0, columnspan=4, sticky='w', pady=(6,0))
 
         pick_frame = tk.Frame(frm)
-        pick_frame.grid(row=10, column=0, columnspan=4, pady=(6,0))
+        pick_frame.grid(row=11, column=0, columnspan=4, pady=(6,0))
         tk.Button(pick_frame, text=self._t('pick_tl'), command=lambda: self.on_hunt_pick_corner('tl')).pack(side='left')
         tk.Button(pick_frame, text=self._t('pick_br'), command=lambda: self.on_hunt_pick_corner('br')).pack(side='left', padx=(8,0))
 
         # Hunt buttons
         hbtn = tk.Frame(frm)
-        hbtn.grid(row=11, column=0, columnspan=4, pady=(12,0))
+        hbtn.grid(row=12, column=0, columnspan=4, pady=(12,0))
         tk.Button(hbtn, text=self._t('save_hunt'), command=self.on_hunt_save).pack(side='left')
         self.hunt_start_btn = tk.Button(hbtn, text=self._t('start_hunt'), command=self.on_hunt_start)
         self.hunt_start_btn.pack(side='left', padx=(8,0))
@@ -545,7 +609,7 @@ class App(tk.Tk):
 
         # Monster quick apply
         monster_bar = tk.Frame(frm)
-        monster_bar.grid(row=12, column=0, columnspan=4, sticky='we', pady=(12,0))
+        monster_bar.grid(row=13, column=0, columnspan=4, sticky='we', pady=(12,0))
         monster_bar.grid_columnconfigure(1, weight=1)
         tk.Label(monster_bar, text=self._t('monster_section')).grid(row=0, column=0, sticky='w')
         self.monster_select_var = tk.StringVar(value=self.monster_selected_name or '')
@@ -559,12 +623,12 @@ class App(tk.Tk):
 
         # Skill slots selection
         skill_header = tk.Frame(frm)
-        skill_header.grid(row=13, column=0, columnspan=4, sticky='we', pady=(12,0))
+        skill_header.grid(row=14, column=0, columnspan=4, sticky='we', pady=(12,0))
         tk.Label(skill_header, text=self._t('skill_slots')).pack(side='left')
         tk.Button(skill_header, text=self._t('skill_manage'), command=self._open_skill_manager).pack(side='left', padx=(6,0))
 
         slot_frame = tk.Frame(frm)
-        slot_frame.grid(row=14, column=0, columnspan=4, sticky='we')
+        slot_frame.grid(row=15, column=0, columnspan=4, sticky='we')
         slot_frame.grid_columnconfigure(1, weight=1)
         self.skill_slot_vars = []
         self.skill_slot_boxes = []
@@ -584,16 +648,26 @@ class App(tk.Tk):
 
         # Status
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
-        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=15, column=0, columnspan=4, pady=(8,0))
+        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=16, column=0, columnspan=4, pady=(8,0))
 
         for i in range(4):
             frm.grid_columnconfigure(i, weight=1)
+        self._update_window_bounds_display()
 
     # Click UI and handlers removed
 
     # -----------------
     # Hunt Handlers
     # -----------------
+    def _update_window_bounds_display(self):
+        if not hasattr(self, 'window_bounds_display_var'):
+            return
+        if self.current_window_bounds:
+            bounds_text = '{left},{top},{width},{height}'.format(**self.current_window_bounds)
+            self.window_bounds_display_var.set(self._t('hunt_window_bounds').format(value=bounds_text))
+        else:
+            self.window_bounds_display_var.set(self._t('hunt_window_bounds_none'))
+
     def on_hunt_browse_template(self):
         path = filedialog.askopenfilename(title='Select template image', filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
         if path:
@@ -842,7 +916,8 @@ class App(tk.Tk):
             "grayscale": bool(self.hunt_cfg.get('grayscale', True)),
             "lost_timeout_sec": lost_timeout,
             "attack_min_duration_sec": attack_min_duration,
-            "bring_to_front_each_cycle": bool(self.bring_front_var.get())
+            "bring_to_front_each_cycle": bool(self.bring_front_var.get()),
+            "window_bounds": self.current_window_bounds,
         }
         slots = self._collect_skill_slots()
         cfg['skill_slots'] = slots
@@ -853,6 +928,21 @@ class App(tk.Tk):
     # -----------------
     # Monster library helpers
     # -----------------
+    def _monster_desc_set(self, text: str):
+        if self.monster_description_text:
+            self.monster_description_text.delete('1.0', tk.END)
+            if text:
+                self.monster_description_text.insert('1.0', text)
+
+    def _monster_desc_get(self) -> str:
+        if self.monster_description_text:
+            return self.monster_description_text.get('1.0', tk.END).strip()
+        return ''
+
+    def on_monster_clear_bounds(self):
+        for var in self.monster_bounds_vars.values():
+            var.set('')
+
     def _monster_clear_form(self):
         if hasattr(self, 'monster_name_var'):
             self.monster_name_var.set('')
@@ -864,6 +954,9 @@ class App(tk.Tk):
             self.monster_template_var.set('')
         if hasattr(self, 'monster_estimate_var'):
             self.monster_estimate_var.set('')
+        self._monster_desc_set('')
+        for var in self.monster_bounds_vars.values():
+            var.set('')
 
     def _format_number(self, value):
         try:
@@ -886,6 +979,13 @@ class App(tk.Tk):
             self.monster_damage_var.set(self._format_number(monster.get('damage_per_hit', '')))
         if hasattr(self, 'monster_template_var'):
             self.monster_template_var.set(monster.get('template', ''))
+        self._monster_desc_set(monster.get('description', ''))
+        bounds = monster.get('window_bounds') if isinstance(monster.get('window_bounds'), dict) else None
+        for key, var in self.monster_bounds_vars.items():
+            if bounds and key in bounds:
+                var.set(str(bounds.get(key, '')))
+            else:
+                var.set('')
         self._update_monster_estimate_label(monster)
 
     def _open_monster_manager(self):
@@ -907,47 +1007,84 @@ class App(tk.Tk):
             if self.monster_manager_win is win:
                 self.monster_manager_win = None
             self.monster_listbox = None
+            self.monster_description_text = None
             win.destroy()
 
         win.protocol('WM_DELETE_WINDOW', _on_close)
-        container = tk.Frame(win, padx=10, pady=10)
+        container = tk.Frame(win, padx=12, pady=12)
         container.grid(row=0, column=0, sticky='nsew')
         win.grid_columnconfigure(0, weight=1)
         win.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
-        container.grid_columnconfigure(3, weight=1)
-        container.grid_rowconfigure(1, weight=1)
+        container.grid_columnconfigure(0, weight=0)
+        container.grid_columnconfigure(1, weight=1)
+        container.grid_rowconfigure(0, weight=1)
 
-        tk.Label(container, text=self._t('monster_list')).grid(row=0, column=0, sticky='w')
-        self.monster_listbox = tk.Listbox(container, height=10, exportselection=False)
-        self.monster_listbox.grid(row=1, column=0, rowspan=6, sticky='nswe', padx=(0,4))
-        monster_scroll = tk.Scrollbar(container, orient='vertical', command=self.monster_listbox.yview)
-        monster_scroll.grid(row=1, column=1, rowspan=6, sticky='ns')
+        sidebar = tk.Frame(container)
+        sidebar.grid(row=0, column=0, sticky='ns')
+        sidebar.grid_rowconfigure(1, weight=1)
+
+        tk.Label(sidebar, text=self._t('monster_list')).grid(row=0, column=0, sticky='w')
+        self.monster_listbox = tk.Listbox(sidebar, height=16, width=26, exportselection=False)
+        self.monster_listbox.grid(row=1, column=0, sticky='ns')
+        monster_scroll = tk.Scrollbar(sidebar, orient='vertical', command=self.monster_listbox.yview)
+        monster_scroll.grid(row=1, column=1, sticky='ns')
         self.monster_listbox.config(yscrollcommand=monster_scroll.set)
         self.monster_listbox.bind('<<ListboxSelect>>', self.on_monster_selected)
 
-        tk.Label(container, text=self._t('monster_name')).grid(row=0, column=2, sticky='e')
-        tk.Entry(container, textvariable=self.monster_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
+        detail = tk.Frame(container)
+        detail.grid(row=0, column=1, sticky='nsew', padx=(16,0))
+        detail.grid_columnconfigure(1, weight=1)
 
-        tk.Label(container, text=self._t('monster_hp')).grid(row=1, column=2, sticky='e', pady=(2,0))
-        tk.Entry(container, textvariable=self.monster_hp_var, width=14).grid(row=1, column=3, sticky='we', padx=(4,0), pady=(2,0))
+        info_frame = tk.Frame(detail)
+        info_frame.grid(row=0, column=0, sticky='we')
+        info_frame.grid_columnconfigure(1, weight=1)
+        info_frame.grid_columnconfigure(3, weight=1)
 
-        tk.Label(container, text=self._t('monster_damage')).grid(row=2, column=2, sticky='e')
-        tk.Entry(container, textvariable=self.monster_damage_var, width=14).grid(row=2, column=3, sticky='we', padx=(4,0))
-        tk.Button(container, text=self._t('monster_estimate'), command=self.on_monster_estimate).grid(row=2, column=4, padx=(8,0))
+        tk.Label(info_frame, text=self._t('monster_name')).grid(row=0, column=0, sticky='e')
+        tk.Entry(info_frame, textvariable=self.monster_name_var, width=24).grid(row=0, column=1, sticky='we', padx=(4,0))
+        tk.Button(info_frame, text=self._t('monster_estimate'), command=self.on_monster_estimate).grid(row=0, column=4, padx=(8,0))
 
-        tk.Label(container, text=self._t('monster_template')).grid(row=3, column=2, sticky='e')
-        tk.Entry(container, textvariable=self.monster_template_var, width=24).grid(row=3, column=3, sticky='we', padx=(4,0))
-        tk.Button(container, text=self._t('browse'), command=self.on_monster_browse_template).grid(row=3, column=4, padx=(8,0))
+        tk.Label(info_frame, text=self._t('monster_hp')).grid(row=1, column=0, sticky='e', pady=(6,0))
+        tk.Entry(info_frame, textvariable=self.monster_hp_var, width=12).grid(row=1, column=1, sticky='we', padx=(4,0), pady=(6,0))
 
-        btn_frame = tk.Frame(container)
-        btn_frame.grid(row=4, column=2, columnspan=3, sticky='w', pady=(8,0))
+        tk.Label(info_frame, text=self._t('monster_damage')).grid(row=1, column=2, sticky='e', pady=(6,0))
+        tk.Entry(info_frame, textvariable=self.monster_damage_var, width=12).grid(row=1, column=3, sticky='we', padx=(4,0), pady=(6,0))
+
+        desc_label = tk.Label(detail, text=self._t('monster_description'))
+        desc_label.grid(row=1, column=0, sticky='w', pady=(8,0))
+        self.monster_description_text = tk.Text(detail, width=46, height=4, wrap='word')
+        self.monster_description_text.grid(row=2, column=0, sticky='we')
+        tk.Label(detail, text=self._t('monster_description_hint'), fg='gray').grid(row=3, column=0, sticky='w')
+
+        bounds_frame = tk.Frame(detail)
+        bounds_frame.grid(row=4, column=0, sticky='w', pady=(8,0))
+        tk.Label(bounds_frame, text=self._t('monster_bounds')).grid(row=0, column=0, columnspan=5, sticky='w')
+        headings = ['L', 'T', 'W', 'H']
+        for idx, title in enumerate(headings):
+            tk.Label(bounds_frame, text=title).grid(row=1, column=idx, padx=(0,4), sticky='w')
+        tk.Entry(bounds_frame, textvariable=self.monster_bounds_vars['left'], width=6).grid(row=2, column=0, padx=(0,4))
+        tk.Entry(bounds_frame, textvariable=self.monster_bounds_vars['top'], width=6).grid(row=2, column=1, padx=(0,4))
+        tk.Entry(bounds_frame, textvariable=self.monster_bounds_vars['width'], width=6).grid(row=2, column=2, padx=(0,4))
+        tk.Entry(bounds_frame, textvariable=self.monster_bounds_vars['height'], width=6).grid(row=2, column=3, padx=(0,10))
+        tk.Button(bounds_frame, text=self._t('monster_bounds_clear'), command=self.on_monster_clear_bounds).grid(row=2, column=4)
+        tk.Label(bounds_frame, text=self._t('monster_bounds_hint'), fg='gray').grid(row=3, column=0, columnspan=5, sticky='w', pady=(4,0))
+
+        template_frame = tk.Frame(detail)
+        template_frame.grid(row=5, column=0, sticky='we', pady=(8,0))
+        template_frame.grid_columnconfigure(1, weight=1)
+        tk.Label(template_frame, text=self._t('monster_template')).grid(row=0, column=0, sticky='e')
+        tk.Entry(template_frame, textvariable=self.monster_template_var, width=32).grid(row=0, column=1, sticky='we', padx=(4,0))
+        tk.Button(template_frame, text=self._t('browse'), command=self.on_monster_browse_template).grid(row=0, column=2, padx=(6,0))
+        tk.Button(template_frame, text=self._t('monster_open_templates'), command=self.on_monster_manage_templates).grid(row=1, column=1, sticky='w', pady=(6,0))
+
+        tk.Label(detail, textvariable=self.monster_estimate_var, fg='gray', wraplength=360, justify='left').grid(row=6, column=0, sticky='we', pady=(8,0))
+
+        btn_frame = tk.Frame(detail)
+        btn_frame.grid(row=7, column=0, sticky='w', pady=(12,0))
         tk.Button(btn_frame, text=self._t('monster_new'), command=self.on_monster_new).pack(side='left')
         tk.Button(btn_frame, text=self._t('monster_save'), command=self.on_monster_save).pack(side='left', padx=(6,0))
         tk.Button(btn_frame, text=self._t('monster_delete'), command=self.on_monster_delete).pack(side='left', padx=(6,0))
         tk.Button(btn_frame, text=self._t('monster_use_template'), command=self.on_monster_use_for_hunt).pack(side='left', padx=(12,0))
-
-        tk.Label(container, textvariable=self.monster_estimate_var, fg='gray').grid(row=5, column=2, columnspan=3, sticky='w', pady=(6,0))
 
         self._refresh_monster_list(select_name=self.monster_selected_name)
 
@@ -1052,11 +1189,35 @@ class App(tk.Tk):
         if hp <= 0 or dmg <= 0:
             raise ValueError('values must be positive')
         template = self.monster_template_var.get().strip() if hasattr(self, 'monster_template_var') else ''
+        description = self._monster_desc_get()
+        bounds_input = {k: v.get().strip() for k, v in self.monster_bounds_vars.items()}
+        window_bounds = None
+        if any(bounds_input.values()):
+            if not all(bounds_input.values()):
+                raise ValueError('window bounds require left/top/width/height')
+            try:
+                left = int(bounds_input['left'])
+                top = int(bounds_input['top'])
+                width = int(bounds_input['width'])
+                height = int(bounds_input['height'])
+            except ValueError as exc:
+                raise ValueError(f'invalid window bounds: {exc}')
+            if width <= 0 or height <= 0:
+                raise ValueError('window bounds width/height must be positive')
+            window_bounds = {'left': left, 'top': top, 'width': width, 'height': height}
+        templates = []
+        if self.monster_selected_index is not None and 0 <= self.monster_selected_index < len(self.monsters):
+            current_templates = self.monsters[self.monster_selected_index].get('templates')
+            if isinstance(current_templates, list):
+                templates = current_templates
         return {
             'name': name,
             'hp': hp,
             'damage_per_hit': dmg,
             'template': template,
+            'description': description,
+            'window_bounds': window_bounds,
+            'templates': templates,
         }
 
     def _current_attack_settings(self):
@@ -1121,6 +1282,9 @@ class App(tk.Tk):
         path = filedialog.askopenfilename(title='Select template image', filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
         if path:
             self.monster_template_var.set(path)
+
+    def on_monster_manage_templates(self):
+        messagebox.showinfo(self._t('monster_section'), self._t('monster_template_stub'))
 
     def on_monster_selected(self, _evt=None):
         if not self.monster_listbox:
@@ -1210,6 +1374,10 @@ class App(tk.Tk):
         monster = self.monsters[self.monster_selected_index]
         if monster.get('template'):
             self.template_var.set(monster['template'])
+        bounds = _normalize_window_bounds(monster.get('window_bounds'))
+        self.current_window_bounds = bounds
+        self.hunt_cfg['window_bounds'] = bounds
+        self._update_window_bounds_display()
         try:
             stats = self._calculate_monster_estimate(monster)
         except Exception as e:
