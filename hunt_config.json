@@ -13,14 +13,14 @@
   "attack_interval": 0.15,
   "template_path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 182938.png",
   "region": [
-    1116,
-    455,
-    181,
-    201
+    174,
+    87,
+    1265,
+    742
   ],
   "confidence": 0.85,
   "grayscale": true,
-  "lost_timeout_sec": 0.8,
-  "attack_min_duration_sec": 1.5,
+  "lost_timeout_sec": 15.45,
+  "attack_min_duration_sec": 41258.49,
   "bring_to_front_each_cycle": true
 }

@@ -1,21 +1,29 @@
+import ctypes
 import json
+import math
+import os
 import threading
 import time
+from ctypes import wintypes
 from pathlib import Path
-import tkinter as tk
-from tkinter import messagebox, filedialog
-import tkinter.ttk as ttk
+from typing import Dict, List, Optional
 
 import pyautogui
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
 
 from win_input import tap
-import ctypes
-from ctypes import wintypes
-try:
-    import keyboard  # global hotkeys for stopping
-except Exception:
-    keyboard = None
 
+try:
+    import keyboard  # type: ignore
+except Exception:
+    keyboard = None  # type: ignore
+
+try:
+    from PIL import Image, ImageTk  # type: ignore
+except Exception:
+    Image = None  # type: ignore
+    ImageTk = None  # type: ignore
 # Simple i18n dictionary
 LANG = {
     'en': {
@@ -25,29 +33,97 @@ LANG = {
         'language': 'Language',
         'lang_en': 'English',
         'lang_vi': 'Tiếng Việt',
-        'x': 'X', 'y': 'Y', 'interval': 'Interval (s)',
-        'pick': 'Pick (3s)', 'always_on_top': 'Always on top',
-        'start': 'Start', 'stop': 'Stop', 'save_config': 'Save Config',
-        'ready': 'Ready', 'stopped': 'Stopped', 'failsafe_stopped': 'FAILSAFE triggered. Stopped.',
+        'x': 'X',
+        'y': 'Y',
+        'interval': 'Interval (s)',
+        'pick': 'Pick (3s)',
+        'always_on_top': 'Always on top',
+        'start': 'Start',
+        'stop': 'Stop',
+        'save_config': 'Save Config',
+        'ready': 'Ready',
+        'stopped': 'Stopped',
+        'failsafe_stopped': 'FAILSAFE triggered. Stopped.',
         'pick_in': 'Pick in {i}... Move mouse to target',
-        'picked': 'Picked: ({x}, {y})', 'pick_error': 'Pick error: {e}',
+        'picked': 'Picked: ({x}, {y})',
+        'pick_error': 'Pick error: {e}',
         'window_title_contains': 'Window title contains:',
-        'find_windows': 'Find Windows', 'bring_to_front': 'Bring To Front',
-    'bring_each_cycle': 'Force focus every cycle (use only if needed)',
-        'target_key': 'Target key:', 'attack_keys': 'Attack keys (, sep):',
-        'press_ms': 'Press ms:', 'target_cycle': 'Target cycle (s):',
-        'search_interval': 'Search interval (s):', 'attack_interval': 'Attack interval (s):',
-    'lost_timeout': 'Keep attacking for (s) after target lost:',
-    'attack_duration': 'Minimum attack duration (s):',
-        'template': 'Template:', 'browse': 'Browse',
-        'region_l': 'Region: L', 't': 'T', 'w': 'W', 'h': 'H',
-        'pick_tl': 'Pick TL (3s)', 'pick_br': 'Pick BR (3s)',
-        'save_hunt': 'Save Hunt Config', 'start_hunt': 'Start Hunt', 'stop_hunt': 'Stop Hunt',
-        'hunt_idle': 'Hunt idle', 'hunt_running': 'Hunt running', 'hunt_stopped': 'Hunt stopped',
-        'selected_window': 'Selected window: {title}', 'bring_ok': 'Brought to front', 'bring_fail': 'Bring to front failed',
-        'invalid_input': 'Invalid input: {e}', 'invalid_hunt': 'Invalid hunt config: {e}',
-        'no_windows': 'No matching windows found', 'warn_pygetwindow': 'pygetwindow not available',
+        'find_windows': 'Find Windows',
+        'bring_to_front': 'Bring To Front',
+        'bring_each_cycle': 'Force focus every cycle (use only if needed)',
+        'target_key': 'Target key:',
+        'attack_keys': 'Attack keys (, sep):',
+        'press_ms': 'Press ms:',
+        'target_cycle': 'Target cycle (s):',
+        'search_interval': 'Search interval (s):',
+        'attack_interval': 'Attack interval (s):',
+        'lost_timeout': 'Keep attacking for (s) after target lost:',
+        'attack_duration': 'Minimum attack duration (s):',
+        'template': 'Template:',
+        'browse': 'Browse',
+        'region_l': 'Region: L',
+        't': 'T',
+        'w': 'W',
+        'h': 'H',
+        'pick_tl': 'Pick TL (3s)',
+        'pick_br': 'Pick BR (3s)',
+        'save_hunt': 'Save Hunt Config',
+        'start_hunt': 'Start Hunt',
+        'stop_hunt': 'Stop Hunt',
+        'hunt_idle': 'Hunt idle',
+        'hunt_running': 'Hunt running',
+        'hunt_stopped': 'Hunt stopped',
+        'selected_window': 'Selected window: {title}',
+        'bring_ok': 'Brought to front',
+        'bring_fail': 'Bring to front failed',
+        'invalid_input': 'Invalid input: {e}',
+        'invalid_hunt': 'Invalid hunt config: {e}',
+        'no_windows': 'No matching windows found',
+        'warn_pygetwindow': 'pygetwindow not available',
         'win_list_label': 'Windows (filtered):',
+        'monster_section': 'Monster Library',
+        'monster_list': 'Saved monsters:',
+        'monster_name': 'Name:',
+        'monster_hp': 'HP:',
+        'monster_damage': 'Damage per hit:',
+        'monster_template': 'Template image:',
+        'monster_new': 'New',
+        'monster_save': 'Save monster',
+        'monster_delete': 'Delete',
+        'monster_use_template': 'Use for hunt',
+        'monster_estimate': 'Estimate kill time',
+        'monster_estimate_result': 'Estimated kill time: {time:.2f}s (DPS {dps:.1f})',
+    'monster_estimate_detail': '{base} -> attack {attack:.2f}s, lost {lost:.2f}s',
+        'monster_saved': 'Monster saved',
+        'monster_deleted': 'Monster deleted',
+        'monster_invalid': 'Invalid monster data: {e}',
+        'monster_not_selected': 'Select a monster first',
+    'monster_applied': 'Applied monster to hunt config',
+    'monster_duplicate': 'Monster name already exists',
+    'skill_section': 'Skill Library',
+    'skill_list': 'Skills:',
+    'skill_name': 'Name:',
+    'skill_key': 'Key:',
+    'skill_type': 'Type:',
+    'skill_type_attack': 'Attack',
+    'skill_type_buff': 'Buff',
+    'skill_cooldown': 'Cooldown (s):',
+    'skill_cast_time': 'Cast time (s):',
+    'skill_image': 'Image path:',
+    'skill_no_image': 'No preview',
+    'skill_image_error': 'Preview failed',
+    'skill_new': 'New skill',
+    'skill_save': 'Save skill',
+    'skill_delete': 'Delete skill',
+    'skill_saved': 'Skill saved',
+    'skill_deleted': 'Skill deleted',
+    'skill_invalid': 'Invalid skill data: {e}',
+    'skill_not_selected': 'Select a skill first',
+    'skill_slots': 'Skill rotation',
+    'skill_slot_label': 'Slot {i}:',
+    'skill_slot_clear': 'Clear',
+    'skill_estimate_missing': 'Missing skill data',
+    'skill_duplicate': 'Skill name already exists',
     },
     'vi': {
         'app_title': 'Cabal Auto GUI',
@@ -56,34 +132,229 @@ LANG = {
         'language': 'Ngôn ngữ',
         'lang_en': 'English',
         'lang_vi': 'Tiếng Việt',
-        'x': 'X', 'y': 'Y', 'interval': 'Khoảng (giây)',
-        'pick': 'Lấy tọa độ (3s)', 'always_on_top': 'Luôn nổi (Always on top)',
-        'start': 'Bắt đầu', 'stop': 'Dừng', 'save_config': 'Lưu cấu hình',
-        'ready': 'Sẵn sàng', 'stopped': 'Đã dừng', 'failsafe_stopped': 'Đã dừng (FAILSAFE)',
+        'x': 'X',
+        'y': 'Y',
+        'interval': 'Khoảng (giây)',
+        'pick': 'Lấy tọa độ (3s)',
+        'always_on_top': 'Luôn nổi (Always on top)',
+        'start': 'Bắt đầu',
+        'stop': 'Dừng',
+        'save_config': 'Lưu cấu hình',
+        'ready': 'Sẵn sàng',
+        'stopped': 'Đã dừng',
+        'failsafe_stopped': 'Đã dừng (FAILSAFE)',
         'pick_in': 'Lấy sau {i}s... Di chuột đến vị trí',
-        'picked': 'Đã lấy: ({x}, {y})', 'pick_error': 'Lỗi lấy tọa độ: {e}',
+        'picked': 'Đã lấy: ({x}, {y})',
+        'pick_error': 'Lỗi lấy tọa độ: {e}',
         'window_title_contains': 'Tiêu đề cửa sổ chứa:',
-        'find_windows': 'Tìm cửa sổ', 'bring_to_front': 'Đưa lên trước',
-    'bring_each_cycle': 'Đưa cửa sổ lên mỗi vòng (chỉ dùng khi cần)',
-        'target_key': 'Phím chọn mục tiêu:', 'attack_keys': 'Phím đánh (cách nhau bằng dấu phẩy):',
-        'press_ms': 'Giữ phím (ms):', 'target_cycle': 'Chu kỳ đổi mục tiêu (s):',
-        'search_interval': 'Chu kỳ tìm (s):', 'attack_interval': 'Chu kỳ đánh (s):',
-    'lost_timeout': 'Giữ đánh thêm (giây) sau khi mất dấu:',
-    'attack_duration': 'Thời gian đánh tối thiểu (giây):',
-        'template': 'Ảnh mẫu:', 'browse': 'Chọn ảnh',
-        'region_l': 'Vùng tìm: L', 't': 'T', 'w': 'R', 'h': 'D',
-        'pick_tl': 'Chọn góc TL (3s)', 'pick_br': 'Chọn góc BR (3s)',
-        'save_hunt': 'Lưu cấu hình săn', 'start_hunt': 'Chạy săn', 'stop_hunt': 'Dừng săn',
-        'hunt_idle': 'Sẵn sàng săn', 'hunt_running': 'Đang săn', 'hunt_stopped': 'Đã dừng săn',
-        'selected_window': 'Đã chọn cửa sổ: {title}', 'bring_ok': 'Đã đưa lên trước', 'bring_fail': 'Không đưa lên trước được',
-        'invalid_input': 'Dữ liệu không hợp lệ: {e}', 'invalid_hunt': 'Cấu hình săn không hợp lệ: {e}',
-        'no_windows': 'Không tìm thấy cửa sổ phù hợp', 'warn_pygetwindow': 'Chưa có pygetwindow',
+        'find_windows': 'Tìm cửa sổ',
+        'bring_to_front': 'Đưa lên trước',
+        'bring_each_cycle': 'Đưa cửa sổ lên mỗi vòng (chỉ dùng khi cần)',
+        'target_key': 'Phím chọn mục tiêu:',
+        'attack_keys': 'Phím đánh (cách nhau bằng dấu phẩy):',
+        'press_ms': 'Giữ phím (ms):',
+        'target_cycle': 'Chu kỳ đổi mục tiêu (s):',
+        'search_interval': 'Chu kỳ tìm (s):',
+        'attack_interval': 'Chu kỳ đánh (s):',
+        'lost_timeout': 'Giữ đánh thêm (giây) sau khi mất dấu:',
+        'attack_duration': 'Thời gian đánh tối thiểu (giây):',
+        'template': 'Ảnh mẫu:',
+        'browse': 'Chọn ảnh',
+        'region_l': 'Vùng tìm: L',
+        't': 'T',
+        'w': 'R',
+        'h': 'D',
+        'pick_tl': 'Chọn góc TL (3s)',
+        'pick_br': 'Chọn góc BR (3s)',
+        'save_hunt': 'Lưu cấu hình săn',
+        'start_hunt': 'Chạy săn',
+        'stop_hunt': 'Dừng săn',
+        'hunt_idle': 'Sẵn sàng săn',
+        'hunt_running': 'Đang săn',
+        'hunt_stopped': 'Đã dừng săn',
+        'selected_window': 'Đã chọn cửa sổ: {title}',
+        'bring_ok': 'Đã đưa lên trước',
+        'bring_fail': 'Không đưa lên trước được',
+        'invalid_input': 'Dữ liệu không hợp lệ: {e}',
+        'invalid_hunt': 'Cấu hình săn không hợp lệ: {e}',
+        'no_windows': 'Không tìm thấy cửa sổ phù hợp',
+        'warn_pygetwindow': 'Chưa có pygetwindow',
         'win_list_label': 'Danh sách cửa sổ (đã lọc):',
+        'monster_section': 'Thư viện quái',
+        'monster_list': 'Danh sách quái:',
+        'monster_name': 'Tên:',
+        'monster_hp': 'HP:',
+        'monster_damage': 'Sát thương mỗi đòn:',
+        'monster_template': 'Ảnh template:',
+        'monster_new': 'Tạo mới',
+        'monster_save': 'Lưu quái',
+        'monster_delete': 'Xóa',
+        'monster_use_template': 'Dùng cho săn',
+        'monster_estimate': 'Tính thời gian hạ',
+        'monster_estimate_result': 'Thời gian ước tính: {time:.2f}s (DPS {dps:.1f})',
+    'monster_estimate_detail': '{base} -> đánh tối thiểu {attack:.2f}s, giữ thêm {lost:.2f}s',
+        'monster_saved': 'Đã lưu quái',
+        'monster_deleted': 'Đã xóa quái',
+        'monster_invalid': 'Thông tin quái không hợp lệ: {e}',
+        'monster_not_selected': 'Hãy chọn một quái trước',
+    'monster_applied': 'Đã áp dụng vào cấu hình săn',
+    'monster_duplicate': 'Tên quái đã tồn tại',
+    'skill_section': 'Thư viện kỹ năng',
+    'skill_list': 'Danh sách kỹ năng:',
+    'skill_name': 'Tên kỹ năng:',
+    'skill_key': 'Phím:',
+    'skill_type': 'Loại:',
+    'skill_type_attack': 'Tấn công',
+    'skill_type_buff': 'Buff',
+    'skill_cooldown': 'Hồi chiêu (giây):',
+    'skill_cast_time': 'Thi triển (giây):',
+    'skill_image': 'Ảnh kỹ năng:',
+    'skill_no_image': 'Chưa có ảnh',
+    'skill_image_error': 'Không xem được ảnh',
+    'skill_new': 'Tạo kỹ năng',
+    'skill_save': 'Lưu kỹ năng',
+    'skill_delete': 'Xóa kỹ năng',
+    'skill_saved': 'Đã lưu kỹ năng',
+    'skill_deleted': 'Đã xóa kỹ năng',
+    'skill_invalid': 'Thông tin kỹ năng không hợp lệ: {e}',
+    'skill_not_selected': 'Hãy chọn một kỹ năng trước',
+    'skill_slots': 'Thiết lập kỹ năng',
+    'skill_slot_label': 'Ô {i}:',
+    'skill_slot_clear': 'Xóa',
+    'skill_estimate_missing': 'Thiếu thông tin kỹ năng',
+    'skill_duplicate': 'Tên kỹ năng đã tồn tại',
     }
 }
 
 CONFIG_PATH = Path(__file__).with_name('config.json')
 HUNT_CONFIG_PATH = Path(__file__).with_name('hunt_config.json')
+MONSTER_DB_PATH = Path(__file__).with_name('monsters.json')
+SKILL_DB_PATH = Path(__file__).with_name('skills.json')
+
+
+def load_monster_library():
+    if not MONSTER_DB_PATH.exists():
+        return []
+    try:
+        with open(MONSTER_DB_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        monsters = []
+        if isinstance(data, list):
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                name = str(item.get('name', '')).strip()
+                if not name:
+                    continue
+                try:
+                    hp = float(item.get('hp', 0))
+                    dmg = float(item.get('damage_per_hit', 0))
+                except (TypeError, ValueError):
+                    continue
+                if hp <= 0 or dmg <= 0:
+                    continue
+                template = str(item.get('template', '') or '').strip()
+                monsters.append({
+                    'name': name,
+                    'hp': hp,
+                    'damage_per_hit': dmg,
+                    'template': template,
+                })
+        return monsters
+    except Exception:
+        return []
+
+
+def save_monster_library(monsters):
+    safe = []
+    for item in monsters:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get('name', '')).strip()
+        if not name:
+            continue
+        try:
+            hp = float(item.get('hp', 0))
+            dmg = float(item.get('damage_per_hit', 0))
+        except (TypeError, ValueError):
+            continue
+        template = str(item.get('template', '') or '').strip()
+        safe.append({
+            'name': name,
+            'hp': hp,
+            'damage_per_hit': dmg,
+            'template': template,
+        })
+    with open(MONSTER_DB_PATH, 'w', encoding='utf-8') as f:
+        json.dump(safe, f, ensure_ascii=False, indent=2)
+
+
+def load_skill_library():
+    if not SKILL_DB_PATH.exists():
+        return []
+    try:
+        with open(SKILL_DB_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        skills = []
+        if isinstance(data, list):
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                name = str(item.get('name', '')).strip()
+                key = str(item.get('key', '')).strip().upper()
+                if not name or not key:
+                    continue
+                skill_type = str(item.get('type', 'attack')).strip().lower()
+                if skill_type not in ('attack', 'buff'):
+                    skill_type = 'attack'
+                try:
+                    cooldown = float(item.get('cooldown', 0.0))
+                    cast_time = float(item.get('cast_time', 0.0))
+                except (TypeError, ValueError):
+                    cooldown = 0.0
+                    cast_time = 0.0
+                image = str(item.get('image', '') or '').strip()
+                skills.append({
+                    'name': name,
+                    'key': key,
+                    'type': skill_type,
+                    'cooldown': max(cooldown, 0.0),
+                    'cast_time': max(cast_time, 0.0),
+                    'image': image,
+                })
+        return skills
+    except Exception:
+        return []
+
+
+def save_skill_library(skills):
+    safe = []
+    for item in skills:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get('name', '')).strip()
+        key = str(item.get('key', '')).strip().upper()
+        if not name or not key:
+            continue
+        skill_type = str(item.get('type', 'attack')).strip().lower()
+        if skill_type not in ('attack', 'buff'):
+            skill_type = 'attack'
+        try:
+            cooldown = float(item.get('cooldown', 0.0))
+            cast_time = float(item.get('cast_time', 0.0))
+        except (TypeError, ValueError):
+            continue
+        image = str(item.get('image', '') or '').strip()
+        safe.append({
+            'name': name,
+            'key': key,
+            'type': skill_type,
+            'cooldown': max(cooldown, 0.0),
+            'cast_time': max(cast_time, 0.0),
+            'image': image,
+        })
+    with open(SKILL_DB_PATH, 'w', encoding='utf-8') as f:
+        json.dump(safe, f, ensure_ascii=False, indent=2)
 
 
 def load_config():
@@ -119,7 +390,8 @@ def load_hunt_config():
         "grayscale": True,
         "lost_timeout_sec": 1.2,
         "attack_min_duration_sec": 1.5,
-    "bring_to_front_each_cycle": False
+    "bring_to_front_each_cycle": False,
+        "skill_slots": []
     }
     if HUNT_CONFIG_PATH.exists():
         try:
@@ -128,6 +400,7 @@ def load_hunt_config():
             default.update(data)
         except Exception:
             pass
+    default.setdefault('skill_slots', [])
     return default
 
 
@@ -155,6 +428,17 @@ class App(tk.Tk):
         self.win_items = []  # list of {'hwnd','pid','title','proc'}
         self.hunt_selected = None  # currently selected window info
         self._stop_hotkey = None
+        self.monsters = load_monster_library()
+        self.monster_selected_index = None
+        self.monster_selected_name = self.monsters[0]['name'] if self.monsters else None
+        self.skills = load_skill_library()
+        self.skill_selected_index = None
+        self.skill_selected_name = self.skills[0]['name'] if self.skills else None
+        self.skill_preview_image = None
+        self.skill_slot_vars = []
+        self.skill_slot_boxes = []
+        self.skill_slot_count = 6
+        self.skill_slot_saved_names = [slot.get('name', '') for slot in self.hunt_cfg.get('skill_slots', []) if isinstance(slot, dict) and slot.get('name')]
 
         pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
 
@@ -277,9 +561,127 @@ class App(tk.Tk):
         self.hunt_stop_btn = tk.Button(hbtn, text=self._t('stop_hunt'), command=self.on_hunt_stop, state='disabled')
         self.hunt_stop_btn.pack(side='left', padx=(8,0))
 
+        # Monster library
+        monster_frame = tk.LabelFrame(frm, text=self._t('monster_section'), padx=8, pady=6)
+        monster_frame.grid(row=12, column=0, columnspan=4, sticky='we', pady=(12,0))
+        monster_frame.grid_columnconfigure(0, weight=1)
+        monster_frame.grid_columnconfigure(3, weight=1)
+        monster_frame.grid_rowconfigure(1, weight=1)
+
+        tk.Label(monster_frame, text=self._t('monster_list')).grid(row=0, column=0, sticky='w')
+        self.monster_listbox = tk.Listbox(monster_frame, height=6, exportselection=False)
+        self.monster_listbox.grid(row=1, column=0, rowspan=5, sticky='nswe', padx=(0,4))
+        monster_scroll = tk.Scrollbar(monster_frame, orient='vertical', command=self.monster_listbox.yview)
+        monster_scroll.grid(row=1, column=1, rowspan=5, sticky='ns')
+        self.monster_listbox.config(yscrollcommand=monster_scroll.set)
+        self.monster_listbox.bind('<<ListboxSelect>>', self.on_monster_selected)
+
+        tk.Label(monster_frame, text=self._t('monster_name')).grid(row=0, column=2, sticky='e')
+        self.monster_name_var = tk.StringVar()
+        tk.Entry(monster_frame, textvariable=self.monster_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
+
+        tk.Label(monster_frame, text=self._t('monster_hp')).grid(row=1, column=2, sticky='e', pady=(2,0))
+        self.monster_hp_var = tk.StringVar()
+        tk.Entry(monster_frame, textvariable=self.monster_hp_var, width=14).grid(row=1, column=3, sticky='we', padx=(4,0), pady=(2,0))
+
+        tk.Label(monster_frame, text=self._t('monster_damage')).grid(row=2, column=2, sticky='e')
+        self.monster_damage_var = tk.StringVar()
+        tk.Entry(monster_frame, textvariable=self.monster_damage_var, width=14).grid(row=2, column=3, sticky='we', padx=(4,0))
+        tk.Button(monster_frame, text=self._t('monster_estimate'), command=self.on_monster_estimate).grid(row=2, column=4, padx=(8,0))
+
+        self.monster_estimate_var = tk.StringVar(value='')
+        tk.Label(monster_frame, textvariable=self.monster_estimate_var, fg='gray').grid(row=3, column=2, columnspan=3, sticky='w', pady=(4,0))
+
+        tk.Label(monster_frame, text=self._t('monster_template')).grid(row=4, column=2, sticky='e')
+        self.monster_template_var = tk.StringVar()
+        tk.Entry(monster_frame, textvariable=self.monster_template_var, width=24).grid(row=4, column=3, sticky='we', padx=(4,0))
+        tk.Button(monster_frame, text=self._t('browse'), command=self.on_monster_browse_template).grid(row=4, column=4, padx=(8,0))
+
+        btn_frame = tk.Frame(monster_frame)
+        btn_frame.grid(row=5, column=2, columnspan=3, sticky='w', pady=(8,0))
+        tk.Button(btn_frame, text=self._t('monster_new'), command=self.on_monster_new).pack(side='left')
+        tk.Button(btn_frame, text=self._t('monster_save'), command=self.on_monster_save).pack(side='left', padx=(6,0))
+        tk.Button(btn_frame, text=self._t('monster_delete'), command=self.on_monster_delete).pack(side='left', padx=(6,0))
+        tk.Button(btn_frame, text=self._t('monster_use_template'), command=self.on_monster_use_for_hunt).pack(side='left', padx=(12,0))
+
+        self._refresh_monster_list()
+
+        # Skill library
+        skill_frame = tk.LabelFrame(frm, text=self._t('skill_section'), padx=8, pady=6)
+        skill_frame.grid(row=13, column=0, columnspan=4, sticky='we', pady=(12,0))
+        skill_frame.grid_columnconfigure(0, weight=1)
+        skill_frame.grid_columnconfigure(3, weight=1)
+        skill_frame.grid_rowconfigure(1, weight=1)
+
+        tk.Label(skill_frame, text=self._t('skill_list')).grid(row=0, column=0, sticky='w')
+        self.skill_listbox = tk.Listbox(skill_frame, height=6, exportselection=False)
+        self.skill_listbox.grid(row=1, column=0, rowspan=5, sticky='nswe', padx=(0,4))
+        skill_scroll = tk.Scrollbar(skill_frame, orient='vertical', command=self.skill_listbox.yview)
+        skill_scroll.grid(row=1, column=1, rowspan=5, sticky='ns')
+        self.skill_listbox.config(yscrollcommand=skill_scroll.set)
+        self.skill_listbox.bind('<<ListboxSelect>>', self.on_skill_selected)
+
+        tk.Label(skill_frame, text=self._t('skill_name')).grid(row=0, column=2, sticky='e')
+        self.skill_name_var = tk.StringVar()
+        tk.Entry(skill_frame, textvariable=self.skill_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
+
+        tk.Label(skill_frame, text=self._t('skill_key')).grid(row=1, column=2, sticky='e', pady=(2,0))
+        self.skill_key_var = tk.StringVar()
+        tk.Entry(skill_frame, textvariable=self.skill_key_var, width=12).grid(row=1, column=3, sticky='w', padx=(4,0), pady=(2,0))
+
+        tk.Label(skill_frame, text=self._t('skill_type')).grid(row=2, column=2, sticky='e')
+        self.skill_type_var = tk.StringVar()
+        self.skill_type_var.set(self._t('skill_type_attack'))
+        self.skill_type_combo = ttk.Combobox(skill_frame, textvariable=self.skill_type_var, state='readonly', width=14)
+        self.skill_type_combo['values'] = (self._t('skill_type_attack'), self._t('skill_type_buff'))
+        self.skill_type_combo.grid(row=2, column=3, sticky='w', padx=(4,0))
+
+        tk.Label(skill_frame, text=self._t('skill_cooldown')).grid(row=3, column=2, sticky='e')
+        self.skill_cooldown_var = tk.StringVar()
+        tk.Entry(skill_frame, textvariable=self.skill_cooldown_var, width=12).grid(row=3, column=3, sticky='w', padx=(4,0))
+
+        tk.Label(skill_frame, text=self._t('skill_cast_time')).grid(row=4, column=2, sticky='e')
+        self.skill_cast_time_var = tk.StringVar()
+        tk.Entry(skill_frame, textvariable=self.skill_cast_time_var, width=12).grid(row=4, column=3, sticky='w', padx=(4,0))
+
+        tk.Label(skill_frame, text=self._t('skill_image')).grid(row=5, column=2, sticky='e')
+        self.skill_image_var = tk.StringVar()
+        tk.Entry(skill_frame, textvariable=self.skill_image_var, width=24).grid(row=5, column=3, sticky='we', padx=(4,0))
+        tk.Button(skill_frame, text=self._t('browse'), command=self.on_skill_browse_image).grid(row=5, column=4, padx=(8,0))
+
+        self.skill_preview_label = tk.Label(skill_frame, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
+        self.skill_preview_label.grid(row=1, column=4, rowspan=4, sticky='nswe', padx=(8,0))
+        self.skill_image_var.trace_add('write', lambda *_: self._update_skill_preview(self.skill_image_var.get()))
+
+        skill_btn_frame = tk.Frame(skill_frame)
+        skill_btn_frame.grid(row=6, column=2, columnspan=3, sticky='w', pady=(8,0))
+        tk.Button(skill_btn_frame, text=self._t('skill_new'), command=self.on_skill_new).pack(side='left')
+        tk.Button(skill_btn_frame, text=self._t('skill_save'), command=self.on_skill_save).pack(side='left', padx=(6,0))
+        tk.Button(skill_btn_frame, text=self._t('skill_delete'), command=self.on_skill_delete).pack(side='left', padx=(6,0))
+
+        # Skill slots
+        slot_frame = tk.LabelFrame(frm, text=self._t('skill_slots'), padx=8, pady=6)
+        slot_frame.grid(row=14, column=0, columnspan=4, sticky='we', pady=(12,0))
+        slot_frame.grid_columnconfigure(1, weight=1)
+        self.skill_slot_vars = []
+        self.skill_slot_boxes = []
+        for idx in range(self.skill_slot_count):
+            var = tk.StringVar()
+            self.skill_slot_vars.append(var)
+            label = self._t('skill_slot_label').format(i=idx + 1)
+            tk.Label(slot_frame, text=label).grid(row=idx, column=0, sticky='e', pady=2)
+            cmb = ttk.Combobox(slot_frame, textvariable=var, state='readonly', width=24)
+            cmb.grid(row=idx, column=1, sticky='we', padx=(4,0), pady=2)
+            cmb.bind('<<ComboboxSelected>>', self.on_skill_slot_changed)
+            tk.Button(slot_frame, text=self._t('skill_slot_clear'), command=lambda v=var: self._clear_skill_slot(v)).grid(row=idx, column=2, padx=(6,0))
+            self.skill_slot_boxes.append(cmb)
+
+        self._refresh_skill_list()
+        self._load_skill_slots_from_cfg()
+
         # Status
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
-        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=12, column=0, columnspan=4, pady=(8,0))
+        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=15, column=0, columnspan=4, pady=(8,0))
 
         for i in range(4):
             frm.grid_columnconfigure(i, weight=1)
@@ -539,7 +941,580 @@ class App(tk.Tk):
             "attack_min_duration_sec": attack_min_duration,
             "bring_to_front_each_cycle": bool(self.bring_front_var.get())
         }
+        slots = self._collect_skill_slots()
+        cfg['skill_slots'] = slots
+        if slots:
+            cfg['attack_keys'] = [slot['key'] for slot in slots if slot.get('key')]
         return cfg
+
+    # -----------------
+    # Monster library helpers
+    # -----------------
+    def _monster_clear_form(self):
+        if hasattr(self, 'monster_name_var'):
+            self.monster_name_var.set('')
+        if hasattr(self, 'monster_hp_var'):
+            self.monster_hp_var.set('')
+        if hasattr(self, 'monster_damage_var'):
+            self.monster_damage_var.set('')
+        if hasattr(self, 'monster_template_var'):
+            self.monster_template_var.set('')
+        if hasattr(self, 'monster_estimate_var'):
+            self.monster_estimate_var.set('')
+
+    def _format_number(self, value):
+        try:
+            num = float(value)
+        except (TypeError, ValueError):
+            return ''
+        if math.isclose(num, round(num), rel_tol=1e-9, abs_tol=1e-9):
+            return str(int(round(num)))
+        return f'{num:.2f}'.rstrip('0').rstrip('.')
+
+    def _monster_fill_form(self, monster):
+        if not monster:
+            self._monster_clear_form()
+            return
+        if hasattr(self, 'monster_name_var'):
+            self.monster_name_var.set(monster.get('name', ''))
+        if hasattr(self, 'monster_hp_var'):
+            self.monster_hp_var.set(self._format_number(monster.get('hp', '')))
+        if hasattr(self, 'monster_damage_var'):
+            self.monster_damage_var.set(self._format_number(monster.get('damage_per_hit', '')))
+        if hasattr(self, 'monster_template_var'):
+            self.monster_template_var.set(monster.get('template', ''))
+        self._update_monster_estimate_label(monster)
+
+    def _refresh_monster_list(self, select_name=None):
+        if select_name is not None:
+            self.monster_selected_name = select_name
+        if not hasattr(self, 'monster_listbox'):
+            return
+        self.monster_listbox.delete(0, tk.END)
+        for monster in self.monsters:
+            self.monster_listbox.insert(tk.END, monster['name'])
+        idx = None
+        if self.monster_selected_name:
+            for i, monster in enumerate(self.monsters):
+                if monster['name'] == self.monster_selected_name:
+                    idx = i
+                    break
+        if idx is None and self.monsters and self.monster_selected_name is None:
+            idx = 0
+        if idx is not None and idx < len(self.monsters):
+            self.monster_listbox.selection_clear(0, tk.END)
+            self.monster_listbox.selection_set(idx)
+            self.monster_listbox.activate(idx)
+            self.monster_selected_index = idx
+            self.monster_selected_name = self.monsters[idx]['name']
+            self._monster_fill_form(self.monsters[idx])
+        else:
+            self.monster_listbox.selection_clear(0, tk.END)
+            self.monster_selected_index = None
+            self._monster_clear_form()
+
+    def _read_monster_form(self):
+        if not hasattr(self, 'monster_name_var'):
+            raise ValueError('UI not ready')
+        name = self.monster_name_var.get().strip()
+        if not name:
+            raise ValueError('name required')
+        try:
+            hp = float(self.monster_hp_var.get())
+            dmg = float(self.monster_damage_var.get())
+        except Exception as exc:
+            raise ValueError(exc)
+        if hp <= 0 or dmg <= 0:
+            raise ValueError('values must be positive')
+        template = self.monster_template_var.get().strip() if hasattr(self, 'monster_template_var') else ''
+        return {
+            'name': name,
+            'hp': hp,
+            'damage_per_hit': dmg,
+            'template': template,
+        }
+
+    def _current_attack_settings(self):
+        try:
+            press_ms = max(int(float(self.attack_press_var.get() or 0)), 1)
+            attack_interval = max(float(self.attack_interval_var.get() or 0), 0.0)
+        except Exception as exc:
+            raise ValueError(exc)
+        attack_keys = [k.strip() for k in self.attack_keys_var.get().split(',') if k.strip()]
+        if not attack_keys:
+            attack_keys = ['1']
+        return press_ms, attack_interval, attack_keys
+
+    def _calculate_monster_estimate(self, monster):
+        hp = float(monster.get('hp', 0))
+        dmg = float(monster.get('damage_per_hit', 0))
+        if hp <= 0 or dmg <= 0:
+            raise ValueError('hp/damage must be positive')
+        press_ms, attack_interval, attack_keys = self._current_attack_settings()
+        per_hit_time = (press_ms / 1000.0) + attack_interval
+        per_hit_time = max(per_hit_time, 0.05)
+        hits_needed = max(1, math.ceil(hp / dmg))
+        key_count = max(len(attack_keys), 1)
+        cycles_needed = math.ceil(hits_needed / key_count)
+        cycle_overhead = 0.02  # loop sleep between cycles
+        kill_time = hits_needed * per_hit_time + cycles_needed * cycle_overhead
+        dps = hp / kill_time if kill_time > 0 else 0.0
+        return {
+            'kill_time': kill_time,
+            'dps': dps,
+            'hits': hits_needed,
+            'per_hit_time': per_hit_time,
+            'key_count': key_count,
+        }
+
+    def _recommend_attack_settings(self, stats):
+        per_hit_time = stats['per_hit_time']
+        kill_time = stats['kill_time']
+        attack_padding = max(per_hit_time, 0.3)
+        attack_min = kill_time + attack_padding
+        lost_timeout = min(max(per_hit_time * 3.0, 0.6), attack_min)
+        return attack_min, lost_timeout
+
+    def _update_monster_estimate_label(self, monster=None, stats=None):
+        if not hasattr(self, 'monster_estimate_var'):
+            return
+        try:
+            if monster is None and self.monster_selected_index is not None and self.monster_selected_index < len(self.monsters):
+                monster = self.monsters[self.monster_selected_index]
+            if monster is None:
+                raise ValueError('no monster')
+            if stats is None:
+                stats = self._calculate_monster_estimate(monster)
+            base = self._t('monster_estimate_result').format(time=stats['kill_time'], dps=stats['dps'])
+            attack_min, lost_timeout = self._recommend_attack_settings(stats)
+            text = self._t('monster_estimate_detail').format(base=base, attack=attack_min, lost=lost_timeout)
+        except Exception:
+            text = ''
+        self.monster_estimate_var.set(text)
+
+    def on_monster_browse_template(self):
+        path = filedialog.askopenfilename(title='Select template image', filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
+        if path:
+            self.monster_template_var.set(path)
+
+    def on_monster_selected(self, _evt=None):
+        try:
+            idxs = self.monster_listbox.curselection()
+            if not idxs:
+                return
+            idx = idxs[0]
+            if idx >= len(self.monsters):
+                return
+            monster = self.monsters[idx]
+            self.monster_selected_index = idx
+            self.monster_selected_name = monster['name']
+            self._monster_fill_form(monster)
+        except Exception:
+            pass
+
+    def on_monster_new(self):
+        self.monster_selected_index = None
+        self.monster_selected_name = None
+        if hasattr(self, 'monster_listbox'):
+            self.monster_listbox.selection_clear(0, tk.END)
+        self._monster_clear_form()
+
+    def on_monster_save(self):
+        try:
+            monster = self._read_monster_form()
+        except Exception as e:
+            messagebox.showerror(self._t('monster_section'), self._t('monster_invalid').format(e=e))
+            return
+
+        idx = self.monster_selected_index
+        if idx is None:
+            existing = next((i for i, m in enumerate(self.monsters) if m['name'].lower() == monster['name'].lower()), None)
+            if existing is not None:
+                idx = existing
+                self.monsters[idx] = monster
+            else:
+                self.monsters.append(monster)
+                idx = len(self.monsters) - 1
+        else:
+            for i, data in enumerate(self.monsters):
+                if i != idx and data['name'].lower() == monster['name'].lower():
+                    messagebox.showerror(self._t('monster_section'), self._t('monster_duplicate'))
+                    return
+            self.monsters[idx] = monster
+
+        save_monster_library(self.monsters)
+        self.monster_selected_index = idx
+        self.monster_selected_name = monster['name']
+        self._refresh_monster_list(select_name=monster['name'])
+        self.hunt_status.set(self._t('monster_saved'))
+
+    def on_monster_delete(self):
+        if self.monster_selected_index is None or self.monster_selected_index >= len(self.monsters):
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_not_selected'))
+            return
+        self.monsters.pop(self.monster_selected_index)
+        save_monster_library(self.monsters)
+        if self.monsters:
+            next_name = self.monsters[min(self.monster_selected_index, len(self.monsters) - 1)]['name']
+        else:
+            next_name = None
+        self.monster_selected_index = None
+        self.monster_selected_name = next_name
+        self._refresh_monster_list(select_name=next_name)
+        self.hunt_status.set(self._t('monster_deleted'))
+
+    def on_monster_estimate(self):
+        try:
+            monster = self._read_monster_form()
+            stats = self._calculate_monster_estimate(monster)
+        except Exception as e:
+            messagebox.showerror(self._t('monster_section'), self._t('monster_invalid').format(e=e))
+            return
+        self._update_monster_estimate_label(monster, stats)
+        base = self._t('monster_estimate_result').format(time=stats['kill_time'], dps=stats['dps'])
+        attack_min, lost_timeout = self._recommend_attack_settings(stats)
+        detail = self._t('monster_estimate_detail').format(base=base, attack=attack_min, lost=lost_timeout)
+        self.hunt_status.set(detail)
+
+    def on_monster_use_for_hunt(self):
+        if self.monster_selected_index is None or self.monster_selected_index >= len(self.monsters):
+            messagebox.showinfo(self._t('monster_section'), self._t('monster_not_selected'))
+            return
+        monster = self.monsters[self.monster_selected_index]
+        if monster.get('template'):
+            self.template_var.set(monster['template'])
+        try:
+            stats = self._calculate_monster_estimate(monster)
+        except Exception as e:
+            messagebox.showerror(self._t('monster_section'), self._t('monster_invalid').format(e=e))
+            return
+        kill_time = stats['kill_time']
+        attack_min, lost_timeout = self._recommend_attack_settings(stats)
+        self.attack_duration_var.set(f'{attack_min:.2f}')
+        self.lost_timeout_var.set(f'{lost_timeout:.2f}')
+        base = self._t('monster_estimate_result').format(time=kill_time, dps=stats['dps'])
+        detail = self._t('monster_estimate_detail').format(base=base, attack=attack_min, lost=lost_timeout)
+        self.monster_estimate_var.set(detail)
+        self.hunt_status.set(self._t('monster_applied'))
+
+    # -----------------
+    # Skill library helpers
+    # -----------------
+    def _skill_type_label(self, code: str) -> str:
+        return self._t('skill_type_buff') if code == 'buff' else self._t('skill_type_attack')
+
+    def _skill_type_from_label(self, label: str) -> str:
+        label = label.strip().lower()
+        if label in (self._t('skill_type_buff').lower(), 'buff'):
+            return 'buff'
+        return 'attack'
+
+    def _skill_clear_form(self):
+        if hasattr(self, 'skill_name_var'):
+            self.skill_name_var.set('')
+        if hasattr(self, 'skill_key_var'):
+            self.skill_key_var.set('')
+        if hasattr(self, 'skill_type_var'):
+            self.skill_type_var.set(self._t('skill_type_attack'))
+        if hasattr(self, 'skill_cooldown_var'):
+            self.skill_cooldown_var.set('')
+        if hasattr(self, 'skill_cast_time_var'):
+            self.skill_cast_time_var.set('')
+        if hasattr(self, 'skill_image_var'):
+            self.skill_image_var.set('')
+        self._update_skill_preview('')
+
+    def _skill_fill_form(self, skill):
+        if not skill:
+            self._skill_clear_form()
+            return
+        if hasattr(self, 'skill_name_var'):
+            self.skill_name_var.set(skill.get('name', ''))
+        if hasattr(self, 'skill_key_var'):
+            self.skill_key_var.set(skill.get('key', ''))
+        if hasattr(self, 'skill_type_var'):
+            self.skill_type_var.set(self._skill_type_label(skill.get('type', 'attack')))
+        if hasattr(self, 'skill_cooldown_var'):
+            self.skill_cooldown_var.set(self._format_number(skill.get('cooldown', '')))
+        if hasattr(self, 'skill_cast_time_var'):
+            self.skill_cast_time_var.set(self._format_number(skill.get('cast_time', '')))
+        if hasattr(self, 'skill_image_var'):
+            self.skill_image_var.set(skill.get('image', ''))
+        self._update_skill_preview(skill.get('image', ''))
+
+    def _refresh_skill_list(self, select_name=None):
+        if select_name is not None:
+            self.skill_selected_name = select_name
+        if not hasattr(self, 'skill_listbox'):
+            return
+        self.skill_listbox.delete(0, tk.END)
+        for skill in self.skills:
+            self.skill_listbox.insert(tk.END, skill['name'])
+        idx = None
+        if self.skill_selected_name:
+            for i, skill in enumerate(self.skills):
+                if skill['name'] == self.skill_selected_name:
+                    idx = i
+                    break
+        if idx is None and self.skills and self.skill_selected_name is None:
+            idx = 0
+        if idx is not None and idx < len(self.skills):
+            self.skill_listbox.selection_clear(0, tk.END)
+            self.skill_listbox.selection_set(idx)
+            self.skill_listbox.activate(idx)
+            self.skill_selected_index = idx
+            self.skill_selected_name = self.skills[idx]['name']
+            self._skill_fill_form(self.skills[idx])
+        else:
+            self.skill_listbox.selection_clear(0, tk.END)
+            self.skill_selected_index = None
+            self._skill_clear_form()
+        self._refresh_skill_slots_options()
+
+    def _refresh_skill_slots_options(self):
+        if not hasattr(self, 'skill_slot_boxes'):
+            return
+        names = []
+        for skill in self.skills:
+            if skill['name'] not in names:
+                names.append(skill['name'])
+        for saved in getattr(self, 'skill_slot_saved_names', []):
+            if saved and saved not in names:
+                names.append(saved)
+        values = [''] + names
+        for cmb in self.skill_slot_boxes:
+            cmb['values'] = values
+
+    def _load_skill_slots_from_cfg(self):
+        saved = self.hunt_cfg.get('skill_slots', []) if hasattr(self, 'hunt_cfg') else []
+        self.skill_slot_saved_names = [slot.get('name', '') for slot in saved if slot.get('name')]
+        self._refresh_skill_slots_options()
+        for idx, var in enumerate(self.skill_slot_vars):
+            name = ''
+            if idx < len(saved):
+                name = saved[idx].get('name', '')
+            var.set(name)
+        self._update_attack_keys_from_slots()
+
+    def _collect_skill_slots(self):
+        if not self.skill_slot_vars:
+            self.skill_slot_saved_names = []
+            return []
+        mapping = {skill['name']: skill for skill in self.skills}
+        slots = []
+        saved_names = []
+        for var in self.skill_slot_vars:
+            name = var.get().strip()
+            if not name:
+                continue
+            skill = mapping.get(name)
+            if not skill:
+                continue
+            saved_names.append(name)
+            slots.append({
+                'name': skill['name'],
+                'key': skill['key'],
+                'type': skill.get('type', 'attack'),
+                'cooldown': float(skill.get('cooldown', 0.0)),
+                'cast_time': float(skill.get('cast_time', 0.0)),
+                'image': skill.get('image', ''),
+            })
+        self.skill_slot_saved_names = saved_names
+        return slots
+
+    def _clear_skill_slot(self, var):
+        var.set('')
+        self._update_attack_keys_from_slots()
+
+    def _update_skill_preview(self, path):
+        if not hasattr(self, 'skill_preview_label'):
+            return
+        path = (path or '').strip()
+        if not path:
+            self.skill_preview_label.config(image='', text=self._t('skill_no_image'))
+            self.skill_preview_image = None
+            return
+        try:
+            if Image is not None and ImageTk is not None:
+                img = Image.open(path)
+                img.thumbnail((96, 96))
+                photo = ImageTk.PhotoImage(img)
+            else:
+                photo = tk.PhotoImage(file=path)
+            self.skill_preview_label.config(image=photo, text='')
+            self.skill_preview_image = photo
+        except Exception:
+            self.skill_preview_label.config(image='', text=self._t('skill_image_error'))
+            self.skill_preview_image = None
+
+    def _update_attack_keys_from_slots(self):
+        if not hasattr(self, 'attack_keys_var'):
+            return
+        mapping = {skill['name']: skill for skill in self.skills}
+        keys = []
+        for var in self.skill_slot_vars:
+            name = var.get().strip()
+            if not name:
+                continue
+            skill = mapping.get(name)
+            if not skill:
+                continue
+            keys.append(skill['key'])
+        if keys:
+            self.attack_keys_var.set(','.join(keys))
+        self.skill_slot_saved_names = [v.get().strip() for v in self.skill_slot_vars if v.get().strip()]
+        self._refresh_skill_slots_options()
+
+    def on_skill_browse_image(self):
+        path = filedialog.askopenfilename(title='Select skill image', filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
+        if path:
+            self.skill_image_var.set(path)
+
+    def on_skill_selected(self, _evt=None):
+        try:
+            idxs = self.skill_listbox.curselection()
+            if not idxs:
+                return
+            idx = idxs[0]
+            if idx >= len(self.skills):
+                return
+            skill = self.skills[idx]
+            self.skill_selected_index = idx
+            self.skill_selected_name = skill['name']
+            self._skill_fill_form(skill)
+        except Exception:
+            pass
+
+    def _read_skill_form(self):
+        if not hasattr(self, 'skill_name_var'):
+            raise ValueError('UI not ready')
+        name = self.skill_name_var.get().strip()
+        if not name:
+            raise ValueError('name required')
+        key = self.skill_key_var.get().strip().upper()
+        if not key:
+            raise ValueError('key required')
+        type_label = self.skill_type_var.get().strip() if hasattr(self, 'skill_type_var') else self._t('skill_type_attack')
+        skill_type = self._skill_type_from_label(type_label)
+        try:
+            cooldown = float(self.skill_cooldown_var.get() or 0)
+            cast_time = float(self.skill_cast_time_var.get() or 0)
+        except Exception as exc:
+            raise ValueError(exc)
+        image = self.skill_image_var.get().strip() if hasattr(self, 'skill_image_var') else ''
+        return {
+            'name': name,
+            'key': key,
+            'type': skill_type,
+            'cooldown': max(cooldown, 0.0),
+            'cast_time': max(cast_time, 0.0),
+            'image': image,
+        }
+
+    def on_skill_new(self):
+        self.skill_selected_index = None
+        self.skill_selected_name = None
+        if hasattr(self, 'skill_listbox'):
+            self.skill_listbox.selection_clear(0, tk.END)
+        self._skill_clear_form()
+
+    def on_skill_save(self):
+        try:
+            skill = self._read_skill_form()
+        except Exception as e:
+            messagebox.showerror(self._t('skill_section'), self._t('skill_invalid').format(e=e))
+            return
+
+        idx = self.skill_selected_index
+        if idx is None:
+            existing = next((i for i, s in enumerate(self.skills) if s['name'].lower() == skill['name'].lower()), None)
+            if existing is not None:
+                idx = existing
+                self.skills[idx] = skill
+            else:
+                self.skills.append(skill)
+                idx = len(self.skills) - 1
+        else:
+            for i, data in enumerate(self.skills):
+                if i != idx and data['name'].lower() == skill['name'].lower():
+                    messagebox.showerror(self._t('skill_section'), self._t('skill_duplicate'))
+                    return
+            self.skills[idx] = skill
+
+        save_skill_library(self.skills)
+        self.skill_selected_index = idx
+        self.skill_selected_name = skill['name']
+        self._refresh_skill_list(select_name=skill['name'])
+        self._update_attack_keys_from_slots()
+        self.hunt_status.set(self._t('skill_saved'))
+
+    def on_skill_delete(self):
+        if self.skill_selected_index is None or self.skill_selected_index >= len(self.skills):
+            messagebox.showinfo(self._t('skill_section'), self._t('skill_not_selected'))
+            return
+        removed = self.skills.pop(self.skill_selected_index)
+        save_skill_library(self.skills)
+        for var in self.skill_slot_vars:
+            if var.get().strip() == removed['name']:
+                var.set('')
+        self.skill_slot_saved_names = [v.get().strip() for v in self.skill_slot_vars if v.get().strip()]
+        self.skill_selected_index = None
+        self.skill_selected_name = None
+        self._refresh_skill_list()
+        self._update_attack_keys_from_slots()
+        self.hunt_status.set(self._t('skill_deleted'))
+
+    def on_skill_slot_changed(self, _evt=None):
+        self._update_attack_keys_from_slots()
+
+    def _prepare_skill_runtime(self, cfg):
+        runtime = []
+        slots = cfg.get('skill_slots') or []
+        default_press = int(cfg.get('attack_press_ms', 60))
+        for slot in slots:
+            key = str(slot.get('key', '')).strip().upper()
+            if not key:
+                continue
+            cooldown = max(float(slot.get('cooldown', 0.0)), 0.0)
+            cast_time = max(float(slot.get('cast_time', 0.0)), 0.0)
+            press_ms = max(int(cast_time * 1000), 30)
+            if press_ms < default_press:
+                press_ms = default_press
+            press_ms = min(press_ms, 2000)
+            runtime.append({
+                'name': slot.get('name', ''),
+                'key': key,
+                'type': slot.get('type', 'attack'),
+                'cooldown': cooldown,
+                'cast_time': cast_time,
+                'press_ms': press_ms,
+                'next_ready': 0.0,
+            })
+        return runtime
+
+    def _try_cast_skills(self, runtime, now, target_available, attack_phase):
+        if not runtime:
+            return
+        for skill in runtime:
+            if now < skill['next_ready']:
+                continue
+            skill_type = skill.get('type', 'attack')
+            if skill_type == 'attack' and not (attack_phase and target_available):
+                continue
+            if skill_type == 'buff' and attack_phase:
+                # allow buffs even during attack phase, but no extra gating
+                pass
+            try:
+                tap(skill['key'], skill['press_ms'])
+            except Exception:
+                continue
+            cooldown = skill.get('cooldown', 0.0)
+            skill['next_ready'] = time.time() + cooldown if cooldown > 0 else now
+            sleep_extra = max(skill.get('cast_time', 0.0) - (skill['press_ms'] / 1000.0), 0.0)
+            if sleep_extra > 0:
+                end = time.time() + min(sleep_extra, 0.5)
+                while time.time() < end and self.hunt_running:
+                    time.sleep(0.02)
 
     def on_hunt_start(self):
         if self.hunt_running:
@@ -590,6 +1565,8 @@ class App(tk.Tk):
                 attack_started = 0.0
                 lost_timeout = float(cfg.get('lost_timeout_sec', 0.8))
                 attack_min_duration = float(cfg.get('attack_min_duration_sec', 1.5))
+                skill_runtime = self._prepare_skill_runtime(cfg)
+                has_attack_skills = any(skill.get('type', 'attack') != 'buff' for skill in skill_runtime)
                 while self.hunt_running:
                     now = time.time()
                     if cfg.get('bring_to_front_each_cycle'):
@@ -614,6 +1591,9 @@ class App(tk.Tk):
                             have_target = False
                         last_search = now
 
+                    if skill_runtime:
+                        self._try_cast_skills(skill_runtime, now, have_target, attack_phase=False)
+
                     if mode == 'search':
                         if have_target:
                             mode = 'attack'
@@ -625,6 +1605,15 @@ class App(tk.Tk):
 
                     # mode == 'attack'
                     if have_target or (now - last_seen) <= lost_timeout or (now - attack_started) <= attack_min_duration:
+                        target_active = have_target or (now - last_seen) <= lost_timeout or (now - attack_started) <= attack_min_duration
+                        if skill_runtime and has_attack_skills:
+                            self._try_cast_skills(skill_runtime, now, target_active, attack_phase=True)
+                            if not target_active:
+                                mode = 'search'
+                                time.sleep(0.05)
+                                continue
+                            time.sleep(float(cfg['attack_interval']))
+                            continue
                         for k in cfg['attack_keys']:
                             if not self.hunt_running:
                                 break
