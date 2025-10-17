@@ -1,0 +1,122 @@
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-17, refresh GUI Hunt)
+
+🎯 Mục tiêu
+- Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), có thể mở rộng nhận diện ảnh.
+- Cung cấp GUI Hunt ổn định: chọn đúng cửa sổ game theo PID/HWND, đưa lên trước, thu nhỏ GUI để phím vào game, có hotkey dừng toàn cục.
+
+🛠️ Môi trường hiện tại
+- Hệ điều hành: Windows
+- Thư mục project: E:\Cabal_Auto
+- Python: 3.14.0 (venv tại `E:\Cabal_Auto\venv`)
+- Trình chạy: PowerShell (khuyến nghị Start VS Code/PowerShell As Administrator để global hotkey đáng tin cậy hơn)
+
+📦 Thư viện trong venv
+- pyautogui, keyboard, pillow
+- Khuyến nghị thêm (tùy chọn): pygetwindow, psutil
+- Lưu ý: opencv-python (cv2) có thể chưa tương thích Python 3.14. Nếu cần confidence cho template matching, dùng Python 3.10/3.11 rồi cài opencv-python.
+
+📁 Cấu trúc thư mục tiêu biểu
+E:\Cabal_Auto
+├── assets/
+│   ├── documents/Ngữ cảnh tạo auto cabal.txt
+│   └── images/                       # Lưu ảnh template (ví dụ target_frame.png)
+├── app_gui.py                        # GUI Hunt (chỉ còn tab Hunt)
+├── auto_hunt.py                      # Script Hunt không GUI
+├── hunt_config.json                  # Cấu hình Hunt
+├── win_input.py                      # Gửi phím qua Windows SendInput (ctypes)
+├── skills.json                       # Danh sách skill (key + cooldown)
+├── main_skills.py                    # Tự gửi skill theo cooldown
+├── main_safe.py                      # Auto click/keys an toàn (hotkey, failsafe)
+├── config.json                       # Cấu hình click/hotkey cơ bản; có thể bổ sung UI
+├── README.md                         # Hướng dẫn chi tiết
+├── requirements.txt                  # Danh sách thư viện
+└── venv/                             # Môi trường ảo
+
+⚙️ Cấu hình chính
+- config.json (clicker cơ bản)
+	{
+		"click": { "x": 500, "y": 400, "interval_sec": 2.0 },
+		"hotkeys": { "toggle": "f8", "exit": "f9" },
+		"safety": { "failsafe": true, "pause_key": "f7" }
+	}
+
+- hunt_config.json (Hunt trong GUI hoặc CLI)
+	Các khóa điển hình: 
+	- window_title: chuỗi cần có trong tên cửa sổ (ví dụ "CABAL")
+	- window_pid (tùy chọn) và/hoặc window_hwnd (tùy chọn): ưu tiên focus chính xác
+	- target_key: phím chuyển mục tiêu (thường "TAB")
+	- attack_keys: mảng phím tấn công, ví dụ ["1", "2", "3"]
+	- attack_press_ms: thời gian nhấn mỗi phím (ms)
+	- target_cycle_delay: độ trễ giữa các lần nhấn target_key khi đang tìm (s)
+	- search_interval, attack_interval: chu kỳ quét ảnh/đánh (s)
+	- lost_timeout_sec: thời gian mất dấu mục tiêu trước khi quay lại tìm (s)
+	- template_path: đường dẫn ảnh template (khung target/bộ chỉ thị ổn định)
+	- region: [left, top, width, height] để giới hạn tìm kiếm (khuyến nghị)
+	- confidence, grayscale: tham số cho OpenCV nếu có
+	- bring_to_front_each_cycle: true/false, có đưa game lên trước mỗi vòng hay không
+
+▶️ Cách chạy (PowerShell)
+1) Kích hoạt venv và cài thư viện (nếu chưa có)
+	 - E:\Cabal_Auto\venv\Scripts\Activate.ps1
+	 - pip install -r requirements.txt
+
+2) Chạy GUI Hunt
+	 - E:\Cabal_Auto\venv\Scripts\python.exe app_gui.py
+	 Lưu ý: Chạy As Administrator giúp hotkey toàn cục (F9) ổn định hơn.
+
+3) Chạy các script không GUI (tùy nhu cầu)
+	 - E:\Cabal_Auto\venv\Scripts\python.exe main_safe.py
+	 - E:\Cabal_Auto\venv\Scripts\python.exe main_skills.py
+	 - E:\Cabal_Auto\venv\Scripts\python.exe auto_hunt.py
+
+⌨️ Hotkey và thao tác quan trọng
+- Trong GUI Hunt:
+	- F9: dừng Hunt toàn cục (global hotkey, kể cả khi GUI bị thu nhỏ)
+	- ESC: dừng Hunt trong GUI
+	- GUI sẽ tự thu nhỏ (minimize) sau khi focus game thành công để phím đi vào game, không vào GUI
+- Trong clicker an toàn (main_safe.py):
+	- F8: bật/tắt auto
+	- F7: tạm dừng/tiếp tục
+	- F9: thoát chương trình
+	- Failsafe: đưa chuột lên góc trên-trái (0,0) để ngắt khẩn cấp
+
+🧠 Hành vi Hunt thông minh (state machine)
+- Chế độ tìm (search): chỉ gửi target_key theo nhịp target_cycle_delay cho đến khi ảnh template xuất hiện trong region.
+- Khi phát hiện mục tiêu: chuyển sang chế độ đánh (attack), lặp các attack_keys với attack_interval.
+- Nếu mất ảnh mục tiêu liên tục quá lost_timeout_sec: quay lại chế độ tìm, tránh đổi mục tiêu quá sớm.
+- Có thể cấu hình đưa cửa sổ game lên trước mỗi vòng để tăng độ tin cậy nhập phím.
+
+🪟 Focus đúng cửa sổ game (PID/HWND)
+- GUI liệt kê danh sách cửa sổ (lọc theo từ khóa), kèm PID và (tùy) tên process.
+- Ưu tiên focus theo HWND hoặc PID (chính xác hơn tiêu đề). Sau khi focus thành công, GUI sẽ minimize.
+- Có nút Bring To Front để thử đưa game lên foreground trước khi Start Hunt.
+
+🌐 Ngôn ngữ và hiển thị
+- GUI hỗ trợ i18n (EN/VI) và có trạng thái (status) theo thời gian thực khi đang Hunt.
+- Tab Click đã được loại bỏ. Chỉ còn tab Hunt để đơn giản hóa và tránh xung đột phím (TAB) làm chuyển tab.
+
+🧪 Chuẩn bị template và region
+- Chụp màn hình khi đã lock mục tiêu; cắt phần UI ổn định (khung/badge) làm template.
+- Giới hạn vùng tìm (region) quanh khu vực UI đó để tăng tốc và giảm nhầm lẫn.
+- Nếu dùng Python 3.10/3.11 + opencv-python: có thể đặt confidence/grayscale để nhận diện chắc hơn.
+
+🛠️ Khắc phục sự cố nhanh
+- Phím đi vào GUI thay vì game: dùng Bring To Front, chọn đúng PID/HWND, đảm bảo GUI đã minimize.
+- Global hotkey không bắt được: chạy VS Code/PowerShell As Administrator.
+- Tìm ảnh chậm hoặc sai: đặt region nhỏ, dùng template rõ ràng; cân nhắc dùng OpenCV trên Python 3.10/3.11.
+- Game không nhận phím: anti-cheat có thể chặn. SendInput thường tốt hơn pyautogui. Chạy As Admin có thể giúp nhưng không đảm bảo vượt mọi hạn chế.
+
+🧭 Hướng phát triển tiếp theo
+- Expose thêm lost_timeout_sec trong GUI để người dùng tự chỉnh.
+- Tuỳ chọn không minimize GUI khi Start (cho mục đích debug).
+- Di chuyển môi trường sang Python 3.10/3.11 để bật OpenCV confidence.
+- Ghi log tóm tắt (bắt đầu/kết thúc, số lần nhận diện, thời gian đánh) để dễ tinh chỉnh.
+
+============================
+🔄 Tổng kết cập nhật (2025-10-17)
+============================
+- Đã bổ sung GUI Hunt chỉ một tab, liệt kê PID/HWND, Bring To Front, minimize khi chạy.
+- Thêm hotkey F9 dừng toàn cục; ESC dừng trong GUI.
+- Áp dụng state machine: search → attack → search với lost_timeout_sec để không đổi mục tiêu sớm.
+- Bổ sung script bàn phím (win_input.py, main_skills.py) và Hunt CLI (auto_hunt.py) cùng cấu hình (skills.json, hunt_config.json).
+- README đã cập nhật hướng dẫn dùng GUI Hunt, cách chụp template, và troubleshooting.

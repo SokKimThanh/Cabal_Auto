@@ -1,0 +1,19 @@
+{
+  "click": {
+    "x": 707,
+    "y": 990,
+    "interval_sec": 2.0
+  },
+  "hotkeys": {
+    "toggle": "f8",
+    "exit": "f9"
+  },
+  "safety": {
+    "failsafe": true,
+    "pause_key": "f7"
+  },
+  "ui": {
+    "topmost": true,
+    "language": "vi"
+  }
+}

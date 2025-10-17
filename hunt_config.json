@@ -1,0 +1,24 @@
+{
+  "window_title": "CABAL",
+  "window_pid": 10380,
+  "target_key": "z",
+  "attack_keys": [
+    "1",
+    "2",
+    "3"
+  ],
+  "attack_press_ms": 60,
+  "target_cycle_delay": 0.2,
+  "search_interval": 0.25,
+  "attack_interval": 0.15,
+  "template_path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 182938.png",
+  "region": [
+    462,
+    607,
+    1,
+    1
+  ],
+  "confidence": 0.85,
+  "grayscale": true,
+  "bring_to_front_each_cycle": true
+}
