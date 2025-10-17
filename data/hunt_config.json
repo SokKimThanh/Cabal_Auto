@@ -58,6 +58,28 @@
         "width": 204,
         "height": 217
       }
+    },
+    {
+      "name": "Coc Go 4",
+      "path": "assets/images/monsters/coc_go__1760737532564.png",
+      "threshold": 0.85,
+      "region": {
+        "left": 1074,
+        "top": 456,
+        "width": 204,
+        "height": 217
+      }
+    },
+    {
+      "name": "Coc Go 5",
+      "path": "assets/images/monsters/coc_go__capture_1760738437748.png",
+      "threshold": 0.85,
+      "region": {
+        "left": 1074,
+        "top": 456,
+        "width": 204,
+        "height": 217
+      }
     }
   ],
   "skill_slots": [
@@ -67,7 +89,7 @@
       "type": "attack",
       "cooldown": 1.9,
       "cast_time": 1.7,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
+      "image": "assets/images/skills/dark_explosion_1760739255497.png"
     },
     {
       "name": "Bone Javelin",
@@ -75,7 +97,7 @@
       "type": "attack",
       "cooldown": 2.4,
       "cast_time": 1.5,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
+      "image": "assets/images/skills/bone_javelin_1760739255498.png"
     },
     {
       "name": "Skull Shooter",
@@ -83,7 +105,7 @@
       "type": "attack",
       "cooldown": 2.2,
       "cast_time": 1.5,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231935.png"
+      "image": "assets/images/skills/skull_shooter_1760739255501.png"
     },
     {
       "name": "Regeneration",
@@ -91,7 +113,7 @@
       "type": "buff",
       "cooldown": 2.2,
       "cast_time": 1.0,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231921.png"
+      "image": "assets/images/skills/regeneration_1760739255499.png"
     }
   ]
 }

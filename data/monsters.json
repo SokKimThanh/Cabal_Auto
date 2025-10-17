@@ -63,14 +63,5 @@
         }
       }
     ]
-  },
-  {
-    "name": "Quai vung xam",
-    "hp": 700.0,
-    "damage_per_hit": 700.0,
-    "template": "",
-    "description": "",
-    "window_bounds": null,
-    "templates": []
   }
 ]

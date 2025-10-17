@@ -2433,7 +2433,7 @@ class App(tk.Tk):
                     # Calculate timing
                     rec = calculate_timing(hp, damage, aps)
                     current_rec['rec'] = rec  # Store for Apply button
-                    formatted = format_timing_recommendation(rec, self.language)
+                    formatted = format_timing_recommendation(rec, self.lang)
                     
                     # Display results
                     result_text.delete('1.0', tk.END)
@@ -2451,7 +2451,7 @@ class App(tk.Tk):
                 if current_rec['rec'] is None:
                     messagebox.showwarning(
                         self._t('monster_timing_title'),
-                        'Please calculate timing first.' if self.language == 'en' else 'Vui lòng tính toán trước.'
+                        'Please calculate timing first.' if self.lang == 'en' else 'Vui lòng tính toán trước.'
                     )
                     return
                 
@@ -2473,7 +2473,7 @@ class App(tk.Tk):
                     msg = (f'Applied to Hunt Config:\n\n'
                            f'Lost Timeout: {rec.lost_timeout_sec:.2f}s\n'
                            f'Attack Duration: {rec.attack_min_duration_sec:.2f}s\n\n'
-                           f'Config saved to hunt_config.json' if self.language == 'en' else
+                           f'Config saved to hunt_config.json' if self.lang == 'en' else
                            f'Đã áp dụng vào Hunt Config:\n\n'
                            f'Lost Timeout: {rec.lost_timeout_sec:.2f}s\n'
                            f'Attack Duration: {rec.attack_min_duration_sec:.2f}s\n\n'
@@ -2498,11 +2498,11 @@ class App(tk.Tk):
             btn_frame = tk.Frame(dialog)
             btn_frame.pack(fill='x', padx=10, pady=(0,10))
             
-            tk.Button(btn_frame, text='Calculate' if self.language == 'en' else 'Tính toán',
+            tk.Button(btn_frame, text='Calculate' if self.lang == 'en' else 'Tính toán',
                      command=update_recommendations).pack(side='left', padx=5)
-            tk.Button(btn_frame, text='Apply to Hunt Config' if self.language == 'en' else 'Áp dụng vào Hunt',
+            tk.Button(btn_frame, text='Apply to Hunt Config' if self.lang == 'en' else 'Áp dụng vào Hunt',
                      command=apply_to_hunt_config, bg='#4CAF50', fg='white').pack(side='left', padx=5)
-            tk.Button(btn_frame, text='Close' if self.language == 'en' else 'Đóng',
+            tk.Button(btn_frame, text='Close' if self.lang == 'en' else 'Đóng',
                      command=dialog.destroy).pack(side='left', padx=5)
             
             # Initial calculation
