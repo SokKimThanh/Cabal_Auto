@@ -33,6 +33,7 @@ LANG = {
         'picked': 'Picked: ({x}, {y})', 'pick_error': 'Pick error: {e}',
         'window_title_contains': 'Window title contains:',
         'find_windows': 'Find Windows', 'bring_to_front': 'Bring To Front',
+    'bring_each_cycle': 'Force focus every cycle (use only if needed)',
         'target_key': 'Target key:', 'attack_keys': 'Attack keys (, sep):',
         'press_ms': 'Press ms:', 'target_cycle': 'Target cycle (s):',
         'search_interval': 'Search interval (s):', 'attack_interval': 'Attack interval (s):',
@@ -61,6 +62,7 @@ LANG = {
         'picked': 'Đã lấy: ({x}, {y})', 'pick_error': 'Lỗi lấy tọa độ: {e}',
         'window_title_contains': 'Tiêu đề cửa sổ chứa:',
         'find_windows': 'Tìm cửa sổ', 'bring_to_front': 'Đưa lên trước',
+    'bring_each_cycle': 'Đưa cửa sổ lên mỗi vòng (chỉ dùng khi cần)',
         'target_key': 'Phím chọn mục tiêu:', 'attack_keys': 'Phím đánh (cách nhau bằng dấu phẩy):',
         'press_ms': 'Giữ phím (ms):', 'target_cycle': 'Chu kỳ đổi mục tiêu (s):',
         'search_interval': 'Chu kỳ tìm (s):', 'attack_interval': 'Chu kỳ đánh (s):',
@@ -106,12 +108,13 @@ def load_hunt_config():
         "attack_press_ms": 60,
         "target_cycle_delay": 0.2,
         "search_interval": 0.25,
-        "attack_interval": 0.15,
+    "attack_interval": 0.15,
         "template_path": "assets/images/target_frame.png",
         "region": None,
         "confidence": 0.85,
         "grayscale": True,
-        "bring_to_front_each_cycle": True
+    "lost_timeout_sec": 0.8,
+    "bring_to_front_each_cycle": False
     }
     if HUNT_CONFIG_PATH.exists():
         try:
@@ -244,14 +247,17 @@ class App(tk.Tk):
         tk.Label(frm, text=self._t('h')).grid(row=7, column=3, sticky='e', padx=(48,0))
         tk.Entry(frm, textvariable=self.reg_h, width=6).grid(row=7, column=3, sticky='e', padx=(24,0))
 
+        self.bring_front_var = tk.BooleanVar(value=bool(self.hunt_cfg.get('bring_to_front_each_cycle', False)))
+        tk.Checkbutton(frm, text=self._t('bring_each_cycle'), variable=self.bring_front_var).grid(row=8, column=0, columnspan=4, sticky='w', pady=(6,0))
+
         pick_frame = tk.Frame(frm)
-        pick_frame.grid(row=8, column=0, columnspan=4, pady=(6,0))
+        pick_frame.grid(row=9, column=0, columnspan=4, pady=(6,0))
         tk.Button(pick_frame, text=self._t('pick_tl'), command=lambda: self.on_hunt_pick_corner('tl')).pack(side='left')
         tk.Button(pick_frame, text=self._t('pick_br'), command=lambda: self.on_hunt_pick_corner('br')).pack(side='left', padx=(8,0))
 
         # Hunt buttons
         hbtn = tk.Frame(frm)
-        hbtn.grid(row=9, column=0, columnspan=4, pady=(12,0))
+        hbtn.grid(row=10, column=0, columnspan=4, pady=(12,0))
         tk.Button(hbtn, text=self._t('save_hunt'), command=self.on_hunt_save).pack(side='left')
         self.hunt_start_btn = tk.Button(hbtn, text=self._t('start_hunt'), command=self.on_hunt_start)
         self.hunt_start_btn.pack(side='left', padx=(8,0))
@@ -260,7 +266,7 @@ class App(tk.Tk):
 
         # Status
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
-        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=10, column=0, columnspan=4, pady=(8,0))
+        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=11, column=0, columnspan=4, pady=(8,0))
 
         for i in range(4):
             frm.grid_columnconfigure(i, weight=1)
@@ -376,52 +382,21 @@ class App(tk.Tk):
     def _bring_window_to_front_by_hwnd(self, hwnd: int) -> bool:
         try:
             user32 = ctypes.windll.user32
-            kernel32 = ctypes.windll.kernel32
             hwnd_obj = wintypes.HWND(int(hwnd))
             SW_SHOW = 5
             SW_RESTORE = 9
-
-            try:
-                user32.AllowSetForegroundWindow(0xFFFFFFFF)
-            except Exception:
-                pass
 
             if user32.IsIconic(hwnd_obj):
                 user32.ShowWindow(hwnd_obj, SW_RESTORE)
             else:
                 user32.ShowWindow(hwnd_obj, SW_SHOW)
 
-            fg_hwnd = user32.GetForegroundWindow()
-            if fg_hwnd == hwnd_obj.value:
-                return True
-
-            current_thread = kernel32.GetCurrentThreadId()
-            fg_thread = 0
-            if fg_hwnd:
-                fg_pid = wintypes.DWORD()
-                fg_thread = user32.GetWindowThreadProcessId(wintypes.HWND(fg_hwnd), ctypes.byref(fg_pid))
-            target_pid = wintypes.DWORD()
-            target_thread = user32.GetWindowThreadProcessId(hwnd_obj, ctypes.byref(target_pid))
-
-            attached_fg = False
-            attached_target = False
-            if fg_thread and fg_thread != current_thread:
-                attached_fg = bool(user32.AttachThreadInput(fg_thread, current_thread, True))
-            if target_thread and target_thread != current_thread:
-                attached_target = bool(user32.AttachThreadInput(target_thread, current_thread, True))
-
-            user32.BringWindowToTop(hwnd_obj)
-            user32.SetForegroundWindow(hwnd_obj)
-            user32.SetFocus(hwnd_obj)
-            user32.SetActiveWindow(hwnd_obj)
-
-            if attached_target:
-                user32.AttachThreadInput(target_thread, current_thread, False)
-            if attached_fg:
-                user32.AttachThreadInput(fg_thread, current_thread, False)
-
-            time.sleep(0.05)
-            return user32.GetForegroundWindow() == hwnd_obj.value
+            res = user32.SetForegroundWindow(hwnd_obj)
+            if not res:
+                user32.BringWindowToTop(hwnd_obj)
+                res = user32.SetForegroundWindow(hwnd_obj)
+            time.sleep(0.02)
+            return bool(res and user32.GetForegroundWindow() == hwnd_obj.value)
         except Exception:
             return False
 
@@ -514,6 +489,7 @@ class App(tk.Tk):
         try:
             cfg = self._hunt_from_ui()
             save_hunt_config(cfg)
+            self.hunt_cfg = cfg
             self.hunt_status.set('Saved hunt_config.json')
         except Exception as e:
             messagebox.showerror('Error', self._t('invalid_hunt').format(e=e))
@@ -542,9 +518,10 @@ class App(tk.Tk):
             "attack_interval": attack_i,
             "template_path": template or 'assets/images/target_frame.png',
             "region": region,
-            "confidence": float(load_hunt_config().get('confidence', 0.85)),
-            "grayscale": bool(load_hunt_config().get('grayscale', True)),
-            "bring_to_front_each_cycle": True
+            "confidence": float(self.hunt_cfg.get('confidence', 0.85)),
+            "grayscale": bool(self.hunt_cfg.get('grayscale', True)),
+            "lost_timeout_sec": float(self.hunt_cfg.get('lost_timeout_sec', 0.8)),
+            "bring_to_front_each_cycle": bool(self.bring_front_var.get())
         }
         return cfg
 
@@ -594,7 +571,7 @@ class App(tk.Tk):
                 have_target = False
                 mode = 'search'
                 last_seen = 0.0
-                lost_timeout = float(cfg.get('lost_timeout_sec', load_hunt_config().get('lost_timeout_sec', 0.8)))
+                lost_timeout = float(cfg.get('lost_timeout_sec', 0.8))
                 while self.hunt_running:
                     now = time.time()
                     if cfg.get('bring_to_front_each_cycle'):
