@@ -29,3 +29,5 @@
 {"event": "MATCH", "template": "Coc Go 5", "monster": "", "box": {"left": 1064, "top": 367, "width": 167, "height": 264}, "center": {"x": 1147, "y": 499}, "threshold": 0.85, "confidence": 0.8977546095848083, "timestamp": "2025-10-18T06:26:11.792569"}
 {"event": "MATCH", "template": "Coc Go 5", "monster": "", "box": {"left": 1064, "top": 367, "width": 167, "height": 264}, "center": {"x": 1147, "y": 499}, "threshold": 0.85, "confidence": 0.9230659008026123, "timestamp": "2025-10-18T06:26:16.501012"}
 {"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 103.069707, "timestamp": "2025-10-18T06:26:20.655559"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 10.32, "attack_min_duration_sec": 10.32, "template_count": 1}, "timestamp": "2025-10-18T06:41:42.959371"}
+{"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 36.724307, "timestamp": "2025-10-18T06:42:19.438168"}

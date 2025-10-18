@@ -63,5 +63,21 @@
         }
       }
     ]
+  },
+  {
+    "name": "Scorlug",
+    "hp": 100.0,
+    "damage_per_hit": 175.0,
+    "template": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-18 063850.png",
+    "description": "Luyen Cap",
+    "window_bounds": null,
+    "templates": [
+      {
+        "name": "scorlug1",
+        "path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-18 063850.png",
+        "threshold": 0.85,
+        "region": null
+      }
+    ]
   }
 ]

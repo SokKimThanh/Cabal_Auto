@@ -1739,27 +1739,37 @@ class App(tk.Tk):
         time_module.sleep(0.5)  # Brief pause
         
         try:
-            # Try to locate on screen
+            # Try to locate on screen using template_matcher
             result = None
             confidence_val = None
             
-            # PyAutoGUI locate
-            if region:
-                result = pyautogui.locateOnScreen(template_path, confidence=threshold, region=region, grayscale=True)
-            else:
-                result = pyautogui.locateOnScreen(template_path, confidence=threshold, grayscale=True)
+            # Use locate_template for accurate confidence tracking
+            box_and_conf = locate_template(
+                template_path=template_path,
+                threshold=threshold,
+                region=region,
+                grayscale=True
+            )
             
             # Restore window
             if self.monster_manager_win:
                 self.monster_manager_win.deiconify()
             
-            if result:
+            if box_and_conf:
+                box, confidence_val = box_and_conf
+                # Create a Box-like object for compatibility
+                class Box:
+                    def __init__(self, left, top, width, height):
+                        self.left = left
+                        self.top = top
+                        self.width = width
+                        self.height = height
+                
+                result = Box(box[0], box[1], box[2], box[3])
+                
                 # Get center coordinates
                 center_x = result.left + result.width // 2
                 center_y = result.top + result.height // 2
-                
-                # PyAutoGUI doesn't return confidence, use threshold as approximation
-                confidence_val = threshold
                 
                 message = self._t('monster_template_test_found').format(
                     x=center_x, 
