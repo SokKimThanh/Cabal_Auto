@@ -1104,6 +1104,10 @@ class App(tk.Tk):
         for i in range(4):
             frm.grid_columnconfigure(i, weight=1)
         self._update_window_bounds_display()
+        
+        # Auto-populate window selection if config exists (UX FIX #3)
+        # This prevents users from having to re-select window every time
+        self._auto_populate_saved_window()
 
     # Click UI and handlers removed
 
@@ -1438,14 +1442,111 @@ class App(tk.Tk):
     
     def on_setup_wizard(self):
         """Launch setup wizard to guide user through initial configuration."""
+        # Hide main window during wizard to prevent confusing dual-window state
+        self.withdraw()
+        
         def on_wizard_complete(wizard_data):
             """Callback when wizard completes - apply settings to UI."""
-            # Apply wizard data to hunt config
-            # (Will be fully implemented in Task #5)
-            self.hunt_status.set(f"Wizard completed - Language: {wizard_data.get('language', 'en')}")
+            # Show main window again
+            self.deiconify()
+            
+            # Reload config to get wizard changes
+            self.hunt_cfg = load_hunt_config()
+            
+            # Populate Hunt tab UI with wizard data
+            self._populate_hunt_ui_from_config()
+            
+            # Update status message
+            lang = wizard_data.get('language', 'en')
+            self.hunt_status.set(f"✅ Wizard completed! Configuration loaded. Ready to hunt. (Language: {lang})")
+        
+        def on_wizard_cancel():
+            """Callback when wizard is cancelled - restore main window."""
+            self.deiconify()
         
         # Launch wizard - use 'self' instead of 'self.root' (App inherits from tk.Tk)
-        show_setup_wizard(self, config_manager=self.config_mgr, on_complete=on_wizard_complete)
+        show_setup_wizard(self, config_manager=self.config_mgr, on_complete=on_wizard_complete, on_cancel=on_wizard_cancel)
+    
+    def _populate_hunt_ui_from_config(self):
+        """Populate Hunt tab UI elements from hunt_config.json data."""
+        # 1. Window selection
+        window_title = self.hunt_cfg.get('window_title', '').strip()
+        window_pid = self.hunt_cfg.get('window_pid')
+        window_hwnd = self.hunt_cfg.get('window_hwnd')
+        
+        if window_title:
+            # Update window title entry
+            self.win_title_var.set(window_title)
+            
+            # If we have PID/HWND, create hunt_selected object and populate listbox
+            if window_pid and window_hwnd:
+                self.hunt_selected = {
+                    'title': window_title,
+                    'pid': window_pid,
+                    'hwnd': window_hwnd,
+                    'proc': None  # Process name not saved in config
+                }
+                
+                # Populate listbox with saved window
+                self.win_listbox.delete(0, tk.END)
+                label = f"{window_title}  [PID:{window_pid}]"
+                self.win_listbox.insert(tk.END, label)
+                self.win_listbox.selection_set(0)
+                self.win_listbox.activate(0)
+                self.win_items = [self.hunt_selected]
+        
+        # 2. Monster template (if exists)
+        monster_name = self.hunt_cfg.get('monster_selected_name', '').strip()
+        template_path = self.hunt_cfg.get('template_path', '').strip()
+        
+        if monster_name:
+            # Update monster name display (assuming you have a monster_name variable)
+            # This will be shown in UI when monster selection is implemented
+            pass
+        
+        # 3. Skill slots
+        skill_slots = self.hunt_cfg.get('skill_slots', [])
+        if skill_slots:
+            # Update skill UI (assuming skill slot UI variables exist)
+            # This will populate skill comboboxes when skill UI is ready
+            pass
+        
+        # 4. Update any other UI elements that depend on config
+        # (Add more as needed based on your UI structure)
+        pass
+    
+    def _auto_populate_saved_window(self):
+        """
+        Auto-populate window selection from hunt_config.json on app startup.
+        Prevents users from having to re-select window if already configured.
+        Users can still use 'Find Windows' to change if needed.
+        """
+        window_title = self.hunt_cfg.get('window_title', '').strip()
+        window_pid = self.hunt_cfg.get('window_pid')
+        window_hwnd = self.hunt_cfg.get('window_hwnd')
+        
+        # Only auto-populate if we have all required data
+        if not (window_title and window_pid and window_hwnd):
+            return
+        
+        # Create hunt_selected object
+        self.hunt_selected = {
+            'title': window_title,
+            'pid': window_pid,
+            'hwnd': window_hwnd,
+            'proc': None  # Process name not saved in config
+        }
+        
+        # Populate listbox with saved window
+        self.win_listbox.delete(0, tk.END)
+        label = f"{window_title}  [PID:{window_pid}]"
+        self.win_listbox.insert(tk.END, label)
+        self.win_listbox.selection_set(0)
+        self.win_listbox.activate(0)
+        self.win_items = [self.hunt_selected]
+        
+        # Update status to inform user
+        self.hunt_status.set(f"✓ Loaded saved window: {window_title} (PID: {window_pid})")
     
     def on_hunt_save(self):
         try:

@@ -26,7 +26,7 @@ class SetupWizard:
     Guides through: Welcome → Window → Monster → Skills → Review
     """
     
-    def __init__(self, parent, config_manager=None, on_complete=None):
+    def __init__(self, parent, config_manager=None, on_complete=None, on_cancel=None):
         """
         Initialize setup wizard.
         
@@ -34,10 +34,12 @@ class SetupWizard:
             parent: Parent tkinter window
             config_manager: ConfigManager instance (optional)
             on_complete: Callback function when wizard completes (optional)
+            on_cancel: Callback function when wizard is cancelled (optional)
         """
         self.parent = parent
         self.config_manager = config_manager
         self.on_complete = on_complete
+        self.on_cancel = on_cancel
         
         # Wizard state
         self.current_step = 1
@@ -1036,9 +1038,12 @@ It takes about 2 minutes. Let's begin!"""
         
         if confirm:
             self.dialog.destroy()
+            # Call cancel callback to restore main window
+            if self.on_cancel:
+                self.on_cancel()
 
 
-def show_setup_wizard(parent, config_manager=None, on_complete=None):
+def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=None):
     """
     Convenience function to show setup wizard.
     
@@ -1046,11 +1051,12 @@ def show_setup_wizard(parent, config_manager=None, on_complete=None):
         parent: Parent tkinter window
         config_manager: ConfigManager instance (optional)
         on_complete: Callback when wizard completes (optional)
+        on_cancel: Callback when wizard is cancelled (optional)
     
     Returns:
         SetupWizard instance
     """
-    wizard = SetupWizard(parent, config_manager, on_complete)
+    wizard = SetupWizard(parent, config_manager, on_complete, on_cancel)
     return wizard
 
 
