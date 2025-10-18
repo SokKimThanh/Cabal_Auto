@@ -1,0 +1,155 @@
+# Documentation Index
+
+Tổ chức tài liệu dự án Cabal Auto - Organized October 18, 2025
+
+## 📁 Cấu trúc thư mục / Folder Structure
+
+```
+docs/
+├── README.md                           # Tổng quan dự án / Project overview
+├── INDEX.md                            # File này / This file
+├── HUONG_DAN_NGUOI_MOI.md             # Hướng dẫn người mới / Beginner guide
+├── HOW_TO_USE_TEST_RECOGNITION.md     # Hướng dẫn test nhận diện / Recognition testing guide
+├── PROJECT_REORGANIZATION.md          # Tổng quan tổ chức lại dự án / Project reorganization overview
+├── PROJECT_REORGANIZATION_SUMMARY.md  # Tóm tắt tổ chức lại dự án / Project reorganization summary
+├── PROJECT_SUMMARY.py                 # Script tạo tóm tắt dự án / Project summary generator
+├── SESSION_SUMMARY_2025-10-18.md      # Tóm tắt phiên làm việc / Session summary
+│
+├── sprints/                            # Tài liệu các Sprint
+│   ├── sprint15/
+│   │   ├── SPRINT15_COMPLETE.md
+│   │   ├── SPRINT15_SUMMARY.txt
+│   │   ├── sprint15_demo.py
+│   │   └── ...
+│   │
+│   ├── sprint16/                       # Sprint 16 - UI Redesign
+│   │   ├── REDESIGN_PROPOSAL_SPRINT16.md
+│   │   ├── SPRINT16_QUICK_REFERENCE.md
+│   │   ├── SPRINT16_BUGFIX_WIZARD_AUTOLAUNCH.md
+│   │   ├── SPRINT16_BUGFIX_WIZARD_CRASH.md
+│   │   ├── SPRINT16_PLANNING_SUMMARY.md
+│   │   ├── SPRINT16_TASK1_IMPLEMENTATION.md
+│   │   ├── SPRINT16_TASK2_IMPLEMENTATION.md
+│   │   ├── SPRINT16_TASK3_IMPLEMENTATION.md
+│   │   ├── SPRINT16_TASK4_IMPLEMENTATION.md
+│   │   ├── SPRINT16_TASK5_IMPLEMENTATION.md
+│   │   └── SPRINT16_UX_WIZARD_IMPROVEMENTS.md
+│   │
+│   └── sprint18/                       # Sprint 18 - 4-Tab Reorganization
+│       ├── SPRINT17_PHASE3_MULTIMOB.md          # Multi-monster support (Phase 3)
+│       ├── SPRINT18_PHASE4_TAB_REORGANIZATION.md # 4-tab redesign overview
+│       ├── SPRINT18_PHASE4_PROGRESS_1.md        # Progress tracking
+│       ├── SPRINT18_PHASE4_TASK2_COMPLETE.md    # Hunt Tab refactor
+│       ├── SPRINT18_PHASE4_TASK3_COMPLETE.md    # Setup Tab creation
+│       └── WINDOW_SELECTION_UX_ENHANCEMENT.md   # Window selection UX improvement
+│
+├── bugfixes/                           # Tài liệu sửa lỗi / Bug fix documentation
+│   ├── BUGFIX_IMAGE_PREVIEW_SIZE.md
+│   └── BUGFIX_SESSION_SUMMARY.md
+│
+├── ux-enhancements/                    # Cải tiến UX / UX improvements
+│   ├── UX_ENHANCEMENT_SMART_MONSTER_INPUT.md
+│   ├── UX_FIX_PIL_MISSING_ERROR.md
+│   └── WIZARD_AUTO_LAUNCH.md
+│
+└── translations/                       # Tài liệu dịch thuật / Translation documentation
+    ├── TRANSLATION_COMPLETION_PIL_FIX.md
+    ├── TRANSLATION_QUICK_SUMMARY.md
+    ├── PIL_FIX_QUICK_REF.md
+    ├── PIL_FIX_SUMMARY.md
+    └── CONTEXT_UPDATE_SUMMARY_PIL_FIX.md
+```
+
+## 📚 Tài liệu chính / Main Documents
+
+### Hướng dẫn sử dụng / User Guides
+- **[HUONG_DAN_NGUOI_MOI.md](HUONG_DAN_NGUOI_MOI.md)** - Hướng dẫn người mới bắt đầu
+- **[HOW_TO_USE_TEST_RECOGNITION.md](HOW_TO_USE_TEST_RECOGNITION.md)** - Cách test nhận diện template
+- **[README.md](README.md)** - Tổng quan dự án
+
+### Tổng quan dự án / Project Overview
+- **[PROJECT_REORGANIZATION.md](PROJECT_REORGANIZATION.md)** - Chi tiết tổ chức lại dự án
+- **[PROJECT_REORGANIZATION_SUMMARY.md](PROJECT_REORGANIZATION_SUMMARY.md)** - Tóm tắt tổ chức lại
+- **[SESSION_SUMMARY_2025-10-18.md](SESSION_SUMMARY_2025-10-18.md)** - Tóm tắt phiên làm việc gần nhất
+
+## 🚀 Sprint Documentation
+
+### Sprint 18 - 4-Tab UI Reorganization (Current)
+**Mục tiêu**: Tổ chức lại giao diện thành 4 tab (Hunt, Setup, Stats, Help) để dễ sử dụng hơn
+
+**Tài liệu**:
+- [SPRINT18_PHASE4_TAB_REORGANIZATION.md](sprints/sprint18/SPRINT18_PHASE4_TAB_REORGANIZATION.md) - Tổng quan 4-tab redesign
+- [SPRINT18_PHASE4_TASK2_COMPLETE.md](sprints/sprint18/SPRINT18_PHASE4_TASK2_COMPLETE.md) - Refactor Hunt Tab
+- [SPRINT18_PHASE4_TASK3_COMPLETE.md](sprints/sprint18/SPRINT18_PHASE4_TASK3_COMPLETE.md) - Create Setup Tab
+- [WINDOW_SELECTION_UX_ENHANCEMENT.md](sprints/sprint18/WINDOW_SELECTION_UX_ENHANCEMENT.md) - Window selection UX improvement
+- [SPRINT17_PHASE3_MULTIMOB.md](sprints/sprint18/SPRINT17_PHASE3_MULTIMOB.md) - Multi-monster support (Phase 3)
+
+**Tiến độ**: 75% complete (6/8 tasks done)
+
+### Sprint 16 - UI Redesign & Wizard
+**Mục tiêu**: Redesign giao diện và cải thiện wizard cho người mới
+
+**Tài liệu**:
+- [REDESIGN_PROPOSAL_SPRINT16.md](sprints/sprint16/REDESIGN_PROPOSAL_SPRINT16.md) - Đề xuất redesign
+- [SPRINT16_QUICK_REFERENCE.md](sprints/sprint16/SPRINT16_QUICK_REFERENCE.md) - Tham khảo nhanh
+- [SPRINT16_TASK1-5_IMPLEMENTATION.md](sprints/sprint16/) - 5 tasks implementation
+- [SPRINT16_UX_WIZARD_IMPROVEMENTS.md](sprints/sprint16/SPRINT16_UX_WIZARD_IMPROVEMENTS.md) - Cải tiến wizard
+
+**Trạng thái**: ✅ Complete
+
+### Sprint 15 & Earlier
+Xem thư mục [sprints/](sprints/) để tìm tài liệu các sprint cũ hơn
+
+## 🐛 Bug Fixes
+
+- [BUGFIX_IMAGE_PREVIEW_SIZE.md](bugfixes/BUGFIX_IMAGE_PREVIEW_SIZE.md) - Sửa lỗi preview image size
+- [BUGFIX_SESSION_SUMMARY.md](bugfixes/BUGFIX_SESSION_SUMMARY.md) - Tóm tắt các bugfix
+
+## ✨ UX Enhancements
+
+- [UX_ENHANCEMENT_SMART_MONSTER_INPUT.md](ux-enhancements/UX_ENHANCEMENT_SMART_MONSTER_INPUT.md) - Smart monster input
+- [UX_FIX_PIL_MISSING_ERROR.md](ux-enhancements/UX_FIX_PIL_MISSING_ERROR.md) - Fix PIL missing error
+- [WIZARD_AUTO_LAUNCH.md](ux-enhancements/WIZARD_AUTO_LAUNCH.md) - Wizard auto-launch
+
+## 🌐 Translations
+
+- [TRANSLATION_COMPLETION_PIL_FIX.md](translations/TRANSLATION_COMPLETION_PIL_FIX.md) - PIL fix translations
+- [TRANSLATION_QUICK_SUMMARY.md](translations/TRANSLATION_QUICK_SUMMARY.md) - Tóm tắt translations
+- [PIL_FIX_QUICK_REF.md](translations/PIL_FIX_QUICK_REF.md) - PIL fix reference
+- [PIL_FIX_SUMMARY.md](translations/PIL_FIX_SUMMARY.md) - PIL fix summary
+
+## 📝 Quy ước đặt tên / Naming Conventions
+
+- **SPRINT{N}_*.md** - Sprint documentation
+- **TASK{N}_*.md** - Task implementation details
+- **BUGFIX_*.md** - Bug fix documentation
+- **UX_*.md** - UX enhancement documentation
+- **TRANSLATION_*.md** - Translation documentation
+- **PIL_*.md** - PIL/Pillow related documentation
+
+## 🔍 Tìm tài liệu / Finding Documentation
+
+### Theo chức năng / By Feature
+- **Multi-monster hunting** → `sprints/sprint18/SPRINT17_PHASE3_MULTIMOB.md`
+- **4-tab UI** → `sprints/sprint18/SPRINT18_PHASE4_TAB_REORGANIZATION.md`
+- **Setup wizard** → `sprints/sprint16/SPRINT16_UX_WIZARD_IMPROVEMENTS.md`
+- **Window selection** → `sprints/sprint18/WINDOW_SELECTION_UX_ENHANCEMENT.md`
+- **Smart input** → `ux-enhancements/UX_ENHANCEMENT_SMART_MONSTER_INPUT.md`
+
+### Theo thời gian / By Date
+1. **Sprint 15** - Multi-monster foundation
+2. **Sprint 16** - UI Redesign & Wizard
+3. **Sprint 17 Phase 3** - Multi-monster completion
+4. **Sprint 18 Phase 4** - 4-tab reorganization (current)
+
+## 📊 Thống kê / Statistics
+
+- **Tổng số file tài liệu**: ~40 files
+- **Sprints hoàn thành**: 3 (Sprint 15, 16, 17)
+- **Sprint hiện tại**: Sprint 18 Phase 4 (75% complete)
+- **Ngôn ngữ hỗ trợ**: English, Tiếng Việt
+
+---
+
+**Cập nhật lần cuối / Last Updated**: October 18, 2025  
+**Người tổ chức / Organized By**: AI Assistant
