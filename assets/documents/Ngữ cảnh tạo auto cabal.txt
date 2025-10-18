@@ -506,14 +506,158 @@ E:\Cabal_Auto
 		- Task #3: Progressive Disclosure & Layout (+200 lines)
 		- **Total Phase 1**: +405 lines, 3/3 tasks complete ✅
 	
-	🚀 **Sprint 16 Phase 2 - Setup Wizard** (Đang bắt đầu):
-		- Goal: 5-step wizard hướng dẫn người dùng mới setup trong 2 phút
-		- Task #4: Welcome Screen (~150 lines)
-		- Task #5: Steps 2-5 (~300 lines)
-		- Total estimate: ~450 lines
+	✅ **Sprint 16 Task #4 HOÀN TẤT** (2025-01-18): Setup Wizard - Welcome Screen
+		• **setup_wizard.py module**: NEW FILE (~450 lines) - Modal wizard dialog for first-time setup
+		• **SetupWizard class structure**:
+			- Modal Toplevel dialog: 750×750 pixels (resizable, min 700×650)
+			- 5-step wizard: Welcome → Window → Monster → Skills → Review
+			- Progress indicator: Step counter + progress dots (●)
+			- Navigation: Back/Next/Cancel buttons with validation
+		• **Step 1: Welcome Screen** (~120 lines):
+			- Welcoming title: "🎉 Welcome to Cabal Auto Hunt!"
+			- Info text: What wizard will help configure
+			- Language selector: EN/VI combobox với flag icons
+			- Visual hierarchy: Large title, subtitle, bullet points
+			- Auto-saves language preference to wizard_data
+		• **UI Components**:
+			- Header frame (60px fixed): Progress label + dots
+			- Content frame (scrollable canvas): Step-specific content với scrollbar
+			- Separator line: Visual divider trước footer
+			- Footer frame (auto-expand): Navigation buttons
+			- Modal blocking: transient() + grab_set() + wait_window()
+		• **Navigation buttons** (improved visibility):
+			- Back button: width=12, height=2, disabled on step 1
+			- Next button: width=15, height=2, bold green (#4CAF50), prominent với extra padding
+			- Finish button: "✓ Finish" blue (#2196F3) on step 5
+			- Cancel button: width=12, height=2
+			- All buttons: Hover effects (activebackground), cursor='hand2', raised relief
+		• **Wizard data structure**:
+			```python
+			wizard_data = {
+			    'language': 'en',
+			    'window_title': '',
+			    'window_pid': 0,
+			    'window_hwnd': 0,
+			    'monster_name': '',
+			    'monster_templates': [],
+			    'skill_slots': [],
+			    'timing': {'lost_timeout_sec': 0.5, 'attack_min_duration_sec': 5.0}
+			}
+			```
+		• **Localization** (~20 strings):
+			- wizard_title, wizard_welcome, wizard_subtitle
+			- wizard_info_*, wizard_language, wizard_next, wizard_back, wizard_cancel
+			- Full EN/VI support cho all wizard strings
+		• **Integration với app_gui.py**:
+			- "🧙 Setup Wizard" button trong Hunt tab
+			- on_setup_wizard() callback launches wizard
+			- on_wizard_complete() callback handles wizard data
+		• **Benefits**:
+			- User-friendly: Clear visual flow với progress tracking
+			- Modal behavior: Blocks app until wizard completes
+			- Responsive: Scrollable content, resizable window
+			- Localized: Full EN/VI support từ đầu
+		• **Code changes**:
+			- setup_wizard.py: ~450 lines (NEW FILE)
+			- app_gui.py: +25 lines (button, callbacks, import)
+		• **Documentation**: docs/sprints/SPRINT16_TASK4_IMPLEMENTATION.md
+	
+	✅ **Sprint 16 Task #5 HOÀN TẤT** (2025-01-18): Setup Wizard - Steps 2-5
+		• **Step 2: Window Calibration** (~70 lines):
+			- Filter textbox (default "Cabal") + Search button
+			- Window listbox với PID/HWND display (Courier New font for alignment)
+			- Auto-search on load: self.dialog.after(100, self._search_windows)
+			- Info label shows window count và selection status
+			- Stores: window_title, window_pid, window_hwnd in wizard_data
+		• **Step 3: Monster Selection** (~90 lines):
+			- Load monsters.json với error handling
+			- Display format: "{name}  (HP: {hp:,.0f}, {templates_count} template(s))"
+			- Listbox với scrollbar, auto-select first monster
+			- Info label shows selected monster details
+			- Stores: monster_name, monster_templates[], hp, damage in wizard_data
+		• **Step 4: Skill Configuration** (~100 lines):
+			- Load skills.json for skill names
+			- 3×3 grid layout với 9 comboboxes (slots 1-9)
+			- Combobox values: ['(Empty)'] + skill_names
+			- Clear All button resets all slots to (Empty)
+			- Tip label explains skill order importance
+			- Stores: skill_slots[] (9 elements) in wizard_data
+		• **Step 5: Final Review** (~130 lines):
+			- LabelFrame "Configuration Summary" với icons
+			- Display sections:
+				• 🪟 Game Window: title, PID, HWND
+				• 👾 Monster: name, HP, damage, templates count
+				• ⚔️ Skills: List of assigned skills (or "None assigned")
+				• ⏱️ Timing: lost_timeout, attack_duration
+			- Warnings (orange) if window/monster not selected
+			- Wraplength for long skill lists
+			- Ready to Finish with complete configuration review
+		• **Helper Methods** (~170 lines):
+			- _search_windows(): WinAPI window enumeration với filter
+			- _on_window_select(): Store window info from listbox selection
+			- _on_monster_select(): Store monster data from listbox selection
+			- _clear_all_skill_slots(): Reset all 9 comboboxes to (Empty)
+			- _enum_windows(): WinAPI EnumWindows callback với psutil integration
+				• ctypes bindings: EnumWindows, IsWindowVisible, GetWindowTextW, GetWindowThreadProcessId
+				• Returns: [{hwnd, pid, title, proc}, ...] sorted by PID
+				• Optional psutil for process name (graceful fallback if not installed)
+		• **Validation Logic** (~50 lines):
+			- Step 2: Window required - blocks Next if not selected
+			- Step 3: Monster required - blocks Next if not selected
+			- Step 4: Skills optional - confirmation dialog if no skills assigned
+			- Step 5: Review only - can Finish with warnings
+			- _validate_current_step() enforces rules with localized messageboxes
+		• **Save Configuration** (~55 lines):
+			- _save_wizard_config() writes all wizard_data to hunt_config.json via ConfigManager
+			- Window settings: window_title, window_pid, window_hwnd
+			- Monster settings: monster_selected_name, template_path (first template)
+			- Skill settings: skill_slots (9-element array)
+			- Timing settings: lost_timeout_sec (0.5), attack_min_duration_sec (5.0)
+			- Error handling với messagebox on save failure
+		• **Bug Fixes**:
+			- ❌ Duplicate _on_language_change() at line 830 - REMOVED
+			- ❌ self.root.after() → self.dialog.after() - FIXED
+			- ✅ Navigation now works correctly through all 5 steps
+		• **UI Improvements** (post-user feedback):
+			- Increased window size: 600×500 → 750×750 (足够显示所有按钮)
+			- Scrollable content: Canvas + Scrollbar để footer luôn visible
+			- Prominent buttons: Next button 15px width, 2px height, bold font, green color
+			- Footer auto-expand: Removed fixed height, allows buttons to fit naturally
+			- Separator line: Visual boundary between content và footer
+			- Mouse wheel support: Scroll content với mouse wheel
+		• **Code changes**:
+			- setup_wizard.py: +400 lines (Steps 2-5, helpers, validation, save logic)
+			- Total setup_wizard.py: ~1,056 lines after all improvements
+		• **Benefits**:
+			- Complete 5-step workflow: Welcome → Window → Monster → Skills → Review → Save
+			- Smart validation: Required fields enforced, optional fields với confirmation
+			- Auto-save: Config written to hunt_config.json on Finish
+			- Error handling: Graceful fallbacks, clear error messages
+			- Responsive UI: Scrollable content, always-visible footer buttons
+		• **Documentation**: docs/sprints/SPRINT16_TASK5_IMPLEMENTATION.md
+	
+	🎉 **Sprint 16 Phase 2 COMPLETE** (2025-01-18):
+		- Task #4: Setup Wizard Welcome Screen (+450 lines)
+		- Task #5: Setup Wizard Steps 2-5 (+400 lines + UI improvements)
+		- Bug fixes: Duplicate method removal, window sizing, scrollable content
+		- **Total Phase 2**: +850 lines, 2/2 tasks complete ✅
+		- **setup_wizard.py**: Fully functional 5-step wizard với modal blocking, validation, save to config
+	
+	🎉 **Sprint 16 Phase 1 COMPLETE** (2025-01-18):
+		- Task #1: Skill-Based Timing Calculator (+135 lines)
+		- Task #2: Mode Toggle Foundation (+70 lines)
+		- Task #3: Progressive Disclosure & Layout (+200 lines)
+		- **Total Phase 1**: +405 lines, 3/3 tasks complete ✅
+	
+	🚀 **Sprint 16 Phases Remaining**:
+		- ✅ Phase 1 Complete: Skill-based calculator, Mode toggle, Progressive disclosure (+405 lines)
+		- ✅ Phase 2 Complete: Setup Wizard with 5 steps (+850 lines)
+		- 🔜 Phase 3: Multi-Monster Support (~300 lines)
+		- 🔜 Phase 4: Tab Reorganization (~250 lines)
+		- 🔜 Phase 5: Polish & Documentation (~200 lines + docs)
 
 ============================
-🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
+🔄 Tổng kết cập nhật (2025-10-18 - Sprint 16 Phase 2 Complete)
 ============================
 ✅ HOÀN TẤT SPRINT 5: UX Polish & Optimization
 - **Tooltips**: ToolTip class với hover hints cho các trường phức tạp (threshold, window_bounds, lost_timeout, attack_duration). Dual-language support (EN/VI).
@@ -714,7 +858,7 @@ E:\Cabal_Auto
   - Validation: Ensures schema compliance
   - Future-proof: Schema ready for buff/attack runtime separation
 
-🎯 TỔNG KẾT SPRINT 1-15:
+🎯 TỔNG KẾT SPRINT 1-16:
 - Sprint 1-4: Monster/template CRUD, preview overlay, multi-template runtime, Hunt integration với auto-apply
 - Sprint 5: Polish UX với tooltips, validation, complete localization, thumbnail caching
 - Sprint 6: Screenshot capture với interactive region selection, auto-save, auto-fill form
@@ -727,10 +871,13 @@ E:\Cabal_Auto
 - Sprint 13: Apply Timing to Hunt Config với one-click workflow từ timing calculator đến hunt_config.json
 - Sprint 14: Buff Auto-Casting Runtime với intelligent skill management, duration/pre-refresh logic, separate attack/buff lanes
 - Sprint 15: Buff Duration GUI Fields với dynamic visibility, validation, tooltips - complete skill configuration in GUI
-- **System production-ready**: Complete workflow - capture → test → save → calculate timing → apply to hunt → configure buff skills in GUI → hunt với accurate confidence + intelligent buff management → monitor logs với portable assets và data-driven optimization
+- **Sprint 16 Phase 1**: Skill-based Timing Calculator, Mode Toggle, Progressive Disclosure - beginner-friendly UI (+405 lines)
+- **Sprint 16 Phase 2**: Setup Wizard with 5 steps (Welcome, Window, Monster, Skills, Review) - first-time user onboarding (+850 lines)
+- **System production-ready**: Complete workflow - capture → test → save → calculate timing → apply to hunt → configure buff skills in GUI → run setup wizard → hunt với accurate confidence + intelligent buff management → monitor logs với portable assets và data-driven optimization
 
-📊 CODE METRICS:
-- app_gui.py: ~3,271 lines (+80 lines Sprint 15 - buff duration GUI fields)
+📊 CODE METRICS (Updated Sprint 16 Phase 2):
+- app_gui.py: ~3,696 lines (+425 lines Sprint 16 Phase 1+2 - mode toggle, progressive disclosure, wizard integration)
+- setup_wizard.py: ~1,056 lines (NEW FILE Sprint 16 - complete 5-step wizard với validation, scrollable content, modal blocking)
 - auto_hunt.py: ~215 lines (+25 lines skill runtime integration với buff auto-casting)
 - hunt_logger.py: ~300 lines (dual logging system)
 - opencv_test.py: ~340 lines (comparison testing)
@@ -738,12 +885,28 @@ E:\Cabal_Auto
 - timing_calculator.py: ~280 lines (timing recommendations)
 - skill_migrator.py: ~220 lines (skills migration tool)
 - skill_runtime.py: ~320 lines (intelligent skill management)
-- Total project: ~5,166 lines (+80 lines Sprint 15)
-- Localization: 177+ strings với EN/VI parity (added 4 skill buff strings)
-- Dependencies: pyautogui, PIL, tkinter, logging, opencv-python 4.12.0, numpy 2.3.4
+- Total project: ~6,647 lines (+1,481 lines Sprint 16 Phases 1+2)
+- Localization: 197+ strings với EN/VI parity (added 20+ wizard strings, mode strings)
+- Dependencies: pyautogui, PIL, tkinter, logging, opencv-python 4.12.0, numpy 2.3.4, ctypes (WinAPI)
 - Assets: 4 skill images in assets/images/skills/ (portable, no external dependencies)
 
-🔧 TECHNICAL HIGHLIGHTS:
+🔧 TECHNICAL HIGHLIGHTS (Updated Sprint 16):
+- **Progressive Disclosure Pattern** (Sprint 16):
+  • hunt_intermediate_widgets[]: 4 timing parameter widgets
+  • hunt_advanced_widgets[]: 27 advanced configuration widgets
+  • _apply_hunt_mode(): Dynamic show/hide based on user experience level
+  • grid_remove() strategy: Preserves layout config while hiding widgets
+  • Beginner mode: 4 essentials only (window, monster, skills, start/stop)
+  • Intermediate mode: +4 timing parameters (8 total)
+  • Advanced mode: All 35 fields visible
+- **Setup Wizard Architecture** (Sprint 16):
+  • Modal Toplevel dialog: 750×750 resizable window với wait_window() blocking
+  • 5-step workflow: Welcome → Window Selection → Monster Config → Skills → Review & Save
+  • WinAPI integration: ctypes EnumWindows, GetWindowTextW, GetWindowThreadProcessId cho window enumeration
+  • Scrollable content: Canvas + Scrollbar pattern để footer buttons luôn visible
+  • Navigation validation: Step-by-step validation với localized error messages
+  • Auto-save config: Wizard data → hunt_config.json via ConfigManager
+  • Progress tracking: Step counter + visual progress dots, dynamic button text (Next/Finish)
 - ToolTip implementation: Lightweight Toplevel window với Enter/Leave bindings
 - Cache strategy: Path-based dict với PhotoImage references
 - Validation pattern: Try-except với custom error messages, _t() localized
