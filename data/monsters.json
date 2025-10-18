@@ -61,6 +61,12 @@
           "width": 204,
           "height": 217
         }
+      },
+      {
+        "name": "Coc go 6",
+        "path": "E:\\Cabal_Auto\\tmp\\captures\\coc_go__new_template_1760819978575.png",
+        "threshold": 0.85,
+        "region": null
       }
     ]
   },

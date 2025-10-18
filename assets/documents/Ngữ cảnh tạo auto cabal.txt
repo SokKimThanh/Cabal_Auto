@@ -2463,11 +2463,45 @@ self._t('success_title')
 ## Sprint 19: Library Manager Window (IN PROGRESS - 62.5% Complete)
 
 **Date Started**: October 18, 2025 (Night)
-**Last Updated**: October 18, 2025 (Advanced Testing & Code Review Phase)
+**Last Updated**: October 19, 2025 (Addendum: Capture UX + Fallbacks + Repo hygiene)
 **Priority**: High
 **Status**: 🟢 **Tasks #1, #2, #2.5 COMPLETE** | ⏳ **Tasks #3-8 PENDING**
 **Complexity**: Medium-High (~400-500 lines new code)
 **Current Progress**: 5/8 tasks completed (62.5%)
+
+### 🔎 Sprint 19 Addendum (October 19, 2025)
+
+This addendum records fixes and UX improvements landed during Sprint 19 while validating Monster Library capture and runtime matching:
+
+- Capture Overlay & Grab Safety
+  - Fixed Tk color error by using a valid Canvas background ("black")
+  - Added safe grab release/restore around capture to avoid Tk grab conflicts
+  - Synced capture behavior with helper: auto-fill name, default threshold, robust region tuple handling; removed unsupported grayscale arg in helper path
+
+- Bring-to-Front Timing (Pre-wait Hook)
+  - Game window is now brought to front immediately after the user confirms the capture dialog and right before the 3s countdown
+  - Implemented as a pre-wait hook; prevents premature warnings and ensures keystrokes go to game
+
+- Template Image Lifecycle: Temp Staging + Unsaved Badge
+  - Captured images are staged under tmp/captures until Apply; they are moved into assets/images/monsters on Apply with unique names and project-relative paths
+  - Deleting a template removes its image if it’s safely under project and not referenced elsewhere
+  - Visible "Unsaved" badge appears when there are pending changes; temps cleaned up on discard/close without apply
+
+- Library Manager Window Sizing
+  - Window opens at a normal centered size (e.g., 1200x800, resizable) instead of fullscreen for better desktop UX
+
+- Matching Robustness Without OpenCV
+  - PyAutoGUI path now falls back to locateOnScreen without the confidence parameter when OpenCV isn’t installed, avoiding crashes
+  - Removed brittle checks against pyautogui.__version__
+
+- Repo Hygiene: .gitignore
+  - Fixed pattern to stop ignoring the source lib/ directory; added build/lib*/ instead; kept lib64/
+
+Impact:
+- More reliable, predictable capture workflow
+- No more mid-workflow focus errors or premature warnings
+- Safer asset handling and clear pending state
+- Runtime no longer crashes on environments lacking OpenCV
 
 ### ✅ Completed Tasks Summary
 
@@ -2680,7 +2714,20 @@ self._t('success_title')
 **Task #7: Smart Auto-Sync** (~50 lines)
 - When Library Manager closes with changes → Refresh Hunt tab dropdowns
 - When timing applied → Update Advanced Settings automatically
-- Callback pattern: `on_library_changed()`
+- Callback pattern: `on_library_changed(changes)`
+  - Contract:
+    - Input: changes dict with possible keys: { monsters_updated: bool, skills_updated: bool, timing_applied: bool }
+    - Behavior:
+      - If monsters_updated: reload monsters.json, refresh Hunt tab monster rotation dropdowns, re-bind selection
+      - If skills_updated: reload skills.json, refresh skill slot previews in Hunt tab
+      - If timing_applied: update Advanced Settings fields (lost_timeout_sec, attack_min_duration_sec) and persist to hunt_config.json
+  - Triggers:
+    - Library Manager window close (Apply All clicked and changes persisted)
+    - Timing Calculator → Apply button in Library Manager
+  - Wiring:
+    - LibraryManagerWindow(..., on_close_callback=on_library_changed)
+    - Inside Library Manager: set self._changes["monsters_updated"|"skills_updated"|"timing_applied"] = True when appropriate
+    - On close: if any True → call callback(self._changes)
 
 **Task #8: Integration & Testing** (~50 lines)
 - Test all CRUD operations in new window

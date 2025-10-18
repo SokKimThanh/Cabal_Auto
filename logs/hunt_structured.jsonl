@@ -65,3 +65,4 @@
 {"event": "HUNT_STOP", "reason": "error", "duration_sec": 17.264016, "timestamp": "2025-10-19T03:25:40.833911"}
 {"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-19T03:28:32.460053"}
 {"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 75.040432, "timestamp": "2025-10-19T03:29:47.325016"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-19T03:40:31.721949"}
