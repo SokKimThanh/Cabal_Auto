@@ -12,7 +12,12 @@
   "search_interval": 0.25,
   "attack_interval": 0.15,
   "template_path": "assets/images/monsters/coc_go__capture_1760736387994.png",
-  "region": null,
+  "region": [
+    "",
+    "",
+    "",
+    ""
+  ],
   "confidence": 0.85,
   "grayscale": true,
   "lost_timeout_sec": 0.5,
@@ -120,5 +125,6 @@
       }
     }
   ],
-  "ui_mode": "advanced"
+  "ui_mode": "beginner",
+  "template_threshold": 0.8
 }

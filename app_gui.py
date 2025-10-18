@@ -1629,12 +1629,12 @@ class App(tk.Tk):
             
             # Update status
             if hasattr(self, 'hunt_status'):
-                self.hunt_status.set(self._t('settings_applied_success') if 'settings_applied_success' in self.translations[self.lang] else 'Settings applied successfully!')
+                self.hunt_status.set(self._t('settings_applied_success'))
             
             # Show success message
             messagebox.showinfo(
-                self._t('success_title') if 'success_title' in self.translations[self.lang] else 'Success',
-                self._t('settings_applied_message') if 'settings_applied_message' in self.translations[self.lang] else 'Settings have been applied and saved.'
+                self._t('success_title'),
+                self._t('settings_applied_message')
             )
             
         except ValueError as e:
