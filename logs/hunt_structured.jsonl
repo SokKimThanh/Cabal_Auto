@@ -46,3 +46,5 @@
 {"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-18T17:42:06.573798"}
 {"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 0.212722, "timestamp": "2025-10-18T17:42:06.611496"}
 {"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-18T17:42:40.190500"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-18T17:50:01.717333"}
+{"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 37.179544, "timestamp": "2025-10-18T17:50:38.639926"}
