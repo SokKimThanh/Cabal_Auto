@@ -225,6 +225,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'setup_mode': 'Configuration Mode',
         'setup_mode_desc': 'Select UI complexity level',
         'setup_libraries': 'Libraries',
+        'setup_libraries_desc': 'Manage monsters, skills, and timing',
+        'open_library_manager': 'Open Library Manager',
+        'library_manager_hint': 'Centralized management for monsters, skills, and timing calculations',
         'setup_advanced': 'Advanced Hunt Settings',
         'setup_window': 'Window Settings',
         'monsters_count': 'monsters',
@@ -351,6 +354,10 @@ LANG: Dict[str, Dict[str, str]] = {
         'mode_intermediate_desc': 'Các trường cơ bản + điều khiển thời gian cho người dùng có kinh nghiệm',
         'mode_advanced': '🔧 Nâng cao',
         'mode_advanced_desc': 'Toàn quyền kiểm soát - tất cả các tham số và cài đặt kỹ thuật',
+        'setup_libraries': 'Thư viện',
+        'setup_libraries_desc': 'Quản lý quái vật, kỹ năng và tính toán thời gian',
+        'open_library_manager': 'Mở Quản Lý Thư Viện',
+        'library_manager_hint': 'Quản lý tập trung cho quái vật, kỹ năng, và tính toán thời gian',
         'selected_window': 'Đã chọn cửa sổ: {title}',
         'bring_ok': 'Đã đưa lên trên',
         'bring_fail': 'Không thể đưa lên trên',
@@ -1327,41 +1334,47 @@ class App(tk.Tk):
         lib_frame = tk.LabelFrame(parent, text=self._t('setup_libraries'), padx=12, pady=10)
         lib_frame.grid(row=1, column=0, columnspan=2, sticky='we', pady=(0,12))
         
-        # Monster Library
-        monster_btn_frame = tk.Frame(lib_frame)
-        monster_btn_frame.grid(row=0, column=0, sticky='w', pady=4)
+        # Description
+        lib_desc = tk.Label(lib_frame, text=self._t('setup_libraries_desc'), fg='#666', font=('Arial', 9))
+        lib_desc.grid(row=0, column=0, columnspan=2, sticky='w', pady=(0,8))
+        
+        # Open Library Manager button
+        lib_btn_frame = tk.Frame(lib_frame)
+        lib_btn_frame.grid(row=1, column=0, columnspan=2, sticky='w', pady=4)
         
         tk.Button(
-            monster_btn_frame, 
-            text=self._t('monster_library'),
-            command=self._open_monster_library,
-            width=20
-        ).pack(side='left', padx=(0,8))
+            lib_btn_frame, 
+            text='📚 ' + self._t('open_library_manager'),
+            command=self._open_library_manager,
+            bg='#2196F3',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            padx=15,
+            pady=8
+        ).pack(side='left', padx=(0,12))
         
+        # Status info
         monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
+        skills_count = len(load_skill_library()) if hasattr(self, 'skills') else 0
+        
+        status_text = f"{monster_count} monsters • {skills_count} skills" if self.lang == 'en' else f"{monster_count} quái vật • {skills_count} kỹ năng"
         tk.Label(
-            monster_btn_frame,
-            text=f"({monster_count} {self._t('monsters_count')})",
-            fg='#666'
+            lib_btn_frame,
+            text=status_text,
+            fg='#666',
+            font=('Arial', 9)
         ).pack(side='left')
         
-        # Skills Library
-        skills_btn_frame = tk.Frame(lib_frame)
-        skills_btn_frame.grid(row=1, column=0, sticky='w', pady=4)
-        
-        tk.Button(
-            skills_btn_frame,
-            text=self._t('skills_library'),
-            command=self._open_skills_library,
-            width=20
-        ).pack(side='left', padx=(0,8))
-        
-        skills_count = len(self.skills) if hasattr(self, 'skills') else 0
+        # Hint
+        hint_text = self._t('library_manager_hint')
         tk.Label(
-            skills_btn_frame,
-            text=f"({skills_count} {self._t('skills_count')})",
-            fg='#666'
-        ).pack(side='left')
+            lib_frame,
+            text=f"💡 {hint_text}",
+            fg='#1976D2',
+            font=('Arial', 8),
+            wraplength=500,
+            justify='left'
+        ).grid(row=2, column=0, columnspan=2, sticky='w', pady=(8,0))
         
         # Section 3: Advanced Hunt Settings (visible for intermediate/advanced)
         self.adv_frame = tk.LabelFrame(parent, text=self._t('setup_advanced'), padx=12, pady=10)
@@ -1547,6 +1560,79 @@ class App(tk.Tk):
             # Show all sections
             self.adv_frame.grid()
             self.window_frame.grid()
+    
+    def _open_library_manager(self):
+        """
+        Open Library Manager window for centralized library management.
+        
+        Sprint 19 Task #1: Library Manager Window
+        """
+        from lib.library_manager import LibraryManagerWindow
+        
+        def on_library_changes(changes):
+            """Handle changes from Library Manager."""
+            # Update monsters if changed
+            if changes.get('monsters_changed'):
+                self.monsters = changes.get('monsters', self.monsters)
+                save_monster_library(self.monsters)
+                self._refresh_monster_list()  # Refresh Hunt tab monster dropdown
+                
+            # Update skills if changed
+            if changes.get('skills_changed'):
+                self.skills = changes.get('skills', self.skills)
+                save_skill_library(self.skills)
+                self._refresh_skill_display()  # Refresh Hunt tab skill display
+                
+            # Update hunt config if timing applied
+            if changes.get('timing_applied'):
+                self.hunt_cfg = changes.get('hunt_cfg', self.hunt_cfg)
+                save_hunt_config(self.hunt_cfg)
+                self._reload_setup_advanced_settings()  # Refresh Setup tab Advanced Settings
+                
+            # Update status
+            self.hunt_status.set(
+                'Library updated successfully' if self.lang == 'en' else 'Thư viện đã được cập nhật'
+            )
+        
+        # Open Library Manager window
+        try:
+            manager = LibraryManagerWindow(
+                parent=self,
+                hunt_cfg=self.hunt_cfg,
+                monsters=self.monsters,
+                skills=load_skill_library(),
+                lang=self.lang,
+                on_close_callback=on_library_changes
+            )
+        except Exception as e:
+            messagebox.showerror(
+                self._t('error_title'),
+                f"Failed to open Library Manager: {e}\n\nPlease check console for details."
+            )
+            import traceback
+            traceback.print_exc()
+    
+    def _refresh_skill_display(self):
+        """Refresh skill display in Hunt tab after library changes."""
+        # Refresh skill slots dropdown options
+        if hasattr(self, '_refresh_skill_slots_options'):
+            self._refresh_skill_slots_options()
+        
+        # Refresh skill list if in advanced mode
+        if hasattr(self, '_refresh_skill_list'):
+            self._refresh_skill_list()
+    
+    def _reload_setup_advanced_settings(self):
+        """Reload Advanced Settings values in Setup tab after timing changes."""
+        # Update variables with new values from hunt_cfg
+        if hasattr(self, 'setup_search_interval_var'):
+            self.setup_search_interval_var.set(f"{self.hunt_cfg.get('search_interval', 0.25):.2f}")
+        if hasattr(self, 'setup_attack_interval_var'):
+            self.setup_attack_interval_var.set(f"{self.hunt_cfg.get('attack_interval', 0.15):.2f}")
+        if hasattr(self, 'setup_lost_timeout_var'):
+            self.setup_lost_timeout_var.set(f"{self.hunt_cfg.get('lost_timeout_sec', 0.5):.2f}")
+        if hasattr(self, 'setup_attack_duration_var'):
+            self.setup_attack_duration_var.set(f"{self.hunt_cfg.get('attack_min_duration_sec', 5.0):.2f}")
     
     def _open_monster_library(self):
         """Open Monster Library Manager dialog."""

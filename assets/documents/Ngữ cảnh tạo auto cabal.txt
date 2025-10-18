@@ -2453,10 +2453,300 @@ self._t('success_title')
 
 ---
 
-*Phase 4 Last Updated: October 18, 2025 (Late Evening)*
+*Phase 4 Last Updated: October 18, 2025 (Night)*
 *Sprint 18 Progress: 75% (6/8 tasks)*
 *Recent Fixes: Timing recommendation unhashable dict error (skill_slots data structure)*
-*Next Session: Complete Task #4 (Stats Tab) + Integration Testing*
+*Next Session: Sprint 19 - Library Manager Window (NEW) + Task #4 Stats Tab*
+
+---
+
+## Sprint 19 Planning: Library Manager Window (UPCOMING)
+
+**Date**: October 18, 2025 (Night - Planning Phase)
+**Priority**: High
+**Complexity**: Medium-High (~400-500 lines new code)
+
+### User Request Summary
+"Tách phần quản lý quái vật và kỹ năng ra riêng khỏi tab săn. Tôi muốn nó là dạng form cha con, trong phần thiết lập. Tức là trình bày dạng tab ở form riêng cho phần quản lý, đó sẽ là nơi tổng hợp quản lý các danh sách, tùy chỉnh cụ thể tương ứng. Lưu ý với khả năng khuyến nghị tính toán, thì phần thiết lập nâng cao về thời gian chu kỳ tấn công sẽ tự động cập nhật theo. Tùy vào skill và quái vật mà người dùng đã thiết lập."
+
+### Vision: Centralized Library Management
+
+**Current Pain Points**:
+1. Hunt tab quá dài và phức tạp với Monster/Skill library sections
+2. Monster và Skill CRUD operations trộn lẫn với hunt controls
+3. Timing calculator tách biệt, không có auto-sync với libraries
+4. Khó quản lý khi có nhiều monsters/skills
+
+**Proposed Solution**: **Library Manager Window**
+- Separate Toplevel dialog (800x600) mở từ Setup Tab
+- 3 tabs nội bộ: Monster Library, Skill Library, Timing Settings
+- Tích hợp CRUD + Smart Timing Calculation
+- Auto-sync với Hunt config khi apply changes
+
+### Architecture Design
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Main App (app_gui.py)                              │
+│                                                     │
+│  ┌──────┬──────┬──────┬──────┐                   │
+│  │ Hunt │Setup │Stats │ Help │                   │
+│  └──────┴──────┴──────┴──────┘                   │
+│                                                     │
+│  Hunt Tab (SIMPLIFIED):                           │
+│  ├─ Window selection (topbar)                     │
+│  ├─ Monster rotation (dropdown only)              │
+│  ├─ Skill slots (display only, 4 boxes)          │
+│  ├─ [Edit Libraries] → Opens Library Manager     │
+│  └─ Start/Stop buttons                            │
+│                                                     │
+│  Setup Tab:                                        │
+│  ├─ Mode selection                                 │
+│  ├─ [📚 Open Library Manager] ← NEW BUTTON       │
+│  ├─ Advanced Settings                              │
+│  └─ Window Settings                                │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+                          ↓ Click "Open Library Manager"
+        ┌──────────────────────────────────────┐
+        │ Library Manager Window               │
+        │ (lib/library_manager.py - NEW)      │
+        │                                      │
+        │  ┌────────┬────────┬─────────┐     │
+        │  │Monster │ Skill  │ Timing  │     │
+        │  │Library │Library │Calculate│     │
+        │  └────────┴────────┴─────────┘     │
+        │                                      │
+        │  Tab 1 - Monster Library:           │
+        │  ├─ List monsters (name, HP, DMG)   │
+        │  ├─ CRUD: Add/Edit/Delete/Import    │
+        │  ├─ Template management (multi)     │
+        │  └─ Priority/Enable toggles         │
+        │                                      │
+        │  Tab 2 - Skill Library:             │
+        │  ├─ List skills (name, key, CD)     │
+        │  ├─ CRUD: Add/Edit/Delete/Import    │
+        │  ├─ Type filter (attack/buff)       │
+        │  └─ Cooldown/Cast time editor       │
+        │                                      │
+        │  Tab 3 - Timing Calculator:         │
+        │  ├─ Auto-calculate from skills      │
+        │  ├─ Show recommendations            │
+        │  ├─ "Apply to Advanced Settings"    │
+        │  └─ Preview impact                  │
+        │                                      │
+        │  [Apply All] [Calculate] [Close]    │
+        │                                      │
+        └──────────────────────────────────────┘
+```
+
+### Sprint 19 Tasks Breakdown
+
+**Task #1: Create Library Manager Window** (~200 lines)
+- File: `lib/library_manager.py`
+- Class: `LibraryManagerWindow(tk.Toplevel)`
+- 3-tab structure inside dialog
+- Translation support (EN/VI)
+- Modal behavior (grab_set)
+
+**Task #2: Implement Monster Library Tab** (~150 lines)
+- Move monster CRUD from Hunt tab
+- List view with columns: Name, HP, Damage, Templates, Priority, Enabled
+- Add/Edit/Delete buttons
+- Template management (multiple templates per monster)
+- Import from image capture
+
+**Task #3: Implement Skill Library Tab** (~150 lines)
+- Move skill CRUD from Hunt tab
+- List view with columns: Name, Key, Type, Cooldown, Cast Time
+- Add/Edit/Delete buttons
+- Type filter (show attack/buff separately)
+- Skill image capture
+
+**Task #4: Implement Timing Calculator Tab** (~100 lines)
+- Calculate recommended timing from configured skills
+- Show breakdown: "3 attack skills, avg cooldown 2.1s → APS 1.43"
+- "Recommended attack_interval: 0.7s"
+- Button: "Apply to Advanced Settings"
+- Auto-sync when skills change
+
+**Task #5: Refactor Hunt Tab** (~100 lines removed, ~50 added)
+- Remove Monster Library section (move to Library Manager)
+- Remove Skill Library section (move to Library Manager)
+- Keep only:
+  - Monster rotation dropdown (read from hunt_config)
+  - Skill display boxes (4 boxes, read-only)
+  - Button: "Edit Libraries" → Opens Library Manager
+- Simplify to ~200 lines (from ~400 lines)
+
+**Task #6: Update Setup Tab** (~30 lines)
+- Add "Libraries" section (between Mode and Advanced Settings)
+- Button: "📚 Open Library Manager"
+- Auto-update Advanced Settings when timing applied
+
+**Task #7: Smart Auto-Sync** (~50 lines)
+- When Library Manager closes with changes → Refresh Hunt tab dropdowns
+- When timing applied → Update Advanced Settings automatically
+- Callback pattern: `on_library_changed()`
+
+**Task #8: Integration & Testing** (~50 lines)
+- Test all CRUD operations in new window
+- Test timing calculation accuracy
+- Test auto-sync between windows
+- Regression test Hunt tab still works
+- Update documentation
+
+### Technical Specifications
+
+**File Structure**:
+```
+lib/
+├── library_manager.py          # NEW - Main dialog class
+├── timing_calculator.py        # EXISTING - Reuse calculation logic
+└── skills.py                   # EXISTING - Skill utilities
+
+data/
+├── monsters.json              # EXISTING - Monster data
+└── skills.json                # EXISTING - Skill data
+```
+
+**Class Design** (lib/library_manager.py):
+```python
+class LibraryManagerWindow(tk.Toplevel):
+    """
+    Centralized library management window with 3 tabs:
+    - Monster Library: CRUD monsters, templates, priorities
+    - Skill Library: CRUD skills, cooldowns, types
+    - Timing Calculator: Auto-calculate and apply timing recommendations
+    """
+    
+    def __init__(self, parent, hunt_cfg, lang='vi', on_close_callback=None):
+        """
+        Args:
+            parent: Main app window
+            hunt_cfg: Current hunt configuration dict
+            lang: Language ('en' or 'vi')
+            on_close_callback: Function to call when window closes with changes
+        """
+        
+    def _build_monster_tab(self, parent):
+        """Monster Library tab with list view and CRUD buttons."""
+        
+    def _build_skill_tab(self, parent):
+        """Skill Library tab with list view and CRUD buttons."""
+        
+    def _build_timing_tab(self, parent):
+        """Timing Calculator tab with auto-calculation and apply."""
+        
+    def _calculate_recommended_timing(self):
+        """Calculate timing based on current skill configuration."""
+        
+    def _apply_timing_to_config(self):
+        """Apply calculated timing to hunt_config Advanced Settings."""
+        
+    def _on_window_close(self):
+        """Handle window close, trigger callback if changes made."""
+```
+
+**Key Features**:
+
+1. **Unified CRUD Operations**:
+   - Add/Edit/Delete monsters and skills in one place
+   - No more switching between tabs for library management
+   - Better organization and discoverability
+
+2. **Smart Timing Integration**:
+   - Auto-calculate from configured skills
+   - Show visual recommendations
+   - One-click apply to Advanced Settings
+   - Real-time preview of timing impact
+
+3. **Better UX**:
+   - Dedicated space for library management
+   - Cleaner Hunt tab (focus on hunting, not management)
+   - Modal dialog prevents confusion
+   - Apply/Cancel pattern for safety
+
+4. **Auto-Sync Architecture**:
+   ```python
+   # When Library Manager closes:
+   if self.changes_made:
+       self.on_close_callback({
+           'monsters_changed': True,
+           'skills_changed': True,
+           'timing_applied': True
+       })
+   
+   # In main app:
+   def on_library_changed(changes):
+       if changes['monsters_changed']:
+           self._refresh_monster_dropdown()
+       if changes['skills_changed']:
+           self._refresh_skill_display()
+       if changes['timing_applied']:
+           self._reload_advanced_settings()
+   ```
+
+### Benefits
+
+**For Users**:
+- 🎯 One place to manage all libraries
+- 🚀 Smart timing recommendations (no manual calculation)
+- 🧹 Cleaner, less overwhelming Hunt tab
+- 💡 Discover features easier (everything organized by function)
+
+**For Developers**:
+- 📦 Better code organization (separation of concerns)
+- 🔧 Easier to maintain CRUD operations
+- 🧪 Easier to test (isolated dialog)
+- 📚 Reusable LibraryManager component
+
+### Risk Assessment
+
+**Complexity**: Medium-High
+- Need to refactor existing Hunt tab (risk of breaking existing functionality)
+- Complex state management between windows
+- Auto-sync mechanism needs careful design
+
+**Mitigation**:
+- ✅ Incremental development (task by task)
+- ✅ Keep old code commented during transition
+- ✅ Extensive testing after each task
+- ✅ Rollback plan if issues arise
+
+**Estimated Effort**: 
+- Development: ~6-8 hours
+- Testing: ~2 hours
+- Documentation: ~1 hour
+- **Total: ~9-11 hours** (1-2 sessions)
+
+### Success Criteria
+
+**Must Have**:
+1. ✅ Library Manager window opens from Setup tab
+2. ✅ All Monster/Skill CRUD operations work in new window
+3. ✅ Timing calculator shows accurate recommendations
+4. ✅ Hunt tab simplified (no library sections)
+5. ✅ Auto-sync works (changes reflect in Hunt tab)
+
+**Nice to Have**:
+1. 🎨 Drag-and-drop reordering in lists
+2. 📊 Visual skill timeline preview
+3. 🔍 Search/filter in library lists
+4. 📤 Export/Import library to JSON file
+
+### Next Steps (After User Approval)
+
+1. **Create design document** with mockups and detailed specs
+2. **Implement Task #1**: Library Manager window skeleton
+3. **Implement Task #2**: Monster Library tab
+4. **Implement Task #3**: Skill Library tab
+5. **Implement Task #4**: Timing Calculator tab
+6. **Implement Task #5**: Refactor Hunt tab
+7. **Implement Task #6**: Update Setup tab
+8. **Implement Task #7**: Auto-sync mechanism
+9. **Implement Task #8**: Integration testing
+10. **Documentation**: Update user guides and context
 
 ---
 
