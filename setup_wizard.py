@@ -69,15 +69,15 @@ class SetupWizard:
         # Create wizard window with larger size to fit all content
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Setup Wizard - Cabal Auto Hunt")
-        self.dialog.geometry("750x650")  # Increased size to ensure all buttons are visible
-        self.dialog.minsize(700, 600)  # Minimum size to prevent content from being cut off
+        self.dialog.geometry("750x750")  # Increased height to ensure footer buttons are always visible
+        self.dialog.minsize(700, 650)  # Minimum size to prevent content from being cut off
         self.dialog.resizable(True, True)  # Allow resizing for different screen sizes
         
         # Center window on screen
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (750 // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (650 // 2)
-        self.dialog.geometry(f"750x650+{x}+{y}")
+        y = (self.dialog.winfo_screenheight() // 2) - (750 // 2)
+        self.dialog.geometry(f"750x750+{x}+{y}")
         
         # Make dialog modal - blocks parent window
         self.dialog.transient(parent)
@@ -128,9 +128,32 @@ class SetupWizard:
             dot.pack(side=tk.LEFT, padx=5)
             self.progress_dots.append(dot)
         
-        # Content area (will be swapped based on step)
-        self.content_frame = tk.Frame(main_frame, bg='white')
-        self.content_frame.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
+        # Content area with scrollbar (will be swapped based on step)
+        # Create a canvas to enable scrolling if content is too tall
+        content_container = tk.Frame(main_frame, bg='white')
+        content_container.pack(fill=tk.BOTH, expand=True)
+        
+        self.canvas = tk.Canvas(content_container, bg='white', highlightthickness=0)
+        scrollbar = tk.Scrollbar(content_container, orient='vertical', command=self.canvas.yview)
+        
+        self.content_frame = tk.Frame(self.canvas, bg='white')
+        
+        # Configure canvas scrolling
+        self.content_frame.bind(
+            '<Configure>',
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+        )
+        
+        self.canvas.create_window((0, 0), window=self.content_frame, anchor='nw')
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=30, pady=20)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Enable mouse wheel scrolling
+        def _on_mousewheel(event):
+            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
         # Separator line above footer
         separator = tk.Frame(main_frame, height=2, bg='#ddd')
