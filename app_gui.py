@@ -2099,13 +2099,15 @@ class App(tk.Tk):
         
         try:
             img = Image.open(path)
-            img.thumbnail((96, 96))
+            img.thumbnail((200, 200))  # Increased from 96x96 to 200x200 for better visibility
             photo = ImageTk.PhotoImage(img)
             self._thumbnail_cache[path] = photo  # Cache it
             label.configure(image=photo, text='')
             self.monster_template_preview_image = photo
-        except Exception:
-            label.configure(image='', text=self._t('skill_image_error'))
+        except Exception as e:
+            # Better error handling with specific message
+            error_msg = str(e) if str(e) else self._t('skill_image_error')
+            label.configure(image='', text=f"❌ {error_msg[:50]}...")
             self.monster_template_preview_image = None
 
     def _monster_template_clear_form(self):
@@ -2859,7 +2861,9 @@ class App(tk.Tk):
 
         preview_frame = tk.Frame(template_form)
         preview_frame.grid(row=5, column=0, columnspan=3, sticky='w', pady=(8,0))
-        self.monster_template_preview_label = tk.Label(preview_frame, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
+        # Increased preview size from 16x6 to 30x12 to accommodate 200x200 thumbnails
+        self.monster_template_preview_label = tk.Label(preview_frame, text=self._t('skill_no_image'), 
+                                                        width=30, height=12, relief='groove', bg='#f0f0f0')
         self.monster_template_preview_label.pack(side='left')
         
         preview_btn_frame = tk.Frame(preview_frame)
@@ -3654,7 +3658,9 @@ class App(tk.Tk):
         tk.Entry(container, textvariable=self.skill_image_var, width=24).grid(row=7, column=3, sticky='we', padx=(4,0))
         tk.Button(container, text=self._t('browse'), command=self.on_skill_browse_image).grid(row=7, column=4, padx=(8,0))
 
-        self.skill_preview_label = tk.Label(container, text=self._t('skill_no_image'), width=16, height=6, relief='groove')
+        # Increased preview size from 16x6 to 30x12 to accommodate 200x200 thumbnails
+        self.skill_preview_label = tk.Label(container, text=self._t('skill_no_image'), 
+                                            width=30, height=12, relief='groove', bg='#f0f0f0')
         self.skill_preview_label.grid(row=1, column=4, rowspan=6, sticky='nswe', padx=(8,0))
         self._ensure_skill_image_trace()
 
@@ -3787,15 +3793,18 @@ class App(tk.Tk):
         try:
             if Image is not None and ImageTk is not None:
                 img = Image.open(path)
-                img.thumbnail((96, 96))
+                img.thumbnail((200, 200))  # Increased from 96x96 to 200x200 for better visibility
                 photo = ImageTk.PhotoImage(img)
             else:
+                # Fallback to tk.PhotoImage if PIL not available
                 photo = tk.PhotoImage(file=path)
             self._thumbnail_cache[path] = photo  # Cache it
             label.config(image=photo, text='')
             self.skill_preview_image = photo
-        except Exception:
-            label.config(image='', text=self._t('skill_image_error'))
+        except Exception as e:
+            # Better error handling with specific message
+            error_msg = str(e) if str(e) else self._t('skill_image_error')
+            label.config(image='', text=f"❌ {error_msg[:50]}...")
             self.skill_preview_image = None
 
     def _update_attack_keys_from_slots(self):
