@@ -14,6 +14,10 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from lib.template_matcher import locate_template
+try:
+    from lib.capture_helper import capture_region_and_save
+except Exception:
+    capture_region_and_save = None  # type: ignore
 from lib.skill_runtime import SkillRuntime
 
 try:
@@ -2783,132 +2787,40 @@ class App(tk.Tk):
                 self.monster_template_name_var.set('template')
 
     def on_monster_template_capture(self):
-        """Capture screenshot region and save to assets."""
-        try:
-            import pyautogui
-            import time as time_module
-            from pathlib import Path
-        except ImportError as exc:
-            messagebox.showerror(self._t('monster_section'), self._t('error_missing_library').format(exc=exc))
+        """Capture screenshot using shared helper and update form fields."""
+        if capture_region_and_save is None:
+            messagebox.showerror(self._t('monster_section'), self._t('error_missing_library').format(exc='capture_helper'))
             return
-        
-        # Show instructions
-        messagebox.showinfo(
-            self._t('monster_section'),
-            self._t('monster_template_capture_hint')
-        )
-        
-        # Minimize this window to allow user to see game
-        self.monster_manager_win.iconify()
-        
-        # Wait 3 seconds
-        self.hunt_status.set(self._t('monster_template_capture_wait'))
-        self.update()
-        time_module.sleep(3)
-        
-        # Capture full screen first
         try:
-            screenshot = pyautogui.screenshot()
-        except Exception as exc:
-            self.monster_manager_win.deiconify()
-            messagebox.showerror(self._t('monster_section'), self._t('error_screenshot_failed').format(exc=exc))
-            return
-        
-        # Create selection window
-        self.monster_manager_win.deiconify()
-        selector = tk.Toplevel(self.monster_manager_win)
-        selector.title(self._t('monster_template_capture_select'))
-        selector.attributes('-fullscreen', True)
-        selector.attributes('-alpha', 0.3)
-        selector.attributes('-topmost', True)
-        selector.configure(bg='black')
-        
-        # Variables for selection
-        selection = {'start': None, 'end': None, 'cancelled': False}
-        canvas = tk.Canvas(selector, cursor='cross', bg='black', highlightthickness=0)
-        canvas.pack(fill='both', expand=True)
-        rect_id = None
-        
-        def on_mouse_down(event):
-            selection['start'] = (event.x, event.y)
-        
-        def on_mouse_move(event):
-            nonlocal rect_id
-            if selection['start']:
-                if rect_id:
-                    canvas.delete(rect_id)
-                x1, y1 = selection['start']
-                rect_id = canvas.create_rectangle(x1, y1, event.x, event.y, outline='red', width=2)
-        
-        def on_mouse_up(event):
-            selection['end'] = (event.x, event.y)
-            selector.destroy()
-        
-        def on_escape(event):
-            selection['cancelled'] = True
-            selector.destroy()
-        
-        canvas.bind('<Button-1>', on_mouse_down)
-        canvas.bind('<B1-Motion>', on_mouse_move)
-        canvas.bind('<ButtonRelease-1>', on_mouse_up)
-        selector.bind('<Escape>', on_escape)
-        
-        selector.wait_window()
-        
-        # Check if cancelled
-        if selection['cancelled'] or not selection['start'] or not selection['end']:
+            monster_name = self.monster_name_var.get().strip() if hasattr(self, 'monster_name_var') else 'monster'
+        except Exception:
+            monster_name = 'monster'
+        parent_win = self.winfo_toplevel()
+        result = capture_region_and_save(parent_win, Image is not None, monster_name, self.lang)
+        if not result:
             self.hunt_status.set(self._t('monster_template_capture_cancelled'))
             return
-        
-        # Calculate region
-        x1, y1 = selection['start']
-        x2, y2 = selection['end']
-        left = min(x1, x2)
-        top = min(y1, y2)
-        width = abs(x2 - x1)
-        height = abs(y2 - y1)
-        
-        if width < 10 or height < 10:
-            messagebox.showwarning(self._t('monster_section'), self._t('error_region_too_small'))
-            return
-        
-        # Crop screenshot
-        cropped = screenshot.crop((left, top, left + width, top + height))
-        
-        # Save to assets
+        path, (left, top, width, height) = result
+        # Use relative path if under project dir
         try:
-            assets_dir = Path(__file__).parent / 'assets' / 'images' / 'monsters'
-            assets_dir.mkdir(parents=True, exist_ok=True)
-            
-            monster_name = self.monster_name_var.get().strip() or 'monster'
-            safe_name = ''.join(c if c.isalnum() or c in ('_', '-') else '_' for c in monster_name.lower())
-            timestamp = int(time_module.time() * 1000)
-            filename = f"{safe_name}_capture_{timestamp}.png"
-            target_path = assets_dir / filename
-            
-            cropped.save(target_path, 'PNG')
-            
-            # Use relative path
-            try:
-                relative_path = target_path.relative_to(Path(__file__).parent)
-                path_str = str(relative_path).replace('\\', '/')
-            except Exception:
-                path_str = str(target_path)
-            
-            # Set to form
-            self.monster_template_path_var.set(path_str)
-            
-            # Auto-fill region if blank
-            if not any(v.get().strip() for v in self.monster_template_region_vars.values()):
-                self.monster_template_region_vars['left'].set(str(left))
-                self.monster_template_region_vars['top'].set(str(top))
-                self.monster_template_region_vars['width'].set(str(width))
-                self.monster_template_region_vars['height'].set(str(height))
-            
+            base_dir = Path(__file__).parent
+            rel = Path(path).resolve().relative_to(base_dir.resolve())
+            path_str = str(rel).replace('\\', '/')
+        except Exception:
+            path_str = path
+        self.monster_template_path_var.set(path_str)
+        # Fill region if blank
+        if hasattr(self, 'monster_template_region_vars') and not any(v.get().strip() for v in self.monster_template_region_vars.values()):
+            self.monster_template_region_vars['left'].set(str(left))
+            self.monster_template_region_vars['top'].set(str(top))
+            self.monster_template_region_vars['width'].set(str(width))
+            self.monster_template_region_vars['height'].set(str(height))
+        # Status
+        try:
+            filename = os.path.basename(path_str)
             self.hunt_status.set(self._t('monster_template_capture_success').format(filename=filename))
-            
-        except Exception as exc:
-            messagebox.showerror(self._t('monster_section'), self._t('error_save_failed').format(exc=exc))
+        except Exception:
+            pass
 
     def on_monster_template_add(self):
         try:
