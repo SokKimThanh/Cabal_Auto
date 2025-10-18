@@ -191,6 +191,19 @@ LANG: Dict[str, Dict[str, str]] = {
         'hunt_monsters': 'Monster Rotation',
         'rotation_mode': 'Rotation Mode:',
         'monster_none_selected': 'No monsters selected - Enable monsters to start hunting',
+        'monster_add_title': 'Add Monster to Rotation',
+        'monster_add_instruction': 'Select monster to add to hunt rotation:',
+        'monster_add_hint': '💡 Tip: Type any part of the monster name. Fuzzy matching ignores case and special characters (~, !, etc.)',
+        'monster_suggestions': 'Matching Monsters',
+        'monster_showing_all': 'Showing all {count} monsters',
+        'monster_found_matches': 'Found {count} matches',
+        'monster_no_matches': 'No matches found',
+        'monster_fuzzy_hint': 'Matching: "coc go" = "Coc Go" = "COC-GO~"',
+        'monster_try_hint': 'Try shorter/simpler text (e.g., "coc", "desert")',
+        'monster_already_in_list': '"{name}" is already in rotation list',
+        'add_button': 'Add',
+        'cancel_button': 'Cancel',
+        'info_title': 'Information',
         'hunt_template_active': 'Active template: {name}',
         'tooltip_threshold': 'Match confidence: 0.0 (any) to 1.0 (exact). Higher = stricter matching. Recommended: 0.80-0.90',
         'tooltip_region_strategy': 'Window: use game window bounds\nCustom: use specific region below',
@@ -365,6 +378,19 @@ LANG: Dict[str, Dict[str, str]] = {
         'hunt_monsters': 'Luân Chuyển Quái',
         'rotation_mode': 'Chế độ:',
         'monster_none_selected': 'Chưa chọn quái - Bật quái để bắt đầu săn',
+        'monster_add_title': 'Thêm Quái Vào Luân Chuyển',
+        'monster_add_instruction': 'Chọn quái để thêm vào danh sách săn:',
+        'monster_add_hint': '💡 Mẹo: Gõ bất kỳ phần nào của tên quái. Tìm kiếm thông minh bỏ qua chữ hoa/thường và ký tự đặc biệt (~, !, v.v.)',
+        'monster_suggestions': 'Quái Khớp',
+        'monster_showing_all': 'Hiển thị tất cả {count} quái',
+        'monster_found_matches': 'Tìm thấy {count} kết quả',
+        'monster_no_matches': 'Không tìm thấy',
+        'monster_fuzzy_hint': 'Khớp: "coc go" = "Coc Go" = "COC-GO~"',
+        'monster_try_hint': 'Thử từ ngắn hơn (vd: "coc", "desert")',
+        'monster_already_in_list': '"{name}" đã có trong danh sách',
+        'add_button': 'Thêm',
+        'cancel_button': 'Hủy',
+        'info_title': 'Thông báo',
         'hunt_template_active': 'Template đang dùng: {name}',
         'tooltip_threshold': 'Độ khớp: 0.0 (bất kỳ) đến 1.0 (chính xác). Cao hơn = khớp chặt hơn. Khuyến nghị: 0.80-0.90',
         'tooltip_region_strategy': 'Window: dùng biên cửa sổ game\nCustom: dùng vùng cụ thể bên dưới',
@@ -1083,6 +1109,8 @@ class App(tk.Tk):
         btn_container = tk.Frame(list_container)
         btn_container.pack(side='right', fill='y', padx=(8,0))
         
+        tk.Button(btn_container, text="➕", command=self._on_monster_add_smart, width=3, 
+                  font=('Arial', 10, 'bold'), fg='#4CAF50').pack(pady=(0,4))
         tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3).pack(pady=(0,4))
         tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3).pack(pady=(0,12))
         tk.Button(btn_container, text=self._t('manage_button'), command=self._open_monster_manager, width=10).pack()
@@ -1389,6 +1417,150 @@ class App(tk.Tk):
         
         self._refresh_monster_rotation_list()
         self.monster_rotation_listbox.selection_set(idx+1)
+    
+    def _on_monster_add_smart(self):
+        """Smart add monster with autocomplete and fuzzy matching hints."""
+        dialog = tk.Toplevel(self)
+        dialog.title(self._t('monster_add_title'))
+        dialog.geometry('500x400')
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Center dialog
+        dialog.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
+        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f'+{x}+{y}')
+        
+        container = tk.Frame(dialog, padx=16, pady=16)
+        container.pack(fill='both', expand=True)
+        
+        # Title + hint
+        title_label = tk.Label(container, text=self._t('monster_add_instruction'), 
+                               font=('Arial', 10, 'bold'))
+        title_label.pack(anchor='w', pady=(0,8))
+        
+        hint_text = self._t('monster_add_hint')
+        hint_label = tk.Label(container, text=hint_text, fg='#666', 
+                              font=('Arial', 8), wraplength=450, justify='left')
+        hint_label.pack(anchor='w', pady=(0,12))
+        
+        # Search entry with real-time suggestions
+        search_frame = tk.Frame(container)
+        search_frame.pack(fill='x', pady=(0,8))
+        
+        tk.Label(search_frame, text=self._t('monster_name')).pack(side='left')
+        search_var = tk.StringVar()
+        search_entry = tk.Entry(search_frame, textvariable=search_var, width=30)
+        search_entry.pack(side='left', padx=(8,0), fill='x', expand=True)
+        search_entry.focus_set()
+        
+        # Suggestion listbox
+        suggest_frame = tk.LabelFrame(container, text=self._t('monster_suggestions'), padx=8, pady=8)
+        suggest_frame.pack(fill='both', expand=True, pady=(0,8))
+        
+        suggest_listbox = tk.Listbox(suggest_frame, height=10, exportselection=False)
+        suggest_listbox.pack(side='left', fill='both', expand=True)
+        
+        suggest_scroll = tk.Scrollbar(suggest_frame, orient='vertical', command=suggest_listbox.yview)
+        suggest_scroll.pack(side='right', fill='y')
+        suggest_listbox.config(yscrollcommand=suggest_scroll.set)
+        
+        # Match info label
+        match_info_var = tk.StringVar(value='')
+        match_info_label = tk.Label(container, textvariable=match_info_var, fg='#2196F3', 
+                                     font=('Arial', 8), wraplength=450, justify='left')
+        match_info_label.pack(fill='x', pady=(0,8))
+        
+        # Populate initial suggestions (all monsters)
+        def update_suggestions(*args):
+            """Update suggestions based on search text with fuzzy matching."""
+            import re
+            search_text = search_var.get().strip()
+            
+            suggest_listbox.delete(0, tk.END)
+            match_info_var.set('')
+            
+            if not search_text:
+                # Show all monsters
+                for monster in self.monsters:
+                    suggest_listbox.insert(tk.END, monster['name'])
+                match_info_var.set(f"💡 {self._t('monster_showing_all').format(count=len(self.monsters))}")
+                return
+            
+            # Fuzzy search
+            search_clean = re.sub(r'[^a-z0-9\s]', '', search_text.lower()).strip()
+            matches = []
+            
+            for monster in self.monsters:
+                name = monster['name']
+                name_clean = re.sub(r'[^a-z0-9\s]', '', name.lower()).strip()
+                
+                # Score matches: exact > starts with > contains
+                if search_clean == name_clean:
+                    matches.append((name, 100))  # Exact match
+                elif name_clean.startswith(search_clean):
+                    matches.append((name, 80))   # Starts with
+                elif search_clean in name_clean:
+                    matches.append((name, 60))   # Contains
+                elif any(word.startswith(search_clean) for word in name_clean.split()):
+                    matches.append((name, 40))   # Word starts with
+            
+            # Sort by score (descending)
+            matches.sort(key=lambda x: x[1], reverse=True)
+            
+            # Display matches
+            for name, score in matches:
+                suggest_listbox.insert(tk.END, name)
+            
+            # Update match info
+            if matches:
+                match_info_var.set(f"✓ {self._t('monster_found_matches').format(count=len(matches))} | " +
+                                   self._t('monster_fuzzy_hint'))
+            else:
+                match_info_var.set(f"⚠ {self._t('monster_no_matches')} | " +
+                                   self._t('monster_try_hint'))
+        
+        search_var.trace_add('write', update_suggestions)
+        update_suggestions()  # Initial population
+        
+        # Double-click or Enter to select
+        def on_select(event=None):
+            selection = suggest_listbox.curselection()
+            if not selection:
+                return
+            
+            monster_name = suggest_listbox.get(selection[0])
+            
+            # Check if already in rotation list
+            if any(m['name'] == monster_name for m in self.monster_rotation_list):
+                messagebox.showinfo(self._t('info_title'), 
+                                    self._t('monster_already_in_list').format(name=monster_name),
+                                    parent=dialog)
+                return
+            
+            # Add to rotation list
+            new_priority = len(self.monster_rotation_list) + 1
+            self.monster_rotation_list.append({
+                'name': monster_name,
+                'priority': new_priority,
+                'enabled': True
+            })
+            
+            self._refresh_monster_rotation_list()
+            dialog.destroy()
+        
+        suggest_listbox.bind('<Double-Button-1>', on_select)
+        search_entry.bind('<Return>', on_select)
+        
+        # Buttons
+        btn_frame = tk.Frame(container)
+        btn_frame.pack(fill='x')
+        
+        tk.Button(btn_frame, text=self._t('add_button'), command=on_select, 
+                  font=('Arial', 9, 'bold'), fg='#4CAF50').pack(side='left')
+        tk.Button(btn_frame, text=self._t('cancel_button'), command=dialog.destroy).pack(side='left', padx=(8,0))
 
     def on_hunt_browse_template(self):
         path = filedialog.askopenfilename(title='Select template image', filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
