@@ -569,6 +569,55 @@ def save_skill_library(skills):
         json.dump(safe, f, ensure_ascii=False, indent=2)
 
 
+def calculate_attack_speed_from_skills(skill_names):
+    """
+    Calculate effective attack speed from selected skills.
+    
+    Args:
+        skill_names: List of skill names to use for hunting
+        
+    Returns:
+        tuple: (attacks_per_second, average_cooldown, skill_count)
+        Returns (None, None, 0) if no valid skills
+        
+    Example:
+        skills = ["Dark Explosion", "Fire Ball"]
+        aps, avg_cd, count = calculate_attack_speed_from_skills(skills)
+        # aps = 0.67 (if avg cooldown is 1.5s)
+    """
+    if not skill_names:
+        return (None, None, 0)
+    
+    skills_data = load_skill_library()
+    if not skills_data:
+        return (None, None, 0)
+    
+    # Build skill lookup dict
+    skill_dict = {s['name']: s for s in skills_data}
+    
+    # Collect cooldowns for selected skills
+    total_cooldown = 0.0
+    valid_count = 0
+    
+    for skill_name in skill_names:
+        if skill_name in skill_dict:
+            skill = skill_dict[skill_name]
+            # Only count attack skills for attack speed calculation
+            if skill.get('type', 'attack').lower() == 'attack':
+                cooldown = float(skill.get('cooldown', 1.0))
+                if cooldown > 0:
+                    total_cooldown += cooldown
+                    valid_count += 1
+    
+    if valid_count == 0:
+        return (None, None, 0)
+    
+    avg_cooldown = total_cooldown / valid_count
+    attacks_per_second = 1.0 / avg_cooldown if avg_cooldown > 0 else 1.0
+    
+    return (attacks_per_second, avg_cooldown, valid_count)
+
+
 def load_config():
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
@@ -2393,16 +2442,53 @@ class App(tk.Tk):
             dialog.grab_set()
             
             # Attack speed selection
-            speed_frame = tk.LabelFrame(dialog, text='Attack Speed Preset', padx=10, pady=10)
+            speed_frame = tk.LabelFrame(dialog, text='Attack Speed Source', padx=10, pady=10)
             speed_frame.pack(fill='x', padx=10, pady=10)
             
-            speed_var = tk.StringVar(value='normal')
+            speed_var = tk.StringVar(value='from_skills')
             presets = get_timing_presets()
+            
+            # NEW: From Skills option (Recommended)
+            from_skills_frame = tk.Frame(speed_frame)
+            from_skills_frame.pack(fill='x', pady=2)
+            
+            tk.Radiobutton(
+                from_skills_frame,
+                text='● From Skills (Recommended)',
+                variable=speed_var,
+                value='from_skills',
+                font=('Arial', 9, 'bold')
+            ).pack(anchor='w')
+            
+            # Skill info label (will update dynamically)
+            skill_info_label = tk.Label(from_skills_frame, text='', fg='#666', font=('Arial', 8))
+            skill_info_label.pack(anchor='w', padx=(20, 0))
+            
+            # Calculate from current skills
+            skills_data = load_skill_library()
+            attack_skills = [s['name'] for s in skills_data if s.get('type', 'attack').lower() == 'attack']
+            
+            if attack_skills:
+                aps, avg_cd, count = calculate_attack_speed_from_skills(attack_skills)
+                if aps is not None:
+                    skill_info_label.config(
+                        text=f"  {count} attack skills found | Avg Cooldown: {avg_cd:.2f}s | APS: {aps:.2f} hits/sec"
+                    )
+                else:
+                    skill_info_label.config(text="  No valid attack skills found")
+            else:
+                skill_info_label.config(text="  No attack skills configured yet")
+            
+            # Separator
+            ttk.Separator(speed_frame, orient='horizontal').pack(fill='x', pady=(8,8))
+            
+            # Manual presets
+            tk.Label(speed_frame, text='Manual Presets:', font=('Arial', 9)).pack(anchor='w', pady=(0,4))
             
             for preset_name, (aps, desc) in presets.items():
                 rb = tk.Radiobutton(
                     speed_frame,
-                    text=f"{preset_name.replace('_', ' ').title()}: {desc}",
+                    text=f"  {preset_name.replace('_', ' ').title()}: {desc}",
                     variable=speed_var,
                     value=preset_name
                 )
@@ -2435,10 +2521,43 @@ class App(tk.Tk):
                 """Calculate and display recommendations."""
                 try:
                     preset = speed_var.get()
-                    if preset == 'custom':
+                    
+                    # NEW: Handle "from_skills" option
+                    if preset == 'from_skills':
+                        skills_data = load_skill_library()
+                        attack_skills = [s['name'] for s in skills_data if s.get('type', 'attack').lower() == 'attack']
+                        aps, avg_cd, count = calculate_attack_speed_from_skills(attack_skills)
+                        
+                        if aps is None:
+                            result_text.delete('1.0', tk.END)
+                            error_msg = (
+                                'No attack skills found.\n\n'
+                                'Please add attack skills in Skills Manager tab first.'
+                                if self.lang == 'en' else
+                                'Không tìm thấy skill tấn công.\n\n'
+                                'Vui lòng thêm skill tấn công ở tab Quản lý Skill trước.'
+                            )
+                            result_text.insert('1.0', error_msg)
+                            current_rec['rec'] = None
+                            return
+                        
+                        # Show skill-based info
+                        skill_info = (
+                            f"Calculated from {count} attack skills\n"
+                            f"Average Cooldown: {avg_cd:.2f}s\n"
+                            f"Effective APS: {aps:.2f} hits/sec\n\n"
+                            if self.lang == 'en' else
+                            f"Tính từ {count} skill tấn công\n"
+                            f"Cooldown trung bình: {avg_cd:.2f}s\n"
+                            f"Tốc độ tấn công hiệu dụng: {aps:.2f} đòn/giây\n\n"
+                        )
+                        
+                    elif preset == 'custom':
                         aps = float(custom_speed_var.get())
+                        skill_info = ''
                     else:
                         aps = presets[preset][0]
+                        skill_info = ''
                     
                     # Calculate timing
                     rec = calculate_timing(hp, damage, aps)
@@ -2447,7 +2566,9 @@ class App(tk.Tk):
                     
                     # Display results
                     result_text.delete('1.0', tk.END)
-                    result_text.insert('1.0', f"{rec}\n\n")
+                    if skill_info:
+                        result_text.insert('1.0', skill_info)
+                    result_text.insert(tk.END, f"{rec}\n\n")
                     result_text.insert(tk.END, "=" * 60 + "\n")
                     result_text.insert(tk.END, formatted['summary'])
                     
