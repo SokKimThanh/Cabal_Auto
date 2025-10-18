@@ -13,8 +13,21 @@ CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
 
 
 def load_cfg():
+    """Load hunt config with Phase 3 migration support."""
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        cfg = json.load(f)
+    
+    # Phase 3: Backward compatibility migration
+    if 'monster_selected_name' in cfg and cfg['monster_selected_name']:
+        if not cfg.get('monster_list'):
+            cfg['monster_list'] = [{"name": cfg['monster_selected_name'], "priority": 1, "enabled": True}]
+    
+    # Ensure Phase 3 fields exist
+    cfg.setdefault('monster_list', [])
+    cfg.setdefault('rotation_mode', 'sequence')
+    cfg.setdefault('current_monster_index', 0)
+    
+    return cfg
 
 
 def get_monster_rotation_targets(cfg):
@@ -45,8 +58,20 @@ def get_monster_rotation_targets(cfg):
         name = monster.get('name', '')
         priority = monster.get('priority', 1)
         
-        # Find templates for this monster
-        monster_templates = [t for t in all_templates if t.get('name', '').startswith(name) or name in t.get('name', '')]
+        # Find templates for this monster (fuzzy case-insensitive matching)
+        # Remove special chars for better matching: "Coc go~" → "coc go"
+        import re
+        name_clean = re.sub(r'[^a-z0-9\s]', '', name.lower()).strip()
+        
+        monster_templates = []
+        for t in all_templates:
+            tmpl_name = t.get('name', '')
+            tmpl_clean = re.sub(r'[^a-z0-9\s]', '', tmpl_name.lower()).strip()
+            
+            # Match if cleaned names overlap significantly
+            if name_clean in tmpl_clean or tmpl_clean in name_clean or \
+               tmpl_clean.startswith(name_clean) or name_clean.startswith(tmpl_clean):
+                monster_templates.append(t)
         
         if monster_templates:
             result.append({
