@@ -73,6 +73,9 @@ docs/
 - **[ADVANCED_WINDOW_SETTINGS_GUIDE.md](ADVANCED_WINDOW_SETTINGS_GUIDE.md)** - Giải thích chi tiết Advanced Window Settings ⭐ **New**
 - **[README.md](README.md)** - Tổng quan dự án
 
+### Ngữ cảnh dự án / Project Context
+- **[CONTEXT_AUTO_CABAL.md](CONTEXT_AUTO_CABAL.md)** - Tóm tắt ngữ cảnh dự án (cập nhật từ Ngữ cảnh tạo auto cabal.txt)
+
 ### Tổng quan dự án / Project Overview
 - **[PROJECT_REORGANIZATION.md](PROJECT_REORGANIZATION.md)** - Chi tiết tổ chức lại dự án
 - **[PROJECT_REORGANIZATION_SUMMARY.md](PROJECT_REORGANIZATION_SUMMARY.md)** - Tóm tắt tổ chức lại
