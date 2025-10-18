@@ -2796,7 +2796,27 @@ class App(tk.Tk):
         except Exception:
             monster_name = 'monster'
         parent_win = self.winfo_toplevel()
-        result = capture_region_and_save(parent_win, Image is not None, monster_name, self.lang)
+        # Avoid Tkinter grab conflicts during overlay selection
+        had_grab = False
+        try:
+            try:
+                self.grab_release()
+                had_grab = True
+            except Exception:
+                had_grab = False
+            result = capture_region_and_save(parent_win, Image is not None, monster_name, self.lang)
+        except Exception as exc:
+            try:
+                messagebox.showerror(self._t('error_title'), self._t('error_screenshot_failed').format(exc=exc))
+            except Exception:
+                pass
+            return
+        finally:
+            try:
+                if had_grab:
+                    self.grab_set()
+            except Exception:
+                pass
         if not result:
             self.hunt_status.set(self._t('monster_template_capture_cancelled'))
             return
@@ -2809,6 +2829,15 @@ class App(tk.Tk):
         except Exception:
             path_str = path
         self.monster_template_path_var.set(path_str)
+        # Auto-fill name if empty
+        if hasattr(self, 'monster_template_name_var') and not self.monster_template_name_var.get().strip():
+            try:
+                self.monster_template_name_var.set(Path(path_str).stem)
+            except Exception:
+                self.monster_template_name_var.set('template')
+        # Ensure default threshold if empty
+        if hasattr(self, 'monster_template_threshold_var') and not self.monster_template_threshold_var.get().strip():
+            self.monster_template_threshold_var.set('0.85')
         # Fill region if blank
         if hasattr(self, 'monster_template_region_vars') and not any(v.get().strip() for v in self.monster_template_region_vars.values()):
             self.monster_template_region_vars['left'].set(str(left))
@@ -2979,9 +3008,13 @@ class App(tk.Tk):
         region = None
         if all(region_input.values()):
             try:
-                region = tuple([int(region_input[k]) for k in ('left', 'top', 'width', 'height')])
-            except ValueError:
-                pass
+                l = int(region_input['left'])
+                t = int(region_input['top'])
+                w = int(region_input['width'])
+                h = int(region_input['height'])
+                region = (l, t, w, h)
+            except (ValueError, KeyError):
+                region = None
         
         # Show status
         self.hunt_status.set(self._t('monster_template_test_running'))
@@ -3002,15 +3035,14 @@ class App(tk.Tk):
             box_and_conf = locate_template(
                 template_path=template_path,
                 threshold=threshold,
-                region=region,
-                grayscale=True
+                region=region
             )
             
             # Restore window
             if self.monster_manager_win:
                 self.monster_manager_win.deiconify()
             
-            if box_and_conf:
+            if box_and_conf and box_and_conf[0] is not None:
                 box, confidence_val = box_and_conf
                 # Create a Box-like object for compatibility
                 class Box:

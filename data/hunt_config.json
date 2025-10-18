@@ -125,6 +125,6 @@
       }
     }
   ],
-  "ui_mode": "beginner",
+  "ui_mode": "advanced",
   "template_threshold": 0.8
 }
