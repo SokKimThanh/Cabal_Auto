@@ -14,7 +14,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# NOTE: In this repository, 'lib/' contains source code and must be tracked.
+# If you intend to ignore build artifacts produced under build/, use the pattern below.
+build/lib*/
 lib64/
 parts/
 sdist/
