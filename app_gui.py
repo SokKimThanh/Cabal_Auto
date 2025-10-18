@@ -1442,9 +1442,6 @@ class App(tk.Tk):
     
     def on_setup_wizard(self):
         """Launch setup wizard to guide user through initial configuration."""
-        # Hide main window during wizard to prevent confusing dual-window state
-        self.withdraw()
-        
         def on_wizard_complete(wizard_data):
             """Callback when wizard completes - apply settings to UI."""
             # Show main window again
@@ -1465,6 +1462,7 @@ class App(tk.Tk):
             self.deiconify()
         
         # Launch wizard - use 'self' instead of 'self.root' (App inherits from tk.Tk)
+        # Note: Wizard will hide main window after setup to avoid transient() issues
         show_setup_wizard(self, config_manager=self.config_mgr, on_complete=on_wizard_complete, on_cancel=on_wizard_cancel)
     
     def _populate_hunt_ui_from_config(self):

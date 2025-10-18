@@ -85,6 +85,13 @@ class SetupWizard:
         self.dialog.transient(parent)
         self.dialog.grab_set()
         
+        # Handle window close (X button) - restore parent window
+        self.dialog.protocol("WM_DELETE_WINDOW", self._on_close_window)
+        
+        # Hide parent window AFTER dialog is set up to avoid transient() issues
+        # This prevents confusing dual-window state during wizard
+        parent.withdraw()
+        
         # Build UI
         self._build_ui()
         
@@ -969,8 +976,9 @@ It takes about 2 minutes. Let's begin!"""
             if self.on_complete:
                 self.on_complete(self.wizard_data)
             
-            # Close wizard
+            # Close wizard (deiconify handled by callback)
             self.dialog.destroy()
+        # If user clicks "No", wizard stays open (don't destroy)
     
     def _save_wizard_config(self):
         """Save wizard data to hunt_config.json via config_manager."""
@@ -1041,6 +1049,10 @@ It takes about 2 minutes. Let's begin!"""
             # Call cancel callback to restore main window
             if self.on_cancel:
                 self.on_cancel()
+    
+    def _on_close_window(self):
+        """Handle window close button (X) - treat as cancel."""
+        self._on_cancel()
 
 
 def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=None):
