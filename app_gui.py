@@ -2169,7 +2169,12 @@ class App(tk.Tk):
         # Check if user has completed basic setup
         # Must have ALL THREE to be considered configured
         has_window = bool(self.hunt_cfg.get('window_title', '').strip())
-        has_monster = bool(self.hunt_cfg.get('monster_selected_name', '').strip())
+        
+        # Phase 3 compatibility: Check both legacy and new monster fields
+        has_monster_legacy = bool(self.hunt_cfg.get('monster_selected_name', '').strip())
+        has_monster_list = bool(self.hunt_cfg.get('monster_list')) and len(self.hunt_cfg.get('monster_list', [])) > 0
+        has_monster = has_monster_legacy or has_monster_list
+        
         has_skills = bool(self.hunt_cfg.get('skill_slots')) and len(self.hunt_cfg.get('skill_slots', [])) > 0
         
         is_new_user = not (has_window and has_monster and has_skills)
