@@ -16,6 +16,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
+import ctypes
+from ctypes import wintypes
 
 
 class SetupWizard:
@@ -41,6 +43,13 @@ class SetupWizard:
         self.current_step = 1
         self.total_steps = 5
         self.language = 'en'  # Default language
+        
+        # Data lists for steps
+        self.filtered_windows = []  # Step 2: Window list
+        self.monsters_data = []     # Step 3: Monster list
+        self.skills_data = []       # Step 4: Skills list
+        self.skill_slot_vars = []   # Step 4: Skill slot variables
+        self.skill_slot_combos = [] # Step 4: Skill slot comboboxes
         
         # Collected data from wizard steps
         self.wizard_data = {
@@ -285,80 +294,538 @@ It takes about 2 minutes. Let's begin!"""
         hint.pack(pady=(30, 0))
     
     def _build_step2_window(self):
-        """Step 2: Game window calibration (placeholder)."""
+        """Step 2: Game window calibration."""
         title = tk.Label(
             self.content_frame,
             text="Step 2: Select Game Window",
             font=('Arial', 16, 'bold'),
             bg='white'
         )
-        title.pack(pady=20)
+        title.pack(pady=(10, 5))
         
-        placeholder = tk.Label(
+        subtitle = tk.Label(
             self.content_frame,
-            text="[Window selection UI will be implemented in Task #5]",
-            font=('Arial', 11, 'italic'),
+            text="Choose which game window to control",
+            font=('Arial', 10),
             bg='white',
-            fg='#999'
+            fg='#666'
         )
-        placeholder.pack(pady=50)
+        subtitle.pack(pady=(0, 15))
+        
+        # Search frame
+        search_frame = tk.Frame(self.content_frame, bg='white')
+        search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+        
+        tk.Label(search_frame, text="Filter:", bg='white').pack(side=tk.LEFT)
+        self.window_filter_var = tk.StringVar(value='Cabal')
+        filter_entry = tk.Entry(search_frame, textvariable=self.window_filter_var, width=20)
+        filter_entry.pack(side=tk.LEFT, padx=(5, 10))
+        
+        tk.Button(
+            search_frame,
+            text="🔍 Search Windows",
+            command=self._search_windows,
+            bg='#4CAF50',
+            fg='white',
+            font=('Arial', 9, 'bold')
+        ).pack(side=tk.LEFT)
+        
+        # Window list
+        list_frame = tk.Frame(self.content_frame, bg='white')
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
+        
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.window_listbox = tk.Listbox(
+            list_frame,
+            height=8,
+            yscrollcommand=scrollbar.set,
+            font=('Courier New', 9)
+        )
+        self.window_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.window_listbox.yview)
+        
+        self.window_listbox.bind('<<ListboxSelect>>', self._on_window_select)
+        
+        # Info label
+        self.window_info_label = tk.Label(
+            self.content_frame,
+            text="💡 Tip: Make sure your game is running before searching",
+            font=('Arial', 9, 'italic'),
+            bg='white',
+            fg='#666'
+        )
+        self.window_info_label.pack(pady=(5, 0))
+        
+        # Auto-search on step load
+        self.dialog.after(100, self._search_windows)
     
     def _build_step3_monster(self):
-        """Step 3: Monster selection (placeholder)."""
+        """Step 3: Monster selection."""
         title = tk.Label(
             self.content_frame,
-            text="Step 3: Choose Monster",
+            text="Step 3: Choose Monster to Hunt",
             font=('Arial', 16, 'bold'),
             bg='white'
         )
-        title.pack(pady=20)
+        title.pack(pady=(10, 5))
         
-        placeholder = tk.Label(
+        subtitle = tk.Label(
             self.content_frame,
-            text="[Monster selection UI will be implemented in Task #5]",
-            font=('Arial', 11, 'italic'),
+            text="Select which monster you want to hunt",
+            font=('Arial', 10),
             bg='white',
-            fg='#999'
+            fg='#666'
         )
-        placeholder.pack(pady=50)
+        subtitle.pack(pady=(0, 15))
+        
+        # Load monsters
+        monsters_path = os.path.join(os.path.dirname(__file__), 'data', 'monsters.json')
+        try:
+            with open(monsters_path, 'r', encoding='utf-8') as f:
+                self.monsters_data = json.load(f)
+        except Exception as e:
+            self.monsters_data = []
+            tk.Label(
+                self.content_frame,
+                text=f"⚠️ Error loading monsters: {e}",
+                fg='red',
+                bg='white'
+            ).pack(pady=20)
+            return
+        
+        if not self.monsters_data:
+            tk.Label(
+                self.content_frame,
+                text="⚠️ No monsters found. Please add monsters first.",
+                fg='orange',
+                bg='white'
+            ).pack(pady=20)
+            return
+        
+        # Monster list frame
+        list_frame = tk.Frame(self.content_frame, bg='white')
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
+        
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.monster_listbox = tk.Listbox(
+            list_frame,
+            height=10,
+            yscrollcommand=scrollbar.set,
+            font=('Arial', 10)
+        )
+        self.monster_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.monster_listbox.yview)
+        
+        self.monster_listbox.bind('<<ListboxSelect>>', self._on_monster_select)
+        
+        # Populate monster list
+        for monster in self.monsters_data:
+            name = monster.get('name', 'Unnamed')
+            hp = monster.get('hp', 0)
+            templates_count = len(monster.get('templates', []))
+            label = f"{name}  (HP: {hp:,.0f}, {templates_count} template(s))"
+            self.monster_listbox.insert(tk.END, label)
+        
+        # Select first monster by default
+        if self.monsters_data:
+            self.monster_listbox.selection_set(0)
+            self.monster_listbox.activate(0)
+            self._on_monster_select()
+        
+        # Info label
+        self.monster_info_label = tk.Label(
+            self.content_frame,
+            text="",
+            font=('Arial', 9),
+            bg='white',
+            fg='#333',
+            justify=tk.LEFT
+        )
+        self.monster_info_label.pack(pady=(5, 0))
     
     def _build_step4_skills(self):
-        """Step 4: Skill configuration (placeholder)."""
+        """Step 4: Skill configuration."""
         title = tk.Label(
             self.content_frame,
-            text="Step 4: Configure Skills",
+            text="Step 4: Configure Attack Skills",
             font=('Arial', 16, 'bold'),
             bg='white'
         )
-        title.pack(pady=20)
+        title.pack(pady=(10, 5))
         
-        placeholder = tk.Label(
+        subtitle = tk.Label(
             self.content_frame,
-            text="[Skill configuration UI will be implemented in Task #5]",
-            font=('Arial', 11, 'italic'),
+            text="Assign skills to 9 quick slots (leave empty if not needed)",
+            font=('Arial', 10),
             bg='white',
-            fg='#999'
+            fg='#666'
         )
-        placeholder.pack(pady=50)
+        subtitle.pack(pady=(0, 15))
+        
+        # Load skills
+        skills_path = os.path.join(os.path.dirname(__file__), 'data', 'skills.json')
+        try:
+            with open(skills_path, 'r', encoding='utf-8') as f:
+                self.skills_data = json.load(f)
+        except Exception as e:
+            self.skills_data = []
+            tk.Label(
+                self.content_frame,
+                text=f"⚠️ Error loading skills: {e}",
+                fg='red',
+                bg='white'
+            ).pack(pady=20)
+            return
+        
+        # Skill slots frame
+        slots_frame = tk.Frame(self.content_frame, bg='white')
+        slots_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+        
+        self.skill_slot_vars = []
+        self.skill_slot_combos = []
+        
+        # Create skill name list for combobox
+        skill_names = ['(Empty)'] + [s.get('name', 'Unnamed') for s in self.skills_data]
+        
+        # Create 9 skill slots (3 rows x 3 cols)
+        for row in range(3):
+            for col in range(3):
+                slot_num = row * 3 + col + 1
+                
+                # Slot container
+                slot_container = tk.Frame(slots_frame, bg='white')
+                slot_container.grid(row=row, column=col, padx=8, pady=5, sticky='w')
+                
+                # Label
+                tk.Label(
+                    slot_container,
+                    text=f"Slot {slot_num}:",
+                    bg='white',
+                    font=('Arial', 9, 'bold')
+                ).pack(anchor='w')
+                
+                # Combobox
+                var = tk.StringVar(value='(Empty)')
+                combo = ttk.Combobox(
+                    slot_container,
+                    textvariable=var,
+                    values=skill_names,
+                    state='readonly',
+                    width=18
+                )
+                combo.pack(anchor='w')
+                
+                self.skill_slot_vars.append(var)
+                self.skill_slot_combos.append(combo)
+        
+        # Buttons frame
+        btn_frame = tk.Frame(self.content_frame, bg='white')
+        btn_frame.pack(pady=(15, 0))
+        
+        tk.Button(
+            btn_frame,
+            text="Clear All Slots",
+            command=self._clear_all_skill_slots
+        ).pack()
+        
+        # Info
+        info = tk.Label(
+            self.content_frame,
+            text="💡 Tip: Skills will be used in order from Slot 1 to Slot 9",
+            font=('Arial', 9, 'italic'),
+            bg='white',
+            fg='#666'
+        )
+        info.pack(pady=(10, 0))
     
     def _build_step5_review(self):
-        """Step 5: Final review (placeholder)."""
+        """Step 5: Final review."""
         title = tk.Label(
             self.content_frame,
-            text="Step 5: Review & Save",
+            text="Step 5: Review & Confirm",
             font=('Arial', 16, 'bold'),
             bg='white'
         )
-        title.pack(pady=20)
+        title.pack(pady=(10, 5))
         
-        placeholder = tk.Label(
+        subtitle = tk.Label(
             self.content_frame,
-            text="[Review UI will be implemented in Task #5]",
-            font=('Arial', 11, 'italic'),
+            text="Review your setup and click Finish to save",
+            font=('Arial', 10),
             bg='white',
-            fg='#999'
+            fg='#666'
         )
-        placeholder.pack(pady=50)
+        subtitle.pack(pady=(0, 20))
+        
+        # Review frame with border
+        review_frame = tk.LabelFrame(
+            self.content_frame,
+            text="Configuration Summary",
+            font=('Arial', 10, 'bold'),
+            bg='white',
+            padx=20,
+            pady=15
+        )
+        review_frame.pack(fill=tk.BOTH, expand=True, padx=30)
+        
+        # Window info
+        window_info = self.wizard_data.get('window_title', 'Not selected')
+        window_pid = self.wizard_data.get('window_pid', 'N/A')
+        tk.Label(
+            review_frame,
+            text=f"🪟 Game Window:",
+            font=('Arial', 10, 'bold'),
+            bg='white',
+            anchor='w'
+        ).pack(fill=tk.X, pady=(0, 2))
+        tk.Label(
+            review_frame,
+            text=f"   {window_info} (PID: {window_pid})",
+            font=('Arial', 9),
+            bg='white',
+            fg='#333',
+            anchor='w'
+        ).pack(fill=tk.X, pady=(0, 10))
+        
+        # Monster info
+        monster_name = self.wizard_data.get('monster_name', 'Not selected')
+        monster_templates = self.wizard_data.get('monster_templates', [])
+        tk.Label(
+            review_frame,
+            text=f"👾 Monster:",
+            font=('Arial', 10, 'bold'),
+            bg='white',
+            anchor='w'
+        ).pack(fill=tk.X, pady=(0, 2))
+        tk.Label(
+            review_frame,
+            text=f"   {monster_name} ({len(monster_templates)} template(s))",
+            font=('Arial', 9),
+            bg='white',
+            fg='#333',
+            anchor='w'
+        ).pack(fill=tk.X, pady=(0, 10))
+        
+        # Skills info
+        skill_slots = self.wizard_data.get('skill_slots', [])
+        assigned_skills = [s for s in skill_slots if s and s != '(Empty)']
+        tk.Label(
+            review_frame,
+            text=f"⚔️ Skills:",
+            font=('Arial', 10, 'bold'),
+            bg='white',
+            anchor='w'
+        ).pack(fill=tk.X, pady=(0, 2))
+        
+        if assigned_skills:
+            skills_text = "   " + ", ".join(assigned_skills)
+            tk.Label(
+                review_frame,
+                text=skills_text,
+                font=('Arial', 9),
+                bg='white',
+                fg='#333',
+                anchor='w',
+                wraplength=450,
+                justify=tk.LEFT
+            ).pack(fill=tk.X, pady=(0, 10))
+        else:
+            tk.Label(
+                review_frame,
+                text="   No skills assigned",
+                font=('Arial', 9, 'italic'),
+                bg='white',
+                fg='#999',
+                anchor='w'
+            ).pack(fill=tk.X, pady=(0, 10))
+        
+        # Timing info
+        timing = self.wizard_data.get('timing', {})
+        tk.Label(
+            review_frame,
+            text=f"⏱️ Timing:",
+            font=('Arial', 10, 'bold'),
+            bg='white',
+            anchor='w'
+        ).pack(fill=tk.X, pady=(0, 2))
+        timing_text = f"   Lost timeout: {timing.get('lost_timeout_sec', 0.5)}s, Attack duration: {timing.get('attack_min_duration_sec', 5.0)}s"
+        tk.Label(
+            review_frame,
+            text=timing_text,
+            font=('Arial', 9),
+            bg='white',
+            fg='#333',
+            anchor='w'
+        ).pack(fill=tk.X, pady=(0, 10))
+        
+        # Warning if incomplete
+        if not window_info or window_info == 'Not selected':
+            tk.Label(
+                self.content_frame,
+                text="⚠️ Warning: No game window selected",
+                font=('Arial', 9, 'bold'),
+                bg='white',
+                fg='orange'
+            ).pack(pady=(10, 0))
+        
+        if not monster_name or monster_name == 'Not selected':
+            tk.Label(
+                self.content_frame,
+                text="⚠️ Warning: No monster selected",
+                font=('Arial', 9, 'bold'),
+                bg='white',
+                fg='orange'
+            ).pack(pady=(5, 0))
+    
+    def _on_language_change(self):
+        """Handle language selection change."""
+        self.language = self.language_var.get()
+        self.wizard_data['language'] = self.language
+        # Note: Full UI translation will be implemented when needed
+    
+    def _search_windows(self):
+        """Search for game windows matching filter."""
+        filter_text = self.window_filter_var.get().strip().lower()
+        windows = self._enum_windows()
+        
+        # Filter windows
+        self.filtered_windows = [
+            w for w in windows 
+            if filter_text in w['title'].lower() or filter_text in (w.get('proc') or '').lower()
+        ]
+        
+        # Update listbox
+        self.window_listbox.delete(0, tk.END)
+        for w in self.filtered_windows:
+            label = f"{w['title']}  [PID: {w['pid']}]"
+            if w.get('proc'):
+                label += f"  ({w['proc']})"
+            self.window_listbox.insert(tk.END, label)
+        
+        # Update info
+        if not self.filtered_windows:
+            self.window_info_label.config(
+                text="⚠️ No windows found. Try a different filter or make sure game is running.",
+                fg='orange'
+            )
+        else:
+            self.window_info_label.config(
+                text=f"✓ Found {len(self.filtered_windows)} window(s)",
+                fg='green'
+            )
+            # Auto-select first
+            self.window_listbox.selection_set(0)
+            self.window_listbox.activate(0)
+            self._on_window_select()
+    
+    def _on_window_select(self, event=None):
+        """Handle window selection."""
+        try:
+            idx = self.window_listbox.curselection()
+            if not idx:
+                return
+            
+            selected = self.filtered_windows[idx[0]]
+            self.wizard_data['window_title'] = selected['title']
+            self.wizard_data['window_pid'] = selected['pid']
+            self.wizard_data['window_hwnd'] = selected['hwnd']
+            
+            self.window_info_label.config(
+                text=f"✓ Selected: {selected['title']} (PID: {selected['pid']})",
+                fg='green'
+            )
+        except Exception as e:
+            pass
+    
+    def _on_monster_select(self, event=None):
+        """Handle monster selection."""
+        try:
+            idx = self.monster_listbox.curselection()
+            if not idx:
+                return
+            
+            selected = self.monsters_data[idx[0]]
+            self.wizard_data['monster_name'] = selected.get('name', 'Unnamed')
+            self.wizard_data['monster_templates'] = selected.get('templates', [])
+            self.wizard_data['monster_hp'] = selected.get('hp', 0)
+            self.wizard_data['monster_damage'] = selected.get('damage_per_hit', 0)
+            
+            # Update info label
+            info = f"✓ Selected: {selected.get('name')} | HP: {selected.get('hp', 0):,.0f}"
+            templates_count = len(selected.get('templates', []))
+            info += f" | {templates_count} template(s)"
+            self.monster_info_label.config(text=info)
+        except Exception:
+            pass
+    
+    def _clear_all_skill_slots(self):
+        """Clear all skill slot selections."""
+        for var in self.skill_slot_vars:
+            var.set('(Empty)')
+    
+    def _enum_windows(self):
+        """Enumerate visible windows using WinAPI."""
+        user32 = ctypes.windll.user32
+        EnumWindows = user32.EnumWindows
+        EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+        IsWindowVisible = user32.IsWindowVisible
+        GetWindowTextW = user32.GetWindowTextW
+        GetWindowTextLengthW = user32.GetWindowTextLengthW
+        GetWindowThreadProcessId = user32.GetWindowThreadProcessId
+
+        results = []
+        
+        # Try to get process name via psutil
+        try:
+            import psutil
+        except Exception:
+            psutil = None
+
+        def callback(hwnd, lParam):
+            try:
+                if not IsWindowVisible(hwnd):
+                    return True
+                length = GetWindowTextLengthW(hwnd)
+                if length == 0:
+                    return True
+                buf = ctypes.create_unicode_buffer(length + 1)
+                GetWindowTextW(hwnd, buf, length + 1)
+                title = buf.value.strip()
+                if not title:
+                    return True
+                
+                pid = wintypes.DWORD()
+                GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                pid_val = int(pid.value)
+                
+                proc_name = None
+                if psutil is not None:
+                    try:
+                        p = psutil.Process(pid_val)
+                        proc_name = p.name()
+                    except Exception:
+                        proc_name = None
+                
+                results.append({
+                    'hwnd': int(hwnd),
+                    'pid': pid_val,
+                    'title': title,
+                    'proc': proc_name
+                })
+            except Exception:
+                pass
+            return True
+        
+        try:
+            EnumWindows(EnumWindowsProc(callback), 0)
+        except Exception:
+            pass
+        
+        return results
     
     def _on_language_change(self):
         """Handle language selection change."""
@@ -387,8 +854,47 @@ It takes about 2 minutes. Let's begin!"""
         if self.current_step == 1:
             return True
         
-        # Steps 2-4: Will be implemented in Task #5
-        if self.current_step in [2, 3, 4]:
+        # Step 2: Window selection
+        if self.current_step == 2:
+            if not self.wizard_data.get('window_title'):
+                messagebox.showwarning(
+                    "Window Required",
+                    "Please select a game window before continuing.",
+                    parent=self.dialog
+                )
+                return False
+            return True
+        
+        # Step 3: Monster selection
+        if self.current_step == 3:
+            if not self.wizard_data.get('monster_name'):
+                messagebox.showwarning(
+                    "Monster Required",
+                    "Please select a monster before continuing.",
+                    parent=self.dialog
+                )
+                return False
+            return True
+        
+        # Step 4: Skills (optional - can proceed with empty slots)
+        if self.current_step == 4:
+            # Collect selected skills
+            skill_slots = []
+            for var in self.skill_slot_vars:
+                value = var.get()
+                skill_slots.append(value if value != '(Empty)' else '')
+            
+            self.wizard_data['skill_slots'] = skill_slots
+            
+            # Check if at least one skill is assigned (optional warning)
+            assigned = [s for s in skill_slots if s]
+            if not assigned:
+                confirm = messagebox.askyesno(
+                    "No Skills",
+                    "You haven't assigned any skills. Continue anyway?",
+                    parent=self.dialog
+                )
+                return confirm
             return True
         
         # Step 5: Review - always valid
@@ -420,9 +926,59 @@ It takes about 2 minutes. Let's begin!"""
     
     def _save_wizard_config(self):
         """Save wizard data to hunt_config.json via config_manager."""
-        # This will be fully implemented when config_manager integration is added
-        # For now, just store the collected data
-        pass
+        if not self.config_manager:
+            return
+        
+        try:
+            # Update hunt config with wizard data
+            # Window settings
+            window_title = self.wizard_data.get('window_title', '')
+            if window_title:
+                self.config_manager.set('hunt_config', 'window_title', window_title)
+            
+            window_pid = self.wizard_data.get('window_pid')
+            if window_pid:
+                self.config_manager.set('hunt_config', 'window_pid', window_pid)
+            
+            window_hwnd = self.wizard_data.get('window_hwnd')
+            if window_hwnd:
+                self.config_manager.set('hunt_config', 'window_hwnd', window_hwnd)
+            
+            # Monster settings
+            monster_name = self.wizard_data.get('monster_name')
+            if monster_name:
+                self.config_manager.set('hunt_config', 'monster_selected_name', monster_name)
+            
+            templates = self.wizard_data.get('monster_templates', [])
+            if templates and len(templates) > 0:
+                # Use first template's path as primary template
+                first_template = templates[0]
+                template_path = first_template.get('path', '')
+                if template_path:
+                    self.config_manager.set('hunt_config', 'template_path', template_path)
+            
+            # Skill slots
+            skill_slots = self.wizard_data.get('skill_slots', [])
+            if skill_slots:
+                self.config_manager.set('hunt_config', 'skill_slots', skill_slots)
+            
+            # Timing settings (use defaults from wizard_data or recommended values)
+            timing = self.wizard_data.get('timing', {})
+            lost_timeout = timing.get('lost_timeout_sec', 0.5)
+            attack_duration = timing.get('attack_min_duration_sec', 5.0)
+            
+            self.config_manager.set('hunt_config', 'lost_timeout_sec', lost_timeout)
+            self.config_manager.set('hunt_config', 'attack_min_duration_sec', attack_duration)
+            
+            # Save to file
+            self.config_manager.save()
+            
+        except Exception as e:
+            messagebox.showerror(
+                "Save Error",
+                f"Failed to save configuration: {e}",
+                parent=self.dialog
+            )
     
     def _on_cancel(self):
         """Cancel wizard and close dialog."""
