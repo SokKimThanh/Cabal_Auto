@@ -66,17 +66,18 @@ class SetupWizard:
             }
         }
         
-        # Create wizard window
+        # Create wizard window with larger size to fit all content
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Setup Wizard - Cabal Auto Hunt")
-        self.dialog.geometry("600x500")
-        self.dialog.resizable(False, False)
+        self.dialog.geometry("700x600")
+        self.dialog.minsize(650, 550)  # Minimum size to prevent content from being cut off
+        self.dialog.resizable(True, True)  # Allow resizing for different screen sizes
         
         # Center window on screen
         self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (600 // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (500 // 2)
-        self.dialog.geometry(f"600x500+{x}+{y}")
+        x = (self.dialog.winfo_screenwidth() // 2) - (700 // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (600 // 2)
+        self.dialog.geometry(f"700x600+{x}+{y}")
         
         # Make dialog modal
         self.dialog.transient(parent)
