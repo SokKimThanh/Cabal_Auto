@@ -79,5 +79,27 @@
         "region": null
       }
     ]
+  },
+  {
+    "name": "Plant Sừng Báo",
+    "hp": 500.0,
+    "damage_per_hit": 313.0,
+    "template": "",
+    "description": "Level 24",
+    "window_bounds": null,
+    "templates": [
+      {
+        "name": "Plant Sừng báo mặt trước",
+        "path": "E:\\Cabal_Auto\\tmp\\captures\\plant_sng_bo__plant_sng_bo_mt_trc_1760817841155.png",
+        "threshold": 0.85,
+        "region": null
+      },
+      {
+        "name": "Plant sừng báo mặt sau",
+        "path": "E:\\Cabal_Auto\\tmp\\captures\\plant_sng_bo__plant_sng_bo_mt_sau_1760817662694.png",
+        "threshold": 0.85,
+        "region": null
+      }
+    ]
   }
 ]
