@@ -71,6 +71,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'tab_stats': 'Stats',
         'tab_help': 'Help',
         'window_selection': 'Window Selection',
+        'window_quick_select': '🪟 Step 1: Select game window',
+        'select_game_window': 'Select Game Window',
+        'win_list_hint': 'Click "Find windows" button above, then select your game window from this list:',
         'hunt_tab_help_text': '💡 Tip: Configure advanced settings in the Setup tab',
         'window_title_contains': 'Window title contains:',
         'find_windows': 'Find windows',
@@ -298,6 +301,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'tab_stats': 'Thống kê',
         'tab_help': 'Trợ giúp',
         'window_selection': 'Chọn cửa sổ',
+        'window_quick_select': '🪟 Bước 1: Chọn cửa sổ game',
+        'select_game_window': 'Chọn cửa sổ game',
+        'win_list_hint': 'Nhấn nút "Tìm cửa sổ" ở trên, sau đó chọn cửa sổ game từ danh sách:',
         'hunt_tab_help_text': '💡 Mẹo: Cấu hình nâng cao trong tab Thiết lập',
         'window_title_contains': 'Tiêu đề cửa sổ chứa:',
         'find_windows': 'Tìm cửa sổ',
@@ -1012,15 +1018,27 @@ class App(tk.Tk):
         for w in self.winfo_children():
             w.destroy()
 
-        # Topbar with language selector
+        # Topbar with language selector and compact window selection
         top = tk.Frame(self, padx=8, pady=6)
         top.pack(fill='x')
+        
+        # Left side: Language selector
         tk.Label(top, text=self._t('language')).pack(side='left')
         self.lang_var = tk.StringVar(value=self.lang)
         lang_cmb = ttk.Combobox(top, textvariable=self.lang_var, state='readonly', width=12)
         lang_cmb['values'] = ('en', 'vi')
         lang_cmb.pack(side='left', padx=(6,0))
         lang_cmb.bind('<<ComboboxSelected>>', self.on_language_change)
+        
+        # Separator
+        tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
+        
+        # Right side: Compact Window Selection
+        tk.Label(top, text=self._t('window_quick_select'), fg='#666', font=('Arial', 8)).pack(side='left', padx=(0,6))
+        self.win_title_var = tk.StringVar(value=str(self.hunt_cfg.get('window_title', 'Cabal')))
+        tk.Entry(top, textvariable=self.win_title_var, width=15).pack(side='left')
+        tk.Button(top, text=self._t('find_windows'), command=self.on_hunt_find_windows, padx=8).pack(side='left', padx=(4,0))
+        tk.Button(top, text=self._t('bring_to_front'), command=self.on_hunt_bring_front_below_app, padx=8).pack(side='left', padx=(4,0))
 
         nb = ttk.Notebook(self)
         nb.pack(fill='both', expand=True)
@@ -1043,32 +1061,24 @@ class App(tk.Tk):
 
     # Click Tab removed
 
-    # Hunt Tab (Refactored - Sprint 18 Phase 4 Task #2)
+    # Hunt Tab (Refactored - Sprint 18 Phase 4 Task #2 + UX Enhancement)
     def _build_hunt_tab(self, frm):
         """Streamlined Hunt tab with only essential controls.
         
-        Advanced settings moved to Setup tab for cleaner UX.
-        Beginner-friendly: Window selection → Monster rotation → Skill slots → Hunt buttons
+        Window selection moved to topbar for quick access.
+        Beginner-friendly: Monster rotation → Skill slots → Hunt buttons
         """
         
         # Initialize mode var for compatibility (actual mode selector is in Setup tab)
         self.hunt_mode_var = tk.StringVar(value=self.hunt_cfg.get('ui_mode', 'beginner'))
         
-        # Section 1: Window Selection
-        window_frame = tk.LabelFrame(frm, text=self._t('window_selection'), padx=10, pady=8)
+        # Section 1: Window List (compact - topbar has Find/Bring buttons)
+        window_frame = tk.LabelFrame(frm, text=self._t('select_game_window'), padx=10, pady=8)
         window_frame.grid(row=0, column=0, columnspan=4, sticky='we', pady=(0,12))
         
-        tk.Label(window_frame, text=self._t('window_title_contains')).grid(row=0, column=0, sticky='e', pady=4)
-        self.win_title_var = tk.StringVar(value=str(self.hunt_cfg.get('window_title', 'Cabal')))
-        tk.Entry(window_frame, textvariable=self.win_title_var, width=24).grid(row=0, column=1, sticky='w', pady=4)
-
-        tk.Button(window_frame, text=self._t('find_windows'), command=self.on_hunt_find_windows).grid(row=0, column=2, padx=(8,0), pady=4)
-        tk.Button(window_frame, text=self._t('bring_to_front'), command=self.on_hunt_bring_front).grid(row=0, column=3, pady=4)
-
-        # Window list (filtered)
-        tk.Label(window_frame, text=self._t('win_list_label')).grid(row=1, column=0, columnspan=4, sticky='w', pady=(4,2))
-        self.win_listbox = tk.Listbox(window_frame, height=5, exportselection=False)
-        self.win_listbox.grid(row=2, column=0, columnspan=4, sticky='we', pady=(0,4))
+        tk.Label(window_frame, text=self._t('win_list_hint'), fg='#666', font=('Arial', 8)).pack(anchor='w', pady=(0,4))
+        self.win_listbox = tk.Listbox(window_frame, height=4, exportselection=False)
+        self.win_listbox.pack(fill='both', expand=True)
         self.win_listbox.bind('<<ListboxSelect>>', self.on_window_selected)
         
         # Initialize vars for compatibility with hunt loop (values read from hunt_cfg)
@@ -1998,6 +2008,36 @@ class App(tk.Tk):
             ok = self._bring_window_to_front_by_hwnd(hwnd)
         else:
             ok = self._bring_window_to_front(self.win_title_var.get().strip())
+        self.hunt_status.set(self._t('bring_ok') if ok else self._t('bring_fail'))
+
+    def on_hunt_bring_front_below_app(self):
+        """Bring game window to front but keep app on top of it."""
+        # Prefer selected item in list
+        hwnd = None
+        try:
+            idx = self.win_listbox.curselection()
+            if idx:
+                hwnd = self.win_items[idx[0]]['hwnd']
+                self.hunt_selected = self.win_items[idx[0]]
+        except Exception:
+            hwnd = None
+        
+        # First bring game window to front
+        ok = False
+        if hwnd:
+            ok = self._bring_window_to_front_by_hwnd(hwnd)
+        else:
+            ok = self._bring_window_to_front(self.win_title_var.get().strip())
+        
+        # Then bring app back on top
+        if ok:
+            time.sleep(0.1)  # Small delay to ensure game window is up
+            self.lift()
+            self.focus_force()
+            self.attributes('-topmost', True)
+            self.update()
+            self.after(100, lambda: self.attributes('-topmost', False))  # Disable topmost after 100ms
+        
         self.hunt_status.set(self._t('bring_ok') if ok else self._t('bring_fail'))
 
     def on_window_selected(self, _evt=None):
