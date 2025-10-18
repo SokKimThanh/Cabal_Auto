@@ -2436,14 +2436,16 @@ self._t('success_title')
 - Lines removed: ~180 (Hunt tab simplification)
 - Net change: +320 lines (better organized, more features)
 
-**Bug Fixes**: 3
-1. Setup apply settings error
-2. OpenCV missing
-3. Logger parameter error
+**Bug Fixes**: 5 (Sprint 18 Phase 4)
+1. ✅ Setup apply settings error (translation access)
+2. ✅ OpenCV missing (installed 4.12.0)
+3. ✅ Logger parameter error (2 locations)
+4. ✅ Timing recommendation UX (skill filtering, visual feedback, z-order)
+5. ✅ Timing unhashable dict (skill_slots data structure mismatch)
 
-**Documentation**: 10 new files (~1,500 lines)
+**Documentation**: 12 new files (~3,500 lines)
 
-**Testing**: 10 test cases passed
+**Testing**: 15 test cases passed
 
 **Impact**: Major UX improvement, professional polish, no breaking changes
 
@@ -2451,6 +2453,80 @@ self._t('success_title')
 
 ---
 
-*Phase 4 Last Updated: October 18, 2025 (Evening)*
+*Phase 4 Last Updated: October 18, 2025 (Late Evening)*
 *Sprint 18 Progress: 75% (6/8 tasks)*
+*Recent Fixes: Timing recommendation unhashable dict error (skill_slots data structure)*
 *Next Session: Complete Task #4 (Stats Tab) + Integration Testing*
+
+---
+
+## Bug Fix Summary: Timing Recommendation Unhashable Dict Error
+
+**Date**: October 18, 2025 (Late Evening)
+**Severity**: Critical (blocks timing calculation)
+**Status**: ✅ Fixed
+
+### Problem
+```
+Error: cannot use 'dict' as a dict key (unhashable type: 'dict')
+```
+
+User could not use timing recommendation feature. Error occurred when clicking "Tính thời gian" button.
+
+### Root Cause
+**Data Structure Mismatch**:
+- Code assumed `skill_slots` is array of STRINGS: `["Dark Explosion", "Bone Javelin", ...]`
+- Actual format in hunt_config.json is array of DICTS:
+  ```json
+  "skill_slots": [
+    {
+      "name": "Dark Explosion",
+      "key": "1",
+      "type": "attack",
+      "cooldown": 1.9,
+      "cast_time": 1.7,
+      "image": "assets/images/skills/..."
+    }
+  ]
+  ```
+
+### Solution
+Changed code to extract skill name from dict objects:
+
+```python
+# ❌ OLD CODE (assumes strings)
+for skill_name in configured_skills:
+    if skill_name in skill_dict:  # TypeError: dict is not hashable!
+
+# ✅ NEW CODE (handles dict objects)
+for skill_slot in configured_skills:
+    if isinstance(skill_slot, dict):
+        skill_name = skill_slot.get('name', '')
+        skill_type = skill_slot.get('type', 'attack').lower()
+    else:
+        # Fallback for string format
+        skill_name = skill_slot
+```
+
+### Files Modified
+- `app_gui.py` lines ~3708-3730 (dialog initialization)
+- `app_gui.py` lines ~3838-3860 (update_recommendations function)
+- Total: ~40 lines modified (2 locations)
+
+### Impact
+- ✅ Timing recommendation now works correctly
+- ✅ "From Configured Skills" option displays attack/buff breakdown
+- ✅ Accurate calculation from 3 attack skills (excludes 1 buff skill)
+- ✅ All presets (slow/normal/fast/custom) working
+
+### Testing
+- ✅ Dialog opens without errors
+- ✅ Shows "3 kỹ năng TẤN CÔNG + 1 kỹ năng BUFF (không tính)"
+- ✅ Calculation correct for all speed options
+- ✅ No breaking changes
+
+### Related Documentation
+- `docs/bugfixes/BUGFIX_TIMING_UNHASHABLE_DICT.md` (full technical details)
+- `docs/ADVANCED_WINDOW_SETTINGS_GUIDE.md` (explains Advanced Window Settings)
+
+---

@@ -3660,9 +3660,13 @@ class App(tk.Tk):
             # Create dialog for attack speed selection
             dialog = tk.Toplevel(self)
             dialog.title(self._t('monster_timing_title'))
-            dialog.geometry('500x400')
+            dialog.geometry('550x550')
             dialog.transient(self)
             dialog.grab_set()
+            
+            # Keep dialog on top but below main app
+            dialog.attributes('-topmost', False)
+            self.lift()  # Keep main app on top
             
             # Attack speed selection
             speed_frame = tk.LabelFrame(dialog, text='Attack Speed Source', padx=10, pady=10)
@@ -3671,49 +3675,117 @@ class App(tk.Tk):
             speed_var = tk.StringVar(value='from_skills')
             presets = get_timing_presets()
             
-            # NEW: From Skills option (Recommended)
-            from_skills_frame = tk.Frame(speed_frame)
-            from_skills_frame.pack(fill='x', pady=2)
+            # NEW: From Skills option (Recommended) - with visual indicator
+            from_skills_frame = tk.Frame(speed_frame, bg='#E3F2FD', relief='solid', borderwidth=1)
+            from_skills_frame.pack(fill='x', pady=2, padx=2)
             
-            tk.Radiobutton(
+            from_skills_rb = tk.Radiobutton(
                 from_skills_frame,
-                text='● From Skills (Recommended)',
+                text='✓ From Skills (Recommended)',
                 variable=speed_var,
                 value='from_skills',
-                font=('Arial', 9, 'bold')
-            ).pack(anchor='w')
+                font=('Arial', 9, 'bold'),
+                bg='#E3F2FD',
+                activebackground='#BBDEFB',
+                selectcolor='#2196F3',
+                indicatoron=1,
+                command=lambda: None  # Will set after defining update_recommendations
+            )
+            from_skills_rb.pack(anchor='w', padx=5, pady=5)
             
             # Skill info label (will update dynamically)
-            skill_info_label = tk.Label(from_skills_frame, text='', fg='#666', font=('Arial', 8))
-            skill_info_label.pack(anchor='w', padx=(20, 0))
+            skill_info_label = tk.Label(
+                from_skills_frame, 
+                text='', 
+                fg='#1976D2', 
+                font=('Arial', 8),
+                bg='#E3F2FD',
+                justify='left'
+            )
+            skill_info_label.pack(anchor='w', padx=(25, 5), pady=(0, 5))
             
-            # Calculate from current skills
+            # Calculate from CONFIGURED skills (from hunt_config skill_slots)
+            configured_skills = self.hunt_cfg.get('skill_slots', [])
             skills_data = load_skill_library()
-            attack_skills = [s['name'] for s in skills_data if s.get('type', 'attack').lower() == 'attack']
+            skill_dict = {s['name']: s for s in skills_data}
             
-            if attack_skills:
-                aps, avg_cd, count = calculate_attack_speed_from_skills(attack_skills)
-                if aps is not None:
-                    skill_info_label.config(
-                        text=f"  {count} attack skills found | Avg Cooldown: {avg_cd:.2f}s | APS: {aps:.2f} hits/sec"
-                    )
+            # Filter to get only ATTACK skills from configured skills
+            attack_skill_names = []
+            buff_skill_names = []
+            for skill_slot in configured_skills:
+                # Extract skill name from dict (skill_slots stores full skill objects)
+                if isinstance(skill_slot, dict):
+                    skill_name = skill_slot.get('name', '')
+                    skill_type = skill_slot.get('type', 'attack').lower()
                 else:
-                    skill_info_label.config(text="  No valid attack skills found")
+                    # Fallback: if it's already a string
+                    skill_name = skill_slot
+                    # Look up type from library
+                    if skill_name in skill_dict:
+                        skill_type = skill_dict[skill_name].get('type', 'attack').lower()
+                    else:
+                        skill_type = 'attack'
+                
+                if skill_type == 'attack':
+                    attack_skill_names.append(skill_name)
+                else:
+                    buff_skill_names.append(skill_name)
+            
+            if attack_skill_names:
+                aps, avg_cd, count = calculate_attack_speed_from_skills(attack_skill_names)
+                if aps is not None:
+                    skill_details = (
+                        f"✓ {count} attack skill(s) | Avg CD: {avg_cd:.2f}s | APS: {aps:.2f} hits/sec"
+                        if self.lang == 'en' else
+                        f"✓ {count} kỹ năng tấn công | CD TB: {avg_cd:.2f}s | TĐ: {aps:.2f} đòn/giây"
+                    )
+                    if buff_skill_names:
+                        buff_count = len(buff_skill_names)
+                        skill_details += (
+                            f"\n  ({buff_count} buff skill(s) excluded from calculation)"
+                            if self.lang == 'en' else
+                            f"\n  ({buff_count} kỹ năng buff không tính vào)"
+                        )
+                    skill_info_label.config(text=skill_details)
+                else:
+                    skill_info_label.config(
+                        text=(
+                            "⚠ No valid attack skills found"
+                            if self.lang == 'en' else
+                            "⚠ Không tìm thấy kỹ năng tấn công hợp lệ"
+                        )
+                    )
             else:
-                skill_info_label.config(text="  No attack skills configured yet")
+                no_skills_msg = (
+                    "⚠ No attack skills configured\n  Please add skills in Hunt tab first"
+                    if self.lang == 'en' else
+                    "⚠ Chưa thiết lập kỹ năng tấn công\n  Vui lòng thêm kỹ năng ở tab Hunt trước"
+                )
+                skill_info_label.config(text=no_skills_msg)
             
             # Separator
             ttk.Separator(speed_frame, orient='horizontal').pack(fill='x', pady=(8,8))
             
-            # Manual presets
-            tk.Label(speed_frame, text='Manual Presets:', font=('Arial', 9)).pack(anchor='w', pady=(0,4))
+            # Manual presets header
+            preset_label = tk.Label(
+                speed_frame, 
+                text=(
+                    'Manual Presets (for testing/comparison):' 
+                    if self.lang == 'en' else 
+                    'Các mức cố định (để test/so sánh):'
+                ), 
+                font=('Arial', 9),
+                fg='#666'
+            )
+            preset_label.pack(anchor='w', pady=(0,4))
             
             for preset_name, (aps, desc) in presets.items():
                 rb = tk.Radiobutton(
                     speed_frame,
                     text=f"  {preset_name.replace('_', ' ').title()}: {desc}",
                     variable=speed_var,
-                    value=preset_name
+                    value=preset_name,
+                    command=lambda: update_recommendations()
                 )
                 rb.pack(anchor='w', pady=2)
             
@@ -3724,17 +3796,29 @@ class App(tk.Tk):
                 custom_frame,
                 text='Custom:',
                 variable=speed_var,
-                value='custom'
+                value='custom',
+                command=lambda: update_recommendations()
             ).pack(side='left')
             custom_speed_var = tk.StringVar(value='2.0')
-            tk.Entry(custom_frame, textvariable=custom_speed_var, width=8).pack(side='left', padx=5)
+            custom_entry = tk.Entry(custom_frame, textvariable=custom_speed_var, width=8)
+            custom_entry.pack(side='left', padx=5)
+            custom_entry.bind('<KeyRelease>', lambda e: update_recommendations() if speed_var.get() == 'custom' else None)
             tk.Label(custom_frame, text='attacks/sec').pack(side='left')
             
             # Result text
-            result_frame = tk.LabelFrame(dialog, text='Recommendations', padx=10, pady=10)
+            result_frame = tk.LabelFrame(
+                dialog, 
+                text=(
+                    'Calculation Results & Recommendations' 
+                    if self.lang == 'en' else 
+                    'Kết quả tính toán & Khuyến nghị'
+                ), 
+                padx=10, 
+                pady=10
+            )
             result_frame.pack(fill='both', expand=True, padx=10, pady=10)
             
-            result_text = tk.Text(result_frame, width=60, height=12, wrap='word')
+            result_text = tk.Text(result_frame, width=65, height=15, wrap='word', font=('Consolas', 9))
             result_text.pack(fill='both', expand=True)
             
             # Store current recommendation for Apply button
@@ -3745,40 +3829,84 @@ class App(tk.Tk):
                 try:
                     preset = speed_var.get()
                     
+                    # Debug: Log preset value and type
+                    print(f"DEBUG: preset = {preset!r}, type = {type(preset)}")
+                    
                     # NEW: Handle "from_skills" option
                     if preset == 'from_skills':
+                        # Get configured skills from hunt_config
+                        configured_skills = self.hunt_cfg.get('skill_slots', [])
                         skills_data = load_skill_library()
-                        attack_skills = [s['name'] for s in skills_data if s.get('type', 'attack').lower() == 'attack']
-                        aps, avg_cd, count = calculate_attack_speed_from_skills(attack_skills)
+                        skill_dict = {s['name']: s for s in skills_data}
                         
-                        if aps is None:
+                        # Separate attack and buff skills
+                        attack_skill_names = []
+                        buff_skill_names = []
+                        for skill_slot in configured_skills:
+                            # Extract skill name from dict (skill_slots stores full skill objects)
+                            if isinstance(skill_slot, dict):
+                                skill_name = skill_slot.get('name', '')
+                                skill_type = skill_slot.get('type', 'attack').lower()
+                            else:
+                                # Fallback: if it's already a string
+                                skill_name = skill_slot
+                                # Look up type from library
+                                if skill_name in skill_dict:
+                                    skill_type = skill_dict[skill_name].get('type', 'attack').lower()
+                                else:
+                                    skill_type = 'attack'
+                            
+                            if skill_type == 'attack':
+                                attack_skill_names.append(skill_name)
+                            else:
+                                buff_skill_names.append(skill_name)
+                        
+                        aps, avg_cd, count = calculate_attack_speed_from_skills(attack_skill_names)
+                        
+                        if aps is None or count == 0:
                             result_text.delete('1.0', tk.END)
                             error_msg = (
-                                'No attack skills found.\n\n'
-                                'Please add attack skills in Skills Manager tab first.'
+                                '⚠ No attack skills configured!\n\n'
+                                'Please add attack skills in Hunt tab first.\n\n'
+                                'Note: Buff skills are not counted for attack speed calculation.'
                                 if self.lang == 'en' else
-                                'Không tìm thấy skill tấn công.\n\n'
-                                'Vui lòng thêm skill tấn công ở tab Quản lý Skill trước.'
+                                '⚠ Chưa thiết lập kỹ năng tấn công!\n\n'
+                                'Vui lòng thêm kỹ năng tấn công ở tab Hunt trước.\n\n'
+                                'Lưu ý: Kỹ năng buff không được tính vào tốc độ tấn công.'
                             )
                             result_text.insert('1.0', error_msg)
                             current_rec['rec'] = None
                             return
                         
-                        # Show skill-based info
-                        skill_info = (
-                            f"Calculated from {count} attack skills\n"
-                            f"Average Cooldown: {avg_cd:.2f}s\n"
-                            f"Effective APS: {aps:.2f} hits/sec\n\n"
-                            if self.lang == 'en' else
-                            f"Tính từ {count} skill tấn công\n"
-                            f"Cooldown trung bình: {avg_cd:.2f}s\n"
-                            f"Tốc độ tấn công hiệu dụng: {aps:.2f} đòn/giây\n\n"
-                        )
+                        # Show detailed skill-based info with breakdown
+                        if self.lang == 'en':
+                            skill_info = f"📊 Calculated from configured skills:\n"
+                            skill_info += f"  • {count} ATTACK skill(s): {', '.join(attack_skill_names)}\n"
+                            if buff_skill_names:
+                                skill_info += f"  • {len(buff_skill_names)} BUFF skill(s): {', '.join(buff_skill_names)} (excluded)\n"
+                            skill_info += f"\n"
+                            skill_info += f"Attack Speed Calculation:\n"
+                            skill_info += f"  • Average Cooldown: {avg_cd:.2f}s\n"
+                            skill_info += f"  • Effective APS: {aps:.2f} hits/sec\n\n"
+                        else:
+                            skill_info = f"📊 Tính từ kỹ năng đã thiết lập:\n"
+                            skill_info += f"  • {count} kỹ năng TẤN CÔNG: {', '.join(attack_skill_names)}\n"
+                            if buff_skill_names:
+                                skill_info += f"  • {len(buff_skill_names)} kỹ năng BUFF: {', '.join(buff_skill_names)} (không tính)\n"
+                            skill_info += f"\n"
+                            skill_info += f"Tính toán tốc độ tấn công:\n"
+                            skill_info += f"  • Cooldown trung bình: {avg_cd:.2f}s\n"
+                            skill_info += f"  • Tốc độ hiệu dụng: {aps:.2f} đòn/giây\n\n"
                         
                     elif preset == 'custom':
                         aps = float(custom_speed_var.get())
                         skill_info = ''
                     else:
+                        # Debug: Check presets dict
+                        print(f"DEBUG: presets keys = {list(presets.keys())}")
+                        print(f"DEBUG: Looking for preset '{preset}' in presets")
+                        if preset not in presets:
+                            raise ValueError(f"Invalid preset: {preset!r}")
                         aps = presets[preset][0]
                         skill_info = ''
                     
@@ -3796,8 +3924,11 @@ class App(tk.Tk):
                     result_text.insert(tk.END, formatted['summary'])
                     
                 except Exception as e:
+                    import traceback
+                    error_trace = traceback.format_exc()
+                    print(f"ERROR in update_recommendations:\n{error_trace}")
                     result_text.delete('1.0', tk.END)
-                    result_text.insert('1.0', f'Error: {e}')
+                    result_text.insert('1.0', f'Error: {e}\n\nFull traceback:\n{error_trace}')
                     current_rec['rec'] = None
             
             def apply_to_hunt_config():
@@ -3852,18 +3983,41 @@ class App(tk.Tk):
             btn_frame = tk.Frame(dialog)
             btn_frame.pack(fill='x', padx=10, pady=(0,10))
             
-            tk.Button(btn_frame, text='Calculate' if self.lang == 'en' else 'Tính toán',
-                     command=update_recommendations).pack(side='left', padx=5)
-            tk.Button(btn_frame, text='Apply to Hunt Config' if self.lang == 'en' else 'Áp dụng vào Hunt',
-                     command=apply_to_hunt_config, bg='#4CAF50', fg='white').pack(side='left', padx=5)
-            tk.Button(btn_frame, text='Close' if self.lang == 'en' else 'Đóng',
-                     command=dialog.destroy).pack(side='left', padx=5)
+            tk.Button(
+                btn_frame, 
+                text='Calculate' if self.lang == 'en' else 'Tính toán',
+                command=update_recommendations,
+                bg='#2196F3',
+                fg='white',
+                font=('Arial', 9, 'bold')
+            ).pack(side='left', padx=5)
+            
+            tk.Button(
+                btn_frame, 
+                text='Apply to Hunt Config' if self.lang == 'en' else 'Áp dụng vào Hunt',
+                command=apply_to_hunt_config, 
+                bg='#4CAF50', 
+                fg='white',
+                font=('Arial', 9, 'bold')
+            ).pack(side='left', padx=5)
+            
+            tk.Button(
+                btn_frame, 
+                text='Close' if self.lang == 'en' else 'Đóng',
+                command=dialog.destroy
+            ).pack(side='left', padx=5)
+            
+            # Set callback for from_skills radio button (now that update_recommendations is defined)
+            from_skills_rb.config(command=update_recommendations)
             
             # Initial calculation
             update_recommendations()
             
         except Exception as e:
-            messagebox.showerror(self._t('monster_timing_title'), f'Error: {e}')
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"ERROR in on_monster_calculate_timing:\n{error_trace}")
+            messagebox.showerror(self._t('monster_timing_title'), f'Error: {e}\n\nCheck terminal for details.')
 
     def on_monster_estimate(self):
         try:

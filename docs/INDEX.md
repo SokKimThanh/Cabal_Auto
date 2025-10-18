@@ -48,7 +48,9 @@ docs/
 │   ├── BUGFIX_IMAGE_PREVIEW_SIZE.md
 │   ├── BUGFIX_SESSION_SUMMARY.md
 │   ├── BUGFIX_SETUP_APPLY_SETTINGS.md
-│   └── BUGFIX_HUNT_START_OPENCV_LOGGER.md
+│   ├── BUGFIX_HUNT_START_OPENCV_LOGGER.md
+│   ├── BUGFIX_TIMING_RECOMMENDATION_UX.md
+│   └── BUGFIX_TIMING_UNHASHABLE_DICT.md
 │
 ├── ux-enhancements/                    # Cải tiến UX / UX improvements
 │   ├── UX_ENHANCEMENT_SMART_MONSTER_INPUT.md
@@ -68,6 +70,7 @@ docs/
 ### Hướng dẫn sử dụng / User Guides
 - **[HUONG_DAN_NGUOI_MOI.md](HUONG_DAN_NGUOI_MOI.md)** - Hướng dẫn người mới bắt đầu
 - **[HOW_TO_USE_TEST_RECOGNITION.md](HOW_TO_USE_TEST_RECOGNITION.md)** - Cách test nhận diện template
+- **[ADVANCED_WINDOW_SETTINGS_GUIDE.md](ADVANCED_WINDOW_SETTINGS_GUIDE.md)** - Giải thích chi tiết Advanced Window Settings ⭐ **New**
 - **[README.md](README.md)** - Tổng quan dự án
 
 ### Tổng quan dự án / Project Overview
@@ -103,10 +106,14 @@ docs/
 ### Sprint 15 & Earlier
 Xem thư mục [sprints/](sprints/) để tìm tài liệu các sprint cũ hơn
 
-## 🐛 Bug Fixes
+## 🐛 Bug Fixes (Sprint 18 Phase 4)
 
 - [BUGFIX_IMAGE_PREVIEW_SIZE.md](bugfixes/BUGFIX_IMAGE_PREVIEW_SIZE.md) - Sửa lỗi preview image size
 - [BUGFIX_SESSION_SUMMARY.md](bugfixes/BUGFIX_SESSION_SUMMARY.md) - Tóm tắt các bugfix
+- [BUGFIX_SETUP_APPLY_SETTINGS.md](bugfixes/BUGFIX_SETUP_APPLY_SETTINGS.md) - Sửa lỗi apply settings (translation access)
+- [BUGFIX_HUNT_START_OPENCV_LOGGER.md](bugfixes/BUGFIX_HUNT_START_OPENCV_LOGGER.md) - Sửa lỗi OpenCV missing + logger parameters
+- [BUGFIX_TIMING_RECOMMENDATION_UX.md](bugfixes/BUGFIX_TIMING_RECOMMENDATION_UX.md) - Cải tiến UX timing recommendation (skill filtering, visual feedback, z-order)
+- [BUGFIX_TIMING_UNHASHABLE_DICT.md](bugfixes/BUGFIX_TIMING_UNHASHABLE_DICT.md) - Sửa lỗi unhashable dict (skill_slots data structure) ⭐ **Latest**
 
 ## ✨ UX Enhancements
 
@@ -147,12 +154,14 @@ Xem thư mục [sprints/](sprints/) để tìm tài liệu các sprint cũ hơn
 
 ## 📊 Thống kê / Statistics
 
-- **Tổng số file tài liệu**: ~40 files
+- **Tổng số file tài liệu**: ~42 files (+2 new)
 - **Sprints hoàn thành**: 3 (Sprint 15, 16, 17)
 - **Sprint hiện tại**: Sprint 18 Phase 4 (75% complete)
+- **Bug fixes (Sprint 18)**: 5 critical bugs fixed
 - **Ngôn ngữ hỗ trợ**: English, Tiếng Việt
 
 ---
 
-**Cập nhật lần cuối / Last Updated**: October 18, 2025  
+**Cập nhật lần cuối / Last Updated**: October 18, 2025 (Late Evening)  
 **Người tổ chức / Organized By**: AI Assistant
+**Latest Changes**: Added timing unhashable dict fix + Advanced Window Settings guide
