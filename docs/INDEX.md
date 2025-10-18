@@ -14,6 +14,7 @@ docs/
 ├── PROJECT_REORGANIZATION_SUMMARY.md  # Tóm tắt tổ chức lại dự án / Project reorganization summary
 ├── PROJECT_SUMMARY.py                 # Script tạo tóm tắt dự án / Project summary generator
 ├── SESSION_SUMMARY_2025-10-18.md      # Tóm tắt phiên làm việc / Session summary
+├── CONTEXT_UPDATE_SPRINT18_PHASE4.md  # Cập nhật ngữ cảnh Sprint 18 Phase 4 / Context update
 │
 ├── sprints/                            # Tài liệu các Sprint
 │   ├── sprint15/
@@ -45,7 +46,9 @@ docs/
 │
 ├── bugfixes/                           # Tài liệu sửa lỗi / Bug fix documentation
 │   ├── BUGFIX_IMAGE_PREVIEW_SIZE.md
-│   └── BUGFIX_SESSION_SUMMARY.md
+│   ├── BUGFIX_SESSION_SUMMARY.md
+│   ├── BUGFIX_SETUP_APPLY_SETTINGS.md
+│   └── BUGFIX_HUNT_START_OPENCV_LOGGER.md
 │
 ├── ux-enhancements/                    # Cải tiến UX / UX improvements
 │   ├── UX_ENHANCEMENT_SMART_MONSTER_INPUT.md
