@@ -187,6 +187,10 @@ LANG: Dict[str, Dict[str, str]] = {
     'hunt_window_bounds_none': 'Saved window bounds: not set',
         'hunt_monster_select': 'Quick select monster:',
         'hunt_monster_auto_applied': 'Auto-applied: {name}',
+        # Phase 3: Multi-Monster Support
+        'hunt_monsters': 'Monster Rotation',
+        'rotation_mode': 'Rotation Mode:',
+        'monster_none_selected': 'No monsters selected - Enable monsters to start hunting',
         'hunt_template_active': 'Active template: {name}',
         'tooltip_threshold': 'Match confidence: 0.0 (any) to 1.0 (exact). Higher = stricter matching. Recommended: 0.80-0.90',
         'tooltip_region_strategy': 'Window: use game window bounds\nCustom: use specific region below',
@@ -357,6 +361,10 @@ LANG: Dict[str, Dict[str, str]] = {
     'hunt_window_bounds_none': 'Vùng cửa sổ đã lưu: chưa có',
         'hunt_monster_select': 'Chọn nhanh quái:',
         'hunt_monster_auto_applied': 'Đã tự động áp dụng: {name}',
+        # Phase 3: Multi-Monster Support
+        'hunt_monsters': 'Luân Chuyển Quái',
+        'rotation_mode': 'Chế độ:',
+        'monster_none_selected': 'Chưa chọn quái - Bật quái để bắt đầu săn',
         'hunt_template_active': 'Template đang dùng: {name}',
         'tooltip_threshold': 'Độ khớp: 0.0 (bất kỳ) đến 1.0 (chính xác). Cao hơn = khớp chặt hơn. Khuyến nghị: 0.80-0.90',
         'tooltip_region_strategy': 'Window: dùng biên cửa sổ game\nCustom: dùng vùng cụ thể bên dưới',
@@ -693,6 +701,10 @@ def load_hunt_config():
     "bring_to_front_each_cycle": False,
         "skill_slots": [],
         "window_bounds": None,
+        # Phase 3: Multi-Monster Support
+        "monster_list": [],           # [{"name": "Coc Go 2", "priority": 1}, ...]
+        "rotation_mode": "sequence",  # "sequence" or "priority"
+        "current_monster_index": 0,   # For sequence rotation
     }
     if HUNT_CONFIG_PATH.exists():
         try:
@@ -702,6 +714,17 @@ def load_hunt_config():
         except Exception:
             pass
     default.setdefault('skill_slots', [])
+    
+    # Backward compatibility: migrate monster_selected_name → monster_list
+    if 'monster_selected_name' in default and default['monster_selected_name']:
+        if not default.get('monster_list'):
+            default['monster_list'] = [{"name": default['monster_selected_name'], "priority": 1}]
+    
+    # Ensure monster_list exists
+    default.setdefault('monster_list', [])
+    default.setdefault('rotation_mode', 'sequence')
+    default.setdefault('current_monster_index', 0)
+    
     return default
 
 
@@ -768,6 +791,10 @@ class App(tk.Tk):
         self.monsters = load_monster_library()
         self.monster_selected_index = None
         self.monster_selected_name = self.monsters[0]['name'] if self.monsters else None
+        
+        # Phase 3: Multi-Monster Support
+        self.monster_rotation_list = []  # [{"name": "Coc Go 2", "priority": 1, "enabled": True}, ...]
+        self._load_monster_rotation_list()
         self.skills = load_skill_library()
         self.skill_selected_index = None
         self.skill_selected_name = self.skills[0]['name'] if self.skills else None
@@ -1016,19 +1043,61 @@ class App(tk.Tk):
         self.hunt_stop_btn = tk.Button(hbtn, text=self._t('stop_hunt'), command=self.on_hunt_stop, state='disabled')
         self.hunt_stop_btn.pack(side='left', padx=(8,0))
 
-        # Monster quick apply
-        monster_bar = tk.Frame(frm)
-        monster_bar.grid(row=15, column=0, columnspan=4, sticky='we', pady=(12,0))
-        monster_bar.grid_columnconfigure(1, weight=1)
-        tk.Label(monster_bar, text=self._t('hunt_monster_select')).grid(row=0, column=0, sticky='w')
-        self.monster_select_var = tk.StringVar(value=self.monster_selected_name or '')
-        self.monster_select_combo = ttk.Combobox(monster_bar, textvariable=self.monster_select_var, state='readonly', width=28)
-        self.monster_select_combo.grid(row=0, column=1, sticky='we', padx=(6,0))
-        self.monster_select_combo.bind('<<ComboboxSelected>>', self.on_monster_select_change)
-        tk.Button(monster_bar, text=self._t('monster_use_template'), command=self.on_monster_apply_from_select).grid(row=0, column=2, padx=(6,0))
-        tk.Button(monster_bar, text=self._t('manage_button'), command=self._open_monster_manager).grid(row=0, column=3, padx=(6,0))
+        # Monster Selection (Phase 3: Multi-Monster Support)
+        monster_frame = tk.LabelFrame(frm, text=self._t('hunt_monsters'), padx=10, pady=8)
+        monster_frame.grid(row=15, column=0, columnspan=4, sticky='we', pady=(12,0))
+        monster_frame.grid_columnconfigure(0, weight=1)
+        
+        # Rotation mode selection
+        mode_bar = tk.Frame(monster_frame)
+        mode_bar.pack(fill='x', pady=(0,8))
+        tk.Label(mode_bar, text=self._t('rotation_mode')).pack(side='left')
+        
+        self.rotation_mode_var = tk.StringVar(value=self.hunt_cfg.get('rotation_mode', 'sequence'))
+        self.rotation_mode_combo = ttk.Combobox(mode_bar, textvariable=self.rotation_mode_var, 
+                                                 state='readonly', width=12, values=['sequence', 'priority'])
+        self.rotation_mode_combo.pack(side='left', padx=(6,0))
+        self.rotation_mode_combo.bind('<<ComboboxSelected>>', self._on_rotation_mode_changed)
+        
+        # Mode description
+        self.rotation_desc_var = tk.StringVar()
+        tk.Label(mode_bar, textvariable=self.rotation_desc_var, fg='#666', font=('Arial', 8)).pack(side='left', padx=(8,0))
+        
+        # Monster list with checkboxes
+        list_container = tk.Frame(monster_frame)
+        list_container.pack(fill='both', expand=True)
+        
+        # Listbox frame with scrollbar
+        listbox_frame = tk.Frame(list_container)
+        listbox_frame.pack(side='left', fill='both', expand=True)
+        
+        self.monster_rotation_listbox = tk.Listbox(listbox_frame, height=5, exportselection=False, 
+                                                    selectmode='single', font=('Arial', 9))
+        self.monster_rotation_listbox.pack(side='left', fill='both', expand=True)
+        
+        monster_scroll = tk.Scrollbar(listbox_frame, orient='vertical', command=self.monster_rotation_listbox.yview)
+        monster_scroll.pack(side='right', fill='y')
+        self.monster_rotation_listbox.config(yscrollcommand=monster_scroll.set)
+        
+        # Control buttons (right side)
+        btn_container = tk.Frame(list_container)
+        btn_container.pack(side='right', fill='y', padx=(8,0))
+        
+        tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3).pack(pady=(0,4))
+        tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3).pack(pady=(0,12))
+        tk.Button(btn_container, text=self._t('manage_button'), command=self._open_monster_manager, width=10).pack()
+        
+        # Current monster status
+        self.monster_status_var = tk.StringVar()
+        tk.Label(monster_frame, textvariable=self.monster_status_var, fg='#2196F3', 
+                 font=('Arial', 8, 'bold')).pack(fill='x', pady=(8,0))
+        
+        # Bind click to toggle checkbox
+        self.monster_rotation_listbox.bind('<Double-Button-1>', self._on_monster_toggle)
+        self.monster_rotation_listbox.bind('<<ListboxSelect>>', self._on_monster_list_select)
+        
+        # Legacy monster estimate (keep for compatibility)
         self.monster_estimate_var.set('')
-        tk.Label(monster_bar, textvariable=self.monster_estimate_var, fg='gray').grid(row=1, column=0, columnspan=4, sticky='w', pady=(6,0))
 
         # Skill slots selection
         skill_header = tk.Frame(frm)
@@ -1054,6 +1123,9 @@ class App(tk.Tk):
 
         self._refresh_monster_select_options()
         self._load_skill_slots_from_cfg()
+        
+        # Phase 3: Populate monster rotation list
+        self._refresh_monster_rotation_list()
 
         # Status
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
@@ -1173,6 +1245,150 @@ class App(tk.Tk):
             self.window_bounds_display_var.set(self._t('hunt_window_bounds').format(value=bounds_text))
         else:
             self.window_bounds_display_var.set(self._t('hunt_window_bounds_none'))
+    
+    # Phase 3: Multi-Monster Support Handlers
+    def _load_monster_rotation_list(self):
+        """Load monster_list from hunt_config into UI."""
+        saved_list = self.hunt_cfg.get('monster_list', [])
+        self.monster_rotation_list = []
+        
+        for item in saved_list:
+            if isinstance(item, dict):
+                self.monster_rotation_list.append({
+                    'name': item.get('name', ''),
+                    'priority': item.get('priority', 1),
+                    'enabled': item.get('enabled', True)
+                })
+        
+        # If empty, populate from monsters library for convenience
+        if not self.monster_rotation_list and self.monsters:
+            for idx, monster in enumerate(self.monsters[:5]):  # Top 5 monsters
+                self.monster_rotation_list.append({
+                    'name': monster['name'],
+                    'priority': idx + 1,
+                    'enabled': False  # Disabled by default
+                })
+    
+    def _refresh_monster_rotation_list(self):
+        """Refresh the monster rotation listbox display."""
+        if not hasattr(self, 'monster_rotation_listbox'):
+            return
+        
+        self.monster_rotation_listbox.delete(0, tk.END)
+        
+        for item in self.monster_rotation_list:
+            check = "☑" if item['enabled'] else "☐"
+            display = f"{check} {item['name']}"
+            if self.hunt_cfg.get('rotation_mode') == 'priority':
+                display += f" (P{item['priority']})"
+            self.monster_rotation_listbox.insert(tk.END, display)
+        
+        self._update_monster_status()
+        self._update_rotation_mode_description()
+    
+    def _update_monster_status(self):
+        """Update current monster hunting status display."""
+        if not hasattr(self, 'monster_status_var'):
+            return
+        
+        enabled = [m for m in self.monster_rotation_list if m['enabled']]
+        if not enabled:
+            self.monster_status_var.set(self._t('monster_none_selected'))
+            return
+        
+        mode = self.hunt_cfg.get('rotation_mode', 'sequence')
+        current_idx = self.hunt_cfg.get('current_monster_index', 0)
+        
+        if mode == 'sequence':
+            if current_idx < len(enabled):
+                current = enabled[current_idx]
+                self.monster_status_var.set(f"Current: {current['name']} | Sequence: {current_idx+1}/{len(enabled)}")
+            else:
+                self.monster_status_var.set(f"Sequence: {len(enabled)} monsters")
+        else:  # priority
+            sorted_monsters = sorted(enabled, key=lambda m: m['priority'])
+            current = sorted_monsters[0]
+            self.monster_status_var.set(f"Priority: {current['name']} (P{current['priority']}) | {len(enabled)} total")
+    
+    def _update_rotation_mode_description(self):
+        """Update rotation mode description."""
+        if not hasattr(self, 'rotation_desc_var'):
+            return
+        
+        mode = self.rotation_mode_var.get()
+        if mode == 'sequence':
+            self.rotation_desc_var.set("Hunt monsters in order, cycle through list")
+        elif mode == 'priority':
+            self.rotation_desc_var.set("Always hunt highest priority (lowest number)")
+    
+    def _on_rotation_mode_changed(self, event=None):
+        """Handle rotation mode change."""
+        mode = self.rotation_mode_var.get()
+        self.hunt_cfg['rotation_mode'] = mode
+        self._refresh_monster_rotation_list()
+        self.hunt_status.set(f"Rotation mode: {mode}")
+    
+    def _on_monster_toggle(self, event=None):
+        """Toggle monster enabled state on double-click."""
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection:
+            return
+        
+        idx = selection[0]
+        if idx < len(self.monster_rotation_list):
+            self.monster_rotation_list[idx]['enabled'] = not self.monster_rotation_list[idx]['enabled']
+            self._refresh_monster_rotation_list()
+            self.monster_rotation_listbox.selection_set(idx)
+    
+    def _on_monster_list_select(self, event=None):
+        """Handle monster list selection for preview."""
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection:
+            return
+        
+        idx = selection[0]
+        if idx < len(self.monster_rotation_list):
+            monster = self.monster_rotation_list[idx]
+            # Optional: Show monster template preview or stats
+            pass
+    
+    def _on_monster_move_up(self):
+        """Move selected monster up in rotation order."""
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection or selection[0] == 0:
+            return
+        
+        idx = selection[0]
+        # Swap with previous
+        self.monster_rotation_list[idx], self.monster_rotation_list[idx-1] = \
+            self.monster_rotation_list[idx-1], self.monster_rotation_list[idx]
+        
+        # Update priorities if in priority mode
+        if self.hunt_cfg.get('rotation_mode') == 'priority':
+            self.monster_rotation_list[idx]['priority'], self.monster_rotation_list[idx-1]['priority'] = \
+                self.monster_rotation_list[idx-1]['priority'], self.monster_rotation_list[idx]['priority']
+        
+        self._refresh_monster_rotation_list()
+        self.monster_rotation_listbox.selection_set(idx-1)
+    
+    def _on_monster_move_down(self):
+        """Move selected monster down in rotation order."""
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection or selection[0] >= len(self.monster_rotation_list) - 1:
+            return
+        
+        idx = selection[0]
+        # Swap with next
+        self.monster_rotation_list[idx], self.monster_rotation_list[idx+1] = \
+            self.monster_rotation_list[idx+1], self.monster_rotation_list[idx]
+        
+        # Update priorities if in priority mode
+        if self.hunt_cfg.get('rotation_mode') == 'priority':
+            self.monster_rotation_list[idx]['priority'], self.monster_rotation_list[idx+1]['priority'] = \
+                self.monster_rotation_list[idx+1]['priority'], self.monster_rotation_list[idx]['priority']
+        
+        self._refresh_monster_rotation_list()
+        self.monster_rotation_listbox.selection_set(idx+1)
 
     def on_hunt_browse_template(self):
         path = filedialog.askopenfilename(title='Select template image', filetypes=[('Images','*.png;*.jpg;*.jpeg;*.bmp')])
@@ -1650,6 +1866,10 @@ class App(tk.Tk):
             "bring_to_front_each_cycle": bool(self.bring_front_var.get()),
             "window_bounds": self.current_window_bounds,
             "templates": self.hunt_cfg.get('templates', []),
+            # Phase 3: Multi-Monster Support
+            "monster_list": self.monster_rotation_list,
+            "rotation_mode": self.hunt_cfg.get('rotation_mode', 'sequence'),
+            "current_monster_index": self.hunt_cfg.get('current_monster_index', 0),
         }
         slots = self._collect_skill_slots()
         cfg['skill_slots'] = slots

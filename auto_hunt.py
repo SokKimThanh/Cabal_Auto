@@ -17,6 +17,51 @@ def load_cfg():
         return json.load(f)
 
 
+def get_monster_rotation_targets(cfg):
+    """
+    Phase 3: Get list of monsters to hunt based on rotation_mode.
+    
+    Returns:
+        list of monster dicts sorted by rotation order:
+        - sequence mode: order as they appear in monster_list
+        - priority mode: sorted by priority (ascending)
+        
+    Each monster dict contains:
+        {'name': str, 'priority': int, 'templates': [template_dict, ...]}
+    """
+    monster_list = cfg.get('monster_list', [])
+    enabled_monsters = [m for m in monster_list if m.get('enabled', True)]
+    
+    if not enabled_monsters:
+        return []
+    
+    rotation_mode = cfg.get('rotation_mode', 'sequence')
+    
+    # Build monster objects with their templates
+    all_templates = cfg.get('templates', [])
+    result = []
+    
+    for monster in enabled_monsters:
+        name = monster.get('name', '')
+        priority = monster.get('priority', 1)
+        
+        # Find templates for this monster
+        monster_templates = [t for t in all_templates if t.get('name', '').startswith(name) or name in t.get('name', '')]
+        
+        if monster_templates:
+            result.append({
+                'name': name,
+                'priority': priority,
+                'templates': monster_templates
+            })
+    
+    # Sort based on rotation mode
+    if rotation_mode == 'priority':
+        result.sort(key=lambda m: m['priority'])
+    
+    return result
+
+
 def locate_target(cfg):
     """
     Try to locate the target frame on screen using templates[] or fallback to template_path.
@@ -77,6 +122,54 @@ def locate_target(cfg):
     return (box, {'path': template, 'threshold': threshold, 'confidence': confidence}) if box else (None, None)
 
 
+def locate_monster_target(monster_targets, window_bounds=None):
+    """
+    Phase 3: Try to locate any monster from the rotation list.
+    
+    Args:
+        monster_targets: list of monster dicts from get_monster_rotation_targets()
+        window_bounds: optional window bounds dict for region
+        
+    Returns:
+        (box, template_info, monster_name) or (None, None, None)
+    """
+    for monster in monster_targets:
+        monster_name = monster['name']
+        templates = monster['templates']
+        
+        for tmpl in templates:
+            path = tmpl.get('path', '')
+            if not path or not Path(path).exists():
+                continue
+            
+            threshold = tmpl.get('threshold', 0.85)
+            
+            # Determine region
+            region_strategy = tmpl.get('region_strategy', 'window')
+            if region_strategy == 'custom' and tmpl.get('region'):
+                reg_dict = tmpl['region']
+                region = (reg_dict.get('left', 0), reg_dict.get('top', 0), 
+                         reg_dict.get('width', 0), reg_dict.get('height', 0))
+            elif window_bounds:
+                region = (window_bounds.get('left', 0), window_bounds.get('top', 0), 
+                         window_bounds.get('width', 0), window_bounds.get('height', 0))
+            else:
+                region = None
+            
+            # Try to locate
+            box, confidence = locate_template(path, region, threshold, method='auto')
+            if box:
+                return box, {
+                    'name': tmpl.get('name', ''),
+                    'path': path,
+                    'threshold': threshold,
+                    'confidence': confidence,
+                    'monster_name': monster_name
+                }, monster_name
+    
+    return None, None, None
+
+
 def bring_window_to_front(title_substring: str) -> bool:
     """Best-effort bring a window whose title contains substring to front using PyAutoGUI helper."""
     try:
@@ -124,30 +217,78 @@ def main():
         except Exception as e:
             print(f'Warning: Could not load skill runtime: {e}')
 
+    # Phase 3: Initialize monster rotation
+    monster_targets = get_monster_rotation_targets(cfg)
+    rotation_mode = cfg.get('rotation_mode', 'sequence')
+    current_monster_index = cfg.get('current_monster_index', 0)
+    window_bounds = cfg.get('window_bounds')
+    
+    use_rotation = len(monster_targets) > 0
+    if use_rotation:
+        print(f'Monster rotation enabled: {rotation_mode} mode, {len(monster_targets)} monsters')
+        for idx, monster in enumerate(monster_targets):
+            prefix = "→" if idx == current_monster_index and rotation_mode == 'sequence' else " "
+            print(f'  {prefix} [{idx+1}] {monster["name"]} (P{monster["priority"]}) - {len(monster["templates"])} templates')
+    else:
+        print('Monster rotation disabled - using legacy template mode')
+
     # Initialize logger
     logger = get_hunt_logger()
     logger.log_hunt_start(cfg)
 
     print('Auto Hunt started')
-    print(f'Template: {template_path}')
+    if not use_rotation:
+        print(f'Template: {template_path}')
     print('Press Ctrl+C to stop')
 
     last_search = 0.0
     have_target = False
     last_match_info = None
+    last_monster_name = None
     state = 'search'  # Track state for logging
     attack_start_time = None
+    lost_timeout_sec = float(cfg.get('lost_timeout_sec', 1.2))
+    attack_min_duration_sec = float(cfg.get('attack_min_duration_sec', 1.5))
+    time_target_lost = None  # Track when we lost the target
 
     try:
         while True:
             now = time.time()
             if now - last_search >= search_interval:
-                box, match_info = locate_target(cfg)
+                # Phase 3: Use monster rotation if available
+                if use_rotation:
+                    # Determine which monsters to try
+                    if rotation_mode == 'sequence':
+                        # Try current monster, then cycle to next if not found
+                        search_order = [monster_targets[current_monster_index % len(monster_targets)]]
+                    else:  # priority mode
+                        # Try all monsters in priority order
+                        search_order = monster_targets
+                    
+                    box, match_info, monster_name = locate_monster_target(search_order, window_bounds)
+                    
+                    # If found, update current monster index for sequence mode
+                    if box and rotation_mode == 'sequence':
+                        # Check if this is a different monster than expected
+                        if monster_name != last_monster_name:
+                            # Find index of this monster
+                            for idx, m in enumerate(monster_targets):
+                                if m['name'] == monster_name:
+                                    current_monster_index = idx
+                                    break
+                else:
+                    # Legacy mode: use locate_target
+                    box, match_info = locate_target(cfg)
+                    monster_name = None
+                
                 have_target = box is not None
                 last_search = now
                 
                 # Log template match details
                 if have_target and match_info:
+                    # Target found - clear lost timer
+                    time_target_lost = None
+                    
                     if last_match_info != match_info:
                         # State transition: search -> attack
                         if state == 'search':
@@ -159,25 +300,53 @@ def main():
                         template_name = match_info.get('name') or match_info.get('path', 'unknown')
                         threshold = match_info.get('threshold', 0.8)
                         confidence = match_info.get('confidence', 0.0)
-                        monster_name = match_info.get('monster_name', '')
-                        logger.log_match(template_name, box, threshold, confidence, monster_name)
+                        log_monster_name = match_info.get('monster_name', monster_name or '')
+                        logger.log_match(template_name, box, threshold, confidence, log_monster_name)
                         
-                        print(f"[Match] Template: {template_name}, " +
+                        rotation_info = f" [{rotation_mode}]" if use_rotation else ""
+                        monster_info = f" Monster: {log_monster_name}" if log_monster_name else ""
+                        print(f"[Match{rotation_info}]{monster_info} Template: {template_name}, " +
                               f"Threshold: {threshold:.2f}, Confidence: {confidence:.3f}, Box: {box}")
                         last_match_info = match_info
-                elif not have_target and last_match_info:
-                    # State transition: attack -> search
-                    if state == 'attack':
-                        duration = now - attack_start_time if attack_start_time else 0
-                        template_name = last_match_info.get('name') or last_match_info.get('path', 'unknown')
-                        monster_name = last_match_info.get('monster_name', '')
-                        logger.log_lost(template_name, monster_name, duration)
-                        logger.log_state_change('attack', 'search', 'target_lost')
-                        state = 'search'
-                        attack_start_time = None
+                        last_monster_name = monster_name
+                elif not have_target:
+                    # Target lost
+                    if last_match_info and time_target_lost is None:
+                        time_target_lost = now
                     
-                    print("[Lost] Target lost")
-                    last_match_info = None
+                    # Check if we should give up on this target
+                    if time_target_lost and (now - time_target_lost >= lost_timeout_sec):
+                        # State transition: attack -> search
+                        if state == 'attack':
+                            duration = now - attack_start_time if attack_start_time else 0
+                            
+                            # Only transition if we've been attacking long enough
+                            if duration >= attack_min_duration_sec:
+                                template_name = last_match_info.get('name') or last_match_info.get('path', 'unknown')
+                                log_monster_name = last_match_info.get('monster_name', last_monster_name or '')
+                                logger.log_lost(template_name, log_monster_name, duration)
+                                logger.log_state_change('attack', 'search', 'target_lost')
+                                state = 'search'
+                                attack_start_time = None
+                                
+                                rotation_info = f" [{rotation_mode}]" if use_rotation else ""
+                                monster_info = f" Monster: {log_monster_name}" if log_monster_name else ""
+                                print(f"[Lost{rotation_info}]{monster_info} Target lost after {duration:.1f}s")
+                                
+                                # Phase 3: Rotate to next monster in sequence mode
+                                if use_rotation and rotation_mode == 'sequence':
+                                    current_monster_index = (current_monster_index + 1) % len(monster_targets)
+                                    next_monster = monster_targets[current_monster_index]['name']
+                                    print(f"[Rotation] Switching to: {next_monster} ({current_monster_index+1}/{len(monster_targets)})")
+                                    
+                                    # Save rotation state
+                                    cfg['current_monster_index'] = current_monster_index
+                                    with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
+                                        json.dump(cfg, f, ensure_ascii=False, indent=2)
+                            
+                        last_match_info = None
+                        last_monster_name = None
+                        time_target_lost = None
 
             # Cast buff skills (always, regardless of combat state)
             if skill_runtime:
