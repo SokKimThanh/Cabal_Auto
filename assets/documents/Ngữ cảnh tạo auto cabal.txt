@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 15 Complete - Buff Duration GUI Fields)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 16 Planning - GUI Redesign for User Experience)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
@@ -400,9 +400,20 @@ E:\Cabal_Auto
 			- 2 new StringVars: skill_duration_var, skill_pre_refresh_var
 			- 4 new UI widgets: 2 labels + 2 entries with tooltips
 			- Enhanced _read_skill_form() với buff validation
-- Tiếp theo:
+- Tiếp theo (Sprint 16 - GUI Redesign Planned):
 	- ✅ Sprint 15 complete! Buff duration GUI fields fully integrated.
-	- Next potential enhancements: Skill preview with buff timer display, bulk skill editing, skill presets
+	- 🎯 Sprint 16: Major GUI/UX redesign based on user feedback
+		• **Problem identified**: Current UI quá phức tạp cho người mới, timing calculator không liên kết với skills thực tế
+		• **User feedback**: Không hiểu radiobutton "Normal", overwhelmed bởi hunt config parameters, cần workflow rõ ràng hơn
+		• **Solutions proposed**:
+			1. Skill-based Timing Calculator: Tính attack speed từ skills thực tế thay vì manual guess
+			2. Beginner/Intermediate/Advanced modes: Progressive disclosure, ẩn complexity cho người mới
+			3. Setup Wizard: 5-step wizard hướng dẫn first-time setup
+			4. Multi-monster support: Rotation/priority modes cho level 60+
+			5. Tab reorganization: Hunt/Setup/Stats/Help tabs với clear hierarchy
+		• **Expected outcomes**: Beginner chỉ cần 4 bước để start hunt, timing chính xác hơn, UI thân thiện
+		• **Documentation**: Full proposal tại docs/REDESIGN_PROPOSAL_SPRINT16.md
+	- Next enhancements after Sprint 16: Skill preview with buff timer, bulk editing, presets
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
