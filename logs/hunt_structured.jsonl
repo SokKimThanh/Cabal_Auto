@@ -50,3 +50,18 @@
 {"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 37.179544, "timestamp": "2025-10-18T17:50:38.639926"}
 {"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-18T18:32:27.323556"}
 {"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 7.711987, "timestamp": "2025-10-18T18:32:34.715785"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-19T03:25:23.746365"}
+{"event": "ERROR", "error_type": "hunt_loop", "message": "Hunt error: The confidence keyword argument is only available if OpenCV is installed.", "exception": "The confidence keyword argument is only available if OpenCV is installed.", "timestamp": "2025-10-19T03:25:23.783768"}
+{"event": "HUNT_STOP", "reason": "error", "duration_sec": 0.21464, "timestamp": "2025-10-19T03:25:23.785105"}
+{"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 0.216372, "timestamp": "2025-10-19T03:25:23.786150"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-19T03:25:33.724576"}
+{"event": "ERROR", "error_type": "hunt_loop", "message": "Hunt error: The confidence keyword argument is only available if OpenCV is installed.", "exception": "The confidence keyword argument is only available if OpenCV is installed.", "timestamp": "2025-10-19T03:25:33.766065"}
+{"event": "HUNT_STOP", "reason": "error", "duration_sec": 10.196968, "timestamp": "2025-10-19T03:25:33.766726"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-19T03:25:39.662868"}
+{"event": "ERROR", "error_type": "hunt_loop", "message": "Hunt error: The confidence keyword argument is only available if OpenCV is installed.", "exception": "The confidence keyword argument is only available if OpenCV is installed.", "timestamp": "2025-10-19T03:25:39.700946"}
+{"event": "HUNT_STOP", "reason": "error", "duration_sec": 16.131844, "timestamp": "2025-10-19T03:25:39.701952"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-19T03:25:40.800735"}
+{"event": "ERROR", "error_type": "hunt_loop", "message": "Hunt error: The confidence keyword argument is only available if OpenCV is installed.", "exception": "The confidence keyword argument is only available if OpenCV is installed.", "timestamp": "2025-10-19T03:25:40.833138"}
+{"event": "HUNT_STOP", "reason": "error", "duration_sec": 17.264016, "timestamp": "2025-10-19T03:25:40.833911"}
+{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-19T03:28:32.460053"}
+{"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 75.040432, "timestamp": "2025-10-19T03:29:47.325016"}
