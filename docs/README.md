@@ -2,19 +2,35 @@
 
 This directory contains all project documentation, summaries, and sprint records.
 
-## Structure
+**📋 [Xem INDEX.md](INDEX.md)** để tìm tài liệu nhanh / See INDEX.md for quick reference
 
-### `/sprints/`
-Contains sprint demo scripts and summary documents:
-- `sprint13_demo.py` - Demo for Apply Timing to Hunt Config
-- `sprint14_demo.py` - Demo for Buff Auto-Casting Runtime
-- `sprint15_demo.py` - Demo for Buff Duration GUI Fields
-- `SPRINT15_SUMMARY.txt` - Detailed technical summary of Sprint 15
-- `SPRINT15_COMPLETE.md` - User-friendly guide for Sprint 15
+## 📁 Structure
 
-### Root Documentation
-- `PROJECT_SUMMARY.py` - Complete project summary (all 15 sprints)
-- (Future: API documentation, user guides, etc.)
+```
+docs/
+├── 📄 INDEX.md                          # Chỉ mục đầy đủ / Full index
+├── 📄 REORGANIZATION_SUMMARY.md         # Tóm tắt tổ chức / Reorganization summary
+├── 📄 HUONG_DAN_NGUOI_MOI.md           # Hướng dẫn người mới / Beginner guide
+├── 📄 HOW_TO_USE_TEST_RECOGNITION.md   # Test recognition guide
+├── 📂 sprints/                          # Sprint documentation (25 files)
+│   ├── sprint15/
+│   ├── sprint16/                        # UI Redesign
+│   └── sprint18/                        # 4-Tab Reorganization (current)
+├── 📂 bugfixes/                         # Bug fixes (1 file)
+├── 📂 ux-enhancements/                  # UX improvements (3 files)
+└── 📂 translations/                     # Translation docs (5 files)
+```
+
+### 📚 Main Documents
+- **[INDEX.md](INDEX.md)** - Complete documentation index with quick links
+- **[REORGANIZATION_SUMMARY.md](REORGANIZATION_SUMMARY.md)** - How docs are organized
+- **[PROJECT_SUMMARY.py](PROJECT_SUMMARY.py)** - Complete project summary script
+
+### 🚀 Current Sprint: Sprint 18 Phase 4
+- **Location**: `sprints/sprint18/`
+- **Goal**: 4-Tab UI Reorganization (Hunt, Setup, Stats, Help)
+- **Progress**: 75% complete (6/8 tasks done)
+- **Latest**: Window Selection UX Enhancement ✅
 
 ## Sprint Documentation Format
 
