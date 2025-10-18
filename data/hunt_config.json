@@ -19,9 +19,9 @@
   "bring_to_front_each_cycle": false,
   "skill_slots": [
     "Dark Explosion",
-    "",
-    "",
-    "",
+    "Bone Javelin",
+    "Skull Shooter",
+    "Regeneration",
     "",
     "",
     "",
@@ -88,5 +88,6 @@
   ],
   "window_pid": 26572,
   "window_hwnd": 14028520,
-  "monster_selected_name": "Coc go~"
+  "monster_selected_name": "Coc go~",
+  "ui_mode": "beginner"
 }

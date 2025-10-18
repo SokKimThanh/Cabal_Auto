@@ -3318,13 +3318,31 @@ class App(tk.Tk):
 
     def _load_skill_slots_from_cfg(self):
         saved = self.hunt_cfg.get('skill_slots', []) if hasattr(self, 'hunt_cfg') else []
-        self.skill_slot_saved_names = [slot.get('name', '') for slot in saved if slot.get('name')]
+        
+        # Handle both formats: list of strings (old) and list of dicts (new)
+        normalized_slots = []
+        for slot in saved:
+            if isinstance(slot, dict):
+                # New format: {"name": "skill_name"}
+                normalized_slots.append(slot.get('name', ''))
+            elif isinstance(slot, str):
+                # Old format: "skill_name"
+                normalized_slots.append(slot)
+            else:
+                normalized_slots.append('')
+        
+        # Extract non-empty names for saved skills
+        self.skill_slot_saved_names = [name for name in normalized_slots if name]
+        
         self._refresh_skill_slots_options()
+        
+        # Load saved slots into UI
         for idx, var in enumerate(self.skill_slot_vars):
             name = ''
-            if idx < len(saved):
-                name = saved[idx].get('name', '')
+            if idx < len(normalized_slots):
+                name = normalized_slots[idx]
             var.set(name)
+        
         self._update_attack_keys_from_slots()
 
     def _collect_skill_slots(self):
