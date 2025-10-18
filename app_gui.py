@@ -92,6 +92,17 @@ LANG: Dict[str, Dict[str, str]] = {
         'start_hunt': 'Start hunt',
         'stop_hunt': 'Stop hunt',
         'setup_wizard': '🧙 Setup Wizard',
+        'wizard_first_time_title': 'Welcome to Cabal Auto Hunt!',
+        'wizard_first_time_message': (
+            "It looks like this is your first time using Cabal Auto Hunt.\n\n"
+            "Would you like to run the Setup Wizard to configure your settings?\n\n"
+            "The wizard will guide you through:\n"
+            "  • Selecting your game window\n"
+            "  • Choosing a monster to hunt\n"
+            "  • Configuring your attack skills\n\n"
+            "You can always run the wizard later by clicking the '🧙 Setup Wizard' button."
+        ),
+        'wizard_skipped_hint': "Setup wizard skipped. Click '🧙 Setup Wizard' button to run it later.",
         'hunt_idle': 'Ready to hunt',
         'hunt_running': 'Hunting…',
         'hunt_stopped': 'Hunt stopped',
@@ -245,6 +256,17 @@ LANG: Dict[str, Dict[str, str]] = {
         'start_hunt': 'Bắt đầu săn',
         'stop_hunt': 'Dừng săn',
         'setup_wizard': '🧙 Trợ lý thiết lập',
+        'wizard_first_time_title': 'Chào mừng đến Cabal Auto Hunt!',
+        'wizard_first_time_message': (
+            "Có vẻ đây là lần đầu bạn sử dụng Cabal Auto Hunt.\n\n"
+            "Bạn có muốn chạy Trợ lý thiết lập để cấu hình không?\n\n"
+            "Trợ lý sẽ hướng dẫn bạn:\n"
+            "  • Chọn cửa sổ game\n"
+            "  • Chọn quái để săn\n"
+            "  • Cấu hình kỹ năng tấn công\n\n"
+            "Bạn luôn có thể chạy trợ lý sau bằng nút '🧙 Trợ lý thiết lập'."
+        ),
+        'wizard_skipped_hint': "Đã bỏ qua trợ lý. Nhấn nút '🧙 Trợ lý thiết lập' để chạy sau.",
         'hunt_idle': 'Sẵn sàng săn',
         'hunt_running': 'Đang săn…',
         'hunt_stopped': 'Đã dừng săn',
@@ -688,6 +710,39 @@ def save_hunt_config(cfg):
         json.dump(cfg, f, ensure_ascii=False, indent=2)
 
 
+class ConfigManager:
+    """Wrapper class for config management to interface with SetupWizard."""
+    def __init__(self, cfg, hunt_cfg):
+        self.cfg = cfg
+        self.hunt_cfg = hunt_cfg
+    
+    def set(self, section, key, value):
+        """Set a configuration value."""
+        if section == 'hunt_config':
+            self.hunt_cfg[key] = value
+        elif section == 'config':
+            self.cfg[key] = value
+        else:
+            # Handle other sections if needed
+            if section not in self.cfg:
+                self.cfg[section] = {}
+            self.cfg[section][key] = value
+    
+    def get(self, section, key, default=None):
+        """Get a configuration value."""
+        if section == 'hunt_config':
+            return self.hunt_cfg.get(key, default)
+        elif section == 'config':
+            return self.cfg.get(key, default)
+        else:
+            return self.cfg.get(section, {}).get(key, default)
+    
+    def save(self):
+        """Save both config files."""
+        save_config(self.cfg)
+        save_hunt_config(self.hunt_cfg)
+
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -695,6 +750,9 @@ class App(tk.Tk):
         self.cfg = load_config()
         self.hunt_cfg = load_hunt_config()
         self.lang = str(self.cfg.get('ui', {}).get('language', 'vi'))
+        
+        # Create config manager for wizard
+        self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
 
         self.title(self._t('app_title'))
         self.resizable(False, False)
@@ -773,6 +831,9 @@ class App(tk.Tk):
         self._build_ui()
         # ESC to stop hunt quickly
         self.bind('<Escape>', lambda e: self.on_hunt_stop())
+        
+        # Auto-launch Setup Wizard for new users (after UI is ready)
+        self.after(500, self._check_first_time_setup)
 
     # -----------------
     # UI Construction
@@ -1347,6 +1408,34 @@ class App(tk.Tk):
         box, confidence = locate_template(template, region, threshold, method='auto')
         return (box, {'path': template, 'threshold': threshold, 'confidence': confidence}) if box else (None, None)
 
+    def _check_first_time_setup(self):
+        """Check if this is first-time user and auto-launch wizard if needed."""
+        # Check if user has completed basic setup
+        # Must have ALL THREE to be considered configured
+        has_window = bool(self.hunt_cfg.get('window_title', '').strip())
+        has_monster = bool(self.hunt_cfg.get('monster_selected_name', '').strip())
+        has_skills = bool(self.hunt_cfg.get('skill_slots')) and len(self.hunt_cfg.get('skill_slots', [])) > 0
+        
+        is_new_user = not (has_window and has_monster and has_skills)
+        
+        # Debug log to understand detection
+        print(f"[First-time check] window={has_window}, monster={has_monster}, skills={has_skills}, is_new={is_new_user}")
+        
+        if is_new_user:
+            # Ask user if they want to run setup wizard
+            response = messagebox.askyesno(
+                self._t('wizard_first_time_title'),
+                self._t('wizard_first_time_message'),
+                icon='question'
+            )
+            
+            if response:
+                # User clicked Yes - launch wizard
+                self.on_setup_wizard()
+            else:
+                # User clicked No - show hint about wizard button
+                self.hunt_status.set(self._t('wizard_skipped_hint'))
+    
     def on_setup_wizard(self):
         """Launch setup wizard to guide user through initial configuration."""
         def on_wizard_complete(wizard_data):
@@ -1355,8 +1444,8 @@ class App(tk.Tk):
             # (Will be fully implemented in Task #5)
             self.hunt_status.set(f"Wizard completed - Language: {wizard_data.get('language', 'en')}")
         
-        # Launch wizard
-        show_setup_wizard(self.root, config_manager=self.config_mgr, on_complete=on_wizard_complete)
+        # Launch wizard - use 'self' instead of 'self.root' (App inherits from tk.Tk)
+        show_setup_wizard(self, config_manager=self.config_mgr, on_complete=on_wizard_complete)
     
     def on_hunt_save(self):
         try:
