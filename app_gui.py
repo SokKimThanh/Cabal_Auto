@@ -760,6 +760,10 @@ class App(tk.Tk):
         self.current_window_bounds = _normalize_window_bounds(self.hunt_cfg.get('window_bounds'))
         self.hunt_cfg['window_bounds'] = self.current_window_bounds
         self.window_bounds_display_var = tk.StringVar(value='')
+        
+        # Hunt tab widget groups for progressive disclosure
+        self.hunt_intermediate_widgets = []  # Shown in intermediate+ modes
+        self.hunt_advanced_widgets = []      # Shown only in advanced mode
 
         pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
 
@@ -823,9 +827,9 @@ class App(tk.Tk):
             desc_label = tk.Label(mode_frame, text=f"  {mode_desc}", fg='#666', font=('Arial', 8))
             desc_label.grid(row=idx, column=1, sticky='w', padx=(4,0), pady=2)
         
-        separator_frame = tk.Frame(frm)
-        separator_frame.grid(row=1, column=0, columnspan=4, sticky='we', pady=(0,12))
-        ttk.Separator(separator_frame, orient='horizontal').pack(fill='x')
+        # Separator line (using Frame since ttk.Separator doesn't work well with grid)
+        sep_line = tk.Frame(frm, height=2, bd=1, relief='sunken')
+        sep_line.grid(row=1, column=0, columnspan=4, sticky='we', pady=(0,12))
         
         # Window title
         tk.Label(frm, text=self._t('window_title_contains')).grid(row=2, column=0, sticky='e')
@@ -841,77 +845,105 @@ class App(tk.Tk):
         self.win_listbox.grid(row=4, column=0, columnspan=4, sticky='we')
         self.win_listbox.bind('<<ListboxSelect>>', self.on_window_selected)
 
-        # Target/Attack keys
-        tk.Label(frm, text=self._t('target_key')).grid(row=5, column=0, sticky='e', pady=(8,0))
+        # Target/Attack keys (ADVANCED)
+        self.target_key_label = tk.Label(frm, text=self._t('target_key'))
+        self.target_key_label.grid(row=5, column=0, sticky='e', pady=(8,0))
         self.target_key_var = tk.StringVar(value=str(self.hunt_cfg.get('target_key', 'TAB')))
         self.target_key_entry = tk.Entry(frm, textvariable=self.target_key_var, width=8)
         self.target_key_entry.grid(row=5, column=1, sticky='w', pady=(8,0))
 
-        tk.Label(frm, text=self._t('attack_keys')).grid(row=5, column=2, sticky='e', pady=(8,0))
+        self.attack_keys_label = tk.Label(frm, text=self._t('attack_keys'))
+        self.attack_keys_label.grid(row=5, column=2, sticky='e', pady=(8,0))
         self.attack_keys_var = tk.StringVar(value=','.join(self.hunt_cfg.get('attack_keys', ['1','2','3'])))
         self.attack_keys_entry = tk.Entry(frm, textvariable=self.attack_keys_var, width=18)
         self.attack_keys_entry.grid(row=5, column=3, sticky='w', pady=(8,0))
 
-        # Timing (Intermediate/Advanced)
+        # Timing intervals (ADVANCED)
         self.press_ms_label = tk.Label(frm, text=self._t('press_ms'))
+        self.press_ms_label.grid(row=6, column=0, sticky='e')
         self.attack_press_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_press_ms', 60)))
         self.press_ms_entry = tk.Entry(frm, textvariable=self.attack_press_var, width=8)
+        self.press_ms_entry.grid(row=6, column=1, sticky='w')
 
         self.target_cycle_label = tk.Label(frm, text=self._t('target_cycle'))
+        self.target_cycle_label.grid(row=6, column=2, sticky='e')
         self.target_cycle_var = tk.StringVar(value=str(self.hunt_cfg.get('target_cycle_delay', 0.2)))
         self.target_cycle_entry = tk.Entry(frm, textvariable=self.target_cycle_var, width=8)
+        self.target_cycle_entry.grid(row=6, column=3, sticky='w')
 
         self.search_interval_label = tk.Label(frm, text=self._t('search_interval'))
+        self.search_interval_label.grid(row=7, column=0, sticky='e')
         self.search_interval_var = tk.StringVar(value=str(self.hunt_cfg.get('search_interval', 0.25)))
         self.search_interval_entry = tk.Entry(frm, textvariable=self.search_interval_var, width=8)
+        self.search_interval_entry.grid(row=7, column=1, sticky='w')
 
         self.attack_interval_label = tk.Label(frm, text=self._t('attack_interval'))
+        self.attack_interval_label.grid(row=7, column=2, sticky='e')
         self.attack_interval_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_interval', 0.15)))
         self.attack_interval_entry = tk.Entry(frm, textvariable=self.attack_interval_var, width=8)
+        self.attack_interval_entry.grid(row=7, column=3, sticky='w')
 
+        # Lost timeout & Attack duration (INTERMEDIATE)
         self.lost_timeout_label = tk.Label(frm, text=self._t('lost_timeout'))
+        self.lost_timeout_label.grid(row=8, column=0, sticky='e', pady=(8,0))
         self.lost_timeout_var = tk.StringVar(value=str(self.hunt_cfg.get('lost_timeout_sec', 1.2)))
         self.lost_timeout_entry = tk.Entry(frm, textvariable=self.lost_timeout_var, width=8)
+        self.lost_timeout_entry.grid(row=8, column=1, sticky='w', pady=(8,0))
         ToolTip(self.lost_timeout_entry, self._t('tooltip_lost_timeout'))
 
         self.attack_duration_label = tk.Label(frm, text=self._t('attack_duration'))
+        self.attack_duration_label.grid(row=8, column=2, sticky='e', pady=(8,0))
         self.attack_duration_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_min_duration_sec', 1.5)))
         self.attack_duration_entry = tk.Entry(frm, textvariable=self.attack_duration_var, width=8)
+        self.attack_duration_entry.grid(row=8, column=3, sticky='w', pady=(8,0))
         ToolTip(self.attack_duration_entry, self._t('tooltip_attack_duration'))
 
-        # Template & Region (Advanced)
+        # Template & Region (ADVANCED)
         self.template_label = tk.Label(frm, text=self._t('template'))
+        self.template_label.grid(row=9, column=0, sticky='e')
         self.template_var = tk.StringVar(value=str(self.hunt_cfg.get('template_path', 'assets/images/target_frame.png')))
         self.template_entry = tk.Entry(frm, textvariable=self.template_var, width=36)
+        self.template_entry.grid(row=9, column=1, columnspan=2, sticky='w')
         self.template_browse_btn = tk.Button(frm, text=self._t('browse'), command=self.on_hunt_browse_template)
+        self.template_browse_btn.grid(row=9, column=3)
 
         self.region_l_label = tk.Label(frm, text=self._t('region_l'))
+        self.region_l_label.grid(row=10, column=0, sticky='e')
         region = self.hunt_cfg.get('region') or ["", "", "", ""]
         self.reg_l = tk.StringVar(value=str(region[0]) if region[0] != "" else "")
         self.reg_t = tk.StringVar(value=str(region[1]) if region[1] != "" else "")
         self.reg_w = tk.StringVar(value=str(region[2]) if region[2] != "" else "")
         self.reg_h = tk.StringVar(value=str(region[3]) if region[3] != "" else "")
-        tk.Entry(frm, textvariable=self.reg_l, width=6).grid(row=8, column=1, sticky='w')
-        tk.Label(frm, text=self._t('t')).grid(row=8, column=1, sticky='e', padx=(48,0))
-        tk.Entry(frm, textvariable=self.reg_t, width=6).grid(row=8, column=2, sticky='w')
-        tk.Label(frm, text=self._t('w')).grid(row=8, column=2, sticky='e', padx=(48,0))
-        tk.Entry(frm, textvariable=self.reg_w, width=6).grid(row=8, column=3, sticky='w')
-        tk.Label(frm, text=self._t('h')).grid(row=8, column=3, sticky='e', padx=(48,0))
-        tk.Entry(frm, textvariable=self.reg_h, width=6).grid(row=8, column=3, sticky='e', padx=(24,0))
+        self.reg_l_entry = tk.Entry(frm, textvariable=self.reg_l, width=6)
+        self.reg_l_entry.grid(row=10, column=1, sticky='w')
+        self.reg_t_label = tk.Label(frm, text=self._t('t'))
+        self.reg_t_label.grid(row=10, column=1, sticky='e', padx=(48,0))
+        self.reg_t_entry = tk.Entry(frm, textvariable=self.reg_t, width=6)
+        self.reg_t_entry.grid(row=10, column=2, sticky='w')
+        self.reg_w_label = tk.Label(frm, text=self._t('w'))
+        self.reg_w_label.grid(row=10, column=2, sticky='e', padx=(48,0))
+        self.reg_w_entry = tk.Entry(frm, textvariable=self.reg_w, width=6)
+        self.reg_w_entry.grid(row=10, column=3, sticky='w')
+        self.reg_h_label = tk.Label(frm, text=self._t('h'))
+        self.reg_h_label.grid(row=10, column=3, sticky='e', padx=(48,0))
+        self.reg_h_entry = tk.Entry(frm, textvariable=self.reg_h, width=6)
+        self.reg_h_entry.grid(row=10, column=3, sticky='e', padx=(24,0))
 
-        tk.Label(frm, textvariable=self.window_bounds_display_var, fg='gray').grid(row=9, column=0, columnspan=4, sticky='w', pady=(6,0))
+        self.window_bounds_label = tk.Label(frm, textvariable=self.window_bounds_display_var, fg='gray')
+        self.window_bounds_label.grid(row=11, column=0, columnspan=4, sticky='w', pady=(6,0))
 
         self.bring_front_var = tk.BooleanVar(value=bool(self.hunt_cfg.get('bring_to_front_each_cycle', False)))
-        tk.Checkbutton(frm, text=self._t('bring_each_cycle'), variable=self.bring_front_var).grid(row=10, column=0, columnspan=4, sticky='w', pady=(6,0))
+        self.bring_front_check = tk.Checkbutton(frm, text=self._t('bring_each_cycle'), variable=self.bring_front_var)
+        self.bring_front_check.grid(row=12, column=0, columnspan=4, sticky='w', pady=(6,0))
 
-        pick_frame = tk.Frame(frm)
-        pick_frame.grid(row=11, column=0, columnspan=4, pady=(6,0))
-        tk.Button(pick_frame, text=self._t('pick_tl'), command=lambda: self.on_hunt_pick_corner('tl')).pack(side='left')
-        tk.Button(pick_frame, text=self._t('pick_br'), command=lambda: self.on_hunt_pick_corner('br')).pack(side='left', padx=(8,0))
+        self.pick_frame = tk.Frame(frm)
+        self.pick_frame.grid(row=13, column=0, columnspan=4, pady=(6,0))
+        tk.Button(self.pick_frame, text=self._t('pick_tl'), command=lambda: self.on_hunt_pick_corner('tl')).pack(side='left')
+        tk.Button(self.pick_frame, text=self._t('pick_br'), command=lambda: self.on_hunt_pick_corner('br')).pack(side='left', padx=(8,0))
 
         # Hunt buttons
         hbtn = tk.Frame(frm)
-        hbtn.grid(row=12, column=0, columnspan=4, pady=(12,0))
+        hbtn.grid(row=14, column=0, columnspan=4, pady=(12,0))
         tk.Button(hbtn, text=self._t('save_hunt'), command=self.on_hunt_save).pack(side='left')
         self.hunt_start_btn = tk.Button(hbtn, text=self._t('start_hunt'), command=self.on_hunt_start)
         self.hunt_start_btn.pack(side='left', padx=(8,0))
@@ -920,7 +952,7 @@ class App(tk.Tk):
 
         # Monster quick apply
         monster_bar = tk.Frame(frm)
-        monster_bar.grid(row=13, column=0, columnspan=4, sticky='we', pady=(12,0))
+        monster_bar.grid(row=15, column=0, columnspan=4, sticky='we', pady=(12,0))
         monster_bar.grid_columnconfigure(1, weight=1)
         tk.Label(monster_bar, text=self._t('hunt_monster_select')).grid(row=0, column=0, sticky='w')
         self.monster_select_var = tk.StringVar(value=self.monster_selected_name or '')
@@ -934,12 +966,12 @@ class App(tk.Tk):
 
         # Skill slots selection
         skill_header = tk.Frame(frm)
-        skill_header.grid(row=14, column=0, columnspan=4, sticky='we', pady=(12,0))
+        skill_header.grid(row=16, column=0, columnspan=4, sticky='we', pady=(12,0))
         tk.Label(skill_header, text=self._t('skill_slots')).pack(side='left')
         tk.Button(skill_header, text=self._t('skill_manage'), command=self._open_skill_manager).pack(side='left', padx=(6,0))
 
         slot_frame = tk.Frame(frm)
-        slot_frame.grid(row=15, column=0, columnspan=4, sticky='we')
+        slot_frame.grid(row=17, column=0, columnspan=4, sticky='we')
         slot_frame.grid_columnconfigure(1, weight=1)
         self.skill_slot_vars = []
         self.skill_slot_boxes = []
@@ -959,7 +991,49 @@ class App(tk.Tk):
 
         # Status
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
-        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=16, column=0, columnspan=4, pady=(8,0))
+        tk.Label(frm, textvariable=self.hunt_status, fg='gray').grid(row=18, column=0, columnspan=4, pady=(8,0))
+
+        # Track widgets for progressive disclosure
+        # Intermediate widgets (shown in intermediate+ modes)
+        self.hunt_intermediate_widgets = [
+            (self.lost_timeout_label, 8, 0, {'sticky': 'e', 'pady': (8,0)}),
+            (self.lost_timeout_entry, 8, 1, {'sticky': 'w', 'pady': (8,0)}),
+            (self.attack_duration_label, 8, 2, {'sticky': 'e', 'pady': (8,0)}),
+            (self.attack_duration_entry, 8, 3, {'sticky': 'w', 'pady': (8,0)}),
+        ]
+        
+        # Advanced widgets (shown only in advanced mode)
+        self.hunt_advanced_widgets = [
+            (self.target_key_label, 5, 0, {'sticky': 'e', 'pady': (8,0)}),
+            (self.target_key_entry, 5, 1, {'sticky': 'w', 'pady': (8,0)}),
+            (self.attack_keys_label, 5, 2, {'sticky': 'e', 'pady': (8,0)}),
+            (self.attack_keys_entry, 5, 3, {'sticky': 'w', 'pady': (8,0)}),
+            (self.press_ms_label, 6, 0, {'sticky': 'e'}),
+            (self.press_ms_entry, 6, 1, {'sticky': 'w'}),
+            (self.target_cycle_label, 6, 2, {'sticky': 'e'}),
+            (self.target_cycle_entry, 6, 3, {'sticky': 'w'}),
+            (self.search_interval_label, 7, 0, {'sticky': 'e'}),
+            (self.search_interval_entry, 7, 1, {'sticky': 'w'}),
+            (self.attack_interval_label, 7, 2, {'sticky': 'e'}),
+            (self.attack_interval_entry, 7, 3, {'sticky': 'w'}),
+            (self.template_label, 9, 0, {'sticky': 'e'}),
+            (self.template_entry, 9, 1, {'sticky': 'w', 'columnspan': 2}),
+            (self.template_browse_btn, 9, 3, {}),
+            (self.region_l_label, 10, 0, {'sticky': 'e'}),
+            (self.reg_l_entry, 10, 1, {'sticky': 'w'}),
+            (self.reg_t_label, 10, 1, {'sticky': 'e', 'padx': (48,0)}),
+            (self.reg_t_entry, 10, 2, {'sticky': 'w'}),
+            (self.reg_w_label, 10, 2, {'sticky': 'e', 'padx': (48,0)}),
+            (self.reg_w_entry, 10, 3, {'sticky': 'w'}),
+            (self.reg_h_label, 10, 3, {'sticky': 'e', 'padx': (48,0)}),
+            (self.reg_h_entry, 10, 3, {'sticky': 'e', 'padx': (24,0)}),
+            (self.window_bounds_label, 11, 0, {'sticky': 'w', 'pady': (6,0), 'columnspan': 4}),
+            (self.bring_front_check, 12, 0, {'sticky': 'w', 'pady': (6,0), 'columnspan': 4}),
+            (self.pick_frame, 13, 0, {'pady': (6,0), 'columnspan': 4}),
+        ]
+        
+        # Apply initial mode visibility
+        self._apply_hunt_mode()
 
         for i in range(4):
             frm.grid_columnconfigure(i, weight=1)
@@ -982,25 +1056,44 @@ class App(tk.Tk):
         except Exception as e:
             print(f"Warning: Could not save ui_mode: {e}")
         
-        # Beginner mode: Only show basics (window, monster, skills, start button)
-        # Hide: target_key, attack_keys, timing params, template/region, pick corners
+        # Apply visibility changes
+        self._apply_hunt_mode()
         
-        # Intermediate mode: Show basics + timing params (lost_timeout, attack_duration)
-        # Hide: template/region, pick corners, advanced intervals
-        
-        # Advanced mode: Show everything
-        
-        # For now, we'll implement a simple version that doesn't hide widgets
-        # (full implementation would require restructuring the grid layout)
-        # Instead, show status message about mode
-        
+        # Update status
         mode_labels = {
             'beginner': self._t('mode_beginner'),
             'intermediate': self._t('mode_intermediate'),
             'advanced': self._t('mode_advanced')
         }
-        
         self.hunt_status.set(f"Mode: {mode_labels.get(mode, mode)} - {self._t('hunt_idle')}")
+    
+    def _apply_hunt_mode(self):
+        """Show/hide widgets based on current mode setting."""
+        mode = self.hunt_mode_var.get() if hasattr(self, 'hunt_mode_var') else 'beginner'
+        
+        if mode == 'beginner':
+            # Hide intermediate widgets
+            for widget, row, col, kwargs in self.hunt_intermediate_widgets:
+                widget.grid_remove()
+            # Hide advanced widgets
+            for widget, row, col, kwargs in self.hunt_advanced_widgets:
+                widget.grid_remove()
+                
+        elif mode == 'intermediate':
+            # Show intermediate widgets
+            for widget, row, col, kwargs in self.hunt_intermediate_widgets:
+                widget.grid(row=row, column=col, **kwargs)
+            # Hide advanced widgets
+            for widget, row, col, kwargs in self.hunt_advanced_widgets:
+                widget.grid_remove()
+                
+        elif mode == 'advanced':
+            # Show intermediate widgets
+            for widget, row, col, kwargs in self.hunt_intermediate_widgets:
+                widget.grid(row=row, column=col, **kwargs)
+            # Show advanced widgets
+            for widget, row, col, kwargs in self.hunt_advanced_widgets:
+                widget.grid(row=row, column=col, **kwargs)
     
     def _update_window_bounds_display(self):
         if not hasattr(self, 'window_bounds_display_var'):
