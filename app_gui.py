@@ -121,6 +121,12 @@ LANG: Dict[str, Dict[str, str]] = {
         'error_title': 'Error',
         'error_copy_image': 'Failed to copy image: {exc}',
         'error_pil_required': 'PIL required for preview',
+        'pil_not_installed_message': 'Pillow library is not installed.\n\nSome image preview features will be disabled.\n\nTo install, run:\npip install Pillow\n\nThe app will still work normally, you just cannot preview images with overlay.',
+        'pil_required_tooltip': 'Pillow required for this feature.\nRun: pip install Pillow',
+        'error_missing_library': 'Missing library: {exc}',
+        'error_screenshot_failed': 'Screenshot failed: {exc}',
+        'error_save_failed': 'Save failed: {exc}',
+        'error_region_too_small': 'Region too small (min 10x10)',
         'error_preview': 'Preview error: {exc}',
         'monster_section': 'Monster library',
         'monster_list': 'Monsters:',
@@ -302,6 +308,12 @@ LANG: Dict[str, Dict[str, str]] = {
         'error_title': 'Lỗi',
         'error_copy_image': 'Không sao chép được ảnh: {exc}',
         'error_pil_required': 'Cần cài PIL để xem trước',
+        'pil_not_installed_message': 'Thư viện Pillow chưa được cài đặt.\n\nMột số tính năng preview hình ảnh sẽ bị tắt.\n\nĐể cài đặt, chạy lệnh:\npip install Pillow\n\nỨng dụng vẫn hoạt động bình thường, bạn chỉ không thể xem preview với overlay.',
+        'pil_required_tooltip': 'Cần cài Pillow để sử dụng.\nChạy: pip install Pillow',
+        'error_missing_library': 'Thiếu thư viện: {exc}',
+        'error_screenshot_failed': 'Chụp màn hình thất bại: {exc}',
+        'error_save_failed': 'Lưu thất bại: {exc}',
+        'error_region_too_small': 'Vùng chọn quá nhỏ (tối thiểu 10x10)',
         'error_preview': 'Lỗi xem trước: {exc}',
         'hunt_stopped': 'Đã dừng săn',
         'selected_window': 'Đã chọn cửa sổ: {title}',
@@ -806,6 +818,9 @@ class App(tk.Tk):
         self.title(self._t('app_title'))
         self.resizable(False, False)
 
+        # Check PIL availability (for image preview features)
+        self.pil_available = (Image is not None and ImageTk is not None and ImageDraw is not None)
+        
         # State
         self.click_running = False
         self.click_thread = None
@@ -887,6 +902,27 @@ class App(tk.Tk):
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
+
+    # -----------------
+    # Helper Methods
+    # -----------------
+    def _create_tooltip(self, widget, text):
+        """Create a simple tooltip for a widget."""
+        def on_enter(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            label = tk.Label(tooltip, text=text, background="#ffffe0", relief='solid', borderwidth=1, padx=5, pady=3)
+            label.pack()
+            widget._tooltip = tooltip
+        
+        def on_leave(event):
+            if hasattr(widget, '_tooltip'):
+                widget._tooltip.destroy()
+                delattr(widget, '_tooltip')
+        
+        widget.bind('<Enter>', on_enter)
+        widget.bind('<Leave>', on_leave)
 
     # -----------------
     # UI Construction
@@ -1843,6 +1879,17 @@ class App(tk.Tk):
                 # User clicked No - show hint about wizard button
                 print("[First-time check] User skipped wizard")
                 self.hunt_status.set(self._t('wizard_skipped_hint'))
+        
+        # Check PIL availability and show one-time warning if missing
+        if not self.pil_available:
+            print("[PIL Check] PIL/Pillow not available - showing install instructions")
+            # Use showinfo (blue icon) instead of showerror (red icon) for less scary UX
+            # Don't force window to front - let user dismiss naturally
+            messagebox.showinfo(
+                self._t('info_title'),
+                self._t('pil_not_installed_message'),
+                parent=self
+            )
     
     def on_setup_wizard(self):
         """Launch setup wizard to guide user through initial configuration."""
@@ -2283,7 +2330,7 @@ class App(tk.Tk):
             import time as time_module
             from pathlib import Path
         except ImportError as exc:
-            messagebox.showerror(self._t('monster_section'), f'Missing library: {exc}')
+            messagebox.showerror(self._t('monster_section'), self._t('error_missing_library').format(exc=exc))
             return
         
         # Show instructions
@@ -2305,7 +2352,7 @@ class App(tk.Tk):
             screenshot = pyautogui.screenshot()
         except Exception as exc:
             self.monster_manager_win.deiconify()
-            messagebox.showerror(self._t('monster_section'), f'Screenshot failed: {exc}')
+            messagebox.showerror(self._t('monster_section'), self._t('error_screenshot_failed').format(exc=exc))
             return
         
         # Create selection window
@@ -2363,7 +2410,7 @@ class App(tk.Tk):
         height = abs(y2 - y1)
         
         if width < 10 or height < 10:
-            messagebox.showwarning(self._t('monster_section'), 'Region too small (min 10x10)')
+            messagebox.showwarning(self._t('monster_section'), self._t('error_region_too_small'))
             return
         
         # Crop screenshot
@@ -2402,7 +2449,7 @@ class App(tk.Tk):
             self.hunt_status.set(self._t('monster_template_capture_success').format(filename=filename))
             
         except Exception as exc:
-            messagebox.showerror(self._t('monster_section'), f'Save failed: {exc}')
+            messagebox.showerror(self._t('monster_section'), self._t('error_save_failed').format(exc=exc))
 
     def on_monster_template_add(self):
         try:
@@ -2473,8 +2520,13 @@ class App(tk.Tk):
             messagebox.showinfo(self._t('monster_section'), self._t('monster_template_no_image'))
             return
         
-        if Image is None or ImageTk is None or ImageDraw is None:
-            messagebox.showerror(self._t('monster_section'), self._t('error_pil_required'))
+        # PIL check - should not reach here if button is disabled, but double-check
+        if not self.pil_available:
+            # Use showinfo instead of showerror for friendlier UX
+            messagebox.showinfo(
+                self._t('monster_section'), 
+                self._t('pil_not_installed_message')
+            )
             return
 
         try:
@@ -2540,7 +2592,7 @@ class App(tk.Tk):
             import pyautogui
             import time as time_module
         except ImportError as exc:
-            messagebox.showerror(self._t('monster_section'), f'Missing library: {exc}')
+            messagebox.showerror(self._t('monster_section'), self._t('error_missing_library').format(exc=exc))
             return
         
         # Get threshold
@@ -2868,7 +2920,20 @@ class App(tk.Tk):
         
         preview_btn_frame = tk.Frame(preview_frame)
         preview_btn_frame.pack(side='left', padx=(8,0))
-        tk.Button(preview_btn_frame, text=self._t('monster_template_preview_overlay'), command=self.on_monster_template_preview_overlay).pack(side='top', anchor='w')
+        
+        # Preview overlay button - disable if PIL not available
+        self.monster_preview_overlay_btn = tk.Button(
+            preview_btn_frame, 
+            text=self._t('monster_template_preview_overlay'), 
+            command=self.on_monster_template_preview_overlay
+        )
+        self.monster_preview_overlay_btn.pack(side='top', anchor='w')
+        
+        if not self.pil_available:
+            self.monster_preview_overlay_btn.config(state='disabled')
+            # Add tooltip explaining why disabled
+            self._create_tooltip(self.monster_preview_overlay_btn, self._t('pil_required_tooltip'))
+        
         tk.Button(preview_btn_frame, text=self._t('monster_template_test_recognition'), command=self.on_monster_template_test_recognition).pack(side='top', anchor='w', pady=(4,0))
 
         tmpl_btn_frame = tk.Frame(template_form)
@@ -4013,7 +4078,7 @@ class App(tk.Tk):
         try:
             cfg = self._hunt_from_ui()
         except Exception as e:
-            messagebox.showerror('Error', f'Invalid hunt config: {e!r}')
+            messagebox.showerror(self._t('error_title'), self._t('invalid_hunt').format(e=e))
             return
         save_hunt_config(cfg)
         self.hunt_cfg = cfg
