@@ -134,35 +134,45 @@ class SetupWizard:
         footer_frame.pack_propagate(False)
         
         button_frame = tk.Frame(footer_frame, bg='#f0f0f0')
-        button_frame.pack(pady=15)
+        button_frame.pack(pady=20)
         
         self.back_button = tk.Button(
             button_frame,
             text="← Back",
             command=self._on_back,
-            width=10,
+            width=12,
+            height=2,
+            font=('Arial', 10),
             state=tk.DISABLED  # Disabled on first step
         )
-        self.back_button.pack(side=tk.LEFT, padx=5)
+        self.back_button.pack(side=tk.LEFT, padx=8)
         
+        # Make Next button more prominent
         self.next_button = tk.Button(
             button_frame,
             text="Next →",
             command=self._on_next,
-            width=10,
-            font=('Arial', 10, 'bold'),
+            width=15,
+            height=2,
+            font=('Arial', 11, 'bold'),
             bg='#4CAF50',
-            fg='white'
+            fg='white',
+            activebackground='#45a049',
+            cursor='hand2',
+            relief=tk.RAISED,
+            bd=3
         )
-        self.next_button.pack(side=tk.LEFT, padx=5)
+        self.next_button.pack(side=tk.LEFT, padx=15)  # Extra padding to make it stand out
         
         self.cancel_button = tk.Button(
             button_frame,
             text="Cancel",
             command=self._on_cancel,
-            width=10
+            width=12,
+            height=2,
+            font=('Arial', 10)
         )
-        self.cancel_button.pack(side=tk.LEFT, padx=5)
+        self.cancel_button.pack(side=tk.LEFT, padx=8)
     
     def _show_step(self, step_number):
         """Show specified wizard step."""
@@ -182,9 +192,20 @@ class SetupWizard:
         self.back_button.config(state=tk.NORMAL if step_number > 1 else tk.DISABLED)
         
         if step_number == self.total_steps:
-            self.next_button.config(text="Finish", bg='#2196F3')
+            # Make Finish button even more prominent
+            self.next_button.config(
+                text="✓ Finish",
+                bg='#2196F3',
+                activebackground='#1976D2',
+                font=('Arial', 11, 'bold')
+            )
         else:
-            self.next_button.config(text="Next →", bg='#4CAF50')
+            self.next_button.config(
+                text="Next →",
+                bg='#4CAF50',
+                activebackground='#45a049',
+                font=('Arial', 11, 'bold')
+            )
         
         # Clear content frame
         for widget in self.content_frame.winfo_children():
