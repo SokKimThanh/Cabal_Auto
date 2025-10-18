@@ -97,7 +97,8 @@ class SetupWizard:
             
             print("[Wizard] Setting up modal dialog...")
             # Make dialog modal - blocks parent window
-            self.dialog.transient(parent)
+            # NOTE: Temporarily disable transient to test if it causes visibility issues
+            # self.dialog.transient(parent)
             self.dialog.grab_set()
             
             # Force dialog to front and keep it on top
@@ -112,17 +113,40 @@ class SetupWizard:
             # Hide parent window AFTER dialog is set up to avoid transient() issues
             # This prevents confusing dual-window state during wizard
             parent.withdraw()
+            parent.update()  # Force parent update to ensure it's hidden
+            
+            # Immediately bring dialog to front after hiding parent
+            self.dialog.lift()
+            self.dialog.focus_force()
             
             print("[Wizard] Building UI...")
             # Build UI
             self._build_ui()
             
-            # Disable topmost after initial display (allow user to switch windows if needed)
-            self.dialog.attributes('-topmost', False)
-            
             print("[Wizard] Showing step 1...")
             # Show first step
             self._show_step(1)
+            
+            # Force wizard to be visible and on top AFTER building UI
+            print("[Wizard] Forcing wizard to front...")
+            self.dialog.deiconify()  # Ensure not minimized
+            self.dialog.lift()       # Bring to front
+            self.dialog.focus_force() # Force focus
+            self.dialog.attributes('-topmost', True)  # Stay on top
+            self.dialog.update()     # Force update
+            
+            # Make sure it's visible
+            self.dialog.state('normal')
+            
+            # Print window geometry for debugging
+            geometry = self.dialog.geometry()
+            print(f"[Wizard] Window geometry: {geometry}")
+            print(f"[Wizard] Window state: {self.dialog.state()}")
+            print(f"[Wizard] Is viewable: {self.dialog.winfo_viewable()}")
+            print(f"[Wizard] Is mapped: {self.dialog.winfo_ismapped()}")
+            
+            # Disable topmost after a short delay (allow user to see it first)
+            self.dialog.after(1000, lambda: self.dialog.attributes('-topmost', False))
             
             print("[Wizard] Wizard ready! Waiting for user...")
             # Wait for dialog to close (blocks execution until wizard finishes)
