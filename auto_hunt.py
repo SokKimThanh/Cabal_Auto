@@ -411,7 +411,7 @@ def main():
         logger.log_hunt_stop('manual_stop')
         print('Auto Hunt stopped')
     except Exception as e:
-        logger.log_error(f'Hunt error: {str(e)}')
+        logger.log_error('hunt_main', f'Hunt error: {str(e)}', e)
         logger.log_hunt_stop('error')
         print(f'Error: {e}')
         raise

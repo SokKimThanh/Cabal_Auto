@@ -4585,7 +4585,7 @@ class App(tk.Tk):
                         time.sleep(0.05)
                     time.sleep(0.02)
             except Exception as e:
-                logger.log_error(f'Hunt error: {str(e)}')
+                logger.log_error('hunt_loop', f'Hunt error: {str(e)}', e)
                 logger.log_hunt_stop('error')
             finally:
                 if not hasattr(logger, '_stop_logged') or not logger._stop_logged:
