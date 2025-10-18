@@ -19,6 +19,18 @@ import os
 import ctypes
 from ctypes import wintypes
 
+# Optional psutil: import only if available to avoid static analysis/import errors
+import importlib
+import importlib.util
+
+_psutil_spec = importlib.util.find_spec("psutil")
+if _psutil_spec is not None:
+    psutil = importlib.import_module("psutil")
+    PSUTIL_AVAILABLE = True
+else:
+    psutil = None
+    PSUTIL_AVAILABLE = False
+
 
 class SetupWizard:
     """
@@ -68,38 +80,64 @@ class SetupWizard:
             }
         }
         
-        # Create wizard window with larger size to fit all content
-        self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Setup Wizard - Cabal Auto Hunt")
-        self.dialog.geometry("750x750")  # Increased height to ensure footer buttons are always visible
-        self.dialog.minsize(700, 650)  # Minimum size to prevent content from being cut off
-        self.dialog.resizable(True, True)  # Allow resizing for different screen sizes
-        
-        # Center window on screen
-        self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (750 // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (750 // 2)
-        self.dialog.geometry(f"750x750+{x}+{y}")
-        
-        # Make dialog modal - blocks parent window
-        self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
-        # Handle window close (X button) - restore parent window
-        self.dialog.protocol("WM_DELETE_WINDOW", self._on_close_window)
-        
-        # Hide parent window AFTER dialog is set up to avoid transient() issues
-        # This prevents confusing dual-window state during wizard
-        parent.withdraw()
-        
-        # Build UI
-        self._build_ui()
-        
-        # Show first step
-        self._show_step(1)
-        
-        # Wait for dialog to close (blocks execution until wizard finishes)
-        parent.wait_window(self.dialog)
+        try:
+            # Create wizard window with larger size to fit all content
+            print("[Wizard] Creating dialog window...")
+            self.dialog = tk.Toplevel(parent)
+            self.dialog.title("Setup Wizard - Cabal Auto Hunt")
+            self.dialog.geometry("750x750")  # Increased height to ensure footer buttons are always visible
+            self.dialog.minsize(700, 650)  # Minimum size to prevent content from being cut off
+            self.dialog.resizable(True, True)  # Allow resizing for different screen sizes
+            
+            # Center window on screen
+            self.dialog.update_idletasks()
+            x = (self.dialog.winfo_screenwidth() // 2) - (750 // 2)
+            y = (self.dialog.winfo_screenheight() // 2) - (750 // 2)
+            self.dialog.geometry(f"750x750+{x}+{y}")
+            
+            print("[Wizard] Setting up modal dialog...")
+            # Make dialog modal - blocks parent window
+            self.dialog.transient(parent)
+            self.dialog.grab_set()
+            
+            # Force dialog to front and keep it on top
+            self.dialog.lift()
+            self.dialog.focus_force()
+            self.dialog.attributes('-topmost', True)
+            
+            # Handle window close (X button) - restore parent window
+            self.dialog.protocol("WM_DELETE_WINDOW", self._on_close_window)
+            
+            print("[Wizard] Hiding parent window...")
+            # Hide parent window AFTER dialog is set up to avoid transient() issues
+            # This prevents confusing dual-window state during wizard
+            parent.withdraw()
+            
+            print("[Wizard] Building UI...")
+            # Build UI
+            self._build_ui()
+            
+            # Disable topmost after initial display (allow user to switch windows if needed)
+            self.dialog.attributes('-topmost', False)
+            
+            print("[Wizard] Showing step 1...")
+            # Show first step
+            self._show_step(1)
+            
+            print("[Wizard] Wizard ready! Waiting for user...")
+            # Wait for dialog to close (blocks execution until wizard finishes)
+            parent.wait_window(self.dialog)
+            print("[Wizard] Wizard closed.")
+        except Exception as e:
+            print(f"[Wizard ERROR] Failed to create wizard: {e}")
+            import traceback
+            traceback.print_exc()
+            # Restore parent if error
+            try:
+                parent.deiconify()
+            except:
+                pass
+            raise
     
     def _build_ui(self):
         """Build wizard UI structure with header, content, and footer."""
@@ -840,11 +878,8 @@ It takes about 2 minutes. Let's begin!"""
 
         results = []
         
-        # Try to get process name via psutil
-        try:
-            import psutil
-        except Exception:
-            psutil = None
+        # Use psutil if available (imported at module level)
+        # psutil_available is set at top of file
 
         def callback(hwnd, lParam):
             try:
@@ -864,7 +899,7 @@ It takes about 2 minutes. Let's begin!"""
                 pid_val = int(pid.value)
                 
                 proc_name = None
-                if psutil is not None:
+                if PSUTIL_AVAILABLE and psutil is not None:
                     try:
                         p = psutil.Process(pid_val)
                         proc_name = p.name()

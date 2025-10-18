@@ -1426,18 +1426,34 @@ class App(tk.Tk):
         print(f"[First-time check] window={has_window}, monster={has_monster}, skills={has_skills}, is_new={is_new_user}")
         
         if is_new_user:
+            print("[First-time check] Showing messagebox to ask user...")
+            
+            # Force main window to front before showing messagebox
+            self.lift()
+            self.focus_force()
+            self.attributes('-topmost', True)
+            self.update()
+            
             # Ask user if they want to run setup wizard
             response = messagebox.askyesno(
                 self._t('wizard_first_time_title'),
                 self._t('wizard_first_time_message'),
-                icon='question'
+                icon='question',
+                parent=self  # Ensure messagebox is child of main window
             )
+            
+            # Disable topmost after messagebox
+            self.attributes('-topmost', False)
+            
+            print(f"[First-time check] User response: {response}")
             
             if response:
                 # User clicked Yes - launch wizard
+                print("[First-time check] Launching wizard...")
                 self.on_setup_wizard()
             else:
                 # User clicked No - show hint about wizard button
+                print("[First-time check] User skipped wizard")
                 self.hunt_status.set(self._t('wizard_skipped_hint'))
     
     def on_setup_wizard(self):
