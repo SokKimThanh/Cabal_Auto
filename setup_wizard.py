@@ -69,17 +69,17 @@ class SetupWizard:
         # Create wizard window with larger size to fit all content
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Setup Wizard - Cabal Auto Hunt")
-        self.dialog.geometry("700x600")
-        self.dialog.minsize(650, 550)  # Minimum size to prevent content from being cut off
+        self.dialog.geometry("750x650")  # Increased size to ensure all buttons are visible
+        self.dialog.minsize(700, 600)  # Minimum size to prevent content from being cut off
         self.dialog.resizable(True, True)  # Allow resizing for different screen sizes
         
         # Center window on screen
         self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (700 // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (600 // 2)
-        self.dialog.geometry(f"700x600+{x}+{y}")
+        x = (self.dialog.winfo_screenwidth() // 2) - (750 // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (650 // 2)
+        self.dialog.geometry(f"750x650+{x}+{y}")
         
-        # Make dialog modal
+        # Make dialog modal - blocks parent window
         self.dialog.transient(parent)
         self.dialog.grab_set()
         
@@ -88,6 +88,9 @@ class SetupWizard:
         
         # Show first step
         self._show_step(1)
+        
+        # Wait for dialog to close (blocks execution until wizard finishes)
+        parent.wait_window(self.dialog)
     
     def _build_ui(self):
         """Build wizard UI structure with header, content, and footer."""
@@ -129,13 +132,17 @@ class SetupWizard:
         self.content_frame = tk.Frame(main_frame, bg='white')
         self.content_frame.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
         
-        # Footer: Navigation buttons
-        footer_frame = tk.Frame(main_frame, bg='#f0f0f0', height=60)
-        footer_frame.pack(fill=tk.X, side=tk.BOTTOM)
-        footer_frame.pack_propagate(False)
+        # Separator line above footer
+        separator = tk.Frame(main_frame, height=2, bg='#ddd')
+        separator.pack(fill=tk.X, side=tk.BOTTOM)
+        
+        # Footer: Navigation buttons (auto-expand to fit tall buttons)
+        footer_frame = tk.Frame(main_frame, bg='#f0f0f0')
+        footer_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=10)
+        # Removed pack_propagate(False) to allow footer to expand with button height
         
         button_frame = tk.Frame(footer_frame, bg='#f0f0f0')
-        button_frame.pack(pady=20)
+        button_frame.pack(pady=15)
         
         self.back_button = tk.Button(
             button_frame,
