@@ -1,9 +1,11 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 16 Planning - GUI Redesign for User Experience)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 16 COMPLETED - Setup Wizard & UX Improvements)
 
 🎯 Mục tiêu
 - Auto thao tác an toàn cho Cabal VTC Origin: ưu tiên gửi phím (không cần click), mở rộng nhận diện ảnh đa mẫu.
 - Cung cấp GUI Hunt ổn định: chọn đúng cửa sổ game theo PID/HWND, đưa lên trước, thu nhỏ GUI để phím vào game, có hotkey dừng toàn cục.
 - Thiết kế lại quản lý quái/thư viện ảnh: CRUD tách riêng, hỗ trợ nhiều template 2D mỗi quái và lưu vùng cửa sổ.
+- ✨ Setup Wizard cho người dùng mới: Hướng dẫn thiết lập qua 5 bước (Window → Monster → Skills → Review).
+- 🎨 Progressive Disclosure: 3 UI modes (Beginner/Intermediate/Advanced) để giảm độ phức tạp.
 
 🛠️ Môi trường hiện tại
 - Hệ điều hành: Windows
@@ -110,8 +112,7 @@ E:\Cabal_Auto
 - Khi người dùng chọn ảnh kỹ năng, chương trình sao chép về `assets/images/skills/<slug>.png` (slug từ tên + timestamp) và lưu đường dẫn tương đối trong skills.json để tránh liên kết tới thư mục cá nhân.
 - Nếu người dùng thay ảnh, xóa bản sao cũ trong thư mục dự án nhưng tuyệt đối không xóa file gốc của họ.
 - Khi migrate dữ liệu cũ, đặt mặc định `duration_sec = 0`, `pre_refresh_sec = 0` và bỏ qua `hold_ms` để không phá vỡ skill đang có.
-
-�🪟 Focus đúng cửa sổ game (PID/HWND)
+  �🪟 Focus đúng cửa sổ game (PID/HWND)
 - GUI liệt kê danh sách cửa sổ (lọc theo từ khóa), kèm PID và (tùy) tên process.
 - Ưu tiên focus theo HWND hoặc PID (chính xác hơn tiêu đề). Sau khi focus thành công, GUI sẽ minimize.
 - Có nút Bring To Front để thử đưa game lên foreground trước khi Start Hunt.
@@ -1069,3 +1070,135 @@ E:\Cabal_Auto
 - Tương thích ngược: nơi còn dùng `template_path` đơn, runtime ưu tiên `templates[]` trước rồi fallback.
 - GUI Hunt: một tab, liệt kê PID/HWND, Bring To Front, tự minimize khi chạy; F9 dừng toàn cục, ESC dừng trong GUI; state machine search ↔ attack.
 - Kỹ năng: workflow đã chốt (skill_slots → attack_keys, duration/pre-refresh/hold_ms, auto copy ảnh, ✅ GUI buff fields integrated Sprint 15).
+
+📋 Sprint 16 - Setup Wizard & UX Improvements (COMPLETED 2025-10-18)
+
+🎯 Objectives
+- Create 5-step Setup Wizard for new users: Welcome → Window → Monster → Skills → Review
+- Implement Progressive Disclosure: Beginner/Intermediate/Advanced modes
+- Improve first-time user experience with auto-launch wizard
+- Auto-populate window/monster/skills from saved config for existing users
+
+✅ Completed Tasks
+
+**Phase 1: Foundation (Tasks #1-3)**
+1. ✅ **Skill-Based Timing Calculator** (+135 lines)
+   - Added "From Skills" radio option to calculate APS from skill cooldowns
+   - Auto-sync timing with skill configuration
+   - Doc: docs/sprints/SPRINT16_TASK1_IMPLEMENTATION.md
+
+2. ✅ **Mode Toggle Foundation** (+50 lines)
+   - UI mode selector: Beginner/Intermediate/Advanced
+   - Mode persistence in hunt_config.json (ui_mode field)
+   - Doc: docs/sprints/SPRINT16_TASK2_IMPLEMENTATION.md
+
+3. ✅ **Progressive Disclosure & Layout** (+200 lines)
+   - Beginner: 4 essentials (Window, Monster, Template, Start/Stop)
+   - Intermediate: +timing parameters (intervals, timeouts)
+   - Advanced: All fields (region, confidence, grayscale, etc.)
+   - Dynamic show/hide with grid_remove()/grid()
+   - Doc: docs/sprints/SPRINT16_TASK3_IMPLEMENTATION.md
+
+**Phase 2: Setup Wizard (Tasks #4-5)**
+4. ✅ **Wizard Welcome Screen** (+450 lines)
+   - Created setup_wizard.py module with 5-step structure
+   - Step 1: Welcome screen with language selection (EN/VI)
+   - Progress indicator with dots
+   - Modal dialog with clean UI
+   - Integrated into app_gui.py with '🧙 Setup Wizard' button
+   - Doc: docs/sprints/SPRINT16_TASK4_IMPLEMENTATION.md
+
+5. ✅ **Wizard Steps 2-5** (+400 lines)
+   - Step 2: Window calibration with auto-search, PID/HWND selection
+   - Step 3: Monster selection from monsters.json with info display
+   - Step 4: Skill configuration (9 slots via comboboxes)
+   - Step 5: Final review showing all settings
+   - Validation at each step (window/monster required, skills optional)
+   - _save_wizard_config() writes to hunt_config.json via ConfigManager
+   - Doc: docs/sprints/SPRINT16_TASK5_IMPLEMENTATION.md
+
+**Bug Fixes & UX Improvements**
+6. ✅ **Bug Fix: Wizard Auto-Launch Issues** (3 bugs fixed)
+   - Fixed AttributeError: self.root → self
+   - Fixed false positive new user detection (empty strings "")
+   - Created ConfigManager wrapper class for wizard-app integration
+   - Doc: docs/sprints/SPRINT16_BUGFIX_WIZARD_AUTOLAUNCH.md
+
+7. ✅ **UX Fix #1: Hide Main Window During Wizard** (+10 lines)
+   - Main window hides when wizard launches (self.withdraw())
+   - Restores on complete/cancel (self.deiconify())
+   - Added on_cancel callback support
+   - No more confusing dual-window state
+
+8. ✅ **UX Fix #2: Auto-Populate Hunt Tab from Wizard Data** (+50 lines)
+   - After wizard completes, hunt_cfg reloads
+   - _populate_hunt_ui_from_config() fills UI automatically
+   - window_title/pid/hwnd → win_title_var + win_listbox + hunt_selected
+   - Status shows "✅ Wizard completed! Ready to hunt."
+
+9. ✅ **UX Fix #3: Skip Window Selection if Already Configured** (+35 lines)
+   - _auto_populate_saved_window() called on app startup
+   - If hunt_config.json has window data, auto-fills UI
+   - Prevents redundant window selection for returning users
+   - Status: "✓ Loaded saved window: {title} (PID: {pid})"
+
+10. ✅ **Bug Fix #4: App Crash After Wizard Launch** (+15 lines)
+    - Fixed critical crash: Moved parent.withdraw() AFTER dialog setup
+    - Avoided transient() issues with withdrawn parent
+    - Added protocol('WM_DELETE_WINDOW') handler for X button
+    - Added _on_close_window() method
+    - Doc: docs/sprints/SPRINT16_BUGFIX_WIZARD_CRASH.md
+
+11. ✅ **Bug Fix #5: Wizard Invisible & psutil Import Issues** (+30 lines)
+    - Moved psutil import to module level to avoid repeated overhead
+    - Added dialog.lift(), focus_force(), topmost=True to force wizard visible
+    - Added comprehensive debug logging to track wizard creation
+    - Added error handling with traceback for wizard crashes
+    - Fixed skill_slots format compatibility (list of strings vs list of dicts)
+
+🎉 Sprint 16 Results
+
+**New User Flow (First-Time Setup):**
+```
+1. App starts → Auto-detects new user (no window/monster/skills)
+2. MessageBox asks: "Setup wizard?" → Click Yes
+3. Main window hides, wizard appears on top
+4. Step 1: Choose language (EN/VI) → Next
+5. Step 2: Search and select game window → Next
+6. Step 3: Select monster from list → Next
+7. Step 4: Configure skills (optional) → Next
+8. Step 5: Review settings → Finish
+9. Config saved to hunt_config.json
+10. Main window shows with all data populated
+11. Ready to hunt immediately! ✅
+```
+
+**Existing User Flow (Returning User):**
+```
+1. App starts → Auto-loads saved config
+2. Window auto-populated: "✓ Loaded saved window: CABAL (PID: 12345)"
+3. Monster/skills already configured
+4. Can start hunting immediately! ✅
+5. Can still manually launch wizard via '🧙 Setup Wizard' button if needed
+```
+
+**Technical Achievements:**
+- ✅ Zero manual steps for new users after wizard
+- ✅ Zero window re-selection for existing users
+- ✅ Stable wizard with proper window lifecycle management
+- ✅ Backwards compatible config format (strings vs dicts)
+- ✅ Progressive disclosure reduces cognitive load
+- ✅ Clean separation: app_gui.py (UI) + setup_wizard.py (wizard)
+- ✅ ConfigManager wrapper bridges app config and wizard
+
+**Code Statistics:**
+- Total lines added: ~1,380 lines
+- Files modified: 2 (app_gui.py, setup_wizard.py)
+- Files created: 1 (setup_wizard.py)
+- Documentation: 6 markdown files
+- Bug fixes: 5 critical issues resolved
+
+**Next Steps (Sprint 17 Planning):**
+- Phase 3: Multi-Monster Support (rotation modes)
+- Phase 4: Tab Reorganization (Hunt/Setup/Stats/Help)
+- Phase 5: Polish & Documentation (tooltips, tutorials, README)
