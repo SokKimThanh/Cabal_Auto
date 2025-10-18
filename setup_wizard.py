@@ -827,12 +827,6 @@ It takes about 2 minutes. Let's begin!"""
         
         return results
     
-    def _on_language_change(self):
-        """Handle language selection change."""
-        self.language = self.language_var.get()
-        self.wizard_data['language'] = self.language
-        # Note: Full UI translation will be implemented when needed
-    
     def _on_back(self):
         """Navigate to previous step."""
         if self.current_step > 1:
