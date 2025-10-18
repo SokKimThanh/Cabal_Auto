@@ -400,20 +400,83 @@ E:\Cabal_Auto
 			- 2 new StringVars: skill_duration_var, skill_pre_refresh_var
 			- 4 new UI widgets: 2 labels + 2 entries with tooltips
 			- Enhanced _read_skill_form() với buff validation
-- Tiếp theo (Sprint 16 - GUI Redesign Planned):
+- Sprint 16 (Đang thực hiện - GUI Redesign Based on User Feedback):
 	- ✅ Sprint 15 complete! Buff duration GUI fields fully integrated.
 	- 🎯 Sprint 16: Major GUI/UX redesign based on user feedback
 		• **Problem identified**: Current UI quá phức tạp cho người mới, timing calculator không liên kết với skills thực tế
 		• **User feedback**: Không hiểu radiobutton "Normal", overwhelmed bởi hunt config parameters, cần workflow rõ ràng hơn
 		• **Solutions proposed**:
-			1. Skill-based Timing Calculator: Tính attack speed từ skills thực tế thay vì manual guess
-			2. Beginner/Intermediate/Advanced modes: Progressive disclosure, ẩn complexity cho người mới
-			3. Setup Wizard: 5-step wizard hướng dẫn first-time setup
-			4. Multi-monster support: Rotation/priority modes cho level 60+
-			5. Tab reorganization: Hunt/Setup/Stats/Help tabs với clear hierarchy
+			1. ✅ Skill-based Timing Calculator (COMPLETE): Tính attack speed từ skills thực tế thay vì manual guess
+			2. 🔄 Beginner/Intermediate/Advanced modes (IN PROGRESS): Progressive disclosure, ẩn complexity cho người mới
+			3. 🔜 Setup Wizard: 5-step wizard hướng dẫn first-time setup
+			4. 🔜 Multi-monster support: Rotation/priority modes cho level 60+
+			5. 🔜 Tab reorganization: Hunt/Setup/Stats/Help tabs với clear hierarchy
 		• **Expected outcomes**: Beginner chỉ cần 4 bước để start hunt, timing chính xác hơn, UI thân thiện
 		• **Documentation**: Full proposal tại docs/REDESIGN_PROPOSAL_SPRINT16.md
-	- Next enhancements after Sprint 16: Skill preview with buff timer, bulk editing, presets
+	
+	✅ **Sprint 16 Task #1 HOÀN TẤT** (2025-01-18): Skill-Based Timing Calculator
+		• **calculate_attack_speed_from_skills() helper function** (~50 lines):
+			- Location: app_gui.py line ~570 (after save_skill_library, before load_config)
+			- Input: List of skill names
+			- Logic: Load skills.json → Filter attack-type skills → Calculate average cooldown → Return (aps, avg_cd, count)
+			- Returns: (attacks_per_second, average_cooldown, skill_count) or (None, None, 0) if invalid
+			- Example: ["Dark Explosion" (1.5s), "Fire Ball" (2.0s)] → avg_cd=1.75s → aps=0.57
+		• **Dialog UI Update** (~60 lines):
+			- "From Skills (Recommended)" radio option - đứng đầu, bold font
+			- Real-time skill info display: "3 attack skills found | Avg Cooldown: 1.77s | APS: 0.56 hits/sec"
+			- Separator phân cách rõ ràng với Manual Presets section
+			- Default value changed từ 'normal' → 'from_skills'
+			- Frame title changed: "Attack Speed Preset" → "Attack Speed Source"
+		• **Calculation Logic Update** (~35 lines):
+			- update_recommendations() handles "from_skills" mode
+			- Load skills từ Skills Manager, filter attack-type only
+			- Calculate APS và display skill info trước recommendation
+			- Error handling: Clear message nếu no attack skills với bilingual support
+			- Skill info display: "Calculated from 3 attack skills | Average Cooldown: 1.77s | Effective APS: 0.56 hits/sec"
+		• **Benefits**:
+			- ✅ No more guessing attack speed - auto-calculated từ actual skills
+			- ✅ Accurate timing recommendations based on real skill cooldowns
+			- ✅ Clear explanation of values (skill count, cooldown, APS)
+			- ✅ Beginner-friendly với recommended default option
+			- ✅ Bilingual support (EN/VI) cho all new messages
+		• **Code changes**:
+			- app_gui.py: +135 lines (helper function, UI update, logic enhancement)
+			- No breaking changes - backward compatible với manual presets
+			- Tests: ✅ No syntax errors, ✅ App runs successfully
+		• **Documentation**: Full implementation log tại docs/sprints/SPRINT16_TASK1_IMPLEMENTATION.md
+	
+	✅ **Sprint 16 Task #2 FOUNDATION COMPLETE** (2025-01-18): Mode Toggle Foundation
+		• **Mode Selector UI** (~30 lines):
+			- LabelFrame "Interface Mode" at top of Hunt tab (row 0)
+			- 3 radio buttons: 🌱 Beginner, ⚙️ Intermediate, 🔧 Advanced
+			- Mode descriptions below each option (light gray text)
+			- Bold font for mode labels, grid() layout
+		• **Localization** (~20 lines):
+			- hunt_mode, mode_beginner, mode_intermediate, mode_advanced
+			- mode_beginner_desc, mode_intermediate_desc, mode_advanced_desc
+			- Full EN/VI support with icons (🌱⚙️🔧)
+		• **Mode Persistence** (~35 lines):
+			- _on_hunt_mode_changed() handler
+			- Save mode to hunt_config.json under 'ui_mode' key
+			- Status bar feedback: "Mode: Beginner - Ready to hunt"
+			- Default value: 'beginner' if not in config
+		• **Known Limitations**:
+			- ⚠️ Progressive disclosure NOT YET IMPLEMENTED
+			- ⚠️ All fields still visible regardless of mode
+			- ⚠️ Requires Task #3 for full show/hide functionality
+		• **Benefits**:
+			- ✅ Mode selector visible, clear choice
+			- ✅ Mode preference persists across sessions
+			- ✅ Foundation ready for progressive disclosure
+			- ✅ No breaking changes, backward compatible
+		• **Code changes**:
+			- app_gui.py: +70 lines (LANG, mode selector UI, handler)
+			- hunt_config.json: New 'ui_mode' key
+			- Fixed geometry manager error (mixed pack/grid)
+		• **Documentation**: Full log tại docs/sprints/SPRINT16_TASK2_IMPLEMENTATION.md
+	
+	- Next: Task #3 Progressive Disclosure & Simplified Layout (~200 lines)
+	- Then: Setup Wizard, Multi-Monster, Tab Reorg, Polish
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)
