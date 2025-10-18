@@ -475,8 +475,42 @@ E:\Cabal_Auto
 			- Fixed geometry manager error (mixed pack/grid)
 		• **Documentation**: Full log tại docs/sprints/SPRINT16_TASK2_IMPLEMENTATION.md
 	
-	- Next: Task #3 Progressive Disclosure & Simplified Layout (~200 lines)
-	- Then: Setup Wizard, Multi-Monster, Tab Reorg, Polish
+	✅ **Sprint 16 Task #3 HOÀN TẤT** (2025-01-18): Progressive Disclosure & Layout
+		• **Widget tracking system** (~200 lines added):
+			- hunt_intermediate_widgets[]: 4 widgets (lost_timeout, attack_duration labels+entries)
+			- hunt_advanced_widgets[]: 27 widgets (target/attack keys, intervals, template/region, misc)
+			- Structure: (widget_ref, row, col, grid_kwargs_dict) tuples for clean show/hide
+		• **Complete grid() refactor**:
+			- ALL Hunt tab widgets now use grid() with explicit row numbers (rows 0-18)
+			- Mode selector (row 0-1) → Window (2-4) → Advanced keys (5) → Intervals (6-7) → Timing (8) → Template/Region (9-10) → Misc (11-13) → Buttons/Monster/Skills (14-18)
+		• **Progressive disclosure logic**:
+			- _apply_hunt_mode() method (~35 lines): Show/hide based on mode
+			- Beginner: grid_remove() all 31 optional widgets → Only 4 essentials visible
+			- Intermediate: Show 4 timing widgets, hide 27 advanced → 8 fields total
+			- Advanced: Show all 31 widgets → 35 fields total
+			- Using grid_remove() (not grid_forget()) to preserve layout config
+		• **Integration**:
+			- Initial: _apply_hunt_mode() called at end of _build_hunt_tab()
+			- On change: _on_hunt_mode_changed() applies mode immediately
+			- Status bar: Shows current mode name
+		• **Bug fixes**:
+			- Geometry manager conflict RESOLVED: tk.Frame (grid) replaced ttk.Separator (pack)
+			- Row numbers updated: All widgets +2 rows for mode selector space
+		• **Testing**: ✅ All modes work, no errors, persistence confirmed
+		• **Documentation**: docs/sprints/SPRINT16_TASK3_IMPLEMENTATION.md
+		• **Files modified**: app_gui.py (+~200 lines)
+	
+	🎉 **Sprint 16 Phase 1 COMPLETE** (2025-01-18):
+		- Task #1: Skill-Based Timing Calculator (+135 lines)
+		- Task #2: Mode Toggle Foundation (+70 lines)
+		- Task #3: Progressive Disclosure & Layout (+200 lines)
+		- **Total Phase 1**: +405 lines, 3/3 tasks complete ✅
+	
+	🚀 **Sprint 16 Phase 2 - Setup Wizard** (Đang bắt đầu):
+		- Goal: 5-step wizard hướng dẫn người dùng mới setup trong 2 phút
+		- Task #4: Welcome Screen (~150 lines)
+		- Task #5: Steps 2-5 (~300 lines)
+		- Total estimate: ~450 lines
 
 ============================
 🔄 Tổng kết cập nhật (2025-10-18 - Sprint 7 Complete)

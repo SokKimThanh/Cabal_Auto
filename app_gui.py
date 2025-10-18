@@ -31,6 +31,7 @@ except Exception:
 from lib.win_input import tap
 from lib.hunt_logger import get_hunt_logger
 from lib.timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
+from setup_wizard import show_setup_wizard
 
 
 class ToolTip:
@@ -90,6 +91,7 @@ LANG: Dict[str, Dict[str, str]] = {
         'save_hunt': 'Save hunt config',
         'start_hunt': 'Start hunt',
         'stop_hunt': 'Stop hunt',
+        'setup_wizard': '🧙 Setup Wizard',
         'hunt_idle': 'Ready to hunt',
         'hunt_running': 'Hunting…',
         'hunt_stopped': 'Hunt stopped',
@@ -242,6 +244,7 @@ LANG: Dict[str, Dict[str, str]] = {
         'save_hunt': 'Lưu cấu hình săn',
         'start_hunt': 'Bắt đầu săn',
         'stop_hunt': 'Dừng săn',
+        'setup_wizard': '🧙 Trợ lý thiết lập',
         'hunt_idle': 'Sẵn sàng săn',
         'hunt_running': 'Đang săn…',
         'hunt_stopped': 'Đã dừng săn',
@@ -944,7 +947,9 @@ class App(tk.Tk):
         # Hunt buttons
         hbtn = tk.Frame(frm)
         hbtn.grid(row=14, column=0, columnspan=4, pady=(12,0))
-        tk.Button(hbtn, text=self._t('save_hunt'), command=self.on_hunt_save).pack(side='left')
+        tk.Button(hbtn, text=self._t('setup_wizard'), command=self.on_setup_wizard, 
+                  font=('Arial', 9, 'bold'), fg='#2196F3').pack(side='left')
+        tk.Button(hbtn, text=self._t('save_hunt'), command=self.on_hunt_save).pack(side='left', padx=(8,0))
         self.hunt_start_btn = tk.Button(hbtn, text=self._t('start_hunt'), command=self.on_hunt_start)
         self.hunt_start_btn.pack(side='left', padx=(8,0))
         self.hunt_stop_btn = tk.Button(hbtn, text=self._t('stop_hunt'), command=self.on_hunt_stop, state='disabled')
@@ -1342,6 +1347,17 @@ class App(tk.Tk):
         box, confidence = locate_template(template, region, threshold, method='auto')
         return (box, {'path': template, 'threshold': threshold, 'confidence': confidence}) if box else (None, None)
 
+    def on_setup_wizard(self):
+        """Launch setup wizard to guide user through initial configuration."""
+        def on_wizard_complete(wizard_data):
+            """Callback when wizard completes - apply settings to UI."""
+            # Apply wizard data to hunt config
+            # (Will be fully implemented in Task #5)
+            self.hunt_status.set(f"Wizard completed - Language: {wizard_data.get('language', 'en')}")
+        
+        # Launch wizard
+        show_setup_wizard(self.root, config_manager=self.config_mgr, on_complete=on_wizard_complete)
+    
     def on_hunt_save(self):
         try:
             cfg = self._hunt_from_ui()
