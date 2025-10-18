@@ -67,6 +67,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'app_title': 'Cabal Auto Manager',
         'language': 'Language',
         'tab_hunt': 'Hunt',
+        'tab_setup': 'Setup',
+        'tab_stats': 'Stats',
+        'tab_help': 'Help',
         'window_title_contains': 'Window title contains:',
         'find_windows': 'Find windows',
         'bring_to_front': 'Bring to front',
@@ -191,6 +194,10 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_duplicate': 'Monster name already exists',
     'hunt_window_bounds': 'Saved window bounds: {value}',
     'hunt_window_bounds_none': 'Saved window bounds: not set',
+    'hunt_window_bounds_cleared': 'Window bounds cleared',
+    'settings_applied_success': 'Settings applied successfully!',
+    'settings_applied_message': 'Settings have been applied and saved.',
+    'success_title': 'Success',
         'hunt_monster_select': 'Quick select monster:',
         'hunt_monster_auto_applied': 'Auto-applied: {name}',
         # Phase 3: Multi-Monster Support
@@ -210,6 +217,37 @@ LANG: Dict[str, Dict[str, str]] = {
         'add_button': 'Add',
         'cancel_button': 'Cancel',
         'info_title': 'Information',
+        'setup_mode': 'Configuration Mode',
+        'setup_mode_desc': 'Select UI complexity level',
+        'setup_libraries': 'Libraries',
+        'setup_advanced': 'Advanced Hunt Settings',
+        'setup_window': 'Window Settings',
+        'monsters_count': 'monsters',
+        'skills_count': 'skills',
+        'apply_settings': 'Apply Settings',
+        'stats_hunt': 'Hunt Statistics',
+        'stats_performance': 'Performance Metrics',
+        'stats_rotation': 'Rotation History',
+        'stats_runtime': 'Runtime',
+        'stats_kills': 'Monsters Hunted',
+        'stats_avg_kill_time': 'Avg Kill Time',
+        'stats_exp_per_hour': 'Exp/Hour (est.)',
+        'stats_skills_cast': 'Skills Cast',
+        'stats_fps': 'Template FPS',
+        'stats_cpu': 'CPU Usage',
+        'stats_memory': 'Memory',
+        'stats_latency': 'Screenshot Latency',
+        'stats_reset': 'Reset Statistics',
+        'stats_export': 'Export to CSV',
+        'stats_refresh_rate': 'Refresh Rate',
+        'help_quickstart': 'Quick Start Guide',
+        'help_quickstart_text': '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press F9 to stop anytime',
+        'help_shortcuts': 'Keyboard Shortcuts',
+        'help_shortcuts_text': 'F9: Stop hunt (global hotkey)\nESC: Stop hunt (in-window)\n\nIn game:\nTAB: Target next monster\n1-6: Use skills',
+        'help_troubleshooting': 'Troubleshooting',
+        'help_troubleshooting_text': 'Q: Hunt not working?\nA: Make sure game window is selected and brought to front.\n\nQ: Skills not casting?\nA: Check skill slots are enabled and cooldowns are correct.\n\nQ: Can\'t find monster?\nA: Try lowering template threshold in Setup tab.',
+        'help_about': 'About',
+        'help_about_text': 'Cabal Auto Manager v1.0\n\nAuthor: SokKimThanh\nGitHub: github.com/SokKimThanh/Cabal_Auto\n\nBuilt with Python, tkinter, OpenCV',
         'hunt_template_active': 'Active template: {name}',
         'tooltip_threshold': 'Match confidence: 0.0 (any) to 1.0 (exact). Higher = stricter matching. Recommended: 0.80-0.90',
         'tooltip_region_strategy': 'Window: use game window bounds\nCustom: use specific region below',
@@ -254,6 +292,9 @@ LANG: Dict[str, Dict[str, str]] = {
         'app_title': 'Trợ lý săn Cabal',
         'language': 'Ngôn ngữ',
         'tab_hunt': 'Săn',
+        'tab_setup': 'Thiết lập',
+        'tab_stats': 'Thống kê',
+        'tab_help': 'Trợ giúp',
         'window_title_contains': 'Tiêu đề cửa sổ chứa:',
         'find_windows': 'Tìm cửa sổ',
         'bring_to_front': 'Đưa lên trước',
@@ -384,6 +425,10 @@ LANG: Dict[str, Dict[str, str]] = {
         'monster_duplicate': 'Tên quái đã tồn tại',
     'hunt_window_bounds': 'Vùng cửa sổ đã lưu: {value}',
     'hunt_window_bounds_none': 'Vùng cửa sổ đã lưu: chưa có',
+    'hunt_window_bounds_cleared': 'Đã xóa vùng cửa sổ',
+    'settings_applied_success': 'Đã áp dụng cài đặt thành công!',
+    'settings_applied_message': 'Các cài đặt đã được áp dụng và lưu lại.',
+    'success_title': 'Thành công',
         'hunt_monster_select': 'Chọn nhanh quái:',
         'hunt_monster_auto_applied': 'Đã tự động áp dụng: {name}',
         # Phase 3: Multi-Monster Support
@@ -403,6 +448,37 @@ LANG: Dict[str, Dict[str, str]] = {
         'add_button': 'Thêm',
         'cancel_button': 'Hủy',
         'info_title': 'Thông báo',
+        'setup_mode': 'Chế độ cấu hình',
+        'setup_mode_desc': 'Chọn mức độ phức tạp giao diện',
+        'setup_libraries': 'Thư viện',
+        'setup_advanced': 'Cài đặt săn nâng cao',
+        'setup_window': 'Cài đặt cửa sổ',
+        'monsters_count': 'quái vật',
+        'skills_count': 'kỹ năng',
+        'apply_settings': 'Áp dụng cài đặt',
+        'stats_hunt': 'Thống kê săn',
+        'stats_performance': 'Hiệu năng',
+        'stats_rotation': 'Lịch sử luân chuyển',
+        'stats_runtime': 'Thời gian chạy',
+        'stats_kills': 'Quái vật đã săn',
+        'stats_avg_kill_time': 'Thời gian săn TB',
+        'stats_exp_per_hour': 'Exp/Giờ (ước tính)',
+        'stats_skills_cast': 'Kỹ năng đã dùng',
+        'stats_fps': 'FPS Template',
+        'stats_cpu': 'CPU',
+        'stats_memory': 'Bộ nhớ',
+        'stats_latency': 'Độ trễ chụp màn hình',
+        'stats_reset': 'Reset thống kê',
+        'stats_export': 'Xuất ra CSV',
+        'stats_refresh_rate': 'Tốc độ làm mới',
+        'help_quickstart': 'Hướng dẫn nhanh',
+        'help_quickstart_text': '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn F9 để dừng bất cứ lúc nào',
+        'help_shortcuts': 'Phím tắt',
+        'help_shortcuts_text': 'F9: Dừng săn (hotkey toàn cục)\nESC: Dừng săn (trong cửa sổ)\n\nTrong game:\nTAB: Chọn quái tiếp theo\n1-6: Sử dụng kỹ năng',
+        'help_troubleshooting': 'Xử lý lỗi',
+        'help_troubleshooting_text': 'Q: Săn không hoạt động?\nA: Đảm bảo cửa sổ game đã được chọn và đưa lên trước.\n\nQ: Kỹ năng không ra?\nA: Kiểm tra skill slots đã bật và cooldown đúng chưa.\n\nQ: Không tìm thấy quái?\nA: Thử giảm threshold trong tab Thiết lập.',
+        'help_about': 'Thông tin',
+        'help_about_text': 'Trợ lý săn Cabal v1.0\n\nTác giả: SokKimThanh\nGitHub: github.com/SokKimThanh/Cabal_Auto\n\nXây dựng với Python, tkinter, OpenCV',
         'hunt_template_active': 'Template đang dùng: {name}',
         'tooltip_threshold': 'Độ khớp: 0.0 (bất kỳ) đến 1.0 (chính xác). Cao hơn = khớp chặt hơn. Khuyến nghị: 0.80-0.90',
         'tooltip_region_strategy': 'Window: dùng biên cửa sổ game\nCustom: dùng vùng cụ thể bên dưới',
@@ -945,10 +1021,21 @@ class App(tk.Tk):
         nb = ttk.Notebook(self)
         nb.pack(fill='both', expand=True)
 
-        # Hunt tab
+        # Create 4 tabs: Hunt, Setup, Stats, Help
         tab_hunt = tk.Frame(nb, padx=12, pady=12)
+        tab_setup = tk.Frame(nb, padx=12, pady=12)
+        tab_stats = tk.Frame(nb, padx=12, pady=12)
+        tab_help = tk.Frame(nb, padx=12, pady=12)
+        
         nb.add(tab_hunt, text=self._t('tab_hunt'))
+        nb.add(tab_setup, text=self._t('tab_setup'))
+        nb.add(tab_stats, text=self._t('tab_stats'))
+        nb.add(tab_help, text=self._t('tab_help'))
+        
         self._build_hunt_tab(tab_hunt)
+        self._build_setup_tab(tab_setup)
+        self._build_stats_tab(tab_stats)
+        self._build_help_tab(tab_help)
 
     # Click Tab removed
 
@@ -1309,6 +1396,366 @@ class App(tk.Tk):
             self.window_bounds_display_var.set(self._t('hunt_window_bounds').format(value=bounds_text))
         else:
             self.window_bounds_display_var.set(self._t('hunt_window_bounds_none'))
+    
+    # Setup Tab (Sprint 18 Phase 4)
+    def _build_setup_tab(self, parent):
+        """Build Setup tab with configuration and library management."""
+        
+        # Section 1: Configuration Mode
+        mode_frame = tk.LabelFrame(parent, text=self._t('setup_mode'), padx=12, pady=10)
+        mode_frame.grid(row=0, column=0, columnspan=2, sticky='we', pady=(0,12))
+        
+        mode_desc = tk.Label(mode_frame, text=self._t('setup_mode_desc'), fg='#666', font=('Arial', 9))
+        mode_desc.grid(row=0, column=0, columnspan=3, sticky='w', pady=(0,8))
+        
+        # Read current mode from hunt_cfg
+        current_mode = self.hunt_cfg.get('ui_mode', 'beginner')
+        self.setup_mode_var = tk.StringVar(value=current_mode)
+        
+        modes = [
+            ('beginner', self._t('mode_beginner'), self._t('mode_beginner_desc')),
+            ('intermediate', self._t('mode_intermediate'), self._t('mode_intermediate_desc')),
+            ('advanced', self._t('mode_advanced'), self._t('mode_advanced_desc'))
+        ]
+        
+        for idx, (mode_val, mode_label, mode_desc_text) in enumerate(modes):
+            rb = tk.Radiobutton(
+                mode_frame,
+                text=mode_label,
+                variable=self.setup_mode_var,
+                value=mode_val,
+                command=self._on_setup_mode_changed,
+                font=('Arial', 9, 'bold')
+            )
+            rb.grid(row=idx+1, column=0, sticky='w', pady=2)
+            
+            desc_label = tk.Label(mode_frame, text=f"  {mode_desc_text}", fg='#666', font=('Arial', 8))
+            desc_label.grid(row=idx+1, column=1, sticky='w', padx=(4,0), pady=2)
+        
+        # Section 2: Libraries
+        lib_frame = tk.LabelFrame(parent, text=self._t('setup_libraries'), padx=12, pady=10)
+        lib_frame.grid(row=1, column=0, columnspan=2, sticky='we', pady=(0,12))
+        
+        # Monster Library
+        monster_btn_frame = tk.Frame(lib_frame)
+        monster_btn_frame.grid(row=0, column=0, sticky='w', pady=4)
+        
+        tk.Button(
+            monster_btn_frame, 
+            text=self._t('monster_library'),
+            command=self._open_monster_library,
+            width=20
+        ).pack(side='left', padx=(0,8))
+        
+        monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
+        tk.Label(
+            monster_btn_frame,
+            text=f"({monster_count} {self._t('monsters_count')})",
+            fg='#666'
+        ).pack(side='left')
+        
+        # Skills Library
+        skills_btn_frame = tk.Frame(lib_frame)
+        skills_btn_frame.grid(row=1, column=0, sticky='w', pady=4)
+        
+        tk.Button(
+            skills_btn_frame,
+            text=self._t('skills_library'),
+            command=self._open_skills_library,
+            width=20
+        ).pack(side='left', padx=(0,8))
+        
+        skills_count = len(self.skills) if hasattr(self, 'skills') else 0
+        tk.Label(
+            skills_btn_frame,
+            text=f"({skills_count} {self._t('skills_count')})",
+            fg='#666'
+        ).pack(side='left')
+        
+        # Section 3: Advanced Hunt Settings (visible for intermediate/advanced)
+        self.adv_frame = tk.LabelFrame(parent, text=self._t('setup_advanced'), padx=12, pady=10)
+        self.adv_frame.grid(row=2, column=0, columnspan=2, sticky='we', pady=(0,12))
+        
+        # Target/Attack keys
+        tk.Label(self.adv_frame, text=self._t('target_key')).grid(row=0, column=0, sticky='e', pady=4)
+        self.setup_target_key_var = tk.StringVar(value=str(self.hunt_cfg.get('target_key', 'TAB')))
+        tk.Entry(self.adv_frame, textvariable=self.setup_target_key_var, width=8).grid(row=0, column=1, sticky='w', pady=4)
+        
+        tk.Label(self.adv_frame, text=self._t('attack_keys')).grid(row=0, column=2, sticky='e', padx=(16,4), pady=4)
+        self.setup_attack_keys_var = tk.StringVar(value=','.join(self.hunt_cfg.get('attack_keys', ['1','2','3'])))
+        tk.Entry(self.adv_frame, textvariable=self.setup_attack_keys_var, width=18).grid(row=0, column=3, sticky='w', pady=4)
+        
+        # Timing intervals
+        tk.Label(self.adv_frame, text=self._t('press_ms')).grid(row=1, column=0, sticky='e', pady=4)
+        self.setup_press_ms_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_press_ms', 60)))
+        tk.Entry(self.adv_frame, textvariable=self.setup_press_ms_var, width=8).grid(row=1, column=1, sticky='w', pady=4)
+        
+        tk.Label(self.adv_frame, text=self._t('target_cycle')).grid(row=1, column=2, sticky='e', padx=(16,4), pady=4)
+        self.setup_target_cycle_var = tk.StringVar(value=str(self.hunt_cfg.get('target_cycle_delay', 0.2)))
+        tk.Entry(self.adv_frame, textvariable=self.setup_target_cycle_var, width=8).grid(row=1, column=3, sticky='w', pady=4)
+        
+        tk.Label(self.adv_frame, text=self._t('search_interval')).grid(row=2, column=0, sticky='e', pady=4)
+        self.setup_search_interval_var = tk.StringVar(value=str(self.hunt_cfg.get('search_interval', 0.25)))
+        tk.Entry(self.adv_frame, textvariable=self.setup_search_interval_var, width=8).grid(row=2, column=1, sticky='w', pady=4)
+        
+        tk.Label(self.adv_frame, text=self._t('attack_interval')).grid(row=2, column=2, sticky='e', padx=(16,4), pady=4)
+        self.setup_attack_interval_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_interval', 0.15)))
+        tk.Entry(self.adv_frame, textvariable=self.setup_attack_interval_var, width=8).grid(row=2, column=3, sticky='w', pady=4)
+        
+        # Lost timeout & Attack duration
+        tk.Label(self.adv_frame, text=self._t('lost_timeout')).grid(row=3, column=0, sticky='e', pady=4)
+        self.setup_lost_timeout_var = tk.StringVar(value=str(self.hunt_cfg.get('lost_timeout_sec', 1.2)))
+        lost_entry = tk.Entry(self.adv_frame, textvariable=self.setup_lost_timeout_var, width=8)
+        lost_entry.grid(row=3, column=1, sticky='w', pady=4)
+        ToolTip(lost_entry, self._t('tooltip_lost_timeout'))
+        
+        tk.Label(self.adv_frame, text=self._t('attack_duration')).grid(row=3, column=2, sticky='e', padx=(16,4), pady=4)
+        self.setup_attack_duration_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_min_duration_sec', 1.5)))
+        attack_entry = tk.Entry(self.adv_frame, textvariable=self.setup_attack_duration_var, width=8)
+        attack_entry.grid(row=3, column=3, sticky='w', pady=4)
+        ToolTip(attack_entry, self._t('tooltip_attack_duration'))
+        
+        # Template threshold
+        tk.Label(self.adv_frame, text=self._t('template_threshold')).grid(row=4, column=0, sticky='e', pady=4)
+        self.setup_threshold_var = tk.StringVar(value=str(self.hunt_cfg.get('template_threshold', 0.8)))
+        tk.Entry(self.adv_frame, textvariable=self.setup_threshold_var, width=8).grid(row=4, column=1, sticky='w', pady=4)
+        
+        # Section 4: Window Settings (visible for advanced only)
+        self.window_frame = tk.LabelFrame(parent, text=self._t('setup_window'), padx=12, pady=10)
+        self.window_frame.grid(row=3, column=0, columnspan=2, sticky='we', pady=(0,12))
+        
+        # Template path
+        tk.Label(self.window_frame, text=self._t('template')).grid(row=0, column=0, sticky='e', pady=4)
+        self.setup_template_var = tk.StringVar(value=str(self.hunt_cfg.get('template_path', 'assets/images/target_frame.png')))
+        tk.Entry(self.window_frame, textvariable=self.setup_template_var, width=40).grid(row=0, column=1, columnspan=2, sticky='w', pady=4)
+        tk.Button(self.window_frame, text=self._t('browse'), command=self.on_hunt_browse_template).grid(row=0, column=3, padx=(4,0), pady=4)
+        
+        # Region
+        tk.Label(self.window_frame, text=self._t('region_l')).grid(row=1, column=0, sticky='e', pady=4)
+        region = self.hunt_cfg.get('region') or ["", "", "", ""]
+        self.setup_reg_l = tk.StringVar(value=str(region[0]) if region[0] != "" else "")
+        self.setup_reg_t = tk.StringVar(value=str(region[1]) if region[1] != "" else "")
+        self.setup_reg_w = tk.StringVar(value=str(region[2]) if region[2] != "" else "")
+        self.setup_reg_h = tk.StringVar(value=str(region[3]) if region[3] != "" else "")
+        
+        reg_frame = tk.Frame(self.window_frame)
+        reg_frame.grid(row=1, column=1, columnspan=3, sticky='w', pady=4)
+        
+        tk.Entry(reg_frame, textvariable=self.setup_reg_l, width=6).pack(side='left')
+        tk.Label(reg_frame, text=self._t('t')).pack(side='left', padx=(8,4))
+        tk.Entry(reg_frame, textvariable=self.setup_reg_t, width=6).pack(side='left')
+        tk.Label(reg_frame, text=self._t('w')).pack(side='left', padx=(8,4))
+        tk.Entry(reg_frame, textvariable=self.setup_reg_w, width=6).pack(side='left')
+        tk.Label(reg_frame, text=self._t('h')).pack(side='left', padx=(8,4))
+        tk.Entry(reg_frame, textvariable=self.setup_reg_h, width=6).pack(side='left')
+        
+        # Window bounds display
+        tk.Label(self.window_frame, text=self._t('hunt_window_bounds_label')).grid(row=2, column=0, sticky='e', pady=(8,4))
+        self.setup_bounds_display_var = tk.StringVar(value=self._t('hunt_window_bounds_none'))
+        tk.Label(self.window_frame, textvariable=self.setup_bounds_display_var, fg='blue').grid(row=2, column=1, columnspan=2, sticky='w', pady=(8,4))
+        tk.Button(self.window_frame, text=self._t('clear_bounds'), command=self._clear_window_bounds).grid(row=2, column=3, padx=(4,0), pady=(8,4))
+        
+        # Apply button at bottom
+        apply_btn = tk.Button(parent, text=self._t('apply_settings'), command=self._apply_setup_settings, 
+                             bg='#4CAF50', fg='white', font=('Arial', 10, 'bold'), padx=20, pady=8)
+        apply_btn.grid(row=4, column=0, columnspan=2, pady=(12,0))
+        
+        # Initial visibility update based on mode
+        self._update_setup_visibility()
+    
+    # Stats Tab (Sprint 18 Phase 4)
+    def _build_stats_tab(self, parent):
+        """Build Stats tab with runtime statistics and performance metrics."""
+        # TODO: Implement Stats tab
+        placeholder = tk.Label(parent, text="Stats Tab - Coming Soon\n\nThis tab will contain:\n• Hunt Statistics (runtime, kills, exp/hr)\n• Performance Metrics (FPS, CPU, memory)\n• Rotation History\n• Export controls", 
+                              justify='left', padx=20, pady=20)
+        placeholder.pack()
+    
+    # Help Tab (Sprint 18 Phase 4)
+    def _build_help_tab(self, parent):
+        """Build Help tab with documentation and tutorials."""
+        # Scrollable frame for help content
+        canvas = tk.Canvas(parent, bg='white')
+        scrollbar = tk.Scrollbar(parent, orient='vertical', command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Quick Start Guide
+        help_frame = tk.LabelFrame(scrollable_frame, text=self._t('help_quickstart'), padx=10, pady=8, bg='white')
+        help_frame.pack(fill='x', padx=10, pady=5)
+        tk.Label(help_frame, text=self._t('help_quickstart_text'), justify='left', bg='white').pack(anchor='w')
+        
+        # Keyboard Shortcuts
+        shortcuts_frame = tk.LabelFrame(scrollable_frame, text=self._t('help_shortcuts'), padx=10, pady=8, bg='white')
+        shortcuts_frame.pack(fill='x', padx=10, pady=5)
+        tk.Label(shortcuts_frame, text=self._t('help_shortcuts_text'), justify='left', bg='white').pack(anchor='w')
+        
+        # Troubleshooting
+        trouble_frame = tk.LabelFrame(scrollable_frame, text=self._t('help_troubleshooting'), padx=10, pady=8, bg='white')
+        trouble_frame.pack(fill='x', padx=10, pady=5)
+        tk.Label(trouble_frame, text=self._t('help_troubleshooting_text'), justify='left', bg='white').pack(anchor='w')
+        
+        # About
+        about_frame = tk.LabelFrame(scrollable_frame, text=self._t('help_about'), padx=10, pady=8, bg='white')
+        about_frame.pack(fill='x', padx=10, pady=5)
+        tk.Label(about_frame, text=self._t('help_about_text'), justify='left', bg='white').pack(anchor='w')
+        
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+    
+    # Setup Tab Handlers (Sprint 18 Phase 4)
+    def _on_setup_mode_changed(self):
+        """Handle mode change in Setup tab and sync with Hunt tab."""
+        mode = self.setup_mode_var.get()
+        
+        # Save mode preference
+        self.hunt_cfg['ui_mode'] = mode
+        try:
+            with open(HUNT_CONFIG_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Warning: Could not save ui_mode: {e}")
+        
+        # Sync Hunt tab mode var if it exists
+        if hasattr(self, 'hunt_mode_var'):
+            self.hunt_mode_var.set(mode)
+            self._apply_hunt_mode()
+        
+        # Update Setup tab visibility
+        self._update_setup_visibility()
+        
+        # Update status if exists
+        if hasattr(self, 'hunt_status'):
+            mode_labels = {
+                'beginner': self._t('mode_beginner'),
+                'intermediate': self._t('mode_intermediate'),
+                'advanced': self._t('mode_advanced')
+            }
+            self.hunt_status.set(f"Mode: {mode_labels.get(mode, mode)}")
+    
+    def _update_setup_visibility(self):
+        """Show/hide Setup tab sections based on current mode."""
+        mode = self.setup_mode_var.get() if hasattr(self, 'setup_mode_var') else 'beginner'
+        
+        if mode == 'beginner':
+            # Hide advanced sections
+            self.adv_frame.grid_remove()
+            self.window_frame.grid_remove()
+        elif mode == 'intermediate':
+            # Show advanced hunt settings, hide window settings
+            self.adv_frame.grid()
+            self.window_frame.grid_remove()
+        elif mode == 'advanced':
+            # Show all sections
+            self.adv_frame.grid()
+            self.window_frame.grid()
+    
+    def _open_monster_library(self):
+        """Open Monster Library Manager dialog."""
+        # TODO: Integrate with existing monster manager
+        messagebox.showinfo(
+            self._t('monster_section'),
+            f"{self._t('monsters_count')}: {len(self.monsters) if hasattr(self, 'monsters') else 0}\n\n"
+            f"Monster library management feature coming soon..."
+        )
+    
+    def _open_skills_library(self):
+        """Open Skills Library Manager dialog."""
+        # TODO: Integrate with existing skills manager
+        messagebox.showinfo(
+            self._t('skill_section'),
+            f"{self._t('skills_count')}: {len(self.skills) if hasattr(self, 'skills') else 0}\n\n"
+            f"Skills library management feature coming soon..."
+        )
+    
+    def _clear_window_bounds(self):
+        """Clear stored window bounds."""
+        self.current_window_bounds = None
+        self.setup_bounds_display_var.set(self._t('hunt_window_bounds_none'))
+        self.hunt_status.set(self._t('hunt_window_bounds_cleared') if hasattr(self, 'hunt_status') else 'Window bounds cleared')
+    
+    def _apply_setup_settings(self):
+        """Apply all settings from Setup tab to hunt_config and sync to Hunt tab."""
+        try:
+            # Update hunt_cfg with values from Setup tab
+            self.hunt_cfg['target_key'] = self.setup_target_key_var.get()
+            self.hunt_cfg['attack_keys'] = [k.strip() for k in self.setup_attack_keys_var.get().split(',') if k.strip()]
+            self.hunt_cfg['attack_press_ms'] = int(self.setup_press_ms_var.get())
+            self.hunt_cfg['target_cycle_delay'] = float(self.setup_target_cycle_var.get())
+            self.hunt_cfg['search_interval'] = float(self.setup_search_interval_var.get())
+            self.hunt_cfg['attack_interval'] = float(self.setup_attack_interval_var.get())
+            self.hunt_cfg['lost_timeout_sec'] = float(self.setup_lost_timeout_var.get())
+            self.hunt_cfg['attack_min_duration_sec'] = float(self.setup_attack_duration_var.get())
+            self.hunt_cfg['template_threshold'] = float(self.setup_threshold_var.get())
+            self.hunt_cfg['template_path'] = self.setup_template_var.get()
+            
+            # Region
+            try:
+                l = int(self.setup_reg_l.get()) if self.setup_reg_l.get() else ""
+                t = int(self.setup_reg_t.get()) if self.setup_reg_t.get() else ""
+                w = int(self.setup_reg_w.get()) if self.setup_reg_w.get() else ""
+                h = int(self.setup_reg_h.get()) if self.setup_reg_h.get() else ""
+                self.hunt_cfg['region'] = [l, t, w, h]
+            except ValueError:
+                self.hunt_cfg['region'] = ["", "", "", ""]
+            
+            # Save to file
+            with open(HUNT_CONFIG_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
+            
+            # Sync to Hunt tab vars if they exist
+            if hasattr(self, 'target_key_var'):
+                self.target_key_var.set(self.hunt_cfg['target_key'])
+            if hasattr(self, 'attack_keys_var'):
+                self.attack_keys_var.set(','.join(self.hunt_cfg['attack_keys']))
+            if hasattr(self, 'attack_press_var'):
+                self.attack_press_var.set(str(self.hunt_cfg['attack_press_ms']))
+            if hasattr(self, 'target_cycle_var'):
+                self.target_cycle_var.set(str(self.hunt_cfg['target_cycle_delay']))
+            if hasattr(self, 'search_interval_var'):
+                self.search_interval_var.set(str(self.hunt_cfg['search_interval']))
+            if hasattr(self, 'attack_interval_var'):
+                self.attack_interval_var.set(str(self.hunt_cfg['attack_interval']))
+            if hasattr(self, 'lost_timeout_var'):
+                self.lost_timeout_var.set(str(self.hunt_cfg['lost_timeout_sec']))
+            if hasattr(self, 'attack_duration_var'):
+                self.attack_duration_var.set(str(self.hunt_cfg['attack_min_duration_sec']))
+            if hasattr(self, 'template_var'):
+                self.template_var.set(self.hunt_cfg['template_path'])
+            if hasattr(self, 'reg_l'):
+                region = self.hunt_cfg['region']
+                self.reg_l.set(str(region[0]) if region[0] != "" else "")
+                self.reg_t.set(str(region[1]) if region[1] != "" else "")
+                self.reg_w.set(str(region[2]) if region[2] != "" else "")
+                self.reg_h.set(str(region[3]) if region[3] != "" else "")
+            
+            # Update status
+            if hasattr(self, 'hunt_status'):
+                self.hunt_status.set(self._t('settings_applied_success') if 'settings_applied_success' in self.translations[self.lang] else 'Settings applied successfully!')
+            
+            # Show success message
+            messagebox.showinfo(
+                self._t('success_title') if 'success_title' in self.translations[self.lang] else 'Success',
+                self._t('settings_applied_message') if 'settings_applied_message' in self.translations[self.lang] else 'Settings have been applied and saved.'
+            )
+            
+        except ValueError as e:
+            messagebox.showerror(
+                self._t('error_title'),
+                self._t('error_invalid_number').format(field=str(e))
+            )
+        except Exception as e:
+            messagebox.showerror(
+                self._t('error_title'),
+                f"Failed to apply settings: {e}"
+            )
     
     # Phase 3: Multi-Monster Support Handlers
     def _load_monster_rotation_list(self):

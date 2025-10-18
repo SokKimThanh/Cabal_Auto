@@ -52,3 +52,45 @@
 2025-10-18 06:41:42 | INFO | Timing: search=0.25s, attack=0.15s
 2025-10-18 06:42:19 | INFO | [STOP] Hunt stopped | Reason: manual_stop | Duration: 36.7s
 2025-10-18 06:42:19 | INFO | ================================================================================
+2025-10-18 16:25:43 | INFO | ================================================================================
+2025-10-18 16:25:43 | INFO | Hunt Session Started: 2025-10-18 16:25:43
+2025-10-18 16:25:43 | INFO | ================================================================================
+2025-10-18 16:25:43 | INFO | [START] Hunt started
+2025-10-18 16:25:43 | INFO | Window: CABAL
+2025-10-18 16:25:43 | INFO | Templates: 5 configured
+2025-10-18 16:25:43 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:25:43 | INFO | [STOP] Hunt stopped | Reason: manual_stop | Duration: 0.2s
+2025-10-18 16:25:43 | INFO | ================================================================================
+2025-10-18 16:25:52 | INFO | [START] Hunt started
+2025-10-18 16:25:52 | INFO | Window: CABAL
+2025-10-18 16:25:52 | INFO | Templates: 5 configured
+2025-10-18 16:25:52 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:25:54 | INFO | [START] Hunt started
+2025-10-18 16:25:54 | INFO | Window: CABAL
+2025-10-18 16:25:54 | INFO | Templates: 5 configured
+2025-10-18 16:25:54 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:25:57 | INFO | [START] Hunt started
+2025-10-18 16:25:57 | INFO | Window: CABAL
+2025-10-18 16:25:57 | INFO | Templates: 5 configured
+2025-10-18 16:25:57 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:25:59 | INFO | [START] Hunt started
+2025-10-18 16:25:59 | INFO | Window: CABAL
+2025-10-18 16:25:59 | INFO | Templates: 5 configured
+2025-10-18 16:25:59 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:26:02 | INFO | [START] Hunt started
+2025-10-18 16:26:02 | INFO | Window: CABAL
+2025-10-18 16:26:02 | INFO | Templates: 5 configured
+2025-10-18 16:26:02 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:26:35 | INFO | [START] Hunt started
+2025-10-18 16:26:35 | INFO | Window: CABAL
+2025-10-18 16:26:35 | INFO | Templates: 5 configured
+2025-10-18 16:26:35 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:35:30 | INFO | ================================================================================
+2025-10-18 16:35:30 | INFO | Hunt Session Started: 2025-10-18 16:35:30
+2025-10-18 16:35:30 | INFO | ================================================================================
+2025-10-18 16:35:30 | INFO | [START] Hunt started
+2025-10-18 16:35:30 | INFO | Window: CABAL
+2025-10-18 16:35:30 | INFO | Templates: 5 configured
+2025-10-18 16:35:30 | INFO | Timing: search=0.25s, attack=0.15s
+2025-10-18 16:35:30 | INFO | [STOP] Hunt stopped | Reason: manual_stop | Duration: 0.2s
+2025-10-18 16:35:30 | INFO | ================================================================================
