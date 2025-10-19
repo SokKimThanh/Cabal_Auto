@@ -572,3 +572,45 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'tip_auto_detect': 'Tự động dò vùng từ kết quả',
     }
 }
+
+# Setup Wizard specific translations (tooltips and small hints)
+SETUP_WIZARD_TRANSLATIONS = {
+    'en': {
+        # Footer buttons
+        'tip_wizard_back': 'Go back to previous step',
+        'tip_wizard_next': 'Go to next step',
+        'tip_wizard_finish': 'Finish and save configuration',
+        'tip_wizard_cancel': 'Cancel and close the setup wizard',
+        # Step 1 - Language
+        'tip_lang_english': 'Switch language to English',
+        'tip_lang_vietnamese': 'Switch language to Vietnamese',
+        # Step 2 - Window selection
+        'tip_filter': 'Filter by window title or process name',
+        'tip_search_windows': 'Find running game windows',
+        'tip_window_list': 'Select the game window to control',
+        # Step 3 - Monster selection
+        'tip_monster_list': 'Choose a monster to hunt',
+        # Step 4 - Skills
+        'tip_skill_slot': 'Assign a skill to this slot',
+        'tip_clear_all_slots': 'Clear all skill slots',
+    },
+    'vi': {
+        # Footer buttons
+        'tip_wizard_back': 'Quay lại bước trước',
+        'tip_wizard_next': 'Sang bước tiếp theo',
+        'tip_wizard_finish': 'Hoàn tất và lưu cấu hình',
+        'tip_wizard_cancel': 'Hủy và đóng trợ lý thiết lập',
+        # Step 1 - Language
+        'tip_lang_english': 'Chuyển sang tiếng Anh',
+        'tip_lang_vietnamese': 'Chuyển sang Tiếng Việt',
+        # Step 2 - Window selection
+        'tip_filter': 'Lọc theo tiêu đề cửa sổ hoặc tên tiến trình',
+        'tip_search_windows': 'Tìm các cửa sổ game đang chạy',
+        'tip_window_list': 'Chọn cửa sổ game để điều khiển',
+        # Step 3 - Monster selection
+        'tip_monster_list': 'Chọn quái để săn',
+        # Step 4 - Skills
+        'tip_skill_slot': 'Gán kỹ năng cho ô này',
+        'tip_clear_all_slots': 'Xóa tất cả kỹ năng đã chọn',
+    }
+}

@@ -23,6 +23,24 @@ from ctypes import wintypes
 import importlib
 import importlib.util
 
+# i18n and tooltip helpers
+try:
+    from lib.tooltip import attach_i18n_tooltip
+except Exception:
+    attach_i18n_tooltip = None  # type: ignore
+try:
+    from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t
+except Exception:
+    def i18n_register_bulk(namespace, translations):  # type: ignore
+        pass
+    # Match actual signature to satisfy static analyzers
+    def i18n_t(key: str, *, ns: str | None = None, lang: str | None = None, default: str | None = None) -> str:  # type: ignore
+        return default or key
+try:
+    from lib.translations import SETUP_WIZARD_TRANSLATIONS
+except Exception:
+    SETUP_WIZARD_TRANSLATIONS = {}
+
 _psutil_spec = importlib.util.find_spec("psutil")
 if _psutil_spec is not None:
     psutil = importlib.import_module("psutil")
@@ -163,6 +181,24 @@ class SetupWizard:
                 pass
             raise
     
+    # Property used by tooltips to get current language
+    @property
+    def lang(self) -> str:
+        try:
+            return str(self.language)
+        except Exception:
+            return 'en'
+
+    def _t(self, key: str) -> str:
+        """Translate a Setup Wizard string using its namespace."""
+        try:
+            # Register once; safe if already registered
+            if SETUP_WIZARD_TRANSLATIONS:
+                i18n_register_bulk('setup_wizard', SETUP_WIZARD_TRANSLATIONS)
+            return i18n_t(key, ns='setup_wizard', lang=self.lang)
+        except Exception:
+            return key
+
     def _build_ui(self):
         """Build wizard UI structure with header, content, and footer."""
         # Main container
@@ -248,6 +284,9 @@ class SetupWizard:
             state=tk.DISABLED  # Disabled on first step
         )
         self.back_button.pack(side=tk.LEFT, padx=8)
+        # Tooltip
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(self.back_button, key='tip_wizard_back', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         # Make Next button more prominent
         self.next_button = tk.Button(
@@ -265,6 +304,8 @@ class SetupWizard:
             bd=3
         )
         self.next_button.pack(side=tk.LEFT, padx=15)  # Extra padding to make it stand out
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(self.next_button, key='tip_wizard_next', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         self.cancel_button = tk.Button(
             button_frame,
@@ -275,6 +316,8 @@ class SetupWizard:
             font=('Arial', 10)
         )
         self.cancel_button.pack(side=tk.LEFT, padx=8)
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(self.cancel_button, key='tip_wizard_cancel', ns='setup_wizard', lang_provider=lambda: self.lang)
     
     def _show_step(self, step_number):
         """Show specified wizard step."""
@@ -394,6 +437,8 @@ It takes about 2 minutes. Let's begin!"""
             command=self._on_language_change
         )
         lang_en.pack(anchor='w', pady=5)
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(lang_en, key='tip_lang_english', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         lang_vi = tk.Radiobutton(
             lang_frame,
@@ -405,6 +450,8 @@ It takes about 2 minutes. Let's begin!"""
             command=self._on_language_change
         )
         lang_vi.pack(anchor='w', pady=5)
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(lang_vi, key='tip_lang_vietnamese', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         # Get started hint
         hint = tk.Label(
@@ -443,15 +490,20 @@ It takes about 2 minutes. Let's begin!"""
         self.window_filter_var = tk.StringVar(value='Cabal')
         filter_entry = tk.Entry(search_frame, textvariable=self.window_filter_var, width=20)
         filter_entry.pack(side=tk.LEFT, padx=(5, 10))
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(filter_entry, key='tip_filter', ns='setup_wizard', lang_provider=lambda: self.lang)
         
-        tk.Button(
+        btn_search = tk.Button(
             search_frame,
             text="🔍 Search Windows",
             command=self._search_windows,
             bg='#4CAF50',
             fg='white',
             font=('Arial', 9, 'bold')
-        ).pack(side=tk.LEFT)
+        )
+        btn_search.pack(side=tk.LEFT)
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(btn_search, key='tip_search_windows', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         # Window list
         list_frame = tk.Frame(self.content_frame, bg='white')
@@ -468,6 +520,8 @@ It takes about 2 minutes. Let's begin!"""
         )
         self.window_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.window_listbox.yview)
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(self.window_listbox, key='tip_window_list', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         self.window_listbox.bind('<<ListboxSelect>>', self._on_window_select)
         
@@ -542,6 +596,8 @@ It takes about 2 minutes. Let's begin!"""
         )
         self.monster_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.monster_listbox.yview)
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(self.monster_listbox, key='tip_monster_list', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         self.monster_listbox.bind('<<ListboxSelect>>', self._on_monster_select)
         
@@ -641,6 +697,8 @@ It takes about 2 minutes. Let's begin!"""
                     width=18
                 )
                 combo.pack(anchor='w')
+                if attach_i18n_tooltip:
+                    attach_i18n_tooltip(combo, key='tip_skill_slot', ns='setup_wizard', lang_provider=lambda: self.lang)
                 
                 self.skill_slot_vars.append(var)
                 self.skill_slot_combos.append(combo)
@@ -649,11 +707,14 @@ It takes about 2 minutes. Let's begin!"""
         btn_frame = tk.Frame(self.content_frame, bg='white')
         btn_frame.pack(pady=(15, 0))
         
-        tk.Button(
+        clear_btn = tk.Button(
             btn_frame,
             text="Clear All Slots",
             command=self._clear_all_skill_slots
-        ).pack()
+        )
+        clear_btn.pack()
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(clear_btn, key='tip_clear_all_slots', ns='setup_wizard', lang_provider=lambda: self.lang)
         
         # Info
         info = tk.Label(
