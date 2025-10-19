@@ -1155,7 +1155,7 @@ class App(tk.Tk):
                   font=('Arial', 10, 'bold'), fg='#4CAF50').pack(pady=(0,4))
         tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3).pack(pady=(0,4))
         tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3).pack(pady=(0,12))
-        tk.Button(btn_container, text=self._t('manage_button'), command=self._open_monster_manager, width=10).pack()
+        tk.Button(btn_container, text=self._t('open_library_manager'), command=self._open_library_manager, width=18).pack()
         
         # Current monster status
         self.monster_status_var = tk.StringVar()
