@@ -933,7 +933,13 @@ class App(tk.Tk):
         lib_desc = tk.Label(lib_frame, text=self._t('setup_libraries_desc'), fg='#666', font=('Arial', 9))
         lib_desc.grid(row=0, column=0, columnspan=2, sticky='w', pady=(0,8))
         
-        # Library Manager button removed per request
+        # Library Manager button (restored)
+        tk.Button(
+            lib_frame,
+            text=f"🗂️ {self._t('open_library_manager')}",
+            command=self._open_library_manager,
+            padx=10, pady=6
+        ).grid(row=1, column=1, sticky='e')
         
         # Status info
         monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
