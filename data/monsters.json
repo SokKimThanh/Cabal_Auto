@@ -9,7 +9,7 @@
     "templates": [
       {
         "name": "Coc Go 2",
-        "path": "assets/images/monsters/coc_go__capture_1760736387994.png",
+        "path": "E:\\Cabal_Auto\\lib\\tmp\\captures\\coc_go__coc_go_2_1760859998607.png",
         "threshold": 0.85,
         "region": {
           "left": 1074,
@@ -67,10 +67,10 @@
         "path": "assets/images/monsters/coc_go_capture_1760820616.png",
         "threshold": 0.85,
         "region": {
-          "left": 247,
-          "top": 10,
-          "width": 1599,
-          "height": 931
+          "left": 203,
+          "top": 74,
+          "width": 1588,
+          "height": 928
         },
         "region_strategy": "custom"
       }

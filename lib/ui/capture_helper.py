@@ -18,7 +18,12 @@ except Exception:
 import tkinter as tk
 from tkinter import messagebox
 
-ASSETS_DIR = Path(os.path.dirname(os.path.dirname(__file__))) / 'assets' / 'images' / 'monsters'
+# ASSETS_DIR now points to root assets/images/monsters (not lib/assets)
+# Get project root by going up from lib/ui/capture_helper.py
+_current_file = Path(__file__).resolve()  # lib/ui/capture_helper.py
+_lib_dir = _current_file.parent.parent    # lib/
+_project_root = _lib_dir.parent            # project root
+ASSETS_DIR = _project_root / 'assets' / 'images' / 'monsters'
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 
 
