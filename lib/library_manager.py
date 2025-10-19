@@ -23,9 +23,11 @@ import sys
 import os
 import ctypes
 from ctypes import wintypes
-from typing import Optional
 
-# Optional PIL imports for capture
+# Add parent directory to path for imports (project root)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Optional PIL imports for capture and previews
 try:
     from PIL import ImageGrab, Image, ImageTk  # type: ignore
 except Exception:  # pragma: no cover - environment dependent
@@ -33,14 +35,11 @@ except Exception:  # pragma: no cover - environment dependent
     Image = None  # type: ignore
     ImageTk = None  # type: ignore
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import icon helper
+# Icon helper
 try:
     from lib.icon_helper import get_icon_helper
     icon_helper = get_icon_helper()
-except ImportError:
+except Exception:
     icon_helper = None
 
 # Shared capture helper
@@ -49,6 +48,12 @@ try:
 except Exception:
     capture_region_and_save = None  # type: ignore
 
+# Template matcher for Test Recognition and Auto-Detect Region
+try:
+    from lib.template_matcher import locate_template  # type: ignore
+except Exception:
+    locate_template = None  # type: ignore
+
 # Import existing utilities (will be available when integrated)
 # Use importlib to avoid static unresolved-import issues in editors/linters
 try:
@@ -56,9 +61,13 @@ try:
     timing_mod = importlib.import_module('lib.timing_calculator')
     calculate_timing = getattr(timing_mod, 'calculate_timing')
     format_timing_recommendation = getattr(timing_mod, 'format_timing_recommendation')
-    skills_mod = importlib.import_module('lib.skills')
-    load_skill_library = getattr(skills_mod, 'load_skill_library')
-    save_skill_library = getattr(skills_mod, 'save_skill_library')
+    # skills module may not be present yet; provide fallbacks
+    try:
+        skills_mod = importlib.import_module('lib.skills')
+        load_skill_library = getattr(skills_mod, 'load_skill_library')
+        save_skill_library = getattr(skills_mod, 'save_skill_library')
+    except Exception:
+        raise
 except Exception:
     # Fallback for standalone testing
     def calculate_timing(*args, **kwargs):
@@ -72,6 +81,223 @@ except Exception:
 
 
 class LibraryManagerWindow(tk.Toplevel):
+
+    def _on_template_region_change(self):
+        if getattr(self, '_suspend_template_var_traces', False):
+            return
+        tmpl = self._get_current_template_ref()
+        if tmpl is None:
+            return
+        vals = {k: self.template_region_vars[k].get().strip() for k in ('left','top','width','height')}
+        if any(vals.values()):
+            try:
+                region_vals = {k: int(vals[k]) for k in vals}
+                if region_vals['width'] <= 0 or region_vals['height'] <= 0:
+                    return
+                tmpl['region_strategy'] = 'custom'
+                tmpl['region'] = region_vals
+            except Exception:
+                # ignore until valid
+                return
+        else:
+            # No override → use window strategy
+            tmpl.pop('region', None)
+            tmpl['region_strategy'] = 'window'
+        self.changes_made['monsters_changed'] = True
+        try:
+            self._mark_unsaved(True)
+        except Exception:
+            pass
+
+    def _pick_template_region(self):
+        """Let user pick a region from screen for current template; fill fields and persist."""
+        if not hasattr(self, 'current_monster') or self.current_monster is None:
+            messagebox.showwarning('No Monster' if self.lang=='en' else 'Chưa Chọn Quái',
+                                   'Please select a monster first.' if self.lang=='en' else 'Vui lòng chọn một quái trước.')
+            return
+        # Bring game window to front before overlay
+        try:
+            pid = self.hunt_cfg.get('window_pid') if isinstance(self.hunt_cfg, dict) else None
+            hwnd_cfg = self.hunt_cfg.get('window_hwnd') if isinstance(self.hunt_cfg, dict) else None
+            if pid:
+                self._bring_window_to_front_by_pid(int(pid))
+            elif hwnd_cfg:
+                self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
+        except Exception:
+            pass
+        # Iconify our window to avoid covering game
+        try:
+            self.iconify()
+        except Exception:
+            pass
+        self.update()
+        # Optionally restrict to game window bounds if available
+        restrict = None
+        try:
+            wb = self.hunt_cfg.get('window_bounds') if isinstance(self.hunt_cfg, dict) else None
+            if wb and all(k in wb for k in ('left','top','width','height')):
+                l,t,w,h = int(wb['left']), int(wb['top']), int(wb['width']), int(wb['height'])
+                restrict = (l, t, l + w, t + h)
+        except Exception:
+            restrict = None
+        try:
+            overlay = self._RegionCaptureOverlay(self, restrict_bbox=restrict)
+            bbox = overlay.show_modal()  # returns (left, top, right, bottom)
+        finally:
+            try:
+                self.deiconify()
+                self.lift()
+            except Exception:
+                pass
+        if not bbox:
+            return
+        l, t, r, b = bbox
+        w = max(0, int(r - l))
+        h = max(0, int(b - t))
+        self._suspend_template_var_traces = True
+        try:
+            self.template_region_vars['left'].set(str(l))
+            self.template_region_vars['top'].set(str(t))
+            self.template_region_vars['width'].set(str(w))
+            self.template_region_vars['height'].set(str(h))
+        finally:
+            self._suspend_template_var_traces = False
+        self._on_template_region_change()
+
+    def _resolve_current_template_params(self) -> Optional[tuple[str, float, Optional[tuple[int,int,int,int]]]]:
+        """Collect (path, threshold, region) for current template based on UI fields."""
+        tmpl = self._get_current_template_ref()
+        if tmpl is None:
+            return None
+        path = (self.template_path_var.get() or tmpl.get('path','')).strip()
+        if not path:
+            return None
+        # Threshold
+        try:
+            th = float((self.template_threshold_var.get() or tmpl.get('threshold', 0.85)))
+            th = max(0.0, min(th, 1.0))
+        except Exception:
+            th = float(tmpl.get('threshold', 0.85))
+        # Region
+        vals = {k: self.template_region_vars[k].get().strip() for k in ('left','top','width','height')} if hasattr(self, 'template_region_vars') else {'left':'','top':'','width':'','height':''}
+        region = None
+        if all(vals.values()):
+            try:
+                region = (int(vals['left']), int(vals['top']), int(vals['width']), int(vals['height']))
+            except Exception:
+                region = None
+        elif isinstance(self.hunt_cfg, dict) and self.hunt_cfg.get('window_bounds'):
+            wb = self.hunt_cfg['window_bounds']
+            region = (int(wb.get('left',0)), int(wb.get('top',0)), int(wb.get('width',0)), int(wb.get('height',0)))
+        return (path, th, region)
+
+    def _test_template_recognition(self):
+        """Test match for current template on screen; minimize app to avoid covering game."""
+        if locate_template is None:
+            messagebox.showerror('Error', 'template_matcher not available')
+            return
+        params = self._resolve_current_template_params()
+        if not params:
+            messagebox.showinfo('Info' if self.lang=='en' else 'Thông báo', 'No template selected' if self.lang=='en' else 'Chưa chọn ảnh mẫu')
+            return
+        path, th, region = params
+        # Bring to front and minimize
+        try:
+            pid = self.hunt_cfg.get('window_pid') if isinstance(self.hunt_cfg, dict) else None
+            hwnd_cfg = self.hunt_cfg.get('window_hwnd') if isinstance(self.hunt_cfg, dict) else None
+            if pid:
+                self._bring_window_to_front_by_pid(int(pid))
+            elif hwnd_cfg:
+                self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
+        except Exception:
+            pass
+        try:
+            self.iconify()
+        except Exception:
+            pass
+        self.update()
+        time.sleep(0.4)
+        try:
+            box, conf = locate_template(path, region, th, method='auto')
+        except Exception as exc:
+            try:
+                self.deiconify(); self.lift()
+            except Exception:
+                pass
+            messagebox.showerror('Error' if self.lang=='en' else 'Lỗi', str(exc))
+            return
+        # Restore
+        try:
+            self.deiconify(); self.lift()
+        except Exception:
+            pass
+        if box:
+            x = int(box[0] + box[2]//2)
+            y = int(box[1] + box[3]//2)
+            if conf is None:
+                msg = (f"Match found at ({x}, {y})" if self.lang=='en' else f"Tìm thấy tại ({x}, {y})")
+            else:
+                msg = (f"Match found at ({x}, {y}) - Confidence: {conf:.2f}" if self.lang=='en' else f"Tìm thấy tại ({x}, {y}) - Độ khớp: {conf:.2f}")
+            messagebox.showinfo('Test Recognition', msg)
+        else:
+            messagebox.showinfo('Test Recognition', 'No match found' if self.lang=='en' else 'Không tìm thấy')
+
+    def _auto_detect_template_region(self):
+        """Auto-detect region by locating template on current screen and filling region with the match bbox."""
+        if locate_template is None:
+            messagebox.showerror('Error', 'template_matcher not available')
+            return
+        params = self._resolve_current_template_params()
+        if not params:
+            messagebox.showinfo('Info' if self.lang=='en' else 'Thông báo', 'No template selected' if self.lang=='en' else 'Chưa chọn ảnh mẫu')
+            return
+        path, th, region = params
+        # Prefer searching within window bounds even if region empty
+        if region is None and isinstance(self.hunt_cfg, dict) and self.hunt_cfg.get('window_bounds'):
+            wb = self.hunt_cfg['window_bounds']
+            region = (int(wb.get('left',0)), int(wb.get('top',0)), int(wb.get('width',0)), int(wb.get('height',0)))
+        # Bring game up and minimize
+        try:
+            pid = self.hunt_cfg.get('window_pid') if isinstance(self.hunt_cfg, dict) else None
+            hwnd_cfg = self.hunt_cfg.get('window_hwnd') if isinstance(self.hunt_cfg, dict) else None
+            if pid:
+                self._bring_window_to_front_by_pid(int(pid))
+            elif hwnd_cfg:
+                self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
+        except Exception:
+            pass
+        try:
+            self.iconify()
+        except Exception:
+            pass
+        self.update(); time.sleep(0.4)
+        try:
+            box, conf = locate_template(path, region, th, method='auto')
+        except Exception as exc:
+            try:
+                self.deiconify(); self.lift()
+            except Exception:
+                pass
+            messagebox.showerror('Error' if self.lang=='en' else 'Lỗi', str(exc))
+            return
+        try:
+            self.deiconify(); self.lift()
+        except Exception:
+            pass
+        if not box:
+            messagebox.showinfo('Auto-Detect', 'No match found to derive region' if self.lang=='en' else 'Không tìm thấy ảnh để suy ra vùng')
+            return
+        l,t,w,h = box
+        # Fill fields and persist
+        self._suspend_template_var_traces = True
+        try:
+            self.template_region_vars['left'].set(str(l))
+            self.template_region_vars['top'].set(str(t))
+            self.template_region_vars['width'].set(str(w))
+            self.template_region_vars['height'].set(str(h))
+        finally:
+            self._suspend_template_var_traces = False
+        self._on_template_region_change()
     """
     Centralized library management window with 3 tabs.
     
@@ -1129,6 +1355,27 @@ class LibraryManagerWindow(tk.Toplevel):
             'Tip: 0.80 - 0.90. Higher = less false positives, but harder to match.'
         ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,0))
 
+        # Region override section
+        region_frame = tk.Frame(form_body, bg='#E3F2FD'); region_frame.pack(fill='x', pady=(0,12))
+        tk.Label(region_frame, text=('Region Override (L,T,W,H)' if self.lang=='en' else 'Vùng ghi đè (L,T,R,D)'), bg='#E3F2FD', font=('Arial', 9, 'bold'), fg='#424242', anchor='w').pack(fill='x', pady=(0,4))
+        region_inputs = tk.Frame(region_frame, bg='#E3F2FD'); region_inputs.pack(fill='x')
+        self.template_region_vars = {
+            'left': tk.StringVar(),
+            'top': tk.StringVar(),
+            'width': tk.StringVar(),
+            'height': tk.StringVar(),
+        }
+        for key, lbl in [('left','L'),('top','T'),('width','W'),('height','H')]:
+            tk.Label(region_inputs, text=f"{lbl}:", bg='#E3F2FD').pack(side='left')
+            tk.Entry(region_inputs, textvariable=self.template_region_vars[key], width=6, font=('Arial', 10), relief='solid', borderwidth=1).pack(side='left', padx=(2,8), ipady=4)
+        tk.Label(region_frame, text=(
+            'Để trống để dùng biên cửa sổ game.' if self.lang=='vi' else 'Leave blank to use game window bounds.'
+        ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,6))
+        region_btns = tk.Frame(region_frame, bg='#E3F2FD'); region_btns.pack(fill='x')
+        tk.Button(region_btns, text=('Pick Region' if self.lang=='en' else 'Chọn vùng'), command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
+        tk.Button(region_btns, text=('Test Recognition' if self.lang=='en' else 'Kiểm tra nhận diện'), command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        tk.Button(region_btns, text=('Auto-Detect Region' if self.lang=='en' else 'Tự động dò vùng'), command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+
         # No Save/Cancel buttons; changes are applied immediately and persisted with Apply All (top-right)
 
         # Bind auto-apply traces for form fields
@@ -1137,6 +1384,9 @@ class LibraryManagerWindow(tk.Toplevel):
             self.template_name_var.trace('w', lambda *args: self._on_template_name_change())
             self.template_path_var.trace('w', lambda *args: self._on_template_path_change())
             self.template_threshold_var.trace('w', lambda *args: self._on_template_threshold_change())
+            # Region change traces
+            for v in self.template_region_vars.values():
+                v.trace('w', lambda *args: self._on_template_region_change())
         except Exception:
             pass
 
@@ -1175,6 +1425,20 @@ class LibraryManagerWindow(tk.Toplevel):
             self.template_name_var.set(template.get('name', ''))
             self.template_path_var.set(template.get('path', ''))
             self.template_threshold_var.set(str(template.get('threshold', 0.85)))
+            # Region fields
+            region = template.get('region') or {}
+            try:
+                l = str(int(region.get('left', ''))) if isinstance(region, dict) and str(region.get('left', '')).strip() != '' else ''
+                t = str(int(region.get('top', ''))) if isinstance(region, dict) and str(region.get('top', '')).strip() != '' else ''
+                w = str(int(region.get('width', ''))) if isinstance(region, dict) and str(region.get('width', '')).strip() != '' else ''
+                h = str(int(region.get('height', ''))) if isinstance(region, dict) and str(region.get('height', '')).strip() != '' else ''
+            except Exception:
+                l = t = w = h = ''
+            if hasattr(self, 'template_region_vars'):
+                self.template_region_vars['left'].set(l)
+                self.template_region_vars['top'].set(t)
+                self.template_region_vars['width'].set(w)
+                self.template_region_vars['height'].set(h)
         finally:
             self._suspend_template_var_traces = False
         self.template_form_mode = 'edit'
@@ -1403,6 +1667,17 @@ class LibraryManagerWindow(tk.Toplevel):
         self.changes_made['monsters_changed'] = True
         try:
             self._mark_unsaved(True)
+        except Exception:
+            pass
+        # Fill region from capture bbox if region fields are blank
+        try:
+            if bbox and hasattr(self, 'template_region_vars') and not any(v.get().strip() for v in self.template_region_vars.values()):
+                l,t,w,h = bbox
+                self.template_region_vars['left'].set(str(l))
+                self.template_region_vars['top'].set(str(t))
+                self.template_region_vars['width'].set(str(w))
+                self.template_region_vars['height'].set(str(h))
+                self._on_template_region_change()
         except Exception:
             pass
 
