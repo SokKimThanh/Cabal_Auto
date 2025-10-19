@@ -92,11 +92,19 @@ class LibraryManagerWindow(tk.Toplevel):
             key = f"{name}_{size}"
             if key in self._icon_cache:
                 return self._icon_cache[key]
-            img = icon_helper.get_icon(name, fallback=fallback, size=size) if icon_helper else fallback
+            # If icon helper is unavailable, do not pass a text fallback to Tk 'image' option
+            if not icon_helper:
+                self._icon_cache[key] = ''
+                return ''
+            img = icon_helper.get_icon(name, fallback=fallback, size=size)
+            # Ensure we never return a text emoji for the Tk 'image' parameter
+            if isinstance(img, str):
+                img = ''
             self._icon_cache[key] = img
             return img
         except Exception:
-            return fallback
+            # On any error, return empty image name to avoid TclError
+            return ''
 
     def _on_template_region_change(self):
         if getattr(self, '_suspend_template_var_traces', False):
@@ -823,9 +831,12 @@ class LibraryManagerWindow(tk.Toplevel):
         search_container = tk.Frame(search_frame, bg='#F5F5F5', highlightbackground='#E0E0E0', highlightthickness=1)
         search_container.pack(fill='x')
         search_img = self._icon('search', '🔍')
-        try:
-            tk.Label(search_container, image=search_img, text='', bg='#F5F5F5').pack(side='left', padx=(10, 5))
-        except Exception:
+        if search_img:
+            try:
+                tk.Label(search_container, image=search_img, text='', bg='#F5F5F5').pack(side='left', padx=(10, 5))
+            except Exception:
+                tk.Label(search_container, text='🔍', font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
+        else:
             tk.Label(search_container, text='🔍', font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
         self.monster_search_var = tk.StringVar()
         self.monster_search_var.trace('w', lambda *args: self._filter_monster_list())
