@@ -2,34 +2,21 @@ import ctypes
 import json
 import math
 import os
-import threading
-import time
-import copy
-from ctypes import wintypes
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-
-import pyautogui
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+import threading 
+                speed_frame,
+                text=self._t('timing_manual_presets'),
+                font=('Arial', 9),
+                fg='#666'
+            )
 
 from lib.template_matcher import locate_template
-from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang, GLOBAL_NS as I18N_GLOBAL
+                text=self._t('custom_label'),
 from lib.translations import GLOBAL_TRANSLATIONS
 try:
     from lib.capture_helper import capture_region_and_save
 except Exception:
     capture_region_and_save = None  # type: ignore
-from lib.skill_runtime import SkillRuntime
-
-try:
-    from PIL import Image, ImageTk, ImageDraw  # type: ignore
-except Exception:
-    Image = None
-    ImageTk = None
-    ImageDraw = None
-
-try:
+            result_frame = tk.LabelFrame(dialog, text=self._t('timing_results_title'), padx=10, pady=10)
     import keyboard  # type: ignore
 except Exception:
     keyboard = None  # type: ignore
@@ -37,43 +24,29 @@ except Exception:
 from lib.win_input import tap
 from lib.hunt_logger import get_hunt_logger
 from lib.timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
-from setup_wizard import show_setup_wizard
-try:
-    from lib.icon_helper import get_icon_helper
-    icon_helper = get_icon_helper()
-except Exception:
-    icon_helper = None
-
+                skill_info_label.config(text=self._t('timing_no_valid_attack_skills'))
 
 class ToolTip:
     """Simple tooltip helper for Tkinter widgets."""
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
-        self.tooltip_window = None
-        self.widget.bind("<Enter>", self.show_tooltip)
-        self.widget.bind("<Leave>", self.hide_tooltip)
-    
-    def show_tooltip(self, event=None):
-        if self.tooltip_window or not self.text:
-            return
-        x = self.widget.winfo_rootx() + 20
-        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+                            error_msg = self._t('timing_no_attack_skills_configured')
         self.tooltip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(
-            tw,
-            text=self.text,
-            justify='left',
-            background="#ffffe0",
-            relief='solid',
-            borderwidth=1,
-            font=("tahoma", 8, "normal"),
-            padx=4,
+                        skill_info = self._t('timing_from_skills_title')
+                        skill_info += self._t('timing_attack_skills_list').format(count=count, names=', '.join(attack_skill_names))
+                        if buff_skill_names:
+                            skill_info += self._t('timing_buff_skills_list').format(count=len(buff_skill_names), names=', '.join(buff_skill_names))
+                        skill_info += "\n"
+                        skill_info += self._t('timing_attack_calc_header')
+                        skill_info += self._t('timing_avg_cooldown').format(avg=avg_cd)
+                        skill_info += self._t('timing_effective_aps').format(aps=aps)
+                        skill_info += "\n"
             pady=2,
         )
-        label.pack()
+                text=self._t('btn_calculate'),
     
     def hide_tooltip(self, event=None):
         if self.tooltip_window:
@@ -81,7 +54,7 @@ class ToolTip:
             self.tooltip_window = None
 
 
-LANG: Dict[str, Dict[str, str]] = {
+                text=self._t('btn_apply_to_hunt_config'),
     'en': {
         'app_title': 'Cabal Auto Manager',
         'language': 'Language',
@@ -89,7 +62,7 @@ LANG: Dict[str, Dict[str, str]] = {
         'tab_setup': 'Setup',
         'tab_stats': 'Stats',
         'tab_help': 'Help',
-        'window_selection': 'Window Selection',
+                text=self._t('close'),
         'window_quick_select': '🪟 Step 1: Select game window',
         'select_game_window': 'Select Game Window',
         'win_list_hint': 'Click "Find windows" button above, then select your game window from this list:',
@@ -1410,7 +1383,11 @@ class App(tk.Tk):
         monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
         skills_count = len(load_skill_library()) if hasattr(self, 'skills') else 0
         
-        status_text = f"{monster_count} monsters • {skills_count} skills" if self.lang == 'en' else f"{monster_count} quái vật • {skills_count} kỹ năng"
+        # Use i18n for counts label
+        try:
+            status_text = f"{monster_count} {self._t('monsters_count')} • {skills_count} {self._t('skills_count')}"
+        except Exception:
+            status_text = f"{monster_count} monsters • {skills_count} skills" if self.lang == 'en' else f"{monster_count} quái vật • {skills_count} kỹ năng"
         tk.Label(
             lib_frame,
             text=status_text,
@@ -1643,9 +1620,7 @@ class App(tk.Tk):
                 self._reload_setup_advanced_settings()  # Refresh Setup tab Advanced Settings
                 
             # Update status
-            self.hunt_status.set(
-                'Library updated successfully' if self.lang == 'en' else 'Thư viện đã được cập nhật'
-            )
+            self.hunt_status.set(self._t('library_updated'))
         
         # Open Library Manager window
         try:
@@ -3852,12 +3827,8 @@ class App(tk.Tk):
             
             # Manual presets header
             preset_label = tk.Label(
-                speed_frame, 
-                text=(
-                    'Manual Presets (for testing/comparison):' 
-                    if self.lang == 'en' else 
-                    'Các mức cố định (để test/so sánh):'
-                ), 
+                speed_frame,
+                text=self._t('timing_manual_presets'),
                 font=('Arial', 9),
                 fg='#666'
             )
@@ -3878,7 +3849,7 @@ class App(tk.Tk):
             custom_frame.pack(fill='x', pady=(10,0))
             tk.Radiobutton(
                 custom_frame,
-                text='Custom:',
+                text=self._t('custom_label'),
                 variable=speed_var,
                 value='custom',
                 command=lambda: update_recommendations()
@@ -3887,19 +3858,10 @@ class App(tk.Tk):
             custom_entry = tk.Entry(custom_frame, textvariable=custom_speed_var, width=8)
             custom_entry.pack(side='left', padx=5)
             custom_entry.bind('<KeyRelease>', lambda e: update_recommendations() if speed_var.get() == 'custom' else None)
-            tk.Label(custom_frame, text='attacks/sec').pack(side='left')
+            tk.Label(custom_frame, text=self._t('attacks_per_sec')).pack(side='left')
             
             # Result text
-            result_frame = tk.LabelFrame(
-                dialog, 
-                text=(
-                    'Calculation Results & Recommendations' 
-                    if self.lang == 'en' else 
-                    'Kết quả tính toán & Khuyến nghị'
-                ), 
-                padx=10, 
-                pady=10
-            )
+            result_frame = tk.LabelFrame(dialog, text=self._t('timing_results_title'), padx=10, pady=10)
             result_frame.pack(fill='both', expand=True, padx=10, pady=10)
             
             result_text = tk.Text(result_frame, width=65, height=15, wrap='word', font=('Consolas', 9))
@@ -3949,38 +3911,21 @@ class App(tk.Tk):
                         
                         if aps is None or count == 0:
                             result_text.delete('1.0', tk.END)
-                            error_msg = (
-                                '⚠ No attack skills configured!\n\n'
-                                'Please add attack skills in Hunt tab first.\n\n'
-                                'Note: Buff skills are not counted for attack speed calculation.'
-                                if self.lang == 'en' else
-                                '⚠ Chưa thiết lập kỹ năng tấn công!\n\n'
-                                'Vui lòng thêm kỹ năng tấn công ở tab Hunt trước.\n\n'
-                                'Lưu ý: Kỹ năng buff không được tính vào tốc độ tấn công.'
-                            )
+                            error_msg = self._t('timing_no_attack_skills_configured')
                             result_text.insert('1.0', error_msg)
                             current_rec['rec'] = None
                             return
                         
                         # Show detailed skill-based info with breakdown
-                        if self.lang == 'en':
-                            skill_info = f"📊 Calculated from configured skills:\n"
-                            skill_info += f"  • {count} ATTACK skill(s): {', '.join(attack_skill_names)}\n"
-                            if buff_skill_names:
-                                skill_info += f"  • {len(buff_skill_names)} BUFF skill(s): {', '.join(buff_skill_names)} (excluded)\n"
-                            skill_info += f"\n"
-                            skill_info += f"Attack Speed Calculation:\n"
-                            skill_info += f"  • Average Cooldown: {avg_cd:.2f}s\n"
-                            skill_info += f"  • Effective APS: {aps:.2f} hits/sec\n\n"
-                        else:
-                            skill_info = f"📊 Tính từ kỹ năng đã thiết lập:\n"
-                            skill_info += f"  • {count} kỹ năng TẤN CÔNG: {', '.join(attack_skill_names)}\n"
-                            if buff_skill_names:
-                                skill_info += f"  • {len(buff_skill_names)} kỹ năng BUFF: {', '.join(buff_skill_names)} (không tính)\n"
-                            skill_info += f"\n"
-                            skill_info += f"Tính toán tốc độ tấn công:\n"
-                            skill_info += f"  • Cooldown trung bình: {avg_cd:.2f}s\n"
-                            skill_info += f"  • Tốc độ hiệu dụng: {aps:.2f} đòn/giây\n\n"
+                        skill_info = self._t('timing_from_skills_title')
+                        skill_info += self._t('timing_attack_skills_list').format(count=count, names=', '.join(attack_skill_names))
+                        if buff_skill_names:
+                            skill_info += self._t('timing_buff_skills_list').format(count=len(buff_skill_names), names=', '.join(buff_skill_names))
+                        skill_info += "\n"
+                        skill_info += self._t('timing_attack_calc_header')
+                        skill_info += self._t('timing_avg_cooldown').format(avg=avg_cd)
+                        skill_info += self._t('timing_effective_aps').format(aps=aps)
+                        skill_info += "\n"
                         
                     elif preset == 'custom':
                         aps = float(custom_speed_var.get())
@@ -4020,7 +3965,7 @@ class App(tk.Tk):
                 if current_rec['rec'] is None:
                     messagebox.showwarning(
                         self._t('monster_timing_title'),
-                        'Please calculate timing first.' if self.lang == 'en' else 'Vui lòng tính toán trước.'
+                        self._t('timing_calculate_first')
                     )
                     return
                 
@@ -4039,14 +3984,10 @@ class App(tk.Tk):
                     save_hunt_config(self.hunt_cfg)
                     
                     # Show success message
-                    msg = (f'Applied to Hunt Config:\n\n'
-                           f'Lost Timeout: {rec.lost_timeout_sec:.2f}s\n'
-                           f'Attack Duration: {rec.attack_min_duration_sec:.2f}s\n\n'
-                           f'Config saved to hunt_config.json' if self.lang == 'en' else
-                           f'Đã áp dụng vào Hunt Config:\n\n'
-                           f'Lost Timeout: {rec.lost_timeout_sec:.2f}s\n'
-                           f'Attack Duration: {rec.attack_min_duration_sec:.2f}s\n\n'
-                           f'Config đã lưu vào hunt_config.json')
+                    msg = self._t('timing_applied_message').format(
+                        lost=rec.lost_timeout_sec,
+                        attack=rec.attack_min_duration_sec
+                    )
                     
                     messagebox.showinfo(
                         self._t('monster_timing_title'),
@@ -4067,29 +4008,11 @@ class App(tk.Tk):
             btn_frame = tk.Frame(dialog)
             btn_frame.pack(fill='x', padx=10, pady=(0,10))
             
-            tk.Button(
-                btn_frame, 
-                text='Calculate' if self.lang == 'en' else 'Tính toán',
-                command=update_recommendations,
-                bg='#2196F3',
-                fg='white',
-                font=('Arial', 9, 'bold')
-            ).pack(side='left', padx=5)
+            tk.Button(btn_frame, text=self._t('btn_calculate'), command=update_recommendations, bg='#2196F3', fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
             
-            tk.Button(
-                btn_frame, 
-                text='Apply to Hunt Config' if self.lang == 'en' else 'Áp dụng vào Hunt',
-                command=apply_to_hunt_config, 
-                bg='#4CAF50', 
-                fg='white',
-                font=('Arial', 9, 'bold')
-            ).pack(side='left', padx=5)
+            tk.Button(btn_frame, text=self._t('btn_apply_to_hunt_config'), command=apply_to_hunt_config, bg='#4CAF50', fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
             
-            tk.Button(
-                btn_frame, 
-                text='Close' if self.lang == 'en' else 'Đóng',
-                command=dialog.destroy
-            ).pack(side='left', padx=5)
+            tk.Button(btn_frame, text=self._t('close'), command=dialog.destroy).pack(side='left', padx=5)
             
             # Set callback for from_skills radio button (now that update_recommendations is defined)
             from_skills_rb.config(command=update_recommendations)
