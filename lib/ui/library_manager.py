@@ -472,7 +472,8 @@ class LibraryManagerWindow(tk.Toplevel):
         self._center_window()
         
         # Initialize common attributes to avoid unknown-attribute issues
-        self.unsaved_badge = None
+        self.unsaved_badge = None  # Global badge in top bar (for all tabs)
+        self.template_badge = None  # Template-specific badge in monster tab
         self.details_panel = None
         self.monster_tree = None
         self.template_list_panel = None
@@ -541,18 +542,19 @@ class LibraryManagerWindow(tk.Toplevel):
         ext = ext if ext else '.png'
         return f"{base_mon}__{base_tpl}_{ts}{ext}"
 
-    # --------- Unsaved indicator ---------
+    # --------- Unsaved indicator (global badge in top bar) ---------
     def _mark_unsaved(self, state: bool):
+        """Show/hide global unsaved badge in top bar (tracks all 3 tabs)."""
         try:
             if hasattr(self, 'unsaved_badge') and self.unsaved_badge:
                 if state:
                     text = 'CHƯA LƯU' if self.lang == 'vi' else 'UNSAVED'
                     self.unsaved_badge.config(text=text)
-                    # ensure visible
-                    self.unsaved_badge.place(relx=1.0, x=-12, rely=0.5, anchor='e')
+                    # Show badge (already packed in top_bar)
+                    self.unsaved_badge.pack(side='right', padx=(0, 6), pady=6)
                 else:
                     self.unsaved_badge.config(text='')
-                    self.unsaved_badge.place_forget()
+                    self.unsaved_badge.pack_forget()
             
             # Update save button tooltip to reflect state
             self._update_save_button_tooltip(state)
@@ -877,6 +879,12 @@ class LibraryManagerWindow(tk.Toplevel):
         tk.Label(top_bar, text=self._t('library_manager_title'), bg=UI.BG_PANEL, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=8)
         # Right-aligned actions
         self._make_icon_button(top_bar, 'cancel', '✖', 'tip_close_manager', command=self._on_window_close, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
+        
+        # Global unsaved badge (for all tabs) - right of Save button
+        self.unsaved_badge = tk.Label(top_bar, text='', bg=UI.COLOR_WARNING, fg='#FFFFFF', font=(UI.FONT_FAMILY, 9, 'bold'), padx=8, pady=4)
+        self.unsaved_badge.pack(side='right', padx=(0, 6), pady=6)
+        self.unsaved_badge.pack_forget()  # Initially hidden
+        
         # Save button with dynamic tooltip based on unsaved state
         self.save_btn = self._make_icon_button(top_bar, 'save', '💾', 'tip_apply_all', command=self._apply_all_changes, bg=UI.BTN_PRIMARY_BG, fg=UI.BTN_PRIMARY_FG, relief='flat', padx=12, pady=6)
         self.save_btn.pack(side='right', padx=6, pady=6)
@@ -1465,12 +1473,12 @@ class LibraryManagerWindow(tk.Toplevel):
         form_title_frame.pack_propagate(False)
         self.form_title_label = tk.Label(form_title_frame, text='', font=(UI.FONT_FAMILY, 11, 'bold'), bg=UI.BG_TITLE, fg='#FFFFFF')
         self.form_title_label.pack(pady=12, padx=15, side='left')
-        # Unsaved badge (initially hidden)
+        # Template-specific badge for template editing (initially hidden)
         try:
-            self.unsaved_badge = tk.Label(form_title_frame, text='', bg=UI.COLOR_WARNING, fg='#FFFFFF', font=(UI.FONT_FAMILY, 9, 'bold'))
-            self.unsaved_badge.place_forget()
+            self.template_badge = tk.Label(form_title_frame, text='', bg=UI.COLOR_WARNING, fg='#FFFFFF', font=(UI.FONT_FAMILY, 9, 'bold'))
+            self.template_badge.place_forget()
         except Exception:
-            self.unsaved_badge = None
+            self.template_badge = None
 
         form_body = tk.Frame(self.template_form_frame, bg=UI.BG_SECTION)
         form_body.pack(fill='both', expand=True, padx=20, pady=15)
@@ -1746,33 +1754,33 @@ class LibraryManagerWindow(tk.Toplevel):
             )
     
     def _show_editing_badge(self):
-        """Show 'Đang chỉnh sửa' badge (orange background)."""
+        """Show 'Đang chỉnh sửa' badge (orange background) for template editing."""
         try:
-            if not self.unsaved_badge:
+            if not self.template_badge:
                 return
             
             badge_text = 'Editing' if self.lang == 'en' else 'Đang chỉnh sửa'
-            self.unsaved_badge.config(text=f'  {badge_text}  ', bg='#FF9800')  # Orange
-            self.unsaved_badge.place(relx=1.0, x=-15, y=12, anchor='e')
+            self.template_badge.config(text=f'  {badge_text}  ', bg='#FF9800')  # Orange
+            self.template_badge.place(relx=1.0, x=-15, y=12, anchor='e')
             
         except Exception:
             pass
     
     def _show_saved_badge(self):
-        """Show 'Đã lưu' badge (green background)."""
+        """Show 'Đã lưu' badge (green background) for template save."""
         try:
-            if not self.unsaved_badge:
+            if not self.template_badge:
                 return
             
             badge_text = 'Saved' if self.lang == 'en' else 'Đã lưu'
-            self.unsaved_badge.config(text=f'  {badge_text}  ', bg='#4CAF50')  # Green
-            self.unsaved_badge.place(relx=1.0, x=-15, y=12, anchor='e')
+            self.template_badge.config(text=f'  {badge_text}  ', bg='#4CAF50')  # Green
+            self.template_badge.place(relx=1.0, x=-15, y=12, anchor='e')
             
             # Hide after 3 seconds
             def hide_badge():
                 try:
-                    if self.unsaved_badge:
-                        self.unsaved_badge.place_forget()
+                    if self.template_badge:
+                        self.template_badge.place_forget()
                 except Exception:
                     pass
             
@@ -1784,8 +1792,8 @@ class LibraryManagerWindow(tk.Toplevel):
     def _hide_template_badge(self):
         """Hide template badge (used when viewing locked template)."""
         try:
-            if self.unsaved_badge:
-                self.unsaved_badge.place_forget()
+            if self.template_badge:
+                self.template_badge.place_forget()
         except Exception:
             pass
 
@@ -3187,6 +3195,10 @@ class LibraryManagerWindow(tk.Toplevel):
                 hunt_path = data_dir / 'hunt_config.json'
                 with hunt_path.open('w', encoding='utf-8') as f:
                     json.dump(self.hunt_cfg, f, ensure_ascii=False, indent=2)
+            # Clear unsaved state after successful save
+            self.changes_made = {'monsters_changed': False, 'skills_changed': False, 'timing_applied': False}
+            self._mark_unsaved(False)
+            
             # Report and close
             messagebox.showinfo(self._t('success_title'), self._t('changes_applied'))
             self._on_window_close(force_apply=True)
