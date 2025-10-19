@@ -1,4 +1,4 @@
-# Sprint 19 - Template Badge Timing Fix
+# Sprint 19 - Badge System Improvements
 
 **Date**: October 19, 2025  
 **Status**: ✅ Completed
@@ -7,13 +7,19 @@
 
 ## 🎯 Objectives
 
-Fix template badge hiển thị sai thời điểm:
+**Phase 1**: Fix template badge hiển thị sai thời điểm
 - ❌ Badge "Chưa lưu" xuất hiện ngay khi chọn template (chưa edit)
 - ✅ Badge chỉ hiển thị khi thực sự unlock và edit
+
+**Phase 2**: Relocate global badge to top bar
+- ❌ Badge trong tab area, gây nhầm lẫn giữa local và global state
+- ✅ Badge trong top bar cạnh nút Save, phản ánh trạng thái toàn cục
 
 ---
 
 ## 📋 Changes
+
+### Phase 1: Template Badge Timing Fix
 
 ### 1. Hide Badge on Template Selection
 **File**: `lib/ui/library_manager.py`
@@ -85,10 +91,70 @@ python app_gui.py
 
 ---
 
+### Phase 2: Global Badge Relocation
+
+### 1. Badge Separation
+**Before**: 1 badge cho cả global và template → conflict
+**After**: 2 badge riêng biệt
+```python
+self.unsaved_badge = None   # Global badge in top bar (all tabs)
+self.template_badge = None  # Template badge in monster tab
+```
+
+### 2. Global Badge in Top Bar
+**Location**: Right of Save button in `top_bar`
+```python
+# Global unsaved badge (for all tabs)
+self.unsaved_badge = tk.Label(top_bar, text='', 
+    bg=UI.COLOR_WARNING, fg='#FFFFFF', 
+    font=(UI.FONT_FAMILY, 9, 'bold'), padx=8, pady=4)
+self.unsaved_badge.pack(side='right', padx=(0, 6), pady=6)
+self.unsaved_badge.pack_forget()  # Initially hidden
+```
+
+**Visual**:
+```
+┌────────────────────────────────────────────────┐
+│ [Title]              [CHƯA LƯU] [💾] [✖]      │ ← Top bar
+├────────────────────────────────────────────────┤
+│ [Quái Vật] [Kỹ Năng] [Timing]                 │
+└────────────────────────────────────────────────┘
+```
+
+### 3. Template Badge Methods Updated
+All template badge methods now use `self.template_badge`:
+- `_show_editing_badge()` → Orange "Đang chỉnh sửa"
+- `_show_saved_badge()` → Green "Đã lưu" (3s)
+- `_hide_template_badge()` → Hide when locked
+
+### 4. Global Badge Tracking
+```python
+def _mark_unsaved(self, state: bool):
+    """Show/hide global badge (tracks all 3 tabs)."""
+    if state:
+        self.unsaved_badge.pack(side='right', padx=(0, 6), pady=6)
+    else:
+        self.unsaved_badge.pack_forget()
+```
+
+Tracks changes from:
+- Tab 1: Quái Vật (monsters)
+- Tab 2: Kỹ Năng (skills)  
+- Tab 3: Timing (calculations)
+
+---
+
 ## 📚 Documentation
 
+**Phase 1**:
 - **Bugfix Detail**: `docs/sprints/sprint19/BUGFIX_TEMPLATE_BADGE_PREMATURE_DISPLAY.md`
 - **Test Script**: `tests/demo_template_badge_timing.py`
+
+**Phase 2**:
+- **UX Enhancement**: `docs/sprints/sprint19/UX_GLOBAL_BADGE_RELOCATION.md`
+- **Test Script**: `tests/demo_global_badge_relocation.py`
+
+**Related**:
 - **Previous Feature**: `docs/UPDATE_TEMPLATE_INSTANT_SAVE.md`
 
 ---
@@ -99,13 +165,34 @@ python app_gui.py
 - Sprint 18 Phase 4: Template lock/unlock với instant save
 - Implemented badge system (orange/green)
 
-**This Sprint**:
+**This Sprint - Phase 1**:
 - Fixed badge premature display
-- Resolved badge conflict between global and template badges
-- Improved UX logic
+- Resolved badge conflict in template callbacks
+- Improved template badge timing
+
+**This Sprint - Phase 2**:
+- Relocated global badge to top bar
+- Separated global and template badge systems
+- Improved UX clarity for multi-tab state tracking
+
+---
+
+## ✅ Final Results
+
+### Phase 1
+- ✅ Template badge chỉ hiển thị khi unlock
+- ✅ Không còn conflict trong callbacks
+- ✅ Logic rõ ràng: locked = hidden, unlocked = orange
+
+### Phase 2
+- ✅ Global badge trong top bar cạnh Save button
+- ✅ Badge visible across all 3 tabs
+- ✅ Clear separation: global vs template badge
+- ✅ Better UX: badge near related action
 
 ---
 
 **Status**: ✅ Production Ready  
-**Lines Changed**: ~15 lines in `lib/ui/library_manager.py`  
-**Impact**: High (UX clarity improvement)
+**Total Lines Changed**: ~30 lines in `lib/ui/library_manager.py`  
+**Impact**: High (Major UX clarity improvement)  
+**Risk**: Low (Non-breaking changes)
