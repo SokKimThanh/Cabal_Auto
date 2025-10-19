@@ -1,0 +1,14 @@
+Main project context lives here (docs/context). If you're looking for the previous long-form context, it was maintained at:
+
+- assets/documents/Ngữ cảnh tạo auto cabal.txt
+
+This docs/context folder is the new home for consolidated context. You can migrate content incrementally by copying sections from the file above into this document structure.
+
+Suggested structure for future updates:
+- 00_INTRODUCTION.md
+- 10_PRODUCT_GOALS.md
+- 20_TECH_STACK.md
+- 30_FEATURES_AND_SPRINTS.md
+- 40_DATA_SCHEMAS.md
+- 50_UI_UX_GUIDES.md
+- 60_CHANGELOG.md

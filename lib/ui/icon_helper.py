@@ -40,16 +40,24 @@ class IconHelper:
         # Get project root
         if getattr(sys, 'frozen', False):
             # Running as compiled executable
-            self.root_dir = Path(sys.executable).parent
+            base_dir = Path(sys.executable).parent
         else:
-            # Running as script
-            self.root_dir = Path(__file__).parent.parent
+            # Running from source: project root is three levels up (lib/ui/* -> project root)
+            # __file__ = <project>/lib/ui/icon_helper.py
+            # parents[0]=ui, [1]=lib, [2]=<project>
+            try:
+                base_dir = Path(__file__).resolve().parents[2]
+            except Exception:
+                # Fallback to previous behavior (may be lib folder)
+                base_dir = Path(__file__).parent.parent
         
-        # Icon directory
-        self.icon_dir = self.root_dir / 'images' / 'icons'
-        
-        # Create directory if it doesn't exist
-        self.icon_dir.mkdir(parents=True, exist_ok=True)
+        # Icon directories (prefer new assets path, fallback to legacy images/icons)
+        self.icon_dirs = [
+            base_dir / 'assets' / 'images' / 'icons',
+            base_dir / 'images' / 'icons',
+        ]
+        # Ensure primary icon directory exists
+        self.icon_dirs[0].mkdir(parents=True, exist_ok=True)
         
         # Icon cache
         self._cache = {}
@@ -98,11 +106,17 @@ class IconHelper:
             return fallback or '❓'
         
         icon_file, emoji = self.icon_map[name]
-        icon_path = self.icon_dir / icon_file
+        # Resolve first existing icon path across known dirs
+        icon_path = None
+        for d in self.icon_dirs:
+            p = d / icon_file
+            if p.exists():
+                icon_path = p
+                break
         
         # Try to load icon file
         try:
-            if icon_path.exists():
+            if icon_path and icon_path.exists():
                 # Prefer PIL resize if available for crisp icons
                 if Image is not None and ImageTk is not None and size > 0:
                     try:
@@ -171,8 +185,11 @@ class IconHelper:
             return False
         
         icon_file = self.icon_map[name][0]
-        icon_path = self.icon_dir / icon_file
-        return icon_path.exists()
+        for d in self.icon_dirs:
+            p = d / icon_file
+            if p.exists():
+                return True
+        return False
 
 
 # Global instance

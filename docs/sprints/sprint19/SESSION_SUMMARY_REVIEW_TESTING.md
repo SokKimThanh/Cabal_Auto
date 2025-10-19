@@ -160,7 +160,7 @@
 - Tasks #4-8: Timing, refactor, integration
 
 **Updated Files**:
-- `assets/documents/Ngữ cảnh tạo auto cabal.txt` (Sprint 19 section expanded)
+- `docs/context/CONTEXT_MAIN.txt` (Sprint 19 section expanded)
 - `docs/sprints/sprint19/SPRINT19_CONTEXT_UPDATE.md` (new comprehensive summary)
 
 ---

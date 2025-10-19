@@ -6,7 +6,7 @@
 
 ## 📝 What Was Updated
 
-Updated main context file: `assets/documents/Ngữ cảnh tạo auto cabal.txt`
+Updated main context file: `docs/context/CONTEXT_MAIN.txt`
 
 ### Changes Made:
 

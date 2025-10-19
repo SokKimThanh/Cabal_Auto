@@ -283,7 +283,7 @@ Sprint 16 được thiết kế dựa trên feedback thực tế:
 
 - Full proposal: `docs/REDESIGN_PROPOSAL_SPRINT16.md`
 - Planning summary: `docs/sprints/SPRINT16_PLANNING_SUMMARY.md`
-- Current context: `assets/documents/Ngữ cảnh tạo auto cabal.txt`
+- Current context: `docs/context/CONTEXT_MAIN.txt`
 
 ---
 

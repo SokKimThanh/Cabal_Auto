@@ -389,7 +389,7 @@ Updates appropriate data:
 1. **This document** - Sprint 19 Task #1 completion summary
 
 ### Context Updated
-- `assets/documents/Ngữ cảnh tạo auto cabal.txt` - Added Sprint 19 planning section
+- `docs/context/CONTEXT_MAIN.txt` - Added Sprint 19 planning section
 
 ### Files to Update (Next)
 - `docs/INDEX.md` - Add library manager documentation

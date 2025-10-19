@@ -334,10 +334,10 @@ python app_gui.py
 
 ## 📚 Documentation
 
-- **Full Documentation**: `assets/documents/Ngữ cảnh tạo auto cabal.txt`
-- **Project Summary**: `docs/PROJECT_SUMMARY.py`
-- **Sprint 15 Guide**: `docs/sprints/SPRINT15_COMPLETE.md`
-- **API Docs**: See README in each directory (lib/, data/, tests/, etc.)
+- Main context: `docs/context/CONTEXT_MAIN.txt` (moved from `assets/documents/Ngữ cảnh tạo auto cabal.txt`)
+- Project Summary: `docs/PROJECT_SUMMARY.py`
+- Sprint 15 Guide: `docs/sprints/SPRINT15_COMPLETE.md`
+- API Docs: See README in each directory (lib/, data/, tests/, etc.)
 
 ## 🤝 Contributing
 
