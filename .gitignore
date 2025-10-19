@@ -313,3 +313,4 @@ dist/
 # !hunt_config.json.example
 # !monsters.json.example
 # !skills.json.example
+__pycache__/*.cpython-*.pyc

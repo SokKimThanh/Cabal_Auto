@@ -107,11 +107,20 @@ class IconHelper:
         
         icon_file, emoji = self.icon_map[name]
         # Resolve first existing icon path across known dirs
+        # Try both specified extension and .png fallback
         icon_path = None
+        icon_stem = Path(icon_file).stem  # e.g., 'save' from 'save.ico'
+        extensions = [Path(icon_file).suffix, '.png', '.ico']  # Try specified first, then fallbacks
+        
         for d in self.icon_dirs:
-            p = d / icon_file
-            if p.exists():
-                icon_path = p
+            for ext in extensions:
+                if not ext:  # Skip empty extension
+                    continue
+                p = d / f"{icon_stem}{ext}"
+                if p.exists():
+                    icon_path = p
+                    break
+            if icon_path:
                 break
         
         # Try to load icon file

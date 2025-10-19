@@ -63,11 +63,12 @@ except Exception:
 
 # Local ToolTip class removed; using centralized attach_i18n_tooltip from lib.tooltip
 
-
-CONFIG_PATH = Path(__file__).parent / 'data' / 'config.json'
-HUNT_CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
-MONSTER_DB_PATH = Path(__file__).parent / 'data' / 'monsters.json'
-SKILL_DB_PATH = Path(__file__).parent / 'data' / 'skills.json'
+# All data files centralized in lib/data/ for consistency
+_LIB_DATA_DIR = Path(__file__).parent / 'lib' / 'data'
+CONFIG_PATH = _LIB_DATA_DIR / 'config.json'
+HUNT_CONFIG_PATH = _LIB_DATA_DIR / 'hunt_config.json'
+MONSTER_DB_PATH = _LIB_DATA_DIR / 'monsters.json'
+SKILL_DB_PATH = _LIB_DATA_DIR / 'skills.json'
 
 
 def _normalize_window_bounds(value):
