@@ -7,16 +7,16 @@
     "3",
     "4"
   ],
-  "attack_press_ms": 60,
-  "target_cycle_delay": 0.2,
+  "attack_press_ms": 100,
+  "target_cycle_delay": 0.6,
   "search_interval": 0.25,
-  "attack_interval": 0.15,
+  "attack_interval": 0.4,
   "template_path": "assets/images/monsters/coc_go__capture_1760736387994.png",
   "region": null,
   "confidence": 0.85,
   "grayscale": true,
-  "lost_timeout_sec": 0.5,
-  "attack_min_duration_sec": 5.0,
+  "lost_timeout_sec": 0.75,
+  "attack_min_duration_sec": 30.0,
   "bring_to_front_each_cycle": false,
   "skill_slots": [
     {

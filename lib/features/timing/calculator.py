@@ -28,9 +28,15 @@ import math
 class TimingRecommendation:
     """Recommended timing parameters for hunt configuration."""
     
-    # Core timing values
+    # Core timing values - Main 2 values
     lost_timeout_sec: float
     attack_min_duration_sec: float
+    
+    # Additional timing values - NEW
+    attack_press_ms: int  # Key hold duration in milliseconds
+    target_cycle_delay: float  # Delay between target switches
+    search_interval: float  # Template search frequency
+    attack_interval: float  # Delay between attacks
     
     # Calculation details
     estimated_kill_time_sec: float
@@ -119,9 +125,33 @@ def calculate_timing(
     attack_duration = estimated_kill_time_sec * (1.0 + attack_duration_margin)
     attack_duration = max(min_attack_duration, min(max_attack_duration, attack_duration))
     
+    # === Calculate additional timing parameters ===
+    
+    # 1. attack_press_ms: Key hold duration
+    # Based on skill cast time, typically 50-100ms is safe
+    # Faster APS = shorter press to avoid lag
+    attack_press_ms = int(max(50, min(100, 500 / attacks_per_second)))
+    
+    # 2. target_cycle_delay: Delay between target switches
+    # Should be > time_per_hit to avoid switching mid-attack
+    target_cycle_delay = round(max(0.15, time_per_hit * 1.2), 2)
+    
+    # 3. search_interval: Template search frequency
+    # Faster search = better detection, but more CPU
+    # Should be < time_per_hit for responsive detection
+    search_interval = round(max(0.1, min(0.3, time_per_hit * 0.5)), 2)
+    
+    # 4. attack_interval: Delay between attacks
+    # Should be slightly less than time_per_hit to maintain rhythm
+    attack_interval = round(max(0.1, time_per_hit * 0.8), 2)
+    
     return TimingRecommendation(
         lost_timeout_sec=round(lost_timeout, 2),
         attack_min_duration_sec=round(attack_duration, 2),
+        attack_press_ms=attack_press_ms,
+        target_cycle_delay=target_cycle_delay,
+        search_interval=search_interval,
+        attack_interval=attack_interval,
         estimated_kill_time_sec=round(estimated_kill_time_sec, 2),
         hits_to_kill=hits_to_kill,
         lost_timeout_margin=lost_timeout_margin,

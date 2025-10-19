@@ -3699,6 +3699,36 @@ Track progress at:
         )
         self.timing_results.pack(fill='both', expand=True)
         
+        # === Preview Settings Section ===
+        preview_label = tk.Label(
+            scrollable_frame,
+            text=f"{'Preview Settings' if self.lang == 'en' else '🔍 Xem Trước Cài Đặt'}",
+            font=(UI.FONT_FAMILY, 11, 'bold'),
+            bg='white',
+            fg='#FF9800'
+        )
+        preview_label.pack(fill='x', padx=10, pady=(10, 5))
+        
+        preview_frame = tk.LabelFrame(
+            scrollable_frame,
+            bg='#FFF3E0',
+            bd=2,
+            relief='groove'
+        )
+        preview_frame.pack(fill='x', padx=10, pady=5)
+        
+        self.timing_preview = tk.Text(
+            preview_frame,
+            height=40,  # Increased to 40 to show all: formulas + behavior explanation
+            state='disabled',
+            bg='#FFF3E0',
+            font=('Consolas', 8),  # Smaller font to fit more content
+            wrap='word',
+            padx=10,
+            pady=10
+        )
+        self.timing_preview.pack(fill='both', expand=True)
+        
         # Apply button
         apply_btn_frame = tk.Frame(scrollable_frame, bg='white')
         apply_btn_frame.pack(fill='x', padx=10, pady=(5, 15))
@@ -3720,14 +3750,44 @@ Track progress at:
         )
         self.timing_apply_btn.pack(expand=True)
         
-        # Initialize data
-        self._refresh_timing_monsters()
-        self._refresh_timing_skills()
+        # === Execution Confirmation Section (Hidden initially) ===
+        self.timing_confirmation_frame = tk.LabelFrame(
+            scrollable_frame,
+            bg='#E8F5E9',
+            bd=2,
+            relief='groove'
+        )
+        # Don't pack yet - will show after Apply
         
-        # Store references
+        confirm_label = tk.Label(
+            self.timing_confirmation_frame,
+            text=f"{'✅ Execution Confirmation' if self.lang == 'en' else '✅ Xác Nhận Thực Thi'}",
+            font=(UI.FONT_FAMILY, 11, 'bold'),
+            bg='#E8F5E9',
+            fg='#2E7D32'
+        )
+        confirm_label.pack(fill='x', padx=10, pady=(10, 5))
+        
+        self.timing_confirmation_text = tk.Text(
+            self.timing_confirmation_frame,
+            height=35,
+            state='disabled',
+            bg='#E8F5E9',
+            font=('Consolas', 8),
+            wrap='word',
+            padx=10,
+            pady=10
+        )
+        self.timing_confirmation_text.pack(fill='both', expand=True, padx=5, pady=(0, 10))
+        
+        # Store references FIRST (before calling refresh methods!)
         self.timing_monster_combo = monster_combo
         self.timing_skill_combo = skill_combo
         self.timing_calculation_result = None
+        
+        # Initialize data AFTER references are stored
+        self._refresh_timing_monsters()
+        self._refresh_timing_skills()
     
     def _refresh_timing_monsters(self):
         """Refresh monster dropdown in timing tab"""
@@ -3754,6 +3814,13 @@ Track progress at:
                 self._on_timing_skill_select(None)
         except Exception as e:
             print(f"Error loading skills for timing tab: {e}")
+    
+    def _update_text_widget(self, widget, text):
+        """Helper to update read-only text widget"""
+        widget.config(state='normal')
+        widget.delete('1.0', 'end')
+        widget.insert('1.0', text)
+        widget.config(state='disabled')
     
     def _on_timing_monster_select(self, event):
         """Handle monster selection in timing tab"""
@@ -3926,6 +3993,136 @@ Track progress at:
         text += f"\n{'='*50}\n"
         
         self._update_text_widget(self.timing_results, text)
+        
+        # Update preview
+        self._update_timing_preview(result)
+    
+    def _update_timing_preview(self, result):
+        """Update preview section with settings to be applied"""
+        # Calculate base values for formula display
+        time_per_hit = 1.0 / result.attacks_per_second
+        
+        if self.lang == 'vi':
+            preview_text = (
+                f"📋 CÀI ĐẶT SẼ ĐƯỢC ÁP DỤNG:\n"
+                f"{'─'*60}\n"
+                f"📊 DỮ LIỆU ĐẦU VÀO:\n"
+                f"  • Monster HP: {result.monster_hp:,.0f}\n"
+                f"  • Damage/hit: {result.damage_per_hit:,.0f}\n"
+                f"  • Attack Speed: {result.attacks_per_second:.2f} hits/s\n"
+                f"  • Time/hit: {time_per_hit:.2f}s (= 1 / {result.attacks_per_second:.2f})\n"
+                f"  • Hits to kill: {result.hits_to_kill} hits (= HP / Damage)\n"
+                f"  • Kill time: {result.estimated_kill_time_sec:.2f}s (= {result.hits_to_kill} / {result.attacks_per_second:.2f})\n\n"
+                f"⏱️  TIMING CƠ BẢN:\n"
+                f"  • attack_press_ms: {result.attack_press_ms} ms\n"
+                f"    📐 Công thức: max(50, min(100, 500/APS))\n"
+                f"    💡 APS càng cao → nhấn phím càng nhanh\n\n"
+                f"  • target_cycle_delay: {result.target_cycle_delay:.2f}s\n"
+                f"    📐 Công thức: max(0.15, time_per_hit × 1.2)\n"
+                f"    💡 Đợi lâu hơn 1 hit để tránh đổi target giữa chừng\n\n"
+                f"  • search_interval: {result.search_interval:.2f}s\n"
+                f"    📐 Công thức: max(0.1, min(0.3, time_per_hit × 0.5))\n"
+                f"    💡 Tìm nhanh hơn thời gian 1 hit để phát hiện kịp\n\n"
+                f"  • attack_interval: {result.attack_interval:.2f}s\n"
+                f"    📐 Công thức: max(0.1, time_per_hit × 0.8)\n"
+                f"    💡 Đánh hơi nhanh hơn rhythm tự nhiên\n\n"
+                f"🎯 TIMEOUT & DURATION:\n"
+                f"  • lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
+                f"    📐 Công thức: time_per_hit × (1 + {result.lost_timeout_margin:.0%} margin)\n"
+                f"    💡 Cho phép lag detection giữa các đòn\n\n"
+                f"  • attack_min_duration_sec: {result.attack_min_duration_sec:.2f}s\n"
+                f"    📐 Công thức: kill_time × (1 + {result.attack_duration_margin:.0%} margin)\n"
+                f"    💡 Đảm bảo đánh đủ lâu ngay cả khi template mất tạm thời\n\n"
+                f"{'─'*60}\n"
+                f"🤖 MÔ TẢ HÀNH VI AUTO:\n"
+                f"{'─'*60}\n"
+                f"1️⃣ PHA TÌM KIẾM (Mỗi {result.search_interval:.2f}s):\n"
+                f"   → Quét màn hình tìm hình ảnh quái vật\n"
+                f"   → Tìm nhanh = Phản ứng kịp thời khi quái xuất hiện\n\n"
+                f"2️⃣ KHÓA MỤC TIÊU:\n"
+                f"   → Nhấn phím 'Z' để chọn quái vật\n"
+                f"   → Đợi {result.target_cycle_delay:.2f}s trước khi thử chọn lại\n"
+                f"   → Tránh đổi target lung tung giữa lúc đánh\n\n"
+                f"3️⃣ CHU KỲ TẤN CÔNG (Mỗi {result.attack_interval:.2f}s):\n"
+                f"   → Nhấn phím tấn công giữ {result.attack_press_ms}ms\n"
+                f"   → Thả phím và đợi {result.attack_interval:.2f}s\n"
+                f"   → Lặp lại nhịp điệu: Đánh → Chờ → Đánh → Chờ\n"
+                f"   → Dự kiến: {result.hits_to_kill} đòn trong ~{result.estimated_kill_time_sec:.1f}s để hạ gục\n\n"
+                f"4️⃣ GIÁM SÁT TEMPLATE:\n"
+                f"   → Nếu quái biến mất > {result.lost_timeout_sec:.2f}s:\n"
+                f"      ❌ Dừng đánh (target mất/chết rồi)\n"
+                f"   → Nếu quái còn thấy:\n"
+                f"      ✅ Tiếp tục đánh ít nhất {result.attack_min_duration_sec:.2f}s\n"
+                f"      (Dù template nhấp nháy vẫn đánh tiếp)\n\n"
+                f"5️⃣ XÁC NHẬN TIÊU DIỆT:\n"
+                f"   → Sau {result.attack_min_duration_sec:.2f}s HOẶC mất target:\n"
+                f"   → Quay lại PHA TÌM KIẾM (bước 1)\n"
+                f"   → Vòng lặp tự động tiếp tục\n"
+                f"{'─'*60}\n"
+                f"💡 Nhấn 'Apply' để lưu vào Hunt Config"
+            )
+        else:
+            preview_text = (
+                f"📋 SETTINGS TO BE APPLIED:\n"
+                f"{'─'*60}\n"
+                f"📊 INPUT DATA:\n"
+                f"  • Monster HP: {result.monster_hp:,.0f}\n"
+                f"  • Damage/hit: {result.damage_per_hit:,.0f}\n"
+                f"  • Attack Speed: {result.attacks_per_second:.2f} hits/s\n"
+                f"  • Time/hit: {time_per_hit:.2f}s (= 1 / {result.attacks_per_second:.2f})\n"
+                f"  • Hits to kill: {result.hits_to_kill} hits (= HP / Damage)\n"
+                f"  • Kill time: {result.estimated_kill_time_sec:.2f}s (= {result.hits_to_kill} / {result.attacks_per_second:.2f})\n\n"
+                f"⏱️  BASIC TIMING:\n"
+                f"  • attack_press_ms: {result.attack_press_ms} ms\n"
+                f"    📐 Formula: max(50, min(100, 500/APS))\n"
+                f"    💡 Higher APS → shorter press\n\n"
+                f"  • target_cycle_delay: {result.target_cycle_delay:.2f}s\n"
+                f"    📐 Formula: max(0.15, time_per_hit × 1.2)\n"
+                f"    💡 Wait longer than 1 hit to avoid mid-attack switching\n\n"
+                f"  • search_interval: {result.search_interval:.2f}s\n"
+                f"    📐 Formula: max(0.1, min(0.3, time_per_hit × 0.5))\n"
+                f"    💡 Search faster than hit time for responsive detection\n\n"
+                f"  • attack_interval: {result.attack_interval:.2f}s\n"
+                f"    📐 Formula: max(0.1, time_per_hit × 0.8)\n"
+                f"    💡 Attack slightly faster than natural rhythm\n\n"
+                f"🎯 TIMEOUT & DURATION:\n"
+                f"  • lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
+                f"    📐 Formula: time_per_hit × (1 + {result.lost_timeout_margin:.0%} margin)\n"
+                f"    💡 Allow detection lag between hits\n\n"
+                f"  • attack_min_duration_sec: {result.attack_min_duration_sec:.2f}s\n"
+                f"    📐 Formula: kill_time × (1 + {result.attack_duration_margin:.0%} margin)\n"
+                f"    💡 Ensure attacking long enough even if template temporarily lost\n\n"
+                f"{'─'*60}\n"
+                f"🤖 AUTO BEHAVIOR EXPLANATION:\n"
+                f"{'─'*60}\n"
+                f"1️⃣ SEARCH PHASE (Every {result.search_interval:.2f}s):\n"
+                f"   → Scan screen to find monster template\n"
+                f"   → Fast search = Quick response when monster appears\n\n"
+                f"2️⃣ TARGET LOCK:\n"
+                f"   → Press 'Z' key to target monster\n"
+                f"   → Wait {result.target_cycle_delay:.2f}s before next target attempt\n"
+                f"   → This prevents target switching during combat\n\n"
+                f"3️⃣ ATTACK CYCLE (Every {result.attack_interval:.2f}s):\n"
+                f"   → Press attack key for {result.attack_press_ms}ms\n"
+                f"   → Release and wait {result.attack_interval:.2f}s\n"
+                f"   → Repeat rhythm: Attack → Wait → Attack → Wait\n"
+                f"   → Expected: {result.hits_to_kill} hits in ~{result.estimated_kill_time_sec:.1f}s to kill\n\n"
+                f"4️⃣ TEMPLATE MONITORING:\n"
+                f"   → If monster disappears for > {result.lost_timeout_sec:.2f}s:\n"
+                f"      ❌ Stop attacking (target lost/dead)\n"
+                f"   → If monster visible:\n"
+                f"      ✅ Keep attacking for at least {result.attack_min_duration_sec:.2f}s\n"
+                f"      (Even if template flickers, continue attacking)\n\n"
+                f"5️⃣ KILL CONFIRMATION:\n"
+                f"   → After {result.attack_min_duration_sec:.2f}s OR target lost:\n"
+                f"   → Return to SEARCH PHASE (step 1)\n"
+                f"   → Loop continues automatically\n"
+                f"{'─'*60}\n"
+                f"💡 Click 'Apply' to save to Hunt Config"
+            )
+        
+        self._update_text_widget(self.timing_preview, preview_text)
+
     
     def _get_timing_confidence(self, result) -> str:
         """Determine confidence level of calculation"""
@@ -3939,22 +4136,221 @@ Track progress at:
     def _apply_timing_to_config(self):
         """Apply calculated timing to hunt config"""
         if not hasattr(self, 'timing_calculation_result') or self.timing_calculation_result is None:
+            messagebox.showwarning(
+                self._t('error_title'),
+                'Please calculate timing first' if self.lang == 'en' else 'Vui lòng tính toán timing trước'
+            )
             return
         
         result = self.timing_calculation_result
         
-        # Update hunt config
-        self.hunt_cfg['lost_timeout'] = result.lost_timeout_sec
-        self.hunt_cfg['attack_min_duration'] = result.attack_min_duration_sec
+        # Confirm before applying
+        confirm_msg = (
+            f"Apply ALL timing settings to Hunt Config?\n\n"
+            f"⏱️  Basic Timing:\n"
+            f"• attack_press_ms: {result.attack_press_ms} ms\n"
+            f"• target_cycle_delay: {result.target_cycle_delay:.2f}s\n"
+            f"• search_interval: {result.search_interval:.2f}s\n"
+            f"• attack_interval: {result.attack_interval:.2f}s\n\n"
+            f"🎯 Timeout & Duration:\n"
+            f"• lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
+            f"• attack_min_duration_sec: {result.attack_min_duration_sec:.2f}s"
+        ) if self.lang == 'en' else (
+            f"Áp dụng TẤT CẢ cài đặt timing vào Hunt Config?\n\n"
+            f"⏱️  Timing Cơ Bản:\n"
+            f"• attack_press_ms: {result.attack_press_ms} ms\n"
+            f"• target_cycle_delay: {result.target_cycle_delay:.2f}s\n"
+            f"• search_interval: {result.search_interval:.2f}s\n"
+            f"• attack_interval: {result.attack_interval:.2f}s\n\n"
+            f"🎯 Timeout & Duration:\n"
+            f"• lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
+            f"• attack_min_duration_sec: {result.attack_min_duration_sec:.2f}s"
+        )
+        
+        if not messagebox.askyesno(self._t('confirm_title'), confirm_msg):
+            return
+        
+        # Store old values for comparison
+        old_values = {
+            'attack_press_ms': self.hunt_cfg.get('attack_press_ms', 0),
+            'target_cycle_delay': self.hunt_cfg.get('target_cycle_delay', 0),
+            'search_interval': self.hunt_cfg.get('search_interval', 0),
+            'attack_interval': self.hunt_cfg.get('attack_interval', 0),
+            'lost_timeout_sec': self.hunt_cfg.get('lost_timeout_sec', 0),
+            'attack_min_duration_sec': self.hunt_cfg.get('attack_min_duration_sec', 0)
+        }
+        
+        # Update hunt config with ALL timing values
+        self.hunt_cfg['attack_press_ms'] = result.attack_press_ms
+        self.hunt_cfg['target_cycle_delay'] = result.target_cycle_delay
+        self.hunt_cfg['search_interval'] = result.search_interval
+        self.hunt_cfg['attack_interval'] = result.attack_interval
+        self.hunt_cfg['lost_timeout_sec'] = result.lost_timeout_sec
+        self.hunt_cfg['attack_min_duration_sec'] = result.attack_min_duration_sec
         
         # Mark as changed
         self.changes_made['timing_applied'] = True
         self._mark_unsaved(True)
         
-        messagebox.showinfo(
-            self._t('success_title'),
-            self._t('timing_applied_success')
+        # Show success with what changed
+        success_msg = (
+            f"✅ All timing settings applied successfully!\n\n"
+            f"⏱️  Basic Timing:\n"
+            f"• attack_press_ms: {old_values['attack_press_ms']} → {result.attack_press_ms} ms\n"
+            f"• target_cycle_delay: {old_values['target_cycle_delay']:.2f}s → {result.target_cycle_delay:.2f}s\n"
+            f"• search_interval: {old_values['search_interval']:.2f}s → {result.search_interval:.2f}s\n"
+            f"• attack_interval: {old_values['attack_interval']:.2f}s → {result.attack_interval:.2f}s\n\n"
+            f"🎯 Timeout & Duration:\n"
+            f"• lost_timeout_sec: {old_values['lost_timeout_sec']:.2f}s → {result.lost_timeout_sec:.2f}s\n"
+            f"• attack_min_duration_sec: {old_values['attack_min_duration_sec']:.2f}s → {result.attack_min_duration_sec:.2f}s\n\n"
+            f"💾 Remember to save changes!"
+        ) if self.lang == 'en' else (
+            f"✅ Đã áp dụng tất cả cài đặt timing thành công!\n\n"
+            f"⏱️  Timing Cơ Bản:\n"
+            f"• attack_press_ms: {old_values['attack_press_ms']} → {result.attack_press_ms} ms\n"
+            f"• target_cycle_delay: {old_values['target_cycle_delay']:.2f}s → {result.target_cycle_delay:.2f}s\n"
+            f"• search_interval: {old_values['search_interval']:.2f}s → {result.search_interval:.2f}s\n"
+            f"• attack_interval: {old_values['attack_interval']:.2f}s → {result.attack_interval:.2f}s\n\n"
+            f"🎯 Timeout & Duration:\n"
+            f"• lost_timeout_sec: {old_values['lost_timeout_sec']:.2f}s → {result.lost_timeout_sec:.2f}s\n"
+            f"• attack_min_duration_sec: {old_values['attack_min_duration_sec']:.2f}s → {result.attack_min_duration_sec:.2f}s\n\n"
+            f"💾 Nhớ lưu thay đổi!"
         )
+        
+        messagebox.showinfo(self._t('success_title'), success_msg)
+        
+        # === SAVE TO HUNT CONFIG AND SHOW INLINE CONFIRMATION ===
+        try:
+            # Save hunt_cfg to file immediately (local save)
+            hunt_config_path = Path(__file__).parent.parent / 'data' / 'hunt_config.json'
+            with open(hunt_config_path, 'w', encoding='utf-8') as f:
+                json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
+            
+            # Show inline confirmation (not popup)
+            self._show_timing_execution_inline()
+            
+        except Exception as e:
+            messagebox.showerror(
+                self._t('error_title'),
+                f"Failed to save hunt config: {str(e)}"
+            )
+    
+    def _show_timing_execution_inline(self):
+        """Show inline preview of how auto will execute with saved settings"""
+        result = self.timing_calculation_result
+        
+        if self.lang == 'vi':
+            preview_msg = (
+                f"{'='*60}\n"
+                f"✅ ĐÃ LƯU VÀO hunt_config.json\n"
+                f"{'='*60}\n\n"
+                f"🤖 XÁC NHẬN: AUTO SẼ THỰC THI NHƯ SAU:\n"
+                f"{'─'*60}\n\n"
+                f"📂 FILE: lib/data/hunt_config.json\n"
+                f"🔧 CÁC THÔNG SỐ ĐÃ LƯU:\n\n"
+                f"  attack_press_ms: {result.attack_press_ms}\n"
+                f"  target_cycle_delay: {result.target_cycle_delay}\n"
+                f"  search_interval: {result.search_interval}\n"
+                f"  attack_interval: {result.attack_interval}\n"
+                f"  lost_timeout_sec: {result.lost_timeout_sec}\n"
+                f"  attack_min_duration_sec: {result.attack_min_duration_sec}\n\n"
+                f"{'─'*60}\n"
+                f"⚡ QUÁ TRÌNH THỰC THI KHI CHẠY AUTO:\n"
+                f"{'─'*60}\n\n"
+                f"1. auto_hunt.py ĐỌC FILE hunt_config.json\n"
+                f"   → Load các thông số timing vừa lưu\n\n"
+                f"2. TÌM KIẾM QUÁI (mỗi {result.search_interval:.2f}s):\n"
+                f"   → while True:\n"
+                f"       template_matcher.locate_template()\n"
+                f"       time.sleep({result.search_interval:.2f})\n\n"
+                f"3. NHẤN PHÍM Z ĐỂ TARGET:\n"
+                f"   → tap('z', {result.attack_press_ms})\n"
+                f"   → time.sleep({result.target_cycle_delay:.2f})\n\n"
+                f"4. TẤN CÔNG (mỗi {result.attack_interval:.2f}s):\n"
+                f"   → tap(attack_key, {result.attack_press_ms})  # GIỮ PHÍM {result.attack_press_ms}ms\n"
+                f"   → time.sleep({result.attack_interval:.2f})     # ĐỢI {result.attack_interval:.2f}s\n"
+                f"   → Lặp lại ~{result.hits_to_kill} lần (dự kiến {result.estimated_kill_time_sec:.1f}s)\n\n"
+                f"5. KIỂM TRA MẤT TARGET:\n"
+                f"   → if template_lost > {result.lost_timeout_sec:.2f}s:\n"
+                f"       break  # DỪNG ĐÁNH\n\n"
+                f"6. ĐẢM BẢO THỜI GIAN TỐI THIỂU:\n"
+                f"   → if attack_duration >= {result.attack_min_duration_sec:.2f}s:\n"
+                f"       # OK, ĐÃ ĐÁNH ĐỦ LÂU\n"
+                f"   → else: continue attacking\n\n"
+                f"{'─'*60}\n"
+                f"🔑 API GỌI THỰC TẾ:\n"
+                f"{'─'*60}\n\n"
+                f"  lib/system/win_input.py:\n"
+                f"    def tap(key, press_ms):\n"
+                f"        key_down(key)                    # ⬇️ NHẤN\n"
+                f"        time.sleep(press_ms/1000.0)      # ⏱️ GIỮ\n"
+                f"        key_up(key)                      # ⬆️ THẢ PHÍM\n\n"
+                f"  Windows API:\n"
+                f"    user32.SendInput(...)                # 🪟 WINDOWS\n"
+                f"    → CABAL Game nhận input              # 🎮 GAME\n\n"
+                f"{'='*60}\n"
+                f"✅ XÁC NHẬN: AUTO SẼ NHẤN PHÍM THẬT!\n"
+                f"{'='*60}\n"
+            )
+        else:
+            preview_msg = (
+                f"{'='*60}\n"
+                f"✅ SAVED TO hunt_config.json\n"
+                f"{'='*60}\n\n"
+                f"🤖 CONFIRMATION: AUTO WILL EXECUTE AS FOLLOWS:\n"
+                f"{'─'*60}\n\n"
+                f"📂 FILE: lib/data/hunt_config.json\n"
+                f"🔧 SAVED PARAMETERS:\n\n"
+                f"  attack_press_ms: {result.attack_press_ms}\n"
+                f"  target_cycle_delay: {result.target_cycle_delay}\n"
+                f"  search_interval: {result.search_interval}\n"
+                f"  attack_interval: {result.attack_interval}\n"
+                f"  lost_timeout_sec: {result.lost_timeout_sec}\n"
+                f"  attack_min_duration_sec: {result.attack_min_duration_sec}\n\n"
+                f"{'─'*60}\n"
+                f"⚡ EXECUTION FLOW WHEN AUTO RUNS:\n"
+                f"{'─'*60}\n\n"
+                f"1. auto_hunt.py READS hunt_config.json\n"
+                f"   → Loads saved timing parameters\n\n"
+                f"2. SEARCH FOR MONSTER (every {result.search_interval:.2f}s):\n"
+                f"   → while True:\n"
+                f"       template_matcher.locate_template()\n"
+                f"       time.sleep({result.search_interval:.2f})\n\n"
+                f"3. PRESS Z TO TARGET:\n"
+                f"   → tap('z', {result.attack_press_ms})\n"
+                f"   → time.sleep({result.target_cycle_delay:.2f})\n\n"
+                f"4. ATTACK (every {result.attack_interval:.2f}s):\n"
+                f"   → tap(attack_key, {result.attack_press_ms})  # HOLD {result.attack_press_ms}ms\n"
+                f"   → time.sleep({result.attack_interval:.2f})     # WAIT {result.attack_interval:.2f}s\n"
+                f"   → Repeat ~{result.hits_to_kill} times (est. {result.estimated_kill_time_sec:.1f}s)\n\n"
+                f"5. CHECK TARGET LOST:\n"
+                f"   → if template_lost > {result.lost_timeout_sec:.2f}s:\n"
+                f"       break  # STOP ATTACKING\n\n"
+                f"6. ENSURE MINIMUM DURATION:\n"
+                f"   → if attack_duration >= {result.attack_min_duration_sec:.2f}s:\n"
+                f"       # OK, ATTACKED LONG ENOUGH\n"
+                f"   → else: continue attacking\n\n"
+                f"{'─'*60}\n"
+                f"🔑 ACTUAL API CALLS:\n"
+                f"{'─'*60}\n\n"
+                f"  lib/system/win_input.py:\n"
+                f"    def tap(key, press_ms):\n"
+                f"        key_down(key)                    # ⬇️ PRESS\n"
+                f"        time.sleep(press_ms/1000.0)      # ⏱️ HOLD\n"
+                f"        key_up(key)                      # ⬆️ RELEASE\n\n"
+                f"  Windows API:\n"
+                f"    user32.SendInput(...)                # 🪟 WINDOWS\n"
+                f"    → CABAL Game receives input         # 🎮 GAME\n\n"
+                f"{'='*60}\n"
+                f"✅ CONFIRMED: AUTO WILL PRESS REAL KEYS!\n"
+                f"{'='*60}\n"
+            )
+        
+        # Display inline in confirmation frame
+        self._update_text_widget(self.timing_confirmation_text, preview_msg)
+        
+        # Show the confirmation frame inline
+        self.timing_confirmation_frame.pack(fill='both', expand=True, padx=10, pady=(10, 15))
     
     def _apply_all_changes(self):
         """
