@@ -4,7 +4,7 @@ import threading
 from pathlib import Path
 
 import keyboard
-from win_input import tap
+from ui.win_input import tap
 
 CONFIG_SKILLS = Path(__file__).with_name('skills.json')
 

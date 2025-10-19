@@ -2777,10 +2777,24 @@ class LibraryManagerWindow(tk.Toplevel):
         # Use capture helper
         if capture_region_and_save:
             try:
+                # Pre-wait hook to bring window forward
+                def _pre_wait_bring():
+                    try:
+                        pid = self.hunt_cfg.get('window_pid') if isinstance(self.hunt_cfg, dict) else None
+                        hwnd_cfg = self.hunt_cfg.get('window_hwnd') if isinstance(self.hunt_cfg, dict) else None
+                        if pid:
+                            self._bring_window_to_front_by_pid(int(pid))
+                        elif hwnd_cfg:
+                            self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
+                    except Exception:
+                        pass
+                
                 result = capture_region_and_save(
-                    parent=self,
-                    title='Capture Skill Image' if self.lang == 'en' else 'Chụp Hình Ảnh Kỹ Năng',
-                    initial_message='Select skill icon area' if self.lang == 'en' else 'Chọn vùng icon kỹ năng'
+                    self, 
+                    self.pil_available, 
+                    self.current_skill.get('name', ''), 
+                    self.lang, 
+                    pre_wait_hook=_pre_wait_bring
                 )
                 
                 if result and result.get('image_path'):

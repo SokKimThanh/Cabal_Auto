@@ -568,8 +568,8 @@ It takes about 2 minutes. Let's begin!"""
         )
         subtitle.pack(pady=(0, 15))
         
-        # Load monsters
-        monsters_path = os.path.join(os.path.dirname(__file__), 'data', 'monsters.json')
+        # Load monsters (data/ is in parent directory)
+        monsters_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'monsters.json')
         try:
             with open(monsters_path, 'r', encoding='utf-8') as f:
                 self.monsters_data = json.load(f)
@@ -656,8 +656,8 @@ It takes about 2 minutes. Let's begin!"""
         )
         subtitle.pack(pady=(0, 15))
         
-        # Load skills
-        skills_path = os.path.join(os.path.dirname(__file__), 'data', 'skills.json')
+        # Load skills (data/ is in parent directory)
+        skills_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'skills.json')
         try:
             with open(skills_path, 'r', encoding='utf-8') as f:
                 self.skills_data = json.load(f)

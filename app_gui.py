@@ -2,11 +2,15 @@ import ctypes
 import json
 import math
 import os
+import sys
 import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 import copy
+
+# Add parent directory to path for lib imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog

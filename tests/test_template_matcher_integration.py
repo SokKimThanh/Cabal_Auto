@@ -19,7 +19,7 @@ print("=" * 70)
 # Test 1: Import template_matcher
 print("\n1. Testing template_matcher import...")
 try:
-    from template_matcher import locate_template, get_available_methods
+    from ui.template_matcher import locate_template, get_available_methods
     print("   ✅ template_matcher imported successfully")
 except ImportError as e:
     print(f"   ❌ Failed to import template_matcher: {e}")
@@ -39,7 +39,7 @@ print(f"   Recommended: {methods['recommended']}")
 # Test 3: Import auto_hunt
 print("\n3. Testing auto_hunt.py integration...")
 try:
-    import auto_hunt
+    import ui.auto_hunt as auto_hunt
     print("   ✅ auto_hunt imported successfully")
     # Check if locate_template is imported in auto_hunt
     if hasattr(auto_hunt, 'locate_template'):
@@ -69,7 +69,7 @@ print("\n5. Checking locate_target function signatures...")
 try:
     # Check auto_hunt.locate_target
     import inspect
-    import auto_hunt
+    import ui.auto_hunt as auto_hunt
     sig = inspect.signature(auto_hunt.locate_target)
     print(f"   auto_hunt.locate_target signature: {sig}")
     print("   ✅ auto_hunt.locate_target signature verified")

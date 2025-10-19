@@ -4,7 +4,7 @@
 import sys
 sys.path.insert(0, 'e:/Cabal_Auto')
 
-from auto_hunt import load_cfg, get_monster_rotation_targets
+from ui.auto_hunt import load_cfg, get_monster_rotation_targets
 
 print("=" * 60)
 print("Phase 3 Test: Monster Rotation Logic")

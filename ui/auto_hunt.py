@@ -9,7 +9,8 @@ from lib.system.hunt_logger import get_hunt_logger
 from lib.vision.template_matcher import locate_template
 from lib.features.skills.runtime import SkillRuntime
 
-CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
+# CONFIG_PATH points to data/ in parent directory (project root)
+CONFIG_PATH = Path(__file__).parent.parent / 'data' / 'hunt_config.json'
 
 
 def load_cfg():
@@ -230,9 +231,9 @@ def main():
     if bring_front:
         bring_window_to_front(window_title)
 
-    # Initialize skill runtime if skills.json exists
+    # Initialize skill runtime if skills.json exists (data/ in parent directory)
     skill_runtime = None
-    skills_path = Path(__file__).parent / 'data' / 'skills.json'
+    skills_path = Path(__file__).parent.parent / 'data' / 'skills.json'
     if skills_path.exists():
         try:
             with open(skills_path, 'r', encoding='utf-8') as f:

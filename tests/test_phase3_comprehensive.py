@@ -15,7 +15,7 @@ print("=" * 70)
 print("\n[TEST 1] Config Migration from monster_selected_name")
 print("-" * 70)
 
-from auto_hunt import load_cfg
+from ui.auto_hunt import load_cfg
 cfg = load_cfg()
 
 print(f"✓ monster_selected_name: {cfg.get('monster_selected_name')}")
@@ -39,7 +39,7 @@ test_cfg['monster_list'] = [
     {'name': 'Desert Fungus', 'priority': 3, 'enabled': False},  # Disabled
 ]
 
-from auto_hunt import get_monster_rotation_targets
+from ui.auto_hunt import get_monster_rotation_targets
 
 # Test sequence mode
 test_cfg['rotation_mode'] = 'sequence'
