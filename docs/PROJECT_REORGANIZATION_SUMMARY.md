@@ -201,3 +201,52 @@ python docs/sprints/sprint15_demo.py
 **Quality**: Professional 🌟  
 **User Impact**: None (seamless) 🎯  
 **Developer Experience**: Excellent 👍
+
+---
+
+## 📚 Functional Classification (By Feature)
+
+This section classifies files by functional areas to make navigation easier without moving code. Use it as a map when working on specific features.
+
+### Monsters
+- Data: `data/monsters.json`
+- UI (Hunt): `app_gui.py` (monster dropdown, auto-apply, status)
+- Library Manager: `lib/library_manager.py` (Monster tab, dialogs)
+- Matching: `lib/template_matcher.py` (template confidence, regions)
+- Capture/Preview tools: `app_gui.py` (overlay preview, test recognition)
+
+### Skills
+- Data: `data/skills.json`
+- Runtime: `lib/skill_runtime.py` (attack/buff lanes, scheduling)
+- Migration: `lib/skill_migrator.py` (image auto-copy, schema migrate)
+- UI (Hunt): `app_gui.py` (skill_slots display, buff fields)
+- Library Manager: `lib/library_manager.py` (Skill tab - planned Task #3)
+
+### Timing Calculation
+- Calculator: `lib/timing_calculator.py`
+- UI: `app_gui.py` (timing dialog, presets)
+- Library Manager: `lib/library_manager.py` (Timing tab - planned Task #4)
+
+### Setup & Wizard
+- Setup Wizard: `setup_wizard.py` (5 steps, i18n-enabled)
+- App Integration: `app_gui.py` (auto-launch wizard, language)
+
+### Window & Input
+- Windows Input: `lib/win_input.py` (SendInput)
+- Capture helper: `lib/capture_helper.py` (screenshots, overlays)
+- Icon helper: `lib/icon_helper.py`
+
+### Internationalization & Tooltips
+- Translations: `lib/translations.py` (GLOBAL, library_manager, setup_wizard)
+- Tooltip system: `lib/tooltip.py` (centralized i18n tooltips)
+
+### Logging
+- Structured logging: `lib/hunt_logger.py` (JSONL + text)
+- Logs: `logs/hunt_structured.jsonl`
+
+### Scripts & Tests
+- CLI/Sample scripts: `scripts/main.py`, `scripts/main_safe.py`, `scripts/main_skills.py`
+- Tests: `tests/opencv_test.py`, `tests/test_template_matcher_integration.py`, `tests/test_advanced_monster_dialog.py`
+
+Notes
+- This is a logical grouping only; no file moves were performed in this update.

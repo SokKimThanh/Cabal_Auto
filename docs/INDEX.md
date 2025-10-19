@@ -1,6 +1,6 @@
 # Documentation Index
 
-Tổ chức tài liệu dự án Cabal Auto - Organized October 18, 2025
+Tổ chức tài liệu dự án Cabal Auto - Organized October 19, 2025
 
 ## 📁 Cấu trúc thư mục / Folder Structure
 
@@ -81,9 +81,27 @@ docs/
 - **[PROJECT_REORGANIZATION_SUMMARY.md](PROJECT_REORGANIZATION_SUMMARY.md)** - Tóm tắt tổ chức lại
 - **[SESSION_SUMMARY_2025-10-18.md](SESSION_SUMMARY_2025-10-18.md)** - Tóm tắt phiên làm việc gần nhất
 
-## 🚀 Sprint Documentation
+## 🚀 Sprint Documentation (Chronological)
 
-### Sprint 18 - 4-Tab UI Reorganization (Current)
+### Sprint 19 - Library Manager (Monster/Skill/Timing)
+**Mục tiêu**: Hoàn thiện Library Manager với 3 tab (Quái Vật, Kỹ Năng, Tính Toán Thời Gian), phục vụ cấu hình và tính toán timing áp dụng cho Hunt.
+
+**Tài liệu**:
+- [SPRINT19_CONTEXT_UPDATE.md](sprints/sprint19/SPRINT19_CONTEXT_UPDATE.md) - Tổng hợp tiến độ Sprint 19 (Tasks 1, 2, 2.5 hoàn tất; hôm nay tiếp tục chỉnh sửa màn hình Quái Vật)
+- [SPRINT19_TASK1_COMPLETE.md](sprints/sprint19/SPRINT19_TASK1_COMPLETE.md) - Khung cửa sổ Library Manager
+- [SPRINT19_TASK2_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2_COMPLETE.md) - Tab Thư viện Quái Vật (core)
+- [SPRINT19_TASK2.5_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2.5_COMPLETE.md) - Hộp thoại Add/Edit Quái Vật
+- [SPRINT19_TASK2.5_FINAL_SUMMARY.md](sprints/sprint19/SPRINT19_TASK2.5_FINAL_SUMMARY.md) - Tổng kết Task 2.5
+- [SPRINT19_TASK2_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2_COMPLETE.md) - Hoàn tất Tab Quái Vật
+- [SPRINT19_TASK2.6_CARD_REDESIGN.md](sprints/sprint19/SPRINT19_TASK2.6_CARD_REDESIGN.md) - Redesign card UI
+- [SPRINT19_TASK2.6_REDESIGN.md](sprints/sprint19/SPRINT19_TASK2.6_REDESIGN.md) - Phác thảo redesign
+- [SPRINT19_TASK2.6_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2.6_COMPLETE.md) - Hoàn tất redesign UI
+- [CODE_REVIEW_TASK2.5.md](sprints/sprint19/CODE_REVIEW_TASK2.5.md) - Code review Task 2.5
+- [SESSION_SUMMARY_REVIEW_TESTING.md](sprints/sprint19/SESSION_SUMMARY_REVIEW_TESTING.md) - Tổng hợp review + testing
+
+**Tiến độ**: Đang tiếp tục (hôm nay có chỉnh sửa màn hình Quái Vật để phục vụ tính timing)
+
+### Sprint 18 - 4-Tab UI Reorganization
 **Mục tiêu**: Tổ chức lại giao diện thành 4 tab (Hunt, Setup, Stats, Help) để dễ sử dụng hơn
 
 **Tài liệu**:
@@ -165,6 +183,6 @@ Xem thư mục [sprints/](sprints/) để tìm tài liệu các sprint cũ hơn
 
 ---
 
-**Cập nhật lần cuối / Last Updated**: October 18, 2025 (Late Evening)  
+**Cập nhật lần cuối / Last Updated**: October 19, 2025 (Afternoon)  
 **Người tổ chức / Organized By**: AI Assistant
-**Latest Changes**: Added timing unhashable dict fix + Advanced Window Settings guide
+**Latest Changes**: Added Sprint 19 section and links; clarified chronological ordering; noted Monster UI changes today.

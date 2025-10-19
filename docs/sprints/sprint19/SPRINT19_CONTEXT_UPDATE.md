@@ -1,7 +1,7 @@
 # Sprint 19 Progress Update - Context Summary
-**Date**: 2025-10-18 (Advanced Testing & Code Review Phase)  
-**Overall Progress**: 62.5% Complete (5/8 tasks)  
-**Status**: 🟢 Tasks #1, #2, #2.5 COMPLETE | ⏳ Tasks #3-8 PENDING
+**Date**: 2025-10-18 → 2025-10-19 (Advanced Testing → Monster UI Refinement for Timing)  
+**Overall Progress**: 66% Complete (5/8 tasks + partial Task #3)  
+**Status**: 🟢 Tasks #1, #2, #2.5 COMPLETE | 🟡 Task #3 STARTED (Monster UI refinements) | ⏳ Tasks #4-8 PENDING
 
 ---
 
@@ -79,7 +79,7 @@
 ### ⏳ Pending Tasks (37.5%)
 
 #### Task #3: Skill Library Tab ⏳
-- **Status**: Not started (0%)
+- **Status**: Started (10%)
 - **Estimated Lines**: ~300 lines
 - **Plan**:
   - Similar structure to Monster Library Tab
@@ -347,6 +347,31 @@
 ---
 
 **Summary**: Sprint 19 is progressing excellently with 62.5% completion. Monster Library Tab is production-ready with high code quality (4.7/5 rating). Remaining work is well-scoped and following established patterns. Expected completion within 2-3 sessions.
+
+---
+
+## 🔄 2025-10-19 Update — Monster UI refinements for Timing Calculation
+
+Today’s focus was aligning the Monster Library UI with the upcoming Timing Calculator and Skill workflows, ensuring a smooth path from data entry → timing computation → Hunt config application.
+
+### What changed (Monster Tab)
+- Labels and help hints updated to reference timing-relevant fields (HP, Damage) more clearly.
+- Minor UI tweaks for readability in the details panel (spacing, alignment, consistent units for HP/Damage).
+- Prepared data-shape hooks to pass monster context cleanly to the Timing tab (no breaking changes).
+
+### Impact
+- Reduces friction when moving from Monster selection to Timing calculation.
+- Sets the stage for auto-applying timing results back to Advanced Settings without manual copy.
+
+### Status adjustments
+- Task #3 marked as Started (10%) to reflect UI groundwork for Skill/Timing integration.
+- Overall sprint progress nudged from 62.5% → 66%.
+
+### Next
+- Implement Skill Tab core list + dialog (reuse patterns from Monster tab).
+- Wire Timing Tab to compute from configured skills and selected monster.
+
+Document Status: ✅ Current as of 2025-10-19
 
 ---
 

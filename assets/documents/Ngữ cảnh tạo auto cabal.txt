@@ -3014,3 +3014,30 @@ Quality Gates
 - Tests: PASS (không thay đổi logic cốt lõi; các test hiện hữu không bị ảnh hưởng)
 
 — Kết thúc tham chiếu 2025-10-19 —
+
+## Cập nhật nối mạch 2025-10-18 → 2025-10-19
+
+Mục tiêu: Kết nối nhịp phát triển từ Sprint 16 (Wizard & i18n) qua Sprint 18 (4-tab) đến Sprint 19 (Library Manager) mà không đứt mạch thông tin.
+
+1) Sprint 16 (hoàn tất):
+- Wizard 5 bước + i18n hoàn chỉnh; Tooltip hóa tập trung giúp thống nhất trải nghiệm.
+- Ảnh hưởng: mọi màn hình mới (kể cả Library Manager) kế thừa cơ chế tooltip + dịch tự động.
+
+2) Sprint 18 Phase 4 (đang 75%):
+- Tái tổ chức UI thành 4 tab (Hunt/Setup/Stats/Help) và cải tiến chọn cửa sổ.
+- Ảnh hưởng: Hunt đơn giản hơn, tạo chỗ cho Library Manager tách riêng.
+
+3) Sprint 19 (tiếp tục hôm nay):
+- Đã hoàn tất khung Library Manager + Tab Quái Vật + Dialog Add/Edit (Tasks #1, #2, #2.5).
+- Hôm nay tinh chỉnh UI Tab Quái Vật để phục vụ tính toán thời gian (Timing): làm rõ HP/Damage, căn chỉnh chi tiết, chuẩn bị hook dữ liệu.
+- Đánh dấu Task #3 (Skill Tab) đã bắt đầu 10% để phản ánh groundwork giao diện cho tích hợp Timing.
+
+4) Tác động tổng thể:
+- Chuỗi thao tác người dùng rõ ràng: Quái (HP/Damage, templates) → Kỹ năng (loại, cooldown/cast) → Tính toán timing → Áp dụng về Hunt.
+- Cấu trúc tài liệu đã cập nhật: `docs/INDEX.md` bổ sung mục Sprint 19 theo thứ tự thời gian; `docs/sprints/sprint19/SPRINT19_CONTEXT_UPDATE.md` ghi nhận cập nhật ngày 2025-10-19.
+
+5) Hướng tiếp theo (ngắn hạn):
+- Hoàn thiện Skill Tab (danh sách + dialog) theo pattern Monster.
+- Lắp Timing Tab để tính tự động từ kỹ năng và quái chọn, hỗ trợ apply về Advanced Settings.
+
+Trạng thái tài liệu: Đồng bộ đến 2025-10-19; không còn khoảng trống giữa Sprint 16 → 18 → 19.
