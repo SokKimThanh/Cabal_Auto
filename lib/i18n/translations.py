@@ -549,6 +549,7 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'tip_auto_detect': 'Auto-detect region from match',
         'tip_save_monster': 'Save monster',
         'tip_save_skill': 'Save skill',
+        'tip_template_save_temp': 'Hold 2s to save template',
     },
     'vi': {
         'library_manager_title': 'Quản Lý Thư Viện',
@@ -578,6 +579,7 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'tip_auto_detect': 'Tự động dò vùng từ kết quả',
         'tip_save_monster': 'Lưu quái',
         'tip_save_skill': 'Lưu kỹ năng',
+        'tip_template_save_temp': 'Giữ 2s để lưu template',
     }
 }
 

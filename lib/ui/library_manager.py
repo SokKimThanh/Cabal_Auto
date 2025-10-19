@@ -492,6 +492,13 @@ class LibraryManagerWindow(tk.Toplevel):
             'width': tk.StringVar(),
             'height': tk.StringVar(),
         }
+        # Template edit state
+        self.template_locked = True  # Start locked
+        self.template_name_entry = None
+        self.template_threshold_entry = None
+        self.template_region_entries = {}
+        self.template_toggle_btn = None  # Edit/Save toggle button
+        self.template_temp_saved = False  # Track if template was temporarily saved
 
         # Build UI
         self._build_ui()
@@ -1443,7 +1450,9 @@ class LibraryManagerWindow(tk.Toplevel):
         edit_toolbar.pack(fill='x', padx=10, pady=(10, 0))
         # Right-align with 4px margins
         self._make_icon_button(edit_toolbar, 'delete', '🗑️', 'tip_template_delete', command=self._delete_template_inline, bg=UI.BTN_DANGER_BG, fg=UI.BTN_DANGER_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
-        self._make_icon_button(edit_toolbar, 'edit', '✏️', 'tip_template_edit', command=self._edit_template_inline, bg=UI.BTN_INFO_BG, fg=UI.BTN_INFO_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
+        # Toggle button (edit ↔ save) - Store reference for dynamic icon change
+        self.template_toggle_btn = self._make_icon_button(edit_toolbar, 'edit', '✏️', 'tip_template_edit', command=self._toggle_template_edit, bg=UI.BTN_INFO_BG, fg=UI.BTN_INFO_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold'))
+        self.template_toggle_btn.pack(side='right', padx=4, pady=4)
         self._make_icon_button(edit_toolbar, 'add', '➕', 'tip_template_add', command=self._add_template_inline, bg=UI.COLOR_ACCENT, fg='#FFFFFF', relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
 
         # Small guidance hint below toolbar
@@ -1478,7 +1487,8 @@ class LibraryManagerWindow(tk.Toplevel):
         name_col.grid(row=0, column=0, sticky='nsew', padx=(0, 6))
         tk.Label(name_col, text=('Template Name' if self.lang=='en' else 'Tên Template'), bg=UI.BG_SECTION, font=(UI.FONT_FAMILY, 9, 'bold'), fg=UI.COLOR_PRIMARY_TEXT, anchor='w').pack(fill='x', pady=(0,4))
         self.template_name_var = tk.StringVar()
-        tk.Entry(name_col, textvariable=self.template_name_var, font=UI.FONT_TEXT, relief='solid', borderwidth=1).pack(fill='x', ipady=6)
+        self.template_name_entry = tk.Entry(name_col, textvariable=self.template_name_var, font=UI.FONT_TEXT, relief='solid', borderwidth=1, state='readonly')
+        self.template_name_entry.pack(fill='x', ipady=6)
         tk.Label(name_col, text=('Tên hiển thị của mẫu hình.' if self.lang=='vi' else 'Display name for this template.'), bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL, anchor='w').pack(fill='x', pady=(4,0))
         # Threshold column
         th_col = tk.Frame(top_row, bg=UI.BG_SECTION)
@@ -1487,7 +1497,8 @@ class LibraryManagerWindow(tk.Toplevel):
         th_input = tk.Frame(th_col, bg=UI.BG_SECTION)
         th_input.pack(fill='x')
         self.template_threshold_var = tk.StringVar(value='0.85')
-        tk.Entry(th_input, textvariable=self.template_threshold_var, font=UI.FONT_TEXT, width=12, relief='solid', borderwidth=1).pack(side='left', ipady=6)
+        self.template_threshold_entry = tk.Entry(th_input, textvariable=self.template_threshold_var, font=UI.FONT_TEXT, width=12, relief='solid', borderwidth=1, state='readonly')
+        self.template_threshold_entry.pack(side='left', ipady=6)
         tk.Label(th_input, text='  (0.0 - 1.0)', bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL).pack(side='left', padx=5)
         tk.Label(th_col, text=(
             'Gợi ý: 0.80 - 0.90. Cao hơn -> ít nhận nhầm, nhưng khó khớp.' if self.lang=='vi' else 
@@ -1508,9 +1519,12 @@ class LibraryManagerWindow(tk.Toplevel):
             'width': tk.StringVar(),
             'height': tk.StringVar(),
         }
+        self.template_region_entries = {}
         for key, lbl in [('left','L'),('top','T'),('width','W'),('height','H')]:
             tk.Label(region_inputs, text=f"{lbl}:", bg='#E3F2FD').pack(side='left')
-            tk.Entry(region_inputs, textvariable=self.template_region_vars[key], width=6, font=('Arial', 10), relief='solid', borderwidth=1).pack(side='left', padx=(2,8), ipady=4)
+            entry = tk.Entry(region_inputs, textvariable=self.template_region_vars[key], width=6, font=('Arial', 10), relief='solid', borderwidth=1, state='readonly')
+            entry.pack(side='left', padx=(2,8), ipady=4)
+            self.template_region_entries[key] = entry
         tk.Label(region_frame, text=(
             'Để trống để dùng biên cửa sổ game.' if self.lang=='vi' else 'Leave blank to use game window bounds.'
         ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,6))
@@ -1590,9 +1604,210 @@ class LibraryManagerWindow(tk.Toplevel):
             self._suspend_template_var_traces = False
         self.template_form_mode = 'edit'
         self.template_form_edit_index = idx
+        # Lock fields after selection
+        self._lock_template_fields()
         # Reset unsaved badge view based on current change state
         try:
             self._mark_unsaved(any(self.changes_made.values()))
+        except Exception:
+            pass
+
+    # === Template Lock/Unlock Management ===
+    def _lock_template_fields(self):
+        """Lock all template edit fields."""
+        self.template_locked = True
+        try:
+            if self.template_name_entry:
+                self.template_name_entry.config(state='readonly')
+            if self.template_threshold_entry:
+                self.template_threshold_entry.config(state='readonly')
+            for entry in self.template_region_entries.values():
+                entry.config(state='readonly')
+        except Exception:
+            pass
+    
+    def _unlock_template_fields(self):
+        """Unlock all template edit fields for editing."""
+        self.template_locked = False
+        self.template_temp_saved = False  # Reset temp save status
+        try:
+            if self.template_name_entry:
+                self.template_name_entry.config(state='normal')
+            if self.template_threshold_entry:
+                self.template_threshold_entry.config(state='normal')
+            for entry in self.template_region_entries.values():
+                entry.config(state='normal')
+        except Exception:
+            pass
+    
+    def _toggle_template_edit(self):
+        """Toggle between locked (view) and unlocked (edit) mode."""
+        if self.template_locked:
+            # Unlock for editing
+            self._unlock_template_fields()
+            # Update button icon to save.ico
+            self._update_toggle_button_icon('save', '💾', 'tip_template_save_temp')
+        else:
+            # Save mode - start hold-to-save
+            self._start_hold_to_save()
+    
+    def _update_toggle_button_icon(self, icon_name: str, fallback: str, tooltip_key: str):
+        """Update toggle button icon and tooltip."""
+        if not self.template_toggle_btn:
+            return
+        try:
+            # Get new icon
+            new_icon = self._icon(icon_name, fallback)
+            if new_icon:
+                self.template_toggle_btn.config(image=new_icon)
+                # Keep reference
+                if not hasattr(self, '_toggle_btn_icons'):
+                    self._toggle_btn_icons = []
+                self._toggle_btn_icons.append(new_icon)
+            else:
+                # Fallback to text
+                self.template_toggle_btn.config(text=fallback)
+            
+            # Update tooltip
+            try:
+                from lib.ui.tooltip import attach_i18n_tooltip
+                # Unbind old tooltip
+                if hasattr(self.template_toggle_btn, '_i18n_tooltip'):
+                    old_tooltip = getattr(self.template_toggle_btn, '_i18n_tooltip')
+                    try:
+                        self.template_toggle_btn.unbind('<Enter>')
+                        self.template_toggle_btn.unbind('<Leave>')
+                        self.template_toggle_btn.unbind('<ButtonPress>')
+                    except Exception:
+                        pass
+                # Attach new tooltip
+                attach_i18n_tooltip(
+                    self.template_toggle_btn,
+                    tooltip_key,
+                    'library_manager',
+                    lambda: self.lang
+                )
+            except Exception:
+                pass
+        except Exception:
+            pass
+    
+    def _start_hold_to_save(self):
+        """Start hold-to-save animation and save template after 2 seconds."""
+        if not self.template_toggle_btn:
+            return
+        
+        # Create progress overlay on button
+        try:
+            # Store original button state
+            orig_bg = self.template_toggle_btn.cget('bg')
+            orig_fg = self.template_toggle_btn.cget('fg')
+            
+            # Create progress variables
+            hold_duration = 2000  # 2 seconds in milliseconds
+            steps = 20  # Animation steps
+            step_duration = hold_duration // steps
+            current_step = [0]  # Mutable container for closure
+            is_holding = [True]  # Track if still holding
+            
+            def update_progress():
+                if not is_holding[0]:
+                    # User released - reset
+                    try:
+                        self.template_toggle_btn.config(bg=orig_bg, fg=orig_fg)
+                    except Exception:
+                        pass
+                    return
+                
+                current_step[0] += 1
+                progress = current_step[0] / steps
+                
+                # Update button background to show progress (green gradient)
+                # Interpolate from info blue to success green
+                r = int(33 + (76 - 33) * progress)  # 33 (#2196F3) -> 76 (#4CAF50)
+                g = int(150 + (175 - 150) * progress)  # 150 -> 175
+                b = int(243 + (80 - 243) * progress)  # 243 -> 80
+                color = f'#{r:02x}{g:02x}{b:02x}'
+                
+                try:
+                    self.template_toggle_btn.config(bg=color)
+                except Exception:
+                    pass
+                
+                if current_step[0] >= steps:
+                    # Completed - save template
+                    self._save_template_temporarily()
+                    # Lock fields again and switch back to edit icon
+                    self._lock_template_fields()
+                    self._update_toggle_button_icon('edit', '✏️', 'tip_template_edit')
+                    self.template_toggle_btn.config(bg=orig_bg, fg=orig_fg)
+                else:
+                    # Continue animation
+                    self.after(step_duration, update_progress)
+            
+            def on_release(event):
+                is_holding[0] = False
+            
+            # Bind release event
+            self.template_toggle_btn.bind('<ButtonRelease-1>', on_release, add='+')
+            
+            # Start animation
+            update_progress()
+            
+        except Exception as e:
+            print(f"Hold-to-save error: {e}")
+            # Fallback: immediate save
+            self._save_template_temporarily()
+    
+    def _save_template_temporarily(self):
+        """Save current template data to lib/data/monsters.json temporarily."""
+        try:
+            # Mark as temp saved
+            self.template_temp_saved = True
+            
+            # Save monsters to lib/data/monsters.json
+            data_dir = self.project_root / 'lib' / 'data'
+            data_dir.mkdir(parents=True, exist_ok=True)
+            monsters_path = data_dir / 'monsters.json'
+            
+            with open(monsters_path, 'w', encoding='utf-8') as f:
+                json.dump(self.monsters, f, indent=2, ensure_ascii=False)
+            
+            # Show success badge
+            self._show_temp_save_badge()
+            
+            # Also mark as changed for main save
+            self.changes_made['monsters_changed'] = True
+            self._mark_unsaved(True)
+            
+        except Exception as e:
+            messagebox.showerror(
+                'Save Error' if self.lang == 'en' else 'Lỗi Lưu',
+                f"Failed to save template: {e}" if self.lang == 'en'
+                else f"Không thể lưu template: {e}"
+            )
+    
+    def _show_temp_save_badge(self):
+        """Show 'Đã lưu tạm' badge temporarily."""
+        try:
+            if not self.unsaved_badge:
+                return
+            
+            # Show badge with temp saved text
+            badge_text = 'Temp Saved' if self.lang == 'en' else 'Đã lưu tạm'
+            self.unsaved_badge.config(text=f'  {badge_text}  ', bg='#4CAF50')
+            self.unsaved_badge.place(relx=1.0, x=-15, y=12, anchor='e')
+            
+            # Hide after 3 seconds
+            def hide_badge():
+                try:
+                    if self.unsaved_badge:
+                        self.unsaved_badge.place_forget()
+                except Exception:
+                    pass
+            
+            self.after(3000, hide_badge)
+            
         except Exception:
             pass
 
@@ -1619,6 +1834,9 @@ class LibraryManagerWindow(tk.Toplevel):
     def _on_template_name_change(self):
         if getattr(self, '_suspend_template_var_traces', False):
             return
+        # Don't apply changes if template is locked
+        if getattr(self, 'template_locked', True):
+            return
         tmpl = self._get_current_template_ref()
         if tmpl is None:
             return
@@ -1643,6 +1861,9 @@ class LibraryManagerWindow(tk.Toplevel):
     def _on_template_path_change(self):
         if getattr(self, '_suspend_template_var_traces', False):
             return
+        # Don't apply changes if template is locked
+        if getattr(self, 'template_locked', True):
+            return
         tmpl = self._get_current_template_ref()
         if tmpl is None:
             return
@@ -1657,6 +1878,9 @@ class LibraryManagerWindow(tk.Toplevel):
 
     def _on_template_threshold_change(self):
         if getattr(self, '_suspend_template_var_traces', False):
+            return
+        # Don't apply changes if template is locked
+        if getattr(self, 'template_locked', True):
             return
         tmpl = self._get_current_template_ref()
         if tmpl is None:
