@@ -533,6 +533,18 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'confirm_title': 'Unsaved Changes',
         'changes_applied': 'All changes have been applied successfully!',
         'success_title': 'Success',
+        # Tooltips (buttons/icon-only helpers)
+        'tip_apply_all': 'Apply all changes',
+        'tip_close_manager': 'Close Library Manager',
+        'tip_add_monster': 'Add monster',
+        'tip_template_add': 'Add template',
+        'tip_template_edit': 'Edit template',
+        'tip_template_delete': 'Delete template',
+        'tip_browse_image': 'Browse image…',
+        'tip_capture_image': 'Capture region from screen',
+        'tip_pick_region': 'Pick region (drag to select)',
+        'tip_test_recognition': 'Test template recognition',
+        'tip_auto_detect': 'Auto-detect region from match',
     },
     'vi': {
         'library_manager_title': 'Quản Lý Thư Viện',
@@ -546,5 +558,17 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'confirm_title': 'Thay Đổi Chưa Lưu',
         'changes_applied': 'Tất cả thay đổi đã được áp dụng thành công!',
         'success_title': 'Thành Công',
+        # Tooltips (buttons/icon-only helpers)
+        'tip_apply_all': 'Áp dụng tất cả thay đổi',
+        'tip_close_manager': 'Đóng Quản Lý Thư Viện',
+        'tip_add_monster': 'Thêm quái',
+        'tip_template_add': 'Thêm template',
+        'tip_template_edit': 'Sửa template',
+        'tip_template_delete': 'Xóa template',
+        'tip_browse_image': 'Chọn ảnh…',
+        'tip_capture_image': 'Chụp vùng màn hình',
+        'tip_pick_region': 'Chọn vùng (kéo để chọn)',
+        'tip_test_recognition': 'Kiểm tra nhận diện',
+        'tip_auto_detect': 'Tự động dò vùng từ kết quả',
     }
 }

@@ -45,6 +45,71 @@ try:
 except Exception:
     icon_helper = None
 
+# Lightweight tooltip helper (localized via provided text)
+class ToolTip:
+    """Simple tooltip for Tkinter widgets (no external deps)."""
+    def __init__(self, widget: tk.Widget, text: str, delay: int = 400):
+        self.widget = widget
+        self.text = text
+        self.delay = delay
+        self._after_id = None
+        self._tip_win = None
+        try:
+            widget.bind('<Enter>', self._on_enter, add='+')
+            widget.bind('<Leave>', self._on_leave, add='+')
+            widget.bind('<ButtonPress>', self._on_leave, add='+')
+        except Exception:
+            pass
+
+    def _on_enter(self, _evt=None):
+        self._cancel()
+        try:
+            self._after_id = self.widget.after(self.delay, self._show)
+        except Exception:
+            self._after_id = None
+
+    def _on_leave(self, _evt=None):
+        self._cancel()
+        self._hide()
+
+    def _show(self):
+        if self._tip_win or not self.text:
+            return
+        try:
+            x, y = self.widget.winfo_pointerxy()
+            self._tip_win = tw = tk.Toplevel(self.widget)
+            tw.wm_overrideredirect(True)
+            tw.wm_geometry(f"+{x+12}+{y+12}")
+            label = tk.Label(
+                tw,
+                text=self.text,
+                background='#ffffe0',
+                relief='solid',
+                borderwidth=1,
+                padx=6,
+                pady=3,
+                justify='left'
+            )
+            label.pack()
+        except Exception:
+            self._tip_win = None
+
+    def _hide(self):
+        try:
+            if self._tip_win is not None:
+                self._tip_win.destroy()
+        except Exception:
+            pass
+        self._tip_win = None
+
+    def _cancel(self):
+        if self._after_id is not None:
+            try:
+                self.widget.after_cancel(self._after_id)
+            except Exception:
+                pass
+            self._after_id = None
+
 # Shared capture helper
 try:
     from lib.capture_helper import capture_region_and_save
@@ -106,6 +171,42 @@ class LibraryManagerWindow(tk.Toplevel):
         except Exception:
             # On any error, return empty image name to avoid TclError
             return ''
+
+    def _make_icon_button(self, parent, icon_name: str, fallback_text: str, tooltip_key: str, command: Optional[Callable[[], Any] | str] = None, **kwargs):
+        """Create an icon-only button with hand cursor and localized tooltip.
+
+        If icon image is unavailable, falls back to emoji/text label while keeping cursor and tooltip.
+        """
+        img = None
+        try:
+            img = self._icon(icon_name, fallback_text)
+        except Exception:
+            img = None
+        # Do not pass emoji to image param; use text only when image missing
+        btn_kwargs = dict(kwargs)
+        # Ensure command is not None (Tk requires a callable or string)
+        cmd = command if command is not None else (lambda: None)
+        if img:
+            btn = tk.Button(parent, image=img, command=cmd, cursor='hand2', **btn_kwargs)
+            try:
+                # Keep a reference on the window to avoid GC
+                if not hasattr(self, '_image_refs'):
+                    self._image_refs = []
+                self._image_refs.append(img)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+        else:
+            # Emoji/text fallback if icon image missing
+            try:
+                text_fb = self._icon_text(icon_name, fallback_text)
+            except Exception:
+                text_fb = fallback_text
+            btn = tk.Button(parent, text=text_fb, command=cmd, cursor='hand2', **btn_kwargs)
+        try:
+            ToolTip(btn, self._t(tooltip_key))
+        except Exception:
+            pass
+        return btn
 
     def _icon_text(self, name: str, fallback: str) -> str:
         """Return a text/emoji fallback for non-image contexts using icon_helper when available."""
@@ -798,8 +899,8 @@ class LibraryManagerWindow(tk.Toplevel):
         # Spacer label left as title
         tk.Label(top_bar, text=self._t('library_manager_title'), bg=UI.BG_PANEL, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=8)
         # Right-aligned actions
-        tk.Button(top_bar, image=self._icon('cancel', '✖'), compound='left', text=self._t('btn_close'), command=self._on_window_close, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
-        tk.Button(top_bar, image=self._icon('save', '💾'), compound='left', text=self._t('btn_apply_all'), command=self._apply_all_changes, bg=UI.BTN_PRIMARY_BG, fg=UI.BTN_PRIMARY_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=6, pady=6)
+        self._make_icon_button(top_bar, 'cancel', '✖', 'tip_close_manager', command=self._on_window_close, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
+        self._make_icon_button(top_bar, 'save', '💾', 'tip_apply_all', command=self._apply_all_changes, bg=UI.BTN_PRIMARY_BG, fg=UI.BTN_PRIMARY_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=6, pady=6)
         
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(main_frame)
@@ -845,14 +946,11 @@ class LibraryManagerWindow(tk.Toplevel):
         header.pack(fill='x')
         header.pack_propagate(False)
 
-        tk.Button(
-            header,
-            image=self._icon('add', '➕'), compound='left',
-            text=('Add' if self.lang=='en' else 'Thêm'),
+        self._make_icon_button(
+            header, 'add', '➕', 'tip_add_monster',
             command=self._add_monster,
             bg='#4CAF50', fg='white', relief='flat',
-            font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady,
-            cursor='hand2'
+            font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady
         ).pack(side='right', padx=10, pady=6)
 
         # Search bar
@@ -1362,16 +1460,16 @@ class LibraryManagerWindow(tk.Toplevel):
         path_entry = tk.Entry(preview_tools_row, textvariable=self.template_path_var, font=UI.FONT_TEXT, state='readonly', fg=UI.COLOR_SUBTEXT, relief='solid', borderwidth=1)
         path_entry.pack(side='left', fill='x', expand=True, ipady=6)
         # Buttons inline
-        tk.Button(preview_tools_row, image=self._icon('folder', '📁'), compound='left', text=('Browse' if self.lang=='en' else 'Chọn'), command=self._browse_template_image, font=UI.FONT_BUTTON, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(6,0))
-        tk.Button(preview_tools_row, image=self._icon('capture', '📸'), compound='left', text=('Capture' if self.lang=='en' else 'Chụp'), command=lambda: self._capture_into_path_var(window=False), font=UI.FONT_BUTTON, bg='#9C27B0', fg='#FFFFFF', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(6,0))
+        self._make_icon_button(preview_tools_row, 'folder', '📁', 'tip_browse_image', command=self._browse_template_image, font=UI.FONT_BUTTON, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=10, pady=6).pack(side='left', padx=(6,0))
+        self._make_icon_button(preview_tools_row, 'capture', '📸', 'tip_capture_image', command=lambda: self._capture_into_path_var(window=False), font=UI.FONT_BUTTON, bg='#9C27B0', fg='#FFFFFF', relief='flat', padx=10, pady=6).pack(side='left', padx=(6,0))
 
         # Right: edit panel with toolbar + inline form (created but not packed until used)
         edit_toolbar = tk.Frame(self.template_edit_panel, bg=UI.BG_PANEL)
         edit_toolbar.pack(fill='x', padx=10, pady=(10, 0))
         # Right-align with 4px margins
-        tk.Button(edit_toolbar, image=self._icon('delete', '🗑️'), compound='left', text=('Delete' if self.lang=='en' else 'Xóa'), command=self._delete_template_inline, bg=UI.BTN_DANGER_BG, fg=UI.BTN_DANGER_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
-        tk.Button(edit_toolbar, image=self._icon('edit', '✏️'), compound='left', text=('Edit' if self.lang=='en' else 'Sửa'), command=self._edit_template_inline, bg=UI.BTN_INFO_BG, fg=UI.BTN_INFO_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
-        tk.Button(edit_toolbar, image=self._icon('add', '➕'), compound='left', text=('Add' if self.lang=='en' else 'Thêm'), command=self._add_template_inline, bg=UI.COLOR_ACCENT, fg='#FFFFFF', relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
+        self._make_icon_button(edit_toolbar, 'delete', '🗑️', 'tip_template_delete', command=self._delete_template_inline, bg=UI.BTN_DANGER_BG, fg=UI.BTN_DANGER_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
+        self._make_icon_button(edit_toolbar, 'edit', '✏️', 'tip_template_edit', command=self._edit_template_inline, bg=UI.BTN_INFO_BG, fg=UI.BTN_INFO_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
+        self._make_icon_button(edit_toolbar, 'add', '➕', 'tip_template_add', command=self._add_template_inline, bg=UI.COLOR_ACCENT, fg='#FFFFFF', relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
 
         # Small guidance hint below toolbar
         hint_txt = ('Chọn một template để xem trước và sửa. Dùng Thêm/Sửa/Xóa ở góc phải.' if self.lang=='vi' else 'Select a template to preview and edit. Use Add/Edit/Delete on the top-right.')
@@ -1442,9 +1540,9 @@ class LibraryManagerWindow(tk.Toplevel):
             'Để trống để dùng biên cửa sổ game.' if self.lang=='vi' else 'Leave blank to use game window bounds.'
         ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,6))
         region_btns = tk.Frame(region_frame, bg='#E3F2FD'); region_btns.pack(fill='x')
-        tk.Button(region_btns, image=self._icon('template', '🖼️'), compound='left', text=('Pick Region' if self.lang=='en' else 'Chọn vùng'), command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
-        tk.Button(region_btns, image=self._icon('search', '🔍'), compound='left', text=('Test Recognition' if self.lang=='en' else 'Kiểm tra nhận diện'), command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
-        tk.Button(region_btns, image=self._icon('info', '📋'), compound='left', text=('Auto-Detect Region' if self.lang=='en' else 'Tự động dò vùng'), command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        self._make_icon_button(region_btns, 'template', '🖼️', 'tip_pick_region', command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
+        self._make_icon_button(region_btns, 'search', '🔍', 'tip_test_recognition', command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        self._make_icon_button(region_btns, 'info', '📋', 'tip_auto_detect', command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
 
         # No Save/Cancel buttons; changes are applied immediately and persisted with Apply All (top-right)
 
