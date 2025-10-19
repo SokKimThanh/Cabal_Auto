@@ -14,7 +14,7 @@ Date: October 18, 2025
 import tkinter as tk
 from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t
 from lib.ui_style import UIStyle as UI
-from lib.translations import LIBRARY_MANAGER_TRANSLATIONS
+from lib.i18n.translations import LIBRARY_MANAGER_TRANSLATIONS
 from tkinter import ttk, messagebox, filedialog
 from typing import Callable, Optional, Dict, Any
 import json
@@ -40,22 +40,22 @@ except Exception:  # pragma: no cover - environment dependent
 
 # Icon helper
 try:
-    from lib.icon_helper import get_icon_helper
+    from lib.ui.icon_helper import get_icon_helper
     icon_helper = get_icon_helper()
 except Exception:
     icon_helper = None
 
-from lib.tooltip import attach_i18n_tooltip
+from lib.ui.tooltip import attach_i18n_tooltip
 
 # Shared capture helper
 try:
-    from lib.capture_helper import capture_region_and_save
+    from lib.ui.capture_helper import capture_region_and_save
 except Exception:
     capture_region_and_save = None  # type: ignore
 
 # Template matcher for Test Recognition and Auto-Detect Region
 try:
-    from lib.template_matcher import locate_template  # type: ignore
+    from lib.vision.template_matcher import locate_template  # type: ignore
 except Exception:
     locate_template = None  # type: ignore
 

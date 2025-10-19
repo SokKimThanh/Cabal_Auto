@@ -67,22 +67,22 @@ MOVE_MAP: Dict[str, str] = {
 
 # Import replacements (exact substring replacements)
 IMPORT_REPLACE_MAP: List[Tuple[str, str]] = [
-    ("from lib.template_matcher import", "from lib.vision.template_matcher import"),
-    ("import lib.template_matcher", "import lib.vision.template_matcher"),
+    ("from lib.vision.template_matcher import", "from lib.vision.template_matcher import"),
+    ("import lib.vision.template_matcher", "import lib.vision.template_matcher"),
 
-    ("from lib.skill_runtime import", "from lib.features.skills.runtime import"),
-    ("from lib.skill_migrator import", "from lib.features.skills.migrator import"),
-    ("from lib.timing_calculator import", "from lib.features.timing.calculator import"),
+    ("from lib.features.skills.runtime import", "from lib.features.skills.runtime import"),
+    ("from lib.features.skills.migrator import", "from lib.features.skills.migrator import"),
+    ("from lib.features.timing.calculator import", "from lib.features.timing.calculator import"),
 
-    ("from lib.library_manager import", "from lib.ui.library_manager import"),
-    ("from lib.icon_helper import", "from lib.ui.icon_helper import"),
-    ("from lib.capture_helper import", "from lib.ui.capture_helper import"),
-    ("from lib.tooltip import", "from lib.ui.tooltip import"),
+    ("from lib.ui.library_manager import", "from lib.ui.library_manager import"),
+    ("from lib.ui.icon_helper import", "from lib.ui.icon_helper import"),
+    ("from lib.ui.capture_helper import", "from lib.ui.capture_helper import"),
+    ("from lib.ui.tooltip import", "from lib.ui.tooltip import"),
 
-    ("from lib.translations import", "from lib.i18n.translations import"),
+    ("from lib.i18n.translations import", "from lib.i18n.translations import"),
 
-    ("from lib.win_input import", "from lib.system.win_input import"),
-    ("from lib.hunt_logger import", "from lib.system.hunt_logger import"),
+    ("from lib.system.win_input import", "from lib.system.win_input import"),
+    ("from lib.system.hunt_logger import", "from lib.system.hunt_logger import"),
 ]
 
 PY_GLOB = "**/*.py"
@@ -170,6 +170,25 @@ def write_backup(moved: List[Tuple[Path, Path]], modified_imports: List[Path]) -
     return backup_file
 
 
+def ensure_packages() -> None:
+    """Create __init__.py files for new package directories to ensure imports work."""
+    package_dirs = [
+        ROOT / "ui",
+        ROOT / "lib" / "ui",
+        ROOT / "lib" / "i18n",
+        ROOT / "lib" / "system",
+        ROOT / "lib" / "vision",
+        ROOT / "lib" / "features",
+        ROOT / "lib" / "features" / "skills",
+        ROOT / "lib" / "features" / "timing",
+    ]
+    for d in package_dirs:
+        d.mkdir(parents=True, exist_ok=True)
+        init_file = d / "__init__.py"
+        if not init_file.exists():
+            init_file.write_text("# Package\n", encoding="utf-8")
+
+
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(description="Project restructure utility")
     parser.add_argument("--apply", action="store_true", help="Apply changes (move files + rewrite imports)")
@@ -202,6 +221,7 @@ def main(argv: List[str]) -> int:
         print("Use --apply to perform the moves and import rewrites.")
         return 0
 
+    ensure_packages()
     moved = apply_moves(plan)
     modified_imports = apply_import_rewrites()
     backup_path = write_backup(moved, modified_imports)

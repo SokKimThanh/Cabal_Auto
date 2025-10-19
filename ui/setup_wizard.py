@@ -25,7 +25,7 @@ import importlib.util
 
 # i18n and tooltip helpers
 try:
-    from lib.tooltip import attach_i18n_tooltip
+    from lib.ui.tooltip import attach_i18n_tooltip
 except Exception:
     attach_i18n_tooltip = None  # type: ignore
 try:
@@ -39,7 +39,7 @@ except Exception:
     def i18n_set_lang(lang: str) -> None:  # type: ignore
         return None
 try:
-    from lib.translations import SETUP_WIZARD_TRANSLATIONS
+    from lib.i18n.translations import SETUP_WIZARD_TRANSLATIONS
 except Exception:
     SETUP_WIZARD_TRANSLATIONS = {}
 

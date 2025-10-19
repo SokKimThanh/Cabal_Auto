@@ -6,7 +6,7 @@ This module provides a centralized way to load icons from files,
 with automatic fallback to Unicode emoji if icons are not available.
 
 Usage:
-    from lib.icon_helper import IconHelper
+    from lib.ui.icon_helper import IconHelper
     
     icon_helper = IconHelper()
     add_icon = icon_helper.get_icon('add', fallback='➕')

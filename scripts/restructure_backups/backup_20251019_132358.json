@@ -1,0 +1,69 @@
+{
+  "moved": [
+    {
+      "src": "app_gui.py",
+      "dst": "ui\\app_gui.py"
+    },
+    {
+      "src": "setup_wizard.py",
+      "dst": "ui\\setup_wizard.py"
+    },
+    {
+      "src": "lib\\library_manager.py",
+      "dst": "lib\\ui\\library_manager.py"
+    },
+    {
+      "src": "lib\\icon_helper.py",
+      "dst": "lib\\ui\\icon_helper.py"
+    },
+    {
+      "src": "lib\\capture_helper.py",
+      "dst": "lib\\ui\\capture_helper.py"
+    },
+    {
+      "src": "lib\\tooltip.py",
+      "dst": "lib\\ui\\tooltip.py"
+    },
+    {
+      "src": "lib\\translations.py",
+      "dst": "lib\\i18n\\translations.py"
+    },
+    {
+      "src": "lib\\win_input.py",
+      "dst": "lib\\system\\win_input.py"
+    },
+    {
+      "src": "lib\\hunt_logger.py",
+      "dst": "lib\\system\\hunt_logger.py"
+    },
+    {
+      "src": "lib\\template_matcher.py",
+      "dst": "lib\\vision\\template_matcher.py"
+    },
+    {
+      "src": "lib\\skill_runtime.py",
+      "dst": "lib\\features\\skills\\runtime.py"
+    },
+    {
+      "src": "lib\\skill_migrator.py",
+      "dst": "lib\\features\\skills\\migrator.py"
+    },
+    {
+      "src": "lib\\timing_calculator.py",
+      "dst": "lib\\features\\timing\\calculator.py"
+    }
+  ],
+  "modified_imports": [
+    "auto_hunt.py",
+    "template_matcher.py",
+    "win_input.py",
+    "scripts\\restructure_project.py",
+    "ui\\app_gui.py",
+    "ui\\setup_wizard.py",
+    "lib\\ui\\icon_helper.py",
+    "lib\\ui\\library_manager.py",
+    "lib\\ui\\tooltip.py"
+  ],
+  "root": "E:\\Cabal_Auto",
+  "timestamp": "20251019_132358"
+}

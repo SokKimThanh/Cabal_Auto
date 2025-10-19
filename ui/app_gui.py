@@ -30,19 +30,19 @@ except Exception:
 
 from ctypes import wintypes
 
-from lib.template_matcher import locate_template
-from lib.translations import GLOBAL_TRANSLATIONS
-from lib.tooltip import attach_i18n_tooltip
+from lib.vision.template_matcher import locate_template
+from lib.i18n.translations import GLOBAL_TRANSLATIONS
+from lib.ui.tooltip import attach_i18n_tooltip
 from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang, GLOBAL_NS as I18N_GLOBAL
 
 try:
-    from lib.capture_helper import capture_region_and_save
+    from lib.ui.capture_helper import capture_region_and_save
 except Exception:
     capture_region_and_save = None  # type: ignore
 
-from lib.win_input import tap
-from lib.hunt_logger import get_hunt_logger
-from lib.timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
+from lib.system.win_input import tap
+from lib.system.hunt_logger import get_hunt_logger
+from lib.features.timing.calculator import calculate_timing, format_timing_recommendation, get_timing_presets
 
 
 # Register centralized translations at startup
@@ -437,7 +437,7 @@ class App(tk.Tk):
         
         # Centralized icon helper
         try:
-            from lib.icon_helper import get_icon_helper
+            from lib.ui.icon_helper import get_icon_helper
             self.icon_helper = get_icon_helper()
         except Exception:
             self.icon_helper = None
@@ -1132,7 +1132,7 @@ class App(tk.Tk):
         
         Sprint 19 Task #1: Library Manager Window
         """
-        from lib.library_manager import LibraryManagerWindow
+        from lib.ui.library_manager import LibraryManagerWindow
         
         def on_library_changes(changes):
             """Handle changes from Library Manager."""

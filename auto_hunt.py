@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pyautogui
 
-from lib.win_input import tap
-from lib.hunt_logger import get_hunt_logger
-from lib.template_matcher import locate_template
-from lib.skill_runtime import SkillRuntime
+from lib.system.win_input import tap
+from lib.system.hunt_logger import get_hunt_logger
+from lib.vision.template_matcher import locate_template
+from lib.features.skills.runtime import SkillRuntime
 
 CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
 
