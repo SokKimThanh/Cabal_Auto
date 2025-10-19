@@ -32,6 +32,7 @@ from ctypes import wintypes
 
 from lib.template_matcher import locate_template
 from lib.translations import GLOBAL_TRANSLATIONS
+from lib.tooltip import attach_i18n_tooltip
 from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang, GLOBAL_NS as I18N_GLOBAL
 
 try:
@@ -56,35 +57,7 @@ try:
 except Exception:
     show_setup_wizard = None  # type: ignore
 
-class ToolTip:
-    """Simple tooltip helper for Tkinter widgets."""
-    def __init__(self, widget, text):
-        self.widget = widget
-        self.text = text
-        self.tooltip_window = None
-
-    def show_tooltip(self, event=None):
-        try:
-            if self.tooltip_window:
-                return
-            x = event.x_root + 10 if event else self.widget.winfo_rootx() + 10
-            y = event.y_root + 10 if event else self.widget.winfo_rooty() + 20
-            tw = tk.Toplevel(self.widget)
-            tw.wm_overrideredirect(True)
-            tw.wm_geometry(f"+{x}+{y}")
-            label = tk.Label(tw, text=self.text, background="#ffffe0", relief='solid', borderwidth=1, padx=5, pady=3)
-            label.pack()
-            self.tooltip_window = tw
-        except Exception:
-            pass
-
-    def hide_tooltip(self, event=None):
-        try:
-            if self.tooltip_window:
-                self.tooltip_window.destroy()
-                self.tooltip_window = None
-        except Exception:
-            self.tooltip_window = None
+# Local ToolTip class removed; using centralized attach_i18n_tooltip from lib.tooltip
 
 
 CONFIG_PATH = Path(__file__).parent / 'data' / 'config.json'
@@ -1003,13 +976,13 @@ class App(tk.Tk):
         self.setup_lost_timeout_var = tk.StringVar(value=str(self.hunt_cfg.get('lost_timeout_sec', 1.2)))
         lost_entry = tk.Entry(self.adv_frame, textvariable=self.setup_lost_timeout_var, width=8)
         lost_entry.grid(row=3, column=1, sticky='w', pady=4)
-        ToolTip(lost_entry, self._t('tooltip_lost_timeout'))
+        attach_i18n_tooltip(lost_entry, key='tooltip_lost_timeout', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
         
         tk.Label(self.adv_frame, text=self._t('attack_duration')).grid(row=3, column=2, sticky='e', padx=(16,4), pady=4)
         self.setup_attack_duration_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_min_duration_sec', 1.5)))
         attack_entry = tk.Entry(self.adv_frame, textvariable=self.setup_attack_duration_var, width=8)
         attack_entry.grid(row=3, column=3, sticky='w', pady=4)
-        ToolTip(attack_entry, self._t('tooltip_attack_duration'))
+        attach_i18n_tooltip(attack_entry, key='tooltip_attack_duration', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
         
         # Template threshold
         tk.Label(self.adv_frame, text=self._t('template_threshold')).grid(row=4, column=0, sticky='e', pady=4)
@@ -2851,7 +2824,7 @@ class App(tk.Tk):
         bounds_frame.grid(row=4, column=0, sticky='w', pady=(8,0))
         bounds_label = tk.Label(bounds_frame, text=self._t('monster_bounds'))
         bounds_label.grid(row=0, column=0, columnspan=5, sticky='w')
-        ToolTip(bounds_label, self._t('tooltip_window_bounds'))
+        attach_i18n_tooltip(bounds_label, key='tooltip_window_bounds', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
         headings = ['L', 'T', 'W', 'H']
         for idx, title in enumerate(headings):
             tk.Label(bounds_frame, text=title).grid(row=1, column=idx, padx=(0,4), sticky='w')
@@ -2900,7 +2873,7 @@ class App(tk.Tk):
         tk.Label(template_form, text=self._t('monster_template_threshold')).grid(row=2, column=0, sticky='e')
         threshold_entry = tk.Entry(template_form, textvariable=self.monster_template_threshold_var, width=8)
         threshold_entry.grid(row=2, column=1, sticky='w', padx=(4,0))
-        ToolTip(threshold_entry, self._t('tooltip_threshold'))
+        attach_i18n_tooltip(threshold_entry, key='tooltip_threshold', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
         tk.Label(template_form, text=self._t('monster_template_threshold_hint'), fg='gray').grid(row=3, column=0, columnspan=3, sticky='w')
 
         region_frame = tk.Frame(template_form)
@@ -3819,11 +3792,11 @@ class App(tk.Tk):
         # Buff-specific fields (will be shown/hidden based on skill type)
         self.skill_duration_label = tk.Label(container, text=self._t('skill_duration'))
         self.skill_duration_entry = tk.Entry(container, textvariable=self.skill_duration_var, width=12)
-        ToolTip(self.skill_duration_entry, self._t('skill_duration_hint'))
+        attach_i18n_tooltip(self.skill_duration_entry, key='skill_duration_hint', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
         
         self.skill_pre_refresh_label = tk.Label(container, text=self._t('skill_pre_refresh'))
         self.skill_pre_refresh_entry = tk.Entry(container, textvariable=self.skill_pre_refresh_var, width=12)
-        ToolTip(self.skill_pre_refresh_entry, self._t('skill_pre_refresh_hint'))
+        attach_i18n_tooltip(self.skill_pre_refresh_entry, key='skill_pre_refresh_hint', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
 
         tk.Label(container, text=self._t('skill_image')).grid(row=7, column=2, sticky='e')
         tk.Entry(container, textvariable=self.skill_image_var, width=24).grid(row=7, column=3, sticky='we', padx=(4,0))
