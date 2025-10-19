@@ -45,70 +45,7 @@ try:
 except Exception:
     icon_helper = None
 
-# Lightweight tooltip helper (localized via provided text)
-class ToolTip:
-    """Simple tooltip for Tkinter widgets (no external deps)."""
-    def __init__(self, widget: tk.Widget, text: str, delay: int = 400):
-        self.widget = widget
-        self.text = text
-        self.delay = delay
-        self._after_id = None
-        self._tip_win = None
-        try:
-            widget.bind('<Enter>', self._on_enter, add='+')
-            widget.bind('<Leave>', self._on_leave, add='+')
-            widget.bind('<ButtonPress>', self._on_leave, add='+')
-        except Exception:
-            pass
-
-    def _on_enter(self, _evt=None):
-        self._cancel()
-        try:
-            self._after_id = self.widget.after(self.delay, self._show)
-        except Exception:
-            self._after_id = None
-
-    def _on_leave(self, _evt=None):
-        self._cancel()
-        self._hide()
-
-    def _show(self):
-        if self._tip_win or not self.text:
-            return
-        try:
-            x, y = self.widget.winfo_pointerxy()
-            self._tip_win = tw = tk.Toplevel(self.widget)
-            tw.wm_overrideredirect(True)
-            tw.wm_geometry(f"+{x+12}+{y+12}")
-            label = tk.Label(
-                tw,
-                text=self.text,
-                background='#ffffe0',
-                relief='solid',
-                borderwidth=1,
-                padx=6,
-                pady=3,
-                justify='left'
-            )
-            label.pack()
-        except Exception:
-            self._tip_win = None
-
-    def _hide(self):
-        try:
-            if self._tip_win is not None:
-                self._tip_win.destroy()
-        except Exception:
-            pass
-        self._tip_win = None
-
-    def _cancel(self):
-        if self._after_id is not None:
-            try:
-                self.widget.after_cancel(self._after_id)
-            except Exception:
-                pass
-            self._after_id = None
+from lib.tooltip import attach_i18n_tooltip
 
 # Shared capture helper
 try:
@@ -203,7 +140,7 @@ class LibraryManagerWindow(tk.Toplevel):
                 text_fb = fallback_text
             btn = tk.Button(parent, text=text_fb, command=cmd, cursor='hand2', **btn_kwargs)
         try:
-            ToolTip(btn, self._t(tooltip_key))
+            attach_i18n_tooltip(btn, key=tooltip_key, ns='library_manager', lang_provider=lambda: self.lang)
         except Exception:
             pass
         return btn
