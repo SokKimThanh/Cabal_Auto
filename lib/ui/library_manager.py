@@ -2359,30 +2359,522 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _build_skill_tab(self, parent: tk.Frame):
         """
-        Build Skill Library tab with CRUD operations.
-        
-        TODO Sprint 19 Task #3: Implement full skill management
-        - List view with columns: Name, Key, Type, Cooldown, Cast Time
-        - Add/Edit/Delete buttons
-        - Type filter (attack/buff)
-        - Cooldown and cast time editor
-        - Skill image capture
+        Build Skill Library tab with left list, inline edit form, and image preview.
+        Pattern matches Monster Tab structure for consistency.
         """
-        # Placeholder for now
-        placeholder = tk.Label(
-            parent,
-            text="⚔️ Skill Library Tab\n\nComing in Task #3:\n"
-                 "• List all skills with details\n"
-                 "• Add/Edit/Delete skills\n"
-                 "• Filter by type (attack/buff)\n"
-                 "• Edit cooldown and cast time\n"
-                 "• Import skill icons from game",
-            justify='left',
-            padx=20,
-            pady=20,
-            font=('Arial', 10)
+        # Main container
+        main_container = tk.Frame(parent, bg='#F5F5F5')
+        main_container.pack(fill='both', expand=True)
+
+        # Layout: left list (2) | right area (10)
+        main_container.grid_columnconfigure(0, weight=2, uniform='column')
+        main_container.grid_columnconfigure(1, weight=10, uniform='column')
+        main_container.grid_rowconfigure(0, weight=1)
+
+        # Left: Skill List
+        left_frame = tk.Frame(main_container, bg='#FFFFFF')
+        left_frame.grid(row=0, column=0, sticky='nsew', padx=(10, 5), pady=10)
+
+        # Header with Add button
+        header = tk.Frame(left_frame, bg='#FFFDE7', height=44)
+        header.pack(fill='x')
+        header.pack_propagate(False)
+
+        self._make_icon_button(
+            header, 'add', '➕', 'tip_add_skill',
+            command=self._add_skill,
+            bg='#4CAF50', fg='white', relief='flat',
+            font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady
+        ).pack(side='right', padx=10, pady=6)
+
+        # Search bar
+        search_frame = tk.Frame(left_frame, bg=UI.BG_DEFAULT, pady=12, padx=15)
+        search_frame.pack(fill='x')
+        search_container = tk.Frame(search_frame, bg=UI.BG_PANEL, highlightbackground='#E0E0E0', highlightthickness=1)
+        search_container.pack(fill='x')
+        search_img = self._icon('search', '🔍')
+        search_txt = self._icon_text('search', '🔍')
+        if search_img:
+            try:
+                tk.Label(search_container, image=search_img, text='', bg='#F5F5F5').pack(side='left', padx=(10, 5))
+            except Exception:
+                tk.Label(search_container, text=search_txt, font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
+        else:
+            tk.Label(search_container, text=search_txt, font=(UI.FONT_FAMILY, 11), bg=UI.BG_PANEL, fg=UI.COLOR_HINT).pack(side='left', padx=(10, 5))
+        self.skill_search_var = tk.StringVar()
+        self.skill_search_var.trace('w', lambda *args: self._filter_skill_list())
+        tk.Entry(search_container, textvariable=self.skill_search_var, font=UI.FONT_TEXT, border=0, bg=UI.BG_PANEL, fg=UI.COLOR_TEXT).pack(side='left', fill='x', expand=True, pady=10, padx=(0, 10))
+
+        # Type filter
+        filter_frame = tk.Frame(left_frame, bg='#FFFFFF', pady=8, padx=15)
+        filter_frame.pack(fill='x')
+        tk.Label(filter_frame, text='Type:' if self.lang=='en' else 'Loại:', bg='#FFFFFF', font=UI.FONT_LABEL).pack(side='left', padx=(0,6))
+        self.skill_type_filter_var = tk.StringVar(value='all')
+        type_combo = ttk.Combobox(filter_frame, textvariable=self.skill_type_filter_var, state='readonly', width=12, 
+                                   values=['all', 'attack', 'buff'])
+        type_combo.pack(side='left')
+        type_combo.bind('<<ComboboxSelected>>', lambda e: self._filter_skill_list())
+
+        # Treeview with columns
+        list_frame = tk.Frame(left_frame, bg='#FFFFFF')
+        list_frame.pack(fill='both', expand=True, padx=15, pady=(0, 12))
+        vsb = tk.Scrollbar(list_frame, orient='vertical')
+        hsb = tk.Scrollbar(list_frame, orient='horizontal')
+        
+        # Columns: Name, Key, Type
+        self.skill_tree = ttk.Treeview(list_frame, columns=('key', 'type'), show='tree headings', 
+                                       yscrollcommand=vsb.set, xscrollcommand=hsb.set, selectmode='browse')
+        vsb.config(command=self.skill_tree.yview)
+        hsb.config(command=self.skill_tree.xview)
+        
+        self.skill_tree.heading('#0', text='Name' if self.lang == 'en' else 'Tên')
+        self.skill_tree.heading('key', text='Key' if self.lang == 'en' else 'Phím')
+        self.skill_tree.heading('type', text='Type' if self.lang == 'en' else 'Loại')
+        
+        self.skill_tree.column('#0', width=160, minwidth=100)
+        self.skill_tree.column('key', width=50, minwidth=40, anchor='center')
+        self.skill_tree.column('type', width=70, minwidth=60, anchor='center')
+        
+        self.skill_tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+        list_frame.grid_rowconfigure(0, weight=1)
+        list_frame.grid_columnconfigure(0, weight=1)
+        self.skill_tree.bind('<<TreeviewSelect>>', self._on_skill_select)
+
+        # Right: Details and Image Preview
+        right_area = tk.Frame(main_container, bg='#FFFFFF')
+        right_area.grid(row=0, column=1, sticky='nsew', padx=(5, 10), pady=10)
+        right_area.grid_rowconfigure(0, weight=3)  # Edit form takes 3
+        right_area.grid_rowconfigure(1, weight=2)  # Image preview takes 2
+        right_area.grid_columnconfigure(0, weight=1)
+
+        # Top: Edit Form
+        form_container = tk.Frame(right_area, bg='#FFFFFF')
+        form_container.grid(row=0, column=0, sticky='nsew')
+        form_container.grid_columnconfigure(0, weight=1)
+        form_container.grid_rowconfigure(1, weight=1)
+        
+        # Title bar
+        action_bar = tk.Frame(form_container, bg='#E3F2FD', height=44)
+        action_bar.grid(row=0, column=0, sticky='ew')
+        action_bar.grid_propagate(False)
+        tk.Label(action_bar, text=('Skill Editor' if self.lang=='en' else 'Chỉnh Sửa Kỹ Năng'), 
+                bg=UI.BG_SECTION, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=12)
+        
+        # Details panel
+        self.skill_details_panel = tk.Frame(form_container, bg='#FFFFFF')
+        self.skill_details_panel.grid(row=1, column=0, sticky='nsew', padx=0)
+
+        # Bottom: Image Preview
+        preview_container = tk.Frame(right_area, bg='#FFFFFF')
+        preview_container.grid(row=1, column=0, sticky='nsew', pady=(10, 0))
+        preview_container.grid_columnconfigure(0, weight=1)
+        preview_container.grid_rowconfigure(1, weight=1)
+        
+        preview_bar = tk.Frame(preview_container, bg='#FFF3E0', height=36)
+        preview_bar.grid(row=0, column=0, sticky='ew')
+        preview_bar.grid_propagate(False)
+        tk.Label(preview_bar, text=('Skill Image' if self.lang=='en' else 'Hình Ảnh Kỹ Năng'), 
+                bg='#FFF3E0', fg='#E65100', font=UI.FONT_SECTION).pack(side='left', padx=12, pady=6)
+        
+        self.skill_preview_panel = tk.Frame(preview_container, bg='#FAFAFA')
+        self.skill_preview_panel.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
+
+        # Initial population
+        self._refresh_skill_tree()
+        
+        # Auto-select first skill if available
+        try:
+            first = self.skill_tree.get_children()
+            if first:
+                self.skill_tree.selection_set(first[0])
+                self.skill_tree.focus(first[0])
+                self._on_skill_select(None)
+            else:
+                self._show_skill_details(None)
+        except Exception:
+            self._show_skill_details(None)
+    
+    # -----------------
+    # Skill Tab Handlers
+    # -----------------
+    
+    def _filter_skill_list(self):
+        """Filter skill list based on search text and type filter."""
+        search_text = self.skill_search_var.get().lower()
+        skill_type = self.skill_type_filter_var.get()
+        
+        # Clear tree
+        if not self.skill_tree:
+            return
+        for item in self.skill_tree.get_children():
+            self.skill_tree.delete(item)
+        
+        # Re-add filtered skills
+        for skill in self.skills:
+            name = skill.get('name', '')
+            stype = skill.get('type', 'attack')
+            
+            # Apply filters
+            if search_text and search_text not in name.lower():
+                continue
+            if skill_type != 'all' and stype != skill_type:
+                continue
+                
+            self._add_skill_to_tree(skill)
+    
+    def _refresh_skill_tree(self):
+        """Refresh the skill tree with current data."""
+        # Clear tree
+        if not self.skill_tree:
+            return
+        for item in self.skill_tree.get_children():
+            self.skill_tree.delete(item)
+        
+        # Add all skills (respect current filters)
+        self._filter_skill_list()
+    
+    def _add_skill_to_tree(self, skill: dict):
+        """Add a single skill to the tree."""
+        name = skill.get('name', 'Unknown')
+        key = skill.get('key', '')
+        skill_type = skill.get('type', 'attack')
+        
+        # Type display
+        type_display = '⚔️' if skill_type == 'attack' else '🛡️'
+        if self.lang == 'en':
+            type_text = skill_type.capitalize()
+        else:
+            type_text = 'Tấn công' if skill_type == 'attack' else 'Buff'
+        
+        if not self.skill_tree:
+            return
+        self.skill_tree.insert(
+            '',
+            'end',
+            text=f"  {name}",
+            values=(key, f"{type_display} {type_text}"),
+            tags=('skill',)
         )
-        placeholder.pack(expand=True)
+    
+    def _on_skill_select(self, event):
+        """Handle skill selection in tree."""
+        if not self.skill_tree:
+            return
+        selection = self.skill_tree.selection()
+        if not selection:
+            self._show_skill_details(None)
+            return
+        
+        # Get selected item index
+        item = selection[0]
+        item_index = self.skill_tree.index(item)
+        
+        # Get filtered skills list (matching tree order)
+        search_text = self.skill_search_var.get().lower()
+        skill_type = self.skill_type_filter_var.get()
+        filtered_skills = []
+        for skill in self.skills:
+            name = skill.get('name', '')
+            stype = skill.get('type', 'attack')
+            if search_text and search_text not in name.lower():
+                continue
+            if skill_type != 'all' and stype != skill_type:
+                continue
+            filtered_skills.append(skill)
+        
+        # Show details for selected skill
+        if 0 <= item_index < len(filtered_skills):
+            self._skill_edit_open = True
+            self._show_skill_details(filtered_skills[item_index])
+    
+    def _show_skill_details(self, skill: Optional[dict]):
+        """Show skill information in edit form and image preview."""
+        # Clear current content
+        if hasattr(self, 'skill_details_panel') and self.skill_details_panel:
+            try:
+                for w in self.skill_details_panel.winfo_children():
+                    w.destroy()
+            except Exception:
+                pass
+
+        if skill is None:
+            if not self.skill_details_panel:
+                return
+            tk.Label(self.skill_details_panel, text='← ' + ('Select a skill to edit' if self.lang=='en' else 'Chọn kỹ năng để sửa'),
+                     bg='#FFFFFF', fg='#9E9E9E', font=self.ui_font_label).pack(padx=18, pady=18, anchor='w')
+            # Clear preview
+            self._show_skill_image_preview(None)
+            return
+
+        # Store current and render edit form
+        self.current_skill = skill
+        if self.skill_details_panel:
+            self._render_skill_edit_form(self.skill_details_panel)
+        # Show image preview
+        self._show_skill_image_preview(skill)
+    
+    def _render_skill_edit_form(self, parent: tk.Frame):
+        """Render the inline skill edit form."""
+        if not hasattr(self, 'current_skill') or self.current_skill is None:
+            return
+            
+        form = tk.Frame(parent, bg='#E3F2FD', highlightbackground='#2196F3', highlightthickness=2)
+        form.pack(fill='both', expand=False, pady=(12, 0))
+
+        # Title
+        title = tk.Frame(form, bg='#2196F3', height=36)
+        title.pack(fill='x')
+        title.pack_propagate(False)
+        tk.Label(
+            title,
+            text='✏️ ' + ('Edit Skill' if self.lang=='en' else 'Sửa Kỹ Năng'),
+            bg='#2196F3',
+            fg='white',
+            font=self.ui_font_section
+        ).pack(padx=10, pady=6)
+
+        body = tk.Frame(form, bg='#E3F2FD')
+        body.pack(fill='both', expand=True, padx=14, pady=12)
+
+        # Fields
+        self.skill_name_var = tk.StringVar(value=self.current_skill.get('name',''))
+        self.skill_key_var = tk.StringVar(value=self.current_skill.get('key',''))
+        self.skill_type_var = tk.StringVar(value=self.current_skill.get('type','attack'))
+        self.skill_cooldown_var = tk.StringVar(value=str(self.current_skill.get('cooldown',0.0)))
+        self.skill_cast_time_var = tk.StringVar(value=str(self.current_skill.get('cast_time',0.0)))
+
+        # Row 0: Name
+        tk.Label(body, text=('Name' if self.lang=='en' else 'Tên'), bg='#E3F2FD', font=self.ui_font_label).grid(row=0, column=0, sticky='w', pady=(0,6))
+        tk.Entry(body, textvariable=self.skill_name_var, font=self.ui_font_text).grid(row=0, column=1, columnspan=3, sticky='ew', pady=(0,6))
+
+        # Row 1: Key & Type
+        tk.Label(body, text=('Key' if self.lang=='en' else 'Phím'), bg='#E3F2FD', font=self.ui_font_label).grid(row=1, column=0, sticky='w', pady=(0,6))
+        tk.Entry(body, textvariable=self.skill_key_var, width=8, font=self.ui_font_text).grid(row=1, column=1, sticky='w', pady=(0,6))
+
+        tk.Label(body, text=('Type' if self.lang=='en' else 'Loại'), bg='#E3F2FD', font=self.ui_font_label).grid(row=1, column=2, sticky='w', padx=(12,0), pady=(0,6))
+        type_combo = ttk.Combobox(body, textvariable=self.skill_type_var, state='readonly', width=12, values=['attack', 'buff'])
+        type_combo.grid(row=1, column=3, sticky='w', pady=(0,6))
+
+        # Row 2: Cooldown & Cast Time
+        tk.Label(body, text=('Cooldown (s)' if self.lang=='en' else 'Hồi chiêu (s)'), bg='#E3F2FD', font=self.ui_font_label).grid(row=2, column=0, sticky='w', pady=(0,6))
+        tk.Entry(body, textvariable=self.skill_cooldown_var, width=12, font=self.ui_font_text).grid(row=2, column=1, sticky='w', pady=(0,6))
+
+        tk.Label(body, text=('Cast Time (s)' if self.lang=='en' else 'Thời gian thi (s)'), bg='#E3F2FD', font=self.ui_font_label).grid(row=2, column=2, sticky='w', padx=(12,0), pady=(0,6))
+        tk.Entry(body, textvariable=self.skill_cast_time_var, width=12, font=self.ui_font_text).grid(row=2, column=3, sticky='w', pady=(0,6))
+
+        body.grid_columnconfigure(1, weight=1)
+        body.grid_columnconfigure(3, weight=0)
+    
+    def _show_skill_image_preview(self, skill: Optional[dict]):
+        """Show skill image preview in bottom panel."""
+        # Clear preview panel
+        if hasattr(self, 'skill_preview_panel') and self.skill_preview_panel:
+            try:
+                for w in self.skill_preview_panel.winfo_children():
+                    w.destroy()
+            except Exception:
+                pass
+        
+        if skill is None or not self.skill_preview_panel:
+            return
+        
+        image_path = skill.get('image', '')
+        if not image_path or not Path(image_path).exists():
+            tk.Label(self.skill_preview_panel, 
+                    text='📷 ' + ('No image captured' if self.lang=='en' else 'Chưa có hình ảnh'),
+                    bg='#FAFAFA', fg='#9E9E9E', font=self.ui_font_label).pack(expand=True)
+            
+            # Add capture button
+            btn_frame = tk.Frame(self.skill_preview_panel, bg='#FAFAFA')
+            btn_frame.pack(side='bottom', pady=10)
+            self._make_icon_button(
+                btn_frame, 'capture', '📸', 'tip_capture_skill_image',
+                command=self._capture_skill_image,
+                bg='#2196F3', fg='white', relief='flat',
+                font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady
+            ).pack()
+            return
+        
+        # Show image
+        try:
+            if Image:
+                img = Image.open(image_path)
+                # Resize to fit preview (max 400x300)
+                max_w, max_h = 400, 300
+                img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
+                
+                label = tk.Label(self.skill_preview_panel, image=photo, bg='#FAFAFA')
+                label.image = photo  # Keep reference
+                label.pack(expand=True, pady=10)
+                
+                # Action buttons
+                btn_frame = tk.Frame(self.skill_preview_panel, bg='#FAFAFA')
+                btn_frame.pack(side='bottom', pady=10)
+                
+                self._make_icon_button(
+                    btn_frame, 'capture', '📸', 'tip_recapture_skill_image',
+                    command=self._capture_skill_image,
+                    bg='#2196F3', fg='white', relief='flat',
+                    font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady
+                ).pack(side='left', padx=4)
+                
+                self._make_icon_button(
+                    btn_frame, 'delete', '🗑️', 'tip_delete_skill_image',
+                    command=self._delete_skill_image,
+                    bg='#f44336', fg='white', relief='flat',
+                    font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady
+                ).pack(side='left', padx=4)
+            else:
+                tk.Label(self.skill_preview_panel, text=f"Image: {Path(image_path).name}",
+                        bg='#FAFAFA', fg='#666', font=self.ui_font_label).pack(expand=True)
+        except Exception as e:
+            tk.Label(self.skill_preview_panel, text=f"Error loading image: {e}",
+                    bg='#FAFAFA', fg='#f44336', font=self.ui_font_label).pack(expand=True)
+    
+    def _add_skill(self):
+        """Open dialog to add new skill."""
+        dialog = SkillDialog(self, self.lang, mode='add')
+        
+        if dialog.result:
+            # Add new skill
+            self.skills.append(dialog.result)
+            self.changes_made['skills_changed'] = True
+            self._mark_unsaved(True)
+            
+            # Refresh tree
+            self._refresh_skill_tree()
+            
+            # Status message
+            messagebox.showinfo(
+                'Added' if self.lang == 'en' else 'Đã Thêm',
+                f"Skill '{dialog.result.get('name', 'Unknown')}' has been added." if self.lang == 'en'
+                else f"Kỹ năng '{dialog.result.get('name', 'Unknown')}' đã được thêm."
+            )
+    
+    def _capture_skill_image(self):
+        """Capture skill image from screen."""
+        if not hasattr(self, 'current_skill') or self.current_skill is None:
+            messagebox.showwarning(
+                'No Skill' if self.lang=='en' else 'Chưa Chọn Kỹ Năng',
+                'Please select a skill first.' if self.lang=='en' else 'Vui lòng chọn một kỹ năng trước.'
+            )
+            return
+        
+        # Bring game window to front
+        try:
+            pid = self.hunt_cfg.get('window_pid') if isinstance(self.hunt_cfg, dict) else None
+            hwnd_cfg = self.hunt_cfg.get('window_hwnd') if isinstance(self.hunt_cfg, dict) else None
+            if pid:
+                self._bring_window_to_front_by_pid(int(pid))
+            elif hwnd_cfg:
+                self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
+        except Exception:
+            pass
+        
+        # Use capture helper
+        if capture_region_and_save:
+            try:
+                result = capture_region_and_save(
+                    parent=self,
+                    title='Capture Skill Image' if self.lang == 'en' else 'Chụp Hình Ảnh Kỹ Năng',
+                    initial_message='Select skill icon area' if self.lang == 'en' else 'Chọn vùng icon kỹ năng'
+                )
+                
+                if result and result.get('image_path'):
+                    # Update current skill
+                    self.current_skill['image'] = result['image_path']
+                    self.changes_made['skills_changed'] = True
+                    self._mark_unsaved(True)
+                    
+                    # Refresh preview
+                    self._show_skill_image_preview(self.current_skill)
+            except Exception as e:
+                messagebox.showerror(
+                    'Capture Error' if self.lang == 'en' else 'Lỗi Chụp Ảnh',
+                    f"Failed to capture image: {e}"
+                )
+    
+    def _delete_skill_image(self):
+        """Delete skill image."""
+        if not hasattr(self, 'current_skill') or self.current_skill is None:
+            return
+        
+        # Confirm
+        if not messagebox.askyesno(
+            'Confirm' if self.lang == 'en' else 'Xác Nhận',
+            'Delete this skill image?' if self.lang == 'en' else 'Xóa hình ảnh kỹ năng này?'
+        ):
+            return
+        
+        # Remove image
+        self.current_skill['image'] = ''
+        self.changes_made['skills_changed'] = True
+        self._mark_unsaved(True)
+        
+        # Refresh preview
+        self._show_skill_image_preview(self.current_skill)
+    
+    def _save_current_skill_inline(self):
+        """Save current skill changes from inline form."""
+        if not hasattr(self, 'current_skill') or self.current_skill is None:
+            return
+        
+        try:
+            # Validate and update current_skill
+            self.current_skill['name'] = self.skill_name_var.get().strip()
+            self.current_skill['key'] = self.skill_key_var.get().strip().upper()
+            self.current_skill['type'] = self.skill_type_var.get()
+            self.current_skill['cooldown'] = float(self.skill_cooldown_var.get())
+            self.current_skill['cast_time'] = float(self.skill_cast_time_var.get())
+            
+            # Validate values
+            if not self.current_skill['name']:
+                raise ValueError('Name cannot be empty' if self.lang=='en' else 'Tên không được để trống')
+            if not self.current_skill['key']:
+                raise ValueError('Key cannot be empty' if self.lang=='en' else 'Phím không được để trống')
+            if self.current_skill['cooldown'] < 0:
+                raise ValueError('Cooldown must be non-negative' if self.lang=='en' else 'Thời gian hồi chiêu phải không âm')
+            if self.current_skill['cast_time'] < 0:
+                raise ValueError('Cast time must be non-negative' if self.lang=='en' else 'Thời gian thi triển phải không âm')
+                
+        except ValueError as e:
+            messagebox.showerror('Invalid Input' if self.lang=='en' else 'Dữ Liệu Không Hợp Lệ', str(e))
+            return
+        except Exception as e:
+            messagebox.showerror('Error' if self.lang=='en' else 'Lỗi', str(e))
+            return
+        
+        self.changes_made['skills_changed'] = True
+        self._mark_unsaved(True)
+        self._refresh_skill_tree()
+        
+        # Keep focus on same skill
+        self._show_skill_details(self.current_skill)
+    
+    def _delete_current_skill_inline(self):
+        """Delete current skill."""
+        if not hasattr(self, 'current_skill') or self.current_skill is None:
+            return
+        
+        name = self.current_skill.get('name', 'Unknown')
+        title = 'Confirm Delete' if self.lang=='en' else 'Xác Nhận Xóa'
+        msg = f"Delete skill '{name}'?" if self.lang=='en' else f"Xóa kỹ năng '{name}'?"
+        
+        if messagebox.askyesno(title, msg, parent=self):
+            try:
+                idx = self.skills.index(self.current_skill)
+            except ValueError:
+                idx = -1
+            
+            if idx >= 0:
+                del self.skills[idx]
+                self.changes_made['skills_changed'] = True
+                self._mark_unsaved(True)
+                self._refresh_skill_tree()
+                self._show_skill_details(None)
     
     def _build_timing_tab(self, parent: tk.Frame):
         """
@@ -2751,6 +3243,255 @@ class MonsterDialog:
             'priority': int(self.priority_var.get().strip()),
             'description': self.desc_text.get('1.0', 'end-1c').strip(),
             'templates': self.monster.get('templates', [])  # Preserve existing templates
+        }
+        
+        self.dialog.grab_release()
+        self.dialog.destroy()
+    
+    def _cancel(self):
+        """Cancel and close dialog."""
+        self.result = None
+        self.dialog.grab_release()
+        self.dialog.destroy()
+
+
+class SkillDialog:
+    """
+    Dialog for adding or editing a skill.
+    
+    Provides form fields for:
+    - Name (required)
+    - Key (required)
+    - Type (attack/buff, required)
+    - Cooldown (float, required)
+    - Cast Time (float, required)
+    - Image path (optional, readonly for now)
+    
+    Args:
+        parent: Parent window
+        lang: Language ('en' or 'vi')
+        mode: 'add' or 'edit'
+        skill: Skill dict (for edit mode)
+    
+    Returns:
+        result: New/updated skill dict, or None if cancelled
+    """
+    
+    def __init__(self, parent: tk.Toplevel, lang: str = 'en', mode: str = 'add', skill: Optional[dict] = None):
+        self.parent = parent
+        self.lang = lang
+        self.mode = mode
+        self.skill = skill or {}
+        self.result = None
+        
+        # Create dialog
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(
+            'Add Skill' if mode == 'add' and lang == 'en' else
+            'Thêm Kỹ Năng' if mode == 'add' else
+            'Edit Skill' if lang == 'en' else
+            'Sửa Kỹ Năng'
+        )
+        self.dialog.geometry("500x400")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+        
+        # Center dialog
+        self.dialog.update_idletasks()
+        x = parent.winfo_x() + (parent.winfo_width() // 2) - (self.dialog.winfo_width() // 2)
+        y = parent.winfo_y() + (parent.winfo_height() // 2) - (self.dialog.winfo_height() // 2)
+        self.dialog.geometry(f"+{x}+{y}")
+        
+        # Build form
+        self._build_form()
+        
+        # Wait for dialog to close
+        self.dialog.wait_window()
+    
+    def _build_form(self):
+        """Build form fields."""
+        # Main container with padding
+        container = tk.Frame(self.dialog, padx=20, pady=20)
+        container.pack(fill='both', expand=True)
+        
+        # Title
+        title = tk.Label(
+            container,
+            text='⚔️ Skill Information' if self.lang == 'en' else '⚔️ Thông Tin Kỹ Năng',
+            font=('Arial', 12, 'bold')
+        )
+        title.pack(pady=(0, 15))
+        
+        # Form fields
+        form_frame = tk.Frame(container)
+        form_frame.pack(fill='both', expand=True)
+        
+        # Name field (required)
+        tk.Label(
+            form_frame,
+            text='Name:' if self.lang == 'en' else 'Tên:',
+            font=('Arial', 9, 'bold')
+        ).grid(row=0, column=0, sticky='w', pady=5)
+        
+        self.name_var = tk.StringVar(value=self.skill.get('name', ''))
+        name_entry = tk.Entry(form_frame, textvariable=self.name_var, width=40, font=('Arial', 9))
+        name_entry.grid(row=0, column=1, pady=5, sticky='ew')
+        name_entry.focus()
+        
+        # Key field (required)
+        tk.Label(
+            form_frame,
+            text='Key:' if self.lang == 'en' else 'Phím:',
+            font=('Arial', 9, 'bold')
+        ).grid(row=1, column=0, sticky='w', pady=5)
+        
+        self.key_var = tk.StringVar(value=self.skill.get('key', ''))
+        key_entry = tk.Entry(form_frame, textvariable=self.key_var, width=40, font=('Arial', 9))
+        key_entry.grid(row=1, column=1, pady=5, sticky='ew')
+        
+        # Type field (required)
+        tk.Label(
+            form_frame,
+            text='Type:' if self.lang == 'en' else 'Loại:',
+            font=('Arial', 9, 'bold')
+        ).grid(row=2, column=0, sticky='w', pady=5)
+        
+        self.type_var = tk.StringVar(value=self.skill.get('type', 'attack'))
+        type_combo = ttk.Combobox(
+            form_frame, 
+            textvariable=self.type_var, 
+            state='readonly',
+            width=37,
+            values=['attack', 'buff'],
+            font=('Arial', 9)
+        )
+        type_combo.grid(row=2, column=1, pady=5, sticky='ew')
+        
+        # Cooldown field (required)
+        tk.Label(
+            form_frame,
+            text='Cooldown (s):' if self.lang == 'en' else 'Hồi chiêu (s):',
+            font=('Arial', 9, 'bold')
+        ).grid(row=3, column=0, sticky='w', pady=5)
+        
+        self.cooldown_var = tk.StringVar(value=str(self.skill.get('cooldown', '0.0')))
+        cooldown_entry = tk.Entry(form_frame, textvariable=self.cooldown_var, width=40, font=('Arial', 9))
+        cooldown_entry.grid(row=3, column=1, pady=5, sticky='ew')
+        
+        # Cast time field (required)
+        tk.Label(
+            form_frame,
+            text='Cast Time (s):' if self.lang == 'en' else 'Thời gian thi (s):',
+            font=('Arial', 9, 'bold')
+        ).grid(row=4, column=0, sticky='w', pady=5)
+        
+        self.cast_time_var = tk.StringVar(value=str(self.skill.get('cast_time', '0.0')))
+        cast_time_entry = tk.Entry(form_frame, textvariable=self.cast_time_var, width=40, font=('Arial', 9))
+        cast_time_entry.grid(row=4, column=1, pady=5, sticky='ew')
+        
+        form_frame.grid_columnconfigure(1, weight=1)
+        
+        # Button frame at bottom
+        button_frame = tk.Frame(container)
+        button_frame.pack(side='bottom', pady=(20, 0))
+        
+        # Save button
+        save_btn = tk.Button(
+            button_frame,
+            text='✅ Save' if self.lang == 'en' else '✅ Lưu',
+            command=self._save,
+            bg='#4CAF50',
+            fg='white',
+            font=('Arial', 9, 'bold'),
+            padx=20,
+            pady=5,
+            cursor='hand2'
+        )
+        save_btn.pack(side='left', padx=5)
+        
+        # Cancel button
+        cancel_btn = tk.Button(
+            button_frame,
+            text='❌ Cancel' if self.lang == 'en' else '❌ Hủy',
+            command=self._cancel,
+            bg='#f44336',
+            fg='white',
+            font=('Arial', 9, 'bold'),
+            padx=20,
+            pady=5,
+            cursor='hand2'
+        )
+        cancel_btn.pack(side='left', padx=5)
+        
+        # Bind Enter key to save
+        self.dialog.bind('<Return>', lambda e: self._save())
+        self.dialog.bind('<Escape>', lambda e: self._cancel())
+    
+    def _validate(self) -> bool:
+        """Validate form fields."""
+        # Check name
+        name = self.name_var.get().strip()
+        if not name:
+            messagebox.showerror(
+                'Validation Error' if self.lang == 'en' else 'Lỗi Xác Thực',
+                'Please enter skill name.' if self.lang == 'en' else 'Vui lòng nhập tên kỹ năng.',
+                parent=self.dialog
+            )
+            return False
+        
+        # Check key
+        key = self.key_var.get().strip()
+        if not key:
+            messagebox.showerror(
+                'Validation Error' if self.lang == 'en' else 'Lỗi Xác Thực',
+                'Please enter key binding.' if self.lang == 'en' else 'Vui lòng nhập phím tắt.',
+                parent=self.dialog
+            )
+            return False
+        
+        # Check cooldown
+        try:
+            cooldown = float(self.cooldown_var.get().strip())
+            if cooldown < 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showerror(
+                'Validation Error' if self.lang == 'en' else 'Lỗi Xác Thực',
+                'Please enter valid cooldown (non-negative number).' if self.lang == 'en' 
+                else 'Vui lòng nhập thời gian hồi chiêu hợp lệ (số không âm).',
+                parent=self.dialog
+            )
+            return False
+        
+        # Check cast time
+        try:
+            cast_time = float(self.cast_time_var.get().strip())
+            if cast_time < 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showerror(
+                'Validation Error' if self.lang == 'en' else 'Lỗi Xác Thực',
+                'Please enter valid cast time (non-negative number).' if self.lang == 'en'
+                else 'Vui lòng nhập thời gian thi triển hợp lệ (số không âm).',
+                parent=self.dialog
+            )
+            return False
+        
+        return True
+    
+    def _save(self):
+        """Save and close dialog."""
+        if not self._validate():
+            return
+        
+        # Build result dict
+        self.result = {
+            'name': self.name_var.get().strip(),
+            'key': self.key_var.get().strip().upper(),
+            'type': self.type_var.get(),
+            'cooldown': float(self.cooldown_var.get().strip()),
+            'cast_time': float(self.cast_time_var.get().strip()),
+            'image': self.skill.get('image', '')  # Preserve existing image
         }
         
         self.dialog.grab_release()
