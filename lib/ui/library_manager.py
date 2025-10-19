@@ -430,8 +430,11 @@ class LibraryManagerWindow(tk.Toplevel):
         self.pil_available = (Image is not None)
         # Thumbnail image cache to prevent GC
         self._thumb_cache = {}
-        # Project paths
-        self.project_root = Path(os.path.dirname(os.path.dirname(__file__)))
+        # Project paths - library_manager.py is in lib/ui/, need 3 levels up to reach project root
+        _current_file = Path(__file__).resolve()     # lib/ui/library_manager.py
+        _lib_ui_dir = _current_file.parent           # lib/ui/
+        _lib_dir = _lib_ui_dir.parent                # lib/
+        self.project_root = _lib_dir.parent          # project root
         self.assets_mon_dir = self.project_root / 'assets' / 'images' / 'monsters'
         self.assets_mon_dir.mkdir(parents=True, exist_ok=True)
         self.tmp_capture_dir = self.project_root / 'tmp' / 'captures'
