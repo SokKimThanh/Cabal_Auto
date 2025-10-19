@@ -9,7 +9,7 @@
     "templates": [
       {
         "name": "Coc Go 2",
-        "path": "E:\\Cabal_Auto\\tmp\\captures\\coc_go__coc_go_2_1760818488308.png",
+        "path": "assets/images/monsters/coc_go__capture_1760736387994.png",
         "threshold": 0.85,
         "region": {
           "left": 1074,
@@ -64,7 +64,7 @@
       },
       {
         "name": "Coc go 6",
-        "path": "E:\\Cabal_Auto\\tmp\\captures\\coc_go__new_template_1760819978575.png",
+        "path": "assets/images/monsters/coc_go_capture_1760820616.png",
         "threshold": 0.85,
         "region": {
           "left": 247,
