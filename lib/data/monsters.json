@@ -73,6 +73,18 @@
           "height": 928
         },
         "region_strategy": "custom"
+      },
+      {
+        "name": "Coc go 7",
+        "path": "E:\\Cabal_Auto\\tmp\\captures\\coc_go__coc_go_7_1760867380325.png",
+        "threshold": 0.85,
+        "region_strategy": "custom",
+        "region": {
+          "left": 205,
+          "top": 77,
+          "width": 1592,
+          "height": 929
+        }
       }
     ]
   },
@@ -125,5 +137,14 @@
         "region_strategy": "custom"
       }
     ]
+  },
+  {
+    "name": "con ga",
+    "hp": 11.0,
+    "damage_per_hit": 2.0,
+    "template": "",
+    "description": "tét",
+    "window_bounds": null,
+    "templates": []
   }
 ]

@@ -1637,6 +1637,9 @@ class LibraryManagerWindow(tk.Toplevel):
                 self.template_threshold_entry.config(state='normal')
             for entry in self.template_region_entries.values():
                 entry.config(state='normal')
+            
+            # Show "Đang chỉnh sửa" badge (orange)
+            self._show_editing_badge()
         except Exception:
             pass
     
@@ -1648,8 +1651,8 @@ class LibraryManagerWindow(tk.Toplevel):
             # Update button icon to save.ico
             self._update_toggle_button_icon('save', '💾', 'tip_template_save_temp')
         else:
-            # Save mode - start hold-to-save
-            self._start_hold_to_save()
+            # Save mode - save immediately
+            self._save_template_immediately()
     
     def _update_toggle_button_icon(self, icon_name: str, fallback: str, tooltip_key: str):
         """Update toggle button icon and tooltip."""
@@ -1692,78 +1695,36 @@ class LibraryManagerWindow(tk.Toplevel):
         except Exception:
             pass
     
-    def _start_hold_to_save(self):
-        """Start hold-to-save animation and save template after 2 seconds."""
-        if not self.template_toggle_btn:
-            return
-        
-        # Create progress overlay on button
+    def _save_template_immediately(self):
+        """Save current template data immediately to lib/data/monsters.json and copy images to assets."""
         try:
-            # Store original button state
-            orig_bg = self.template_toggle_btn.cget('bg')
-            orig_fg = self.template_toggle_btn.cget('fg')
+            # Get current template
+            tmpl = self._get_current_template_ref()
+            if not tmpl:
+                return
             
-            # Create progress variables
-            hold_duration = 2000  # 2 seconds in milliseconds
-            steps = 20  # Animation steps
-            step_duration = hold_duration // steps
-            current_step = [0]  # Mutable container for closure
-            is_holding = [True]  # Track if still holding
-            
-            def update_progress():
-                if not is_holding[0]:
-                    # User released - reset
+            # Copy image from tmp to assets if needed
+            img_path = tmpl.get('path', '')
+            if img_path and 'tmp' in img_path.lower():
+                # Copy from tmp/captures/ to assets/images/monsters/
+                src_path = Path(img_path)
+                if src_path.exists():
+                    # Create destination directory
+                    dest_dir = self.assets_mon_dir
+                    dest_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Generate destination filename
+                    dest_filename = src_path.name
+                    dest_path = dest_dir / dest_filename
+                    
+                    # Copy file
                     try:
-                        self.template_toggle_btn.config(bg=orig_bg, fg=orig_fg)
-                    except Exception:
-                        pass
-                    return
-                
-                current_step[0] += 1
-                progress = current_step[0] / steps
-                
-                # Update button background to show progress (green gradient)
-                # Interpolate from info blue to success green
-                r = int(33 + (76 - 33) * progress)  # 33 (#2196F3) -> 76 (#4CAF50)
-                g = int(150 + (175 - 150) * progress)  # 150 -> 175
-                b = int(243 + (80 - 243) * progress)  # 243 -> 80
-                color = f'#{r:02x}{g:02x}{b:02x}'
-                
-                try:
-                    self.template_toggle_btn.config(bg=color)
-                except Exception:
-                    pass
-                
-                if current_step[0] >= steps:
-                    # Completed - save template
-                    self._save_template_temporarily()
-                    # Lock fields again and switch back to edit icon
-                    self._lock_template_fields()
-                    self._update_toggle_button_icon('edit', '✏️', 'tip_template_edit')
-                    self.template_toggle_btn.config(bg=orig_bg, fg=orig_fg)
-                else:
-                    # Continue animation
-                    self.after(step_duration, update_progress)
-            
-            def on_release(event):
-                is_holding[0] = False
-            
-            # Bind release event
-            self.template_toggle_btn.bind('<ButtonRelease-1>', on_release, add='+')
-            
-            # Start animation
-            update_progress()
-            
-        except Exception as e:
-            print(f"Hold-to-save error: {e}")
-            # Fallback: immediate save
-            self._save_template_temporarily()
-    
-    def _save_template_temporarily(self):
-        """Save current template data to lib/data/monsters.json temporarily."""
-        try:
-            # Mark as temp saved
-            self.template_temp_saved = True
+                        shutil.copy2(src_path, dest_path)
+                        # Update path in template to use relative path
+                        rel_path = f"assets/images/monsters/{dest_filename}"
+                        tmpl['path'] = rel_path
+                    except Exception as e:
+                        print(f"Failed to copy image: {e}")
             
             # Save monsters to lib/data/monsters.json
             data_dir = self.project_root / 'lib' / 'data'
@@ -1773,12 +1734,15 @@ class LibraryManagerWindow(tk.Toplevel):
             with open(monsters_path, 'w', encoding='utf-8') as f:
                 json.dump(self.monsters, f, indent=2, ensure_ascii=False)
             
-            # Show success badge
-            self._show_temp_save_badge()
+            # Lock fields again and switch back to edit icon
+            self._lock_template_fields()
+            self._update_toggle_button_icon('edit', '✏️', 'tip_template_edit')
             
-            # Also mark as changed for main save
-            self.changes_made['monsters_changed'] = True
-            self._mark_unsaved(True)
+            # Show "Đã lưu" badge (green)
+            self._show_saved_badge()
+            
+            # Mark as saved (no more changes)
+            self.template_temp_saved = True
             
         except Exception as e:
             messagebox.showerror(
@@ -1787,15 +1751,27 @@ class LibraryManagerWindow(tk.Toplevel):
                 else f"Không thể lưu template: {e}"
             )
     
-    def _show_temp_save_badge(self):
-        """Show 'Đã lưu tạm' badge temporarily."""
+    def _show_editing_badge(self):
+        """Show 'Đang chỉnh sửa' badge (orange background)."""
         try:
             if not self.unsaved_badge:
                 return
             
-            # Show badge with temp saved text
-            badge_text = 'Temp Saved' if self.lang == 'en' else 'Đã lưu tạm'
-            self.unsaved_badge.config(text=f'  {badge_text}  ', bg='#4CAF50')
+            badge_text = 'Editing' if self.lang == 'en' else 'Đang chỉnh sửa'
+            self.unsaved_badge.config(text=f'  {badge_text}  ', bg='#FF9800')  # Orange
+            self.unsaved_badge.place(relx=1.0, x=-15, y=12, anchor='e')
+            
+        except Exception:
+            pass
+    
+    def _show_saved_badge(self):
+        """Show 'Đã lưu' badge (green background)."""
+        try:
+            if not self.unsaved_badge:
+                return
+            
+            badge_text = 'Saved' if self.lang == 'en' else 'Đã lưu'
+            self.unsaved_badge.config(text=f'  {badge_text}  ', bg='#4CAF50')  # Green
             self.unsaved_badge.place(relx=1.0, x=-15, y=12, anchor='e')
             
             # Hide after 3 seconds
