@@ -36,6 +36,11 @@ from lib.win_input import tap
 from lib.hunt_logger import get_hunt_logger
 from lib.timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
 from setup_wizard import show_setup_wizard
+try:
+    from lib.icon_helper import get_icon_helper
+    icon_helper = get_icon_helper()
+except Exception:
+    icon_helper = None
 
 
 class ToolTip:
@@ -909,6 +914,13 @@ class App(tk.Tk):
         self.hunt_cfg = load_hunt_config()
         self.lang = str(self.cfg.get('ui', {}).get('language', 'vi'))
         
+        # Centralized icon helper
+        try:
+            from lib.icon_helper import get_icon_helper
+            icon_helper = get_icon_helper()
+        except Exception:
+            icon_helper = None
+        
         # Create config manager for wizard
         self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
 
@@ -999,6 +1011,24 @@ class App(tk.Tk):
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
+    
+    def _icon(self, name: str, fallback: str, size: int = 16):
+        """Fetch an icon image from icon_helper with caching.
+
+        Returns a PhotoImage (when available) or fallback string (emoji) otherwise.
+        Keep a reference on self to avoid Tk image garbage collection.
+        """
+        try:
+            if not hasattr(self, '_icon_cache'):
+                self._icon_cache = {}
+            key = f"{name}_{size}"
+            if key in self._icon_cache:
+                return self._icon_cache[key]
+            img = icon_helper.get_icon(name, fallback=fallback, size=size) if icon_helper else fallback
+            self._icon_cache[key] = img
+            return img
+        except Exception:
+            return fallback
 
     # -----------------
     # Helper Methods
@@ -1156,6 +1186,12 @@ class App(tk.Tk):
         tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3).pack(pady=(0,4))
         tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3).pack(pady=(0,12))
         tk.Button(btn_container, text=self._t('open_library_manager'), command=self._open_library_manager, width=18).pack()
+        # Open Library Manager (use icon if available)
+        lib_icon = self._icon('list', '📚')
+        if isinstance(lib_icon, str):
+            tk.Button(btn_container, text=f"{lib_icon} " + self._t('open_library_manager'), command=self._open_library_manager, width=18).pack()
+        else:
+            tk.Button(btn_container, image=lib_icon, compound='left', text=self._t('open_library_manager'), command=self._open_library_manager, width=18).pack()
         
         # Current monster status
         self.monster_status_var = tk.StringVar()
@@ -1346,16 +1382,32 @@ class App(tk.Tk):
         lib_btn_frame = tk.Frame(lib_frame)
         lib_btn_frame.grid(row=1, column=0, columnspan=2, sticky='w', pady=4)
         
-        tk.Button(
-            lib_btn_frame, 
-            text='📚 ' + self._t('open_library_manager'),
-            command=self._open_library_manager,
-            bg='#2196F3',
-            fg='white',
-            font=('Arial', 10, 'bold'),
-            padx=15,
-            pady=8
-        ).pack(side='left', padx=(0,12))
+        # Open Library Manager button with icon
+        lib_icon2 = self._icon('list', '📚')
+        if isinstance(lib_icon2, str):
+            tk.Button(
+                lib_btn_frame, 
+                text=f"{lib_icon2} " + self._t('open_library_manager'),
+                command=self._open_library_manager,
+                bg='#2196F3',
+                fg='white',
+                font=('Arial', 10, 'bold'),
+                padx=15,
+                pady=8
+            ).pack(side='left', padx=(0,12))
+        else:
+            tk.Button(
+                lib_btn_frame, 
+                image=lib_icon2,
+                compound='left',
+                text=self._t('open_library_manager'),
+                command=self._open_library_manager,
+                bg='#2196F3',
+                fg='white',
+                font=('Arial', 10, 'bold'),
+                padx=15,
+                pady=8
+            ).pack(side='left', padx=(0,12))
         
         # Status info
         monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
