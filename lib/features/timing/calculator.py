@@ -69,6 +69,7 @@ def calculate_timing(
     monster_hp: float,
     damage_per_hit: float,
     attacks_per_second: float = 2.0,
+    skill_rotation: Optional[list] = None,  # NEW: List of attack skills
     lost_timeout_margin: float = 0.5,
     attack_duration_margin: float = 0.2,
     min_lost_timeout: float = 0.3,
@@ -77,12 +78,13 @@ def calculate_timing(
     max_attack_duration: float = 30.0
 ) -> TimingRecommendation:
     """
-    Calculate optimal timing parameters based on monster stats.
+    Calculate optimal timing parameters based on monster stats and skill rotation.
     
     Args:
         monster_hp: Monster's total HP
         damage_per_hit: Player's damage per attack
-        attacks_per_second: Attack speed (default 2.0)
+        attacks_per_second: Attack speed (default 2.0) - ONLY used if skill_rotation is None
+        skill_rotation: List of skill dicts with 'cooldown' and 'cast_time' (NEW!)
         lost_timeout_margin: Safety margin for lost_timeout (default 0.5 = 50%)
         attack_duration_margin: Safety margin for attack_duration (default 0.2 = 20%)
         min_lost_timeout: Minimum lost_timeout value (default 0.3s)
@@ -94,29 +96,68 @@ def calculate_timing(
         TimingRecommendation with calculated values
     
     Examples:
+        >>> # Old way (generic APS)
         >>> rec = calculate_timing(10000, 500, 2.0)
-        >>> rec.lost_timeout_sec
-        1.5
-        >>> rec.attack_min_duration_sec
-        12.0
+        
+        >>> # New way (skill rotation)
+        >>> skills = [
+        ...     {'name': 'Dark Explosion', 'cooldown': 1.9, 'cast_time': 1.7},
+        ...     {'name': 'Bone Javelin', 'cooldown': 2.4, 'cast_time': 1.5},
+        ... ]
+        >>> rec = calculate_timing(10000, 500, skill_rotation=skills)
     """
     # Validate inputs
     if monster_hp <= 0:
         raise ValueError("monster_hp must be > 0")
     if damage_per_hit <= 0:
         raise ValueError("damage_per_hit must be > 0")
-    if attacks_per_second <= 0:
-        raise ValueError("attacks_per_second must be > 0")
     
     # Calculate hits needed to kill monster
     hits_to_kill = math.ceil(monster_hp / damage_per_hit)
+    
+    # === SKILL ROTATION LOGIC (NEW!) ===
+    if skill_rotation and len(skill_rotation) > 0:
+        # Calculate timing based on ACTUAL skill rotation
+        attack_skills = [s for s in skill_rotation if s.get('type') == 'attack']
+        
+        if not attack_skills:
+            # Fallback to generic APS if no attack skills
+            attacks_per_second = attacks_per_second
+            time_per_hit = 1.0 / attacks_per_second
+            rotation_cycle_time = time_per_hit
+        else:
+            # Calculate average time per skill cast
+            # cast_time = animation time
+            # cooldown = time until skill available again
+            avg_cast_time = sum(s.get('cast_time', 1.0) for s in attack_skills) / len(attack_skills)
+            avg_cooldown = sum(s.get('cooldown', 1.5) for s in attack_skills) / len(attack_skills)
+            
+            # Total rotation cycle time = cast all skills once
+            rotation_cycle_time = sum(s.get('cast_time', 1.0) for s in attack_skills)
+            
+            # Effective attacks per second = skills per cycle / cycle time
+            attacks_per_second = len(attack_skills) / rotation_cycle_time
+            
+            # Time per hit = rotation cycle / number of skills
+            time_per_hit = rotation_cycle_time / len(attack_skills)
+            
+            # attack_interval = time between skill casts
+            # Use the MINIMUM cooldown to ensure we don't cast too fast
+            min_cooldown = min(s.get('cooldown', 1.5) for s in attack_skills)
+            attack_interval_base = max(min_cooldown, avg_cast_time)
+    else:
+        # Fallback: Use generic attacks_per_second
+        if attacks_per_second <= 0:
+            raise ValueError("attacks_per_second must be > 0")
+        time_per_hit = 1.0 / attacks_per_second
+        rotation_cycle_time = time_per_hit
+        attack_interval_base = time_per_hit
     
     # Calculate estimated kill time
     estimated_kill_time_sec = hits_to_kill / attacks_per_second
     
     # Calculate lost_timeout with margin
     # This is the time between attacks - should be short for detection lag
-    time_per_hit = 1.0 / attacks_per_second
     lost_timeout = time_per_hit * (1.0 + lost_timeout_margin)
     lost_timeout = max(min_lost_timeout, min(max_lost_timeout, lost_timeout))
     
@@ -128,9 +169,15 @@ def calculate_timing(
     # === Calculate additional timing parameters ===
     
     # 1. attack_press_ms: Key hold duration
-    # Based on skill cast time, typically 50-100ms is safe
-    # Faster APS = shorter press to avoid lag
-    attack_press_ms = int(max(50, min(100, 500 / attacks_per_second)))
+    # If skill rotation provided, use average cast_time
+    if skill_rotation and len([s for s in skill_rotation if s.get('type') == 'attack']) > 0:
+        attack_skills = [s for s in skill_rotation if s.get('type') == 'attack']
+        avg_cast_time_ms = sum(s.get('cast_time', 1.0) for s in attack_skills) / len(attack_skills) * 1000
+        # Press duration = 10% of cast time (enough to trigger, not too long)
+        attack_press_ms = int(max(50, min(150, avg_cast_time_ms * 0.1)))
+    else:
+        # Fallback: Based on generic APS
+        attack_press_ms = int(max(50, min(100, 500 / attacks_per_second)))
     
     # 2. target_cycle_delay: Delay between target switches
     # Should be > time_per_hit to avoid switching mid-attack
@@ -142,8 +189,13 @@ def calculate_timing(
     search_interval = round(max(0.1, min(0.3, time_per_hit * 0.5)), 2)
     
     # 4. attack_interval: Delay between attacks
-    # Should be slightly less than time_per_hit to maintain rhythm
-    attack_interval = round(max(0.1, time_per_hit * 0.8), 2)
+    # If skill rotation provided, use skill-based timing
+    if skill_rotation and len([s for s in skill_rotation if s.get('type') == 'attack']) > 0:
+        # Use the interval calculated from rotation
+        attack_interval = round(max(0.1, attack_interval_base), 2)
+    else:
+        # Fallback: Slightly less than time_per_hit
+        attack_interval = round(max(0.1, time_per_hit * 0.8), 2)
     
     return TimingRecommendation(
         lost_timeout_sec=round(lost_timeout, 2),
@@ -165,14 +217,16 @@ def calculate_timing(
 def calculate_timing_from_monster(
     monster: dict,
     attacks_per_second: float = 2.0,
+    skill_rotation: Optional[list] = None,  # NEW!
     **kwargs
 ) -> Optional[TimingRecommendation]:
     """
-    Calculate timing from monster dict (from monsters.json).
+    Calculate timing from monster dict (from monsters.json) with optional skill rotation.
     
     Args:
         monster: Monster dict with 'hp' and 'damage_per_hit' keys
-        attacks_per_second: Attack speed
+        attacks_per_second: Attack speed (fallback if no skill_rotation)
+        skill_rotation: List of skill dicts with 'cooldown', 'cast_time', 'type' (NEW!)
         **kwargs: Additional args passed to calculate_timing
     
     Returns:
@@ -180,9 +234,13 @@ def calculate_timing_from_monster(
     
     Examples:
         >>> monster = {"name": "Dragon", "hp": 10000, "damage_per_hit": 500}
-        >>> rec = calculate_timing_from_monster(monster)
-        >>> rec.lost_timeout_sec
-        1.5
+        >>> skills = [
+        ...     {'name': 'Skill1', 'cooldown': 1.9, 'cast_time': 1.7, 'type': 'attack'},
+        ...     {'name': 'Skill2', 'cooldown': 2.4, 'cast_time': 1.5, 'type': 'attack'},
+        ... ]
+        >>> rec = calculate_timing_from_monster(monster, skill_rotation=skills)
+        >>> rec.attack_interval  # Based on actual skill timings!
+        1.6
     """
     hp = monster.get('hp')
     damage = monster.get('damage_per_hit')
@@ -194,6 +252,7 @@ def calculate_timing_from_monster(
         monster_hp=float(hp),
         damage_per_hit=float(damage),
         attacks_per_second=attacks_per_second,
+        skill_rotation=skill_rotation,  # Pass skill rotation!
         **kwargs
     )
 

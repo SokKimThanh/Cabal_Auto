@@ -3920,10 +3920,24 @@ Track progress at:
         try:
             from lib.features.timing.calculator import calculate_timing_from_monster
             
-            result = calculate_timing_from_monster(
-                self.selected_timing_monster,
-                attacks_per_second=aps
-            )
+            # Get skill rotation from hunt_cfg (attack skills only)
+            skill_rotation = []
+            if hasattr(self, 'hunt_cfg') and 'skill_slots' in self.hunt_cfg:
+                skill_rotation = [s for s in self.hunt_cfg['skill_slots'] if s.get('type') == 'attack']
+            
+            # Calculate with skill rotation if available
+            if skill_rotation:
+                result = calculate_timing_from_monster(
+                    self.selected_timing_monster,
+                    attacks_per_second=aps,  # Fallback if no skills
+                    skill_rotation=skill_rotation  # Use actual skills!
+                )
+            else:
+                # Fallback to generic APS
+                result = calculate_timing_from_monster(
+                    self.selected_timing_monster,
+                    attacks_per_second=aps
+                )
             
             if result is None:
                 messagebox.showerror(
