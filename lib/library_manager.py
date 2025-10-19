@@ -13,6 +13,7 @@ Date: October 18, 2025
 
 import tkinter as tk
 from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t
+from lib.ui_style import UIStyle as UI
 from lib.translations import LIBRARY_MANAGER_TRANSLATIONS
 from tkinter import ttk, messagebox, filedialog
 from typing import Callable, Optional, Dict, Any
@@ -105,6 +106,16 @@ class LibraryManagerWindow(tk.Toplevel):
         except Exception:
             # On any error, return empty image name to avoid TclError
             return ''
+
+    def _icon_text(self, name: str, fallback: str) -> str:
+        """Return a text/emoji fallback for non-image contexts using icon_helper when available."""
+        try:
+            if not icon_helper:
+                return fallback
+            ic = icon_helper.get_icon(name, fallback=fallback, size=16)
+            return ic if isinstance(ic, str) and ic else fallback
+        except Exception:
+            return fallback
 
     def _on_template_region_change(self):
         if getattr(self, '_suspend_template_var_traces', False):
@@ -422,6 +433,25 @@ class LibraryManagerWindow(tk.Toplevel):
         # Center window
         self._center_window()
         
+        # Initialize common attributes to avoid unknown-attribute issues
+        self.unsaved_badge = None
+        self.details_panel = None
+        self.monster_tree = None
+        self.template_list_panel = None
+        self.template_preview_panel = None
+        self.template_edit_panel = None
+        self.template_tree = None
+        # Initialize form variables (non-optional)
+        self.template_name_var = tk.StringVar()
+        self.template_path_var = tk.StringVar()
+        self.template_threshold_var = tk.StringVar(value='0.85')
+        self.template_region_vars = {
+            'left': tk.StringVar(),
+            'top': tk.StringVar(),
+            'width': tk.StringVar(),
+            'height': tk.StringVar(),
+        }
+
         # Build UI
         self._build_ui()
         
@@ -766,10 +796,10 @@ class LibraryManagerWindow(tk.Toplevel):
         top_bar.pack(fill='x', side='top', pady=(0, 8))
         top_bar.pack_propagate(False)
         # Spacer label left as title
-        tk.Label(top_bar, text=self._t('library_manager_title'), bg='#F5F5F5', fg='#424242', font=('Segoe UI', 12, 'bold')).pack(side='left', padx=8)
+        tk.Label(top_bar, text=self._t('library_manager_title'), bg=UI.BG_PANEL, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=8)
         # Right-aligned actions
-        tk.Button(top_bar, image=self._icon('cancel', '✖'), compound='left', text=self._t('btn_close'), command=self._on_window_close, bg='#757575', fg='white', relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
-        tk.Button(top_bar, image=self._icon('save', '💾'), compound='left', text=self._t('btn_apply_all'), command=self._apply_all_changes, bg='#2E7D32', fg='white', relief='flat', padx=12, pady=6).pack(side='right', padx=6, pady=6)
+        tk.Button(top_bar, image=self._icon('cancel', '✖'), compound='left', text=self._t('btn_close'), command=self._on_window_close, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
+        tk.Button(top_bar, image=self._icon('save', '💾'), compound='left', text=self._t('btn_apply_all'), command=self._apply_all_changes, bg=UI.BTN_PRIMARY_BG, fg=UI.BTN_PRIMARY_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=6, pady=6)
         
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(main_frame)
@@ -821,26 +851,27 @@ class LibraryManagerWindow(tk.Toplevel):
             text=('Add' if self.lang=='en' else 'Thêm'),
             command=self._add_monster,
             bg='#4CAF50', fg='white', relief='flat',
-            font=self.ui_font_button, padx=self.ui_btn_padx, pady=self.ui_btn_pady,
+            font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady,
             cursor='hand2'
         ).pack(side='right', padx=10, pady=6)
 
         # Search bar
-        search_frame = tk.Frame(left_frame, bg='#FFFFFF', pady=12, padx=15)
+        search_frame = tk.Frame(left_frame, bg=UI.BG_DEFAULT, pady=12, padx=15)
         search_frame.pack(fill='x')
-        search_container = tk.Frame(search_frame, bg='#F5F5F5', highlightbackground='#E0E0E0', highlightthickness=1)
+        search_container = tk.Frame(search_frame, bg=UI.BG_PANEL, highlightbackground='#E0E0E0', highlightthickness=1)
         search_container.pack(fill='x')
         search_img = self._icon('search', '🔍')
+        search_txt = self._icon_text('search', '🔍')
         if search_img:
             try:
                 tk.Label(search_container, image=search_img, text='', bg='#F5F5F5').pack(side='left', padx=(10, 5))
             except Exception:
-                tk.Label(search_container, text='🔍', font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
+                tk.Label(search_container, text=search_txt, font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
         else:
-            tk.Label(search_container, text='🔍', font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
+            tk.Label(search_container, text=search_txt, font=(UI.FONT_FAMILY, 11), bg=UI.BG_PANEL, fg=UI.COLOR_HINT).pack(side='left', padx=(10, 5))
         self.monster_search_var = tk.StringVar()
         self.monster_search_var.trace('w', lambda *args: self._filter_monster_list())
-        tk.Entry(search_container, textvariable=self.monster_search_var, font=('Segoe UI', 10), border=0, bg='#F5F5F5', fg='#212121').pack(side='left', fill='x', expand=True, pady=10, padx=(0, 10))
+        tk.Entry(search_container, textvariable=self.monster_search_var, font=UI.FONT_TEXT, border=0, bg=UI.BG_PANEL, fg=UI.COLOR_TEXT).pack(side='left', fill='x', expand=True, pady=10, padx=(0, 10))
 
         # Treeview (name only)
         list_frame = tk.Frame(left_frame, bg='#FFFFFF')
@@ -875,7 +906,7 @@ class LibraryManagerWindow(tk.Toplevel):
         action_bar = tk.Frame(row1, bg='#E3F2FD', height=44)
         action_bar.grid(row=0, column=0, sticky='ew')
         action_bar.grid_propagate(False)
-        tk.Label(action_bar, text=('Monster Editor' if self.lang=='en' else 'Chỉnh Sửa Quái'), bg='#E3F2FD', fg='#0D47A1', font=self.ui_font_title).pack(side='left', padx=12)
+        tk.Label(action_bar, text=('Monster Editor' if self.lang=='en' else 'Chỉnh Sửa Quái'), bg=UI.BG_SECTION, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=12)
         # Details panel
         self.details_panel = tk.Frame(row1, bg='#FFFFFF')
         self.details_panel.grid(row=1, column=0, sticky='nsew', padx=0)
@@ -916,6 +947,8 @@ class LibraryManagerWindow(tk.Toplevel):
         search_text = self.monster_search_var.get().lower()
         
         # Clear tree
+        if not self.monster_tree:
+            return
         for item in self.monster_tree.get_children():
             self.monster_tree.delete(item)
         
@@ -928,6 +961,8 @@ class LibraryManagerWindow(tk.Toplevel):
     def _refresh_monster_tree(self):
         """Refresh the monster tree with current data."""
         # Clear tree
+        if not self.monster_tree:
+            return
         for item in self.monster_tree.get_children():
             self.monster_tree.delete(item)
         
@@ -938,6 +973,8 @@ class LibraryManagerWindow(tk.Toplevel):
     def _add_monster_to_tree(self, monster: dict):
         """Add a single monster to the tree."""
         name = monster.get('name', 'Unknown')
+        if not self.monster_tree:
+            return
         self.monster_tree.insert(
             '',
             'end',
@@ -947,6 +984,8 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _on_monster_select(self, event):
         """Handle monster selection in tree."""
+        if not self.monster_tree:
+            return
         selection = self.monster_tree.selection()
         if not selection:
             self._show_monster_details(None)
@@ -967,18 +1006,24 @@ class LibraryManagerWindow(tk.Toplevel):
         Includes an inline Edit button that opens the inline form.
         """
         # Clear current content
-        if hasattr(self, 'details_panel'):
-            for w in self.details_panel.winfo_children():
-                w.destroy()
+        if hasattr(self, 'details_panel') and self.details_panel:
+            try:
+                for w in self.details_panel.winfo_children():
+                    w.destroy()
+            except Exception:
+                pass
 
         if monster is None:
+            if not self.details_panel:
+                return
             tk.Label(self.details_panel, text='← ' + ('Select a monster to edit' if self.lang=='en' else 'Chọn quái để sửa'),
                      bg='#FFFFFF', fg='#9E9E9E', font=self.ui_font_label).pack(padx=18, pady=18, anchor='w')
             return
 
         # Store current and render edit form directly
         self.current_monster = monster
-        self._render_monster_edit_form(self.details_panel)
+        if self.details_panel:
+            self._render_monster_edit_form(self.details_panel)
         # Keep template editor in sync (right panel)
         self._show_template_editor(monster)
 
@@ -1070,6 +1115,8 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _edit_monster(self):
         """Open dialog to edit selected monster."""
+        if not self.monster_tree:
+            return
         selection = self.monster_tree.selection()
         if not selection:
             messagebox.showwarning(
@@ -1101,6 +1148,8 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _edit_monster_inline(self):
         """Edit selected monster inline (no popup dialog)."""
+        if not self.monster_tree:
+            return
         selection = self.monster_tree.selection()
         if not selection:
             messagebox.showwarning(
@@ -1131,6 +1180,8 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _delete_monster(self):
         """Delete selected monster."""
+        if not self.monster_tree:
+            return
         selection = self.monster_tree.selection()
         if not selection:
             messagebox.showwarning(
@@ -1169,6 +1220,8 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _duplicate_monster(self):
         """Duplicate selected monster."""
+        if not self.monster_tree:
+            return
         selection = self.monster_tree.selection()
         if not selection:
             messagebox.showwarning(
@@ -1208,20 +1261,30 @@ class LibraryManagerWindow(tk.Toplevel):
         - Right column: template edit form and preview/info (preview width fixed to 200)
         """
         # Clear panels
-        if hasattr(self, 'template_list_panel'):
-            for w in self.template_list_panel.winfo_children():
-                w.destroy()
-        if hasattr(self, 'template_preview_panel'):
-            for w in self.template_preview_panel.winfo_children():
-                w.destroy()
-        if hasattr(self, 'template_edit_panel'):
-            for w in self.template_edit_panel.winfo_children():
-                w.destroy()
+        if hasattr(self, 'template_list_panel') and self.template_list_panel:
+            try:
+                for w in self.template_list_panel.winfo_children():
+                    w.destroy()
+            except Exception:
+                pass
+        if hasattr(self, 'template_preview_panel') and self.template_preview_panel:
+            try:
+                for w in self.template_preview_panel.winfo_children():
+                    w.destroy()
+            except Exception:
+                pass
+        if hasattr(self, 'template_edit_panel') and self.template_edit_panel:
+            try:
+                for w in self.template_edit_panel.winfo_children():
+                    w.destroy()
+            except Exception:
+                pass
 
         if monster is None:
             # Show empty hints
-            tk.Label(self.template_list_panel, text='👈', font=('Arial', 36), bg='#FFFFFF', fg='#DDD').pack(pady=(40, 6))
-            tk.Label(self.template_list_panel, text=('Select a monster to view templates' if self.lang=='en' else 'Chọn quái để xem template'), bg='#FFFFFF', fg='#999').pack()
+            if self.template_list_panel:
+                tk.Label(self.template_list_panel, text='👈', font=('Arial', 36), bg='#FFFFFF', fg='#DDD').pack(pady=(40, 6))
+                tk.Label(self.template_list_panel, text=('Select a monster to view templates' if self.lang=='en' else 'Chọn quái để xem template'), bg='#FFFFFF', fg='#999').pack()
             return
 
         self.current_monster = monster
@@ -1294,67 +1357,76 @@ class LibraryManagerWindow(tk.Toplevel):
         self.template_preview_label.pack(anchor='n', padx=10, pady=(0, 8))
 
         # Right: edit panel with toolbar + inline form (created but not packed until used)
-        edit_toolbar = tk.Frame(self.template_edit_panel, bg='#F5F5F5')
+        edit_toolbar = tk.Frame(self.template_edit_panel, bg=UI.BG_PANEL)
         edit_toolbar.pack(fill='x', padx=10, pady=(10, 0))
         # Right-align with 4px margins
-        tk.Button(edit_toolbar, image=self._icon('delete', '🗑️'), compound='left', text=('Delete' if self.lang=='en' else 'Xóa'), command=self._delete_template_inline, bg='#F44336', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
-        tk.Button(edit_toolbar, image=self._icon('edit', '✏️'), compound='left', text=('Edit' if self.lang=='en' else 'Sửa'), command=self._edit_template_inline, bg='#1976D2', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
-        tk.Button(edit_toolbar, image=self._icon('add', '➕'), compound='left', text=('Add' if self.lang=='en' else 'Thêm'), command=self._add_template_inline, bg='#4CAF50', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
+        tk.Button(edit_toolbar, image=self._icon('delete', '🗑️'), compound='left', text=('Delete' if self.lang=='en' else 'Xóa'), command=self._delete_template_inline, bg=UI.BTN_DANGER_BG, fg=UI.BTN_DANGER_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
+        tk.Button(edit_toolbar, image=self._icon('edit', '✏️'), compound='left', text=('Edit' if self.lang=='en' else 'Sửa'), command=self._edit_template_inline, bg=UI.BTN_INFO_BG, fg=UI.BTN_INFO_FG, relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
+        tk.Button(edit_toolbar, image=self._icon('add', '➕'), compound='left', text=('Add' if self.lang=='en' else 'Thêm'), command=self._add_template_inline, bg=UI.COLOR_ACCENT, fg='#FFFFFF', relief='flat', padx=12, pady=6, font=(UI.FONT_FAMILY, 9, 'bold')).pack(side='right', padx=4, pady=4)
 
         # Small guidance hint below toolbar
         hint_txt = ('Chọn một template để xem trước và sửa. Dùng Thêm/Sửa/Xóa ở góc phải.' if self.lang=='vi' else 'Select a template to preview and edit. Use Add/Edit/Delete on the top-right.')
         tk.Label(self.template_edit_panel, text=hint_txt, bg='#FFFFFF', fg='#757575', font=('Arial', 8)).pack(fill='x', padx=12, pady=(4, 0))
 
         # Inline template form
-        self.template_form_frame = tk.Frame(self.template_edit_panel, bg='#E3F2FD', relief='flat', borderwidth=0, highlightbackground='#2196F3', highlightthickness=2)
+        self.template_form_frame = tk.Frame(self.template_edit_panel, bg=UI.BG_SECTION, relief='flat', borderwidth=0, highlightbackground=UI.COLOR_PRIMARY, highlightthickness=2)
 
         # Title
-        form_title_frame = tk.Frame(self.template_form_frame, bg='#2196F3', height=45)
+        form_title_frame = tk.Frame(self.template_form_frame, bg=UI.BG_TITLE, height=45)
         form_title_frame.pack(fill='x')
         form_title_frame.pack_propagate(False)
-        self.form_title_label = tk.Label(form_title_frame, text='', font=('Arial', 11, 'bold'), bg='#2196F3', fg='white')
+        self.form_title_label = tk.Label(form_title_frame, text='', font=(UI.FONT_FAMILY, 11, 'bold'), bg=UI.BG_TITLE, fg='#FFFFFF')
         self.form_title_label.pack(pady=12, padx=15, side='left')
         # Unsaved badge (initially hidden)
         try:
-            self.unsaved_badge = tk.Label(form_title_frame, text='', bg='#FF7043', fg='white', font=('Arial', 9, 'bold'))
+            self.unsaved_badge = tk.Label(form_title_frame, text='', bg=UI.COLOR_WARNING, fg='#FFFFFF', font=(UI.FONT_FAMILY, 9, 'bold'))
             self.unsaved_badge.place_forget()
         except Exception:
             self.unsaved_badge = None
 
-        form_body = tk.Frame(self.template_form_frame, bg='#E3F2FD')
+        form_body = tk.Frame(self.template_form_frame, bg=UI.BG_SECTION)
         form_body.pack(fill='both', expand=True, padx=20, pady=15)
-        name_frame = tk.Frame(form_body, bg='#E3F2FD'); name_frame.pack(fill='x', pady=(0, 12))
-        tk.Label(name_frame, text=('Template Name' if self.lang=='en' else 'Tên Template'), bg='#E3F2FD', font=('Arial', 9, 'bold'), fg='#424242', anchor='w').pack(fill='x', pady=(0,4))
+        # Top row: Template Name (4) | Threshold (8)
+        top_row = tk.Frame(form_body, bg='#E3F2FD')
+        top_row.pack(fill='x', pady=(0, 12))
+        top_row.grid_columnconfigure(0, weight=4, uniform='top')
+        top_row.grid_columnconfigure(1, weight=8, uniform='top')
+        # Name column
+        name_col = tk.Frame(top_row, bg=UI.BG_SECTION)
+        name_col.grid(row=0, column=0, sticky='nsew', padx=(0, 6))
+        tk.Label(name_col, text=('Template Name' if self.lang=='en' else 'Tên Template'), bg=UI.BG_SECTION, font=(UI.FONT_FAMILY, 9, 'bold'), fg=UI.COLOR_PRIMARY_TEXT, anchor='w').pack(fill='x', pady=(0,4))
         self.template_name_var = tk.StringVar()
-        tk.Entry(name_frame, textvariable=self.template_name_var, font=('Arial', 10), relief='solid', borderwidth=1).pack(fill='x', ipady=6)
-        # Guidance for name
-        tk.Label(name_frame, text=('Tên hiển thị của mẫu hình.' if self.lang=='vi' else 'Display name for this template.'), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,0))
+        tk.Entry(name_col, textvariable=self.template_name_var, font=UI.FONT_TEXT, relief='solid', borderwidth=1).pack(fill='x', ipady=6)
+        tk.Label(name_col, text=('Tên hiển thị của mẫu hình.' if self.lang=='vi' else 'Display name for this template.'), bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL, anchor='w').pack(fill='x', pady=(4,0))
+        # Threshold column
+        th_col = tk.Frame(top_row, bg=UI.BG_SECTION)
+        th_col.grid(row=0, column=1, sticky='nsew', padx=(6, 0))
+        tk.Label(th_col, text=('Match Threshold' if self.lang=='en' else 'Ngưỡng Khớp'), bg=UI.BG_SECTION, font=(UI.FONT_FAMILY, 9, 'bold'), fg=UI.COLOR_PRIMARY_TEXT, anchor='w').pack(fill='x', pady=(0,4))
+        th_input = tk.Frame(th_col, bg=UI.BG_SECTION)
+        th_input.pack(fill='x')
+        self.template_threshold_var = tk.StringVar(value='0.85')
+        tk.Entry(th_input, textvariable=self.template_threshold_var, font=UI.FONT_TEXT, width=12, relief='solid', borderwidth=1).pack(side='left', ipady=6)
+        tk.Label(th_input, text='  (0.0 - 1.0)', bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL).pack(side='left', padx=5)
+        tk.Label(th_col, text=(
+            'Gợi ý: 0.80 - 0.90. Cao hơn -> ít nhận nhầm, nhưng khó khớp.' if self.lang=='vi' else 
+            'Tip: 0.80 - 0.90. Higher = less false positives, but harder to match.'
+        ), bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL, anchor='w').pack(fill='x', pady=(4,0))
 
-        path_frame = tk.Frame(form_body, bg='#E3F2FD'); path_frame.pack(fill='x', pady=(0, 12))
-        tk.Label(path_frame, text=('Image Path' if self.lang=='en' else 'Đường Dẫn Ảnh'), bg='#E3F2FD', font=('Arial', 9, 'bold'), fg='#424242', anchor='w').pack(fill='x', pady=(0,4))
-        path_input_frame = tk.Frame(path_frame, bg='#E3F2FD'); path_input_frame.pack(fill='x')
+        path_frame = tk.Frame(form_body, bg=UI.BG_SECTION); path_frame.pack(fill='x', pady=(0, 12))
+        tk.Label(path_frame, text=('Image Path' if self.lang=='en' else 'Đường Dẫn Ảnh'), bg=UI.BG_SECTION, font=(UI.FONT_FAMILY, 9, 'bold'), fg=UI.COLOR_PRIMARY_TEXT, anchor='w').pack(fill='x', pady=(0,4))
+        path_input_frame = tk.Frame(path_frame, bg=UI.BG_SECTION); path_input_frame.pack(fill='x')
         self.template_path_var = tk.StringVar()
-        tk.Entry(path_input_frame, textvariable=self.template_path_var, font=('Arial', 9), state='readonly', fg='#666', relief='solid', borderwidth=1).pack(side='left', fill='x', expand=True, ipady=6)
+        tk.Entry(path_input_frame, textvariable=self.template_path_var, font=UI.FONT_TEXT, state='readonly', fg=UI.COLOR_SUBTEXT, relief='solid', borderwidth=1).pack(side='left', fill='x', expand=True, ipady=6)
         # Browse and Capture inline
         tools_frame = tk.Frame(path_input_frame, bg='#E3F2FD')
         tools_frame.pack(side='right')
-        tk.Button(tools_frame, image=self._icon('folder', '📁'), compound='left', text=('Browse' if self.lang=='en' else 'Chọn'), command=self._browse_template_image, font=('Arial', 9), bg='#757575', fg='white', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
+        tk.Button(tools_frame, image=self._icon('folder', '📁'), compound='left', text=('Browse' if self.lang=='en' else 'Chọn'), command=self._browse_template_image, font=UI.FONT_BUTTON, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
         # Keep only screenshot capture per spec
-        tk.Button(tools_frame, image=self._icon('capture', '📸'), compound='left', text=('Capture' if self.lang=='en' else 'Chụp'), command=lambda: self._capture_into_path_var(window=False), font=('Arial', 9), bg='#9C27B0', fg='white', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
+        tk.Button(tools_frame, image=self._icon('capture', '📸'), compound='left', text=('Capture' if self.lang=='en' else 'Chụp'), command=lambda: self._capture_into_path_var(window=False), font=UI.FONT_BUTTON, bg='#9C27B0', fg='#FFFFFF', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
         # Guidance for path/capture
-        tk.Label(path_frame, text=('Chọn file ảnh hoặc bấm Chụp để lấy ảnh từ màn hình.' if self.lang=='vi' else 'Pick an image file or use Capture to grab from screen.'), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,0))
+        tk.Label(path_frame, text=('Chọn file ảnh hoặc bấm Chụp để lấy ảnh từ màn hình.' if self.lang=='vi' else 'Pick an image file or use Capture to grab from screen.'), bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL, anchor='w').pack(fill='x', pady=(4,0))
 
-        threshold_frame = tk.Frame(form_body, bg='#E3F2FD'); threshold_frame.pack(fill='x', pady=(0,12))
-        tk.Label(threshold_frame, text=('Match Threshold' if self.lang=='en' else 'Ngưỡng Khớp'), bg='#E3F2FD', font=('Arial', 9, 'bold'), fg='#424242', anchor='w').pack(fill='x', pady=(0,4))
-        threshold_input_frame = tk.Frame(threshold_frame, bg='#E3F2FD'); threshold_input_frame.pack(fill='x')
-        self.template_threshold_var = tk.StringVar(value='0.85')
-        tk.Entry(threshold_input_frame, textvariable=self.template_threshold_var, font=('Arial', 10), width=12, relief='solid', borderwidth=1).pack(side='left', ipady=6)
-        tk.Label(threshold_input_frame, text='  (0.0 - 1.0)', bg='#E3F2FD', fg='#757575', font=('Arial', 8)).pack(side='left', padx=5)
-        # Guidance for threshold
-        tk.Label(threshold_frame, text=(
-            'Gợi ý: 0.80 - 0.90. Cao hơn -> ít nhận nhầm, nhưng khó khớp.' if self.lang=='vi' else 
-            'Tip: 0.80 - 0.90. Higher = less false positives, but harder to match.'
-        ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,0))
+        # Threshold moved to top_row with name
 
         # Region override section
         region_frame = tk.Frame(form_body, bg='#E3F2FD'); region_frame.pack(fill='x', pady=(0,12))
@@ -1395,6 +1467,8 @@ class LibraryManagerWindow(tk.Toplevel):
         self._update_template_preview(None)
         # Auto-select first template if exists
         try:
+            if not self.template_tree:
+                return
             items = self.template_tree.get_children()
             if items:
                 self.template_tree.selection_set(items[0])
@@ -1405,6 +1479,8 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _on_template_tree_select(self, event):
         """Handle template selection: show preview and open inline edit immediately."""
+        if not self.template_tree:
+            return
         selection = self.template_tree.selection()
         if not selection:
             self._update_template_preview(None)
@@ -1459,6 +1535,8 @@ class LibraryManagerWindow(tk.Toplevel):
             return None
         # Prefer selected index if available; else use first
         try:
+            if not self.template_tree:
+                raise Exception('template_tree not ready')
             sel = self.template_tree.selection()
             if sel:
                 idx = self.template_tree.index(sel[0])
@@ -1484,6 +1562,8 @@ class LibraryManagerWindow(tk.Toplevel):
         if hasattr(self, 'template_name_label'):
             self.template_name_label.config(text=tmpl['name'])
         try:
+            if not self.template_tree:
+                return
             sel = self.template_tree.selection()
             if sel:
                 self.template_tree.set(sel[0], 'name', tmpl['name'])
@@ -1747,6 +1827,8 @@ class LibraryManagerWindow(tk.Toplevel):
         self._show_template_editor(self.current_monster)
         # Select the newly added item (last)
         try:
+            if not self.template_tree:
+                return
             items = self.template_tree.get_children()
             if items:
                 self.template_tree.selection_set(items[-1])
@@ -1761,6 +1843,8 @@ class LibraryManagerWindow(tk.Toplevel):
             return
         
         # Get selection from treeview
+        if not self.template_tree:
+            return
         selection = self.template_tree.selection()
         if not selection:
             messagebox.showwarning(
@@ -1790,6 +1874,8 @@ class LibraryManagerWindow(tk.Toplevel):
             return
         
         # Get selection
+        if not self.template_tree:
+            return
         selection = self.template_tree.selection()
         if not selection:
             messagebox.showwarning(
