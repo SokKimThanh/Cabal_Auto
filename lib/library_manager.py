@@ -82,6 +82,20 @@ except Exception:
 
 class LibraryManagerWindow(tk.Toplevel):
 
+    # --- Small icon cache ---
+    def _icon(self, name: str, fallback: str, size: int = 16):
+        try:
+            if not hasattr(self, '_icon_cache'):
+                self._icon_cache = {}
+            key = f"{name}_{size}"
+            if key in self._icon_cache:
+                return self._icon_cache[key]
+            img = icon_helper.get_icon(name, fallback=fallback, size=size) if icon_helper else fallback
+            self._icon_cache[key] = img
+            return img
+        except Exception:
+            return fallback
+
     def _on_template_region_change(self):
         if getattr(self, '_suspend_template_var_traces', False):
             return
@@ -774,8 +788,8 @@ class LibraryManagerWindow(tk.Toplevel):
         # Spacer label left as title
         tk.Label(top_bar, text=self._t('library_manager_title'), bg='#F5F5F5', fg='#424242', font=('Segoe UI', 12, 'bold')).pack(side='left', padx=8)
         # Right-aligned actions
-        tk.Button(top_bar, text=self._t('btn_close'), command=self._on_window_close, bg='#757575', fg='white', relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
-        tk.Button(top_bar, text=self._t('btn_apply_all'), command=self._apply_all_changes, bg='#2E7D32', fg='white', relief='flat', padx=12, pady=6).pack(side='right', padx=6, pady=6)
+        tk.Button(top_bar, image=self._icon('cancel', '✖'), compound='left', text=self._t('btn_close'), command=self._on_window_close, bg='#757575', fg='white', relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
+        tk.Button(top_bar, image=self._icon('save', '💾'), compound='left', text=self._t('btn_apply_all'), command=self._apply_all_changes, bg='#2E7D32', fg='white', relief='flat', padx=12, pady=6).pack(side='right', padx=6, pady=6)
         
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(main_frame)
@@ -823,6 +837,7 @@ class LibraryManagerWindow(tk.Toplevel):
 
         tk.Button(
             header,
+            image=self._icon('add', '➕'), compound='left',
             text=('Add' if self.lang=='en' else 'Thêm'),
             command=self._add_monster,
             bg='#4CAF50', fg='white', relief='flat',
@@ -835,8 +850,11 @@ class LibraryManagerWindow(tk.Toplevel):
         search_frame.pack(fill='x')
         search_container = tk.Frame(search_frame, bg='#F5F5F5', highlightbackground='#E0E0E0', highlightthickness=1)
         search_container.pack(fill='x')
-        search_icon = icon_helper.get_text('search', '') if icon_helper else '🔍'
-        tk.Label(search_container, text=search_icon, font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
+        search_img = self._icon('search', '🔍')
+        try:
+            tk.Label(search_container, image=search_img, text='', bg='#F5F5F5').pack(side='left', padx=(10, 5))
+        except Exception:
+            tk.Label(search_container, text='🔍', font=('Segoe UI', 11), bg='#F5F5F5', fg='#757575').pack(side='left', padx=(10, 5))
         self.monster_search_var = tk.StringVar()
         self.monster_search_var.trace('w', lambda *args: self._filter_monster_list())
         tk.Entry(search_container, textvariable=self.monster_search_var, font=('Segoe UI', 10), border=0, bg='#F5F5F5', fg='#212121').pack(side='left', fill='x', expand=True, pady=10, padx=(0, 10))
@@ -1296,9 +1314,9 @@ class LibraryManagerWindow(tk.Toplevel):
         edit_toolbar = tk.Frame(self.template_edit_panel, bg='#F5F5F5')
         edit_toolbar.pack(fill='x', padx=10, pady=(10, 0))
         # Right-align with 4px margins
-        tk.Button(edit_toolbar, text='🗑️ ' + ('Delete' if self.lang=='en' else 'Xóa'), command=self._delete_template_inline, bg='#F44336', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
-        tk.Button(edit_toolbar, text='✏️ ' + ('Edit' if self.lang=='en' else 'Sửa'), command=self._edit_template_inline, bg='#1976D2', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
-        tk.Button(edit_toolbar, text='➕ ' + ('Add' if self.lang=='en' else 'Thêm'), command=self._add_template_inline, bg='#4CAF50', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
+        tk.Button(edit_toolbar, image=self._icon('delete', '🗑️'), compound='left', text=('Delete' if self.lang=='en' else 'Xóa'), command=self._delete_template_inline, bg='#F44336', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
+        tk.Button(edit_toolbar, image=self._icon('edit', '✏️'), compound='left', text=('Edit' if self.lang=='en' else 'Sửa'), command=self._edit_template_inline, bg='#1976D2', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
+        tk.Button(edit_toolbar, image=self._icon('add', '➕'), compound='left', text=('Add' if self.lang=='en' else 'Thêm'), command=self._add_template_inline, bg='#4CAF50', fg='white', relief='flat', padx=12, pady=6, font=('Arial', 9, 'bold')).pack(side='right', padx=4, pady=4)
 
         # Small guidance hint below toolbar
         hint_txt = ('Chọn một template để xem trước và sửa. Dùng Thêm/Sửa/Xóa ở góc phải.' if self.lang=='vi' else 'Select a template to preview and edit. Use Add/Edit/Delete on the top-right.')
@@ -1337,9 +1355,9 @@ class LibraryManagerWindow(tk.Toplevel):
         # Browse and Capture inline
         tools_frame = tk.Frame(path_input_frame, bg='#E3F2FD')
         tools_frame.pack(side='right')
-        tk.Button(tools_frame, text='📁 ' + ('Browse' if self.lang=='en' else 'Chọn'), command=self._browse_template_image, font=('Arial', 9), bg='#757575', fg='white', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
+        tk.Button(tools_frame, image=self._icon('folder', '📁'), compound='left', text=('Browse' if self.lang=='en' else 'Chọn'), command=self._browse_template_image, font=('Arial', 9), bg='#757575', fg='white', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
         # Keep only screenshot capture per spec
-        tk.Button(tools_frame, text='📸 ' + ('Capture' if self.lang=='en' else 'Chụp'), command=lambda: self._capture_into_path_var(window=False), font=('Arial', 9), bg='#9C27B0', fg='white', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
+        tk.Button(tools_frame, image=self._icon('capture', '📸'), compound='left', text=('Capture' if self.lang=='en' else 'Chụp'), command=lambda: self._capture_into_path_var(window=False), font=('Arial', 9), bg='#9C27B0', fg='white', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
         # Guidance for path/capture
         tk.Label(path_frame, text=('Chọn file ảnh hoặc bấm Chụp để lấy ảnh từ màn hình.' if self.lang=='vi' else 'Pick an image file or use Capture to grab from screen.'), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,0))
 
@@ -1372,9 +1390,9 @@ class LibraryManagerWindow(tk.Toplevel):
             'Để trống để dùng biên cửa sổ game.' if self.lang=='vi' else 'Leave blank to use game window bounds.'
         ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,6))
         region_btns = tk.Frame(region_frame, bg='#E3F2FD'); region_btns.pack(fill='x')
-        tk.Button(region_btns, text=('Pick Region' if self.lang=='en' else 'Chọn vùng'), command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
-        tk.Button(region_btns, text=('Test Recognition' if self.lang=='en' else 'Kiểm tra nhận diện'), command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
-        tk.Button(region_btns, text=('Auto-Detect Region' if self.lang=='en' else 'Tự động dò vùng'), command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        tk.Button(region_btns, image=self._icon('template', '🖼️'), compound='left', text=('Pick Region' if self.lang=='en' else 'Chọn vùng'), command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
+        tk.Button(region_btns, image=self._icon('search', '🔍'), compound='left', text=('Test Recognition' if self.lang=='en' else 'Kiểm tra nhận diện'), command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        tk.Button(region_btns, image=self._icon('info', '📋'), compound='left', text=('Auto-Detect Region' if self.lang=='en' else 'Tự động dò vùng'), command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
 
         # No Save/Cancel buttons; changes are applied immediately and persisted with Apply All (top-right)
 
