@@ -12,6 +12,8 @@ Date: October 18, 2025
 """
 
 import tkinter as tk
+from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t
+from lib.translations import LIBRARY_MANAGER_TRANSLATIONS
 from tkinter import ttk, messagebox, filedialog
 from typing import Callable, Optional, Dict, Any
 import json
@@ -716,44 +718,14 @@ class LibraryManagerWindow(tk.Toplevel):
             self.destroy()
     
     def _t(self, key: str) -> str:
-        """
-        Get translated string for current language.
-        
-        Args:
-            key: Translation key
-            
-        Returns:
-            Translated string, or key if not found
-        """
-        translations = {
-            'en': {
-                'library_manager_title': 'Library Manager',
-                'tab_monsters': 'Monster Library',
-                'tab_skills': 'Skill Library',
-                'tab_timing': 'Timing Calculator',
-                'btn_apply_all': 'Apply All Changes',
-                'btn_close': 'Close',
-                'btn_calculate': 'Calculate Timing',
-                'changes_pending': 'You have unsaved changes. Apply them?',
-                'confirm_title': 'Unsaved Changes',
-                'changes_applied': 'All changes have been applied successfully!',
-                'success_title': 'Success',
-            },
-            'vi': {
-                'library_manager_title': 'Quản Lý Thư Viện',
-                'tab_monsters': 'Thư Viện Quái Vật',
-                'tab_skills': 'Thư Viện Kỹ Năng',
-                'tab_timing': 'Tính Toán Thời Gian',
-                'btn_apply_all': 'Áp Dụng Tất Cả',
-                'btn_close': 'Đóng',
-                'btn_calculate': 'Tính Toán Thời Gian',
-                'changes_pending': 'Bạn có thay đổi chưa lưu. Áp dụng chúng?',
-                'confirm_title': 'Thay Đổi Chưa Lưu',
-                'changes_applied': 'Tất cả thay đổi đã được áp dụng thành công!',
-                'success_title': 'Thành Công',
-            }
-        }
-        return translations.get(self.lang, {}).get(key, key)
+        """Translate using central i18n with local fallback."""
+        translations = LIBRARY_MANAGER_TRANSLATIONS
+        try:
+            # Register once; cheap if already registered (dict.update no-op for same keys)
+            i18n_register_bulk('library_manager', translations)
+            return i18n_t(key, ns='library_manager', lang=self.lang)
+        except Exception:
+            return translations.get(self.lang, {}).get(key, key)
     
     def _center_window(self):
         """Center window on parent."""

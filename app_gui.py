@@ -7,13 +7,15 @@ import time
 import copy
 from ctypes import wintypes
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any, Tuple
 
 import pyautogui
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from lib.template_matcher import locate_template
+from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang, GLOBAL_NS as I18N_GLOBAL
+from lib.translations import GLOBAL_TRANSLATIONS
 try:
     from lib.capture_helper import capture_region_and_save
 except Exception:
@@ -60,9 +62,17 @@ class ToolTip:
         self.tooltip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(tw, text=self.text, justify='left',
-                        background="#ffffe0", relief='solid', borderwidth=1,
-                        font=("tahoma", "8", "normal"), padx=4, pady=2)
+        label = tk.Label(
+            tw,
+            text=self.text,
+            justify='left',
+            background="#ffffe0",
+            relief='solid',
+            borderwidth=1,
+            font=("tahoma", 8, "normal"),
+            padx=4,
+            pady=2,
+        )
         label.pack()
     
     def hide_tooltip(self, event=None):
@@ -547,6 +557,15 @@ LANG: Dict[str, Dict[str, str]] = {
     },
 }
 
+# Register centralized translations; prefer module in lib/translations.py, fallback to local LANG
+try:
+    i18n_register_bulk(I18N_GLOBAL, GLOBAL_TRANSLATIONS)
+except Exception:
+    try:
+        i18n_register_bulk(I18N_GLOBAL, LANG)
+    except Exception:
+        pass
+
 CONFIG_PATH = Path(__file__).parent / 'data' / 'config.json'
 HUNT_CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
 MONSTER_DB_PATH = Path(__file__).parent / 'data' / 'monsters.json'
@@ -913,6 +932,14 @@ class App(tk.Tk):
         self.cfg = load_config()
         self.hunt_cfg = load_hunt_config()
         self.lang = str(self.cfg.get('ui', {}).get('language', 'vi'))
+        try:
+            i18n_set_lang(self.lang)
+        except Exception:
+            pass
+        try:
+            i18n_set_lang(self.lang)
+        except Exception:
+            pass
         
         # Centralized icon helper
         try:
@@ -956,6 +983,9 @@ class App(tk.Tk):
         self.monster_manager_win = None
         self.skill_manager_win = None
         self.monster_listbox = None
+        # Declare monster quick-select attributes for type-checker and runtime
+        self.monster_select_var = tk.StringVar()
+        self.monster_select_combo = None  # type: Optional[ttk.Combobox]
         self.monster_name_var = tk.StringVar()
         self.monster_hp_var = tk.StringVar()
         self.monster_damage_var = tk.StringVar()
@@ -968,6 +998,8 @@ class App(tk.Tk):
         self.skill_cooldown_var = tk.StringVar()
         self.skill_cast_time_var = tk.StringVar()
         self.skill_duration_var = tk.StringVar()
+        # Keep references to images (PhotoImage) to prevent GC
+        self._image_refs = []  # type: List[Any]
         self.skill_pre_refresh_var = tk.StringVar()
         self.skill_image_var = tk.StringVar()
         self.skill_preview_label = None
@@ -1185,13 +1217,7 @@ class App(tk.Tk):
                   font=('Arial', 10, 'bold'), fg='#4CAF50').pack(pady=(0,4))
         tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3).pack(pady=(0,4))
         tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3).pack(pady=(0,12))
-        tk.Button(btn_container, text=self._t('open_library_manager'), command=self._open_library_manager, width=18).pack()
-        # Open Library Manager (use icon if available)
-        lib_icon = self._icon('list', '📚')
-        if isinstance(lib_icon, str):
-            tk.Button(btn_container, text=f"{lib_icon} " + self._t('open_library_manager'), command=self._open_library_manager, width=18).pack()
-        else:
-            tk.Button(btn_container, image=lib_icon, compound='left', text=self._t('open_library_manager'), command=self._open_library_manager, width=18).pack()
+        # Library Manager buttons removed per request
         
         # Current monster status
         self.monster_status_var = tk.StringVar()
@@ -1378,36 +1404,7 @@ class App(tk.Tk):
         lib_desc = tk.Label(lib_frame, text=self._t('setup_libraries_desc'), fg='#666', font=('Arial', 9))
         lib_desc.grid(row=0, column=0, columnspan=2, sticky='w', pady=(0,8))
         
-        # Open Library Manager button
-        lib_btn_frame = tk.Frame(lib_frame)
-        lib_btn_frame.grid(row=1, column=0, columnspan=2, sticky='w', pady=4)
-        
-        # Open Library Manager button with icon
-        lib_icon2 = self._icon('list', '📚')
-        if isinstance(lib_icon2, str):
-            tk.Button(
-                lib_btn_frame, 
-                text=f"{lib_icon2} " + self._t('open_library_manager'),
-                command=self._open_library_manager,
-                bg='#2196F3',
-                fg='white',
-                font=('Arial', 10, 'bold'),
-                padx=15,
-                pady=8
-            ).pack(side='left', padx=(0,12))
-        else:
-            tk.Button(
-                lib_btn_frame, 
-                image=lib_icon2,
-                compound='left',
-                text=self._t('open_library_manager'),
-                command=self._open_library_manager,
-                bg='#2196F3',
-                fg='white',
-                font=('Arial', 10, 'bold'),
-                padx=15,
-                pady=8
-            ).pack(side='left', padx=(0,12))
+        # Library Manager button removed per request
         
         # Status info
         monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
@@ -1415,11 +1412,11 @@ class App(tk.Tk):
         
         status_text = f"{monster_count} monsters • {skills_count} skills" if self.lang == 'en' else f"{monster_count} quái vật • {skills_count} kỹ năng"
         tk.Label(
-            lib_btn_frame,
+            lib_frame,
             text=status_text,
             fg='#666',
             font=('Arial', 9)
-        ).pack(side='left')
+        ).grid(row=1, column=0, sticky='w', pady=(0,8))
         
         # Hint
         hint_text = self._t('library_manager_hint')
@@ -2983,6 +2980,8 @@ class App(tk.Tk):
 
         try:
             # Load template image
+            # For type checkers: ensure PIL modules are available here
+            assert Image is not None and ImageDraw is not None and ImageTk is not None
             img = Image.open(template_path).convert('RGB')
             draw = ImageDraw.Draw(img)
             
@@ -3017,8 +3016,10 @@ class App(tk.Tk):
             img.thumbnail((780, 550))
             photo = ImageTk.PhotoImage(img)
             
-            label = tk.Label(preview_win, image=photo)
-            label._photo_ref = photo  # keep reference
+            label = tk.Label(preview_win)
+            label.configure(image=photo)
+            # Keep reference to prevent GC
+            self._image_refs.append(photo)
             label.pack(pady=10)
             
             info_text = f"Template: {Path(template_path).name}"
@@ -3103,7 +3104,7 @@ class App(tk.Tk):
                         self.top = top
                         self.width = width
                         self.height = height
-                
+                assert box is not None
                 result = Box(box[0], box[1], box[2], box[3])
                 
                 # Get center coordinates
@@ -3136,10 +3137,11 @@ class App(tk.Tk):
                     screenshot = pyautogui.screenshot(region=(result.left, result.top, result.width, result.height))
                     screenshot.thumbnail((200, 200))
                     
-                    if ImageTk:
+                    if ImageTk is not None:
                         photo = ImageTk.PhotoImage(screenshot)
-                        img_label = tk.Label(result_win, image=photo)
-                        img_label._photo_ref = photo
+                        img_label = tk.Label(result_win)
+                        img_label.configure(image=photo)
+                        self._image_refs.append(photo)
                         img_label.pack(pady=10)
                 except Exception:
                     pass
@@ -3770,7 +3772,7 @@ class App(tk.Tk):
                 bg='#E3F2FD',
                 activebackground='#BBDEFB',
                 selectcolor='#2196F3',
-                indicatoron=1,
+                indicatoron=True,
                 command=lambda: None  # Will set after defining update_recommendations
             )
             from_skills_rb.pack(anchor='w', padx=5, pady=5)
@@ -3904,7 +3906,7 @@ class App(tk.Tk):
             result_text.pack(fill='both', expand=True)
             
             # Store current recommendation for Apply button
-            current_rec = {'rec': None}
+            current_rec: Dict[str, Any] = {'rec': None}
             
             def update_recommendations():
                 """Calculate and display recommendations."""
@@ -4824,9 +4826,16 @@ class App(tk.Tk):
                 logger.log_error('hunt_loop', f'Hunt error: {str(e)}', e)
                 logger.log_hunt_stop('error')
             finally:
-                if not hasattr(logger, '_stop_logged') or not logger._stop_logged:
+                try:
+                    already_logged = bool(getattr(logger, '_stop_logged', False))
+                except Exception:
+                    already_logged = False
+                if not already_logged:
                     logger.log_hunt_stop('manual_stop')
-                    logger._stop_logged = True
+                    try:
+                        setattr(logger, '_stop_logged', True)
+                    except Exception:
+                        pass
                 self.hunt_running = False
                 self.after(0, self._after_hunt_stop)
 
@@ -4867,13 +4876,24 @@ class App(tk.Tk):
     # Language helpers
     # -----------------
     def _t(self, key: str) -> str:
-        return LANG.get(self.lang, LANG['en']).get(key, key)
+        try:
+            return i18n_t(key, ns=I18N_GLOBAL, lang=self.lang)
+        except Exception:
+            return GLOBAL_TRANSLATIONS.get(self.lang, GLOBAL_TRANSLATIONS.get('en', {})).get(key, key)
 
     def on_language_change(self, _evt=None):
         self.lang = self.lang_var.get()
         self.cfg.setdefault('ui', {})
         self.cfg['ui']['language'] = self.lang
         save_config(self.cfg)
+        try:
+            i18n_set_lang(self.lang)
+        except Exception:
+            pass
+        try:
+            i18n_set_lang(self.lang)
+        except Exception:
+            pass
         # Rebuild UI with new language
         self.title(self._t('app_title'))
         self._build_ui()
