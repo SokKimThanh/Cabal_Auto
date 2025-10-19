@@ -3732,8 +3732,8 @@ Track progress at:
     def _refresh_timing_monsters(self):
         """Refresh monster dropdown in timing tab"""
         try:
-            monsters = self.data_manager.load_monster_library()
-            names = [m['name'] for m in monsters]
+            # Use self.monsters instead of data_manager
+            names = [m['name'] for m in self.monsters]
             self.timing_monster_combo['values'] = names
             if names:
                 self.timing_monster_combo.current(0)
@@ -3744,9 +3744,9 @@ Track progress at:
     def _refresh_timing_skills(self):
         """Refresh skill dropdown in timing tab"""
         try:
-            skills = self.data_manager.load_skill_library()
+            # Use self.skills instead of data_manager
             # Filter attack skills only
-            attack_skills = [s for s in skills if s.get('type') == 'attack']
+            attack_skills = [s for s in self.skills if s.get('type') == 'attack']
             names = [s['name'] for s in attack_skills]
             self.timing_skill_combo['values'] = names
             if names:
@@ -3762,8 +3762,8 @@ Track progress at:
             return
         
         try:
-            monsters = self.data_manager.load_monster_library()
-            monster = next((m for m in monsters if m['name'] == name), None)
+            # Use self.monsters instead of data_manager
+            monster = next((m for m in self.monsters if m['name'] == name), None)
             
             if monster:
                 hp = monster.get('hp', 'N/A')
@@ -3771,8 +3771,8 @@ Track progress at:
                 desc = monster.get('description', 'N/A')
                 
                 info = (
-                    f"HP: {hp:,} " if isinstance(hp, (int, float)) else f"HP: {hp}\n"
-                    f"{'Damage per hit' if self.lang == 'en' else 'Sát thương/đòn'}: {damage:,} " if isinstance(damage, (int, float)) else f"Damage: {damage}\n"
+                    f"HP: {hp:,}\n" if isinstance(hp, (int, float)) else f"HP: {hp}\n"
+                    f"{'Damage per hit' if self.lang == 'en' else 'Sát thương/đòn'}: {damage:,}\n" if isinstance(damage, (int, float)) else f"Damage: {damage}\n"
                     f"{'Description' if self.lang == 'en' else 'Mô tả'}: {desc}"
                 )
                 self._update_text_widget(self.timing_monster_info, info)
@@ -3787,8 +3787,8 @@ Track progress at:
             return
         
         try:
-            skills = self.data_manager.load_skill_library()
-            skill = next((s for s in skills if s['name'] == name), None)
+            # Use self.skills instead of data_manager
+            skill = next((s for s in self.skills if s['name'] == name), None)
             
             if skill:
                 cooldown = skill.get('cooldown', 'N/A')
