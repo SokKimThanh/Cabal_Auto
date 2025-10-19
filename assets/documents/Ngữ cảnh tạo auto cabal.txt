@@ -1,4 +1,4 @@
-🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-18, Sprint 18 Phase 4 - 4-Tab UI Reorganization IN PROGRESS 75%)
+🧩 Ngữ cảnh dự án: Auto Game Cabal Origin bằng Python (Cập nhật 2025-10-19, Sprint 18 Phase 4 - 4-Tab UI Reorganization IN PROGRESS 75%)
 
 🗓️ Cập nhật 2025-10-19 (Tooltip hóa & Wizard UX)
 - Trung tâm hóa tooltip: Tạo module lib/tooltip.py với attach_i18n_tooltip; tooltip được dịch động theo i18n runtime (ns + lang).
@@ -10,6 +10,13 @@
   • lib/library_manager.py: Chuyển tất cả nút sang icon-only + tooltip, con trỏ hand2; dùng helper _make_icon_button.
   • app_gui.py: Loại bỏ ToolTip cục bộ, dùng attach_i18n_tooltip cho các trường Hunt.
   • setup_wizard.py: Đăng ký namespace 'setup_wizard', thêm property lang; gắn tooltip cho radio ngôn ngữ, filter/search windows, list cửa sổ/quái, combobox skill slot và nút Clear All; các nút Back/Next/Cancel ở footer.
+- Chuẩn hóa icon & tái tổ chức ảnh:
+  • Di chuyển icons png sang thư mục images/png, thêm các file .ico (cancel.ico, add.ico, …) để hỗ trợ chuẩn Windows.
+  • Cập nhật lib/icon_helper.py để ưu tiên .ico và thống nhất cách lấy icon trên toàn bộ UI.
+  • Chuẩn hóa tài liệu images/README.md và tham chiếu icon trong Library Manager.
+- Cấu hình IDE/Phân tích mã:
+  • Thêm lib/__init__.py và pyrightconfig.json để IDE nhận dạng package lib, hết lỗi import không tìm thấy (Pylance/Pyright).
+  • Sửa vài import và docstring gây cảnh báo trong template_matcher; giữ API thống nhất.
 - Ổn định build và cleanup:
   • Sửa lỗi thụt lề phát sinh khi refactor, chuẩn hóa chữ ký i18n fallback cho phân tích tĩnh.
   • Tránh gắn tooltip lặp khi đổi bước (Next ↔ Finish chỉ đổi nhãn, giữ tooltip mặc định trừ khi cần thay đổi sau).
