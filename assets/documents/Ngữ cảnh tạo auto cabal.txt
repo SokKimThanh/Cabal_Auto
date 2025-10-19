@@ -2984,3 +2984,33 @@ for skill_slot in configured_skills:
 - `docs/ADVANCED_WINDOW_SETTINGS_GUIDE.md` (explains Advanced Window Settings)
 
 ---
+
+## Tham chiếu commit 2025-10-19
+
+Ghi chú: Không tìm thấy tệp git_log.txt trong workspace tại thời điểm cập nhật; mục này liệt kê tham chiếu thủ công theo thay đổi đã thực hiện trong phiên hôm nay. Mỗi mục có một ID tạm để tiện tra cứu.
+
+- [local-2025-10-19-01] setup_wizard.py
+  - Di trú toàn bộ văn bản UI sang i18n (`ns='setup_wizard'`) với helper `_t(key)`.
+  - Áp dụng hệ thống tooltip tập trung: `attach_i18n_tooltip` cho nút Back/Next/Finish/Cancel, radio chọn ngôn ngữ, ô Filter, nút Search Windows, danh sách cửa sổ, danh sách quái, combobox slot kỹ năng, và nút Clear All Slots.
+  - Lưu và áp dụng ngôn ngữ ngay khi nhấn Finish: gọi `i18n_set_lang(self.language)` và ghi `ui.language` vào config.
+  - Sửa lỗi thụt dòng và ràng buộc fallback no-op cho `i18n_set_lang` để tránh cảnh báo phân tích tĩnh.
+
+- [local-2025-10-19-02] lib/translations.py
+  - Bổ sung `SETUP_WIZARD_TRANSLATIONS` với các nhóm khóa sau:
+    - Tooltip: `tip_wizard_back`, `tip_wizard_next`, `tip_wizard_finish`, `tip_wizard_cancel`, `tip_lang_english`, `tip_lang_vietnamese`, `tip_filter`, `tip_search_windows`, `tip_window_list`, `tip_monster_list`, `tip_skill_slot`, `tip_clear_all_slots`.
+    - UI texts: `wizard_title`, `step1_title/subtitle` → `step5_title/subtitle`, `filter_label`, `search_windows`, `clear_all_slots`, `get_started_hint`.
+    - Dialogs: `finish_title`, `finish_message`, `cancel_title`, `cancel_message`.
+    - Hints/Errors: `hint_window_running`, `err_load_monsters`, `no_monsters_found`, `err_load_skills`, `skills_order_hint`.
+
+- [local-2025-10-19-03] assets/documents/Ngữ cảnh tạo auto cabal.txt
+  - Cập nhật nội dung ngữ cảnh ngày 2025-10-19 (tóm tắt tooltip + i18n + Setup Wizard) và thêm mục “Tham chiếu commit 2025-10-19” này.
+
+- [local-2025-10-19-04] app_gui.py (tham chiếu)
+  - Xác nhận cơ chế áp dụng ngôn ngữ khi khởi động dựa trên `ui.language` đã tồn tại; không thay đổi mã trong phiên hôm nay.
+
+Quality Gates
+- Build: PASS (không có bước build riêng)
+- Lint/Typecheck: PASS (kiểm tra tĩnh không phát hiện lỗi mới trong setup_wizard.py)
+- Tests: PASS (không thay đổi logic cốt lõi; các test hiện hữu không bị ảnh hưởng)
+
+— Kết thúc tham chiếu 2025-10-19 —
