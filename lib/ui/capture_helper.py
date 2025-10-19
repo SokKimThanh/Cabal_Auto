@@ -18,13 +18,18 @@ except Exception:
 import tkinter as tk
 from tkinter import messagebox
 
-# ASSETS_DIR now points to root assets/images/monsters (not lib/assets)
 # Get project root by going up from lib/ui/capture_helper.py
 _current_file = Path(__file__).resolve()  # lib/ui/capture_helper.py
 _lib_dir = _current_file.parent.parent    # lib/
 _project_root = _lib_dir.parent            # project root
+
+# Default ASSETS_DIR for monsters (backward compatibility)
 ASSETS_DIR = _project_root / 'assets' / 'images' / 'monsters'
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Skills directory
+ASSETS_SKILLS_DIR = _project_root / 'assets' / 'images' / 'skills'
+ASSETS_SKILLS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _slugify(name: str) -> str:
@@ -99,9 +104,24 @@ class RegionSelector(tk.Toplevel):
         return self._bbox
 
 
-def capture_region_and_save(parent: Any, pil_available: bool, monster_name: str, lang: str = 'vi', pre_wait_hook: Optional[Callable[[], None]] = None) -> Optional[Tuple[str, Tuple[int,int,int,int]]]:
+def capture_region_and_save(
+    parent: Any, 
+    pil_available: bool, 
+    monster_name: str, 
+    lang: str = 'vi', 
+    pre_wait_hook: Optional[Callable[[], None]] = None,
+    capture_type: str = 'monster'
+) -> Optional[Tuple[str, Tuple[int,int,int,int]]]:
     """Implements the shared capture flow: wait 3s, screenshot, region select, crop and save.
-
+    
+    Args:
+        parent: Parent widget
+        pil_available: Whether PIL is available
+        monster_name: Name for the image file (works for both monsters and skills)
+        lang: Language ('vi' or 'en')
+        pre_wait_hook: Optional callback before screenshot
+        capture_type: 'monster' or 'skill' - determines save directory
+    
     Returns (path, bbox) where bbox is (left, top, width, height), or None if cancelled/failed.
     """
     if pyautogui is None:
@@ -171,11 +191,19 @@ def capture_region_and_save(parent: Any, pil_available: bool, monster_name: str,
         messagebox.showerror('Error', msg, parent=parent)
         return None
 
-    # Save under assets/images/monsters
-    slug = _slugify(monster_name or 'monster')
+    # Determine save directory based on capture type
+    if capture_type == 'skill':
+        save_dir = ASSETS_SKILLS_DIR
+        default_name = 'skill'
+    else:  # default to 'monster'
+        save_dir = ASSETS_DIR
+        default_name = 'monster'
+    
+    # Save under appropriate directory
+    slug = _slugify(monster_name or default_name)
     ts = int(time.time())
     filename = f"{slug}_capture_{ts}.png"
-    path = ASSETS_DIR / filename
+    path = save_dir / filename
     try:
         cropped.save(path)
     except Exception as exc:

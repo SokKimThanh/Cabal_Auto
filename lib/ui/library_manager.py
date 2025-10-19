@@ -2797,12 +2797,15 @@ class LibraryManagerWindow(tk.Toplevel):
                     self.pil_available, 
                     self.current_skill.get('name', ''), 
                     self.lang, 
-                    pre_wait_hook=_pre_wait_bring
+                    pre_wait_hook=_pre_wait_bring,
+                    capture_type='skill'  # Save to assets/images/skills/
                 )
                 
-                if result and result.get('image_path'):
+                if result:
+                    # result is (path, bbox) tuple
+                    image_path, bbox = result
                     # Update current skill
-                    self.current_skill['image'] = result['image_path']
+                    self.current_skill['image'] = image_path
                     self.changes_made['skills_changed'] = True
                     self._mark_unsaved(True)
                     
