@@ -16,7 +16,12 @@ import os
 import sys
 from pathlib import Path
 from tkinter import PhotoImage
-from typing import Optional, Union
+try:
+    from PIL import Image, ImageTk  # type: ignore
+except Exception:
+    Image = None  # type: ignore
+    ImageTk = None  # type: ignore
+from typing import Optional, Union, Any
 
 
 class IconHelper:
@@ -70,7 +75,7 @@ class IconHelper:
             'priority': ('priority.png', '🎯'),
         }
     
-    def get_icon(self, name: str, fallback: Optional[str] = None, size: int = 24) -> Union[PhotoImage, str]:
+    def get_icon(self, name: str, fallback: Optional[str] = None, size: int = 24) -> Union[Any, str]:
         """
         Get icon by name, with fallback to emoji.
         
@@ -98,17 +103,34 @@ class IconHelper:
         # Try to load icon file
         try:
             if icon_path.exists():
-                icon = PhotoImage(file=str(icon_path))
-                # Resize if needed (tkinter doesn't support direct resize, use subsample)
-                if size != 24:
-                    # Simple scaling (not ideal but works)
-                    factor = 24 // size if size < 24 else 1
-                    if factor > 1:
-                        icon = icon.subsample(factor, factor)
-                
-                # Cache and return
-                self._cache[cache_key] = icon
-                return icon
+                # Prefer PIL resize if available for crisp icons
+                if Image is not None and ImageTk is not None and size > 0:
+                    try:
+                        img = Image.open(icon_path)
+                        if img.width != size or img.height != size:
+                            # Handle PIL v10+ and older
+                            resampling = None
+                            try:
+                                # PIL >= 10
+                                resampling = getattr(Image, 'Resampling').LANCZOS  # type: ignore[attr-defined]
+                            except Exception:
+                                resampling = getattr(Image, 'LANCZOS', getattr(Image, 'ANTIALIAS', None))
+                            if resampling is not None:
+                                img = img.resize((size, size), resampling)
+                            else:
+                                img = img.resize((size, size))
+                        icon = ImageTk.PhotoImage(img)
+                        self._cache[cache_key] = icon
+                        return icon
+                    except Exception:
+                        # Fallback to tkinter PhotoImage without resizing
+                        icon = PhotoImage(file=str(icon_path))
+                        self._cache[cache_key] = icon
+                        return icon
+                else:
+                    icon = PhotoImage(file=str(icon_path))
+                    self._cache[cache_key] = icon
+                    return icon
         except Exception as e:
             print(f"Warning: Could not load icon '{name}': {e}")
         

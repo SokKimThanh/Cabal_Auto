@@ -66,7 +66,13 @@
         "name": "Coc go 6",
         "path": "E:\\Cabal_Auto\\tmp\\captures\\coc_go__new_template_1760819978575.png",
         "threshold": 0.85,
-        "region": null
+        "region": {
+          "left": 247,
+          "top": 10,
+          "width": 1599,
+          "height": 931
+        },
+        "region_strategy": "custom"
       }
     ]
   },
@@ -82,7 +88,13 @@
         "name": "scorlug1",
         "path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-18 063850.png",
         "threshold": 0.85,
-        "region": null
+        "region": {
+          "left": 374,
+          "top": 170,
+          "width": 1365,
+          "height": 712
+        },
+        "region_strategy": "custom"
       }
     ]
   },
@@ -104,7 +116,13 @@
         "name": "Plant sừng báo mặt sau",
         "path": "E:\\Cabal_Auto\\tmp\\captures\\plant_sng_bo__plant_sng_bo_mt_sau_1760819016762.png",
         "threshold": 0.85,
-        "region": null
+        "region": {
+          "left": 250,
+          "top": 12,
+          "width": 1597,
+          "height": 925
+        },
+        "region_strategy": "custom"
       }
     ]
   }
