@@ -240,7 +240,8 @@ tmp/
 ~$*
 *.swp
 *.swo
-
+*.log
+*.jsonl
 # Screenshots and captured images (optional - uncomment if you don't want to track them)
 # screenshots/
 # captures/
