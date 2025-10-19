@@ -250,3 +250,21 @@ This section classifies files by functional areas to make navigation easier with
 
 Notes
 - This is a logical grouping only; no file moves were performed in this update.
+
+---
+
+## 🛠️ Restructure Utility (Optional)
+
+For future grouping by feature-first directories, use the helper script (dry-run by default):
+
+Usage (PowerShell):
+
+```
+python scripts/restructure_project.py           # dry-run (show plan)
+python scripts/restructure_project.py --apply   # apply moves + rewrite imports
+```
+
+Safety & rollback:
+- The script prints a full move plan and import-impact before changes.
+- When applied, it writes a JSON backup to `scripts/restructure_backups/`.
+- Preferred rollback is via git: `git restore .` or `git reset --hard`.

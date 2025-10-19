@@ -208,6 +208,13 @@ $RECYCLE.BIN/
 # ===============================================
 
 # Hunt logs (runtime generated)
+# Prefer ignoring entire logs directory
+logs/
+logs/**/*.log
+logs/**/*.jsonl
+logs/**/*.txt
+
+# Legacy single-file log patterns (kept for safety)
 hunt.log
 hunt.log.*
 hunt_structured.jsonl
@@ -230,6 +237,9 @@ skills.json.backup
 *.temp
 temp/
 tmp/
+~$*
+*.swp
+*.swo
 
 # Screenshots and captured images (optional - uncomment if you don't want to track them)
 # screenshots/
@@ -239,6 +249,9 @@ tmp/
 test_output/
 test_results/
 *.test
+coverage/
+.coverage
+.pytest_cache/
 
 # Performance profiling
 *.prof
@@ -280,6 +293,7 @@ locale/*/LC_MESSAGES/*.mo
 docs/_build/
 docs/_static/
 docs/_templates/
+site/
 
 # Virtual environment from different tools
 pyvenv.cfg
