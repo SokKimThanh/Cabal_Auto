@@ -2,542 +2,90 @@ import ctypes
 import json
 import math
 import os
-import threading 
-                speed_frame,
-                text=self._t('timing_manual_presets'),
-                font=('Arial', 9),
-                fg='#666'
-            )
+import threading
+import time
+from pathlib import Path
+from typing import Any, Dict, Optional, List
+import copy
 
-from lib.template_matcher import locate_template
-                text=self._t('custom_label'),
-from lib.translations import GLOBAL_TRANSLATIONS
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+
 try:
-    from lib.capture_helper import capture_region_and_save
+    import pyautogui  # type: ignore
 except Exception:
-    capture_region_and_save = None  # type: ignore
-            result_frame = tk.LabelFrame(dialog, text=self._t('timing_results_title'), padx=10, pady=10)
+    pyautogui = None  # type: ignore
+
+try:
+    from PIL import Image, ImageTk, ImageDraw  # type: ignore
+except Exception:
+    Image = None  # type: ignore
+    ImageTk = None  # type: ignore
+    ImageDraw = None  # type: ignore
+
+try:
     import keyboard  # type: ignore
 except Exception:
     keyboard = None  # type: ignore
 
+from ctypes import wintypes
+
+from lib.template_matcher import locate_template
+from lib.translations import GLOBAL_TRANSLATIONS
+from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang, GLOBAL_NS as I18N_GLOBAL
+
+try:
+    from lib.capture_helper import capture_region_and_save
+except Exception:
+    capture_region_and_save = None  # type: ignore
+
 from lib.win_input import tap
 from lib.hunt_logger import get_hunt_logger
 from lib.timing_calculator import calculate_timing, format_timing_recommendation, get_timing_presets
-                skill_info_label.config(text=self._t('timing_no_valid_attack_skills'))
+
+
+# Register centralized translations at startup
+try:
+    i18n_register_bulk(I18N_GLOBAL, GLOBAL_TRANSLATIONS)
+except Exception:
+    pass
+
+# Optional setup wizard import
+try:
+    from setup_wizard import show_setup_wizard  # type: ignore
+except Exception:
+    show_setup_wizard = None  # type: ignore
 
 class ToolTip:
     """Simple tooltip helper for Tkinter widgets."""
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
-                            error_msg = self._t('timing_no_attack_skills_configured')
-        self.tooltip_window = tw = tk.Toplevel(self.widget)
-        tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"+{x}+{y}")
-                        skill_info = self._t('timing_from_skills_title')
-                        skill_info += self._t('timing_attack_skills_list').format(count=count, names=', '.join(attack_skill_names))
-                        if buff_skill_names:
-                            skill_info += self._t('timing_buff_skills_list').format(count=len(buff_skill_names), names=', '.join(buff_skill_names))
-                        skill_info += "\n"
-                        skill_info += self._t('timing_attack_calc_header')
-                        skill_info += self._t('timing_avg_cooldown').format(avg=avg_cd)
-                        skill_info += self._t('timing_effective_aps').format(aps=aps)
-                        skill_info += "\n"
-            pady=2,
-        )
-                text=self._t('btn_calculate'),
-    
+        self.tooltip_window = None
+
+    def show_tooltip(self, event=None):
+        try:
+            if self.tooltip_window:
+                return
+            x = event.x_root + 10 if event else self.widget.winfo_rootx() + 10
+            y = event.y_root + 10 if event else self.widget.winfo_rooty() + 20
+            tw = tk.Toplevel(self.widget)
+            tw.wm_overrideredirect(True)
+            tw.wm_geometry(f"+{x}+{y}")
+            label = tk.Label(tw, text=self.text, background="#ffffe0", relief='solid', borderwidth=1, padx=5, pady=3)
+            label.pack()
+            self.tooltip_window = tw
+        except Exception:
+            pass
+
     def hide_tooltip(self, event=None):
-        if self.tooltip_window:
-            self.tooltip_window.destroy()
+        try:
+            if self.tooltip_window:
+                self.tooltip_window.destroy()
+                self.tooltip_window = None
+        except Exception:
             self.tooltip_window = None
 
-
-                text=self._t('btn_apply_to_hunt_config'),
-    'en': {
-        'app_title': 'Cabal Auto Manager',
-        'language': 'Language',
-        'tab_hunt': 'Hunt',
-        'tab_setup': 'Setup',
-        'tab_stats': 'Stats',
-        'tab_help': 'Help',
-                text=self._t('close'),
-        'window_quick_select': '🪟 Step 1: Select game window',
-        'select_game_window': 'Select Game Window',
-        'win_list_hint': 'Click "Find windows" button above, then select your game window from this list:',
-        'hunt_tab_help_text': '💡 Tip: Configure advanced settings in the Setup tab',
-        'window_title_contains': 'Window title contains:',
-        'find_windows': 'Find windows',
-        'bring_to_front': 'Bring to front',
-        'win_list_label': 'Filtered window list:',
-        'target_key': 'Target key:',
-        'attack_keys': 'Attack keys (comma separated):',
-        'press_ms': 'Key press (ms):',
-        'target_cycle': 'Target cycle (s):',
-        'search_interval': 'Search interval (s):',
-        'attack_interval': 'Attack interval (s):',
-        'lost_timeout': 'Extra attack after lost (s):',
-        'attack_duration': 'Minimum attack duration (s):',
-        'template': 'Target template:',
-        'browse': 'Browse',
-        'region_l': 'Region L',
-        't': 'T',
-        'w': 'W',
-        'h': 'H',
-        'bring_each_cycle': 'Bring window to front each loop (only if needed)',
-        'pick_tl': 'Pick top-left (3s)',
-        'pick_br': 'Pick bottom-right (3s)',
-        'save_hunt': 'Save hunt config',
-        'start_hunt': 'Start hunt',
-        'stop_hunt': 'Stop hunt',
-        'setup_wizard': '🧙 Setup Wizard',
-        'wizard_first_time_title': 'Welcome to Cabal Auto Hunt!',
-        'wizard_first_time_message': (
-            "It looks like this is your first time using Cabal Auto Hunt.\n\n"
-            "Would you like to run the Setup Wizard to configure your settings?\n\n"
-            "The wizard will guide you through:\n"
-            "  • Selecting your game window\n"
-            "  • Choosing a monster to hunt\n"
-            "  • Configuring your attack skills\n\n"
-            "You can always run the wizard later by clicking the '🧙 Setup Wizard' button."
-        ),
-        'wizard_skipped_hint': "Setup wizard skipped. Click '🧙 Setup Wizard' button to run it later.",
-        'hunt_idle': 'Ready to hunt',
-        'hunt_running': 'Hunting…',
-        'hunt_stopped': 'Hunt stopped',
-        'hunt_mode': 'Interface Mode',
-        'mode_beginner': '🌱 Beginner',
-        'mode_beginner_desc': 'Simple 4-step workflow - perfect for first-time users',
-        'mode_intermediate': '⚙️ Intermediate',
-        'mode_intermediate_desc': 'Basic fields + timing controls for experienced users',
-        'mode_advanced': '🔧 Advanced',
-        'mode_advanced_desc': 'Full control - all parameters and technical settings',
-        'selected_window': 'Selected window: {title}',
-        'bring_ok': 'Brought to front',
-        'bring_fail': 'Unable to bring to front',
-        'invalid_hunt': 'Invalid hunt config: {e}',
-        'no_windows': 'No window matched',
-        'error_title': 'Error',
-        'error_copy_image': 'Failed to copy image: {exc}',
-        'error_pil_required': 'PIL required for preview',
-        'pil_not_installed_message': 'Pillow library is not installed.\n\nSome image preview features will be disabled.\n\nTo install, run:\npip install Pillow\n\nThe app will still work normally, you just cannot preview images with overlay.',
-        'pil_required_tooltip': 'Pillow required for this feature.\nRun: pip install Pillow',
-        'error_missing_library': 'Missing library: {exc}',
-        'error_screenshot_failed': 'Screenshot failed: {exc}',
-        'error_save_failed': 'Save failed: {exc}',
-        'error_region_too_small': 'Region too small (min 10x10)',
-        'error_preview': 'Preview error: {exc}',
-        'monster_section': 'Monster library',
-        'monster_list': 'Monsters:',
-        'monster_name': 'Name:',
-        'monster_hp': 'HP:',
-        'monster_damage': 'Damage per hit:',
-        'monster_calculate_timing': 'Calculate Timing',
-        'monster_timing_title': 'Timing Recommendations',
-        'monster_timing_no_stats': 'Please enter HP and Damage per hit values first.',
-        'monster_template': 'Template:',
-    'monster_description': 'Description:',
-    'monster_description_hint': 'Optional notes about this monster or spawn location.',
-    'monster_bounds': 'Window bounds (L,T,W,H):',
-    'monster_bounds_hint': 'Leave blank to auto-detect during hunt.',
-    'monster_bounds_clear': 'Clear bounds',
-    'monster_open_templates': 'Quick-add template…',
-    'monster_templates': 'Templates',
-    'monster_template_list': 'Template variants:',
-    'monster_template_name': 'Label:',
-    'monster_template_path': 'Image path:',
-    'monster_template_threshold': 'Threshold:',
-    'monster_template_threshold_hint': 'Match score between 0 and 1 (default 0.85).',
-    'monster_template_region': 'Region override (L,T,W,H):',
-    'monster_template_region_hint': 'Leave blank to reuse hunt window bounds.',
-    'monster_template_browse': 'Browse image…',
-    'monster_template_capture': 'Capture screenshot',
-    'monster_template_capture_hint': 'Instructions:\n1. Click button and wait 3s\n2. Select region by dragging rectangle\n3. Image will be saved automatically',
-    'monster_template_capture_wait': 'Position window... (3s)',
-    'monster_template_capture_select': 'Drag to select region...',
-    'monster_template_capture_success': 'Screenshot saved: {filename}',
-    'monster_template_capture_cancelled': 'Capture cancelled',
-    'monster_template_preview_overlay': 'Preview with overlay',
-    'monster_template_test_recognition': 'Test Recognition',
-    'monster_template_test_hint': 'Test template matching on current screen',
-    'monster_template_test_running': 'Testing recognition...',
-    'monster_template_test_found': 'Match found at ({x}, {y}) - Confidence: {conf:.2f}',
-    'monster_template_test_not_found': 'No match found (threshold: {threshold})',
-    'monster_template_test_error': 'Test failed: {error}',
-    'monster_template_no_image': 'No template image selected',
-    'monster_template_add': 'Add',
-    'monster_template_update': 'Update',
-    'monster_template_delete': 'Delete',
-    'monster_template_invalid': 'Invalid template data: {e}',
-    'monster_template_not_selected': 'Pick a template first',
-    'monster_template_duplicate': 'Template name already exists',
-    'monster_template_added': 'Template added',
-    'monster_template_saved': 'Template updated',
-    'monster_template_removed': 'Template removed',
-        'monster_new': 'Create',
-        'monster_save': 'Save',
-        'monster_delete': 'Delete',
-        'monster_use_template': 'Apply to hunt',
-        'monster_estimate': 'Estimate kill time',
-        'close': 'Close',
-        'monster_estimate_result': 'Estimated time: {time:.2f}s (DPS {dps:.1f})',
-        'monster_estimate_detail': '{base} -> minimum attack {attack:.2f}s, keep hitting {lost:.2f}s',
-        'monster_saved': 'Monster saved',
-        'monster_deleted': 'Monster deleted',
-        'monster_invalid': 'Invalid monster data: {e}',
-        'monster_not_selected': 'Pick a monster first',
-        'monster_applied': 'Applied to hunt config',
-        'monster_duplicate': 'Monster name already exists',
-    'hunt_window_bounds': 'Saved window bounds: {value}',
-    'hunt_window_bounds_none': 'Saved window bounds: not set',
-    'hunt_window_bounds_cleared': 'Window bounds cleared',
-    'settings_applied_success': 'Settings applied successfully!',
-    'settings_applied_message': 'Settings have been applied and saved.',
-    'success_title': 'Success',
-        'hunt_monster_select': 'Quick select monster:',
-        'hunt_monster_auto_applied': 'Auto-applied: {name}',
-        # Phase 3: Multi-Monster Support
-        'hunt_monsters': 'Monster Rotation',
-        'rotation_mode': 'Rotation Mode:',
-        'monster_none_selected': 'No monsters selected - Enable monsters to start hunting',
-        'monster_add_title': 'Add Monster to Rotation',
-        'monster_add_instruction': 'Select monster to add to hunt rotation:',
-        'monster_add_hint': '💡 Tip: Type any part of the monster name. Fuzzy matching ignores case and special characters (~, !, etc.)',
-        'monster_suggestions': 'Matching Monsters',
-        'monster_showing_all': 'Showing all {count} monsters',
-        'monster_found_matches': 'Found {count} matches',
-        'monster_no_matches': 'No matches found',
-        'monster_fuzzy_hint': 'Matching: "coc go" = "Coc Go" = "COC-GO~"',
-        'monster_try_hint': 'Try shorter/simpler text (e.g., "coc", "desert")',
-        'monster_already_in_list': '"{name}" is already in rotation list',
-        'add_button': 'Add',
-        'cancel_button': 'Cancel',
-        'info_title': 'Information',
-        'setup_mode': 'Configuration Mode',
-        'setup_mode_desc': 'Select UI complexity level',
-        'setup_libraries': 'Libraries',
-        'setup_libraries_desc': 'Manage monsters, skills, and timing',
-        'open_library_manager': 'Open Library Manager',
-        'library_manager_hint': 'Centralized management for monsters, skills, and timing calculations',
-        'setup_advanced': 'Advanced Hunt Settings',
-        'setup_window': 'Window Settings',
-        'monsters_count': 'monsters',
-        'skills_count': 'skills',
-        'apply_settings': 'Apply Settings',
-        'stats_hunt': 'Hunt Statistics',
-        'stats_performance': 'Performance Metrics',
-        'stats_rotation': 'Rotation History',
-        'stats_runtime': 'Runtime',
-        'stats_kills': 'Monsters Hunted',
-        'stats_avg_kill_time': 'Avg Kill Time',
-        'stats_exp_per_hour': 'Exp/Hour (est.)',
-        'stats_skills_cast': 'Skills Cast',
-        'stats_fps': 'Template FPS',
-        'stats_cpu': 'CPU Usage',
-        'stats_memory': 'Memory',
-        'stats_latency': 'Screenshot Latency',
-        'stats_reset': 'Reset Statistics',
-        'stats_export': 'Export to CSV',
-        'stats_refresh_rate': 'Refresh Rate',
-        'help_quickstart': 'Quick Start Guide',
-        'help_quickstart_text': '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press F9 to stop anytime',
-        'help_shortcuts': 'Keyboard Shortcuts',
-        'help_shortcuts_text': 'F9: Stop hunt (global hotkey)\nESC: Stop hunt (in-window)\n\nIn game:\nTAB: Target next monster\n1-6: Use skills',
-        'help_troubleshooting': 'Troubleshooting',
-        'help_troubleshooting_text': 'Q: Hunt not working?\nA: Make sure game window is selected and brought to front.\n\nQ: Skills not casting?\nA: Check skill slots are enabled and cooldowns are correct.\n\nQ: Can\'t find monster?\nA: Try lowering template threshold in Setup tab.',
-        'help_about': 'About',
-        'help_about_text': 'Cabal Auto Manager v1.0\n\nAuthor: SokKimThanh\nGitHub: github.com/SokKimThanh/Cabal_Auto\n\nBuilt with Python, tkinter, OpenCV',
-        'hunt_template_active': 'Active template: {name}',
-        'tooltip_threshold': 'Match confidence: 0.0 (any) to 1.0 (exact). Higher = stricter matching. Recommended: 0.80-0.90',
-        'tooltip_region_strategy': 'Window: use game window bounds\nCustom: use specific region below',
-        'tooltip_window_bounds': 'Game window area (Left, Top, Width, Height). Leave blank to auto-detect.',
-        'tooltip_lost_timeout': 'Keep attacking this long after losing visual on target (prevents premature target switch)',
-        'tooltip_attack_duration': 'Minimum attack time even if target lost early (ensures skill combos complete)',
-        'error_invalid_number': 'Invalid number: {field}',
-        'error_value_must_be_positive': '{field} must be greater than 0',
-        'error_threshold_range': 'Threshold must be between 0.0 and 1.0',
-        'skill_section': 'Skill library',
-        'skill_list': 'Skills:',
-        'skill_name': 'Name:',
-        'skill_key': 'Key:',
-        'skill_type': 'Type:',
-        'skill_type_attack': 'Attack',
-        'skill_type_buff': 'Buff',
-        'skill_cooldown': 'Cooldown (s):',
-        'skill_cast_time': 'Cast time (s):',
-        'skill_duration': 'Buff duration (s):',
-        'skill_pre_refresh': 'Pre-refresh (s):',
-        'skill_duration_hint': 'How long the buff lasts (0 for attack skills)',
-        'skill_pre_refresh_hint': 'Recast before expiration (e.g., 5s = recast 5s early)',
-        'skill_image': 'Skill image:',
-        'skill_no_image': 'No image',
-        'skill_image_error': 'Cannot preview image',
-        'skill_new': 'Create',
-        'skill_save': 'Save',
-        'skill_delete': 'Delete',
-        'skill_saved': 'Skill saved',
-        'skill_deleted': 'Skill deleted',
-        'skill_invalid': 'Invalid skill data: {e}',
-        'skill_not_selected': 'Pick a skill first',
-        'skill_slots': 'Skill slots',
-        'skill_slot_label': 'Slot {i}:',
-        'skill_slot_clear': 'Clear',
-        'skill_estimate_missing': 'Missing skill info',
-        'skill_duplicate': 'Skill name already exists',
-        'manage_button': 'Manage…',
-        'skill_manage': 'Manage skills…',
-    },
-    'vi': {
-        'app_title': 'Trợ lý săn Cabal',
-        'language': 'Ngôn ngữ',
-        'tab_hunt': 'Săn',
-        'tab_setup': 'Thiết lập',
-        'tab_stats': 'Thống kê',
-        'tab_help': 'Trợ giúp',
-        'window_selection': 'Chọn cửa sổ',
-        'window_quick_select': '🪟 Bước 1: Chọn cửa sổ game',
-        'select_game_window': 'Chọn cửa sổ game',
-        'win_list_hint': 'Nhấn nút "Tìm cửa sổ" ở trên, sau đó chọn cửa sổ game từ danh sách:',
-        'hunt_tab_help_text': '💡 Mẹo: Cấu hình nâng cao trong tab Thiết lập',
-        'window_title_contains': 'Tiêu đề cửa sổ chứa:',
-        'find_windows': 'Tìm cửa sổ',
-        'bring_to_front': 'Đưa lên trước',
-        'win_list_label': 'Danh sách cửa sổ (đã lọc):',
-        'target_key': 'Phím chọn mục tiêu:',
-        'attack_keys': 'Phím đánh (cách nhau bằng dấu phẩy):',
-        'press_ms': 'Giữ phím (ms):',
-        'target_cycle': 'Chu kỳ đổi mục tiêu (s):',
-        'search_interval': 'Chu kỳ tìm (s):',
-        'attack_interval': 'Chu kỳ đánh (s):',
-        'lost_timeout': 'Giữ đánh thêm (giây):',
-        'attack_duration': 'Thời gian đánh tối thiểu (giây):',
-        'template': 'Ảnh mẫu:',
-        'browse': 'Chọn ảnh',
-        'region_l': 'Vùng tìm: L',
-        't': 'T',
-        'w': 'R',
-        'h': 'D',
-        'bring_each_cycle': 'Đưa cửa sổ lên mỗi vòng (chỉ dùng khi cần)',
-        'pick_tl': 'Chọn góc trái trên (3s)',
-        'pick_br': 'Chọn góc phải dưới (3s)',
-        'save_hunt': 'Lưu cấu hình săn',
-        'start_hunt': 'Bắt đầu săn',
-        'stop_hunt': 'Dừng săn',
-        'setup_wizard': '🧙 Trợ lý thiết lập',
-        'wizard_first_time_title': 'Chào mừng đến Cabal Auto Hunt!',
-        'wizard_first_time_message': (
-            "Có vẻ đây là lần đầu bạn sử dụng Cabal Auto Hunt.\n\n"
-            "Bạn có muốn chạy Trợ lý thiết lập để cấu hình không?\n\n"
-            "Trợ lý sẽ hướng dẫn bạn:\n"
-            "  • Chọn cửa sổ game\n"
-            "  • Chọn quái để săn\n"
-            "  • Cấu hình kỹ năng tấn công\n\n"
-            "Bạn luôn có thể chạy trợ lý sau bằng nút '🧙 Trợ lý thiết lập'."
-        ),
-        'wizard_skipped_hint': "Đã bỏ qua trợ lý. Nhấn nút '🧙 Trợ lý thiết lập' để chạy sau.",
-        'hunt_idle': 'Sẵn sàng săn',
-        'hunt_running': 'Đang săn…',
-        'hunt_stopped': 'Đã dừng săn',
-        'hunt_mode': 'Chế độ giao diện',
-        'mode_beginner': '🌱 Người mới',
-        'mode_beginner_desc': 'Quy trình 4 bước đơn giản - hoàn hảo cho người dùng lần đầu',
-        'mode_intermediate': '⚙️ Trung cấp',
-        'mode_intermediate_desc': 'Các trường cơ bản + điều khiển thời gian cho người dùng có kinh nghiệm',
-        'mode_advanced': '🔧 Nâng cao',
-        'mode_advanced_desc': 'Toàn quyền kiểm soát - tất cả các tham số và cài đặt kỹ thuật',
-        'setup_libraries': 'Thư viện',
-        'setup_libraries_desc': 'Quản lý quái vật, kỹ năng và tính toán thời gian',
-        'open_library_manager': 'Mở Quản Lý Thư Viện',
-        'library_manager_hint': 'Quản lý tập trung cho quái vật, kỹ năng, và tính toán thời gian',
-        'selected_window': 'Đã chọn cửa sổ: {title}',
-        'bring_ok': 'Đã đưa lên trên',
-        'bring_fail': 'Không thể đưa lên trên',
-        'invalid_hunt': 'Cấu hình săn không hợp lệ: {e}',
-        'no_windows': 'Không tìm thấy cửa sổ',
-        'error_title': 'Lỗi',
-        'error_copy_image': 'Không sao chép được ảnh: {exc}',
-        'error_pil_required': 'Cần cài PIL để xem trước',
-        'pil_not_installed_message': 'Thư viện Pillow chưa được cài đặt.\n\nMột số tính năng preview hình ảnh sẽ bị tắt.\n\nĐể cài đặt, chạy lệnh:\npip install Pillow\n\nỨng dụng vẫn hoạt động bình thường, bạn chỉ không thể xem preview với overlay.',
-        'pil_required_tooltip': 'Cần cài Pillow để sử dụng.\nChạy: pip install Pillow',
-        'error_missing_library': 'Thiếu thư viện: {exc}',
-        'error_screenshot_failed': 'Chụp màn hình thất bại: {exc}',
-        'error_save_failed': 'Lưu thất bại: {exc}',
-        'error_region_too_small': 'Vùng chọn quá nhỏ (tối thiểu 10x10)',
-        'error_preview': 'Lỗi xem trước: {exc}',
-        'hunt_stopped': 'Đã dừng săn',
-        'selected_window': 'Đã chọn cửa sổ: {title}',
-        'bring_ok': 'Đã đưa lên trước',
-        'bring_fail': 'Không đưa lên trước được',
-        'invalid_hunt': 'Cấu hình săn không hợp lệ: {e}',
-        'no_windows': 'Không tìm thấy cửa sổ phù hợp',
-        'monster_section': 'Thư viện quái',
-        'monster_list': 'Danh sách quái:',
-        'monster_name': 'Tên:',
-        'monster_hp': 'HP:',
-        'monster_damage': 'Sát thương mỗi đòn:',
-        'monster_calculate_timing': 'Tính thời gian',
-        'monster_timing_title': 'Khuyến nghị thời gian',
-        'monster_timing_no_stats': 'Vui lòng nhập HP và Sát thương trước.',
-        'monster_template': 'Ảnh template:',
-    'monster_description': 'Mô tả:',
-    'monster_description_hint': 'Ghi chú thêm về quái hoặc vị trí spawn (tùy chọn).',
-    'monster_bounds': 'Biên cửa sổ (L,T,R,D):',
-    'monster_bounds_hint': 'Để trống để hệ thống tự dò khi chạy săn.',
-    'monster_bounds_clear': 'Xóa biên',
-    'monster_open_templates': 'Thêm ảnh mẫu nhanh…',
-    'monster_templates': 'Ảnh mẫu',
-    'monster_template_list': 'Danh sách ảnh mẫu:',
-    'monster_template_name': 'Tên hiển thị:',
-    'monster_template_path': 'Đường dẫn ảnh:',
-    'monster_template_threshold': 'Ngưỡng:',
-    'monster_template_threshold_hint': 'Điểm khớp từ 0 đến 1 (mặc định 0.85).',
-    'monster_template_region': 'Vùng ghi đè (L,T,R,D):',
-    'monster_template_region_hint': 'Để trống để dùng lại biên cửa sổ săn.',
-    'monster_template_browse': 'Chọn ảnh…',
-    'monster_template_capture': 'Chụp màn hình',
-    'monster_template_capture_hint': 'Hướng dẫn:\n1. Nhấn nút và đợi 3 giây\n2. Chọn vùng bằng cách kéo hình chữ nhật\n3. Ảnh sẽ tự động lưu',
-    'monster_template_capture_wait': 'Chuẩn bị cửa sổ... (3s)',
-    'monster_template_capture_select': 'Kéo để chọn vùng...',
-    'monster_template_capture_success': 'Đã lưu ảnh: {filename}',
-    'monster_template_capture_cancelled': 'Đã hủy chụp',
-    'monster_template_preview_overlay': 'Xem trước với overlay',
-    'monster_template_test_recognition': 'Kiểm tra nhận diện',
-    'monster_template_test_hint': 'Test khớp ảnh mẫu trên màn hình hiện tại',
-    'monster_template_test_running': 'Đang kiểm tra...',
-    'monster_template_test_found': 'Tìm thấy tại ({x}, {y}) - Độ khớp: {conf:.2f}',
-    'monster_template_test_not_found': 'Không tìm thấy (ngưỡng: {threshold})',
-    'monster_template_test_error': 'Lỗi kiểm tra: {error}',
-    'monster_template_no_image': 'Chưa chọn ảnh mẫu',
-    'monster_template_add': 'Thêm',
-    'monster_template_update': 'Cập nhật',
-    'monster_template_delete': 'Xóa',
-    'monster_template_invalid': 'Thông tin ảnh mẫu không hợp lệ: {e}',
-    'monster_template_not_selected': 'Hãy chọn một ảnh mẫu trước',
-    'monster_template_duplicate': 'Tên ảnh mẫu đã tồn tại',
-    'monster_template_added': 'Đã thêm ảnh mẫu',
-    'monster_template_saved': 'Đã cập nhật ảnh mẫu',
-    'monster_template_removed': 'Đã xóa ảnh mẫu',
-        'monster_new': 'Tạo mới',
-        'monster_save': 'Lưu',
-        'monster_delete': 'Xóa',
-        'monster_use_template': 'Áp dụng săn',
-        'monster_estimate': 'Tính thời gian hạ',
-        'close': 'Đóng',
-        'monster_estimate_result': 'Thời gian ước tính: {time:.2f}s (DPS {dps:.1f})',
-        'monster_estimate_detail': '{base} -> đánh tối thiểu {attack:.2f}s, giữ thêm {lost:.2f}s',
-        'monster_saved': 'Đã lưu quái',
-        'monster_deleted': 'Đã xóa quái',
-        'monster_invalid': 'Thông tin quái không hợp lệ: {e}',
-        'monster_not_selected': 'Hãy chọn một quái trước',
-        'monster_applied': 'Đã áp dụng vào cấu hình săn',
-        'monster_duplicate': 'Tên quái đã tồn tại',
-    'hunt_window_bounds': 'Vùng cửa sổ đã lưu: {value}',
-    'hunt_window_bounds_none': 'Vùng cửa sổ đã lưu: chưa có',
-    'hunt_window_bounds_cleared': 'Đã xóa vùng cửa sổ',
-    'settings_applied_success': 'Đã áp dụng cài đặt thành công!',
-    'settings_applied_message': 'Các cài đặt đã được áp dụng và lưu lại.',
-    'success_title': 'Thành công',
-        'hunt_monster_select': 'Chọn nhanh quái:',
-        'hunt_monster_auto_applied': 'Đã tự động áp dụng: {name}',
-        # Phase 3: Multi-Monster Support
-        'hunt_monsters': 'Luân Chuyển Quái',
-        'rotation_mode': 'Chế độ:',
-        'monster_none_selected': 'Chưa chọn quái - Bật quái để bắt đầu săn',
-        'monster_add_title': 'Thêm Quái Vào Luân Chuyển',
-        'monster_add_instruction': 'Chọn quái để thêm vào danh sách săn:',
-        'monster_add_hint': '💡 Mẹo: Gõ bất kỳ phần nào của tên quái. Tìm kiếm thông minh bỏ qua chữ hoa/thường và ký tự đặc biệt (~, !, v.v.)',
-        'monster_suggestions': 'Quái Khớp',
-        'monster_showing_all': 'Hiển thị tất cả {count} quái',
-        'monster_found_matches': 'Tìm thấy {count} kết quả',
-        'monster_no_matches': 'Không tìm thấy',
-        'monster_fuzzy_hint': 'Khớp: "coc go" = "Coc Go" = "COC-GO~"',
-        'monster_try_hint': 'Thử từ ngắn hơn (vd: "coc", "desert")',
-        'monster_already_in_list': '"{name}" đã có trong danh sách',
-        'add_button': 'Thêm',
-        'cancel_button': 'Hủy',
-        'info_title': 'Thông báo',
-        'setup_mode': 'Chế độ cấu hình',
-        'setup_mode_desc': 'Chọn mức độ phức tạp giao diện',
-        'setup_libraries': 'Thư viện',
-        'setup_advanced': 'Cài đặt săn nâng cao',
-        'setup_window': 'Cài đặt cửa sổ',
-        'monsters_count': 'quái vật',
-        'skills_count': 'kỹ năng',
-        'apply_settings': 'Áp dụng cài đặt',
-        'stats_hunt': 'Thống kê săn',
-        'stats_performance': 'Hiệu năng',
-        'stats_rotation': 'Lịch sử luân chuyển',
-        'stats_runtime': 'Thời gian chạy',
-        'stats_kills': 'Quái vật đã săn',
-        'stats_avg_kill_time': 'Thời gian săn TB',
-        'stats_exp_per_hour': 'Exp/Giờ (ước tính)',
-        'stats_skills_cast': 'Kỹ năng đã dùng',
-        'stats_fps': 'FPS Template',
-        'stats_cpu': 'CPU',
-        'stats_memory': 'Bộ nhớ',
-        'stats_latency': 'Độ trễ chụp màn hình',
-        'stats_reset': 'Reset thống kê',
-        'stats_export': 'Xuất ra CSV',
-        'stats_refresh_rate': 'Tốc độ làm mới',
-        'help_quickstart': 'Hướng dẫn nhanh',
-        'help_quickstart_text': '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn F9 để dừng bất cứ lúc nào',
-        'help_shortcuts': 'Phím tắt',
-        'help_shortcuts_text': 'F9: Dừng săn (hotkey toàn cục)\nESC: Dừng săn (trong cửa sổ)\n\nTrong game:\nTAB: Chọn quái tiếp theo\n1-6: Sử dụng kỹ năng',
-        'help_troubleshooting': 'Xử lý lỗi',
-        'help_troubleshooting_text': 'Q: Săn không hoạt động?\nA: Đảm bảo cửa sổ game đã được chọn và đưa lên trước.\n\nQ: Kỹ năng không ra?\nA: Kiểm tra skill slots đã bật và cooldown đúng chưa.\n\nQ: Không tìm thấy quái?\nA: Thử giảm threshold trong tab Thiết lập.',
-        'help_about': 'Thông tin',
-        'help_about_text': 'Trợ lý săn Cabal v1.0\n\nTác giả: SokKimThanh\nGitHub: github.com/SokKimThanh/Cabal_Auto\n\nXây dựng với Python, tkinter, OpenCV',
-        'hunt_template_active': 'Template đang dùng: {name}',
-        'tooltip_threshold': 'Độ khớp: 0.0 (bất kỳ) đến 1.0 (chính xác). Cao hơn = khớp chặt hơn. Khuyến nghị: 0.80-0.90',
-        'tooltip_region_strategy': 'Window: dùng biên cửa sổ game\nCustom: dùng vùng cụ thể bên dưới',
-        'tooltip_window_bounds': 'Vùng cửa sổ game (Trái, Trên, Rộng, Cao). Để trống để tự phát hiện.',
-        'tooltip_lost_timeout': 'Tiếp tục đánh trong khoảng thời gian này sau khi mất hình ảnh mục tiêu (tránh đổi mục tiêu quá sớm)',
-        'tooltip_attack_duration': 'Thời gian đánh tối thiểu ngay cả khi mất mục tiêu sớm (đảm bảo combo kỹ năng hoàn tất)',
-        'error_invalid_number': 'Số không hợp lệ: {field}',
-        'error_value_must_be_positive': '{field} phải lớn hơn 0',
-        'error_threshold_range': 'Threshold phải từ 0.0 đến 1.0',
-        'skill_section': 'Thư viện kỹ năng',
-        'skill_list': 'Danh sách kỹ năng:',
-        'skill_name': 'Tên kỹ năng:',
-        'skill_key': 'Phím:',
-        'skill_type': 'Loại:',
-        'skill_type_attack': 'Tấn công',
-        'skill_type_buff': 'Buff',
-        'skill_cooldown': 'Hồi chiêu (giây):',
-        'skill_cast_time': 'Thi triển (giây):',
-        'skill_duration': 'Thời gian duy trì (giây):',
-        'skill_pre_refresh': 'Cast lại trước (giây):',
-        'skill_duration_hint': 'Thời gian buff tồn tại (0 nếu là skill tấn công)',
-        'skill_pre_refresh_hint': 'Cast lại trước khi hết (VD: 5 giây = cast lại sớm 5s)',
-        'skill_image': 'Ảnh kỹ năng:',
-        'skill_no_image': 'Chưa có ảnh',
-        'skill_image_error': 'Không xem được ảnh',
-        'skill_new': 'Tạo kỹ năng',
-        'skill_save': 'Lưu',
-        'skill_delete': 'Xóa',
-        'skill_saved': 'Đã lưu kỹ năng',
-        'skill_deleted': 'Đã xóa kỹ năng',
-        'skill_invalid': 'Thông tin kỹ năng không hợp lệ: {e}',
-        'skill_not_selected': 'Hãy chọn một kỹ năng trước',
-        'skill_slots': 'Thiết lập kỹ năng',
-        'skill_slot_label': 'Ô {i}:',
-        'skill_slot_clear': 'Xóa',
-        'skill_estimate_missing': 'Thiếu thông tin kỹ năng',
-        'skill_duplicate': 'Tên kỹ năng đã tồn tại',
-        'manage_button': 'Quản lý…',
-        'skill_manage': 'Quản lý kỹ năng…',
-    },
-}
-
-# Register centralized translations; prefer module in lib/translations.py, fallback to local LANG
-try:
-    i18n_register_bulk(I18N_GLOBAL, GLOBAL_TRANSLATIONS)
-except Exception:
-    try:
-        i18n_register_bulk(I18N_GLOBAL, LANG)
-    except Exception:
-        pass
 
 CONFIG_PATH = Path(__file__).parent / 'data' / 'config.json'
 HUNT_CONFIG_PATH = Path(__file__).parent / 'data' / 'hunt_config.json'
@@ -917,9 +465,9 @@ class App(tk.Tk):
         # Centralized icon helper
         try:
             from lib.icon_helper import get_icon_helper
-            icon_helper = get_icon_helper()
+            self.icon_helper = get_icon_helper()
         except Exception:
-            icon_helper = None
+            self.icon_helper = None
         
         # Create config manager for wizard
         self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
@@ -1008,7 +556,8 @@ class App(tk.Tk):
         self.hunt_intermediate_widgets = []  # Shown in intermediate+ modes
         self.hunt_advanced_widgets = []      # Shown only in advanced mode
 
-        pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
+        if pyautogui is not None:
+            pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
 
         self._build_ui()
         # ESC to stop hunt quickly
@@ -1029,7 +578,14 @@ class App(tk.Tk):
             key = f"{name}_{size}"
             if key in self._icon_cache:
                 return self._icon_cache[key]
-            img = icon_helper.get_icon(name, fallback=fallback, size=size) if icon_helper else fallback
+            helper = getattr(self, 'icon_helper', None)
+            if helper is not None:
+                try:
+                    img = helper.get_icon(name, fallback=fallback, size=size)
+                except Exception:
+                    img = fallback
+            else:
+                img = fallback
             self._icon_cache[key] = img
             return img
         except Exception:
@@ -2061,7 +1617,10 @@ class App(tk.Tk):
                 self.hunt_status.set(f'Pick {which.upper()} in {i}... Move mouse to corner')
                 time.sleep(1)
             try:
-                x, y = pyautogui.position()
+                pg = pyautogui
+                if pg is None:
+                    raise RuntimeError('pyautogui not available')
+                x, y = pg.position()
                 if which == 'tl':
                     self.reg_l.set(str(x))
                     self.reg_t.set(str(y))
@@ -2401,7 +1960,14 @@ class App(tk.Tk):
         
         # Launch wizard - use 'self' instead of 'self.root' (App inherits from tk.Tk)
         # Note: Wizard will hide main window after setup to avoid transient() issues
-        show_setup_wizard(self, config_manager=self.config_mgr, on_complete=on_wizard_complete, on_cancel=on_wizard_cancel)
+        if callable(show_setup_wizard):
+            show_setup_wizard(self, config_manager=self.config_mgr, on_complete=on_wizard_complete, on_cancel=on_wizard_cancel)
+        else:
+            # Fallback: wizard not available
+            try:
+                messagebox.showinfo(self._t('info_title'), 'Setup wizard is not available in this build.', parent=self)
+            except Exception:
+                pass
     
     def _populate_hunt_ui_from_config(self):
         """Populate Hunt tab UI elements from hunt_config.json data."""
