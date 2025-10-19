@@ -177,10 +177,7 @@ class LibraryManagerWindow(tk.Toplevel):
             tmpl.pop('region', None)
             tmpl['region_strategy'] = 'window'
         self.changes_made['monsters_changed'] = True
-        try:
-            self._mark_unsaved(True)
-        except Exception:
-            pass
+        # Badge already shown by unlock action - no need to mark unsaved here
 
     def _pick_template_region(self):
         """Let user pick a region from screen for current template; fill fields and persist."""
@@ -1606,11 +1603,8 @@ class LibraryManagerWindow(tk.Toplevel):
         self.template_form_edit_index = idx
         # Lock fields after selection
         self._lock_template_fields()
-        # Reset unsaved badge view based on current change state
-        try:
-            self._mark_unsaved(any(self.changes_made.values()))
-        except Exception:
-            pass
+        # Hide badge when just viewing (locked state) - no editing yet
+        self._hide_template_badge()
 
     # === Template Lock/Unlock Management ===
     def _lock_template_fields(self):
@@ -1738,7 +1732,7 @@ class LibraryManagerWindow(tk.Toplevel):
             self._lock_template_fields()
             self._update_toggle_button_icon('edit', '✏️', 'tip_template_edit')
             
-            # Show "Đã lưu" badge (green)
+            # Show "Đã lưu" badge (green) - will auto-hide after 3s
             self._show_saved_badge()
             
             # Mark as saved (no more changes)
@@ -1786,6 +1780,14 @@ class LibraryManagerWindow(tk.Toplevel):
             
         except Exception:
             pass
+    
+    def _hide_template_badge(self):
+        """Hide template badge (used when viewing locked template)."""
+        try:
+            if self.unsaved_badge:
+                self.unsaved_badge.place_forget()
+        except Exception:
+            pass
 
     # === Auto-apply bindings for template form ===
     def _get_current_template_ref(self) -> Optional[dict]:
@@ -1818,10 +1820,7 @@ class LibraryManagerWindow(tk.Toplevel):
             return
         tmpl['name'] = self.template_name_var.get().strip()
         self.changes_made['monsters_changed'] = True
-        try:
-            self._mark_unsaved(True)
-        except Exception:
-            pass
+        # Badge already shown by unlock action - no need to mark unsaved here
         # Update name label and tree text
         if hasattr(self, 'template_name_label'):
             self.template_name_label.config(text=tmpl['name'])
@@ -1845,10 +1844,7 @@ class LibraryManagerWindow(tk.Toplevel):
             return
         tmpl['path'] = self.template_path_var.get().strip()
         self.changes_made['monsters_changed'] = True
-        try:
-            self._mark_unsaved(True)
-        except Exception:
-            pass
+        # Badge already shown by unlock action - no need to mark unsaved here
         # Refresh preview
         self._update_template_preview(tmpl)
 
@@ -1865,10 +1861,7 @@ class LibraryManagerWindow(tk.Toplevel):
         try:
             tmpl['threshold'] = float(val)
             self.changes_made['monsters_changed'] = True
-            try:
-                self._mark_unsaved(True)
-            except Exception:
-                pass
+            # Badge already shown by unlock action - no need to mark unsaved here
         except Exception:
             # Ignore invalid while typing
             pass

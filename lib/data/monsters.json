@@ -76,15 +76,15 @@
       },
       {
         "name": "Coc go 7",
-        "path": "E:\\Cabal_Auto\\tmp\\captures\\coc_go__coc_go_7_1760867380325.png",
+        "path": "assets/images/monsters/coc_go__coc_go_7_1760868158078.png",
         "threshold": 0.85,
-        "region_strategy": "custom",
         "region": {
           "left": 205,
           "top": 77,
           "width": 1592,
           "height": 929
-        }
+        },
+        "region_strategy": "custom"
       }
     ]
   },
