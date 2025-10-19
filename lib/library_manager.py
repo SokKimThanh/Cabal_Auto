@@ -1355,6 +1355,15 @@ class LibraryManagerWindow(tk.Toplevel):
         self.template_name_label.pack(anchor='n', padx=10, pady=(10, 6))
         self.template_preview_label = tk.Label(preview_frame, bg='#FAFAFA', relief='solid')
         self.template_preview_label.pack(anchor='n', padx=10, pady=(0, 8))
+        # Path + Browse + Capture row (moved here under preview for compact UX)
+        preview_tools_row = tk.Frame(preview_frame, bg='#FFFFFF')
+        preview_tools_row.pack(fill='x', padx=10, pady=(0, 8))
+        # Path entry (readonly)
+        path_entry = tk.Entry(preview_tools_row, textvariable=self.template_path_var, font=UI.FONT_TEXT, state='readonly', fg=UI.COLOR_SUBTEXT, relief='solid', borderwidth=1)
+        path_entry.pack(side='left', fill='x', expand=True, ipady=6)
+        # Buttons inline
+        tk.Button(preview_tools_row, image=self._icon('folder', '📁'), compound='left', text=('Browse' if self.lang=='en' else 'Chọn'), command=self._browse_template_image, font=UI.FONT_BUTTON, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(6,0))
+        tk.Button(preview_tools_row, image=self._icon('capture', '📸'), compound='left', text=('Capture' if self.lang=='en' else 'Chụp'), command=lambda: self._capture_into_path_var(window=False), font=UI.FONT_BUTTON, bg='#9C27B0', fg='#FFFFFF', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(6,0))
 
         # Right: edit panel with toolbar + inline form (created but not packed until used)
         edit_toolbar = tk.Frame(self.template_edit_panel, bg=UI.BG_PANEL)
@@ -1412,19 +1421,7 @@ class LibraryManagerWindow(tk.Toplevel):
             'Tip: 0.80 - 0.90. Higher = less false positives, but harder to match.'
         ), bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL, anchor='w').pack(fill='x', pady=(4,0))
 
-        path_frame = tk.Frame(form_body, bg=UI.BG_SECTION); path_frame.pack(fill='x', pady=(0, 12))
-        tk.Label(path_frame, text=('Image Path' if self.lang=='en' else 'Đường Dẫn Ảnh'), bg=UI.BG_SECTION, font=(UI.FONT_FAMILY, 9, 'bold'), fg=UI.COLOR_PRIMARY_TEXT, anchor='w').pack(fill='x', pady=(0,4))
-        path_input_frame = tk.Frame(path_frame, bg=UI.BG_SECTION); path_input_frame.pack(fill='x')
-        self.template_path_var = tk.StringVar()
-        tk.Entry(path_input_frame, textvariable=self.template_path_var, font=UI.FONT_TEXT, state='readonly', fg=UI.COLOR_SUBTEXT, relief='solid', borderwidth=1).pack(side='left', fill='x', expand=True, ipady=6)
-        # Browse and Capture inline
-        tools_frame = tk.Frame(path_input_frame, bg='#E3F2FD')
-        tools_frame.pack(side='right')
-        tk.Button(tools_frame, image=self._icon('folder', '📁'), compound='left', text=('Browse' if self.lang=='en' else 'Chọn'), command=self._browse_template_image, font=UI.FONT_BUTTON, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
-        # Keep only screenshot capture per spec
-        tk.Button(tools_frame, image=self._icon('capture', '📸'), compound='left', text=('Capture' if self.lang=='en' else 'Chụp'), command=lambda: self._capture_into_path_var(window=False), font=UI.FONT_BUTTON, bg='#9C27B0', fg='#FFFFFF', relief='flat', padx=10, pady=6, cursor='hand2').pack(side='left', padx=(5,0))
-        # Guidance for path/capture
-        tk.Label(path_frame, text=('Chọn file ảnh hoặc bấm Chụp để lấy ảnh từ màn hình.' if self.lang=='vi' else 'Pick an image file or use Capture to grab from screen.'), bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL, anchor='w').pack(fill='x', pady=(4,0))
+    # Path inputs moved to preview column above; guidance removed for compactness
 
         # Threshold moved to top_row with name
 
@@ -1770,7 +1767,21 @@ class LibraryManagerWindow(tk.Toplevel):
         # Default state
         if not template:
             self.template_name_label.config(text='')
-            self.template_preview_label.config(image='', text='No preview', font=('Arial', 10), fg='#999')
+            # Always show a fixed 300x300 placeholder
+            try:
+                ph_key = '__blank_300x300'
+                photo = self._thumb_cache.get(ph_key)
+                if photo is None:
+                    if self.pil_available and Image is not None and ImageTk is not None:  # type: ignore[attr-defined]
+                        bg = Image.new('RGBA', (300, 300), (250, 250, 250, 255))  # type: ignore[attr-defined]
+                        photo = ImageTk.PhotoImage(bg)  # type: ignore[attr-defined]
+                    else:
+                        # Fallback to Tk blank image
+                        photo = tk.PhotoImage(width=300, height=300)
+                    self._thumb_cache[ph_key] = photo
+                self.template_preview_label.config(image=photo, text='')
+            except Exception:
+                self.template_preview_label.config(image='', text='')
             return
         # Set name label
         self.template_name_label.config(text=template.get('name', ''))
@@ -1781,21 +1792,63 @@ class LibraryManagerWindow(tk.Toplevel):
             path = str((self.project_root / path).resolve())
         if path and os.path.exists(path) and self.pil_available:
             try:
-                img = Image.open(path)  # type: ignore[attr-defined]
-                # Scale to fixed height 300, preserve aspect ratio (auto width)
-                w, h = img.size
-                if w > 0 and h > 0:
-                    target_h = 300
-                    target_w = int(w * (target_h / float(h)))
-                    img = img.resize((max(1, target_w), target_h), Image.LANCZOS)  # type: ignore[attr-defined]
-                photo = ImageTk.PhotoImage(img)  # type: ignore[attr-defined]
-                # cache to avoid GC
-                self._thumb_cache[path + '_preview_h300'] = photo
+                cache_key = path + '_preview_300x300'
+                photo = self._thumb_cache.get(cache_key)
+                if photo is None:
+                    img = Image.open(path)  # type: ignore[attr-defined]
+                    # Ensure RGB/RGBA
+                    if img.mode not in ('RGB', 'RGBA'):
+                        img = img.convert('RGBA')
+                    w, h = img.size
+                    # Fit into 300x300 preserving aspect ratio
+                    if w > 0 and h > 0:
+                        scale = min(300 / float(w), 300 / float(h))
+                        new_w = max(1, int(round(w * scale)))
+                        new_h = max(1, int(round(h * scale)))
+                    else:
+                        new_w, new_h = 300, 300
+                    img_resized = img.resize((new_w, new_h), Image.LANCZOS)  # type: ignore[attr-defined]
+                    # Compose on 300x300 background (match preview bg #FAFAFA)
+                    bg = Image.new('RGBA', (300, 300), (250, 250, 250, 255))  # type: ignore[attr-defined]
+                    off_x = (300 - new_w) // 2
+                    off_y = (300 - new_h) // 2
+                    try:
+                        bg.paste(img_resized, (off_x, off_y), img_resized)
+                    except Exception:
+                        bg.paste(img_resized, (off_x, off_y))
+                    photo = ImageTk.PhotoImage(bg)  # type: ignore[attr-defined]
+                    self._thumb_cache[cache_key] = photo
                 self.template_preview_label.config(image=photo, text='')
             except Exception:
-                self.template_preview_label.config(image='', text='Preview not available', font=('Arial', 10), fg='#999')
+                # On failure, show blank placeholder 300x300
+                try:
+                    ph_key = '__blank_300x300'
+                    photo = self._thumb_cache.get(ph_key)
+                    if photo is None:
+                        if self.pil_available and Image is not None and ImageTk is not None:  # type: ignore[attr-defined]
+                            bg = Image.new('RGBA', (300, 300), (250, 250, 250, 255))  # type: ignore[attr-defined]
+                            photo = ImageTk.PhotoImage(bg)  # type: ignore[attr-defined]
+                        else:
+                            photo = tk.PhotoImage(width=300, height=300)
+                        self._thumb_cache[ph_key] = photo
+                    self.template_preview_label.config(image=photo, text='')
+                except Exception:
+                    self.template_preview_label.config(image='', text='')
         else:
-            self.template_preview_label.config(image='', text='No image', font=('Arial', 10), fg='#999')
+            # No path or PIL not available: show fixed placeholder
+            try:
+                ph_key = '__blank_300x300'
+                photo = self._thumb_cache.get(ph_key)
+                if photo is None:
+                    if self.pil_available and Image is not None and ImageTk is not None:  # type: ignore[attr-defined]
+                        bg = Image.new('RGBA', (300, 300), (250, 250, 250, 255))  # type: ignore[attr-defined]
+                        photo = ImageTk.PhotoImage(bg)  # type: ignore[attr-defined]
+                    else:
+                        photo = tk.PhotoImage(width=300, height=300)
+                    self._thumb_cache[ph_key] = photo
+                self.template_preview_label.config(image=photo, text='')
+            except Exception:
+                self.template_preview_label.config(image='', text='')
 
     # === Inline Monster Edit (reuse template form style) ===
     def _show_monster_edit_inline(self):
