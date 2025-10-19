@@ -535,6 +535,8 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'success_title': 'Success',
         # Tooltips (buttons/icon-only helpers)
         'tip_apply_all': 'Apply all changes',
+        'tip_apply_all_saved': 'No unsaved changes',
+        'tip_apply_all_unsaved': 'Apply all changes (unsaved)',
         'tip_close_manager': 'Close Library Manager',
         'tip_add_monster': 'Add monster',
         'tip_template_add': 'Add template',
@@ -560,6 +562,8 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'success_title': 'Thành Công',
         # Tooltips (buttons/icon-only helpers)
         'tip_apply_all': 'Áp dụng tất cả thay đổi',
+        'tip_apply_all_saved': 'Không có thay đổi chưa lưu',
+        'tip_apply_all_unsaved': 'Áp dụng tất cả thay đổi (chưa lưu)',
         'tip_close_manager': 'Đóng Quản Lý Thư Viện',
         'tip_add_monster': 'Thêm quái',
         'tip_template_add': 'Thêm template',

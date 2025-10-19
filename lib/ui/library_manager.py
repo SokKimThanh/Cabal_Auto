@@ -549,6 +549,39 @@ class LibraryManagerWindow(tk.Toplevel):
                 else:
                     self.unsaved_badge.config(text='')
                     self.unsaved_badge.place_forget()
+            
+            # Update save button tooltip to reflect state
+            self._update_save_button_tooltip(state)
+        except Exception:
+            pass
+    
+    def _update_save_button_tooltip(self, has_unsaved: bool):
+        """Update save button tooltip based on unsaved state."""
+        try:
+            if not hasattr(self, 'save_btn') or not self.save_btn:
+                return
+            
+            # Determine tooltip key based on state
+            tooltip_key = 'tip_apply_all_unsaved' if has_unsaved else 'tip_apply_all_saved'
+            
+            # Remove old tooltip if exists
+            if hasattr(self.save_btn, '_i18n_tooltip'):
+                old_tooltip = getattr(self.save_btn, '_i18n_tooltip')
+                try:
+                    # Unbind events from old tooltip
+                    self.save_btn.unbind('<Enter>')
+                    self.save_btn.unbind('<Leave>')
+                    self.save_btn.unbind('<ButtonPress>')
+                except Exception:
+                    pass
+            
+            # Attach new tooltip with updated key
+            attach_i18n_tooltip(
+                self.save_btn, 
+                key=tooltip_key, 
+                ns='library_manager', 
+                lang_provider=lambda: self.lang
+            )
         except Exception:
             pass
 
@@ -840,7 +873,9 @@ class LibraryManagerWindow(tk.Toplevel):
         tk.Label(top_bar, text=self._t('library_manager_title'), bg=UI.BG_PANEL, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=8)
         # Right-aligned actions
         self._make_icon_button(top_bar, 'cancel', '✖', 'tip_close_manager', command=self._on_window_close, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
-        self._make_icon_button(top_bar, 'save', '💾', 'tip_apply_all', command=self._apply_all_changes, bg=UI.BTN_PRIMARY_BG, fg=UI.BTN_PRIMARY_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=6, pady=6)
+        # Save button with dynamic tooltip based on unsaved state
+        self.save_btn = self._make_icon_button(top_bar, 'save', '💾', 'tip_apply_all', command=self._apply_all_changes, bg=UI.BTN_PRIMARY_BG, fg=UI.BTN_PRIMARY_FG, relief='flat', padx=12, pady=6)
+        self.save_btn.pack(side='right', padx=6, pady=6)
         
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(main_frame)
