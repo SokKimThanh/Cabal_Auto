@@ -1180,6 +1180,11 @@ Track progress at:
         self.notebook.add(self.timing_tab, text=self._t('tab_timing'))
         self._build_timing_tab(self.timing_tab)
         
+        # Tab 4: Skill Rotation Builder
+        self.rotation_tab = tk.Frame(self.notebook)
+        self.notebook.add(self.rotation_tab, text="🎮 " + ("Skill Rotation" if self.lang == 'en' else "Chu Kỳ Chiêu"))
+        self._build_rotation_tab(self.rotation_tab)
+        
         # Bottom buttons removed per new UX (actions moved to form title bar)
     
     def _build_monster_tab(self, parent: tk.Frame):
@@ -3788,6 +3793,36 @@ Track progress at:
         # Initialize data AFTER references are stored
         self._refresh_timing_monsters()
         self._refresh_timing_skills()
+    
+    def _build_rotation_tab(self, parent: tk.Frame):
+        """
+        Build Skill Rotation Builder tab
+        
+        Sprint 19 Task #5: Skill Rotation Builder with precise timing
+        - Select skills from hunt_config
+        - Arrange in specific order
+        - Calculate precise rotation with cooldown tracking
+        - Save rotation sequence to hunt_config
+        """
+        try:
+            from lib.features.skill_rotation.ui_integration import SkillRotationUI
+            
+            # Create rotation UI
+            self.rotation_ui = SkillRotationUI(parent, self)
+            
+        except ImportError as e:
+            # Fallback if module not available
+            error_frame = tk.Frame(parent, bg='white')
+            error_frame.pack(fill='both', expand=True)
+            
+            tk.Label(
+                error_frame,
+                text=f"⚠️ Skill Rotation module not available\n\n{str(e)}",
+                font=('Arial', 12),
+                fg='#F44336',
+                bg='white',
+                justify='center'
+            ).pack(expand=True)
     
     def _refresh_timing_monsters(self):
         """Refresh monster dropdown in timing tab"""
