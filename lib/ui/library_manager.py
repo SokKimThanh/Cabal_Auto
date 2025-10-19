@@ -1169,7 +1169,7 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _add_monster(self):
         """Open dialog to add new monster."""
-        dialog = MonsterDialog(self, self.lang, mode='add')
+        dialog = MonsterDialog(self, self.lang, mode='add', icon_helper=icon_helper, i18n_registry=i18n_t)
         
         if dialog.result:
             # Add new monster
@@ -1202,7 +1202,7 @@ class LibraryManagerWindow(tk.Toplevel):
         monster = self.monsters[item_index]
         
         # Open edit dialog
-        dialog = MonsterDialog(self, self.lang, mode='edit', monster=monster)
+        dialog = MonsterDialog(self, self.lang, mode='edit', monster=monster, icon_helper=icon_helper, i18n_registry=i18n_t)
         
         if dialog.result:
             # Update monster
@@ -2774,7 +2774,7 @@ class LibraryManagerWindow(tk.Toplevel):
     
     def _add_skill(self):
         """Open dialog to add new skill."""
-        dialog = SkillDialog(self, self.lang, mode='add')
+        dialog = SkillDialog(self, self.lang, mode='add', icon_helper=icon_helper, i18n_registry=i18n_t)
         
         if dialog.result:
             # Add new skill
@@ -3065,12 +3065,14 @@ class MonsterDialog:
         result: New/updated monster dict, or None if cancelled
     """
     
-    def __init__(self, parent: tk.Toplevel, lang: str = 'en', mode: str = 'add', monster: Optional[dict] = None):
+    def __init__(self, parent: tk.Toplevel, lang: str = 'en', mode: str = 'add', monster: Optional[dict] = None, icon_helper=None, i18n_registry=None):
         self.parent = parent
         self.lang = lang
         self.mode = mode
         self.monster = monster or {}
         self.result = None
+        self.icon_helper = icon_helper
+        self.i18n_registry = i18n_registry
         
         # Create dialog
         self.dialog = tk.Toplevel(parent)
@@ -3199,18 +3201,58 @@ class MonsterDialog:
         button_frame = tk.Frame(container)
         button_frame.pack(pady=(15, 0))
         
-        # Save button
-        save_btn = tk.Button(
-            button_frame,
-            text='💾 Save' if self.lang == 'en' else '💾 Lưu',
-            command=self._save,
-            bg='#4CAF50',
-            fg='white',
-            font=('Arial', 9, 'bold'),
-            padx=20,
-            pady=5,
-            cursor='hand2'
-        )
+        # Save button - Use icon if icon_helper available
+        if self.icon_helper:
+            save_icon = self.icon_helper.get_icon('save', fallback='💾')
+            # If icon is a string (emoji fallback), use as text; otherwise use as image
+            if isinstance(save_icon, str):
+                save_btn = tk.Button(
+                    button_frame,
+                    text=f"{save_icon} {'Save' if self.lang == 'en' else 'Lưu'}",
+                    command=self._save,
+                    bg='#4CAF50',
+                    fg='white',
+                    font=('Arial', 9, 'bold'),
+                    padx=20,
+                    pady=5,
+                    cursor='hand2'
+                )
+            else:
+                save_btn = tk.Button(
+                    button_frame,
+                    image=save_icon,
+                    command=self._save,
+                    bg='#4CAF50',
+                    fg='white',
+                    font=('Arial', 9, 'bold'),
+                    padx=20,
+                    pady=5,
+                    cursor='hand2'
+                )
+                save_btn.image = save_icon  # Keep reference
+            
+            # Add i18n tooltip if registry available
+            if self.i18n_registry:
+                from lib.ui.tooltip import attach_i18n_tooltip
+                attach_i18n_tooltip(
+                    save_btn, 
+                    'tip_save_monster', 
+                    'library_manager',
+                    lambda: self.lang
+                )
+        else:
+            # Fallback to text-only button
+            save_btn = tk.Button(
+                button_frame,
+                text='💾 Save' if self.lang == 'en' else '💾 Lưu',
+                command=self._save,
+                bg='#4CAF50',
+                fg='white',
+                font=('Arial', 9, 'bold'),
+                padx=20,
+                pady=5,
+                cursor='hand2'
+            )
         save_btn.pack(side='left', padx=5)
         
         # Cancel button
@@ -3332,12 +3374,14 @@ class SkillDialog:
         result: New/updated skill dict, or None if cancelled
     """
     
-    def __init__(self, parent: tk.Toplevel, lang: str = 'en', mode: str = 'add', skill: Optional[dict] = None):
+    def __init__(self, parent: tk.Toplevel, lang: str = 'en', mode: str = 'add', skill: Optional[dict] = None, icon_helper=None, i18n_registry=None):
         self.parent = parent
         self.lang = lang
         self.mode = mode
         self.skill = skill or {}
         self.result = None
+        self.icon_helper = icon_helper
+        self.i18n_registry = i18n_registry
         
         # Create dialog
         self.dialog = tk.Toplevel(parent)
@@ -3450,18 +3494,58 @@ class SkillDialog:
         button_frame = tk.Frame(container)
         button_frame.pack(side='bottom', pady=(20, 0))
         
-        # Save button
-        save_btn = tk.Button(
-            button_frame,
-            text='✅ Save' if self.lang == 'en' else '✅ Lưu',
-            command=self._save,
-            bg='#4CAF50',
-            fg='white',
-            font=('Arial', 9, 'bold'),
-            padx=20,
-            pady=5,
-            cursor='hand2'
-        )
+        # Save button - Use icon if icon_helper available
+        if self.icon_helper:
+            save_icon = self.icon_helper.get_icon('save', fallback='💾')
+            # If icon is a string (emoji fallback), use as text; otherwise use as image
+            if isinstance(save_icon, str):
+                save_btn = tk.Button(
+                    button_frame,
+                    text=f"{save_icon} {'Save' if self.lang == 'en' else 'Lưu'}",
+                    command=self._save,
+                    bg='#4CAF50',
+                    fg='white',
+                    font=('Arial', 9, 'bold'),
+                    padx=20,
+                    pady=5,
+                    cursor='hand2'
+                )
+            else:
+                save_btn = tk.Button(
+                    button_frame,
+                    image=save_icon,
+                    command=self._save,
+                    bg='#4CAF50',
+                    fg='white',
+                    font=('Arial', 9, 'bold'),
+                    padx=20,
+                    pady=5,
+                    cursor='hand2'
+                )
+                save_btn.image = save_icon  # Keep reference
+            
+            # Add i18n tooltip if registry available
+            if self.i18n_registry:
+                from lib.ui.tooltip import attach_i18n_tooltip
+                attach_i18n_tooltip(
+                    save_btn, 
+                    'tip_save_skill', 
+                    'library_manager',
+                    lambda: self.lang
+                )
+        else:
+            # Fallback to text-only button
+            save_btn = tk.Button(
+                button_frame,
+                text='💾 Save' if self.lang == 'en' else '💾 Lưu',
+                command=self._save,
+                bg='#4CAF50',
+                fg='white',
+                font=('Arial', 9, 'bold'),
+                padx=20,
+                pady=5,
+                cursor='hand2'
+            )
         save_btn.pack(side='left', padx=5)
         
         # Cancel button

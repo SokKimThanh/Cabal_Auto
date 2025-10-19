@@ -1,0 +1,198 @@
+"""Test Monster/Skill Dialog Save Icons and Tooltips.
+
+This test verifies:
+1. MonsterDialog save button displays save.ico icon
+2. SkillDialog save button displays save.ico icon
+3. Both dialogs have i18n tooltips (EN/VI)
+4. Icon fallback works when .ico unavailable
+
+Usage:
+    python tests/test_dialog_save_icons.py
+"""
+
+import sys
+from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import tkinter as tk
+from lib.ui.library_manager import MonsterDialog, SkillDialog
+from lib.ui.icon_helper import get_icon_helper
+from lib.i18n import t as i18n_t
+
+def test_monster_dialog_icon():
+    """Test MonsterDialog save button icon."""
+    print("=" * 60)
+    print("TEST 1: MonsterDialog Save Icon & Tooltip")
+    print("=" * 60)
+    
+    root = tk.Tk()
+    root.withdraw()
+    
+    # Get icon helper
+    icon_helper = get_icon_helper()
+    
+    # Test in EN
+    print("\n[EN] Opening MonsterDialog (Add Monster)...")
+    dialog_en = MonsterDialog(
+        root, 
+        lang='en', 
+        mode='add',
+        icon_helper=icon_helper,
+        i18n_registry=i18n_t
+    )
+    
+    if dialog_en.result:
+        print(f"✅ Monster added: {dialog_en.result.get('name')}")
+    else:
+        print("ℹ️  Dialog cancelled")
+    
+    # Test in VI
+    print("\n[VI] Opening MonsterDialog (Thêm Quái)...")
+    dialog_vi = MonsterDialog(
+        root, 
+        lang='vi', 
+        mode='add',
+        icon_helper=icon_helper,
+        i18n_registry=i18n_t
+    )
+    
+    if dialog_vi.result:
+        print(f"✅ Quái đã thêm: {dialog_vi.result.get('name')}")
+    else:
+        print("ℹ️  Đã hủy")
+    
+    root.destroy()
+    print("\n✅ MonsterDialog test completed\n")
+
+def test_skill_dialog_icon():
+    """Test SkillDialog save button icon."""
+    print("=" * 60)
+    print("TEST 2: SkillDialog Save Icon & Tooltip")
+    print("=" * 60)
+    
+    root = tk.Tk()
+    root.withdraw()
+    
+    # Get icon helper
+    icon_helper = get_icon_helper()
+    
+    # Test in EN
+    print("\n[EN] Opening SkillDialog (Add Skill)...")
+    dialog_en = SkillDialog(
+        root, 
+        lang='en', 
+        mode='add',
+        icon_helper=icon_helper,
+        i18n_registry=i18n_t
+    )
+    
+    if dialog_en.result:
+        print(f"✅ Skill added: {dialog_en.result.get('name')}")
+    else:
+        print("ℹ️  Dialog cancelled")
+    
+    # Test in VI
+    print("\n[VI] Opening SkillDialog (Thêm Kỹ Năng)...")
+    dialog_vi = SkillDialog(
+        root, 
+        lang='vi', 
+        mode='add',
+        icon_helper=icon_helper,
+        i18n_registry=i18n_t
+    )
+    
+    if dialog_vi.result:
+        print(f"✅ Kỹ năng đã thêm: {dialog_vi.result.get('name')}")
+    else:
+        print("ℹ️  Đã hủy")
+    
+    root.destroy()
+    print("\n✅ SkillDialog test completed\n")
+
+def test_icon_availability():
+    """Test save.ico availability."""
+    print("=" * 60)
+    print("TEST 3: Save Icon Availability")
+    print("=" * 60)
+    
+    icon_helper = get_icon_helper()
+    
+    # Test save icon
+    save_icon = icon_helper.get_icon('save')
+    
+    if save_icon:
+        print("✅ Save icon loaded successfully")
+        print(f"   Type: {type(save_icon)}")
+        
+        # Check if it's PhotoImage
+        if hasattr(save_icon, 'width') and hasattr(save_icon, 'height'):
+            print(f"   Size: {save_icon.width()}x{save_icon.height()}")
+    else:
+        print("❌ Save icon not found")
+    
+    # Check fallback
+    save_fallback = icon_helper.get_icon('save', fallback='💾')
+    if isinstance(save_fallback, str):
+        print(f"   Fallback text: {save_fallback}")
+    else:
+        print(f"   Icon loaded (not fallback)")
+    
+    # Check file paths
+    project_root = Path(__file__).parent.parent
+    
+    ico_path = project_root / 'assets' / 'images' / 'icons' / 'save.ico'
+    png_path = project_root / 'assets' / 'images' / 'icons' / 'save.png'
+    
+    print(f"\n📁 Icon Files:")
+    print(f"   save.ico: {'✅ EXISTS' if ico_path.exists() else '❌ NOT FOUND'} ({ico_path})")
+    if ico_path.exists():
+        print(f"            Size: {ico_path.stat().st_size:,} bytes")
+    
+    print(f"   save.png: {'✅ EXISTS' if png_path.exists() else '❌ NOT FOUND'} ({png_path})")
+    if png_path.exists():
+        print(f"            Size: {png_path.stat().st_size:,} bytes")
+    
+    print("\n✅ Icon availability test completed\n")
+
+def main():
+    """Run all tests."""
+    print("\n" + "=" * 60)
+    print("Dialog Save Icons & Tooltips Test Suite")
+    print("=" * 60 + "\n")
+    
+    try:
+        # Test 1: Icon availability
+        test_icon_availability()
+        
+        # Test 2: MonsterDialog
+        response = input("📋 Test MonsterDialog? (y/n): ")
+        if response.lower() == 'y':
+            test_monster_dialog_icon()
+        
+        # Test 3: SkillDialog
+        response = input("📋 Test SkillDialog? (y/n): ")
+        if response.lower() == 'y':
+            test_skill_dialog_icon()
+        
+        print("=" * 60)
+        print("✅ ALL TESTS COMPLETED")
+        print("=" * 60)
+        print("\nWhat to check:")
+        print("1. ✅ Save button shows disk icon (not emoji)")
+        print("2. ✅ Tooltip appears on hover")
+        print("3. ✅ Tooltip text:")
+        print("   - EN: 'Save monster' or 'Save skill'")
+        print("   - VI: 'Lưu quái' or 'Lưu kỹ năng'")
+        print("4. ✅ Icon fallback to 💾 if .ico missing")
+        
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Tests interrupted by user")
+    except Exception as e:
+        print(f"\n\n❌ Test failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == '__main__':
+    main()

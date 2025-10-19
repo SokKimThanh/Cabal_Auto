@@ -547,6 +547,8 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'tip_pick_region': 'Pick region (drag to select)',
         'tip_test_recognition': 'Test template recognition',
         'tip_auto_detect': 'Auto-detect region from match',
+        'tip_save_monster': 'Save monster',
+        'tip_save_skill': 'Save skill',
     },
     'vi': {
         'library_manager_title': 'Quản Lý Thư Viện',
@@ -574,6 +576,8 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'tip_pick_region': 'Chọn vùng (kéo để chọn)',
         'tip_test_recognition': 'Kiểm tra nhận diện',
         'tip_auto_detect': 'Tự động dò vùng từ kết quả',
+        'tip_save_monster': 'Lưu quái',
+        'tip_save_skill': 'Lưu kỹ năng',
     }
 }
 
