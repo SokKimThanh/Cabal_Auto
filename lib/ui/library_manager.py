@@ -3453,28 +3453,508 @@ Track progress at:
         """
         Build Timing Calculator tab with auto-calculation and recommendations.
         
-        TODO Sprint 19 Task #4: Implement timing calculator
-        - Auto-calculate from configured skills
-        - Show breakdown: "3 attack skills, avg cooldown 2.1s → APS 1.43"
-        - Display recommendations: "Recommended attack_interval: 0.7s"
-        - Button: "Apply to Advanced Settings"
-        - Real-time preview of timing impact
+        Sprint 19 Task #4: Auto timing calculator
+        - Step 1: Select monster (with HP/damage info)
+        - Step 2: Select skill (with cooldown info)
+        - Step 3: Set attack speed (presets or custom)
+        - Calculate button shows recommendations
+        - Apply button saves to hunt_config.json
         """
-        # Placeholder for now
-        placeholder = tk.Label(
-            parent,
-            text="⏱️ Timing Calculator Tab\n\nComing in Task #4:\n"
-                 "• Auto-calculate from configured skills\n"
-                 "• Show attack speed breakdown\n"
-                 "• Display recommended timings\n"
-                 "• One-click apply to Advanced Settings\n"
-                 "• Preview timing impact on hunt performance",
-            justify='left',
-            padx=20,
-            pady=20,
-            font=('Arial', 10)
+        # Main container with scroll
+        canvas = tk.Canvas(parent, bg='white', highlightthickness=0)
+        scrollbar = ttk.Scrollbar(parent, orient='vertical', command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        placeholder.pack(expand=True)
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Title
+        title = tk.Label(
+            scrollable_frame,
+            text=self._t('timing_calculator_title'),
+            font=(UI.FONT_FAMILY, 14, 'bold'),
+            bg='white'
+        )
+        title.pack(pady=(10, 5))
+        
+        # Subtitle/hint
+        hint = tk.Label(
+            scrollable_frame,
+            text="Calculate optimal timing based on monster HP and your damage" if self.lang == 'en' 
+                 else "Tính toán timing tối ưu dựa trên HP quái và sát thương của bạn",
+            font=(UI.FONT_FAMILY, 9, 'italic'),
+            fg='#666',
+            bg='white'
+        )
+        hint.pack(pady=(0, 10))
+        
+        # Step 1: Select Monster
+        step1_frame = tk.LabelFrame(
+            scrollable_frame,
+            text=self._t('timing_step1'),
+            font=(UI.FONT_FAMILY, 10, 'bold'),
+            bg='#E3F2FD',
+            fg='#1976D2',
+            padx=10,
+            pady=10
+        )
+        step1_frame.pack(fill='x', padx=10, pady=5)
+        
+        # Monster dropdown
+        monster_select_frame = tk.Frame(step1_frame, bg='#E3F2FD')
+        monster_select_frame.pack(fill='x', pady=(0, 10))
+        
+        self.timing_monster_var = tk.StringVar()
+        monster_combo = ttk.Combobox(
+            monster_select_frame,
+            textvariable=self.timing_monster_var,
+            state='readonly',
+            font=(UI.FONT_FAMILY, 10)
+        )
+        monster_combo.pack(fill='x')
+        monster_combo.bind('<<ComboboxSelected>>', self._on_timing_monster_select)
+        
+        # Monster info display
+        monster_info_label = tk.Label(
+            step1_frame,
+            text=self._t('timing_monster_info'),
+            font=(UI.FONT_FAMILY, 9, 'bold'),
+            bg='#E3F2FD',
+            anchor='w'
+        )
+        monster_info_label.pack(fill='x', pady=(5, 2))
+        
+        self.timing_monster_info = tk.Text(
+            step1_frame,
+            height=3,
+            state='disabled',
+            bg='#F5F5F5',
+            font=(UI.FONT_FAMILY, 9),
+            relief='flat',
+            padx=5,
+            pady=5
+        )
+        self.timing_monster_info.pack(fill='x')
+        
+        # Step 2: Select Skill
+        step2_frame = tk.LabelFrame(
+            scrollable_frame,
+            text=self._t('timing_step2'),
+            font=(UI.FONT_FAMILY, 10, 'bold'),
+            bg='#E8F5E9',
+            fg='#388E3C',
+            padx=10,
+            pady=10
+        )
+        step2_frame.pack(fill='x', padx=10, pady=5)
+        
+        # Skill dropdown
+        skill_select_frame = tk.Frame(step2_frame, bg='#E8F5E9')
+        skill_select_frame.pack(fill='x', pady=(0, 10))
+        
+        self.timing_skill_var = tk.StringVar()
+        skill_combo = ttk.Combobox(
+            skill_select_frame,
+            textvariable=self.timing_skill_var,
+            state='readonly',
+            font=(UI.FONT_FAMILY, 10)
+        )
+        skill_combo.pack(fill='x')
+        skill_combo.bind('<<ComboboxSelected>>', self._on_timing_skill_select)
+        
+        # Skill info display
+        skill_info_label = tk.Label(
+            step2_frame,
+            text=self._t('timing_skill_info'),
+            font=(UI.FONT_FAMILY, 9, 'bold'),
+            bg='#E8F5E9',
+            anchor='w'
+        )
+        skill_info_label.pack(fill='x', pady=(5, 2))
+        
+        self.timing_skill_info = tk.Text(
+            step2_frame,
+            height=3,
+            state='disabled',
+            bg='#F5F5F5',
+            font=(UI.FONT_FAMILY, 9),
+            relief='flat',
+            padx=5,
+            pady=5
+        )
+        self.timing_skill_info.pack(fill='x')
+        
+        # Step 3: Attack Speed
+        step3_frame = tk.LabelFrame(
+            scrollable_frame,
+            text=self._t('timing_step3'),
+            font=(UI.FONT_FAMILY, 10, 'bold'),
+            bg='#FFF3E0',
+            fg='#F57C00',
+            padx=10,
+            pady=10
+        )
+        step3_frame.pack(fill='x', padx=10, pady=5)
+        
+        # Preset selection
+        preset_frame = tk.Frame(step3_frame, bg='#FFF3E0')
+        preset_frame.pack(fill='x', pady=(0, 10))
+        
+        tk.Label(
+            preset_frame,
+            text=self._t('timing_attacks_preset'),
+            font=(UI.FONT_FAMILY, 9),
+            bg='#FFF3E0'
+        ).pack(side='left', padx=(0, 10))
+        
+        self.timing_preset_var = tk.StringVar(value='normal')
+        presets = [
+            ('slow', self._t('timing_preset_slow')),
+            ('normal', self._t('timing_preset_normal')),
+            ('fast', self._t('timing_preset_fast')),
+            ('very_fast', self._t('timing_preset_very_fast')),
+            ('custom', self._t('timing_preset_custom'))
+        ]
+        
+        for value, text in presets:
+            rb = tk.Radiobutton(
+                preset_frame,
+                text=text,
+                variable=self.timing_preset_var,
+                value=value,
+                bg='#FFF3E0',
+                font=(UI.FONT_FAMILY, 9),
+                command=self._on_timing_preset_change
+            )
+            rb.pack(side='left', padx=5)
+        
+        # Custom APS input
+        aps_frame = tk.Frame(step3_frame, bg='#FFF3E0')
+        aps_frame.pack(fill='x')
+        
+        tk.Label(
+            aps_frame,
+            text=self._t('timing_attacks_per_sec'),
+            font=(UI.FONT_FAMILY, 9),
+            bg='#FFF3E0'
+        ).pack(side='left', padx=(0, 10))
+        
+        self.timing_aps_var = tk.StringVar(value='2.0')
+        aps_entry = tk.Entry(
+            aps_frame,
+            textvariable=self.timing_aps_var,
+            width=10,
+            font=(UI.FONT_FAMILY, 10)
+        )
+        aps_entry.pack(side='left')
+        
+        # Calculate button
+        calc_btn_frame = tk.Frame(scrollable_frame, bg='white')
+        calc_btn_frame.pack(fill='x', padx=10, pady=15)
+        
+        self.timing_calc_btn = tk.Button(
+            calc_btn_frame,
+            text=self._t('timing_calculate_btn'),
+            command=self._calculate_timing,
+            font=(UI.FONT_FAMILY, 11, 'bold'),
+            bg='#2196F3',
+            fg='white',
+            activebackground='#1976D2',
+            activeforeground='white',
+            relief='raised',
+            cursor='hand2',
+            padx=20,
+            pady=10
+        )
+        self.timing_calc_btn.pack(expand=True)
+        
+        # Results area
+        results_frame = tk.LabelFrame(
+            scrollable_frame,
+            text=self._t('timing_results_title'),
+            font=(UI.FONT_FAMILY, 10, 'bold'),
+            bg='#F5F5F5',
+            padx=10,
+            pady=10
+        )
+        results_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        
+        self.timing_results = tk.Text(
+            results_frame,
+            height=15,
+            state='disabled',
+            bg='white',
+            font=('Consolas', 9),
+            wrap='word',
+            padx=10,
+            pady=10
+        )
+        self.timing_results.pack(fill='both', expand=True)
+        
+        # Apply button
+        apply_btn_frame = tk.Frame(scrollable_frame, bg='white')
+        apply_btn_frame.pack(fill='x', padx=10, pady=(5, 15))
+        
+        self.timing_apply_btn = tk.Button(
+            apply_btn_frame,
+            text=self._t('timing_apply_btn'),
+            command=self._apply_timing_to_config,
+            font=(UI.FONT_FAMILY, 11, 'bold'),
+            bg='#4CAF50',
+            fg='white',
+            activebackground='#388E3C',
+            activeforeground='white',
+            relief='raised',
+            cursor='hand2',
+            padx=20,
+            pady=10,
+            state='disabled'
+        )
+        self.timing_apply_btn.pack(expand=True)
+        
+        # Initialize data
+        self._refresh_timing_monsters()
+        self._refresh_timing_skills()
+        
+        # Store references
+        self.timing_monster_combo = monster_combo
+        self.timing_skill_combo = skill_combo
+        self.timing_calculation_result = None
+    
+    def _refresh_timing_monsters(self):
+        """Refresh monster dropdown in timing tab"""
+        try:
+            monsters = self.data_manager.load_monster_library()
+            names = [m['name'] for m in monsters]
+            self.timing_monster_combo['values'] = names
+            if names:
+                self.timing_monster_combo.current(0)
+                self._on_timing_monster_select(None)
+        except Exception as e:
+            print(f"Error loading monsters for timing tab: {e}")
+    
+    def _refresh_timing_skills(self):
+        """Refresh skill dropdown in timing tab"""
+        try:
+            skills = self.data_manager.load_skill_library()
+            # Filter attack skills only
+            attack_skills = [s for s in skills if s.get('type') == 'attack']
+            names = [s['name'] for s in attack_skills]
+            self.timing_skill_combo['values'] = names
+            if names:
+                self.timing_skill_combo.current(0)
+                self._on_timing_skill_select(None)
+        except Exception as e:
+            print(f"Error loading skills for timing tab: {e}")
+    
+    def _on_timing_monster_select(self, event):
+        """Handle monster selection in timing tab"""
+        name = self.timing_monster_var.get()
+        if not name:
+            return
+        
+        try:
+            monsters = self.data_manager.load_monster_library()
+            monster = next((m for m in monsters if m['name'] == name), None)
+            
+            if monster:
+                hp = monster.get('hp', 'N/A')
+                damage = monster.get('damage_per_hit', 'N/A')
+                desc = monster.get('description', 'N/A')
+                
+                info = (
+                    f"HP: {hp:,} " if isinstance(hp, (int, float)) else f"HP: {hp}\n"
+                    f"{'Damage per hit' if self.lang == 'en' else 'Sát thương/đòn'}: {damage:,} " if isinstance(damage, (int, float)) else f"Damage: {damage}\n"
+                    f"{'Description' if self.lang == 'en' else 'Mô tả'}: {desc}"
+                )
+                self._update_text_widget(self.timing_monster_info, info)
+                self.selected_timing_monster = monster
+        except Exception as e:
+            print(f"Error displaying monster info: {e}")
+    
+    def _on_timing_skill_select(self, event):
+        """Handle skill selection in timing tab"""
+        name = self.timing_skill_var.get()
+        if not name:
+            return
+        
+        try:
+            skills = self.data_manager.load_skill_library()
+            skill = next((s for s in skills if s['name'] == name), None)
+            
+            if skill:
+                cooldown = skill.get('cooldown', 'N/A')
+                cast_time = skill.get('cast_time', 'N/A')
+                skill_type = skill.get('type', 'N/A')
+                
+                info = (
+                    f"{'Cooldown' if self.lang == 'en' else 'Hồi chiêu'}: {cooldown}s\n"
+                    f"{'Cast time' if self.lang == 'en' else 'Thời gian thi triển'}: {cast_time}s\n"
+                    f"{'Type' if self.lang == 'en' else 'Loại'}: {skill_type}"
+                )
+                self._update_text_widget(self.timing_skill_info, info)
+                self.selected_timing_skill = skill
+        except Exception as e:
+            print(f"Error displaying skill info: {e}")
+    
+    def _on_timing_preset_change(self):
+        """Handle attack speed preset change"""
+        preset = self.timing_preset_var.get()
+        
+        preset_values = {
+            'slow': 1.0,
+            'normal': 2.0,
+            'fast': 3.0,
+            'very_fast': 4.0
+        }
+        
+        if preset in preset_values:
+            self.timing_aps_var.set(str(preset_values[preset]))
+    
+    def _calculate_timing(self):
+        """Calculate optimal timing based on selections"""
+        # Validate selections
+        if not hasattr(self, 'selected_timing_monster'):
+            messagebox.showwarning(
+                self._t('error_title'),
+                self._t('timing_no_monster')
+            )
+            return
+        
+        if not hasattr(self, 'selected_timing_skill'):
+            messagebox.showwarning(
+                self._t('error_title'),
+                self._t('timing_no_skill')
+            )
+            return
+        
+        # Get attack speed
+        try:
+            aps = float(self.timing_aps_var.get())
+            if aps <= 0:
+                raise ValueError("APS must be positive")
+        except ValueError:
+            messagebox.showerror(
+                self._t('error_title'),
+                "Invalid attack speed value" if self.lang == 'en' 
+                else "Giá trị tốc độ đánh không hợp lệ"
+            )
+            return
+        
+        # Calculate
+        try:
+            from lib.features.timing.calculator import calculate_timing_from_monster
+            
+            result = calculate_timing_from_monster(
+                self.selected_timing_monster,
+                attacks_per_second=aps
+            )
+            
+            if result is None:
+                messagebox.showerror(
+                    self._t('error_title'),
+                    self._t('timing_no_data')
+                )
+                return
+            
+            # Format and display results
+            self._display_timing_results(result)
+            self.timing_calculation_result = result
+            self.timing_apply_btn.config(state='normal')
+            
+            messagebox.showinfo(
+                self._t('success_title'),
+                self._t('timing_calc_success')
+            )
+            
+        except Exception as e:
+            messagebox.showerror(
+                self._t('error_title'),
+                f"{'Calculation error' if self.lang == 'en' else 'Lỗi tính toán'}: {str(e)}"
+            )
+    
+    def _display_timing_results(self, result):
+        """Display calculation results in text widget"""
+        if self.lang == 'vi':
+            text = (
+                f"{'='*50}\n"
+                f"📊 {self._t('timing_analysis')}\n"
+                f"{'='*50}\n\n"
+                f"• {self._t('timing_hits_to_kill')}: {result.hits_to_kill} đòn\n"
+                f"• {self._t('timing_time_per_hit')}: {1.0/result.attacks_per_second:.2f}s\n"
+                f"• {self._t('timing_kill_time')}: {result.estimated_kill_time_sec:.2f}s\n\n"
+                f"{'='*50}\n"
+                f"⚙️ {self._t('timing_recommendations')}\n"
+                f"{'='*50}\n\n"
+                f"• {self._t('timing_lost_timeout')}: {result.lost_timeout_sec:.2f}s\n"
+                f"  (Thời gian chờ giữa các đòn + {result.lost_timeout_margin*100:.0f}% an toàn)\n\n"
+                f"• {self._t('timing_attack_duration')}: {result.attack_min_duration_sec:.2f}s\n"
+                f"  (Thời gian hạ gục + {result.attack_duration_margin*100:.0f}% an toàn)\n\n"
+                f"{'='*50}\n"
+                f"🎯 {self._t('timing_confidence')}: "
+            )
+        else:
+            text = (
+                f"{'='*50}\n"
+                f"📊 {self._t('timing_analysis')}\n"
+                f"{'='*50}\n\n"
+                f"• {self._t('timing_hits_to_kill')}: {result.hits_to_kill} hits\n"
+                f"• {self._t('timing_time_per_hit')}: {1.0/result.attacks_per_second:.2f}s\n"
+                f"• {self._t('timing_kill_time')}: {result.estimated_kill_time_sec:.2f}s\n\n"
+                f"{'='*50}\n"
+                f"⚙️ {self._t('timing_recommendations')}\n"
+                f"{'='*50}\n\n"
+                f"• {self._t('timing_lost_timeout')}: {result.lost_timeout_sec:.2f}s\n"
+                f"  (Time between hits + {result.lost_timeout_margin*100:.0f}% safety margin)\n\n"
+                f"• {self._t('timing_attack_duration')}: {result.attack_min_duration_sec:.2f}s\n"
+                f"  (Kill time + {result.attack_duration_margin*100:.0f}% safety margin)\n\n"
+                f"{'='*50}\n"
+                f"🎯 {self._t('timing_confidence')}: "
+            )
+        
+        # Add confidence
+        confidence = self._get_timing_confidence(result)
+        text += self._t(f'timing_confidence_{confidence}')
+        text += f"\n{'='*50}\n"
+        
+        self._update_text_widget(self.timing_results, text)
+    
+    def _get_timing_confidence(self, result) -> str:
+        """Determine confidence level of calculation"""
+        if result.monster_hp > 0 and result.damage_per_hit > 0 and result.attacks_per_second > 0:
+            return 'high'
+        elif result.monster_hp > 0 and result.damage_per_hit > 0:
+            return 'medium'
+        else:
+            return 'low'
+    
+    def _apply_timing_to_config(self):
+        """Apply calculated timing to hunt config"""
+        if not hasattr(self, 'timing_calculation_result') or self.timing_calculation_result is None:
+            return
+        
+        result = self.timing_calculation_result
+        
+        # Update hunt config
+        self.hunt_cfg['lost_timeout'] = result.lost_timeout_sec
+        self.hunt_cfg['attack_min_duration'] = result.attack_min_duration_sec
+        
+        # Mark as changed
+        self.changes_made['timing_applied'] = True
+        self._mark_unsaved(True)
+        
+        messagebox.showinfo(
+            self._t('success_title'),
+            self._t('timing_applied_success')
+        )
     
     def _apply_all_changes(self):
         """
