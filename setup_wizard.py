@@ -29,13 +29,15 @@ try:
 except Exception:
     attach_i18n_tooltip = None  # type: ignore
 try:
-    from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t
+    from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang
 except Exception:
     def i18n_register_bulk(namespace, translations):  # type: ignore
         pass
     # Match actual signature to satisfy static analyzers
     def i18n_t(key: str, *, ns: str | None = None, lang: str | None = None, default: str | None = None) -> str:  # type: ignore
         return default or key
+    def i18n_set_lang(lang: str) -> None:  # type: ignore
+        return None
 try:
     from lib.translations import SETUP_WIZARD_TRANSLATIONS
 except Exception:
@@ -102,7 +104,16 @@ class SetupWizard:
             # Create wizard window with larger size to fit all content
             print("[Wizard] Creating dialog window...")
             self.dialog = tk.Toplevel(parent)
-            self.dialog.title("Setup Wizard - Cabal Auto Hunt")
+            # i18n title
+            try:
+                i18n_register_bulk('setup_wizard', SETUP_WIZARD_TRANSLATIONS)
+            except Exception:
+                pass
+            try:
+                title_text = i18n_t('wizard_title', ns='setup_wizard', lang=self.language)
+            except Exception:
+                title_text = "Setup Wizard - Cabal Auto Hunt"
+            self.dialog.title(title_text)
             self.dialog.geometry("750x750")  # Increased height to ensure footer buttons are always visible
             self.dialog.minsize(700, 650)  # Minimum size to prevent content from being cut off
             self.dialog.resizable(True, True)  # Allow resizing for different screen sizes
@@ -373,7 +384,7 @@ class SetupWizard:
         # Welcome title
         title = tk.Label(
             self.content_frame,
-            text="🎉 Welcome to Cabal Auto Hunt!",
+            text=self._t('step1_title'),
             font=('Arial', 18, 'bold'),
             bg='white',
             fg='#333'
@@ -383,7 +394,7 @@ class SetupWizard:
         # Subtitle
         subtitle = tk.Label(
             self.content_frame,
-            text="Let's get you set up in just 5 easy steps",
+            text=self._t('step1_subtitle'),
             font=('Arial', 12),
             bg='white',
             fg='#666'
@@ -417,7 +428,7 @@ It takes about 2 minutes. Let's begin!"""
         # Language selection
         lang_frame = tk.LabelFrame(
             self.content_frame,
-            text="Choose Your Language / Chọn ngôn ngữ",
+            text=self._t('language_group'),
             font=('Arial', 10, 'bold'),
             bg='white',
             padx=20,
@@ -456,7 +467,7 @@ It takes about 2 minutes. Let's begin!"""
         # Get started hint
         hint = tk.Label(
             self.content_frame,
-            text="Click 'Next' to get started →",
+            text=self._t('get_started_hint'),
             font=('Arial', 10, 'italic'),
             bg='white',
             fg='#999'
@@ -467,7 +478,7 @@ It takes about 2 minutes. Let's begin!"""
         """Step 2: Game window calibration."""
         title = tk.Label(
             self.content_frame,
-            text="Step 2: Select Game Window",
+            text=self._t('step2_title'),
             font=('Arial', 16, 'bold'),
             bg='white'
         )
@@ -475,7 +486,7 @@ It takes about 2 minutes. Let's begin!"""
         
         subtitle = tk.Label(
             self.content_frame,
-            text="Choose which game window to control",
+            text=self._t('step2_subtitle'),
             font=('Arial', 10),
             bg='white',
             fg='#666'
@@ -486,7 +497,7 @@ It takes about 2 minutes. Let's begin!"""
         search_frame = tk.Frame(self.content_frame, bg='white')
         search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
         
-        tk.Label(search_frame, text="Filter:", bg='white').pack(side=tk.LEFT)
+        tk.Label(search_frame, text=self._t('filter_label'), bg='white').pack(side=tk.LEFT)
         self.window_filter_var = tk.StringVar(value='Cabal')
         filter_entry = tk.Entry(search_frame, textvariable=self.window_filter_var, width=20)
         filter_entry.pack(side=tk.LEFT, padx=(5, 10))
@@ -495,7 +506,7 @@ It takes about 2 minutes. Let's begin!"""
         
         btn_search = tk.Button(
             search_frame,
-            text="🔍 Search Windows",
+            text=self._t('search_windows'),
             command=self._search_windows,
             bg='#4CAF50',
             fg='white',
@@ -528,7 +539,7 @@ It takes about 2 minutes. Let's begin!"""
         # Info label
         self.window_info_label = tk.Label(
             self.content_frame,
-            text="💡 Tip: Make sure your game is running before searching",
+            text=self._t('hint_window_running'),
             font=('Arial', 9, 'italic'),
             bg='white',
             fg='#666'
@@ -542,7 +553,7 @@ It takes about 2 minutes. Let's begin!"""
         """Step 3: Monster selection."""
         title = tk.Label(
             self.content_frame,
-            text="Step 3: Choose Monster to Hunt",
+            text=self._t('step3_title'),
             font=('Arial', 16, 'bold'),
             bg='white'
         )
@@ -550,7 +561,7 @@ It takes about 2 minutes. Let's begin!"""
         
         subtitle = tk.Label(
             self.content_frame,
-            text="Select which monster you want to hunt",
+            text=self._t('step3_subtitle'),
             font=('Arial', 10),
             bg='white',
             fg='#666'
@@ -566,7 +577,7 @@ It takes about 2 minutes. Let's begin!"""
             self.monsters_data = []
             tk.Label(
                 self.content_frame,
-                text=f"⚠️ Error loading monsters: {e}",
+                text=self._t('err_load_monsters').format(e=e),
                 fg='red',
                 bg='white'
             ).pack(pady=20)
@@ -575,7 +586,7 @@ It takes about 2 minutes. Let's begin!"""
         if not self.monsters_data:
             tk.Label(
                 self.content_frame,
-                text="⚠️ No monsters found. Please add monsters first.",
+                text=self._t('no_monsters_found'),
                 fg='orange',
                 bg='white'
             ).pack(pady=20)
@@ -630,7 +641,7 @@ It takes about 2 minutes. Let's begin!"""
         """Step 4: Skill configuration."""
         title = tk.Label(
             self.content_frame,
-            text="Step 4: Configure Attack Skills",
+            text=self._t('step4_title'),
             font=('Arial', 16, 'bold'),
             bg='white'
         )
@@ -638,7 +649,7 @@ It takes about 2 minutes. Let's begin!"""
         
         subtitle = tk.Label(
             self.content_frame,
-            text="Assign skills to 9 quick slots (leave empty if not needed)",
+            text=self._t('step4_subtitle'),
             font=('Arial', 10),
             bg='white',
             fg='#666'
@@ -654,7 +665,7 @@ It takes about 2 minutes. Let's begin!"""
             self.skills_data = []
             tk.Label(
                 self.content_frame,
-                text=f"⚠️ Error loading skills: {e}",
+                text=self._t('err_load_skills').format(e=e),
                 fg='red',
                 bg='white'
             ).pack(pady=20)
@@ -709,7 +720,7 @@ It takes about 2 minutes. Let's begin!"""
         
         clear_btn = tk.Button(
             btn_frame,
-            text="Clear All Slots",
+            text=self._t('clear_all_slots'),
             command=self._clear_all_skill_slots
         )
         clear_btn.pack()
@@ -719,7 +730,7 @@ It takes about 2 minutes. Let's begin!"""
         # Info
         info = tk.Label(
             self.content_frame,
-            text="💡 Tip: Skills will be used in order from Slot 1 to Slot 9",
+            text=self._t('skills_order_hint'),
             font=('Arial', 9, 'italic'),
             bg='white',
             fg='#666'
@@ -730,7 +741,7 @@ It takes about 2 minutes. Let's begin!"""
         """Step 5: Final review."""
         title = tk.Label(
             self.content_frame,
-            text="Step 5: Review & Confirm",
+            text=self._t('step5_title'),
             font=('Arial', 16, 'bold'),
             bg='white'
         )
@@ -738,7 +749,7 @@ It takes about 2 minutes. Let's begin!"""
         
         subtitle = tk.Label(
             self.content_frame,
-            text="Review your setup and click Finish to save",
+            text=self._t('step5_subtitle'),
             font=('Arial', 10),
             bg='white',
             fg='#666'
@@ -1082,8 +1093,8 @@ It takes about 2 minutes. Let's begin!"""
         """Complete wizard and save configuration."""
         # Show confirmation
         confirm = messagebox.askyesno(
-            "Finish Setup",
-            "Save this configuration and start hunting?",
+            self._t('finish_title'),
+            self._t('finish_message'),
             parent=self.dialog
         )
         
@@ -1091,6 +1102,19 @@ It takes about 2 minutes. Let's begin!"""
             # Save wizard data (will be implemented with config_manager)
             if self.config_manager:
                 self._save_wizard_config()
+                # Persist language globally and save to config
+                try:
+                    i18n_set_lang(self.language)
+                except Exception:
+                    pass
+                try:
+                    # Save language into config under ui.language
+                    ui = self.config_manager.get('config', 'ui', {}) or {}
+                    ui['language'] = self.language
+                    self.config_manager.set('config', 'ui', ui)
+                    self.config_manager.save()
+                except Exception:
+                    pass
             
             # Call completion callback if provided
             if self.on_complete:
@@ -1159,8 +1183,8 @@ It takes about 2 minutes. Let's begin!"""
     def _on_cancel(self):
         """Cancel wizard and close dialog."""
         confirm = messagebox.askyesno(
-            "Cancel Setup",
-            "Are you sure you want to cancel the setup wizard?",
+            self._t('cancel_title'),
+            self._t('cancel_message'),
             parent=self.dialog
         )
         
