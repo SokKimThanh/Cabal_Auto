@@ -179,6 +179,278 @@ class LibraryManagerWindow(tk.Toplevel):
         self.changes_made['monsters_changed'] = True
         # Badge already shown by unlock action - no need to mark unsaved here
 
+    # ============================================================================
+    # Setup Wizard Vision - Modern replacement for legacy vision tools
+    # ============================================================================
+    
+    def _open_setup_wizard_vision(self):
+        """Open Setup Wizard Vision dialog - shows upcoming feature upgrades."""
+        dialog = tk.Toplevel(self)
+        dialog.title('Setup Wizard Vision' if self.lang == 'en' else 'Thiết Lập Vision Nâng Cao')
+        dialog.geometry('700x600')
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Center dialog
+        dialog.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
+        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f'+{x}+{y}')
+        
+        # Header
+        header_frame = tk.Frame(dialog, bg='#66BB6A', height=60)
+        header_frame.pack(fill='x')
+        header_frame.pack_propagate(False)
+        
+        tk.Label(header_frame, 
+            text='🔮 Setup Wizard Vision - Coming Soon!',
+            bg='#66BB6A', fg='white', 
+            font=('Arial', 14, 'bold')).pack(pady=15)
+        
+        # Content frame
+        content_frame = tk.Frame(dialog, bg='white')
+        content_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Title
+        if self.lang == 'vi':
+            title_text = '📋 Các Tính Năng Sắp Được Nâng Cấp'
+            content_text = """
+🎯 TỔNG QUAN
+
+Chúng tôi đang phát triển hệ thống Setup Wizard Vision hoàn toàn mới để thay thế 
+các công cụ cũ (Chọn vùng, Kiểm tra nhận diện, Tự động dò vùng).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ CÁC TÍNH NĂNG MỚI
+
+1. 🎨 Semi-Transparent Overlay
+   • Nhìn thấy game khi kéo vùng chọn
+   • Không còn bị "mù" với overlay đen đục
+   • Hiển thị kích thước real-time khi kéo
+
+2. 🎯 Auto-Numbering & Visual Feedback
+   • Tự động đánh số các đối tượng phát hiện được (#1, #2, #3...)
+   • Hiển thị bounding box với màu sắc rõ ràng
+   • Hiển thị confidence score cho mỗi detection
+
+3. 📹 Real-time Tracking
+   • Theo dõi chuyển động của monsters trên màn hình
+   • Hybrid tracking: OpenCV Tracker + Template Matching
+   • Re-verify định kỳ để tránh lost track
+
+4. 🔍 Scale-Invariant Detection
+   • Tự động handle camera zoom in/out
+   • Multi-scale template matching
+   • Feature-based matching (SIFT/ORB) cho robust detection
+
+5. 🧙 Step-by-Step Wizard UI
+   • Hướng dẫn từng bước rõ ràng
+   • Live preview cho mỗi bước
+   • Validation và feedback tức thì
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 CẢI TIẾN UX
+
+Before (Cũ):
+❌ Overlay đen đục → không thấy gì
+❌ Không biết kéo từ đâu đến đâu
+❌ Không biết đã phát hiện được gì
+❌ Không có feedback khi zoom
+
+After (Mới):
+✅ Semi-transparent → nhìn thấy game
+✅ Live dimension display
+✅ Auto-numbering với bounding boxes
+✅ Real-time tracking với scale handling
+✅ Wizard hướng dẫn step-by-step
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📅 TIMELINE (DỰ KIẾN)
+
+Week 1-2: UI/UX improvements
+  • Semi-transparent overlay
+  • Live dimension display  
+  • Auto-numbering
+
+Week 3-4: Tracking system
+  • Basic template matching loop
+  • Hybrid tracker implementation
+
+Week 5-6: Advanced features
+  • Multi-scale matching
+  • Feature-based detection
+  • Final wizard polish
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 TẠI SAO CẦN NÂNG CẤP?
+
+1. Người dùng mới khó hiểu cách dùng công cụ cũ
+2. Không có visual feedback → bối rối
+3. Không handle camera zoom → detection fail
+4. Không track movement → phải re-detect liên tục
+
+→ Wizard mới sẽ giải quyết TẤT CẢ vấn đề này!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 TÀI LIỆU THAM KHẢO
+
+Xem thêm chi tiết kỹ thuật trong:
+• docs/sprints/sprint20/VISION_WIZARD_DESIGN.md
+• docs/ADVANCED_VISION_FEATURES.md
+
+Theo dõi tiến độ tại:
+• GitHub Issues: #vision-wizard
+• Sprint Board: Sprint 20
+"""
+        else:
+            title_text = '📋 Upcoming Feature Upgrades'
+            content_text = """
+🎯 OVERVIEW
+
+We are developing a completely new Setup Wizard Vision system to replace the 
+old tools (Pick Region, Test Recognition, Auto-Detect Region).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ NEW FEATURES
+
+1. 🎨 Semi-Transparent Overlay
+   • See the game while selecting region
+   • No more "blind" with opaque black overlay
+   • Real-time dimension display while dragging
+
+2. 🎯 Auto-Numbering & Visual Feedback
+   • Automatically number detected objects (#1, #2, #3...)
+   • Display bounding boxes with clear colors
+   • Show confidence score for each detection
+
+3. 📹 Real-time Tracking
+   • Track monster movement on screen
+   • Hybrid tracking: OpenCV Tracker + Template Matching
+   • Periodic re-verify to avoid lost track
+
+4. 🔍 Scale-Invariant Detection
+   • Automatically handle camera zoom in/out
+   • Multi-scale template matching
+   • Feature-based matching (SIFT/ORB) for robust detection
+
+5. 🧙 Step-by-Step Wizard UI
+   • Clear step-by-step guidance
+   • Live preview for each step
+   • Instant validation and feedback
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 UX IMPROVEMENTS
+
+Before (Old):
+❌ Opaque black overlay → can't see anything
+❌ Don't know where to drag
+❌ Don't know what was detected
+❌ No feedback when zooming
+
+After (New):
+✅ Semi-transparent → see the game
+✅ Live dimension display
+✅ Auto-numbering with bounding boxes
+✅ Real-time tracking with scale handling
+✅ Step-by-step wizard guidance
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📅 TIMELINE (ESTIMATED)
+
+Week 1-2: UI/UX improvements
+  • Semi-transparent overlay
+  • Live dimension display  
+  • Auto-numbering
+
+Week 3-4: Tracking system
+  • Basic template matching loop
+  • Hybrid tracker implementation
+
+Week 5-6: Advanced features
+  • Multi-scale matching
+  • Feature-based detection
+  • Final wizard polish
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 WHY UPGRADE?
+
+1. New users find old tools confusing
+2. No visual feedback → confusion
+3. No camera zoom handling → detection fails
+4. No movement tracking → must re-detect constantly
+
+→ New wizard will solve ALL these issues!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION
+
+See technical details in:
+• docs/sprints/sprint20/VISION_WIZARD_DESIGN.md
+• docs/ADVANCED_VISION_FEATURES.md
+
+Track progress at:
+• GitHub Issues: #vision-wizard
+• Sprint Board: Sprint 20
+"""
+        
+        tk.Label(content_frame,
+            text=title_text,
+            bg='white', fg='#424242',
+            font=('Arial', 12, 'bold')).pack(anchor='w', pady=(0, 10))
+        
+        # Scrollable text area
+        text_frame = tk.Frame(content_frame, bg='white')
+        text_frame.pack(fill='both', expand=True)
+        
+        scrollbar = tk.Scrollbar(text_frame)
+        scrollbar.pack(side='right', fill='y')
+        
+        text_widget = tk.Text(text_frame,
+            wrap='word',
+            bg='#F5F5F5',
+            fg='#212121',
+            font=('Consolas', 9),
+            padx=15, pady=15,
+            yscrollcommand=scrollbar.set,
+            relief='flat',
+            borderwidth=1)
+        text_widget.pack(side='left', fill='both', expand=True)
+        
+        scrollbar.config(command=text_widget.yview)
+        
+        # Insert content
+        text_widget.insert('1.0', content_text)
+        text_widget.config(state='disabled')  # Read-only
+        
+        # Bottom button frame
+        btn_frame = tk.Frame(dialog, bg='white')
+        btn_frame.pack(fill='x', padx=20, pady=(0, 20))
+        
+        close_btn = tk.Button(btn_frame,
+            text='Close' if self.lang == 'en' else 'Đóng',
+            command=dialog.destroy,
+            bg='#757575', fg='white',
+            font=('Arial', 10, 'bold'),
+            padx=20, pady=8,
+            relief='flat',
+            cursor='hand2')
+        close_btn.pack(side='right')
+    
+    # ============================================================================
+    # LEGACY VISION METHODS - Preserved for backward compatibility
+    # These will be migrated to new Setup Wizard Vision system
+    # ============================================================================
+
     def _pick_template_region(self):
         """Let user pick a region from screen for current template; fill fields and persist."""
         if not hasattr(self, 'current_monster') or self.current_monster is None:
@@ -1514,10 +1786,18 @@ class LibraryManagerWindow(tk.Toplevel):
 
         # Threshold moved to top_row with name
 
-        # Region override section
-        region_frame = tk.Frame(form_body, bg='#E3F2FD'); region_frame.pack(fill='x', pady=(0,12))
-        tk.Label(region_frame, text=('Region Override (L,T,W,H)' if self.lang=='en' else 'Vùng ghi đè (L,T,R,D)'), bg='#E3F2FD', font=('Arial', 9, 'bold'), fg='#424242', anchor='w').pack(fill='x', pady=(0,4))
-        region_inputs = tk.Frame(region_frame, bg='#E3F2FD'); region_inputs.pack(fill='x')
+        # ============================================================================
+        # LEGACY REGION OVERRIDE SECTION - TEMPORARILY HIDDEN FOR WIZARD VISION UPGRADE
+        # TODO: Will be replaced by new Setup Wizard Vision feature
+        # Keeping code structure for future reference and migration
+        # ============================================================================
+        
+        # HIDDEN: Region override section - preserved for future upgrade
+        # region_frame = tk.Frame(form_body, bg='#E3F2FD'); region_frame.pack(fill='x', pady=(0,12))
+        # tk.Label(region_frame, text=('Region Override (L,T,W,H)' if self.lang=='en' else 'Vùng ghi đè (L,T,R,D)'), bg='#E3F2FD', font=('Arial', 9, 'bold'), fg='#424242', anchor='w').pack(fill='x', pady=(0,4))
+        # region_inputs = tk.Frame(region_frame, bg='#E3F2FD'); region_inputs.pack(fill='x')
+        
+        # Initialize region vars even when hidden (for backward compatibility)
         self.template_region_vars = {
             'left': tk.StringVar(),
             'top': tk.StringVar(),
@@ -1525,18 +1805,55 @@ class LibraryManagerWindow(tk.Toplevel):
             'height': tk.StringVar(),
         }
         self.template_region_entries = {}
-        for key, lbl in [('left','L'),('top','T'),('width','W'),('height','H')]:
-            tk.Label(region_inputs, text=f"{lbl}:", bg='#E3F2FD').pack(side='left')
-            entry = tk.Entry(region_inputs, textvariable=self.template_region_vars[key], width=6, font=('Arial', 10), relief='solid', borderwidth=1, state='readonly')
-            entry.pack(side='left', padx=(2,8), ipady=4)
-            self.template_region_entries[key] = entry
-        tk.Label(region_frame, text=(
-            'Để trống để dùng biên cửa sổ game.' if self.lang=='vi' else 'Leave blank to use game window bounds.'
-        ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,6))
-        region_btns = tk.Frame(region_frame, bg='#E3F2FD'); region_btns.pack(fill='x')
-        self._make_icon_button(region_btns, 'template', '🖼️', 'tip_pick_region', command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
-        self._make_icon_button(region_btns, 'search', '🔍', 'tip_test_recognition', command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
-        self._make_icon_button(region_btns, 'info', '📋', 'tip_auto_detect', command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        
+        # HIDDEN: Region input fields - preserved structure
+        # for key, lbl in [('left','L'),('top','T'),('width','W'),('height','H')]:
+        #     tk.Label(region_inputs, text=f"{lbl}:", bg='#E3F2FD').pack(side='left')
+        #     entry = tk.Entry(region_inputs, textvariable=self.template_region_vars[key], width=6, font=('Arial', 10), relief='solid', borderwidth=1, state='readonly')
+        #     entry.pack(side='left', padx=(2,8), ipady=4)
+        #     self.template_region_entries[key] = entry
+        
+        # HIDDEN: Helper text - preserved
+        # tk.Label(region_frame, text=(
+        #     'Để trống để dùng biên cửa sổ game.' if self.lang=='vi' else 'Leave blank to use game window bounds.'
+        # ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,6))
+        
+        # HIDDEN: Legacy action buttons - preserved for migration
+        # region_btns = tk.Frame(region_frame, bg='#E3F2FD'); region_btns.pack(fill='x')
+        # self._make_icon_button(region_btns, 'template', '🖼️', 'tip_pick_region', command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
+        # self._make_icon_button(region_btns, 'search', '🔍', 'tip_test_recognition', command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        # self._make_icon_button(region_btns, 'info', '📋', 'tip_auto_detect', command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
+        
+        # ============================================================================
+        # NEW: Setup Wizard Vision - Modern replacement for legacy region tools
+        # ============================================================================
+        
+        wizard_frame = tk.Frame(form_body, bg='#E8F5E9', relief='solid', borderwidth=1)
+        wizard_frame.pack(fill='x', pady=(0,12), padx=2)
+        
+        # Hint text above button
+        hint_text = (
+            'Xem thêm về các chức năng sắp được nâng cấp bằng cách nhấp vào nút bên dưới'
+            if self.lang == 'vi' else
+            'Click the button below to learn about upcoming feature upgrades'
+        )
+        tk.Label(wizard_frame, text=hint_text, bg='#E8F5E9', fg='#558B2F', 
+                font=('Arial', 8, 'italic'), anchor='w', wraplength=400).pack(fill='x', padx=10, pady=(8,4))
+        
+        # Setup Wizard Vision button
+        wizard_btn_frame = tk.Frame(wizard_frame, bg='#E8F5E9')
+        wizard_btn_frame.pack(fill='x', padx=10, pady=(0,8))
+        
+        wizard_btn_text = '🔮 Setup Wizard Vision' if self.lang == 'en' else '🔮 Thiết Lập Vision Nâng Cao'
+        wizard_btn = tk.Button(
+            wizard_btn_frame,
+            text=wizard_btn_text,
+            command=self._open_setup_wizard_vision,
+            bg='#66BB6A', fg='white', relief='flat',
+            padx=15, pady=8, font=('Arial', 10, 'bold'),
+            cursor='hand2'
+        )
+        wizard_btn.pack(side='left')
 
         # No Save/Cancel buttons; changes are applied immediately and persisted with Apply All (top-right)
 
