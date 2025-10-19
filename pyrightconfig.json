@@ -1,0 +1,14 @@
+{
+  "include": [
+    "**/*.py"
+  ],
+  "reportMissingImports": "warning",
+  "executionEnvironments": [
+    {
+      "root": "./",
+      "extraPaths": [
+        "./lib"
+      ]
+    }
+  ]
+}

@@ -25,6 +25,7 @@ try:
 except ImportError:
     HAS_OPENCV = False
 
+
 # Try to import PyAutoGUI
 try:
     import pyautogui
