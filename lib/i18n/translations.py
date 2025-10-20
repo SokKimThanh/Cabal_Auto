@@ -763,6 +763,7 @@ SETUP_WIZARD_TRANSLATIONS = {
         'user_level_experienced_desc': 'Tôi đã biết cách sử dụng - Bỏ qua hướng dẫn',
         'tip_user_level_new': 'Nhận hướng dẫn chi tiết thiết lập kỹ năng',
         'tip_user_level_experienced': 'Bỏ qua hướng dẫn cho người dùng có kinh nghiệm',
+        'first_time_user_hint': 'Người dùng lần đầu phải bắt đầu với tùy chọn \'Người mới\'',
         # Rotation builder button
         'open_rotation_builder': '🎯 Mở công cụ thiết lập kỹ năng',
         'tip_rotation_builder': 'Mở công cụ nâng cao để cấu hình thứ tự và thời gian kỹ năng chính xác (dành cho người mới)',
