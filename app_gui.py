@@ -543,6 +543,9 @@ class App(tk.Tk):
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
+        
+        # Auto bring-to-front saved window (after setup check)
+        self.after(1000, self._auto_bring_to_front_on_startup)
     
     def _icon(self, name: str, fallback: str, size: int = 16):
         """Fetch an icon image from icon_helper with caching.
@@ -2136,6 +2139,41 @@ class App(tk.Tk):
         
         # Update status to inform user
         self.hunt_status.set(f"✓ Loaded saved window: {window_title} (PID: {window_pid})")
+    
+    def _auto_bring_to_front_on_startup(self):
+        """Auto bring saved Cabal window to front on app startup."""
+        try:
+            # Check if we have a valid hunt_selected window
+            if not hasattr(self, 'hunt_selected') or not self.hunt_selected:
+                print("[Auto Bring] No saved window to bring to front")
+                return
+            
+            hwnd = self.hunt_selected.get('hwnd')
+            title = self.hunt_selected.get('title', '')
+            pid = self.hunt_selected.get('pid', '')
+            
+            if not hwnd:
+                print(f"[Auto Bring] No HWND for window: {title}")
+                return
+            
+            print(f"[Auto Bring] Bringing window to front: {title} [PID:{pid}]")
+            
+            # Bring window to front
+            ok = self._bring_window_to_front_by_hwnd(hwnd)
+            
+            if ok:
+                print(f"[Auto Bring] ✓ Successfully brought window to front: {title}")
+                # Update status briefly
+                if hasattr(self, 'hunt_status'):
+                    current_status = self.hunt_status.get()
+                    self.hunt_status.set(f"✓ Game window ready: {title}")
+                    # Restore previous status after 3 seconds
+                    self.after(3000, lambda: self.hunt_status.set(current_status))
+            else:
+                print(f"[Auto Bring] ✗ Failed to bring window to front: {title}")
+                
+        except Exception as e:
+            print(f"[Auto Bring] Error: {e}")
     
     def on_hunt_save(self):
         try:
