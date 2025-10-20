@@ -316,15 +316,29 @@ class SkillRotationUI:
         self.save_preset_btn.pack(side='right', padx=5)
     
     def _load_available_skills(self):
-        """Load skills from hunt_config.json"""
+        """Load skills from library manager or hunt_config.json"""
         try:
-            # Load from hunt_config
-            hunt_config_path = Path(__file__).parent.parent.parent / 'lib' / 'data' / 'hunt_config.json'
-            
-            if hunt_config_path.exists():
-                with open(hunt_config_path, 'r', encoding='utf-8') as f:
-                    hunt_config = json.load(f)
-                    self.available_skills = hunt_config.get('skill_slots', [])
+            # Priority 1: Load from library manager's skills (for Setup Wizard context)
+            if hasattr(self.lib_manager, 'skills') and self.lib_manager.skills:
+                # Skills from library manager (master list)
+                # Convert to skill_slots format if needed
+                self.available_skills = []
+                for skill in self.lib_manager.skills:
+                    skill_slot = {
+                        'name': skill.get('name', 'Unnamed'),
+                        'key': skill.get('key', ''),
+                        'cooldown': skill.get('cooldown', 0),
+                        'type': skill.get('type', 'attack')
+                    }
+                    self.available_skills.append(skill_slot)
+            else:
+                # Priority 2: Fallback to hunt_config.json
+                hunt_config_path = Path(__file__).parent.parent.parent / 'lib' / 'data' / 'hunt_config.json'
+                
+                if hunt_config_path.exists():
+                    with open(hunt_config_path, 'r', encoding='utf-8') as f:
+                        hunt_config = json.load(f)
+                        self.available_skills = hunt_config.get('skill_slots', [])
             
             # Render skill checkboxes
             self._render_available_skills()
