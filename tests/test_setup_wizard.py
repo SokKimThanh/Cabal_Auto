@@ -18,7 +18,7 @@ def test_data_paths():
     print("=" * 60)
     
     # Test monster path
-    monsters_path = project_root / 'data' / 'monsters.json'
+    monsters_path = project_root / 'lib' / 'data' / 'monsters.json'
     print(f"\n✓ Monsters path: {monsters_path}")
     print(f"  Exists: {monsters_path.exists()}")
     
@@ -31,7 +31,7 @@ def test_data_paths():
             print(f"    - {m.get('name', 'Unknown')}")
     
     # Test skills path
-    skills_path = project_root / 'data' / 'skills.json'
+    skills_path = project_root / 'lib' / 'data' / 'skills.json'
     print(f"\n✓ Skills path: {skills_path}")
     print(f"  Exists: {skills_path.exists()}")
     

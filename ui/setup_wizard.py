@@ -73,6 +73,9 @@ class SetupWizard:
         self.on_complete = on_complete
         self.on_cancel = on_cancel
         
+        # Detect if this is first-time run (no config yet)
+        self.is_first_run = self._detect_first_run()
+        
         # Wizard state
         self.current_step = 1
         self.total_steps = 5
@@ -211,6 +214,39 @@ class SetupWizard:
             return i18n_t(key, ns='setup_wizard', lang=self.lang)
         except Exception:
             return key
+    
+    def _detect_first_run(self) -> bool:
+        """
+        Detect if this is first-time run by checking hunt_config.
+        Returns True if user has not completed setup (missing window, monster, or skills).
+        """
+        try:
+            # Try to load hunt_config
+            hunt_config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'data', 'hunt_config.json')
+            
+            if not os.path.exists(hunt_config_path):
+                return True  # No config file = first run
+            
+            with open(hunt_config_path, 'r', encoding='utf-8') as f:
+                hunt_cfg = json.load(f)
+            
+            # Check if basic setup is complete (same logic as app_gui.py)
+            has_window = bool(hunt_cfg.get('window_title', '').strip())
+            has_monster_legacy = bool(hunt_cfg.get('monster_selected_name', '').strip())
+            has_monster_list = bool(hunt_cfg.get('monster_list')) and len(hunt_cfg.get('monster_list', [])) > 0
+            has_monster = has_monster_legacy or has_monster_list
+            has_skills = bool(hunt_cfg.get('skill_slots')) and len(hunt_cfg.get('skill_slots', [])) > 0
+            
+            # If missing any of the 3 basic requirements, it's first run
+            is_first = not (has_window and has_monster and has_skills)
+            
+            print(f"[Wizard] First-run detection: window={has_window}, monster={has_monster}, skills={has_skills}, is_first={is_first}")
+            
+            return is_first
+            
+        except Exception as e:
+            print(f"[Wizard] Error detecting first run: {e}")
+            return True  # Default to first run on error
 
     def _build_ui(self):
         """Build wizard UI structure with header, content, and footer."""
@@ -479,7 +515,8 @@ It takes about 2 minutes. Let's begin!"""
         
         self.user_level_var = tk.StringVar(value='new')
         
-        level_new = tk.Radiobutton(
+        # New User radio button
+        self.level_new_radio = tk.Radiobutton(
             user_level_frame,
             text=self._t('user_level_new'),
             variable=self.user_level_var,
@@ -488,9 +525,9 @@ It takes about 2 minutes. Let's begin!"""
             bg='white',
             command=self._on_user_level_change
         )
-        level_new.pack(anchor='w', pady=5)
+        self.level_new_radio.pack(anchor='w', pady=5)
         
-        level_new_desc = tk.Label(
+        self.level_new_desc = tk.Label(
             user_level_frame,
             text="  " + self._t('user_level_new_desc'),
             font=('Arial', 9),
@@ -498,12 +535,13 @@ It takes about 2 minutes. Let's begin!"""
             fg='#666',
             justify=tk.LEFT
         )
-        level_new_desc.pack(anchor='w', padx=(25, 0))
+        self.level_new_desc.pack(anchor='w', padx=(25, 0))
         
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(level_new, key='tip_user_level_new', ns='setup_wizard', lang_provider=lambda: self.lang)
+            attach_i18n_tooltip(self.level_new_radio, key='tip_user_level_new', ns='setup_wizard', lang_provider=lambda: self.lang)
         
-        level_experienced = tk.Radiobutton(
+        # Experienced User radio button
+        self.level_experienced_radio = tk.Radiobutton(
             user_level_frame,
             text=self._t('user_level_experienced'),
             variable=self.user_level_var,
@@ -512,9 +550,9 @@ It takes about 2 minutes. Let's begin!"""
             bg='white',
             command=self._on_user_level_change
         )
-        level_experienced.pack(anchor='w', pady=(10, 5))
+        self.level_experienced_radio.pack(anchor='w', pady=(10, 5))
         
-        level_experienced_desc = tk.Label(
+        self.level_experienced_desc = tk.Label(
             user_level_frame,
             text="  " + self._t('user_level_experienced_desc'),
             font=('Arial', 9),
@@ -522,10 +560,24 @@ It takes about 2 minutes. Let's begin!"""
             fg='#666',
             justify=tk.LEFT
         )
-        level_experienced_desc.pack(anchor='w', padx=(25, 0))
+        self.level_experienced_desc.pack(anchor='w', padx=(25, 0))
         
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(level_experienced, key='tip_user_level_experienced', ns='setup_wizard', lang_provider=lambda: self.lang)
+            attach_i18n_tooltip(self.level_experienced_radio, key='tip_user_level_experienced', ns='setup_wizard', lang_provider=lambda: self.lang)
+        
+        # Disable "Experienced User" option if this is first-time run
+        if self.is_first_run:
+            self.level_experienced_radio.config(state=tk.DISABLED)
+            # Add a hint label for first-time users
+            self.first_time_hint = tk.Label(
+                user_level_frame,
+                text="ℹ️ " + ("First-time users must start with 'New User' option" if self.lang == 'en' else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"),
+                font=('Arial', 9, 'italic'),
+                bg='white',
+                fg='#2196F3',
+                justify=tk.LEFT
+            )
+            self.first_time_hint.pack(anchor='w', padx=(25, 0), pady=(5, 0))
         
         # Get started hint
         hint = tk.Label(
@@ -976,7 +1028,26 @@ It takes about 2 minutes. Let's begin!"""
         """Handle language selection change."""
         self.language = self.language_var.get()
         self.wizard_data['language'] = self.language
-        # Note: Full UI translation will be implemented when needed
+        
+        # Update user level section texts if they exist (Step 1)
+        if hasattr(self, 'level_new_radio'):
+            self.level_new_radio.config(text=self._t('user_level_new'))
+        
+        if hasattr(self, 'level_new_desc'):
+            self.level_new_desc.config(text="  " + self._t('user_level_new_desc'))
+        
+        if hasattr(self, 'level_experienced_radio'):
+            self.level_experienced_radio.config(text=self._t('user_level_experienced'))
+        
+        if hasattr(self, 'level_experienced_desc'):
+            self.level_experienced_desc.config(text="  " + self._t('user_level_experienced_desc'))
+        
+        # Update first-time hint if exists
+        if hasattr(self, 'first_time_hint') and self.is_first_run:
+            hint_text = "First-time users must start with 'New User' option" if self.lang == 'en' else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
+            self.first_time_hint.config(text="ℹ️ " + hint_text)
+        
+        # Note: Tooltips will auto-update through lang_provider lambda
     
     def _on_user_level_change(self):
         """Handle user level selection change."""

@@ -3924,7 +3924,7 @@ Track progress at:
         # === SAVE TO HUNT CONFIG AND SHOW INLINE CONFIRMATION ===
         try:
             # Save hunt_cfg to file immediately (local save)
-            hunt_config_path = Path(__file__).parent.parent / 'data' / 'hunt_config.json'
+            hunt_config_path = Path(__file__).parent.parent / 'lib' / 'data' / 'hunt_config.json'
             with open(hunt_config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
             
@@ -4068,7 +4068,7 @@ Track progress at:
                 messagebox.showinfo(self._t('success_title'), "No changes to apply." if self.lang == 'en' else "Không có thay đổi để áp dụng.")
                 return
             root_dir = Path(os.path.dirname(os.path.dirname(__file__)))
-            data_dir = root_dir / 'data'
+            data_dir = root_dir / 'lib' / 'data'
             data_dir.mkdir(parents=True, exist_ok=True)
             # Before saving, finalize any temp-captured assets and normalize paths
             if changes.get('monsters_changed'):

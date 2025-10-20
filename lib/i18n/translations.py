@@ -704,6 +704,7 @@ SETUP_WIZARD_TRANSLATIONS = {
         'user_level_experienced_desc': 'I know what I\'m doing - skip the extra guidance',
         'tip_user_level_new': 'Get guided help with skill rotation setup',
         'tip_user_level_experienced': 'Skip extra guidance for experienced users',
+        'first_time_user_hint': 'First-time users must start with \'New User\' option',
         # Rotation builder button
         'open_rotation_builder': '🎯 Open Skill Rotation Builder',
         'tip_rotation_builder': 'Open advanced rotation builder to configure precise skill timing and order (for new users)',

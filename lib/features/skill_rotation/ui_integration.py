@@ -319,7 +319,7 @@ class SkillRotationUI:
         """Load skills from hunt_config.json"""
         try:
             # Load from hunt_config
-            hunt_config_path = Path(__file__).parent.parent.parent / 'data' / 'hunt_config.json'
+            hunt_config_path = Path(__file__).parent.parent.parent / 'lib' / 'data' / 'hunt_config.json'
             
             if hunt_config_path.exists():
                 with open(hunt_config_path, 'r', encoding='utf-8') as f:
@@ -637,7 +637,7 @@ class SkillRotationUI:
         
         try:
             # Load hunt_config
-            hunt_config_path = Path(__file__).parent.parent.parent / 'data' / 'hunt_config.json'
+            hunt_config_path = Path(__file__).parent.parent.parent / 'lib' / 'data' / 'hunt_config.json'
             
             with open(hunt_config_path, 'r', encoding='utf-8') as f:
                 hunt_config = json.load(f)
