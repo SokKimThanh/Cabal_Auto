@@ -545,7 +545,7 @@ class App(tk.Tk):
         self.bind('<Control-k>', lambda e: self._open_skill_manager())  # Ctrl+K: Manage skills
         self.bind('<Alt-Key-1>', lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
         self.bind('<Alt-Key-2>', lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
-        self.bind('<Alt-z>', lambda e: self._toggle_hunt())  # Alt+Z: Toggle hunt start/stop
+        self.bind('<Alt-Shift-Key-Z>', lambda e: self._toggle_hunt())  # Alt+Shift+Z: Toggle hunt start/stop
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)

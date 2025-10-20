@@ -47,9 +47,12 @@ GLOBAL_TRANSLATIONS = {
             "  • Selecting your game window\n"
             "  • Choosing a monster to hunt\n"
             "  • Configuring your attack skills\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "• Click 'Yes' → Run full setup wizard\n"
+            "• Click 'No' → Auto-detect Cabal window (PID)\n\n"
             "You can always run the wizard later by clicking the '🧙 Setup Wizard' button."
         ),
-        'wizard_skipped_hint': "Setup wizard skipped. Click '🧙 Setup Wizard' button to run it later.",
+        'wizard_skipped_hint': "Setup wizard skipped. Auto-detected Cabal window. Click '🧙 Setup Wizard' to configure monster & skills.",
         'hunt_idle': 'Ready to hunt',
         'hunt_running': 'Hunting…',
         'hunt_stopped': 'Hunt stopped',
@@ -189,7 +192,25 @@ GLOBAL_TRANSLATIONS = {
         'help_quickstart': 'Quick Start Guide',
         'help_quickstart_text': '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press F9 to stop anytime',
         'help_shortcuts': 'Keyboard Shortcuts',
-        'help_shortcuts_text': 'F9: Stop hunt (global hotkey)\nESC: Stop hunt (in-window)\n\nIn game:\nTAB: Target next monster\n1-6: Use skills',
+        'help_shortcuts_text': '''Application Shortcuts:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⌨️  Ctrl+K             →  Open Skill Manager
+⌨️  Alt+1              →  Switch to Hunt tab
+⌨️  Alt+2              →  Switch to Setup tab
+⌨️  Alt+Shift+Z        →  Toggle Hunt (Start/Stop)
+⌨️  ESC                →  Stop Hunt immediately
+⌨️  F9                 →  Stop Hunt (global hotkey)
+
+In-Game Controls (configured in Setup):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎮  Z                  →  Target next monster
+🎮  1-6                →  Use skills (skill slots)
+🎮  Attack Keys        →  Attack current target
+
+Tips:
+• Use Alt+Shift+Z for quick hunt toggle without mouse
+• Ctrl+K opens skill manager from anywhere
+• ESC and F9 both stop hunt for safety''',
         'help_troubleshooting': 'Troubleshooting',
         'help_troubleshooting_text': 'Q: Hunt not working?\nA: Make sure game window is selected and brought to front.\n\nQ: Skills not casting?\nA: Check skill slots are enabled and cooldowns are correct.\n\nQ: Can\'t find monster?\nA: Try lowering template threshold in Setup tab.',
         'help_about': 'About',
@@ -242,8 +263,8 @@ GLOBAL_TRANSLATIONS = {
         'skill_manage_hint': 'Press Ctrl+K to manage skills',
         'shortcut_tab_hunt': 'Alt+1: Switched to Hunt tab',
         'shortcut_tab_setup': 'Alt+2: Switched to Setup tab',
-        'hunt_toggled_start': 'Alt+Z: Hunt started',
-        'hunt_toggled_stop': 'Alt+Z: Hunt stopped',
+        'hunt_toggled_start': 'Alt+Shift+Z: Hunt started',
+        'hunt_toggled_stop': 'Alt+Shift+Z: Hunt stopped',
         # Generic UI titles/messages
         'warning_title': 'Warning',
         'library_updated': 'Library updated successfully',
@@ -320,9 +341,12 @@ GLOBAL_TRANSLATIONS = {
             "  • Chọn cửa sổ game\n"
             "  • Chọn quái để săn\n"
             "  • Cấu hình kỹ năng tấn công\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "• Bấm 'Yes' → Chạy trợ lý đầy đủ\n"
+            "• Bấm 'No' → Tự động tìm cửa sổ Cabal (PID)\n\n"
             "Bạn luôn có thể chạy trợ lý sau bằng nút '🧙 Trợ lý thiết lập'."
         ),
-        'wizard_skipped_hint': "Đã bỏ qua trợ lý. Nhấn nút '🧙 Trợ lý thiết lập' để chạy sau.",
+        'wizard_skipped_hint': "Đã bỏ qua trợ lý. Tự động phát hiện cửa sổ Cabal. Bấm '🧙 Trợ lý' để cấu hình quái & kỹ năng.",
         'hunt_idle': 'Sẵn sàng săn',
         'hunt_running': 'Đang săn…',
         'hunt_stopped': 'Đã dừng săn',
@@ -453,8 +477,26 @@ GLOBAL_TRANSLATIONS = {
         'help_quickstart': 'Hướng dẫn nhanh',
         'help_quickstart_text': '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn F9 để dừng bất cứ lúc nào',
         'help_shortcuts': 'Phím tắt',
-        'help_shortcuts_text': 'F9: Dừng săn (hotkey toàn cục)\nESC: Dừng săn (trong cửa sổ)\n\nTrong game:\nTAB: Chọn quái tiếp theo\n1-6: Sử dụng kỹ năng',
-        'help_troubleshooting': 'Xử lý lỗi',
+        'help_shortcuts_text': '''Phím tắt ứng dụng:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⌨️  Ctrl+K             →  Mở Quản lý Kỹ năng
+⌨️  Alt+1              →  Chuyển sang tab Săn
+⌨️  Alt+2              →  Chuyển sang tab Thiết lập
+⌨️  Alt+Shift+Z        →  Bật/Tắt Săn (Start/Stop)
+⌨️  ESC                →  Dừng săn ngay lập tức
+⌨️  F9                 →  Dừng săn (hotkey toàn cục)
+
+Điều khiển trong game (cấu hình trong Thiết lập):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎮  Z                  →  Chọn quái tiếp theo
+🎮  1-6                →  Sử dụng kỹ năng (skill slots)
+🎮  Phím tấn công       →  Đánh mục tiêu hiện tại
+
+Mẹo:
+• Dùng Alt+Shift+Z để bật/tắt săn nhanh không cần chuột
+• Ctrl+K mở quản lý kỹ năng từ bất kỳ đâu
+• ESC và F9 đều dừng săn để đảm bảo an toàn''',
+        'help_troubleshooting': 'Xử lý sự cố',
         'help_troubleshooting_text': 'Q: Săn không hoạt động?\nA: Đảm bảo cửa sổ game đã được chọn và đưa lên trước.\n\nQ: Kỹ năng không ra?\nA: Kiểm tra skill slots đã bật và cooldown đúng chưa.\n\nQ: Không tìm thấy quái?\nA: Thử giảm threshold trong tab Thiết lập.',
         'help_about': 'Thông tin',
         'help_about_text': 'Trợ lý săn Cabal v1.0\n\nTác giả: SokKimThanh\nGitHub: github.com/SokKimThanh/Cabal_Auto\n\nXây dựng với Python, tkinter, OpenCV',
@@ -506,8 +548,8 @@ GLOBAL_TRANSLATIONS = {
         'skill_manage_hint': 'Nhấn Ctrl+K để quản lý kỹ năng',
         'shortcut_tab_hunt': 'Alt+1: Chuyển sang tab Săn',
         'shortcut_tab_setup': 'Alt+2: Chuyển sang tab Thiết lập',
-        'hunt_toggled_start': 'Alt+Z: Đã bắt đầu săn',
-        'hunt_toggled_stop': 'Alt+Z: Đã dừng săn',
+        'hunt_toggled_start': 'Alt+Shift+Z: Đã bắt đầu săn',
+        'hunt_toggled_stop': 'Alt+Shift+Z: Đã dừng săn',
         # Generic UI titles/messages
         'warning_title': 'Cảnh báo',
         'library_updated': 'Thư viện đã được cập nhật',
@@ -709,7 +751,19 @@ SETUP_WIZARD_TRANSLATIONS = {
         'step5_title': 'Step 5: Review & Confirm',
         'step5_subtitle': 'Review your setup and click Finish to save',
         'finish_title': 'Finish Setup',
-        'finish_message': 'Save this configuration and start hunting?',
+        'finish_message': '''Configuration completed successfully!
+
+⌨️ KEYBOARD SHORTCUTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ctrl+K        →  Open Skill Manager
+• Alt+1         →  Switch to Hunt tab
+• Alt+2         →  Switch to Setup tab
+• Alt+Shift+Z   →  Toggle Hunt (Start/Stop)
+• ESC           →  Stop Hunt immediately
+
+💡 TIP: Use Alt+Shift+Z for quick hunt toggle!
+
+Save configuration and close wizard?''',
         'cancel_title': 'Cancel Setup',
         'cancel_message': 'Are you sure you want to cancel the setup wizard?',
         # Hints and errors
@@ -768,7 +822,19 @@ SETUP_WIZARD_TRANSLATIONS = {
         'step5_title': 'Bước 5: Xem lại & Xác nhận',
         'step5_subtitle': 'Xem lại cấu hình và nhấn Finish để lưu',
         'finish_title': 'Hoàn tất thiết lập',
-        'finish_message': 'Lưu cấu hình này và bắt đầu săn?',
+        'finish_message': '''Cấu hình hoàn tất thành công!
+
+⌨️ PHÍM TẮT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ctrl+K        →  Mở Quản lý Kỹ năng
+• Alt+1         →  Chuyển sang tab Săn
+• Alt+2         →  Chuyển sang tab Thiết lập
+• Alt+Shift+Z   →  Bật/Tắt Săn (Start/Stop)
+• ESC           →  Dừng săn ngay lập tức
+
+💡 MẸO: Dùng Alt+Shift+Z để bật/tắt săn nhanh!
+
+Lưu cấu hình và đóng trợ lý?''',
         'cancel_title': 'Hủy thiết lập',
         'cancel_message': 'Bạn chắc chắn muốn hủy trợ lý thiết lập?',
         # Hints and errors

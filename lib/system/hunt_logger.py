@@ -274,7 +274,7 @@ if __name__ == '__main__':
     
     logger.log_hunt_start({
         'window_title': 'CABAL',
-        'target_key': 'TAB',
+        'target_key': 'z',
         'attack_keys': ['1', '2', '3'],
         'search_interval': 0.2,
         'attack_interval': 0.15,

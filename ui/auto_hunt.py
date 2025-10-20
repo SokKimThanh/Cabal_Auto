@@ -218,7 +218,7 @@ def main():
     cfg = load_cfg()
     pyautogui.FAILSAFE = True
 
-    target_key = cfg.get('target_key', 'TAB')
+    target_key = cfg.get('target_key', 'z')
     attack_keys = cfg.get('attack_keys', ['1', '2'])
     attack_press_ms = int(cfg.get('attack_press_ms', 60))
     target_cycle_delay = float(cfg.get('target_cycle_delay', 0.2))
