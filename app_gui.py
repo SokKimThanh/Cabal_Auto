@@ -613,12 +613,61 @@ class App(tk.Tk):
         # Separator
         tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
         
-        # Right side: Compact Window Selection
-        tk.Label(top, text=self._t('window_quick_select'), fg='#666', font=('Arial', 8)).pack(side='left', padx=(0,6))
-        self.win_title_var = tk.StringVar(value=str(self.hunt_cfg.get('window_title', 'Cabal')))
-        tk.Entry(top, textvariable=self.win_title_var, width=15).pack(side='left')
+        # Right side: Window Selection Combobox with auto bring-to-front
+        self.win_combo_var = tk.StringVar()
+        self.win_combo = ttk.Combobox(top, textvariable=self.win_combo_var, state='readonly', width=35)
+        self.win_combo.pack(side='left', padx=(0,6))
+        self.win_combo.bind('<<ComboboxSelected>>', self.on_window_combo_selected)
+        
+        # Attach tooltip to combobox explaining window selection
+        attach_i18n_tooltip(self.win_combo, key='window_select_tooltip', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
+        
+        # Find Windows button (refresh window list)
         tk.Button(top, text=self._t('find_windows'), command=self.on_hunt_find_windows, padx=8).pack(side='left', padx=(4,0))
-        tk.Button(top, text=self._t('bring_to_front'), command=self.on_hunt_bring_front_below_app, padx=8).pack(side='left', padx=(4,0))
+        
+        # Separator before hunt controls
+        tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
+        
+        # Hunt Control Buttons - moved to topbar for quick access
+        # Start Hunt Button - Enhanced design with better contrast ratio
+        # Active: Green background (#2E7D32) with white text (CR: 5.8:1)
+        self.hunt_start_btn = tk.Button(
+            top, 
+            text=self._t('start_hunt'),
+            command=self.on_hunt_start,
+            bg='#2E7D32',              # Darker green for better contrast
+            fg='white',
+            activebackground='#1B5E20', # Even darker on hover
+            activeforeground='white',
+            font=('Arial', 10, 'bold'),
+            padx=16,
+            pady=6,
+            relief='raised',
+            bd=2,
+            cursor='hand2'
+        )
+        self.hunt_start_btn.pack(side='left', padx=(0, 6))
+        
+        # Stop Hunt Button - Enhanced design with better contrast ratio  
+        # Active: Red background (#C62828) with white text (CR: 6.3:1)
+        self.hunt_stop_btn = tk.Button(
+            top,
+            text=self._t('stop_hunt'),
+            command=self.on_hunt_stop,
+            state='disabled',
+            bg='#C62828',              # Darker red for better contrast
+            fg='white',
+            activebackground='#B71C1C', # Even darker on hover
+            activeforeground='white',
+            disabledforeground='#999', # Gray text when disabled
+            font=('Arial', 10, 'bold'),
+            padx=16,
+            pady=6,
+            relief='raised',
+            bd=2,
+            cursor='hand2'
+        )
+        self.hunt_stop_btn.pack(side='left')
 
         nb = ttk.Notebook(self)
         nb.pack(fill='both', expand=True)
@@ -645,21 +694,12 @@ class App(tk.Tk):
     def _build_hunt_tab(self, frm):
         """Streamlined Hunt tab with only essential controls.
         
-        Window selection moved to topbar for quick access.
-        Beginner-friendly: Monster rotation → Skill slots → Hunt buttons
+        Window selection moved to topbar for quick access via combobox.
+        Beginner-friendly: Monster rotation → Skill slots → Quick actions
         """
         
         # Initialize mode var for compatibility (actual mode selector is in Setup tab)
         self.hunt_mode_var = tk.StringVar(value=self.hunt_cfg.get('ui_mode', 'beginner'))
-        
-        # Section 1: Window List (compact - topbar has Find/Bring buttons)
-        window_frame = tk.LabelFrame(frm, text=self._t('select_game_window'), padx=10, pady=8)
-        window_frame.grid(row=0, column=0, columnspan=4, sticky='we', pady=(0,12))
-        
-        tk.Label(window_frame, text=self._t('win_list_hint'), fg='#666', font=('Arial', 8)).pack(anchor='w', pady=(0,4))
-        self.win_listbox = tk.Listbox(window_frame, height=4, exportselection=False)
-        self.win_listbox.pack(fill='both', expand=True)
-        self.win_listbox.bind('<<ListboxSelect>>', self.on_window_selected)
         
         # Initialize vars for compatibility with hunt loop (values read from hunt_cfg)
         self.target_key_var = tk.StringVar(value=str(self.hunt_cfg.get('target_key', 'TAB')))
@@ -767,7 +807,7 @@ class App(tk.Tk):
         # Phase 3: Populate monster rotation list
         self._refresh_monster_rotation_list()
 
-        # Section 4: Hunt Control Buttons
+        # Section 4: Quick Action Buttons (below monster rotation)
         control_frame = tk.Frame(frm)
         control_frame.grid(row=3, column=0, columnspan=4, pady=(0,12))
         
@@ -775,48 +815,6 @@ class App(tk.Tk):
                   font=('Arial', 9, 'bold'), fg='#2196F3', padx=12, pady=6).pack(side='left', padx=(0,8))
         tk.Button(control_frame, text=self._t('save_hunt'), command=self.on_hunt_save, 
                   padx=12, pady=6).pack(side='left', padx=(0,8))
-        
-        # Start Hunt Button - Enhanced design with better contrast ratio
-        # Active: Green background (#2E7D32) with white text (CR: 5.8:1)
-        # Disabled: Muted gray with lower contrast for inactive state
-        self.hunt_start_btn = tk.Button(
-            control_frame, 
-            text=self._t('start_hunt'),
-            command=self.on_hunt_start,
-            bg='#2E7D32',              # Darker green for better contrast
-            fg='white',
-            activebackground='#1B5E20', # Even darker on hover
-            activeforeground='white',
-            font=('Arial', 11, 'bold'),
-            padx=20,
-            pady=8,
-            relief='raised',
-            bd=2,
-            cursor='hand2'
-        )
-        self.hunt_start_btn.pack(side='left', padx=(0, 8))
-        
-        # Stop Hunt Button - Enhanced design with better contrast ratio  
-        # Active: Red background (#C62828) with white text (CR: 6.3:1)
-        # Disabled: Muted gray to indicate inactive state
-        self.hunt_stop_btn = tk.Button(
-            control_frame,
-            text=self._t('stop_hunt'),
-            command=self.on_hunt_stop,
-            state='disabled',
-            bg='#C62828',              # Darker red for better contrast
-            fg='white',
-            activebackground='#B71C1C', # Even darker on hover
-            activeforeground='white',
-            disabledforeground='#999', # Gray text when disabled
-            font=('Arial', 11, 'bold'),
-            padx=20,
-            pady=8,
-            relief='raised',
-            bd=2,
-            cursor='hand2'
-        )
-        self.hunt_stop_btn.pack(side='left')
 
         # Section 5: Status Display
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
@@ -1663,64 +1661,76 @@ class App(tk.Tk):
         threading.Thread(target=do_pick, daemon=True).start()
 
     def on_hunt_find_windows(self):
+        """Find and populate window list in combobox with auto-selection."""
         # Enumerate windows using WinAPI to get hwnd and PID
         items = self._enum_windows()
-        sub = (self.win_title_var.get() or 'cabal').strip().lower()
-        candidates = [w for w in items if sub in w['title'].lower() or sub in (w['proc'] or '').lower()]
-        # Populate listbox
+        
+        # Filter for Cabal windows (check saved window_title or default to 'cabal')
+        saved_title = self.hunt_cfg.get('window_title', 'cabal').strip().lower()
+        candidates = [w for w in items if saved_title in w['title'].lower() or 
+                     'cabal' in w['title'].lower() or 
+                     'cabal' in (w['proc'] or '').lower()]
+        
+        # Store window items
         self.win_items = candidates
-        self.win_listbox.delete(0, tk.END)
-        for w in candidates:
-            label = f"{w['title']}  [PID:{w['pid']}]"
-            if w.get('proc'):
-                label += f" ({w['proc']})"
-            self.win_listbox.insert(tk.END, label)
+        
+        # Populate combobox
+        self.win_combo['values'] = [
+            f"{w['title']}  [PID:{w['pid']}]" for w in candidates
+        ]
+        
         if not candidates:
             messagebox.showinfo(self._t('find_windows'), self._t('no_windows'))
             return
-        # Select first
-        self.win_listbox.selection_clear(0, tk.END)
-        self.win_listbox.selection_set(0)
-        self.win_listbox.activate(0)
-        self.hunt_selected = candidates[0]
-        self.win_title_var.set(candidates[0]['title'])
-        self.hunt_status.set(self._t('selected_window').format(title=candidates[0]['title']))
+        
+        # Auto-select window matching saved PID if available
+        saved_pid = self.hunt_cfg.get('window_pid')
+        selected_idx = 0
+        
+        if saved_pid:
+            for i, w in enumerate(candidates):
+                if w['pid'] == saved_pid:
+                    selected_idx = i
+                    break
+        
+        # Select in combobox
+        self.win_combo.current(selected_idx)
+        self.hunt_selected = candidates[selected_idx]
+        
+        self.hunt_status.set(self._t('selected_window').format(title=candidates[selected_idx]['title']))
 
     def on_hunt_bring_front(self):
-        # Prefer selected item in list
+        """Bring selected window to front."""
+        # Get hwnd from hunt_selected
         hwnd = None
-        try:
-            idx = self.win_listbox.curselection()
-            if idx:
-                hwnd = self.win_items[idx[0]]['hwnd']
-                self.hunt_selected = self.win_items[idx[0]]
-        except Exception:
-            hwnd = None
+        if hasattr(self, 'hunt_selected') and self.hunt_selected:
+            hwnd = self.hunt_selected.get('hwnd')
+        
         ok = False
         if hwnd:
             ok = self._bring_window_to_front_by_hwnd(hwnd)
         else:
-            ok = self._bring_window_to_front(self.win_title_var.get().strip())
+            # Fallback to title-based search
+            title = self.hunt_cfg.get('window_title', 'Cabal').strip()
+            ok = self._bring_window_to_front(title)
+        
         self.hunt_status.set(self._t('bring_ok') if ok else self._t('bring_fail'))
 
     def on_hunt_bring_front_below_app(self):
         """Bring game window to front but keep app on top of it."""
-        # Prefer selected item in list
+        # Get hwnd from hunt_selected
         hwnd = None
-        try:
-            idx = self.win_listbox.curselection()
-            if idx:
-                hwnd = self.win_items[idx[0]]['hwnd']
-                self.hunt_selected = self.win_items[idx[0]]
-        except Exception:
-            hwnd = None
+        if hasattr(self, 'hunt_selected') and self.hunt_selected:
+            hwnd = self.hunt_selected.get('hwnd')
         
         # First bring game window to front
         ok = False
         if hwnd:
             ok = self._bring_window_to_front_by_hwnd(hwnd)
         else:
-            ok = self._bring_window_to_front(self.win_title_var.get().strip())
+            # Fallback to title-based search
+            title = self.hunt_cfg.get('window_title', 'Cabal').strip()
+            ok = self._bring_window_to_front(title)
         
         # Then bring app back on top
         if ok:
@@ -1733,19 +1743,30 @@ class App(tk.Tk):
         
         self.hunt_status.set(self._t('bring_ok') if ok else self._t('bring_fail'))
 
-    def on_window_selected(self, _evt=None):
+    def on_window_combo_selected(self, _evt=None):
+        """Handle window selection from combobox - auto bring to front."""
         try:
-            idx = self.win_listbox.curselection()
-            if not idx:
+            idx = self.win_combo.current()
+            if idx < 0 or idx >= len(self.win_items):
                 return
-            item = self.win_items[idx[0]] if idx[0] < len(self.win_items) else None
-            if not item:
-                return
+            
+            item = self.win_items[idx]
             self.hunt_selected = item
-            self.win_title_var.set(item['title'])
-            self.hunt_status.set(self._t('selected_window').format(title=item['title']))
-        except Exception:
-            pass
+            
+            # Auto bring window to front when selected
+            ok = self._bring_window_to_front_by_hwnd(item['hwnd'])
+            
+            # Update status
+            if ok:
+                self.hunt_status.set(self._t('selected_window').format(title=item['title']))
+            else:
+                self.hunt_status.set(self._t('bring_fail'))
+        except Exception as e:
+            print(f"Window combo selection error: {e}")
+
+    def on_window_selected(self, _evt=None):
+        """Legacy handler - no longer used since listbox removed."""
+        pass
 
     def _bring_window_to_front(self, title_sub: str) -> bool:
         try:
@@ -1942,8 +1963,9 @@ class App(tk.Tk):
                 print("[First-time check] Launching wizard...")
                 self.on_setup_wizard()
             else:
-                # User clicked No - show hint about wizard button
-                print("[First-time check] User skipped wizard")
+                # User clicked No - auto-detect Cabal window and save
+                print("[First-time check] User skipped wizard - attempting auto PID detection...")
+                self._auto_detect_and_save_cabal_window()
                 self.hunt_status.set(self._t('wizard_skipped_hint'))
         
         # Check PIL availability and show one-time warning if missing
@@ -1956,6 +1978,58 @@ class App(tk.Tk):
                 self._t('pil_not_installed_message'),
                 parent=self
             )
+    
+    def _auto_detect_and_save_cabal_window(self):
+        """Auto-detect Cabal window PID and save to config when user skips setup."""
+        print("[Auto PID] Starting Cabal window detection...")
+        
+        # Find all windows
+        items = self._enum_windows()
+        
+        # Filter for Cabal windows
+        cabal_windows = [w for w in items if 
+                        'cabal' in w['title'].lower() or 
+                        (w.get('proc') and 'cabal' in w['proc'].lower())]
+        
+        if not cabal_windows:
+            print("[Auto PID] No Cabal windows found")
+            messagebox.showwarning(
+                self._t('info_title'),
+                "No Cabal windows detected.\n\nPlease:\n1. Launch Cabal game first\n2. Click 'Find Windows' button to select manually",
+                parent=self
+            )
+            return
+        
+        # Select first Cabal window
+        selected = cabal_windows[0]
+        print(f"[Auto PID] Found Cabal window: {selected['title']} [PID:{selected['pid']}]")
+        
+        # Update hunt_selected
+        self.hunt_selected = selected
+        
+        # Update UI combobox
+        if hasattr(self, 'win_combo'):
+            self.win_combo['values'] = [f"{selected['title']}  [PID:{selected['pid']}]"]
+            self.win_combo.current(0)
+            self.win_items = [selected]
+        
+        # Save to hunt_config.json
+        self.hunt_cfg['window_title'] = selected['title']
+        self.hunt_cfg['window_pid'] = selected['pid']
+        self.hunt_cfg['window_hwnd'] = selected['hwnd']
+        
+        try:
+            save_hunt_config(self.hunt_cfg)
+            print(f"[Auto PID] Saved to config: {selected['title']} [PID:{selected['pid']}]")
+            
+            # Show success message
+            messagebox.showinfo(
+                self._t('info_title'),
+                f"✅ Auto-detected Cabal window:\n\n{selected['title']}\nPID: {selected['pid']}\n\nYou can change this anytime using 'Find Windows' button.",
+                parent=self
+            )
+        except Exception as e:
+            print(f"[Auto PID] Failed to save config: {e}")
     
     def on_setup_wizard(self):
         """Launch setup wizard to guide user through initial configuration."""
@@ -1997,10 +2071,7 @@ class App(tk.Tk):
         window_hwnd = self.hunt_cfg.get('window_hwnd')
         
         if window_title:
-            # Update window title entry
-            self.win_title_var.set(window_title)
-            
-            # If we have PID/HWND, create hunt_selected object and populate listbox
+            # If we have PID/HWND, create hunt_selected object
             if window_pid and window_hwnd:
                 self.hunt_selected = {
                     'title': window_title,
@@ -2009,13 +2080,11 @@ class App(tk.Tk):
                     'proc': None  # Process name not saved in config
                 }
                 
-                # Populate listbox with saved window
-                self.win_listbox.delete(0, tk.END)
-                label = f"{window_title}  [PID:{window_pid}]"
-                self.win_listbox.insert(tk.END, label)
-                self.win_listbox.selection_set(0)
-                self.win_listbox.activate(0)
-                self.win_items = [self.hunt_selected]
+                # Populate combobox with saved window
+                if hasattr(self, 'win_combo'):
+                    self.win_combo['values'] = [f"{window_title}  [PID:{window_pid}]"]
+                    self.win_combo.current(0)
+                    self.win_items = [self.hunt_selected]
         
         # 2. Monster template (if exists)
         monster_name = self.hunt_cfg.get('monster_selected_name', '').strip()
@@ -2059,13 +2128,11 @@ class App(tk.Tk):
             'proc': None  # Process name not saved in config
         }
         
-        # Populate listbox with saved window
-        self.win_listbox.delete(0, tk.END)
-        label = f"{window_title}  [PID:{window_pid}]"
-        self.win_listbox.insert(tk.END, label)
-        self.win_listbox.selection_set(0)
-        self.win_listbox.activate(0)
-        self.win_items = [self.hunt_selected]
+        # Populate combobox with saved window
+        if hasattr(self, 'win_combo'):
+            self.win_combo['values'] = [f"{window_title}  [PID:{window_pid}]"]
+            self.win_combo.current(0)
+            self.win_items = [self.hunt_selected]
         
         # Update status to inform user
         self.hunt_status.set(f"✓ Loaded saved window: {window_title} (PID: {window_pid})")
@@ -2080,7 +2147,14 @@ class App(tk.Tk):
             messagebox.showerror(self._t('error_title'), self._t('invalid_hunt').format(e=e))
 
     def _hunt_from_ui(self):
-        title = self.win_title_var.get().strip()
+        """Extract hunt configuration from UI elements."""
+        # Get window title from selected window or config
+        title = ''
+        if hasattr(self, 'hunt_selected') and self.hunt_selected:
+            title = self.hunt_selected.get('title', '').strip()
+        if not title:
+            title = self.hunt_cfg.get('window_title', 'Cabal').strip()
+        
         target_key = self.target_key_var.get().strip() or 'TAB'
         attack_keys = [k.strip() for k in self.attack_keys_var.get().split(',') if k.strip()]
         
