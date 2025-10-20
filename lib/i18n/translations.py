@@ -696,6 +696,18 @@ SETUP_WIZARD_TRANSLATIONS = {
         'no_monsters_found': '⚠️ No monsters found. Please add monsters first.',
         'err_load_skills': '⚠️ Error loading skills: {e}',
         'skills_order_hint': '💡 Tip: Skills will be used in order from Slot 1 to Slot 9',
+        # User level selection
+        'user_level_group': 'Select Your Experience Level',
+        'user_level_new': '🌱 New User',
+        'user_level_new_desc': 'First time using the bot - I need help with skill rotation',
+        'user_level_experienced': '⚙️ Experienced User',
+        'user_level_experienced_desc': 'I know what I\'m doing - skip the extra guidance',
+        'tip_user_level_new': 'Get guided help with skill rotation setup',
+        'tip_user_level_experienced': 'Skip extra guidance for experienced users',
+        # Rotation builder button
+        'open_rotation_builder': '🎯 Open Skill Rotation Builder',
+        'tip_rotation_builder': 'Open advanced rotation builder to configure precise skill timing and order (for new users)',
+        'rotation_builder_disabled_hint': '💡 This feature is only available for new users. Select "New User" in Step 1 to enable it.',
     },
     'vi': {
         # Footer buttons
@@ -742,5 +754,17 @@ SETUP_WIZARD_TRANSLATIONS = {
         'no_monsters_found': '⚠️ Không tìm thấy quái. Vui lòng thêm quái trước.',
         'err_load_skills': '⚠️ Lỗi khi tải danh sách kỹ năng: {e}',
         'skills_order_hint': '💡 Mẹo: Kỹ năng sẽ được dùng theo thứ tự từ Ô 1 đến Ô 9',
+        # User level selection
+        'user_level_group': 'Chọn mức độ kinh nghiệm',
+        'user_level_new': '🌱 Người mới',
+        'user_level_new_desc': 'Lần đầu dùng bot - Cần hỗ trợ thiết lập kỹ năng',
+        'user_level_experienced': '⚙️ Người có kinh nghiệm',
+        'user_level_experienced_desc': 'Tôi đã biết cách sử dụng - Bỏ qua hướng dẫn',
+        'tip_user_level_new': 'Nhận hướng dẫn chi tiết thiết lập kỹ năng',
+        'tip_user_level_experienced': 'Bỏ qua hướng dẫn cho người dùng có kinh nghiệm',
+        # Rotation builder button
+        'open_rotation_builder': '🎯 Mở công cụ thiết lập kỹ năng',
+        'tip_rotation_builder': 'Mở công cụ nâng cao để cấu hình thứ tự và thời gian kỹ năng chính xác (dành cho người mới)',
+        'rotation_builder_disabled_hint': '💡 Tính năng này chỉ dành cho người mới. Chọn "Người mới" ở Bước 1 để kích hoạt.',
     }
 }

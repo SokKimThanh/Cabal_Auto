@@ -77,6 +77,7 @@ class SetupWizard:
         self.current_step = 1
         self.total_steps = 5
         self.language = 'en'  # Default language
+        self.user_level = 'new'  # Default: new user (can be 'new' or 'experienced')
         
         # Data lists for steps
         self.filtered_windows = []  # Step 2: Window list
@@ -88,6 +89,7 @@ class SetupWizard:
         # Collected data from wizard steps
         self.wizard_data = {
             'language': 'en',
+            'user_level': 'new',  # Track user experience level
             'window_title': '',
             'window_pid': None,
             'window_hwnd': None,
@@ -464,6 +466,67 @@ It takes about 2 minutes. Let's begin!"""
         if attach_i18n_tooltip:
             attach_i18n_tooltip(lang_vi, key='tip_lang_vietnamese', ns='setup_wizard', lang_provider=lambda: self.lang)
         
+        # User level selection (New User vs Experienced User)
+        user_level_frame = tk.LabelFrame(
+            self.content_frame,
+            text=self._t('user_level_group'),
+            font=('Arial', 10, 'bold'),
+            bg='white',
+            padx=20,
+            pady=15
+        )
+        user_level_frame.pack(pady=30, fill=tk.X)
+        
+        self.user_level_var = tk.StringVar(value='new')
+        
+        level_new = tk.Radiobutton(
+            user_level_frame,
+            text=self._t('user_level_new'),
+            variable=self.user_level_var,
+            value='new',
+            font=('Arial', 11),
+            bg='white',
+            command=self._on_user_level_change
+        )
+        level_new.pack(anchor='w', pady=5)
+        
+        level_new_desc = tk.Label(
+            user_level_frame,
+            text="  " + self._t('user_level_new_desc'),
+            font=('Arial', 9),
+            bg='white',
+            fg='#666',
+            justify=tk.LEFT
+        )
+        level_new_desc.pack(anchor='w', padx=(25, 0))
+        
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(level_new, key='tip_user_level_new', ns='setup_wizard', lang_provider=lambda: self.lang)
+        
+        level_experienced = tk.Radiobutton(
+            user_level_frame,
+            text=self._t('user_level_experienced'),
+            variable=self.user_level_var,
+            value='experienced',
+            font=('Arial', 11),
+            bg='white',
+            command=self._on_user_level_change
+        )
+        level_experienced.pack(anchor='w', pady=(10, 5))
+        
+        level_experienced_desc = tk.Label(
+            user_level_frame,
+            text="  " + self._t('user_level_experienced_desc'),
+            font=('Arial', 9),
+            bg='white',
+            fg='#666',
+            justify=tk.LEFT
+        )
+        level_experienced_desc.pack(anchor='w', padx=(25, 0))
+        
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(level_experienced, key='tip_user_level_experienced', ns='setup_wizard', lang_provider=lambda: self.lang)
+        
         # Get started hint
         hint = tk.Label(
             self.content_frame,
@@ -723,9 +786,42 @@ It takes about 2 minutes. Let's begin!"""
             text=self._t('clear_all_slots'),
             command=self._clear_all_skill_slots
         )
-        clear_btn.pack()
+        clear_btn.pack(side=tk.LEFT, padx=5)
         if attach_i18n_tooltip:
             attach_i18n_tooltip(clear_btn, key='tip_clear_all_slots', ns='setup_wizard', lang_provider=lambda: self.lang)
+        
+        # Rotation builder button (for new users only)
+        self.rotation_builder_button = tk.Button(
+            btn_frame,
+            text=self._t('open_rotation_builder'),
+            command=self._open_rotation_builder,
+            bg='#2196F3',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            padx=15,
+            pady=5,
+            cursor='hand2'
+        )
+        self.rotation_builder_button.pack(side=tk.LEFT, padx=5)
+        if attach_i18n_tooltip:
+            attach_i18n_tooltip(self.rotation_builder_button, key='tip_rotation_builder', ns='setup_wizard', lang_provider=lambda: self.lang)
+        
+        # Update button state based on user level
+        self._update_rotation_builder_button_state()
+        
+        # Hint label for disabled rotation builder
+        self.rotation_builder_hint = tk.Label(
+            self.content_frame,
+            text='',
+            font=('Arial', 9, 'italic'),
+            bg='white',
+            fg='#999'
+        )
+        self.rotation_builder_hint.pack(pady=(10, 0))
+        
+        # Update hint based on user level
+        if self.user_level != 'new':
+            self.rotation_builder_hint.config(text=self._t('rotation_builder_disabled_hint'))
         
         # Info
         info = tk.Label(
@@ -882,6 +978,14 @@ It takes about 2 minutes. Let's begin!"""
         self.wizard_data['language'] = self.language
         # Note: Full UI translation will be implemented when needed
     
+    def _on_user_level_change(self):
+        """Handle user level selection change."""
+        self.user_level = self.user_level_var.get()
+        self.wizard_data['user_level'] = self.user_level
+        # If we're on step 4 and the rotation builder button exists, update its state
+        if self.current_step == 4 and hasattr(self, 'rotation_builder_button'):
+            self._update_rotation_builder_button_state()
+    
     def _search_windows(self):
         """Search for game windows matching filter."""
         filter_text = self.window_filter_var.get().strip().lower()
@@ -961,6 +1065,90 @@ It takes about 2 minutes. Let's begin!"""
         """Clear all skill slot selections."""
         for var in self.skill_slot_vars:
             var.set('(Empty)')
+    
+    def _update_rotation_builder_button_state(self):
+        """Enable/disable rotation builder button based on user level."""
+        if not hasattr(self, 'rotation_builder_button'):
+            return
+        
+        if self.user_level == 'new':
+            # Enable button for new users
+            self.rotation_builder_button.config(state=tk.NORMAL, cursor='hand2')
+            # Hide hint
+            if hasattr(self, 'rotation_builder_hint'):
+                self.rotation_builder_hint.config(text='')
+        else:
+            # Disable button for experienced users
+            self.rotation_builder_button.config(state=tk.DISABLED, cursor='arrow')
+            # Show hint
+            if hasattr(self, 'rotation_builder_hint'):
+                self.rotation_builder_hint.config(text=self._t('rotation_builder_disabled_hint'))
+    
+    def _open_rotation_builder(self):
+        """Open Library Manager with Rotation tab for new users."""
+        try:
+            # Import library manager
+            from lib.ui.library_manager import LibraryManagerWindow
+            
+            # Load current monsters and skills data
+            monsters_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'monsters.json')
+            skills_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'skills.json')
+            
+            try:
+                with open(monsters_path, 'r', encoding='utf-8') as f:
+                    monsters = json.load(f)
+            except Exception:
+                monsters = []
+            
+            try:
+                with open(skills_path, 'r', encoding='utf-8') as f:
+                    skills = json.load(f)
+            except Exception:
+                skills = []
+            
+            # Create hunt config from wizard data
+            hunt_cfg = {
+                'window_title': self.wizard_data.get('window_title', ''),
+                'window_pid': self.wizard_data.get('window_pid'),
+                'window_hwnd': self.wizard_data.get('window_hwnd'),
+            }
+            
+            # Callback when library manager closes
+            def on_library_close(changes):
+                """Handle changes from library manager."""
+                if changes:
+                    # Reload skills data if it was modified
+                    if changes.get('skills_modified'):
+                        try:
+                            with open(skills_path, 'r', encoding='utf-8') as f:
+                                self.skills_data = json.load(f)
+                            # Refresh skill slot combos
+                            skill_names = ['(Empty)'] + [s.get('name', 'Unnamed') for s in self.skills_data]
+                            for combo in self.skill_slot_combos:
+                                combo['values'] = skill_names
+                        except Exception as e:
+                            print(f"Error reloading skills: {e}")
+            
+            # Create library manager window
+            # Pass parent as the dialog (not the root) to keep wizard modal behavior
+            lib_manager = LibraryManagerWindow(
+                parent=self.dialog,
+                hunt_cfg=hunt_cfg,
+                monsters=monsters,
+                skills=skills,
+                lang=self.language,
+                on_close_callback=on_library_close
+            )
+            
+            # Note: LibraryManagerWindow handles its own modal state
+            # It will automatically open to the Rotation tab if that's the default
+            
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"Failed to open Rotation Builder:\n{str(e)}",
+                parent=self.dialog
+            )
     
     def _enum_windows(self):
         """Enumerate visible windows using WinAPI."""
