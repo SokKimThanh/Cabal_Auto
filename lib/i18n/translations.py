@@ -239,6 +239,11 @@ GLOBAL_TRANSLATIONS = {
         'skill_duplicate': 'Skill name already exists',
         'manage_button': 'Manage…',
         'skill_manage': 'Manage skills…',
+        'skill_manage_hint': 'Press Ctrl+K to manage skills',
+        'shortcut_tab_hunt': 'Alt+1: Switched to Hunt tab',
+        'shortcut_tab_setup': 'Alt+2: Switched to Setup tab',
+        'hunt_toggled_start': 'Alt+Z: Hunt started',
+        'hunt_toggled_stop': 'Alt+Z: Hunt stopped',
         # Generic UI titles/messages
         'warning_title': 'Warning',
         'library_updated': 'Library updated successfully',
@@ -498,6 +503,11 @@ GLOBAL_TRANSLATIONS = {
         'skill_duplicate': 'Tên kỹ năng đã tồn tại',
         'manage_button': 'Quản lý…',
         'skill_manage': 'Quản lý kỹ năng…',
+        'skill_manage_hint': 'Nhấn Ctrl+K để quản lý kỹ năng',
+        'shortcut_tab_hunt': 'Alt+1: Chuyển sang tab Săn',
+        'shortcut_tab_setup': 'Alt+2: Chuyển sang tab Thiết lập',
+        'hunt_toggled_start': 'Alt+Z: Đã bắt đầu săn',
+        'hunt_toggled_stop': 'Alt+Z: Đã dừng săn',
         # Generic UI titles/messages
         'warning_title': 'Cảnh báo',
         'library_updated': 'Thư viện đã được cập nhật',

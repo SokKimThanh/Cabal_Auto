@@ -539,8 +539,13 @@ class App(tk.Tk):
             pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
 
         self._build_ui()
-        # ESC to stop hunt quickly
-        self.bind('<Escape>', lambda e: self.on_hunt_stop())
+        
+        # Keyboard shortcuts
+        self.bind('<Escape>', lambda e: self.on_hunt_stop())  # ESC: Stop hunt
+        self.bind('<Control-k>', lambda e: self._open_skill_manager())  # Ctrl+K: Manage skills
+        self.bind('<Alt-Key-1>', lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
+        self.bind('<Alt-Key-2>', lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
+        self.bind('<Alt-z>', lambda e: self._toggle_hunt())  # Alt+Z: Toggle hunt start/stop
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
@@ -633,60 +638,48 @@ class App(tk.Tk):
         # Separator before hunt controls
         tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
         
-        # Hunt Control Buttons - moved to topbar for quick access
-        # Start Hunt Button - Enhanced design with better contrast ratio
-        # Active: Green background (#2E7D32) with white text (CR: 5.8:1)
+        # Hunt Control Buttons - Using global button styles for consistency
+        from lib.ui.button_styles import get_button_config
+        
+        # Start Hunt Button - Green (CR: 5.8:1)
+        start_config = get_button_config('green')
         self.hunt_start_btn = tk.Button(
             top, 
             text=self._t('start_hunt'),
             command=self.on_hunt_start,
-            bg='#2E7D32',              # Darker green for better contrast
-            fg='white',
-            activebackground='#1B5E20', # Even darker on hover
-            activeforeground='white',
-            font=('Arial', 10, 'bold'),
+            **start_config,
             padx=16,
-            pady=6,
-            relief='raised',
-            bd=2,
-            cursor='hand2'
+            pady=6
         )
         self.hunt_start_btn.pack(side='left', padx=(0, 6))
         
-        # Stop Hunt Button - Enhanced design with better contrast ratio  
-        # Active: Red background (#C62828) with white text (CR: 6.3:1)
+        # Stop Hunt Button - Red (CR: 6.3:1)
+        stop_config = get_button_config('red')
         self.hunt_stop_btn = tk.Button(
             top,
             text=self._t('stop_hunt'),
             command=self.on_hunt_stop,
             state='disabled',
-            bg='#C62828',              # Darker red for better contrast
-            fg='white',
-            activebackground='#B71C1C', # Even darker on hover
-            activeforeground='white',
-            disabledforeground='#999', # Gray text when disabled
-            font=('Arial', 10, 'bold'),
+            **stop_config,
             padx=16,
-            pady=6,
-            relief='raised',
-            bd=2,
-            cursor='hand2'
+            pady=6
         )
         self.hunt_stop_btn.pack(side='left')
 
-        nb = ttk.Notebook(self)
-        nb.pack(fill='both', expand=True, pady=(0,8))
+        # Store notebook reference for keyboard shortcuts
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill='both', expand=True, pady=(0,8))
 
         # Create 4 tabs: Hunt, Setup, Stats, Help
-        tab_hunt = tk.Frame(nb, padx=12, pady=12)
-        tab_setup = tk.Frame(nb, padx=12, pady=12)
-        tab_stats = tk.Frame(nb, padx=12, pady=12)
-        tab_help = tk.Frame(nb, padx=12, pady=12)
+        tab_hunt = tk.Frame(self.notebook, padx=12, pady=12)
+        tab_setup = tk.Frame(self.notebook, padx=12, pady=12)
+        tab_stats = tk.Frame(self.notebook, padx=12, pady=12)
+        tab_help = tk.Frame(self.notebook, padx=12, pady=12)
         
-        nb.add(tab_hunt, text=self._t('tab_hunt'))
-        nb.add(tab_setup, text=self._t('tab_setup'))
-        nb.add(tab_stats, text=self._t('tab_stats'))
-        nb.add(tab_help, text=self._t('tab_help'))
+        self.notebook.add(tab_hunt, text=self._t('tab_hunt'))
+        self.notebook.add(tab_setup, text=self._t('tab_setup'))
+        self.notebook.add(tab_stats, text=self._t('tab_stats'))
+        self.notebook.add(tab_help, text=self._t('tab_help'))
         
         self._build_hunt_tab(tab_hunt)
         self._build_setup_tab(tab_setup)
@@ -715,21 +708,16 @@ class App(tk.Tk):
         )
         self.unsaved_indicator_label.pack(side='left')
         
-        # Apply All Settings button (right side)
+        # Apply All Settings button (right side) - Using global green_light style
+        from lib.ui.button_styles import get_button_config
+        apply_config = get_button_config('green_light')
         self.global_apply_btn = tk.Button(
             apply_frame,
             text=f"💾 {self._t('apply_all_settings')}",
             command=self.on_global_apply,
-            bg='#4CAF50',
-            fg='white',
-            activebackground='#45A049',
-            activeforeground='white',
-            font=('Arial', 10, 'bold'),
+            **apply_config,
             padx=20,
-            pady=8,
-            relief='raised',
-            bd=2,
-            cursor='hand2'
+            pady=8
         )
         self.global_apply_btn.pack(side='right', padx=8, pady=4)
         
@@ -831,8 +819,11 @@ class App(tk.Tk):
         skill_frame_outer = tk.LabelFrame(frm, text=self._t('skill_slots'), padx=10, pady=8)
         skill_frame_outer.grid(row=2, column=0, columnspan=4, sticky='we', pady=(0,12))
         
-        # Manage button at top
-        tk.Button(skill_frame_outer, text=self._t('skill_manage'), command=self._open_skill_manager).pack(pady=(0,6))
+        # Manage skills hint (button hidden, use Ctrl+K shortcut)
+        hint_label = tk.Label(skill_frame_outer, text=f"ℹ️ {self._t('skill_manage_hint')}", 
+                             fg='#666', font=('Arial', 8), cursor='hand2')
+        hint_label.pack(pady=(0,6))
+        hint_label.bind('<Button-1>', lambda e: self._open_skill_manager())
 
         slot_frame = tk.Frame(skill_frame_outer)
         slot_frame.pack(fill='both', expand=True)
@@ -981,17 +972,16 @@ class App(tk.Tk):
         wizard_frame = tk.Frame(parent)
         wizard_frame.grid(row=0, column=2, sticky='e', padx=(12,0))
         
+        # Use global blue button style
+        from lib.ui.button_styles import get_button_config
+        wizard_config = get_button_config('blue')
         self.setup_wizard_btn = tk.Button(
             wizard_frame,
             text=f"🧙 {self._t('setup_wizard')}",
             command=self.on_setup_wizard,
-            font=('Arial', 10, 'bold'),
-            fg='white',
-            bg='#2196F3',
-            activebackground='#1976D2',
+            **wizard_config,
             padx=16,
-            pady=8,
-            cursor='hand2'
+            pady=8
         )
         self.setup_wizard_btn.pack()
         
@@ -2328,6 +2318,41 @@ class App(tk.Tk):
                 text=f"✓ {self._t('all_saved')}",
                 fg='#4CAF50'  # Green color
             )
+    
+    def _switch_to_tab(self, tab_index: int):
+        """Switch to specified tab via keyboard shortcut."""
+        try:
+            if not hasattr(self, 'notebook'):
+                return
+            
+            # Switch to tab
+            self.notebook.select(tab_index)
+            
+            # Update status with shortcut indicator
+            tab_names = ['Hunt', 'Setup', 'Stats', 'Help']
+            if 0 <= tab_index < len(tab_names):
+                tab_name = tab_names[tab_index]
+                shortcut = f"Alt+{tab_index + 1}"
+                if hasattr(self, 'hunt_status'):
+                    self.hunt_status.set(f"{shortcut}: Switched to {tab_name} tab")
+        except Exception as e:
+            print(f"Tab switch error: {e}")
+    
+    def _toggle_hunt(self):
+        """Toggle hunt start/stop via Alt+Z shortcut."""
+        try:
+            if self.hunt_running:
+                # Stop hunt
+                self.on_hunt_stop()
+                if hasattr(self, 'hunt_status'):
+                    self.hunt_status.set(self._t('hunt_toggled_stop'))
+            else:
+                # Start hunt
+                self.on_hunt_start()
+                if hasattr(self, 'hunt_status'):
+                    self.hunt_status.set(self._t('hunt_toggled_start'))
+        except Exception as e:
+            print(f"Hunt toggle error: {e}")
 
     def _hunt_from_ui(self):
         """Extract hunt configuration from UI elements."""

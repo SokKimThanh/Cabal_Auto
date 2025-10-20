@@ -1,4 +1,4 @@
-# Enhancement: Global Apply Button & Wizard Relocation
+        # Enhancement: Global Apply Button & Wizard Relocation
 
 **Sprint**: 20 - Phase 3  
 **Date**: October 21, 2025  
