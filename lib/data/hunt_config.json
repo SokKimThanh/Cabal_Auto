@@ -41,5 +41,6 @@
   "window_pid": 21928,
   "templates": [],
   "window_hwnd": 264136,
-  "monster_selected_name": "Coc go~"
+  "monster_selected_name": "Coc go~",
+  "ui_mode": "intermediate"
 }

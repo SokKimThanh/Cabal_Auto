@@ -675,7 +675,7 @@ class App(tk.Tk):
         self.hunt_stop_btn.pack(side='left')
 
         nb = ttk.Notebook(self)
-        nb.pack(fill='both', expand=True)
+        nb.pack(fill='both', expand=True, pady=(0,8))
 
         # Create 4 tabs: Hunt, Setup, Stats, Help
         tab_hunt = tk.Frame(nb, padx=12, pady=12)
@@ -692,6 +692,50 @@ class App(tk.Tk):
         self._build_setup_tab(tab_setup)
         self._build_stats_tab(tab_stats)
         self._build_help_tab(tab_help)
+        
+        # Global Apply Section (below tabs, right-aligned)
+        self._build_global_apply_section()
+
+    def _build_global_apply_section(self):
+        """Build global apply button section below tabs."""
+        # Frame for global apply section (right-aligned)
+        apply_frame = tk.Frame(self, relief='sunken', bd=1, bg='#f0f0f0')
+        apply_frame.pack(fill='x', padx=8, pady=(0,8))
+        
+        # Unsaved changes indicator (left side)
+        indicator_frame = tk.Frame(apply_frame, bg='#f0f0f0')
+        indicator_frame.pack(side='left', padx=8, pady=6)
+        
+        self.unsaved_indicator_label = tk.Label(
+            indicator_frame,
+            text='',
+            fg='#666',
+            font=('Arial', 9),
+            bg='#f0f0f0'
+        )
+        self.unsaved_indicator_label.pack(side='left')
+        
+        # Apply All Settings button (right side)
+        self.global_apply_btn = tk.Button(
+            apply_frame,
+            text=f"💾 {self._t('apply_all_settings')}",
+            command=self.on_global_apply,
+            bg='#4CAF50',
+            fg='white',
+            activebackground='#45A049',
+            activeforeground='white',
+            font=('Arial', 10, 'bold'),
+            padx=20,
+            pady=8,
+            relief='raised',
+            bd=2,
+            cursor='hand2'
+        )
+        self.global_apply_btn.pack(side='right', padx=8, pady=4)
+        
+        # Initialize unsaved state
+        self.has_unsaved_changes = False
+        self._update_unsaved_indicator()
 
     # Click Tab removed
 
@@ -812,23 +856,14 @@ class App(tk.Tk):
         # Phase 3: Populate monster rotation list
         self._refresh_monster_rotation_list()
 
-        # Section 4: Quick Action Buttons (below monster rotation)
-        control_frame = tk.Frame(frm)
-        control_frame.grid(row=3, column=0, columnspan=4, pady=(0,12))
-        
-        tk.Button(control_frame, text=self._t('setup_wizard'), command=self.on_setup_wizard, 
-                  font=('Arial', 9, 'bold'), fg='#2196F3', padx=12, pady=6).pack(side='left', padx=(0,8))
-        tk.Button(control_frame, text=self._t('save_hunt'), command=self.on_hunt_save, 
-                  padx=12, pady=6).pack(side='left', padx=(0,8))
-
-        # Section 5: Status Display
+        # Section 4: Status Display (wizard button moved to Setup tab)
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
         status_label = tk.Label(frm, textvariable=self.hunt_status, fg='#666', font=('Arial', 9), 
                                relief='sunken', padx=8, pady=4)
-        status_label.grid(row=4, column=0, columnspan=4, sticky='we')
+        status_label.grid(row=3, column=0, columnspan=4, sticky='we')
 
         # Helper text for beginners
-        tk.Label(frm, text=self._t('hunt_tab_help_text'), fg='#999', font=('Arial', 8)).grid(row=5, column=0, columnspan=4, pady=(8,0))
+        tk.Label(frm, text=self._t('hunt_tab_help_text'), fg='#999', font=('Arial', 8)).grid(row=4, column=0, columnspan=4, pady=(8,0))
 
         # Empty widget lists for compatibility (no progressive disclosure in streamlined Hunt tab)
         self.hunt_intermediate_widgets = []
@@ -941,6 +976,26 @@ class App(tk.Tk):
             
             desc_label = tk.Label(mode_frame, text=f"  {mode_desc_text}", fg='#666', font=('Arial', 8))
             desc_label.grid(row=idx+1, column=1, sticky='w', padx=(4,0), pady=2)
+        
+        # Setup Wizard button (only enabled in Beginner mode)
+        wizard_frame = tk.Frame(parent)
+        wizard_frame.grid(row=0, column=2, sticky='e', padx=(12,0))
+        
+        self.setup_wizard_btn = tk.Button(
+            wizard_frame,
+            text=f"🧙 {self._t('setup_wizard')}",
+            command=self.on_setup_wizard,
+            font=('Arial', 10, 'bold'),
+            fg='white',
+            bg='#2196F3',
+            activebackground='#1976D2',
+            padx=16,
+            pady=8,
+            cursor='hand2'
+        )
+        self.setup_wizard_btn.pack()
+        
+        # Tooltip will be attached in _update_setup_visibility()
         
         # Section 2: Libraries
         lib_frame = tk.LabelFrame(parent, text=self._t('setup_libraries'), padx=12, pady=10)
@@ -1068,10 +1123,7 @@ class App(tk.Tk):
         tk.Label(self.window_frame, textvariable=self.setup_bounds_display_var, fg='blue').grid(row=2, column=1, columnspan=2, sticky='w', pady=(8,4))
         tk.Button(self.window_frame, text=self._t('clear_bounds'), command=self._clear_window_bounds).grid(row=2, column=3, padx=(4,0), pady=(8,4))
         
-        # Apply button at bottom
-        apply_btn = tk.Button(parent, text=self._t('apply_settings'), command=self._apply_setup_settings, 
-                             bg='#4CAF50', fg='white', font=('Arial', 10, 'bold'), padx=20, pady=8)
-        apply_btn.grid(row=4, column=0, columnspan=2, pady=(12,0))
+        # Apply button removed - now using global apply button below tabs
         
         # Initial visibility update based on mode
         self._update_setup_visibility()
@@ -1156,6 +1208,21 @@ class App(tk.Tk):
     def _update_setup_visibility(self):
         """Show/hide Setup tab sections based on current mode."""
         mode = self.setup_mode_var.get() if hasattr(self, 'setup_mode_var') else 'beginner'
+        
+        # Update wizard button state based on mode
+        if hasattr(self, 'setup_wizard_btn'):
+            if mode == 'beginner':
+                self.setup_wizard_btn.config(state='normal', cursor='hand2')
+                # Attach enabled tooltip
+                from lib.ui.tooltip import attach_i18n_tooltip
+                attach_i18n_tooltip(self.setup_wizard_btn, key='wizard_enabled_tooltip', 
+                                   ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
+            else:
+                self.setup_wizard_btn.config(state='disabled', cursor='arrow')
+                # Attach disabled tooltip
+                from lib.ui.tooltip import attach_i18n_tooltip
+                attach_i18n_tooltip(self.setup_wizard_btn, key='wizard_disabled_tooltip', 
+                                   ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
         
         if mode == 'beginner':
             # Hide advanced sections
@@ -2204,8 +2271,63 @@ class App(tk.Tk):
             save_hunt_config(cfg)
             self.hunt_cfg = cfg
             self.hunt_status.set('Saved hunt_config.json')
+            self._clear_unsaved_changes()
         except Exception as e:
             messagebox.showerror(self._t('error_title'), self._t('invalid_hunt').format(e=e))
+    
+    def on_global_apply(self):
+        """Global apply handler - saves all settings across all tabs."""
+        try:
+            # 1. Apply Setup tab settings (hunt config)
+            self._apply_setup_settings()
+            
+            # 2. Save hunt config from UI
+            cfg = self._hunt_from_ui()
+            save_hunt_config(cfg)
+            self.hunt_cfg = cfg
+            
+            # 3. Clear unsaved changes indicator
+            self._clear_unsaved_changes()
+            
+            # 4. Update status
+            self.hunt_status.set(self._t('all_saved'))
+            
+            # 5. Show success message
+            messagebox.showinfo(
+                self._t('success_title'),
+                self._t('settings_applied_message')
+            )
+        except Exception as e:
+            messagebox.showerror(
+                self._t('error_title'),
+                f"Failed to apply settings: {e}"
+            )
+    
+    def _mark_unsaved(self, *args):
+        """Mark that there are unsaved changes."""
+        self.has_unsaved_changes = True
+        self._update_unsaved_indicator()
+    
+    def _clear_unsaved_changes(self):
+        """Clear unsaved changes indicator after successful save."""
+        self.has_unsaved_changes = False
+        self._update_unsaved_indicator()
+    
+    def _update_unsaved_indicator(self):
+        """Update unsaved changes indicator UI."""
+        if not hasattr(self, 'unsaved_indicator_label'):
+            return
+        
+        if self.has_unsaved_changes:
+            self.unsaved_indicator_label.config(
+                text=f"● {self._t('unsaved_indicator')}",
+                fg='#FF9800'  # Orange color
+            )
+        else:
+            self.unsaved_indicator_label.config(
+                text=f"✓ {self._t('all_saved')}",
+                fg='#4CAF50'  # Green color
+            )
 
     def _hunt_from_ui(self):
         """Extract hunt configuration from UI elements."""
