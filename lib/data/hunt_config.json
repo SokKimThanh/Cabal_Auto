@@ -1,5 +1,6 @@
 {
   "window_title": "CABAL",
+  "window_pid": null,
   "target_key": "z",
   "attack_keys": [
     "1",
@@ -12,67 +13,13 @@
   "search_interval": 0.3,
   "attack_interval": 2.4,
   "template_path": "assets/images/monsters/coc_go__capture_1760736387994.png",
-  "region": [
-    "",
-    "",
-    "",
-    ""
-  ],
+  "region": null,
   "confidence": 0.85,
   "grayscale": true,
   "lost_timeout_sec": 1.5,
   "attack_min_duration_sec": 30.0,
   "bring_to_front_each_cycle": false,
-  "skill_slots": [
-    {
-      "name": "Dark Explosion",
-      "key": "1",
-      "type": "attack",
-      "cooldown": 1.9,
-      "cast_time": 1.7,
-      "image": "assets/images/skills/dark_explosion_1760739255497.png"
-    },
-    {
-      "name": "Bone Javelin",
-      "key": "2",
-      "type": "attack",
-      "cooldown": 2.4,
-      "cast_time": 1.5,
-      "image": "assets/images/skills/bone_javelin_1760739255498.png"
-    },
-    {
-      "name": "Skull Shooter",
-      "key": "3",
-      "type": "attack",
-      "cooldown": 2.2,
-      "cast_time": 1.5,
-      "image": "assets/images/skills/skull_shooter_1760739255501.png"
-    },
-    {
-      "name": "Regeneration",
-      "key": "4",
-      "type": "buff",
-      "cooldown": 2.2,
-      "cast_time": 1.0,
-      "image": "assets/images/skills/regeneration_1760739255499.png"
-    }
-  ],
   "window_bounds": null,
-  "monster_list": [
-    {
-      "name": "Coc go~",
-      "priority": 1,
-      "enabled": true
-    },
-    {
-      "name": "Plant Sừng Báo",
-      "priority": 2,
-      "enabled": false
-    }
-  ],
-  "rotation_mode": "priority",
-  "current_monster_index": 0,
-  "window_pid": null,
   "templates": [
     {
       "name": "Coc Go 2",
@@ -130,47 +77,52 @@
       }
     }
   ],
-  "ui_mode": "beginner",
-  "template_threshold": 0.8,
-  "skill_rotation": {
-    "enabled": true,
-    "sequence": [
-      {
-        "name": "Dark Explosion",
-        "key": "1",
-        "type": "attack",
-        "cooldown": 1.9,
-        "cast_time": 1.7,
-        "image": "assets/images/skills/dark_explosion_1760739255497.png"
-      },
-      {
-        "name": "Bone Javelin",
-        "key": "2",
-        "type": "attack",
-        "cooldown": 2.4,
-        "cast_time": 1.5,
-        "image": "assets/images/skills/bone_javelin_1760739255498.png"
-      },
-      {
-        "name": "Skull Shooter",
-        "key": "3",
-        "type": "attack",
-        "cooldown": 2.2,
-        "cast_time": 1.5,
-        "image": "assets/images/skills/skull_shooter_1760739255501.png"
-      },
-      {
-        "name": "Regeneration",
-        "key": "4",
-        "type": "buff",
-        "cooldown": 2.2,
-        "cast_time": 1.0,
-        "image": "assets/images/skills/regeneration_1760739255499.png"
-      }
-    ],
-    "total_cycle_time": 7.2,
-    "attack_interval": 2.4,
-    "attack_press_ms": 156,
-    "rotation_cycle_ms": 7200
-  }
+  "monster_list": [
+    {
+      "name": "Coc go~",
+      "priority": 1,
+      "enabled": true
+    },
+    {
+      "name": "Plant Sừng Báo",
+      "priority": 2,
+      "enabled": false
+    }
+  ],
+  "rotation_mode": "priority",
+  "current_monster_index": 0,
+  "skill_slots": [
+    {
+      "name": "Dark Explosion",
+      "key": "1",
+      "type": "attack",
+      "cooldown": 1.9,
+      "cast_time": 1.7,
+      "image": "assets/images/skills/dark_explosion_1760739255497.png"
+    },
+    {
+      "name": "Bone Javelin",
+      "key": "2",
+      "type": "attack",
+      "cooldown": 2.4,
+      "cast_time": 1.5,
+      "image": "assets/images/skills/bone_javelin_1760739255498.png"
+    },
+    {
+      "name": "Skull Shooter",
+      "key": "3",
+      "type": "attack",
+      "cooldown": 2.2,
+      "cast_time": 1.5,
+      "image": "assets/images/skills/skull_shooter_1760739255501.png"
+    },
+    {
+      "name": "Regeneration",
+      "key": "4",
+      "type": "buff",
+      "cooldown": 2.2,
+      "cast_time": 1.0,
+      "image": "assets/images/skills/regeneration_1760739255499.png"
+    }
+  ]
 }
