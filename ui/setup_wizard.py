@@ -474,7 +474,8 @@ It takes about 2 minutes. Let's begin!"""
         )
         lang_frame.pack(pady=30, fill=tk.X)
         
-        self.language_var = tk.StringVar(value='en')
+        # Restore language from wizard state (fixes persistence bug when navigating back)
+        self.language_var = tk.StringVar(value=self.language)
         
         lang_en = tk.Radiobutton(
             lang_frame,
@@ -513,7 +514,8 @@ It takes about 2 minutes. Let's begin!"""
         )
         user_level_frame.pack(pady=30, fill=tk.X)
         
-        self.user_level_var = tk.StringVar(value='new')
+        # Restore user level from wizard state (fixes persistence bug when navigating back)
+        self.user_level_var = tk.StringVar(value=self.user_level)
         
         # New User radio button
         self.level_new_radio = tk.Radiobutton(
