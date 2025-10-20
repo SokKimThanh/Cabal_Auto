@@ -464,6 +464,7 @@ class App(tk.Tk):
         self.win_items = []  # list of {'hwnd','pid','title','proc'}
         self.hunt_selected = None  # currently selected window info
         self._stop_hotkey = None
+        self._skip_auto_bring = False  # Flag to prevent double bring-to-front
         self.monsters = load_monster_library()
         self.monster_selected_index = None
         self.monster_selected_name = self.monsters[0]['name'] if self.monsters else None
@@ -616,17 +617,18 @@ class App(tk.Tk):
         # Separator
         tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
         
-        # Right side: Window Selection Combobox with auto bring-to-front
+        # Right side: Window Selection Combobox with auto find & bring-to-front
         self.win_combo_var = tk.StringVar()
-        self.win_combo = ttk.Combobox(top, textvariable=self.win_combo_var, state='readonly', width=35)
+        self.win_combo = ttk.Combobox(top, textvariable=self.win_combo_var, state='readonly', width=40)
         self.win_combo.pack(side='left', padx=(0,6))
+        
+        # Auto-populate windows when dropdown is clicked
+        self.win_combo.bind('<Button-1>', lambda e: self.on_hunt_find_windows() if not self.win_items else None)
+        # Handle window selection
         self.win_combo.bind('<<ComboboxSelected>>', self.on_window_combo_selected)
         
         # Attach tooltip to combobox explaining window selection
         attach_i18n_tooltip(self.win_combo, key='window_select_tooltip', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
-        
-        # Find Windows button (refresh window list)
-        tk.Button(top, text=self._t('find_windows'), command=self.on_hunt_find_windows, padx=8).pack(side='left', padx=(4,0))
         
         # Separator before hunt controls
         tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
@@ -1696,9 +1698,11 @@ class App(tk.Tk):
                     selected_idx = i
                     break
         
-        # Select in combobox
+        # Select in combobox WITHOUT triggering bring-to-front
+        self._skip_auto_bring = True
         self.win_combo.current(selected_idx)
         self.hunt_selected = candidates[selected_idx]
+        self._skip_auto_bring = False
         
         self.hunt_status.set(self._t('selected_window').format(title=candidates[selected_idx]['title']))
 
@@ -1747,8 +1751,12 @@ class App(tk.Tk):
         self.hunt_status.set(self._t('bring_ok') if ok else self._t('bring_fail'))
 
     def on_window_combo_selected(self, _evt=None):
-        """Handle window selection from combobox - auto bring to front."""
+        """Handle window selection from combobox - auto bring to front BELOW app."""
         try:
+            # Skip if this is auto-selection from find_windows
+            if self._skip_auto_bring:
+                return
+            
             idx = self.win_combo.current()
             if idx < 0 or idx >= len(self.win_items):
                 return
@@ -1756,11 +1764,18 @@ class App(tk.Tk):
             item = self.win_items[idx]
             self.hunt_selected = item
             
-            # Auto bring window to front when selected
+            # Auto bring window to front BUT keep app on top
             ok = self._bring_window_to_front_by_hwnd(item['hwnd'])
             
-            # Update status
             if ok:
+                # Bring app back on top after game window
+                time.sleep(0.1)
+                self.lift()
+                self.focus_force()
+                self.attributes('-topmost', True)
+                self.update()
+                self.after(100, lambda: self.attributes('-topmost', False))
+                
                 self.hunt_status.set(self._t('selected_window').format(title=item['title']))
             else:
                 self.hunt_status.set(self._t('bring_fail'))
@@ -2141,7 +2156,7 @@ class App(tk.Tk):
         self.hunt_status.set(f"✓ Loaded saved window: {window_title} (PID: {window_pid})")
     
     def _auto_bring_to_front_on_startup(self):
-        """Auto bring saved Cabal window to front on app startup."""
+        """Auto bring saved Cabal window to front BELOW app on startup."""
         try:
             # Check if we have a valid hunt_selected window
             if not hasattr(self, 'hunt_selected') or not self.hunt_selected:
@@ -2156,13 +2171,21 @@ class App(tk.Tk):
                 print(f"[Auto Bring] No HWND for window: {title}")
                 return
             
-            print(f"[Auto Bring] Bringing window to front: {title} [PID:{pid}]")
+            print(f"[Auto Bring] Bringing window to front (below app): {title} [PID:{pid}]")
             
             # Bring window to front
             ok = self._bring_window_to_front_by_hwnd(hwnd)
             
             if ok:
-                print(f"[Auto Bring] ✓ Successfully brought window to front: {title}")
+                # Keep app on top of game window
+                time.sleep(0.1)
+                self.lift()
+                self.focus_force()
+                self.attributes('-topmost', True)
+                self.update()
+                self.after(100, lambda: self.attributes('-topmost', False))
+                
+                print(f"[Auto Bring] ✓ Window ready (below app): {title}")
                 # Update status briefly
                 if hasattr(self, 'hunt_status'):
                     current_status = self.hunt_status.get()
