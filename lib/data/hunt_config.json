@@ -1,5 +1,6 @@
 {
   "window_title": "Setup Wizard - Cabal Auto Hunt",
+  "window_pid": 8688,
   "target_key": "TAB",
   "attack_keys": [
     "1",
@@ -17,24 +18,16 @@
   "lost_timeout_sec": 0.5,
   "attack_min_duration_sec": 5.0,
   "bring_to_front_each_cycle": false,
-  "skill_slots": [
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
-  ],
   "window_bounds": null,
-  "monster_list": [],
+  "templates": [],
+  "monster_list": [
+    {
+      "name": "Coc go~",
+      "priority": 1,
+      "enabled": true
+    }
+  ],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "version": "1.0",
-  "ui_mode": "beginner",
-  "window_pid": 8688,
-  "window_hwnd": 1246854,
-  "monster_selected_name": "Coc go~"
+  "skill_slots": []
 }
