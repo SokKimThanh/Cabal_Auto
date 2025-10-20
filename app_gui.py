@@ -57,7 +57,7 @@ except Exception:
 
 # Optional setup wizard import
 try:
-    from setup_wizard import show_setup_wizard  # type: ignore
+    from ui.setup_wizard import show_setup_wizard  # type: ignore
 except Exception:
     show_setup_wizard = None  # type: ignore
 

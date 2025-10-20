@@ -1,6 +1,27 @@
 {
-  "version": "1.0",
   "window_title": "",
+  "target_key": "TAB",
+  "attack_keys": [
+    "1",
+    "2",
+    "3"
+  ],
+  "attack_press_ms": 60,
+  "target_cycle_delay": 0.2,
+  "search_interval": 0.25,
+  "attack_interval": 0.15,
+  "template_path": "assets/images/target_frame.png",
+  "region": null,
+  "confidence": 0.85,
+  "grayscale": true,
+  "lost_timeout_sec": 1.2,
+  "attack_min_duration_sec": 1.5,
+  "bring_to_front_each_cycle": false,
+  "skill_slots": [],
+  "window_bounds": null,
   "monster_list": [],
-  "skill_slots": []
+  "rotation_mode": "sequence",
+  "current_monster_index": 0,
+  "version": "1.0",
+  "ui_mode": "beginner"
 }
