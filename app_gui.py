@@ -657,12 +657,16 @@ class App(tk.Tk):
         # Separator before hunt controls
         tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
         
-        # Hunt Control Buttons - Using global button styles for consistency
-        # Start Hunt Button - Green (CR: 5.8:1)
+        # Hunt Control Buttons - Using global button styles for consistency with icons
+        # Start Hunt Button - Green (CR: 5.8:1) with start icon
         start_config = get_button_config('green')
+        start_icon = self._icon('start', '▶️', size=18)
+        
         self.hunt_start_btn = tk.Button(
             top, 
-            text=self._t('start_hunt'),
+            text=f" {self._t('start_hunt')}" if not isinstance(start_icon, str) else self._t('start_hunt'),
+            image=start_icon if not isinstance(start_icon, str) else None,
+            compound='left' if not isinstance(start_icon, str) else 'none',
             command=self.on_hunt_start,
             **start_config,
             padx=16,
@@ -670,11 +674,19 @@ class App(tk.Tk):
         )
         self.hunt_start_btn.pack(side='left', padx=(0, 6))
         
-        # Stop Hunt Button - Red (CR: 6.3:1)
+        # Keep reference
+        if not isinstance(start_icon, str):
+            self.hunt_start_btn.image = start_icon
+        
+        # Stop Hunt Button - Red (CR: 6.3:1) with stop icon
         stop_config = get_button_config('red')
+        stop_icon = self._icon('stop', '⏹️', size=18)
+        
         self.hunt_stop_btn = tk.Button(
             top,
-            text=self._t('stop_hunt'),
+            text=f" {self._t('stop_hunt')}" if not isinstance(stop_icon, str) else self._t('stop_hunt'),
+            image=stop_icon if not isinstance(stop_icon, str) else None,
+            compound='left' if not isinstance(stop_icon, str) else 'none',
             command=self.on_hunt_stop,
             state='disabled',
             **stop_config,
@@ -725,18 +737,28 @@ class App(tk.Tk):
         )
         self.unsaved_indicator_label.pack(side='left')
         
-        # Apply All Settings button (right side) - Using global green_light style
+        # Apply All Settings button (right side) - Using global green_light style with save icon
         from lib.ui.button_styles import get_button_config
         apply_config = get_button_config('green_light')
+        
+        # Load save icon
+        save_icon = self._icon('save', '💾', size=20)
+        
         self.global_apply_btn = tk.Button(
             apply_frame,
-            text=f"💾 {self._t('apply_all_settings')}",
+            text=f" {self._t('apply_all_settings')}" if not isinstance(save_icon, str) else f"💾 {self._t('apply_all_settings')}",
+            image=save_icon if not isinstance(save_icon, str) else None,
+            compound='left' if not isinstance(save_icon, str) else 'none',
             command=self.on_global_apply,
             **apply_config,
             padx=20,
             pady=8
         )
         self.global_apply_btn.pack(side='right', padx=8, pady=4)
+        
+        # Keep reference to prevent garbage collection
+        if not isinstance(save_icon, str):
+            self.global_apply_btn.image = save_icon
         
         # Initialize unsaved state
         self.has_unsaved_changes = False
@@ -992,15 +1014,25 @@ class App(tk.Tk):
         # Use global blue button style
         from lib.ui.button_styles import get_button_config
         wizard_config = get_button_config('blue')
+        
+        # Load support icon for Setup Wizard button
+        support_icon = self._icon('support', '🧙', size=20)
+        
         self.setup_wizard_btn = tk.Button(
             wizard_frame,
-            text=f"🧙 {self._t('setup_wizard')}",
+            text=f" {self._t('setup_wizard')}" if not isinstance(support_icon, str) else f"🧙 {self._t('setup_wizard')}",
+            image=support_icon if not isinstance(support_icon, str) else None,
+            compound='left' if not isinstance(support_icon, str) else 'none',
             command=self.on_setup_wizard,
             **wizard_config,
             padx=16,
             pady=8
         )
         self.setup_wizard_btn.pack()
+        
+        # Keep reference to prevent garbage collection
+        if not isinstance(support_icon, str):
+            self.setup_wizard_btn.image = support_icon
         
         # Tooltip will be attached in _update_setup_visibility()
         

@@ -62,26 +62,31 @@ class IconHelper:
         # Icon cache
         self._cache = {}
         
-        # Default icon mappings
+        # Default icon mappings (prefer .ico, fallback to .png)
         self.icon_map = {
-            'add': ('add.png', '➕'),
-            'edit': ('edit.png', '✏️'),
-            'delete': ('delete.png', '🗑️'),
-            'save': ('save.png', '💾'),
-            'cancel': ('cancel.png', '✖'),
+            'add': ('add.ico', '➕'),
+            'edit': ('edit.ico', '✏️'),
+            'delete': ('delete.ico', '🗑️'),
+            'save': ('save.ico', '💾'),
+            'cancel': ('cancel.ico', '✖'),
             'folder': ('folder.png', '📁'),
             'capture': ('capture.png', '📸'),
-            'search': ('search.png', '🔍'),
+            'search': ('search.ico', '🔍'),
             'refresh': ('refresh.ico', '🔄'),
+            'start': ('start.ico', '▶️'),
+            'stop': ('stop.ico', '⏹️'),
+            'pause': ('pause.ico', '⏸️'),
+            'minimize': ('minimize.ico', '➖'),
+            'support': ('support.ico', '🧙'),
             'monster': ('monster.png', '👹'),
-            'skill': ('skill.png', '⚔️'),
+            'skill': ('skill.ico', '⚔️'),
             'template': ('template.png', '🖼️'),
-            'list': ('list.png', '🗂️'),
-            'info': ('info.png', '📋'),
-            'time': ('time.png', '⏱️'),
-            'hp': ('hp.png', '❤️'),
-            'damage': ('damage.png', '⚔️'),
-            'priority': ('priority.png', '🎯'),
+            'list': ('list.ico', '🗂️'),
+            'info': ('info.ico', '📋'),
+            'time': ('time.ico', '⏱️'),
+            'hp': ('hp.ico', '❤️'),
+            'damage': ('damage.ico', '⚔️'),
+            'priority': ('priority.ico', '🎯'),
         }
     
     def get_icon(self, name: str, fallback: Optional[str] = None, size: int = 24) -> Union[Any, str]:
@@ -108,15 +113,13 @@ class IconHelper:
         
         icon_file, emoji = self.icon_map[name]
         # Resolve first existing icon path across known dirs
-        # Try both specified extension and .png fallback
+        # Priority: .ico > .png > emoji (always try .ico first)
         icon_path = None
         icon_stem = Path(icon_file).stem  # e.g., 'save' from 'save.ico'
-        extensions = [Path(icon_file).suffix, '.png', '.ico']  # Try specified first, then fallbacks
+        extensions = ['.ico', '.png']  # Always prioritize .ico over .png
         
         for d in self.icon_dirs:
             for ext in extensions:
-                if not ext:  # Skip empty extension
-                    continue
                 p = d / f"{icon_stem}{ext}"
                 if p.exists():
                     icon_path = p

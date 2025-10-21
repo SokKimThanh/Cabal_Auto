@@ -28,10 +28,13 @@ BTN_GREEN_ACTIVE_FG = 'white'
 BTN_GREEN_DISABLED_FG = '#999'
 
 # Alternative green (lighter, for non-critical actions)
-# Contrast Ratio: 4.7:1 ✓
-BTN_GREEN_LIGHT_BG = '#4CAF50'
+# Enhanced contrast: #357A38 (darker green for better visibility)
+# Background: #357A38
+# Foreground: white (#FFFFFF)
+# Contrast Ratio: 5.26:1 ✓ (exceeds AA standard)
+BTN_GREEN_LIGHT_BG = '#357A38'
 BTN_GREEN_LIGHT_FG = 'white'
-BTN_GREEN_LIGHT_ACTIVE_BG = '#45A049'
+BTN_GREEN_LIGHT_ACTIVE_BG = '#2E7D32'  # Darker on hover/active
 
 # =============================================================================
 # RED BUTTONS (Stop Hunt, Delete, Danger)
