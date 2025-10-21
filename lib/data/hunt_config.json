@@ -64,12 +64,14 @@
   "current_monster_index": 0,
   "window_pid": 21928,
   "templates": [],
-  "training_mode_enabled": false,
-  "ui_mode": "intermediate",
+  "training_mode_enabled": true,
+  "ui_mode": "advanced",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,
     "start_key": "ctrl+shift+r",
-    "stop_key": "ctrl+shift+e"
+    "stop_key": "ctrl+shift+e",
+    "setup_wizard_key": "ctrl+shift+n",
+    "library_manager_key": "ctrl+shift+l"
   }
 }

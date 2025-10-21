@@ -579,9 +579,11 @@ class App(tk.Tk):
         self.hunt_selected = None  # currently selected window info
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
         
-        # Global hotkeys (Ctrl+Shift+R/E) - registered after config load
+        # Global hotkeys - registered after config load
         self._global_start_hotkey = None
         self._global_stop_hotkey = None
+        self._global_wizard_hotkey = None  # NEW: Setup Wizard (Ctrl+Shift+N)
+        self._global_library_hotkey = None  # NEW: Library Manager (Ctrl+Shift+L)
         
         self.monsters = load_monster_library()
         self.monster_selected_index = None
@@ -665,6 +667,9 @@ class App(tk.Tk):
         
         # Register global hotkeys (Ctrl+Shift+R to start, Ctrl+Shift+E to stop)
         self._register_global_hotkeys()
+        
+        # Update hotkeys UI state based on current mode
+        self.after(100, self._update_hotkeys_state)
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
@@ -1470,6 +1475,62 @@ class App(tk.Tk):
         )
         stop_combo.grid(row=3, column=1, sticky='w', pady=4)
         
+        # NEW: Setup Wizard hotkey
+        wizard_label = "Setup Wizard:" if self.lang == 'en' else "Trợ lý Thiết lập:"
+        wizard_label_widget = tk.Label(hotkey_frame, text=wizard_label, font=('Arial', 9))
+        wizard_label_widget.grid(row=4, column=0, sticky='e', padx=(0,8), pady=4)
+        
+        wizard_key = hotkey_cfg.get('setup_wizard_key', 'ctrl+shift+n')
+        self.global_hotkey_wizard_var = tk.StringVar(value=wizard_key)
+        
+        wizard_combo = ttk.Combobox(
+            hotkey_frame,
+            textvariable=self.global_hotkey_wizard_var,
+            values=hotkey_options + ['ctrl+shift+n', 'ctrl+alt+n'],
+            width=15,
+            state='readonly'
+        )
+        wizard_combo.grid(row=4, column=1, sticky='w', pady=4)
+        
+        # Store for enable/disable logic
+        self.wizard_hotkey_combo = wizard_combo
+        self.wizard_hotkey_label = wizard_label_widget
+        
+        # Icon for Setup Wizard
+        try:
+            wizard_icon = self._icon('support', '🎓', size=16)
+            if wizard_icon and not isinstance(wizard_icon, str):
+                wizard_icon_label = tk.Label(hotkey_frame, image=wizard_icon, bg='white')
+                wizard_icon_label.image = wizard_icon
+                wizard_icon_label.grid(row=4, column=1, sticky='e', padx=(0,20))
+        except:
+            pass
+        
+        # NEW: Library Manager hotkey
+        library_label = "Library Manager:" if self.lang == 'en' else "Quản lý Thư viện:"
+        library_label_widget = tk.Label(hotkey_frame, text=library_label, font=('Arial', 9))
+        library_label_widget.grid(row=5, column=0, sticky='e', padx=(0,8), pady=4)
+        
+        library_key = hotkey_cfg.get('library_manager_key', 'ctrl+shift+l')
+        self.global_hotkey_library_var = tk.StringVar(value=library_key)
+        
+        library_combo = ttk.Combobox(
+            hotkey_frame,
+            textvariable=self.global_hotkey_library_var,
+            values=hotkey_options + ['ctrl+shift+l', 'ctrl+alt+l'],
+            width=15,
+            state='readonly'
+        )
+        library_combo.grid(row=5, column=1, sticky='w', pady=4)
+        
+        # Store for future use
+        self.library_hotkey_combo = library_combo
+        self.library_hotkey_label = library_label_widget
+        
+        # Icon for Library Manager (emoji)
+        library_icon_label = tk.Label(hotkey_frame, text='🗂️', font=('Arial', 14), bg='white')
+        library_icon_label.grid(row=5, column=1, sticky='e', padx=(0,20))
+        
         # Hint
         hint_hotkey = "💡 Press 'Global Apply' button below to activate new hotkeys."
         if self.lang == 'vi':
@@ -1481,7 +1542,7 @@ class App(tk.Tk):
             font=('Arial', 8),
             wraplength=280,
             justify='left'
-        ).grid(row=4, column=0, columnspan=2, sticky='w', pady=(8,0))
+        ).grid(row=6, column=0, columnspan=2, sticky='w', pady=(8,0))
         
         # Section 3: Advanced Hunt Settings (visible for intermediate/advanced)
         self.adv_frame = tk.LabelFrame(parent, text=self._t('setup_advanced'), padx=12, pady=10)
@@ -1699,6 +1760,38 @@ class App(tk.Tk):
             # Show all sections
             self.adv_frame.grid()
             self.window_frame.grid()
+        
+        # Update hotkeys state based on mode
+        self._update_hotkeys_state()
+    
+    def _update_hotkeys_state(self):
+        """Update Setup Wizard hotkey enable/disable state based on UI mode.
+        
+        Called when:
+        - UI mode changes (beginner/intermediate/advanced)
+        - Global hotkeys are re-registered
+        
+        Rules:
+        - Setup Wizard hotkey: Only active in beginner mode
+        - Library Manager hotkey: Always active
+        """
+        mode = self.setup_mode_var.get() if hasattr(self, 'setup_mode_var') else 'beginner'
+        
+        # Update Setup Wizard hotkey combo state
+        if hasattr(self, 'wizard_hotkey_combo'):
+            if mode == 'beginner':
+                self.wizard_hotkey_combo.config(state='readonly')
+                if hasattr(self, 'wizard_hotkey_label'):
+                    self.wizard_hotkey_label.config(fg='black')
+            else:
+                self.wizard_hotkey_combo.config(state='disabled')
+                if hasattr(self, 'wizard_hotkey_label'):
+                    self.wizard_hotkey_label.config(fg='#999')
+        
+        # Library Manager hotkey always enabled (no change needed)
+        # But we re-register hotkeys to update wizard hotkey state
+        if hasattr(self, 'hunt_cfg'):
+            self._register_global_hotkeys()
     
     def _open_library_manager(self):
         """
@@ -3011,13 +3104,16 @@ class App(tk.Tk):
                 enabled = self.global_hotkey_enabled_var.get()
                 start_key = self.global_hotkey_start_var.get()
                 stop_key = self.global_hotkey_stop_var.get()
+                wizard_key = self.global_hotkey_wizard_var.get()  # NEW
+                library_key = self.global_hotkey_library_var.get()  # NEW
                 
-                # Validate: start and stop keys must be different
-                if start_key == stop_key:
+                # Validate: all hotkeys must be unique
+                all_keys = [start_key, stop_key, wizard_key, library_key]
+                if len(all_keys) != len(set(all_keys)):
                     messagebox.showerror(
                         self._t('error_title'),
-                        "Start and Stop hotkeys must be different!" if self.lang == 'en' 
-                        else "Phím tắt Start và Stop phải khác nhau!"
+                        "All hotkeys must be different!" if self.lang == 'en' 
+                        else "Tất cả phím tắt phải khác nhau!"
                     )
                     return
                 
@@ -3025,7 +3121,9 @@ class App(tk.Tk):
                 cfg['global_hotkeys'] = {
                     'enabled': enabled,
                     'start_key': start_key,
-                    'stop_key': stop_key
+                    'stop_key': stop_key,
+                    'setup_wizard_key': wizard_key,  # NEW
+                    'library_manager_key': library_key  # NEW
                 }
                 
                 # Re-register hotkeys with new settings
@@ -3098,6 +3196,42 @@ class App(tk.Tk):
                     self.hunt_status.set(f"{shortcut}: Switched to {tab_name} tab")
         except Exception as e:
             print(f"Tab switch error: {e}")
+    
+    def _on_setup_wizard_hotkey(self):
+        """Callback for Setup Wizard hotkey (Ctrl+Shift+N).
+        
+        Only executes if ui_mode == 'beginner'.
+        Will be fully implemented in Batch 7.
+        """
+        try:
+            print("[Hotkeys] Setup Wizard hotkey pressed")
+            
+            # Check mode before opening
+            current_mode = self.hunt_cfg.get('ui_mode', 'beginner')
+            if current_mode != 'beginner':
+                print(f"[Hotkeys] Setup Wizard blocked - current mode: {current_mode}")
+                return
+            
+            # Open wizard (will be implemented in Batch 7)
+            self.after(0, self.on_setup_wizard)
+            
+        except Exception as e:
+            print(f"[Hotkeys] Error opening Setup Wizard: {e}")
+    
+    def _on_library_manager_hotkey(self):
+        """Callback for Library Manager hotkey (Ctrl+Shift+L).
+        
+        Always available regardless of UI mode.
+        Will be fully implemented in Batch 7.
+        """
+        try:
+            print("[Hotkeys] Library Manager hotkey pressed")
+            
+            # Open library manager (will be implemented in Batch 7)
+            self.after(0, self._open_library_manager)
+            
+        except Exception as e:
+            print(f"[Hotkeys] Error opening Library Manager: {e}")
 
     def _register_global_hotkeys(self):
         """Register global hotkeys (Ctrl+Shift+R/E) for hunt start/stop.
@@ -3120,6 +3254,8 @@ class App(tk.Tk):
             
             start_key = hotkey_cfg.get('start_key', 'ctrl+shift+r')
             stop_key = hotkey_cfg.get('stop_key', 'ctrl+shift+e')
+            wizard_key = hotkey_cfg.get('setup_wizard_key', 'ctrl+shift+n')  # NEW
+            library_key = hotkey_cfg.get('library_manager_key', 'ctrl+shift+l')  # NEW
             
             # Unregister old hotkeys first (in case of re-registration)
             self._unregister_global_hotkeys()
@@ -3145,9 +3281,45 @@ class App(tk.Tk):
                 print(f"Failed to register stop hotkey '{stop_key}': {e}")
                 self._global_stop_hotkey = None
             
+            # NEW: Register Setup Wizard hotkey (only in beginner mode)
+            current_mode = self.hunt_cfg.get('ui_mode', 'beginner')
+            if current_mode == 'beginner':
+                try:
+                    self._global_wizard_hotkey = keyboard.add_hotkey(
+                        wizard_key,
+                        self._on_setup_wizard_hotkey,
+                        suppress=False
+                    )
+                except Exception as e:
+                    print(f"Failed to register wizard hotkey '{wizard_key}': {e}")
+                    self._global_wizard_hotkey = None
+            else:
+                self._global_wizard_hotkey = None
+            
+            # NEW: Register Library Manager hotkey (always active)
+            try:
+                self._global_library_hotkey = keyboard.add_hotkey(
+                    library_key,
+                    self._on_library_manager_hotkey,
+                    suppress=False
+                )
+            except Exception as e:
+                print(f"Failed to register library hotkey '{library_key}': {e}")
+                self._global_library_hotkey = None
+            
             # Log successful registration
-            if self._global_start_hotkey or self._global_stop_hotkey:
-                print(f"Global hotkeys registered: Start={start_key}, Stop={stop_key}")
+            registered = []
+            if self._global_start_hotkey:
+                registered.append(f"Start={start_key}")
+            if self._global_stop_hotkey:
+                registered.append(f"Stop={stop_key}")
+            if self._global_wizard_hotkey:
+                registered.append(f"Wizard={wizard_key}")
+            if self._global_library_hotkey:
+                registered.append(f"Library={library_key}")
+            
+            if registered:
+                print(f"Global hotkeys registered: {', '.join(registered)}")
         
         except Exception as e:
             print(f"Error registering global hotkeys: {e}")
@@ -3181,6 +3353,24 @@ class App(tk.Tk):
                     print(f"Error unregistering stop hotkey: {e}")
                 finally:
                     self._global_stop_hotkey = None
+            
+            # NEW: Unregister wizard hotkey
+            if self._global_wizard_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_wizard_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering wizard hotkey: {e}")
+                finally:
+                    self._global_wizard_hotkey = None
+            
+            # NEW: Unregister library hotkey
+            if self._global_library_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_library_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering library hotkey: {e}")
+                finally:
+                    self._global_library_hotkey = None
         
         except Exception as e:
             print(f"Error in _unregister_global_hotkeys: {e}")
