@@ -1573,8 +1573,13 @@ class App(tk.Tk):
         self.setup_bounds_display_var.set(self._t('hunt_window_bounds_none'))
         self.hunt_status.set(self._t('hunt_window_bounds_cleared') if hasattr(self, 'hunt_status') else 'Window bounds cleared')
     
-    def _apply_setup_settings(self):
-        """Apply all settings from Setup tab to hunt_config and sync to Hunt tab."""
+    def _apply_setup_settings(self, save_to_file=True):
+        """Apply all settings from Setup tab to hunt_config and sync to Hunt tab.
+        
+        Args:
+            save_to_file: If True, save to hunt_config.json immediately.
+                         If False, only update self.hunt_cfg (used by on_global_apply to avoid duplicate writes).
+        """
         try:
             # Update hunt_cfg with values from Setup tab
             self.hunt_cfg['target_key'] = self.setup_target_key_var.get()
@@ -1598,9 +1603,10 @@ class App(tk.Tk):
             except ValueError:
                 self.hunt_cfg['region'] = ["", "", "", ""]
             
-            # Save to file
-            with open(HUNT_CONFIG_PATH, 'w', encoding='utf-8') as f:
-                json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
+            # Save to file only if requested
+            if save_to_file:
+                with open(HUNT_CONFIG_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
             
             # Sync to Hunt tab vars if they exist
             if hasattr(self, 'target_key_var'):
@@ -1628,15 +1634,17 @@ class App(tk.Tk):
                 self.reg_w.set(str(region[2]) if region[2] != "" else "")
                 self.reg_h.set(str(region[3]) if region[3] != "" else "")
             
-            # Update status
-            if hasattr(self, 'hunt_status'):
-                self.hunt_status.set(self._t('settings_applied_success'))
-            
-            # Show success message
-            messagebox.showinfo(
-                self._t('success_title'),
-                self._t('settings_applied_message')
-            )
+            # Show success feedback only when saving directly (not called from on_global_apply)
+            if save_to_file:
+                # Update status
+                if hasattr(self, 'hunt_status'):
+                    self.hunt_status.set(self._t('settings_applied_success'))
+                
+                # Show success message
+                messagebox.showinfo(
+                    self._t('success_title'),
+                    self._t('settings_applied_message')
+                )
             
         except ValueError as e:
             messagebox.showerror(
@@ -2765,23 +2773,28 @@ class App(tk.Tk):
             messagebox.showerror(self._t('error_title'), self._t('invalid_hunt').format(e=e))
     
     def on_global_apply(self):
-        """Global apply handler - saves all settings across all tabs."""
+        """Global apply handler - saves all settings across all tabs.
+        
+        NOTE: Save file only ONCE to avoid duplicate writes and preserve field order.
+        """
         try:
-            # 1. Apply Setup tab settings (hunt config)
-            self._apply_setup_settings()
+            # 1. Apply Setup tab settings (updates hunt_cfg in-place, but don't save yet)
+            self._apply_setup_settings(save_to_file=False)
             
-            # 2. Save hunt config from UI
+            # 2. Update hunt config from Hunt tab UI (in-place update)
             cfg = self._hunt_from_ui()
+            
+            # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
             save_hunt_config(cfg)
             self.hunt_cfg = cfg
             
-            # 3. Clear unsaved changes indicator
+            # 4. Clear unsaved changes indicator
             self._clear_unsaved_changes()
             
-            # 4. Update status
+            # 5. Update status
             self.hunt_status.set(self._t('all_saved'))
             
-            # 5. Show success message
+            # 6. Show success message
             messagebox.showinfo(
                 self._t('success_title'),
                 self._t('settings_applied_message')
@@ -2854,7 +2867,11 @@ class App(tk.Tk):
             print(f"Hunt toggle error: {e}")
 
     def _hunt_from_ui(self):
-        """Extract hunt configuration from UI elements."""
+        """Extract hunt configuration from UI elements.
+        
+        NOTE: This updates self.hunt_cfg in-place to preserve all fields (template_threshold,
+        confidence, grayscale, training_mode_enabled, ui_mode, etc.) that are not managed by Hunt tab.
+        """
         # Get window title from selected window or config
         title = ''
         if hasattr(self, 'hunt_selected') and self.hunt_selected:
@@ -2921,7 +2938,9 @@ class App(tk.Tk):
         region = None
         if all(v.strip() != '' for v in (self.reg_l.get(), self.reg_t.get(), self.reg_w.get(), self.reg_h.get())):
             region = [int(self.reg_l.get()), int(self.reg_t.get()), int(self.reg_w.get()), int(self.reg_h.get())]
-        cfg = {
+        
+        # Update hunt_cfg in-place (preserves fields not managed by Hunt tab)
+        self.hunt_cfg.update({
             "window_title": title or 'Cabal',
             "window_pid": int(self.hunt_selected['pid']) if self.hunt_selected else None,
             "target_key": target_key,
@@ -2932,23 +2951,22 @@ class App(tk.Tk):
             "attack_interval": attack_i,
             "template_path": template or 'assets/images/target_frame.png',
             "region": region,
-            "confidence": float(self.hunt_cfg.get('confidence', 0.85)),
-            "grayscale": bool(self.hunt_cfg.get('grayscale', True)),
             "lost_timeout_sec": lost_timeout,
             "attack_min_duration_sec": attack_min_duration,
             "bring_to_front_each_cycle": bool(self.bring_front_var.get()),
             "window_bounds": self.current_window_bounds,
-            "templates": self.hunt_cfg.get('templates', []),
             # Phase 3: Multi-Monster Support
             "monster_list": self.monster_rotation_list,
-            "rotation_mode": self.hunt_cfg.get('rotation_mode', 'sequence'),
             "current_monster_index": self.hunt_cfg.get('current_monster_index', 0),
-        }
+        })
+        
+        # Update skill slots
         slots = self._collect_skill_slots()
-        cfg['skill_slots'] = slots
+        self.hunt_cfg['skill_slots'] = slots
         if slots:
-            cfg['attack_keys'] = [slot['key'] for slot in slots if slot.get('key')]
-        return cfg
+            self.hunt_cfg['attack_keys'] = [slot['key'] for slot in slots if slot.get('key')]
+        
+        return self.hunt_cfg
 
     # -----------------
     # Monster library helpers
