@@ -76,6 +76,11 @@ class UIStyle:
     # Rule: Button size = Icon size + (Padding × 2)
     # This ensures icons have proper breathing room regardless of icon size
     
+    # Compact icons (16x16) - Ultra-compact UI controls (list actions, etc.)
+    BTN_ICON_PADDING_COMPACT = 2   # Minimal padding for 16x16 icons
+    BTN_ICON_SIZE_COMPACT = 20     # Total: 16 + (2×2) = 20px
+    # For compact buttons, use width=0 to disable character-based sizing
+    
     # Small icons (16x16) - Compact UI controls
     BTN_ICON_PADDING_SMALL = 10    # Padding for 16x16 icons
     BTN_ICON_SIZE_SMALL = 36       # Total: 16 + (10×2) = 36px

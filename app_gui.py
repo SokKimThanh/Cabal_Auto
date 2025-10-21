@@ -593,6 +593,76 @@ class App(tk.Tk):
     # -----------------
     # Helper Methods
     # -----------------
+    def _create_icon_button(self, parent, icon_emoji, command, style='compact', 
+                           bg_color=None, hover_color=None, **kwargs):
+        """Create a standardized icon button following UIStyle guidelines.
+        
+        Args:
+            parent: Parent widget
+            icon_emoji: Emoji text for button (e.g., '➕', '↑', '↓')
+            command: Button command callback
+            style: Size style - 'compact', 'small', 'medium', or 'large'
+            bg_color: Background color (uses BTN_ACCENT_BG if not specified)
+            hover_color: Hover color (uses BTN_ACCENT_HOVER if not specified)
+            **kwargs: Additional button configuration options
+            
+        Returns:
+            tk.Button: Configured button widget
+        """
+        # Style presets based on UIStyle constants
+        style_configs = {
+            'compact': {
+                'width': 0,
+                'height': 0,
+                'padx': UI.BTN_ICON_PADDING_COMPACT,
+                'pady': UI.BTN_ICON_PADDING_COMPACT
+            },
+            'small': {
+                'width': UI.BTN_ICON_WIDTH_SMALL,
+                'height': 1,
+                'padx': UI.BTN_ICON_PADDING_SMALL,
+                'pady': UI.BTN_ICON_PADDING_SMALL
+            },
+            'medium': {
+                'width': UI.BTN_ICON_WIDTH_MEDIUM,
+                'height': 1,
+                'padx': UI.BTN_ICON_PADDING_MEDIUM,
+                'pady': UI.BTN_ICON_PADDING_MEDIUM
+            },
+            'large': {
+                'width': UI.BTN_ICON_WIDTH_LARGE,
+                'height': 1,
+                'padx': UI.BTN_ICON_PADDING_LARGE,
+                'pady': UI.BTN_ICON_PADDING_LARGE
+            }
+        }
+        
+        # Get style config
+        config = style_configs.get(style, style_configs['compact'])
+        
+        # Default colors
+        if bg_color is None:
+            bg_color = UI.BTN_ACCENT_BG
+        if hover_color is None:
+            hover_color = UI.BTN_ACCENT_HOVER
+        
+        # Merge with user kwargs
+        button_config = {
+            'text': icon_emoji,
+            'command': command,
+            'font': UI.FONT_BUTTON,
+            'bg': bg_color,
+            'fg': UI.BTN_ACCENT_FG,
+            'activebackground': hover_color,
+            'activeforeground': UI.BTN_ACCENT_FG,
+            'relief': UI.BTN_RELIEF_NORMAL,
+            'cursor': 'hand2',
+            **config,
+            **kwargs  # User kwargs override defaults
+        }
+        
+        return tk.Button(parent, **button_config)
+    
     def _create_tooltip(self, widget, text):
         """Create a simple tooltip for a widget."""
         def on_enter(event):
@@ -845,67 +915,41 @@ class App(tk.Tk):
         monster_scroll.pack(side='right', fill='y')
         self.monster_rotation_listbox.config(yscrollcommand=monster_scroll.set)
         
-        # Control buttons (right side) - Icon-only buttons with square design
+        # Control buttons (right side) - Using compact icon buttons (all 20px for consistency)
         btn_container = tk.Frame(list_container)
         btn_container.pack(side='right', fill='y', padx=(8,0))
         
-        # Add monster button (icon changes based on training mode state)
-        # Custom sizing: Minimal padding for compact 16x16 icon button
-        self.btn_add_monster = tk.Button(
-            btn_container, 
-            text="➕", 
-            command=self._on_monster_add_smart, 
-            font=UI.FONT_BUTTON,
-            bg=UI.BTN_ACCENT_BG,
-            fg=UI.BTN_ACCENT_FG,
-            activebackground=UI.BTN_ACCENT_HOVER,
-            activeforeground=UI.BTN_ACCENT_FG,
-            relief=UI.BTN_RELIEF_NORMAL,
-            cursor='hand2',
-            width=0,       # Disable character-based width (use padding instead)
-            height=0,      # Disable character-based height
-            padx=2,        # Minimal padding: 16px icon + 2px padding = ~20px total
-            pady=2
+        # Add monster button - Compact style (20px: 16px icon + 2×2px padding)
+        self.btn_add_monster = self._create_icon_button(
+            btn_container,
+            icon_emoji="➕",
+            command=self._on_monster_add_smart,
+            style='compact',
+            bg_color=UI.BTN_ACCENT_BG,
+            hover_color=UI.BTN_ACCENT_HOVER
         )
         self.btn_add_monster.pack(pady=(0, UI.BTN_SPACING))
         self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
         
-        # Priority reorder buttons (disabled in training mode)
-        # Using SMALL size for secondary actions (36px) with distinct colors
-        self.btn_move_up = tk.Button(
-            btn_container, 
-            text="↑", 
-            command=self._on_monster_move_up, 
-            font=UI.FONT_BUTTON,
-            bg=UI.BTN_PRIMARY_BG,                # Green for UP (ascending priority)
-            fg=UI.BTN_PRIMARY_FG,
-            activebackground=UI.BTN_PRIMARY_HOVER,
-            activeforeground=UI.BTN_PRIMARY_FG,
-            relief=UI.BTN_RELIEF_NORMAL,
-            cursor='hand2',
-            width=UI.BTN_ICON_WIDTH_SMALL,       # Width=3 for compact
-            height=1,
-            padx=UI.BTN_ICON_PADDING_SMALL,      # 10px padding (icon 16px → total 36px)
-            pady=UI.BTN_ICON_PADDING_SMALL
+        # Priority reorder buttons - Compact style (20px: 16px icon + 2×2px padding)
+        self.btn_move_up = self._create_icon_button(
+            btn_container,
+            icon_emoji="↑",
+            command=self._on_monster_move_up,
+            style='compact',
+            bg_color=UI.BTN_PRIMARY_BG,      # Green for UP
+            hover_color=UI.BTN_PRIMARY_HOVER
         )
         self.btn_move_up.pack(pady=(0, UI.BTN_SPACING // 2))
         self._create_tooltip(self.btn_move_up, self._t('tooltip_move_up'))
         
-        self.btn_move_down = tk.Button(
-            btn_container, 
-            text="↓", 
-            command=self._on_monster_move_down, 
-            font=UI.FONT_BUTTON,
-            bg=UI.BTN_INFO_BG,                   # Blue for DOWN (descending priority)
-            fg=UI.BTN_INFO_FG,
-            activebackground=UI.BTN_INFO_HOVER,
-            activeforeground=UI.BTN_INFO_FG,
-            relief=UI.BTN_RELIEF_NORMAL,
-            cursor='hand2',
-            width=UI.BTN_ICON_WIDTH_SMALL,
-            height=1,
-            padx=UI.BTN_ICON_PADDING_SMALL,
-            pady=UI.BTN_ICON_PADDING_SMALL
+        self.btn_move_down = self._create_icon_button(
+            btn_container,
+            icon_emoji="↓",
+            command=self._on_monster_move_down,
+            style='compact',
+            bg_color=UI.BTN_INFO_BG,         # Blue for DOWN
+            hover_color=UI.BTN_INFO_HOVER
         )
         self.btn_move_down.pack(pady=(0, UI.BTN_SPACING * 1.5))
         self._create_tooltip(self.btn_move_down, self._t('tooltip_move_down'))

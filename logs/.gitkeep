@@ -1,0 +1,6 @@
+# This file keeps the logs/ directory in Git
+# All actual log files (*.log, *.jsonl) are gitignored
+# Only documentation files are tracked:
+# - README.md
+# - hunt_structured.example.jsonl
+# - .gitkeep (this file)

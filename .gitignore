@@ -214,6 +214,11 @@ logs/**/*.log
 logs/**/*.jsonl
 logs/**/*.txt
 
+# BUT allow example/template files to be tracked
+!logs/.gitkeep
+!logs/README.md
+!logs/hunt_structured.example.jsonl
+
 # Legacy single-file log patterns (kept for safety)
 hunt.log
 hunt.log.*
