@@ -225,7 +225,6 @@ def main():
     pyautogui.FAILSAFE = True
 
     target_key = cfg.get('target_key', 'z')
-    attack_keys = cfg.get('attack_keys', ['1', '2'])
     attack_press_ms = int(cfg.get('attack_press_ms', 60))
     target_cycle_delay = float(cfg.get('target_cycle_delay', 0.2))
     search_interval = float(cfg.get('search_interval', 0.25))
@@ -365,8 +364,12 @@ def main():
                             
                             # Only transition if we've been attacking long enough
                             if duration >= attack_min_duration_sec:
-                                template_name = last_match_info.get('name') or last_match_info.get('path', 'unknown')
-                                log_monster_name = last_match_info.get('monster_name', last_monster_name or '')
+                                if last_match_info and isinstance(last_match_info, dict):
+                                    template_name = last_match_info.get('name') or last_match_info.get('path', 'unknown')
+                                    log_monster_name = last_match_info.get('monster_name', last_monster_name or '')
+                                else:
+                                    template_name = last_monster_name or 'unknown'
+                                    log_monster_name = last_monster_name or ''
                                 logger.log_lost(template_name, log_monster_name, duration)
                                 logger.log_state_change('attack', 'search', 'target_lost')
                                 state = 'search'
@@ -429,8 +432,13 @@ def main():
                     skill_runtime.mark_cast(attack_key, now)
                     time.sleep(attack_interval)
             else:
-                # Fallback to legacy attack_keys sequence
-                for k in attack_keys:
+                # Fallback to legacy attack sequence: derive keys from configured skill_slots
+                # If no skill_slots configured, default to ['1'] to ensure something is pressed
+                slots = cfg.get('skill_slots', []) or []
+                fallback_keys = [s.get('key') for s in slots if s.get('key')]
+                if not fallback_keys:
+                    fallback_keys = ['1']
+                for k in fallback_keys:
                     tap(k, attack_press_ms)
                     time.sleep(attack_interval)
 

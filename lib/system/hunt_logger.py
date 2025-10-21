@@ -165,12 +165,18 @@ class HuntLogger:
         Args:
             config: Hunt configuration dict
         """
+        # Derive attack keys from skill_slots if present (attack_keys deprecated)
+        slots = config.get('skill_slots', []) or []
+        attack_keys = [s.get('key') for s in slots if s.get('key')]
+        if not attack_keys:
+            attack_keys = config.get('attack_keys') or []
+
         info = {
             'event': 'HUNT_START',
             'config': {
                 'window_title': config.get('window_title'),
                 'target_key': config.get('target_key'),
-                'attack_keys': config.get('attack_keys'),
+                'attack_keys': attack_keys,
                 'search_interval': config.get('search_interval'),
                 'attack_interval': config.get('attack_interval'),
                 'lost_timeout_sec': config.get('lost_timeout_sec'),
