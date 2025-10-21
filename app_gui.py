@@ -593,6 +593,55 @@ class App(tk.Tk):
         self.title(self._t('app_title'))
         self.resizable(False, False)
 
+        # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
+        try:
+            menubar = tk.Menu(self)
+            settings_menu = tk.Menu(menubar, tearoff=0)
+            # BooleanVar reflects hunt_cfg setting
+            gh_cfg = self.hunt_cfg.get('global_hotkeys', {})
+            self._global_hotkeys_var = tk.BooleanVar(value=bool(gh_cfg.get('enabled', True)))
+
+            def _on_toggle_global_hotkeys():
+                enabled = bool(self._global_hotkeys_var.get())
+                # Persist setting
+                self.hunt_cfg.setdefault('global_hotkeys', {})['enabled'] = enabled
+                try:
+                    save_hunt_config(self.hunt_cfg)
+                except Exception:
+                    pass
+                # Apply immediately
+                if enabled:
+                    print('[Hotkeys] User enabled global hotkeys via menu')
+                    try:
+                        self._register_global_hotkeys()
+                    except Exception as e:
+                        print(f'[Hotkeys] Error re-registering hotkeys: {e}')
+                else:
+                    print('[Hotkeys] User disabled global hotkeys via menu')
+                    try:
+                        self._unregister_global_hotkeys()
+                    except Exception as e:
+                        print(f'[Hotkeys] Error unregistering hotkeys: {e}')
+
+            settings_menu.add_checkbutton(label=self._t('help_shortcuts'), variable=self._global_hotkeys_var, command=_on_toggle_global_hotkeys)
+            settings_menu.add_separator()
+            def _retry_hotkeys():
+                print('[Hotkeys] User requested retry registration')
+                try:
+                    self._register_global_hotkeys()
+                except Exception as e:
+                    print(f'[Hotkeys] Retry failed: {e}')
+
+            settings_menu.add_command(label='Retry global hotkeys', command=_retry_hotkeys)
+            menubar.add_cascade(label='Settings', menu=settings_menu)
+            try:
+                self.config(menu=menubar)
+            except Exception:
+                # Some environments may not support menu on top-level; ignore
+                pass
+        except Exception:
+            pass
+
         # Check PIL availability (for image preview features)
         self.pil_available = (Image is not None and ImageTk is not None and ImageDraw is not None)
         
@@ -610,6 +659,9 @@ class App(tk.Tk):
         self._global_stop_hotkey = None
         self._global_wizard_hotkey = None  # NEW: Setup Wizard (Ctrl+Shift+N)
         self._global_library_hotkey = None  # NEW: Library Manager (Ctrl+Shift+L)
+        # Fallback when `keyboard` package not available in this interpreter
+        self._hotkey_fallback_bound = []  # list of tkinter sequence strings bound via bind_all
+        self._hotkey_import_diag = ''
         
         self.monsters = load_monster_library()
         self.monster_selected_index = None
@@ -705,6 +757,8 @@ class App(tk.Tk):
         self.skill_duration_var = tk.StringVar()
         # Keep references to images (PhotoImage) to prevent GC
         self._image_refs = []  # type: List[Any]
+        # Central tooltip store to avoid attaching dynamic attributes to widgets
+        self._tooltips = {}
         self.skill_pre_refresh_var = tk.StringVar()
         self.skill_image_var = tk.StringVar()
         self.skill_preview_label = None
@@ -743,26 +797,68 @@ class App(tk.Tk):
         if pyautogui is not None:
             pyautogui.FAILSAFE = bool(self.cfg.get('safety', {}).get('failsafe', True))
 
+
         self._build_ui()
-        
+
         # Keyboard shortcuts (Window-focused only)
         self.bind('<Control-k>', lambda e: self._open_skill_manager())  # Ctrl+K: Manage skills
         self.bind('<Alt-Key-1>', lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
         self.bind('<Alt-Key-2>', lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
-        
-        # Register global hotkeys (Ctrl+Shift+R to start, Ctrl+Shift+E to stop)
-        self._register_global_hotkeys()
-        
+
+        # Register global hotkeys (Ctrl+Shift+R/E/L/N) using keyboard module
+        self._registered_hotkey_handlers = {}  # key -> handler (as returned by keyboard.add_hotkey)
+        self._failed_hotkeys = {}  # key -> exception
+        self._hotkeys_registered_ok = False
+        if keyboard is not None:
+            hotkey_map = {
+                'ctrl+shift+r': getattr(self, 'on_hunt_start', None),
+                'ctrl+shift+e': getattr(self, 'on_hunt_stop', None),
+                'ctrl+shift+l': getattr(self, '_open_skill_manager', None),
+                'ctrl+shift+n': getattr(self, '_open_setup_wizard', None),
+            }
+            for hk, callback in hotkey_map.items():
+                if callback is None:
+                    # No callback available; skip registration but record as skipped
+                    self._failed_hotkeys[hk] = 'missing-callback'
+                    print(f"[Hotkey] Skipping {hk} - no callback available")
+                    continue
+                try:
+                    handler = keyboard.add_hotkey(hk, callback)
+                    # handler may be a function to remove or an id; store as-is
+                    self._registered_hotkey_handlers[hk] = handler
+                    print(f"[Hotkey] Registered {hk} -> {callback.__name__}")
+                except Exception as ex:
+                    self._failed_hotkeys[hk] = repr(ex)
+                    print(f"[Hotkey] Failed to register {hk}: {ex}")
+            # Determine overall success
+            self._hotkeys_registered_ok = len(self._failed_hotkeys) == 0
+            if not self._hotkeys_registered_ok:
+                print('[Hotkey] Some hotkeys failed to register:', self._failed_hotkeys)
+
         # Update hotkeys UI state based on current mode
         self.after(100, self._update_hotkeys_state)
-        
+
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
-        
+
         # Auto bring-to-front saved window (after setup check)
         self.after(1000, self._auto_bring_to_front_on_startup)
+
+    def destroy(self):
+        # Unregister global hotkeys on exit
+        if keyboard is not None and hasattr(self, '_registered_hotkey_handlers'):
+            for hk, handler in list(self._registered_hotkey_handlers.items()):
+                try:
+                    # keyboard.remove_hotkey accepts either the hotkey string or the handler id/function
+                    keyboard.remove_hotkey(handler)
+                except Exception:
+                    try:
+                        keyboard.remove_hotkey(hk)
+                    except Exception:
+                        pass
+        super().destroy()
     
-    def _icon(self, name: str, fallback: str, size: int = 16, color: str = None):
+    def _icon(self, name: str, fallback: str, size: int = 16, color: Optional[str] = None):
         """Fetch an icon image from icon_helper with caching.
 
         Returns a PhotoImage (when available) or fallback string (emoji) otherwise.
@@ -885,15 +981,161 @@ class App(tk.Tk):
             tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
             label = tk.Label(tooltip, text=text, background="#ffffe0", relief='solid', borderwidth=1, padx=5, pady=3)
             label.pack()
-            widget._tooltip = tooltip
+            # Store tooltip in a central map to avoid setting dynamic attributes on widgets
+            try:
+                if not hasattr(self, '_tooltips'):
+                    self._tooltips = {}
+                self._tooltips[id(widget)] = tooltip
+            except Exception:
+                # Last-resort: attach to widget (legacy)
+                try:
+                    widget._tooltip = tooltip
+                except Exception:
+                    pass
         
         def on_leave(event):
-            if hasattr(widget, '_tooltip'):
-                widget._tooltip.destroy()
-                delattr(widget, '_tooltip')
+            try:
+                # Prefer centralized map
+                if hasattr(self, '_tooltips') and id(widget) in self._tooltips:
+                    try:
+                        self._tooltips[id(widget)].destroy()
+                    except Exception:
+                        pass
+                    try:
+                        del self._tooltips[id(widget)]
+                    except Exception:
+                        pass
+                    return
+                # Fallback to widget attribute
+                tooltip = getattr(widget, '_tooltip', None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(widget, '_tooltip')
+                    except Exception:
+                        pass
+            except Exception:
+                pass
         
         widget.bind('<Enter>', on_enter)
         widget.bind('<Leave>', on_leave)
+
+    def _destroy_widget_tooltip(self, widget):
+        """Safely destroy a tooltip for a widget (central map or widget attribute)."""
+        try:
+            if hasattr(self, '_tooltips') and id(widget) in self._tooltips:
+                try:
+                    self._tooltips[id(widget)].destroy()
+                except Exception:
+                    pass
+                try:
+                    del self._tooltips[id(widget)]
+                except Exception:
+                    pass
+                return
+            tooltip = getattr(widget, '_tooltip', None)
+            if tooltip is not None:
+                try:
+                    tooltip.destroy()
+                except Exception:
+                    pass
+                try:
+                    delattr(widget, '_tooltip')
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def _show_hotkey_diagnostics_modal(self):
+        """Show a modal with full hotkey import diagnostics and remediation help.
+
+        Displays sys.executable, the captured import traceback (if any), and
+        provides a button to copy the suggested pip command and a Retry action.
+        """
+        try:
+            win = tk.Toplevel(self)
+            win.title(self._t('hotkey_diag_title') if hasattr(self, '_t') else 'Hotkey Diagnostics')
+            win.transient(self)
+            win.grab_set()
+            win.geometry('700x360')
+
+            # Header
+            header = tk.Label(win, text=self._t('hotkey_diag_header') if hasattr(self, '_t') else 'Hotkey diagnostics', font=('Arial', 11, 'bold'))
+            header.pack(anchor='w', padx=12, pady=(12,4))
+
+            # Short guidance paragraph
+            guide_text = (
+                self._t('hotkey_diag_guidance') if hasattr(self, '_t') else
+                'If the keyboard package is missing in this Python interpreter, run the copied pip command in a shell, then click Retry. Restarting the app may also be required.'
+            )
+            guide_label = tk.Label(win, text=guide_text, font=('Arial', 9), fg='#444', wraplength=660, justify='left')
+            guide_label.pack(anchor='w', padx=12, pady=(0,8))
+
+            # Executable path
+            exe_frame = tk.Frame(win)
+            exe_frame.pack(fill='x', padx=12)
+            tk.Label(exe_frame, text='Python executable:', font=('Arial', 9)).pack(anchor='w')
+            exe_label = tk.Label(exe_frame, text=sys.executable, fg='blue', font=('Arial', 8))
+            exe_label.pack(anchor='w')
+
+            # Diagnostics text area
+            txt = tk.Text(win, wrap='none', height=12)
+            txt.pack(fill='both', expand=True, padx=12, pady=8)
+            txt.configure(state='normal')
+            diag = getattr(self, '_hotkey_import_diag', '') or ''
+            if not diag:
+                diag = self._t('hotkey_diag_no_trace') if hasattr(self, '_t') else 'No import traceback was captured. Hotkeys may be registered or bound to fallback handlers.'
+            txt.insert('1.0', diag)
+            txt.configure(state='disabled')
+
+            # Buttons frame
+            btn_frame = tk.Frame(win)
+            btn_frame.pack(fill='x', padx=12, pady=(0,12))
+
+            def _copy_cmd():
+                # Suggest pip install command for the current interpreter
+                cmd = f"{sys.executable} -m pip install keyboard"
+                try:
+                    win.clipboard_clear()
+                    win.clipboard_append(cmd)
+                    # show a brief success toast
+                    try:
+                        if not hasattr(win, '_copy_status'):
+                            win._copy_status = tk.Label(btn_frame, text='Copied!', fg='#fff', bg='#4CAF50')
+                        else:
+                            win._copy_status.config(text='Copied!')
+                        win._copy_status.pack(side='left', padx=(8,0))
+                        # remove after 1800ms
+                        win.after(1800, lambda: win._copy_status.pack_forget())
+                    except Exception:
+                        pass
+                except Exception:
+                    # best-effort; ignore failures
+                    pass
+
+            def _do_retry():
+                try:
+                    self._on_retry_global_hotkeys()
+                finally:
+                    try:
+                        win.destroy()
+                    except Exception:
+                        pass
+
+            copy_btn = tk.Button(btn_frame, text=self._t('copy_install_cmd') if hasattr(self, '_t') else 'Copy pip command', command=_copy_cmd)
+            copy_btn.pack(side='left')
+
+            retry_btn = tk.Button(btn_frame, text=self._t('retry') if hasattr(self, '_t') else 'Retry', command=_do_retry)
+            retry_btn.pack(side='right')
+
+        except Exception as e:
+            try:
+                messagebox.showerror('Error', f'Failed to show diagnostics: {e}')
+            except Exception:
+                pass
 
     # -----------------
     # UI Construction
@@ -936,19 +1178,27 @@ class App(tk.Tk):
         
         # Refresh button with icon (manual window refresh)
         refresh_icon = self._icon('refresh', '🔄', size=16)
+        # Build kwargs for refresh button to avoid passing None to 'image'
+        refresh_kwargs = get_button_config('refresh')
+        if not isinstance(refresh_icon, str):
+            refresh_text = ''
+            refresh_kwargs.update({'image': refresh_icon, 'compound': 'left'})
+        else:
+            refresh_text = self._t('refresh_windows')
         refresh_btn = tk.Button(
             top,
-            text=self._t('refresh_windows') if isinstance(refresh_icon, str) else '',
-            image=refresh_icon if not isinstance(refresh_icon, str) else None,
-            compound='left' if not isinstance(refresh_icon, str) else 'none',
+            text=refresh_text,
             command=self.on_hunt_refresh_windows,
-            **get_button_config('refresh')
+            **refresh_kwargs
         )
         refresh_btn.pack(side='left', padx=(0,6))
         
         # Keep reference to prevent garbage collection
         if not isinstance(refresh_icon, str):
-            refresh_btn.image = refresh_icon
+            try:
+                self._image_refs.append(refresh_icon)
+            except Exception:
+                pass
         
         # Separator before hunt controls
         tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
@@ -958,36 +1208,46 @@ class App(tk.Tk):
         start_config = get_button_config('green')
         start_icon = self._icon('start', '▶️', size=18)
         
+        # Start button kwargs (avoid passing None image)
+        start_kwargs = dict(start_config)
+        start_text = self._t('start_hunt')
+        if not isinstance(start_icon, str):
+            start_kwargs.update({'image': start_icon, 'compound': 'left'})
+            start_text = f" {start_text}"
         self.hunt_start_btn = tk.Button(
-            top, 
-            text=f" {self._t('start_hunt')}" if not isinstance(start_icon, str) else self._t('start_hunt'),
-            image=start_icon if not isinstance(start_icon, str) else None,
-            compound='left' if not isinstance(start_icon, str) else 'none',
+            top,
+            text=start_text,
             command=self.on_hunt_start,
-            **start_config,
             padx=16,
-            pady=6
+            pady=6,
+            **start_kwargs
         )
         self.hunt_start_btn.pack(side='left', padx=(0, 6))
         
         # Keep reference
         if not isinstance(start_icon, str):
-            self.hunt_start_btn.image = start_icon
+            try:
+                self._image_refs.append(start_icon)
+            except Exception:
+                pass
         
         # Stop Hunt Button - Red (CR: 6.3:1) with stop icon
         stop_config = get_button_config('red')
         stop_icon = self._icon('stop', '⏹️', size=18)
         
+        stop_kwargs = dict(stop_config)
+        stop_text = self._t('stop_hunt')
+        if not isinstance(stop_icon, str):
+            stop_kwargs.update({'image': stop_icon, 'compound': 'left'})
+            stop_text = f" {stop_text}"
         self.hunt_stop_btn = tk.Button(
             top,
-            text=f" {self._t('stop_hunt')}" if not isinstance(stop_icon, str) else self._t('stop_hunt'),
-            image=stop_icon if not isinstance(stop_icon, str) else None,
-            compound='left' if not isinstance(stop_icon, str) else 'none',
+            text=stop_text,
             command=self.on_hunt_stop,
             state='disabled',
-            **stop_config,
             padx=16,
-            pady=6
+            pady=6,
+            **stop_kwargs
         )
         self.hunt_stop_btn.pack(side='left')
 
@@ -1041,21 +1301,29 @@ class App(tk.Tk):
         # Load save icon (22px to scale with 11pt font)
         save_icon = self._icon('save', '💾', size=22)
         
+        apply_kwargs = dict(apply_config)
+        apply_text = self._t('apply_all_settings')
+        if not isinstance(save_icon, str):
+            apply_kwargs.update({'image': save_icon, 'compound': 'left'})
+            apply_text = f" {apply_text}"
+        else:
+            apply_text = f"💾 {apply_text}"
         self.global_apply_btn = tk.Button(
             apply_frame,
-            text=f" {self._t('apply_all_settings')}" if not isinstance(save_icon, str) else f"💾 {self._t('apply_all_settings')}",
-            image=save_icon if not isinstance(save_icon, str) else None,
-            compound='left' if not isinstance(save_icon, str) else 'none',
+            text=apply_text,
             command=self.on_global_apply,
-            **apply_config,
-            padx=24,  # Increased from 20px for better negative space
-            pady=10   # Increased from 8px for better touch target (48px height)
+            padx=24,
+            pady=10,
+            **apply_kwargs
         )
         self.global_apply_btn.pack(side='right', padx=10, pady=6)  # Increased external margins
         
         # Keep reference to prevent garbage collection
         if not isinstance(save_icon, str):
-            self.global_apply_btn.image = save_icon
+            try:
+                self._image_refs.append(save_icon)
+            except Exception:
+                pass
         
         # Initialize unsaved state
         self.has_unsaved_changes = False
@@ -1559,6 +1827,29 @@ class App(tk.Tk):
             wraplength=500,
             justify='left'
         ).grid(row=6, column=0, columnspan=2, sticky='w', pady=(8,0))
+
+        # Hotkey diagnostic banner (shows import traceback or status)
+        # This will be updated when hotkeys are (re)registered via _register_global_hotkeys
+        self._hotkey_diag_var = tk.StringVar(value='')
+        diag_label = tk.Label(
+            hotkey_frame,
+            textvariable=self._hotkey_diag_var,
+            fg='#B00020',
+            font=('Arial', 8),
+            wraplength=500,
+            justify='left'
+        )
+        diag_label.grid(row=7, column=0, columnspan=2, sticky='w', pady=(8,0))
+
+        # Retry button for re-registering global hotkeys (useful after installing 'keyboard' or switching interpreter)
+        retry_text = "Retry Global Hotkeys" if self.lang == 'en' else "Thử lại phím tắt toàn cục"
+        retry_btn = tk.Button(hotkey_frame, text=retry_text, command=self._on_retry_global_hotkeys)
+        retry_btn.grid(row=8, column=0, sticky='w', pady=(8,0))
+
+        # Details button to show full import traceback and remediation steps
+        details_text = "Details" if self.lang == 'en' else "Chi tiết"
+        details_btn = tk.Button(hotkey_frame, text=details_text, command=self._show_hotkey_diagnostics_modal)
+        details_btn.grid(row=8, column=1, sticky='w', pady=(8,0), padx=(8,0))
         
         # Section 3: Advanced Hunt Settings (visible for intermediate/advanced)
         self.adv_frame = tk.LabelFrame(parent, text=self._t('setup_advanced'), padx=12, pady=10)
@@ -1729,18 +2020,36 @@ class App(tk.Tk):
         Note: Changes only take effect after clicking Global Apply button.
         This is intentional to avoid accidental hotkey changes during configuration.
         """
-        enabled = self.global_hotkey_enabled_var.get()
-        
+        enabled = bool(self.global_hotkey_enabled_var.get())
+
+        # Persist setting immediately and apply
+        try:
+            self.hunt_cfg.setdefault('global_hotkeys', {})['enabled'] = enabled
+            save_hunt_config(self.hunt_cfg)
+        except Exception:
+            pass
+
+        # Apply immediately (register/unregister hotkeys)
+        try:
+            if enabled:
+                print('[Hotkeys] User enabled global hotkeys via Setup tab')
+                self._register_global_hotkeys()
+            else:
+                print('[Hotkeys] User disabled global hotkeys via Setup tab')
+                self._unregister_global_hotkeys()
+        except Exception as e:
+            print(f'[Hotkeys] Error applying global hotkey toggle: {e}')
+
         # Update status message
         if hasattr(self, 'hunt_status'):
             if enabled:
-                msg = "Global hotkeys will be enabled after clicking 'Global Apply'"
+                msg = "Global hotkeys enabled"
                 if self.lang == 'vi':
-                    msg = "Phím tắt toàn cục sẽ được bật sau khi nhấn 'Global Apply'"
+                    msg = "Đã bật phím tắt toàn cục"
             else:
-                msg = "Global hotkeys will be disabled after clicking 'Global Apply'"
+                msg = "Global hotkeys disabled"
                 if self.lang == 'vi':
-                    msg = "Phím tắt toàn cục sẽ bị tắt sau khi nhấn 'Global Apply'"
+                    msg = "Đã tắt phím tắt toàn cục"
             self.hunt_status.set(msg)
     
     def _update_setup_visibility(self):
@@ -2278,11 +2587,19 @@ class App(tk.Tk):
                         self.btn_add_monster.config(image=accept_icon, text='', state='disabled')
                 except Exception:
                     self.btn_add_monster.config(text='✓', state='disabled')
-                
-                # Update tooltip
+
+                # Update tooltip for locked state
                 tooltip_text = self._t('tooltip_add_monster_locked')
-                if hasattr(self.btn_add_monster, '_tooltip'):
-                    self.btn_add_monster._tooltip.destroy()
+                tooltip = getattr(self.btn_add_monster, '_tooltip', None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(self.btn_add_monster, '_tooltip')
+                    except Exception:
+                        pass
                 self._create_tooltip(self.btn_add_monster, tooltip_text)
             else:
                 # No dummy yet - show add icon and enable
@@ -2295,13 +2612,21 @@ class App(tk.Tk):
                         self.btn_add_monster.config(image=add_icon, text='', state='normal')
                 except Exception:
                     self.btn_add_monster.config(text='➕', state='normal')
-                
-                # Update tooltip
+
+                # Update tooltip for training helper
                 tooltip_text = self._t('tooltip_add_monster_training')
-                if hasattr(self.btn_add_monster, '_tooltip'):
-                    self.btn_add_monster._tooltip.destroy()
+                tooltip = getattr(self.btn_add_monster, '_tooltip', None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(self.btn_add_monster, '_tooltip')
+                    except Exception:
+                        pass
                 self._create_tooltip(self.btn_add_monster, tooltip_text)
-            
+                 
             # Disable priority reorder buttons with locked icon (white on gray)
             # Use size=16 to match SMALL buttons (36px)
             try:
@@ -2320,8 +2645,11 @@ class App(tk.Tk):
             
             # Update tooltips for disabled buttons
             for btn in [self.btn_move_up, self.btn_move_down]:
-                if hasattr(btn, '_tooltip'):
-                    btn._tooltip.destroy()
+                # Safely destroy any existing tooltip then create a new one
+                try:
+                    self._destroy_widget_tooltip(btn)
+                except Exception:
+                    pass
                 self._create_tooltip(btn, self._t('tooltip_reorder_locked'))
         else:
             # Normal mode: Restore defaults
@@ -2336,8 +2664,10 @@ class App(tk.Tk):
                 self.btn_add_monster.config(text='➕', state='normal')
             
             # Restore normal tooltip
-            if hasattr(self.btn_add_monster, '_tooltip'):
-                self.btn_add_monster._tooltip.destroy()
+            try:
+                self._destroy_widget_tooltip(self.btn_add_monster)
+            except Exception:
+                pass
             self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
             
             # Enable priority reorder buttons with original icons and colors (both blue for consistency)
@@ -2392,12 +2722,16 @@ class App(tk.Tk):
                 )
             
             # Restore normal tooltips
-            if hasattr(self.btn_move_up, '_tooltip'):
-                self.btn_move_up._tooltip.destroy()
+            try:
+                self._destroy_widget_tooltip(self.btn_move_up)
+            except Exception:
+                pass
             self._create_tooltip(self.btn_move_up, self._t('tooltip_move_up'))
-            
-            if hasattr(self.btn_move_down, '_tooltip'):
-                self.btn_move_down._tooltip.destroy()
+
+            try:
+                self._destroy_widget_tooltip(self.btn_move_down)
+            except Exception:
+                pass
             self._create_tooltip(self.btn_move_down, self._t('tooltip_move_down'))
     
     def _on_monster_toggle(self, event=None):
@@ -3501,7 +3835,109 @@ class App(tk.Tk):
         try:
             # Check if keyboard module is available
             if keyboard is None:
-                print("[Hotkeys] ⚠️ keyboard module not available")
+                # Provide detailed diagnostics to help troubleshoot environment mismatches
+                try:
+                    import sys as _sys, importlib, traceback as _tb
+                    print(f"[Hotkeys] ⚠️ keyboard module not available in interpreter: {_sys.executable}")
+                    # Try a fresh import to capture the exception text (without changing global state)
+                    try:
+                        importlib.import_module('keyboard')
+                        print('[Hotkeys] Note: importlib was able to import keyboard unexpectedly')
+                    except Exception as _e:
+                        print('[Hotkeys] keyboard import error trace:')
+                        _tb.print_exc()
+                        # Save diagnostic text for UI/diagnostics dialog
+                        try:
+                            self._hotkey_import_diag = _tb.format_exc()
+                        except Exception:
+                            self._hotkey_import_diag = str(_e)
+                        # Update UI banner if available
+                        try:
+                            self._update_hotkey_diagnostics_ui()
+                        except Exception:
+                            pass
+                except Exception:
+                    # Fallback minimal diagnostic
+                    try:
+                        import sys as _sys
+                        print(f"[Hotkeys] ⚠️ keyboard module not available (interpreter: {_sys.executable})")
+                    except Exception:
+                        print('[Hotkeys] ⚠️ keyboard module not available')
+
+                # Fallback: bind window-focused shortcuts using tkinter so app still responds when focused.
+                # These are not global system-wide hotkeys, but provide reasonable functionality if keyboard is missing.
+                def _to_tk_seq(hotkey: str) -> Optional[str]:
+                    # Very small converter for common patterns like 'ctrl+shift+r', 'ctrl+f8', 'f8'
+                    try:
+                        hk = (hotkey or '').strip().lower()
+                        if not hk:
+                            return None
+                        parts = hk.split('+')
+                        mods = []
+                        key = None
+                        for p in parts:
+                            p = p.strip()
+                            if p in ('ctrl', 'control'):
+                                mods.append('Control')
+                            elif p in ('shift',):
+                                mods.append('Shift')
+                            elif p in ('alt', 'menu'):
+                                mods.append('Alt')
+                            else:
+                                key = p
+                        if not key:
+                            return None
+                        # Function keys (f1..f24)
+                        if key.startswith('f') and key[1:].isdigit():
+                            key_tok = key.upper()
+                        else:
+                            # single character -> uppercase letter
+                            key_tok = key.upper()
+                        seq = '<' + '-'.join(mods + [key_tok]) + '>'
+                        return seq
+                    except Exception:
+                        return None
+
+                # Bind defaults first, then try to honor configured keys if possible
+                cfg = self.hunt_cfg.get('global_hotkeys', {})
+                start_key = cfg.get('start_key', 'ctrl+shift+r')
+                stop_key = cfg.get('stop_key', 'ctrl+shift+e')
+                wizard_key = cfg.get('setup_wizard_key', 'ctrl+shift+n')
+                library_key = cfg.get('library_manager_key', 'ctrl+shift+l')
+
+                seq_start = _to_tk_seq(start_key) or '<Control-Shift-R>'
+                seq_stop = _to_tk_seq(stop_key) or '<Control-Shift-E>'
+                seq_wiz = _to_tk_seq(wizard_key) or '<Control-Shift-N>'
+                seq_lib = _to_tk_seq(library_key) or '<Control-Shift-L>'
+
+                try:
+                    # Unbind any previously-bound fallback sequences to avoid duplicates
+                    for s in list(self._hotkey_fallback_bound):
+                        try:
+                            self.unbind_all(s)
+                        except Exception:
+                            pass
+                    self._hotkey_fallback_bound = []
+
+                    # Bind to all widgets (works when app is focused)
+                    self.bind_all(seq_start, lambda e: self.on_hunt_start(), add='+')
+                    self._hotkey_fallback_bound.append(seq_start)
+                    self.bind_all(seq_stop, lambda e: self.on_hunt_stop(), add='+')
+                    self._hotkey_fallback_bound.append(seq_stop)
+                    # Wizard only meaningful in beginner mode
+                    if self.hunt_cfg.get('ui_mode', 'beginner') == 'beginner':
+                        self.bind_all(seq_wiz, lambda e: self._on_setup_wizard_hotkey(), add='+')
+                        self._hotkey_fallback_bound.append(seq_wiz)
+                    self.bind_all(seq_lib, lambda e: self._on_library_manager_hotkey(), add='+')
+                    self._hotkey_fallback_bound.append(seq_lib)
+                    print(f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}")
+                    try:
+                        self._update_hotkey_diagnostics_ui()
+                    except Exception:
+                        pass
+                except Exception as _bind_e:
+                    print(f"[Hotkeys] Failed to bind fallback focused hotkeys: {_bind_e}")
+
                 return
             
             # Get hotkey config (defaults to Ctrl+Shift+R/E if not set)
@@ -3578,9 +4014,18 @@ class App(tk.Tk):
             
             if registered:
                 print(f"Global hotkeys registered: {', '.join(registered)}")
+                # Update diagnostic UI if present
+                try:
+                    self._hotkey_diag_var.set(self._t('hotkeys_registered').format(keys=', '.join(registered)))
+                except Exception:
+                    pass
         
         except Exception as e:
             print(f"Error registering global hotkeys: {e}")
+            try:
+                self._hotkey_diag_var.set(str(e))
+            except Exception:
+                pass
     
     def _unregister_global_hotkeys(self):
         """Unregister global hotkeys to clean up resources.
@@ -3632,6 +4077,48 @@ class App(tk.Tk):
         
         except Exception as e:
             print(f"Error in _unregister_global_hotkeys: {e}")
+            try:
+                self._hotkey_diag_var.set(str(e))
+            except Exception:
+                pass
+
+    def _on_retry_global_hotkeys(self):
+        """Handler for 'Retry Global Hotkeys' button in Setup tab."""
+        try:
+            # Clear previous diagnostics
+            try:
+                self._hotkey_diag_var.set('')
+            except Exception:
+                pass
+            # Unregister then re-register
+            try:
+                self._unregister_global_hotkeys()
+            except Exception:
+                pass
+            self._register_global_hotkeys()
+            # Refresh UI state
+            self._update_hotkeys_state()
+        except Exception as e:
+            print(f"[Hotkeys] Retry action failed: {e}")
+            try:
+                self._hotkey_diag_var.set(str(e))
+            except Exception:
+                pass
+
+    def _update_hotkey_diagnostics_ui(self):
+        """Update the diagnostic banner text from internal diagnostic state."""
+        try:
+            if hasattr(self, '_hotkey_import_diag') and self._hotkey_import_diag:
+                # Show the first line or a short summary to avoid huge UI text
+                diag = str(self._hotkey_import_diag)
+                # Keep only first 500 chars
+                short = diag if len(diag) <= 500 else diag[:500] + '...'
+                self._hotkey_diag_var.set(short)
+            else:
+                # Clear if no diagnostic
+                self._hotkey_diag_var.set('')
+        except Exception:
+            pass
 
     def _hunt_from_ui(self):
         """Extract hunt configuration from UI elements.

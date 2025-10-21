@@ -12,7 +12,7 @@ Hệ thống tự động hóa thông minh cho Cabal VTC Origin với Python - P
 - 📚 **Library Manager**: Quản lý tập trung Monster/Skills/Timing (Sprint 19)
 - 🎨 **Icon System**: 39 icon entries với .ico files, thiết kế nhất quán (Sprint 21)
 - 🪟 **Auto Window Detection**: Tự động phát hiện Cabal window (Sprint 21)
-- ⌨️ **Global Hotkeys**: Ctrl+Shift+R (start hunt), Ctrl+Shift+E (stop hunt) - hoạt động khi minimize
+- ⌨️ **Global Hotkeys**: Ctrl+Shift+R (start hunt), Ctrl+Shift+E (stop hunt), Ctrl+Shift+L (open Skill Manager), Ctrl+Shift+N (open Setup Wizard) - hoạt động khi minimize (system-wide)
 - 🌐 **Dual Language**: Hỗ trợ đầy đủ EN/VI với persistence
 - 🔒 **First-Run Lock**: Khóa an toàn khi hunt, ngăn chỉnh sửa nhầm
 - 📝 **Enhanced Logging**: Dual logging (text + JSON) với structured hunt data
@@ -159,6 +159,8 @@ Khi chạy lần đầu, **Setup Wizard** sẽ tự động mở và hướng d�
 - **Global Hotkeys**: 
   - `Ctrl+Shift+R`: Start hunt (works when minimized)
   - `Ctrl+Shift+E`: Stop hunt (works when minimized)
+  - `Ctrl+Shift+L`: Open Skill Manager (Library → Skills)
+  - `Ctrl+Shift+N`: Open Setup Wizard (first-run or manual)
   - `Z`: Switch target (in-game)
 
 #### 2️⃣ **Setup Tab** - Cấu hình
@@ -227,6 +229,44 @@ Chạy `python app_gui.py` lần đầu → Setup Wizard tự động mở.
 - To control which keys are used during the hunt, open the Library → Skills manager and assign a `Key` to each skill, then choose skills into the Skill Slots on the Setup tab. The hunt fallback will press keys in the order of configured `skill_slots`.
 
 If you relied on `attack_keys` previously, migration preserves your keys; however please open the Skill Manager afterward to confirm the mapping and adjust names or duplicate keys if needed.
+ 
+## 🔔 Global Hotkeys — Troubleshooting & Notes
+
+The app supports several system-wide (global) hotkeys so you can control the hunt even when the app is minimized:
+
+- Ctrl+Shift+R — Start hunt
+- Ctrl+Shift+E — Stop hunt
+- Ctrl+Shift+L — Open Skill Manager
+- Ctrl+Shift+N — Open Setup Wizard (if available)
+
+Requirements & common issues:
+
+- The Python `keyboard` package must be installed (listed in `requirements.txt`). Install manually if needed:
+
+```powershell
+pip install keyboard
+```
+
+- On Windows, global hotkeys require elevated permissions. Run the app as Administrator to allow system-wide key capture.
+
+- If hotkeys do not trigger:
+  1. Verify `keyboard` is installed and importable.
+  2. Run `python app_gui.py` from an Administrator PowerShell.
+ 3. Check the console for errors like `[Hotkey] Failed to register global hotkeys: ...`.
+
+- If you can't run as Administrator, global hotkeys will not work reliably. Window-focused shortcuts (Ctrl+K, Alt+1/2) still work when the app window is focused.
+
+Testing hotkeys:
+
+1. Open an Administrator PowerShell in the project folder.
+2. Run:
+
+```powershell
+python app_gui.py
+```
+
+3. Press Ctrl+Shift+R (start) / Ctrl+Shift+E (stop) / Ctrl+Shift+L (open Skill Manager) from another window. Watch the app or console for activity.
+
 3. Cấu hình skill:
 
 **Attack Skill**:

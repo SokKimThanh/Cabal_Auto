@@ -3263,7 +3263,12 @@ Track progress at:
                 photo = ImageTk.PhotoImage(img)
                 
                 label = tk.Label(self.skill_preview_panel, image=photo, bg='#FAFAFA')
-                label.image = photo  # Keep reference
+                try:
+                    if not hasattr(self, '_image_refs'):
+                        self._image_refs = []
+                    self._image_refs.append(photo)
+                except Exception:
+                    pass
                 label.pack(expand=True, pady=10)
                 
                 # Action buttons
@@ -4327,7 +4332,12 @@ class MonsterDialog:
                     pady=5,
                     cursor='hand2'
                 )
-                save_btn.image = save_icon  # Keep reference
+                try:
+                    if not hasattr(self, '_image_refs'):
+                        self._image_refs = []
+                    self._image_refs.append(save_icon)
+                except Exception:
+                    pass
             
             # Add i18n tooltip if registry available
             if self.i18n_registry:
@@ -4620,7 +4630,12 @@ class SkillDialog:
                     pady=5,
                     cursor='hand2'
                 )
-                save_btn.image = save_icon  # Keep reference
+                try:
+                    if not hasattr(self, '_image_refs'):
+                        self._image_refs = []
+                    self._image_refs.append(save_icon)
+                except Exception:
+                    pass
             
             # Add i18n tooltip if registry available
             if self.i18n_registry:

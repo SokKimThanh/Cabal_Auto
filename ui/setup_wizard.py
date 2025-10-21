@@ -371,7 +371,12 @@ class SetupWizard:
         )
         self.back_button.pack(side=tk.LEFT, padx=8)
         if not isinstance(back_icon, str):
-            self.back_button.image = back_icon  # Keep reference
+            try:
+                if not hasattr(self, '_image_refs'):
+                    self._image_refs = []
+                self._image_refs.append(back_icon)
+            except Exception:
+                pass
         # Tooltip
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.back_button, key='tip_wizard_back', ns='setup_wizard', lang_provider=lambda: self.lang)
@@ -397,7 +402,12 @@ class SetupWizard:
         )
         self.next_button.pack(side=tk.LEFT, padx=15)  # Extra padding to make it stand out
         if not isinstance(next_icon, str):
-            self.next_button.image = next_icon  # Keep reference
+            try:
+                if not hasattr(self, '_image_refs'):
+                    self._image_refs = []
+                self._image_refs.append(next_icon)
+            except Exception:
+                pass
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.next_button, key='tip_wizard_next', ns='setup_wizard', lang_provider=lambda: self.lang)
         
@@ -416,7 +426,12 @@ class SetupWizard:
         )
         self.cancel_button.pack(side=tk.LEFT, padx=8)
         if not isinstance(cancel_icon, str):
-            self.cancel_button.image = cancel_icon  # Keep reference
+            try:
+                if not hasattr(self, '_image_refs'):
+                    self._image_refs = []
+                self._image_refs.append(cancel_icon)
+            except Exception:
+                pass
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.cancel_button, key='tip_wizard_cancel', ns='setup_wizard', lang_provider=lambda: self.lang)
     
@@ -706,7 +721,12 @@ It takes about 2 minutes. Let's begin!"""
         )
         btn_search.pack(side=tk.LEFT)
         if not isinstance(search_icon, str):
-            btn_search.image = search_icon  # Keep reference
+            try:
+                if not hasattr(self, '_image_refs'):
+                    self._image_refs = []
+                self._image_refs.append(search_icon)
+            except Exception:
+                pass
         if attach_i18n_tooltip:
             attach_i18n_tooltip(btn_search, key='tip_search_windows', ns='setup_wizard', lang_provider=lambda: self.lang)
         
@@ -927,7 +947,12 @@ It takes about 2 minutes. Let's begin!"""
         )
         clear_btn.pack(side=tk.LEFT, padx=5)
         if not isinstance(clear_icon, str):
-            clear_btn.image = clear_icon  # Keep reference
+            try:
+                if not hasattr(self, '_image_refs'):
+                    self._image_refs = []
+                self._image_refs.append(clear_icon)
+            except Exception:
+                pass
         if attach_i18n_tooltip:
             attach_i18n_tooltip(clear_btn, key='tip_clear_all_slots', ns='setup_wizard', lang_provider=lambda: self.lang)
         
@@ -950,7 +975,12 @@ It takes about 2 minutes. Let's begin!"""
         )
         self.rotation_builder_button.pack(side=tk.LEFT, padx=5)
         if not isinstance(skill_icon, str):
-            self.rotation_builder_button.image = skill_icon  # Keep reference
+            try:
+                if not hasattr(self, '_image_refs'):
+                    self._image_refs = []
+                self._image_refs.append(skill_icon)
+            except Exception:
+                pass
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.rotation_builder_button, key='tip_rotation_builder', ns='setup_wizard', lang_provider=lambda: self.lang)
         
@@ -1605,6 +1635,13 @@ if __name__ == "__main__":
     )
     launch_btn.pack(expand=True)
     if wizard_icon and not isinstance(wizard_icon, str):
-        launch_btn.image = wizard_icon
+        try:
+            # Test block: keep a local reference to avoid GC during demo
+            _launch_refs = getattr(root, '_image_refs', None)
+            if _launch_refs is None:
+                root._image_refs = []
+            root._image_refs.append(wizard_icon)
+        except Exception:
+            pass
     
     root.mainloop()
