@@ -72,6 +72,7 @@ class IconHelper:
             'folder': ('folder.png', '📁'),
             'capture': ('capture.png', '📸'),
             'search': ('search.png', '🔍'),
+            'refresh': ('refresh.ico', '🔄'),
             'monster': ('monster.png', '👹'),
             'skill': ('skill.png', '⚔️'),
             'template': ('template.png', '🖼️'),

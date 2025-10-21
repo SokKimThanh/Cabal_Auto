@@ -635,12 +635,29 @@ class App(tk.Tk):
         # Attach tooltip to combobox explaining window selection
         attach_i18n_tooltip(self.win_combo, key='window_select_tooltip', ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
         
+        # Import button styles for refresh button
+        from lib.ui.button_styles import get_button_config
+        
+        # Refresh button with icon (manual window refresh)
+        refresh_icon = self._icon('refresh', '🔄', size=16)
+        refresh_btn = tk.Button(
+            top,
+            text=self._t('refresh_windows') if isinstance(refresh_icon, str) else '',
+            image=refresh_icon if not isinstance(refresh_icon, str) else None,
+            compound='left' if not isinstance(refresh_icon, str) else 'none',
+            command=self.on_hunt_refresh_windows,
+            **get_button_config('refresh')
+        )
+        refresh_btn.pack(side='left', padx=(0,6))
+        
+        # Keep reference to prevent garbage collection
+        if not isinstance(refresh_icon, str):
+            refresh_btn.image = refresh_icon
+        
         # Separator before hunt controls
         tk.Frame(top, width=2, bg='#ccc', relief='sunken').pack(side='left', fill='y', padx=12, pady=2)
         
         # Hunt Control Buttons - Using global button styles for consistency
-        from lib.ui.button_styles import get_button_config
-        
         # Start Hunt Button - Green (CR: 5.8:1)
         start_config = get_button_config('green')
         self.hunt_start_btn = tk.Button(
@@ -1762,6 +1779,19 @@ class App(tk.Tk):
         self._skip_auto_bring = False
         
         self.hunt_status.set(self._t('selected_window').format(title=candidates[selected_idx]['title']))
+    
+    def on_hunt_refresh_windows(self):
+        """Refresh window list manually (PATCH 9)."""
+        # Clear existing selection
+        self.win_items = []
+        self.win_combo.set('')
+        
+        # Re-enumerate and populate windows
+        self.on_hunt_find_windows()
+        
+        # Update status
+        count = len(self.win_items) if hasattr(self, 'win_items') else 0
+        self.hunt_status.set(f"🔄 Refreshed: {count} window(s) found")
 
     def on_hunt_bring_front(self):
         """Bring selected window to front."""
