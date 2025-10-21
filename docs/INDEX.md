@@ -79,6 +79,7 @@ docs/
 2. **First-Time Setup**: [guides/HUONG_DAN_NGUOI_MOI.md](guides/HUONG_DAN_NGUOI_MOI.md) 🇻🇳
 3. **Skills Guide**: [guides/SKILLS_EXPLANATION_SIMPLE.md](guides/SKILLS_EXPLANATION_SIMPLE.md)
 4. **Test Recognition**: [guides/HOW_TO_USE_TEST_RECOGNITION.md](guides/HOW_TO_USE_TEST_RECOGNITION.md)
+5. **Hotkey Migration**: [GLOBAL_HOTKEY_MIGRATION.md](GLOBAL_HOTKEY_MIGRATION.md) ⌨️ **NEW** - F8 → Ctrl+Shift+R/E
 
 ### For Developers
 1. **Icon Design Rules**: [sprint21/ICON_PLACEMENT_RULES.md](sprint21/ICON_PLACEMENT_RULES.md) ⭐ **NEW**
@@ -318,7 +319,18 @@ Historical sprint documentation:
 
 ---
 
-### 8. Context (`context/`)
+### 8. Core Architecture Documentation (Root `docs/`)
+
+**Technical architecture and system design**:
+
+- **[SINGLE_INSTANCE_LOCK.md](SINGLE_INSTANCE_LOCK.md)** - Single instance enforcement (Windows mutex + Unix file lock)
+- **[GLOBAL_HOTKEY_ARCHITECTURE.md](GLOBAL_HOTKEY_ARCHITECTURE.md)** - Hotkey system architecture analysis ⌨️ **NEW**
+- **[GLOBAL_HOTKEY_MIGRATION.md](GLOBAL_HOTKEY_MIGRATION.md)** - F8 → Ctrl+Shift+R/E migration guide ⌨️ **NEW**
+- **[HOTKEY_F8_TOGGLE.md](HOTKEY_F8_TOGGLE.md)** - ⚠️ **DEPRECATED** - Old F9→F8 migration (superseded)
+
+---
+
+### 9. Context (`context/`)
 
 System context and architecture documentation:
 - **CONTEXT_MAIN.txt** - Main system context

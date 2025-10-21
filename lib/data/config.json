@@ -5,8 +5,7 @@
     "interval_sec": 2.0
   },
   "hotkeys": {
-    "toggle": "f8",
-    "exit": "f9"
+    "note": "Legacy hotkeys removed. Use global_hotkeys in hunt_config.json"
   },
   "safety": {
     "failsafe": true,
