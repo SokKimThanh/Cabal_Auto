@@ -160,6 +160,7 @@ def load_monster_library():
                     continue
                 template = str(item.get('template', '') or '').strip()
                 description = str(item.get('description', '') or '').strip()
+                training_mode = bool(item.get('training_mode', False))
                 window_bounds = _normalize_window_bounds(item.get('window_bounds'))
                 templates = _sanitize_templates(item.get('templates'))
                 monsters.append({
@@ -168,6 +169,7 @@ def load_monster_library():
                     'damage_per_hit': dmg,
                     'template': template,
                     'description': description,
+                    'training_mode': training_mode,
                     'window_bounds': window_bounds,
                     'templates': templates,
                 })
@@ -191,6 +193,7 @@ def save_monster_library(monsters):
             continue
         template = str(item.get('template', '') or '').strip()
         description = str(item.get('description', '') or '').strip()
+        training_mode = bool(item.get('training_mode', False))
         window_bounds = _normalize_window_bounds(item.get('window_bounds'))
         templates = _sanitize_templates(item.get('templates'))
         safe.append({
@@ -199,6 +202,7 @@ def save_monster_library(monsters):
             'damage_per_hit': dmg,
             'template': template,
             'description': description,
+            'training_mode': training_mode,
             'window_bounds': window_bounds,
             'templates': templates,
         })

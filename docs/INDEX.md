@@ -1,7 +1,7 @@
 # Cabal Auto Hunt - Documentation Index
 
-**Last Updated**: October 21, 2025 (Reorganized Structure v2.0)  
-**Sprint**: Sprint 21 Patch 16 - Documentation Organization
+**Last Updated**: October 21, 2025 (Sprint 22 Started)  
+**Current Sprint**: Sprint 22 - Advanced Features & Training System
 
 ## 📁 Documentation Structure
 
@@ -33,14 +33,21 @@ docs/
 │   ├── BUGFIX_SETUP_WIZARD_BUTTON.md
 │   └── ... (13 more bugfix docs)
 │
-├── sprint21/                   # Sprint 21 - UI/UX Icon Enhancement ⭐ CURRENT
+├── sprint21/                   # Sprint 21 - UI/UX Icon Enhancement ✅ COMPLETE
 │   ├── ICON_PLACEMENT_RULES.md        # Comprehensive icon design rules
 │   ├── ICON_STATUS_REPORT.md          # Icon coverage analysis
 │   ├── SPRINT21_SUMMARY.md            # Sprint summary
 │   ├── SPRINT21_PATCH10_ICONS.md
 │   ├── SPRINT21_PATCH11_ICON_SYSTEM_ENHANCEMENT.md
 │   ├── SPRINT21_PATCH12_SETUP_WIZARD_ICONS.md
-│   └── SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md
+│   ├── SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md
+│   └── SPRINT21_PATCH16_DOCUMENTATION_ORGANIZATION.md
+│
+├── sprint22/                   # Sprint 22 - Training Mode & Advanced Features ⭐ CURRENT
+│   ├── README.md                      # Sprint 22 overview
+│   ├── SPRINT22_SUMMARY.md            # Complete sprint summary
+│   ├── SPRINT22_PATCH1_TRAINING_MODE.md # Training Mode feature spec
+│   └── IMPLEMENTATION_GUIDE.md        # Developer implementation guide
 │
 ├── sprints/                    # Historical sprint documentation
 │   ├── sprint16/               # Setup Wizard implementation
@@ -77,11 +84,11 @@ docs/
 3. **Window Settings**: [guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md](guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md)
 4. **Code Style**: [archive/COMPLETE_SYSTEM_INTEGRATION.md](archive/COMPLETE_SYSTEM_INTEGRATION.md)
 
-### Latest Sprint (Sprint 21)
-- **Theme**: UI/UX Icon System Enhancement
-- **Status**: Patch 16 - Documentation Organization
-- **Progress**: 15/16 patches complete (94%)
-- **Docs**: [sprint21/](sprint21/)
+### Latest Sprint (Sprint 22)
+- **Theme**: Advanced Features & Training System
+- **Status**: Patch 1 - Training Mode (30% complete)
+- **Progress**: 1/N patches started
+- **Docs**: [sprint22/](sprint22/) ⭐
 
 ---
 
@@ -164,11 +171,11 @@ Bug fix documentation with solutions:
 
 ---
 
-### 5. Sprint 21 (`sprint21/`) - 7 files ⭐ **CURRENT SPRINT**
+### 5. Sprint 21 (`sprint21/`) - 8 files ✅ **COMPLETE**
 
 **Theme**: UI/UX Icon System Enhancement  
 **Duration**: October 15-21, 2025  
-**Progress**: 15/16 patches (94% complete)
+**Progress**: 16/16 patches (100% complete) 🎉
 
 #### **Key Documents**:
 
@@ -203,14 +210,80 @@ Icon coverage analysis:
 4. **SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md** - Global button optimization
 5. **Patch 14** - Icon map expansion (24→39 entries)
 6. **Patch 15** - Icon placement rules implementation
-7. **Patch 16** - Documentation organization (CURRENT)
+7. **Patch 16** - Documentation organization
 
 ##### **SPRINT21_SUMMARY.md**
 Complete sprint summary with all patches
 
 ---
 
-### 6. Sprints Archive (`sprints/`)
+### 6. Sprint 22 (`sprint22/`) - 4 files ⭐ **CURRENT SPRINT**
+
+**Theme**: Advanced Features & Training System  
+**Start Date**: October 21, 2025  
+**Progress**: Patch 1 - Training Mode (30% complete)
+
+#### **Key Documents**:
+
+##### **SPRINT22_PATCH1_TRAINING_MODE.md** ⭐ **IN PROGRESS**
+Complete Training Mode feature specification:
+- **Training Dummy**: Monster with infinite HP (`training_mode: true`)
+- **Training Mode Toggle**: Practice skills without target switching
+- **Skill Performance Stats**: Real-time tracking (cast count, cooldown, success rate)
+- **Simplified UI**: Focus on skill execution, hide rotation controls
+
+Features:
+```json
+{
+  "name": "Coc go~",
+  "training_mode": true,  // Training dummy - never dies
+  "hp": 10000,
+  "templates": [...]
+}
+```
+
+UI Preview:
+```
+🎯 Training Mode
+☑ Enable Training Mode (Practice Skills)
+
+📊 Skill Performance Statistics
+Skill        Casts  Last Cast  Cooldown  Success %
+Power Slash   12     2.3s ago   Ready     100%
+Fire Ball      8     3.1s ago   1.2s       88%
+```
+
+##### **IMPLEMENTATION_GUIDE.md**
+Quick implementation guide for developers:
+- Step-by-step code changes
+- UI modifications
+- Hunt logic updates
+- i18n translations
+- Testing checklist
+
+##### **SPRINT22_SUMMARY.md**
+Sprint overview and progress tracking
+
+##### **README.md**
+Sprint 22 folder overview
+
+#### **Completed Tasks** (30%):
+- [x] Add `training_mode` field to monsters.json
+- [x] Update load/save monster library functions
+- [x] Set "Coc go~" as training dummy
+- [x] Create comprehensive documentation
+
+#### **Remaining Tasks** (70%):
+- [ ] Add Training Mode checkbox to Hunt Tab
+- [ ] Implement training mode toggle logic
+- [ ] Modify hunt loop (skip target switching)
+- [ ] Build skill stats display UI
+- [ ] Add i18n translations (EN/VI)
+- [ ] Test thoroughly
+
+---
+
+### 7. Sprints Archive (`sprints/`)
 
 Historical sprint documentation:
 
@@ -243,14 +316,14 @@ Historical sprint documentation:
 
 ---
 
-### 7. Context (`context/`)
+### 8. Context (`context/`)
 
 System context and architecture documentation:
 - **CONTEXT_MAIN.txt** - Main system context
 
 ---
 
-### 8. Archive (`archive/`) - 17+ files
+### 9. Archive (`archive/`) - 17+ files
 
 Deprecated or superseded documentation:
 
@@ -280,6 +353,8 @@ Deprecated or superseded documentation:
 - Dialog Icons: [enhancements/ENHANCEMENT_DIALOG_SAVE_ICONS.md](enhancements/ENHANCEMENT_DIALOG_SAVE_ICONS.md)
 
 **Skills & Combat**:
+- Training Mode: [sprint22/SPRINT22_PATCH1_TRAINING_MODE.md](sprint22/SPRINT22_PATCH1_TRAINING_MODE.md) ⭐
+- Implementation Guide: [sprint22/IMPLEMENTATION_GUIDE.md](sprint22/IMPLEMENTATION_GUIDE.md)
 - Skills Guide: [guides/SKILLS_EXPLANATION_SIMPLE.md](guides/SKILLS_EXPLANATION_SIMPLE.md)
 - Rotation Tab: [bugfixes/BUGFIX_ROTATION_TAB_NO_SKILLS.md](bugfixes/BUGFIX_ROTATION_TAB_NO_SKILLS.md)
 
@@ -297,7 +372,8 @@ Deprecated or superseded documentation:
 - **Sprint 18**: [sprints/sprint18/](sprints/sprint18/) - 4-Tab UI
 - **Sprint 19**: [sprints/sprint19/](sprints/sprint19/) - Library Manager
 - **Sprint 20**: [sprints/sprint20/](sprints/sprint20/) - Performance
-- **Sprint 21**: [sprint21/](sprint21/) - UI/UX Icons ⭐ **CURRENT**
+- **Sprint 21**: [sprint21/](sprint21/) - UI/UX Icons ✅ COMPLETE
+- **Sprint 22**: [sprint22/](sprint22/) - Training Mode ⭐ **CURRENT**
 
 ---
 
@@ -332,6 +408,34 @@ For icon-related documents:
 
 ## 🔄 Recent Changes (October 21, 2025)
 
+### Sprint 22 - Training Mode (Patch 1)
+**Status**: ⏳ IN PROGRESS (30% complete)
+
+**Completed**:
+- ✅ Database schema: Added `training_mode` field to monsters.json
+- ✅ Updated load/save monster library functions
+- ✅ Configured "Coc go~" as training dummy (infinite HP)
+- ✅ Created comprehensive documentation (4 files)
+- ✅ Implementation guide for developers
+
+**In Progress**:
+- ⏳ Hunt Tab: Add Training Mode checkbox toggle
+- ⏳ Hunt logic: Skip target switching in training mode
+- ⏳ UI: Build skill performance stats display
+- ⏳ i18n: Add EN/VI translations
+- ⏳ Testing: Manual verification
+
+**New Files**:
+```
+docs/sprint22/
+├── SPRINT22_PATCH1_TRAINING_MODE.md  (700 lines)
+├── IMPLEMENTATION_GUIDE.md            (350 lines)
+├── SPRINT22_SUMMARY.md                (400 lines)
+└── README.md                          (200 lines)
+```
+
+---
+
 ### Documentation Reorganization (Patch 16)
 **Status**: ✅ COMPLETE
 
@@ -340,7 +444,7 @@ For icon-related documents:
 - ✅ Moved 30+ files to appropriate locations
 - ✅ Updated INDEX.md structure (this file)
 - ✅ Archived old summaries
-- ⏳ README.md update (NEXT)
+- ✅ README.md updated to v2.0
 
 **New Structure**:
 ```
@@ -348,7 +452,8 @@ docs/
 ├── features/      (2 files)
 ├── enhancements/  (4 files)
 ├── guides/        (5 files)
-├── sprint21/      (7 files) ⭐
+├── sprint21/      (8 files) ✅
+├── sprint22/      (4 files) ⭐
 ├── bugfixes/      (16 files)
 ├── archive/       (17+ files)
 └── sprints/       (existing)
@@ -358,7 +463,7 @@ docs/
 - ✨ **ICON_PLACEMENT_RULES.md** - Comprehensive icon design guide
 - ✨ **ICON_STATUS_REPORT.md** - Icon coverage analysis
 - ✨ Sprint 21 patches consolidated in `sprint21/`
-- ✨ 7 patch documents + summary
+- ✨ 8 patch documents + summary
 
 ---
 

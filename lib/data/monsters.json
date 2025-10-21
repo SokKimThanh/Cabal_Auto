@@ -5,6 +5,7 @@
     "damage_per_hit": 1.0,
     "template": "assets/images/monsters/coc_go__capture_1760736387994.png",
     "description": "Luyện skill",
+    "training_mode": true,
     "window_bounds": null,
     "templates": [
       {
