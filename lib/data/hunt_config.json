@@ -1,5 +1,5 @@
 {
-  "window_title": "CABAL",
+  "window_title": "Trợ lý săn Cabal",
   "target_key": "z",
   "attack_keys": [
     "1",
@@ -53,16 +53,10 @@
     }
   ],
   "window_bounds": null,
-  "monster_list": [
-    {
-      "name": "Coc go~",
-      "priority": 1,
-      "enabled": true
-    }
-  ],
+  "monster_list": [],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 21928,
+  "window_pid": 27180,
   "templates": [],
   "training_mode_enabled": true,
   "ui_mode": "beginner",
@@ -73,5 +67,14 @@
     "stop_key": "ctrl+shift+e",
     "setup_wizard_key": "ctrl+shift+n",
     "library_manager_key": "ctrl+shift+l"
-  }
+  },
+  "training_monster_list": [
+    {
+      "name": "Coc go~",
+      "priority": 1,
+      "enabled": true,
+      "training_mode": true
+    }
+  ],
+  "window_hwnd": 9833566
 }
