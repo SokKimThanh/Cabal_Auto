@@ -350,7 +350,7 @@ def load_hunt_config():
     # Default hunt config if file missing
     default = {
         "window_title": "Cabal",
-        "target_key": "TAB",
+        "target_key": "Z",  # Changed from TAB to Z (more common for target cycling)
         "attack_keys": ["1", "2", "3"],
         "attack_press_ms": 60,
         "target_cycle_delay": 0.2,
@@ -850,7 +850,7 @@ class App(tk.Tk):
         btn_container.pack(side='right', fill='y', padx=(8,0))
         
         # Add monster button (icon changes based on training mode state)
-        # Using MEDIUM size for comfortable touch target (44px)
+        # Custom sizing: Minimal padding for compact 16x16 icon button
         self.btn_add_monster = tk.Button(
             btn_container, 
             text="➕", 
@@ -862,31 +862,31 @@ class App(tk.Tk):
             activeforeground=UI.BTN_ACCENT_FG,
             relief=UI.BTN_RELIEF_NORMAL,
             cursor='hand2',
-            width=UI.BTN_ICON_WIDTH_MEDIUM,   # Width=3 for balanced square
-            height=1,                          # Height in lines
-            padx=UI.BTN_ICON_PADDING_MEDIUM,  # 12px padding (icon 20px → total 44px)
-            pady=UI.BTN_ICON_PADDING_MEDIUM
+            width=0,       # Disable character-based width (use padding instead)
+            height=0,      # Disable character-based height
+            padx=2,        # Minimal padding: 16px icon + 2px padding = ~20px total
+            pady=2
         )
-        self.btn_add_monster.pack(pady=(0, UI.BTN_SPACING // 2))
+        self.btn_add_monster.pack(pady=(0, UI.BTN_SPACING))
         self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
         
         # Priority reorder buttons (disabled in training mode)
-        # Same MEDIUM size for visual consistency
+        # Using SMALL size for secondary actions (36px) with distinct colors
         self.btn_move_up = tk.Button(
             btn_container, 
             text="↑", 
             command=self._on_monster_move_up, 
             font=UI.FONT_BUTTON,
-            bg=UI.BTN_NEUTRAL_BG,
-            fg=UI.BTN_NEUTRAL_FG,
-            activebackground=UI.BTN_NEUTRAL_HOVER,
-            activeforeground=UI.BTN_NEUTRAL_FG,
+            bg=UI.BTN_PRIMARY_BG,                # Green for UP (ascending priority)
+            fg=UI.BTN_PRIMARY_FG,
+            activebackground=UI.BTN_PRIMARY_HOVER,
+            activeforeground=UI.BTN_PRIMARY_FG,
             relief=UI.BTN_RELIEF_NORMAL,
             cursor='hand2',
-            width=UI.BTN_ICON_WIDTH_MEDIUM,
+            width=UI.BTN_ICON_WIDTH_SMALL,       # Width=3 for compact
             height=1,
-            padx=UI.BTN_ICON_PADDING_MEDIUM,
-            pady=UI.BTN_ICON_PADDING_MEDIUM
+            padx=UI.BTN_ICON_PADDING_SMALL,      # 10px padding (icon 16px → total 36px)
+            pady=UI.BTN_ICON_PADDING_SMALL
         )
         self.btn_move_up.pack(pady=(0, UI.BTN_SPACING // 2))
         self._create_tooltip(self.btn_move_up, self._t('tooltip_move_up'))
@@ -896,16 +896,16 @@ class App(tk.Tk):
             text="↓", 
             command=self._on_monster_move_down, 
             font=UI.FONT_BUTTON,
-            bg=UI.BTN_NEUTRAL_BG,
-            fg=UI.BTN_NEUTRAL_FG,
-            activebackground=UI.BTN_NEUTRAL_HOVER,
-            activeforeground=UI.BTN_NEUTRAL_FG,
+            bg=UI.BTN_INFO_BG,                   # Blue for DOWN (descending priority)
+            fg=UI.BTN_INFO_FG,
+            activebackground=UI.BTN_INFO_HOVER,
+            activeforeground=UI.BTN_INFO_FG,
             relief=UI.BTN_RELIEF_NORMAL,
             cursor='hand2',
-            width=UI.BTN_ICON_WIDTH_MEDIUM,
+            width=UI.BTN_ICON_WIDTH_SMALL,
             height=1,
-            padx=UI.BTN_ICON_PADDING_MEDIUM,
-            pady=UI.BTN_ICON_PADDING_MEDIUM
+            padx=UI.BTN_ICON_PADDING_SMALL,
+            pady=UI.BTN_ICON_PADDING_SMALL
         )
         self.btn_move_down.pack(pady=(0, UI.BTN_SPACING * 1.5))
         self._create_tooltip(self.btn_move_down, self._t('tooltip_move_down'))
@@ -1766,6 +1766,7 @@ class App(tk.Tk):
             if has_training_dummy:
                 # Dummy already set - show accept icon and disable
                 try:
+                    # Use size=16 to match compact button
                     accept_icon = self._icon('accept', '✓', size=16)
                     if isinstance(accept_icon, str):
                         self.btn_add_monster.config(text=accept_icon, state='disabled')
@@ -1782,6 +1783,7 @@ class App(tk.Tk):
             else:
                 # No dummy yet - show add icon and enable
                 try:
+                    # Use size=16 to match compact button
                     add_icon = self._icon('add', '➕', size=16)
                     if isinstance(add_icon, str):
                         self.btn_add_monster.config(text=add_icon, state='normal')
@@ -1797,17 +1799,20 @@ class App(tk.Tk):
                 self._create_tooltip(self.btn_add_monster, tooltip_text)
             
             # Disable priority reorder buttons with locked icon (white on gray)
+            # Use size=16 to match SMALL buttons (36px)
             try:
                 locked_icon = self._icon('locked', '🔒', size=16, color='#FFFFFF')
                 for btn in [self.btn_move_up, self.btn_move_down]:
-                    btn.config(state='disabled')
+                    # IMPORTANT: Keep original bg colors when disabled
+                    original_bg = UI.BTN_NEUTRAL_BG if btn == self.btn_move_up else UI.BTN_NEUTRAL_BG
+                    btn.config(state='disabled', bg=original_bg)
                     if isinstance(locked_icon, str):
                         btn.config(text=locked_icon)
                     else:
                         btn.config(image=locked_icon, text='')
             except Exception:
-                self.btn_move_up.config(state='disabled', text='🔒')
-                self.btn_move_down.config(state='disabled', text='🔒')
+                self.btn_move_up.config(state='disabled', text='🔒', bg=UI.BTN_NEUTRAL_BG)
+                self.btn_move_down.config(state='disabled', text='🔒', bg=UI.BTN_NEUTRAL_BG)
             
             # Update tooltips for disabled buttons
             for btn in [self.btn_move_up, self.btn_move_down]:
@@ -1817,6 +1822,7 @@ class App(tk.Tk):
         else:
             # Normal mode: Restore defaults
             try:
+                # Use size=16 to match compact button
                 add_icon = self._icon('add', '➕', size=16)
                 if isinstance(add_icon, str):
                     self.btn_add_monster.config(text=add_icon, state='normal')
@@ -1830,23 +1836,56 @@ class App(tk.Tk):
                 self.btn_add_monster._tooltip.destroy()
             self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
             
-            # Enable priority reorder buttons with original icons
+            # Enable priority reorder buttons with original icons and colors
             try:
+                # Use size=16 to match SMALL buttons
                 up_icon = self._icon('up', '↑', size=16)
                 down_icon = self._icon('down', '↓', size=16)
                 
                 if isinstance(up_icon, str):
-                    self.btn_move_up.config(state='normal', text=up_icon)
+                    self.btn_move_up.config(
+                        state='normal', 
+                        text=up_icon,
+                        bg=UI.BTN_PRIMARY_BG,      # Restore green
+                        fg=UI.BTN_PRIMARY_FG
+                    )
                 else:
-                    self.btn_move_up.config(state='normal', image=up_icon, text='')
+                    self.btn_move_up.config(
+                        state='normal', 
+                        image=up_icon, 
+                        text='',
+                        bg=UI.BTN_PRIMARY_BG,
+                        fg=UI.BTN_PRIMARY_FG
+                    )
                 
                 if isinstance(down_icon, str):
-                    self.btn_move_down.config(state='normal', text=down_icon)
+                    self.btn_move_down.config(
+                        state='normal', 
+                        text=down_icon,
+                        bg=UI.BTN_INFO_BG,         # Restore blue
+                        fg=UI.BTN_INFO_FG
+                    )
                 else:
-                    self.btn_move_down.config(state='normal', image=down_icon, text='')
+                    self.btn_move_down.config(
+                        state='normal', 
+                        image=down_icon, 
+                        text='',
+                        bg=UI.BTN_INFO_BG,
+                        fg=UI.BTN_INFO_FG
+                    )
             except Exception:
-                self.btn_move_up.config(state='normal', text='↑')
-                self.btn_move_down.config(state='normal', text='↓')
+                self.btn_move_up.config(
+                    state='normal', 
+                    text='↑',
+                    bg=UI.BTN_PRIMARY_BG,
+                    fg=UI.BTN_PRIMARY_FG
+                )
+                self.btn_move_down.config(
+                    state='normal', 
+                    text='↓',
+                    bg=UI.BTN_INFO_BG,
+                    fg=UI.BTN_INFO_FG
+                )
             
             # Restore normal tooltips
             if hasattr(self.btn_move_up, '_tooltip'):
@@ -5087,7 +5126,7 @@ class App(tk.Tk):
                 has_attack_skills = any(skill.get('type', 'attack') != 'buff' for skill in skill_runtime)
                 last_match_info = None
                 
-                # Sprint 22 Patch 1: Initialize skill stats tracker for training mode
+                # Sprint 22 Patch 2: Training mode should NOT cycle targets (no Tab spam)
                 training_mode_active = cfg.get('training_mode_enabled', False)
                 skill_stats = SkillStats() if training_mode_active else None
                 last_stats_update = 0.0
@@ -5156,8 +5195,15 @@ class App(tk.Tk):
                             mode = 'attack'
                             attack_started = now
                             continue
-                        tap(cfg['target_key'])
-                        time.sleep(float(cfg['target_cycle_delay']))
+                        
+                        # Sprint 22 Patch 2: Training mode SKIP target cycling
+                        # Training dummy is stationary - no need to spam Tab/Z key
+                        if not training_mode_active:
+                            tap(cfg['target_key'])
+                            time.sleep(float(cfg['target_cycle_delay']))
+                        else:
+                            # Training mode: Just wait for template detection
+                            time.sleep(0.1)
                         continue
 
                     # mode == 'attack'
