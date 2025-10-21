@@ -3105,14 +3105,17 @@ class App(tk.Tk):
         This is called in __init__() after config load to ensure hotkeys are
         immediately available, even when app is minimized or not focused.
         """
+        print("[Hotkeys] _register_global_hotkeys() called")
         try:
             # Check if keyboard module is available
             if keyboard is None:
+                print("[Hotkeys] ⚠️ keyboard module not available")
                 return
             
             # Get hotkey config (defaults to Ctrl+Shift+R/E if not set)
             hotkey_cfg = self.hunt_cfg.get('global_hotkeys', {})
             if not hotkey_cfg.get('enabled', True):
+                print("[Hotkeys] Global hotkeys disabled by user")
                 return  # Global hotkeys disabled by user
             
             start_key = hotkey_cfg.get('start_key', 'ctrl+shift+r')
