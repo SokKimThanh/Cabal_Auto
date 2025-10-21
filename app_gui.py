@@ -592,6 +592,11 @@ class App(tk.Tk):
         # Phase 3: Multi-Monster Support
         self.monster_rotation_list = []  # [{"name": "Coc Go 2", "priority": 1, "enabled": True}, ...]
         self._load_monster_rotation_list()
+        
+        # Sprint 22 Patch 2: Separate training dummy list
+        self.training_monster_list = []  # [{"name": "Coc go~", "priority": 1, "enabled": True, "training_mode": True}]
+        self._load_training_monster_list()
+        
         self.skills = load_skill_library()
         self.skill_selected_index = None
         self.skill_selected_name = self.skills[0]['name'] if self.skills else None
@@ -1098,40 +1103,17 @@ class App(tk.Tk):
         # Legacy monster estimate (keep for compatibility)
         self.monster_estimate_var.set('')
 
-        # Section 2.5: Training Mode Toggle (Sprint 22 Patch 1)
-        training_frame = tk.Frame(frm)
-        training_frame.grid(row=1, column=4, columnspan=4, sticky='we', pady=(0,12), padx=(12,0))
+        # Section 2.5: Training Mode Toggle (Sprint 22 Patch 2 - Hidden, auto-detect from training_monster_list)
+        # NOTE: Training mode checkbox removed to avoid user confusion.
+        # System auto-enables training mode when training_monster_list has items.
+        # User adds training dummies via normal "Add Monster" dialog (filtered by training_mode flag).
         
-        self.training_mode_var = tk.BooleanVar(value=bool(self.hunt_cfg.get('training_mode_enabled', False)))
-        training_check = tk.Checkbutton(
-            training_frame, 
-            text=self._t('enable_training_mode'),
-            variable=self.training_mode_var,
-            command=self._on_training_mode_toggled,
-            font=('Arial', 9, 'bold')
-        )
-        training_check.pack(anchor='w')
+        # Initialize training_mode_var for backward compatibility
+        self.training_mode_var = tk.BooleanVar(value=False)  # Will be auto-updated
         
-        # Training mode description
-        training_desc = tk.Label(
-            training_frame,
-            text=self._t('training_mode_desc'),
-            fg='#666',
-            font=('Arial', 8),
-            wraplength=250,
-            justify='left'
-        )
-        training_desc.pack(anchor='w', pady=(2,0))
-        
-        # Training mode status indicator
+        # Training mode status indicator (kept for debug info)
         self.training_mode_status_var = tk.StringVar()
-        training_status = tk.Label(
-            training_frame,
-            textvariable=self.training_mode_status_var,
-            fg='#FF9800',
-            font=('Arial', 8, 'bold')
-        )
-        training_status.pack(anchor='w', pady=(4,0))
+        # Status label hidden, only used internally
 
         # Section 3: Skill slots selection
         skill_frame_outer = tk.LabelFrame(frm, text=self._t('skill_slots'), padx=10, pady=8)
@@ -1908,27 +1890,49 @@ class App(tk.Tk):
                     'enabled': False  # Disabled by default
                 })
     
+    def _load_training_monster_list(self):
+        """Sprint 22 Patch 2: Load training_monster_list from hunt_config.
+        
+        This is a separate list for training dummies (Cọc gỗ, quái bất tử).
+        When this list has items, training mode is auto-enabled.
+        """
+        saved_list = self.hunt_cfg.get('training_monster_list', [])
+        self.training_monster_list = []
+        
+        for item in saved_list:
+            if isinstance(item, dict):
+                self.training_monster_list.append({
+                    'name': item.get('name', ''),
+                    'priority': item.get('priority', 1),
+                    'enabled': item.get('enabled', True),
+                    'training_mode': True  # Always true for training list
+                })
+        
+        # Auto-enable training mode if training list has items
+        if hasattr(self, 'training_mode_var'):
+            self.training_mode_var.set(len(self.training_monster_list) > 0)
+    
     def _refresh_monster_rotation_list(self):
         """Refresh the monster rotation listbox display.
         
-        Sprint 22 Patch 1: If training_mode_enabled, filter to show only training dummies.
+        Sprint 22 Patch 2: Show training_monster_list when training mode active,
+        otherwise show monster_rotation_list (normal monsters).
         """
         if not hasattr(self, 'monster_rotation_listbox'):
             return
         
         self.monster_rotation_listbox.delete(0, tk.END)
         
-        # Filter monsters based on training mode
-        is_training_mode = self.training_mode_var.get() if hasattr(self, 'training_mode_var') else False
+        # Sprint 22 Patch 2: Auto-detect training mode from training_monster_list
+        has_training_list = hasattr(self, 'training_monster_list') and len(self.training_monster_list) > 0
         
-        display_list = self.monster_rotation_list
-        if is_training_mode:
-            # Filter to show only training dummies
-            display_list = [m for m in self.monster_rotation_list if m.get('training_mode', False)]
-            
-            # Update status if no training dummies found
-            if not display_list and hasattr(self, 'training_mode_status_var'):
-                self.training_mode_status_var.set(f"⚠️ {self._t('no_training_dummies')}")
+        # Choose which list to display
+        if has_training_list:
+            # Training mode: Show training_monster_list
+            display_list = self.training_monster_list
+        else:
+            # Normal mode: Show monster_rotation_list
+            display_list = self.monster_rotation_list
         
         for item in display_list:
             check = "☑" if item['enabled'] else "☐"
@@ -2314,15 +2318,26 @@ class App(tk.Tk):
             suggest_listbox.delete(0, tk.END)
             match_info_var.set('')
             
-            # Filter monsters based on training mode
-            is_training_mode = self.training_mode_var.get() if hasattr(self, 'training_mode_var') else False
+            # Sprint 22 Patch 2: Auto-detect training mode based on training_monster_list
+            # Check if training_monster_list exists and has items
+            has_training_list = hasattr(self, 'training_monster_list') and len(self.training_monster_list) > 0
+            is_training_mode = has_training_list  # Auto-enable if training list has items
+            
             available_monsters = self.monsters
             
             if is_training_mode:
                 # Training mode: Only show training dummies
                 available_monsters = [m for m in self.monsters if m.get('training_mode', False)]
                 if not available_monsters:
-                    match_info_var.set(f"⚠️ {self._t('no_training_dummies')}")
+                    # Sprint 22 Patch 2: Only show warning if training_monster_list is EMPTY
+                    # If user already added training dummies to training_monster_list, don't show warning
+                    if not has_training_list:
+                        debug_msg = f"⚠️ {self._t('no_training_dummies')}"
+                        if self.monsters:
+                            debug_msg += f"\n📚 Library has {len(self.monsters)} monsters total"
+                            training_count = sum(1 for m in self.monsters if m.get('training_mode', False))
+                            debug_msg += f"\n🎯 Training dummies: {training_count}"
+                        match_info_var.set(debug_msg)
                     return
             
             if not search_text:
@@ -2379,20 +2394,50 @@ class App(tk.Tk):
             
             monster_name = suggest_listbox.get(selection[0])
             
-            # Check if already in rotation list
-            if any(m['name'] == monster_name for m in self.monster_rotation_list):
+            # Sprint 22 Patch 2: Check duplicate based on auto-detected training mode
+            has_training_list = hasattr(self, 'training_monster_list') and len(self.training_monster_list) > 0
+            is_training_mode = has_training_list
+            
+            # Find monster in library to get training_mode flag
+            monster_data = next((m for m in self.monsters if m['name'] == monster_name), None)
+            training_flag = monster_data.get('training_mode', False) if monster_data else False
+            
+            # Determine which list to check and add to
+            if training_flag:
+                # Training dummy: add to training_monster_list
+                check_list = self.training_monster_list
+                target_list = 'training'
+            else:
+                # Normal monster: add to monster_rotation_list
+                check_list = self.monster_rotation_list
+                target_list = 'normal'
+            
+            if any(m['name'] == monster_name for m in check_list):
                 messagebox.showinfo(self._t('info_title'), 
                                     self._t('monster_already_in_list').format(name=monster_name),
                                     parent=dialog)
                 return
             
-            # Add to rotation list
-            new_priority = len(self.monster_rotation_list) + 1
-            self.monster_rotation_list.append({
-                'name': monster_name,
-                'priority': new_priority,
-                'enabled': True
-            })
+            # Add to appropriate list
+            new_priority = len(check_list) + 1
+            
+            if target_list == 'training':
+                self.training_monster_list.append({
+                    'name': monster_name,
+                    'priority': new_priority,
+                    'enabled': True,
+                    'training_mode': True
+                })
+                # Auto-enable training mode
+                if hasattr(self, 'training_mode_var'):
+                    self.training_mode_var.set(True)
+            else:
+                self.monster_rotation_list.append({
+                    'name': monster_name,
+                    'priority': new_priority,
+                    'enabled': True,
+                    'training_mode': False
+                })
             
             self._refresh_monster_rotation_list()
             dialog.destroy()
@@ -3380,6 +3425,8 @@ class App(tk.Tk):
             # Phase 3: Multi-Monster Support
             "monster_list": self.monster_rotation_list,
             "current_monster_index": self.hunt_cfg.get('current_monster_index', 0),
+            # Sprint 22 Patch 2: Save training_monster_list separately
+            "training_monster_list": self.training_monster_list if hasattr(self, 'training_monster_list') else [],
         })
         
         # Update skill slots

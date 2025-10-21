@@ -60,12 +60,12 @@
       "enabled": true
     }
   ],
-  "rotation_mode": "priority",
+  "rotation_mode": "sequence",
   "current_monster_index": 0,
   "window_pid": 21928,
   "templates": [],
   "training_mode_enabled": true,
-  "ui_mode": "intermediate",
+  "ui_mode": "beginner",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,
