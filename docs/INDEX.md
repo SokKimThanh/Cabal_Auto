@@ -83,6 +83,28 @@ docs/
 
 ## 🚀 Sprint Documentation (Chronological)
 
+### Sprint 21 - System Enhancements & Refinements ✅
+**Mục tiêu**: Cải tiến UX dựa trên user feedback - window auto-detection, keyboard shortcuts, prerequisites validation
+
+**Tài liệu**:
+- [SPRINT21_SUMMARY.md](SPRINT21_SUMMARY.md) - 📘 COMPLETE SUMMARY
+  - ✅ PATCH 1: Codebase Analysis
+  - ✅ PATCH 2: Window Auto-Detection cho First Run
+  - ✅ PATCH 3: Keyboard Shortcuts Update (Alt+Shift+Z, Z key)
+  - ✅ PATCH 4: Combat System Verification (skill rotation)
+  - ⚠️ PATCH 5: Target Lock (DEFERRED to Sprint 22)
+  - ✅ PATCH 6: Auto Mode Prerequisites Validation
+  - ✅ PATCH 7: UI Contrast & Color Consistency
+  - ✅ PATCH 8: Documentation & Summary
+
+**Key Changes**:
+- 🪟 Auto-detect Cabal window by PID when user skips wizard
+- ⌨️ New shortcuts: `Alt+Shift+Z` (toggle hunt), `Z` (target switch)
+- ✅ Prerequisites check prevents invalid hunt starts
+- 🎨 100% button style consistency
+
+**Tiến độ**: 6/8 patches complete (75%), 1 deferred, 1 documentation
+
 ### Sprint 19 - Library Manager (Monster/Skill/Timing)
 **Mục tiêu**: Hoàn thiện Library Manager với 3 tab (Quái Vật, Kỹ Năng, Tính Toán Thời Gian), phục vụ cấu hình và tính toán timing áp dụng cho Hunt.
 

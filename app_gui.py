@@ -3876,9 +3876,10 @@ class App(tk.Tk):
             btn_frame = tk.Frame(dialog)
             btn_frame.pack(fill='x', padx=10, pady=(0,10))
             
-            tk.Button(btn_frame, text=self._t('btn_calculate'), command=update_recommendations, bg='#2196F3', fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
+            from lib.ui.button_styles import get_button_config
+            tk.Button(btn_frame, text=self._t('btn_calculate'), command=update_recommendations, **get_button_config('blue')).pack(side='left', padx=5)
             
-            tk.Button(btn_frame, text=self._t('btn_apply_to_hunt_config'), command=apply_to_hunt_config, bg='#4CAF50', fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
+            tk.Button(btn_frame, text=self._t('btn_apply_to_hunt_config'), command=apply_to_hunt_config, **get_button_config('green')).pack(side='left', padx=5)
             
             tk.Button(btn_frame, text=self._t('close'), command=dialog.destroy).pack(side='left', padx=5)
             
@@ -4473,10 +4474,68 @@ class App(tk.Tk):
                 end = time.time() + min(sleep_extra, 0.5)
                 while time.time() < end and self.hunt_running:
                     time.sleep(0.02)
+    
+    def _validate_hunt_prerequisites(self) -> Optional[str]:
+        """
+        Validate prerequisites before starting hunt (PATCH 6).
+        
+        Returns:
+            None if all checks pass, otherwise error message string.
+        """
+        errors = []
+        
+        # 1. Check window selected
+        has_window = hasattr(self, 'hunt_selected') and self.hunt_selected
+        if not has_window:
+            window_title = self.hunt_cfg.get('window_title', '').strip()
+            if not window_title:
+                errors.append("❌ No game window selected")
+                errors.append("   → Click 'Find Windows' button to select your game")
+        
+        # 2. Check monster templates exist
+        templates = self.hunt_cfg.get('templates', [])
+        monster_list = self.hunt_cfg.get('monster_list', [])
+        has_templates = len(templates) > 0
+        has_monsters = len(monster_list) > 0
+        
+        if not has_templates and not has_monsters:
+            errors.append("❌ No monster templates configured")
+            errors.append("   → Go to Setup tab and add monster templates")
+            errors.append("   → Or run Setup Wizard for guided configuration")
+        
+        # 3. Check skills configured (at least 1 attack skill)
+        skill_slots = self.hunt_cfg.get('skill_slots', [])
+        attack_skills = [s for s in skill_slots if s.get('enabled', True) and s.get('type', 'attack') == 'attack']
+        
+        if len(attack_skills) == 0:
+            errors.append("❌ No attack skills configured")
+            errors.append("   → Configure at least 1 attack skill in Setup tab")
+            errors.append("   → Or press Ctrl+K to open Skill Manager")
+        
+        # 4. Check target key configured
+        target_key = self.hunt_cfg.get('target_key', '').strip()
+        if not target_key:
+            errors.append("⚠️ No target key configured (will use default 'z')")
+        
+        if errors:
+            return "\n".join(errors) + "\n\n💡 Fix these issues before starting hunt."
+        
+        return None
 
     def on_hunt_start(self):
         if self.hunt_running:
             return
+        
+        # ✅ PATCH 6: Prerequisites validation
+        validation_error = self._validate_hunt_prerequisites()
+        if validation_error:
+            messagebox.showerror(
+                self._t('error_title'),
+                validation_error,
+                parent=self
+            )
+            return
+        
         try:
             cfg = self._hunt_from_ui()
         except Exception as e:
