@@ -51,6 +51,107 @@ from lib.features.skills.skill_stats import SkillStats  # Sprint 22 Patch 1: Tra
 from lib.ui_style import UIStyle as UI  # Global UI style constants
 
 
+# =====================================================================
+# Single Instance Lock (Prevent multiple app instances)
+# =====================================================================
+class SingleInstanceLock:
+    """Cross-platform single instance lock.
+    
+    Ensures only one instance of the application can run at a time.
+    Uses Windows mutex on Windows, fcntl file lock on Unix-like systems.
+    """
+    
+    def __init__(self, app_name: str = "CabalAutoHunt"):
+        """Initialize single instance lock.
+        
+        Args:
+            app_name: Unique application name for mutex/lock identification
+        """
+        self.app_name = app_name
+        self.mutex = None
+        self.lock_file = None
+        self.is_locked = False
+        
+        # For Unix: lock file in tmp directory
+        if sys.platform != 'win32':
+            lock_dir = Path(__file__).parent / 'tmp'
+            lock_dir.mkdir(parents=True, exist_ok=True)
+            self.lock_file_path = lock_dir / f'{app_name}.lock'
+    
+    def acquire(self) -> bool:
+        """Acquire the lock. Returns True if successful, False if another instance is running.
+        
+        Returns:
+            bool: True if lock acquired successfully, False if another instance holds the lock.
+        """
+        try:
+            if sys.platform == 'win32':
+                # Windows: Use named mutex (more reliable than file locking)
+                import ctypes
+                from ctypes import wintypes
+                
+                # Create mutex name (Global for all users, Local for current user)
+                mutex_name = f"Global\\{self.app_name}_SingleInstance"
+                
+                # Try to create mutex
+                kernel32 = ctypes.windll.kernel32
+                self.mutex = kernel32.CreateMutexW(None, False, mutex_name)
+                
+                # Check if mutex already exists (ERROR_ALREADY_EXISTS = 183)
+                last_error = kernel32.GetLastError()
+                if last_error == 183:  # ERROR_ALREADY_EXISTS
+                    return False
+                
+                self.is_locked = True
+                return True
+            else:
+                # Unix: Use fcntl file lock
+                import fcntl
+                try:
+                    self.lock_file = open(self.lock_file_path, 'w')
+                    fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    self.is_locked = True
+                    # Write PID for debugging
+                    self.lock_file.write(str(os.getpid()))
+                    self.lock_file.flush()
+                    return True
+                except (OSError, IOError):
+                    if self.lock_file:
+                        self.lock_file.close()
+                    return False
+        except Exception as e:
+            print(f"Error acquiring lock: {e}")
+            return False
+    
+    def release(self):
+        """Release the lock and clean up."""
+        try:
+            if sys.platform == 'win32':
+                # Windows: Close mutex handle
+                if self.mutex and self.is_locked:
+                    import ctypes
+                    kernel32 = ctypes.windll.kernel32
+                    kernel32.CloseHandle(self.mutex)
+                    self.is_locked = False
+            else:
+                # Unix: Unlock and close file
+                if self.lock_file and self.is_locked:
+                    import fcntl
+                    fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                    self.lock_file.close()
+                    self.is_locked = False
+                    
+                    # Remove lock file
+                    if self.lock_file_path.exists():
+                        self.lock_file_path.unlink()
+        except Exception as e:
+            print(f"Error releasing lock: {e}")
+    
+    def __del__(self):
+        """Cleanup on object destruction."""
+        self.release()
+
+
 # Register centralized translations at startup
 try:
     i18n_register_bulk(I18N_GLOBAL, GLOBAL_TRANSLATIONS)
@@ -5395,9 +5496,39 @@ class App(tk.Tk):
 
 
 def main():
-    app = App()
-    app.protocol('WM_DELETE_WINDOW', app.on_close)
-    app.mainloop()
+    """Main entry point with single instance lock."""
+    # Create single instance lock (using mutex on Windows, file lock on Unix)
+    instance_lock = SingleInstanceLock("CabalAutoHunt_v1")
+    
+    # Try to acquire lock
+    if not instance_lock.acquire():
+        # Another instance is already running - show error in both languages
+        root = tk.Tk()
+        root.withdraw()  # Hide main window
+        
+        messagebox.showerror(
+            "⚠️ Application Already Running | Ứng dụng đã chạy",
+            "❌ CANNOT START: Another instance is already running!\n\n"
+            "📌 Only ONE instance can run at a time.\n"
+            "🔄 Please close the existing application first, then try again.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "❌ KHÔNG THỂ KHỞI ĐỘNG: Ứng dụng đã đang chạy!\n\n"
+            "📌 Chỉ được phép chạy 1 ứng dụng tại một thời điểm.\n"
+            "🔄 Vui lòng tắt ứng dụng đang chạy trước, sau đó thử lại.",
+            parent=root
+        )
+        
+        root.destroy()
+        sys.exit(1)
+    
+    try:
+        # Start application
+        app = App()
+        app.protocol('WM_DELETE_WINDOW', app.on_close)
+        app.mainloop()
+    finally:
+        # Always release lock on exit
+        instance_lock.release()
 
 
 if __name__ == '__main__':
