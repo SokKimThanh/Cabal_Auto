@@ -5305,12 +5305,12 @@ class App(tk.Tk):
         tk.Label(container, text=self._t('skill_name')).grid(row=0, column=2, sticky='e')
         tk.Entry(container, textvariable=self.skill_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
 
-    tk.Label(container, text=self._t('skill_key')).grid(row=1, column=2, sticky='e', pady=(2,0))
-    tk.Entry(container, textvariable=self.skill_key_var, width=12).grid(row=1, column=3, sticky='w', padx=(4,0), pady=(2,0))
-    # Capture key convenience: set key by pressing it while capture is active
-    cap_btn = tk.Button(container, text=self._t('capture_key'), command=lambda: self._start_key_capture_for_skill(win))
-    cap_btn.grid(row=1, column=4, sticky='w', padx=(6,0), pady=(2,0))
-    self._skill_key_capture_active = False
+        tk.Label(container, text=self._t('skill_key')).grid(row=1, column=2, sticky='e', pady=(2,0))
+        tk.Entry(container, textvariable=self.skill_key_var, width=12).grid(row=1, column=3, sticky='w', padx=(4,0), pady=(2,0))
+        # Capture key convenience: set key by pressing it while capture is active
+        cap_btn = tk.Button(container, text=self._t('capture_key'), command=lambda: self._start_key_capture_for_skill(win))
+        cap_btn.grid(row=1, column=4, sticky='w', padx=(6,0), pady=(2,0))
+        self._skill_key_capture_active = False
 
         tk.Label(container, text=self._t('skill_type')).grid(row=2, column=2, sticky='e')
         self.skill_type_combo = ttk.Combobox(container, textvariable=self.skill_type_var, state='readonly', width=14)
