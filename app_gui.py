@@ -48,6 +48,7 @@ from lib.system.win_input import tap
 from lib.system.hunt_logger import get_hunt_logger
 from lib.features.timing.calculator import calculate_timing, format_timing_recommendation, get_timing_presets
 from lib.features.skills.skill_stats import SkillStats  # Sprint 22 Patch 1: Training Mode
+from lib.ui_style import UIStyle as UI  # Global UI style constants
 
 
 # Register centralized translations at startup
@@ -558,22 +559,28 @@ class App(tk.Tk):
         # Auto bring-to-front saved window (after setup check)
         self.after(1000, self._auto_bring_to_front_on_startup)
     
-    def _icon(self, name: str, fallback: str, size: int = 16):
+    def _icon(self, name: str, fallback: str, size: int = 16, color: str = None):
         """Fetch an icon image from icon_helper with caching.
 
         Returns a PhotoImage (when available) or fallback string (emoji) otherwise.
         Keep a reference on self to avoid Tk image garbage collection.
+        
+        Args:
+            name: Icon name (e.g., 'add', 'locked')
+            fallback: Emoji fallback if icon not found
+            size: Icon size in pixels
+            color: Hex color to tint icon (e.g., '#FFFFFF' for white on gray background)
         """
         try:
             if not hasattr(self, '_icon_cache'):
                 self._icon_cache = {}
-            key = f"{name}_{size}"
+            key = f"{name}_{size}_{color or 'default'}"
             if key in self._icon_cache:
                 return self._icon_cache[key]
             helper = getattr(self, 'icon_helper', None)
             if helper is not None:
                 try:
-                    img = helper.get_icon(name, fallback=fallback, size=size)
+                    img = helper.get_icon(name, fallback=fallback, size=size, color=color)
                 except Exception:
                     img = fallback
             else:
@@ -838,29 +845,69 @@ class App(tk.Tk):
         monster_scroll.pack(side='right', fill='y')
         self.monster_rotation_listbox.config(yscrollcommand=monster_scroll.set)
         
-        # Control buttons (right side)
+        # Control buttons (right side) - Icon-only buttons with square design
         btn_container = tk.Frame(list_container)
         btn_container.pack(side='right', fill='y', padx=(8,0))
         
         # Add monster button (icon changes based on training mode state)
+        # Using MEDIUM size for comfortable touch target (44px)
         self.btn_add_monster = tk.Button(
             btn_container, 
             text="➕", 
             command=self._on_monster_add_smart, 
-            width=3, 
-            font=('Arial', 10, 'bold'), 
-            fg='#4CAF50'
+            font=UI.FONT_BUTTON,
+            bg=UI.BTN_ACCENT_BG,
+            fg=UI.BTN_ACCENT_FG,
+            activebackground=UI.BTN_ACCENT_HOVER,
+            activeforeground=UI.BTN_ACCENT_FG,
+            relief=UI.BTN_RELIEF_NORMAL,
+            cursor='hand2',
+            width=UI.BTN_ICON_WIDTH_MEDIUM,   # Width=3 for balanced square
+            height=1,                          # Height in lines
+            padx=UI.BTN_ICON_PADDING_MEDIUM,  # 12px padding (icon 20px → total 44px)
+            pady=UI.BTN_ICON_PADDING_MEDIUM
         )
-        self.btn_add_monster.pack(pady=(0,4))
+        self.btn_add_monster.pack(pady=(0, UI.BTN_SPACING // 2))
         self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
         
         # Priority reorder buttons (disabled in training mode)
-        self.btn_move_up = tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3)
-        self.btn_move_up.pack(pady=(0,4))
+        # Same MEDIUM size for visual consistency
+        self.btn_move_up = tk.Button(
+            btn_container, 
+            text="↑", 
+            command=self._on_monster_move_up, 
+            font=UI.FONT_BUTTON,
+            bg=UI.BTN_NEUTRAL_BG,
+            fg=UI.BTN_NEUTRAL_FG,
+            activebackground=UI.BTN_NEUTRAL_HOVER,
+            activeforeground=UI.BTN_NEUTRAL_FG,
+            relief=UI.BTN_RELIEF_NORMAL,
+            cursor='hand2',
+            width=UI.BTN_ICON_WIDTH_MEDIUM,
+            height=1,
+            padx=UI.BTN_ICON_PADDING_MEDIUM,
+            pady=UI.BTN_ICON_PADDING_MEDIUM
+        )
+        self.btn_move_up.pack(pady=(0, UI.BTN_SPACING // 2))
         self._create_tooltip(self.btn_move_up, self._t('tooltip_move_up'))
         
-        self.btn_move_down = tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3)
-        self.btn_move_down.pack(pady=(0,12))
+        self.btn_move_down = tk.Button(
+            btn_container, 
+            text="↓", 
+            command=self._on_monster_move_down, 
+            font=UI.FONT_BUTTON,
+            bg=UI.BTN_NEUTRAL_BG,
+            fg=UI.BTN_NEUTRAL_FG,
+            activebackground=UI.BTN_NEUTRAL_HOVER,
+            activeforeground=UI.BTN_NEUTRAL_FG,
+            relief=UI.BTN_RELIEF_NORMAL,
+            cursor='hand2',
+            width=UI.BTN_ICON_WIDTH_MEDIUM,
+            height=1,
+            padx=UI.BTN_ICON_PADDING_MEDIUM,
+            pady=UI.BTN_ICON_PADDING_MEDIUM
+        )
+        self.btn_move_down.pack(pady=(0, UI.BTN_SPACING * 1.5))
         self._create_tooltip(self.btn_move_down, self._t('tooltip_move_down'))
         
         # Library Manager buttons removed per request
@@ -1749,9 +1796,9 @@ class App(tk.Tk):
                     self.btn_add_monster._tooltip.destroy()
                 self._create_tooltip(self.btn_add_monster, tooltip_text)
             
-            # Disable priority reorder buttons with locked icon
+            # Disable priority reorder buttons with locked icon (white on gray)
             try:
-                locked_icon = self._icon('locked', '🔒', size=16)
+                locked_icon = self._icon('locked', '🔒', size=16, color='#FFFFFF')
                 for btn in [self.btn_move_up, self.btn_move_down]:
                     btn.config(state='disabled')
                     if isinstance(locked_icon, str):

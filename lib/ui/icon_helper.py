@@ -65,11 +65,13 @@ class IconHelper:
         # Default icon mappings (prefer .ico, fallback to .png)
         self.icon_map = {
             'add': ('add.ico', '➕'),
+            'accept': ('accept.ico', '✔️'),  # Accept icon for training mode
+            'locked': ('locked.ico', '🔒'),  # Locked icon for training mode
             'edit': ('edit.ico', '✏️'),
             'delete': ('delete.ico', '🗑️'),
             'save': ('save.ico', '💾'),
             'cancel': ('cancel.ico', '✖'),
-            'folder': ('folder.ico', '📁'),  # Updated to prioritize .ico
+            'folder': ('folder.ico', '📁'),
             'capture': ('capture.png', '📸'),
             'search': ('search.ico', '🔍'),
             'refresh': ('refresh.ico', '🔄'),
@@ -91,20 +93,67 @@ class IconHelper:
             'damage': ('damage.ico', '⚔️'),
             'priority': ('priority.ico', '🎯'),
             'question': ('question_mark.ico', '❓'),
-            'up': ('up.ico', '↑'),  # Emoji fallback (no .ico yet)
-            'down': ('down.ico', '↓'),  # Emoji fallback (no .ico yet)
-            'browse': ('folder.ico', '📂'),  # Alias for folder
-            'clear': ('delete.ico', '🗑️'),  # Alias for delete
-            'close': ('cancel.ico', '✖'),  # Alias for cancel
-            'new': ('add.ico', '➕'),  # Alias for add
-            'calculate': ('info.ico', '🔢'),  # Using info icon
-            'apply': ('save.ico', '✔️'),  # Alias for save
-            'test': ('question_mark.ico', '🧪'),  # Using question icon
-            'use': ('start.ico', '📌'),  # Using start icon for "use"
-            'library': ('list.ico', '📚'),  # Alias for list
+            'up': ('up.ico', '↑'),
+            'down': ('down.ico', '↓'),
+            'browse': ('folder.ico', '📂'),
+            'clear': ('delete.ico', '🗑️'),
+            'close': ('cancel.ico', '✖'),
+            'new': ('add.ico', '➕'),
+            'calculate': ('info.ico', '🔢'),
+            'apply': ('save.ico', '✔️'),
+            'test': ('question_mark.ico', '🧪'),
+            'use': ('start.ico', '📌'),
+            'library': ('list.ico', '📚'),
         }
     
-    def get_icon(self, name: str, fallback: Optional[str] = None, size: int = 24) -> Union[Any, str]:
+    def _apply_color_tint(self, img: Any, hex_color: str) -> Any:
+        """
+        Apply color tint to icon while preserving alpha channel.
+        Works best with monochrome icons.
+        
+        Args:
+            img: PIL Image in RGBA mode
+            hex_color: Hex color string (e.g., '#FFFFFF')
+        
+        Returns:
+            Tinted PIL Image
+        """
+        if Image is None:
+            return img
+        
+        # Parse hex color to RGB
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+        else:
+            return img  # Invalid color format
+        
+        # Split channels
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+        
+        data = img.getdata()
+        new_data = []
+        
+        # Recolor each pixel: replace RGB but keep alpha
+        for item in data:
+            # item = (R, G, B, A)
+            if item[3] > 0:  # If pixel has any opacity
+                # Use the luminance of original pixel to determine brightness
+                luminance = (item[0] + item[1] + item[2]) / 3.0 / 255.0
+                new_data.append((
+                    int(r * luminance),
+                    int(g * luminance),
+                    int(b * luminance),
+                    item[3]  # Preserve alpha
+                ))
+            else:
+                new_data.append(item)  # Fully transparent - keep as is
+        
+        img.putdata(new_data)
+        return img
+    
+    def get_icon(self, name: str, fallback: Optional[str] = None, size: int = 24, color: Optional[str] = None) -> Union[Any, str]:
         """
         Get icon by name, with fallback to emoji.
         
@@ -112,12 +161,13 @@ class IconHelper:
             name: Icon name (e.g., 'add', 'edit', 'delete')
             fallback: Fallback emoji character (optional)
             size: Icon size in pixels (default: 24)
+            color: Hex color to tint icon (e.g., '#FFFFFF' for white). Only works with PIL installed.
         
         Returns:
             PhotoImage object if icon file exists, otherwise emoji string
         """
-        # Check cache
-        cache_key = f"{name}_{size}"
+        # Check cache (include color in cache key)
+        cache_key = f"{name}_{size}_{color or 'default'}"
         if cache_key in self._cache:
             return self._cache[cache_key]
         
@@ -149,6 +199,16 @@ class IconHelper:
                 if Image is not None and ImageTk is not None and size > 0:
                     try:
                         img = Image.open(icon_path)
+                        
+                        # Convert to RGBA if needed for color manipulation
+                        if img.mode != 'RGBA':
+                            img = img.convert('RGBA')
+                        
+                        # Apply color tint if requested
+                        if color:
+                            img = self._apply_color_tint(img, color)
+                        
+                        # Resize if needed
                         if img.width != size or img.height != size:
                             # Handle PIL v10+ and older
                             resampling = None
@@ -161,11 +221,13 @@ class IconHelper:
                                 img = img.resize((size, size), resampling)
                             else:
                                 img = img.resize((size, size))
+                        
                         icon = ImageTk.PhotoImage(img)
                         self._cache[cache_key] = icon
                         return icon
-                    except Exception:
-                        # Fallback to tkinter PhotoImage without resizing
+                    except Exception as e:
+                        print(f"Warning: Could not process icon '{name}' with PIL: {e}")
+                        # Fallback to tkinter PhotoImage without resizing/coloring
                         icon = PhotoImage(file=str(icon_path))
                         self._cache[cache_key] = icon
                         return icon
