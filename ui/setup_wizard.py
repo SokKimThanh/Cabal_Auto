@@ -331,11 +331,11 @@ class SetupWizard:
         button_frame = tk.Frame(footer_frame, bg='#f0f0f0')
         button_frame.pack(pady=15)
         
-        # Back button with previous icon
+        # Back button with previous icon (reduced size for better balance)
         back_icon = None
         if icon_helper:
             try:
-                back_icon = icon_helper.get_icon('previous', fallback='←', size=18)
+                back_icon = icon_helper.get_icon('previous', fallback='←', size=16)
             except Exception:
                 pass
         
@@ -345,9 +345,9 @@ class SetupWizard:
             image=back_icon if back_icon and not isinstance(back_icon, str) else None,
             compound='left' if back_icon and not isinstance(back_icon, str) else 'none',
             command=self._on_back,
-            width=12,
-            height=2,
             font=('Arial', 10),
+            padx=20,
+            pady=8,
             state=tk.DISABLED  # Disabled on first step
         )
         self.back_button.pack(side=tk.LEFT, padx=8)
@@ -371,15 +371,15 @@ class SetupWizard:
             image=next_icon if next_icon and not isinstance(next_icon, str) else None,
             compound='right' if next_icon and not isinstance(next_icon, str) else 'none',
             command=self._on_next,
-            width=15,
-            height=2,
             font=('Arial', 11, 'bold'),
             bg='#357A38',  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
             fg='white',
             activebackground='#2E7D32',  # Darker on hover
             cursor='hand2',
             relief=tk.RAISED,
-            bd=3
+            bd=3,
+            padx=24,  # Negative space (primary button)
+            pady=10
         )
         self.next_button.pack(side=tk.LEFT, padx=15)  # Extra padding to make it stand out
         if next_icon and not isinstance(next_icon, str):
@@ -401,9 +401,9 @@ class SetupWizard:
             image=cancel_icon if cancel_icon and not isinstance(cancel_icon, str) else None,
             compound='left' if cancel_icon and not isinstance(cancel_icon, str) else 'none',
             command=self._on_cancel,
-            width=12,
-            height=2,
-            font=('Arial', 10)
+            font=('Arial', 10),
+            padx=20,
+            pady=8
         )
         self.cancel_button.pack(side=tk.LEFT, padx=8)
         if cancel_icon and not isinstance(cancel_icon, str):
@@ -682,7 +682,9 @@ It takes about 2 minutes. Let's begin!"""
             fg='white',
             activebackground='#2E7D32',
             font=('Arial', 9, 'bold'),
-            cursor='hand2'
+            cursor='hand2',
+            padx=18,
+            pady=8
         )
         btn_search.pack(side=tk.LEFT)
         if search_icon and not isinstance(search_icon, str):
@@ -905,7 +907,10 @@ It takes about 2 minutes. Let's begin!"""
             text=f" {self._t('clear_all_slots')}" if clear_icon and not isinstance(clear_icon, str) else self._t('clear_all_slots'),
             image=clear_icon if clear_icon and not isinstance(clear_icon, str) else None,
             compound='left' if clear_icon and not isinstance(clear_icon, str) else 'none',
-            command=self._clear_all_skill_slots
+            command=self._clear_all_skill_slots,
+            font=('Arial', 10),
+            padx=18,
+            pady=8
         )
         clear_btn.pack(side=tk.LEFT, padx=5)
         if clear_icon and not isinstance(clear_icon, str):
@@ -931,8 +936,8 @@ It takes about 2 minutes. Let's begin!"""
             fg='white',
             activebackground='#1976D2',
             font=('Arial', 10, 'bold'),
-            padx=15,
-            pady=5,
+            padx=20,  # Negative space
+            pady=8,
             cursor='hand2'
         )
         self.rotation_builder_button.pack(side=tk.LEFT, padx=5)
@@ -1568,15 +1573,30 @@ if __name__ == "__main__":
     def on_wizard_complete(data):
         print("Wizard completed with data:", data)
     
-    # Button to launch wizard
+    # Button to launch wizard with support icon
+    wizard_icon = None
+    if icon_helper:
+        try:
+            wizard_icon = icon_helper.get_icon('support', fallback='🧙', size=20)
+        except Exception:
+            pass
+    
     launch_btn = tk.Button(
         root,
-        text="Launch Setup Wizard",
+        text=" Launch Setup Wizard" if wizard_icon and not isinstance(wizard_icon, str) else "🧙 Launch Setup Wizard",
+        image=wizard_icon if wizard_icon and not isinstance(wizard_icon, str) else None,
+        compound='left' if wizard_icon and not isinstance(wizard_icon, str) else 'none',
         command=lambda: show_setup_wizard(root, on_complete=on_wizard_complete),
-        font=('Arial', 12),
-        padx=20,
-        pady=10
+        font=('Arial', 12, 'bold'),
+        bg='#2196F3',
+        fg='white',
+        activebackground='#1976D2',
+        padx=24,
+        pady=10,
+        cursor='hand2'
     )
     launch_btn.pack(expand=True)
+    if wizard_icon and not isinstance(wizard_icon, str):
+        launch_btn.image = wizard_icon
     
     root.mainloop()
