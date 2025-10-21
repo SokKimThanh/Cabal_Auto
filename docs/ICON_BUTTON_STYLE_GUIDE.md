@@ -26,6 +26,12 @@ def _create_icon_button(self, parent, icon_emoji, command, style='compact',
 **Returns:**
 `tk.Button` widget đã được config
 
+**Features:**
+- ✅ Auto-maps foreground color based on background (white for all standard colors)
+- ✅ Consistent sizing across all button styles
+- ✅ Built-in hover states
+- ✅ Flexible kwargs override system
+
 ## Button Size Styles
 
 ### 1. Compact (20px)
@@ -154,26 +160,32 @@ self.btn_add_monster = self._create_icon_button(
     hover_color=UI.BTN_ACCENT_HOVER
 )
 
-# Move Up - Small green
+# Move Up - Compact blue
 self.btn_move_up = self._create_icon_button(
     btn_container,
     icon_emoji="↑",
     command=self._on_monster_move_up,
-    style='small',
-    bg_color=UI.BTN_PRIMARY_BG,
-    hover_color=UI.BTN_PRIMARY_HOVER
+    style='compact',
+    bg_color=UI.BTN_INFO_BG,
+    hover_color=UI.BTN_INFO_HOVER
 )
 
-# Move Down - Small blue
+# Move Down - Compact blue
 self.btn_move_down = self._create_icon_button(
     btn_container,
     icon_emoji="↓",
     command=self._on_monster_move_down,
-    style='small',
+    style='compact',
     bg_color=UI.BTN_INFO_BG,
     hover_color=UI.BTN_INFO_HOVER
 )
 ```
+
+**All 3 buttons use:**
+- ✅ Style: `compact` (20px: 16px icon + 2×2px padding)
+- ✅ Consistent sizing for visual alignment
+- ✅ Color scheme: Teal (Add) + Blue (Up/Down for consistency)
+- ✅ Auto-mapped foreground colors (all white)
 
 ### Common Icon Patterns
 
@@ -189,8 +201,8 @@ self.btn_move_down = self._create_icon_button(
 
 #### Move Up/Down
 - Icon: ↑ / ↓ (Arrows)
-- Color: Green (Up) / Blue (Down)
-- Size: Small
+- Color: Blue (Info) for both - consistent color scheme
+- Size: Compact or Small
 
 #### Edit/Modify
 - Icon: ✏️ or ⚙️ (Pencil/Gear)

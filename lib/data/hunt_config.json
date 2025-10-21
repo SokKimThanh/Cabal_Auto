@@ -1,6 +1,5 @@
 {
   "window_title": "Setup Wizard - Cabal Auto Hunt",
-  "window_pid": null,
   "target_key": "TAB",
   "attack_keys": [
     "1",
@@ -19,17 +18,6 @@
   "lost_timeout_sec": 0.5,
   "attack_min_duration_sec": 5.0,
   "bring_to_front_each_cycle": false,
-  "window_bounds": null,
-  "templates": [],
-  "monster_list": [
-    {
-      "name": "Coc go~",
-      "priority": 1,
-      "enabled": true
-    }
-  ],
-  "rotation_mode": "priority",
-  "current_monster_index": 0,
   "skill_slots": [
     {
       "name": "Dark Explosion",
@@ -64,5 +52,17 @@
       "image": "assets/images/skills/regeneration_1760739255499.png"
     }
   ],
-  "training_mode_enabled": true
+  "window_bounds": null,
+  "monster_list": [
+    {
+      "name": "Coc go~",
+      "priority": 1,
+      "enabled": true
+    }
+  ],
+  "rotation_mode": "priority",
+  "current_monster_index": 0,
+  "window_pid": null,
+  "templates": [],
+  "training_mode_enabled": false
 }

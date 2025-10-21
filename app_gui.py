@@ -646,15 +646,26 @@ class App(tk.Tk):
         if hover_color is None:
             hover_color = UI.BTN_ACCENT_HOVER
         
+        # Determine foreground color based on background color
+        # Map background colors to their corresponding foreground colors
+        color_map = {
+            UI.BTN_PRIMARY_BG: UI.BTN_PRIMARY_FG,
+            UI.BTN_ACCENT_BG: UI.BTN_ACCENT_FG,
+            UI.BTN_INFO_BG: UI.BTN_INFO_FG,
+            UI.BTN_NEUTRAL_BG: UI.BTN_NEUTRAL_FG,
+            UI.BTN_DANGER_BG: UI.BTN_DANGER_FG,
+        }
+        fg_color = color_map.get(bg_color, UI.BTN_ACCENT_FG)  # Default to white
+        
         # Merge with user kwargs
         button_config = {
             'text': icon_emoji,
             'command': command,
             'font': UI.FONT_BUTTON,
             'bg': bg_color,
-            'fg': UI.BTN_ACCENT_FG,
+            'fg': fg_color,
             'activebackground': hover_color,
-            'activeforeground': UI.BTN_ACCENT_FG,
+            'activeforeground': fg_color,
             'relief': UI.BTN_RELIEF_NORMAL,
             'cursor': 'hand2',
             **config,
@@ -932,13 +943,14 @@ class App(tk.Tk):
         self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
         
         # Priority reorder buttons - Compact style (20px: 16px icon + 2×2px padding)
+        # Both buttons use blue color for consistency
         self.btn_move_up = self._create_icon_button(
             btn_container,
             icon_emoji="↑",
             command=self._on_monster_move_up,
             style='compact',
-            bg_color=UI.BTN_PRIMARY_BG,      # Green for UP
-            hover_color=UI.BTN_PRIMARY_HOVER
+            bg_color=UI.BTN_INFO_BG,         # Blue for UP
+            hover_color=UI.BTN_INFO_HOVER
         )
         self.btn_move_up.pack(pady=(0, UI.BTN_SPACING // 2))
         self._create_tooltip(self.btn_move_up, self._t('tooltip_move_up'))
@@ -1880,7 +1892,7 @@ class App(tk.Tk):
                 self.btn_add_monster._tooltip.destroy()
             self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
             
-            # Enable priority reorder buttons with original icons and colors
+            # Enable priority reorder buttons with original icons and colors (both blue for consistency)
             try:
                 # Use size=16 to match SMALL buttons
                 up_icon = self._icon('up', '↑', size=16)
@@ -1890,23 +1902,23 @@ class App(tk.Tk):
                     self.btn_move_up.config(
                         state='normal', 
                         text=up_icon,
-                        bg=UI.BTN_PRIMARY_BG,      # Restore green
-                        fg=UI.BTN_PRIMARY_FG
+                        bg=UI.BTN_INFO_BG,         # Blue for consistency
+                        fg=UI.BTN_INFO_FG
                     )
                 else:
                     self.btn_move_up.config(
                         state='normal', 
                         image=up_icon, 
                         text='',
-                        bg=UI.BTN_PRIMARY_BG,
-                        fg=UI.BTN_PRIMARY_FG
+                        bg=UI.BTN_INFO_BG,
+                        fg=UI.BTN_INFO_FG
                     )
                 
                 if isinstance(down_icon, str):
                     self.btn_move_down.config(
                         state='normal', 
                         text=down_icon,
-                        bg=UI.BTN_INFO_BG,         # Restore blue
+                        bg=UI.BTN_INFO_BG,         # Blue for consistency
                         fg=UI.BTN_INFO_FG
                     )
                 else:
@@ -1921,13 +1933,13 @@ class App(tk.Tk):
                 self.btn_move_up.config(
                     state='normal', 
                     text='↑',
-                    bg=UI.BTN_PRIMARY_BG,
-                    fg=UI.BTN_PRIMARY_FG
+                    bg=UI.BTN_INFO_BG,            # Blue for consistency
+                    fg=UI.BTN_INFO_FG
                 )
                 self.btn_move_down.config(
                     state='normal', 
                     text='↓',
-                    bg=UI.BTN_INFO_BG,
+                    bg=UI.BTN_INFO_BG,            # Blue for consistency
                     fg=UI.BTN_INFO_FG
                 )
             
