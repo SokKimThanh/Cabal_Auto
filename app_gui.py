@@ -478,6 +478,33 @@ def load_hunt_config():
         except Exception:
             pass
     default.setdefault('skill_slots', [])
+
+    # Backward compatibility: if legacy 'attack_keys' present and no skill_slots configured,
+    # migrate them into skill_slots (attack keys become anonymous attack slots).
+    try:
+        if default.get('attack_keys') and not default.get('skill_slots'):
+            atk = default.get('attack_keys') or []
+            # Limit to skill_slot_count (6) to avoid oversized configs
+            max_slots = 6
+            slots = []
+            for i, k in enumerate(atk[:max_slots]):
+                slots.append({'name': '', 'key': str(k).upper(), 'type': 'attack', 'cooldown': 0.0, 'cast_time': 0.0, 'image': ''})
+            default['skill_slots'] = slots
+            # Remove legacy key to avoid re-migration
+            try:
+                del default['attack_keys']
+            except Exception:
+                pass
+            # Write back the migrated config
+            try:
+                with open(HUNT_CONFIG_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(default, f, ensure_ascii=False, indent=2)
+                print('[Migration] ✅ Migrated legacy attack_keys into skill_slots and saved hunt_config.json')
+            except Exception:
+                print('[Migration] ⚠️ Failed to save migrated hunt_config.json; continuing with in-memory migration')
+    except Exception:
+        # Non-fatal migration failure
+        pass
     
     # Backward compatibility: migrate monster_selected_name → monster_list
     if 'monster_selected_name' in default and default['monster_selected_name']:
@@ -607,6 +634,50 @@ class App(tk.Tk):
             print("[Migration] ✅ Auto-migrated 'Coc go' variants to training_monster_list and saved config.")
         
         self.skills = load_skill_library()
+        # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
+        # try to map them to actual attack skills from the skill library for a better UX.
+        try:
+            slots = self.hunt_cfg.get('skill_slots', [])
+            # find anonymous slots (name is empty but key present)
+            anon_indices = [i for i, s in enumerate(slots) if isinstance(s, dict) and not s.get('name') and s.get('key')]
+            if anon_indices:
+                # Inform the user that a legacy migration occurred (attack_keys -> skill_slots)
+                try:
+                    # Show a gentle migration notice (one-time modal)
+                    messagebox.showinfo(self._t('migration_legacy_attack_keys_title'), self._t('migration_legacy_attack_keys_message'))
+                except Exception:
+                    pass
+
+            if anon_indices and self.skills:
+                # collect candidate attack skill names that are not already assigned
+                assigned = {s.get('name') for s in slots if isinstance(s, dict) and s.get('name')}
+                attack_names = [sk['name'] for sk in self.skills if sk.get('type', 'attack') == 'attack' and sk.get('name') and sk.get('name') not in assigned]
+                changed = False
+                for idx in anon_indices:
+                    if not attack_names:
+                        break
+                    name = attack_names.pop(0)
+                    slots[idx]['name'] = name
+                    changed = True
+                if changed:
+                    # persist mapping
+                    self.hunt_cfg['skill_slots'] = slots
+                    try:
+                        save_hunt_config(self.hunt_cfg)
+                        try:
+                            # show auto-mapped details if available
+                            mapped = ', '.join([slots[i].get('name', '') for i in anon_indices if slots[i].get('name')])
+                            info_msg = self._t('migration_legacy_attack_keys_auto_mapped').format(mapped=mapped)
+                            messagebox.showinfo(self._t('skill_section'), info_msg)
+                        except Exception:
+                            pass
+                        # also set a short hunt status message
+                        self.hunt_status.set(self._t('migration_mapped_slots_short'))
+                    except Exception:
+                        # non-fatal
+                        pass
+        except Exception:
+            pass
         self.skill_selected_index = None
         self.skill_selected_name = self.skills[0]['name'] if self.skills else None
         self.skill_preview_image = None
@@ -1162,6 +1233,7 @@ class App(tk.Tk):
         slot_frame.grid_columnconfigure(1, weight=1)
         self.skill_slot_vars = []
         self.skill_slot_boxes = []
+        self.skill_slot_key_labels = []
         for idx in range(self.skill_slot_count):
             var = tk.StringVar()
             self.skill_slot_vars.append(var)
@@ -1170,7 +1242,12 @@ class App(tk.Tk):
             cmb = ttk.Combobox(slot_frame, textvariable=var, state='readonly', width=24)
             cmb.grid(row=idx, column=1, sticky='we', padx=(4,0), pady=2)
             cmb.bind('<<ComboboxSelected>>', self.on_skill_slot_changed)
-            tk.Button(slot_frame, text=self._t('skill_slot_clear'), command=lambda v=var: self._clear_skill_slot(v)).grid(row=idx, column=2, padx=(6,0))
+            # Key label showing which key is assigned to the selected skill
+            key_lbl = tk.Label(slot_frame, text='', width=6, anchor='w', fg='#333')
+            key_lbl.grid(row=idx, column=2, padx=(6,0))
+            self.skill_slot_key_labels.append(key_lbl)
+            # Clear button (moved to column 3)
+            tk.Button(slot_frame, text=self._t('skill_slot_clear'), command=lambda v=var: self._clear_skill_slot(v)).grid(row=idx, column=3, padx=(6,0))
             self.skill_slot_boxes.append(cmb)
 
         self._refresh_monster_select_options()
@@ -5428,6 +5505,11 @@ class App(tk.Tk):
         values = [''] + names
         for cmb in self.skill_slot_boxes:
             cmb['values'] = values
+        # Also refresh key labels next to each slot
+        try:
+            self._refresh_slot_key_labels()
+        except Exception:
+            pass
 
     def _load_skill_slots_from_cfg(self):
         saved = self.hunt_cfg.get('skill_slots', []) if hasattr(self, 'hunt_cfg') else []
@@ -5483,6 +5565,19 @@ class App(tk.Tk):
             })
         self.skill_slot_saved_names = saved_names
         return slots
+
+    def _refresh_slot_key_labels(self):
+        """Update the small labels next to each skill slot to show the assigned key for the selected skill."""
+        if not hasattr(self, 'skill_slot_key_labels') or not hasattr(self, 'skill_slot_vars'):
+            return
+        # Build a mapping from skill name -> key
+        name_to_key = {s.get('name', ''): s.get('key', '') for s in self.skills}
+        for i, var in enumerate(self.skill_slot_vars):
+            name = var.get().strip()
+            key = name_to_key.get(name, '')
+            lbl = self.skill_slot_key_labels[i] if i < len(self.skill_slot_key_labels) else None
+            if lbl:
+                lbl.config(text=(key or ''))
 
     def _clear_skill_slot(self, var):
         var.set('')
@@ -5639,6 +5734,15 @@ class App(tk.Tk):
         self.skill_selected_name = skill['name']
         self._refresh_skill_list(select_name=skill['name'])
         self._update_attack_keys_from_slots()
+        try:
+            self._refresh_slot_key_labels()
+        except Exception:
+            pass
+        # Validate duplicate keys across skill library and slots
+        try:
+            self._validate_slot_key_duplicates()
+        except Exception:
+            pass
         self.hunt_status.set(self._t('skill_saved'))
 
     def on_skill_delete(self):
@@ -5655,10 +5759,71 @@ class App(tk.Tk):
         self.skill_selected_name = None
         self._refresh_skill_list()
         self._update_attack_keys_from_slots()
+        try:
+            self._refresh_slot_key_labels()
+        except Exception:
+            pass
+        try:
+            self._validate_slot_key_duplicates()
+        except Exception:
+            pass
         self.hunt_status.set(self._t('skill_deleted'))
 
     def on_skill_slot_changed(self, _evt=None):
         self._update_attack_keys_from_slots()
+        try:
+            self._refresh_slot_key_labels()
+        except Exception:
+            pass
+        try:
+            self._validate_slot_key_duplicates()
+        except Exception:
+            pass
+
+    def _validate_slot_key_duplicates(self):
+        """Detect duplicate assigned keys across selected slots and update UI warnings.
+
+        - Highlights slot key labels in red when duplicated.
+        - Updates `hunt_status` with a concise warning message when duplicates exist.
+        """
+        if not hasattr(self, 'skill_slot_vars') or not hasattr(self, 'skill_slot_key_labels'):
+            return
+        # map skill name -> key
+        name_to_key = {s.get('name', ''): s.get('key', '') for s in self.skills}
+        # collect keys for each slot
+        keys = []
+        for var in self.skill_slot_vars:
+            name = var.get().strip()
+            key = name_to_key.get(name, '')
+            keys.append(key)
+
+        # reverse mapping: key -> list of slot indices
+        dup_map = {}
+        for i, k in enumerate(keys):
+            if not k:
+                continue
+            dup_map.setdefault(k, []).append(i + 1)  # 1-based slot index for display
+
+        duplicates = {k: v for k, v in dup_map.items() if len(v) > 1}
+
+        # Update label colors
+        for i, lbl in enumerate(self.skill_slot_key_labels):
+            k = keys[i] if i < len(keys) else ''
+            if k and k in duplicates:
+                lbl.config(fg='#D32F2F')  # red
+            else:
+                lbl.config(fg='#333')
+
+        # Update status message
+        if duplicates:
+            msgs = []
+            for k, idxs in duplicates.items():
+                msgs.append(f"{k}: slots {', '.join(map(str, idxs))}")
+            self.hunt_status.set('⚠️ Duplicate skill keys - ' + '; '.join(msgs))
+        else:
+            # restore idle or previous short status
+            # keep a short message to not overwrite more important status
+            self.hunt_status.set(self._t('hunt_idle'))
     
     def update_skill_stats_display(self, stats_dict):
         """Update skill performance statistics display (Sprint 22 Patch 1).

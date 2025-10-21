@@ -218,6 +218,15 @@ Chạy `python app_gui.py` lần đầu → Setup Wizard tự động mở.
 #### **Skills Library**
 1. Click **Library** tab → **Skills** sub-tab
 2. Click **Add Skill**
+3. Set the skill key: each skill has a `Key` field which is used to bind that skill to an in-game key.
+
+### Important: Attack keys are now derived from skill slots
+
+- The legacy `attack_keys` setting is deprecated. The application now uses per-skill `key` values stored in `skill_slots` as the canonical source for which keys will be pressed during the hunt.
+- On first-run or if your existing `hunt_config.json` contains `attack_keys` but no `skill_slots`, the app will automatically migrate those keys into anonymous `skill_slots` and persist the updated config. The app will then attempt to map those anonymous slots to actual attack skills in your skill library when possible.
+- To control which keys are used during the hunt, open the Library → Skills manager and assign a `Key` to each skill, then choose skills into the Skill Slots on the Setup tab. The hunt fallback will press keys in the order of configured `skill_slots`.
+
+If you relied on `attack_keys` previously, migration preserves your keys; however please open the Skill Manager afterward to confirm the mapping and adjust names or duplicate keys if needed.
 3. Cấu hình skill:
 
 **Attack Skill**:
