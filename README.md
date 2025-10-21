@@ -9,10 +9,10 @@ Hệ thống tự động hóa thông minh cho Cabal VTC Origin với Python - P
 - 🛡️ **Buff Auto-Casting**: Tự động cast lại buff trước khi hết hiệu ứng
 - 🎮 **Skill Rotation Builder**: Tạo rotation kỹ năng tự động với timing tối ưu
 - 📊 **Timing Calculator**: Tính toán thời gian tối ưu dựa trên HP/damage/cooldown
-- � **Library Manager**: Quản lý tập trung Monster/Skills/Timing (Sprint 19)
+- 📚 **Library Manager**: Quản lý tập trung Monster/Skills/Timing (Sprint 19)
 - 🎨 **Icon System**: 39 icon entries với .ico files, thiết kế nhất quán (Sprint 21)
 - 🪟 **Auto Window Detection**: Tự động phát hiện Cabal window (Sprint 21)
-- ⌨️ **Keyboard Shortcuts**: Alt+Shift+Z (toggle hunt), F8 (global toggle), Z (target switch)
+- ⌨️ **Global Hotkeys**: Ctrl+Shift+R (start hunt), Ctrl+Shift+E (stop hunt) - hoạt động khi minimize
 - 🌐 **Dual Language**: Hỗ trợ đầy đủ EN/VI với persistence
 - 🔒 **First-Run Lock**: Khóa an toàn khi hunt, ngăn chỉnh sửa nhầm
 - 📝 **Enhanced Logging**: Dual logging (text + JSON) với structured hunt data
@@ -156,11 +156,10 @@ Khi chạy lần đầu, **Setup Wizard** sẽ tự động mở và hướng d�
 - Chọn monster từ dropdown
 - Templates & timing tự động load
 - Click **Start Hunt** để bắt đầu
-- **Hotkeys**: 
-  - `Alt+Shift+Z`: Toggle hunt on/off
-  - `F8`: Toggle hunt (global hotkey - works when minimized)
-  - `Z`: Switch target
-  - `ESC`: Stop hunt immediately
+- **Global Hotkeys**: 
+  - `Ctrl+Shift+R`: Start hunt (works when minimized)
+  - `Ctrl+Shift+E`: Stop hunt (works when minimized)
+  - `Z`: Switch target (in-game)
 
 #### 2️⃣ **Setup Tab** - Cấu hình
 - **Window**: Chọn Cabal window, set bounds
@@ -282,12 +281,12 @@ Chạy `python app_gui.py` lần đầu → Setup Wizard tự động mở.
 
 2. **Start Hunt**:
    - Hunt Tab → Select monster → **Start Hunt**
-   - Hoặc nhấn `Alt+Shift+Z` hoặc `F8`
+   - Hoặc nhấn `Ctrl+Shift+R` (global hotkey)
 
 3. **During Hunt**:
-   - `Z`: Switch target
-   - `Alt+Shift+Z` hoặc `F8`: Toggle hunt on/off
-   - `ESC`: Stop hunt immediately
+   - `Z`: Switch target (in-game)
+   - `Ctrl+Shift+R`: Start hunt
+   - `Ctrl+Shift+E`: Stop hunt
 
 4. **Monitor**:
    - Status bar hiển thị hunt state
@@ -543,9 +542,9 @@ logs/
 - ✅ **Template Lock**: Hold-to-save mechanism (prevent accidental overwrites)
 - ✅ **Prerequisites Validation**: Check config before hunt starts
 - ✅ **Global Hotkeys**: 
-  - `Alt+Shift+Z`: Toggle hunt (works when minimized)
-  - `F8`: Toggle hunt (global hotkey)
-  - `ESC`: Stop hunt immediately
+  - `Ctrl+Shift+R`: Start hunt (works when minimized)
+  - `Ctrl+Shift+E`: Stop hunt (works when minimized)
+  - Customizable in Setup → Global Hotkeys section
 - ✅ **Window Restore**: Guaranteed window restoration on errors
 - ✅ **Input Validation**: Prevents invalid configurations
 - ✅ **Error Handling**: Graceful degradation on errors

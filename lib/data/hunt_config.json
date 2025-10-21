@@ -64,7 +64,12 @@
   "current_monster_index": 0,
   "window_pid": 21928,
   "templates": [],
-  "training_mode_enabled": true,
-  "ui_mode": "beginner",
-  "template_threshold": 0.8
+  "training_mode_enabled": false,
+  "ui_mode": "intermediate",
+  "template_threshold": 0.8,
+  "global_hotkeys": {
+    "enabled": true,
+    "start_key": "ctrl+shift+r",
+    "stop_key": "ctrl+shift+e"
+  }
 }

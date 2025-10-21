@@ -212,16 +212,15 @@ GLOBAL_TRANSLATIONS = {
         'stats_export': 'Export to CSV',
         'stats_refresh_rate': 'Refresh Rate',
         'help_quickstart': 'Quick Start Guide',
-        'help_quickstart_text': '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press F8 to toggle hunt anytime',
+        'help_quickstart_text': '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press Ctrl+Shift+R to start or Ctrl+Shift+E to stop hunt anytime',
         'help_shortcuts': 'Keyboard Shortcuts',
         'help_shortcuts_text': '''Application Shortcuts:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⌨️  Ctrl+K             →  Open Skill Manager
 ⌨️  Alt+1              →  Switch to Hunt tab
 ⌨️  Alt+2              →  Switch to Setup tab
-⌨️  Alt+Shift+Z        →  Toggle Hunt (Start/Stop)
-⌨️  ESC                →  Stop Hunt immediately
-⌨️  F8                 →  Toggle Hunt (global hotkey)
+⌨️  Ctrl+Shift+R       →  Start Hunt (global hotkey)
+⌨️  Ctrl+Shift+E       →  Stop Hunt (global hotkey)
 
 In-Game Controls (configured in Setup):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -230,9 +229,10 @@ In-Game Controls (configured in Setup):
 🎮  Attack Keys        →  Attack current target
 
 Tips:
-• Use Alt+Shift+Z or F8 for quick hunt toggle without mouse
+• Use Ctrl+Shift+R/E for quick hunt start/stop without mouse
 • Ctrl+K opens skill manager from anywhere
-• ESC and F8 both stop/start hunt for safety''',
+• Global hotkeys work even when app is minimized
+• You can customize hotkeys in Setup → Global Hotkeys section''',
         'help_troubleshooting': 'Troubleshooting',
         'help_troubleshooting_text': 'Q: Hunt not working?\nA: Make sure game window is selected and brought to front.\n\nQ: Skills not casting?\nA: Check skill slots are enabled and cooldowns are correct.\n\nQ: Can\'t find monster?\nA: Try lowering template threshold in Setup tab.',
         'help_about': 'About',
@@ -285,8 +285,6 @@ Tips:
         'skill_manage_hint': 'Press Ctrl+K to manage skills',
         'shortcut_tab_hunt': 'Alt+1: Switched to Hunt tab',
         'shortcut_tab_setup': 'Alt+2: Switched to Setup tab',
-        'hunt_toggled_start': 'Alt+Shift+Z: Hunt started',
-        'hunt_toggled_stop': 'Alt+Shift+Z: Hunt stopped',
         # Generic UI titles/messages
         'warning_title': 'Warning',
         'library_updated': 'Library updated successfully',
@@ -519,16 +517,15 @@ Tips:
         'stats_export': 'Xuất ra CSV',
         'stats_refresh_rate': 'Tốc độ làm mới',
         'help_quickstart': 'Hướng dẫn nhanh',
-        'help_quickstart_text': '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn F8 để toggle bất cứ lúc nào',
+        'help_quickstart_text': '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn Ctrl+Shift+R để bắt đầu hoặc Ctrl+Shift+E để dừng săn bất cứ lúc nào',
         'help_shortcuts': 'Phím tắt',
         'help_shortcuts_text': '''Phím tắt ứng dụng:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⌨️  Ctrl+K             →  Mở Quản lý Kỹ năng
 ⌨️  Alt+1              →  Chuyển sang tab Săn
 ⌨️  Alt+2              →  Chuyển sang tab Thiết lập
-⌨️  Alt+Shift+Z        →  Bật/Tắt Săn (Start/Stop)
-⌨️  ESC                →  Dừng săn ngay lập tức
-⌨️  F8                 →  Bật/Tắt Săn (hotkey toàn cục)
+⌨️  Ctrl+Shift+R       →  Bắt đầu Săn (hotkey toàn cục)
+⌨️  Ctrl+Shift+E       →  Dừng Săn (hotkey toàn cục)
 
 Điều khiển trong game (cấu hình trong Thiết lập):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -537,9 +534,10 @@ Tips:
 🎮  Phím tấn công       →  Đánh mục tiêu hiện tại
 
 Mẹo:
-• Dùng Alt+Shift+Z hoặc F8 để bật/tắt săn nhanh không cần chuột
+• Dùng Ctrl+Shift+R/E để bắt đầu/dừng săn nhanh không cần chuột
 • Ctrl+K mở quản lý kỹ năng từ bất kỳ đâu
-• ESC và F8 đều có thể dừng/bật săn để đảm bảo an toàn''',
+• Phím tắt toàn cục hoạt động khi ứng dụng thu nhỏ
+• Bạn có thể tùy chỉnh phím tắt trong Thiết lập → Global Hotkeys''',
         'help_troubleshooting': 'Xử lý sự cố',
         'help_troubleshooting_text': 'Q: Săn không hoạt động?\nA: Đảm bảo cửa sổ game đã được chọn và đưa lên trước.\n\nQ: Kỹ năng không ra?\nA: Kiểm tra skill slots đã bật và cooldown đúng chưa.\n\nQ: Không tìm thấy quái?\nA: Thử giảm threshold trong tab Thiết lập.',
         'help_about': 'Thông tin',
@@ -592,8 +590,6 @@ Mẹo:
         'skill_manage_hint': 'Nhấn Ctrl+K để quản lý kỹ năng',
         'shortcut_tab_hunt': 'Alt+1: Chuyển sang tab Săn',
         'shortcut_tab_setup': 'Alt+2: Chuyển sang tab Thiết lập',
-        'hunt_toggled_start': 'Alt+Shift+Z: Đã bắt đầu săn',
-        'hunt_toggled_stop': 'Alt+Shift+Z: Đã dừng săn',
         # Generic UI titles/messages
         'warning_title': 'Cảnh báo',
         'library_updated': 'Thư viện đã được cập nhật',
@@ -802,10 +798,10 @@ SETUP_WIZARD_TRANSLATIONS = {
 • Ctrl+K        →  Open Skill Manager
 • Alt+1         →  Switch to Hunt tab
 • Alt+2         →  Switch to Setup tab
-• Alt+Shift+Z   →  Toggle Hunt (Start/Stop)
-• ESC           →  Stop Hunt immediately
+• Ctrl+Shift+R  →  Start Hunt (global hotkey)
+• Ctrl+Shift+E  →  Stop Hunt (global hotkey)
 
-💡 TIP: Use Alt+Shift+Z for quick hunt toggle!
+💡 TIP: Use Ctrl+Shift+R to start and Ctrl+Shift+E to stop hunt!
 
 Save configuration and close wizard?''',
         'cancel_title': 'Cancel Setup',
@@ -873,10 +869,10 @@ Save configuration and close wizard?''',
 • Ctrl+K        →  Mở Quản lý Kỹ năng
 • Alt+1         →  Chuyển sang tab Săn
 • Alt+2         →  Chuyển sang tab Thiết lập
-• Alt+Shift+Z   →  Bật/Tắt Săn (Start/Stop)
-• ESC           →  Dừng săn ngay lập tức
+• Ctrl+Shift+R  →  Bắt đầu Săn (hotkey toàn cục)
+• Ctrl+Shift+E  →  Dừng Săn (hotkey toàn cục)
 
-💡 MẸO: Dùng Alt+Shift+Z để bật/tắt săn nhanh!
+💡 MẸO: Dùng Ctrl+Shift+R để bắt đầu và Ctrl+Shift+E để dừng săn!
 
 Lưu cấu hình và đóng trợ lý?''',
         'cancel_title': 'Hủy thiết lập',

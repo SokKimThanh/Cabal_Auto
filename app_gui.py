@@ -490,6 +490,13 @@ def load_hunt_config():
     default.setdefault('rotation_mode', 'sequence')
     default.setdefault('current_monster_index', 0)
     
+    # Ensure global_hotkeys section exists
+    default.setdefault('global_hotkeys', {
+        'enabled': True,
+        'start_key': 'ctrl+shift+r',
+        'stop_key': 'ctrl+shift+e'
+    })
+    
     return default
 
 
@@ -571,6 +578,11 @@ class App(tk.Tk):
         self.win_items = []  # list of {'hwnd','pid','title','proc'}
         self.hunt_selected = None  # currently selected window info
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
+        
+        # Global hotkeys (Ctrl+Shift+R/E) - registered after config load
+        self._global_start_hotkey = None
+        self._global_stop_hotkey = None
+        
         self.monsters = load_monster_library()
         self.monster_selected_index = None
         self.monster_selected_name = self.monsters[0]['name'] if self.monsters else None
@@ -651,7 +663,8 @@ class App(tk.Tk):
         self.bind('<Alt-Key-1>', lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
         self.bind('<Alt-Key-2>', lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
         
-        # Global hotkeys (Ctrl+Shift+R/E) will be registered separately after config load
+        # Register global hotkeys (Ctrl+Shift+R to start, Ctrl+Shift+E to stop)
+        self._register_global_hotkeys()
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
@@ -1381,6 +1394,95 @@ class App(tk.Tk):
             justify='left'
         ).grid(row=2, column=0, columnspan=2, sticky='w', pady=(8,0))
         
+        # Section 2.5: Global Hotkeys
+        hotkey_frame = tk.LabelFrame(parent, text="⌨️ Global Hotkeys", padx=12, pady=10)
+        hotkey_frame.grid(row=1, column=2, rowspan=2, sticky='nwe', padx=(12,0), pady=(0,12))
+        
+        # Description
+        hotkey_desc_text = "Global hotkeys work even when app is minimized or not focused."
+        if self.lang == 'vi':
+            hotkey_desc_text = "Phím tắt toàn cục hoạt động khi ứng dụng thu nhỏ hoặc không focus."
+        tk.Label(
+            hotkey_frame,
+            text=hotkey_desc_text,
+            fg='#666',
+            font=('Arial', 8),
+            wraplength=280,
+            justify='left'
+        ).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0,8))
+        
+        # Enable/Disable checkbox
+        hotkey_cfg = self.hunt_cfg.get('global_hotkeys', {})
+        self.global_hotkey_enabled_var = tk.BooleanVar(value=hotkey_cfg.get('enabled', True))
+        
+        enable_text = "Enable Global Hotkeys" if self.lang == 'en' else "Bật phím tắt toàn cục"
+        tk.Checkbutton(
+            hotkey_frame,
+            text=enable_text,
+            variable=self.global_hotkey_enabled_var,
+            font=('Arial', 9, 'bold'),
+            command=self._on_global_hotkey_toggle
+        ).grid(row=1, column=0, columnspan=2, sticky='w', pady=(0,8))
+        
+        # Start hotkey
+        start_label = "Start Hunt:" if self.lang == 'en' else "Bắt đầu Hunt:"
+        tk.Label(hotkey_frame, text=start_label, font=('Arial', 9)).grid(row=2, column=0, sticky='e', padx=(0,8), pady=4)
+        
+        # Combobox for start key
+        start_key = hotkey_cfg.get('start_key', 'ctrl+shift+r')
+        self.global_hotkey_start_var = tk.StringVar(value=start_key)
+        
+        hotkey_options = [
+            'ctrl+shift+r',
+            'ctrl+shift+s',
+            'ctrl+alt+r',
+            'ctrl+alt+s',
+            'f9',
+            'f10',
+            'f11',
+            'f12'
+        ]
+        
+        from tkinter import ttk
+        start_combo = ttk.Combobox(
+            hotkey_frame,
+            textvariable=self.global_hotkey_start_var,
+            values=hotkey_options,
+            width=15,
+            state='readonly'
+        )
+        start_combo.grid(row=2, column=1, sticky='w', pady=4)
+        
+        # Stop hotkey
+        stop_label = "Stop Hunt:" if self.lang == 'en' else "Dừng Hunt:"
+        tk.Label(hotkey_frame, text=stop_label, font=('Arial', 9)).grid(row=3, column=0, sticky='e', padx=(0,8), pady=4)
+        
+        # Combobox for stop key
+        stop_key = hotkey_cfg.get('stop_key', 'ctrl+shift+e')
+        self.global_hotkey_stop_var = tk.StringVar(value=stop_key)
+        
+        stop_combo = ttk.Combobox(
+            hotkey_frame,
+            textvariable=self.global_hotkey_stop_var,
+            values=hotkey_options,
+            width=15,
+            state='readonly'
+        )
+        stop_combo.grid(row=3, column=1, sticky='w', pady=4)
+        
+        # Hint
+        hint_hotkey = "💡 Press 'Global Apply' button below to activate new hotkeys."
+        if self.lang == 'vi':
+            hint_hotkey = "💡 Nhấn nút 'Global Apply' phía dưới để kích hoạt phím tắt mới."
+        tk.Label(
+            hotkey_frame,
+            text=hint_hotkey,
+            fg='#1976D2',
+            font=('Arial', 8),
+            wraplength=280,
+            justify='left'
+        ).grid(row=4, column=0, columnspan=2, sticky='w', pady=(8,0))
+        
         # Section 3: Advanced Hunt Settings (visible for intermediate/advanced)
         self.adv_frame = tk.LabelFrame(parent, text=self._t('setup_advanced'), padx=12, pady=10)
         self.adv_frame.grid(row=2, column=0, columnspan=2, sticky='we', pady=(0,12))
@@ -1545,6 +1647,26 @@ class App(tk.Tk):
                 'advanced': self._t('mode_advanced')
             }
             self.hunt_status.set(f"Mode: {mode_labels.get(mode, mode)}")
+    
+    def _on_global_hotkey_toggle(self):
+        """Handle enable/disable of global hotkeys checkbox.
+        
+        Note: Changes only take effect after clicking Global Apply button.
+        This is intentional to avoid accidental hotkey changes during configuration.
+        """
+        enabled = self.global_hotkey_enabled_var.get()
+        
+        # Update status message
+        if hasattr(self, 'hunt_status'):
+            if enabled:
+                msg = "Global hotkeys will be enabled after clicking 'Global Apply'"
+                if self.lang == 'vi':
+                    msg = "Phím tắt toàn cục sẽ được bật sau khi nhấn 'Global Apply'"
+            else:
+                msg = "Global hotkeys will be disabled after clicking 'Global Apply'"
+                if self.lang == 'vi':
+                    msg = "Phím tắt toàn cục sẽ bị tắt sau khi nhấn 'Global Apply'"
+            self.hunt_status.set(msg)
     
     def _update_setup_visibility(self):
         """Show/hide Setup tab sections based on current mode."""
@@ -2884,6 +3006,33 @@ class App(tk.Tk):
             # 2. Update hunt config from Hunt tab UI (in-place update)
             cfg = self._hunt_from_ui()
             
+            # 2.5. Update global hotkeys from Setup tab UI
+            if hasattr(self, 'global_hotkey_enabled_var'):
+                enabled = self.global_hotkey_enabled_var.get()
+                start_key = self.global_hotkey_start_var.get()
+                stop_key = self.global_hotkey_stop_var.get()
+                
+                # Validate: start and stop keys must be different
+                if start_key == stop_key:
+                    messagebox.showerror(
+                        self._t('error_title'),
+                        "Start and Stop hotkeys must be different!" if self.lang == 'en' 
+                        else "Phím tắt Start và Stop phải khác nhau!"
+                    )
+                    return
+                
+                # Update config
+                cfg['global_hotkeys'] = {
+                    'enabled': enabled,
+                    'start_key': start_key,
+                    'stop_key': stop_key
+                }
+                
+                # Re-register hotkeys with new settings
+                self.hunt_cfg = cfg  # Update instance config first
+                self._unregister_global_hotkeys()
+                self._register_global_hotkeys()
+            
             # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
             save_hunt_config(cfg)
             self.hunt_cfg = cfg
@@ -2949,6 +3098,89 @@ class App(tk.Tk):
                     self.hunt_status.set(f"{shortcut}: Switched to {tab_name} tab")
         except Exception as e:
             print(f"Tab switch error: {e}")
+
+    def _register_global_hotkeys(self):
+        """Register global hotkeys (Ctrl+Shift+R/E) for hunt start/stop.
+        
+        This is called in __init__() after config load to ensure hotkeys are
+        immediately available, even when app is minimized or not focused.
+        """
+        try:
+            # Check if keyboard module is available
+            if keyboard is None:
+                return
+            
+            # Get hotkey config (defaults to Ctrl+Shift+R/E if not set)
+            hotkey_cfg = self.hunt_cfg.get('global_hotkeys', {})
+            if not hotkey_cfg.get('enabled', True):
+                return  # Global hotkeys disabled by user
+            
+            start_key = hotkey_cfg.get('start_key', 'ctrl+shift+r')
+            stop_key = hotkey_cfg.get('stop_key', 'ctrl+shift+e')
+            
+            # Unregister old hotkeys first (in case of re-registration)
+            self._unregister_global_hotkeys()
+            
+            # Register new hotkeys
+            try:
+                self._global_start_hotkey = keyboard.add_hotkey(
+                    start_key,
+                    self.on_hunt_start,
+                    suppress=False  # Don't suppress the key event
+                )
+            except Exception as e:
+                print(f"Failed to register start hotkey '{start_key}': {e}")
+                self._global_start_hotkey = None
+            
+            try:
+                self._global_stop_hotkey = keyboard.add_hotkey(
+                    stop_key,
+                    self.on_hunt_stop,
+                    suppress=False
+                )
+            except Exception as e:
+                print(f"Failed to register stop hotkey '{stop_key}': {e}")
+                self._global_stop_hotkey = None
+            
+            # Log successful registration
+            if self._global_start_hotkey or self._global_stop_hotkey:
+                print(f"Global hotkeys registered: Start={start_key}, Stop={stop_key}")
+        
+        except Exception as e:
+            print(f"Error registering global hotkeys: {e}")
+    
+    def _unregister_global_hotkeys(self):
+        """Unregister global hotkeys to clean up resources.
+        
+        Called when:
+        - Re-registering hotkeys with new key combinations
+        - Closing the application (in on_close)
+        - Disabling global hotkeys via settings
+        """
+        try:
+            if keyboard is None:
+                return
+            
+            # Unregister start hotkey
+            if self._global_start_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_start_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering start hotkey: {e}")
+                finally:
+                    self._global_start_hotkey = None
+            
+            # Unregister stop hotkey
+            if self._global_stop_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_stop_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering stop hotkey: {e}")
+                finally:
+                    self._global_stop_hotkey = None
+        
+        except Exception as e:
+            print(f"Error in _unregister_global_hotkeys: {e}")
 
     def _hunt_from_ui(self):
         """Extract hunt configuration from UI elements.
@@ -5439,6 +5671,10 @@ class App(tk.Tk):
     def on_close(self):
         self.click_running = False
         self.hunt_running = False
+        
+        # Unregister global hotkeys before closing
+        self._unregister_global_hotkeys()
+        
         self.destroy()
 
     # -----------------
