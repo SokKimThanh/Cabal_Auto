@@ -113,8 +113,15 @@
       },
       {
         "name": "coc go 10",
-        "path": "",
-        "threshold": 0.85
+        "path": "assets/images/monsters/coc_go__coc_go_10_1761043838086.png",
+        "threshold": 0.85,
+        "region_strategy": "custom",
+        "region": {
+          "left": 1096,
+          "top": 400,
+          "width": 233,
+          "height": 307
+        }
       }
     ]
   },

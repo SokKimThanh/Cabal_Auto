@@ -25,7 +25,7 @@
       "type": "attack",
       "cooldown": 1.9,
       "cast_time": 1.7,
-      "image": "E:\\Cabal_Auto\\assets\\images\\skills\\dark_explosion_capture_1761035796.png"
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
     },
     {
       "name": "Bone Javelin",
@@ -33,7 +33,7 @@
       "type": "attack",
       "cooldown": 2.4,
       "cast_time": 1.5,
-      "image": "assets/images/skills/bone_javelin_1760739255498.png"
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
     },
     {
       "name": "Skull Shooter",
@@ -62,7 +62,7 @@
   ],
   "rotation_mode": "priority",
   "current_monster_index": 0,
-  "window_pid": 21928,
+  "window_pid": null,
   "templates": [],
   "training_mode_enabled": false,
   "ui_mode": "beginner",
