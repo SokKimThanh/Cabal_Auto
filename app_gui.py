@@ -5359,6 +5359,12 @@ class App(tk.Tk):
         """
         if not runtime:
             return
+        
+        # Debug log
+        ready_skills = [s for s in runtime if now >= s['next_ready']]
+        if ready_skills:
+            print(f"[Skills] Ready skills: {[s['name'] for s in ready_skills]}, target={target_available}, attack_phase={attack_phase}")
+        
         for skill in runtime:
             if now < skill['next_ready']:
                 continue
@@ -5372,9 +5378,12 @@ class App(tk.Tk):
             # Attempt to cast skill
             cast_success = False
             try:
+                print(f"[Skills] Casting {skill['name']} (key={skill['key']}, press_ms={skill['press_ms']})")
                 tap(skill['key'], skill['press_ms'])
                 cast_success = True
-            except Exception:
+                print(f"[Skills] ✓ Cast successful: {skill['name']}")
+            except Exception as e:
+                print(f"[Skills] ✗ Cast failed: {skill['name']} - {e}")
                 pass
             
             # Sprint 22 Patch 1: Record skill cast in training mode
@@ -5576,6 +5585,7 @@ class App(tk.Tk):
                             pass  # Ignore stats update errors
 
                     if skill_runtime:
+                        print(f"[Hunt] Search mode - Casting buffs only (have_target={have_target})")
                         self._try_cast_skills(skill_runtime, now, have_target, attack_phase=False, skill_stats=skill_stats)
 
                     if mode == 'search':
@@ -5598,7 +5608,12 @@ class App(tk.Tk):
                     # mode == 'attack'
                     if have_target or (now - last_seen) <= lost_timeout or (now - attack_started) <= attack_min_duration:
                         target_active = have_target or (now - last_seen) <= lost_timeout or (now - attack_started) <= attack_min_duration
+                        print(f"[Hunt] Attack mode - target_active={target_active}, have_target={have_target}, has_attack_skills={has_attack_skills}")
                         if skill_runtime and has_attack_skills:
+                            # Ensure target is selected before casting attack skills
+                            if target_active:
+                                tap(cfg['target_key'])  # Press Z to ensure target locked
+                                time.sleep(0.05)  # Small delay for target lock
                             self._try_cast_skills(skill_runtime, now, target_active, attack_phase=True, skill_stats=skill_stats)
                             if not target_active:
                                 logger.log_state_change('attack', 'search', 'lost_timeout')

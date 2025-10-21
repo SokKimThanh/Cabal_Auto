@@ -328,7 +328,9 @@ class SkillRotationUI:
                         'name': skill.get('name', 'Unnamed'),
                         'key': skill.get('key', ''),
                         'cooldown': skill.get('cooldown', 0),
-                        'type': skill.get('type', 'attack')
+                        'cast_time': skill.get('cast_time', 0),  # FIX: Added cast_time
+                        'type': skill.get('type', 'attack'),
+                        'image': skill.get('image', '')  # FIX: Added image path
                     }
                     self.available_skills.append(skill_slot)
             else:
