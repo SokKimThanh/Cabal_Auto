@@ -738,11 +738,12 @@ class App(tk.Tk):
         self.unsaved_indicator_label.pack(side='left')
         
         # Apply All Settings button (right side) - Using global green_light style with save icon
+        # Optimized for: Negative Space, Hierarchy, Contrast Ratio (WCAG AA: 5.26:1)
         from lib.ui.button_styles import get_button_config
         apply_config = get_button_config('green_light')
         
-        # Load save icon
-        save_icon = self._icon('save', '💾', size=20)
+        # Load save icon (22px to scale with 11pt font)
+        save_icon = self._icon('save', '💾', size=22)
         
         self.global_apply_btn = tk.Button(
             apply_frame,
@@ -751,10 +752,10 @@ class App(tk.Tk):
             compound='left' if not isinstance(save_icon, str) else 'none',
             command=self.on_global_apply,
             **apply_config,
-            padx=20,
-            pady=8
+            padx=24,  # Increased from 20px for better negative space
+            pady=10   # Increased from 8px for better touch target (48px height)
         )
-        self.global_apply_btn.pack(side='right', padx=8, pady=4)
+        self.global_apply_btn.pack(side='right', padx=10, pady=6)  # Increased external margins
         
         # Keep reference to prevent garbage collection
         if not isinstance(save_icon, str):

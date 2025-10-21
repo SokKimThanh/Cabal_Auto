@@ -69,7 +69,7 @@ class IconHelper:
             'delete': ('delete.ico', '🗑️'),
             'save': ('save.ico', '💾'),
             'cancel': ('cancel.ico', '✖'),
-            'folder': ('folder.png', '📁'),
+            'folder': ('folder.ico', '📁'),  # Updated to prioritize .ico
             'capture': ('capture.png', '📸'),
             'search': ('search.ico', '🔍'),
             'refresh': ('refresh.ico', '🔄'),
@@ -78,6 +78,9 @@ class IconHelper:
             'pause': ('pause.ico', '⏸️'),
             'minimize': ('minimize.ico', '➖'),
             'support': ('support.ico', '🧙'),
+            'next': ('next.ico', '→'),
+            'previous': ('previous.ico', '←'),
+            'preview': ('preview.ico', '👁️'),
             'monster': ('monster.png', '👹'),
             'skill': ('skill.ico', '⚔️'),
             'template': ('template.png', '🖼️'),
@@ -87,6 +90,18 @@ class IconHelper:
             'hp': ('hp.ico', '❤️'),
             'damage': ('damage.ico', '⚔️'),
             'priority': ('priority.ico', '🎯'),
+            'question': ('question_mark.ico', '❓'),
+            'up': ('up.ico', '↑'),  # Emoji fallback (no .ico yet)
+            'down': ('down.ico', '↓'),  # Emoji fallback (no .ico yet)
+            'browse': ('folder.ico', '📂'),  # Alias for folder
+            'clear': ('delete.ico', '🗑️'),  # Alias for delete
+            'close': ('cancel.ico', '✖'),  # Alias for cancel
+            'new': ('add.ico', '➕'),  # Alias for add
+            'calculate': ('info.ico', '🔢'),  # Using info icon
+            'apply': ('save.ico', '✔️'),  # Alias for save
+            'test': ('question_mark.ico', '🧪'),  # Using question icon
+            'use': ('start.ico', '📌'),  # Using start icon for "use"
+            'library': ('list.ico', '📚'),  # Alias for list
         }
     
     def get_icon(self, name: str, fallback: Optional[str] = None, size: int = 24) -> Union[Any, str]:

@@ -149,7 +149,7 @@ def get_button_config(button_type: str) -> dict:
             'activebackground': BTN_GREEN_LIGHT_ACTIVE_BG,
             'activeforeground': BTN_GREEN_LIGHT_FG,
             'disabledforeground': TEXT_LIGHT_GRAY,
-            'font': ('Arial', 10, 'bold'),
+            'font': ('Arial', 11, 'bold'),  # Increased from 10pt for better hierarchy
             'relief': 'raised',
             'bd': 2,
             'cursor': 'hand2'
