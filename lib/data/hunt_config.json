@@ -1,6 +1,6 @@
 {
-  "window_title": "Setup Wizard - Cabal Auto Hunt",
-  "target_key": "TAB",
+  "window_title": "CABAL",
+  "target_key": "z",
   "attack_keys": [
     "1",
     "2",
@@ -25,7 +25,7 @@
       "type": "attack",
       "cooldown": 1.9,
       "cast_time": 1.7,
-      "image": "assets/images/skills/dark_explosion_1760739255497.png"
+      "image": "E:\\Cabal_Auto\\assets\\images\\skills\\dark_explosion_capture_1761035796.png"
     },
     {
       "name": "Bone Javelin",
@@ -62,7 +62,9 @@
   ],
   "rotation_mode": "priority",
   "current_monster_index": 0,
-  "window_pid": null,
+  "window_pid": 21928,
   "templates": [],
-  "training_mode_enabled": false
+  "training_mode_enabled": true,
+  "ui_mode": "beginner",
+  "template_threshold": 0.8
 }

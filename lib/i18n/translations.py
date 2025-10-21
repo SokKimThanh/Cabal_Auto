@@ -212,7 +212,7 @@ GLOBAL_TRANSLATIONS = {
         'stats_export': 'Export to CSV',
         'stats_refresh_rate': 'Refresh Rate',
         'help_quickstart': 'Quick Start Guide',
-        'help_quickstart_text': '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press F9 to stop anytime',
+        'help_quickstart_text': '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press F8 to toggle hunt anytime',
         'help_shortcuts': 'Keyboard Shortcuts',
         'help_shortcuts_text': '''Application Shortcuts:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -221,7 +221,7 @@ GLOBAL_TRANSLATIONS = {
 ⌨️  Alt+2              →  Switch to Setup tab
 ⌨️  Alt+Shift+Z        →  Toggle Hunt (Start/Stop)
 ⌨️  ESC                →  Stop Hunt immediately
-⌨️  F9                 →  Stop Hunt (global hotkey)
+⌨️  F8                 →  Toggle Hunt (global hotkey)
 
 In-Game Controls (configured in Setup):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -230,9 +230,9 @@ In-Game Controls (configured in Setup):
 🎮  Attack Keys        →  Attack current target
 
 Tips:
-• Use Alt+Shift+Z for quick hunt toggle without mouse
+• Use Alt+Shift+Z or F8 for quick hunt toggle without mouse
 • Ctrl+K opens skill manager from anywhere
-• ESC and F9 both stop hunt for safety''',
+• ESC and F8 both stop/start hunt for safety''',
         'help_troubleshooting': 'Troubleshooting',
         'help_troubleshooting_text': 'Q: Hunt not working?\nA: Make sure game window is selected and brought to front.\n\nQ: Skills not casting?\nA: Check skill slots are enabled and cooldowns are correct.\n\nQ: Can\'t find monster?\nA: Try lowering template threshold in Setup tab.',
         'help_about': 'About',
@@ -355,7 +355,7 @@ Tips:
         'save_hunt': 'Lưu cấu hình săn',
         'start_hunt': 'Bắt đầu săn',
         'stop_hunt': 'Dừng săn',
-        'setup_wizard': '🧙 Trợ lý thiết lập',
+        'setup_wizard': 'Trợ lý thiết lập',
         'wizard_first_time_title': 'Chào mừng đến Cabal Auto Hunt!',
         'wizard_first_time_message': (
             "Có vẻ đây là lần đầu bạn sử dụng Cabal Auto Hunt.\n\n"
@@ -519,7 +519,7 @@ Tips:
         'stats_export': 'Xuất ra CSV',
         'stats_refresh_rate': 'Tốc độ làm mới',
         'help_quickstart': 'Hướng dẫn nhanh',
-        'help_quickstart_text': '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn F9 để dừng bất cứ lúc nào',
+        'help_quickstart_text': '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn F8 để toggle bất cứ lúc nào',
         'help_shortcuts': 'Phím tắt',
         'help_shortcuts_text': '''Phím tắt ứng dụng:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -528,7 +528,7 @@ Tips:
 ⌨️  Alt+2              →  Chuyển sang tab Thiết lập
 ⌨️  Alt+Shift+Z        →  Bật/Tắt Săn (Start/Stop)
 ⌨️  ESC                →  Dừng săn ngay lập tức
-⌨️  F9                 →  Dừng săn (hotkey toàn cục)
+⌨️  F8                 →  Bật/Tắt Săn (hotkey toàn cục)
 
 Điều khiển trong game (cấu hình trong Thiết lập):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -537,9 +537,9 @@ Tips:
 🎮  Phím tấn công       →  Đánh mục tiêu hiện tại
 
 Mẹo:
-• Dùng Alt+Shift+Z để bật/tắt săn nhanh không cần chuột
+• Dùng Alt+Shift+Z hoặc F8 để bật/tắt săn nhanh không cần chuột
 • Ctrl+K mở quản lý kỹ năng từ bất kỳ đâu
-• ESC và F9 đều dừng săn để đảm bảo an toàn''',
+• ESC và F8 đều có thể dừng/bật săn để đảm bảo an toàn''',
         'help_troubleshooting': 'Xử lý sự cố',
         'help_troubleshooting_text': 'Q: Săn không hoạt động?\nA: Đảm bảo cửa sổ game đã được chọn và đưa lên trước.\n\nQ: Kỹ năng không ra?\nA: Kiểm tra skill slots đã bật và cooldown đúng chưa.\n\nQ: Không tìm thấy quái?\nA: Thử giảm threshold trong tab Thiết lập.',
         'help_about': 'Thông tin',

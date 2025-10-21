@@ -436,7 +436,7 @@ def load_config():
             return json.load(f)
     return {
         "click": {"x": 500, "y": 400, "interval_sec": 2.0},
-        "hotkeys": {"toggle": "f8", "exit": "f9"},
+        "hotkeys": {"toggle": "f8", "exit": "f8"},
         "safety": {"failsafe": True, "pause_key": "f7"},
         "ui": {"topmost": False}
     }
@@ -570,7 +570,6 @@ class App(tk.Tk):
         self.hunt_thread = None
         self.win_items = []  # list of {'hwnd','pid','title','proc'}
         self.hunt_selected = None  # currently selected window info
-        self._stop_hotkey = None
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
         self.monsters = load_monster_library()
         self.monster_selected_index = None
@@ -647,12 +646,12 @@ class App(tk.Tk):
 
         self._build_ui()
         
-        # Keyboard shortcuts
-        self.bind('<Escape>', lambda e: self.on_hunt_stop())  # ESC: Stop hunt
+        # Keyboard shortcuts (Window-focused only)
         self.bind('<Control-k>', lambda e: self._open_skill_manager())  # Ctrl+K: Manage skills
         self.bind('<Alt-Key-1>', lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
         self.bind('<Alt-Key-2>', lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
-        self.bind('<Alt-Shift-Key-Z>', lambda e: self._toggle_hunt())  # Alt+Shift+Z: Toggle hunt start/stop
+        
+        # Global hotkeys (Ctrl+Shift+R/E) will be registered separately after config load
         
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
@@ -2950,22 +2949,6 @@ class App(tk.Tk):
                     self.hunt_status.set(f"{shortcut}: Switched to {tab_name} tab")
         except Exception as e:
             print(f"Tab switch error: {e}")
-    
-    def _toggle_hunt(self):
-        """Toggle hunt start/stop via Alt+Z shortcut."""
-        try:
-            if self.hunt_running:
-                # Stop hunt
-                self.on_hunt_stop()
-                if hasattr(self, 'hunt_status'):
-                    self.hunt_status.set(self._t('hunt_toggled_stop'))
-            else:
-                # Start hunt
-                self.on_hunt_start()
-                if hasattr(self, 'hunt_status'):
-                    self.hunt_status.set(self._t('hunt_toggled_start'))
-        except Exception as e:
-            print(f"Hunt toggle error: {e}")
 
     def _hunt_from_ui(self):
         """Extract hunt configuration from UI elements.
@@ -5280,12 +5263,8 @@ class App(tk.Tk):
                 except Exception:
                     pass
 
-                # Optional global stop hotkey (F9)
-                if keyboard is not None and self._stop_hotkey is None:
-                    try:
-                        self._stop_hotkey = keyboard.add_hotkey('f9', lambda: setattr(self, 'hunt_running', False))
-                    except Exception:
-                        self._stop_hotkey = None
+                # Note: Global hotkeys (Ctrl+Shift+R/E) are registered in __init__()
+                # No need to register hotkeys here anymore
 
                 # Start logging
                 logger.log_hunt_start(cfg)
@@ -5441,14 +5420,8 @@ class App(tk.Tk):
             cursor='arrow'
         )
         
-        # remove global hotkey if registered
-        if hasattr(self, '_stop_hotkey') and self._stop_hotkey is not None:
-            try:
-                if 'keyboard' in globals() and keyboard is not None:
-                    keyboard.remove_hotkey(self._stop_hotkey)
-            except Exception:
-                pass
-            self._stop_hotkey = None
+        # Note: Global hotkeys cleanup will be handled in on_close()
+        
         # restore GUI
         try:
             self.deiconify()
