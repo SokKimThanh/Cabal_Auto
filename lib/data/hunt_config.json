@@ -1,10 +1,12 @@
 {
-  "window_title": "CABAL",
+  "window_title": "Setup Wizard - Cabal Auto Hunt",
+  "window_pid": 24336,
   "target_key": "TAB",
   "attack_keys": [
     "1",
     "2",
-    "3"
+    "3",
+    "4"
   ],
   "attack_press_ms": 60,
   "target_cycle_delay": 0.2,
@@ -17,18 +19,8 @@
   "lost_timeout_sec": 0.5,
   "attack_min_duration_sec": 5.0,
   "bring_to_front_each_cycle": false,
-  "skill_slots": [
-    "Dark Explosion",
-    "Bone Javelin",
-    "Skull Shooter",
-    "Regeneration",
-    "",
-    "",
-    "",
-    "",
-    ""
-  ],
   "window_bounds": null,
+  "templates": [],
   "monster_list": [
     {
       "name": "Coc go~",
@@ -38,9 +30,38 @@
   ],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 21928,
-  "templates": [],
-  "window_hwnd": 264136,
-  "monster_selected_name": "Coc go~",
-  "training_mode_enabled": false
+  "skill_slots": [
+    {
+      "name": "Dark Explosion",
+      "key": "1",
+      "type": "attack",
+      "cooldown": 1.9,
+      "cast_time": 1.7,
+      "image": "assets/images/skills/dark_explosion_1760739255497.png"
+    },
+    {
+      "name": "Bone Javelin",
+      "key": "2",
+      "type": "attack",
+      "cooldown": 2.4,
+      "cast_time": 1.5,
+      "image": "assets/images/skills/bone_javelin_1760739255498.png"
+    },
+    {
+      "name": "Skull Shooter",
+      "key": "3",
+      "type": "attack",
+      "cooldown": 2.2,
+      "cast_time": 1.5,
+      "image": "assets/images/skills/skull_shooter_1760739255501.png"
+    },
+    {
+      "name": "Regeneration",
+      "key": "4",
+      "type": "buff",
+      "cooldown": 2.2,
+      "cast_time": 1.0,
+      "image": "assets/images/skills/regeneration_1760739255499.png"
+    }
+  ]
 }
