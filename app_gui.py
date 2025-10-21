@@ -47,6 +47,7 @@ except Exception:
 from lib.system.win_input import tap
 from lib.system.hunt_logger import get_hunt_logger
 from lib.features.timing.calculator import calculate_timing, format_timing_recommendation, get_timing_presets
+from lib.features.skills.skill_stats import SkillStats  # Sprint 22 Patch 1: Training Mode
 
 
 # Register centralized translations at startup
@@ -859,6 +860,41 @@ class App(tk.Tk):
         # Legacy monster estimate (keep for compatibility)
         self.monster_estimate_var.set('')
 
+        # Section 2.5: Training Mode Toggle (Sprint 22 Patch 1)
+        training_frame = tk.Frame(frm)
+        training_frame.grid(row=1, column=4, columnspan=4, sticky='we', pady=(0,12), padx=(12,0))
+        
+        self.training_mode_var = tk.BooleanVar(value=bool(self.hunt_cfg.get('training_mode_enabled', False)))
+        training_check = tk.Checkbutton(
+            training_frame, 
+            text=self._t('enable_training_mode'),
+            variable=self.training_mode_var,
+            command=self._on_training_mode_toggled,
+            font=('Arial', 9, 'bold')
+        )
+        training_check.pack(anchor='w')
+        
+        # Training mode description
+        training_desc = tk.Label(
+            training_frame,
+            text=self._t('training_mode_desc'),
+            fg='#666',
+            font=('Arial', 8),
+            wraplength=250,
+            justify='left'
+        )
+        training_desc.pack(anchor='w', pady=(2,0))
+        
+        # Training mode status indicator
+        self.training_mode_status_var = tk.StringVar()
+        training_status = tk.Label(
+            training_frame,
+            textvariable=self.training_mode_status_var,
+            fg='#FF9800',
+            font=('Arial', 8, 'bold')
+        )
+        training_status.pack(anchor='w', pady=(4,0))
+
         # Section 3: Skill slots selection
         skill_frame_outer = tk.LabelFrame(frm, text=self._t('skill_slots'), padx=10, pady=8)
         skill_frame_outer.grid(row=2, column=0, columnspan=4, sticky='we', pady=(0,12))
@@ -891,14 +927,55 @@ class App(tk.Tk):
         # Phase 3: Populate monster rotation list
         self._refresh_monster_rotation_list()
 
+        # Section 3.5: Skill Performance Statistics (Sprint 22 Patch 1 - Training Mode)
+        self.skill_stats_frame = tk.LabelFrame(frm, text=self._t('skill_stats_title'), padx=10, pady=8)
+        self.skill_stats_frame.grid(row=2, column=4, rowspan=1, columnspan=4, sticky='nswe', padx=(12,0), pady=(0,12))
+        
+        # Create Treeview for stats display
+        stats_container = tk.Frame(self.skill_stats_frame)
+        stats_container.pack(fill='both', expand=True)
+        
+        # Define columns
+        columns = ('skill', 'casts', 'last_cast', 'cooldown', 'success')
+        self.skill_stats_tree = ttk.Treeview(stats_container, columns=columns, show='headings', height=6)
+        
+        # Configure column headings
+        self.skill_stats_tree.heading('skill', text=self._t('skill_name_col'))
+        self.skill_stats_tree.heading('casts', text=self._t('cast_count_col'))
+        self.skill_stats_tree.heading('last_cast', text=self._t('last_cast_col'))
+        self.skill_stats_tree.heading('cooldown', text=self._t('cooldown_col'))
+        self.skill_stats_tree.heading('success', text=self._t('success_rate_col'))
+        
+        # Configure column widths
+        self.skill_stats_tree.column('skill', width=120)
+        self.skill_stats_tree.column('casts', width=60, anchor='center')
+        self.skill_stats_tree.column('last_cast', width=80, anchor='center')
+        self.skill_stats_tree.column('cooldown', width=80, anchor='center')
+        self.skill_stats_tree.column('success', width=80, anchor='center')
+        
+        # Add scrollbar
+        stats_scroll = tk.Scrollbar(stats_container, orient='vertical', command=self.skill_stats_tree.yview)
+        stats_scroll.pack(side='right', fill='y')
+        self.skill_stats_tree.config(yscrollcommand=stats_scroll.set)
+        self.skill_stats_tree.pack(side='left', fill='both', expand=True)
+        
+        # Configure tags for color coding
+        self.skill_stats_tree.tag_configure('excellent', foreground='#4CAF50')  # Green
+        self.skill_stats_tree.tag_configure('good', foreground='#FF9800')      # Orange
+        self.skill_stats_tree.tag_configure('poor', foreground='#F44336')      # Red
+        
+        # Initially hide stats frame (show only when training mode enabled)
+        if not self.training_mode_var.get():
+            self.skill_stats_frame.grid_remove()
+
         # Section 4: Status Display (wizard button moved to Setup tab)
         self.hunt_status = tk.StringVar(value=self._t('hunt_idle'))
         status_label = tk.Label(frm, textvariable=self.hunt_status, fg='#666', font=('Arial', 9), 
                                relief='sunken', padx=8, pady=4)
-        status_label.grid(row=3, column=0, columnspan=4, sticky='we')
+        status_label.grid(row=3, column=0, columnspan=8, sticky='we')
 
         # Helper text for beginners
-        tk.Label(frm, text=self._t('hunt_tab_help_text'), fg='#999', font=('Arial', 8)).grid(row=4, column=0, columnspan=4, pady=(8,0))
+        tk.Label(frm, text=self._t('hunt_tab_help_text'), fg='#999', font=('Arial', 8)).grid(row=4, column=0, columnspan=8, pady=(8,0))
 
         # Empty widget lists for compatibility (no progressive disclosure in streamlined Hunt tab)
         self.hunt_intermediate_widgets = []
@@ -1476,17 +1553,35 @@ class App(tk.Tk):
                 })
     
     def _refresh_monster_rotation_list(self):
-        """Refresh the monster rotation listbox display."""
+        """Refresh the monster rotation listbox display.
+        
+        Sprint 22 Patch 1: If training_mode_enabled, filter to show only training dummies.
+        """
         if not hasattr(self, 'monster_rotation_listbox'):
             return
         
         self.monster_rotation_listbox.delete(0, tk.END)
         
-        for item in self.monster_rotation_list:
+        # Filter monsters based on training mode
+        is_training_mode = self.training_mode_var.get() if hasattr(self, 'training_mode_var') else False
+        
+        display_list = self.monster_rotation_list
+        if is_training_mode:
+            # Filter to show only training dummies
+            display_list = [m for m in self.monster_rotation_list if m.get('training_mode', False)]
+            
+            # Update status if no training dummies found
+            if not display_list and hasattr(self, 'training_mode_status_var'):
+                self.training_mode_status_var.set(f"⚠️ {self._t('no_training_dummies')}")
+        
+        for item in display_list:
             check = "☑" if item['enabled'] else "☐"
             display = f"{check} {item['name']}"
             if self.hunt_cfg.get('rotation_mode') == 'priority':
                 display += f" (P{item['priority']})"
+            # Add training dummy indicator
+            if item.get('training_mode', False):
+                display += " 🎯"
             self.monster_rotation_listbox.insert(tk.END, display)
         
         self._update_monster_status()
@@ -1533,6 +1628,48 @@ class App(tk.Tk):
         self.hunt_cfg['rotation_mode'] = mode
         self._refresh_monster_rotation_list()
         self.hunt_status.set(f"Rotation mode: {mode}")
+    
+    def _on_training_mode_toggled(self):
+        """Handle training mode checkbox toggle (Sprint 22 Patch 1).
+        
+        When enabled:
+        - Filter monster list to show only training dummies (training_mode=true)
+        - Update status indicator
+        - Save state to hunt_config.json
+        
+        When disabled:
+        - Show all monsters in rotation list
+        - Clear status indicator
+        """
+        is_enabled = self.training_mode_var.get()
+        
+        # Update hunt_cfg
+        self.hunt_cfg['training_mode_enabled'] = is_enabled
+        
+        # Save to config file
+        try:
+            with open(HUNT_CONFIG_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Warning: Could not save training_mode_enabled: {e}")
+        
+        # Update UI feedback
+        if is_enabled:
+            self.training_mode_status_var.set(self._t('training_mode_active'))
+            self.hunt_status.set(self._t('training_mode_active'))
+        else:
+            self.training_mode_status_var.set('')
+            self.hunt_status.set(self._t('training_mode_disabled'))
+        
+        # Refresh monster rotation list (will filter if training mode is on)
+        self._refresh_monster_rotation_list()
+        
+        # Show/hide skill stats frame if it exists
+        if hasattr(self, 'skill_stats_frame'):
+            if is_enabled:
+                self.skill_stats_frame.grid()
+            else:
+                self.skill_stats_frame.grid_remove()
     
     def _on_monster_toggle(self, event=None):
         """Toggle monster enabled state on double-click."""
@@ -4492,6 +4629,64 @@ class App(tk.Tk):
 
     def on_skill_slot_changed(self, _evt=None):
         self._update_attack_keys_from_slots()
+    
+    def update_skill_stats_display(self, stats_dict):
+        """Update skill performance statistics display (Sprint 22 Patch 1).
+        
+        Args:
+            stats_dict: Dictionary from SkillStats.get_all_stats() containing:
+                {
+                    'Skill Name': {
+                        'cast_count': int,
+                        'last_cast': float (timestamp) or None,
+                        'time_since_last_cast': float (seconds) or None,
+                        'success_rate': float (percentage)
+                    },
+                    ...
+                }
+        """
+        if not hasattr(self, 'skill_stats_tree'):
+            return
+        
+        # Clear existing rows
+        for item in self.skill_stats_tree.get_children():
+            self.skill_stats_tree.delete(item)
+        
+        # Populate with current stats
+        for skill_name, data in stats_dict.items():
+            cast_count = data.get('cast_count', 0)
+            time_since = data.get('time_since_last_cast')
+            success_rate = data.get('success_rate', 0.0)
+            
+            # Format last cast time
+            if time_since is None:
+                last_cast_str = 'Never'
+            else:
+                last_cast_str = self._t('time_ago_format').format(time=time_since)
+            
+            # Format cooldown status (simplified - just show "Ready" for now)
+            # TODO: Integrate with actual skill cooldown data from skills.json
+            cooldown_str = self._t('cooldown_ready')
+            
+            # Format success rate
+            success_str = f"{success_rate:.1f}%"
+            
+            # Determine color tag based on success rate
+            if success_rate >= 90:
+                tag = 'excellent'
+            elif success_rate >= 70:
+                tag = 'good'
+            else:
+                tag = 'poor'
+            
+            # Insert row
+            self.skill_stats_tree.insert('', 'end', values=(
+                skill_name,
+                cast_count,
+                last_cast_str,
+                cooldown_str,
+                success_str
+            ), tags=(tag,))
 
     def _prepare_skill_runtime(self, cfg):
         runtime = []
@@ -4518,7 +4713,18 @@ class App(tk.Tk):
             })
         return runtime
 
-    def _try_cast_skills(self, runtime, now, target_available, attack_phase):
+    def _try_cast_skills(self, runtime, now, target_available, attack_phase, skill_stats=None):
+        """Cast skills based on runtime configuration.
+        
+        Args:
+            runtime: List of skill configurations
+            now: Current timestamp
+            target_available: Whether target is available
+            attack_phase: Whether in attack phase
+            skill_stats: SkillStats instance for training mode tracking (optional)
+        
+        Sprint 22 Patch 1: Added skill_stats parameter for training mode.
+        """
         if not runtime:
             return
         for skill in runtime:
@@ -4530,10 +4736,22 @@ class App(tk.Tk):
             if skill_type == 'buff' and attack_phase:
                 # allow buffs even during attack phase, but no extra gating
                 pass
+            
+            # Attempt to cast skill
+            cast_success = False
             try:
                 tap(skill['key'], skill['press_ms'])
+                cast_success = True
             except Exception:
+                pass
+            
+            # Sprint 22 Patch 1: Record skill cast in training mode
+            if skill_stats and skill.get('name'):
+                skill_stats.record_cast(skill['name'], success=cast_success)
+            
+            if not cast_success:
                 continue
+            
             cooldown = skill.get('cooldown', 0.0)
             skill['next_ready'] = time.time() + cooldown if cooldown > 0 else now
             sleep_extra = max(skill.get('cast_time', 0.0) - (skill['press_ms'] / 1000.0), 0.0)
@@ -4668,6 +4886,13 @@ class App(tk.Tk):
                 skill_runtime = self._prepare_skill_runtime(cfg)
                 has_attack_skills = any(skill.get('type', 'attack') != 'buff' for skill in skill_runtime)
                 last_match_info = None
+                
+                # Sprint 22 Patch 1: Initialize skill stats tracker for training mode
+                training_mode_active = cfg.get('training_mode_enabled', False)
+                skill_stats = SkillStats() if training_mode_active else None
+                last_stats_update = 0.0
+                stats_update_interval = 0.5  # Update UI every 0.5 seconds
+                
                 while self.hunt_running:
                     now = time.time()
                     if cfg.get('bring_to_front_each_cycle'):
@@ -4713,8 +4938,17 @@ class App(tk.Tk):
                                 last_match_info = None
                         last_search = now
 
+                    # Sprint 22 Patch 1: Update skill stats display periodically
+                    if skill_stats and (now - last_stats_update) >= stats_update_interval:
+                        try:
+                            all_stats = skill_stats.get_all_stats()
+                            self.after(0, lambda: self.update_skill_stats_display(all_stats))
+                            last_stats_update = now
+                        except Exception:
+                            pass  # Ignore stats update errors
+
                     if skill_runtime:
-                        self._try_cast_skills(skill_runtime, now, have_target, attack_phase=False)
+                        self._try_cast_skills(skill_runtime, now, have_target, attack_phase=False, skill_stats=skill_stats)
 
                     if mode == 'search':
                         if have_target:
@@ -4730,7 +4964,7 @@ class App(tk.Tk):
                     if have_target or (now - last_seen) <= lost_timeout or (now - attack_started) <= attack_min_duration:
                         target_active = have_target or (now - last_seen) <= lost_timeout or (now - attack_started) <= attack_min_duration
                         if skill_runtime and has_attack_skills:
-                            self._try_cast_skills(skill_runtime, now, target_active, attack_phase=True)
+                            self._try_cast_skills(skill_runtime, now, target_active, attack_phase=True, skill_stats=skill_stats)
                             if not target_active:
                                 logger.log_state_change('attack', 'search', 'lost_timeout')
                                 mode = 'search'

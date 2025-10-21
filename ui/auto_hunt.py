@@ -14,7 +14,10 @@ CONFIG_PATH = Path(__file__).parent.parent / 'lib' / 'data' / 'hunt_config.json'
 
 
 def load_cfg():
-    """Load hunt config with Phase 3 migration support."""
+    """Load hunt config with Phase 3 migration support.
+    
+    Sprint 22 Patch 1: Added training_mode_enabled field support.
+    """
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         cfg = json.load(f)
     
@@ -27,6 +30,9 @@ def load_cfg():
     cfg.setdefault('monster_list', [])
     cfg.setdefault('rotation_mode', 'sequence')
     cfg.setdefault('current_monster_index', 0)
+    
+    # Sprint 22 Patch 1: Training mode support
+    cfg.setdefault('training_mode_enabled', False)
     
     return cfg
 
@@ -227,6 +233,9 @@ def main():
     template_path = cfg.get('template_path')
     bring_front = bool(cfg.get('bring_to_front_each_cycle', True))
     window_title = cfg.get('window_title', 'Cabal')
+    
+    # Sprint 22 Patch 1: Training mode support
+    training_mode_enabled = bool(cfg.get('training_mode_enabled', False))
 
     if bring_front:
         bring_window_to_front(window_title)
@@ -249,12 +258,20 @@ def main():
     current_monster_index = cfg.get('current_monster_index', 0)
     window_bounds = cfg.get('window_bounds')
     
+    # Sprint 22 Patch 1: Check if current monster is training dummy
+    is_training_dummy = False
+    if training_mode_enabled and len(monster_targets) > 0:
+        current_monster = monster_targets[current_monster_index % len(monster_targets)]
+        is_training_dummy = current_monster.get('training_mode', False)
+    
     use_rotation = len(monster_targets) > 0
     if use_rotation:
-        print(f'Monster rotation enabled: {rotation_mode} mode, {len(monster_targets)} monsters')
+        training_info = " [TRAINING MODE]" if training_mode_enabled and is_training_dummy else ""
+        print(f'Monster rotation enabled: {rotation_mode} mode, {len(monster_targets)} monsters{training_info}')
         for idx, monster in enumerate(monster_targets):
             prefix = "→" if idx == current_monster_index and rotation_mode == 'sequence' else " "
-            print(f'  {prefix} [{idx+1}] {monster["name"]} (P{monster["priority"]}) - {len(monster["templates"])} templates')
+            dummy_mark = " 🎯 [Training Dummy]" if monster.get('training_mode', False) else ""
+            print(f'  {prefix} [{idx+1}] {monster["name"]} (P{monster["priority"]}) - {len(monster["templates"])} templates{dummy_mark}')
     else:
         print('Monster rotation disabled - using legacy template mode')
 
@@ -359,10 +376,21 @@ def main():
                                 monster_info = f" Monster: {log_monster_name}" if log_monster_name else ""
                                 print(f"[Lost{rotation_info}]{monster_info} Target lost after {duration:.1f}s")
                                 
-                                # Phase 3: Rotate to next monster in sequence mode
-                                if use_rotation and rotation_mode == 'sequence':
+                                # Sprint 22 Patch 1: Skip rotation if in training mode with training dummy
+                                should_rotate = use_rotation and rotation_mode == 'sequence'
+                                if training_mode_enabled and is_training_dummy:
+                                    should_rotate = False
+                                    print(f"[Training Mode] Staying on training dummy - no target rotation")
+                                
+                                # Phase 3: Rotate to next monster in sequence mode (unless training mode)
+                                if should_rotate:
                                     current_monster_index = (current_monster_index + 1) % len(monster_targets)
                                     next_monster = monster_targets[current_monster_index]['name']
+                                    
+                                    # Update training dummy status for new monster
+                                    is_training_dummy = next_monster.get('training_mode', False) if isinstance(next_monster, dict) else \
+                                                       monster_targets[current_monster_index].get('training_mode', False)
+                                    
                                     print(f"[Rotation] Switching to: {next_monster} ({current_monster_index+1}/{len(monster_targets)})")
                                     
                                     # Save rotation state
