@@ -32,20 +32,30 @@ except Exception:
 # Icon helper for button icons
 try:
     from lib.ui.icon_helper import get_icon_helper
+
     icon_helper = get_icon_helper()
 except Exception:
     icon_helper = None  # type: ignore
 
 try:
-    from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang
+    from lib.i18n import (
+        register_bulk as i18n_register_bulk,
+        t as i18n_t,
+        set_default_lang as i18n_set_lang,
+    )
 except Exception:
+
     def i18n_register_bulk(namespace, translations):  # type: ignore
         pass
+
     # Match actual signature to satisfy static analyzers
     def i18n_t(key: str, *, ns: str | None = None, lang: str | None = None, default: str | None = None) -> str:  # type: ignore
         return default or key
+
     def i18n_set_lang(lang: str) -> None:  # type: ignore
         return None
+
+
 try:
     from lib.i18n.translations import SETUP_WIZARD_TRANSLATIONS
 except Exception:
@@ -65,11 +75,11 @@ class SetupWizard:
     5-step setup wizard for first-time users.
     Guides through: Welcome → Window → Monster → Skills → Review
     """
-    
+
     def __init__(self, parent, config_manager=None, on_complete=None, on_cancel=None):
         """
         Initialize setup wizard.
-        
+
         Args:
             parent: Parent tkinter window
             config_manager: ConfigManager instance (optional)
@@ -80,116 +90,121 @@ class SetupWizard:
         self.config_manager = config_manager
         self.on_complete = on_complete
         self.on_cancel = on_cancel
-        
+
         # Detect if this is first-time run (no config yet)
         self.is_first_run = self._detect_first_run()
-        
+
         # Wizard state
         self.current_step = 1
         self.total_steps = 5
-        self.language = 'en'  # Default language
-        self.user_level = 'new'  # Default: new user (can be 'new' or 'experienced')
-        
+        self.language = "en"  # Default language
+        self.user_level = "new"  # Default: new user (can be 'new' or 'experienced')
+
         # Data lists for steps
         self.filtered_windows = []  # Step 2: Window list
-        self.monsters_data = []     # Step 3: Monster list
-        self.skills_data = []       # Step 4: Skills list
-        self.skill_slot_vars = []   # Step 4: Skill slot variables
-        self.skill_slot_combos = [] # Step 4: Skill slot comboboxes
-        
+        self.monsters_data = []  # Step 3: Monster list
+        self.skills_data = []  # Step 4: Skills list
+        self.skill_slot_vars = []  # Step 4: Skill slot variables
+        self.skill_slot_combos = []  # Step 4: Skill slot comboboxes
+
         # Collected data from wizard steps
         self.wizard_data = {
-            'language': 'en',
-            'user_level': 'new',  # Track user experience level
-            'window_title': '',
-            'window_pid': None,
-            'window_hwnd': None,
-            'monster_name': '',
-            'monster_templates': [],
-            'skill_slots': [],
-            'timing': {
-                'lost_timeout_sec': 0.5,
-                'attack_min_duration_sec': 5.0
-            }
+            "language": "en",
+            "user_level": "new",  # Track user experience level
+            "window_title": "",
+            "window_pid": None,
+            "window_hwnd": None,
+            "monster_name": "",
+            "monster_templates": [],
+            "skill_slots": [],
+            "timing": {"lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0},
         }
-        
+
         try:
             # Create wizard window with larger size to fit all content
             print("[Wizard] Creating dialog window...")
             self.dialog = tk.Toplevel(parent)
             # i18n title
             try:
-                i18n_register_bulk('setup_wizard', SETUP_WIZARD_TRANSLATIONS)
+                i18n_register_bulk("setup_wizard", SETUP_WIZARD_TRANSLATIONS)
             except Exception:
                 pass
             try:
-                title_text = i18n_t('wizard_title', ns='setup_wizard', lang=self.language)
+                title_text = i18n_t(
+                    "wizard_title", ns="setup_wizard", lang=self.language
+                )
             except Exception:
                 title_text = "Setup Wizard - Cabal Auto Hunt"
             self.dialog.title(title_text)
-            self.dialog.geometry("750x750")  # Increased height to ensure footer buttons are always visible
-            self.dialog.minsize(700, 650)  # Minimum size to prevent content from being cut off
-            self.dialog.resizable(True, True)  # Allow resizing for different screen sizes
-            
+            self.dialog.geometry(
+                "750x750"
+            )  # Increased height to ensure footer buttons are always visible
+            self.dialog.minsize(
+                700, 650
+            )  # Minimum size to prevent content from being cut off
+            self.dialog.resizable(
+                True, True
+            )  # Allow resizing for different screen sizes
+
             # Center window on screen
             self.dialog.update_idletasks()
             x = (self.dialog.winfo_screenwidth() // 2) - (750 // 2)
             y = (self.dialog.winfo_screenheight() // 2) - (750 // 2)
             self.dialog.geometry(f"750x750+{x}+{y}")
-            
+
             print("[Wizard] Setting up modal dialog...")
             # Make dialog modal - blocks parent window
             # NOTE: Temporarily disable transient to test if it causes visibility issues
             # self.dialog.transient(parent)
             self.dialog.grab_set()
-            
+
             # Force dialog to front and keep it on top
             self.dialog.lift()
             self.dialog.focus_force()
-            self.dialog.attributes('-topmost', True)
-            
+            self.dialog.attributes("-topmost", True)
+
             # Handle window close (X button) - restore parent window
             self.dialog.protocol("WM_DELETE_WINDOW", self._on_close_window)
-            
+
             print("[Wizard] Hiding parent window...")
             # Hide parent window AFTER dialog is set up to avoid transient() issues
             # This prevents confusing dual-window state during wizard
             parent.withdraw()
             parent.update()  # Force parent update to ensure it's hidden
-            
+
             # Immediately bring dialog to front after hiding parent
             self.dialog.lift()
             self.dialog.focus_force()
-            
+
             print("[Wizard] Building UI...")
             # Build UI
             self._build_ui()
-            
+
             print("[Wizard] Showing step 1...")
             # Show first step
             self._show_step(1)
-            
+
             # Force wizard to be visible and on top AFTER building UI
             print("[Wizard] Forcing wizard to front...")
             self.dialog.deiconify()  # Ensure not minimized
-            self.dialog.lift()       # Bring to front
-            self.dialog.focus_force() # Force focus
-            self.dialog.attributes('-topmost', True)  # Stay on top
-            self.dialog.update()     # Force update
-            
+            self.dialog.lift()  # Bring to front
+            self.dialog.focus_force()  # Force focus
+            self.dialog.attributes("-topmost", True)  # Stay on top
+            self.dialog.update()  # Force update
+
             # Make sure it's visible
-            self.dialog.state('normal')
-            
+            self.dialog.state("normal")
+
             # Print window geometry for debugging
             geometry = self.dialog.geometry()
             print(f"[Wizard] Window geometry: {geometry}")
             print(f"[Wizard] Window state: {self.dialog.state()}")
             print(f"[Wizard] Is viewable: {self.dialog.winfo_viewable()}")
             print(f"[Wizard] Is mapped: {self.dialog.winfo_ismapped()}")
-            
+
             # Disable topmost after a short delay (allow user to see it first)
-            self.dialog.after(1000, lambda: self.dialog.attributes('-topmost', False))
-            
+            self.dialog.after(1000, lambda: self.dialog.attributes("-topmost", False))
+
             print("[Wizard] Wizard ready! Waiting for user...")
             # Wait for dialog to close (blocks execution until wizard finishes)
             parent.wait_window(self.dialog)
@@ -197,6 +212,7 @@ class SetupWizard:
         except Exception as e:
             print(f"[Wizard ERROR] Failed to create wizard: {e}")
             import traceback
+
             traceback.print_exc()
             # Restore parent if error
             try:
@@ -204,25 +220,25 @@ class SetupWizard:
             except:
                 pass
             raise
-    
+
     # Property used by tooltips to get current language
     @property
     def lang(self) -> str:
         try:
             return str(self.language)
         except Exception:
-            return 'en'
+            return "en"
 
     def _t(self, key: str) -> str:
         """Translate a Setup Wizard string using its namespace."""
         try:
             # Register once; safe if already registered
             if SETUP_WIZARD_TRANSLATIONS:
-                i18n_register_bulk('setup_wizard', SETUP_WIZARD_TRANSLATIONS)
-            return i18n_t(key, ns='setup_wizard', lang=self.lang)
+                i18n_register_bulk("setup_wizard", SETUP_WIZARD_TRANSLATIONS)
+            return i18n_t(key, ns="setup_wizard", lang=self.lang)
         except Exception:
             return key
-    
+
     def _icon(self, name: str, fallback: str, size: int = 16):
         """
         Fetch an icon image from icon_helper with caching.
@@ -230,7 +246,7 @@ class SetupWizard:
         Keep a reference on self to avoid Tk image garbage collection.
         """
         try:
-            if not hasattr(self, '_icon_cache'):
+            if not hasattr(self, "_icon_cache"):
                 self._icon_cache = {}
             key = f"{name}_{size}"
             if key in self._icon_cache:
@@ -246,7 +262,7 @@ class SetupWizard:
             return img
         except Exception:
             return fallback
-    
+
     def _detect_first_run(self) -> bool:
         """
         Detect if this is first-time run by checking hunt_config.
@@ -254,28 +270,41 @@ class SetupWizard:
         """
         try:
             # Try to load hunt_config
-            hunt_config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'data', 'hunt_config.json')
-            
+            hunt_config_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "lib",
+                "data",
+                "hunt_config.json",
+            )
+
             if not os.path.exists(hunt_config_path):
                 return True  # No config file = first run
-            
-            with open(hunt_config_path, 'r', encoding='utf-8') as f:
+
+            with open(hunt_config_path, "r", encoding="utf-8") as f:
                 hunt_cfg = json.load(f)
-            
+
             # Check if basic setup is complete (same logic as app_gui.py)
-            has_window = bool(hunt_cfg.get('window_title', '').strip())
-            has_monster_legacy = bool(hunt_cfg.get('monster_selected_name', '').strip())
-            has_monster_list = bool(hunt_cfg.get('monster_list')) and len(hunt_cfg.get('monster_list', [])) > 0
+            has_window = bool(hunt_cfg.get("window_title", "").strip())
+            has_monster_legacy = bool(hunt_cfg.get("monster_selected_name", "").strip())
+            has_monster_list = (
+                bool(hunt_cfg.get("monster_list"))
+                and len(hunt_cfg.get("monster_list", [])) > 0
+            )
             has_monster = has_monster_legacy or has_monster_list
-            has_skills = bool(hunt_cfg.get('skill_slots')) and len(hunt_cfg.get('skill_slots', [])) > 0
-            
+            has_skills = (
+                bool(hunt_cfg.get("skill_slots"))
+                and len(hunt_cfg.get("skill_slots", [])) > 0
+            )
+
             # If missing any of the 3 basic requirements, it's first run
             is_first = not (has_window and has_monster and has_skills)
-            
-            print(f"[Wizard] First-run detection: window={has_window}, monster={has_monster}, skills={has_skills}, is_first={is_first}")
-            
+
+            print(
+                f"[Wizard] First-run detection: window={has_window}, monster={has_monster}, skills={has_skills}, is_first={is_first}"
+            )
+
             return is_first
-            
+
         except Exception as e:
             print(f"[Wizard] Error detecting first run: {e}")
             return True  # Default to first run on error
@@ -283,191 +312,215 @@ class SetupWizard:
     def _build_ui(self):
         """Build wizard UI structure with header, content, and footer."""
         # Main container
-        main_frame = tk.Frame(self.dialog, bg='white')
+        main_frame = tk.Frame(self.dialog, bg="white")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Header: Progress indicator
-        header_frame = tk.Frame(main_frame, bg='#f0f0f0', height=60)
+        header_frame = tk.Frame(main_frame, bg="#f0f0f0", height=60)
         header_frame.pack(fill=tk.X, side=tk.TOP)
         header_frame.pack_propagate(False)
-        
+
         self.progress_label = tk.Label(
             header_frame,
             text="Step 1 of 5",
-            font=('Arial', 12, 'bold'),
-            bg='#f0f0f0',
-            fg='#333'
+            font=("Arial", 12, "bold"),
+            bg="#f0f0f0",
+            fg="#333",
         )
         self.progress_label.pack(pady=20)
-        
+
         # Progress dots
-        self.dots_frame = tk.Frame(header_frame, bg='#f0f0f0')
+        self.dots_frame = tk.Frame(header_frame, bg="#f0f0f0")
         self.dots_frame.pack()
-        
+
         self.progress_dots = []
         for i in range(self.total_steps):
             dot = tk.Label(
                 self.dots_frame,
-                text='●',
-                font=('Arial', 16),
-                bg='#f0f0f0',
-                fg='#4CAF50' if i == 0 else '#ccc'
+                text="●",
+                font=("Arial", 16),
+                bg="#f0f0f0",
+                fg="#4CAF50" if i == 0 else "#ccc",
             )
             dot.pack(side=tk.LEFT, padx=5)
             self.progress_dots.append(dot)
-        
+
         # Content area with scrollbar (will be swapped based on step)
         # Create a canvas to enable scrolling if content is too tall
-        content_container = tk.Frame(main_frame, bg='white')
+        content_container = tk.Frame(main_frame, bg="white")
         content_container.pack(fill=tk.BOTH, expand=True)
-        
-        self.canvas = tk.Canvas(content_container, bg='white', highlightthickness=0)
-        scrollbar = tk.Scrollbar(content_container, orient='vertical', command=self.canvas.yview)
-        
-        self.content_frame = tk.Frame(self.canvas, bg='white')
-        
+
+        self.canvas = tk.Canvas(content_container, bg="white", highlightthickness=0)
+        scrollbar = tk.Scrollbar(
+            content_container, orient="vertical", command=self.canvas.yview
+        )
+
+        self.content_frame = tk.Frame(self.canvas, bg="white")
+
         # Configure canvas scrolling
         self.content_frame.bind(
-            '<Configure>',
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
         )
-        
-        self.canvas.create_window((0, 0), window=self.content_frame, anchor='nw')
+
+        self.canvas.create_window((0, 0), window=self.content_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=30, pady=20)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Enable mouse wheel scrolling
         def _on_mousewheel(event):
-            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
         self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        
+
         # Separator line above footer
-        separator = tk.Frame(main_frame, height=2, bg='#ddd')
+        separator = tk.Frame(main_frame, height=2, bg="#ddd")
         separator.pack(fill=tk.X, side=tk.BOTTOM)
-        
+
         # Footer: Navigation buttons (auto-expand to fit tall buttons)
-        footer_frame = tk.Frame(main_frame, bg='#f0f0f0')
+        footer_frame = tk.Frame(main_frame, bg="#f0f0f0")
         footer_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=10)
         # Removed pack_propagate(False) to allow footer to expand with button height
-        
-        button_frame = tk.Frame(footer_frame, bg='#f0f0f0')
+
+        button_frame = tk.Frame(footer_frame, bg="#f0f0f0")
         button_frame.pack(pady=15)
-        
+
         # Back button with previous icon - Icon placement: LEFT (directional, going backward)
-        back_icon = self._icon('previous', '←', size=16)
-        
+        back_icon = self._icon("previous", "←", size=16)
+
         self.back_button = tk.Button(
             button_frame,
-            text=" Back" if not isinstance(back_icon, str) else "Back",  # No emoji in text when icon present
-            image=back_icon if not isinstance(back_icon, str) else '',
-            compound='left' if not isinstance(back_icon, str) else 'none',
+            text=(
+                " Back" if not isinstance(back_icon, str) else "Back"
+            ),  # No emoji in text when icon present
+            image=back_icon if not isinstance(back_icon, str) else "",
+            compound="left" if not isinstance(back_icon, str) else "none",
             command=self._on_back,
-            font=('Arial', 10),
+            font=("Arial", 10),
             padx=20,
             pady=8,
-            state=tk.DISABLED  # Disabled on first step
+            state=tk.DISABLED,  # Disabled on first step
         )
         self.back_button.pack(side=tk.LEFT, padx=8)
         if not isinstance(back_icon, str):
             try:
-                if not hasattr(self, '_image_refs'):
+                if not hasattr(self, "_image_refs"):
                     self._image_refs = []
                 self._image_refs.append(back_icon)
             except Exception:
                 pass
         # Tooltip
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.back_button, key='tip_wizard_back', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                self.back_button,
+                key="tip_wizard_back",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Next button with next icon - Enhanced contrast (#357A38 = CR 5.26:1)
-        next_icon = self._icon('next', '→', size=18)
-        
+        next_icon = self._icon("next", "→", size=18)
+
         self.next_button = tk.Button(
             button_frame,
             text="Next " if not isinstance(next_icon, str) else "Next →",
-            image=next_icon if not isinstance(next_icon, str) else '',
-            compound='right' if not isinstance(next_icon, str) else 'none',
+            image=next_icon if not isinstance(next_icon, str) else "",
+            compound="right" if not isinstance(next_icon, str) else "none",
             command=self._on_next,
-            font=('Arial', 11, 'bold'),
-            bg='#357A38',  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
-            fg='white',
-            activebackground='#2E7D32',  # Darker on hover
-            cursor='hand2',
+            font=("Arial", 11, "bold"),
+            bg="#357A38",  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
+            fg="white",
+            activebackground="#2E7D32",  # Darker on hover
+            cursor="hand2",
             relief=tk.RAISED,
             bd=3,
             padx=24,  # Negative space (primary button)
-            pady=10
+            pady=10,
         )
-        self.next_button.pack(side=tk.LEFT, padx=15)  # Extra padding to make it stand out
+        self.next_button.pack(
+            side=tk.LEFT, padx=15
+        )  # Extra padding to make it stand out
         if not isinstance(next_icon, str):
             try:
-                if not hasattr(self, '_image_refs'):
+                if not hasattr(self, "_image_refs"):
                     self._image_refs = []
                 self._image_refs.append(next_icon)
             except Exception:
                 pass
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.next_button, key='tip_wizard_next', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                self.next_button,
+                key="tip_wizard_next",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Cancel button with cancel icon
-        cancel_icon = self._icon('cancel', '✖', size=16)
-        
+        cancel_icon = self._icon("cancel", "✖", size=16)
+
         self.cancel_button = tk.Button(
             button_frame,
             text=" Cancel" if not isinstance(cancel_icon, str) else "Cancel",
-            image=cancel_icon if not isinstance(cancel_icon, str) else '',
-            compound='left' if not isinstance(cancel_icon, str) else 'none',
+            image=cancel_icon if not isinstance(cancel_icon, str) else "",
+            compound="left" if not isinstance(cancel_icon, str) else "none",
             command=self._on_cancel,
-            font=('Arial', 10),
+            font=("Arial", 10),
             padx=20,
-            pady=8
+            pady=8,
         )
         self.cancel_button.pack(side=tk.LEFT, padx=8)
         if not isinstance(cancel_icon, str):
             try:
-                if not hasattr(self, '_image_refs'):
+                if not hasattr(self, "_image_refs"):
                     self._image_refs = []
                 self._image_refs.append(cancel_icon)
             except Exception:
                 pass
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.cancel_button, key='tip_wizard_cancel', ns='setup_wizard', lang_provider=lambda: self.lang)
-    
+            attach_i18n_tooltip(
+                self.cancel_button,
+                key="tip_wizard_cancel",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
     def _show_step(self, step_number):
         """Show specified wizard step."""
         self.current_step = step_number
-        
+
         # Update progress indicator
         self.progress_label.config(text=f"Step {step_number} of {self.total_steps}")
-        
+
         # Update progress dots
         for i, dot in enumerate(self.progress_dots):
             if i < step_number:
-                dot.config(fg='#4CAF50')  # Green for completed/current
+                dot.config(fg="#4CAF50")  # Green for completed/current
             else:
-                dot.config(fg='#ccc')  # Gray for upcoming
-        
+                dot.config(fg="#ccc")  # Gray for upcoming
+
         # Update button states
         self.back_button.config(state=tk.NORMAL if step_number > 1 else tk.DISABLED)
-        
+
         # Update Next/Finish button based on step (icon placement rule: Next=right, Finish=left)
         if step_number == self.total_steps:
             # Finish button: icon on LEFT, different icon (save/check)
             # NO emoji in text when icon present, only use emoji as fallback
-            finish_icon = self._icon('save', '✓', size=18)
+            finish_icon = self._icon("save", "✓", size=18)
             self.next_button.config(
-                text=" Finish" if not isinstance(finish_icon, str) else "✓ Finish",  # Emoji only when fallback
-                image=finish_icon if not isinstance(finish_icon, str) else '',
-                compound='left' if not isinstance(finish_icon, str) else 'none',
-                bg='#2196F3',
-                activebackground='#1976D2',
-                font=('Arial', 11, 'bold')
+                text=(
+                    " Finish" if not isinstance(finish_icon, str) else "✓ Finish"
+                ),  # Emoji only when fallback
+                image=finish_icon if not isinstance(finish_icon, str) else "",
+                compound="left" if not isinstance(finish_icon, str) else "none",
+                bg="#2196F3",
+                activebackground="#1976D2",
+                font=("Arial", 11, "bold"),
             )
             if not isinstance(finish_icon, str):
                 try:
-                    if not hasattr(self, '_image_refs'):
+                    if not hasattr(self, "_image_refs"):
                         self._image_refs = []
                     self._image_refs.append(finish_icon)
                 except Exception:
@@ -475,27 +528,29 @@ class SetupWizard:
         else:
             # Next button: icon on RIGHT (directional)
             # NO emoji in text when icon present, only use emoji as fallback
-            next_icon = self._icon('next', '→', size=18)
+            next_icon = self._icon("next", "→", size=18)
             self.next_button.config(
-                text="Next " if not isinstance(next_icon, str) else "Next →",  # Emoji only when fallback
-                image=next_icon if not isinstance(next_icon, str) else '',
-                compound='right' if not isinstance(next_icon, str) else 'none',
-                bg='#357A38',
-                activebackground='#2E7D32',
-                font=('Arial', 11, 'bold')
+                text=(
+                    "Next " if not isinstance(next_icon, str) else "Next →"
+                ),  # Emoji only when fallback
+                image=next_icon if not isinstance(next_icon, str) else "",
+                compound="right" if not isinstance(next_icon, str) else "none",
+                bg="#357A38",
+                activebackground="#2E7D32",
+                font=("Arial", 11, "bold"),
             )
             if not isinstance(next_icon, str):
                 try:
-                    if not hasattr(self, '_image_refs'):
+                    if not hasattr(self, "_image_refs"):
                         self._image_refs = []
                     self._image_refs.append(next_icon)
                 except Exception:
                     pass
-        
+
         # Clear content frame
         for widget in self.content_frame.winfo_children():
             widget.destroy()
-        
+
         # Show appropriate step content
         if step_number == 1:
             self._build_step1_welcome()
@@ -507,33 +562,33 @@ class SetupWizard:
             self._build_step4_skills()
         elif step_number == 5:
             self._build_step5_review()
-    
+
     def _build_step1_welcome(self):
         """Step 1: Welcome screen with language selection."""
         # Welcome title
         title = tk.Label(
             self.content_frame,
-            text=self._t('step1_title'),
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg='#333'
+            text=self._t("step1_title"),
+            font=("Arial", 18, "bold"),
+            bg="white",
+            fg="#333",
         )
         title.pack(pady=(20, 10))
-        
+
         # Subtitle
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t('step1_subtitle'),
-            font=('Arial', 12),
-            bg='white',
-            fg='#666'
+            text=self._t("step1_subtitle"),
+            font=("Arial", 12),
+            bg="white",
+            fg="#666",
         )
         subtitle.pack(pady=(0, 30))
-        
+
         # What this wizard will do
-        info_frame = tk.Frame(self.content_frame, bg='white')
+        info_frame = tk.Frame(self.content_frame, bg="white")
         info_frame.pack(pady=20, fill=tk.X)
-        
+
         info_text = """This wizard will help you:
 
 ✓ Select your game window
@@ -542,833 +597,931 @@ class SetupWizard:
 ✓ Set up optimal timing
 
 It takes about 2 minutes. Let's begin!"""
-        
+
         info_label = tk.Label(
             info_frame,
             text=info_text,
-            font=('Arial', 11),
-            bg='white',
-            fg='#333',
+            font=("Arial", 11),
+            bg="white",
+            fg="#333",
             justify=tk.LEFT,
-            anchor='w'
+            anchor="w",
         )
         info_label.pack(padx=50, fill=tk.X)
-        
+
         # Language selection
         lang_frame = tk.LabelFrame(
             self.content_frame,
-            text=self._t('language_group'),
-            font=('Arial', 10, 'bold'),
-            bg='white',
+            text=self._t("language_group"),
+            font=("Arial", 10, "bold"),
+            bg="white",
             padx=20,
-            pady=15
+            pady=15,
         )
         lang_frame.pack(pady=30, fill=tk.X)
-        
+
         # Restore language from wizard state (fixes persistence bug when navigating back)
         self.language_var = tk.StringVar(value=self.language)
-        
+
         lang_en = tk.Radiobutton(
             lang_frame,
             text="🇬🇧 English",
             variable=self.language_var,
-            value='en',
-            font=('Arial', 11),
-            bg='white',
-            command=self._on_language_change
+            value="en",
+            font=("Arial", 11),
+            bg="white",
+            command=self._on_language_change,
         )
-        lang_en.pack(anchor='w', pady=5)
+        lang_en.pack(anchor="w", pady=5)
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(lang_en, key='tip_lang_english', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                lang_en,
+                key="tip_lang_english",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         lang_vi = tk.Radiobutton(
             lang_frame,
             text="🇻🇳 Tiếng Việt",
             variable=self.language_var,
-            value='vi',
-            font=('Arial', 11),
-            bg='white',
-            command=self._on_language_change
+            value="vi",
+            font=("Arial", 11),
+            bg="white",
+            command=self._on_language_change,
         )
-        lang_vi.pack(anchor='w', pady=5)
+        lang_vi.pack(anchor="w", pady=5)
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(lang_vi, key='tip_lang_vietnamese', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                lang_vi,
+                key="tip_lang_vietnamese",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # User level selection (New User vs Experienced User)
         user_level_frame = tk.LabelFrame(
             self.content_frame,
-            text=self._t('user_level_group'),
-            font=('Arial', 10, 'bold'),
-            bg='white',
+            text=self._t("user_level_group"),
+            font=("Arial", 10, "bold"),
+            bg="white",
             padx=20,
-            pady=15
+            pady=15,
         )
         user_level_frame.pack(pady=30, fill=tk.X)
-        
+
         # Restore user level from wizard state (fixes persistence bug when navigating back)
         self.user_level_var = tk.StringVar(value=self.user_level)
-        
+
         # New User radio button
         self.level_new_radio = tk.Radiobutton(
             user_level_frame,
-            text=self._t('user_level_new'),
+            text=self._t("user_level_new"),
             variable=self.user_level_var,
-            value='new',
-            font=('Arial', 11),
-            bg='white',
-            command=self._on_user_level_change
+            value="new",
+            font=("Arial", 11),
+            bg="white",
+            command=self._on_user_level_change,
         )
-        self.level_new_radio.pack(anchor='w', pady=5)
-        
+        self.level_new_radio.pack(anchor="w", pady=5)
+
         self.level_new_desc = tk.Label(
             user_level_frame,
-            text="  " + self._t('user_level_new_desc'),
-            font=('Arial', 9),
-            bg='white',
-            fg='#666',
-            justify=tk.LEFT
+            text="  " + self._t("user_level_new_desc"),
+            font=("Arial", 9),
+            bg="white",
+            fg="#666",
+            justify=tk.LEFT,
         )
-        self.level_new_desc.pack(anchor='w', padx=(25, 0))
-        
+        self.level_new_desc.pack(anchor="w", padx=(25, 0))
+
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.level_new_radio, key='tip_user_level_new', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                self.level_new_radio,
+                key="tip_user_level_new",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Experienced User radio button
         self.level_experienced_radio = tk.Radiobutton(
             user_level_frame,
-            text=self._t('user_level_experienced'),
+            text=self._t("user_level_experienced"),
             variable=self.user_level_var,
-            value='experienced',
-            font=('Arial', 11),
-            bg='white',
-            command=self._on_user_level_change
+            value="experienced",
+            font=("Arial", 11),
+            bg="white",
+            command=self._on_user_level_change,
         )
-        self.level_experienced_radio.pack(anchor='w', pady=(10, 5))
-        
+        self.level_experienced_radio.pack(anchor="w", pady=(10, 5))
+
         self.level_experienced_desc = tk.Label(
             user_level_frame,
-            text="  " + self._t('user_level_experienced_desc'),
-            font=('Arial', 9),
-            bg='white',
-            fg='#666',
-            justify=tk.LEFT
+            text="  " + self._t("user_level_experienced_desc"),
+            font=("Arial", 9),
+            bg="white",
+            fg="#666",
+            justify=tk.LEFT,
         )
-        self.level_experienced_desc.pack(anchor='w', padx=(25, 0))
-        
+        self.level_experienced_desc.pack(anchor="w", padx=(25, 0))
+
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.level_experienced_radio, key='tip_user_level_experienced', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                self.level_experienced_radio,
+                key="tip_user_level_experienced",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Disable "Experienced User" option if this is first-time run
         if self.is_first_run:
             self.level_experienced_radio.config(state=tk.DISABLED)
             # Add a hint label for first-time users
             self.first_time_hint = tk.Label(
                 user_level_frame,
-                text="ℹ️ " + ("First-time users must start with 'New User' option" if self.lang == 'en' else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"),
-                font=('Arial', 9, 'italic'),
-                bg='white',
-                fg='#2196F3',
-                justify=tk.LEFT
+                text="ℹ️ "
+                + (
+                    "First-time users must start with 'New User' option"
+                    if self.lang == "en"
+                    else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
+                ),
+                font=("Arial", 9, "italic"),
+                bg="white",
+                fg="#2196F3",
+                justify=tk.LEFT,
             )
-            self.first_time_hint.pack(anchor='w', padx=(25, 0), pady=(5, 0))
-        
+            self.first_time_hint.pack(anchor="w", padx=(25, 0), pady=(5, 0))
+
         # Get started hint
         hint = tk.Label(
             self.content_frame,
-            text=self._t('get_started_hint'),
-            font=('Arial', 10, 'italic'),
-            bg='white',
-            fg='#999'
+            text=self._t("get_started_hint"),
+            font=("Arial", 10, "italic"),
+            bg="white",
+            fg="#999",
         )
         hint.pack(pady=(30, 0))
-    
+
     def _build_step2_window(self):
         """Step 2: Game window calibration."""
         title = tk.Label(
             self.content_frame,
-            text=self._t('step2_title'),
-            font=('Arial', 16, 'bold'),
-            bg='white'
+            text=self._t("step2_title"),
+            font=("Arial", 16, "bold"),
+            bg="white",
         )
         title.pack(pady=(10, 5))
-        
+
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t('step2_subtitle'),
-            font=('Arial', 10),
-            bg='white',
-            fg='#666'
+            text=self._t("step2_subtitle"),
+            font=("Arial", 10),
+            bg="white",
+            fg="#666",
         )
         subtitle.pack(pady=(0, 15))
-        
+
         # Search frame
-        search_frame = tk.Frame(self.content_frame, bg='white')
+        search_frame = tk.Frame(self.content_frame, bg="white")
         search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
-        
-        tk.Label(search_frame, text=self._t('filter_label'), bg='white').pack(side=tk.LEFT)
-        self.window_filter_var = tk.StringVar(value='Cabal')
-        filter_entry = tk.Entry(search_frame, textvariable=self.window_filter_var, width=20)
+
+        tk.Label(search_frame, text=self._t("filter_label"), bg="white").pack(
+            side=tk.LEFT
+        )
+        self.window_filter_var = tk.StringVar(value="Cabal")
+        filter_entry = tk.Entry(
+            search_frame, textvariable=self.window_filter_var, width=20
+        )
         filter_entry.pack(side=tk.LEFT, padx=(5, 10))
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(filter_entry, key='tip_filter', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                filter_entry,
+                key="tip_filter",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Search button with search icon - Enhanced contrast
-        search_icon = self._icon('search', '🔍', size=16)
-        
+        search_icon = self._icon("search", "🔍", size=16)
+
         btn_search = tk.Button(
             search_frame,
-            text=f" {self._t('search_windows')}" if not isinstance(search_icon, str) else self._t('search_windows'),
-            image=search_icon if not isinstance(search_icon, str) else '',
-            compound='left' if not isinstance(search_icon, str) else 'none',
+            text=(
+                f" {self._t('search_windows')}"
+                if not isinstance(search_icon, str)
+                else self._t("search_windows")
+            ),
+            image=search_icon if not isinstance(search_icon, str) else "",
+            compound="left" if not isinstance(search_icon, str) else "none",
             command=self._search_windows,
-            bg='#357A38',  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
-            fg='white',
-            activebackground='#2E7D32',
-            font=('Arial', 9, 'bold'),
-            cursor='hand2',
+            bg="#357A38",  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
+            fg="white",
+            activebackground="#2E7D32",
+            font=("Arial", 9, "bold"),
+            cursor="hand2",
             padx=18,
-            pady=8
+            pady=8,
         )
         btn_search.pack(side=tk.LEFT)
         if not isinstance(search_icon, str):
             try:
-                if not hasattr(self, '_image_refs'):
+                if not hasattr(self, "_image_refs"):
                     self._image_refs = []
                 self._image_refs.append(search_icon)
             except Exception:
                 pass
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(btn_search, key='tip_search_windows', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                btn_search,
+                key="tip_search_windows",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Window list
-        list_frame = tk.Frame(self.content_frame, bg='white')
+        list_frame = tk.Frame(self.content_frame, bg="white")
         list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
-        
+
         scrollbar = tk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         self.window_listbox = tk.Listbox(
-            list_frame,
-            height=8,
-            yscrollcommand=scrollbar.set,
-            font=('Courier New', 9)
+            list_frame, height=8, yscrollcommand=scrollbar.set, font=("Courier New", 9)
         )
         self.window_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.window_listbox.yview)
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.window_listbox, key='tip_window_list', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
-        self.window_listbox.bind('<<ListboxSelect>>', self._on_window_select)
-        
+            attach_i18n_tooltip(
+                self.window_listbox,
+                key="tip_window_list",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
+        self.window_listbox.bind("<<ListboxSelect>>", self._on_window_select)
+
         # Info label
         self.window_info_label = tk.Label(
             self.content_frame,
-            text=self._t('hint_window_running'),
-            font=('Arial', 9, 'italic'),
-            bg='white',
-            fg='#666'
+            text=self._t("hint_window_running"),
+            font=("Arial", 9, "italic"),
+            bg="white",
+            fg="#666",
         )
         self.window_info_label.pack(pady=(5, 0))
-        
+
         # Auto-search on step load
         self.dialog.after(100, self._search_windows)
-    
+
     def _build_step3_monster(self):
         """Step 3: Monster selection."""
         title = tk.Label(
             self.content_frame,
-            text=self._t('step3_title'),
-            font=('Arial', 16, 'bold'),
-            bg='white'
+            text=self._t("step3_title"),
+            font=("Arial", 16, "bold"),
+            bg="white",
         )
         title.pack(pady=(10, 5))
-        
+
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t('step3_subtitle'),
-            font=('Arial', 10),
-            bg='white',
-            fg='#666'
+            text=self._t("step3_subtitle"),
+            font=("Arial", 10),
+            bg="white",
+            fg="#666",
         )
         subtitle.pack(pady=(0, 15))
-        
+
         # Load monsters (lib/data/ is in parent directory)
-        monsters_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'data', 'monsters.json')
+        monsters_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "lib", "data", "monsters.json"
+        )
         try:
-            with open(monsters_path, 'r', encoding='utf-8') as f:
+            with open(monsters_path, "r", encoding="utf-8") as f:
                 self.monsters_data = json.load(f)
         except Exception as e:
             self.monsters_data = []
             tk.Label(
                 self.content_frame,
-                text=self._t('err_load_monsters').format(e=e),
-                fg='red',
-                bg='white'
+                text=self._t("err_load_monsters").format(e=e),
+                fg="red",
+                bg="white",
             ).pack(pady=20)
             return
-        
+
         if not self.monsters_data:
             tk.Label(
                 self.content_frame,
-                text=self._t('no_monsters_found'),
-                fg='orange',
-                bg='white'
+                text=self._t("no_monsters_found"),
+                fg="orange",
+                bg="white",
             ).pack(pady=20)
             return
-        
+
         # Monster list frame
-        list_frame = tk.Frame(self.content_frame, bg='white')
+        list_frame = tk.Frame(self.content_frame, bg="white")
         list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
-        
+
         scrollbar = tk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         self.monster_listbox = tk.Listbox(
-            list_frame,
-            height=10,
-            yscrollcommand=scrollbar.set,
-            font=('Arial', 10)
+            list_frame, height=10, yscrollcommand=scrollbar.set, font=("Arial", 10)
         )
         self.monster_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.monster_listbox.yview)
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.monster_listbox, key='tip_monster_list', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
-        self.monster_listbox.bind('<<ListboxSelect>>', self._on_monster_select)
-        
+            attach_i18n_tooltip(
+                self.monster_listbox,
+                key="tip_monster_list",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
+        self.monster_listbox.bind("<<ListboxSelect>>", self._on_monster_select)
+
         # Populate monster list
         for monster in self.monsters_data:
-            name = monster.get('name', 'Unnamed')
-            hp = monster.get('hp', 0)
-            templates_count = len(monster.get('templates', []))
+            name = monster.get("name", "Unnamed")
+            hp = monster.get("hp", 0)
+            templates_count = len(monster.get("templates", []))
             label = f"{name}  (HP: {hp:,.0f}, {templates_count} template(s))"
             self.monster_listbox.insert(tk.END, label)
-        
+
         # Select first monster by default
         if self.monsters_data:
             self.monster_listbox.selection_set(0)
             self.monster_listbox.activate(0)
             self._on_monster_select()
-        
+
         # Info label
         self.monster_info_label = tk.Label(
             self.content_frame,
             text="",
-            font=('Arial', 9),
-            bg='white',
-            fg='#333',
-            justify=tk.LEFT
+            font=("Arial", 9),
+            bg="white",
+            fg="#333",
+            justify=tk.LEFT,
         )
         self.monster_info_label.pack(pady=(5, 0))
-    
+
     def _build_step4_skills(self):
         """Step 4: Skill configuration."""
         title = tk.Label(
             self.content_frame,
-            text=self._t('step4_title'),
-            font=('Arial', 16, 'bold'),
-            bg='white'
+            text=self._t("step4_title"),
+            font=("Arial", 16, "bold"),
+            bg="white",
         )
         title.pack(pady=(10, 5))
-        
+
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t('step4_subtitle'),
-            font=('Arial', 10),
-            bg='white',
-            fg='#666'
+            text=self._t("step4_subtitle"),
+            font=("Arial", 10),
+            bg="white",
+            fg="#666",
         )
         subtitle.pack(pady=(0, 15))
-        
+
         # Load skills (lib/data/ is in parent directory)
-        skills_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'data', 'skills.json')
+        skills_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "lib", "data", "skills.json"
+        )
         try:
-            with open(skills_path, 'r', encoding='utf-8') as f:
+            with open(skills_path, "r", encoding="utf-8") as f:
                 self.skills_data = json.load(f)
         except Exception as e:
             self.skills_data = []
             tk.Label(
                 self.content_frame,
-                text=self._t('err_load_skills').format(e=e),
-                fg='red',
-                bg='white'
+                text=self._t("err_load_skills").format(e=e),
+                fg="red",
+                bg="white",
             ).pack(pady=20)
             return
-        
+
         # Skill slots frame
-        slots_frame = tk.Frame(self.content_frame, bg='white')
+        slots_frame = tk.Frame(self.content_frame, bg="white")
         slots_frame.pack(fill=tk.BOTH, expand=True, padx=20)
-        
+
         self.skill_slot_vars = []
         self.skill_slot_combos = []
-        
+
         # Create skill name list for combobox
-        skill_names = ['(Empty)'] + [s.get('name', 'Unnamed') for s in self.skills_data]
-        
+        skill_names = ["(Empty)"] + [s.get("name", "Unnamed") for s in self.skills_data]
+
         # Create 9 skill slots (3 rows x 3 cols)
         for row in range(3):
             for col in range(3):
                 slot_num = row * 3 + col + 1
-                
+
                 # Slot container
-                slot_container = tk.Frame(slots_frame, bg='white')
-                slot_container.grid(row=row, column=col, padx=8, pady=5, sticky='w')
-                
+                slot_container = tk.Frame(slots_frame, bg="white")
+                slot_container.grid(row=row, column=col, padx=8, pady=5, sticky="w")
+
                 # Label
                 tk.Label(
                     slot_container,
                     text=f"Slot {slot_num}:",
-                    bg='white',
-                    font=('Arial', 9, 'bold')
-                ).pack(anchor='w')
-                
+                    bg="white",
+                    font=("Arial", 9, "bold"),
+                ).pack(anchor="w")
+
                 # Combobox
-                var = tk.StringVar(value='(Empty)')
+                var = tk.StringVar(value="(Empty)")
                 combo = ttk.Combobox(
                     slot_container,
                     textvariable=var,
                     values=skill_names,
-                    state='readonly',
-                    width=18
+                    state="readonly",
+                    width=18,
                 )
-                combo.pack(anchor='w')
+                combo.pack(anchor="w")
                 if attach_i18n_tooltip:
-                    attach_i18n_tooltip(combo, key='tip_skill_slot', ns='setup_wizard', lang_provider=lambda: self.lang)
-                
+                    attach_i18n_tooltip(
+                        combo,
+                        key="tip_skill_slot",
+                        ns="setup_wizard",
+                        lang_provider=lambda: self.lang,
+                    )
+
                 self.skill_slot_vars.append(var)
                 self.skill_slot_combos.append(combo)
-        
+
         # Buttons frame
-        btn_frame = tk.Frame(self.content_frame, bg='white')
+        btn_frame = tk.Frame(self.content_frame, bg="white")
         btn_frame.pack(pady=(15, 0))
-        
+
         # Clear button with delete icon
-        clear_icon = self._icon('delete', '🗑️', size=16)
-        
+        clear_icon = self._icon("delete", "🗑️", size=16)
+
         clear_btn = tk.Button(
             btn_frame,
-            text=f" {self._t('clear_all_slots')}" if not isinstance(clear_icon, str) else self._t('clear_all_slots'),
-            image=clear_icon if not isinstance(clear_icon, str) else '',
-            compound='left' if not isinstance(clear_icon, str) else 'none',
+            text=(
+                f" {self._t('clear_all_slots')}"
+                if not isinstance(clear_icon, str)
+                else self._t("clear_all_slots")
+            ),
+            image=clear_icon if not isinstance(clear_icon, str) else "",
+            compound="left" if not isinstance(clear_icon, str) else "none",
             command=self._clear_all_skill_slots,
-            font=('Arial', 10),
+            font=("Arial", 10),
             padx=18,
-            pady=8
+            pady=8,
         )
         clear_btn.pack(side=tk.LEFT, padx=5)
         if not isinstance(clear_icon, str):
             try:
-                if not hasattr(self, '_image_refs'):
+                if not hasattr(self, "_image_refs"):
                     self._image_refs = []
                 self._image_refs.append(clear_icon)
             except Exception:
                 pass
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(clear_btn, key='tip_clear_all_slots', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                clear_btn,
+                key="tip_clear_all_slots",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Rotation builder button (for new users only) with skill icon
-        skill_icon = self._icon('skill', '⚔️', size=18)
-        
+        skill_icon = self._icon("skill", "⚔️", size=18)
+
         self.rotation_builder_button = tk.Button(
             btn_frame,
-            text=f" {self._t('open_rotation_builder')}" if not isinstance(skill_icon, str) else self._t('open_rotation_builder'),
-            image=skill_icon if not isinstance(skill_icon, str) else '',
-            compound='left' if not isinstance(skill_icon, str) else 'none',
+            text=(
+                f" {self._t('open_rotation_builder')}"
+                if not isinstance(skill_icon, str)
+                else self._t("open_rotation_builder")
+            ),
+            image=skill_icon if not isinstance(skill_icon, str) else "",
+            compound="left" if not isinstance(skill_icon, str) else "none",
             command=self._open_rotation_builder,
-            bg='#2196F3',  # Blue (CR 3.12:1 - OK for large/bold text)
-            fg='white',
-            activebackground='#1976D2',
-            font=('Arial', 10, 'bold'),
+            bg="#2196F3",  # Blue (CR 3.12:1 - OK for large/bold text)
+            fg="white",
+            activebackground="#1976D2",
+            font=("Arial", 10, "bold"),
             padx=20,  # Negative space
             pady=8,
-            cursor='hand2'
+            cursor="hand2",
         )
         self.rotation_builder_button.pack(side=tk.LEFT, padx=5)
         if not isinstance(skill_icon, str):
             try:
-                if not hasattr(self, '_image_refs'):
+                if not hasattr(self, "_image_refs"):
                     self._image_refs = []
                 self._image_refs.append(skill_icon)
             except Exception:
                 pass
         if attach_i18n_tooltip:
-            attach_i18n_tooltip(self.rotation_builder_button, key='tip_rotation_builder', ns='setup_wizard', lang_provider=lambda: self.lang)
-        
+            attach_i18n_tooltip(
+                self.rotation_builder_button,
+                key="tip_rotation_builder",
+                ns="setup_wizard",
+                lang_provider=lambda: self.lang,
+            )
+
         # Update button state based on user level
         self._update_rotation_builder_button_state()
-        
+
         # Hint label for disabled rotation builder
         self.rotation_builder_hint = tk.Label(
             self.content_frame,
-            text='',
-            font=('Arial', 9, 'italic'),
-            bg='white',
-            fg='#999'
+            text="",
+            font=("Arial", 9, "italic"),
+            bg="white",
+            fg="#999",
         )
         self.rotation_builder_hint.pack(pady=(10, 0))
-        
+
         # Update hint based on user level
-        if self.user_level != 'new':
-            self.rotation_builder_hint.config(text=self._t('rotation_builder_disabled_hint'))
-        
+        if self.user_level != "new":
+            self.rotation_builder_hint.config(
+                text=self._t("rotation_builder_disabled_hint")
+            )
+
         # Info
         info = tk.Label(
             self.content_frame,
-            text=self._t('skills_order_hint'),
-            font=('Arial', 9, 'italic'),
-            bg='white',
-            fg='#666'
+            text=self._t("skills_order_hint"),
+            font=("Arial", 9, "italic"),
+            bg="white",
+            fg="#666",
         )
         info.pack(pady=(10, 0))
-    
+
     def _build_step5_review(self):
         """Step 5: Final review."""
         title = tk.Label(
             self.content_frame,
-            text=self._t('step5_title'),
-            font=('Arial', 16, 'bold'),
-            bg='white'
+            text=self._t("step5_title"),
+            font=("Arial", 16, "bold"),
+            bg="white",
         )
         title.pack(pady=(10, 5))
-        
+
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t('step5_subtitle'),
-            font=('Arial', 10),
-            bg='white',
-            fg='#666'
+            text=self._t("step5_subtitle"),
+            font=("Arial", 10),
+            bg="white",
+            fg="#666",
         )
         subtitle.pack(pady=(0, 20))
-        
+
         # Review frame with border
         review_frame = tk.LabelFrame(
             self.content_frame,
             text="Configuration Summary",
-            font=('Arial', 10, 'bold'),
-            bg='white',
+            font=("Arial", 10, "bold"),
+            bg="white",
             padx=20,
-            pady=15
+            pady=15,
         )
         review_frame.pack(fill=tk.BOTH, expand=True, padx=30)
-        
+
         # Window info
-        window_info = self.wizard_data.get('window_title', 'Not selected')
-        window_pid = self.wizard_data.get('window_pid', 'N/A')
+        window_info = self.wizard_data.get("window_title", "Not selected")
+        window_pid = self.wizard_data.get("window_pid", "N/A")
         tk.Label(
             review_frame,
             text=f"🪟 Game Window:",
-            font=('Arial', 10, 'bold'),
-            bg='white',
-            anchor='w'
+            font=("Arial", 10, "bold"),
+            bg="white",
+            anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
         tk.Label(
             review_frame,
             text=f"   {window_info} (PID: {window_pid})",
-            font=('Arial', 9),
-            bg='white',
-            fg='#333',
-            anchor='w'
+            font=("Arial", 9),
+            bg="white",
+            fg="#333",
+            anchor="w",
         ).pack(fill=tk.X, pady=(0, 10))
-        
+
         # Monster info
-        monster_name = self.wizard_data.get('monster_name', 'Not selected')
-        monster_templates = self.wizard_data.get('monster_templates', [])
+        monster_name = self.wizard_data.get("monster_name", "Not selected")
+        monster_templates = self.wizard_data.get("monster_templates", [])
         tk.Label(
             review_frame,
             text=f"👾 Monster:",
-            font=('Arial', 10, 'bold'),
-            bg='white',
-            anchor='w'
+            font=("Arial", 10, "bold"),
+            bg="white",
+            anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
         tk.Label(
             review_frame,
             text=f"   {monster_name} ({len(monster_templates)} template(s))",
-            font=('Arial', 9),
-            bg='white',
-            fg='#333',
-            anchor='w'
+            font=("Arial", 9),
+            bg="white",
+            fg="#333",
+            anchor="w",
         ).pack(fill=tk.X, pady=(0, 10))
-        
+
         # Skills info
-        skill_slots = self.wizard_data.get('skill_slots', [])
-        assigned_skills = [s for s in skill_slots if s and s != '(Empty)']
+        skill_slots = self.wizard_data.get("skill_slots", [])
+        assigned_skills = [s for s in skill_slots if s and s != "(Empty)"]
         tk.Label(
             review_frame,
             text=f"⚔️ Skills:",
-            font=('Arial', 10, 'bold'),
-            bg='white',
-            anchor='w'
+            font=("Arial", 10, "bold"),
+            bg="white",
+            anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
-        
+
         if assigned_skills:
             skills_text = "   " + ", ".join(assigned_skills)
             tk.Label(
                 review_frame,
                 text=skills_text,
-                font=('Arial', 9),
-                bg='white',
-                fg='#333',
-                anchor='w',
+                font=("Arial", 9),
+                bg="white",
+                fg="#333",
+                anchor="w",
                 wraplength=450,
-                justify=tk.LEFT
+                justify=tk.LEFT,
             ).pack(fill=tk.X, pady=(0, 10))
         else:
             tk.Label(
                 review_frame,
                 text="   No skills assigned",
-                font=('Arial', 9, 'italic'),
-                bg='white',
-                fg='#999',
-                anchor='w'
+                font=("Arial", 9, "italic"),
+                bg="white",
+                fg="#999",
+                anchor="w",
             ).pack(fill=tk.X, pady=(0, 10))
-        
+
         # Timing info
-        timing = self.wizard_data.get('timing', {})
+        timing = self.wizard_data.get("timing", {})
         tk.Label(
             review_frame,
             text=f"⏱️ Timing:",
-            font=('Arial', 10, 'bold'),
-            bg='white',
-            anchor='w'
+            font=("Arial", 10, "bold"),
+            bg="white",
+            anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
         timing_text = f"   Lost timeout: {timing.get('lost_timeout_sec', 0.5)}s, Attack duration: {timing.get('attack_min_duration_sec', 5.0)}s"
         tk.Label(
             review_frame,
             text=timing_text,
-            font=('Arial', 9),
-            bg='white',
-            fg='#333',
-            anchor='w'
+            font=("Arial", 9),
+            bg="white",
+            fg="#333",
+            anchor="w",
         ).pack(fill=tk.X, pady=(0, 10))
-        
+
         # Warning if incomplete
-        if not window_info or window_info == 'Not selected':
+        if not window_info or window_info == "Not selected":
             tk.Label(
                 self.content_frame,
                 text="⚠️ Warning: No game window selected",
-                font=('Arial', 9, 'bold'),
-                bg='white',
-                fg='orange'
+                font=("Arial", 9, "bold"),
+                bg="white",
+                fg="orange",
             ).pack(pady=(10, 0))
-        
-        if not monster_name or monster_name == 'Not selected':
+
+        if not monster_name or monster_name == "Not selected":
             tk.Label(
                 self.content_frame,
                 text="⚠️ Warning: No monster selected",
-                font=('Arial', 9, 'bold'),
-                bg='white',
-                fg='orange'
+                font=("Arial", 9, "bold"),
+                bg="white",
+                fg="orange",
             ).pack(pady=(5, 0))
-    
+
     def _on_language_change(self):
         """Handle language selection change."""
         self.language = self.language_var.get()
-        self.wizard_data['language'] = self.language
-        
+        self.wizard_data["language"] = self.language
+
         # Update user level section texts if they exist (Step 1)
-        if hasattr(self, 'level_new_radio'):
-            self.level_new_radio.config(text=self._t('user_level_new'))
-        
-        if hasattr(self, 'level_new_desc'):
-            self.level_new_desc.config(text="  " + self._t('user_level_new_desc'))
-        
-        if hasattr(self, 'level_experienced_radio'):
-            self.level_experienced_radio.config(text=self._t('user_level_experienced'))
-        
-        if hasattr(self, 'level_experienced_desc'):
-            self.level_experienced_desc.config(text="  " + self._t('user_level_experienced_desc'))
-        
+        if hasattr(self, "level_new_radio"):
+            self.level_new_radio.config(text=self._t("user_level_new"))
+
+        if hasattr(self, "level_new_desc"):
+            self.level_new_desc.config(text="  " + self._t("user_level_new_desc"))
+
+        if hasattr(self, "level_experienced_radio"):
+            self.level_experienced_radio.config(text=self._t("user_level_experienced"))
+
+        if hasattr(self, "level_experienced_desc"):
+            self.level_experienced_desc.config(
+                text="  " + self._t("user_level_experienced_desc")
+            )
+
         # Update first-time hint if exists
-        if hasattr(self, 'first_time_hint') and self.is_first_run:
-            hint_text = "First-time users must start with 'New User' option" if self.lang == 'en' else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
+        if hasattr(self, "first_time_hint") and self.is_first_run:
+            hint_text = (
+                "First-time users must start with 'New User' option"
+                if self.lang == "en"
+                else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
+            )
             self.first_time_hint.config(text="ℹ️ " + hint_text)
-        
+
         # Note: Tooltips will auto-update through lang_provider lambda
-    
+
     def _on_user_level_change(self):
         """Handle user level selection change."""
         self.user_level = self.user_level_var.get()
-        self.wizard_data['user_level'] = self.user_level
+        self.wizard_data["user_level"] = self.user_level
         # If we're on step 4 and the rotation builder button exists, update its state
-        if self.current_step == 4 and hasattr(self, 'rotation_builder_button'):
+        if self.current_step == 4 and hasattr(self, "rotation_builder_button"):
             self._update_rotation_builder_button_state()
-    
+
     def _search_windows(self):
         """Search for game windows matching filter."""
         filter_text = self.window_filter_var.get().strip().lower()
         windows = self._enum_windows()
-        
+
         # Filter windows
         self.filtered_windows = [
-            w for w in windows 
-            if filter_text in w['title'].lower() or filter_text in (w.get('proc') or '').lower()
+            w
+            for w in windows
+            if filter_text in w["title"].lower()
+            or filter_text in (w.get("proc") or "").lower()
         ]
-        
+
         # Update listbox
         self.window_listbox.delete(0, tk.END)
         for w in self.filtered_windows:
             label = f"{w['title']}  [PID: {w['pid']}]"
-            if w.get('proc'):
+            if w.get("proc"):
                 label += f"  ({w['proc']})"
             self.window_listbox.insert(tk.END, label)
-        
+
         # Update info
         if not self.filtered_windows:
             self.window_info_label.config(
                 text="⚠️ No windows found. Try a different filter or make sure game is running.",
-                fg='orange'
+                fg="orange",
             )
         else:
             self.window_info_label.config(
-                text=f"✓ Found {len(self.filtered_windows)} window(s)",
-                fg='green'
+                text=f"✓ Found {len(self.filtered_windows)} window(s)", fg="green"
             )
             # Auto-select first
             self.window_listbox.selection_set(0)
             self.window_listbox.activate(0)
             self._on_window_select()
-    
+
     def _on_window_select(self, event=None):
         """Handle window selection."""
         try:
             idx = self.window_listbox.curselection()
             if not idx:
                 return
-            
+
             selected = self.filtered_windows[idx[0]]
-            self.wizard_data['window_title'] = selected['title']
-            self.wizard_data['window_pid'] = selected['pid']
-            self.wizard_data['window_hwnd'] = selected['hwnd']
-            
+            self.wizard_data["window_title"] = selected["title"]
+            self.wizard_data["window_pid"] = selected["pid"]
+            self.wizard_data["window_hwnd"] = selected["hwnd"]
+
             self.window_info_label.config(
                 text=f"✓ Selected: {selected['title']} (PID: {selected['pid']})",
-                fg='green'
+                fg="green",
             )
         except Exception as e:
             pass
-    
+
     def _on_monster_select(self, event=None):
         """Handle monster selection."""
         try:
             idx = self.monster_listbox.curselection()
             if not idx:
                 return
-            
+
             selected = self.monsters_data[idx[0]]
-            self.wizard_data['monster_name'] = selected.get('name', 'Unnamed')
-            self.wizard_data['monster_templates'] = selected.get('templates', [])
-            self.wizard_data['monster_hp'] = selected.get('hp', 0)
-            self.wizard_data['monster_damage'] = selected.get('damage_per_hit', 0)
-            
+            self.wizard_data["monster_name"] = selected.get("name", "Unnamed")
+            self.wizard_data["monster_templates"] = selected.get("templates", [])
+            self.wizard_data["monster_hp"] = selected.get("hp", 0)
+            self.wizard_data["monster_damage"] = selected.get("damage_per_hit", 0)
+
             # Update info label
-            info = f"✓ Selected: {selected.get('name')} | HP: {selected.get('hp', 0):,.0f}"
-            templates_count = len(selected.get('templates', []))
+            info = (
+                f"✓ Selected: {selected.get('name')} | HP: {selected.get('hp', 0):,.0f}"
+            )
+            templates_count = len(selected.get("templates", []))
             info += f" | {templates_count} template(s)"
             self.monster_info_label.config(text=info)
         except Exception:
             pass
-    
+
     def _clear_all_skill_slots(self):
         """Clear all skill slot selections."""
         for var in self.skill_slot_vars:
-            var.set('(Empty)')
-    
+            var.set("(Empty)")
+
     def _update_rotation_builder_button_state(self):
         """Enable/disable rotation builder button based on user level."""
-        if not hasattr(self, 'rotation_builder_button'):
+        if not hasattr(self, "rotation_builder_button"):
             return
-        
-        if self.user_level == 'new':
+
+        if self.user_level == "new":
             # Enable button for new users
-            self.rotation_builder_button.config(state=tk.NORMAL, cursor='hand2')
+            self.rotation_builder_button.config(state=tk.NORMAL, cursor="hand2")
             # Hide hint
-            if hasattr(self, 'rotation_builder_hint'):
-                self.rotation_builder_hint.config(text='')
+            if hasattr(self, "rotation_builder_hint"):
+                self.rotation_builder_hint.config(text="")
         else:
             # Disable button for experienced users
-            self.rotation_builder_button.config(state=tk.DISABLED, cursor='arrow')
+            self.rotation_builder_button.config(state=tk.DISABLED, cursor="arrow")
             # Show hint
-            if hasattr(self, 'rotation_builder_hint'):
-                self.rotation_builder_hint.config(text=self._t('rotation_builder_disabled_hint'))
-    
+            if hasattr(self, "rotation_builder_hint"):
+                self.rotation_builder_hint.config(
+                    text=self._t("rotation_builder_disabled_hint")
+                )
+
     def _open_rotation_builder(self):
         """Open Library Manager with Rotation tab for new users."""
         try:
             # Import library manager
             from lib.ui.library_manager import LibraryManagerWindow
-            
+
             # Load current monsters and skills data
-            monsters_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'data', 'monsters.json')
-            skills_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'data', 'skills.json')
-            
+            monsters_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "lib",
+                "data",
+                "monsters.json",
+            )
+            skills_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "lib", "data", "skills.json"
+            )
+
             try:
-                with open(monsters_path, 'r', encoding='utf-8') as f:
+                with open(monsters_path, "r", encoding="utf-8") as f:
                     monsters = json.load(f)
             except Exception:
                 monsters = []
-            
+
             try:
-                with open(skills_path, 'r', encoding='utf-8') as f:
+                with open(skills_path, "r", encoding="utf-8") as f:
                     skills = json.load(f)
             except Exception:
                 skills = []
-            
+
             # Create hunt config from wizard data
             hunt_cfg = {
-                'window_title': self.wizard_data.get('window_title', ''),
-                'window_pid': self.wizard_data.get('window_pid'),
-                'window_hwnd': self.wizard_data.get('window_hwnd'),
+                "window_title": self.wizard_data.get("window_title", ""),
+                "window_pid": self.wizard_data.get("window_pid"),
+                "window_hwnd": self.wizard_data.get("window_hwnd"),
             }
-            
+
             # Callback when library manager closes
             def on_library_close(changes):
                 """Handle changes from library manager."""
                 if changes:
                     # Reload skills data if it was modified
-                    if changes.get('skills_modified'):
+                    if changes.get("skills_modified"):
                         try:
-                            with open(skills_path, 'r', encoding='utf-8') as f:
+                            with open(skills_path, "r", encoding="utf-8") as f:
                                 self.skills_data = json.load(f)
                             # Refresh skill slot combos
-                            skill_names = ['(Empty)'] + [s.get('name', 'Unnamed') for s in self.skills_data]
+                            skill_names = ["(Empty)"] + [
+                                s.get("name", "Unnamed") for s in self.skills_data
+                            ]
                             for combo in self.skill_slot_combos:
-                                combo['values'] = skill_names
+                                combo["values"] = skill_names
                         except Exception as e:
                             print(f"Error reloading skills: {e}")
-            
+
             # Create library manager window
             # Pass parent as the dialog (not the root) to keep wizard modal behavior
             lib_manager = LibraryManagerWindow(
-                parent=self.dialog,
+                parent=self.dialog,  # type: ignore[arg-type]
                 hunt_cfg=hunt_cfg,
                 monsters=monsters,
                 skills=skills,
                 lang=self.language,
-                on_close_callback=on_library_close
+                on_close_callback=on_library_close,
             )
-            
+
             # Note: LibraryManagerWindow handles its own modal state
             # It will automatically open to the Rotation tab if that's the default
-            
+
         except Exception as e:
             messagebox.showerror(
                 "Error",
                 f"Failed to open Rotation Builder:\n{str(e)}",
-                parent=self.dialog
+                parent=self.dialog,
             )
-    
+
     def _enum_windows(self):
         """Enumerate visible windows using WinAPI."""
         user32 = ctypes.windll.user32
         EnumWindows = user32.EnumWindows
-        EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+        EnumWindowsProc = ctypes.WINFUNCTYPE(
+            ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
+        )
         IsWindowVisible = user32.IsWindowVisible
         GetWindowTextW = user32.GetWindowTextW
         GetWindowTextLengthW = user32.GetWindowTextLengthW
         GetWindowThreadProcessId = user32.GetWindowThreadProcessId
 
         results = []
-        
+
         # Use psutil if available (imported at module level)
         # psutil_available is set at top of file
 
@@ -1384,11 +1537,11 @@ It takes about 2 minutes. Let's begin!"""
                 title = buf.value.strip()
                 if not title:
                     return True
-                
+
                 pid = wintypes.DWORD()
                 GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
                 pid_val = int(pid.value)
-                
+
                 proc_name = None
                 if PSUTIL_AVAILABLE and psutil is not None:
                     try:
@@ -1396,29 +1549,31 @@ It takes about 2 minutes. Let's begin!"""
                         proc_name = p.name()
                     except Exception:
                         proc_name = None
-                
-                results.append({
-                    'hwnd': int(hwnd),
-                    'pid': pid_val,
-                    'title': title,
-                    'proc': proc_name
-                })
+
+                results.append(
+                    {
+                        "hwnd": int(hwnd),
+                        "pid": pid_val,
+                        "title": title,
+                        "proc": proc_name,
+                    }
+                )
             except Exception:
                 pass
             return True
-        
+
         try:
             EnumWindows(EnumWindowsProc(callback), 0)
         except Exception:
             pass
-        
+
         return results
-    
+
     def _on_back(self):
         """Navigate to previous step."""
         if self.current_step > 1:
             self._show_step(self.current_step - 1)
-    
+
     def _on_next(self):
         """Navigate to next step or finish wizard."""
         if self.current_step < self.total_steps:
@@ -1428,71 +1583,69 @@ It takes about 2 minutes. Let's begin!"""
         else:
             # Final step - finish wizard
             self._on_finish()
-    
+
     def _validate_current_step(self):
         """Validate current step data before moving to next step."""
         # Step 1: Always valid (language selection is optional)
         if self.current_step == 1:
             return True
-        
+
         # Step 2: Window selection
         if self.current_step == 2:
-            if not self.wizard_data.get('window_title'):
+            if not self.wizard_data.get("window_title"):
                 messagebox.showwarning(
                     "Window Required",
                     "Please select a game window before continuing.",
-                    parent=self.dialog
+                    parent=self.dialog,
                 )
                 return False
             return True
-        
+
         # Step 3: Monster selection
         if self.current_step == 3:
-            if not self.wizard_data.get('monster_name'):
+            if not self.wizard_data.get("monster_name"):
                 messagebox.showwarning(
                     "Monster Required",
                     "Please select a monster before continuing.",
-                    parent=self.dialog
+                    parent=self.dialog,
                 )
                 return False
             return True
-        
+
         # Step 4: Skills (optional - can proceed with empty slots)
         if self.current_step == 4:
             # Collect selected skills
             skill_slots = []
             for var in self.skill_slot_vars:
                 value = var.get()
-                skill_slots.append(value if value != '(Empty)' else '')
-            
-            self.wizard_data['skill_slots'] = skill_slots
-            
+                skill_slots.append(value if value != "(Empty)" else "")
+
+            self.wizard_data["skill_slots"] = skill_slots
+
             # Check if at least one skill is assigned (optional warning)
             assigned = [s for s in skill_slots if s]
             if not assigned:
                 confirm = messagebox.askyesno(
                     "No Skills",
                     "You haven't assigned any skills. Continue anyway?",
-                    parent=self.dialog
+                    parent=self.dialog,
                 )
                 return confirm
             return True
-        
+
         # Step 5: Review - always valid
         if self.current_step == 5:
             return True
-        
+
         return True
-    
+
     def _on_finish(self):
         """Complete wizard and save configuration."""
         # Show confirmation
         confirm = messagebox.askyesno(
-            self._t('finish_title'),
-            self._t('finish_message'),
-            parent=self.dialog
+            self._t("finish_title"), self._t("finish_message"), parent=self.dialog
         )
-        
+
         if confirm:
             # Save wizard data (will be implemented with config_manager)
             if self.config_manager:
@@ -1504,91 +1657,93 @@ It takes about 2 minutes. Let's begin!"""
                     pass
                 try:
                     # Save language into config under ui.language
-                    ui = self.config_manager.get('config', 'ui', {}) or {}
-                    ui['language'] = self.language
-                    self.config_manager.set('config', 'ui', ui)
+                    ui = self.config_manager.get("config", "ui", {}) or {}
+                    ui["language"] = self.language
+                    self.config_manager.set("config", "ui", ui)
                     self.config_manager.save()
                 except Exception:
                     pass
-            
+
             # Call completion callback if provided
             if self.on_complete:
                 self.on_complete(self.wizard_data)
-            
+
             # Close wizard (deiconify handled by callback)
             self.dialog.destroy()
         # If user clicks "No", wizard stays open (don't destroy)
-    
+
     def _save_wizard_config(self):
         """Save wizard data to hunt_config.json via config_manager."""
         if not self.config_manager:
             return
-        
+
         try:
             # Update hunt config with wizard data
             # Window settings
-            window_title = self.wizard_data.get('window_title', '')
+            window_title = self.wizard_data.get("window_title", "")
             if window_title:
-                self.config_manager.set('hunt_config', 'window_title', window_title)
-            
-            window_pid = self.wizard_data.get('window_pid')
+                self.config_manager.set("hunt_config", "window_title", window_title)
+
+            window_pid = self.wizard_data.get("window_pid")
             if window_pid:
-                self.config_manager.set('hunt_config', 'window_pid', window_pid)
-            
-            window_hwnd = self.wizard_data.get('window_hwnd')
+                self.config_manager.set("hunt_config", "window_pid", window_pid)
+
+            window_hwnd = self.wizard_data.get("window_hwnd")
             if window_hwnd:
-                self.config_manager.set('hunt_config', 'window_hwnd', window_hwnd)
-            
+                self.config_manager.set("hunt_config", "window_hwnd", window_hwnd)
+
             # Monster settings
-            monster_name = self.wizard_data.get('monster_name')
+            monster_name = self.wizard_data.get("monster_name")
             if monster_name:
-                self.config_manager.set('hunt_config', 'monster_selected_name', monster_name)
-            
-            templates = self.wizard_data.get('monster_templates', [])
+                self.config_manager.set(
+                    "hunt_config", "monster_selected_name", monster_name
+                )
+
+            templates = self.wizard_data.get("monster_templates", [])
             if templates and len(templates) > 0:
                 # Use first template's path as primary template
                 first_template = templates[0]
-                template_path = first_template.get('path', '')
+                template_path = first_template.get("path", "")
                 if template_path:
-                    self.config_manager.set('hunt_config', 'template_path', template_path)
-            
+                    self.config_manager.set(
+                        "hunt_config", "template_path", template_path
+                    )
+
             # Skill slots
-            skill_slots = self.wizard_data.get('skill_slots', [])
+            skill_slots = self.wizard_data.get("skill_slots", [])
             if skill_slots:
-                self.config_manager.set('hunt_config', 'skill_slots', skill_slots)
-            
+                self.config_manager.set("hunt_config", "skill_slots", skill_slots)
+
             # Timing settings (use defaults from wizard_data or recommended values)
-            timing = self.wizard_data.get('timing', {})
-            lost_timeout = timing.get('lost_timeout_sec', 0.5)
-            attack_duration = timing.get('attack_min_duration_sec', 5.0)
-            
-            self.config_manager.set('hunt_config', 'lost_timeout_sec', lost_timeout)
-            self.config_manager.set('hunt_config', 'attack_min_duration_sec', attack_duration)
-            
+            timing = self.wizard_data.get("timing", {})
+            lost_timeout = timing.get("lost_timeout_sec", 0.5)
+            attack_duration = timing.get("attack_min_duration_sec", 5.0)
+
+            self.config_manager.set("hunt_config", "lost_timeout_sec", lost_timeout)
+            self.config_manager.set(
+                "hunt_config", "attack_min_duration_sec", attack_duration
+            )
+
             # Save to file
             self.config_manager.save()
-            
+
         except Exception as e:
             messagebox.showerror(
-                "Save Error",
-                f"Failed to save configuration: {e}",
-                parent=self.dialog
+                "Save Error", f"Failed to save configuration: {e}", parent=self.dialog
             )
-    
+
     def _on_cancel(self):
         """Cancel wizard and close dialog."""
         confirm = messagebox.askyesno(
-            self._t('cancel_title'),
-            self._t('cancel_message'),
-            parent=self.dialog
+            self._t("cancel_title"), self._t("cancel_message"), parent=self.dialog
         )
-        
+
         if confirm:
             self.dialog.destroy()
             # Call cancel callback to restore main window
             if self.on_cancel:
                 self.on_cancel()
-    
+
     def _on_close_window(self):
         """Handle window close button (X) - treat as cancel."""
         self._on_cancel()
@@ -1597,13 +1752,13 @@ It takes about 2 minutes. Let's begin!"""
 def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=None):
     """
     Convenience function to show setup wizard.
-    
+
     Args:
         parent: Parent tkinter window
         config_manager: ConfigManager instance (optional)
         on_complete: Callback when wizard completes (optional)
         on_cancel: Callback when wizard is cancelled (optional)
-    
+
     Returns:
         SetupWizard instance
     """
@@ -1617,41 +1772,48 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("Setup Wizard Test")
     root.geometry("400x300")
-    
+
     def on_wizard_complete(data):
         print("Wizard completed with data:", data)
-    
+
     # Button to launch wizard with support icon
     wizard_icon = None
     if icon_helper:
         try:
-            wizard_icon = icon_helper.get_icon('support', fallback='🧙', size=20)
+            wizard_icon = icon_helper.get_icon("support", fallback="🧙", size=20)
         except Exception:
             pass
-    
+
     launch_btn = tk.Button(
         root,
-        text=" Launch Setup Wizard" if wizard_icon and not isinstance(wizard_icon, str) else "🧙 Launch Setup Wizard",
-        image=wizard_icon if wizard_icon and not isinstance(wizard_icon, str) else '',
-        compound='left' if wizard_icon and not isinstance(wizard_icon, str) else 'none',
+        text=(
+            " Launch Setup Wizard"
+            if wizard_icon and not isinstance(wizard_icon, str)
+            else "🧙 Launch Setup Wizard"
+        ),
+        image=wizard_icon if wizard_icon and not isinstance(wizard_icon, str) else "",
+        compound="left" if wizard_icon and not isinstance(wizard_icon, str) else "none",
         command=lambda: show_setup_wizard(root, on_complete=on_wizard_complete),
-        font=('Arial', 12, 'bold'),
-        bg='#2196F3',
-        fg='white',
-        activebackground='#1976D2',
+        font=("Arial", 12, "bold"),
+        bg="#2196F3",
+        fg="white",
+        activebackground="#1976D2",
         padx=24,
         pady=10,
-        cursor='hand2'
+        cursor="hand2",
     )
     launch_btn.pack(expand=True)
     if wizard_icon and not isinstance(wizard_icon, str):
         try:
             # Test block: keep a local reference to avoid GC during demo
-            _launch_refs = getattr(root, '_image_refs', None)
+            _launch_refs = getattr(root, "_image_refs", None)
             if _launch_refs is None:
-                root._image_refs = []
-            root._image_refs.append(wizard_icon)
+                # Use setattr to avoid static analyzer complaining about unknown attributes
+                setattr(root, "_image_refs", [])  # type: ignore[attr-defined]
+                _launch_refs = getattr(root, "_image_refs")
+            # Append while silencing attr-defined complaint for type checkers
+            _launch_refs.append(wizard_icon)  # type: ignore[attr-defined]
         except Exception:
             pass
-    
+
     root.mainloop()
