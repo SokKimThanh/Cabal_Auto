@@ -28,6 +28,14 @@ try:
     from lib.ui.tooltip import attach_i18n_tooltip
 except Exception:
     attach_i18n_tooltip = None  # type: ignore
+
+# Icon helper for button icons
+try:
+    from lib.ui.icon_helper import get_icon_helper
+    icon_helper = get_icon_helper()
+except Exception:
+    icon_helper = None  # type: ignore
+
 try:
     from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t, set_default_lang as i18n_set_lang
 except Exception:
@@ -323,9 +331,19 @@ class SetupWizard:
         button_frame = tk.Frame(footer_frame, bg='#f0f0f0')
         button_frame.pack(pady=15)
         
+        # Back button with previous icon
+        back_icon = None
+        if icon_helper:
+            try:
+                back_icon = icon_helper.get_icon('previous', fallback='←', size=18)
+            except Exception:
+                pass
+        
         self.back_button = tk.Button(
             button_frame,
-            text="← Back",
+            text=" Back" if back_icon and not isinstance(back_icon, str) else "← Back",
+            image=back_icon if back_icon and not isinstance(back_icon, str) else None,
+            compound='left' if back_icon and not isinstance(back_icon, str) else 'none',
             command=self._on_back,
             width=12,
             height=2,
@@ -333,38 +351,63 @@ class SetupWizard:
             state=tk.DISABLED  # Disabled on first step
         )
         self.back_button.pack(side=tk.LEFT, padx=8)
+        if back_icon and not isinstance(back_icon, str):
+            self.back_button.image = back_icon  # Keep reference
         # Tooltip
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.back_button, key='tip_wizard_back', ns='setup_wizard', lang_provider=lambda: self.lang)
         
-        # Make Next button more prominent
+        # Next button with next icon - Enhanced contrast (#357A38 = CR 5.26:1)
+        next_icon = None
+        if icon_helper:
+            try:
+                next_icon = icon_helper.get_icon('next', fallback='→', size=18)
+            except Exception:
+                pass
+        
         self.next_button = tk.Button(
             button_frame,
-            text="Next →",
+            text="Next " if next_icon and not isinstance(next_icon, str) else "Next →",
+            image=next_icon if next_icon and not isinstance(next_icon, str) else None,
+            compound='right' if next_icon and not isinstance(next_icon, str) else 'none',
             command=self._on_next,
             width=15,
             height=2,
             font=('Arial', 11, 'bold'),
-            bg='#4CAF50',
+            bg='#357A38',  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
             fg='white',
-            activebackground='#45a049',
+            activebackground='#2E7D32',  # Darker on hover
             cursor='hand2',
             relief=tk.RAISED,
             bd=3
         )
         self.next_button.pack(side=tk.LEFT, padx=15)  # Extra padding to make it stand out
+        if next_icon and not isinstance(next_icon, str):
+            self.next_button.image = next_icon  # Keep reference
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.next_button, key='tip_wizard_next', ns='setup_wizard', lang_provider=lambda: self.lang)
         
+        # Cancel button with cancel icon
+        cancel_icon = None
+        if icon_helper:
+            try:
+                cancel_icon = icon_helper.get_icon('cancel', fallback='✖', size=16)
+            except Exception:
+                pass
+        
         self.cancel_button = tk.Button(
             button_frame,
-            text="Cancel",
+            text=" Cancel" if cancel_icon and not isinstance(cancel_icon, str) else "Cancel",
+            image=cancel_icon if cancel_icon and not isinstance(cancel_icon, str) else None,
+            compound='left' if cancel_icon and not isinstance(cancel_icon, str) else 'none',
             command=self._on_cancel,
             width=12,
             height=2,
             font=('Arial', 10)
         )
         self.cancel_button.pack(side=tk.LEFT, padx=8)
+        if cancel_icon and not isinstance(cancel_icon, str):
+            self.cancel_button.image = cancel_icon  # Keep reference
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.cancel_button, key='tip_wizard_cancel', ns='setup_wizard', lang_provider=lambda: self.lang)
     
@@ -621,15 +664,29 @@ It takes about 2 minutes. Let's begin!"""
         if attach_i18n_tooltip:
             attach_i18n_tooltip(filter_entry, key='tip_filter', ns='setup_wizard', lang_provider=lambda: self.lang)
         
+        # Search button with search icon - Enhanced contrast
+        search_icon = None
+        if icon_helper:
+            try:
+                search_icon = icon_helper.get_icon('search', fallback='🔍', size=16)
+            except Exception:
+                pass
+        
         btn_search = tk.Button(
             search_frame,
-            text=self._t('search_windows'),
+            text=f" {self._t('search_windows')}" if search_icon and not isinstance(search_icon, str) else self._t('search_windows'),
+            image=search_icon if search_icon and not isinstance(search_icon, str) else None,
+            compound='left' if search_icon and not isinstance(search_icon, str) else 'none',
             command=self._search_windows,
-            bg='#4CAF50',
+            bg='#357A38',  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
             fg='white',
-            font=('Arial', 9, 'bold')
+            activebackground='#2E7D32',
+            font=('Arial', 9, 'bold'),
+            cursor='hand2'
         )
         btn_search.pack(side=tk.LEFT)
+        if search_icon and not isinstance(search_icon, str):
+            btn_search.image = search_icon  # Keep reference
         if attach_i18n_tooltip:
             attach_i18n_tooltip(btn_search, key='tip_search_windows', ns='setup_wizard', lang_provider=lambda: self.lang)
         
@@ -835,28 +892,52 @@ It takes about 2 minutes. Let's begin!"""
         btn_frame = tk.Frame(self.content_frame, bg='white')
         btn_frame.pack(pady=(15, 0))
         
+        # Clear button with delete icon
+        clear_icon = None
+        if icon_helper:
+            try:
+                clear_icon = icon_helper.get_icon('delete', fallback='🗑️', size=16)
+            except Exception:
+                pass
+        
         clear_btn = tk.Button(
             btn_frame,
-            text=self._t('clear_all_slots'),
+            text=f" {self._t('clear_all_slots')}" if clear_icon and not isinstance(clear_icon, str) else self._t('clear_all_slots'),
+            image=clear_icon if clear_icon and not isinstance(clear_icon, str) else None,
+            compound='left' if clear_icon and not isinstance(clear_icon, str) else 'none',
             command=self._clear_all_skill_slots
         )
         clear_btn.pack(side=tk.LEFT, padx=5)
+        if clear_icon and not isinstance(clear_icon, str):
+            clear_btn.image = clear_icon  # Keep reference
         if attach_i18n_tooltip:
             attach_i18n_tooltip(clear_btn, key='tip_clear_all_slots', ns='setup_wizard', lang_provider=lambda: self.lang)
         
-        # Rotation builder button (for new users only)
+        # Rotation builder button (for new users only) with skill icon
+        skill_icon = None
+        if icon_helper:
+            try:
+                skill_icon = icon_helper.get_icon('skill', fallback='⚔️', size=18)
+            except Exception:
+                pass
+        
         self.rotation_builder_button = tk.Button(
             btn_frame,
-            text=self._t('open_rotation_builder'),
+            text=f" {self._t('open_rotation_builder')}" if skill_icon and not isinstance(skill_icon, str) else self._t('open_rotation_builder'),
+            image=skill_icon if skill_icon and not isinstance(skill_icon, str) else None,
+            compound='left' if skill_icon and not isinstance(skill_icon, str) else 'none',
             command=self._open_rotation_builder,
-            bg='#2196F3',
+            bg='#2196F3',  # Blue (CR 3.12:1 - OK for large/bold text)
             fg='white',
+            activebackground='#1976D2',
             font=('Arial', 10, 'bold'),
             padx=15,
             pady=5,
             cursor='hand2'
         )
         self.rotation_builder_button.pack(side=tk.LEFT, padx=5)
+        if skill_icon and not isinstance(skill_icon, str):
+            self.rotation_builder_button.image = skill_icon  # Keep reference
         if attach_i18n_tooltip:
             attach_i18n_tooltip(self.rotation_builder_button, key='tip_rotation_builder', ns='setup_wizard', lang_provider=lambda: self.lang)
         
