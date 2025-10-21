@@ -1,12 +1,6 @@
 {
-  "window_title": "Trợ lý săn Cabal",
+  "window_title": "CABAL",
   "target_key": "z",
-  "attack_keys": [
-    "1",
-    "2",
-    "3",
-    "4"
-  ],
   "attack_press_ms": 60,
   "target_cycle_delay": 0.2,
   "search_interval": 0.25,
@@ -53,13 +47,29 @@
     }
   ],
   "window_bounds": null,
-  "monster_list": [],
+  "monster_list": [
+    {
+      "name": "Plant Sừng Báo",
+      "priority": 3,
+      "enabled": false
+    },
+    {
+      "name": "Scorlug",
+      "priority": 2,
+      "enabled": false
+    },
+    {
+      "name": "con ga",
+      "priority": 4,
+      "enabled": false
+    }
+  ],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 27180,
+  "window_pid": 21928,
   "templates": [],
   "training_mode_enabled": true,
-  "ui_mode": "beginner",
+  "ui_mode": "intermediate",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,

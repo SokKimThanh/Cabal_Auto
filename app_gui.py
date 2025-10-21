@@ -451,8 +451,7 @@ def load_hunt_config():
     # Default hunt config if file missing
     default = {
         "window_title": "Cabal",
-        "target_key": "Z",  # Changed from TAB to Z (more common for target cycling)
-        "attack_keys": ["1", "2", "3"],
+    "target_key": "Z",  # Changed from TAB to Z (more common for target cycling)
         "attack_press_ms": 60,
         "target_cycle_delay": 0.2,
         "search_interval": 0.25,
@@ -1006,7 +1005,7 @@ class App(tk.Tk):
         
         # Initialize vars for compatibility with hunt loop (values read from hunt_cfg)
         self.target_key_var = tk.StringVar(value=str(self.hunt_cfg.get('target_key', 'TAB')))
-        self.attack_keys_var = tk.StringVar(value=','.join(self.hunt_cfg.get('attack_keys', ['1','2','3'])))
+        # attack_keys removed: per-skill keys from skill_slots are used instead
         self.attack_press_var = tk.StringVar(value=str(self.hunt_cfg.get('attack_press_ms', 60)))
         self.target_cycle_var = tk.StringVar(value=str(self.hunt_cfg.get('target_cycle_delay', 0.2)))
         self.search_interval_var = tk.StringVar(value=str(self.hunt_cfg.get('search_interval', 0.25)))
@@ -1493,9 +1492,7 @@ class App(tk.Tk):
         self.setup_target_key_var = tk.StringVar(value=str(self.hunt_cfg.get('target_key', 'TAB')))
         tk.Entry(self.adv_frame, textvariable=self.setup_target_key_var, width=8).grid(row=0, column=1, sticky='w', pady=4)
         
-        tk.Label(self.adv_frame, text=self._t('attack_keys')).grid(row=0, column=2, sticky='e', padx=(16,4), pady=4)
-        self.setup_attack_keys_var = tk.StringVar(value=','.join(self.hunt_cfg.get('attack_keys', ['1','2','3'])))
-        tk.Entry(self.adv_frame, textvariable=self.setup_attack_keys_var, width=18).grid(row=0, column=3, sticky='w', pady=4)
+    # Attack keys removed: use per-skill keys from skill_slots instead
         
         # Timing intervals
         tk.Label(self.adv_frame, text=self._t('press_ms')).grid(row=1, column=0, sticky='e', pady=4)
@@ -1826,7 +1823,7 @@ class App(tk.Tk):
         try:
             # Update hunt_cfg with values from Setup tab
             self.hunt_cfg['target_key'] = self.setup_target_key_var.get()
-            self.hunt_cfg['attack_keys'] = [k.strip() for k in self.setup_attack_keys_var.get().split(',') if k.strip()]
+            # attack_keys removed: attack keys are derived from skill_slots (per-skill key assignments)
             self.hunt_cfg['attack_press_ms'] = int(self.setup_press_ms_var.get())
             self.hunt_cfg['target_cycle_delay'] = float(self.setup_target_cycle_var.get())
             self.hunt_cfg['search_interval'] = float(self.setup_search_interval_var.get())
@@ -1854,8 +1851,7 @@ class App(tk.Tk):
             # Sync to Hunt tab vars if they exist
             if hasattr(self, 'target_key_var'):
                 self.target_key_var.set(self.hunt_cfg['target_key'])
-            if hasattr(self, 'attack_keys_var'):
-                self.attack_keys_var.set(','.join(self.hunt_cfg['attack_keys']))
+            # attack_keys removed: UI reads keys from skill_slots directly
             if hasattr(self, 'attack_press_var'):
                 self.attack_press_var.set(str(self.hunt_cfg['attack_press_ms']))
             if hasattr(self, 'target_cycle_var'):
@@ -3574,7 +3570,6 @@ class App(tk.Tk):
             title = self.hunt_cfg.get('window_title', 'Cabal').strip()
         
         target_key = self.target_key_var.get().strip() or 'TAB'
-        attack_keys = [k.strip() for k in self.attack_keys_var.get().split(',') if k.strip()]
         
         # Validate numeric inputs
         try:
@@ -3638,7 +3633,7 @@ class App(tk.Tk):
             "window_title": title or 'Cabal',
             "window_pid": int(self.hunt_selected['pid']) if self.hunt_selected else None,
             "target_key": target_key,
-            "attack_keys": attack_keys or ['1','2','3'],
+            # attack_keys field removed - skill keys are stored in skill_slots
             "attack_press_ms": press_ms,
             "target_cycle_delay": cycle_d,
             "search_interval": search_i,
@@ -3659,8 +3654,7 @@ class App(tk.Tk):
         # Update skill slots
         slots = self._collect_skill_slots()
         self.hunt_cfg['skill_slots'] = slots
-        if slots:
-            self.hunt_cfg['attack_keys'] = [slot['key'] for slot in slots if slot.get('key')]
+        # attack_keys removed: keys are saved per-skill inside hunt_cfg['skill_slots']
         
         return self.hunt_cfg
 
@@ -4648,7 +4642,9 @@ class App(tk.Tk):
             attack_interval = max(float(self.attack_interval_var.get() or 0), 0.0)
         except Exception as exc:
             raise ValueError(exc)
-        attack_keys = [k.strip() for k in self.attack_keys_var.get().split(',') if k.strip()]
+        # Derive attack keys from skill_slots configured in hunt_cfg
+        slots = self.hunt_cfg.get('skill_slots', []) or []
+        attack_keys = [slot.get('key') for slot in slots if slot.get('key')]
         if not attack_keys:
             attack_keys = ['1']
         return press_ms, attack_interval, attack_keys
@@ -5309,8 +5305,12 @@ class App(tk.Tk):
         tk.Label(container, text=self._t('skill_name')).grid(row=0, column=2, sticky='e')
         tk.Entry(container, textvariable=self.skill_name_var, width=24).grid(row=0, column=3, sticky='we', padx=(4,0))
 
-        tk.Label(container, text=self._t('skill_key')).grid(row=1, column=2, sticky='e', pady=(2,0))
-        tk.Entry(container, textvariable=self.skill_key_var, width=12).grid(row=1, column=3, sticky='w', padx=(4,0), pady=(2,0))
+    tk.Label(container, text=self._t('skill_key')).grid(row=1, column=2, sticky='e', pady=(2,0))
+    tk.Entry(container, textvariable=self.skill_key_var, width=12).grid(row=1, column=3, sticky='w', padx=(4,0), pady=(2,0))
+    # Capture key convenience: set key by pressing it while capture is active
+    cap_btn = tk.Button(container, text=self._t('capture_key'), command=lambda: self._start_key_capture_for_skill(win))
+    cap_btn.grid(row=1, column=4, sticky='w', padx=(6,0), pady=(2,0))
+    self._skill_key_capture_active = False
 
         tk.Label(container, text=self._t('skill_type')).grid(row=2, column=2, sticky='e')
         self.skill_type_combo = ttk.Combobox(container, textvariable=self.skill_type_var, state='readonly', width=14)
@@ -5355,6 +5355,40 @@ class App(tk.Tk):
         
         # Initialize buff fields visibility
         self._toggle_buff_fields()
+
+    def _start_key_capture_for_skill(self, win):
+        """Enable a one-shot key capture for skill key assignment.
+
+        Binds to the skill manager window and waits for a single Key press to set the
+        `self.skill_key_var` value. Shows a small prompt in the window title while active.
+        """
+        if not win or not win.winfo_exists():
+            return
+        if getattr(self, '_skill_key_capture_active', False):
+            return
+        self._skill_key_capture_active = True
+        original_title = win.title()
+        win.title(self._t('press_any_key'))
+
+        def _on_key(event):
+            try:
+                key = event.keysym or event.char
+                if not key:
+                    return
+                # Normalize key to upper-case string, single character where appropriate
+                key_str = str(key).upper()
+                self.skill_key_var.set(key_str)
+            finally:
+                # Unbind and restore title
+                try:
+                    win.unbind('<Key>')
+                except Exception:
+                    pass
+                win.title(original_title)
+                self._skill_key_capture_active = False
+
+        # Bind to Key events on the skill manager window
+        win.bind('<Key>', _on_key)
 
     def _on_skill_type_changed(self, event=None):
         """Handle skill type change to show/hide buff-specific fields."""
@@ -5489,20 +5523,7 @@ class App(tk.Tk):
             self.skill_preview_image = None
 
     def _update_attack_keys_from_slots(self):
-        if not hasattr(self, 'attack_keys_var'):
-            return
-        mapping = {skill['name']: skill for skill in self.skills}
-        keys = []
-        for var in self.skill_slot_vars:
-            name = var.get().strip()
-            if not name:
-                continue
-            skill = mapping.get(name)
-            if not skill:
-                continue
-            keys.append(skill['key'])
-        if keys:
-            self.attack_keys_var.set(','.join(keys))
+        # attack_keys removed: update saved slot names and refresh options
         self.skill_slot_saved_names = [v.get().strip() for v in self.skill_slot_vars if v.get().strip()]
         self._refresh_skill_slots_options()
 
@@ -5999,7 +6020,11 @@ class App(tk.Tk):
                                 continue
                             time.sleep(float(cfg['attack_interval']))
                             continue
-                        for k in cfg['attack_keys']:
+                        # Fallback: if no skill_runtime (no skills), derive keys from skill_slots
+                        fallback_keys = [s.get('key') for s in cfg.get('skill_slots', []) if s.get('key')]
+                        if not fallback_keys:
+                            fallback_keys = ['1']
+                        for k in fallback_keys:
                             if not self.hunt_running:
                                 break
                             try:
