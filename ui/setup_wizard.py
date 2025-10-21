@@ -440,9 +440,10 @@ class SetupWizard:
         # Update Next/Finish button based on step (icon placement rule: Next=right, Finish=left)
         if step_number == self.total_steps:
             # Finish button: icon on LEFT, different icon (save/check)
+            # NO emoji in text when icon present, only use emoji as fallback
             finish_icon = self._icon('save', '✓', size=18)
             self.next_button.config(
-                text=" Finish" if not isinstance(finish_icon, str) else "Finish",
+                text=" Finish" if not isinstance(finish_icon, str) else "✓ Finish",  # Emoji only when fallback
                 image=finish_icon if not isinstance(finish_icon, str) else None,
                 compound='left' if not isinstance(finish_icon, str) else 'none',
                 bg='#2196F3',
@@ -453,9 +454,10 @@ class SetupWizard:
                 self.next_button.image = finish_icon
         else:
             # Next button: icon on RIGHT (directional)
+            # NO emoji in text when icon present, only use emoji as fallback
             next_icon = self._icon('next', '→', size=18)
             self.next_button.config(
-                text="Next " if not isinstance(next_icon, str) else "Next",
+                text="Next " if not isinstance(next_icon, str) else "Next →",  # Emoji only when fallback
                 image=next_icon if not isinstance(next_icon, str) else None,
                 compound='right' if not isinstance(next_icon, str) else 'none',
                 bg='#357A38',
