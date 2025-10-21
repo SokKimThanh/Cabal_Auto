@@ -1332,29 +1332,8 @@ class App(tk.Tk):
         wizard_frame.grid(row=0, column=2, sticky='e', padx=(12,0))
         
         # Use global blue button style
-        from lib.ui.button_styles import get_button_config
-        wizard_config = get_button_config('blue')
-        
-        # Load support icon for Setup Wizard button
-        support_icon = self._icon('support', '🧙', size=20)
-        
-        self.setup_wizard_btn = tk.Button(
-            wizard_frame,
-            text=f" {self._t('setup_wizard')}" if not isinstance(support_icon, str) else f"🧙 {self._t('setup_wizard')}",
-            image=support_icon if not isinstance(support_icon, str) else None,
-            compound='left' if not isinstance(support_icon, str) else 'none',
-            command=self.on_setup_wizard,
-            **wizard_config,
-            padx=16,
-            pady=8
-        )
-        self.setup_wizard_btn.pack()
-        
-        # Keep reference to prevent garbage collection
-        if not isinstance(support_icon, str):
-            self.setup_wizard_btn.image = support_icon
-        
-        # Tooltip will be attached in _update_setup_visibility()
+        # NOTE: Setup Wizard button removed - now accessible via Global Hotkeys (Ctrl+Shift+N)
+        # Method on_setup_wizard() is kept for hotkey callback usage
         
         # Section 2: Libraries
         lib_frame = tk.LabelFrame(parent, text=self._t('setup_libraries'), padx=12, pady=10)
@@ -1364,13 +1343,8 @@ class App(tk.Tk):
         lib_desc = tk.Label(lib_frame, text=self._t('setup_libraries_desc'), fg='#666', font=('Arial', 9))
         lib_desc.grid(row=0, column=0, columnspan=2, sticky='w', pady=(0,8))
         
-        # Library Manager button (restored)
-        tk.Button(
-            lib_frame,
-            text=f"🗂️ {self._t('open_library_manager')}",
-            command=self._open_library_manager,
-            padx=10, pady=6
-        ).grid(row=1, column=1, sticky='e')
+        # NOTE: Library Manager button removed - now accessible via Global Hotkeys (Ctrl+Shift+L)
+        # Method _open_library_manager() is kept for hotkey callback usage
         
         # Status info
         monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
@@ -1733,20 +1707,8 @@ class App(tk.Tk):
         """Show/hide Setup tab sections based on current mode."""
         mode = self.setup_mode_var.get() if hasattr(self, 'setup_mode_var') else 'beginner'
         
-        # Update wizard button state based on mode
-        if hasattr(self, 'setup_wizard_btn'):
-            if mode == 'beginner':
-                self.setup_wizard_btn.config(state='normal', cursor='hand2')
-                # Attach enabled tooltip
-                from lib.ui.tooltip import attach_i18n_tooltip
-                attach_i18n_tooltip(self.setup_wizard_btn, key='wizard_enabled_tooltip', 
-                                   ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
-            else:
-                self.setup_wizard_btn.config(state='disabled', cursor='arrow')
-                # Attach disabled tooltip
-                from lib.ui.tooltip import attach_i18n_tooltip
-                attach_i18n_tooltip(self.setup_wizard_btn, key='wizard_disabled_tooltip', 
-                                   ns=I18N_GLOBAL, lang_provider=lambda: self.lang)
+        # NOTE: Setup Wizard button removed - now accessible via Global Hotkeys
+        # Hotkey state is managed by _update_hotkeys_state() instead
         
         if mode == 'beginner':
             # Hide advanced sections
