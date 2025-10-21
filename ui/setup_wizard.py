@@ -361,7 +361,7 @@ class SetupWizard:
         self.back_button = tk.Button(
             button_frame,
             text=" Back" if not isinstance(back_icon, str) else "Back",  # No emoji in text when icon present
-            image=back_icon if not isinstance(back_icon, str) else None,
+            image=back_icon if not isinstance(back_icon, str) else '',
             compound='left' if not isinstance(back_icon, str) else 'none',
             command=self._on_back,
             font=('Arial', 10),
@@ -387,7 +387,7 @@ class SetupWizard:
         self.next_button = tk.Button(
             button_frame,
             text="Next " if not isinstance(next_icon, str) else "Next →",
-            image=next_icon if not isinstance(next_icon, str) else None,
+            image=next_icon if not isinstance(next_icon, str) else '',
             compound='right' if not isinstance(next_icon, str) else 'none',
             command=self._on_next,
             font=('Arial', 11, 'bold'),
@@ -417,7 +417,7 @@ class SetupWizard:
         self.cancel_button = tk.Button(
             button_frame,
             text=" Cancel" if not isinstance(cancel_icon, str) else "Cancel",
-            image=cancel_icon if not isinstance(cancel_icon, str) else None,
+            image=cancel_icon if not isinstance(cancel_icon, str) else '',
             compound='left' if not isinstance(cancel_icon, str) else 'none',
             command=self._on_cancel,
             font=('Arial', 10),
@@ -459,28 +459,38 @@ class SetupWizard:
             finish_icon = self._icon('save', '✓', size=18)
             self.next_button.config(
                 text=" Finish" if not isinstance(finish_icon, str) else "✓ Finish",  # Emoji only when fallback
-                image=finish_icon if not isinstance(finish_icon, str) else None,
+                image=finish_icon if not isinstance(finish_icon, str) else '',
                 compound='left' if not isinstance(finish_icon, str) else 'none',
                 bg='#2196F3',
                 activebackground='#1976D2',
                 font=('Arial', 11, 'bold')
             )
             if not isinstance(finish_icon, str):
-                self.next_button.image = finish_icon
+                try:
+                    if not hasattr(self, '_image_refs'):
+                        self._image_refs = []
+                    self._image_refs.append(finish_icon)
+                except Exception:
+                    pass
         else:
             # Next button: icon on RIGHT (directional)
             # NO emoji in text when icon present, only use emoji as fallback
             next_icon = self._icon('next', '→', size=18)
             self.next_button.config(
                 text="Next " if not isinstance(next_icon, str) else "Next →",  # Emoji only when fallback
-                image=next_icon if not isinstance(next_icon, str) else None,
+                image=next_icon if not isinstance(next_icon, str) else '',
                 compound='right' if not isinstance(next_icon, str) else 'none',
                 bg='#357A38',
                 activebackground='#2E7D32',
                 font=('Arial', 11, 'bold')
             )
             if not isinstance(next_icon, str):
-                self.next_button.image = next_icon
+                try:
+                    if not hasattr(self, '_image_refs'):
+                        self._image_refs = []
+                    self._image_refs.append(next_icon)
+                except Exception:
+                    pass
         
         # Clear content frame
         for widget in self.content_frame.winfo_children():
@@ -708,7 +718,7 @@ It takes about 2 minutes. Let's begin!"""
         btn_search = tk.Button(
             search_frame,
             text=f" {self._t('search_windows')}" if not isinstance(search_icon, str) else self._t('search_windows'),
-            image=search_icon if not isinstance(search_icon, str) else None,
+            image=search_icon if not isinstance(search_icon, str) else '',
             compound='left' if not isinstance(search_icon, str) else 'none',
             command=self._search_windows,
             bg='#357A38',  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
@@ -938,7 +948,7 @@ It takes about 2 minutes. Let's begin!"""
         clear_btn = tk.Button(
             btn_frame,
             text=f" {self._t('clear_all_slots')}" if not isinstance(clear_icon, str) else self._t('clear_all_slots'),
-            image=clear_icon if not isinstance(clear_icon, str) else None,
+            image=clear_icon if not isinstance(clear_icon, str) else '',
             compound='left' if not isinstance(clear_icon, str) else 'none',
             command=self._clear_all_skill_slots,
             font=('Arial', 10),
@@ -962,7 +972,7 @@ It takes about 2 minutes. Let's begin!"""
         self.rotation_builder_button = tk.Button(
             btn_frame,
             text=f" {self._t('open_rotation_builder')}" if not isinstance(skill_icon, str) else self._t('open_rotation_builder'),
-            image=skill_icon if not isinstance(skill_icon, str) else None,
+            image=skill_icon if not isinstance(skill_icon, str) else '',
             compound='left' if not isinstance(skill_icon, str) else 'none',
             command=self._open_rotation_builder,
             bg='#2196F3',  # Blue (CR 3.12:1 - OK for large/bold text)
@@ -1622,7 +1632,7 @@ if __name__ == "__main__":
     launch_btn = tk.Button(
         root,
         text=" Launch Setup Wizard" if wizard_icon and not isinstance(wizard_icon, str) else "🧙 Launch Setup Wizard",
-        image=wizard_icon if wizard_icon and not isinstance(wizard_icon, str) else None,
+        image=wizard_icon if wizard_icon and not isinstance(wizard_icon, str) else '',
         compound='left' if wizard_icon and not isinstance(wizard_icon, str) else 'none',
         command=lambda: show_setup_wizard(root, on_complete=on_wizard_complete),
         font=('Arial', 12, 'bold'),

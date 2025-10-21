@@ -1081,19 +1081,48 @@ class App(tk.Tk):
             exe_label = tk.Label(exe_frame, text=sys.executable, fg='blue', font=('Arial', 8))
             exe_label.pack(anchor='w')
 
-            # Diagnostics text area
-            txt = tk.Text(win, wrap='none', height=12)
-            txt.pack(fill='both', expand=True, padx=12, pady=8)
-            txt.configure(state='normal')
+            # Diagnostics area with expandable full traceback
             diag = getattr(self, '_hotkey_import_diag', '') or ''
             if not diag:
                 diag = self._t('hotkey_diag_no_trace') if hasattr(self, '_t') else 'No import traceback was captured. Hotkeys may be registered or bound to fallback handlers.'
-            txt.insert('1.0', diag)
-            txt.configure(state='disabled')
+
+            diag_frame = tk.Frame(win)
+            diag_frame.pack(fill='both', expand=True, padx=12, pady=8)
+
+            # Short preview (first 6 lines) and full text in a hidden Text widget
+            preview_txt = tk.Text(diag_frame, wrap='none', height=6)
+            preview_txt.pack(fill='both', expand=False)
+            preview_txt.configure(state='normal')
+            # limit preview to first 6 lines
+            preview_lines = '\n'.join(diag.splitlines()[:6])
+            preview_txt.insert('1.0', preview_lines)
+            preview_txt.configure(state='disabled')
+
+            full_txt = tk.Text(diag_frame, wrap='none')
+            full_txt.insert('1.0', diag)
+            full_txt.configure(state='disabled')
+            full_txt.pack_forget()
+
+            # Toggle button
+            def _toggle_full():
+                if full_txt.winfo_ismapped():
+                    full_txt.pack_forget()
+                    preview_txt.pack(fill='both', expand=False)
+                    toggle_btn.config(text=self._t('show_full') if hasattr(self, '_t') else 'Show full traceback')
+                else:
+                    preview_txt.pack_forget()
+                    full_txt.pack(fill='both', expand=True)
+                    toggle_btn.config(text=self._t('hide_full') if hasattr(self, '_t') else 'Hide full traceback')
+
+            toggle_btn = tk.Button(diag_frame, text=self._t('show_full') if hasattr(self, '_t') else 'Show full traceback', command=_toggle_full)
+            toggle_btn.pack(anchor='e', pady=(4,0))
 
             # Buttons frame
             btn_frame = tk.Frame(win)
             btn_frame.pack(fill='x', padx=12, pady=(0,12))
+
+            # Inline status label for copy success
+            copy_status_lbl = tk.Label(btn_frame, text='', fg='#fff', bg='#4CAF50')
 
             def _copy_cmd():
                 # Suggest pip install command for the current interpreter
@@ -1103,13 +1132,9 @@ class App(tk.Tk):
                     win.clipboard_append(cmd)
                     # show a brief success toast
                     try:
-                        if not hasattr(win, '_copy_status'):
-                            win._copy_status = tk.Label(btn_frame, text='Copied!', fg='#fff', bg='#4CAF50')
-                        else:
-                            win._copy_status.config(text='Copied!')
-                        win._copy_status.pack(side='left', padx=(8,0))
-                        # remove after 1800ms
-                        win.after(1800, lambda: win._copy_status.pack_forget())
+                        copy_status_lbl.config(text='Copied!')
+                        copy_status_lbl.pack(side='left', padx=(8,0))
+                        win.after(1800, lambda: copy_status_lbl.pack_forget())
                     except Exception:
                         pass
                 except Exception:
@@ -1840,6 +1865,25 @@ class App(tk.Tk):
             justify='left'
         )
         diag_label.grid(row=7, column=0, columnspan=2, sticky='w', pady=(8,0))
+        # Make the diagnostic banner clickable to show full diagnostics modal when present
+        def _diag_click(event=None):
+            if getattr(self, '_hotkey_import_diag', None):
+                try:
+                    self._show_hotkey_diagnostics_modal()
+                except Exception:
+                    pass
+        diag_label.bind('<Button-1>', _diag_click)
+        diag_label.config(cursor='hand2')
+
+        # Small help link under diagnostics banner (visible only when diagnostic trace exists)
+        self._hotkey_help_link = tk.Label(hotkey_frame, text='', fg='#1976D2', cursor='hand2', font=('Arial', 8, 'underline'))
+        self._hotkey_help_link.grid(row=7, column=1, sticky='e', pady=(8,0))
+        def _help_click(e=None):
+            try:
+                self._show_hotkey_diagnostics_modal()
+            except Exception:
+                pass
+        self._hotkey_help_link.bind('<Button-1>', _help_click)
 
         # Retry button for re-registering global hotkeys (useful after installing 'keyboard' or switching interpreter)
         retry_text = "Retry Global Hotkeys" if self.lang == 'en' else "Thử lại phím tắt toàn cục"
@@ -4114,9 +4158,22 @@ class App(tk.Tk):
                 # Keep only first 500 chars
                 short = diag if len(diag) <= 500 else diag[:500] + '...'
                 self._hotkey_diag_var.set(short)
+                # Show help link
+                try:
+                    if hasattr(self, '_hotkey_help_link'):
+                        self._hotkey_help_link.config(text=(self._t('hotkey_diag_click') if hasattr(self, '_t') else 'Click for help'))
+                        self._hotkey_help_link.grid()
+                except Exception:
+                    pass
             else:
                 # Clear if no diagnostic
                 self._hotkey_diag_var.set('')
+                try:
+                    if hasattr(self, '_hotkey_help_link'):
+                        self._hotkey_help_link.config(text='')
+                        self._hotkey_help_link.grid_remove()
+                except Exception:
+                    pass
         except Exception:
             pass
 
