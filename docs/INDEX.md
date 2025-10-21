@@ -49,6 +49,8 @@ docs/
 │   ├── SPRINT22_PATCH1_TRAINING_MODE.md # Training Mode feature spec
 │   └── IMPLEMENTATION_GUIDE.md        # Developer implementation guide
 │
+├── TESTS_REORGANIZATION_SUMMARY.md    # Tests folder reorganization (Oct 21, 2025)
+│
 ├── sprints/                    # Historical sprint documentation
 │   ├── sprint16/               # Setup Wizard implementation
 │   ├── sprint18/               # 4-tab reorganization
@@ -360,6 +362,7 @@ Deprecated or superseded documentation:
 
 **Testing**:
 - Template Testing: [guides/HOW_TO_USE_TEST_RECOGNITION.md](guides/HOW_TO_USE_TEST_RECOGNITION.md)
+- Tests Organization: [TESTS_REORGANIZATION_SUMMARY.md](TESTS_REORGANIZATION_SUMMARY.md) ✨ **NEW**
 
 **Internationalization**:
 - Language Persistence: [bugfixes/BUGFIX_LANGUAGE_PERSISTENCE.md](bugfixes/BUGFIX_LANGUAGE_PERSISTENCE.md)
@@ -470,11 +473,12 @@ docs/
 ## 📊 Statistics
 
 - **Total Files**: 40+ markdown files
-- **Categories**: 8 folders (features, enhancements, guides, sprint21, bugfixes, archive, sprints, context)
-- **Sprints Completed**: 5 (Sprint 16-20)
-- **Current Sprint**: Sprint 21 (94% complete - Patch 16)
+- **Categories**: 8 folders (features, enhancements, guides, sprint21, sprint22, bugfixes, archive, sprints)
+- **Sprints Completed**: 21 (Sprint 1-21, 100%)
+- **Current Sprint**: Sprint 22 (Training Mode - 31% complete)
 - **Languages**: English, Tiếng Việt 🇻🇳
 - **Icon Coverage**: 39 buttons, 28 with .ico files (72%)
+- **Test Files**: 31+ organized in 5 categories (unit, integration, demos, utils, sprints)
 
 ---
 
