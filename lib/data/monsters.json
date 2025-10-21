@@ -210,7 +210,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761047471006.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1087,
@@ -354,7 +354,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761047821698.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1095,
@@ -390,7 +390,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053357.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 610,
@@ -402,7 +402,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053358.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1187,
@@ -414,7 +414,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053358.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 933,
@@ -426,7 +426,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053359.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 574,
@@ -438,7 +438,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053360.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 622,
@@ -450,7 +450,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053361.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1161,
@@ -462,7 +462,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053361.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 643,
@@ -474,7 +474,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053362.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 989,
@@ -486,7 +486,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053362.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 972,
@@ -498,7 +498,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053364.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 800,
@@ -510,7 +510,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053364.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1092,
@@ -522,7 +522,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048053366.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1065,
@@ -534,7 +534,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359294.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 636,
@@ -546,7 +546,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359295.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 799,
@@ -558,7 +558,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359295.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1084,
@@ -570,7 +570,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359296.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1099,
@@ -582,7 +582,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359297.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1078,
@@ -594,7 +594,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359298.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 621,
@@ -606,7 +606,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359298.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 827,
@@ -618,7 +618,7 @@
       {
         "name": "New Template",
         "path": "assets/images/monsters/coc_go__new_template_1761048359299.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region_strategy": "custom",
         "region": {
           "left": 1105,
@@ -633,15 +633,15 @@
     "name": "Scorlug",
     "hp": 100.0,
     "damage_per_hit": 175.0,
-    "template": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-18 063850.png",
+    "template": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-18 063550.png",
     "description": "Luyen Cap",
     "training_mode": false,
     "window_bounds": null,
     "templates": [
       {
         "name": "scorlug1",
-        "path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-18 063850.png",
-        "threshold": 0.85,
+        "path": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-18 063550.png",
+        "threshold": 0.55,
         "region": {
           "left": 374,
           "top": 170,
@@ -664,13 +664,13 @@
       {
         "name": "Plant Sừng báo mặt trước",
         "path": "E:\\Cabal_Auto\\tmp\\captures\\plant_sng_bo__plant_sng_bo_mt_trc_1760818996398.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region": null
       },
       {
         "name": "Plant sừng báo mặt sau",
         "path": "E:\\Cabal_Auto\\tmp\\captures\\plant_sng_bo__plant_sng_bo_mt_sau_1760819016762.png",
-        "threshold": 0.85,
+        "threshold": 0.55,
         "region": {
           "left": 250,
           "top": 12,
