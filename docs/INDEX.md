@@ -1,210 +1,412 @@
-# Documentation Index
+# Cabal Auto Hunt - Documentation Index
 
-Tổ chức tài liệu dự án Cabal Auto - Organized October 19, 2025
+**Last Updated**: October 21, 2025 (Reorganized Structure v2.0)  
+**Sprint**: Sprint 21 Patch 16 - Documentation Organization
 
-## 📁 Cấu trúc thư mục / Folder Structure
+## 📁 Documentation Structure
 
 ```
 docs/
-├── README.md                           # Tổng quan dự án / Project overview
-├── INDEX.md                            # File này / This file
-├── HUONG_DAN_NGUOI_MOI.md             # Hướng dẫn người mới / Beginner guide
-├── HOW_TO_USE_TEST_RECOGNITION.md     # Hướng dẫn test nhận diện / Recognition testing guide
-├── PROJECT_REORGANIZATION.md          # Tổng quan tổ chức lại dự án / Project reorganization overview
-├── PROJECT_REORGANIZATION_SUMMARY.md  # Tóm tắt tổ chức lại dự án / Project reorganization summary
-├── PROJECT_SUMMARY.py                 # Script tạo tóm tắt dự án / Project summary generator
-├── SESSION_SUMMARY_2025-10-18.md      # Tóm tắt phiên làm việc / Session summary
-├── CONTEXT_UPDATE_SPRINT18_PHASE4.md  # Cập nhật ngữ cảnh Sprint 18 Phase 4 / Context update
+├── README.md                    # Main documentation entry point
+├── INDEX.md                     # This file - Complete documentation index
 │
-├── sprints/                            # Tài liệu các Sprint
-│   ├── sprint15/
-│   │   ├── SPRINT15_COMPLETE.md
-│   │   ├── SPRINT15_SUMMARY.txt
-│   │   ├── sprint15_demo.py
-│   │   └── ...
-│   │
-│   ├── sprint16/                       # Sprint 16 - UI Redesign
-│   │   ├── REDESIGN_PROPOSAL_SPRINT16.md
-│   │   ├── SPRINT16_QUICK_REFERENCE.md
-│   │   ├── SPRINT16_BUGFIX_WIZARD_AUTOLAUNCH.md
-│   │   ├── SPRINT16_BUGFIX_WIZARD_CRASH.md
-│   │   ├── SPRINT16_PLANNING_SUMMARY.md
-│   │   ├── SPRINT16_TASK1_IMPLEMENTATION.md
-│   │   ├── SPRINT16_TASK2_IMPLEMENTATION.md
-│   │   ├── SPRINT16_TASK3_IMPLEMENTATION.md
-│   │   ├── SPRINT16_TASK4_IMPLEMENTATION.md
-│   │   ├── SPRINT16_TASK5_IMPLEMENTATION.md
-│   │   └── SPRINT16_UX_WIZARD_IMPROVEMENTS.md
-│   │
-│   └── sprint18/                       # Sprint 18 - 4-Tab Reorganization
-│       ├── SPRINT17_PHASE3_MULTIMOB.md          # Multi-monster support (Phase 3)
-│       ├── SPRINT18_PHASE4_TAB_REORGANIZATION.md # 4-tab redesign overview
-│       ├── SPRINT18_PHASE4_PROGRESS_1.md        # Progress tracking
-│       ├── SPRINT18_PHASE4_TASK2_COMPLETE.md    # Hunt Tab refactor
-│       ├── SPRINT18_PHASE4_TASK3_COMPLETE.md    # Setup Tab creation
-│       └── WINDOW_SELECTION_UX_ENHANCEMENT.md   # Window selection UX improvement
+├── features/                    # Feature specifications
+│   ├── FEATURE_FIRST_RUN_LOCK.md
+│   └── FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md
 │
-├── bugfixes/                           # Tài liệu sửa lỗi / Bug fix documentation
-│   ├── BUGFIX_IMAGE_PREVIEW_SIZE.md
-│   ├── BUGFIX_SESSION_SUMMARY.md
-│   ├── BUGFIX_SETUP_APPLY_SETTINGS.md
-│   ├── BUGFIX_HUNT_START_OPENCV_LOGGER.md
-│   ├── BUGFIX_TIMING_RECOMMENDATION_UX.md
-│   └── BUGFIX_TIMING_UNHASHABLE_DICT.md
+├── enhancements/               # UI/UX enhancements
+│   ├── ENHANCEMENT_DIALOG_SAVE_ICONS.md
+│   ├── ENHANCEMENT_GLOBAL_APPLY_WIZARD_RELOCATION.md
+│   ├── ENHANCEMENT_SAVE_BUTTON_DYNAMIC_TOOLTIP.md
+│   └── ENHANCEMENT_WINDOW_SELECTION_TOPBAR.md
 │
-├── ux-enhancements/                    # Cải tiến UX / UX improvements
-│   ├── UX_ENHANCEMENT_SMART_MONSTER_INPUT.md
-│   ├── UX_FIX_PIL_MISSING_ERROR.md
-│   └── WIZARD_AUTO_LAUNCH.md
+├── guides/                     # User guides & tutorials
+│   ├── ADVANCED_WINDOW_SETTINGS_GUIDE.md
+│   ├── HOW_TO_USE_TEST_RECOGNITION.md
+│   ├── HUONG_DAN_NGUOI_MOI.md
+│   ├── HUONG_DAN_USER_LEVEL_WIZARD.md
+│   └── SKILLS_EXPLANATION_SIMPLE.md
 │
-└── translations/                       # Tài liệu dịch thuật / Translation documentation
-    ├── TRANSLATION_COMPLETION_PIL_FIX.md
-    ├── TRANSLATION_QUICK_SUMMARY.md
-    ├── PIL_FIX_QUICK_REF.md
-    ├── PIL_FIX_SUMMARY.md
-    └── CONTEXT_UPDATE_SUMMARY_PIL_FIX.md
+├── bugfixes/                   # Bug fix documentation (16 files)
+│   ├── BUGFIX_LANGUAGE_PERSISTENCE.md
+│   ├── BUGFIX_ROTATION_TAB_NO_SKILLS.md
+│   ├── BUGFIX_SETUP_WIZARD_BUTTON.md
+│   └── ... (13 more bugfix docs)
+│
+├── sprint21/                   # Sprint 21 - UI/UX Icon Enhancement ⭐ CURRENT
+│   ├── ICON_PLACEMENT_RULES.md        # Comprehensive icon design rules
+│   ├── ICON_STATUS_REPORT.md          # Icon coverage analysis
+│   ├── SPRINT21_SUMMARY.md            # Sprint summary
+│   ├── SPRINT21_PATCH10_ICONS.md
+│   ├── SPRINT21_PATCH11_ICON_SYSTEM_ENHANCEMENT.md
+│   ├── SPRINT21_PATCH12_SETUP_WIZARD_ICONS.md
+│   └── SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md
+│
+├── sprints/                    # Historical sprint documentation
+│   ├── sprint16/               # Setup Wizard implementation
+│   ├── sprint18/               # 4-tab reorganization
+│   ├── sprint19/               # Library Manager
+│   ├── sprint20/               # System improvements
+│   └── [Sprint 13-15 docs]
+│
+├── context/                    # System context
+│   └── CONTEXT_MAIN.txt
+│
+├── translations/               # i18n documentation
+│
+├── ux-enhancements/           # UX improvements
+│
+└── archive/                   # Deprecated/historical docs
+    ├── SUMMARY_*.md
+    ├── PROJECT_*.md
+    ├── MIGRATION_*.md
+    └── ... (17+ archived docs)
 ```
 
-## 📚 Tài liệu chính / Main Documents
+## 🎯 Quick Access
 
-### Hướng dẫn sử dụng / User Guides
-- **[HUONG_DAN_NGUOI_MOI.md](HUONG_DAN_NGUOI_MOI.md)** - Hướng dẫn người mới bắt đầu
-- **[HOW_TO_USE_TEST_RECOGNITION.md](HOW_TO_USE_TEST_RECOGNITION.md)** - Cách test nhận diện template
-- **[ADVANCED_WINDOW_SETTINGS_GUIDE.md](ADVANCED_WINDOW_SETTINGS_GUIDE.md)** - Giải thích chi tiết Advanced Window Settings ⭐ **New**
-- **[README.md](README.md)** - Tổng quan dự án
+### For New Users
+1. **Getting Started**: [README.md](README.md)
+2. **First-Time Setup**: [guides/HUONG_DAN_NGUOI_MOI.md](guides/HUONG_DAN_NGUOI_MOI.md) 🇻🇳
+3. **Skills Guide**: [guides/SKILLS_EXPLANATION_SIMPLE.md](guides/SKILLS_EXPLANATION_SIMPLE.md)
+4. **Test Recognition**: [guides/HOW_TO_USE_TEST_RECOGNITION.md](guides/HOW_TO_USE_TEST_RECOGNITION.md)
 
-### Ngữ cảnh dự án / Project Context
-- **[CONTEXT_AUTO_CABAL.md](CONTEXT_AUTO_CABAL.md)** - Tóm tắt ngữ cảnh dự án (cập nhật từ Ngữ cảnh tạo auto cabal.txt)
+### For Developers
+1. **Icon Design Rules**: [sprint21/ICON_PLACEMENT_RULES.md](sprint21/ICON_PLACEMENT_RULES.md) ⭐ **NEW**
+2. **Icon Coverage**: [sprint21/ICON_STATUS_REPORT.md](sprint21/ICON_STATUS_REPORT.md)
+3. **Window Settings**: [guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md](guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md)
+4. **Code Style**: [archive/COMPLETE_SYSTEM_INTEGRATION.md](archive/COMPLETE_SYSTEM_INTEGRATION.md)
 
-### Tổng quan dự án / Project Overview
-- **[PROJECT_REORGANIZATION.md](PROJECT_REORGANIZATION.md)** - Chi tiết tổ chức lại dự án
-- **[PROJECT_REORGANIZATION_SUMMARY.md](PROJECT_REORGANIZATION_SUMMARY.md)** - Tóm tắt tổ chức lại
-- **[SESSION_SUMMARY_2025-10-18.md](SESSION_SUMMARY_2025-10-18.md)** - Tóm tắt phiên làm việc gần nhất
-
-## 🚀 Sprint Documentation (Chronological)
-
-### Sprint 21 - System Enhancements & Refinements ✅
-**Mục tiêu**: Cải tiến UX dựa trên user feedback - window auto-detection, keyboard shortcuts, prerequisites validation
-
-**Tài liệu**:
-- [SPRINT21_SUMMARY.md](SPRINT21_SUMMARY.md) - 📘 COMPLETE SUMMARY
-  - ✅ PATCH 1: Codebase Analysis
-  - ✅ PATCH 2: Window Auto-Detection cho First Run
-  - ✅ PATCH 3: Keyboard Shortcuts Update (Alt+Shift+Z, Z key)
-  - ✅ PATCH 4: Combat System Verification (skill rotation)
-  - ⚠️ PATCH 5: Target Lock (DEFERRED to Sprint 22)
-  - ✅ PATCH 6: Auto Mode Prerequisites Validation
-  - ✅ PATCH 7: UI Contrast & Color Consistency
-  - ✅ PATCH 8: Documentation & Summary
-
-**Key Changes**:
-- 🪟 Auto-detect Cabal window by PID when user skips wizard
-- ⌨️ New shortcuts: `Alt+Shift+Z` (toggle hunt), `Z` (target switch)
-- ✅ Prerequisites check prevents invalid hunt starts
-- 🎨 100% button style consistency
-
-**Tiến độ**: 6/8 patches complete (75%), 1 deferred, 1 documentation
-
-### Sprint 19 - Library Manager (Monster/Skill/Timing)
-**Mục tiêu**: Hoàn thiện Library Manager với 3 tab (Quái Vật, Kỹ Năng, Tính Toán Thời Gian), phục vụ cấu hình và tính toán timing áp dụng cho Hunt.
-
-**Tài liệu**:
-- [SPRINT19_CONTEXT_UPDATE.md](sprints/sprint19/SPRINT19_CONTEXT_UPDATE.md) - Tổng hợp tiến độ Sprint 19 (Tasks 1, 2, 2.5 hoàn tất; hôm nay tiếp tục chỉnh sửa màn hình Quái Vật)
-- [SPRINT19_TASK1_COMPLETE.md](sprints/sprint19/SPRINT19_TASK1_COMPLETE.md) - Khung cửa sổ Library Manager
-- [SPRINT19_TASK2_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2_COMPLETE.md) - Tab Thư viện Quái Vật (core)
-- [SPRINT19_TASK2.5_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2.5_COMPLETE.md) - Hộp thoại Add/Edit Quái Vật
-- [SPRINT19_TASK2.5_FINAL_SUMMARY.md](sprints/sprint19/SPRINT19_TASK2.5_FINAL_SUMMARY.md) - Tổng kết Task 2.5
-- [SPRINT19_TASK2_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2_COMPLETE.md) - Hoàn tất Tab Quái Vật
-- [SPRINT19_TASK2.6_CARD_REDESIGN.md](sprints/sprint19/SPRINT19_TASK2.6_CARD_REDESIGN.md) - Redesign card UI
-- [SPRINT19_TASK2.6_REDESIGN.md](sprints/sprint19/SPRINT19_TASK2.6_REDESIGN.md) - Phác thảo redesign
-- [SPRINT19_TASK2.6_COMPLETE.md](sprints/sprint19/SPRINT19_TASK2.6_COMPLETE.md) - Hoàn tất redesign UI
-- [CODE_REVIEW_TASK2.5.md](sprints/sprint19/CODE_REVIEW_TASK2.5.md) - Code review Task 2.5
-- [SESSION_SUMMARY_REVIEW_TESTING.md](sprints/sprint19/SESSION_SUMMARY_REVIEW_TESTING.md) - Tổng hợp review + testing
-
-**Tiến độ**: Đang tiếp tục (hôm nay có chỉnh sửa màn hình Quái Vật để phục vụ tính timing)
-
-### Sprint 18 - 4-Tab UI Reorganization
-**Mục tiêu**: Tổ chức lại giao diện thành 4 tab (Hunt, Setup, Stats, Help) để dễ sử dụng hơn
-
-**Tài liệu**:
-- [SPRINT18_PHASE4_TAB_REORGANIZATION.md](sprints/sprint18/SPRINT18_PHASE4_TAB_REORGANIZATION.md) - Tổng quan 4-tab redesign
-- [SPRINT18_PHASE4_TASK2_COMPLETE.md](sprints/sprint18/SPRINT18_PHASE4_TASK2_COMPLETE.md) - Refactor Hunt Tab
-- [SPRINT18_PHASE4_TASK3_COMPLETE.md](sprints/sprint18/SPRINT18_PHASE4_TASK3_COMPLETE.md) - Create Setup Tab
-- [WINDOW_SELECTION_UX_ENHANCEMENT.md](sprints/sprint18/WINDOW_SELECTION_UX_ENHANCEMENT.md) - Window selection UX improvement
-- [SPRINT17_PHASE3_MULTIMOB.md](sprints/sprint18/SPRINT17_PHASE3_MULTIMOB.md) - Multi-monster support (Phase 3)
-
-**Tiến độ**: 75% complete (6/8 tasks done)
-
-### Sprint 16 - UI Redesign & Wizard
-**Mục tiêu**: Redesign giao diện và cải thiện wizard cho người mới
-
-**Tài liệu**:
-- [REDESIGN_PROPOSAL_SPRINT16.md](sprints/sprint16/REDESIGN_PROPOSAL_SPRINT16.md) - Đề xuất redesign
-- [SPRINT16_QUICK_REFERENCE.md](sprints/sprint16/SPRINT16_QUICK_REFERENCE.md) - Tham khảo nhanh
-- [SPRINT16_TASK1-5_IMPLEMENTATION.md](sprints/sprint16/) - 5 tasks implementation
-- [SPRINT16_UX_WIZARD_IMPROVEMENTS.md](sprints/sprint16/SPRINT16_UX_WIZARD_IMPROVEMENTS.md) - Cải tiến wizard
-
-**Trạng thái**: ✅ Complete
-
-### Sprint 15 & Earlier
-Xem thư mục [sprints/](sprints/) để tìm tài liệu các sprint cũ hơn
-
-## 🐛 Bug Fixes (Sprint 18 Phase 4)
-
-- [BUGFIX_IMAGE_PREVIEW_SIZE.md](bugfixes/BUGFIX_IMAGE_PREVIEW_SIZE.md) - Sửa lỗi preview image size
-- [BUGFIX_SESSION_SUMMARY.md](bugfixes/BUGFIX_SESSION_SUMMARY.md) - Tóm tắt các bugfix
-- [BUGFIX_SETUP_APPLY_SETTINGS.md](bugfixes/BUGFIX_SETUP_APPLY_SETTINGS.md) - Sửa lỗi apply settings (translation access)
-- [BUGFIX_HUNT_START_OPENCV_LOGGER.md](bugfixes/BUGFIX_HUNT_START_OPENCV_LOGGER.md) - Sửa lỗi OpenCV missing + logger parameters
-- [BUGFIX_TIMING_RECOMMENDATION_UX.md](bugfixes/BUGFIX_TIMING_RECOMMENDATION_UX.md) - Cải tiến UX timing recommendation (skill filtering, visual feedback, z-order)
-- [BUGFIX_TIMING_UNHASHABLE_DICT.md](bugfixes/BUGFIX_TIMING_UNHASHABLE_DICT.md) - Sửa lỗi unhashable dict (skill_slots data structure) ⭐ **Latest**
-
-## ✨ UX Enhancements
-
-- [UX_ENHANCEMENT_SMART_MONSTER_INPUT.md](ux-enhancements/UX_ENHANCEMENT_SMART_MONSTER_INPUT.md) - Smart monster input
-- [UX_FIX_PIL_MISSING_ERROR.md](ux-enhancements/UX_FIX_PIL_MISSING_ERROR.md) - Fix PIL missing error
-- [WIZARD_AUTO_LAUNCH.md](ux-enhancements/WIZARD_AUTO_LAUNCH.md) - Wizard auto-launch
-
-## 🌐 Translations
-
-- [TRANSLATION_COMPLETION_PIL_FIX.md](translations/TRANSLATION_COMPLETION_PIL_FIX.md) - PIL fix translations
-- [TRANSLATION_QUICK_SUMMARY.md](translations/TRANSLATION_QUICK_SUMMARY.md) - Tóm tắt translations
-- [PIL_FIX_QUICK_REF.md](translations/PIL_FIX_QUICK_REF.md) - PIL fix reference
-- [PIL_FIX_SUMMARY.md](translations/PIL_FIX_SUMMARY.md) - PIL fix summary
-
-## 📝 Quy ước đặt tên / Naming Conventions
-
-- **SPRINT{N}_*.md** - Sprint documentation
-- **TASK{N}_*.md** - Task implementation details
-- **BUGFIX_*.md** - Bug fix documentation
-- **UX_*.md** - UX enhancement documentation
-- **TRANSLATION_*.md** - Translation documentation
-- **PIL_*.md** - PIL/Pillow related documentation
-
-## 🔍 Tìm tài liệu / Finding Documentation
-
-### Theo chức năng / By Feature
-- **Multi-monster hunting** → `sprints/sprint18/SPRINT17_PHASE3_MULTIMOB.md`
-- **4-tab UI** → `sprints/sprint18/SPRINT18_PHASE4_TAB_REORGANIZATION.md`
-- **Setup wizard** → `sprints/sprint16/SPRINT16_UX_WIZARD_IMPROVEMENTS.md`
-- **Window selection** → `sprints/sprint18/WINDOW_SELECTION_UX_ENHANCEMENT.md`
-- **Smart input** → `ux-enhancements/UX_ENHANCEMENT_SMART_MONSTER_INPUT.md`
-
-### Theo thời gian / By Date
-1. **Sprint 15** - Multi-monster foundation
-2. **Sprint 16** - UI Redesign & Wizard
-3. **Sprint 17 Phase 3** - Multi-monster completion
-4. **Sprint 18 Phase 4** - 4-tab reorganization (current)
-
-## 📊 Thống kê / Statistics
-
-- **Tổng số file tài liệu**: ~42 files (+2 new)
-- **Sprints hoàn thành**: 3 (Sprint 15, 16, 17)
-- **Sprint hiện tại**: Sprint 18 Phase 4 (75% complete)
-- **Bug fixes (Sprint 18)**: 5 critical bugs fixed
-- **Ngôn ngữ hỗ trợ**: English, Tiếng Việt
+### Latest Sprint (Sprint 21)
+- **Theme**: UI/UX Icon System Enhancement
+- **Status**: Patch 16 - Documentation Organization
+- **Progress**: 15/16 patches complete (94%)
+- **Docs**: [sprint21/](sprint21/)
 
 ---
 
-**Cập nhật lần cuối / Last Updated**: October 19, 2025 (Afternoon)  
-**Người tổ chức / Organized By**: AI Assistant
-**Latest Changes**: Added Sprint 19 section and links; clarified chronological ordering; noted Monster UI changes today.
+## 📚 Documentation Categories
+
+### 1. Features (`features/`) - 2 files
+
+Complete feature specifications with implementation details:
+
+#### **FEATURE_FIRST_RUN_LOCK.md**
+- Prevents accidental changes during hunt
+- Lock mechanism for first-time users
+- Safety features
+
+#### **FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md**
+- Hold-to-save mechanism for templates
+- Prevents accidental template overwrites
+- UX safety enhancement
+
+---
+
+### 2. Enhancements (`enhancements/`) - 4 files
+
+UI/UX improvements and visual enhancements:
+
+#### **ENHANCEMENT_DIALOG_SAVE_ICONS.md**
+- Icon system for dialog buttons
+- Consistent icon usage across dialogs
+
+#### **ENHANCEMENT_GLOBAL_APPLY_WIZARD_RELOCATION.md**
+- Global Apply button placement optimization
+- Wizard-based relocation system
+
+#### **ENHANCEMENT_SAVE_BUTTON_DYNAMIC_TOOLTIP.md**
+- Dynamic tooltip enhancement for save buttons
+- Context-aware tooltip messages
+
+#### **ENHANCEMENT_WINDOW_SELECTION_TOPBAR.md**
+- Window selection in topbar
+- Improved window selection UX
+
+---
+
+### 3. Guides (`guides/`) - 5 files
+
+User-facing documentation and tutorials:
+
+#### **ADVANCED_WINDOW_SETTINGS_GUIDE.md**
+- Complete window settings documentation
+- Advanced configuration options
+
+#### **HOW_TO_USE_TEST_RECOGNITION.md**
+- Template testing guide
+- Recognition testing workflow
+
+#### **HUONG_DAN_NGUOI_MOI.md** 🇻🇳
+- Complete Vietnamese guide for new users
+- First-time setup instructions
+
+#### **HUONG_DAN_USER_LEVEL_WIZARD.md** 🇻🇳
+- User level wizard customization
+- Advanced wizard configuration
+
+#### **SKILLS_EXPLANATION_SIMPLE.md**
+- Simple skills guide
+- Skill rotation basics
+
+---
+
+### 4. Bugfixes (`bugfixes/`) - 16 files
+
+Bug fix documentation with solutions:
+
+**Recent Fixes**:
+- **BUGFIX_LANGUAGE_PERSISTENCE.md** - i18n language saving fix
+- **BUGFIX_ROTATION_TAB_NO_SKILLS.md** - Empty skills list fix
+- **BUGFIX_SETUP_WIZARD_BUTTON.md** - Button state fix
+
+**All Bugfixes**: See [bugfixes/](bugfixes/) folder
+
+---
+
+### 5. Sprint 21 (`sprint21/`) - 7 files ⭐ **CURRENT SPRINT**
+
+**Theme**: UI/UX Icon System Enhancement  
+**Duration**: October 15-21, 2025  
+**Progress**: 15/16 patches (94% complete)
+
+#### **Key Documents**:
+
+##### **ICON_PLACEMENT_RULES.md** ⭐ **CRITICAL**
+Comprehensive icon design guidelines:
+- **Action Buttons**: Icon LEFT (`compound='left'`)
+- **Navigation**: Next=RIGHT, Back=LEFT (directional)
+- **Multi-State**: Icon AND position change with state
+- **Text Rules**: NO emoji in text when icon present
+- **Icon Priority**: `.ico > .png > emoji`
+
+Code example:
+```python
+# ✅ DO: Multi-state button
+if is_final_step:
+    btn.config(text=" Finish", compound='left')  # Action: LEFT
+else:
+    btn.config(text="Next ", compound='right')   # Navigation: RIGHT
+```
+
+##### **ICON_STATUS_REPORT.md**
+Icon coverage analysis:
+- 39 icon entries in `icon_map`
+- 28 buttons with `.ico` files
+- Missing icons: `up.ico`, `down.ico`
+- Full audit completed
+
+##### **Sprint Patches**:
+1. **SPRINT21_PATCH10_ICONS.md** - Initial icon enhancement
+2. **SPRINT21_PATCH11_ICON_SYSTEM_ENHANCEMENT.md** - .ico priority system
+3. **SPRINT21_PATCH12_SETUP_WIZARD_ICONS.md** - Setup Wizard 7 buttons
+4. **SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md** - Global button optimization
+5. **Patch 14** - Icon map expansion (24→39 entries)
+6. **Patch 15** - Icon placement rules implementation
+7. **Patch 16** - Documentation organization (CURRENT)
+
+##### **SPRINT21_SUMMARY.md**
+Complete sprint summary with all patches
+
+---
+
+### 6. Sprints Archive (`sprints/`)
+
+Historical sprint documentation:
+
+#### **Sprint 16**: Setup Wizard Implementation
+- UI Redesign
+- 5-step wizard
+- First-run experience
+- **Docs**: [sprints/sprint16/](sprints/sprint16/)
+
+#### **Sprint 18**: 4-Tab Reorganization
+- Hunt, Setup, Stats, Help tabs
+- UI layout redesign
+- **Docs**: [sprints/sprint18/](sprints/sprint18/)
+
+#### **Sprint 19**: Library Manager
+- Monster library
+- Skill library
+- Timing calculator
+- **Docs**: [sprints/sprint19/](sprints/sprint19/)
+
+#### **Sprint 20**: System Improvements
+- Performance optimization
+- Code refactoring
+- **Docs**: [sprints/sprint20/](sprints/sprint20/)
+
+#### **Sprint 13-15**: Early Development
+- Core features
+- Initial UI
+- **Docs**: [sprints/](sprints/)
+
+---
+
+### 7. Context (`context/`)
+
+System context and architecture documentation:
+- **CONTEXT_MAIN.txt** - Main system context
+
+---
+
+### 8. Archive (`archive/`) - 17+ files
+
+Deprecated or superseded documentation:
+
+**Categories**:
+- Old summaries: `SUMMARY_*.md`
+- Migration guides: `MIGRATION_*.md`
+- Project reorganization: `PROJECT_*.md`
+- Historical sessions: `SESSION_*.md`
+- Implementation checklists: `IMPLEMENTATION_*.md`
+- Update logs: `UPDATE_*.md`
+
+---
+
+## 🔍 Finding Documentation
+
+### By Topic
+
+**Setup & Configuration**:
+- Setup Wizard: [sprints/sprint16/](sprints/sprint16/)
+- Window Settings: [guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md](guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md)
+- First Run: [features/FEATURE_FIRST_RUN_LOCK.md](features/FEATURE_FIRST_RUN_LOCK.md)
+
+**UI/UX & Icons**:
+- Icon System: [sprint21/ICON_PLACEMENT_RULES.md](sprint21/ICON_PLACEMENT_RULES.md) ⭐
+- Icon Coverage: [sprint21/ICON_STATUS_REPORT.md](sprint21/ICON_STATUS_REPORT.md)
+- Button Design: [sprint21/SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md](sprint21/SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md)
+- Dialog Icons: [enhancements/ENHANCEMENT_DIALOG_SAVE_ICONS.md](enhancements/ENHANCEMENT_DIALOG_SAVE_ICONS.md)
+
+**Skills & Combat**:
+- Skills Guide: [guides/SKILLS_EXPLANATION_SIMPLE.md](guides/SKILLS_EXPLANATION_SIMPLE.md)
+- Rotation Tab: [bugfixes/BUGFIX_ROTATION_TAB_NO_SKILLS.md](bugfixes/BUGFIX_ROTATION_TAB_NO_SKILLS.md)
+
+**Testing**:
+- Template Testing: [guides/HOW_TO_USE_TEST_RECOGNITION.md](guides/HOW_TO_USE_TEST_RECOGNITION.md)
+
+**Internationalization**:
+- Language Persistence: [bugfixes/BUGFIX_LANGUAGE_PERSISTENCE.md](bugfixes/BUGFIX_LANGUAGE_PERSISTENCE.md)
+- Vietnamese Guide: [guides/HUONG_DAN_NGUOI_MOI.md](guides/HUONG_DAN_NGUOI_MOI.md) 🇻🇳
+
+### By Sprint
+
+- **Sprint 13-15**: [sprints/SPRINT15_COMPLETE.md](sprints/SPRINT15_COMPLETE.md)
+- **Sprint 16**: [sprints/sprint16/](sprints/sprint16/) - Setup Wizard
+- **Sprint 18**: [sprints/sprint18/](sprints/sprint18/) - 4-Tab UI
+- **Sprint 19**: [sprints/sprint19/](sprints/sprint19/) - Library Manager
+- **Sprint 20**: [sprints/sprint20/](sprints/sprint20/) - Performance
+- **Sprint 21**: [sprint21/](sprint21/) - UI/UX Icons ⭐ **CURRENT**
+
+---
+
+## 📝 Documentation Standards
+
+### File Naming Convention
+- Features: `FEATURE_*.md`
+- Enhancements: `ENHANCEMENT_*.md`
+- Bugfixes: `BUGFIX_*.md`
+- Guides: `HOW_TO_*.md` or `HUONG_DAN_*.md` (Vietnamese)
+- Sprints: `SPRINT##_*.md`
+- Icons: `ICON_*.md`
+- Summaries: `SUMMARY_*.md` (archived)
+
+### Document Structure
+Each document should include:
+1. **Title** and version/date
+2. **Purpose/Overview** - What this document covers
+3. **Technical Details** - Implementation specifics
+4. **Code Examples** - Working code snippets
+5. **Testing/Validation** - How to verify
+6. **Related Documents** - Cross-references
+
+### Icon Documentation Standards (New)
+For icon-related documents:
+1. **Visual Examples** - Screenshots or diagrams
+2. **Code Templates** - Copy-paste ready examples
+3. **DO/DON'T Patterns** - Clear anti-patterns
+4. **Coverage Analysis** - What's implemented vs missing
+
+---
+
+## 🔄 Recent Changes (October 21, 2025)
+
+### Documentation Reorganization (Patch 16)
+**Status**: ✅ COMPLETE
+
+**Changes**:
+- ✅ Created 5 categorical folders
+- ✅ Moved 30+ files to appropriate locations
+- ✅ Updated INDEX.md structure (this file)
+- ✅ Archived old summaries
+- ⏳ README.md update (NEXT)
+
+**New Structure**:
+```
+docs/
+├── features/      (2 files)
+├── enhancements/  (4 files)
+├── guides/        (5 files)
+├── sprint21/      (7 files) ⭐
+├── bugfixes/      (16 files)
+├── archive/       (17+ files)
+└── sprints/       (existing)
+```
+
+### Sprint 21 Documentation (Patches 10-16)
+- ✨ **ICON_PLACEMENT_RULES.md** - Comprehensive icon design guide
+- ✨ **ICON_STATUS_REPORT.md** - Icon coverage analysis
+- ✨ Sprint 21 patches consolidated in `sprint21/`
+- ✨ 7 patch documents + summary
+
+---
+
+## 📊 Statistics
+
+- **Total Files**: 40+ markdown files
+- **Categories**: 8 folders (features, enhancements, guides, sprint21, bugfixes, archive, sprints, context)
+- **Sprints Completed**: 5 (Sprint 16-20)
+- **Current Sprint**: Sprint 21 (94% complete - Patch 16)
+- **Languages**: English, Tiếng Việt 🇻🇳
+- **Icon Coverage**: 39 buttons, 28 with .ico files (72%)
+
+---
+
+## 🎯 TODO
+
+### High Priority
+- [ ] Update README.md with new structure
+- [ ] Create visual diagrams for icon rules
+- [ ] Add Sprint 21 Patch 16 to summary
+
+### Medium Priority
+- [ ] Consolidate bugfix summaries
+- [ ] Add more code examples to guides
+- [ ] Create icon design templates
+
+### Low Priority
+- [ ] Update sprint documentation templates
+- [ ] Archive very old session summaries
+- [ ] Consider consolidating sprint folders
+
+---
+
+## 📞 Support
+
+### For Questions
+1. **New Users**: Check [guides/HUONG_DAN_NGUOI_MOI.md](guides/HUONG_DAN_NGUOI_MOI.md) 🇻🇳
+2. **Developers**: Review [sprint21/ICON_PLACEMENT_RULES.md](sprint21/ICON_PLACEMENT_RULES.md)
+3. **Bug Reports**: Search [bugfixes/](bugfixes/) first
+4. **Historical Context**: Check [archive/](archive/)
+
+### Documentation Navigation
+- **Main Entry**: [README.md](README.md)
+- **This Index**: [INDEX.md](INDEX.md) (you are here)
+- **Latest Sprint**: [sprint21/SPRINT21_SUMMARY.md](sprint21/SPRINT21_SUMMARY.md)
+
+---
+
+**Maintained by**: Cabal Auto Hunt Development Team  
+**Next Review**: Sprint 22  
+**Documentation Version**: 2.0 (Reorganized October 21, 2025)
