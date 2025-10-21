@@ -1335,47 +1335,12 @@ class App(tk.Tk):
         # NOTE: Setup Wizard button removed - now accessible via Global Hotkeys (Ctrl+Shift+N)
         # Method on_setup_wizard() is kept for hotkey callback usage
         
-        # Section 2: Libraries
-        lib_frame = tk.LabelFrame(parent, text=self._t('setup_libraries'), padx=12, pady=10)
-        lib_frame.grid(row=1, column=0, columnspan=2, sticky='we', pady=(0,12))
-        
-        # Description
-        lib_desc = tk.Label(lib_frame, text=self._t('setup_libraries_desc'), fg='#666', font=('Arial', 9))
-        lib_desc.grid(row=0, column=0, columnspan=2, sticky='w', pady=(0,8))
-        
-        # NOTE: Library Manager button removed - now accessible via Global Hotkeys (Ctrl+Shift+L)
-        # Method _open_library_manager() is kept for hotkey callback usage
-        
-        # Status info
-        monster_count = len(self.monsters) if hasattr(self, 'monsters') else 0
-        skills_count = len(load_skill_library()) if hasattr(self, 'skills') else 0
-        
-        # Use i18n for counts label
-        try:
-            status_text = f"{monster_count} {self._t('monsters_count')} • {skills_count} {self._t('skills_count')}"
-        except Exception:
-            status_text = f"{monster_count} monsters • {skills_count} skills" if self.lang == 'en' else f"{monster_count} quái vật • {skills_count} kỹ năng"
-        tk.Label(
-            lib_frame,
-            text=status_text,
-            fg='#666',
-            font=('Arial', 9)
-        ).grid(row=1, column=0, sticky='w', pady=(0,8))
-        
-        # Hint
-        hint_text = self._t('library_manager_hint')
-        tk.Label(
-            lib_frame,
-            text=f"💡 {hint_text}",
-            fg='#1976D2',
-            font=('Arial', 8),
-            wraplength=500,
-            justify='left'
-        ).grid(row=2, column=0, columnspan=2, sticky='w', pady=(8,0))
-        
-        # Section 2.5: Global Hotkeys
-        hotkey_frame = tk.LabelFrame(parent, text="⌨️ Global Hotkeys", padx=12, pady=10)
-        hotkey_frame.grid(row=1, column=2, rowspan=2, sticky='nwe', padx=(12,0), pady=(0,12))
+        # Section 2: Global Hotkeys (moved from Advanced tab)
+        # Load keyboard icon
+        # Section 2: Global Hotkeys with keyboard icon
+        hotkey_title = "Global Hotkeys" if self.lang == 'en' else "Phím Tắt Toàn Cục"
+        hotkey_frame = tk.LabelFrame(parent, text=f"⌨️ {hotkey_title}", padx=12, pady=10)
+        hotkey_frame.grid(row=1, column=0, columnspan=2, sticky='we', pady=(0,12))
         
         # Description
         hotkey_desc_text = "Global hotkeys work even when app is minimized or not focused."
@@ -1386,7 +1351,7 @@ class App(tk.Tk):
             text=hotkey_desc_text,
             fg='#666',
             font=('Arial', 8),
-            wraplength=280,
+            wraplength=500,
             justify='left'
         ).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0,8))
         
@@ -1470,16 +1435,6 @@ class App(tk.Tk):
         self.wizard_hotkey_combo = wizard_combo
         self.wizard_hotkey_label = wizard_label_widget
         
-        # Icon for Setup Wizard
-        try:
-            wizard_icon = self._icon('support', '🎓', size=16)
-            if wizard_icon and not isinstance(wizard_icon, str):
-                wizard_icon_label = tk.Label(hotkey_frame, image=wizard_icon, bg='white')
-                wizard_icon_label.image = wizard_icon
-                wizard_icon_label.grid(row=4, column=1, sticky='e', padx=(0,20))
-        except:
-            pass
-        
         # NEW: Library Manager hotkey
         library_label = "Library Manager:" if self.lang == 'en' else "Quản lý Thư viện:"
         library_label_widget = tk.Label(hotkey_frame, text=library_label, font=('Arial', 9))
@@ -1501,20 +1456,16 @@ class App(tk.Tk):
         self.library_hotkey_combo = library_combo
         self.library_hotkey_label = library_label_widget
         
-        # Icon for Library Manager (emoji)
-        library_icon_label = tk.Label(hotkey_frame, text='🗂️', font=('Arial', 14), bg='white')
-        library_icon_label.grid(row=5, column=1, sticky='e', padx=(0,20))
-        
-        # Hint
-        hint_hotkey = "💡 Press 'Global Apply' button below to activate new hotkeys."
+        # Hint (removed emoji from main text)
+        hint_hotkey = "Press 'Global Apply' button below to activate new hotkeys."
         if self.lang == 'vi':
-            hint_hotkey = "💡 Nhấn nút 'Global Apply' phía dưới để kích hoạt phím tắt mới."
+            hint_hotkey = "Nhấn nút 'Global Apply' phía dưới để kích hoạt phím tắt mới."
         tk.Label(
             hotkey_frame,
             text=hint_hotkey,
             fg='#1976D2',
             font=('Arial', 8),
-            wraplength=280,
+            wraplength=500,
             justify='left'
         ).grid(row=6, column=0, columnspan=2, sticky='w', pady=(8,0))
         
