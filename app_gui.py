@@ -755,7 +755,13 @@ class App(tk.Tk):
         self.skill_cooldown_var = tk.StringVar()
         self.skill_cast_time_var = tk.StringVar()
         self.skill_duration_var = tk.StringVar()
-        # Keep references to images (PhotoImage) to prevent GC
+        # Keep references to images (PhotoImage) to prevent GC. Tkinter will
+        # garbage-collect PhotoImage objects unless a Python reference is held.
+        # We store images here rather than attaching arbitrary attributes to
+        # widgets to reduce static-analysis false-positives and centralize
+        # resource ownership. Some files still use dynamic attribute access
+        # (e.g., `root._image_refs`) for backward compatibility; those uses
+        # are annotated with `# type: ignore[attr-defined]` where needed.
         self._image_refs = []  # type: List[Any]
         # Central tooltip store to avoid attaching dynamic attributes to widgets
         self._tooltips = {}

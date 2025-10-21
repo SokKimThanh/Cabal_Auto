@@ -321,6 +321,33 @@ python app_gui.py
 
 ---
 
+## 🚀 Launching & Hotkey Diagnostics
+
+If you run into issues with global hotkeys, it's often because the optional hotkey package isn't installed in the same Python interpreter that's launching the GUI. Use the provided launch helpers to ensure you run the app with the intended interpreter or virtual environment.
+
+- Windows PowerShell (use the workspace venv if available):
+
+```powershell
+./run_venv.ps1
+```
+
+- Windows (cmd):
+
+```bat
+run_venv.bat
+```
+
+If global hotkeys fail, the app will show a small diagnostic banner. Click "Details" to view the interpreter path (sys.executable) and the import traceback. Use the provided "Copy pip command" button to copy the exact pip install command for that interpreter, paste it into the same shell shown above, install the package, then click "Retry" in the app.
+
+Example pip command copied by the app (uses the same interpreter shown in the dialog):
+
+```powershell
+# "Copied!" will appear after you click the button in-app
+C:\path\to\python.exe -m pip install keyboard
+```
+
+If you prefer not to install system-wide hotkeys, the app will automatically fall back to window-focused key bindings so shortcuts still work while the app window is focused.
+
 ### 🎯 Hunting
 
 1. **Preparation**:

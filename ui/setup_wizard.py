@@ -1339,7 +1339,7 @@ It takes about 2 minutes. Let's begin!"""
             # Create library manager window
             # Pass parent as the dialog (not the root) to keep wizard modal behavior
             lib_manager = LibraryManagerWindow(
-                parent=self.dialog,
+                parent=self.dialog,  # type: ignore[arg-type]
                 hunt_cfg=hunt_cfg,
                 monsters=monsters,
                 skills=skills,
@@ -1649,8 +1649,11 @@ if __name__ == "__main__":
             # Test block: keep a local reference to avoid GC during demo
             _launch_refs = getattr(root, '_image_refs', None)
             if _launch_refs is None:
-                root._image_refs = []
-            root._image_refs.append(wizard_icon)
+                # Use setattr to avoid static analyzer complaining about unknown attributes
+                setattr(root, '_image_refs', [])  # type: ignore[attr-defined]
+                _launch_refs = getattr(root, '_image_refs')
+            # Append while silencing attr-defined complaint for type checkers
+            _launch_refs.append(wizard_icon)  # type: ignore[attr-defined]
         except Exception:
             pass
     
