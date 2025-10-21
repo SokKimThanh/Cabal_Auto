@@ -842,10 +842,27 @@ class App(tk.Tk):
         btn_container = tk.Frame(list_container)
         btn_container.pack(side='right', fill='y', padx=(8,0))
         
-        tk.Button(btn_container, text="➕", command=self._on_monster_add_smart, width=3, 
-                  font=('Arial', 10, 'bold'), fg='#4CAF50').pack(pady=(0,4))
-        tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3).pack(pady=(0,4))
-        tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3).pack(pady=(0,12))
+        # Add monster button (icon changes based on training mode state)
+        self.btn_add_monster = tk.Button(
+            btn_container, 
+            text="➕", 
+            command=self._on_monster_add_smart, 
+            width=3, 
+            font=('Arial', 10, 'bold'), 
+            fg='#4CAF50'
+        )
+        self.btn_add_monster.pack(pady=(0,4))
+        self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
+        
+        # Priority reorder buttons (disabled in training mode)
+        self.btn_move_up = tk.Button(btn_container, text="↑", command=self._on_monster_move_up, width=3)
+        self.btn_move_up.pack(pady=(0,4))
+        self._create_tooltip(self.btn_move_up, self._t('tooltip_move_up'))
+        
+        self.btn_move_down = tk.Button(btn_container, text="↓", command=self._on_monster_move_down, width=3)
+        self.btn_move_down.pack(pady=(0,12))
+        self._create_tooltip(self.btn_move_down, self._t('tooltip_move_down'))
+        
         # Library Manager buttons removed per request
         
         # Current monster status
@@ -1586,6 +1603,10 @@ class App(tk.Tk):
         
         self._update_monster_status()
         self._update_rotation_mode_description()
+        
+        # Update button states if in training mode
+        if hasattr(self, 'training_mode_var'):
+            self._update_training_mode_buttons()
     
     def _update_monster_status(self):
         """Update current monster hunting status display."""
@@ -1670,6 +1691,124 @@ class App(tk.Tk):
                 self.skill_stats_frame.grid()
             else:
                 self.skill_stats_frame.grid_remove()
+        
+        # Update button states and tooltips
+        self._update_training_mode_buttons()
+    
+    def _update_training_mode_buttons(self):
+        """Update monster control buttons based on training mode state.
+        
+        Training Mode ON:
+        - Add button: Shows finish.ico if dummy set, else add.ico with training tooltip
+        - Add button: Disabled if training dummy already in list
+        - Up/Down buttons: Disabled (no rotation needed)
+        
+        Training Mode OFF:
+        - Add button: Shows add.ico with normal tooltip
+        - Add button: Always enabled
+        - Up/Down buttons: Enabled
+        """
+        if not hasattr(self, 'btn_add_monster'):
+            return
+        
+        is_training = self.training_mode_var.get()
+        has_training_dummy = any(m.get('training_mode', False) for m in self.monster_rotation_list)
+        
+        if is_training:
+            # Training mode: Update add button
+            if has_training_dummy:
+                # Dummy already set - show accept icon and disable
+                try:
+                    accept_icon = self._icon('accept', '✓', size=16)
+                    if isinstance(accept_icon, str):
+                        self.btn_add_monster.config(text=accept_icon, state='disabled')
+                    else:
+                        self.btn_add_monster.config(image=accept_icon, text='', state='disabled')
+                except Exception:
+                    self.btn_add_monster.config(text='✓', state='disabled')
+                
+                # Update tooltip
+                tooltip_text = self._t('tooltip_add_monster_locked')
+                if hasattr(self.btn_add_monster, '_tooltip'):
+                    self.btn_add_monster._tooltip.destroy()
+                self._create_tooltip(self.btn_add_monster, tooltip_text)
+            else:
+                # No dummy yet - show add icon and enable
+                try:
+                    add_icon = self._icon('add', '➕', size=16)
+                    if isinstance(add_icon, str):
+                        self.btn_add_monster.config(text=add_icon, state='normal')
+                    else:
+                        self.btn_add_monster.config(image=add_icon, text='', state='normal')
+                except Exception:
+                    self.btn_add_monster.config(text='➕', state='normal')
+                
+                # Update tooltip
+                tooltip_text = self._t('tooltip_add_monster_training')
+                if hasattr(self.btn_add_monster, '_tooltip'):
+                    self.btn_add_monster._tooltip.destroy()
+                self._create_tooltip(self.btn_add_monster, tooltip_text)
+            
+            # Disable priority reorder buttons with locked icon
+            try:
+                locked_icon = self._icon('locked', '🔒', size=16)
+                for btn in [self.btn_move_up, self.btn_move_down]:
+                    btn.config(state='disabled')
+                    if isinstance(locked_icon, str):
+                        btn.config(text=locked_icon)
+                    else:
+                        btn.config(image=locked_icon, text='')
+            except Exception:
+                self.btn_move_up.config(state='disabled', text='🔒')
+                self.btn_move_down.config(state='disabled', text='🔒')
+            
+            # Update tooltips for disabled buttons
+            for btn in [self.btn_move_up, self.btn_move_down]:
+                if hasattr(btn, '_tooltip'):
+                    btn._tooltip.destroy()
+                self._create_tooltip(btn, self._t('tooltip_reorder_locked'))
+        else:
+            # Normal mode: Restore defaults
+            try:
+                add_icon = self._icon('add', '➕', size=16)
+                if isinstance(add_icon, str):
+                    self.btn_add_monster.config(text=add_icon, state='normal')
+                else:
+                    self.btn_add_monster.config(image=add_icon, text='', state='normal')
+            except Exception:
+                self.btn_add_monster.config(text='➕', state='normal')
+            
+            # Restore normal tooltip
+            if hasattr(self.btn_add_monster, '_tooltip'):
+                self.btn_add_monster._tooltip.destroy()
+            self._create_tooltip(self.btn_add_monster, self._t('tooltip_add_monster_normal'))
+            
+            # Enable priority reorder buttons with original icons
+            try:
+                up_icon = self._icon('up', '↑', size=16)
+                down_icon = self._icon('down', '↓', size=16)
+                
+                if isinstance(up_icon, str):
+                    self.btn_move_up.config(state='normal', text=up_icon)
+                else:
+                    self.btn_move_up.config(state='normal', image=up_icon, text='')
+                
+                if isinstance(down_icon, str):
+                    self.btn_move_down.config(state='normal', text=down_icon)
+                else:
+                    self.btn_move_down.config(state='normal', image=down_icon, text='')
+            except Exception:
+                self.btn_move_up.config(state='normal', text='↑')
+                self.btn_move_down.config(state='normal', text='↓')
+            
+            # Restore normal tooltips
+            if hasattr(self.btn_move_up, '_tooltip'):
+                self.btn_move_up._tooltip.destroy()
+            self._create_tooltip(self.btn_move_up, self._t('tooltip_move_up'))
+            
+            if hasattr(self.btn_move_down, '_tooltip'):
+                self.btn_move_down._tooltip.destroy()
+            self._create_tooltip(self.btn_move_down, self._t('tooltip_move_down'))
     
     def _on_monster_toggle(self, event=None):
         """Toggle monster enabled state on double-click."""
@@ -1788,7 +1927,7 @@ class App(tk.Tk):
                                      font=('Arial', 8), wraplength=450, justify='left')
         match_info_label.pack(fill='x', pady=(0,8))
         
-        # Populate initial suggestions (all monsters)
+        # Populate initial suggestions (filtered by training mode if active)
         def update_suggestions(*args):
             """Update suggestions based on search text with fuzzy matching."""
             import re
@@ -1797,18 +1936,32 @@ class App(tk.Tk):
             suggest_listbox.delete(0, tk.END)
             match_info_var.set('')
             
+            # Filter monsters based on training mode
+            is_training_mode = self.training_mode_var.get() if hasattr(self, 'training_mode_var') else False
+            available_monsters = self.monsters
+            
+            if is_training_mode:
+                # Training mode: Only show training dummies
+                available_monsters = [m for m in self.monsters if m.get('training_mode', False)]
+                if not available_monsters:
+                    match_info_var.set(f"⚠️ {self._t('no_training_dummies')}")
+                    return
+            
             if not search_text:
-                # Show all monsters
-                for monster in self.monsters:
+                # Show all available monsters (filtered or not)
+                for monster in available_monsters:
                     suggest_listbox.insert(tk.END, monster['name'])
-                match_info_var.set(f"💡 {self._t('monster_showing_all').format(count=len(self.monsters))}")
+                if is_training_mode:
+                    match_info_var.set(f"🎯 {self._t('training_dummy_filter')} | {len(available_monsters)} dummy")
+                else:
+                    match_info_var.set(f"💡 {self._t('monster_showing_all').format(count=len(available_monsters))}")
                 return
             
-            # Fuzzy search
+            # Fuzzy search (on filtered list)
             search_clean = re.sub(r'[^a-z0-9\s]', '', search_text.lower()).strip()
             matches = []
             
-            for monster in self.monsters:
+            for monster in available_monsters:
                 name = monster['name']
                 name_clean = re.sub(r'[^a-z0-9\s]', '', name.lower()).strip()
                 

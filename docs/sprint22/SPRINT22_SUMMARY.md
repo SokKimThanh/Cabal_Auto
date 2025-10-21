@@ -21,10 +21,15 @@
 
 ## 🎯 Sprint Patches
 
-### Patch 1: Training Mode (Chế Độ Luyện Kỹ Năng) ⭐
-**Status**: ✅ 93% COMPLETE (14/15 tasks done)  
+### Patch 1: Training Mode (Chế Độ Luyện Kỹ Năng) ✅
+**Status**: ✅ 100% COMPLETE (15/15 tasks done)  
 **Document**: [SPRINT22_PATCH1_TRAINING_MODE.md](SPRINT22_PATCH1_TRAINING_MODE.md)  
 **Implementation**: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)
+
+### Patch 2: Training Mode UI Enhancements ✅  
+**Status**: ✅ 100% COMPLETE (8/8 tasks done)  
+**Document**: [SPRINT22_PATCH2_TRAINING_UI.md](SPRINT22_PATCH2_TRAINING_UI.md)  
+**Date**: October 21, 2025
 
 **Features**:
 - ✅ Training Dummy monster type (`training_mode: true`)
@@ -65,9 +70,29 @@ Documentation: ~2,100 lines
 - Comprehensive error handling
 - Clean separation of concerns
 
+**Features** (Patch 2):
+- ✅ Dynamic button icons (add.ico → finish.ico)
+- ✅ Context-aware tooltips (6 variations EN/VI)
+- ✅ Smart button states (auto-disable when appropriate)
+- ✅ Filtered monster list in training mode
+- ✅ Visual feedback for all states (✓ done, 🔒 locked)
+
+**Changes** (Patch 2):
+```
+Modified Files (2):
+- lib/i18n/translations.py (+12 new tooltip keys)
+- app_gui.py (~151 lines: button refs, update method, filter logic)
+
+New Method:
+- _update_training_mode_buttons() (96 lines - complete state management)
+
+Code Added: ~151 lines
+Documentation: ~400 lines (SPRINT22_PATCH2_TRAINING_UI.md)
+```
+
 ---
 
-### Patch 2: Advanced Monster Management (PLANNED)
+### Patch 3: Advanced Monster Management (PLANNED)
 **Status**: 📋 PLANNED  
 **Target**: October 22, 2025
 
@@ -93,15 +118,35 @@ Documentation: ~2,100 lines
 
 ## 📊 Sprint Progress
 
-### Overall Progress: 31%
+### Overall Progress: 48%
 
 | Patch | Feature | Status | Progress | Tasks |
 |-------|---------|--------|----------|-------|
-| 1 | Training Mode | ✅ Near Complete | 93% | 14/15 ✅ |
-| 2 | Advanced Monster Mgmt | 📋 Planned | 0% | 0/10 |
-| 3 | Skill Rotation Optimizer | 📋 Planned | 0% | 0/12 |
+| 1 | Training Mode Core | ✅ COMPLETE | 100% | 15/15 ✅ |
+| 2 | Training Mode UI | ✅ COMPLETE | 100% | 8/8 ✅ |
+| 3 | Advanced Monster Mgmt | 📋 Planned | 0% | 0/10 |
+| 4 | Skill Rotation Optimizer | 📋 Planned | 0% | 0/12 |
 
-### Completed Tasks (Patch 1 - 14/15)
+### Completed Tasks (Patch 1 - 15/15) ✅
+
+#### Phase 4: Testing & Documentation ✅
+- [x] Automated test suite (5 tests, 100% pass)
+- [x] Comprehensive documentation (2,100+ lines)
+- [x] Sprint 22 README and guides
+
+### Completed Tasks (Patch 2 - 8/8) ✅
+
+#### UI Enhancements ✅
+- [x] Button references and tooltips
+- [x] Dynamic icon system (add → finish)
+- [x] Smart button state management
+- [x] Context-aware tooltips (6 variations)
+- [x] Training mode button logic
+- [x] Lock up/down buttons in training mode
+- [x] Filter monster dialog for training mode
+- [x] i18n translations (12 new keys)
+
+### Completed Tasks (Patch 1 - 15/15)
 
 #### Phase 1: Database & Configuration ✅
 - [x] Add `training_mode` field to monsters.json
