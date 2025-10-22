@@ -43,10 +43,12 @@ docs/
 │   ├── SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md
 │   └── SPRINT21_PATCH16_DOCUMENTATION_ORGANIZATION.md
 │
-├── sprint22/                   # Sprint 22 - Training Mode & Advanced Features ⭐ CURRENT
+├── sprint22/                   # Sprint 22 - Vision System & Advanced Features ⭐ CURRENT
 │   ├── README.md                      # Sprint 22 overview
 │   ├── SPRINT22_SUMMARY.md            # Complete sprint summary
 │   ├── SPRINT22_PATCH1_TRAINING_MODE.md # Training Mode feature spec
+│   ├── VISION_WIZARD_FRAMEWORK.md     # Vision Wizard framework guide ✨ NEW
+│   ├── VISION_WIZARD_INTEGRATION_EXAMPLES.py # Integration code examples ✨ NEW
 │   └── IMPLEMENTATION_GUIDE.md        # Developer implementation guide
 │
 ├── TESTS_REORGANIZATION_SUMMARY.md    # Tests folder reorganization (Oct 21, 2025)
@@ -88,9 +90,9 @@ docs/
 4. **Code Style**: [archive/COMPLETE_SYSTEM_INTEGRATION.md](archive/COMPLETE_SYSTEM_INTEGRATION.md)
 
 ### Latest Sprint (Sprint 22)
-- **Theme**: Advanced Features & Training System
-- **Status**: Patch 1 - Training Mode (30% complete)
-- **Progress**: 1/N patches started
+- **Theme**: Vision System Wizard & Advanced Features ✨
+- **Status**: Phase 1 - Framework Setup (✅ Complete) | Training Mode (30% complete)
+- **New**: Vision Wizard module with singleton pattern, topmost mode, and i18n support
 - **Docs**: [sprint22/](sprint22/) ⭐
 
 ---

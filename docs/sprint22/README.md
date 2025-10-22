@@ -1,10 +1,11 @@
-# Sprint 22 - Advanced Features & Training System
+# Sprint 22 - Vision System Wizard & Advanced Features
 
 Welcome to Sprint 22 documentation! 🎯
 
 ## 📚 Documentation Files
 
 ### Main Documents
+- **[VISION_WIZARD_FRAMEWORK.md](VISION_WIZARD_FRAMEWORK.md)** - Vision Wizard framework and setup guide (NEW)
 - **[SPRINT22_SUMMARY.md](SPRINT22_SUMMARY.md)** - Complete sprint overview and progress tracking
 - **[SPRINT22_PATCH1_TRAINING_MODE.md](SPRINT22_PATCH1_TRAINING_MODE.md)** - Training Mode feature specification
 - **[IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)** - Quick implementation guide for developers
