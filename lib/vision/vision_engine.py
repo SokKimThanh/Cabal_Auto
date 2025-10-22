@@ -21,8 +21,10 @@ import json
 import os
 import time
 import logging
+import threading
+import queue
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Callable
 from dataclasses import dataclass, asdict
 
 # Setup logging
@@ -146,11 +148,18 @@ class VisionEngine:
             'max_scales': 3,  # Limit scale variations
             'tracker_type': 'CSRT',  # CSRT or KCF
             'match_method': cv2.TM_CCOEFF_NORMED,  # Matching method
+            'fps_limit': 15,  # UI update rate (10-15 FPS default)
         }
         
         # State
         self.frame_count = 0
         self.debug_mode = False
+        
+        # Worker threads and queue
+        self.worker_running = False
+        self.worker_thread: Optional[threading.Thread] = None
+        self.result_queue: queue.Queue = queue.Queue(maxsize=5)  # Limit queue size to avoid memory buildup
+        self.frame_callback: Optional[Callable] = None  # Callback to get frames (provided by UI)
         
         # Load configs
         self._load_templates_config()
@@ -781,6 +790,216 @@ class VisionEngine:
         self.stop_all_tracks()
         self.frame_count = 0
         logger.info("Engine reset")
+    
+    # =====================================================================
+    # Worker Thread Management (Async API)
+    # =====================================================================
+    
+    def start_worker(self, frame_callback: Callable[[], Optional[np.ndarray]]) -> None:
+        """
+        Start worker thread for async detection/tracking.
+        
+        Worker continuously:
+        1. Calls frame_callback() to get current frame
+        2. Runs match_templates() or update_tracks()
+        3. Puts results into result_queue
+        
+        Args:
+            frame_callback: Function that returns current frame (np.ndarray) or None
+        
+        Note:
+            - Worker stops when worker_running = False
+            - UI should poll result_queue via get_result()
+            - FPS limited by params['fps_limit']
+        """
+        if self.worker_running:
+            logger.warning("Worker already running")
+            return
+        
+        self.frame_callback = frame_callback
+        self.worker_running = True
+        self.worker_thread = threading.Thread(target=self._worker_loop, daemon=True)
+        self.worker_thread.start()
+        logger.info("Worker thread started")
+    
+    def stop_worker(self) -> None:
+        """
+        Stop worker thread and clean up resources.
+        
+        Note:
+            - Blocks until worker exits
+            - Drains result_queue
+            - Stops all trackers
+        """
+        if not self.worker_running:
+            return
+        
+        self.worker_running = False
+        
+        # Wait for worker to exit
+        if self.worker_thread and self.worker_thread.is_alive():
+            self.worker_thread.join(timeout=2.0)
+        
+        # Drain queue
+        while not self.result_queue.empty():
+            try:
+                self.result_queue.get_nowait()
+            except queue.Empty:
+                break
+        
+        # Stop trackers
+        self.stop_all_tracks()
+        
+        logger.info("Worker thread stopped")
+    
+    def get_result(self, timeout: float = 0.0) -> Optional[Dict[str, Any]]:
+        """
+        Get result from worker (non-blocking if timeout=0).
+        
+        Args:
+            timeout: Max wait time (0 = non-blocking)
+        
+        Returns:
+            Result dict with keys:
+                - 'type': 'detections' or 'tracks'
+                - 'data': List of Detection or TrackedObject
+                - 'frame': Rendered frame with overlay (np.ndarray)
+                - 'timestamp': time.time()
+            
+            None if queue empty or timeout
+        """
+        try:
+            return self.result_queue.get(timeout=timeout)
+        except queue.Empty:
+            return None
+    
+    def _worker_loop(self) -> None:
+        """
+        Worker thread main loop.
+        
+        Continuously:
+        1. Get frame from callback
+        2. Run detection or tracking
+        3. Render overlay
+        4. Put result in queue
+        5. Sleep to limit FPS
+        """
+        fps_limit = self.params.get('fps_limit', 15)
+        frame_time = 1.0 / fps_limit
+        
+        while self.worker_running:
+            loop_start = time.time()
+            
+            try:
+                # Get frame
+                if not self.frame_callback:
+                    time.sleep(0.1)
+                    continue
+                
+                frame = self.frame_callback()
+                if frame is None:
+                    time.sleep(0.1)
+                    continue
+                
+                # Process frame (detection or tracking)
+                result = self._process_frame(frame)
+                
+                # Put result in queue (non-blocking to avoid buildup)
+                try:
+                    self.result_queue.put_nowait(result)
+                except queue.Full:
+                    # Drop oldest result
+                    try:
+                        self.result_queue.get_nowait()
+                        self.result_queue.put_nowait(result)
+                    except:
+                        pass
+                
+            except Exception as e:
+                logger.error(f"Worker error: {e}", exc_info=True)
+            
+            # FPS throttling
+            elapsed = time.time() - loop_start
+            sleep_time = frame_time - elapsed
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+    
+    def _process_frame(self, frame: np.ndarray) -> Dict[str, Any]:
+        """
+        Process single frame (detection or tracking).
+        
+        Args:
+            frame: Input frame
+        
+        Returns:
+            Result dict with rendered overlay
+        """
+        # TODO Phase 3: Implement detection/tracking logic
+        # For now, return empty result
+        
+        rendered_frame = frame.copy()
+        
+        # Example: Run detection if no trackers active
+        if len(self.trackers) == 0:
+            detections = self.match_templates(frame, roi=self.default_region)
+            
+            # Render detections
+            for det in detections:
+                cv2.rectangle(
+                    rendered_frame,
+                    (det.x, det.y),
+                    (det.x + det.w, det.y + det.h),
+                    (0, 255, 0),  # Green
+                    2
+                )
+                label = f"{det.template_id} {det.score:.2f}"
+                cv2.putText(
+                    rendered_frame,
+                    label,
+                    (det.x, det.y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    1
+                )
+            
+            return {
+                'type': 'detections',
+                'data': [d.to_dict() for d in detections],
+                'frame': rendered_frame,
+                'timestamp': time.time()
+            }
+        else:
+            # Update trackers
+            tracks = self.update_tracks(frame)
+            
+            # Render tracks
+            for track in tracks:
+                x, y, w, h = track.bbox
+                cv2.rectangle(
+                    rendered_frame,
+                    (x, y),
+                    (x + w, y + h),
+                    (255, 0, 0),  # Blue
+                    2
+                )
+                label = f"{track.template_id} {track.confidence:.2f}"
+                cv2.putText(
+                    rendered_frame,
+                    label,
+                    (x, y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 0, 0),
+                    1
+                )
+            
+            return {
+                'type': 'tracks',
+                'data': [t.to_dict() for t in tracks],
+                'frame': rendered_frame,
+                'timestamp': time.time()
+            }
 
 
 # =====================================================================
