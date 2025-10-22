@@ -8437,7 +8437,7 @@ class App(tk.Tk):
             
             wizard = create_or_show_vision_wizard(
                 self,
-                config_path=self.config_path,
+                config_path=str(CONFIG_PATH),  # Use global CONFIG_PATH
                 on_close=self._on_vision_wizard_closed
             )
             print(f"[Vision] Wizard opened/focused: {wizard}")

@@ -238,6 +238,8 @@ class VisionWizard(tk.Toplevel):
         self.config_path = config_path
         self.on_close_callback = on_close
         
+        print(f"[VisionWizard] Init: parent={type(parent).__name__}, config_path={config_path}")
+        
         # Dữ liệu
         self.templates: List[Dict[str, Any]] = []
         self.current_template: Optional[Dict[str, Any]] = None
