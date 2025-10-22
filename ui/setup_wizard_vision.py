@@ -172,7 +172,6 @@ _vision_wizard_instance: Optional['VisionWizard'] = None
 
 def get_vision_wizard_instance() -> Optional['VisionWizard']:
     """Lấy instance hiện tại của VisionWizard (nếu có)"""
-    global _vision_wizard_instance
     return _vision_wizard_instance
 
 
