@@ -736,7 +736,7 @@ Track progress at:
         self.resizable(True, True)
         self.minsize(1200, 700)  # Minimum size constraint
         
-        # Make modal
+        # Make modal - parent window is blocked until this closes
         self.transient(parent)
         self.grab_set()
         
@@ -2761,13 +2761,11 @@ Track progress at:
                 f"Error during capture: {e}"
             )
             return
-        # Build save path
-        templates_dir = Path(os.path.dirname(os.path.dirname(__file__))) / 'images' / 'templates'
-        templates_dir.mkdir(parents=True, exist_ok=True)
+        # Build save path - use assets/images/monsters (same as project standard)
         base = self._sanitize_filename(self.current_monster.get('name', 'monster'))
         ts = int(time.time())
-        filename = f"{base}_{ts}.png"
-        save_path = templates_dir / filename
+        filename = f"{base}_capture_{ts}.png"
+        save_path = self.assets_mon_dir / filename
         try:
             img.save(save_path)
         except Exception as e:
@@ -2776,10 +2774,10 @@ Track progress at:
                 f"Cannot save image: {e}"
             )
             return
-        # Append to monster templates
+        # Append to monster templates with relative path
         tmpl = {
             'name': filename,
-            'path': str(save_path),
+            'path': f'assets/images/monsters/{filename}',
             'threshold': 0.85,
         }
         templates = self.current_monster.setdefault('templates', [])
@@ -2885,13 +2883,11 @@ Track progress at:
                 f"Error during capture: {e}"
             )
             return
-        # Save and update
-        templates_dir = Path(os.path.dirname(os.path.dirname(__file__))) / 'images' / 'templates'
-        templates_dir.mkdir(parents=True, exist_ok=True)
+        # Save and update - use assets/images/monsters
         base = self._sanitize_filename(self.current_monster.get('name', 'monster'))
         ts = int(time.time())
-        filename = f"{base}_{ts}.png"
-        save_path = templates_dir / filename
+        filename = f"{base}_capture_{ts}.png"
+        save_path = self.assets_mon_dir / filename
         try:
             img.save(save_path)
         except Exception as e:
@@ -2900,7 +2896,8 @@ Track progress at:
                 f"Cannot save image: {e}"
             )
             return
-        tmpl = {'name': filename, 'path': str(save_path), 'threshold': 0.85}
+        # Use relative path for template
+        tmpl = {'name': filename, 'path': f'assets/images/monsters/{filename}', 'threshold': 0.85}
         self.current_monster.setdefault('templates', []).append(tmpl)
         self.changes_made['monsters_changed'] = True
         self._show_template_editor(self.current_monster)
@@ -3929,7 +3926,7 @@ Track progress at:
         # === SAVE TO HUNT CONFIG AND SHOW INLINE CONFIRMATION ===
         try:
             # Save hunt_cfg to file immediately (local save)
-            hunt_config_path = Path(__file__).parent.parent / 'lib' / 'data' / 'hunt_config.json'
+            hunt_config_path = self.project_root / 'lib' / 'data' / 'hunt_config.json'
             with open(hunt_config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
             
@@ -4072,8 +4069,8 @@ Track progress at:
             if not any(changes.values()):
                 messagebox.showinfo(self._t('success_title'), "No changes to apply." if self.lang == 'en' else "Không có thay đổi để áp dụng.")
                 return
-            root_dir = Path(os.path.dirname(os.path.dirname(__file__)))
-            data_dir = root_dir / 'lib' / 'data'
+            # Use self.project_root (calculated in __init__) to avoid lib/lib/data issue
+            data_dir = self.project_root / 'lib' / 'data'
             data_dir.mkdir(parents=True, exist_ok=True)
             # Before saving, finalize any temp-captured assets and normalize paths
             if changes.get('monsters_changed'):
