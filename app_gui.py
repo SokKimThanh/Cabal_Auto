@@ -993,6 +993,9 @@ class App(tk.Tk):
 
         # Update hotkeys UI state based on current mode
         self.after(100, self._update_hotkeys_state)
+        
+        # Update hotkey status UI after registration
+        self.after(150, self._update_hotkey_diagnostics_ui)
 
         # Auto-launch Setup Wizard for new users (after UI is ready)
         self.after(500, self._check_first_time_setup)
@@ -1227,144 +1230,238 @@ class App(tk.Tk):
             pass
 
     def _show_hotkey_diagnostics_modal(self):
-        """Show a modal with full hotkey import diagnostics and remediation help.
+        """Show a user-friendly modal with hotkey fix instructions.
 
-        Displays sys.executable, the captured import traceback (if any), and
-        provides a button to copy the suggested pip command and a Retry action.
+        New design: Focus on "How to Fix" with step-by-step instructions
+        instead of technical traceback. Progressive disclosure for advanced details.
         """
         try:
             win = tk.Toplevel(self)
             win.title(
-                self._t("hotkey_diag_title")
-                if hasattr(self, "_t")
-                else "Hotkey Diagnostics"
+                "How to Fix Hotkey Issues" if self.lang == "en" 
+                else "Cách Khắc Phục Lỗi Phím Tắt"
             )
             win.transient(self)
             win.grab_set()
-            win.geometry("700x360")
+            win.geometry("650x420")
+            win.configure(bg="#f5f5f5")
 
-            # Header
-            header = tk.Label(
-                win,
-                text=(
-                    self._t("hotkey_diag_header")
-                    if hasattr(self, "_t")
-                    else "Hotkey diagnostics"
-                ),
+            # Main container with padding
+            main_frame = tk.Frame(win, bg="#f5f5f5")
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+            # Section 1: What's Wrong?
+            section1_label = tk.Label(
+                main_frame,
+                text="🔍 " + ("What's Wrong?" if self.lang == "en" else "Vấn Đề Là Gì?"),
                 font=("Arial", 11, "bold"),
-            )
-            header.pack(anchor="w", padx=12, pady=(12, 4))
-
-            # Short guidance paragraph
-            guide_text = (
-                self._t("hotkey_diag_guidance")
-                if hasattr(self, "_t")
-                else "If the keyboard package is missing in this Python interpreter, run the copied pip command in a shell, then click Retry. Restarting the app may also be required."
-            )
-            guide_label = tk.Label(
-                win,
-                text=guide_text,
-                font=("Arial", 9),
-                fg="#444",
-                wraplength=660,
-                justify="left",
-            )
-            guide_label.pack(anchor="w", padx=12, pady=(0, 8))
-
-            # Executable path
-            exe_frame = tk.Frame(win)
-            exe_frame.pack(fill="x", padx=12)
-            tk.Label(exe_frame, text="Python executable:", font=("Arial", 9)).pack(
+                bg="#f5f5f5",
                 anchor="w"
             )
-            exe_label = tk.Label(
-                exe_frame, text=sys.executable, fg="blue", font=("Arial", 8)
+            section1_label.pack(fill="x", pady=(0, 8))
+
+            problem_text = (
+                "The 'keyboard' package is not installed in your Python environment.\n"
+                "This package is required for global hotkeys to work."
+                if self.lang == "en" else
+                "Gói 'keyboard' chưa được cài đặt trong Python của bạn.\n"
+                "Gói này cần thiết để phím tắt toàn cục hoạt động."
             )
-            exe_label.pack(anchor="w")
-
-            # Diagnostics area with expandable full traceback
-            diag = getattr(self, "_hotkey_import_diag", "") or ""
-            if not diag:
-                diag = (
-                    self._t("hotkey_diag_no_trace")
-                    if hasattr(self, "_t")
-                    else "No import traceback was captured. Hotkeys may be registered or bound to fallback handlers."
-                )
-
-            diag_frame = tk.Frame(win)
-            diag_frame.pack(fill="both", expand=True, padx=12, pady=8)
-
-            # Short preview (first 6 lines) and full text in a hidden Text widget
-            preview_txt = tk.Text(diag_frame, wrap="none", height=6)
-            preview_txt.pack(fill="both", expand=False)
-            preview_txt.configure(state="normal")
-            # limit preview to first 6 lines
-            preview_lines = "\n".join(diag.splitlines()[:6])
-            preview_txt.insert("1.0", preview_lines)
-            preview_txt.configure(state="disabled")
-
-            full_txt = tk.Text(diag_frame, wrap="none")
-            full_txt.insert("1.0", diag)
-            full_txt.configure(state="disabled")
-            full_txt.pack_forget()
-
-            # Toggle button
-            def _toggle_full():
-                if full_txt.winfo_ismapped():
-                    full_txt.pack_forget()
-                    preview_txt.pack(fill="both", expand=False)
-                    toggle_btn.config(
-                        text=(
-                            self._t("show_full")
-                            if hasattr(self, "_t")
-                            else "Show full traceback"
-                        )
-                    )
-                else:
-                    preview_txt.pack_forget()
-                    full_txt.pack(fill="both", expand=True)
-                    toggle_btn.config(
-                        text=(
-                            self._t("hide_full")
-                            if hasattr(self, "_t")
-                            else "Hide full traceback"
-                        )
-                    )
-
-            toggle_btn = tk.Button(
-                diag_frame,
-                text=(
-                    self._t("show_full")
-                    if hasattr(self, "_t")
-                    else "Show full traceback"
-                ),
-                command=_toggle_full,
+            problem_label = tk.Label(
+                main_frame,
+                text=problem_text,
+                font=("Arial", 9),
+                bg="#f5f5f5",
+                fg="#444",
+                wraplength=580,
+                justify="left"
             )
-            toggle_btn.pack(anchor="e", pady=(4, 0))
+            problem_label.pack(fill="x", pady=(0, 16))
 
-            # Buttons frame
-            btn_frame = tk.Frame(win)
-            btn_frame.pack(fill="x", padx=12, pady=(0, 12))
+            # Separator
+            ttk.Separator(main_frame, orient="horizontal").pack(fill="x", pady=(0, 16))
 
-            # Inline status label for copy success
-            copy_status_lbl = tk.Label(btn_frame, text="", fg="#fff", bg="#4CAF50")
+            # Section 2: How to Fix (Step-by-step)
+            section2_label = tk.Label(
+                main_frame,
+                text="📝 " + ("How to Fix (Easy 3-Step Solution)" if self.lang == "en" 
+                             else "Cách Sửa (3 Bước Đơn Giản)"),
+                font=("Arial", 11, "bold"),
+                bg="#f5f5f5",
+                anchor="w"
+            )
+            section2_label.pack(fill="x", pady=(0, 12))
 
+            # Step 1
+            step1_text = (
+                "Step 1: Open Terminal / Command Prompt\n"
+                "         Press Win+R, type 'cmd', press Enter"
+                if self.lang == "en" else
+                "Bước 1: Mở Terminal / Command Prompt\n"
+                "         Nhấn Win+R, gõ 'cmd', nhấn Enter"
+            )
+            step1_label = tk.Label(
+                main_frame,
+                text=step1_text,
+                font=("Arial", 9),
+                bg="#f5f5f5",
+                fg="#333",
+                justify="left"
+            )
+            step1_label.pack(fill="x", pady=(0, 8))
+
+            # Step 2: Command box
+            step2_text = (
+                "Step 2: Copy and paste this command:"
+                if self.lang == "en" else
+                "Bước 2: Sao chép và dán lệnh này:"
+            )
+            step2_label = tk.Label(
+                main_frame,
+                text=step2_text,
+                font=("Arial", 9),
+                bg="#f5f5f5",
+                fg="#333",
+                justify="left"
+            )
+            step2_label.pack(fill="x", pady=(0, 4))
+
+            # Command box frame
+            cmd_frame = tk.Frame(main_frame, bg="#263238", relief="solid", borderwidth=1)
+            cmd_frame.pack(fill="x", pady=(0, 4))
+
+            cmd_text_frame = tk.Frame(cmd_frame, bg="#263238")
+            cmd_text_frame.pack(side="left", fill="both", expand=True, padx=12, pady=8)
+
+            cmd = f"{sys.executable} -m pip install keyboard"
+            cmd_label = tk.Label(
+                cmd_text_frame,
+                text=cmd,
+                font=("Consolas", 9),
+                bg="#263238",
+                fg="#4CAF50",
+                justify="left"
+            )
+            cmd_label.pack(anchor="w")
+
+            # Copy button
+            copy_status_var = tk.StringVar(value="")
+            
             def _copy_cmd():
-                # Suggest pip install command for the current interpreter
-                cmd = f"{sys.executable} -m pip install keyboard"
                 try:
                     win.clipboard_clear()
                     win.clipboard_append(cmd)
-                    # show a brief success toast
-                    try:
-                        copy_status_lbl.config(text="Copied!")
-                        copy_status_lbl.pack(side="left", padx=(8, 0))
-                        win.after(1800, lambda: copy_status_lbl.pack_forget())
-                    except Exception:
-                        pass
+                    copy_status_var.set("✓ " + ("Copied!" if self.lang == "en" else "Đã sao chép!"))
+                    win.after(2000, lambda: copy_status_var.set(""))
                 except Exception:
-                    # best-effort; ignore failures
                     pass
+
+            copy_btn_frame = tk.Frame(cmd_frame, bg="#263238")
+            copy_btn_frame.pack(side="right", padx=8)
+            
+            copy_btn = tk.Button(
+                copy_btn_frame,
+                text="📋 " + ("Copy" if self.lang == "en" else "Sao chép"),
+                command=_copy_cmd,
+                bg="#37474F",
+                fg="white",
+                font=("Arial", 8, "bold"),
+                relief="flat",
+                cursor="hand2"
+            )
+            copy_btn.pack()
+
+            # Copy status
+            copy_status_label = tk.Label(
+                main_frame,
+                textvariable=copy_status_var,
+                font=("Arial", 8, "bold"),
+                bg="#f5f5f5",
+                fg="#4CAF50"
+            )
+            copy_status_label.pack(fill="x", pady=(0, 8))
+
+            # Step 3
+            step3_text = (
+                "Step 3: Press Enter and wait for installation"
+                if self.lang == "en" else
+                "Bước 3: Nhấn Enter và đợi cài đặt hoàn tất"
+            )
+            step3_label = tk.Label(
+                main_frame,
+                text=step3_text,
+                font=("Arial", 9),
+                bg="#f5f5f5",
+                fg="#333",
+                justify="left"
+            )
+            step3_label.pack(fill="x", pady=(0, 16))
+
+            # Separator
+            ttk.Separator(main_frame, orient="horizontal").pack(fill="x", pady=(0, 16))
+
+            # Advanced details (expandable)
+            advanced_frame = tk.Frame(main_frame, bg="#f5f5f5")
+            advanced_frame.pack(fill="both", expand=True)
+
+            show_advanced_var = tk.BooleanVar(value=False)
+            
+            def _toggle_advanced():
+                if show_advanced_var.get():
+                    details_text.pack(fill="both", expand=True, pady=(8, 0))
+                    toggle_advanced_btn.config(text="▼ " + ("Hide Advanced Details" if self.lang == "en" 
+                                                             else "Ẩn Chi Tiết Nâng Cao"))
+                else:
+                    details_text.pack_forget()
+                    toggle_advanced_btn.config(text="▶ " + ("Show Advanced Details" if self.lang == "en" 
+                                                             else "Hiện Chi Tiết Nâng Cao"))
+
+            # Toggle button
+            toggle_advanced_btn = tk.Button(
+                advanced_frame,
+                text="▶ " + ("Show Advanced Details" if self.lang == "en" 
+                             else "Hiện Chi Tiết Nâng Cao"),
+                command=lambda: (show_advanced_var.set(not show_advanced_var.get()), _toggle_advanced()),
+                bg="#f5f5f5",
+                fg="#1976D2",
+                font=("Arial", 9, "underline"),
+                relief="flat",
+                cursor="hand2",
+                anchor="w"
+            )
+            toggle_advanced_btn.pack(fill="x")
+
+            # Advanced details text (hidden by default)
+            details_frame = tk.Frame(advanced_frame, bg="#f5f5f5")
+            
+            details_text = tk.Text(
+                details_frame,
+                wrap="word",
+                height=6,
+                font=("Consolas", 8),
+                bg="#fff",
+                fg="#333"
+            )
+            
+            # Build advanced details
+            diag = getattr(self, "_hotkey_import_diag", "") or "No diagnostic information available."
+            advanced_info = f"""Python Executable:
+{sys.executable}
+
+Import Error:
+{diag}
+
+Alternative Solutions:
+• Try running as Administrator
+• Use: python -m pip install --user keyboard
+• Check if you're using a virtual environment"""
+            
+            details_text.insert("1.0", advanced_info)
+            details_text.configure(state="disabled")
+
+            # Bottom buttons
+            btn_frame = tk.Frame(win, bg="#f5f5f5")
+            btn_frame.pack(fill="x", padx=20, pady=(0, 20))
 
             def _do_retry():
                 try:
@@ -1375,21 +1472,25 @@ class App(tk.Tk):
                     except Exception:
                         pass
 
-            copy_btn = tk.Button(
+            # Close button
+            close_btn = tk.Button(
                 btn_frame,
-                text=(
-                    self._t("copy_install_cmd")
-                    if hasattr(self, "_t")
-                    else "Copy pip command"
-                ),
-                command=_copy_cmd,
+                text="✕ " + ("Close" if self.lang == "en" else "Đóng"),
+                command=win.destroy,
+                font=("Arial", 9),
+                width=12
             )
-            copy_btn.pack(side="left")
+            close_btn.pack(side="left")
 
+            # Retry button
             retry_btn = tk.Button(
                 btn_frame,
-                text=self._t("retry") if hasattr(self, "_t") else "Retry",
+                text="🔄 " + ("Retry Now" if self.lang == "en" else "Thử Lại Ngay"),
                 command=_do_retry,
+                font=("Arial", 9, "bold"),
+                bg="#2196F3",
+                fg="white",
+                width=15
             )
             retry_btn.pack(side="right")
 
@@ -2255,63 +2356,55 @@ class App(tk.Tk):
             justify="left",
         ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
-        # Hotkey diagnostic banner (shows import traceback or status)
-        # This will be updated when hotkeys are (re)registered via _register_global_hotkeys
-        self._hotkey_diag_var = tk.StringVar(value="")
-        diag_label = tk.Label(
+        # Status indicator - Shows success/warning/error state with icon
+        # This replaces the old diagnostic banner with a clearer status-driven design
+        self._hotkey_status_var = tk.StringVar(value="")
+        self._hotkey_status_label = tk.Label(
             hotkey_frame,
-            textvariable=self._hotkey_diag_var,
-            fg="#B00020",
+            textvariable=self._hotkey_status_var,
+            fg="#4CAF50",  # Default green for success
+            font=("Arial", 9, "bold"),
+            wraplength=500,
+            justify="left",
+        )
+        self._hotkey_status_label.grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
+
+        # Secondary status info (count, timestamp)
+        self._hotkey_status_detail_var = tk.StringVar(value="")
+        self._hotkey_status_detail_label = tk.Label(
+            hotkey_frame,
+            textvariable=self._hotkey_status_detail_var,
+            fg="#666",
             font=("Arial", 8),
             wraplength=500,
             justify="left",
         )
-        diag_label.grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self._hotkey_status_detail_label.grid(row=9, column=0, columnspan=2, sticky="w", pady=(2, 0))
 
-        # Make the diagnostic banner clickable to show full diagnostics modal when present
-        def _diag_click(event=None):
-            if getattr(self, "_hotkey_import_diag", None):
-                try:
-                    self._show_hotkey_diagnostics_modal()
-                except Exception:
-                    pass
+        # Action buttons frame (for retry and details buttons)
+        buttons_frame = tk.Frame(hotkey_frame)
+        buttons_frame.grid(row=10, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
-        diag_label.bind("<Button-1>", _diag_click)
-        diag_label.config(cursor="hand2")
-
-        # Small help link under diagnostics banner (visible only when diagnostic trace exists)
-        self._hotkey_help_link = tk.Label(
-            hotkey_frame,
-            text="",
-            fg="#1976D2",
-            cursor="hand2",
-            font=("Arial", 8, "underline"),
-        )
-        self._hotkey_help_link.grid(row=8, column=1, sticky="e", pady=(8, 0))
-
-        def _help_click(e=None):
-            try:
-                self._show_hotkey_diagnostics_modal()
-            except Exception:
-                pass
-
-        self._hotkey_help_link.bind("<Button-1>", _help_click)
-
-        # Retry button for re-registering global hotkeys (useful after installing 'keyboard' or switching interpreter)
+        # Retry button (only visible when needed)
         retry_text = (
             "Retry Global Hotkeys" if self.lang == "en" else "Thử lại phím tắt toàn cục"
         )
-        retry_btn = tk.Button(
-            hotkey_frame, text=retry_text, command=self._on_retry_global_hotkeys
+        self._hotkey_retry_btn = tk.Button(
+            buttons_frame, text=retry_text, command=self._on_retry_global_hotkeys
         )
-        retry_btn.grid(row=9, column=0, sticky="w", pady=(8, 0))
-
-        # Details button to show full import traceback and remediation steps
-        details_text = "Details" if self.lang == "en" else "Chi tiết"
-        details_btn = tk.Button(
-            hotkey_frame, text=details_text, command=self._show_hotkey_diagnostics_modal
+        # Store reference for show/hide logic
+        
+        # Details/Fix button (only visible when there are issues)
+        details_text = "Show Fix Instructions" if self.lang == "en" else "Hướng Dẫn Khắc Phục"
+        self._hotkey_details_btn = tk.Button(
+            buttons_frame, text=details_text, command=self._show_hotkey_diagnostics_modal
         )
-        details_btn.grid(row=8, column=1, sticky="w", pady=(8, 0), padx=(8, 0))
+        
+        # Initially hide buttons - they will be shown based on hotkey registration status
+        # This is updated by _update_hotkey_status_ui() after registration
+        
+        # Store old diagnostic var for backward compatibility
+        self._hotkey_diag_var = self._hotkey_status_var  # Alias for compatibility
 
         # Section 3: Advanced Hunt Settings (visible for intermediate/advanced)
         self.adv_frame = tk.LabelFrame(
@@ -5187,38 +5280,89 @@ class App(tk.Tk):
                 pass
 
     def _update_hotkey_diagnostics_ui(self):
-        """Update the diagnostic banner text from internal diagnostic state."""
+        """Update the hotkey status UI based on registration state.
+        
+        This new implementation uses a status-driven approach:
+        - Success state: Show green checkmark, hide action buttons
+        - Partial failure: Show orange warning, show retry button
+        - Complete failure: Show red error, show both buttons
+        """
         try:
-            if hasattr(self, "_hotkey_import_diag") and self._hotkey_import_diag:
-                # Show the first line or a short summary to avoid huge UI text
-                diag = str(self._hotkey_import_diag)
-                # Keep only first 500 chars
-                short = diag if len(diag) <= 500 else diag[:500] + "..."
-                self._hotkey_diag_var.set(short)
-                # Show help link
-                try:
-                    if hasattr(self, "_hotkey_help_link"):
-                        self._hotkey_help_link.config(
-                            text=(
-                                self._t("hotkey_diag_click")
-                                if hasattr(self, "_t")
-                                else "Click for help"
-                            )
-                        )
-                        self._hotkey_help_link.grid()
-                except Exception:
-                    pass
+            # Determine current state
+            has_import_error = hasattr(self, "_hotkey_import_diag") and self._hotkey_import_diag
+            has_failed_hotkeys = hasattr(self, "_failed_hotkeys") and self._failed_hotkeys
+            has_registered_hotkeys = hasattr(self, "_registered_hotkey_handlers") and self._registered_hotkey_handlers
+            hotkeys_enabled = getattr(self, "_hotkeys_registered_ok", False)
+            
+            # State 1: Success - All hotkeys registered
+            if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
+                # Green success state
+                success_text = "All hotkeys registered successfully" if self.lang == "en" else "Tất cả phím tắt đã đăng ký thành công"
+                self._hotkey_status_var.set(f"✅ {success_text}")
+                self._hotkey_status_label.config(fg="#4CAF50")  # Green
+                
+                # Show count and timestamp
+                count = len(self._registered_hotkey_handlers) if has_registered_hotkeys else 0
+                detail_text = f"{count} hotkeys active" if self.lang == "en" else f"{count} phím tắt đang hoạt động"
+                self._hotkey_status_detail_var.set(f"   {detail_text}")
+                
+                # Hide action buttons (not needed)
+                if hasattr(self, "_hotkey_retry_btn"):
+                    self._hotkey_retry_btn.pack_forget()
+                if hasattr(self, "_hotkey_details_btn"):
+                    self._hotkey_details_btn.pack_forget()
+            
+            # State 2: Partial failure - Some hotkeys failed
+            elif has_failed_hotkeys and not has_import_error:
+                # Orange warning state
+                failed_count = len(self._failed_hotkeys)
+                warning_text = f"{failed_count} hotkey(s) failed to register" if self.lang == "en" else f"{failed_count} phím tắt đăng ký thất bại"
+                self._hotkey_status_var.set(f"⚠️ {warning_text}")
+                self._hotkey_status_label.config(fg="#FF9800")  # Orange
+                
+                # Show guidance
+                guidance = "Try changing the conflicting hotkey, then click Apply." if self.lang == "en" else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
+                self._hotkey_status_detail_var.set(f"   {guidance}")
+                
+                # Show retry button only
+                if hasattr(self, "_hotkey_retry_btn"):
+                    retry_text = "🔄 Retry Registration" if self.lang == "en" else "🔄 Thử Đăng Ký Lại"
+                    self._hotkey_retry_btn.config(text=retry_text)
+                    self._hotkey_retry_btn.pack(side="left", padx=(0, 8))
+                if hasattr(self, "_hotkey_details_btn"):
+                    self._hotkey_details_btn.pack_forget()
+            
+            # State 3: Complete failure - Import error or no hotkeys registered
             else:
-                # Clear if no diagnostic
-                self._hotkey_diag_var.set("")
-                try:
-                    if hasattr(self, "_hotkey_help_link"):
-                        self._hotkey_help_link.config(text="")
-                        self._hotkey_help_link.grid_remove()
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                # Red error state
+                error_text = "Hotkeys not available" if self.lang == "en" else "Phím tắt không khả dụng"
+                self._hotkey_status_var.set(f"❌ {error_text}")
+                self._hotkey_status_label.config(fg="#F44336")  # Red
+                
+                # Show explanation
+                if has_import_error:
+                    explanation = "The 'keyboard' package is not installed in your Python environment." if self.lang == "en" else "Gói 'keyboard' chưa được cài đặt trong Python của bạn."
+                else:
+                    explanation = "Failed to register global hotkeys." if self.lang == "en" else "Không thể đăng ký phím tắt toàn cục."
+                self._hotkey_status_detail_var.set(f"   {explanation}")
+                
+                # Show both buttons
+                if hasattr(self, "_hotkey_details_btn"):
+                    fix_text = "📋 Show Fix Instructions" if self.lang == "en" else "📋 Hướng Dẫn Khắc Phục"
+                    self._hotkey_details_btn.config(text=fix_text)
+                    self._hotkey_details_btn.pack(side="left", padx=(0, 8))
+                if hasattr(self, "_hotkey_retry_btn"):
+                    retry_text = "🔄 Retry After Fix" if self.lang == "en" else "🔄 Thử Lại Sau Khi Sửa"
+                    self._hotkey_retry_btn.config(text=retry_text)
+                    self._hotkey_retry_btn.pack(side="left")
+                    
+        except Exception as e:
+            # Fallback: show basic error
+            try:
+                self._hotkey_status_var.set(f"⚠️ Error updating status: {e}")
+                self._hotkey_status_label.config(fg="#FF9800")
+            except Exception:
+                pass
 
     def _hunt_from_ui(self):
         """Extract hunt configuration from UI elements.
