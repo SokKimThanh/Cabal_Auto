@@ -61,6 +61,13 @@ try:
 except ImportError:
     icon_helper = None
 
+try:
+    from lib.vision.vision_engine import get_vision_engine, Detection
+except ImportError:
+    # Fallback nếu vision_engine chưa có
+    get_vision_engine = None
+    Detection = None
+
 
 # ==================== TRANSLATIONS ====================
 # Đăng ký bản dịch cho module này
@@ -234,6 +241,14 @@ class VisionWizard(tk.Toplevel):
         self.templates: List[Dict[str, Any]] = []
         self.current_template: Optional[Dict[str, Any]] = None
         self.search_mode: str = "position"  # position, fullscreen, region
+        
+        # Vision Engine
+        self.vision_engine = None
+        if get_vision_engine:
+            try:
+                self.vision_engine = get_vision_engine()
+            except Exception as e:
+                print(f"Error initializing vision engine: {e}")
         
         # UI Components (sẽ được khởi tạo trong setup_ui)
         self.search_mode_combo: Optional[ttk.Combobox] = None
@@ -548,57 +563,188 @@ class VisionWizard(tk.Toplevel):
         """
         Tải danh sách template từ config hoặc thư mục.
         
-        TODO: Bổ sung logic load từ:
-        - File config JSON
-        - Thư mục assets/images/templates/
-        - Database (nếu có)
+        Phase 2: Wire với vision_engine.py
+        - Load từ lib/data/vision_templates.json
+        - Gọi engine.load_templates() nếu có engine
         """
-        # Placeholder: Giả lập dữ liệu mẫu
-        # Trong thực tế, sẽ load từ file config hoặc thư mục
+        # Load config JSON
+        config_file = "lib/data/vision_templates.json"
         
-        sample_templates = [
-            {
-                'name': 'Monster_HP_Bar',
-                'path': 'assets/images/monsters/hp_bar.png',
-                'threshold': 0.8
-            },
-            {
-                'name': 'Skill_Icon_1',
-                'path': 'assets/images/skills/skill_1.png',
-                'threshold': 0.75
-            },
-        ]
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.templates = data if isinstance(data, list) else data.get('templates', [])
+            except Exception as e:
+                print(f"Error loading templates config: {e}")
+                self.templates = []
+        else:
+            # Fallback: Sample data
+            self.templates = [
+                {
+                    'id': 'monster_hp_bar',
+                    'name': 'Monster_HP_Bar',
+                    'path': 'assets/images/monsters/hp_bar.png',
+                    'threshold': 0.8,
+                    'scales': [0.8, 1.0, 1.2],
+                    'enabled': True
+                },
+                {
+                    'id': 'skill_icon_1',
+                    'name': 'Skill_Icon_1',
+                    'path': 'assets/images/skills/skill_1.png',
+                    'threshold': 0.75,
+                    'scales': [1.0],
+                    'enabled': True
+                },
+            ]
         
-        # TODO: Thay bằng logic load thực tế
-        # Ví dụ:
-        # if os.path.exists(self.config_path):
-        #     with open(self.config_path, 'r', encoding='utf-8') as f:
-        #         config = json.load(f)
-        #         self.templates = config.get('templates', [])
+        # Wire: Load vào vision engine
+        if self.vision_engine:
+            try:
+                # Extract paths từ templates
+                enabled_templates = [t for t in self.templates if t.get('enabled', True)]
+                paths = [t['path'] for t in enabled_templates if os.path.exists(t.get('path', ''))]
+                
+                if paths:
+                    loaded = self.vision_engine.load_templates(paths)
+                    print(f"Vision engine loaded {loaded} templates")
+            except Exception as e:
+                print(f"Error loading templates into engine: {e}")
         
-        self.templates = sample_templates
         self._refresh_template_tree()
         
     def load_thresholds(self) -> None:
         """
         Tải các ngưỡng nhận diện đã lưu.
         
-        TODO: Bổ sung logic load từ config
+        Phase 2: Thresholds đã embedded trong templates từ vision_templates.json
+        Method này giữ lại cho backward compatibility.
+        """
+        # Thresholds already loaded via load_templates()
+        pass
+    
+    def save_region(self, region_name: str, x: int, y: int, width: int, height: int) -> None:
+        """
+        Lưu vùng ROI vào config.
+        
+        Args:
+            region_name: Tên vùng (ví dụ: "monster_area", "skill_bar")
+            x, y: Tọa độ góc trên bên trái
+            width, height: Kích thước vùng
+        """
+        region_config_file = "lib/data/vision_region.json"
+        
+        try:
+            # Load existing regions
+            regions = {}
+            if os.path.exists(region_config_file):
+                with open(region_config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    regions = data.get('regions', {})
+            
+            # Add/update region
+            regions[region_name] = {
+                'x': x,
+                'y': y,
+                'width': width,
+                'height': height
+            }
+            
+            # Save back
+            with open(region_config_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    'default_region': regions.get('default', {'x': 0, 'y': 0, 'width': 1920, 'height': 1080}),
+                    'regions': regions
+                }, f, indent=2, ensure_ascii=False)
+            
+            print(f"Region '{region_name}' saved: ({x}, {y}, {width}, {height})")
+            
+        except Exception as e:
+            print(f"Error saving region: {e}")
+    
+    def load_region(self, region_name: str = "default") -> Optional[tuple]:
+        """
+        Load vùng ROI từ config.
+        
+        Args:
+            region_name: Tên vùng cần load
+            
+        Returns:
+            Tuple (x, y, width, height) hoặc None nếu không tìm thấy
+        """
+        region_config_file = "lib/data/vision_region.json"
+        
+        try:
+            if os.path.exists(region_config_file):
+                with open(region_config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    
+                    # Try regions dict first
+                    regions = data.get('regions', {})
+                    if region_name in regions:
+                        r = regions[region_name]
+                        return (r['x'], r['y'], r['width'], r['height'])
+                    
+                    # Fallback to default_region
+                    if region_name == 'default' and 'default_region' in data:
+                        r = data['default_region']
+                        return (r['x'], r['y'], r['width'], r['height'])
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error loading region: {e}")
+            return None
+    
+    def start_detection_loop(self) -> None:
+        """
+        Bắt đầu detection loop (Phase 3+).
+        
+        TODO Phase 3:
+        - Capture game screen periodically
+        - Call engine.match_templates()
+        - Update overlay on preview_canvas
+        - Optionally start tracking với engine.start_track()
         """
         # Placeholder
-        # TODO: Load từ file config
-        pass
+        print("start_detection_loop: TODO Phase 3")
+        messagebox.showinfo(
+            'Detection Loop',
+            'Detection loop starter sẽ được implement ở Phase 3.\n\n'
+            'Sẽ bao gồm:\n'
+            '- Screen capture loop\n'
+            '- Periodic template matching\n'
+            '- Real-time overlay update\n'
+            '- Auto-tracking detected objects'
+        )
+    
+    def stop_detection_loop(self) -> None:
+        """
+        Dừng detection loop (Phase 3+).
+        
+        TODO Phase 3:
+        - Stop screen capture loop
+        - Call engine.stop_all_tracks()
+        - Clear overlay
+        """
+        # Placeholder
+        print("stop_detection_loop: TODO Phase 3")
+        
+        if self.vision_engine:
+            try:
+                self.vision_engine.stop_all_tracks()
+                print("All tracks stopped")
+            except Exception as e:
+                print(f"Error stopping tracks: {e}")
         
     def add_template(self) -> None:
         """
         Thêm template mới vào danh sách.
         
-        Workflow:
-        1. Mở file dialog để chọn ảnh
-        2. Validate file (PNG, JPG)
-        3. Thêm vào self.templates
-        4. Refresh tree
-        5. TODO: Lưu vào config
+        Phase 2: Wire với vision_engine
+        - Lưu vào vision_templates.json
+        - Reload engine templates
         """
         # Mở file dialog
         filetypes = [
@@ -630,16 +776,30 @@ class VisionWizard(tk.Toplevel):
         
         # Thêm vào danh sách
         new_template = {
+            'id': name.lower().replace(' ', '_'),
             'name': name,
             'path': file_path,
-            'threshold': 0.7  # Default
+            'threshold': 0.7,  # Default
+            'scales': [1.0],
+            'enabled': True
         }
         self.templates.append(new_template)
         
         # Refresh tree
         self._refresh_template_tree()
         
-        # TODO: Lưu vào config
+        # Save to config
+        self._save_templates_config()
+        
+        # Reload engine templates
+        if self.vision_engine:
+            try:
+                enabled_templates = [t for t in self.templates if t.get('enabled', True)]
+                paths = [t['path'] for t in enabled_templates if os.path.exists(t.get('path', ''))]
+                if paths:
+                    self.vision_engine.load_templates(paths)
+            except Exception as e:
+                print(f"Error reloading engine templates: {e}")
         
         messagebox.showinfo(
             i18n_t('success', default='Thành công'),
@@ -650,8 +810,7 @@ class VisionWizard(tk.Toplevel):
         """
         Xóa template đang chọn khỏi danh sách.
         
-        TODO: Confirm dialog trước khi xóa
-        TODO: Lưu vào config sau khi xóa
+        Phase 2: Persist to config and reload engine
         """
         if not self.template_tree:
             return
@@ -685,7 +844,21 @@ class VisionWizard(tk.Toplevel):
             # Refresh tree
             self._refresh_template_tree()
             
-            # TODO: Lưu vào config
+            # Save to config
+            self._save_templates_config()
+            
+            # Reload engine templates
+            if self.vision_engine:
+                try:
+                    enabled_templates = [t for t in self.templates if t.get('enabled', True)]
+                    paths = [t['path'] for t in enabled_templates if os.path.exists(t.get('path', ''))]
+                    if paths:
+                        self.vision_engine.load_templates(paths)
+                    else:
+                        # Clear all templates if none enabled
+                        self.vision_engine.templates.clear()
+                except Exception as e:
+                    print(f"Error reloading engine templates: {e}")
             
             messagebox.showinfo(
                 i18n_t('success', default='Thành công'),
@@ -696,9 +869,7 @@ class VisionWizard(tk.Toplevel):
         """
         Lưu ngưỡng nhận diện cho template đang chọn.
         
-        TODO: Validate threshold value (0.0 - 1.0)
-        TODO: Cập nhật vào self.templates
-        TODO: Lưu vào config
+        Phase 2: Persist to vision_templates.json
         """
         if not self.template_tree or not self.threshold_entry:
             return
@@ -738,7 +909,8 @@ class VisionWizard(tk.Toplevel):
             # Refresh tree
             self._refresh_template_tree()
             
-            # TODO: Lưu vào config
+            # Save to config
+            self._save_templates_config()
             
             messagebox.showinfo(
                 i18n_t('success', default='Thành công'),
@@ -749,25 +921,74 @@ class VisionWizard(tk.Toplevel):
         """
         Chạy test nhận diện với cấu hình hiện tại.
         
-        TODO: Bổ sung logic test nhận diện:
-        - Chụp màn hình game
-        - Chạy OpenCV template matching
-        - Hiển thị kết quả trong preview canvas
-        - Show overlay với vị trí tìm thấy
+        Phase 2: Wire với vision_engine.py
+        - Gọi engine.match_templates() để test detection
+        - Hiển thị kết quả (số detections found)
+        - TODO Phase 3: Hiển thị overlay trong canvas
         """
-        # Placeholder
-        messagebox.showinfo(
-            'Test Recognition',
-            'TODO: Tính năng test nhận diện sẽ được bổ sung sau.\n\n'
-            'Sẽ bao gồm:\n'
-            '- Chụp màn hình game\n'
-            '- Template matching với OpenCV\n'
-            '- Hiển thị kết quả trong preview\n'
-            '- Overlay vị trí tìm thấy'
-        )
+        if not self.vision_engine:
+            messagebox.showwarning(
+                'Vision Engine',
+                'Vision engine not initialized.\n\n'
+                'Please check that lib/vision/vision_engine.py is available.'
+            )
+            return
         
-        # TODO: Implement logic test nhận diện
-        # Tham khảo từ lib/vision/template_matcher.py
+        # Kiểm tra có templates loaded không
+        if not self.vision_engine.templates:
+            messagebox.showwarning(
+                'No Templates',
+                'No templates loaded.\n\n'
+                'Please add templates before testing recognition.'
+            )
+            return
+        
+        # TODO Phase 3: Capture game screen
+        # Giờ test với synthetic frame
+        try:
+            import numpy as np
+            # Tạo dummy frame để test (640x480 gray image)
+            test_frame = np.random.randint(0, 255, (480, 640), dtype=np.uint8)
+            
+            # Get threshold from UI
+            try:
+                threshold = float(self.threshold_entry.get()) if self.threshold_entry else 0.7
+            except:
+                threshold = 0.7
+            
+            # Call engine match_templates
+            detections = self.vision_engine.match_templates(
+                frame=test_frame,
+                roi=None,  # Full frame
+                templates=None,  # Use all loaded templates (với threshold mỗi template)
+                scales=[0.8, 1.0, 1.2],
+                max_results=10
+            )
+            
+            # Show results
+            messagebox.showinfo(
+                'Test Recognition Results',
+                f'Test completed.\n\n'
+                f'Templates loaded: {len(self.vision_engine.templates)}\n'
+                f'Detections found: {len(detections)}\n'
+                f'Threshold: {threshold}\n\n'
+                f'Note: Using synthetic test frame.\n'
+                f'Phase 3 will add real screen capture.'
+            )
+            
+            # TODO Phase 3: Display overlay on preview_canvas
+            
+        except ImportError:
+            messagebox.showerror(
+                'Missing Dependency',
+                'NumPy/OpenCV not installed.\n\n'
+                'Install: pip install numpy opencv-python'
+            )
+        except Exception as e:
+            messagebox.showerror(
+                'Test Error',
+                f'Error during test recognition:\n\n{str(e)}'
+            )
         
     def _refresh_template_tree(self) -> None:
         """Làm mới danh sách template trong Treeview"""
@@ -789,6 +1010,27 @@ class VisionWizard(tk.Toplevel):
                     template.get('threshold', 0.7)
                 )
             )
+    
+    def _save_templates_config(self) -> None:
+        """
+        Lưu templates config vào file JSON.
+        
+        Phase 2: Persist templates to vision_templates.json
+        """
+        config_file = "lib/data/vision_templates.json"
+        
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(config_file), exist_ok=True)
+            
+            # Save templates
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.templates, f, indent=2, ensure_ascii=False)
+            
+            print(f"Templates config saved to {config_file}")
+            
+        except Exception as e:
+            print(f"Error saving templates config: {e}")
         
     def _on_search_mode_changed(self, event=None) -> None:
         """
