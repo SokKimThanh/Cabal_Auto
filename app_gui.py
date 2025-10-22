@@ -2343,10 +2343,10 @@ Alternative Solutions:
         self.vision_hotkey_combo = vision_combo
         self.vision_hotkey_label = vision_label_widget
 
-        # Hint (removed emoji from main text)
-        hint_hotkey = "Press 'Global Apply' button below to activate new hotkeys."
+        # Hint: Hotkeys apply automatically
+        hint_hotkey = "Hotkeys apply automatically when you click any field outside this section."
         if self.lang == "vi":
-            hint_hotkey = "Nhấn nút 'Global Apply' phía dưới để kích hoạt phím tắt mới."
+            hint_hotkey = "Phím tắt được áp dụng tự động khi bạn click ra ngoài phần này."
         tk.Label(
             hotkey_frame,
             text=hint_hotkey,
@@ -2692,6 +2692,13 @@ Alternative Solutions:
                 "advanced": self._t("mode_advanced"),
             }
             self.hunt_status.set(f"Mode: {mode_labels.get(mode, mode)}")
+
+        # Re-register hotkeys (wizard hotkey only in beginner mode)
+        # This will update the count display (4 vs 5 hotkeys)
+        try:
+            self._register_global_hotkeys()
+        except Exception as e:
+            print(f"Warning: Could not re-register hotkeys after mode change: {e}")
 
     def _on_global_hotkey_toggle(self):
         """Handle enable/disable of global hotkeys checkbox.
@@ -5177,18 +5184,17 @@ Alternative Solutions:
 
             if registered:
                 print(f"Global hotkeys registered: {', '.join(registered)}")
-                # Update diagnostic UI if present
+                # Update new status-driven UI
                 try:
-                    self._hotkey_diag_var.set(
-                        self._t("hotkeys_registered").format(keys=", ".join(registered))
-                    )
+                    self.after(150, self._update_hotkey_diagnostics_ui)
                 except Exception:
                     pass
 
         except Exception as e:
             print(f"Error registering global hotkeys: {e}")
+            # Update UI to show error state
             try:
-                self._hotkey_diag_var.set(str(e))
+                self.after(150, self._update_hotkey_diagnostics_ui)
             except Exception:
                 pass
 
@@ -5295,16 +5301,23 @@ Alternative Solutions:
             
             # Count actual registered hotkeys (not bindings)
             registered_count = 0
+            hotkey_details = []
+            
             if getattr(self, "_global_start_hotkey", None):
                 registered_count += 1
+                hotkey_details.append("Start" if self.lang == "en" else "Bắt đầu")
             if getattr(self, "_global_stop_hotkey", None):
                 registered_count += 1
+                hotkey_details.append("Stop" if self.lang == "en" else "Dừng")
             if getattr(self, "_global_wizard_hotkey", None):
                 registered_count += 1
+                hotkey_details.append("Wizard" if self.lang == "en" else "Trợ lý")
             if getattr(self, "_global_library_hotkey", None):
                 registered_count += 1
+                hotkey_details.append("Library" if self.lang == "en" else "Thư viện")
             if getattr(self, "_global_vision_hotkey", None):
                 registered_count += 1
+                hotkey_details.append("Vision" if self.lang == "en" else "Thị giác")
             
             # State 1: Success - All hotkeys registered
             if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
@@ -5313,8 +5326,10 @@ Alternative Solutions:
                 self._hotkey_status_var.set(f"✅ {success_text}")
                 self._hotkey_status_label.config(fg="#4CAF50")  # Green
                 
-                # Show count and timestamp
+                # Show count and active hotkeys list
                 detail_text = f"{registered_count} hotkeys active" if self.lang == "en" else f"{registered_count} phím tắt đang hoạt động"
+                if hotkey_details:
+                    detail_text += f": {', '.join(hotkey_details)}"
                 self._hotkey_status_detail_var.set(f"   {detail_text}")
                 
                 # Hide action buttons (not needed)
