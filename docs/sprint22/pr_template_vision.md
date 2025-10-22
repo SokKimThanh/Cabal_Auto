@@ -139,8 +139,8 @@ Implements core vision detection and tracking engine with UI integration for the
 
 #### Region Save/Load (Console Test)
 ```python
-from ui.setup_wizard_vision import create_or_show_vision_wizard
 import tkinter as tk
+from ui.setup_wizard_vision import create_or_show_vision_wizard
 
 root = tk.Tk()
 wizard = create_or_show_vision_wizard(root)
@@ -215,6 +215,9 @@ for det in detections:
 ### Example 2: Multi-Scale Detection with ROI
 
 ```python
+import cv2
+from lib.vision.vision_engine import get_vision_engine
+
 engine = get_vision_engine()
 engine.load_templates([
     'assets/images/monsters/monster1.png',
@@ -238,6 +241,9 @@ print(f"Found {len(detections)} objects in region")
 ### Example 3: Tracking with Re-verification
 
 ```python
+import cv2
+from lib.vision.vision_engine import get_vision_engine
+
 engine = get_vision_engine()
 engine.load_templates(['assets/images/monsters/hp_bar.png'])
 
