@@ -2653,15 +2653,49 @@ class App(tk.Tk):
                     existing.deiconify()
                     existing.lift()
                     existing.focus_force()
-                    # Ensure it's above game window if game hwnd known
-                    hwnd_cfg = None
-                    if isinstance(self.hunt_cfg, dict):
-                        hwnd_cfg = self.hunt_cfg.get("window_hwnd") or self.hunt_cfg.get("window_pid")
-                    # Temporarily set topmost to ensure visibility over fullscreen games
+                    # Follow the same bring-to-front flow the app uses:
+                    # 1) Bring the game window forward (by hwnd or pid or title)
+                    # 2) Then bring the library window above it using lift + temporary -topmost
                     try:
-                        existing.attributes("-topmost", True)
-                        # schedule disabling topmost after a short delay
-                        existing.after(120, lambda: existing.attributes("-topmost", False))
+                        ok = False
+                        if isinstance(self.hunt_cfg, dict):
+                            hwnd_cfg = self.hunt_cfg.get("window_hwnd")
+                            pid_cfg = self.hunt_cfg.get("window_pid")
+                            if hwnd_cfg:
+                                try:
+                                    ok = self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
+                                except Exception:
+                                    ok = False
+                            elif pid_cfg:
+                                try:
+                                    ok = self._bring_window_to_front_by_pid(int(pid_cfg))
+                                except Exception:
+                                    ok = False
+                            else:
+                                try:
+                                    title = str(self.hunt_cfg.get("window_title", "Cabal")).strip()
+                                    ok = self._bring_window_to_front(title)
+                                except Exception:
+                                    ok = False
+
+                        # If bringing game succeeded, give it a moment
+                        if ok:
+                            time.sleep(0.1)
+
+                        # Now ensure library window is on top
+                        try:
+                            existing.deiconify()
+                            existing.lift()
+                            existing.focus_force()
+                            existing.attributes("-topmost", True)
+                            existing.after(100, lambda: existing.attributes("-topmost", False))
+                        except Exception:
+                            # Fallback: simple lift
+                            try:
+                                existing.lift()
+                                existing.focus_force()
+                            except Exception:
+                                pass
                     except Exception:
                         pass
                     return
@@ -2709,6 +2743,45 @@ class App(tk.Tk):
                     manager.protocol("WM_DELETE_WINDOW", _on_lib_close)
                 except Exception:
                     pass
+            except Exception:
+                pass
+            # After creation, apply same bring-to-front behavior so library appears above game
+            try:
+                ok = False
+                if isinstance(self.hunt_cfg, dict):
+                    hwnd_cfg = self.hunt_cfg.get("window_hwnd")
+                    pid_cfg = self.hunt_cfg.get("window_pid")
+                    if hwnd_cfg:
+                        try:
+                            ok = self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
+                        except Exception:
+                            ok = False
+                    elif pid_cfg:
+                        try:
+                            ok = self._bring_window_to_front_by_pid(int(pid_cfg))
+                        except Exception:
+                            ok = False
+                    else:
+                        try:
+                            title = str(self.hunt_cfg.get("window_title", "Cabal")).strip()
+                            ok = self._bring_window_to_front(title)
+                        except Exception:
+                            ok = False
+
+                if ok:
+                    time.sleep(0.1)
+
+                try:
+                    manager.deiconify()
+                    manager.lift()
+                    manager.focus_force()
+                    manager.attributes("-topmost", True)
+                    manager.after(100, lambda: manager.attributes("-topmost", False))
+                except Exception:
+                    try:
+                        manager.lift(); manager.focus_force()
+                    except Exception:
+                        pass
             except Exception:
                 pass
         except Exception as e:
