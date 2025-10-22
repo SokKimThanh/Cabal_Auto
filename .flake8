@@ -1,0 +1,45 @@
+[flake8]
+# Flake8 configuration for Cabal_Auto project
+
+# Maximum line length
+max-line-length = 120
+
+# Exclude patterns
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    build,
+    dist,
+    *.egg-info,
+    .pytest_cache,
+    .mypy_cache,
+    tmp,
+    tmp_test_dir,
+    # Exclude backup and archive directories
+    scripts/restructure_backups,
+    docs/archive
+
+# Ignore specific error codes
+ignore =
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E501: line too long (handled by max-line-length)
+    E501
+
+# Per-file ignores (if needed)
+per-file-ignores =
+    # Ignore unused imports in __init__.py files
+    __init__.py:F401,
+    # Ignore undefined names in documentation examples (now fixed with imports)
+    # docs/sprint22/*.py:F821
+
+# Show source code for each error
+show-source = True
+
+# Show error codes in output
+show-pep8 = True
