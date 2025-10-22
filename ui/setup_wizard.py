@@ -76,7 +76,7 @@ class SetupWizard:
     Guides through: Welcome → Window → Monster → Skills → Review
     """
 
-    def __init__(self, parent, config_manager=None, on_complete=None, on_cancel=None):
+    def __init__(self, parent, config_manager=None, on_complete=None, on_cancel=None, hide_parent=True):
         """
         Initialize setup wizard.
 
@@ -85,11 +85,13 @@ class SetupWizard:
             config_manager: ConfigManager instance (optional)
             on_complete: Callback function when wizard completes (optional)
             on_cancel: Callback function when wizard is cancelled (optional)
+            hide_parent: Whether to hide parent window (default True for normal startup, False for hotkey)
         """
         self.parent = parent
         self.config_manager = config_manager
         self.on_complete = on_complete
         self.on_cancel = on_cancel
+        self.hide_parent = hide_parent
 
         # Detect if this is first-time run (no config yet)
         self.is_first_run = self._detect_first_run()
@@ -119,11 +121,27 @@ class SetupWizard:
             "skill_slots": [],
             "timing": {"lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0},
         }
+        # Snapshot of initial data to detect unsaved changes
+        try:
+            import copy
+
+            self._initial_wizard_data = copy.deepcopy(self.wizard_data)
+        except Exception:
+            self._initial_wizard_data = dict(self.wizard_data)
 
         try:
             # Create wizard window with larger size to fit all content
             print("[Wizard] Creating dialog window...")
             self.dialog = tk.Toplevel(parent)
+            # Mark the dialog so callers can detect existing wizard windows even
+            # if the parent._setup_wizard_win reference isn't yet assigned.
+            try:
+                setattr(self.dialog, "_is_setup_wizard", True)
+                setattr(self.dialog, "_setup_wizard_owner", parent)
+                # Back-reference to this SetupWizard instance
+                setattr(self.dialog, "_wizard_ref", self)
+            except Exception:
+                pass
             # i18n title
             try:
                 i18n_register_bulk("setup_wizard", SETUP_WIZARD_TRANSLATIONS)
@@ -166,13 +184,13 @@ class SetupWizard:
             # Handle window close (X button) - restore parent window
             self.dialog.protocol("WM_DELETE_WINDOW", self._on_close_window)
 
-            print("[Wizard] Hiding parent window...")
-            # Hide parent window AFTER dialog is set up to avoid transient() issues
-            # This prevents confusing dual-window state during wizard
-            parent.withdraw()
-            parent.update()  # Force parent update to ensure it's hidden
+            # Hide parent window only if requested (normal startup vs hotkey)
+            if self.hide_parent:
+                print("[Wizard] Hiding parent window...")
+                parent.withdraw()
+                parent.update()  # Force parent update to ensure it's hidden
 
-            # Immediately bring dialog to front after hiding parent
+            # Bring dialog to front
             self.dialog.lift()
             self.dialog.focus_force()
 
@@ -205,10 +223,13 @@ class SetupWizard:
             # Disable topmost after a short delay (allow user to see it first)
             self.dialog.after(1000, lambda: self.dialog.attributes("-topmost", False))
 
-            print("[Wizard] Wizard ready! Waiting for user...")
-            # Wait for dialog to close (blocks execution until wizard finishes)
-            parent.wait_window(self.dialog)
-            print("[Wizard] Wizard closed.")
+            # Allow Esc to close the wizard as a reliable fallback to the X button
+            try:
+                self.dialog.bind("<Escape>", lambda e: self._on_close_window())
+            except Exception:
+                pass
+
+            print("[Wizard] Wizard ready! (non-blocking init)")
         except Exception as e:
             print(f"[Wizard ERROR] Failed to create wizard: {e}")
             import traceback
@@ -1734,22 +1755,140 @@ It takes about 2 minutes. Let's begin!"""
 
     def _on_cancel(self):
         """Cancel wizard and close dialog."""
-        confirm = messagebox.askyesno(
-            self._t("cancel_title"), self._t("cancel_message"), parent=self.dialog
-        )
-
-        if confirm:
-            self.dialog.destroy()
-            # Call cancel callback to restore main window
-            if self.on_cancel:
-                self.on_cancel()
+        # Use unified external-close attempt logic so callers (and X/Esc) behave
+        # the same as external requests to close the wizard.
+        try:
+            closed = self.attempt_close_from_external()
+            return closed
+        except Exception:
+            # Fallback: force destroy
+            try:
+                self.dialog.destroy()
+            except Exception:
+                try:
+                    self.dialog.withdraw()
+                except Exception:
+                    pass
+            try:
+                if self.on_cancel:
+                    self.on_cancel()
+            except Exception:
+                pass
 
     def _on_close_window(self):
         """Handle window close button (X) - treat as cancel."""
-        self._on_cancel()
+        # Directly destroy the dialog on window-close to avoid issues where the
+        # confirmation messagebox may be blocked by grab_set or topmost layering.
+        try:
+            try:
+                self.dialog.destroy()
+            except Exception:
+                try:
+                    self.dialog.withdraw()
+                except Exception:
+                    pass
+            try:
+                if self.on_cancel:
+                    self.on_cancel()
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def has_unsaved_changes(self) -> bool:
+        """Return True if wizard data differs from the initial snapshot."""
+        try:
+            import copy
+
+            return copy.deepcopy(self.wizard_data) != copy.deepcopy(self._initial_wizard_data)
+        except Exception:
+            try:
+                return dict(self.wizard_data) != dict(self._initial_wizard_data)
+            except Exception:
+                return False
+
+    def attempt_close_from_external(self) -> bool:
+        """Called by external code which wants to close the wizard.
+
+        Returns True if the wizard was closed (or had no changes). Returns False
+        if the user cancelled.
+        """
+        try:
+            dirty = self.has_unsaved_changes()
+        except Exception:
+            dirty = False
+
+        if not dirty:
+            try:
+                self.dialog.destroy()
+            except Exception:
+                try:
+                    self.dialog.withdraw()
+                except Exception:
+                    pass
+            try:
+                if self.on_cancel:
+                    self.on_cancel()
+            except Exception:
+                pass
+            return True
+
+        # Ask user what to do
+        try:
+            resp = messagebox.askyesnocancel(
+                self._t("cancel_title"),
+                self._t("wizard_unsaved_changes_prompt") if hasattr(self, "_t") else "Save changes before closing?",
+                parent=self.dialog,
+            )
+        except Exception:
+            # If dialog can't be shown, be conservative and cancel the close
+            return False
+
+        if resp is None:
+            # Cancel
+            return False
+        if resp:
+            # Yes -> save/complete
+            try:
+                if self.on_complete:
+                    self.on_complete(self.wizard_data)
+                else:
+                    # As fallback, attempt to save via config_manager if provided
+                    try:
+                        cm = getattr(self, 'config_manager', None)
+                        if cm is not None and hasattr(cm, 'save'):
+                            cm.save()
+                    except Exception:
+                        pass
+            except Exception:
+                # If saving failed, do not close
+                return False
+            try:
+                self.dialog.destroy()
+            except Exception:
+                try:
+                    self.dialog.withdraw()
+                except Exception:
+                    pass
+            return True
+        else:
+            # No -> discard changes and close
+            try:
+                self.dialog.destroy()
+            except Exception:
+                try:
+                    self.dialog.withdraw()
+                except Exception:
+                    pass
+            try:
+                if self.on_cancel:
+                    self.on_cancel()
+            except Exception:
+                pass
+            return True
 
 
-def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=None):
+def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=None, hide_parent=True):
     """
     Convenience function to show setup wizard.
 
@@ -1758,11 +1897,113 @@ def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=N
         config_manager: ConfigManager instance (optional)
         on_complete: Callback when wizard completes (optional)
         on_cancel: Callback when wizard is cancelled (optional)
+        hide_parent: Whether to hide parent window (default True for normal startup, False for hotkey)
 
     Returns:
         SetupWizard instance
     """
-    wizard = SetupWizard(parent, config_manager, on_complete, on_cancel)
+    # Single-instance behavior: reuse existing wizard attached to parent if possible.
+    # Also prevent a race where multiple callers try to create the wizard at once
+    # by placing a temporary sentinel marker on the parent while constructing.
+    sentinel = "__creating_setup_wizard__"
+    # Quick scan: check for any existing wizard dialogs among the parent's
+    # children (covers races where attribute isn't yet set).
+    try:
+        for child in list(parent.winfo_children()):
+            try:
+                if getattr(child, "_is_setup_wizard", False):
+                    # Found an existing dialog — reuse its SetupWizard instance
+                    ref = getattr(child, "_wizard_ref", None)
+                    if ref is not None:
+                        try:
+                            child.deiconify(); child.lift(); child.focus_force()
+                        except Exception:
+                            pass
+                        return ref
+                    else:
+                        try:
+                            child.deiconify(); child.lift(); child.focus_force()
+                        except Exception:
+                            pass
+                        return child
+            except Exception:
+                # Ignore errors per-child and continue scanning
+                pass
+    except Exception:
+        pass
+
+    try:
+        existing = getattr(parent, "_setup_wizard_win", None)
+        # If an existing instance is present and alive, reuse it
+        if existing is not None and getattr(existing, "winfo_exists", lambda: False)():
+            try:
+                existing.deiconify()
+                existing.lift()
+                existing.focus_force()
+                return existing
+            except Exception:
+                try:
+                    existing.destroy()
+                except Exception:
+                    pass
+        # If there's a sentinel marker, another creation is in progress; return early
+        if existing == sentinel:
+            return None
+    except Exception:
+        pass
+
+    # Mark parent as 'creating' to prevent concurrent creators
+    try:
+        setattr(parent, "_setup_wizard_win", sentinel)
+    except Exception:
+        pass
+
+    try:
+        wizard = SetupWizard(parent, config_manager, on_complete, on_cancel, hide_parent=hide_parent)
+    except Exception:
+        # If creation failed, clear sentinel and re-raise
+        try:
+            delattr(parent, "_setup_wizard_win")
+        except Exception:
+            try:
+                setattr(parent, "_setup_wizard_win", None)
+            except Exception:
+                pass
+        raise
+
+    try:
+        # store reference on parent so callers (e.g., App) can reuse
+        setattr(parent, "_setup_wizard_win", wizard)
+    except Exception:
+        pass
+
+    # ensure wizard clears the reference when it closes
+    try:
+        orig_on_close = getattr(wizard, "_on_close_window", None)
+
+        def _wrapped_close():
+            try:
+                if callable(orig_on_close):
+                    orig_on_close()
+            finally:
+                try:
+                    delattr(parent, "_setup_wizard_win")
+                except Exception:
+                    try:
+                        setattr(parent, "_setup_wizard_win", None)
+                    except Exception:
+                        pass
+
+        wizard._on_close_window = _wrapped_close  # type: ignore[attr-defined]
+        try:
+            wizard.dialog.protocol("WM_DELETE_WINDOW", _wrapped_close)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+    # Return immediately (non-blocking). The wizard instance is stored on the
+    # parent as `_setup_wizard_win` and will be removed when the wizard closes.
     return wizard
 
 

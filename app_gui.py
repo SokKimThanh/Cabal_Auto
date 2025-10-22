@@ -910,8 +910,9 @@ class App(tk.Tk):
             hotkey_map = {
                 "ctrl+shift+r": getattr(self, "on_hunt_start", None),
                 "ctrl+shift+e": getattr(self, "on_hunt_stop", None),
-                "ctrl+shift+l": getattr(self, "_open_skill_manager", None),
-                "ctrl+shift+n": getattr(self, "_open_setup_wizard", None),
+                # Map to wrapper handlers (which perform mode checks / scheduling)
+                "ctrl+shift+l": getattr(self, "_on_library_manager_hotkey", None),
+                "ctrl+shift+n": getattr(self, "_on_setup_wizard_hotkey", None),
             }
             for hk, callback in hotkey_map.items():
                 if callback is None:
@@ -2612,6 +2613,72 @@ class App(tk.Tk):
         if hasattr(self, "hunt_cfg"):
             self._register_global_hotkeys()
 
+    # --- Helpers to attempt closing other windows while respecting unsaved changes ---
+    def try_close_setup_wizard(self) -> bool:
+        """Attempt to close the setup wizard if open.
+
+        Returns True if wizard not present or was closed. Returns False if close
+        was cancelled (e.g., user declined to discard/save changes).
+        """
+        try:
+            wiz = getattr(self, "_setup_wizard_win", None)
+            if wiz is None:
+                # Try to find dialog child
+                for c in list(self.winfo_children()):
+                    if getattr(c, "_is_setup_wizard", False):
+                        wiz = getattr(c, "_wizard_ref", None) or c
+                        break
+            if wiz is None:
+                return True
+            # If wizard exposes attempt_close_from_external use it
+            fn = getattr(wiz, "attempt_close_from_external", None)
+            if callable(fn):
+                try:
+                    return bool(fn())
+                except Exception:
+                    return False
+            # Fallback: call destroy (conservative: do not destroy without user confirmation)
+            return False
+        except Exception:
+            return False
+
+    def try_close_library_manager(self) -> bool:
+        """Attempt to close library manager if open. Returns True if closed or not present."""
+        try:
+            lib = getattr(self, "library_manager_win", None)
+            if lib is None:
+                # Try to find by flag
+                for c in list(self.winfo_children()):
+                    try:
+                        if getattr(c, "_is_library_manager", False):
+                            lib = c
+                            break
+                    except Exception:
+                        pass
+            if lib is None:
+                return True
+            # If it provides _on_window_close for external closing, call it
+            fn2 = getattr(lib, "_on_window_close", None)
+            if callable(fn2):
+                try:
+                    fn2()
+                except Exception:
+                    return False
+                # Check if window still exists
+                try:
+                    if hasattr(lib, "winfo_exists") and not lib.winfo_exists():
+                        return True
+                    # Some implementations destroy child content rather than the widget
+                    # Check for a 'destroyed' flag
+                    if getattr(lib, "_destroyed", False):
+                        return True
+                    return False
+                except Exception:
+                    return False
+            return False
+        except Exception:
+            return False
+
     def _open_library_manager(self):
         """
         Open Library Manager window for centralized library management.
@@ -2643,8 +2710,30 @@ class App(tk.Tk):
             # Update status
             self.hunt_status.set(self._t("library_updated"))
 
-        # Open Library Manager window
+        # Open Library Manager window (single-instance)
         try:
+            # Reuse existing instance if present
+            existing = getattr(self, "library_manager_win", None)
+            if existing is not None and getattr(existing, "winfo_exists", lambda: False)():
+                try:
+                    # Simple bring-to-front: deiconify, lift
+                    try:
+                        existing.deiconify()
+                        existing.lift()
+                        existing.focus_force()
+                    except Exception:
+                        try:
+                            existing.lift(); existing.focus_force()
+                        except Exception:
+                            pass
+                    return
+                except Exception:
+                    # fallback to creating a new one
+                    try:
+                        existing.destroy()
+                    except Exception:
+                        pass
+
             manager = LibraryManagerWindow(
                 parent=self,
                 hunt_cfg=self.hunt_cfg,
@@ -2653,6 +2742,43 @@ class App(tk.Tk):
                 lang=self.lang,
                 on_close_callback=on_library_changes,
             )
+            # Keep a reference so subsequent hotkey presses reuse the same window
+            try:
+                self.library_manager_win = manager
+            except Exception:
+                setattr(self, "library_manager_win", manager)
+            # Ensure we clear the reference when it closes
+            try:
+                def _on_lib_close():
+                    try:
+                        # call existing close handler on manager which will invoke on_close_callback
+                        manager._on_window_close()
+                    except Exception:
+                        try:
+                            manager.destroy()
+                        except Exception:
+                            pass
+                    try:
+                        delattr(self, "library_manager_win")
+                    except Exception:
+                        try:
+                            self.library_manager_win = None
+                        except Exception:
+                            pass
+
+                # Bind WM_DELETE_WINDOW to clear ref
+                try:
+                    manager.protocol("WM_DELETE_WINDOW", _on_lib_close)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            # After creation, show the manager normally (no forcing)
+            try:
+                manager.deiconify()
+                manager.lift()
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror(
                 self._t("error_title"),
@@ -4236,13 +4362,18 @@ class App(tk.Tk):
         except Exception as e:
             print(f"[Auto PID] Failed to save config: {e}")
 
-    def on_setup_wizard(self):
-        """Launch setup wizard to guide user through initial configuration."""
+    def on_setup_wizard(self, hide_parent=True):
+        """Launch setup wizard to guide user through initial configuration.
+        
+        Args:
+            hide_parent: Whether to hide parent window (default True for startup, False for hotkey)
+        """
 
         def on_wizard_complete(wizard_data):
             """Callback when wizard completes - apply settings to UI."""
-            # Show main window again
-            self.deiconify()
+            # Show main window again if it was hidden
+            if hide_parent:
+                self.deiconify()
 
             # Reload config to get wizard changes
             self.hunt_cfg = load_hunt_config()
@@ -4258,16 +4389,17 @@ class App(tk.Tk):
 
         def on_wizard_cancel():
             """Callback when wizard is cancelled - restore main window."""
-            self.deiconify()
+            if hide_parent:
+                self.deiconify()
 
         # Launch wizard - use 'self' instead of 'self.root' (App inherits from tk.Tk)
-        # Note: Wizard will hide main window after setup to avoid transient() issues
         if callable(show_setup_wizard):
             show_setup_wizard(
                 self,
                 config_manager=self.config_mgr,
                 on_complete=on_wizard_complete,
                 on_cancel=on_wizard_cancel,
+                hide_parent=hide_parent,
             )
         else:
             # Fallback: wizard not available
@@ -4526,7 +4658,7 @@ class App(tk.Tk):
         """Callback for Setup Wizard hotkey (Ctrl+Shift+N).
 
         Only executes if ui_mode == 'beginner'.
-        Will be fully implemented in Batch 7.
+        Shows confirmation if user is new (no config).
         """
         try:
             print("[Hotkeys] Setup Wizard hotkey pressed")
@@ -4537,8 +4669,52 @@ class App(tk.Tk):
                 print(f"[Hotkeys] Setup Wizard blocked - current mode: {current_mode}")
                 return
 
-            # Open wizard (will be implemented in Batch 7)
-            self.after(0, self.on_setup_wizard)
+            # Toggle behavior for wizard (only in beginner mode):
+            # If wizard is open and viewable -> hide; if hidden -> show; otherwise open.
+            existing = getattr(self, "_setup_wizard_win", None) or getattr(self, "setup_wizard_win", None) or getattr(self, "_setup_wizard", None)
+            try:
+                if existing is not None and getattr(existing, "winfo_exists", lambda: False)():
+                    try:
+                        # If the stored object is the SetupWizard instance it may expose .dialog
+                        win = getattr(existing, "dialog", existing)
+                        if win.winfo_viewable():
+                            try:
+                                win.withdraw()
+                            except Exception:
+                                try:
+                                    win.iconify()
+                                except Exception:
+                                    pass
+                        else:
+                            try:
+                                win.deiconify()
+                                win.lift()
+                                win.focus_force()
+                                try:
+                                    win.attributes("-topmost", True)
+                                    win.after(120, lambda: win.attributes("-topmost", False))
+                                except Exception:
+                                    pass
+                            except Exception:
+                                try:
+                                    win.lift(); win.focus_force()
+                                except Exception:
+                                    pass
+                        return
+                    except Exception:
+                        try:
+                            # fallback: destroy stale reference
+                            existing.destroy()
+                        except Exception:
+                            pass
+
+            except Exception:
+                pass
+
+            # No existing wizard - open directly without confirmation
+            # (User actively pressed hotkey, no need to ask)
+            print('[Hotkeys] Opening Setup Wizard directly from hotkey')
+            self.after(0, lambda: self.on_setup_wizard(hide_parent=False))
 
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
@@ -4547,12 +4723,45 @@ class App(tk.Tk):
         """Callback for Library Manager hotkey (Ctrl+Shift+L).
 
         Always available regardless of UI mode.
-        Will be fully implemented in Batch 7.
+        Simple toggle - no mutual exclusion with wizard.
         """
         try:
             print("[Hotkeys] Library Manager hotkey pressed")
 
-            # Open library manager (will be implemented in Batch 7)
+            # Toggle behavior: if library manager exists and is visible -> hide it;
+            # if exists but hidden -> show it; otherwise create it.
+            existing = getattr(self, "library_manager_win", None)
+            if existing is not None and getattr(existing, "winfo_exists", lambda: False)():
+                try:
+                    # If currently viewable, hide (withdraw). If hidden, show again.
+                    if existing.winfo_viewable():
+                        try:
+                            existing.withdraw()
+                        except Exception:
+                            try:
+                                existing.iconify()
+                            except Exception:
+                                pass
+                    else:
+                        try:
+                            existing.deiconify()
+                            existing.lift()
+                            existing.focus_force()
+                        except Exception:
+                            try:
+                                existing.lift()
+                                existing.focus_force()
+                            except Exception:
+                                pass
+                    return
+                except Exception:
+                    # fallthrough to open a fresh one
+                    try:
+                        existing.destroy()
+                    except Exception:
+                        pass
+
+            # Create or show new manager
             self.after(0, self._open_library_manager)
 
         except Exception as e:
