@@ -27,7 +27,7 @@ try:
     from lib.ui_style import UIStyle as UI
 except ImportError:
     # Fallback nếu không tìm thấy UIStyle
-    class UI:
+    class UIStyle:
         FONT_TITLE = ('Segoe UI', 12, 'bold')
         FONT_SECTION = ('Segoe UI', 11, 'bold')
         FONT_LABEL = ('Segoe UI', 10)
@@ -40,22 +40,28 @@ except ImportError:
         COLOR_DANGER = '#F44336'
         BG_DEFAULT = '#FFFFFF'
         BG_PANEL = '#F5F5F5'
+    UI = UIStyle  # Alias for consistency
 
 try:
     from lib.i18n import t as i18n_t, get_lang, register_bulk as i18n_register_bulk
 except ImportError:
-    def i18n_t(key: str, **kwargs) -> str:
-        return kwargs.get('default', key)
+    def i18n_t(key: str, *, ns: Optional[str] = None, lang: Optional[str] = None, default: Optional[str] = None) -> str:
+        return default if default else key
     def get_lang() -> str:
         return 'vi'
     def i18n_register_bulk(namespace: str, translations: dict) -> None:
         pass
 
 try:
-    from lib.ui.tooltip import attach_i18n_tooltip
+    from lib.ui.tooltip import attach_i18n_tooltip, I18nToolTip  # type: ignore
 except ImportError:
-    def attach_i18n_tooltip(widget, key: str, **kwargs) -> None:
+    class I18nToolTip:  # type: ignore
+        """Fallback tooltip class"""
         pass
+    
+    def attach_i18n_tooltip(widget, key: str, ns: Optional[str], lang_provider: Callable[[], str], delay: int = 400) -> I18nToolTip:  # type: ignore
+        """Fallback tooltip function when lib.ui.tooltip not available"""
+        return I18nToolTip()  # type: ignore
 
 try:
     from lib.ui.icon_helper import get_icon_helper
@@ -256,7 +262,7 @@ class VisionWizard(tk.Toplevel):
         # UI Components (sẽ được khởi tạo trong setup_ui)
         self.search_mode_combo: Optional[ttk.Combobox] = None
         self.threshold_entry: Optional[tk.Entry] = None
-        self.threshold_frame: Optional[ttk.Frame] = None
+        self.threshold_frame: Optional[tk.Frame] = None  # tk.Frame (not ttk) for bg support
         self.template_tree: Optional[ttk.Treeview] = None
         self.preview_canvas: Optional[tk.Canvas] = None
         
