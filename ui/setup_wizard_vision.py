@@ -18,6 +18,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json
 import os
+import numpy as np
+import cv2
 from typing import Optional, Dict, List, Any, Callable
 
 # Import các module cần thiết từ lib
@@ -698,45 +700,153 @@ class VisionWizard(tk.Toplevel):
     
     def start_detection_loop(self) -> None:
         """
-        Bắt đầu detection loop (Phase 3+).
+        Bắt đầu detection loop với worker thread.
         
-        TODO Phase 3:
-        - Capture game screen periodically
-        - Call engine.match_templates()
-        - Update overlay on preview_canvas
-        - Optionally start tracking với engine.start_track()
+        Flow:
+        1. Start engine worker với frame callback
+        2. Poll result_queue mỗi ~66ms (15 FPS max) bằng root.after()
+        3. Render overlay lên preview_canvas
+        
+        Note:
+            - Worker chạy trên background thread
+            - UI chỉ blit bitmap từ queue
+            - Không block main thread
         """
-        # Placeholder
-        print("start_detection_loop: TODO Phase 3")
-        messagebox.showinfo(
-            'Detection Loop',
-            'Detection loop starter sẽ được implement ở Phase 3.\n\n'
-            'Sẽ bao gồm:\n'
-            '- Screen capture loop\n'
-            '- Periodic template matching\n'
-            '- Real-time overlay update\n'
-            '- Auto-tracking detected objects'
-        )
+        if not self.vision_engine:
+            messagebox.showwarning(
+                i18n_t('warning', default='Cảnh báo'),
+                'Vision engine not initialized'
+            )
+            return
+        
+        # Start worker với frame callback
+        try:
+            self.vision_engine.start_worker(frame_callback=self._get_current_frame)
+            
+            # Start UI polling loop
+            self._poll_interval_ms = 66  # ~15 FPS
+            self._poll_queue()
+            
+            messagebox.showinfo(
+                'Detection Started',
+                'Detection loop started.\n\n'
+                'Worker thread is running in background.\n'
+                'UI updates at ~15 FPS via queue polling.'
+            )
+            
+        except Exception as e:
+            messagebox.showerror(
+                i18n_t('error', default='Lỗi'),
+                f'Failed to start detection: {e}'
+            )
     
     def stop_detection_loop(self) -> None:
         """
-        Dừng detection loop (Phase 3+).
-        
-        TODO Phase 3:
-        - Stop screen capture loop
-        - Call engine.stop_all_tracks()
-        - Clear overlay
+        Dừng detection loop và cleanup resources.
         """
-        # Placeholder
-        print("stop_detection_loop: TODO Phase 3")
-        
         if self.vision_engine:
-            try:
-                self.vision_engine.stop_all_tracks()
-                print("All tracks stopped")
-            except Exception as e:
-                print(f"Error stopping tracks: {e}")
+            self.vision_engine.stop_worker()
+            print("Detection loop stopped")
+    
+    def _get_current_frame(self) -> Optional[np.ndarray]:
+        """
+        Frame callback cho worker thread.
         
+        Returns:
+            Current frame (np.ndarray) hoặc None
+        
+        Note:
+            - TODO Phase 3: Replace với screen capture
+            - Hiện tại trả về synthetic frame để test
+        """
+        # TODO Phase 3: Capture real game screen
+        # For now, return synthetic test frame
+        try:
+            test_frame = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
+            return test_frame
+        except:
+            return None
+    
+    def _poll_queue(self) -> None:
+        """
+        Poll result_queue từ worker (non-blocking).
+        
+        Được gọi mỗi ~66ms bởi root.after() để không block UI.
+        """
+        if not self.vision_engine or not self.vision_engine.worker_running:
+            return
+        
+        try:
+            # Get result (non-blocking)
+            result = self.vision_engine.get_result(timeout=0.0)
+            
+            if result:
+                # Render overlay lên preview_canvas
+                self._render_overlay(result)
+        
+        except Exception as e:
+            print(f"Poll queue error: {e}")
+        
+        # Schedule next poll
+        if self.vision_engine and self.vision_engine.worker_running:
+            self.after(self._poll_interval_ms, self._poll_queue)
+    
+    def _render_overlay(self, result: Dict[str, Any]) -> None:
+        """
+        Render overlay từ worker result lên preview_canvas.
+        
+        Args:
+            result: Dict with keys 'type', 'data', 'frame', 'timestamp'
+        
+        Note:
+            - Frame đã được engine render overlay (boxes, labels)
+            - UI chỉ convert sang PhotoImage và blit
+        """
+        try:
+            frame = result.get('frame')
+            if frame is None:
+                return
+            
+            # Convert BGR to RGB
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # Convert to PhotoImage (single conversion per frame)
+            from PIL import Image, ImageTk
+            pil_image = Image.fromarray(frame_rgb)
+            photo = ImageTk.PhotoImage(pil_image)
+            
+            # Update preview_canvas
+            if hasattr(self, 'preview_canvas') and self.preview_canvas:
+                # Clear canvas
+                self.preview_canvas.delete("all")
+                
+                # Draw image
+                self.preview_canvas.create_image(0, 0, anchor='nw', image=photo)
+                
+                # Keep reference to prevent garbage collection
+                self.preview_canvas.image = photo  # type: ignore
+                
+                # Update status
+                result_type = result.get('type', 'unknown')
+                data_count = len(result.get('data', []))
+                status_text = f"{result_type}: {data_count} objects"
+                
+                # TODO: Update status label if exists
+                print(f"[Overlay] {status_text}")
+        
+        except Exception as e:
+            print(f"Render overlay error: {e}")
+    
+    def destroy(self) -> None:
+        """
+        Override destroy để cleanup worker thread.
+        """
+        # Stop worker before closing
+        self.stop_detection_loop()
+        
+        # Call parent destroy
+        super().destroy()
+    
     def add_template(self) -> None:
         """
         Thêm template mới vào danh sách.
@@ -918,12 +1028,12 @@ class VisionWizard(tk.Toplevel):
         
     def test_recognition(self) -> None:
         """
-        Chạy test nhận diện với cấu hình hiện tại.
+        Chạy test nhận diện với worker thread (non-blocking).
         
         Phase 2: Wire với vision_engine.py
-        - Gọi engine.match_templates() để test detection
-        - Hiển thị kết quả (số detections found)
-        - TODO Phase 3: Hiển thị overlay trong canvas
+        - Start worker thread để test detection
+        - Kết quả hiển thị qua queue polling
+        - Không block UI thread
         """
         if not self.vision_engine:
             messagebox.showwarning(
@@ -942,53 +1052,16 @@ class VisionWizard(tk.Toplevel):
             )
             return
         
-        # TODO Phase 3: Capture game screen
-        # Giờ test với synthetic frame
         try:
-            import numpy as np
-            # Tạo dummy frame để test (640x480 gray image)
-            test_frame = np.random.randint(0, 255, (480, 640), dtype=np.uint8)
+            # Start detection loop để test (sử dụng worker thread)
+            self.start_detection_loop()
             
-            # Get threshold from UI
-            try:
-                threshold = float(self.threshold_entry.get()) if self.threshold_entry else 0.7
-            except:
-                threshold = 0.7
-            
-            # Call engine match_templates
-            detections = self.vision_engine.match_templates(
-                frame=test_frame,
-                roi=None,  # Full frame
-                templates=None,  # Use all loaded templates (với threshold mỗi template)
-                scales=[0.8, 1.0, 1.2],
-                max_results=10
-            )
-            
-            # Show results
-            messagebox.showinfo(
-                'Test Recognition Results',
-                f'Test completed.\n\n'
-                f'Templates loaded: {len(self.vision_engine.templates)}\n'
-                f'Detections found: {len(detections)}\n'
-                f'Threshold: {threshold}\n\n'
-                f'Note: Using synthetic test frame.\n'
-                f'Phase 3 will add real screen capture.'
-            )
-            
-            # TODO Phase 3: Display overlay on preview_canvas
-            
-        except ImportError:
-            messagebox.showerror(
-                'Missing Dependency',
-                'NumPy/OpenCV not installed.\n\n'
-                'Install: pip install numpy opencv-python'
-            )
         except Exception as e:
             messagebox.showerror(
                 'Test Error',
-                f'Error during test recognition:\n\n{str(e)}'
+                f'Error starting test recognition:\n\n{str(e)}'
             )
-        
+    
     def _refresh_template_tree(self) -> None:
         """Làm mới danh sách template trong Treeview"""
         if not self.template_tree:
