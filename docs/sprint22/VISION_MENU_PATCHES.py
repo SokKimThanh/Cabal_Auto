@@ -5,6 +5,9 @@ Sprint 22 Phase 1B
 Apply these patches to integrate Vision menu into main app.
 """
 
+import tkinter as tk
+from tkinter import messagebox, filedialog
+
 # ==================================================================
 # PATCH 1: Add Vision Menu (sau settings_menu, khoảng dòng 685)
 # ==================================================================

@@ -3,6 +3,11 @@ Example: Cách tích hợp Vision Wizard vào form chính
 File này chứa các ví dụ code để tham khảo
 """
 
+import tkinter as tk
+from tkinter import messagebox, ttk
+import json
+import os
+
 # ============================================================
 # VÍ DỤ 1: Tích hợp vào app_gui.py (Main Application)
 # ============================================================
