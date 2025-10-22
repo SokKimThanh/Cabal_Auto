@@ -1,294 +1,186 @@
 # Cabal Auto Hunt - Documentation Index
 
-**Last Updated**: October 21, 2025 (Sprint 22 Started)  
-**Current Sprint**: Sprint 22 - Advanced Features & Training System
+**Last Updated**: October 22, 2025 (Sprint 22 Phase 2B Complete)  
+**Current Sprint**: Sprint 22 - Vision System Core Implementation ✅ COMPLETED
 
-## 📁 Documentation Structure
+## 📁 New Documentation Structure
 
 ```
 docs/
-├── README.md                    # Main documentation entry point
-├── INDEX.md                     # This file - Complete documentation index
+├── README.md                          # Main documentation entry
+├── INDEX.md                           # This file - Complete index
 │
-├── features/                    # Feature specifications
-│   ├── FEATURE_FIRST_RUN_LOCK.md
-│   └── FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md
+├── architecture/                      # 🏛️ System Architecture
+│   ├── README.md
+│   ├── GLOBAL_HOTKEY_ARCHITECTURE.md
+│   ├── GLOBAL_HOTKEYS_EXTENDED_ARCHITECTURE.md
+│   ├── WORKER_THREAD_ARCHITECTURE.md
+│   └── SINGLE_INSTANCE_LOCK.md
 │
-├── enhancements/               # UI/UX enhancements
-│   ├── ENHANCEMENT_DIALOG_SAVE_ICONS.md
-│   ├── ENHANCEMENT_GLOBAL_APPLY_WIZARD_RELOCATION.md
-│   ├── ENHANCEMENT_SAVE_BUTTON_DYNAMIC_TOOLTIP.md
-│   └── ENHANCEMENT_WINDOW_SELECTION_TOPBAR.md
+├── features/                          # ⭐ Features Documentation
+│   ├── hotkeys/
+│   │   ├── README.md
+│   │   ├── GLOBAL_HOTKEY_MIGRATION.md
+│   │   └── HOTKEY_F8_TOGGLE.md
+│   ├── vision/                        # Vision System (Sprint 22)
+│   │   ├── README.md
+│   │   ├── VISION_WIZARD_FRAMEWORK.md
+│   │   ├── QUICK_START_VISION_WIZARD.md
+│   │   ├── VISION_MENU_INTEGRATION.md
+│   │   └── VISION_MENU_CHECKLIST.md
+│   ├── first-run/
+│   │   └── FEATURE_FIRST_RUN_LOCK.md
+│   └── templates/
+│       └── FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md
 │
-├── guides/                     # User guides & tutorials
-│   ├── ADVANCED_WINDOW_SETTINGS_GUIDE.md
-│   ├── HOW_TO_USE_TEST_RECOGNITION.md
-│   ├── HUONG_DAN_NGUOI_MOI.md
-│   ├── HUONG_DAN_USER_LEVEL_WIZARD.md
-│   └── SKILLS_EXPLANATION_SIMPLE.md
+├── guides/                            # 📖 User Guides
+│   ├── ui-design/
+│   │   ├── ICON_BUTTON_STYLE_GUIDE.md
+│   │   ├── BUTTON_STYLE_CONSISTENCY.md
+│   │   └── FEATURE_ICON_RECOLORING.md
+│   └── testing/
+│       └── TESTS_REORGANIZATION_SUMMARY.md
 │
-├── bugfixes/                   # Bug fix documentation (16 files)
-│   ├── BUGFIX_LANGUAGE_PERSISTENCE.md
-│   ├── BUGFIX_ROTATION_TAB_NO_SKILLS.md
-│   ├── BUGFIX_SETUP_WIZARD_BUTTON.md
-│   └── ... (13 more bugfix docs)
+├── sprints/                           # 🚀 Sprint Documentation
+│   ├── sprint21/                      # Sprint 21 (UI/UX Icons)
+│   └── sprint22/                      # Sprint 22 (Vision System)
+│       ├── README.md
+│       ├── SPRINT22_SUMMARY.md
+│       ├── phases/
+│       │   ├── PHASE1_COMPLETE_SUMMARY.md
+│       │   ├── PHASE1B_SUMMARY.md
+│       │   └── COMPLETION_REPORT.md
+│       ├── patches/
+│       │   ├── SPRINT22_PATCH1_TRAINING_MODE.md
+│       │   ├── SPRINT22_PATCH2_TRAINING_UI.md
+│       │   └── SPRINT22_PATCH2_QUICK_SUMMARY.md
+│       ├── implementation/
+│       │   ├── IMPLEMENTATION_GUIDE.md
+│       │   ├── IMPLEMENTATION_STATUS.md
+│       │   └── SETUP_WIZARD_MENU_AND_LAYOUT.md
+│       ├── updates/
+│       │   └── ICON_UPDATES_ACCEPT_LOCKED.md
+│       ├── examples/
+│       │   ├── VISION_WIZARD_INTEGRATION_EXAMPLES.py
+│       │   └── VISION_MENU_PATCHES.py
+│       └── templates/
+│           └── pr_template_vision.md
 │
-├── sprint21/                   # Sprint 21 - UI/UX Icon Enhancement ✅ COMPLETE
-│   ├── ICON_PLACEMENT_RULES.md        # Comprehensive icon design rules
-│   ├── ICON_STATUS_REPORT.md          # Icon coverage analysis
-│   ├── SPRINT21_SUMMARY.md            # Sprint summary
-│   ├── SPRINT21_PATCH10_ICONS.md
-│   ├── SPRINT21_PATCH11_ICON_SYSTEM_ENHANCEMENT.md
-│   ├── SPRINT21_PATCH12_SETUP_WIZARD_ICONS.md
-│   ├── SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md
-│   └── SPRINT21_PATCH16_DOCUMENTATION_ORGANIZATION.md
+├── maintenance/                       # 🔧 Maintenance
+│   └── LOG_FILES_MANAGEMENT_SUMMARY.md
 │
-├── sprint22/                   # Sprint 22 - Vision System & Advanced Features ⭐ CURRENT
-│   ├── README.md                      # Sprint 22 overview
-│   ├── SPRINT22_SUMMARY.md            # Complete sprint summary
-│   ├── SPRINT22_PATCH1_TRAINING_MODE.md # Training Mode feature spec
-│   ├── VISION_WIZARD_FRAMEWORK.md     # Vision Wizard framework guide ✨ NEW
-│   ├── VISION_WIZARD_INTEGRATION_EXAMPLES.py # Integration code examples ✨ NEW
-│   └── IMPLEMENTATION_GUIDE.md        # Developer implementation guide
-│
-├── TESTS_REORGANIZATION_SUMMARY.md    # Tests folder reorganization (Oct 21, 2025)
-│
-├── sprints/                    # Historical sprint documentation
-│   ├── sprint16/               # Setup Wizard implementation
-│   ├── sprint18/               # 4-tab reorganization
-│   ├── sprint19/               # Library Manager
-│   ├── sprint20/               # System improvements
-│   └── [Sprint 13-15 docs]
-│
-├── context/                    # System context
-│   └── CONTEXT_MAIN.txt
-│
-├── translations/               # i18n documentation
-│
-├── ux-enhancements/           # UX improvements
-│
-└── archive/                   # Deprecated/historical docs
-    ├── SUMMARY_*.md
-    ├── PROJECT_*.md
-    ├── MIGRATION_*.md
-    └── ... (17+ archived docs)
+├── enhancements/                      # ✨ Enhancements (Legacy)
+├── bugfixes/                          # 🐛 Bug Fixes (Legacy)
+├── context/                           # 📝 Context Documentation
+├── translations/                      # 🌐 Translations
+├── ux-enhancements/                   # 💫 UX Enhancements
+└── archive/                           # 📦 Archived Documentation
 ```
 
-## 🎯 Quick Access
-
-### For New Users
-1. **Getting Started**: [README.md](README.md)
-2. **First-Time Setup**: [guides/HUONG_DAN_NGUOI_MOI.md](guides/HUONG_DAN_NGUOI_MOI.md) 🇻🇳
-3. **Skills Guide**: [guides/SKILLS_EXPLANATION_SIMPLE.md](guides/SKILLS_EXPLANATION_SIMPLE.md)
-4. **Test Recognition**: [guides/HOW_TO_USE_TEST_RECOGNITION.md](guides/HOW_TO_USE_TEST_RECOGNITION.md)
-5. **Hotkey Migration**: [GLOBAL_HOTKEY_MIGRATION.md](GLOBAL_HOTKEY_MIGRATION.md) ⌨️ **NEW** - F8 → Ctrl+Shift+R/E
+## 🎯 Quick Navigation
 
 ### For Developers
-1. **Icon Design Rules**: [sprint21/ICON_PLACEMENT_RULES.md](sprint21/ICON_PLACEMENT_RULES.md) ⭐ **NEW**
-2. **Icon Coverage**: [sprint21/ICON_STATUS_REPORT.md](sprint21/ICON_STATUS_REPORT.md)
-3. **Window Settings**: [guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md](guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md)
-4. **Code Style**: [archive/COMPLETE_SYSTEM_INTEGRATION.md](archive/COMPLETE_SYSTEM_INTEGRATION.md)
 
-### Latest Sprint (Sprint 22)
-- **Theme**: Vision System Wizard & Advanced Features ✨
-- **Status**: Phase 1 - Framework Setup (✅ Complete) | Training Mode (30% complete)
-- **New**: Vision Wizard module with singleton pattern, topmost mode, and i18n support
-- **Docs**: [sprint22/](sprint22/) ⭐
+#### Architecture
+- [Global Hotkeys](architecture/GLOBAL_HOTKEY_ARCHITECTURE.md) - Hotkey system architecture
+- [Worker Threads](architecture/WORKER_THREAD_ARCHITECTURE.md) - Non-blocking CV processing
+- [Single Instance Lock](architecture/SINGLE_INSTANCE_LOCK.md) - Prevent multiple instances
 
----
+#### Features
+- [Vision System](features/vision/README.md) - Vision System documentation
+- [Global Hotkeys](features/hotkeys/README.md) - Hotkey features
+- [First Run Lock](features/first-run/FEATURE_FIRST_RUN_LOCK.md) - First-time setup
 
-## 📚 Documentation Categories
+#### Implementation Guides
+- [Vision Quick Start](features/vision/QUICK_START_VISION_WIZARD.md) - Get started with Vision
+- [Sprint 22 Guide](sprints/sprint22/implementation/IMPLEMENTATION_GUIDE.md) - Implementation guide
 
-### 1. Features (`features/`) - 2 files
+### For Designers
 
-Complete feature specifications with implementation details:
+- [Icon Button Style Guide](guides/ui-design/ICON_BUTTON_STYLE_GUIDE.md) - Icon design rules
+- [Button Consistency](guides/ui-design/BUTTON_STYLE_CONSISTENCY.md) - Button styling
+- [Icon Recoloring](guides/ui-design/FEATURE_ICON_RECOLORING.md) - Icon color system
 
-#### **FEATURE_FIRST_RUN_LOCK.md**
-- Prevents accidental changes during hunt
-- Lock mechanism for first-time users
-- Safety features
+### For Testers
 
-#### **FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md**
-- Hold-to-save mechanism for templates
-- Prevents accidental template overwrites
-- UX safety enhancement
+- [Testing Guide](guides/testing/TESTS_REORGANIZATION_SUMMARY.md) - Test organization
+- [Vision Menu Checklist](features/vision/VISION_MENU_CHECKLIST.md) - Vision testing
 
----
+### Latest Sprint (Sprint 22) ✅ COMPLETED
 
-### 2. Enhancements (`enhancements/`) - 4 files
+- **Theme**: Vision System Core Implementation
+- **Duration**: October 18-22, 2025
+- **Status**: ✅ COMPLETED - 23 commits
+- **Branch**: feature/S22-45-vision-core
+- **Docs**: [sprints/sprint22/](sprints/sprint22/)
 
-UI/UX improvements and visual enhancements:
+## 📚 Sprint Documentation
 
-#### **ENHANCEMENT_DIALOG_SAVE_ICONS.md**
-- Icon system for dialog buttons
-- Consistent icon usage across dialogs
+### Sprint 22 - Vision System (Latest) ✅ COMPLETED
 
-#### **ENHANCEMENT_GLOBAL_APPLY_WIZARD_RELOCATION.md**
-- Global Apply button placement optimization
-- Wizard-based relocation system
+**Duration**: October 18-22, 2025  
+**Branch**: `feature/S22-45-vision-core`  
+**Status**: ✅ COMPLETED - 23 commits
 
-#### **ENHANCEMENT_SAVE_BUTTON_DYNAMIC_TOOLTIP.md**
-- Dynamic tooltip enhancement for save buttons
-- Context-aware tooltip messages
+#### Key Deliverables
 
-#### **ENHANCEMENT_WINDOW_SELECTION_TOPBAR.md**
-- Window selection in topbar
-- Improved window selection UX
+**Phase 1: Core Engine**
+- ✅ Vision engine implementation (810 lines)
+- ✅ Template matching & NMS
+- ✅ Multi-template support
+- ✅ Config management
 
----
+**Phase 2: Worker Threads**
+- ✅ Worker thread architecture
+- ✅ Queue-based communication (15 FPS)
+- ✅ Performance tests (7 test cases)
+- ✅ Architecture documentation (302 lines)
 
-### 3. Guides (`guides/`) - 5 files
+**Phase 3: UI Integration**
+- ✅ Vision Wizard UI (1,259 lines)
+- ✅ Singleton pattern
+- ✅ Template management
+- ✅ i18n support (vi/en)
 
-User-facing documentation and tutorials:
+**Phase 4: Menu & Hotkeys**
+- ✅ Vision menu integration
+- ✅ Global hotkeys (Ctrl+Shift+V)
+- ✅ Setup tab configuration
+- ✅ Tooltips with lang_provider
 
-#### **ADVANCED_WINDOW_SETTINGS_GUIDE.md**
-- Complete window settings documentation
-- Advanced configuration options
+**Patches**
+- ✅ Training mode support
+- ✅ Training UI enhancements
+- ✅ Type hint fixes
+- ✅ Menu display fixes
 
-#### **HOW_TO_USE_TEST_RECOGNITION.md**
-- Template testing guide
-- Recognition testing workflow
+#### Documentation
+- [Sprint 22 README](sprints/sprint22/README.md) - Overview
+- [Completion Report](sprints/sprint22/phases/COMPLETION_REPORT.md) - Final report
+- [Vision System](features/vision/README.md) - Feature docs
+- [Worker Threads](architecture/WORKER_THREAD_ARCHITECTURE.md) - Architecture
 
-#### **HUONG_DAN_NGUOI_MOI.md** 🇻🇳
-- Complete Vietnamese guide for new users
-- First-time setup instructions
+#### Statistics
+- **23 commits** on feature branch
+- **3,349 lines** added (core code)
+- **4 phases** completed
+- **2 patches** applied
+- **7 test cases** implemented
 
-#### **HUONG_DAN_USER_LEVEL_WIZARD.md** 🇻🇳
-- User level wizard customization
-- Advanced wizard configuration
+### Sprint 21 - UI/UX Enhancement ✅ COMPLETED
 
-#### **SKILLS_EXPLANATION_SIMPLE.md**
-- Simple skills guide
-- Skill rotation basics
+**Duration**: October 15-17, 2025  
+**Status**: ✅ COMPLETED
 
----
+#### Key Deliverables
+- ✅ Icon system enhancement
+- ✅ Button style consistency
+- ✅ Setup wizard icons
+- ✅ Global button design
 
-### 4. Bugfixes (`bugfixes/`) - 16 files
-
-Bug fix documentation with solutions:
-
-**Recent Fixes**:
-- **BUGFIX_LANGUAGE_PERSISTENCE.md** - i18n language saving fix
-- **BUGFIX_ROTATION_TAB_NO_SKILLS.md** - Empty skills list fix
-- **BUGFIX_SETUP_WIZARD_BUTTON.md** - Button state fix
-
-**All Bugfixes**: See [bugfixes/](bugfixes/) folder
-
----
-
-### 5. Sprint 21 (`sprint21/`) - 8 files ✅ **COMPLETE**
-
-**Theme**: UI/UX Icon System Enhancement  
-**Duration**: October 15-21, 2025  
-**Progress**: 16/16 patches (100% complete) 🎉
-
-#### **Key Documents**:
-
-##### **ICON_PLACEMENT_RULES.md** ⭐ **CRITICAL**
-Comprehensive icon design guidelines:
-- **Action Buttons**: Icon LEFT (`compound='left'`)
-- **Navigation**: Next=RIGHT, Back=LEFT (directional)
-- **Multi-State**: Icon AND position change with state
-- **Text Rules**: NO emoji in text when icon present
-- **Icon Priority**: `.ico > .png > emoji`
-
-Code example:
-```python
-# ✅ DO: Multi-state button
-if is_final_step:
-    btn.config(text=" Finish", compound='left')  # Action: LEFT
-else:
-    btn.config(text="Next ", compound='right')   # Navigation: RIGHT
-```
-
-##### **ICON_STATUS_REPORT.md**
-Icon coverage analysis:
-- 39 icon entries in `icon_map`
-- 28 buttons with `.ico` files
-- Missing icons: `up.ico`, `down.ico`
-- Full audit completed
-
-##### **Sprint Patches**:
-1. **SPRINT21_PATCH10_ICONS.md** - Initial icon enhancement
-2. **SPRINT21_PATCH11_ICON_SYSTEM_ENHANCEMENT.md** - .ico priority system
-3. **SPRINT21_PATCH12_SETUP_WIZARD_ICONS.md** - Setup Wizard 7 buttons
-4. **SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md** - Global button optimization
-5. **Patch 14** - Icon map expansion (24→39 entries)
-6. **Patch 15** - Icon placement rules implementation
-7. **Patch 16** - Documentation organization
-
-##### **SPRINT21_SUMMARY.md**
-Complete sprint summary with all patches
-
----
-
-### 6. Sprint 22 (`sprint22/`) - 4 files ⭐ **CURRENT SPRINT**
-
-**Theme**: Advanced Features & Training System  
-**Start Date**: October 21, 2025  
-**Progress**: Patch 1 - Training Mode (30% complete)
-
-#### **Key Documents**:
-
-##### **SPRINT22_PATCH1_TRAINING_MODE.md** ⭐ **IN PROGRESS**
-Complete Training Mode feature specification:
-- **Training Dummy**: Monster with infinite HP (`training_mode: true`)
-- **Training Mode Toggle**: Practice skills without target switching
-- **Skill Performance Stats**: Real-time tracking (cast count, cooldown, success rate)
-- **Simplified UI**: Focus on skill execution, hide rotation controls
-
-Features:
-```json
-{
-  "name": "Coc go~",
-  "training_mode": true,  // Training dummy - never dies
-  "hp": 10000,
-  "templates": [...]
-}
-```
-
-UI Preview:
-```
-🎯 Training Mode
-☑ Enable Training Mode (Practice Skills)
-
-📊 Skill Performance Statistics
-Skill        Casts  Last Cast  Cooldown  Success %
-Power Slash   12     2.3s ago   Ready     100%
-Fire Ball      8     3.1s ago   1.2s       88%
-```
-
-##### **IMPLEMENTATION_GUIDE.md**
-Quick implementation guide for developers:
-- Step-by-step code changes
-- UI modifications
-- Hunt logic updates
-- i18n translations
-- Testing checklist
-
-##### **SPRINT22_SUMMARY.md**
-Sprint overview and progress tracking
-
-##### **README.md**
-Sprint 22 folder overview
-
-#### **Completed Tasks** (30%):
-- [x] Add `training_mode` field to monsters.json
-- [x] Update load/save monster library functions
-- [x] Set "Coc go~" as training dummy
-- [x] Create comprehensive documentation
-
-#### **Remaining Tasks** (70%):
-- [ ] Add Training Mode checkbox to Hunt Tab
-- [ ] Implement training mode toggle logic
-- [ ] Modify hunt loop (skip target switching)
-- [ ] Build skill stats display UI
-- [ ] Add i18n translations (EN/VI)
-- [ ] Test thoroughly
-
----
-
-### 7. Sprints Archive (`sprints/`)
+#### Documentation
+- [Sprint 21 Summary](sprint21/SPRINT21_SUMMARY.md)
+- [Icon Placement Rules](sprint21/ICON_PLACEMENT_RULES.md)
 
 Historical sprint documentation:
 
