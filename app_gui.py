@@ -686,8 +686,9 @@ class App(tk.Tk):
             vision_menu = tk.Menu(menubar, tearoff=0)
             
             # Open Vision Wizard (Ctrl+Shift+V)
+            vision_label = "Open Vision Wizard" if self.lang == "en" else "Mở Trợ lý Vision"
             vision_menu.add_command(
-                label=self._t("vision_open_wizard", default="Open Vision Wizard"),
+                label=vision_label,
                 accelerator="Ctrl+Shift+V",
                 command=self._open_vision_wizard
             )
@@ -695,22 +696,25 @@ class App(tk.Tk):
             vision_menu.add_separator()
             
             # Scan Region (Ctrl+Alt+S)
+            scan_label = "Scan Region" if self.lang == "en" else "Quét Vùng"
             vision_menu.add_command(
-                label=self._t("vision_scan_region", default="Scan Region"),
+                label=scan_label,
                 accelerator="Ctrl+Alt+S",
                 command=self._scan_region
             )
             
             # Add Template (Ctrl+T)
+            add_tmpl_label = "Add Template" if self.lang == "en" else "Thêm Template"
             vision_menu.add_command(
-                label=self._t("vision_add_template", default="Add Template"),
+                label=add_tmpl_label,
                 accelerator="Ctrl+T",
                 command=self._add_template
             )
             
             # Manage Templates (Ctrl+Shift+T)
+            manage_tmpl_label = "Manage Templates" if self.lang == "en" else "Quản lý Templates"
             vision_menu.add_command(
-                label=self._t("vision_manage_templates", default="Manage Templates"),
+                label=manage_tmpl_label,
                 accelerator="Ctrl+Shift+T",
                 command=self._manage_templates
             )
@@ -718,8 +722,9 @@ class App(tk.Tk):
             vision_menu.add_separator()
             
             # Toggle Overlay (Ctrl+Shift+O)
+            overlay_label = "Toggle Overlay" if self.lang == "en" else "Bật/Tắt Overlay"
             vision_menu.add_command(
-                label=self._t("vision_toggle_overlay", default="Toggle Overlay"),
+                label=overlay_label,
                 accelerator="Ctrl+Shift+O",
                 command=self._toggle_overlay
             )
