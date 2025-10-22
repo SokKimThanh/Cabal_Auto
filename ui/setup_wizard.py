@@ -1762,7 +1762,55 @@ def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=N
     Returns:
         SetupWizard instance
     """
+    # Single-instance behavior: reuse existing wizard attached to parent if possible
+    try:
+        existing = getattr(parent, "_setup_wizard_win", None)
+        if existing is not None and getattr(existing, "winfo_exists", lambda: False)():
+            try:
+                existing.deiconify()
+                existing.lift()
+                existing.focus_force()
+                return existing
+            except Exception:
+                try:
+                    existing.destroy()
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
     wizard = SetupWizard(parent, config_manager, on_complete, on_cancel)
+    try:
+        # store reference on parent so callers (e.g., App) can reuse
+        setattr(parent, "_setup_wizard_win", wizard)
+    except Exception:
+        pass
+
+    # ensure wizard clears the reference when it closes
+    try:
+        orig_on_close = getattr(wizard, "_on_close_window", None)
+
+        def _wrapped_close():
+            try:
+                if callable(orig_on_close):
+                    orig_on_close()
+            finally:
+                try:
+                    delattr(parent, "_setup_wizard_win")
+                except Exception:
+                    try:
+                        setattr(parent, "_setup_wizard_win", None)
+                    except Exception:
+                        pass
+
+        wizard._on_close_window = _wrapped_close  # type: ignore[attr-defined]
+        try:
+            wizard.dialog.protocol("WM_DELETE_WINDOW", _wrapped_close)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
     return wizard
 
 

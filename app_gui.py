@@ -2643,8 +2643,35 @@ class App(tk.Tk):
             # Update status
             self.hunt_status.set(self._t("library_updated"))
 
-        # Open Library Manager window
+        # Open Library Manager window (single-instance)
         try:
+            # Reuse existing instance if present
+            existing = getattr(self, "library_manager_win", None)
+            if existing is not None and getattr(existing, "winfo_exists", lambda: False)():
+                try:
+                    # Bring to front and focus
+                    existing.deiconify()
+                    existing.lift()
+                    existing.focus_force()
+                    # Ensure it's above game window if game hwnd known
+                    hwnd_cfg = None
+                    if isinstance(self.hunt_cfg, dict):
+                        hwnd_cfg = self.hunt_cfg.get("window_hwnd") or self.hunt_cfg.get("window_pid")
+                    # Temporarily set topmost to ensure visibility over fullscreen games
+                    try:
+                        existing.attributes("-topmost", True)
+                        # schedule disabling topmost after a short delay
+                        existing.after(120, lambda: existing.attributes("-topmost", False))
+                    except Exception:
+                        pass
+                    return
+                except Exception:
+                    # fallback to creating a new one
+                    try:
+                        existing.destroy()
+                    except Exception:
+                        pass
+
             manager = LibraryManagerWindow(
                 parent=self,
                 hunt_cfg=self.hunt_cfg,
@@ -2653,6 +2680,37 @@ class App(tk.Tk):
                 lang=self.lang,
                 on_close_callback=on_library_changes,
             )
+            # Keep a reference so subsequent hotkey presses reuse the same window
+            try:
+                self.library_manager_win = manager
+            except Exception:
+                setattr(self, "library_manager_win", manager)
+            # Ensure we clear the reference when it closes
+            try:
+                def _on_lib_close():
+                    try:
+                        # call existing close handler on manager which will invoke on_close_callback
+                        manager._on_window_close()
+                    except Exception:
+                        try:
+                            manager.destroy()
+                        except Exception:
+                            pass
+                    try:
+                        delattr(self, "library_manager_win")
+                    except Exception:
+                        try:
+                            self.library_manager_win = None
+                        except Exception:
+                            pass
+
+                # Bind WM_DELETE_WINDOW to clear ref
+                try:
+                    manager.protocol("WM_DELETE_WINDOW", _on_lib_close)
+                except Exception:
+                    pass
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror(
                 self._t("error_title"),
