@@ -5291,8 +5291,20 @@ Alternative Solutions:
             # Determine current state
             has_import_error = hasattr(self, "_hotkey_import_diag") and self._hotkey_import_diag
             has_failed_hotkeys = hasattr(self, "_failed_hotkeys") and self._failed_hotkeys
-            has_registered_hotkeys = hasattr(self, "_registered_hotkey_handlers") and self._registered_hotkey_handlers
             hotkeys_enabled = getattr(self, "_hotkeys_registered_ok", False)
+            
+            # Count actual registered hotkeys (not bindings)
+            registered_count = 0
+            if getattr(self, "_global_start_hotkey", None):
+                registered_count += 1
+            if getattr(self, "_global_stop_hotkey", None):
+                registered_count += 1
+            if getattr(self, "_global_wizard_hotkey", None):
+                registered_count += 1
+            if getattr(self, "_global_library_hotkey", None):
+                registered_count += 1
+            if getattr(self, "_global_vision_hotkey", None):
+                registered_count += 1
             
             # State 1: Success - All hotkeys registered
             if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
@@ -5302,8 +5314,7 @@ Alternative Solutions:
                 self._hotkey_status_label.config(fg="#4CAF50")  # Green
                 
                 # Show count and timestamp
-                count = len(self._registered_hotkey_handlers) if has_registered_hotkeys else 0
-                detail_text = f"{count} hotkeys active" if self.lang == "en" else f"{count} phím tắt đang hoạt động"
+                detail_text = f"{registered_count} hotkeys active" if self.lang == "en" else f"{registered_count} phím tắt đang hoạt động"
                 self._hotkey_status_detail_var.set(f"   {detail_text}")
                 
                 # Hide action buttons (not needed)
