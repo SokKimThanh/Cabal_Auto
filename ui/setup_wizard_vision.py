@@ -461,7 +461,7 @@ class VisionWizard(tk.Toplevel):
             command=self.add_template
         )
         btn_add.pack(side='left', padx=5)
-        # attach_i18n_tooltip(btn_add, 'tooltip_add_template', ns='vision_wizard')
+        attach_i18n_tooltip(btn_add, 'tooltip_add_template', ns='vision_wizard', lang_provider=get_lang)
         
         btn_remove = ttk.Button(
             left_buttons,
@@ -469,7 +469,7 @@ class VisionWizard(tk.Toplevel):
             command=self.remove_template
         )
         btn_remove.pack(side='left', padx=5)
-        # attach_i18n_tooltip(btn_remove, 'tooltip_remove_template', ns='vision_wizard')
+        attach_i18n_tooltip(btn_remove, 'tooltip_remove_template', ns='vision_wizard', lang_provider=get_lang)
         
         # Right buttons (Lưu, Test, Đóng)
         right_buttons = tk.Frame(button_panel, bg=UI.BG_DEFAULT)
@@ -481,7 +481,7 @@ class VisionWizard(tk.Toplevel):
             command=self.save_threshold
         )
         btn_save.pack(side='left', padx=5)
-        # attach_i18n_tooltip(btn_save, 'tooltip_save_threshold', ns='vision_wizard')
+        attach_i18n_tooltip(btn_save, 'tooltip_save_threshold', ns='vision_wizard', lang_provider=get_lang)
         
         btn_test = ttk.Button(
             right_buttons,
@@ -489,7 +489,7 @@ class VisionWizard(tk.Toplevel):
             command=self.test_recognition
         )
         btn_test.pack(side='left', padx=5)
-        # attach_i18n_tooltip(btn_test, 'tooltip_test_recognition', ns='vision_wizard')
+        attach_i18n_tooltip(btn_test, 'tooltip_test_recognition', ns='vision_wizard', lang_provider=get_lang)
         
         btn_close = ttk.Button(
             right_buttons,

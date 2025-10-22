@@ -754,6 +754,7 @@ class App(tk.Tk):
         self._global_stop_hotkey = None
         self._global_wizard_hotkey = None  # NEW: Setup Wizard (Ctrl+Shift+N)
         self._global_library_hotkey = None  # NEW: Library Manager (Ctrl+Shift+L)
+        self._global_vision_hotkey = None  # NEW Sprint 22: Vision Wizard (Ctrl+Shift+V)
         # Fallback when `keyboard` package not available in this interpreter
         self._hotkey_fallback_bound = (
             []
@@ -2213,6 +2214,29 @@ class App(tk.Tk):
         self.library_hotkey_combo = library_combo
         self.library_hotkey_label = library_label_widget
 
+        # NEW: Vision Wizard hotkey (Sprint 22)
+        vision_label = "Vision Wizard:" if self.lang == "en" else "Trợ lý Vision:"
+        vision_label_widget = tk.Label(
+            hotkey_frame, text=vision_label, font=("Arial", 9)
+        )
+        vision_label_widget.grid(row=6, column=0, sticky="e", padx=(0, 8), pady=4)
+
+        vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
+        self.global_hotkey_vision_var = tk.StringVar(value=vision_key)
+
+        vision_combo = ttk.Combobox(
+            hotkey_frame,
+            textvariable=self.global_hotkey_vision_var,
+            values=hotkey_options + ["ctrl+shift+v", "ctrl+alt+v"],
+            width=15,
+            state="readonly",
+        )
+        vision_combo.grid(row=6, column=1, sticky="w", pady=4)
+
+        # Store for future use
+        self.vision_hotkey_combo = vision_combo
+        self.vision_hotkey_label = vision_label_widget
+
         # Hint (removed emoji from main text)
         hint_hotkey = "Press 'Global Apply' button below to activate new hotkeys."
         if self.lang == "vi":
@@ -2224,7 +2248,7 @@ class App(tk.Tk):
             font=("Arial", 8),
             wraplength=500,
             justify="left",
-        ).grid(row=6, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
         # Hotkey diagnostic banner (shows import traceback or status)
         # This will be updated when hotkeys are (re)registered via _register_global_hotkeys
@@ -2237,7 +2261,7 @@ class App(tk.Tk):
             wraplength=500,
             justify="left",
         )
-        diag_label.grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        diag_label.grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
         # Make the diagnostic banner clickable to show full diagnostics modal when present
         def _diag_click(event=None):
@@ -2258,7 +2282,7 @@ class App(tk.Tk):
             cursor="hand2",
             font=("Arial", 8, "underline"),
         )
-        self._hotkey_help_link.grid(row=7, column=1, sticky="e", pady=(8, 0))
+        self._hotkey_help_link.grid(row=8, column=1, sticky="e", pady=(8, 0))
 
         def _help_click(e=None):
             try:
@@ -2275,7 +2299,7 @@ class App(tk.Tk):
         retry_btn = tk.Button(
             hotkey_frame, text=retry_text, command=self._on_retry_global_hotkeys
         )
-        retry_btn.grid(row=8, column=0, sticky="w", pady=(8, 0))
+        retry_btn.grid(row=9, column=0, sticky="w", pady=(8, 0))
 
         # Details button to show full import traceback and remediation steps
         details_text = "Details" if self.lang == "en" else "Chi tiết"
@@ -4631,12 +4655,14 @@ class App(tk.Tk):
                     return
 
                 # Update config
+                vision_key = self.global_hotkey_vision_var.get()
                 cfg["global_hotkeys"] = {
                     "enabled": enabled,
                     "start_key": start_key,
                     "stop_key": stop_key,
-                    "setup_wizard_key": wizard_key,  # NEW
-                    "library_manager_key": library_key,  # NEW
+                    "setup_wizard_key": wizard_key,
+                    "library_manager_key": library_key,
+                    "vision_wizard_key": vision_key,
                 }
 
                 # Re-register hotkeys with new settings
@@ -4819,6 +4845,22 @@ class App(tk.Tk):
         except Exception as e:
             print(f"[Hotkeys] Error opening Library Manager: {e}")
 
+    def _on_vision_wizard_hotkey(self):
+        """Callback for Vision Wizard hotkey (Ctrl+Shift+V).
+
+        Sprint 22: Opens Vision Wizard for real-time CV debugging.
+        Always available regardless of UI mode.
+        """
+        try:
+            print("[Hotkeys] Vision Wizard hotkey pressed")
+
+            # Vision Wizard uses singleton pattern via create_or_show_vision_wizard
+            # No need to check existing window - factory handles it
+            self.after(0, self._open_vision_wizard)
+
+        except Exception as e:
+            print(f"[Hotkeys] Error opening Vision Wizard: {e}")
+
     def _register_global_hotkeys(self):
         """Register global hotkeys (Ctrl+Shift+R/E) for hunt start/stop.
 
@@ -4906,11 +4948,13 @@ class App(tk.Tk):
                 stop_key = cfg.get("stop_key", "ctrl+shift+e")
                 wizard_key = cfg.get("setup_wizard_key", "ctrl+shift+n")
                 library_key = cfg.get("library_manager_key", "ctrl+shift+l")
+                vision_key = cfg.get("vision_wizard_key", "ctrl+shift+v")  # Sprint 22
 
                 seq_start = _to_tk_seq(start_key) or "<Control-Shift-R>"
                 seq_stop = _to_tk_seq(stop_key) or "<Control-Shift-E>"
                 seq_wiz = _to_tk_seq(wizard_key) or "<Control-Shift-N>"
                 seq_lib = _to_tk_seq(library_key) or "<Control-Shift-L>"
+                seq_vision = _to_tk_seq(vision_key) or "<Control-Shift-V>"  # Sprint 22
 
                 try:
                     # Unbind any previously-bound fallback sequences to avoid duplicates
@@ -4936,6 +4980,11 @@ class App(tk.Tk):
                         seq_lib, lambda e: self._on_library_manager_hotkey(), add="+"
                     )
                     self._hotkey_fallback_bound.append(seq_lib)
+                    # Sprint 22: Vision Wizard fallback
+                    self.bind_all(
+                        seq_vision, lambda e: self._on_vision_wizard_hotkey(), add="+"
+                    )
+                    self._hotkey_fallback_bound.append(seq_vision)
                     print(
                         f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}"
                     )
@@ -4960,6 +5009,7 @@ class App(tk.Tk):
             stop_key = hotkey_cfg.get("stop_key", "ctrl+shift+e")
             wizard_key = hotkey_cfg.get("setup_wizard_key", "ctrl+shift+n")  # NEW
             library_key = hotkey_cfg.get("library_manager_key", "ctrl+shift+l")  # NEW
+            vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")  # NEW Sprint 22
 
             # Unregister old hotkeys first (in case of re-registration)
             self._unregister_global_hotkeys()
@@ -5005,6 +5055,15 @@ class App(tk.Tk):
                 print(f"Failed to register library hotkey '{library_key}': {e}")
                 self._global_library_hotkey = None
 
+            # NEW Sprint 22: Register Vision Wizard hotkey (always active)
+            try:
+                self._global_vision_hotkey = keyboard.add_hotkey(
+                    vision_key, self._on_vision_wizard_hotkey, suppress=False
+                )
+            except Exception as e:
+                print(f"Failed to register vision hotkey '{vision_key}': {e}")
+                self._global_vision_hotkey = None
+
             # Log successful registration
             registered = []
             if self._global_start_hotkey:
@@ -5015,6 +5074,8 @@ class App(tk.Tk):
                 registered.append(f"Wizard={wizard_key}")
             if self._global_library_hotkey:
                 registered.append(f"Library={library_key}")
+            if self._global_vision_hotkey:
+                registered.append(f"Vision={vision_key}")
 
             if registered:
                 print(f"Global hotkeys registered: {', '.join(registered)}")
@@ -5080,6 +5141,15 @@ class App(tk.Tk):
                     print(f"Error unregistering library hotkey: {e}")
                 finally:
                     self._global_library_hotkey = None
+
+            # NEW Sprint 22: Unregister vision hotkey
+            if self._global_vision_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_vision_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering vision hotkey: {e}")
+                finally:
+                    self._global_vision_hotkey = None
 
         except Exception as e:
             print(f"Error in _unregister_global_hotkeys: {e}")
