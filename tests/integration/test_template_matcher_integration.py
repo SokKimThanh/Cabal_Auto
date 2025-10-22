@@ -12,6 +12,10 @@ This script checks:
 import sys
 from pathlib import Path
 
+# Add project root to Python path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 print("=" * 70)
 print("Template Matcher Integration Test")
 print("=" * 70)
