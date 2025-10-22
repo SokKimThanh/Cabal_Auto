@@ -1,81 +1,151 @@
-# Sprint 22 - Vision System Core Implementation
+# Sprint 22 - Vision System Wizard & Advanced Features
 
-Sprint 22 documentation - Triển khai Vision System core với worker threads.
+Welcome to Sprint 22 documentation! 🎯
 
-## Overview
-Sprint 22 implements the Vision System core engine with:
-- OpenCV-based detection and tracking
-- Worker thread architecture for non-blocking UI
-- Vision Wizard UI for configuration
-- Template management system
+## 📚 Documentation Files
 
-## Quick Links
+### Main Documents
+- **[VISION_WIZARD_FRAMEWORK.md](VISION_WIZARD_FRAMEWORK.md)** - Vision Wizard framework and setup guide (NEW)
+- **[SPRINT22_SUMMARY.md](SPRINT22_SUMMARY.md)** - Complete sprint overview and progress tracking
+- **[SPRINT22_PATCH1_TRAINING_MODE.md](SPRINT22_PATCH1_TRAINING_MODE.md)** - Training Mode feature specification
+- **[IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)** - Quick implementation guide for developers
 
-### Phases
-- [Phase 1 Complete](phases/PHASE1_COMPLETE_SUMMARY.md) - Initial implementation
-- [Phase 1B Summary](phases/PHASE1B_SUMMARY.md) - Menu integration
-- [Completion Report](phases/COMPLETION_REPORT.md) - Final report
+## 🎯 Sprint Goal
 
-### Patches
-- [Patch 1: Training Mode](patches/PATCH1_TRAINING_MODE.md) - Training dummy support
-- [Patch 2: Training UI](patches/PATCH2_TRAINING_UI.md) - Training mode UI enhancements
-- [Patch 2 Quick Summary](patches/PATCH2_QUICK_SUMMARY.md) - Quick overview
+Enhance hunting capabilities with:
+1. **Training Mode** - Practice skills on training dummies
+2. **Advanced Monster Management** - Monster categories and behaviors
+3. **Skill Rotation Optimizer** - Auto-optimize rotations based on stats
 
-### Implementation
-- [Implementation Guide](implementation/IMPLEMENTATION_GUIDE.md) - Step-by-step guide
-- [Implementation Status](implementation/IMPLEMENTATION_STATUS.md) - Current status
-- [Setup Wizard Menu](implementation/SETUP_WIZARD_MENU_AND_LAYOUT.md) - Menu layout
+## 📊 Current Status
 
-### Updates & Examples
-- [Icon Updates](updates/ICON_UPDATES_ACCEPT_LOCKED.md) - UI icon updates
-- [Integration Examples](examples/VISION_WIZARD_INTEGRATION_EXAMPLES.py) - Code examples
-- [Menu Patches](examples/VISION_MENU_PATCHES.py) - Menu integration code
+**Sprint Progress**: 10% (Patch 1 in progress)
 
-### Templates
-- [PR Template](templates/pr_template_vision.md) - Pull request template
+- ✅ **Patch 1**: Training Mode (30% complete)
+- 📋 **Patch 2**: Advanced Monster Management (Planned)
+- 📋 **Patch 3**: Skill Rotation Optimizer (Planned)
 
-## Related Documentation
+## 🚀 Quick Start
 
-- [Vision Feature Docs](../../features/vision/) - Feature documentation
-- [Worker Thread Architecture](../../architecture/WORKER_THREAD_ARCHITECTURE.md) - Architecture
-- [UI Design Guides](../../guides/ui-design/) - UI consistency guides
+### For Users
+1. Read [SPRINT22_PATCH1_TRAINING_MODE.md](SPRINT22_PATCH1_TRAINING_MODE.md) for feature overview
+2. Check "Usage Guide" section for setup instructions
+3. Follow step-by-step to enable training mode
 
-## Key Achievements
+### For Developers
+1. Review [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) for implementation steps
+2. Complete remaining tasks (UI, hunt logic, translations)
+3. Test thoroughly before commit
 
-### Phase 1 (Core Engine)
-✅ Vision engine implementation (810 lines)  
-✅ Template matching & detection  
-✅ Non-Maximum Suppression (NMS)  
-✅ Multi-template support  
-✅ Config management  
+## 📋 Patch 1: Training Mode
 
-### Phase 2 (Worker Threads)
-✅ Worker thread architecture  
-✅ Queue-based communication  
-✅ FPS throttling (15 FPS)  
-✅ Performance tests (7 test cases)  
-✅ Architecture documentation  
+### What's Completed (30%)
+- ✅ Database schema (`training_mode` field)
+- ✅ Load/save functions updated
+- ✅ "Coc go~" configured as training dummy
+- ✅ Complete documentation
 
-### Phase 3 (UI Integration)
-✅ Vision Wizard UI (1,259 lines)  
-✅ Singleton pattern  
-✅ Template management UI  
-✅ Preview canvas  
-✅ i18n support (vi/en)  
+### What's Remaining (70%)
+- ⏳ Training Mode UI in Hunt Tab
+- ⏳ Training mode toggle logic
+- ⏳ Hunt loop modifications
+- ⏳ Skill stats display
+- ⏳ i18n translations (EN/VI)
 
-### Phase 4 (Menu & Hotkeys)
-✅ Vision menu integration  
-✅ Global hotkeys (Ctrl+Shift+V, etc.)  
-✅ Setup tab hotkey configuration  
-✅ Tooltips with lang_provider  
+### Implementation Time
+**Estimated**: 2-3 hours for full implementation
 
-### Patches
-✅ Training mode support (Patch 1)  
-✅ Training UI enhancements (Patch 2)  
-✅ Icon updates and fixes  
+## 🔧 Technical Overview
 
-## Commits
-Total: 23 commits on `feature/S22-45-vision-core` branch
+### Database Changes
+```json
+{
+  "name": "Coc go~",
+  "training_mode": true,  // NEW: marks training dummy
+  ...
+}
+```
 
-## Status
-✅ **COMPLETED** - Ready for integration testing
+### Code Changes
+- `app_gui.py`: +200 lines (UI + logic)
+- `ui/auto_hunt.py`: ~50 lines modified
+- `lib/i18n/*.json`: +20 translations
+
+## 📖 Key Concepts
+
+### Training Mode
+- **Purpose**: Practice skill rotations without killing monsters
+- **Target**: Training Dummy (HP vô hạn)
+- **Features**: Real-time skill stats, no target switching
+
+### Training Dummy
+- Special monster type with `training_mode: true`
+- Doesn't die when attacked
+- Used for skill practice and testing
+
+### Skill Performance Stats
+- Cast count
+- Last cast time
+- Cooldown remaining
+- Success rate (%)
+
+## 🎨 UI Preview
+
+```
+┌─────────────────────────────────────────┐
+│ 🎯 Training Mode                        │
+├─────────────────────────────────────────┤
+│ ☑ Enable Training Mode (Practice Skills│
+│                                         │
+│ Practice skill rotation on training    │
+│ dummy without target switching.         │
+│                                         │
+│ ┌─ Skill Performance Statistics ──────┐│
+│ │ Skill       Casts  Last  Cool  %%   ││
+│ │ ──────────  ─────  ────  ────  ───  ││
+│ │ Power Slash  12    2.3s  Ready 100  ││
+│ │ Fire Ball     8    3.1s  1.2s   88  ││
+│ └─────────────────────────────────────┘│
+└─────────────────────────────────────────┘
+```
+
+## 🧪 Testing
+
+### Manual Test Scenarios
+1. Enable training mode → verify UI changes
+2. Start hunt → verify no target switching
+3. Monitor stats → verify accuracy
+4. Disable training mode → verify restoration
+
+### Unit Tests (TODO)
+- Training mode toggle
+- Monster filtering
+- Skill stats tracking
+- UI state management
+
+## 📞 Support
+
+### Getting Help
+1. Read feature documentation
+2. Check implementation guide
+3. Review code examples
+4. Test step-by-step
+
+### Resources
+- **Main Docs**: [docs/INDEX.md](../INDEX.md)
+- **User Guide**: [docs/guides/HUONG_DAN_NGUOI_MOI.md](../guides/HUONG_DAN_NGUOI_MOI.md)
+- **Sprint 21**: [docs/sprint21/](../sprint21/)
+
+## 🔄 Version History
+
+**October 21, 2025**:
+- Created Sprint 22 folder
+- Added Patch 1 documentation (Training Mode)
+- Database schema updated
+- Implementation guide created
+
+---
+
+**Sprint**: Sprint 22 - Advanced Features  
+**Status**: ⏳ IN PROGRESS (10%)  
+**Last Updated**: October 21, 2025
