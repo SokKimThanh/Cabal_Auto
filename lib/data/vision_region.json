@@ -1,0 +1,9 @@
+{
+  "default_region": null,
+  "regions": {
+    "game_area": [100, 100, 800, 600],
+    "skill_bar": [50, 700, 1200, 100],
+    "hp_area": [10, 10, 300, 50]
+  },
+  "notes": "Regions are [x, y, width, height]. Set default_region to one of the regions or null for full frame."
+}

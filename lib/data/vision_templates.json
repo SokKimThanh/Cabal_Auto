@@ -1,0 +1,18 @@
+{
+  "templates": [
+    {
+      "id": "monster_hp_bar",
+      "path": "assets/images/monsters/hp_bar.png",
+      "threshold": 0.8,
+      "scales": [0.9, 1.0, 1.1],
+      "enabled": true
+    },
+    {
+      "id": "skill_icon_1",
+      "path": "assets/images/skills/skill_1.png",
+      "threshold": 0.85,
+      "scales": [1.0],
+      "enabled": true
+    }
+  ]
+}
