@@ -82,6 +82,13 @@ GLOBAL_TRANSLATIONS = {
         'error_save_failed': 'Save failed: {exc}',
         'error_region_too_small': 'Region too small (min 10x10)',
         'error_preview': 'Preview error: {exc}',
+        'error': 'Error',
+        # Vision Menu translations (Sprint 22 Phase 1B)
+        'vision_open_wizard': 'Open Vision Wizard',
+        'vision_scan_region': 'Scan Region',
+        'vision_add_template': 'Add Template',
+        'vision_manage_templates': 'Manage Templates',
+        'vision_toggle_overlay': 'Toggle Overlay',
         'monster_section': 'Monster library',
         'monster_list': 'Monsters:',
         'monster_name': 'Name:',
@@ -756,6 +763,12 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'timing_confidence_low': 'THẤP',
         'timing_analysis': 'Phân Tích',
         'timing_recommendations': 'Cài Đặt Đề Xuất',
+        # Vision Menu translations (Sprint 22 Phase 1B)
+        'vision_open_wizard': 'Mở Vision Wizard',
+        'vision_scan_region': 'Quét Vùng',
+        'vision_add_template': 'Thêm Template',
+        'vision_manage_templates': 'Quản Lý Template',
+        'vision_toggle_overlay': 'Bật/Tắt Overlay',
     }
 }
 
