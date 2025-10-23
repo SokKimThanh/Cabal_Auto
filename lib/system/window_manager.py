@@ -60,6 +60,11 @@ class WindowInfo:
     is_maximized: bool
     is_foreground: bool
     
+    def __post_init__(self):
+        """Ensure class_name is never None"""
+        if self.class_name is None:
+            self.class_name = ""
+    
     def __str__(self) -> str:
         return (
             f"Window('{self.title}' - {self.process_name}, "
@@ -209,7 +214,7 @@ class WindowManager:
             
             # Basic info
             title = win32gui.GetWindowText(hwnd)
-            class_name = win32gui.GetClassName(hwnd)
+            class_name = win32gui.GetClassName(hwnd) or ""
             
             # Process info
             _, pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -225,11 +230,17 @@ class WindowManager:
             # Rect
             rect = self.get_window_rect(hwnd)
             
-            # State
-            is_visible = win32gui.IsWindowVisible(hwnd)
-            is_enabled = win32gui.IsWindowEnabled(hwnd)
-            is_minimized = win32gui.IsIconic(hwnd)
-            is_maximized = win32gui.IsZoomed(hwnd)
+            # State - convert int results to bool explicitly
+            is_visible = bool(win32gui.IsWindowVisible(hwnd))
+            is_enabled = bool(win32gui.IsWindowEnabled(hwnd))
+            is_minimized = bool(win32gui.IsIconic(hwnd))
+            # IsZoomed might not exist in all pywin32 versions, use try-except
+            try:
+                is_maximized = bool(win32gui.IsZoomed(hwnd))  # type: ignore
+            except AttributeError:
+                # Fallback: check window style
+                style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+                is_maximized = bool(style & win32con.WS_MAXIMIZE)
             is_foreground = (win32gui.GetForegroundWindow() == hwnd)
             
             return WindowInfo(
@@ -359,7 +370,7 @@ class WindowManager:
     def is_window_valid(self, hwnd: int) -> bool:
         """Check if window handle is still valid"""
         try:
-            return win32gui.IsWindow(hwnd)
+            return bool(win32gui.IsWindow(hwnd))
         except:
             return False
     
@@ -425,7 +436,7 @@ class WindowManager:
             return True
         
         try:
-            win32api.EnumDisplayMonitors(None, None, callback, 0)
+            win32api.EnumDisplayMonitors(None, None, callback, 0)  # type: ignore
         except Exception as e:
             logger.error(f"EnumDisplayMonitors failed: {e}")
         
