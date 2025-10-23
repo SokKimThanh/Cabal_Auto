@@ -765,6 +765,12 @@ class App(tk.Tk):
             []
         )  # list of tkinter sequence strings bound via bind_all
         self._hotkey_import_diag = ""
+        
+        # Phase 5: Overlay window for vision detection
+        self._overlay_window: Optional[Any] = None  # OverlayWindow instance
+        self._overlay_enabled = False
+        self._overlay_update_thread: Optional[threading.Thread] = None
+        self._overlay_stop_event = threading.Event()
 
         self.monsters = load_monster_library()
         self.monster_selected_index = None
@@ -8768,17 +8774,148 @@ Alternative Solutions:
     def _toggle_overlay(self):
         """
         Toggle overlay display (Ctrl+Shift+O).
-        TODO Phase 5: Toggle overlay on/off.
+        Phase 5: Show/hide transparent overlay on game window.
         """
-        print("[Vision] Toggle overlay - TODO Phase 5")
-        messagebox.showinfo(
-            "Vision - Toggle Overlay",
-            "Overlay toggle will be available in Phase 5.\n\n"
-            "This will allow you to:\n"
-            "• Show/hide detection overlay\n"
-            "• See real-time template matching\n"
-            "• Display confidence scores"
+        print("[Vision] Toggle overlay")
+        
+        try:
+            # Import overlay module
+            from lib.ui.overlay_window import OverlayWindow
+            
+            # Toggle state
+            self._overlay_enabled = not self._overlay_enabled
+            
+            if self._overlay_enabled:
+                # Create and show overlay if not exists
+                if self._overlay_window is None:
+                    # Get target window rect from hunt config
+                    window_bounds = self.hunt_cfg.get('window_bounds')
+                    target_hwnd = self.hunt_cfg.get('window_hwnd')
+                    
+                    if window_bounds is None:
+                        # No window configured - show message
+                        messagebox.showwarning(
+                            "No Window Configured" if self.lang == "en" else "Chưa Cấu Hình Cửa Sổ",
+                            "Please configure a game window first.\n"
+                            "Go to Hunt tab and select a window." if self.lang == "en" else
+                            "Vui lòng cấu hình cửa sổ game trước.\n"
+                            "Vào tab Hunt và chọn cửa sổ."
+                        )
+                        self._overlay_enabled = False
+                        return
+                    
+                    # Get overlay config from hunt_cfg (or use defaults)
+                    overlay_cfg = self.hunt_cfg.get('overlay', {})
+                    alpha = float(overlay_cfg.get('alpha', 0.7))
+                    fps_limit = int(overlay_cfg.get('fps_limit', 15))
+                    
+                    # Create overlay window
+                    self._overlay_window = OverlayWindow(
+                        target_hwnd=target_hwnd,
+                        target_rect=window_bounds,
+                        alpha=alpha,
+                        fps_limit=fps_limit,
+                        enable_click_through=True
+                    )
+                    
+                    # Create window (uses self as parent)
+                    self._overlay_window.create(parent=self)
+                    
+                    print(f"[Overlay] Created: hwnd={target_hwnd}, rect={window_bounds}")
+                
+                # Show overlay
+                self._overlay_window.show()
+                
+                # Start position update thread
+                self._start_overlay_position_sync()
+                
+                # Update menu/config
+                self.hunt_cfg.setdefault('overlay', {})['enabled'] = True
+                save_hunt_config(self.hunt_cfg)
+                
+                print("[Overlay] Enabled")
+                
+            else:
+                # Hide overlay
+                if self._overlay_window is not None:
+                    self._overlay_window.hide()
+                
+                # Stop position sync thread
+                self._stop_overlay_position_sync()
+                
+                # Update config
+                self.hunt_cfg.setdefault('overlay', {})['enabled'] = False
+                save_hunt_config(self.hunt_cfg)
+                
+                print("[Overlay] Disabled")
+                
+        except Exception as e:
+            print(f"[Overlay] Toggle error: {e}")
+            messagebox.showerror(
+                "Overlay Error" if self.lang == "en" else "Lỗi Overlay",
+                f"Failed to toggle overlay:\n{e}" if self.lang == "en" else
+                f"Không thể bật/tắt overlay:\n{e}"
+            )
+            self._overlay_enabled = False
+    
+    def _start_overlay_position_sync(self):
+        """Start background thread to sync overlay position with game window."""
+        if self._overlay_update_thread is not None and self._overlay_update_thread.is_alive():
+            return  # Already running
+        
+        self._overlay_stop_event.clear()
+        
+        def position_sync_loop():
+            """Update overlay position at 15 FPS."""
+            try:
+                # Import WindowManager for position tracking
+                from lib.system.window_manager import WindowManager
+                
+                window_manager = WindowManager()
+                target_hwnd = self.hunt_cfg.get('window_hwnd')
+                
+                if target_hwnd is None:
+                    print("[Overlay] No target hwnd for position sync")
+                    return
+                
+                while not self._overlay_stop_event.is_set():
+                    try:
+                        # Get current window position
+                        window_info = window_manager.get_window_info(target_hwnd)
+                        
+                        if window_info is not None and self._overlay_window is not None:
+                            # Update overlay position
+                            self._overlay_window.update_target_rect(window_info.rect)
+                        
+                    except Exception as e:
+                        print(f"[Overlay] Position sync error: {e}")
+                    
+                    # 15 FPS = ~67ms per frame
+                    self._overlay_stop_event.wait(timeout=0.067)
+                    
+            except Exception as e:
+                print(f"[Overlay] Position sync loop error: {e}")
+        
+        self._overlay_update_thread = threading.Thread(
+            target=position_sync_loop,
+            name="OverlayPositionSync",
+            daemon=True
         )
+        self._overlay_update_thread.start()
+        print("[Overlay] Position sync started")
+    
+    def _stop_overlay_position_sync(self):
+        """Stop the overlay position sync thread."""
+        if self._overlay_update_thread is None:
+            return
+        
+        self._overlay_stop_event.set()
+        
+        if self._overlay_update_thread.is_alive():
+            self._overlay_update_thread.join(timeout=1.0)
+        
+        self._overlay_update_thread = None
+        print("[Overlay] Position sync stopped")
 
     # -----------------
     def _t(self, key: str) -> str:
