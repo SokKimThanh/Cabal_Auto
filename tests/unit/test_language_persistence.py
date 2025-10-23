@@ -12,10 +12,14 @@ Solution: Use self.language to restore language_var value when
 rebuilding Step 1.
 """
 
+import pytest
 import tkinter as tk
 from pathlib import Path
 import json
 import sys
+
+# Mark as Windows-only and GUI test (requires ctypes.wintypes and display)
+pytestmark = [pytest.mark.windows, pytest.mark.gui]
 
 # Add project root to path
 project_root = Path(__file__).parent.parent

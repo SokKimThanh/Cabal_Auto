@@ -1,8 +1,12 @@
 """
 Test Setup Wizard - Verify data paths are working correctly
 """
+import pytest
 import sys
 from pathlib import Path
+
+# Mark as Windows-only and GUI test (requires ctypes.wintypes and display)
+pytestmark = [pytest.mark.windows, pytest.mark.gui]
 
 # Add project root to path
 project_root = Path(__file__).parent
