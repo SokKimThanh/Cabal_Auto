@@ -14,6 +14,15 @@ import sys
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 
+import pytest
+
+# Skip on non-Windows platforms because pyautogui/mouseinfo requires a GUI display
+# and this module is intended to run with real screen access.
+pytestmark = [pytest.mark.windows, pytest.mark.gui]
+
+if sys.platform != "win32":
+    pytest.skip("Requires Windows environment", allow_module_level=True)
+
 try:
     import cv2
     import numpy as np
