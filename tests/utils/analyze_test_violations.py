@@ -306,6 +306,11 @@ def print_report(results: Dict[str, List[Violation]]):
 
 def main():
     """Main entry point."""
+    # Fix Windows console encoding
+    import io
+    if sys.platform == "win32":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    
     project_root = Path(__file__).parent.parent.parent
     tests_dir = project_root / "tests"
     
