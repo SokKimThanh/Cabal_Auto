@@ -288,6 +288,12 @@ class ScreenCapture:
     def _setup_gdi(self):
         """Setup Windows GDI objects for BitBlt"""
         try:
+            # Validate prerequisites
+            if self.hwnd is None:
+                raise RuntimeError("HWND is None - call start() first")
+            if self.window_rect is None:
+                raise RuntimeError("window_rect is None - call start() first")
+            
             # Get window DC
             self._hwndDC = win32gui.GetWindowDC(self.hwnd)
             self._mfcDC = win32ui.CreateDCFromHandle(self._hwndDC)
@@ -330,6 +336,20 @@ class ScreenCapture:
         capture_start = time.time()
         
         try:
+            # Validate GDI objects are initialized
+            if self.window_rect is None:
+                logger.error("window_rect is None")
+                return None
+            if self._saveDC is None or self._mfcDC is None or self._saveBitMap is None:
+                logger.error("GDI objects not initialized")
+                return None
+            
+            # Type narrowing - after checks above, these are guaranteed non-None
+            assert self.window_rect is not None
+            assert self._saveDC is not None
+            assert self._mfcDC is not None
+            assert self._saveBitMap is not None
+            
             w = self.window_rect['width']
             h = self.window_rect['height']
             
