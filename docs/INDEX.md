@@ -182,246 +182,81 @@ docs/
 - [Sprint 21 Summary](sprint21/SPRINT21_SUMMARY.md)
 - [Icon Placement Rules](sprint21/ICON_PLACEMENT_RULES.md)
 
-Historical sprint documentation:
+## 🔍 Search by Topic
 
-#### **Sprint 16**: Setup Wizard Implementation
-- UI Redesign
-- 5-step wizard
-- First-run experience
-- **Docs**: [sprints/sprint16/](sprints/sprint16/)
+### Vision System
+- [Vision README](features/vision/README.md) - Complete vision docs
+- [Vision Wizard Framework](features/vision/VISION_WIZARD_FRAMEWORK.md)
+- [Vision Quick Start](features/vision/QUICK_START_VISION_WIZARD.md)
+- [Worker Thread Architecture](architecture/WORKER_THREAD_ARCHITECTURE.md)
 
-#### **Sprint 18**: 4-Tab Reorganization
-- Hunt, Setup, Stats, Help tabs
-- UI layout redesign
-- **Docs**: [sprints/sprint18/](sprints/sprint18/)
+### Global Hotkeys
+- [Hotkey Architecture](architecture/GLOBAL_HOTKEY_ARCHITECTURE.md)
+- [Hotkey Features](features/hotkeys/README.md)
+- [Hotkey Migration](features/hotkeys/GLOBAL_HOTKEY_MIGRATION.md)
 
-#### **Sprint 19**: Library Manager
-- Monster library
-- Skill library
-- Timing calculator
-- **Docs**: [sprints/sprint19/](sprints/sprint19/)
+### UI Design
+- [Icon Style Guide](guides/ui-design/ICON_BUTTON_STYLE_GUIDE.md)
+- [Button Consistency](guides/ui-design/BUTTON_STYLE_CONSISTENCY.md)
+- [Icon Recoloring](guides/ui-design/FEATURE_ICON_RECOLORING.md)
 
-#### **Sprint 20**: System Improvements
-- Performance optimization
-- Code refactoring
-- **Docs**: [sprints/sprint20/](sprints/sprint20/)
-
-#### **Sprint 13-15**: Early Development
-- Core features
-- Initial UI
-- **Docs**: [sprints/](sprints/)
-
----
-
-### 8. Core Architecture Documentation (Root `docs/`)
-
-**Technical architecture and system design**:
-
-- **[SINGLE_INSTANCE_LOCK.md](SINGLE_INSTANCE_LOCK.md)** - Single instance enforcement (Windows mutex + Unix file lock)
-- **[GLOBAL_HOTKEY_ARCHITECTURE.md](GLOBAL_HOTKEY_ARCHITECTURE.md)** - Hotkey system architecture analysis ⌨️ **NEW**
-- **[GLOBAL_HOTKEY_MIGRATION.md](GLOBAL_HOTKEY_MIGRATION.md)** - F8 → Ctrl+Shift+R/E migration guide ⌨️ **NEW**
-- **[HOTKEY_F8_TOGGLE.md](HOTKEY_F8_TOGGLE.md)** - ⚠️ **DEPRECATED** - Old F9→F8 migration (superseded)
-
----
-
-### 9. Context (`context/`)
-
-System context and architecture documentation:
-- **CONTEXT_MAIN.txt** - Main system context
-
----
-
-### 9. Archive (`archive/`) - 17+ files
-
-Deprecated or superseded documentation:
-
-**Categories**:
-- Old summaries: `SUMMARY_*.md`
-- Migration guides: `MIGRATION_*.md`
-- Project reorganization: `PROJECT_*.md`
-- Historical sessions: `SESSION_*.md`
-- Implementation checklists: `IMPLEMENTATION_*.md`
-- Update logs: `UPDATE_*.md`
-
----
-
-## 🔍 Finding Documentation
-
-### By Topic
-
-**Setup & Configuration**:
-- Setup Wizard: [sprints/sprint16/](sprints/sprint16/)
-- Window Settings: [guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md](guides/ADVANCED_WINDOW_SETTINGS_GUIDE.md)
-- First Run: [features/FEATURE_FIRST_RUN_LOCK.md](features/FEATURE_FIRST_RUN_LOCK.md)
-
-**UI/UX & Icons**:
-- Icon System: [sprint21/ICON_PLACEMENT_RULES.md](sprint21/ICON_PLACEMENT_RULES.md) ⭐
-- Icon Coverage: [sprint21/ICON_STATUS_REPORT.md](sprint21/ICON_STATUS_REPORT.md)
-- Button Design: [sprint21/SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md](sprint21/SPRINT21_PATCH13_GLOBAL_BUTTON_DESIGN.md)
-- Dialog Icons: [enhancements/ENHANCEMENT_DIALOG_SAVE_ICONS.md](enhancements/ENHANCEMENT_DIALOG_SAVE_ICONS.md)
-
-**Skills & Combat**:
-- Training Mode: [sprint22/SPRINT22_PATCH1_TRAINING_MODE.md](sprint22/SPRINT22_PATCH1_TRAINING_MODE.md) ⭐
-- Implementation Guide: [sprint22/IMPLEMENTATION_GUIDE.md](sprint22/IMPLEMENTATION_GUIDE.md)
-- Skills Guide: [guides/SKILLS_EXPLANATION_SIMPLE.md](guides/SKILLS_EXPLANATION_SIMPLE.md)
-- Rotation Tab: [bugfixes/BUGFIX_ROTATION_TAB_NO_SKILLS.md](bugfixes/BUGFIX_ROTATION_TAB_NO_SKILLS.md)
-
-**Testing**:
-- Template Testing: [guides/HOW_TO_USE_TEST_RECOGNITION.md](guides/HOW_TO_USE_TEST_RECOGNITION.md)
-- Tests Organization: [TESTS_REORGANIZATION_SUMMARY.md](TESTS_REORGANIZATION_SUMMARY.md) ✨ **NEW**
-
-**Internationalization**:
-- Language Persistence: [bugfixes/BUGFIX_LANGUAGE_PERSISTENCE.md](bugfixes/BUGFIX_LANGUAGE_PERSISTENCE.md)
-- Vietnamese Guide: [guides/HUONG_DAN_NGUOI_MOI.md](guides/HUONG_DAN_NGUOI_MOI.md) 🇻🇳
-
-### By Sprint
-
-- **Sprint 13-15**: [sprints/SPRINT15_COMPLETE.md](sprints/SPRINT15_COMPLETE.md)
-- **Sprint 16**: [sprints/sprint16/](sprints/sprint16/) - Setup Wizard
-- **Sprint 18**: [sprints/sprint18/](sprints/sprint18/) - 4-Tab UI
-- **Sprint 19**: [sprints/sprint19/](sprints/sprint19/) - Library Manager
-- **Sprint 20**: [sprints/sprint20/](sprints/sprint20/) - Performance
-- **Sprint 21**: [sprint21/](sprint21/) - UI/UX Icons ✅ COMPLETE
-- **Sprint 22**: [sprint22/](sprint22/) - Training Mode ⭐ **CURRENT**
-
----
-
-## 📝 Documentation Standards
-
-### File Naming Convention
-- Features: `FEATURE_*.md`
-- Enhancements: `ENHANCEMENT_*.md`
-- Bugfixes: `BUGFIX_*.md`
-- Guides: `HOW_TO_*.md` or `HUONG_DAN_*.md` (Vietnamese)
-- Sprints: `SPRINT##_*.md`
-- Icons: `ICON_*.md`
-- Summaries: `SUMMARY_*.md` (archived)
-
-### Document Structure
-Each document should include:
-1. **Title** and version/date
-2. **Purpose/Overview** - What this document covers
-3. **Technical Details** - Implementation specifics
-4. **Code Examples** - Working code snippets
-5. **Testing/Validation** - How to verify
-6. **Related Documents** - Cross-references
-
-### Icon Documentation Standards (New)
-For icon-related documents:
-1. **Visual Examples** - Screenshots or diagrams
-2. **Code Templates** - Copy-paste ready examples
-3. **DO/DON'T Patterns** - Clear anti-patterns
-4. **Coverage Analysis** - What's implemented vs missing
-
----
-
-## 🔄 Recent Changes (October 21, 2025)
-
-### Sprint 22 - Training Mode (Patch 1)
-**Status**: ⏳ IN PROGRESS (30% complete)
-
-**Completed**:
-- ✅ Database schema: Added `training_mode` field to monsters.json
-- ✅ Updated load/save monster library functions
-- ✅ Configured "Coc go~" as training dummy (infinite HP)
-- ✅ Created comprehensive documentation (4 files)
-- ✅ Implementation guide for developers
-
-**In Progress**:
-- ⏳ Hunt Tab: Add Training Mode checkbox toggle
-- ⏳ Hunt logic: Skip target switching in training mode
-- ⏳ UI: Build skill performance stats display
-- ⏳ i18n: Add EN/VI translations
-- ⏳ Testing: Manual verification
-
-**New Files**:
-```
-docs/sprint22/
-├── SPRINT22_PATCH1_TRAINING_MODE.md  (700 lines)
-├── IMPLEMENTATION_GUIDE.md            (350 lines)
-├── SPRINT22_SUMMARY.md                (400 lines)
-└── README.md                          (200 lines)
-```
-
----
-
-### Documentation Reorganization (Patch 16)
-**Status**: ✅ COMPLETE
-
-**Changes**:
-- ✅ Created 5 categorical folders
-- ✅ Moved 30+ files to appropriate locations
-- ✅ Updated INDEX.md structure (this file)
-- ✅ Archived old summaries
-- ✅ README.md updated to v2.0
-
-**New Structure**:
-```
-docs/
-├── features/      (2 files)
-├── enhancements/  (4 files)
-├── guides/        (5 files)
-├── sprint21/      (8 files) ✅
-├── sprint22/      (4 files) ⭐
-├── bugfixes/      (16 files)
-├── archive/       (17+ files)
-└── sprints/       (existing)
-```
-
-### Sprint 21 Documentation (Patches 10-16)
-- ✨ **ICON_PLACEMENT_RULES.md** - Comprehensive icon design guide
-- ✨ **ICON_STATUS_REPORT.md** - Icon coverage analysis
-- ✨ Sprint 21 patches consolidated in `sprint21/`
-- ✨ 8 patch documents + summary
-
----
+### Testing
+- [Test Organization](guides/testing/TESTS_REORGANIZATION_SUMMARY.md)
+- [Vision Checklist](features/vision/VISION_MENU_CHECKLIST.md)
 
 ## 📊 Statistics
 
-- **Total Files**: 40+ markdown files
-- **Categories**: 8 folders (features, enhancements, guides, sprint21, sprint22, bugfixes, archive, sprints)
-- **Sprints Completed**: 21 (Sprint 1-21, 100%)
-- **Current Sprint**: Sprint 22 (Training Mode - 31% complete)
-- **Languages**: English, Tiếng Việt 🇻🇳
-- **Icon Coverage**: 39 buttons, 28 with .ico files (72%)
-- **Test Files**: 31+ organized in 5 categories (unit, integration, demos, utils, sprints)
+### Sprint 22 Metrics
+- **23 commits** on feature branch
+- **3,349 lines** added (core code)
+- **302 lines** documentation (architecture)
+- **7 test cases** implemented
+- **4 phases** completed
+- **2 patches** applied
 
----
+### Documentation Metrics
+- **Architecture docs**: 4 files
+- **Feature docs**: 9 files (vision, hotkeys, first-run, templates)
+- **Sprint docs**: 20+ files (organized by phase/patch/implementation)
+- **Guide docs**: 4 files
+- **Total reorganization**: 40+ files moved/renamed
 
-## 🎯 TODO
+### Code Coverage
+- Vision engine: 810 lines
+- Vision Wizard UI: 1,259 lines
+- Worker threads: ~200 lines
+- Tests: 7 test cases
+- Performance: 15 FPS processing rate
 
-### High Priority
-- [ ] Update README.md with new structure
-- [ ] Create visual diagrams for icon rules
-- [ ] Add Sprint 21 Patch 16 to summary
+## 🔄 Recent Changes (October 22, 2025)
 
-### Medium Priority
-- [ ] Consolidate bugfix summaries
-- [ ] Add more code examples to guides
-- [ ] Create icon design templates
+### Documentation Reorganization ✅ COMPLETED
+- ✅ Created `architecture/` directory (4 docs)
+- ✅ Created `features/` subdirectories (hotkeys, vision, first-run, templates)
+- ✅ Created `guides/` subdirectories (ui-design, testing)
+- ✅ Reorganized `sprints/sprint22/` (phases, patches, implementation, updates, examples, templates)
+- ✅ Created 4 comprehensive README.md files
+- ✅ Updated INDEX.md with new structure
 
-### Low Priority
-- [ ] Update sprint documentation templates
-- [ ] Archive very old session summaries
-- [ ] Consider consolidating sprint folders
-
----
+### Sprint 22 Completion ✅
+- ✅ Vision System core implemented (23 commits)
+- ✅ All 4 phases completed (1, 1B, 2, 2B)
+- ✅ Type hints fixed (threshold_frame, UIStyle, i18n)
+- ✅ Menu integration working (Vision menu displays correctly)
+- ✅ Hotkeys configured (Ctrl+Shift+V for Vision Wizard)
+- ✅ Documentation complete (40+ files organized)
 
 ## 📞 Support
 
-### For Questions
-1. **New Users**: Check [guides/HUONG_DAN_NGUOI_MOI.md](guides/HUONG_DAN_NGUOI_MOI.md) 🇻🇳
-2. **Developers**: Review [sprint21/ICON_PLACEMENT_RULES.md](sprint21/ICON_PLACEMENT_RULES.md)
-3. **Bug Reports**: Search [bugfixes/](bugfixes/) first
-4. **Historical Context**: Check [archive/](archive/)
-
-### Documentation Navigation
-- **Main Entry**: [README.md](README.md)
-- **This Index**: [INDEX.md](INDEX.md) (you are here)
-- **Latest Sprint**: [sprint21/SPRINT21_SUMMARY.md](sprint21/SPRINT21_SUMMARY.md)
+For questions or issues:
+1. Check relevant documentation in this index
+2. Review sprint summaries for context
+3. Check bugfixes/ for known issues
+4. Refer to architecture/ for system design
 
 ---
 
+**Note**: This documentation structure was completely reorganized on October 22, 2025 for better maintainability and navigation.
+
 **Maintained by**: Cabal Auto Hunt Development Team  
-**Next Review**: Sprint 22  
-**Documentation Version**: 2.0 (Reorganized October 21, 2025)
+**Documentation Version**: 3.0 (Reorganized October 22, 2025)

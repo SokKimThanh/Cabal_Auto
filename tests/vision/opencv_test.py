@@ -2,7 +2,7 @@
 OpenCV vs PyAutoGUI Template Matching Comparison Test
 
 This module tests and compares template matching performance between:
-- opencv-python (cv2.matchTemplate) 
+- opencv-python (cv2.matchTemplate)
 - pyautogui (locateOnScreen)
 
 Usage:
@@ -12,18 +12,35 @@ Usage:
 import time
 import sys
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any
+from types import ModuleType
+from typing import Any, Dict, Optional, Tuple, cast
+
+import pytest
+
+# Skip on non-Windows platforms because pyautogui/mouseinfo requires a GUI display
+# and this module is intended to run with real screen access.
+pytestmark = [pytest.mark.windows, pytest.mark.gui]
+
+if sys.platform != "win32":
+    pytest.skip("Requires Windows environment", allow_module_level=True)
+
+cv2: Optional[ModuleType] = None
+np: Optional[ModuleType] = None
+pyautogui: Optional[ModuleType] = None
 
 try:
-    import cv2
-    import numpy as np
+    import cv2 as cv2_module
+    import numpy as np_module
+    cv2 = cv2_module
+    np = np_module
     HAS_OPENCV = True
 except ImportError:
     HAS_OPENCV = False
     print("⚠️  OpenCV not available. Install: pip install opencv-python")
 
 try:
-    import pyautogui
+    import pyautogui as pyautogui_module
+    pyautogui = pyautogui_module
     HAS_PYAUTOGUI = True
 except ImportError:
     HAS_PYAUTOGUI = False
@@ -52,29 +69,36 @@ class TemplateMatchTester:
         Returns:
             Dict with result info: found, box, confidence, time_ms
         """
-        if not HAS_OPENCV:
+        if not HAS_OPENCV or cv2 is None or np is None:
             return {'error': 'OpenCV not available'}
+
+        if not HAS_PYAUTOGUI or pyautogui is None:
+            return {'error': 'PyAutoGUI not available'}
+
+        cv2_module = cast(ModuleType, cv2)
+        np_module = cast(ModuleType, np)
+        pyautogui_module = cast(ModuleType, pyautogui)
         
         start = time.perf_counter()
         
         try:
             # Load template
-            template = cv2.imread(template_path)
+            template = cv2_module.imread(template_path)
             if template is None:
                 return {'error': f'Failed to load template: {template_path}'}
             
-            template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+            template_gray = cv2_module.cvtColor(template, cv2_module.COLOR_BGR2GRAY)
             th, tw = template_gray.shape[:2]
             
             # Capture screen
-            screenshot = pyautogui.screenshot(region=region)
-            screenshot_np = np.array(screenshot)
-            screenshot_bgr = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2BGR)
-            screenshot_gray = cv2.cvtColor(screenshot_bgr, cv2.COLOR_BGR2GRAY)
+            screenshot = pyautogui_module.screenshot(region=region)
+            screenshot_np = np_module.array(screenshot)
+            screenshot_bgr = cv2_module.cvtColor(screenshot_np, cv2_module.COLOR_RGB2BGR)
+            screenshot_gray = cv2_module.cvtColor(screenshot_bgr, cv2_module.COLOR_BGR2GRAY)
             
             # Match template
-            result = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            result = cv2_module.matchTemplate(screenshot_gray, template_gray, cv2_module.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2_module.minMaxLoc(result)
             
             elapsed_ms = (time.perf_counter() - start) * 1000
             
@@ -120,15 +144,17 @@ class TemplateMatchTester:
         Returns:
             Dict with result info: found, box, center, time_ms
         """
-        if not HAS_PYAUTOGUI:
+        if not HAS_PYAUTOGUI or pyautogui is None:
             return {'error': 'PyAutoGUI not available'}
         
         start = time.perf_counter()
         
+        pyautogui_module = cast(ModuleType, pyautogui)
+
         try:
             # Try with confidence first (requires opencv)
             try:
-                box = pyautogui.locateOnScreen(
+                box = pyautogui_module.locateOnScreen(
                     template_path,
                     confidence=confidence,
                     region=region,
@@ -136,7 +162,7 @@ class TemplateMatchTester:
                 )
             except TypeError:
                 # Fallback to basic matching without confidence
-                box = pyautogui.locateOnScreen(
+                box = pyautogui_module.locateOnScreen(
                     template_path,
                     region=region,
                     grayscale=True
@@ -145,7 +171,7 @@ class TemplateMatchTester:
             elapsed_ms = (time.perf_counter() - start) * 1000
             
             if box:
-                center = pyautogui.center(box)
+                center = pyautogui_module.center(box)
                 return {
                     'found': True,
                     'box': (box.left, box.top, box.width, box.height),
@@ -187,12 +213,16 @@ class TemplateMatchTester:
         print(f"Iterations: {iterations}")
         print(f"{'='*80}\n")
         
-        opencv_times = []
+        opencv_times: list[float] = []
         opencv_found = 0
-        opencv_confidences = []
+        opencv_confidences: list[float] = []
+        opencv_avg = 0.0
+        opencv_rate = 0.0
         
-        pyautogui_times = []
+        pyautogui_times: list[float] = []
         pyautogui_found = 0
+        pyautogui_avg = 0.0
+        pyautogui_rate = 0.0
         
         # Test OpenCV
         if HAS_OPENCV:

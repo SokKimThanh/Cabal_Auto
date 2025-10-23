@@ -3,9 +3,14 @@ Diagnostic test - Kiểm tra chi tiết từng phím
 """
 import sys
 import time
+import pytest
+
 sys.path.insert(0, 'E:/Cabal_Auto')
 
 from lib.system.win_input import tap, key_down, key_up
+
+# Mark as Windows-only due to win_input dependency
+pytestmark = pytest.mark.windows
 
 print("=" * 60)
 print("KEY DIAGNOSTIC TEST - Kiểm tra chi tiết từng phím")

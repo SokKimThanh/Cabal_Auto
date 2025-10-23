@@ -3,9 +3,14 @@ Test skill rotation independently - Kiểm tra skill rotation độc lập
 """
 import sys
 import time
+import pytest
+
 sys.path.insert(0, 'E:/Cabal_Auto')
 
 from lib.system.win_input import tap
+
+# Mark as Windows-only due to win_input dependency
+pytestmark = pytest.mark.windows
 
 print("=" * 60)
 print("SKILL ROTATION TEST - Test bấm phím kỹ năng")

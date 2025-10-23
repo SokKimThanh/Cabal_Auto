@@ -3,9 +3,16 @@
 Test Setup Wizard with Skill Rotation Integration
 """
 
+import pytest
 import tkinter as tk
 import sys
 import os
+
+# Mark as Windows-only and GUI test (requires ctypes.wintypes and display)
+pytestmark = [pytest.mark.windows, pytest.mark.gui]
+
+if sys.platform != "win32":
+    pytest.skip("Requires Windows environment", allow_module_level=True)
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

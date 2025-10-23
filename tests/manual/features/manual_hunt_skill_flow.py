@@ -3,9 +3,14 @@ Test complete hunt skill flow - Kiểm tra toàn bộ flow skill trong hunt
 """
 import sys
 import time
+import pytest
+
 sys.path.insert(0, 'E:/Cabal_Auto')
 
 from lib.system.win_input import tap
+
+# Mark as Windows-only due to win_input dependency
+pytestmark = pytest.mark.windows
 
 print("=" * 70)
 print("HUNT SKILL FLOW TEST - Mô phỏng hunt flow đầy đủ")

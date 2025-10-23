@@ -1,174 +1,359 @@
-# Tests Directory# Tests Directory
+# Tests Directory
 
+Thư mục này chứa tất cả các test scripts, demos và utilities cho dự án Cabal Auto.
 
-
-Thư mục này chứa tất cả các test scripts, demos và utilities cho dự án Cabal Auto.This directory contains all test scripts and test-related files.
-
-
-
-## 📁 Cấu Trúc Thư Mục## Test Files
-
-
-
-```### `opencv_test.py`
-
-tests/Performance comparison test between OpenCV and PyAutoGUI template matching.
-
-├── unit/              # Unit tests - Kiểm tra từng component riêng lẻ
-
-├── integration/       # Integration tests - Kiểm tra tích hợp hệ thống**Features:**
-
-├── demos/            # Demo scripts - Minh họa tính năng- Benchmarks OpenCV cv2.matchTemplate() vs PyAutoGUI
-
-├── utils/            # Utility scripts - Công cụ audit/verify- Tests accuracy and performance
-
-├── sprints/          # Sprint-specific tests - Test theo từng sprint- Shows confidence value comparison
-
-│   └── sprint22/     # Sprint 22 tests (Training Mode, etc.)- Provides recommendations
-
-└── README.md         # Tài liệu này
-
-```**Usage:**
-
-```bash
-
----python tests/opencv_test.py
+## 📁 Cấu Trúc Thư Mục
 
 ```
-
-## 🧪 Unit Tests (`unit/`)
-
-### `test_template_matcher_integration.py`
-
-Kiểm tra từng component/tính năng riêng lẻ.Integration test for the unified template_matcher module.
-
-
-
-### UI Components**Features:**
-
-- **`test_combobox_data.py`** - ComboBox data loading và hiển thị- Tests template_matcher.locate_template()
-
-- **`test_dialog_save_icons.py`** - Dialog save icons functionality- Verifies OpenCV and PyAutoGUI integration
-
-- **`test_hunt_button_design.py`** - Hunt button UI design- Checks confidence value accuracy
-
-- **`test_topbar_enhancement.py`** - Topbar enhancements- Validates fallback behavior
-
-- **`test_timing_calculator_ui.py`** - Timing calculator UI
-
-**Usage:**
-
-### Data & Paths```bash
-
-- **`test_image_paths.py`** - Image path resolutionpython tests/test_template_matcher_integration.py
-
-- **`test_library_monster_path.py`** - Monster library paths```
-
-- **`test_skill_capture_path.py`** - Skill capture paths
-
-## Running Tests
-
-### Setup Wizard
-
-- **`test_setup_wizard.py`** - Main setup wizard functionality### Run All Tests
-
-- **`test_setup_wizard_button.py`** - Wizard button behaviors```bash
-
-- **`test_setup_wizard_skill_rotation.py`** - Skill rotation in wizard# From project root
-
-- **`test_wizard_first_run_lock.py`** - First run lock mechanismpython tests/opencv_test.py
-
-python tests/test_template_matcher_integration.py
-
-### Features```
-
-- **`test_advanced_monster_dialog.py`** - Advanced monster dialog
-
-- **`test_rotation.py`** - Monster rotation logic### Test Requirements
-
-- **`test_rotation_skills_loading.py`** - Skill rotation loading- Template images in `assets/images/monsters/` or `assets/images/skills/`
-
-- **`test_save_tooltip_dynamic.py`** - Dynamic save tooltips- OpenCV installed (`opencv-python`)
-
-- **`test_language_persistence.py`** - Language setting persistence- PyAutoGUI installed
-
-- PIL/Pillow installed
-
-### Vision/Template Matching
-
-- **`opencv_test.py`** - OpenCV performance testing## Test Coverage
-
-
-
-### UsageCurrent test coverage:
-
-```bash- ✅ OpenCV template matching
-
-# Run single unit test- ✅ PyAutoGUI template matching
-
-python tests/unit/test_combobox_data.py- ✅ Template matcher integration
-
-- ✅ Confidence value accuracy
-
-# Run all unit tests (PowerShell)- ⏳ Skills runtime (manual testing via demo scripts)
-
-Get-ChildItem tests/unit/*.py | ForEach-Object { python $_.FullName }- ⏳ Hunt logger (manual testing during hunt)
-
-```- ⏳ Timing calculator (manual testing in GUI)
-
-
-
----## Adding New Tests
-
-
-
-## 🔗 Integration Tests (`integration/`)When adding new test files:
-
-1. Name files with `test_` prefix
-
-Kiểm tra tích hợp giữa nhiều components/modules.2. Include docstring explaining test purpose
-
-3. Add usage instructions
-
-### System Integration4. Update this README
-
-- **`test_comprehensive_system.py`** - Comprehensive system integration test5. Consider adding to CI/CD pipeline (future)
-
-- **`test_phase3_comprehensive.py`** - Phase 3 comprehensive testing
-
-- **`test_template_matcher_integration.py`** - Template matcher integration## Test Best Practices
-
-
-
-### Features- Keep tests independent
-
-- Kiểm tra UI + Backend + Data flow- Use descriptive names
-
-- Validate end-to-end workflows- Include clear error messages
-
-- Test module interactions- Test both success and failure cases
-
-- Document expected results
-
-### Usage
-```bash
-# Run comprehensive system test
-python tests/integration/test_comprehensive_system.py
-
-# Run template matcher integration
-python tests/integration/test_template_matcher_integration.py
+tests/
+├── unit/                          # ✅ Unit tests (pytest auto-run)
+│   └── test_*.py                  # Real pytest unit tests
+│
+├── integration/                   # ✅ Integration tests (pytest auto-run)
+│   └── test_*.py                  # Real pytest integration tests
+│
+├── manual/                        # 🔧 Manual test scripts (NOT pytest)
+│   ├── gui/                       # GUI interactive tests
+│   ├── integration/               # Manual integration tests
+│   ├── features/                  # Feature testing scripts
+│   ├── paths/                     # Path validation scripts
+│   └── misc/                      # Other manual tests
+│
+├── demos/                         # 🎨 Demo scripts (not tests)
+│   ├── sprints/                   # Sprint demos
+│   └── features/                  # Feature demos
+│
+├── vision/                        # 👁️ Vision/CV tests
+│   ├── opencv_test.py
+│   ├── vision_basic_test.py
+│   └── vision_perf_test.py
+│
+├── sprints/                       # 🏃 Sprint-specific tests
+│   └── sprint*/
+│
+├── samples/                       # 📦 Sample data/fixtures
+├── utils/                         # 🔧 Test utilities/helpers
+└── README.md                      # This file
 ```
 
 ---
 
-## 🎨 Demo Scripts (`demos/`)
+## 🧪 Unit Tests (`unit/`)
 
-Scripts minh họa tính năng, dùng cho development và testing thủ công.
+Automated tests run by pytest in CI/CD. Must follow pytest naming conventions.
 
-### Available Demos
-- **`demo_dialog_save_icon.py`** - Dialog save icon functionality
-- **`demo_global_badge_relocation.py`** - Global badge relocation feature
-- **`demo_save_tooltip.py`** - Save tooltip demonstration
+### UI Components Tests
+- **`test_combobox_data.py`** - ComboBox data loading và hiển thị
+- **`test_dialog_save_icons.py`** - Dialog save icons functionality
+- **`test_timing_calculator_ui.py`** - Timing calculator UI
+- **`test_advanced_monster_dialog.py`** - Advanced monster dialog
+
+### Setup Wizard Tests (Windows-only)
+- **`test_setup_wizard.py`** - Main setup wizard functionality
+- **`test_setup_wizard_skill_rotation.py`** - Skill rotation in wizard
+- **`test_wizard_first_run_lock.py`** - First run lock mechanism
+- **`test_language_persistence.py`** - Language setting persistence
+
+### Data & Features Tests
+- **`test_rotation_skills_loading.py`** - Skill rotation loading
+- **`test_attack_keys_migration.py`** - Attack keys migration
+
+**Run unit tests:**
+```bash
+pytest tests/unit/ -v
+# Skip Windows/GUI tests on Linux
+pytest tests/unit/ -v -m "not windows and not gui"
+```
+
+---
+
+## 🔗 Integration Tests (`integration/`)
+
+Tests that verify multiple components working together.
+
+- **`test_template_matcher_integration.py`** - Template matcher unified module test
+
+**Run integration tests:**
+```bash
+pytest tests/integration/ -v
+```
+
+---
+
+## 🔧 Manual Tests (`manual/`)
+
+Interactive test scripts that require human interaction. **NOT run by pytest.**
+
+### GUI Tests (`manual/gui/`)
+- **`manual_hunt_button_design.py`** - Hunt button UI design verification
+- **`manual_setup_wizard_button.py`** - Wizard button behaviors
+- **`manual_save_tooltip_dynamic.py`** - Dynamic save tooltips
+- **`manual_topbar_enhancement.py`** - Topbar enhancements
+
+### Feature Tests (`manual/features/`)
+- **`manual_hunt_skill_flow.py`** - Hunt skill flow testing
+- **`manual_key_diagnostics.py`** - Keyboard diagnostics
+- **`manual_skill_rotation.py`** - Skill rotation manual testing
+- **`manual_skill_rotation_ui.py`** - Skill rotation UI testing
+
+### Path Validation (`manual/paths/`)
+- **`manual_image_paths.py`** - Image path resolution
+- **`manual_library_monster_path.py`** - Monster library paths
+- **`manual_skill_capture_path.py`** - Skill capture paths
+- **`manual_tooltip_and_image_refs.py`** - Tooltip image references
+
+### Integration (`manual/integration/`)
+- **`manual_comprehensive_system.py`** - Comprehensive system test
+- **`manual_phase3_comprehensive.py`** - Phase 3 comprehensive test
+
+### Misc (`manual/misc/`)
+- **`manual_migration.py`** - Migration testing
+- **`manual_rotation.py`** - Rotation logic
+- **`manual_template_matching.py`** - Template matching verification
+
+**Run manual tests:**
+```bash
+python tests/manual/gui/manual_hunt_button_design.py
+```
+
+---
+
+## 👁️ Vision Tests (`vision/`)
+
+Computer vision and template matching tests.
+
+- **`opencv_test.py`** - OpenCV vs PyAutoGUI performance comparison
+- **`vision_basic_test.py`** - Basic vision functionality
+- **`vision_perf_test.py`** - Vision performance benchmarks
+- **`README.md`** - Vision testing documentation
+
+**Run vision tests:**
+```bash
+python tests/vision/opencv_test.py
+python tests/vision/vision_basic_test.py
+```
+
+---
+
+## 🎨 Demos (`demos/`)
+
+Demonstration scripts showcasing features. **NOT tests.**
+
+### Feature Demos (`demos/features/`)
+- **`demo_dialog_save_icon.py`** - Dialog save icon demo
+- **`demo_global_badge_relocation.py`** - Badge relocation demo
+- **`demo_save_tooltip.py`** - Save tooltip demo
+- **`demo_simple_language.py`** - Language switching demo
+- **`demo_template_badge_timing.py`** - Template badge timing
+- **`demo_template_save.py`** - Template save demo
+- **`demo_vision_wizard_cleanup.py`** - Vision wizard cleanup
+- **`demo_wizard_user_level.py`** - Wizard user level demo
+
+### Sprint Demos (`demos/sprints/`)
+- **`sprint13_demo.py`** - Sprint 13 features
+- **`sprint14_demo.py`** - Sprint 14 features
+- **`sprint15_demo.py`** - Sprint 15 features
+
+**Run demos:**
+```bash
+python tests/demos/features/demo_save_tooltip.py
+```
+
+---
+
+## 🏃 Sprint Tests (`sprints/`)
+
+Tests organized by sprint iterations.
+
+### Sprint 22 - Training Mode
+- **`test_training_mode.py`** - Training mode functionality
+
+---
+
+## 🔧 Test Utilities (`utils/`)
+
+Helper scripts for testing and auditing.
+
+- **`audit_data_paths.py`** - Audit data file paths
+- **`verify_wizard_changes.py`** - Verify wizard changes
+
+
+**Run utilities:**
+```bash
+python tests/utils/audit_data_paths.py
+python tests/utils/verify_wizard_changes.py
+```
+
+---
+
+## 🚀 Running Tests
+
+### Run All Pytest Tests
+```bash
+# Run all automated tests
+pytest tests/ -v
+
+# Skip Windows/GUI tests (for Linux CI)
+pytest tests/ -v -m "not windows and not gui"
+
+# Run only unit tests
+pytest tests/unit/ -v
+
+# Run only integration tests
+pytest tests/integration/ -v
+
+# Run with coverage
+pytest tests/ --cov=lib --cov=ui --cov-report=term-missing
+```
+
+### Run Manual Tests
+```bash
+# GUI tests (Windows only)
+python tests/manual/gui/manual_hunt_button_design.py
+
+# Feature tests
+python tests/manual/features/manual_hunt_skill_flow.py
+
+# Path validation
+python tests/manual/paths/manual_image_paths.py
+```
+
+### Run Vision Tests
+```bash
+python tests/vision/opencv_test.py
+python tests/vision/vision_basic_test.py
+```
+
+### Run Demos
+```bash
+python tests/demos/features/demo_save_tooltip.py
+python tests/demos/sprints/sprint13_demo.py
+```
+
+---
+
+## 📝 Test Coverage
+
+Current test coverage:
+- ✅ OpenCV template matching
+- ✅ PyAutoGUI template matching
+- ✅ Template matcher integration
+- ✅ Confidence value accuracy
+- ✅ UI component functionality
+- ✅ Setup wizard workflows
+- ✅ Data loading and validation
+- ⏳ Skills runtime (manual testing via demo scripts)
+- ⏳ Hunt logger (manual testing during hunt)
+- ⏳ Timing calculator (manual testing in GUI)
+
+---
+
+## ➕ Adding New Tests
+
+When adding new test files:
+
+### For Pytest Tests (unit/integration/)
+1. **Name**: Start with `test_` prefix (e.g., `test_new_feature.py`)
+2. **Markers**: Add appropriate markers (`@pytest.mark.windows`, `@pytest.mark.gui`)
+3. **Platform checks**: Add skip conditions if Windows/GUI specific
+4. **Docstrings**: Document what the test validates
+5. **Assertions**: Use clear assertion messages
+
+**Template:**
+```python
+import pytest
+import sys
+
+pytestmark = [pytest.mark.unit]  # or pytest.mark.integration
+
+if sys.platform != "win32":  # if Windows-only
+    pytest.skip("Requires Windows", allow_module_level=True)
+
+def test_feature_name():
+    """Test description."""
+    result = your_function()
+    assert result is not None, "Expected non-None result"
+```
+
+### For Manual Tests (manual/)
+1. **Name**: Start with `manual_` prefix
+2. **Location**: Choose appropriate subdirectory (gui/features/paths/misc)
+3. **Documentation**: Add usage instructions at top
+4. **No pytest**: These should NOT be collected by pytest
+
+### For Demos (demos/)
+1. **Name**: Start with `demo_` prefix
+2. **Purpose**: Demonstrate feature, not test it
+3. **Interactive**: Can include user interaction
+
+**Update this README** with new test descriptions!
+
+---
+
+## 🎯 Test Best Practices
+
+### General
+- ✅ Keep tests independent (no shared state)
+- ✅ Use descriptive test names (`test_should_load_config_when_file_exists`)
+- ✅ Include clear error messages in assertions
+- ✅ Test both success and failure cases
+- ✅ Clean up resources (files, windows) in teardown
+
+### Platform Compatibility
+- ✅ Mark Windows-only tests: `@pytest.mark.windows`
+- ✅ Mark GUI tests: `@pytest.mark.gui`
+- ✅ Skip appropriately: `pytest.skip("reason", allow_module_level=True)`
+- ✅ Handle optional imports gracefully
+
+### CI/CD Considerations
+- ✅ Tests should pass on headless Linux
+- ✅ Use relative paths from project root
+- ✅ Don't hardcode absolute paths
+- ✅ Handle missing DISPLAY gracefully
+- ✅ No module-level code that crashes on import
+
+---
+
+## 📚 Documentation
+
+- **`PYTEST_TEMPLATE_CI_CD.md`** - Template for writing pytest tests
+- **`QUICK_REFERENCE.md`** - Quick reference guide
+- **`vision/README.md`** - Vision testing documentation
+
+---
+
+## 🔧 CI/CD Integration
+
+Tests are run automatically in GitHub Actions:
+
+```yaml
+# .github/workflows/python-app.yml
+- name: Test with pytest
+  run: |
+    export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+    export DISPLAY=:99
+    pytest -v --tb=short --strict-markers -m "not windows and not gui"
+```
+
+**Markers used in CI:**
+- Skip `@pytest.mark.windows` tests on Linux
+- Skip `@pytest.mark.gui` tests (no real display)
+- Run `@pytest.mark.unit` and `@pytest.mark.integration`
+
+---
+
+## 📞 Support
+
+For test-related questions:
+1. Check `PYTEST_TEMPLATE_CI_CD.md` for templates
+2. Review existing tests for examples
+3. See `QUICK_REFERENCE.md` for common patterns
+4. Contact development team
+
+---
+
+**Last Updated**: 2025-10-23  
+**Maintainer**: Development Team
 - **`demo_template_badge_timing.py`** - Template badge timing
 - **`demo_template_save.py`** - Template save functionality
 - **`demo_vision_wizard_cleanup.py`** - Vision wizard cleanup

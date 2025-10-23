@@ -13,10 +13,17 @@ Test scenarios:
 - Scenario 4: Language switching with unlocked option
 """
 
+import pytest
 import tkinter as tk
 from pathlib import Path
 import json
 import sys
+
+# Mark as Windows-only and GUI test (requires ctypes.wintypes and display)
+pytestmark = [pytest.mark.windows, pytest.mark.gui]
+
+if sys.platform != "win32":
+    pytest.skip("Requires Windows environment", allow_module_level=True)
 
 # Add project root to path
 project_root = Path(__file__).parent.parent

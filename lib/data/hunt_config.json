@@ -76,7 +76,8 @@
     "start_key": "ctrl+shift+r",
     "stop_key": "ctrl+shift+e",
     "setup_wizard_key": "ctrl+shift+n",
-    "library_manager_key": "ctrl+shift+l"
+    "library_manager_key": "ctrl+shift+l",
+    "vision_wizard_key": "ctrl+shift+v"
   },
   "training_monster_list": [
     {

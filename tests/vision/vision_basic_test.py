@@ -7,11 +7,15 @@ Tests core engine functionality with sample images.
 
 import sys
 import os
+import pytest
 from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+# Mark as vision test
+pytestmark = pytest.mark.vision
 
 import cv2
 import numpy as np

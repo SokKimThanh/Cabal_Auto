@@ -1,0 +1,135 @@
+Mục tiêu
+Tách toàn bộ logic phím tắt (global hotkeys) khỏi app_gui.py thành module quản lý độc lập, có lưu cấu hình, UI quản lý, phát hiện xung đột, và API rõ ràng để dùng cho cả Core và Vision. Triển khai theo các bước nhỏ, commit rõ ràng, test cơ bản.
+
+Bối cảnh dự án
+App đang dùng Tkinter, có global hotkeys: Ctrl+Shift+R/E/L/N/V và sắp thêm các hotkeys cho Vision: Ctrl+Alt+S, Ctrl+T, Ctrl+Shift+T, Ctrl+Shift+O.
+
+Yêu cầu: không để hotkey logic rải rác trong app_gui.py; cần một HotkeyManager tập trung để quản lý đăng ký/bật/tắt/lưu config/UI hiển thị trạng thái.
+
+Phạm vi công việc
+Tạo module: lib/hotkey/hotkey_manager.py
+
+Tích hợp vào app_gui.py (thay bind thủ công bằng HotkeyManager)
+
+Tạo UI đơn giản quản lý hotkeys: ui/hotkey_settings.py (có thể là panel trong tab Setup)
+
+Lưu cấu hình: config/hotkeys.json
+
+Hỗ trợ nhóm hotkeys: core, vision
+
+Viết test tối thiểu: tests/test_hotkeys.py
+
+Yêu cầu kỹ thuật
+API HotkeyManager (lib/hotkey/hotkey_manager.py)
+Khởi tạo: HotkeyManager(app, config_path="config/hotkeys.json")
+
+register(key, name, callback, group="core"|"vision", enabled=True, description="")
+
+bind_all(): bind các phím đang enabled vào Tk
+
+unbind_all(): gỡ bind (dùng khi reload/preset)
+
+enable(key), disable(key), is_enabled(key) -> bool
+
+get_active_hotkeys(group=None) -> dict[key] = name
+
+get_all() -> list[dict] với: key, name, group, enabled, description
+
+save_config(), load_config(), reset_defaults(preset="advanced"|"beginner")
+
+detect_conflicts() -> list[dict] {key, names} nếu 1 key gán nhiều chức năng
+
+on_changed(callback): gọi callback(state_summary) khi trạng thái đổi
+
+Cấu hình và presets
+File: config/hotkeys.json
+
+Dạng: { "<Control-Shift-R>": true, "<Control-Shift-E>": true, ... }
+
+Preset:
+
+beginner: bật Start, Stop, Vision Wizard
+
+advanced: bật tất cả (core + vision)
+
+Tích hợp vào app_gui.py
+self.hotkey_manager = HotkeyManager(self); self.hotkey_manager.load_config()
+
+Đăng ký hotkeys:
+
+Core: Start (Ctrl+Shift+R), Stop (Ctrl+Shift+E), Setup (Ctrl+Shift+N), Library (Ctrl+Shift+L)
+
+Vision: Wizard (Ctrl+Shift+V), Scan (Ctrl+Alt+S), Add (Ctrl+T), Manage (Ctrl+Shift+T), Overlay (Ctrl+Shift+O)
+
+self.hotkey_manager.bind_all() sau khi load_config/preset
+
+Thay đổi trạng thái từ UI → enable/disable → save_config() → bind lại (theo key hoặc toàn bộ)
+
+UI quản lý hotkeys (ui/hotkey_settings.py)
+Layout đơn giản (Tkinter):
+
+Bảng/checkbox: mỗi hotkey 1 dòng (checkbox enabled, label key+name, group, mô tả)
+
+Label tổng: “X/Y phím đang hoạt động”
+
+Nút: Lưu cấu hình, Khôi phục mặc định (preset), Kiểm tra xung đột
+
+Nút “Hướng dẫn sửa lỗi” (chỉ hiện khi detect_conflicts() hoặc bind lỗi)
+
+Hành vi:
+
+Toggle checkbox → enable/disable → cập nhật trạng thái tổng → bind lại
+
+on_changed() cập nhật label tổng và danh sách hoạt động
+
+i18n: dùng _t() cho tất cả text; không hiển thị key thô (vd “hotkeys_registered”)
+
+Test tối thiểu (tests/test_hotkeys.py)
+Khởi tạo manager (mock app với bind_all/unbind)
+
+Đăng ký vài hotkeys, enable/disable, assert get_active_hotkeys()
+
+save_config() → load_config() round-trip giữ trạng thái
+
+detect_conflicts(): đăng ký 2 hành động cùng key → trả về list hợp lệ
+
+Kế hoạch triển khai và commit
+feat(hotkeys): add HotkeyManager skeleton + config IO (load/save, presets)
+
+feat(hotkeys): implement register/bind/unbind + enable/disable + on_changed + detect_conflicts
+
+feat(ui): add Hotkeys settings panel (checkbox list + status + save/reset + conflict check)
+
+refactor(app): integrate HotkeyManager into app_gui.py; remove direct binds; apply presets on first run
+
+fix(i18n): replace raw keys with translations in settings panel; ensure status strings localized
+
+test(hotkeys): add unit tests for manager (enable/disable, save/load, conflicts)
+
+docs: create docs/features/hotkeys/README.md with usage, presets, troubleshooting
+
+Mỗi commit kèm mô tả ngắn, liệt kê file thay đổi, và kết quả test nếu có.
+
+Acceptance criteria
+app_gui.py sạch: chỉ init HotkeyManager, register hotkeys, bind_all; không còn bind rải rác
+
+UI hiển thị đầy đủ danh sách; “X/Y phím đang hoạt động” cập nhật tức thì khi đổi preset hoặc checkbox
+
+config/hotkeys.json hoạt động (save/load), presets áp dụng đúng
+
+detect_conflicts() báo trùng key rõ ràng, UI có nút xem/hướng dẫn sửa
+
+i18n đầy đủ: không còn chuỗi thô
+
+tests/test_hotkeys.py pass
+
+Ghi chú thực thi
+Không block UI: callback hotkeys chỉ kích hoạt logic nhẹ hoặc đẩy sang worker nếu cần
+
+Khi thay preset: unbind_all() → apply preset → bind_all()
+
+Tránh xung đột với Vision Wizard (Ctrl+Shift+V): nếu key được dùng cho 2 hành động, chỉ enable hành động ưu tiên và hiển thị cảnh báo
+
+Log nhẹ: in thông báo “[Hotkeys] Registered …” ở DEBUG mode; có thể bật/tắt từ UI
+
+Hãy triển khai theo kế hoạch trên và báo cáo sau mỗi commit: tóm tắt thay đổi, file list, và kết quả test.
