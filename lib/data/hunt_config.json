@@ -47,12 +47,12 @@
     }
   ],
   "window_bounds": {
-    "left": 668,
-    "top": 73,
-    "right": 1586,
-    "bottom": 829,
-    "width": 918,
-    "height": 756
+    "left": -8,
+    "top": -8,
+    "right": 1928,
+    "bottom": 1040,
+    "width": 1936,
+    "height": 1048
   },
   "monster_list": [
     {
@@ -76,7 +76,7 @@
   "window_pid": 21928,
   "templates": [],
   "training_mode_enabled": true,
-  "ui_mode": "intermediate",
+  "ui_mode": "beginner",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,
