@@ -2,6 +2,7 @@
 Quick test to verify combobox data loading in Timing Calculator
 """
 import sys
+import pytest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 

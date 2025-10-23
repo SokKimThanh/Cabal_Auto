@@ -10,13 +10,21 @@ Solution: Load skills from library_manager.skills first (Setup Wizard context),
 fallback to hunt_config.json if not available.
 """
 
-import tkinter as tk
+import sys
+import pytest
 from pathlib import Path
 import json
-import sys
+import tkinter as tk
+
+# Mark as GUI test requiring Windows
+pytestmark = [pytest.mark.gui, pytest.mark.windows]
+
+# Skip on non-Windows platforms
+if sys.platform != "win32":
+    pytest.skip("Requires Windows environment with GUI", allow_module_level=True)
 
 # Add project root to path
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 

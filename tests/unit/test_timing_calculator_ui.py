@@ -11,10 +11,11 @@ Test Scenarios:
 5. Apply to hunt config
 6. Edge cases (missing data, invalid input)
 
-Run: python tests/test_timing_calculator_ui.py
+Run: pytest tests/unit/test_timing_calculator_ui.py
 """
 
 import sys
+import pytest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 

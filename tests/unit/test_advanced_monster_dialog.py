@@ -7,6 +7,7 @@ This script tests edge cases, stress scenarios, and validation boundaries.
 
 import sys
 import os
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
