@@ -8818,6 +8818,46 @@ Alternative Solutions:
             self._overlay_enabled = not self._overlay_enabled
             
             if self._overlay_enabled:
+                # ALWAYS refresh window position from live game window
+                target_hwnd = self.hunt_cfg.get('window_hwnd')
+                
+                # Get CURRENT window position (not from config cache)
+                if target_hwnd:
+                    try:
+                        from lib.system.window_manager import WindowManager
+                        wm = WindowManager()
+                        current_window = wm.get_window_info(target_hwnd)
+                        
+                        if current_window:
+                            # Update with LIVE position
+                            window_bounds = current_window.rect
+                            
+                            # Handle minimized window
+                            if current_window.is_minimized:
+                                print(f"[Overlay] Game is minimized, restoring...")
+                                wm.restore(target_hwnd)
+                                time.sleep(0.3)
+                                
+                                # Get updated position after restore
+                                current_window = wm.get_window_info(target_hwnd)
+                                if current_window:
+                                    window_bounds = current_window.rect
+                                    print(f"[Overlay] Window restored to: {window_bounds}")
+                            
+                            # Save LIVE position to config
+                            self.hunt_cfg['window_bounds'] = window_bounds
+                            save_hunt_config(self.hunt_cfg)
+                            
+                            print(f"[Overlay] Refreshed live position: {window_bounds}")
+                        else:
+                            print(f"[Overlay] ⚠️ Could not get current window info, using cached position")
+                            window_bounds = self.hunt_cfg.get('window_bounds')
+                    except Exception as e:
+                        print(f"[Overlay] Error refreshing position: {e}")
+                        window_bounds = self.hunt_cfg.get('window_bounds')
+                else:
+                    window_bounds = None
+                
                 # Create and show overlay if not exists
                 if self._overlay_window is None:
                     # Get target window rect from hunt config

@@ -46,7 +46,12 @@
       "image": "assets/images/skills/regeneration_1760739255499.png"
     }
   ],
-  "window_bounds": null,
+  "window_bounds": {
+    "left": 244,
+    "top": 49,
+    "width": 1616,
+    "height": 939
+  },
   "monster_list": [
     {
       "name": "Plant Sừng Báo",
@@ -87,5 +92,8 @@
       "training_mode": true
     }
   ],
-  "window_hwnd": 9833566
+  "window_hwnd": 264136,
+  "overlay": {
+    "enabled": false
+  }
 }
