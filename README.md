@@ -21,69 +21,134 @@ Hệ thống tự động hóa thông minh cho Cabal VTC Origin với Python - P
 
 ```
 Cabal_Auto/
-├── app_gui.py              # 🚀 Main GUI Application (4-tab layout)
-├── README.md               # This file
-├── requirements.txt        # Python dependencies
+├── 🚀 app_gui.py           # Main GUI Application (4-tab layout)
+├── 📖 README.md            # Project documentation (this file)
+├── 📋 CHANGELOG.md         # Version history and changes
+├── 📦 requirements.txt     # Python dependencies
 │
-├── assets/                 # Assets & resources
+├── 🎨 assets/              # Assets & resources
 │   ├── images/
 │   │   ├── icons/         # UI icons (.ico, .png) - 31 files
-│   │   ├── monsters/      # Monster templates
+│   │   ├── monsters/      # Monster templates for vision
 │   │   └── skills/        # Skill images
 │   └── documents/         # Legacy documents
 │
-├── data/                   # Configuration & database
+├── ⚙️ config/              # Configuration files
+│   └── bot_config.json    # Legacy bot configuration
+│
+├── 💾 lib/data/            # Application data & databases
 │   ├── hunt_config.json   # Hunt configuration (auto-generated)
 │   ├── monsters.json      # Monster library database
 │   ├── skills.json        # Skills library database
-│   └── README.md          # Data directory docs
+│   ├── vision_*.json      # Vision system configs
+│   └── README.md          # Data directory documentation
 │
-├── lib/                    # Core library modules
-│   ├── features/          # Feature modules
-│   │   ├── combat/       # Combat system (skill_runtime.py, timing_calculator.py)
-│   │   ├── library/      # Library managers
-│   │   └── wizard/       # Setup Wizard
-│   ├── system/           # System modules (hunt_logger.py, win_input.py)
-│   ├── ui/               # UI components (dialogs, frames, helpers)
-│   ├── vision/           # Vision modules (template_matcher.py)
-│   ├── i18n/             # i18n translations (en.json, vi.json)
-│   ├── i18n.py           # i18n handler
-│   ├── ui_style.py       # UI styling & theming
-│   └── README.md         # Library docs
+├── 📚 lib/                 # Core library modules (see lib/README.md)
+│   ├── system/            # System utilities
+│   │   ├── win_input.py       # Windows keyboard input
+│   │   └── hunt_logger.py     # Enhanced logging
+│   ├── vision/            # Computer vision
+│   │   ├── template_matcher.py  # Template matching engine
+│   │   └── vision_engine.py     # Vision processing
+│   ├── features/          # Game features
+│   │   ├── skills/            # Skill system
+│   │   ├── skill_rotation/    # Rotation builder
+│   │   └── timing/            # Timing calculator
+│   ├── ui/                # UI components
+│   │   ├── tooltip.py         # i18n tooltips
+│   │   ├── icon_helper.py     # Icon management
+│   │   ├── library_manager.py # Library manager window
+│   │   ├── button_styles.py   # Button styling
+│   │   └── capture_helper.py  # Screen capture
+│   ├── i18n/              # Internationalization
+│   │   └── translations.py    # Translation strings
+│   ├── i18n.py            # i18n registry
+│   ├── ui_style.py        # Global UI styles
+│   └── README.md          # Library documentation ⭐
 │
-├── ui/                     # Legacy UI modules (being phased out)
-│   ├── setup_wizard.py    # 5-step Setup Wizard ⭐
-│   ├── template_matcher.py # Template Matcher UI
+├── 🎮 ui/                  # UI modules (legacy, being migrated to lib/ui/)
+│   ├── setup_wizard.py    # 5-step Setup Wizard
+│   ├── template_matcher.py # Template matching UI
 │   └── auto_hunt.py       # Hunt UI module
 │
-├── scripts/                # Example & utility scripts
-│   ├── main_safe.py       # ✅ Safe clicker (legacy)
-│   └── README.md          # Scripts docs
+├── 🔧 scripts/             # Utility scripts & examples
+│   ├── main.py            # Main entry point (alternative)
+│   ├── main_safe.py       # Safe clicker (legacy)
+│   ├── main_skills.py     # Skills demo
+│   ├── restructure_project.py # Project restructure utility
+│   └── README.md          # Scripts documentation
 │
-├── tests/                  # Test & demo files
-│   ├── test_*.py          # Unit tests
-│   ├── demo_*.py          # Feature demos
-│   ├── opencv_test.py     # OpenCV testing
-│   └── README.md          # Tests docs
+├── 🧪 tests/               # Tests & demos
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   ├── demos/             # Feature demos
+│   ├── sprints/           # Sprint-specific tests
+│   ├── test_*.py          # Various test files
+│   ├── demo_*.py          # Demo scripts
+│   └── README.md          # Test documentation
 │
-├── docs/                   # 📚 Documentation (Reorganized v2.0)
+├── 📚 docs/                # Documentation (Reorganized v2.0)
 │   ├── INDEX.md           # Complete documentation index ⭐
-│   ├── README.md          # Docs overview
+│   ├── README.md          # Documentation overview
 │   ├── features/          # Feature specifications (2 files)
 │   ├── enhancements/      # UI/UX enhancements (4 files)
-│   ├── guides/            # User guides & tutorials (5 files)
-│   ├── sprint21/          # Sprint 21 - UI/UX Icons (8 files) ⭐
+│   ├── guides/            # User guides (5 files) ⭐
+│   ├── architecture/      # Architecture docs
+│   ├── sprints/           # Sprint documentation
+│   │   ├── sprint21/      # Sprint 21 - UI/UX Icons ⭐
+│   │   ├── sprint20/      # Sprint 20 - Performance
+│   │   └── sprint16-19/   # Historical sprints
 │   ├── bugfixes/          # Bug fix documentation (16 files)
-│   ├── sprints/           # Historical sprints (16-20)
+│   ├── translations/      # Translation documentation
+│   ├── ux-enhancements/   # UX improvements
 │   ├── archive/           # Archived docs (18 files)
+│   ├── legacy/            # Legacy planning docs
+│   │   └── hotkeyManager.txt  # Hotkey system plan (moved)
 │   └── context/           # System context
 │
-├── logs/                   # Runtime logs (auto-generated)
-│   └── hunt_structured.jsonl # JSON structured logs
+├── 📝 logs/                # Runtime logs (auto-generated)
+│   ├── hunt_structured.jsonl  # JSON structured logs
+│   └── README.md          # Logs documentation
 │
-└── tmp/                    # Temporary files
-    └── captures/          # Screenshot captures
+├── 📂 tmp/                 # Temporary files (gitignored)
+│   └── captures/          # Screenshot captures
+│
+├── 🚀 Launcher Scripts
+│   ├── run_venv.ps1       # PowerShell launcher (recommended)
+│   ├── run_venv.bat       # Batch launcher (Windows)
+│   └── run.bat            # Direct launcher (legacy)
+│
+└── 🔧 Development
+    ├── .vscode/           # VSCode settings
+    ├── .github/           # GitHub workflows
+    ├── .gitignore         # Git ignore rules
+    ├── .flake8            # Python linting config
+    └── venv/              # Virtual environment (gitignored)
 ```
+
+### 📂 Cấu trúc thư mục chi tiết
+
+#### 🎯 Thư mục chính (Root)
+- **app_gui.py**: Main application entry point - KHÔNG DI CHUYỂN
+- **README.md**: Project documentation - Bạn đang đọc file này
+- **CHANGELOG.md**: Version history và release notes
+- **requirements.txt**: Python dependencies
+
+#### ⚙️ Config (New!)
+- **bot_config.json**: Reference sample từ phần mềm auto Cabal khác (không sử dụng)
+
+#### 📚 Lib Structure
+Xem chi tiết trong [lib/README.md](lib/README.md) ⭐
+
+**Highlights:**
+- `system/`: Win input, logging
+- `vision/`: Template matching, vision engine
+- `features/`: Skills, timing, rotation
+- `ui/`: Tooltips, icons, library manager
+- `i18n/`: Translations
+
+#### 📚 Docs Organization
+Xem [docs/INDEX.md](docs/INDEX.md) để navigate toàn bộ documentation ⭐
 
 ## 🎯 Yêu cầu hệ thống
 
@@ -134,9 +199,27 @@ pip install -r requirements.txt
 ## 🚀 Quick Start
 
 ### Khởi động ứng dụng
+
+**Cách 1: PowerShell Launcher (Recommended)** 🌟
+```powershell
+.\run_venv.ps1
+```
+- Tự động tìm Python trong venv (`.venv` hoặc `venv`)
+- Fallback to system Python nếu không tìm thấy venv
+- Cross-platform compatible
+
+**Cách 2: Batch Launcher (Windows)**
+```cmd
+run_venv.bat
+```
+- Tương tự run_venv.ps1 nhưng cho cmd.exe
+
+**Cách 3: Direct (Legacy)**
 ```powershell
 python app_gui.py
 ```
+- Sử dụng Python hiện tại trong PATH
+- Không đảm bảo sử dụng đúng venv
 
 ### Lần đầu sử dụng - Setup Wizard 🧙‍♂️
 
@@ -382,7 +465,7 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 
 ## 🔧 Configuration Files
 
-### data/hunt_config.json (Auto-generated)
+### lib/data/hunt_config.json (Auto-generated)
 ```json
 {
   "window_title": "Cabal",
@@ -408,9 +491,11 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 
 **⚠️ Note**: File này được Setup Wizard & Library Manager tự động tạo/cập nhật. Không cần chỉnh sửa thủ công.
 
+**Location**: `lib/data/hunt_config.json`
+
 ---
 
-### data/monsters.json (Monster Database)
+### lib/data/monsters.json (Monster Database)
 ```json
 {
   "monsters": [
@@ -438,9 +523,11 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 
 **Quản lý**: Dùng **Library → Monsters** tab (không edit JSON thủ công).
 
+**Location**: `lib/data/monsters.json`
+
 ---
 
-### data/skills.json (Skills Database)
+### lib/data/skills.json (Skills Database)
 ```json
 {
   "skills": [
@@ -468,11 +555,65 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 
 **Quản lý**: Dùng **Library → Skills** tab (không edit JSON thủ công).
 
+**Location**: `lib/data/skills.json`
+
 **Buff Fields**:
 - `duration_sec`: Thời gian buff tồn tại (giây)
 - `pre_refresh_sec`: Recast trước khi hết bao nhiêu giây
 
 **Example**: `duration_sec=60`, `pre_refresh_sec=5` → Buff recast ở giây thứ 55.
+
+---
+
+### config/bot_config.json (Reference Sample)
+
+```json
+{
+  "actions": [
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": true
+    }
+  ]
+}
+```
+
+**⚠️ Note**: File mẫu tham khảo từ một phần mềm auto Cabal khác (không phải config của app này). Được giữ lại cho mục đích research và học hỏi cách làm của tools khác. App này sử dụng hệ thống config riêng trong `lib/data/`.
+
+**Location**: `config/bot_config.json` (reference only, có thể xóa an toàn)
+
+---
+
+## 📂 File Organization Summary
+
+### ✅ Files đã di chuyển:
+1. **bot_config.json** → `config/bot_config.json` (Legacy config)
+2. **test_migration.py** → `tests/test_migration.py` (Test file)
+3. **hotkeyManager.txt** → `docs/legacy/hotkeyManager.txt` (Planning doc)
+
+### 📍 Files giữ nguyên ở root:
+1. **app_gui.py** - Main application (BẮT BUỘC)
+2. **README.md** - Project documentation
+3. **CHANGELOG.md** - Version history
+4. **requirements.txt** - Dependencies
+5. **run_*.bat / run_*.ps1** - Launcher scripts
+6. **.gitignore, .flake8, .vscode/** - Development configs
+
+### 🗂️ Thư mục mới:
+- **config/**: Reference samples (bot_config.json từ phần mềm khác)
+- **docs/legacy/**: Legacy planning documents (hotkeyManager.txt)
+
+### 🚫 Files đã xóa/deprecated:
+- **interception.dll**: Legacy DLL không còn sử dụng (có thể xóa an toàn)
+- **tmp_test_dir/**: Temporary test directory (có thể xóa)
+
+### 📝 Migration Notes:
+Khi update code, lưu ý các paths đã thay đổi:
+- `bot_config.json` → `config/bot_config.json`
+- Các test files ở root → `tests/`
+- Planning docs ở root → `docs/legacy/`
 
 ## 📊 Development Timeline
 
@@ -769,10 +910,77 @@ MIT License - See LICENSE file for details
 
 ---
 
-## 📊 Project Stats
+## � Project Organization & Best Practices
+
+### File Placement Guidelines
+
+#### ✅ Root Directory - Chỉ giữ files quan trọng
+- **app_gui.py**: Main entry point (BẮT BUỘC ở root)
+- **README.md, CHANGELOG.md**: Project documentation
+- **requirements.txt**: Dependencies list
+- **Launcher scripts**: run_venv.ps1, run_venv.bat, run.bat
+- **Development configs**: .gitignore, .flake8, .vscode/
+
+#### 📦 Configuration Files
+- **Active configs**: `lib/data/*.json` (hunt_config, monsters, skills) ⭐
+- **Reference samples**: `config/*.json` (bot_config - từ phần mềm khác)
+- **Development configs**: `.vscode/`, `.github/`
+
+#### 🧪 Test Files
+- **Unit tests**: `tests/unit/`
+- **Integration tests**: `tests/integration/`
+- **Demo scripts**: `tests/demos/`
+- **Sprint tests**: `tests/sprints/`
+- ⚠️ **KHÔNG** để test files ở root (ví dụ: test_migration.py đã di chuyển)
+
+#### 📚 Documentation
+- **User guides**: `docs/guides/`
+- **Technical docs**: `docs/architecture/`, `docs/features/`
+- **Sprint docs**: `docs/sprints/sprint21/`, etc.
+- **Legacy planning**: `docs/legacy/` (ví dụ: hotkeyManager.txt)
+- **Archive**: `docs/archive/` (old summaries, outdated docs)
+
+#### 🔧 Scripts & Utilities
+- **Example scripts**: `scripts/main*.py`
+- **Utility scripts**: `scripts/restructure_project.py`
+- **Project tools**: `scripts/`
+
+### Clean Root Philosophy
+
+**Goal**: Root directory chỉ chứa essential files cần thiết để chạy app.
+
+**Rationale**:
+- ✅ Dễ navigate và tìm files
+- ✅ Clear separation of concerns
+- ✅ Professional project structure
+- ✅ Easier for new developers to understand
+
+**Recent Changes (Oct 23, 2025)**:
+```
+Moved: bot_config.json → config/bot_config.json
+Moved: test_migration.py → tests/test_migration.py
+Moved: hotkeyManager.txt → docs/legacy/hotkeyManager.txt
+```
+
+### Where to Put New Files?
+
+| File Type | Location | Example |
+|-----------|----------|---------|
+| Test file | `tests/` | `test_feature.py` |
+| Demo script | `tests/demos/` | `demo_feature.py` |
+| Config file | `lib/data/` or `config/` | `feature_config.json` |
+| Documentation | `docs/guides/` or `docs/features/` | `FEATURE_GUIDE.md` |
+| UI component | `lib/ui/` | `feature_dialog.py` |
+| Feature module | `lib/features/` | `feature/module.py` |
+| Legacy script | `scripts/` | `legacy_tool.py` |
+| Planning doc | `docs/legacy/` | `feature_plan.txt` |
+
+---
+
+## �📊 Project Stats
 
 **Version**: 2.0.0  
-**Last Updated**: October 21, 2025  
+**Last Updated**: October 23, 2025  
 **Status**: Production Ready ✅
 
 **Development**:
@@ -782,6 +990,12 @@ MIT License - See LICENSE file for details
 - **Documentation**: 40+ markdown files (reorganized v2.0)
 - **Icon Coverage**: 72% (28/39 buttons with .ico files)
 - **Languages**: English, Tiếng Việt 🇻🇳
+
+**Project Structure**:
+- **Root files**: 6 essential files only (cleaned Oct 23, 2025)
+- **Main directories**: 11 (lib, ui, tests, docs, assets, logs, scripts, config, tmp, venv, .vscode)
+- **Config organization**: Active configs in `lib/data/`, legacy in `config/`
+- **Documentation**: Organized in 8 categories with INDEX.md navigator
 
 **Features**:
 - ✅ 5-step Setup Wizard
