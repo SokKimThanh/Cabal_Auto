@@ -1,0 +1,15 @@
+# Main dependencies for Cabal_Auto project
+# For detailed UI dependencies, see ui/requirements.txt
+
+# Computer Vision & Image Processing
+opencv-python>=4.12.0.132
+numpy>=2.2.1
+pillow>=11.0.0
+
+# GUI Automation
+pyautogui>=0.9.54
+keyboard>=0.13.5
+
+# Testing
+pytest>=8.4.2
+pytest-cov>=4.1.0
