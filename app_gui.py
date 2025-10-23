@@ -8818,10 +8818,13 @@ Alternative Solutions:
             self._overlay_enabled = not self._overlay_enabled
             
             if self._overlay_enabled:
-                # ALWAYS refresh window position from live game window
+                # ========================================
+                # STEP 1: ALWAYS REFRESH LIVE POSITION FIRST
+                # ========================================
                 target_hwnd = self.hunt_cfg.get('window_hwnd')
+                window_bounds = None
                 
-                # Get CURRENT window position (not from config cache)
+                # Get CURRENT window position from LIVE game window (not from config cache)
                 if target_hwnd:
                     try:
                         from lib.system.window_manager import WindowManager
@@ -8834,7 +8837,7 @@ Alternative Solutions:
                             
                             # Handle minimized window
                             if current_window.is_minimized:
-                                print(f"[Overlay] Game is minimized, restoring...")
+                                print(f"[Overlay] ⚠️ Game is minimized, restoring...")
                                 wm.restore(target_hwnd)
                                 time.sleep(0.3)
                                 
@@ -8842,131 +8845,136 @@ Alternative Solutions:
                                 current_window = wm.get_window_info(target_hwnd)
                                 if current_window:
                                     window_bounds = current_window.rect
-                                    print(f"[Overlay] Window restored to: {window_bounds}")
+                                    print(f"[Overlay] ✅ Window restored to: {window_bounds}")
                             
-                            # Save LIVE position to config
-                            self.hunt_cfg['window_bounds'] = window_bounds
-                            save_hunt_config(self.hunt_cfg)
+                            # Validate rect is not minimized position
+                            if window_bounds and (window_bounds.get('left', 0) < -30000 or window_bounds.get('top', 0) < -30000):
+                                print(f"[Overlay] ⚠️ Detected minimized rect, clearing: {window_bounds}")
+                                window_bounds = None
                             
-                            print(f"[Overlay] Refreshed live position: {window_bounds}")
-                        else:
-                            print(f"[Overlay] ⚠️ Could not get current window info, using cached position")
-                            window_bounds = self.hunt_cfg.get('window_bounds')
-                    except Exception as e:
-                        print(f"[Overlay] Error refreshing position: {e}")
-                        window_bounds = self.hunt_cfg.get('window_bounds')
-                else:
-                    window_bounds = None
-                
-                # Create and show overlay if not exists
-                if self._overlay_window is None:
-                    # Get target window rect from hunt config
-                    window_bounds = self.hunt_cfg.get('window_bounds')
-                    target_hwnd = self.hunt_cfg.get('window_hwnd')
-                    
-                    # Validate existing window_bounds is not minimized position
-                    if window_bounds is not None:
-                        if window_bounds.get('left', 0) < -30000 or window_bounds.get('top', 0) < -30000:
-                            print(f"[Overlay] Config has invalid (minimized) rect: {window_bounds}")
-                            print(f"[Overlay] Clearing invalid config and re-detecting...")
-                            window_bounds = None
-                            target_hwnd = None
-                    
-                    # Auto-detect game window if not configured OR invalid
-                    if window_bounds is None:
-                        print("[Overlay] No window_bounds in config, attempting auto-detect...")
-                        
-                        # Try to find CABAL window
-                        try:
-                            from lib.system.window_manager import WindowManager
-                            wm = WindowManager()
-                            
-                            # Search for CABAL window
-                            windows = wm.list_windows()
-                            cabal_window = None
-                            
-                            for w in windows:
-                                if 'CABAL' in w.title.upper():
-                                    cabal_window = w
-                                    print(f"[Overlay] Found CABAL window: {w.title} [HWND:{w.hwnd}]")
-                                    break
-                            
-                            if cabal_window:
-                                # Bring game window to foreground FIRST if minimized/hidden
-                                try:
-                                    if cabal_window.is_minimized:
-                                        print(f"[Overlay] Game is minimized, restoring...")
-                                        wm.restore(cabal_window.hwnd)
-                                        time.sleep(0.3)  # Wait for window to restore
-                                        
-                                        # Get updated window info after restore
-                                        restored_window = wm.get_window_info(cabal_window.hwnd)
-                                        if restored_window:
-                                            cabal_window = restored_window
-                                            print(f"[Overlay] Window restored, new rect: {cabal_window.rect}")
-                                        else:
-                                            print(f"[Overlay] ⚠️ Could not get window info after restore")
-                                    
-                                    if not cabal_window.is_foreground:
-                                        print(f"[Overlay] Bringing game window to foreground...")
-                                        wm.set_foreground(cabal_window.hwnd)
-                                        print(f"[Overlay] ✅ Game window focused")
-                                except Exception as e:
-                                    print(f"[Overlay] Failed to restore/foreground window: {e}")
-                                
-                                # Use detected window (after restore)
-                                window_bounds = cabal_window.rect
-                                target_hwnd = cabal_window.hwnd
-                                
-                                # Validate rect is not minimized position
-                                if window_bounds['left'] < -30000 or window_bounds['top'] < -30000:
-                                    messagebox.showerror(
-                                        "Invalid Window Position",
-                                        f"Game window appears to be minimized or invalid.\n\n"
-                                        f"Current position: {window_bounds}\n\n"
-                                        f"Please restore the game window and try again.",
-                                        parent=self
-                                    )
-                                    self._overlay_enabled = False
-                                    return
-                                
-                                # Save to config for next time
+                            if window_bounds:
+                                # Save LIVE position to config
                                 self.hunt_cfg['window_bounds'] = window_bounds
-                                self.hunt_cfg['window_hwnd'] = target_hwnd
-                                self.hunt_cfg['window_title'] = cabal_window.title
-                                
-                                # save_hunt_config is already defined at module level (line 566)
                                 save_hunt_config(self.hunt_cfg)
-                                
-                                print(f"[Overlay] Auto-configured window: {cabal_window.title}")
+                                print(f"[Overlay] ✅ Refreshed LIVE position: {window_bounds}")
+                        else:
+                            print(f"[Overlay] ⚠️ Could not get current window info for HWND:{target_hwnd}")
+                    except Exception as e:
+                        print(f"[Overlay] ❌ Error refreshing position: {e}")
+                
+                # ========================================
+                # STEP 2: AUTO-DETECT IF NO VALID POSITION
+                # ========================================
+                if window_bounds is None:
+                    print("[Overlay] No valid window position, attempting auto-detect...")
+                    
+                    # Try to find CABAL window
+                    try:
+                        from lib.system.window_manager import WindowManager
+                        wm = WindowManager()
+                        
+                        # Search for CABAL window
+                        windows = wm.list_windows()
+                        cabal_window = None
+                        
+                        for w in windows:
+                            if 'CABAL' in w.title.upper():
+                                cabal_window = w
+                                print(f"[Overlay] Found CABAL window: {w.title} [HWND:{w.hwnd}]")
+                                break
+                        
+                        if cabal_window:
+                            # Bring game window to foreground FIRST if minimized/hidden
+                            try:
+                                if cabal_window.is_minimized:
+                                    print(f"[Overlay] Game is minimized, restoring...")
+                                    wm.restore(cabal_window.hwnd)
+                                    time.sleep(0.3)  # Wait for window to restore
                                     
-                            else:
-                                # Still no window found - show warning
-                                messagebox.showwarning(
-                                    self._t("overlay_no_window_title"),
-                                    self._t("overlay_no_window_message") + "\n\n💡 Tip: Open CABAL game window first!"
+                                    # Get updated window info after restore
+                                    restored_window = wm.get_window_info(cabal_window.hwnd)
+                                    if restored_window:
+                                        cabal_window = restored_window
+                                        print(f"[Overlay] Window restored, new rect: {cabal_window.rect}")
+                                    else:
+                                        print(f"[Overlay] ⚠️ Could not get window info after restore")
+                                
+                                if not cabal_window.is_foreground:
+                                    print(f"[Overlay] Bringing game window to foreground...")
+                                    wm.set_foreground(cabal_window.hwnd)
+                                    print(f"[Overlay] ✅ Game window focused")
+                            except Exception as e:
+                                print(f"[Overlay] Failed to restore/foreground window: {e}")
+                            
+                            # Use detected window (after restore)
+                            window_bounds = cabal_window.rect
+                            target_hwnd = cabal_window.hwnd
+                            
+                            # Validate rect is not minimized position
+                            if window_bounds['left'] < -30000 or window_bounds['top'] < -30000:
+                                messagebox.showerror(
+                                    "Invalid Window Position",
+                                    f"Game window appears to be minimized or invalid.\n\n"
+                                    f"Current position: {window_bounds}\n\n"
+                                    f"Please restore the game window and try again.",
+                                    parent=self
                                 )
                                 self._overlay_enabled = False
                                 return
+                            
+                            # Save to config for next time
+                            self.hunt_cfg['window_bounds'] = window_bounds
+                            self.hunt_cfg['window_hwnd'] = target_hwnd
+                            self.hunt_cfg['window_title'] = cabal_window.title
+                            
+                            # save_hunt_config is already defined at module level (line 566)
+                            save_hunt_config(self.hunt_cfg)
+                            
+                            print(f"[Overlay] Auto-configured window: {cabal_window.title}")
                                 
-                        except Exception as e:
-                            print(f"[Overlay] Auto-detect failed: {e}")
-                            import traceback
-                            traceback.print_exc()
-                            # Show original warning
+                        else:
+                            # Still no window found - show warning
                             messagebox.showwarning(
                                 self._t("overlay_no_window_title"),
-                                self._t("overlay_no_window_message")
+                                self._t("overlay_no_window_message") + "\n\n💡 Tip: Open CABAL game window first!"
                             )
                             self._overlay_enabled = False
                             return
-                    
-                    # Get overlay config from hunt_cfg (or use defaults)
-                    overlay_cfg = self.hunt_cfg.get('overlay', {})
-                    alpha = float(overlay_cfg.get('alpha', 0.7))  # Default 70% for testing (more visible)
-                    fps_limit = int(overlay_cfg.get('fps_limit', 15))
-                    
-                    print(f"[Overlay] Creating overlay with alpha={alpha}, fps={fps_limit}")
+                            
+                    except Exception as e:
+                        print(f"[Overlay] Auto-detect failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        # Show original warning
+                        messagebox.showwarning(
+                            self._t("overlay_no_window_title"),
+                            self._t("overlay_no_window_message")
+                        )
+                        self._overlay_enabled = False
+                        return
+                
+                # ========================================
+                # STEP 3: VALIDATE WE HAVE VALID POSITION
+                # ========================================
+                if window_bounds is None:
+                    messagebox.showwarning(
+                        self._t("overlay_no_window_title"),
+                        self._t("overlay_no_window_message")
+                    )
+                    self._overlay_enabled = False
+                    return
+                
+                # ========================================
+                # STEP 4: CREATE OR UPDATE OVERLAY
+                # ========================================
+                # Get overlay config from hunt_cfg (or use defaults)
+                overlay_cfg = self.hunt_cfg.get('overlay', {})
+                alpha = float(overlay_cfg.get('alpha', 0.7))  # Default 70% for testing (more visible)
+                fps_limit = int(overlay_cfg.get('fps_limit', 15))
+                
+                # Create overlay if not exists
+                if self._overlay_window is None:
+                    print(f"[Overlay] Creating NEW overlay with alpha={alpha}, fps={fps_limit}")
                     print(f"[Overlay] Target rect: {window_bounds}")
                     print(f"[Overlay] Target HWND: {target_hwnd}")
                     
@@ -8983,30 +8991,10 @@ Alternative Solutions:
                     
                     print(f"[Overlay] Window created with HWND: {self._overlay_window.hwnd}")
                     print(f"[Overlay] {self._t('overlay_created').format(hwnd=target_hwnd, rect=window_bounds)}")
-                    
-                    # Add some test detection boxes to make overlay visible
-                    from lib.ui.overlay_window_pywin32 import DetectionBox
-                    test_boxes = [
-                        DetectionBox(
-                            x=100, y=100, w=200, h=150,
-                            label="TEST OVERLAY - Visible?",
-                            color=(255, 0, 0),  # Red
-                            confidence=1.0
-                        ),
-                        DetectionBox(
-                            x=350, y=250, w=150, h=100,
-                            label="Detection Test",
-                            color=(0, 255, 0),  # Green
-                            confidence=0.95
-                        )
-                    ]
-                    self._overlay_window.update_detections(test_boxes)
-                    print(f"[Overlay] Added test detection boxes for visibility")
-                
-                # Update overlay position with LIVE window bounds (before showing)
-                if self._overlay_window and window_bounds:
+                else:
+                    # Overlay already exists, just update position
+                    print(f"[Overlay] Overlay exists, updating to LIVE position: {window_bounds}")
                     self._overlay_window.update_target_rect(window_bounds)
-                    print(f"[Overlay] Updated overlay to live position: {window_bounds}")
                 
                 # Show overlay
                 self._overlay_window.show()
