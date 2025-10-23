@@ -6,9 +6,36 @@ Note: Some games may still block simulated input due to anti-cheat.
 from __future__ import annotations
 import time
 import ctypes
+import sys
+import platform
+from typing import Any
 from ctypes import wintypes
 
-user32 = ctypes.WinDLL('user32', use_last_error=True)
+# Platform detection
+IS_WINDOWS = sys.platform == 'win32' or platform.system() == 'Windows'
+
+# Only load Windows DLL on Windows platform
+if IS_WINDOWS:
+    user32 = ctypes.WinDLL('user32', use_last_error=True)
+else:
+    # Mock user32 for non-Windows platforms (for testing/CI)
+    class MockCallable:
+        """Mock callable with mutable argtypes/restype."""
+        def __init__(self, return_value: Any = 1):
+            self.argtypes: Any = None
+            self.restype: Any = None
+            self._return_value = return_value
+        
+        def __call__(self, *args: Any, **kwargs: Any) -> Any:
+            return self._return_value
+    
+    class MockWinDLL:
+        """Mock Windows DLL for non-Windows platforms."""
+        def __init__(self):
+            self.SendInput = MockCallable(1)  # Simulate successful input
+            self.MapVirtualKeyW = MockCallable(0)  # Return scancode
+    
+    user32 = MockWinDLL()  # type: ignore[assignment]
 
 # Constants
 INPUT_KEYBOARD = 1
@@ -86,11 +113,12 @@ class INPUT(ctypes.Structure):
 
 LPINPUT = ctypes.POINTER(INPUT)
 
-# Function prototypes
-user32.SendInput.argtypes = (wintypes.UINT, LPINPUT, ctypes.c_int)
-user32.SendInput.restype = wintypes.UINT
-user32.MapVirtualKeyW.argtypes = (wintypes.UINT, wintypes.UINT)
-user32.MapVirtualKeyW.restype = wintypes.UINT
+# Function prototypes (only on Windows)
+if IS_WINDOWS:
+    user32.SendInput.argtypes = (wintypes.UINT, LPINPUT, ctypes.c_int)
+    user32.SendInput.restype = wintypes.UINT
+    user32.MapVirtualKeyW.argtypes = (wintypes.UINT, wintypes.UINT)
+    user32.MapVirtualKeyW.restype = wintypes.UINT
 
 
 def _vk_from_str(key: str) -> int:
@@ -126,7 +154,11 @@ def _send_key_scancode(scancode: int, keyup: bool = False, extended: bool = Fals
     inp = INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=0, wScan=scancode, dwFlags=flags, time=0, dwExtraInfo=None))
     sent = user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(inp))
     if sent != 1:
-        raise ctypes.WinError(ctypes.get_last_error())
+        if IS_WINDOWS:
+            raise ctypes.WinError(ctypes.get_last_error())
+        else:
+            raise RuntimeError(f"Failed to send keyboard input (scancode={scancode})")
+
 
 
 def key_down(key: str):
@@ -149,4 +181,4 @@ def tap(key: str, press_ms: int = 50):
     key_up(key)
 
 
-__all__ = ['key_down', 'key_up', 'tap']
+__all__ = ['key_down', 'key_up', 'tap', 'IS_WINDOWS']
