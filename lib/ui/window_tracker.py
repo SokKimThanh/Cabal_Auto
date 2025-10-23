@@ -244,6 +244,10 @@ class WindowTracker:
                     self._last_snapshot = snapshot
                     frame_count += 1
                     
+                    # Log heartbeat every 60 frames (1 second at 60 FPS)
+                    if frame_count % 60 == 0:
+                        print(f"[WindowTracker] ❤️ Heartbeat: frame #{frame_count}, tracking HWND:{self.target_hwnd}")
+                    
                     # Log stats every 5 seconds
                     if frame_count % (self.poll_rate * 5) == 0:
                         elapsed = time.time() - start_time

@@ -9066,33 +9066,58 @@ Alternative Solutions:
             
             # Define callbacks for window changes
             def on_position_change(rect):
-                if self._overlay_window:
-                    self._overlay_window.update_target_rect(rect)
+                try:
+                    print(f"[Overlay] on_position_change called with rect: {rect}")
+                    if self._overlay_window:
+                        print(f"[Overlay] Calling update_target_rect...")
+                        self._overlay_window.update_target_rect(rect)
+                        print(f"[Overlay] ✅ Position updated to ({rect['left']},{rect['top']})")
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_position_change: {e}")
+                    import traceback
+                    traceback.print_exc()
             
             def on_size_change(rect):
-                if self._overlay_window:
-                    self._overlay_window.update_target_rect(rect)
-                    print(f"[Overlay] Window resized to {rect['width']}x{rect['height']}")
+                try:
+                    print(f"[Overlay] on_size_change called with rect: {rect}")
+                    if self._overlay_window:
+                        self._overlay_window.update_target_rect(rect)
+                        print(f"[Overlay] ✅ Size updated to {rect['width']}x{rect['height']}")
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_size_change: {e}")
+                    import traceback
+                    traceback.print_exc()
             
             def on_visibility_change(visible):
-                if self._overlay_window:
-                    if visible:
-                        self._overlay_window.show()
-                        print(f"[Overlay] Game window shown → overlay shown")
-                    else:
-                        self._overlay_window.hide()
-                        print(f"[Overlay] Game window hidden → overlay hidden")
+                try:
+                    print(f"[Overlay] on_visibility_change called: visible={visible}")
+                    if self._overlay_window:
+                        if visible:
+                            self._overlay_window.show()
+                            print(f"[Overlay] Game window shown → overlay shown")
+                        else:
+                            self._overlay_window.hide()
+                            print(f"[Overlay] Game window hidden → overlay hidden")
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_visibility_change: {e}")
+                    import traceback
+                    traceback.print_exc()
             
             def on_state_change(state):
-                print(f"[Overlay] Game window state changed: {state.value}")
-                if state == WindowState.MINIMIZED:
-                    if self._overlay_window:
-                        self._overlay_window.hide()
-                        print(f"[Overlay] Game minimized → overlay hidden")
-                elif state == WindowState.NORMAL or state == WindowState.MAXIMIZED:
-                    if self._overlay_window and self._overlay_enabled:
-                        self._overlay_window.show()
-                        print(f"[Overlay] Game restored → overlay shown")
+                try:
+                    print(f"[Overlay] on_state_change called: state={state.value}")
+                    if state == WindowState.MINIMIZED:
+                        if self._overlay_window:
+                            self._overlay_window.hide()
+                            print(f"[Overlay] Game minimized → overlay hidden")
+                    elif state == WindowState.NORMAL or state == WindowState.MAXIMIZED:
+                        if self._overlay_window and self._overlay_enabled:
+                            self._overlay_window.show()
+                            print(f"[Overlay] Game restored → overlay shown")
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_state_change: {e}")
+                    import traceback
+                    traceback.print_exc()
             
             # Create and start tracker
             self._window_tracker = WindowTracker(
