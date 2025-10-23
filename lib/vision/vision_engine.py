@@ -168,6 +168,14 @@ class VisionEngine:
         self.screen_capture: Optional['ScreenCapture'] = None  # type: ignore
         self.capture_hwnd: Optional[int] = None
         self.capture_enabled = False
+        self.window_manager: Optional['WindowManager'] = None  # type: ignore
+        
+        # Initialize window manager if on Windows
+        if sys.platform == "win32" and WindowManager:
+            try:
+                self.window_manager = WindowManager()  # type: ignore
+            except Exception as e:
+                logger.warning(f"Failed to initialize WindowManager: {e}")
         
         # Worker threads and queue
         self.worker_running = False
@@ -831,18 +839,18 @@ class VisionEngine:
             logger.error("Screen capture only supported on Windows")
             return False
         
-        if not ScreenCapture or not WindowManager:
+        if not ScreenCapture or not self.window_manager:
             logger.error("Screen capture modules not available")
             return False
         
         # Find window
-        hwnd = WindowManager.find_window(title=window_title)  # type: ignore
+        hwnd = self.window_manager.find_window(title_contains=window_title)  # type: ignore
         if not hwnd:
             logger.error(f"Window not found: {window_title}")
             return False
         
         # Check window state
-        info = WindowManager.get_window_info(hwnd)  # type: ignore
+        info = self.window_manager.get_window_info(hwnd)  # type: ignore
         if info and info.is_minimized:
             logger.warning(f"Window is minimized: {window_title}")
             # Capture can still work with minimized windows
@@ -959,11 +967,11 @@ class VisionEngine:
         if not self.capture_hwnd or sys.platform != "win32":
             return False
         
-        if not WindowManager:
+        if not self.window_manager:
             return False
         
         try:
-            return WindowManager.set_foreground(self.capture_hwnd)  # type: ignore
+            return self.window_manager.set_foreground(self.capture_hwnd)  # type: ignore
         except Exception as e:
             logger.error(f"Error focusing window: {e}")
             return False

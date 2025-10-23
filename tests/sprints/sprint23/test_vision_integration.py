@@ -70,37 +70,56 @@ if sys.platform == "win32":
 # =====================================================================
 
 @pytest.fixture
-def vision_engine():
-    """Create VisionEngine instance"""
-    engine = VisionEngine(config_dir="tests/tmp/vision_config")
-    yield engine
-    # Cleanup
-    if engine.is_capture_active():
-        engine.stop_capture()
-    if engine.worker_running:
-        engine.stop_worker()
+def mock_window_manager():
+    """Mock WindowManager for testing"""
+    # Create mock class
+    mock_wm_class = MagicMock()
+    
+    # Create mock instance
+    mock_wm_instance = MagicMock()
+    mock_wm_class.return_value = mock_wm_instance
+    
+    # Setup find_window
+    mock_wm_instance.find_window.return_value = 12345  # Mock hwnd
+    
+    # Setup get_window_info
+    mock_info = Mock(spec=WindowInfo)
+    mock_info.hwnd = 12345
+    mock_info.title = "Test Window"
+    mock_info.class_name = "TestClass"
+    mock_info.pid = 1234
+    mock_info.process_name = "test.exe"
+    mock_info.rect = {'x': 0, 'y': 0, 'width': 800, 'height': 600, 
+                     'left': 0, 'top': 0, 'right': 800, 'bottom': 600}
+    mock_info.is_minimized = False
+    mock_info.is_maximized = False
+    mock_info.is_visible = True
+    mock_info.is_enabled = True
+    mock_info.is_foreground = False
+    mock_wm_instance.get_window_info.return_value = mock_info
+    
+    # Setup set_foreground
+    mock_wm_instance.set_foreground.return_value = True
+    
+    # Setup list_windows
+    mock_wm_instance.list_windows.return_value = [mock_info]
+    
+    yield mock_wm_class, mock_wm_instance
 
 
 @pytest.fixture
-def mock_window_manager():
-    """Mock WindowManager for testing"""
-    with patch('lib.vision.vision_engine.WindowManager') as mock_wm:
-        # Setup find_window
-        mock_wm.find_window.return_value = 12345  # Mock hwnd
-        
-        # Setup get_window_info
-        mock_info = Mock(spec=WindowInfo)
-        mock_info.is_minimized = False
-        mock_info.is_maximized = False
-        mock_info.is_visible = True
-        mock_wm.get_window_info.return_value = mock_info
-        
-        # Setup set_foreground
-        mock_wm.set_foreground.return_value = True
-        
-        yield mock_wm
-
-
+def vision_engine(mock_window_manager):
+    """Create VisionEngine instance with mocked WindowManager"""
+    mock_wm_class, mock_wm_instance = mock_window_manager
+    
+    with patch('lib.vision.vision_engine.WindowManager', mock_wm_class):
+        engine = VisionEngine(config_dir="tests/tmp/vision_config")
+        yield engine
+        # Cleanup
+        if engine.is_capture_active():
+            engine.stop_capture()
+        if engine.worker_running:
+            engine.stop_worker()
 @pytest.fixture
 def mock_screen_capture():
     """Mock ScreenCapture for testing"""
@@ -153,6 +172,7 @@ class TestVisionEngineCapture:
     def test_start_capture_success(self, vision_engine, mock_window_manager, 
                                    mock_screen_capture):
         """Test starting screen capture successfully"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture
@@ -162,14 +182,15 @@ class TestVisionEngineCapture:
         assert result is True
         assert vision_engine.capture_enabled is True
         assert vision_engine.capture_hwnd == 12345
-        mock_window_manager.find_window.assert_called_once()
+        mock_wm_instance.find_window.assert_called_once()
         mock_sc.assert_called_once()
         mock_instance.start_capture.assert_called_once()
     
     def test_start_capture_window_not_found(self, vision_engine, mock_window_manager,
                                            mock_screen_capture):
         """Test starting capture when window not found"""
-        mock_window_manager.find_window.return_value = None
+        mock_wm_class, mock_wm_instance = mock_window_manager
+        mock_wm_instance.find_window.return_value = None
         
         # Start capture
         result = vision_engine.start_capture(window_title="NonExistent")
@@ -182,6 +203,7 @@ class TestVisionEngineCapture:
     def test_start_capture_with_fps(self, vision_engine, mock_window_manager,
                                    mock_screen_capture):
         """Test starting capture with custom FPS"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture with 30 FPS
@@ -198,6 +220,7 @@ class TestVisionEngineCapture:
     def test_stop_capture(self, vision_engine, mock_window_manager, 
                          mock_screen_capture):
         """Test stopping screen capture"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start then stop
@@ -225,6 +248,7 @@ class TestCaptureFrameAccess:
     def test_get_capture_frame_success(self, vision_engine, mock_window_manager,
                                        mock_screen_capture):
         """Test getting frame from capture"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture
@@ -247,6 +271,7 @@ class TestCaptureFrameAccess:
     def test_is_capture_active(self, vision_engine, mock_window_manager,
                                mock_screen_capture):
         """Test checking if capture is active"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Initially not active
@@ -274,6 +299,7 @@ class TestCaptureStatistics:
     def test_get_capture_stats(self, vision_engine, mock_window_manager,
                                mock_screen_capture):
         """Test getting capture statistics"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture
@@ -307,6 +333,8 @@ class TestWindowControl:
     def test_focus_capture_window(self, vision_engine, mock_window_manager,
                                   mock_screen_capture):
         """Test focusing captured window"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
+        
         # Start capture
         vision_engine.start_capture(window_title="Test")
         
@@ -315,7 +343,7 @@ class TestWindowControl:
         
         # Verify
         assert result is True
-        mock_window_manager.set_foreground.assert_called_once()
+        mock_wm_instance.set_foreground.assert_called_once()
     
     def test_focus_capture_window_when_not_active(self, vision_engine):
         """Test focusing when capture not active"""
@@ -335,6 +363,7 @@ class TestWorkerIntegration:
     def test_start_worker_with_capture(self, vision_engine, mock_window_manager,
                                        mock_screen_capture):
         """Test starting worker with active screen capture"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture
@@ -376,6 +405,7 @@ class TestWorkerIntegration:
     def test_stop_worker_stops_capture(self, vision_engine, mock_window_manager,
                                       mock_screen_capture):
         """Test that stopping worker also stops capture"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture and worker
@@ -402,6 +432,8 @@ class TestErrorHandling:
     def test_start_capture_exception_handling(self, vision_engine, 
                                               mock_window_manager):
         """Test exception handling during capture start"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
+        
         # Make ScreenCapture raise exception
         with patch('lib.vision.vision_engine.ScreenCapture') as mock_sc:
             mock_sc.side_effect = RuntimeError("GDI error")
@@ -415,6 +447,7 @@ class TestErrorHandling:
     def test_get_frame_exception_handling(self, vision_engine, mock_window_manager,
                                          mock_screen_capture):
         """Test exception handling during frame get"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture
@@ -430,6 +463,7 @@ class TestErrorHandling:
     def test_stop_capture_exception_handling(self, vision_engine, mock_window_manager,
                                             mock_screen_capture):
         """Test exception handling during capture stop"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture
@@ -516,6 +550,7 @@ class TestPerformance:
     def test_frame_callback_overhead(self, vision_engine, mock_window_manager,
                                     mock_screen_capture):
         """Test overhead of using capture as frame callback"""
+        mock_wm_class, mock_wm_instance = mock_window_manager
         mock_sc, mock_instance = mock_screen_capture
         
         # Start capture

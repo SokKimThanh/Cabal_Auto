@@ -38,36 +38,41 @@ def main():
     print("Vision Engine with Screen Capture Example")
     print("=" * 60)
     
-    # Step 1: Find target window
-    print(f"\n1. Finding window: '{WINDOW_TITLE}'...")
-    hwnd = WindowManager.find_window(title=WINDOW_TITLE)
+    # Step 1: Create window manager
+    print("\n1. Initializing WindowManager...")
+    window_manager = WindowManager()
+    print("✓ WindowManager created")
+    
+    # Step 2: Find target window
+    print(f"\n2. Finding window: '{WINDOW_TITLE}'...")
+    hwnd = window_manager.find_window(title_contains=WINDOW_TITLE)
     
     if not hwnd:
         print(f"❌ Window not found: {WINDOW_TITLE}")
         print("\nAvailable windows:")
-        windows = WindowManager.get_all_windows()
+        windows = window_manager.list_windows(visible_only=True)
         for win in windows[:10]:  # Show first 10
             print(f"  - {win.title}")
         return
     
     print(f"✓ Found window (hwnd={hwnd})")
     
-    # Step 2: Get window info
-    info = WindowManager.get_window_info(hwnd)
+    # Step 3: Get window info
+    info = window_manager.get_window_info(hwnd)
     if info:
         print(f"  Title: {info.title}")
-        print(f"  Size: {info.width}x{info.height}")
-        print(f"  Position: ({info.x}, {info.y})")
+        print(f"  Size: {info.rect['width']}x{info.rect['height']}")
+        print(f"  Position: ({info.rect['x']}, {info.rect['y']})")
         print(f"  Minimized: {info.is_minimized}")
-        print(f"  Process: {info.process_name}")
+        print(f"  Process: {info.process_name if info.process_name else 'N/A'}")
     
-    # Step 3: Create vision engine
-    print("\n2. Creating VisionEngine...")
+    # Step 4: Create vision engine
+    print("\n3. Creating VisionEngine...")
     engine = VisionEngine()
     print("✓ VisionEngine created")
     
-    # Step 4: Start screen capture
-    print(f"\n3. Starting screen capture (target FPS: {TARGET_FPS})...")
+    # Step 5: Start screen capture
+    print(f"\n4. Starting screen capture (target FPS: {TARGET_FPS})...")
     success = engine.start_capture(
         window_title=WINDOW_TITLE,
         target_fps=TARGET_FPS,
@@ -166,12 +171,13 @@ def list_windows():
     print("\nListing all visible windows:")
     print("-" * 60)
     
-    windows = WindowManager.get_all_windows()
+    window_manager = WindowManager()
+    windows = window_manager.list_windows(visible_only=True)
     
     for i, win in enumerate(windows, 1):
         print(f"{i}. {win.title}")
-        print(f"   Size: {win.width}x{win.height}")
-        print(f"   Process: {win.process_name}")
+        print(f"   Size: {win.rect['width']}x{win.rect['height']}")
+        print(f"   Process: {win.process_name if win.process_name else 'N/A'}")
         print()
 
 
