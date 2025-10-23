@@ -48,11 +48,11 @@ jobs:
       run: |
         export PYTHONPATH="${PYTHONPATH}:$(pwd)"
         export DISPLAY=:99
-        pytest -v --tb=short --strict-markers -m "not windows and not gui"
+        pytest -v --tb=short --strict-markers -m "not windows and not gui and not manual"
     
     - name: Generate test coverage report
       if: success()
       run: |
         export PYTHONPATH="${PYTHONPATH}:$(pwd)"
         export DISPLAY=:99
-        pytest --cov=lib --cov=ui --cov-report=term-missing -m "not windows and not gui"
+        pytest --cov=lib --cov=ui --cov-report=term-missing -m "not windows and not gui and not manual"

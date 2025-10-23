@@ -1,0 +1,176 @@
+PS E:\Cabal_Auto>
+
+
+
+
+                  python -m pytest tests/ -v -m "not windows and not gui"
+====================================================== test session starts ======================================================
+platform win32 -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe  
+cachedir: .pytest_cache
+rootdir: E:\Cabal_Auto
+configfile: pytest.ini
+collected 51 items / 19 deselected / 32 selected                                                                                 
+
+tests/sprints/sprint22/test_training_mode.py::test_database_schema PASSED                                                  [  3%] 
+tests/sprints/sprint22/test_training_mode.py::test_skill_stats_class PASSED                                                [  6%]
+tests/sprints/sprint22/test_training_mode.py::test_i18n_translations PASSED                                                [  9%] 
+tests/sprints/sprint22/test_training_mode.py::test_hunt_config_schema PASSED                                               [ 12%] 
+tests/sprints/sprint22/test_training_mode.py::test_file_structure PASSED                                                   [ 15%] 
+tests/unit/test_advanced_monster_dialog.py::test_validation_edge_cases PASSED                                              [ 18%] 
+tests/unit/test_advanced_monster_dialog.py::test_ui_interactions PASSED                                                    [ 21%] 
+tests/unit/test_advanced_monster_dialog.py::test_data_integrity PASSED                                                     [ 25%] 
+tests/unit/test_advanced_monster_dialog.py::test_stress_scenarios PASSED                                                   [ 28%] 
+tests/unit/test_advanced_monster_dialog.py::test_error_handling PASSED                                                     [ 31%] 
+tests/unit/test_attack_keys_migration.py::test_migrate_attack_keys PASSED                                                  [ 34%]
+tests/unit/test_attack_keys_migration.py::test_attack_keys_derived_from_skill_slots PASSED                                 [ 37%] 
+tests/unit/test_combobox_data.py::test_data_loading PASSED                                                                 [ 40%] 
+tests/unit/test_rotation_skills_loading.py::test_rotation_tab_from_wizard PASSED                                           [ 43%]
+tests/unit/test_rotation_skills_loading.py::test_rotation_tab_from_app PASSED                                              [ 46%]
+tests/unit/test_timing_calculator_ui.py::test_calculator_logic PASSED                                                      [ 50%] 
+tests/unit/test_timing_calculator_ui.py::test_presets PASSED                                                               [ 53%] 
+tests/unit/test_timing_calculator_ui.py::test_ui_integration PASSED                                                        [ 56%] 
+tests/unit/test_timing_calculator_ui.py::test_calculation_accuracy PASSED                                                  [ 59%] 
+tests/vision/vision_basic_test.py::test_engine_initialization PASSED                                                       [ 62%]
+tests/vision/vision_basic_test.py::test_template_loading ERROR                                                             [ 65%] 
+tests/vision/vision_basic_test.py::test_detection ERROR                                                                    [ 68%] 
+tests/vision/vision_basic_test.py::test_nms ERROR                                                                          [ 71%] 
+tests/vision/vision_basic_test.py::test_tracking ERROR                                                                     [ 75%] 
+tests/vision/vision_basic_test.py::test_config_persistence ERROR                                                           [ 78%] 
+tests/vision/vision_perf_test.py::test_worker_startup_shutdown_latency PASSED                                              [ 81%]
+tests/vision/vision_perf_test.py::test_frame_processing_latency PASSED                                                     [ 84%]
+tests/vision/vision_perf_test.py::test_queue_throughput_fps_limit PASSED                                                   [ 87%]
+tests/vision/vision_perf_test.py::test_worker_non_blocking PASSED                                                          [ 90%]
+tests/vision/vision_perf_test.py::test_queue_overflow_handling PASSED                                                      [ 93%]
+tests/vision/vision_perf_test.py::test_resource_cleanup_on_stop PASSED                                                     [ 96%]
+tests/vision/vision_perf_test.py::test_multiple_start_stop_cycles PASSED                                                   [100%]
+
+============================================================ ERRORS ============================================================= 
+____________________________________________ ERROR at setup of test_template_loading ____________________________________________ 
+file E:\Cabal_Auto\tests\vision\vision_basic_test.py, line 80
+  def test_template_loading(engine, template_path):
+E       fixture 'engine' not found
+>       available fixtures: assets_path, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, is_linux, is_macos, is_windows, mock_screen_capture, mock_win_input, monkeypatch, platform_name, print_test_environment, project_root_path, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_image_path, skip_if_ci, skip_if_not_linux, skip_if_not_windows, temp_test_dir, test_session_info, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory        
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+E:\Cabal_Auto\tests\vision\vision_basic_test.py:80
+_______________________________________________ ERROR at setup of test_detection ________________________________________________ 
+file E:\Cabal_Auto\tests\vision\vision_basic_test.py, line 108
+  def test_detection(engine, frame_path):
+E       fixture 'engine' not found
+>       available fixtures: assets_path, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, is_linux, is_macos, is_windows, mock_screen_capture, mock_win_input, monkeypatch, platform_name, print_test_environment, project_root_path, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_image_path, skip_if_ci, skip_if_not_linux, skip_if_not_windows, temp_test_dir, test_session_info, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory        
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+E:\Cabal_Auto\tests\vision\vision_basic_test.py:108
+__________________________________________________ ERROR at setup of test_nms ___________________________________________________ 
+file E:\Cabal_Auto\tests\vision\vision_basic_test.py, line 142
+  def test_nms(engine):
+E       fixture 'engine' not found
+>       available fixtures: assets_path, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, is_linux, is_macos, is_windows, mock_screen_capture, mock_win_input, monkeypatch, platform_name, print_test_environment, project_root_path, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_image_path, skip_if_ci, skip_if_not_linux, skip_if_not_windows, temp_test_dir, test_session_info, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory        
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+E:\Cabal_Auto\tests\vision\vision_basic_test.py:142
+________________________________________________ ERROR at setup of test_tracking ________________________________________________ 
+file E:\Cabal_Auto\tests\vision\vision_basic_test.py, line 170
+  def test_tracking(engine, frame, detections):
+E       fixture 'engine' not found
+>       available fixtures: assets_path, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, is_linux, is_macos, is_windows, mock_screen_capture, mock_win_input, monkeypatch, platform_name, print_test_environment, project_root_path, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_image_path, skip_if_ci, skip_if_not_linux, skip_if_not_windows, temp_test_dir, test_session_info, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory        
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+E:\Cabal_Auto\tests\vision\vision_basic_test.py:170
+___________________________________________ ERROR at setup of test_config_persistence ___________________________________________ 
+file E:\Cabal_Auto\tests\vision\vision_basic_test.py, line 219
+  def test_config_persistence(engine):
+E       fixture 'engine' not found
+>       available fixtures: assets_path, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, is_linux, is_macos, is_windows, mock_screen_capture, mock_win_input, monkeypatch, platform_name, print_test_environment, project_root_path, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_image_path, skip_if_ci, skip_if_not_linux, skip_if_not_windows, temp_test_dir, test_session_info, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory        
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+E:\Cabal_Auto\tests\vision\vision_basic_test.py:219
+======================================================= warnings summary ======================================================== 
+tests/sprints/sprint22/test_training_mode.py::test_database_schema
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/sprints/sprint22/test_training_mode.py::test_database_schema returned <class 'bool'>.    
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/sprints/sprint22/test_training_mode.py::test_skill_stats_class
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/sprints/sprint22/test_training_mode.py::test_skill_stats_class returned <class 'bool'>.  
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/sprints/sprint22/test_training_mode.py::test_i18n_translations
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/sprints/sprint22/test_training_mode.py::test_i18n_translations returned <class 'bool'>.  
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/sprints/sprint22/test_training_mode.py::test_hunt_config_schema
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/sprints/sprint22/test_training_mode.py::test_hunt_config_schema returned <class 'bool'>. 
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/sprints/sprint22/test_training_mode.py::test_file_structure
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/sprints/sprint22/test_training_mode.py::test_file_structure returned <class 'bool'>.     
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/unit/test_advanced_monster_dialog.py::test_validation_edge_cases
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/unit/test_advanced_monster_dialog.py::test_validation_edge_cases returned <class 'list'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/unit/test_advanced_monster_dialog.py::test_ui_interactions
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/unit/test_advanced_monster_dialog.py::test_ui_interactions returned <class 'list'>.      
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/unit/test_advanced_monster_dialog.py::test_data_integrity
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/unit/test_advanced_monster_dialog.py::test_data_integrity returned <class 'list'>.       
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/unit/test_advanced_monster_dialog.py::test_stress_scenarios
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/unit/test_advanced_monster_dialog.py::test_stress_scenarios returned <class 'list'>.     
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/unit/test_advanced_monster_dialog.py::test_error_handling
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/unit/test_advanced_monster_dialog.py::test_error_handling returned <class 'list'>.       
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/vision/vision_basic_test.py::test_engine_initialization
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but tests/vision/vision_basic_test.py::test_engine_initialization returned <class 'lib.vision.vision_engine.VisionEngine'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/vision/vision_perf_test.py::test_queue_overflow_handling
+tests/vision/vision_perf_test.py::test_multiple_start_stop_cycles
+  C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored while calling deallocator <function Variable.__del__ at 0x000001A30E9AD640>: None
+
+  Traceback (most recent call last):
+    File "C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\Lib\tkinter\__init__.py", line 416, in __del__
+      if self._tk.getboolean(self._tk.call("info", "exists", self._name)):
+                             ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  RuntimeError: main thread is not in main loop
+
+
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================================== short test summary info ==================================================== 
+ERROR tests/vision/vision_basic_test.py::test_template_loading
+ERROR tests/vision/vision_basic_test.py::test_detection
+ERROR tests/vision/vision_basic_test.py::test_nms
+ERROR tests/vision/vision_basic_test.py::test_tracking
+ERROR tests/vision/vision_basic_test.py::test_config_persistence
+============================== 27 passed, 19 deselected, 13 warnings, 5 errors in 96.84s (0:01:36) ============================== 
+PS E:\Cabal_Auto> 

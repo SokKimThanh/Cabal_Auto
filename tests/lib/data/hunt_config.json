@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "window_title": "CABAL Online",
+  "monster_list": [
+    "Dummy Monster"
+  ],
+  "skill_slots": [
+    {
+      "name": "Slash",
+      "key": "1",
+      "cooldown": 3,
+      "type": "attack"
+    },
+    {
+      "name": "Thrust",
+      "key": "2",
+      "cooldown": 5,
+      "type": "attack"
+    },
+    {
+      "name": "Defense",
+      "key": "3",
+      "cooldown": 10,
+      "type": "buff"
+    }
+  ]
+}
