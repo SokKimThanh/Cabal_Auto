@@ -84,8 +84,25 @@ def main():
         print("    💡 Please open CABAL game and try again.")
         return
     
+    # Check if window is minimized and restore it
+    if cabal_window.rect['left'] < -30000 or cabal_window.rect['top'] < -30000:
+        print(f"    ⚠️  Game window is MINIMIZED (rect: {cabal_window.rect})")
+        print("    🔧 Restoring window...")
+        wm.restore(cabal_window.hwnd)
+        time.sleep(0.5)  # Wait for restore animation
+        
+        # Re-query window info after restore
+        cabal_window = wm.get_window_info(cabal_window.hwnd)
+        if cabal_window:
+            print(f"    ✅ Window restored to: {cabal_window.rect}")
+        else:
+            print("    ❌ Failed to get window info after restore")
+            return
+    
     # 2. Create overlay
     print("\n[2] Creating overlay...")
+    print(f"    Game window rect: {cabal_window.rect}")
+    
     overlay = OverlayWindowPyWin32(
         target_rect=cabal_window.rect,
         alpha=0.7,
@@ -93,8 +110,25 @@ def main():
         enable_click_through=True
     )
     overlay.create()
+    
+    # Add initial test box to verify overlay is visible
+    test_box = DetectionBox(
+        x=50, y=50, w=200, h=100,
+        label="OVERLAY TEST - If you see this, overlay works!",
+        color=(255, 255, 0),  # Yellow
+        confidence=1.0
+    )
+    overlay.update_detections([test_box])
+    
     overlay.show()
     print("    ✅ Overlay created and shown")
+    print(f"    Overlay HWND: {overlay.hwnd}")
+    print("    💡 You should see a YELLOW test box on game window")
+    print("    💡 If not visible, overlay may be behind game window")
+    
+    # Give user time to verify overlay is visible
+    print("\n    ⏳ Waiting 3 seconds for you to check overlay...")
+    time.sleep(3)
     
     # 3. Simulation loop
     print("\n[3] Starting simulation loop...")
@@ -103,10 +137,18 @@ def main():
     
     frame_num = 0
     detection_state = "searching"  # 'searching', 'detected', 'tracking'
+    topmost_counter = 0  # Force topmost every 30 frames
+    game_rect = cabal_window.rect  # Cache game rect
     
     try:
         while True:
             frame_num += 1
+            topmost_counter += 1
+            
+            # Force topmost every 30 frames (every 2 seconds at 15 FPS)
+            if topmost_counter >= 30:
+                overlay.update_target_rect(game_rect)  # Re-apply position with HWND_TOPMOST
+                topmost_counter = 0
             
             # Simulate vision engine detection
             detections = simulate_detections(frame_num)
