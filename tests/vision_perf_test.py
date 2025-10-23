@@ -16,6 +16,9 @@ import numpy as np
 import threading
 from typing import Optional
 
+# Mark as vision and slow test
+pytestmark = [pytest.mark.vision, pytest.mark.slow]
+
 # Add parent to path for imports
 import sys
 import os

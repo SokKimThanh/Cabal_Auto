@@ -10,11 +10,15 @@ This script checks:
 """
 
 import sys
+import pytest
 from pathlib import Path
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
+
+# Mark as Windows-only and integration test
+pytestmark = [pytest.mark.windows, pytest.mark.integration, pytest.mark.vision]
 
 print("=" * 70)
 print("Template Matcher Integration Test")

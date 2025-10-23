@@ -6,6 +6,9 @@ from app_gui import App
 # They are not full GUI interaction tests but help ensure the try_close_* helpers
 # and show_setup_wizard behavior work as intended in the headless test environment.
 
+# Mark as Windows-only due to win_input dependency in app_gui
+pytestmark = [pytest.mark.windows, pytest.mark.gui]
+
 
 def test_setup_wizard_blocks_library_when_unsaved():
     a = App()

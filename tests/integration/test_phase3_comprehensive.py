@@ -3,9 +3,13 @@
 
 import sys
 import json
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, 'e:/Cabal_Auto')
+
+# Mark as integration test
+pytestmark = pytest.mark.integration
 
 print("=" * 70)
 print("Phase 3 Comprehensive Test: Multi-Monster Rotation")
