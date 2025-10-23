@@ -19,6 +19,8 @@ Hệ thống tự động hóa thông minh cho Cabal VTC Origin với Python - P
 
 ## 📁 Cấu trúc dự án
 
+> 📖 **Chi tiết đầy đủ:** Xem [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) để hiểu rõ toàn bộ cấu trúc thư mục
+
 ```
 Cabal_Auto/
 ├── 🚀 app_gui.py           # Main GUI Application (4-tab layout)
@@ -113,10 +115,14 @@ Cabal_Auto/
 ├── 📂 tmp/                 # Temporary files (gitignored)
 │   └── captures/          # Screenshot captures
 │
-├── 🚀 Launcher Scripts
-│   ├── run_venv.ps1       # PowerShell launcher (recommended)
-│   ├── run_venv.bat       # Batch launcher (Windows)
-│   └── run.bat            # Direct launcher (legacy)
+├── 🚀 Launcher Scripts (scripts/launchers/)
+│   ├── run.bat            # Simple launcher (backward compatible)
+│   ├── run_venv.bat       # Batch launcher with auto-detection
+│   ├── run_venv.ps1       # PowerShell launcher (most features)
+│   └── README.md          # Launchers documentation
+│
+├── 🚀 Root Quick Launch
+│   └── run.bat            # Wrapper → scripts/launchers/run_venv.bat
 │
 └── 🔧 Development
     ├── .vscode/           # VSCode settings
@@ -200,26 +206,46 @@ pip install -r requirements.txt
 
 ### Khởi động ứng dụng
 
-**Cách 1: PowerShell Launcher (Recommended)** 🌟
+**Cách 1: Quick Launch (Windows)** 🌟
+```cmd
+run.bat
+```
+- Double-click để chạy nhanh
+- Wrapper tự động redirect đến launcher thông minh
+- Backward compatible
+
+**Cách 2: PowerShell Launcher (Recommended for Developers)** 💻
 ```powershell
-.\run_venv.ps1
+.\scripts\launchers\run_venv.ps1
+
+# With custom venv
+.\scripts\launchers\run_venv.ps1 -VenvPath .venv
+
+# With arguments
+.\scripts\launchers\run_venv.ps1 -Args "--debug"
 ```
 - Tự động tìm Python trong venv (`.venv` hoặc `venv`)
 - Fallback to system Python nếu không tìm thấy venv
-- Cross-platform compatible
+- Hỗ trợ truyền arguments
 
-**Cách 2: Batch Launcher (Windows)**
+**Cách 3: Batch Launcher (Command Prompt)**
 ```cmd
-run_venv.bat
-```
-- Tương tự run_venv.ps1 nhưng cho cmd.exe
+scripts\launchers\run_venv.bat
 
-**Cách 3: Direct (Legacy)**
+REM With custom venv
+scripts\launchers\run_venv.bat myvenv
+```
+- Tương tự PowerShell launcher nhưng cho cmd.exe
+- Smart Python detection
+
+**Cách 4: Direct Python (Advanced)**
 ```powershell
 python app_gui.py
 ```
 - Sử dụng Python hiện tại trong PATH
-- Không đảm bảo sử dụng đúng venv
+- Cần đảm bảo đã activate venv đúng
+
+📖 **Chi tiết về launchers:** Xem [scripts/launchers/README.md](scripts/launchers/README.md)
 
 ### Lần đầu sử dụng - Setup Wizard 🧙‍♂️
 
