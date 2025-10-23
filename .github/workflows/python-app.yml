@@ -41,24 +41,18 @@ jobs:
     
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Test with pytest
       run: |
-        # Set PYTHONPATH to include project root for module imports
         export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-        # Run tests with markers:
-        # -m "not windows and not gui" : Skip Windows-only and GUI tests (no display on CI)
-        # -v : Verbose output
-        # --tb=short : Short traceback format
-        # --strict-markers : Error on unknown markers
+        export DISPLAY=:99
         pytest -v --tb=short --strict-markers -m "not windows and not gui"
     
     - name: Generate test coverage report
       if: success()
       run: |
         export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+        export DISPLAY=:99
         pytest --cov=lib --cov=ui --cov-report=term-missing -m "not windows and not gui"
