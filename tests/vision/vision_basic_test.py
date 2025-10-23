@@ -164,6 +164,10 @@ def test_tracking(engine, frame, detections):
     if not detections:
         pytest.skip("No detections available for tracking test")
     
+    # Check if TrackerCSRT is available (removed in OpenCV 4.5.1+)
+    if not hasattr(cv2, 'TrackerCSRT_create'):
+        pytest.skip("cv2.TrackerCSRT_create not available in this OpenCV version")
+    
     # Start tracking first detection
     detection = detections[0]
     tracker_id = engine.start_track(frame, detection)

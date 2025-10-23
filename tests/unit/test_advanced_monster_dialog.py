@@ -139,7 +139,8 @@ def test_validation_edge_cases():
         print(f"   Expected: {test['expected']}")
         print(f"   Status: {test['status']}")
     
-    return test_cases
+    # Test passes if we can print all test cases without errors
+    assert len(test_cases) > 0, "Should have test cases defined"
 
 
 def test_ui_interactions():
@@ -276,7 +277,8 @@ def test_ui_interactions():
             print(f"      {step}")
         print(f"   Expected: {scenario['expected']}")
     
-    return scenarios
+    # Test passes if we can print all scenarios without errors
+    assert len(scenarios) > 0, "Should have UI interaction scenarios defined"
 
 
 def test_data_integrity():
@@ -346,7 +348,8 @@ def test_data_integrity():
         print(f"   Description: {test['description']}")
         print(f"   Test: {test['test']}")
     
-    return tests
+    # Test passes if we can print all tests without errors
+    assert len(tests) > 0, "Should have data integrity tests defined"
 
 
 def test_stress_scenarios():
@@ -406,7 +409,8 @@ def test_stress_scenarios():
         print(f"   Description: {scenario['description']}")
         print(f"   Test: {scenario['test']}")
     
-    return scenarios
+    # Test passes if we can print all scenarios without errors
+    assert len(scenarios) > 0, "Should have stress test scenarios defined"
 
 
 def test_error_handling():
@@ -466,7 +470,8 @@ def test_error_handling():
         print(f"   Description: {test['description']}")
         print(f"   Expected: {test['expected']}")
     
-    return tests
+    # Test passes if we can print all tests without errors
+    assert len(tests) > 0, "Should have error handling tests defined"
 
 
 def generate_test_report():

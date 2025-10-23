@@ -1,4 +1,5 @@
 @echo off
-echo Starting Cabal Auto Hunt...
-E:\Cabal_Auto\venv\Scripts\python.exe E:\Cabal_Auto\app_gui.py
-pause
+REM Launcher wrapper - calls the actual launcher in scripts/launchers/
+REM This file exists for backward compatibility
+echo Redirecting to scripts\launchers\run_venv.bat...
+call "%~dp0scripts\launchers\run_venv.bat" %*

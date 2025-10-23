@@ -318,4 +318,43 @@ dist/
 # !hunt_config.json.example
 # !monsters.json.example
 # !skills.json.example
-__pycache__/*.cpython-*.pyc
+
+# ===============================================
+# PROJECT-SPECIFIC IGNORES
+# ===============================================
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Pytest cache
+.pytest_cache/
+
+# Temporary directories
+tmp/
+tmp_*/
+temp/
+
+# Personal notes (keep structure but not content)
+docs/notes/*.txt
+!docs/notes/README.md
+
+# Test reports (generated)
+TEST_REPORT_*.md
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
