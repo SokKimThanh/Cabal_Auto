@@ -9003,29 +9003,32 @@ Alternative Solutions:
                     self._overlay_window.update_detections(test_boxes)
                     print(f"[Overlay] Added test detection boxes for visibility")
                 
+                # Update overlay position with LIVE window bounds (before showing)
+                if self._overlay_window and window_bounds:
+                    self._overlay_window.update_target_rect(window_bounds)
+                    print(f"[Overlay] Updated overlay to live position: {window_bounds}")
+                
                 # Show overlay
                 self._overlay_window.show()
                 
-                # Re-add test detection boxes when showing (they persist across show/hide)
-                if not hasattr(self, '_overlay_test_boxes_added'):
-                    from lib.ui.overlay_window_pywin32 import DetectionBox
-                    test_boxes = [
-                        DetectionBox(
-                            x=100, y=100, w=200, h=150,
-                            label="TEST OVERLAY - Visible?",
-                            color=(255, 0, 0),  # Red
-                            confidence=1.0
-                        ),
-                        DetectionBox(
-                            x=350, y=250, w=150, h=100,
-                            label="Detection Test",
-                            color=(0, 255, 0),  # Green
-                            confidence=0.95
-                        )
-                    ]
-                    self._overlay_window.update_detections(test_boxes)
-                    self._overlay_test_boxes_added = True
-                    print(f"[Overlay] Test detection boxes restored")
+                # ALWAYS re-add test detection boxes to fix white screen issue
+                from lib.ui.overlay_window_pywin32 import DetectionBox
+                test_boxes = [
+                    DetectionBox(
+                        x=100, y=100, w=200, h=150,
+                        label="TEST OVERLAY - Visible?",
+                        color=(255, 0, 0),  # Red
+                        confidence=1.0
+                    ),
+                    DetectionBox(
+                        x=350, y=250, w=150, h=100,
+                        label="Detection Test",
+                        color=(0, 255, 0),  # Green
+                        confidence=0.95
+                    )
+                ]
+                self._overlay_window.update_detections(test_boxes)
+                print(f"[Overlay] Test detection boxes updated")
                 
                 # Start window tracker instead of position sync
                 self._start_overlay_window_tracker()
