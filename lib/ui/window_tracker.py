@@ -218,6 +218,7 @@ class WindowTracker:
     def _tracking_loop(self) -> None:
         """Main tracking loop (runs in background thread)."""
         print(f"[WindowTracker] Tracking loop started @ {self.poll_rate} FPS")
+        print(f"[WindowTracker] Callbacks registered: pos={self.on_position_change is not None}, size={self.on_size_change is not None}, vis={self.on_visibility_change is not None}, state={self.on_state_change is not None}")
         
         frame_count = 0
         start_time = time.time()
@@ -233,6 +234,7 @@ class WindowTracker:
                     # Compare with last snapshot
                     if self._last_snapshot is None:
                         # First snapshot - trigger all callbacks
+                        print(f"[WindowTracker] First snapshot captured, triggering initial callbacks...")
                         self._trigger_all_callbacks(snapshot, is_initial=True)
                     else:
                         # Detect changes and trigger appropriate callbacks
@@ -277,29 +279,62 @@ class WindowTracker:
         # Position change
         if (old.rect['left'] != new.rect['left'] or 
             old.rect['top'] != new.rect['top']):
-            if self.on_position_change:
-                self.on_position_change(new.rect)
+            try:
+                print(f"[WindowTracker] 🔄 Position CHANGE detected: ({old.rect['left']},{old.rect['top']}) → ({new.rect['left']},{new.rect['top']})")
+                if self.on_position_change:
+                    self.on_position_change(new.rect)
+                    print(f"[WindowTracker] ✅ Position callback executed")
+            except Exception as e:
+                print(f"[WindowTracker] ❌ Error in on_position_change: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Size change
         if (old.rect['width'] != new.rect['width'] or 
             old.rect['height'] != new.rect['height']):
-            if self.on_size_change:
-                self.on_size_change(new.rect)
+            try:
+                print(f"[WindowTracker] 📏 Size CHANGE detected: {old.rect['width']}x{old.rect['height']} → {new.rect['width']}x{new.rect['height']}")
+                if self.on_size_change:
+                    self.on_size_change(new.rect)
+                    print(f"[WindowTracker] ✅ Size callback executed")
+            except Exception as e:
+                print(f"[WindowTracker] ❌ Error in on_size_change: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Visibility change
         if old.is_visible != new.is_visible:
-            if self.on_visibility_change:
-                self.on_visibility_change(new.is_visible)
+            try:
+                print(f"[WindowTracker] 👁️ Visibility CHANGE detected: {old.is_visible} → {new.is_visible}")
+                if self.on_visibility_change:
+                    self.on_visibility_change(new.is_visible)
+                    print(f"[WindowTracker] ✅ Visibility callback executed")
+            except Exception as e:
+                print(f"[WindowTracker] ❌ Error in on_visibility_change: {e}")
+                import traceback
+                traceback.print_exc()
         
         # State change
         if old.state != new.state:
-            if self.on_state_change:
-                self.on_state_change(new.state)
+            try:
+                print(f"[WindowTracker] 🔄 State CHANGE detected: {old.state.value} → {new.state.value}")
+                if self.on_state_change:
+                    self.on_state_change(new.state)
+                    print(f"[WindowTracker] ✅ State callback executed")
+            except Exception as e:
+                print(f"[WindowTracker] ❌ Error in on_state_change: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Any change
         if old != new:
-            if self.on_any_change:
-                self.on_any_change(new)
+            try:
+                if self.on_any_change:
+                    self.on_any_change(new)
+            except Exception as e:
+                print(f"[WindowTracker] ❌ Error in on_any_change: {e}")
+                import traceback
+                traceback.print_exc()
     
     def _trigger_all_callbacks(
         self,
@@ -309,24 +344,53 @@ class WindowTracker:
         """Trigger all callbacks with initial snapshot."""
         prefix = "[Initial] " if is_initial else ""
         
-        if self.on_position_change:
-            self.on_position_change(snapshot.rect)
-            print(f"{prefix}[WindowTracker] Position: ({snapshot.rect['left']},{snapshot.rect['top']})")
+        try:
+            if self.on_position_change:
+                print(f"{prefix}[WindowTracker] Calling on_position_change...")
+                self.on_position_change(snapshot.rect)
+                print(f"{prefix}[WindowTracker] ✅ Position callback done: ({snapshot.rect['left']},{snapshot.rect['top']})")
+        except Exception as e:
+            print(f"{prefix}[WindowTracker] ❌ Error in on_position_change: {e}")
+            import traceback
+            traceback.print_exc()
         
-        if self.on_size_change:
-            self.on_size_change(snapshot.rect)
-            print(f"{prefix}[WindowTracker] Size: {snapshot.rect['width']}x{snapshot.rect['height']}")
+        try:
+            if self.on_size_change:
+                print(f"{prefix}[WindowTracker] Calling on_size_change...")
+                self.on_size_change(snapshot.rect)
+                print(f"{prefix}[WindowTracker] ✅ Size callback done: {snapshot.rect['width']}x{snapshot.rect['height']}")
+        except Exception as e:
+            print(f"{prefix}[WindowTracker] ❌ Error in on_size_change: {e}")
+            import traceback
+            traceback.print_exc()
         
-        if self.on_visibility_change:
-            self.on_visibility_change(snapshot.is_visible)
-            print(f"{prefix}[WindowTracker] Visibility: {snapshot.is_visible}")
+        try:
+            if self.on_visibility_change:
+                print(f"{prefix}[WindowTracker] Calling on_visibility_change...")
+                self.on_visibility_change(snapshot.is_visible)
+                print(f"{prefix}[WindowTracker] ✅ Visibility callback done: {snapshot.is_visible}")
+        except Exception as e:
+            print(f"{prefix}[WindowTracker] ❌ Error in on_visibility_change: {e}")
+            import traceback
+            traceback.print_exc()
         
-        if self.on_state_change:
-            self.on_state_change(snapshot.state)
-            print(f"{prefix}[WindowTracker] State: {snapshot.state.value}")
+        try:
+            if self.on_state_change:
+                print(f"{prefix}[WindowTracker] Calling on_state_change...")
+                self.on_state_change(snapshot.state)
+                print(f"{prefix}[WindowTracker] ✅ State callback done: {snapshot.state.value}")
+        except Exception as e:
+            print(f"{prefix}[WindowTracker] ❌ Error in on_state_change: {e}")
+            import traceback
+            traceback.print_exc()
         
-        if self.on_any_change:
-            self.on_any_change(snapshot)
+        try:
+            if self.on_any_change:
+                self.on_any_change(snapshot)
+        except Exception as e:
+            print(f"{prefix}[WindowTracker] ❌ Error in on_any_change: {e}")
+            import traceback
+            traceback.print_exc()
     
     def is_running(self) -> bool:
         """Check if tracker is running."""
