@@ -1,5 +1,10 @@
+import sys
 import time
 import pytest
+
+if sys.platform != "win32":
+    pytest.skip("Requires Windows environment", allow_module_level=True)
+
 from app_gui import App
 
 # These tests are basic smoke tests that validate exclusivity helpers.

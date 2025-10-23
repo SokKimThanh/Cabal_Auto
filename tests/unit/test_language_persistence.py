@@ -21,6 +21,9 @@ import sys
 # Mark as Windows-only and GUI test (requires ctypes.wintypes and display)
 pytestmark = [pytest.mark.windows, pytest.mark.gui]
 
+if sys.platform != "win32":
+    pytest.skip("Requires Windows environment", allow_module_level=True)
+
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
