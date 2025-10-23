@@ -1,0 +1,74 @@
+{
+  "actions": [
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": true
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    },
+    {
+      "key": "Z",
+      "scanCode": 44,
+      "duration": 1,
+      "enabled": false
+    }
+  ],
+  "timerInterval": 1,
+  "lockKey": "Z",
+  "lockScanCode": 44,
+  "spaceSpamEnabled": false,
+  "spaceSpamInterval": 200,
+  "running": false,
+  "overlayEnabled": false,
+  "overlayPosition": "top-right",
+  "transparency": 0.8,
+  "directInputEnabled": true
+}
