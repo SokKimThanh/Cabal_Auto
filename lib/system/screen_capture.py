@@ -18,21 +18,39 @@ Usage:
                 # Process frame
                 pass
     capture.stop()
+
+Note:
+    Windows-only module. Requires: pywin32, numpy, opencv-python
 """
 
-import cv2
-import numpy as np
-import win32gui
-import win32ui
-import win32con
-import win32api
-from ctypes import windll
+import sys
 import threading
 import queue
 import time
 import logging
 from typing import Optional, Tuple, Dict, Any
 from dataclasses import dataclass
+
+# Platform check - Windows only
+if sys.platform != "win32":
+    raise ImportError("screen_capture module requires Windows (pywin32)")
+
+# Windows-specific imports
+import win32gui  # type: ignore
+import win32ui  # type: ignore
+import win32con  # type: ignore
+import win32api  # type: ignore
+from ctypes import windll
+
+# Optional: OpenCV and NumPy (required for operation)
+try:
+    import cv2  # type: ignore
+    import numpy as np  # type: ignore
+except ImportError as e:
+    raise ImportError(
+        "screen_capture requires opencv-python and numpy. "
+        "Install: pip install opencv-python numpy"
+    ) from e
 
 logger = logging.getLogger(__name__)
 

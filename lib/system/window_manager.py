@@ -15,17 +15,32 @@ Usage:
     if hwnd:
         rect = wm.get_window_rect(hwnd)
         wm.set_foreground(hwnd)
+
+Note:
+    Windows-only module. Requires: pywin32, psutil
 """
 
-import win32gui
-import win32con
-import win32api
-import win32process
-import psutil
-from ctypes import windll, c_int, byref, c_void_p
-from typing import List, Dict, Optional, Tuple, Callable
-from dataclasses import dataclass
+import sys
 import logging
+from typing import List, Dict, Optional, Tuple, Callable, Any
+from dataclasses import dataclass
+from ctypes import windll, c_int, byref, c_void_p
+
+# Platform check - Windows only
+if sys.platform != "win32":
+    raise ImportError("window_manager module requires Windows (pywin32)")
+
+# Windows-specific imports
+import win32gui  # type: ignore
+import win32con  # type: ignore
+import win32api  # type: ignore
+import win32process  # type: ignore
+
+# Optional: psutil (recommended for process info)
+try:
+    import psutil  # type: ignore
+except ImportError:
+    psutil = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -199,9 +214,12 @@ class WindowManager:
             # Process info
             _, pid = win32process.GetWindowThreadProcessId(hwnd)
             try:
-                process = psutil.Process(pid)
-                process_name = process.name()
-            except:
+                if psutil:
+                    process = psutil.Process(pid)
+                    process_name = process.name()
+                else:
+                    process_name = f"PID:{pid}"
+            except Exception:
                 process_name = "Unknown"
             
             # Rect
@@ -377,7 +395,7 @@ class WindowManager:
         logger.warning(f"Window '{title_contains}' not found after {timeout}s")
         return None
     
-    def get_monitor_info(self) -> List[Dict[str, Any]]:
+    def get_monitor_info(self) -> List[Dict[str, Any]]:  # type: ignore
         """
         Get information about all monitors
         
@@ -413,7 +431,7 @@ class WindowManager:
         
         return monitors
     
-    def get_window_monitor(self, hwnd: int) -> Optional[Dict[str, Any]]:
+    def get_window_monitor(self, hwnd: int) -> Optional[Dict[str, Any]]:  # type: ignore
         """
         Get monitor that contains most of the window
         
