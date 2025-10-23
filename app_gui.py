@@ -721,18 +721,17 @@ class App(tk.Tk):
             
             vision_menu.add_separator()
             
-            # Toggle Overlay (Ctrl+Shift+O)
-            overlay_label = "Toggle Overlay" if self.lang == "en" else "Bật/Tắt Overlay"
+            # Toggle Overlay (Ctrl+Shift+O) - using translations
             vision_menu.add_command(
-                label=overlay_label,
+                label=self._t("vision_toggle_overlay"),
                 accelerator="Ctrl+Shift+O",
                 command=self._toggle_overlay
             )
             
-            # Overlay Settings
-            settings_label = "Overlay Settings..." if self.lang == "en" else "Cài Đặt Overlay..."
+            # Overlay Settings - using translations
+            overlay_settings_label = "Overlay Settings..." if self.lang == "en" else "Cài Đặt Overlay..."
             vision_menu.add_command(
-                label=settings_label,
+                label=overlay_settings_label,
                 command=self._open_overlay_settings
             )
             
@@ -8694,7 +8693,7 @@ Alternative Solutions:
             from ui.setup_wizard_vision import create_or_show_vision_wizard
             
             wizard = create_or_show_vision_wizard(
-                self,
+                self, # type: ignore
                 config_path=str(CONFIG_PATH),  # Use global CONFIG_PATH
                 on_close=self._on_vision_wizard_closed
             )
@@ -8783,11 +8782,37 @@ Alternative Solutions:
         Toggle overlay display (Ctrl+Shift+O).
         Phase 5: Show/hide transparent overlay on game window.
         """
-        print("[Vision] Toggle overlay")
+        print("[Vision] Toggle overlay - Starting...")
         
         try:
-            # Import overlay module
-            from lib.ui.overlay_window import OverlayWindow
+            # Import PyWin32 overlay module (Phase 5 refactor)
+            try:
+                print("[Overlay] Attempting to import OverlayWindowPyWin32...")
+                from lib.ui.overlay_window_pywin32 import OverlayWindowPyWin32
+                print("[Overlay] ✅ Import successful!")
+            except ImportError as import_err:
+                # PyWin32 not installed - show translated error
+                print(f"[Overlay] ❌ ImportError caught: {import_err}")
+                print(f"[Overlay] Error type: {type(import_err)}")
+                import traceback
+                traceback.print_exc()
+                messagebox.showerror(
+                    self._t("overlay_missing_dependency_title"),
+                    self._t("overlay_missing_dependency_message")
+                )
+                self._overlay_enabled = False
+                return
+            except Exception as other_err:
+                # Other errors during import
+                print(f"[Overlay] ❌ Unexpected error during import: {other_err}")
+                import traceback
+                traceback.print_exc()
+                messagebox.showerror(
+                    self._t("error"),
+                    f"Cannot import overlay module:\n{other_err}"
+                )
+                self._overlay_enabled = False
+                return
             
             # Toggle state
             self._overlay_enabled = not self._overlay_enabled
@@ -8799,71 +8824,269 @@ Alternative Solutions:
                     window_bounds = self.hunt_cfg.get('window_bounds')
                     target_hwnd = self.hunt_cfg.get('window_hwnd')
                     
+                    # Validate existing window_bounds is not minimized position
+                    if window_bounds is not None:
+                        if window_bounds.get('left', 0) < -30000 or window_bounds.get('top', 0) < -30000:
+                            print(f"[Overlay] Config has invalid (minimized) rect: {window_bounds}")
+                            print(f"[Overlay] Clearing invalid config and re-detecting...")
+                            window_bounds = None
+                            target_hwnd = None
+                    
+                    # Auto-detect game window if not configured OR invalid
                     if window_bounds is None:
-                        # No window configured - show message
-                        messagebox.showwarning(
-                            "No Window Configured" if self.lang == "en" else "Chưa Cấu Hình Cửa Sổ",
-                            "Please configure a game window first.\n"
-                            "Go to Hunt tab and select a window." if self.lang == "en" else
-                            "Vui lòng cấu hình cửa sổ game trước.\n"
-                            "Vào tab Hunt và chọn cửa sổ."
-                        )
-                        self._overlay_enabled = False
-                        return
+                        print("[Overlay] No window_bounds in config, attempting auto-detect...")
+                        
+                        # Try to find CABAL window
+                        try:
+                            from lib.system.window_manager import WindowManager
+                            wm = WindowManager()
+                            
+                            # Search for CABAL window
+                            windows = wm.list_windows()
+                            cabal_window = None
+                            
+                            for w in windows:
+                                if 'CABAL' in w.title.upper():
+                                    cabal_window = w
+                                    print(f"[Overlay] Found CABAL window: {w.title} [HWND:{w.hwnd}]")
+                                    break
+                            
+                            if cabal_window:
+                                # Bring game window to foreground FIRST if minimized/hidden
+                                try:
+                                    if cabal_window.is_minimized:
+                                        print(f"[Overlay] Game is minimized, restoring...")
+                                        wm.restore(cabal_window.hwnd)
+                                        time.sleep(0.3)  # Wait for window to restore
+                                        
+                                        # Get updated window info after restore
+                                        restored_window = wm.get_window_info(cabal_window.hwnd)
+                                        if restored_window:
+                                            cabal_window = restored_window
+                                            print(f"[Overlay] Window restored, new rect: {cabal_window.rect}")
+                                        else:
+                                            print(f"[Overlay] ⚠️ Could not get window info after restore")
+                                    
+                                    if not cabal_window.is_foreground:
+                                        print(f"[Overlay] Bringing game window to foreground...")
+                                        wm.set_foreground(cabal_window.hwnd)
+                                        print(f"[Overlay] ✅ Game window focused")
+                                except Exception as e:
+                                    print(f"[Overlay] Failed to restore/foreground window: {e}")
+                                
+                                # Use detected window (after restore)
+                                window_bounds = cabal_window.rect
+                                target_hwnd = cabal_window.hwnd
+                                
+                                # Validate rect is not minimized position
+                                if window_bounds['left'] < -30000 or window_bounds['top'] < -30000:
+                                    messagebox.showerror(
+                                        "Invalid Window Position",
+                                        f"Game window appears to be minimized or invalid.\n\n"
+                                        f"Current position: {window_bounds}\n\n"
+                                        f"Please restore the game window and try again.",
+                                        parent=self
+                                    )
+                                    self._overlay_enabled = False
+                                    return
+                                
+                                # Save to config for next time
+                                self.hunt_cfg['window_bounds'] = window_bounds
+                                self.hunt_cfg['window_hwnd'] = target_hwnd
+                                self.hunt_cfg['window_title'] = cabal_window.title
+                                
+                                # save_hunt_config is already defined at module level (line 566)
+                                save_hunt_config(self.hunt_cfg)
+                                
+                                print(f"[Overlay] Auto-configured window: {cabal_window.title}")
+                                    
+                            else:
+                                # Still no window found - show warning
+                                messagebox.showwarning(
+                                    self._t("overlay_no_window_title"),
+                                    self._t("overlay_no_window_message") + "\n\n💡 Tip: Open CABAL game window first!"
+                                )
+                                self._overlay_enabled = False
+                                return
+                                
+                        except Exception as e:
+                            print(f"[Overlay] Auto-detect failed: {e}")
+                            import traceback
+                            traceback.print_exc()
+                            # Show original warning
+                            messagebox.showwarning(
+                                self._t("overlay_no_window_title"),
+                                self._t("overlay_no_window_message")
+                            )
+                            self._overlay_enabled = False
+                            return
                     
                     # Get overlay config from hunt_cfg (or use defaults)
                     overlay_cfg = self.hunt_cfg.get('overlay', {})
-                    alpha = float(overlay_cfg.get('alpha', 0.7))
+                    alpha = float(overlay_cfg.get('alpha', 0.7))  # Default 70% for testing (more visible)
                     fps_limit = int(overlay_cfg.get('fps_limit', 15))
                     
-                    # Create overlay window
-                    self._overlay_window = OverlayWindow(
-                        target_hwnd=target_hwnd,
+                    print(f"[Overlay] Creating overlay with alpha={alpha}, fps={fps_limit}")
+                    print(f"[Overlay] Target rect: {window_bounds}")
+                    print(f"[Overlay] Target HWND: {target_hwnd}")
+                    
+                    # Create PyWin32 overlay window
+                    self._overlay_window = OverlayWindowPyWin32(
                         target_rect=window_bounds,
                         alpha=alpha,
                         fps_limit=fps_limit,
                         enable_click_through=True
                     )
                     
-                    # Create window (uses self as parent)
-                    self._overlay_window.create(parent=self)
+                    # Create window
+                    self._overlay_window.create()
                     
-                    print(f"[Overlay] Created: hwnd={target_hwnd}, rect={window_bounds}")
+                    print(f"[Overlay] Window created with HWND: {self._overlay_window.hwnd}")
+                    print(f"[Overlay] {self._t('overlay_created').format(hwnd=target_hwnd, rect=window_bounds)}")
+                    
+                    # Add some test detection boxes to make overlay visible
+                    from lib.ui.overlay_window_pywin32 import DetectionBox
+                    test_boxes = [
+                        DetectionBox(
+                            x=100, y=100, w=200, h=150,
+                            label="TEST OVERLAY - Visible?",
+                            color=(255, 0, 0),  # Red
+                            confidence=1.0
+                        ),
+                        DetectionBox(
+                            x=350, y=250, w=150, h=100,
+                            label="Detection Test",
+                            color=(0, 255, 0),  # Green
+                            confidence=0.95
+                        )
+                    ]
+                    self._overlay_window.update_detections(test_boxes)
+                    print(f"[Overlay] Added test detection boxes for visibility")
                 
                 # Show overlay
                 self._overlay_window.show()
                 
-                # Start position update thread
-                self._start_overlay_position_sync()
+                # Re-add test detection boxes when showing (they persist across show/hide)
+                if not hasattr(self, '_overlay_test_boxes_added'):
+                    from lib.ui.overlay_window_pywin32 import DetectionBox
+                    test_boxes = [
+                        DetectionBox(
+                            x=100, y=100, w=200, h=150,
+                            label="TEST OVERLAY - Visible?",
+                            color=(255, 0, 0),  # Red
+                            confidence=1.0
+                        ),
+                        DetectionBox(
+                            x=350, y=250, w=150, h=100,
+                            label="Detection Test",
+                            color=(0, 255, 0),  # Green
+                            confidence=0.95
+                        )
+                    ]
+                    self._overlay_window.update_detections(test_boxes)
+                    self._overlay_test_boxes_added = True
+                    print(f"[Overlay] Test detection boxes restored")
+                
+                # Start window tracker instead of position sync
+                self._start_overlay_window_tracker()
                 
                 # Update menu/config
                 self.hunt_cfg.setdefault('overlay', {})['enabled'] = True
                 save_hunt_config(self.hunt_cfg)
                 
-                print("[Overlay] Enabled")
+                print(f"[Overlay] {self._t('overlay_enabled')}")
                 
             else:
                 # Hide overlay
                 if self._overlay_window is not None:
                     self._overlay_window.hide()
                 
-                # Stop position sync thread
-                self._stop_overlay_position_sync()
+                # Stop window tracker
+                self._stop_overlay_window_tracker()
                 
                 # Update config
                 self.hunt_cfg.setdefault('overlay', {})['enabled'] = False
                 save_hunt_config(self.hunt_cfg)
                 
-                print("[Overlay] Disabled")
+                print(f"[Overlay] {self._t('overlay_disabled')}")
                 
         except Exception as e:
             print(f"[Overlay] Toggle error: {e}")
+            import traceback
+            traceback.print_exc()
             messagebox.showerror(
-                "Overlay Error" if self.lang == "en" else "Lỗi Overlay",
-                f"Failed to toggle overlay:\n{e}" if self.lang == "en" else
-                f"Không thể bật/tắt overlay:\n{e}"
+                self._t("overlay_error_title"),
+                self._t("overlay_toggle_failed").format(error=str(e))
             )
             self._overlay_enabled = False
+    
+    def _start_overlay_window_tracker(self):
+        """Start real-time window tracker for overlay sync."""
+        if hasattr(self, '_window_tracker') and self._window_tracker and self._window_tracker.is_running():
+            return  # Already running
+        
+        target_hwnd = self.hunt_cfg.get('window_hwnd')
+        if target_hwnd is None:
+            print("[Overlay] No target hwnd for window tracker")
+            return
+        
+        try:
+            from lib.ui.window_tracker import WindowTracker, WindowState
+            
+            # Define callbacks for window changes
+            def on_position_change(rect):
+                if self._overlay_window:
+                    self._overlay_window.update_target_rect(rect)
+            
+            def on_size_change(rect):
+                if self._overlay_window:
+                    self._overlay_window.update_target_rect(rect)
+                    print(f"[Overlay] Window resized to {rect['width']}x{rect['height']}")
+            
+            def on_visibility_change(visible):
+                if self._overlay_window:
+                    if visible:
+                        self._overlay_window.show()
+                        print(f"[Overlay] Game window shown → overlay shown")
+                    else:
+                        self._overlay_window.hide()
+                        print(f"[Overlay] Game window hidden → overlay hidden")
+            
+            def on_state_change(state):
+                print(f"[Overlay] Game window state changed: {state.value}")
+                if state == WindowState.MINIMIZED:
+                    if self._overlay_window:
+                        self._overlay_window.hide()
+                        print(f"[Overlay] Game minimized → overlay hidden")
+                elif state == WindowState.NORMAL or state == WindowState.MAXIMIZED:
+                    if self._overlay_window and self._overlay_enabled:
+                        self._overlay_window.show()
+                        print(f"[Overlay] Game restored → overlay shown")
+            
+            # Create and start tracker
+            self._window_tracker = WindowTracker(
+                target_hwnd=target_hwnd,
+                poll_rate=60,  # 60 FPS for smooth tracking
+                on_position_change=on_position_change,
+                on_size_change=on_size_change,
+                on_visibility_change=on_visibility_change,
+                on_state_change=on_state_change
+            )
+            self._window_tracker.start()
+            
+            print(f"[Overlay] Window tracker started (60 FPS)")
+            
+        except Exception as e:
+            print(f"[Overlay] Failed to start window tracker: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _stop_overlay_window_tracker(self):
+        """Stop window tracker."""
+        if hasattr(self, '_window_tracker') and self._window_tracker:
+            self._window_tracker.stop()
+            self._window_tracker = None
+            print("[Overlay] Window tracker stopped")
     
     def _start_overlay_position_sync(self):
         """Start background thread to sync overlay position with game window."""
@@ -8885,14 +9108,58 @@ Alternative Solutions:
                     print("[Overlay] No target hwnd for position sync")
                     return
                 
+                print(f"[Overlay] Position sync loop started for HWND: {target_hwnd}")
+                last_rect = None
+                update_count = 0
+                force_topmost_counter = 0  # Force topmost every 30 frames (~2 seconds)
+                
                 while not self._overlay_stop_event.is_set():
                     try:
                         # Get current window position
                         window_info = window_manager.get_window_info(target_hwnd)
                         
                         if window_info is not None and self._overlay_window is not None:
-                            # Update overlay position
-                            self._overlay_window.update_target_rect(window_info.rect)
+                            new_rect = window_info.rect
+                            
+                            # Check if window rect changed (position or size)
+                            if last_rect is None or (
+                                new_rect['left'] != last_rect['left'] or
+                                new_rect['top'] != last_rect['top'] or
+                                new_rect['width'] != last_rect['width'] or
+                                new_rect['height'] != last_rect['height']
+                            ):
+                                # Update overlay position/size
+                                self._overlay_window.update_target_rect(new_rect)
+                                last_rect = new_rect
+                                update_count += 1
+                                print(f"[Overlay] Update #{update_count}: pos=({new_rect['left']},{new_rect['top']}) size=({new_rect['width']}x{new_rect['height']})")
+                                
+                                # Force overlay to stay on top after position update
+                                try:
+                                    import win32gui, win32con
+                                    win32gui.SetWindowPos(
+                                        self._overlay_window.hwnd,
+                                        win32con.HWND_TOPMOST,
+                                        0, 0, 0, 0,
+                                        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE
+                                    )
+                                except Exception as e:
+                                    print(f"[Overlay] Failed to force topmost: {e}")
+                            
+                            # Periodically force topmost even if no position change
+                            force_topmost_counter += 1
+                            if force_topmost_counter >= 30:  # Every ~2 seconds
+                                force_topmost_counter = 0
+                                try:
+                                    import win32gui, win32con
+                                    win32gui.SetWindowPos(
+                                        self._overlay_window.hwnd,
+                                        win32con.HWND_TOPMOST,
+                                        0, 0, 0, 0,
+                                        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE
+                                    )
+                                except Exception:
+                                    pass
                         
                     except Exception as e:
                         print(f"[Overlay] Position sync error: {e}")
@@ -8967,9 +9234,8 @@ Alternative Solutions:
                         print(f"[Overlay] Error updating settings: {e}")
                 
                 messagebox.showinfo(
-                    "Settings Applied" if self.lang == "en" else "Đã Áp Dụng",
-                    "Overlay settings have been applied." if self.lang == "en" else 
-                    "Cài đặt overlay đã được áp dụng."
+                    self._t("overlay_settings_title"),
+                    self._t("overlay_settings_applied")
                 )
             
             # Show settings dialog
@@ -8984,9 +9250,8 @@ Alternative Solutions:
         except Exception as e:
             print(f"[Overlay] Settings dialog error: {e}")
             messagebox.showerror(
-                "Settings Error" if self.lang == "en" else "Lỗi Cài Đặt",
-                f"Failed to open overlay settings:\n{e}" if self.lang == "en" else
-                f"Không thể mở cài đặt overlay:\n{e}"
+                self._t("overlay_settings_error_title"),
+                self._t("overlay_settings_error").format(error=str(e))
             )
 
     # -----------------
@@ -9018,6 +9283,15 @@ Alternative Solutions:
 
 def main():
     """Main entry point with single instance lock."""
+    # Check critical dependencies (pywin32 for overlay)
+    try:
+        import win32gui  # Test pywin32 availability
+    except ImportError:
+        # Show warning but don't block - overlay will show error when toggled
+        print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
+        print("   Run: pip install pywin32")
+        print("   Or: python scripts/check_dependencies.py --install")
+    
     # Create single instance lock (using mutex on Windows, file lock on Unix)
     instance_lock = SingleInstanceLock("CabalAutoHunt_v1")
 

@@ -27,6 +27,11 @@ from tkinter import ttk, colorchooser
 from typing import Dict, Any, Optional, Callable
 import json
 
+# Global translations and tooltip support
+from lib.i18n import t as i18n_t
+from lib.ui.tooltip import attach_i18n_tooltip
+from lib.ui_style import UIStyle as UI
+
 
 class OverlaySettingsDialog:
     """
@@ -117,62 +122,67 @@ class OverlaySettingsDialog:
         return merged
     
     def _t(self, key: str) -> str:
-        """Simple translation helper."""
-        translations = {
-            'en': {
-                'title': 'Overlay Settings',
-                'tab_appearance': 'Appearance',
-                'tab_performance': 'Performance',
-                'tab_effects': 'Effects',
-                'alpha_label': 'Transparency (Alpha):',
-                'alpha_opaque': 'Opaque',
-                'alpha_transparent': 'Transparent',
-                'fps_label': 'FPS Limit:',
-                'colors_label': 'State Colors:',
-                'color_searching': 'Searching:',
-                'color_detected': 'Detected:',
-                'color_tracking': 'Tracking:',
-                'pick_color': 'Pick Color',
-                'reset_colors': 'Reset to Defaults',
-                'trail_enabled': 'Enable detection trails',
-                'trail_length': 'Trail length:',
-                'stats_label': 'Show Statistics:',
-                'stats_fps': 'FPS counter',
-                'stats_count': 'Detection count',
-                'stats_memory': 'Memory usage',
-                'btn_apply': 'Apply',
-                'btn_cancel': 'Cancel',
-                'btn_reset': 'Reset All',
-                'preview_label': 'Preview',
-            },
-            'vi': {
-                'title': 'Cấu Hình Overlay',
-                'tab_appearance': 'Giao Diện',
-                'tab_performance': 'Hiệu Năng',
-                'tab_effects': 'Hiệu Ứng',
-                'alpha_label': 'Độ Trong Suốt (Alpha):',
-                'alpha_opaque': 'Đục',
-                'alpha_transparent': 'Trong Suốt',
-                'fps_label': 'Giới Hạn FPS:',
-                'colors_label': 'Màu Trạng Thái:',
-                'color_searching': 'Đang Tìm:',
-                'color_detected': 'Đã Phát Hiện:',
-                'color_tracking': 'Đang Theo Dõi:',
-                'pick_color': 'Chọn Màu',
-                'reset_colors': 'Khôi Phục Mặc Định',
-                'trail_enabled': 'Bật hiệu ứng đuôi',
-                'trail_length': 'Độ dài đuôi:',
-                'stats_label': 'Hiển Thị Thống Kê:',
-                'stats_fps': 'Bộ đếm FPS',
-                'stats_count': 'Số lượng phát hiện',
-                'stats_memory': 'Sử dụng bộ nhớ',
-                'btn_apply': 'Áp Dụng',
-                'btn_cancel': 'Hủy',
-                'btn_reset': 'Khôi Phục Tất Cả',
-                'preview_label': 'Xem Trước',
+        """Translate using global i18n system with fallback to local."""
+        try:
+            # Try global translations first
+            return i18n_t(key, lang=self.lang)
+        except Exception:
+            # Fallback to local translations
+            translations = {
+                'en': {
+                    'title': 'Overlay Settings',
+                    'tab_appearance': 'Appearance',
+                    'tab_performance': 'Performance',
+                    'tab_effects': 'Effects',
+                    'alpha_label': 'Transparency (Alpha):',
+                    'alpha_opaque': 'Opaque',
+                    'alpha_transparent': 'Transparent',
+                    'fps_label': 'FPS Limit:',
+                    'colors_label': 'State Colors:',
+                    'color_searching': 'Searching:',
+                    'color_detected': 'Detected:',
+                    'color_tracking': 'Tracking:',
+                    'pick_color': 'Pick Color',
+                    'reset_colors': 'Reset to Defaults',
+                    'trail_enabled': 'Enable detection trails',
+                    'trail_length': 'Trail length:',
+                    'stats_label': 'Show Statistics:',
+                    'stats_fps': 'FPS counter',
+                    'stats_count': 'Detection count',
+                    'stats_memory': 'Memory usage',
+                    'btn_apply': 'Apply',
+                    'btn_cancel': 'Cancel',
+                    'btn_reset': 'Reset All',
+                    'preview_label': 'Preview',
+                },
+                'vi': {
+                    'title': 'Cấu Hình Overlay',
+                    'tab_appearance': 'Giao Diện',
+                    'tab_performance': 'Hiệu Năng',
+                    'tab_effects': 'Hiệu Ứng',
+                    'alpha_label': 'Độ Trong Suốt (Alpha):',
+                    'alpha_opaque': 'Đục',
+                    'alpha_transparent': 'Trong Suốt',
+                    'fps_label': 'Giới Hạn FPS:',
+                    'colors_label': 'Màu Trạng Thái:',
+                    'color_searching': 'Đang Tìm:',
+                    'color_detected': 'Đã Phát Hiện:',
+                    'color_tracking': 'Đang Theo Dõi:',
+                    'pick_color': 'Chọn Màu',
+                    'reset_colors': 'Khôi Phục Mặc Định',
+                    'trail_enabled': 'Bật hiệu ứng đuôi',
+                    'trail_length': 'Độ dài đuôi:',
+                    'stats_label': 'Hiển Thị Thống Kê:',
+                    'stats_fps': 'Bộ đếm FPS',
+                    'stats_count': 'Số lượng phát hiện',
+                    'stats_memory': 'Sử dụng bộ nhớ',
+                    'btn_apply': 'Áp Dụng',
+                    'btn_cancel': 'Hủy',
+                    'btn_reset': 'Khôi Phục Tất Cả',
+                    'preview_label': 'Xem Trước',
+                }
             }
-        }
-        return translations.get(self.lang, translations['en']).get(key, key)
+            return translations.get(self.lang, translations['en']).get(key, key)
     
     def show(self) -> None:
         """Show the settings dialog."""
@@ -255,6 +265,14 @@ class OverlaySettingsDialog:
         )
         alpha_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10)
         
+        # Add tooltip for alpha slider
+        attach_i18n_tooltip(
+            alpha_slider,
+            "overlay_alpha_tooltip",
+            ns=None,
+            lang_provider=lambda: self.lang
+        )
+        
         ttk.Label(slider_frame, text=self._t('alpha_opaque')).pack(side=tk.RIGHT)
         
         # Alpha value label
@@ -302,6 +320,14 @@ class OverlaySettingsDialog:
             command=lambda v: self._on_fps_change()
         )
         fps_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10)
+        
+        # Add tooltip for FPS slider
+        attach_i18n_tooltip(
+            fps_slider,
+            "overlay_fps_tooltip",
+            ns=None,
+            lang_provider=lambda: self.lang
+        )
         
         ttk.Label(slider_frame, text="60").pack(side=tk.RIGHT)
         

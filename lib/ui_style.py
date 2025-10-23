@@ -128,3 +128,42 @@ class UIStyle:
     # - White on #1976D2 (Info) = 5.4:1 ✓
     # - White on #00897B (Accent) = 4.5:1 ✓
 
+    # =========================================================================
+    # Overlay Window Styles - For PyWin32 GDI rendering
+    # =========================================================================
+    
+    # Overlay Background
+    OVERLAY_BG_ALPHA = 0.3            # 30% opacity for black background
+    OVERLAY_BG_COLOR = (0, 0, 0)      # Black RGB tuple for Win32
+    
+    # Basic Colors (RGB tuples for Win32 GDI)
+    COLOR_BLACK_RGB = (0, 0, 0)
+    COLOR_WHITE_RGB = (255, 255, 255)
+    COLOR_RED_RGB = (255, 0, 0)
+    COLOR_GREEN_RGB = (0, 255, 0)
+    COLOR_BLUE_RGB = (0, 0, 255)
+    
+    # Detection Box States (color-coded)
+    DETECTION_STATE_SEARCHING = COLOR_RED_RGB     # Red for searching
+    DETECTION_STATE_DETECTED = COLOR_GREEN_RGB    # Green for detected
+    DETECTION_STATE_TRACKING = COLOR_BLUE_RGB     # Blue for tracking
+    
+    # Detection Box Rendering
+    DETECTION_BORDER_WIDTH = 2        # Border thickness in pixels
+    DETECTION_TEXT_FONT_HEIGHT = 16   # Text font height (Segoe UI style)
+    DETECTION_TEXT_PADDING = 4        # Padding around text labels
+    DETECTION_TEXT_CHAR_WIDTH = 8     # Approximate character width
+    
+    # Text Label Styles (opaque rendering for visibility)
+    DETECTION_TEXT_COLOR = COLOR_BLACK_RGB        # Black text
+    DETECTION_TEXT_BG_COLOR = COLOR_WHITE_RGB     # White opaque background
+    
+    # FPS Counter
+    FPS_COUNTER_WIDTH = 100
+    FPS_COUNTER_HEIGHT = 20
+    FPS_COUNTER_PADDING = 4
+    FPS_COUNTER_TEXT_COLOR = COLOR_BLACK_RGB      # Black text
+    FPS_COUNTER_BG_COLOR = COLOR_WHITE_RGB        # White background
+    FPS_COUNTER_POSITION = 'top-right'            # Position anchor
+
+

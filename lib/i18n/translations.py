@@ -89,6 +89,39 @@ GLOBAL_TRANSLATIONS = {
         'vision_add_template': 'Add Template',
         'vision_manage_templates': 'Manage Templates',
         'vision_toggle_overlay': 'Toggle Overlay',
+        
+        # Overlay Window translations (Sprint 23 Phase 5)
+        'overlay_missing_dependency_title': 'Missing Dependency',
+        'overlay_missing_dependency_message': (
+            'PyWin32 library is required for overlay feature.\n\n'
+            'Please install it by running in terminal:\n'
+            '  pip install pywin32\n\n'
+            'Or if using virtual environment:\n'
+            '  venv\\Scripts\\activate\n'
+            '  pip install pywin32\n\n'
+            'Then restart the application.'
+        ),
+        'overlay_no_window_title': 'No Window Configured',
+        'overlay_no_window_message': (
+            'Please configure a game window first.\n'
+            'Go to Hunt tab and select a window.'
+        ),
+        'overlay_error_title': 'Overlay Error',
+        'overlay_toggle_failed': 'Failed to toggle overlay:\n{error}',
+        'overlay_enabled': 'Overlay enabled (PyWin32)',
+        'overlay_disabled': 'Overlay disabled',
+        'overlay_created': 'Created overlay: hwnd={hwnd}, rect={rect}',
+        'overlay_alpha_label': 'Overlay transparency:',
+        'overlay_alpha_tooltip': 'Adjust overlay transparency (0% = invisible, 100% = opaque)',
+        'overlay_fps_label': 'FPS limit:',
+        'overlay_fps_tooltip': 'Maximum frames per second for overlay rendering',
+        'overlay_click_through_label': 'Click-through enabled',
+        'overlay_click_through_tooltip': 'Allow mouse clicks to pass through overlay to game window',
+        'overlay_settings_title': 'Overlay Settings',
+        'overlay_settings_applied': 'Overlay settings have been applied.',
+        'overlay_settings_error': 'Failed to open overlay settings:\n{error}',
+        'overlay_settings_error_title': 'Settings Error',
+        
         'monster_section': 'Monster library',
         'monster_list': 'Monsters:',
         'monster_name': 'Name:',
@@ -633,6 +666,45 @@ Mẹo:
         'timing_effective_aps': '  • Tốc độ hiệu dụng: {aps:.2f} đòn/giây\n',
         # Template recognition messages
         'monster_template_test_found_noconf': 'Tìm thấy tại ({x}, {y})',
+        
+        # Vision Menu translations (Sprint 22 Phase 1B)
+        'vision_open_wizard': 'Mở Vision Wizard',
+        'vision_scan_region': 'Quét Vùng',
+        'vision_add_template': 'Thêm Template',
+        'vision_manage_templates': 'Quản Lý Template',
+        'vision_toggle_overlay': 'Bật/Tắt Overlay',
+        
+        # Overlay Window translations (Sprint 23 Phase 5)
+        'overlay_missing_dependency_title': 'Thiếu Thư Viện',
+        'overlay_missing_dependency_message': (
+            'Cần cài đặt thư viện PyWin32 cho tính năng overlay.\n\n'
+            'Vui lòng chạy lệnh sau trong terminal:\n'
+            '  pip install pywin32\n\n'
+            'Hoặc nếu dùng virtual environment:\n'
+            '  venv\\Scripts\\activate\n'
+            '  pip install pywin32\n\n'
+            'Sau đó khởi động lại ứng dụng.'
+        ),
+        'overlay_no_window_title': 'Chưa Cấu Hình Cửa Sổ',
+        'overlay_no_window_message': (
+            'Vui lòng cấu hình cửa sổ game trước.\n'
+            'Vào tab Hunt và chọn cửa sổ.'
+        ),
+        'overlay_error_title': 'Lỗi Overlay',
+        'overlay_toggle_failed': 'Không thể bật/tắt overlay:\n{error}',
+        'overlay_enabled': 'Đã bật overlay (PyWin32)',
+        'overlay_disabled': 'Đã tắt overlay',
+        'overlay_created': 'Đã tạo overlay: hwnd={hwnd}, rect={rect}',
+        'overlay_alpha_label': 'Độ trong suốt overlay:',
+        'overlay_alpha_tooltip': 'Điều chỉnh độ trong suốt overlay (0% = vô hình, 100% = mờ đục)',
+        'overlay_fps_label': 'Giới hạn FPS:',
+        'overlay_fps_tooltip': 'Số khung hình tối đa mỗi giây cho overlay',
+        'overlay_click_through_label': 'Cho phép click xuyên qua',
+        'overlay_click_through_tooltip': 'Cho phép chuột click xuyên qua overlay vào cửa sổ game',
+        'overlay_settings_title': 'Cài Đặt Overlay',
+        'overlay_settings_applied': 'Cài đặt overlay đã được áp dụng.',
+        'overlay_settings_error': 'Không thể mở cài đặt overlay:\n{error}',
+        'overlay_settings_error_title': 'Lỗi Cài Đặt',
     },
 }
 
@@ -769,6 +841,38 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'vision_add_template': 'Thêm Template',
         'vision_manage_templates': 'Quản Lý Template',
         'vision_toggle_overlay': 'Bật/Tắt Overlay',
+        
+        # Overlay Window translations (Sprint 23 Phase 5)
+        'overlay_missing_dependency_title': 'Thiếu Thư Viện',
+        'overlay_missing_dependency_message': (
+            'Cần cài đặt thư viện PyWin32 cho tính năng overlay.\n\n'
+            'Vui lòng chạy lệnh sau trong terminal:\n'
+            '  pip install pywin32\n\n'
+            'Hoặc nếu dùng virtual environment:\n'
+            '  venv\\Scripts\\activate\n'
+            '  pip install pywin32\n\n'
+            'Sau đó khởi động lại ứng dụng.'
+        ),
+        'overlay_no_window_title': 'Chưa Cấu Hình Cửa Sổ',
+        'overlay_no_window_message': (
+            'Vui lòng cấu hình cửa sổ game trước.\n'
+            'Vào tab Hunt và chọn cửa sổ.'
+        ),
+        'overlay_error_title': 'Lỗi Overlay',
+        'overlay_toggle_failed': 'Không thể bật/tắt overlay:\n{error}',
+        'overlay_enabled': 'Đã bật overlay (PyWin32)',
+        'overlay_disabled': 'Đã tắt overlay',
+        'overlay_created': 'Đã tạo overlay: hwnd={hwnd}, rect={rect}',
+        'overlay_alpha_label': 'Độ trong suốt overlay:',
+        'overlay_alpha_tooltip': 'Điều chỉnh độ trong suốt overlay (0% = vô hình, 100% = mờ đục)',
+        'overlay_fps_label': 'Giới hạn FPS:',
+        'overlay_fps_tooltip': 'Số khung hình tối đa mỗi giây cho overlay',
+        'overlay_click_through_label': 'Cho phép click xuyên qua',
+        'overlay_click_through_tooltip': 'Cho phép chuột click xuyên qua overlay vào cửa sổ game',
+        'overlay_settings_title': 'Cài Đặt Overlay',
+        'overlay_settings_applied': 'Cài đặt overlay đã được áp dụng.',
+        'overlay_settings_error': 'Không thể mở cài đặt overlay:\n{error}',
+        'overlay_settings_error_title': 'Lỗi Cài Đặt',
     }
 }
 
