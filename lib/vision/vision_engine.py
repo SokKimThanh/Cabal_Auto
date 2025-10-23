@@ -23,6 +23,7 @@ import time
 import logging
 import threading
 import queue
+import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple, Callable
 from dataclasses import dataclass, asdict
@@ -30,6 +31,14 @@ from dataclasses import dataclass, asdict
 # Setup logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Import screen capture module (Windows only)
+if sys.platform == "win32":
+    from lib.system.screen_capture import ScreenCapture
+    from lib.system.window_manager import WindowManager
+else:
+    ScreenCapture = None  # type: ignore
+    WindowManager = None  # type: ignore
 
 
 # =====================================================================
@@ -154,6 +163,11 @@ class VisionEngine:
         # State
         self.frame_count = 0
         self.debug_mode = False
+        
+        # Screen capture integration (Sprint 23 Phase 8)
+        self.screen_capture: Optional['ScreenCapture'] = None  # type: ignore
+        self.capture_hwnd: Optional[int] = None
+        self.capture_enabled = False
         
         # Worker threads and queue
         self.worker_running = False
@@ -792,10 +806,173 @@ class VisionEngine:
         logger.info("Engine reset")
     
     # =====================================================================
+    # Screen Capture Management (Sprint 23 Phase 8)
+    # =====================================================================
+    
+    def start_capture(self, window_title: str, target_fps: int = 15, 
+                     queue_size: int = 5) -> bool:
+        """
+        Start screen capture for a game window.
+        
+        Args:
+            window_title: Window title to capture (e.g., "Cabal")
+            target_fps: Target frames per second (default: 15)
+            queue_size: Frame queue size (default: 5)
+        
+        Returns:
+            True if capture started successfully, False otherwise
+        
+        Note:
+            - Only works on Windows platform
+            - Automatically sets up frame callback for worker
+            - Window must be visible and not minimized
+        """
+        if sys.platform != "win32":
+            logger.error("Screen capture only supported on Windows")
+            return False
+        
+        if not ScreenCapture or not WindowManager:
+            logger.error("Screen capture modules not available")
+            return False
+        
+        # Find window
+        hwnd = WindowManager.find_window(title=window_title)  # type: ignore
+        if not hwnd:
+            logger.error(f"Window not found: {window_title}")
+            return False
+        
+        # Check window state
+        info = WindowManager.get_window_info(hwnd)  # type: ignore
+        if info and info.is_minimized:
+            logger.warning(f"Window is minimized: {window_title}")
+            # Capture can still work with minimized windows
+            logger.info("Continuing with capture (minimized window)")
+        
+        # Stop existing capture
+        self.stop_capture()
+        
+        try:
+            # Create screen capture
+            self.screen_capture = ScreenCapture(hwnd, queue_size=queue_size,  # type: ignore
+                                               target_fps=target_fps)
+            self.screen_capture.start_capture()  # type: ignore
+            self.capture_hwnd = hwnd
+            self.capture_enabled = True
+            
+            # Update FPS limit to match capture rate
+            self.params['fps_limit'] = target_fps
+            
+            logger.info(f"Started screen capture: {window_title} (hwnd={hwnd}, fps={target_fps})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to start screen capture: {e}")
+            self.screen_capture = None
+            self.capture_hwnd = None
+            self.capture_enabled = False
+            return False
+    
+    def stop_capture(self) -> None:
+        """
+        Stop screen capture and cleanup resources.
+        
+        Note:
+            - Safe to call even if capture not active
+            - Automatically called by stop_worker()
+        """
+        if self.screen_capture:
+            try:
+                self.screen_capture.stop_capture()  # type: ignore
+                logger.info("Stopped screen capture")
+            except Exception as e:
+                logger.error(f"Error stopping capture: {e}")
+            finally:
+                self.screen_capture = None
+                self.capture_hwnd = None
+                self.capture_enabled = False
+    
+    def get_capture_frame(self, timeout: float = 0.1) -> Optional[np.ndarray]:
+        """
+        Get latest frame from screen capture.
+        
+        Args:
+            timeout: Maximum wait time for frame (seconds)
+        
+        Returns:
+            BGR frame array or None if not available
+        
+        Note:
+            - This is the frame callback used by worker thread
+            - Returns None if capture not active
+        """
+        if not self.capture_enabled or not self.screen_capture:
+            return None
+        
+        try:
+            return self.screen_capture.get_frame(timeout=timeout)  # type: ignore
+        except Exception as e:
+            logger.error(f"Error getting capture frame: {e}")
+            return None
+    
+    def get_capture_stats(self) -> Optional[Dict[str, Any]]:
+        """
+        Get screen capture statistics.
+        
+        Returns:
+            Dictionary with keys:
+                - fps: Current capture FPS
+                - frames_captured: Total frames captured
+                - frames_dropped: Total frames dropped
+                - queue_size: Current queue size
+            
+            None if capture not active
+        """
+        if not self.capture_enabled or not self.screen_capture:
+            return None
+        
+        try:
+            stats = self.screen_capture.get_stats()  # type: ignore
+            return {
+                'fps': stats.fps,
+                'frames_captured': stats.frames_captured,
+                'frames_dropped': stats.frames_dropped,
+                'queue_size': stats.queue_size,
+                'last_update': stats.last_update
+            }
+        except Exception as e:
+            logger.error(f"Error getting capture stats: {e}")
+            return None
+    
+    def is_capture_active(self) -> bool:
+        """Check if screen capture is currently active"""
+        return (self.capture_enabled and 
+                self.screen_capture is not None and 
+                self.screen_capture.is_capturing)  # type: ignore
+    
+    def focus_capture_window(self) -> bool:
+        """
+        Bring captured window to foreground.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.capture_hwnd or sys.platform != "win32":
+            return False
+        
+        if not WindowManager:
+            return False
+        
+        try:
+            return WindowManager.set_foreground(self.capture_hwnd)  # type: ignore
+        except Exception as e:
+            logger.error(f"Error focusing window: {e}")
+            return False
+    
+    # =====================================================================
     # Worker Thread Management (Async API)
     # =====================================================================
     
-    def start_worker(self, frame_callback: Callable[[], Optional[np.ndarray]]) -> None:
+    def start_worker(self, frame_callback: Optional[Callable[[], Optional[np.ndarray]]] = None) -> None:
         """
         Start worker thread for async detection/tracking.
         
@@ -805,18 +982,29 @@ class VisionEngine:
         3. Puts results into result_queue
         
         Args:
-            frame_callback: Function that returns current frame (np.ndarray) or None
+            frame_callback: Function that returns current frame (np.ndarray) or None.
+                           If None, uses internal screen capture if active.
         
         Note:
             - Worker stops when worker_running = False
             - UI should poll result_queue via get_result()
             - FPS limited by params['fps_limit']
+            - If screen capture is active and no callback provided, uses get_capture_frame
         """
         if self.worker_running:
             logger.warning("Worker already running")
             return
         
-        self.frame_callback = frame_callback
+        # Use screen capture if active and no callback provided
+        if frame_callback is None and self.is_capture_active():
+            self.frame_callback = self.get_capture_frame
+            logger.info("Using internal screen capture for worker")
+        elif frame_callback is not None:
+            self.frame_callback = frame_callback
+        else:
+            logger.error("No frame source available (no callback or screen capture)")
+            return
+        
         self.worker_running = True
         self.worker_thread = threading.Thread(target=self._worker_loop, daemon=True)
         self.worker_thread.start()
@@ -830,6 +1018,7 @@ class VisionEngine:
             - Blocks until worker exits
             - Drains result_queue
             - Stops all trackers
+            - Stops screen capture if active
         """
         if not self.worker_running:
             return
@@ -849,6 +1038,10 @@ class VisionEngine:
         
         # Stop trackers
         self.stop_all_tracks()
+        
+        # Stop screen capture if active
+        if self.is_capture_active():
+            self.stop_capture()
         
         logger.info("Worker thread stopped")
     
