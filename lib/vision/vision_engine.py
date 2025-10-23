@@ -91,7 +91,7 @@ class Template:
     id: str
     path: str
     threshold: float = 0.7
-    scales: List[float] = None
+    scales: Optional[List[float]] = None
     enabled: bool = True
     image: Optional[np.ndarray] = None  # Loaded image (not serialized)
     thumbnail: Optional[np.ndarray] = None  # For UI preview
@@ -247,11 +247,10 @@ class VisionEngine:
                 
             except Exception as e:
                 logger.error(f"Error loading template {path}: {e}")
-        
         return loaded
     
     def add_template(self, path: str, threshold: float = 0.7, 
-                     scales: List[float] = None) -> Optional[Template]:
+                     scales: Optional[List[float]] = None) -> Optional[Template]:
         """
         Add a single template.
         
@@ -352,8 +351,8 @@ class VisionEngine:
                 logger.warning(f"Template {template.id} has no image loaded")
                 continue
             
-            # Get scales to try
-            template_scales = scales if scales else template.scales
+            # Get scales to try (ensure not None)
+            template_scales = scales if scales else (template.scales if template.scales else [1.0])
             
             for scale in template_scales[:self.params['max_scales']]:
                 detections = self._match_template_at_scale(
@@ -396,6 +395,10 @@ class VisionEngine:
         try:
             # Resize template
             template_img = template.image
+            if template_img is None:
+                logger.warning(f"Template {template.id} has no image")
+                return []
+            
             if scale != 1.0:
                 new_w = int(template_img.shape[1] * scale)
                 new_h = int(template_img.shape[0] * scale)
@@ -523,14 +526,24 @@ class VisionEngine:
         tracker_id = f"track_{self.next_tracker_id}"
         self.next_tracker_id += 1
         
-        # Create tracker
-        if self.params['tracker_type'] == 'CSRT':
-            tracker = cv2.TrackerCSRT_create()
-        elif self.params['tracker_type'] == 'KCF':
-            tracker = cv2.TrackerKCF_create()
-        else:
-            logger.warning(f"Unknown tracker type: {self.params['tracker_type']}, using CSRT")
-            tracker = cv2.TrackerCSRT_create()
+        # Create tracker (OpenCV 4.5+ uses cv2.legacy)
+        try:
+            if self.params['tracker_type'] == 'CSRT':
+                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
+            elif self.params['tracker_type'] == 'KCF':
+                tracker = cv2.legacy.TrackerKCF_create()  # type: ignore
+            else:
+                logger.warning(f"Unknown tracker type: {self.params['tracker_type']}, using CSRT")
+                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
+        except AttributeError:
+            # Fallback for older OpenCV versions
+            if self.params['tracker_type'] == 'CSRT':
+                tracker = cv2.TrackerCSRT_create()  # type: ignore
+            elif self.params['tracker_type'] == 'KCF':
+                tracker = cv2.TrackerKCF_create()  # type: ignore
+            else:
+                logger.warning(f"Unknown tracker type: {self.params['tracker_type']}, using CSRT")
+                tracker = cv2.TrackerCSRT_create()  # type: ignore
         
         # Initialize tracker
         bbox = detection.bbox()
