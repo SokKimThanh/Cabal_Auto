@@ -729,6 +729,13 @@ class App(tk.Tk):
                 command=self._toggle_overlay
             )
             
+            # Overlay Settings
+            settings_label = "Overlay Settings..." if self.lang == "en" else "Cài Đặt Overlay..."
+            vision_menu.add_command(
+                label=settings_label,
+                command=self._open_overlay_settings
+            )
+            
             menubar.add_cascade(label="Vision", menu=vision_menu)
             print("[Vision Menu] Created successfully")
             
@@ -8916,6 +8923,71 @@ Alternative Solutions:
         
         self._overlay_update_thread = None
         print("[Overlay] Position sync stopped")
+    
+    def _open_overlay_settings(self):
+        """Open overlay settings dialog."""
+        print("[Overlay] Opening settings dialog")
+        
+        try:
+            from lib.ui.overlay_settings import OverlaySettingsDialog
+            
+            # Get current overlay config
+            overlay_config = self.hunt_cfg.get('overlay', {})
+            
+            def on_apply(new_config: Dict[str, Any]):
+                """Apply new overlay settings."""
+                print("[Overlay] Applying new settings")
+                
+                # Update hunt config
+                self.hunt_cfg['overlay'] = new_config
+                save_hunt_config(self.hunt_cfg)
+                
+                # Update existing overlay if active
+                if self._overlay_window is not None:
+                    try:
+                        # Update alpha
+                        alpha = float(new_config.get('alpha', 0.7))
+                        self._overlay_window.set_alpha(alpha)
+                        
+                        # Update FPS limit (requires recreating overlay)
+                        fps_limit = int(new_config.get('fps_limit', 15))
+                        if fps_limit != self._overlay_window.fps_limit:
+                            # Recreate overlay with new FPS
+                            was_visible = self._overlay_window.is_visible()
+                            self._overlay_window.destroy()
+                            self._overlay_window = None
+                            
+                            if was_visible:
+                                # Re-toggle to recreate
+                                self._overlay_enabled = False
+                                self._toggle_overlay()
+                        
+                        print(f"[Overlay] Settings updated: alpha={alpha}, fps={fps_limit}")
+                    except Exception as e:
+                        print(f"[Overlay] Error updating settings: {e}")
+                
+                messagebox.showinfo(
+                    "Settings Applied" if self.lang == "en" else "Đã Áp Dụng",
+                    "Overlay settings have been applied." if self.lang == "en" else 
+                    "Cài đặt overlay đã được áp dụng."
+                )
+            
+            # Show settings dialog
+            dialog = OverlaySettingsDialog(
+                parent=self,
+                current_config=overlay_config,
+                lang=self.lang,
+                on_apply=on_apply
+            )
+            dialog.show()
+            
+        except Exception as e:
+            print(f"[Overlay] Settings dialog error: {e}")
+            messagebox.showerror(
+                "Settings Error" if self.lang == "en" else "Lỗi Cài Đặt",
+                f"Failed to open overlay settings:\n{e}" if self.lang == "en" else
+                f"Không thể mở cài đặt overlay:\n{e}"
+            )
 
     # -----------------
     def _t(self, key: str) -> str:

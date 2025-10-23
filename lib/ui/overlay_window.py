@@ -93,7 +93,8 @@ class OverlayWindow:
         target_rect: Optional[Dict[str, int]] = None,
         alpha: float = 0.7,
         fps_limit: int = 15,
-        enable_click_through: bool = True
+        enable_click_through: bool = True,
+        trail_config: Optional[Dict[str, Any]] = None
     ):
         """
         Initialize overlay window.
@@ -104,6 +105,7 @@ class OverlayWindow:
             alpha: Transparency level (0.0 = invisible, 1.0 = opaque)
             fps_limit: Maximum FPS for rendering updates
             enable_click_through: Enable click-through (Win32 only)
+            trail_config: Trail configuration {'enabled': bool, 'length': int, 'fade': bool}
         """
         # Validate parameters
         if alpha < 0.0 or alpha > 1.0:
@@ -117,6 +119,10 @@ class OverlayWindow:
         self.fps_limit = fps_limit
         self.enable_click_through = enable_click_through and sys.platform == "win32"
         
+        # Trail configuration
+        default_trail = {'enabled': False, 'length': 5, 'fade': True}
+        self.trail_config = {**default_trail, **(trail_config or {})}
+        
         # State
         self.window: Optional[tk.Toplevel] = None
         self.canvas: Optional[tk.Canvas] = None
@@ -127,6 +133,10 @@ class OverlayWindow:
         self._detections_queue: queue.Queue[List[DetectionBox]] = queue.Queue(maxsize=2)
         self._current_detections: List[DetectionBox] = []
         self._detections_lock = threading.Lock()
+        
+        # Trail history: dict[label] -> List[DetectionBox]
+        self._trail_history: Dict[str, List[DetectionBox]] = {}
+        self._trail_lock = threading.Lock()
         
         # Update thread
         self._update_thread: Optional[threading.Thread] = None
@@ -373,6 +383,14 @@ class OverlayWindow:
         with self._detections_lock:
             detections = self._current_detections.copy()
         
+        # Update trail history if enabled
+        if self.trail_config.get('enabled', False):
+            self._update_trail_history(detections)
+        
+        # Draw trails first (behind current detections)
+        if self.trail_config.get('enabled', False):
+            self._render_trails()
+        
         # Draw each detection box
         for det in detections:
             try:
@@ -417,6 +435,77 @@ class OverlayWindow:
                 
             except Exception as e:
                 print(f"[Overlay] Render box error: {e}")
+    
+    def _update_trail_history(self, detections: List[DetectionBox]) -> None:
+        """Update trail history with current detections."""
+        with self._trail_lock:
+            trail_length = self.trail_config.get('length', 5)
+            
+            # Update history for each detection
+            for det in detections:
+                label = det.label
+                
+                # Initialize history list if needed
+                if label not in self._trail_history:
+                    self._trail_history[label] = []
+                
+                # Add current position to history
+                self._trail_history[label].append(det)
+                
+                # Trim to max length
+                if len(self._trail_history[label]) > trail_length:
+                    self._trail_history[label] = self._trail_history[label][-trail_length:]
+            
+            # Clean up old labels (not in current detections)
+            current_labels = {det.label for det in detections}
+            old_labels = set(self._trail_history.keys()) - current_labels
+            for label in old_labels:
+                del self._trail_history[label]
+    
+    def _render_trails(self) -> None:
+        """Render detection trails (historical positions)."""
+        if self.canvas is None:
+            return
+        
+        with self._trail_lock:
+            fade_enabled = self.trail_config.get('fade', True)
+            
+            for label, history in self._trail_history.items():
+                if len(history) < 2:
+                    continue  # Need at least 2 points for trail
+                
+                # Render trail from oldest to newest (excluding current)
+                for i, det in enumerate(history[:-1]):  # Exclude last (current) detection
+                    try:
+                        # Calculate opacity based on position in history
+                        if fade_enabled:
+                            # Fade older positions more
+                            opacity_factor = (i + 1) / len(history)  # 0.0 to 1.0
+                            opacity = int(opacity_factor * 150)  # Max 150 opacity for trails
+                        else:
+                            opacity = 100
+                        
+                        # Create faded color
+                        r, g, b = det.color
+                        # Blend with background (assuming black/dark background)
+                        faded_r = min(255, int(r * (opacity / 255)))
+                        faded_g = min(255, int(g * (opacity / 255)))
+                        faded_b = min(255, int(b * (opacity / 255)))
+                        faded_color = f"#{faded_r:02x}{faded_g:02x}{faded_b:02x}"
+                        
+                        # Draw faded box
+                        self.canvas.create_rectangle(
+                            det.x,
+                            det.y,
+                            det.x + det.w,
+                            det.y + det.h,
+                            outline=faded_color,
+                            width=1,
+                            tags="trail"
+                        )
+                        
+                    except Exception as e:
+                        print(f"[Overlay] Trail render error: {e}")
     
     def destroy(self) -> None:
         """Destroy the overlay window and cleanup resources."""
