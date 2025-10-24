@@ -168,9 +168,15 @@ class QuickMonsterEditor(tk.Toplevel):
         self.info_tab: Optional[tk.Frame] = None
         self.templates_tab: Optional[tk.Frame] = None
         
-        # Center/Right panels (legacy from quick editor)
+        # Info tab widgets
         self.name_entry: Optional[tk.Entry] = None
         self.level_spinbox: Optional[tk.Spinbox] = None
+        self.priority_spinbox: Optional[tk.Spinbox] = None
+        self.hp_entry: Optional[tk.Entry] = None
+        self.damage_entry: Optional[tk.Entry] = None
+        self.desc_text: Optional[tk.Text] = None
+        
+        # Legacy widgets (from quick editor, may be removed later)
         self.threshold_scale: Optional[tk.Scale] = None
         self.threshold_label: Optional[tk.Label] = None
         self.progress_label: Optional[tk.Label] = None
@@ -413,15 +419,153 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_info', ns='monster_editor', default='Monster Info')
         self.notebook.add(self.info_tab, text=tab_text)
         
-        # Placeholder label (content will be added in Batch 6)
-        placeholder_label = tk.Label(
-            self.info_tab,
-            text='Monster Info Form\n(To be implemented in Batch 6)',
-            font=UI.FONT_TEXT,
-            fg=UI.COLOR_SUBTEXT,
-            bg=UI.BG_DEFAULT
+        # Create scrollable container
+        canvas = tk.Canvas(self.info_tab, bg=UI.BG_DEFAULT, highlightthickness=0)
+        scrollbar = tk.Scrollbar(self.info_tab, orient='vertical', command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=UI.BG_DEFAULT)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        placeholder_label.pack(expand=True)
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side='left', fill='both', expand=True, padx=10, pady=10)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Form content
+        form_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
+        form_frame.pack(fill='both', expand=True)
+        
+        # Monster Name
+        name_label_text = i18n_t('monster_name_label', ns='monster_editor', default='Monster name:')
+        tk.Label(
+            form_frame,
+            text=name_label_text,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_DEFAULT
+        ).grid(row=0, column=0, sticky='w', pady=5)
+        
+        self.name_entry = tk.Entry(
+            form_frame,
+            font=UI.FONT_TEXT,
+            width=30
+        )
+        self.name_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
+        self.name_entry.bind('<KeyRelease>', self._on_info_change)
+        
+        # Level
+        level_label_text = i18n_t('monster_level_label', ns='monster_editor', default='Level:')
+        tk.Label(
+            form_frame,
+            text=level_label_text,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_DEFAULT
+        ).grid(row=1, column=0, sticky='w', pady=5)
+        
+        self.level_spinbox = tk.Spinbox(
+            form_frame,
+            from_=1,
+            to=999,
+            font=UI.FONT_TEXT,
+            width=10
+        )
+        self.level_spinbox.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.level_spinbox.bind('<KeyRelease>', self._on_info_change)
+        self.level_spinbox.bind('<<Increment>>', self._on_info_change)
+        self.level_spinbox.bind('<<Decrement>>', self._on_info_change)
+        
+        # Priority
+        priority_label_text = i18n_t('monster_priority_label', ns='monster_editor', default='Priority:')
+        tk.Label(
+            form_frame,
+            text=priority_label_text,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_DEFAULT
+        ).grid(row=2, column=0, sticky='w', pady=5)
+        
+        self.priority_spinbox = tk.Spinbox(
+            form_frame,
+            from_=1,
+            to=10,
+            font=UI.FONT_TEXT,
+            width=10
+        )
+        self.priority_spinbox.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.priority_spinbox.bind('<KeyRelease>', self._on_info_change)
+        self.priority_spinbox.bind('<<Increment>>', self._on_info_change)
+        self.priority_spinbox.bind('<<Decrement>>', self._on_info_change)
+        
+        # HP
+        hp_label_text = i18n_t('monster_hp_label', ns='monster_editor', default='HP:')
+        tk.Label(
+            form_frame,
+            text=hp_label_text,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_DEFAULT
+        ).grid(row=3, column=0, sticky='w', pady=5)
+        
+        self.hp_entry = tk.Entry(
+            form_frame,
+            font=UI.FONT_TEXT,
+            width=15
+        )
+        self.hp_entry.grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.hp_entry.bind('<KeyRelease>', self._on_info_change)
+        
+        # Damage per hit
+        damage_label_text = i18n_t('monster_damage_label', ns='monster_editor', default='Damage per hit:')
+        tk.Label(
+            form_frame,
+            text=damage_label_text,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_DEFAULT
+        ).grid(row=4, column=0, sticky='w', pady=5)
+        
+        self.damage_entry = tk.Entry(
+            form_frame,
+            font=UI.FONT_TEXT,
+            width=15
+        )
+        self.damage_entry.grid(row=4, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.damage_entry.bind('<KeyRelease>', self._on_info_change)
+        
+        # Description
+        desc_label_text = i18n_t('monster_desc_label', ns='monster_editor', default='Description:')
+        tk.Label(
+            form_frame,
+            text=desc_label_text,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_DEFAULT
+        ).grid(row=5, column=0, sticky='nw', pady=5)
+        
+        desc_frame = tk.Frame(form_frame, bg=UI.BG_DEFAULT)
+        desc_frame.grid(row=5, column=1, sticky='ew', pady=5, padx=(10, 0))
+        
+        self.desc_text = tk.Text(
+            desc_frame,
+            font=UI.FONT_TEXT,
+            width=30,
+            height=5,
+            wrap=tk.WORD
+        )
+        self.desc_text.pack(side='left', fill='both', expand=True)
+        
+        desc_scrollbar = tk.Scrollbar(desc_frame, orient='vertical', command=self.desc_text.yview)
+        desc_scrollbar.pack(side='right', fill='y')
+        self.desc_text.configure(yscrollcommand=desc_scrollbar.set)
+        self.desc_text.bind('<KeyRelease>', self._on_info_change)
+        
+        # Configure grid weights
+        form_frame.columnconfigure(1, weight=1)
     
     def _create_templates_tab(self) -> None:
         """Create Templates tab."""
@@ -857,8 +1001,9 @@ class QuickMonsterEditor(tk.Toplevel):
             selected_monster = self.monsters[index]
             self.current_monster_id = selected_monster.get('id')
             
-            # Load monster data into form
-            # TODO: Implement form population in Batch 6
+            # Populate form with monster data
+            self._populate_info_form(selected_monster)
+            
             print(f"[MonsterEditor] Selected monster: {selected_monster.get('name')}")
     
     def _on_add_monster(self) -> None:
@@ -890,7 +1035,9 @@ class QuickMonsterEditor(tk.Toplevel):
         # Set as current
         self.current_monster_id = new_monster['id']
         
-        # TODO: Clear form and prepare for new monster (Batch 6)
+        # Populate form with new monster data
+        self._populate_info_form(new_monster)
+        
         print(f"[MonsterEditor] Added new monster: {new_monster['id']}")
     
     def _on_delete_monster(self) -> None:
@@ -933,6 +1080,92 @@ class QuickMonsterEditor(tk.Toplevel):
                 self._refresh_monster_list()
                 
                 print(f"[MonsterEditor] Deleted monster: {monster.get('name')}")
+    
+    def _populate_info_form(self, monster: Dict[str, Any]) -> None:
+        """Populate Info tab form with monster data."""
+        if not all([self.name_entry, self.level_spinbox, self.priority_spinbox, 
+                    self.hp_entry, self.damage_entry, self.desc_text]):
+            return
+        
+        # Clear form first
+        self._clear_info_form()
+        
+        # Populate fields (null checks already done above)
+        assert self.name_entry is not None
+        assert self.level_spinbox is not None
+        assert self.priority_spinbox is not None
+        assert self.hp_entry is not None
+        assert self.damage_entry is not None
+        assert self.desc_text is not None
+        
+        self.name_entry.insert(0, monster.get('name', ''))
+        self.level_spinbox.delete(0, tk.END)
+        self.level_spinbox.insert(0, str(monster.get('level', 1)))
+        self.priority_spinbox.delete(0, tk.END)
+        self.priority_spinbox.insert(0, str(monster.get('priority', 1)))
+        self.hp_entry.insert(0, str(monster.get('hp', 100)))
+        self.damage_entry.insert(0, str(monster.get('damage_per_hit', 10)))
+        
+        desc = monster.get('description', '')
+        if desc:
+            self.desc_text.insert('1.0', desc)
+    
+    def _clear_info_form(self) -> None:
+        """Clear all fields in Info tab form."""
+        if self.name_entry:
+            self.name_entry.delete(0, tk.END)
+        if self.level_spinbox:
+            self.level_spinbox.delete(0, tk.END)
+            self.level_spinbox.insert(0, '1')
+        if self.priority_spinbox:
+            self.priority_spinbox.delete(0, tk.END)
+            self.priority_spinbox.insert(0, '1')
+        if self.hp_entry:
+            self.hp_entry.delete(0, tk.END)
+        if self.damage_entry:
+            self.damage_entry.delete(0, tk.END)
+        if self.desc_text:
+            self.desc_text.delete('1.0', tk.END)
+    
+    def _on_info_change(self, event: Any = None) -> None:
+        """Handle changes in Info tab form fields."""
+        # Mark current monster as dirty
+        self.is_monster_dirty = True
+        self.is_dirty = True
+        
+        # Update current monster data in memory (if selected)
+        if self.current_monster_id and self.monsters:
+            for monster in self.monsters:
+                if monster.get('id') == self.current_monster_id:
+                    # Update monster data from form
+                    if self.name_entry:
+                        monster['name'] = self.name_entry.get()
+                    if self.level_spinbox:
+                        try:
+                            monster['level'] = int(self.level_spinbox.get())
+                        except ValueError:
+                            pass
+                    if self.priority_spinbox:
+                        try:
+                            monster['priority'] = int(self.priority_spinbox.get())
+                        except ValueError:
+                            pass
+                    if self.hp_entry:
+                        try:
+                            monster['hp'] = int(self.hp_entry.get())
+                        except ValueError:
+                            pass
+                    if self.damage_entry:
+                        try:
+                            monster['damage_per_hit'] = int(self.damage_entry.get())
+                        except ValueError:
+                            pass
+                    if self.desc_text:
+                        monster['description'] = self.desc_text.get('1.0', tk.END).strip()
+                    
+                    # Refresh list to show updated name
+                    self._refresh_monster_list()
+                    break
 
 
 # Singleton instance
