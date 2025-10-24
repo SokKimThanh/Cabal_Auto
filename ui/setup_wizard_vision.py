@@ -1125,15 +1125,245 @@ class VisionWizard(tk.Toplevel):
             )
     
     def _save_all_changes(self) -> None:
-        """Lưu tất cả thay đổi vào file config (will be fully implemented in Batch 3.3)."""
-        # TODO: Implement full save logic in Batch 3.3
-        # For now, just clear unsaved tabs
-        self.unsaved_tabs.clear()
-        self._update_save_status()
-        messagebox.showinfo(
-            i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu'),
-            i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu cài đặt thành công')
-        )
+        """
+        Lưu tất cả thay đổi vào file config.
+        
+        Workflow:
+        1. Collect current widget values to local_data
+        2. Validate data (hotkey conflicts, ranges, etc.)
+        3. Write to hunt_config.json
+        4. Clear unsaved tabs
+        5. Update UI status
+        """
+        try:
+            # Step 1: Collect current widget values
+            self._collect_widget_values()
+            
+            # Step 2: Validate (will be fully implemented in Batch 4.2)
+            # For now, just basic validation
+            if not self._validate_basic():
+                return
+            
+            # Step 3: Save to config file
+            if self._save_to_config():
+                # Step 4 & 5: Clear unsaved and update UI
+                self.unsaved_tabs.clear()
+                self._update_save_status()
+                messagebox.showinfo(
+                    i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu'),
+                    i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu cài đặt thành công')
+                )
+            else:
+                messagebox.showerror(
+                    "Error",
+                    "Không thể lưu cài đặt. Vui lòng kiểm tra file config."
+                )
+        except Exception as e:
+            print(f"[VisionWizard] Error saving changes: {e}")
+            messagebox.showerror(
+                "Error",
+                f"Lỗi khi lưu cài đặt: {str(e)}"
+            )
+    
+    def _collect_widget_values(self) -> None:
+        """
+        Thu thập giá trị hiện tại từ tất cả widgets vào local_data.
+        
+        Collects from:
+        - Overlay hotkey comboboxes (both tabs)
+        - Overlay enabled checkbox
+        - Confidence slider
+        - Detection interval, stable frames, lost timeout spinboxes
+        """
+        try:
+            # Get overlay hotkey from combobox
+            if self.overlay_hotkey_combo_hotkeys:
+                selected_index = self.overlay_hotkey_combo_hotkeys.current()
+                hotkey_value = self._get_hotkey_from_index(selected_index)
+                self.local_data['overlay_hotkey'] = hotkey_value
+            
+            # Get overlay enabled
+            if self.overlay_enabled_var:
+                self.local_data['overlay_enabled'] = self.overlay_enabled_var.get()
+            
+            # Get confidence threshold
+            if self.overlay_confidence_scale:
+                self.local_data['confidence_threshold'] = self.overlay_confidence_scale.get()
+            
+            # Get detection interval
+            if self.overlay_detection_interval_spinbox:
+                try:
+                    interval_str = self.overlay_detection_interval_spinbox.get()
+                    self.local_data['detection_interval'] = float(interval_str)
+                except ValueError:
+                    self.local_data['detection_interval'] = 0.1  # Default
+            
+            # Get stable frames
+            if self.overlay_stable_frames_spinbox:
+                try:
+                    frames_str = self.overlay_stable_frames_spinbox.get()
+                    self.local_data['stable_frames'] = int(frames_str)
+                except ValueError:
+                    self.local_data['stable_frames'] = 3  # Default
+            
+            # Get lost timeout
+            if self.overlay_lost_timeout_spinbox:
+                try:
+                    timeout_str = self.overlay_lost_timeout_spinbox.get()
+                    self.local_data['lost_timeout'] = float(timeout_str)
+                except ValueError:
+                    self.local_data['lost_timeout'] = 3.0  # Default
+            
+            print(f"[VisionWizard] Collected widget values: {self.local_data}")
+            
+        except Exception as e:
+            print(f"[VisionWizard] Error collecting widget values: {e}")
+            raise
+    
+    def _get_hotkey_from_index(self, index: int) -> str:
+        """
+        Convert combobox index to hotkey string.
+        
+        Args:
+            index: Combobox selected index (0-48)
+        
+        Returns:
+            str: Hotkey string (e.g., 'ctrl+shift+o', 'f1', 'ctrl+f5')
+        """
+        if index == 0:
+            return 'ctrl+shift+o'  # Default
+        elif 1 <= index <= 12:
+            return f'f{index}'
+        elif 13 <= index <= 24:
+            return f'ctrl+f{index - 12}'
+        elif 25 <= index <= 36:
+            return f'alt+f{index - 24}'
+        elif 37 <= index <= 48:
+            return f'ctrl+shift+f{index - 36}'
+        else:
+            return 'ctrl+shift+o'  # Fallback
+    
+    def _validate_basic(self) -> bool:
+        """
+        Basic validation của local_data.
+        
+        Validates:
+        - Overlay hotkey not empty
+        - Confidence in range [0.0, 1.0]
+        - Detection interval > 0
+        - Stable frames > 0
+        - Lost timeout > 0
+        
+        Returns:
+            bool: True if valid, False otherwise (shows error message)
+        """
+        try:
+            # Validate hotkey
+            hotkey = self.local_data.get('overlay_hotkey', '')
+            if not hotkey:
+                messagebox.showerror(
+                    i18n_t('error_hotkey_empty', ns='vision_wizard', default='Lỗi'),
+                    i18n_t('error_hotkey_empty', ns='vision_wizard', default='Phím tắt không được để trống')
+                )
+                return False
+            
+            # Validate confidence range
+            confidence = self.local_data.get('confidence_threshold', 0.7)
+            if not (0.0 <= confidence <= 1.0):
+                messagebox.showerror(
+                    i18n_t('error_confidence_range', ns='vision_wizard', default='Lỗi'),
+                    i18n_t('error_confidence_range', ns='vision_wizard', default='Độ tin cậy phải từ 0.0 đến 1.0')
+                )
+                return False
+            
+            # Validate detection interval
+            interval = self.local_data.get('detection_interval', 0.1)
+            if interval <= 0:
+                messagebox.showerror(
+                    i18n_t('error_interval_range', ns='vision_wizard', default='Lỗi'),
+                    i18n_t('error_interval_range', ns='vision_wizard', default='Tần suất phát hiện phải lớn hơn 0')
+                )
+                return False
+            
+            # Validate stable frames
+            frames = self.local_data.get('stable_frames', 3)
+            if frames <= 0:
+                messagebox.showerror(
+                    "Validation Error",
+                    "Số khung hình ổn định phải lớn hơn 0"
+                )
+                return False
+            
+            # Validate lost timeout
+            timeout = self.local_data.get('lost_timeout', 3.0)
+            if timeout <= 0:
+                messagebox.showerror(
+                    "Validation Error",
+                    "Timeout mất dấu phải lớn hơn 0"
+                )
+                return False
+            
+            return True
+            
+        except Exception as e:
+            print(f"[VisionWizard] Validation error: {e}")
+            messagebox.showerror("Validation Error", f"Lỗi validation: {str(e)}")
+            return False
+    
+    def _save_to_config(self) -> bool:
+        """
+        Ghi local_data vào hunt_config.json.
+        
+        Updates:
+        - global_hotkeys.overlay_toggle_key
+        - overlay.enabled
+        - monster_tracking.confidence_threshold
+        - monster_tracking.detection_interval
+        - monster_tracking.stable_frames
+        - monster_tracking.lost_timeout
+        
+        Returns:
+            bool: True if save successful, False otherwise
+        """
+        config_path = "lib/data/hunt_config.json"
+        
+        try:
+            # Read current config
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                config = {}
+            
+            # Update global_hotkeys section
+            if 'global_hotkeys' not in config:
+                config['global_hotkeys'] = {}
+            config['global_hotkeys']['overlay_toggle_key'] = self.local_data.get('overlay_hotkey', 'ctrl+shift+o')
+            
+            # Update overlay section
+            if 'overlay' not in config:
+                config['overlay'] = {}
+            config['overlay']['enabled'] = self.local_data.get('overlay_enabled', False)
+            
+            # Update monster_tracking section
+            if 'monster_tracking' not in config:
+                config['monster_tracking'] = {}
+            
+            config['monster_tracking']['confidence_threshold'] = self.local_data.get('confidence_threshold', 0.7)
+            config['monster_tracking']['detection_interval'] = self.local_data.get('detection_interval', 0.1)
+            config['monster_tracking']['stable_frames'] = self.local_data.get('stable_frames', 3)
+            config['monster_tracking']['lost_timeout'] = self.local_data.get('lost_timeout', 3.0)
+            
+            # Write back to file with pretty formatting
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+            
+            print(f"[VisionWizard] Config saved successfully to {config_path}")
+            return True
+            
+        except Exception as e:
+            print(f"[VisionWizard] Error saving config: {e}")
+            return False
     
     def _load_from_config(self) -> None:
         """
