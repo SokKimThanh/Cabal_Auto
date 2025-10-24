@@ -45,6 +45,7 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tooltip_edit_monster': 'Sửa quái vật đang chọn',
         'tooltip_delete_monster': 'Xóa quái vật đang chọn',
         'tooltip_game_mode': 'Chọn cách hiển thị cửa sổ game',
+        'tooltip_app_mode': 'Chọn cách hiển thị cửa sổ ứng dụng',
         'tooltip_add_monster': 'Thêm quái vật mới vào danh sách',
         'tooltip_browse': 'Chọn file template từ máy tính',
         'tooltip_delete_template': 'Xóa template đã chọn',
@@ -100,6 +101,7 @@ MONSTER_EDITOR_TRANSLATIONS = {
         # Additional labels
         'label_monster_list': 'Danh Sách Quái Vật',
         'label_game_mode': 'Game:',
+        'label_app_mode': 'App:',
         'monster_list_title': 'Danh Sách Quái Vật',
         'monster_priority_label': 'Độ ưu tiên:',
         'monster_hp_label': 'HP:',
@@ -167,6 +169,7 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tooltip_edit_monster': 'Edit selected monster',
         'tooltip_delete_monster': 'Delete selected monster',
         'tooltip_game_mode': 'Choose how to display game window',
+        'tooltip_app_mode': 'Choose how to display application window',
         'tooltip_add_monster': 'Add new monster to the list',
         'tooltip_browse': 'Select template file from computer',
         'tooltip_delete_template': 'Delete selected template',
@@ -222,6 +225,7 @@ MONSTER_EDITOR_TRANSLATIONS = {
         # Additional labels
         'label_monster_list': 'Monster List',
         'label_game_mode': 'Game:',
+        'label_app_mode': 'App:',
         'monster_list_title': 'Monster List',
         'monster_priority_label': 'Priority:',
         'monster_hp_label': 'HP:',

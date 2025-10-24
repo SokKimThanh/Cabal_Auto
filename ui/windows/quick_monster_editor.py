@@ -53,6 +53,7 @@ except ImportError:
 try:
     from ui.components import create_icon_button, create_icon_label
     from ui.components.game_window_mode_selector import create_game_window_mode_selector
+    from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector
 except ImportError:
     # Fallback if component not available
     def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
@@ -63,6 +64,14 @@ except ImportError:
     def create_game_window_mode_selector(parent, **kwargs):
         """Fallback if game_window_mode_selector not available."""
         return tk.Label(parent, text="[Game Mode Selector unavailable]")
+    
+    def create_app_window_selector(parent, **kwargs):
+        """Fallback if app window selector not available."""
+        return tk.Label(parent, text="[App Selector unavailable]")
+    
+    def create_game_window_selector(parent, **kwargs):
+        """Fallback if game window selector not available."""
+        return tk.Label(parent, text="[Game Selector unavailable]")
     
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
         return tk.Label(parent, text=f"{icon_fallback} {text}", **kwargs)
@@ -443,17 +452,28 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.status_label.pack(side='left', padx=(5, 0), pady=15)
         
-        # Game window mode selector (using reusable component)
-        self.game_mode_selector = create_game_window_mode_selector(
-            parent=top_frame,
+        # Window controls frame (App + Game)
+        windows_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
+        windows_frame.pack(side='left', padx=(15, 0), pady=15)
+        
+        # App window mode selector
+        self.app_mode_selector = create_app_window_selector(
+            parent=windows_frame,
+            config_path=str(self.hunt_config_path),
+            on_mode_change=self._on_app_mode_change,
+            show_label=True,
+            initial_mode='normal'
+        )
+        self.app_mode_selector.pack(side='left', padx=(0, 10))
+        
+        # Game window mode selector
+        self.game_mode_selector = create_game_window_selector(
+            parent=windows_frame,
             config_path=str(self.hunt_config_path),
             on_mode_change=self._on_game_mode_change,
-            initial_mode=self.game_window_mode_var.get(),
-            show_label=True,
-            label_text=i18n_t('label_game_mode', ns='monster_editor', default='Game:'),
-            tooltip_text=i18n_t('tooltip_game_mode', ns='monster_editor', default='Chọn cách hiển thị cửa sổ game')
+            show_label=True
         )
-        self.game_mode_selector.pack(side='left', padx=(15, 0), pady=15)
+        self.game_mode_selector.pack(side='left')
         
         # Action buttons (right side)
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
@@ -1212,6 +1232,27 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # No unsaved changes or user confirmed - close window
         self.destroy()
+    
+    def _on_app_mode_change(self, mode: str) -> None:
+        """
+        Handle app window mode change from component callback.
+        
+        Args:
+            mode: New mode string ('normal', 'topmost', 'minimized', 'maximized')
+        
+        Note: Component already saves to hunt_config.json.
+        """
+        print(f"[MonsterEditor] App window mode changed to: {mode}")
+        
+        # Apply to current window
+        if mode == 'topmost':
+            self.attributes('-topmost', True)
+        elif mode == 'normal':
+            self.attributes('-topmost', False)
+        elif mode == 'minimized':
+            self.iconify()
+        elif mode == 'maximized':
+            self.state('zoomed')  # Windows maximize
     
     def _on_game_mode_change(self, mode: str) -> None:
         """
