@@ -211,7 +211,7 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Widgets (initialized in setup_ui)
         # Left panel
-        self.monster_listbox: Optional[tk.Listbox] = None
+        self.monster_listbox: Optional[Union[tk.Listbox, ttk.Treeview]] = None
         self.add_monster_button: Optional[tk.Button] = None
         self.delete_monster_button: Optional[tk.Button] = None
         
@@ -465,9 +465,56 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.status_label.pack(side='left', padx=(5, 0), pady=15)
         
-        # Window controls frame (App + Game)
+        # Checkbox to toggle window controls visibility
+        self.show_window_controls_var = tk.BooleanVar(value=False)  # Default: hidden
+        
+        def toggle_window_controls():
+            """Toggle visibility of window position selectors."""
+            show = self.show_window_controls_var.get()
+            if show:
+                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'show'):
+                    self.app_mode_selector.show()
+                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'show'):
+                    self.game_mode_selector.show()
+            else:
+                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'hide'):
+                    self.app_mode_selector.hide()
+                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'hide'):
+                    self.game_mode_selector.hide()
+        
+        window_check = tk.Checkbutton(
+            top_frame,
+            text="",  # No text, just checkbox
+            variable=self.show_window_controls_var,
+            command=toggle_window_controls,
+            bg=UI.BG_PANEL
+        )
+        window_check.pack(side='left', padx=(15, 6), pady=15)
+        
+        # Tooltip for checkbox
+        check_tooltip = (
+            "Show Window Controls\n"
+            "• App window positioning\n"
+            "• Game window positioning"
+            if get_lang() == "en" else
+            "Hiện Điều Khiển Cửa Sổ\n"
+            "• Vị trí cửa sổ ứng dụng\n"
+            "• Vị trí cửa sổ game"
+        )
+        try:
+            attach_i18n_tooltip(
+                window_check,
+                'tooltip_window_controls',
+                ns='monster_editor',
+                lang_provider=get_lang
+            )
+        except:
+            # Fallback if tooltip fails
+            pass
+        
+        # Window controls frame (App + Game) - Hidden by default
         windows_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
-        windows_frame.pack(side='left', padx=(15, 0), pady=15)
+        windows_frame.pack(side='left', padx=(0, 0), pady=15)
         
         # App window mode selector (no label, tooltip explains)
         self.app_mode_selector = create_app_window_selector(
@@ -484,6 +531,12 @@ class QuickMonsterEditor(tk.Toplevel):
             on_mode_change=self._on_game_mode_change
         )
         self.game_mode_selector.pack(side='left')
+        
+        # Hide both by default (after packing)
+        if hasattr(self.app_mode_selector, 'hide'):
+            self.app_mode_selector.hide()
+        if hasattr(self.game_mode_selector, 'hide'):
+            self.game_mode_selector.hide()
         
         # Action buttons (right side)
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
@@ -543,21 +596,34 @@ class QuickMonsterEditor(tk.Toplevel):
         listbox_frame = tk.Frame(left_frame, bg=UI.BG_PANEL)
         listbox_frame.pack(side='top', fill='both', expand=True, padx=10, pady=5)
         
+        # Use Treeview for 2 columns: icon + name
         scrollbar = tk.Scrollbar(listbox_frame, orient=tk.VERTICAL)
         scrollbar.pack(side='right', fill='y')
         
-        self.monster_listbox = tk.Listbox(
+        # Create Treeview with 2 columns
+        self.monster_listbox = ttk.Treeview(
             listbox_frame,
-            font=UI.FONT_TEXT,
+            columns=('icon', 'name'),
+            show='tree headings',  # Show both tree and column headers
+            selectmode='browse',
             yscrollcommand=scrollbar.set,
-            selectmode=tk.SINGLE,
             height=15
         )
+        
+        # Configure columns
+        self.monster_listbox.column('#0', width=0, stretch=False)  # Hide tree column
+        self.monster_listbox.column('icon', width=40, minwidth=40, anchor='center')
+        self.monster_listbox.column('name', width=180, minwidth=100, anchor='center')
+        
+        # Set headings
+        self.monster_listbox.heading('icon', text='', anchor='center')
+        self.monster_listbox.heading('name', text=i18n_t('header_name', ns='monster_editor', default='Name'), anchor='center')
+        
         self.monster_listbox.pack(side='left', fill='both', expand=True)
         scrollbar.config(command=self.monster_listbox.yview)
         
         # Bind selection event
-        self.monster_listbox.bind('<<ListboxSelect>>', self._on_monster_select)
+        self.monster_listbox.bind('<<TreeviewSelect>>', self._on_monster_select)
         
         # Button container
         button_frame = tk.Frame(left_frame, bg=UI.BG_PANEL)
@@ -1395,46 +1461,54 @@ class QuickMonsterEditor(tk.Toplevel):
         if self.monster_listbox is None:
             return
         
-        # Clear listbox
-        self.monster_listbox.delete(0, tk.END)
+        # Clear Treeview
+        for item in self.monster_listbox.get_children():
+            self.monster_listbox.delete(item)
         
         # Load monsters if not already loaded
         if not self.monsters:
             self._load_monsters()
         
-        # Populate listbox
-        for monster in self.monsters:
+        # Populate Treeview with 2 columns: icon + name
+        for idx, monster in enumerate(self.monsters):
             name = monster.get('name', 'Unnamed')
             level = monster.get('level', 1)
-            display_text = f"{name} (Lv.{level})"
-            self.monster_listbox.insert(tk.END, display_text)
+            icon = '👹'  # Monster emoji as icon
+            display_name = f"{name} (Lv.{level})"
+            
+            # Insert with monster id as item id for easy lookup
+            item_id = monster.get('id', str(idx))
+            self.monster_listbox.insert('', 'end', iid=item_id, values=(icon, display_name))
         
         # Select current monster if editing
         if self.current_monster_id:
-            for i, monster in enumerate(self.monsters):
-                if monster.get('id') == self.current_monster_id:
-                    self.monster_listbox.selection_set(i)
-                    self.monster_listbox.see(i)
-                    break
+            try:
+                self.monster_listbox.selection_set(self.current_monster_id)
+                self.monster_listbox.see(self.current_monster_id)
+            except:
+                pass  # Item not found
     
     def _on_monster_select(self, event: Any) -> None:
-        """Handle monster selection from listbox."""
+        """Handle monster selection from Treeview."""
         if self.monster_listbox is None:
             return
         
-        selection = self.monster_listbox.curselection()
+        # Get selected item (Treeview uses selection() instead of curselection())
+        selection = self.monster_listbox.selection()
         if not selection:
             return
         
-        index = selection[0]
-        if 0 <= index < len(self.monsters):
-            selected_monster = self.monsters[index]
-            self.current_monster_id = selected_monster.get('id')
-            
-            # Populate form with monster data
-            self._populate_info_form(selected_monster)
-            
-            print(f"[MonsterEditor] Selected monster: {selected_monster.get('name')}")
+        # Get the item id (which is the monster id)
+        selected_id = selection[0]
+        self.current_monster_id = selected_id
+        
+        # Find monster by id
+        for monster in self.monsters:
+            if monster.get('id') == selected_id:
+                # Populate form with monster data
+                self._populate_info_form(monster)
+                print(f"[MonsterEditor] Selected monster: {monster.get('name')}")
+                break
     
     def _on_add_monster(self) -> None:
         """Handle add monster button click."""
@@ -1456,11 +1530,13 @@ class QuickMonsterEditor(tk.Toplevel):
         # Refresh listbox
         self._refresh_monster_list()
         
-        # Select new monster
+        # Select new monster (Treeview uses selection_set with item id)
         if self.monster_listbox:
-            self.monster_listbox.selection_clear(0, tk.END)
-            self.monster_listbox.selection_set(len(self.monsters) - 1)
-            self.monster_listbox.see(len(self.monsters) - 1)
+            try:
+                self.monster_listbox.selection_set(new_monster['id'])
+                self.monster_listbox.see(new_monster['id'])
+            except:
+                pass  # Item not found
         
         # Set as current
         self.current_monster_id = new_monster['id']
