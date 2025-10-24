@@ -1815,24 +1815,30 @@ Alternative Solutions:
             stop_tooltip += "\n(Ctrl+F6)"
         self._create_tooltip(self.hunt_stop_btn, stop_tooltip)
         
-        # Add hover effect for Stop button - show forbidden icon when disabled
+        # Add hover effect for Stop button - show forbidden icon and cursor when disabled
         forbidden_icon = self._icon("forbidden", "🚫", size=20)
         
+        # Keep references to both icons for the Stop button
+        self._stop_normal_icon = stop_icon
+        self._stop_forbidden_icon = forbidden_icon
+        
         def on_stop_hover(event):
-            """Show forbidden icon when hovering over disabled Stop button."""
+            """Show forbidden icon and cursor when hovering over disabled Stop button."""
             if str(self.hunt_stop_btn['state']) == 'disabled':
+                # Change icon and cursor to forbidden
                 if not isinstance(forbidden_icon, str):
-                    self.hunt_stop_btn.config(image=forbidden_icon)
+                    self.hunt_stop_btn.config(image=forbidden_icon, text="", cursor="X_cursor")
                 else:
-                    self.hunt_stop_btn.config(text="🚫")
+                    self.hunt_stop_btn.config(text="🚫", cursor="X_cursor")
         
         def on_stop_leave(event):
-            """Restore stop icon when leaving Stop button."""
+            """Restore stop icon and cursor when leaving Stop button."""
             if str(self.hunt_stop_btn['state']) == 'disabled':
+                # Restore original icon and cursor
                 if not isinstance(stop_icon, str):
-                    self.hunt_stop_btn.config(image=stop_icon)
+                    self.hunt_stop_btn.config(image=stop_icon, text="", cursor="arrow")
                 else:
-                    self.hunt_stop_btn.config(text="⏹️")
+                    self.hunt_stop_btn.config(text="⏹️", cursor="arrow")
         
         self.hunt_stop_btn.bind("<Enter>", on_stop_hover)
         self.hunt_stop_btn.bind("<Leave>", on_stop_leave)
