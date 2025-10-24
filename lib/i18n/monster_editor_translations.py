@@ -112,6 +112,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         
         # Additional messages
         'msg_test_result': 'Tìm thấy: {}, Độ tin cậy: {:.1%}',
+        'msg_save_success': 'Đã lưu danh sách quái vật thành công',
+        'msg_no_data': 'Không có dữ liệu để lưu',
         
         # Warnings
         'warning_no_monster_selected': 'Vui lòng chọn một quái để xóa.',
@@ -222,6 +224,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         
         # Additional messages
         'msg_test_result': 'Found: {}, Confidence: {:.1%}',
+        'msg_save_success': 'Monsters saved successfully',
+        'msg_no_data': 'No data to save',
         
         # Warnings
         'warning_no_monster_selected': 'Please select a monster to delete.',

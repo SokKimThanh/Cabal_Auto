@@ -970,42 +970,43 @@ class QuickMonsterEditor(tk.Toplevel):
             self.threshold_label.config(text=f"{float(value):.2f}")
     
     def _on_save(self) -> None:
-        """Handle save button click."""
-        try:
-            # Validate input
-            if not self._validate():
+        """
+        Handle Save button click - save all monsters to JSON.
+        
+        Following PYTHON_CODING_GUIDELINES.md:
+        - Rule 1: Type hints and validation
+        - Rule 2: None checks before access
+        - Rule 5: No duplication
+        """
+        # Rule 2: Check if there's anything to save
+        if not self.monsters or not isinstance(self.monsters, list):
+            error_msg = i18n_t('msg_no_data', ns='monster_editor', default='No data to save')
+            messagebox.showwarning('Warning', error_msg)
+            return
+        
+        # Validate all monsters before saving
+        for idx, monster in enumerate(self.monsters):
+            # Rule 2: Check monster is dict
+            if not isinstance(monster, dict):
+                messagebox.showerror('Error', f'Invalid monster data at index {idx}')
                 return
             
-            # Collect data
-            if self.name_entry is not None:
-                self.monster_data['name'] = self.name_entry.get().strip()
-            
-            if self.level_spinbox is not None:
-                try:
-                    self.monster_data['level'] = int(self.level_spinbox.get())
-                except ValueError:
-                    self.monster_data['level'] = 1
-            
-            if self.threshold_scale is not None:
-                self.monster_data['threshold'] = self.threshold_scale.get()
-            
-            # TODO: Save to monster_manager when implemented
-            print(f"[QuickEditor] Saving monster: {self.monster_data}")
-            
+            # Rule 1: Validate required fields
+            name = monster.get('name', '').strip()
+            if not name:
+                messagebox.showerror('Error', f'Monster at index {idx} has no name')
+                return
+        
+        # Rule 5: Call save once, cache result
+        success = self._save_monsters()
+        
+        if success:
             # Show success message
-            success_msg = i18n_t('msg_monster_created', ns='monster_editor', default='Monster created successfully')
+            success_msg = i18n_t('msg_save_success', ns='monster_editor', default='Monsters saved successfully')
             messagebox.showinfo('Success', success_msg)
-            
-            # Call callback
-            if self.on_save_callback is not None:
-                self.on_save_callback(self.monster_id or 'new', self.monster_data)
-            
-            # Close window
-            self.destroy()
-            
-        except Exception as e:
-            print(f"[QuickEditor] Error saving: {e}")
-            messagebox.showerror('Error', f'Failed to save: {e}')
+        else:
+            # Error already shown by _save_monsters()
+            pass
     
     def _on_cancel(self) -> None:
         """Handle cancel button click."""
