@@ -52,12 +52,17 @@ except ImportError:
 
 try:
     from ui.components import create_icon_button, create_icon_label
+    from ui.components.game_window_mode_selector import create_game_window_mode_selector
 except ImportError:
     # Fallback if component not available
     def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
         config = get_button_config(button_type)
         config.update(kwargs)
         return tk.Button(parent, text=text or icon_name, command=command, **config)
+    
+    def create_game_window_mode_selector(parent, **kwargs):
+        """Fallback if game_window_mode_selector not available."""
+        return tk.Label(parent, text="[Game Mode Selector unavailable]")
     
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
         return tk.Label(parent, text=f"{icon_fallback} {text}", **kwargs)
@@ -438,37 +443,17 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.status_label.pack(side='left', padx=(5, 0), pady=15)
         
-        # Game window mode selector
-        game_mode_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
-        game_mode_frame.pack(side='left', padx=(15, 0), pady=15)
-        
-        game_mode_label = tk.Label(
-            game_mode_frame,
-            text=i18n_t('label_game_mode', ns='monster_editor', default='Game:'),
-            font=UI.FONT_SMALL,
-            fg=UI.COLOR_TEXT,
-            bg=UI.BG_PANEL
+        # Game window mode selector (using reusable component)
+        self.game_mode_selector = create_game_window_mode_selector(
+            parent=top_frame,
+            config_path=str(self.hunt_config_path),
+            on_mode_change=self._on_game_mode_change,
+            initial_mode=self.game_window_mode_var.get(),
+            show_label=True,
+            label_text=i18n_t('label_game_mode', ns='monster_editor', default='Game:'),
+            tooltip_text=i18n_t('tooltip_game_mode', ns='monster_editor', default='Chọn cách hiển thị cửa sổ game')
         )
-        game_mode_label.pack(side='left', padx=(0, 5))
-        
-        self.game_mode_combo = ttk.Combobox(
-            game_mode_frame,
-            textvariable=self.game_window_mode_var,
-            values=['none', 'below', 'above'],
-            state='readonly',
-            width=10,
-            font=UI.FONT_SMALL
-        )
-        self.game_mode_combo.pack(side='left')
-        self.game_mode_combo.bind('<<ComboboxSelected>>', self._on_game_mode_change)
-        
-        # Attach tooltip
-        attach_i18n_tooltip(
-            self.game_mode_combo,
-            'tooltip_game_mode',
-            ns='monster_editor',
-            lang_provider=get_lang
-        )
+        self.game_mode_selector.pack(side='left', padx=(15, 0), pady=15)
         
         # Action buttons (right side)
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
@@ -1228,42 +1213,28 @@ class QuickMonsterEditor(tk.Toplevel):
         # No unsaved changes or user confirmed - close window
         self.destroy()
     
-    def _on_game_mode_change(self, event: Any = None) -> None:
+    def _on_game_mode_change(self, mode: str) -> None:
         """
-        Handle game window mode change - save to hunt_config.json.
+        Handle game window mode change from component callback.
         
         Args:
-            event: Combobox event (unused)
+            mode: New mode string ('none', 'below', 'above')
+        
+        Note: Component already saves to hunt_config.json, 
+              this is just for additional app-level logic.
         """
-        try:
-            new_mode = self.game_window_mode_var.get()
-            print(f"[MonsterEditor] Game window mode changed to: {new_mode}")
-            
-            # Load current hunt_config
-            if self.hunt_config_path.exists():
-                with open(self.hunt_config_path, 'r', encoding='utf-8') as f:
-                    hunt_config = json.load(f)
-            else:
-                hunt_config = {}
-            
-            # Update game_window_mode
-            hunt_config['game_window_mode'] = new_mode
-            
-            # Save back to file
-            with open(self.hunt_config_path, 'w', encoding='utf-8') as f:
-                json.dump(hunt_config, f, indent=2, ensure_ascii=False)
-            
-            print(f"[MonsterEditor] Saved game_window_mode to hunt_config.json")
-            
-            # TODO: Trigger game window launch if needed
-            # if new_mode == 'above':
-            #     self._launch_game_window(topmost=True)
-            # elif new_mode == 'below':
-            #     self._launch_game_window(topmost=False)
-            
-        except Exception as e:
-            print(f"[MonsterEditor] Error saving game_window_mode: {e}")
-            self._show_error('Error', f'Failed to save game mode: {e}')
+        print(f"[MonsterEditor] Game window mode changed to: {mode}")
+        
+        # Update internal StringVar (for consistency)
+        self.game_window_mode_var.set(mode)
+        
+        # TODO: Trigger game window launch if needed
+        # if mode == 'above':
+        #     self._launch_game_window(topmost=True)
+        # elif mode == 'below':
+        #     self._launch_game_window(topmost=False)
+        # elif mode == 'none':
+        #     self._close_game_window()
     
     def _on_capture(self) -> None:
         """Handle capture button click."""
