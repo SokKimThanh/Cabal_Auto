@@ -456,22 +456,19 @@ class QuickMonsterEditor(tk.Toplevel):
         windows_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
         windows_frame.pack(side='left', padx=(15, 0), pady=15)
         
-        # App window mode selector
+        # App window mode selector (no label, tooltip explains)
         self.app_mode_selector = create_app_window_selector(
             parent=windows_frame,
             config_path=str(self.hunt_config_path),
-            on_mode_change=self._on_app_mode_change,
-            show_label=True,
-            initial_mode='normal'
+            on_mode_change=self._on_app_mode_change
         )
-        self.app_mode_selector.pack(side='left', padx=(0, 10))
+        self.app_mode_selector.pack(side='left', padx=(0, 8))
         
-        # Game window mode selector
+        # Game window mode selector (no label, tooltip explains)
         self.game_mode_selector = create_game_window_selector(
             parent=windows_frame,
             config_path=str(self.hunt_config_path),
-            on_mode_change=self._on_game_mode_change,
-            show_label=True
+            on_mode_change=self._on_game_mode_change
         )
         self.game_mode_selector.pack(side='left')
         
