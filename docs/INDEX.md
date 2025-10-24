@@ -1,7 +1,7 @@
 # Cabal Auto Hunt - Documentation Index
 
-**Last Updated**: October 22, 2025 (Sprint 22 Phase 2B Complete)  
-**Current Sprint**: Sprint 22 - Vision System Core Implementation ✅ COMPLETED
+**Last Updated**: October 24, 2025 (Sprint 23 Phase 7 Complete)  
+**Current Sprint**: Sprint 23 - Advanced Vision Features ✅ Phase 7 COMPLETE
 
 ## 📁 New Documentation Structure
 
@@ -106,7 +106,16 @@ docs/
 - [Testing Guide](guides/testing/TESTS_REORGANIZATION_SUMMARY.md) - Test organization
 - [Vision Menu Checklist](features/vision/VISION_MENU_CHECKLIST.md) - Vision testing
 
-### Latest Sprint (Sprint 22) ✅ COMPLETED
+### Latest Sprint (Sprint 23) ✅ Phase 7 COMPLETE
+
+- **Theme**: Advanced Vision Features - Monster Tracking Integration
+- **Duration**: October 24, 2025
+- **Status**: ✅ Phase 7 COMPLETE - 13 commits
+- **Branch**: feature/S23-vision-advanced
+- **Docs**: [sprints/sprint23/](sprints/sprint23/)
+- **Progress**: 119 tests passing, 2,142 lines added
+
+### Previous Sprint (Sprint 22) ✅ COMPLETED
 
 - **Theme**: Vision System Core Implementation
 - **Duration**: October 18-22, 2025
@@ -116,7 +125,60 @@ docs/
 
 ## 📚 Sprint Documentation
 
-### Sprint 22 - Vision System (Latest) ✅ COMPLETED
+### Sprint 23 - Advanced Vision (Latest) ✅ Phase 7 COMPLETE
+
+**Duration**: October 24, 2025  
+**Branch**: `feature/S23-vision-advanced`  
+**Status**: ✅ Phase 7 COMPLETE - 13 commits  
+**Tests**: 119 passing (108 unit + 11 integration)
+
+#### Phase 7: Monster Tracking Integration ✅ COMPLETE
+
+**Batch 1: Detection Loop Foundation**
+- ✅ MonsterDetector class (616 lines, 42 tests)
+- ✅ Detection state machine (SEARCHING → DETECTED → TRACKING → LOST)
+- ✅ Background detection thread with callbacks
+- ✅ Thread-safe state management with RLock
+
+**Batch 2: Overlay Integration**
+- ✅ OverlayController class (424 lines, 34 tests)
+- ✅ Bridge between detector and overlay
+- ✅ Throttled updates and stats tracking
+- ✅ State-based box styling
+
+**Batch 3: App Integration**
+- ✅ BotManager facade (420 lines, 32 tests)
+- ✅ App GUI integration (Phase 7 block)
+- ✅ Configuration system (hunt_config.json)
+- ✅ Hunt integration hooks
+
+**Batch 4: Testing & Polish**
+- ✅ Integration tests (11 tests, 343 lines)
+- ✅ Demo script with 3 demonstrations (339 lines)
+- ✅ Complete documentation
+
+#### Documentation
+- [Phase 7 Plan](sprints/sprint23/PHASE7_MONSTER_TRACKING.md) - Implementation plan
+- [Phase 7 Completion](sprints/sprint23/PHASE7_COMPLETION_SUMMARY.md) - Final summary
+- [Sprint 23 README](sprints/sprint23/README.md) - Sprint overview
+
+#### Performance Metrics
+- **Detection Latency**: ~120ms (target: <150ms) ✅
+- **Detection FPS**: 10 FPS ✅
+- **Memory Overhead**: ~35MB (target: <50MB) ✅
+- **CPU Impact**: ~3% (target: <5%) ✅
+- **Test Pass Rate**: 100% (119/119) ✅
+
+#### Statistics
+- **13 commits** on feature branch
+- **2,142 lines** added (5 new files)
+- **119 tests** passing (42+34+32+11)
+- **4 batches** completed
+- **~9.5 hours** total time
+
+---
+
+### Sprint 22 - Vision System ✅ COMPLETED
 
 **Duration**: October 18-22, 2025  
 **Branch**: `feature/S22-45-vision-core`  
@@ -189,6 +251,8 @@ docs/
 - [Vision Wizard Framework](features/vision/VISION_WIZARD_FRAMEWORK.md)
 - [Vision Quick Start](features/vision/QUICK_START_VISION_WIZARD.md)
 - [Worker Thread Architecture](architecture/WORKER_THREAD_ARCHITECTURE.md)
+- [Phase 7: Monster Tracking](sprints/sprint23/PHASE7_MONSTER_TRACKING.md) - Real-time detection
+- [Phase 7 Completion](sprints/sprint23/PHASE7_COMPLETION_SUMMARY.md) - Implementation summary
 
 ### Global Hotkeys
 - [Hotkey Architecture](architecture/GLOBAL_HOTKEY_ARCHITECTURE.md)
@@ -206,6 +270,14 @@ docs/
 
 ## 📊 Statistics
 
+### Sprint 23 Metrics (Latest)
+- **13 commits** on feature branch
+- **2,142 lines** added (5 new files)
+- **119 tests** passing (108 unit + 11 integration)
+- **4 batches** completed (Detection, Overlay, App, Testing)
+- **~9.5 hours** total implementation time
+- **Performance**: <150ms latency, 10 FPS detection
+
 ### Sprint 22 Metrics
 - **23 commits** on feature branch
 - **3,349 lines** added (core code)
@@ -222,15 +294,35 @@ docs/
 - **Total reorganization**: 40+ files moved/renamed
 
 ### Code Coverage
-- Vision engine: 810 lines
-- Vision Wizard UI: 1,259 lines
-- Worker threads: ~200 lines
-- Tests: 7 test cases
-- Performance: 15 FPS processing rate
+- **Sprint 23 Phase 7**:
+  - MonsterDetector: 616 lines (42 tests)
+  - OverlayController: 424 lines (34 tests)
+  - BotManager: 420 lines (32 tests)
+  - Integration tests: 343 lines (11 tests)
+  - Demo script: 339 lines
+  - Total: 2,142 lines, 119 tests ✅
 
-## 🔄 Recent Changes (October 22, 2025)
+- **Sprint 22**:
+  - Vision engine: 810 lines
+  - Vision Wizard UI: 1,259 lines
+  - Worker threads: ~200 lines
+  - Tests: 7 test cases
+  - Performance: 15 FPS processing rate
 
-### Documentation Reorganization ✅ COMPLETED
+## 🔄 Recent Changes (October 24, 2025)
+
+### Sprint 23 Phase 7 Completion ✅
+- ✅ MonsterDetector with background detection loop (616 lines, 42 tests)
+- ✅ OverlayController for detection visualization (424 lines, 34 tests)
+- ✅ BotManager facade for component coordination (420 lines, 32 tests)
+- ✅ App integration with configuration system
+- ✅ Integration test suite (11 tests passing)
+- ✅ Interactive demo script with 3 demonstrations
+- ✅ Complete documentation (plan + completion summary)
+- ✅ All 119 tests passing (100% pass rate)
+- ✅ Performance targets exceeded (~120ms latency, 10 FPS)
+
+### Documentation Reorganization (October 22, 2025) ✅ COMPLETED
 - ✅ Created `architecture/` directory (4 docs)
 - ✅ Created `features/` subdirectories (hotkeys, vision, first-run, templates)
 - ✅ Created `guides/` subdirectories (ui-design, testing)
