@@ -1156,9 +1156,6 @@ class QuickMonsterEditor(tk.Toplevel):
         """Bind event handlers."""
         # Window close event
         self.protocol("WM_DELETE_WINDOW", self._on_cancel)
-        
-        # Focus name entry
-        self.name_entry.focus_set() if self.name_entry else None
     
     def _start_queue_monitor(self) -> None:
         """Start monitoring result queue for worker responses."""
