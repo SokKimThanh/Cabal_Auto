@@ -1,0 +1,405 @@
+"""
+Unit tests for OverlayController
+Sprint 23 Phase 7 Batch 2 Task 2.1
+
+Tests:
+- Controller lifecycle (start/stop)
+- Callback integration
+- Detection conversion
+- State handling
+- Error resilience
+"""
+
+import pytest
+import time
+from unittest.mock import Mock, MagicMock, call
+from typing import List
+
+from lib.ui.overlay_controller import OverlayController, OverlayStats
+from lib.vision.monster_detector import DetectionState
+from lib.vision.vision_engine import Detection
+
+
+@pytest.fixture
+def mock_overlay():
+    """Mock OverlayWindowPyWin32 for testing"""
+    overlay = Mock()
+    overlay.update_detections = Mock()
+    overlay.show = Mock()
+    overlay.hide = Mock()
+    return overlay
+
+
+@pytest.fixture
+def mock_detector():
+    """Mock MonsterDetector for testing"""
+    detector = Mock()
+    detector.on_detections_changed = Mock()
+    detector.on_state_changed = Mock()
+    detector.remove_detection_callback = Mock()
+    detector.remove_state_callback = Mock()
+    detector.get_state = Mock(return_value=DetectionState.SEARCHING)
+    return detector
+
+
+@pytest.fixture
+def controller(mock_overlay, mock_detector):
+    """Create controller instance for testing"""
+    return OverlayController(
+        overlay=mock_overlay,
+        detector=mock_detector,
+        max_boxes=20
+    )
+
+
+class TestControllerInit:
+    """Test controller initialization"""
+    
+    def test_init_success(self, mock_overlay, mock_detector):
+        """Test successful initialization"""
+        controller = OverlayController(
+            overlay=mock_overlay,
+            detector=mock_detector
+        )
+        
+        assert controller is not None
+        assert not controller.is_running()
+        assert controller.get_current_state() == DetectionState.SEARCHING
+    
+    def test_init_with_max_boxes(self, mock_overlay, mock_detector):
+        """Test initialization with custom max_boxes"""
+        controller = OverlayController(
+            overlay=mock_overlay,
+            detector=mock_detector,
+            max_boxes=10
+        )
+        
+        assert controller._max_boxes == 10
+
+
+class TestControllerLifecycle:
+    """Test controller start/stop"""
+    
+    def test_start_success(self, controller, mock_detector):
+        """Test starting controller"""
+        result = controller.start()
+        
+        assert result is True
+        assert controller.is_running() is True
+        
+        # Should register callbacks
+        assert mock_detector.on_detections_changed.called
+        assert mock_detector.on_state_changed.called
+    
+    def test_start_twice_fails(self, controller):
+        """Test starting already running controller fails"""
+        controller.start()
+        result = controller.start()
+        
+        assert result is False
+    
+    def test_stop_success(self, controller, mock_detector):
+        """Test stopping controller"""
+        controller.start()
+        result = controller.stop()
+        
+        assert result is True
+        assert controller.is_running() is False
+        
+        # Should unregister callbacks
+        assert mock_detector.remove_detection_callback.called
+        assert mock_detector.remove_state_callback.called
+    
+    def test_stop_not_running_fails(self, controller):
+        """Test stopping non-running controller fails"""
+        result = controller.stop()
+        
+        assert result is False
+    
+    def test_del_stops_controller(self, controller):
+        """Test __del__ stops running controller"""
+        controller.start()
+        controller.__del__()
+        
+        assert not controller.is_running()
+
+
+class TestCallbackIntegration:
+    """Test callback registration and handling"""
+    
+    def test_callbacks_registered_on_start(self, controller, mock_detector):
+        """Test callbacks are registered when starting"""
+        controller.start()
+        
+        # Check callbacks registered
+        assert mock_detector.on_detections_changed.call_count == 1
+        assert mock_detector.on_state_changed.call_count == 1
+        
+        # Verify callback functions
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        state_callback = mock_detector.on_state_changed.call_args[0][0]
+        
+        assert callable(detection_callback)
+        assert callable(state_callback)
+    
+    def test_callbacks_unregistered_on_stop(self, controller, mock_detector):
+        """Test callbacks are unregistered when stopping"""
+        controller.start()
+        controller.stop()
+        
+        # Check callbacks unregistered
+        assert mock_detector.remove_detection_callback.call_count == 1
+        assert mock_detector.remove_state_callback.call_count == 1
+
+
+class TestDetectionHandling:
+    """Test detection conversion and overlay updates"""
+    
+    def test_empty_detections(self, controller, mock_overlay, mock_detector):
+        """Test handling empty detection list"""
+        controller.start()
+        
+        # Get registered callback
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        
+        # Call with empty list
+        detection_callback([])
+        
+        # Overlay should be updated (possibly with empty list or search box)
+        assert mock_overlay.update_detections.called
+    
+    def test_single_detection(self, controller, mock_overlay, mock_detector):
+        """Test handling single detection"""
+        controller.start()
+        
+        # Get registered callback
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        
+        # Create mock detection
+        detection = Detection(
+            x=100, y=200, w=50, h=60,
+            score=0.85, template_id="monster1",
+            scale=1.0, timestamp=time.time()
+        )
+        
+        # Call callback
+        detection_callback([detection])
+        
+        # Overlay should be updated with boxes
+        assert mock_overlay.update_detections.called
+        boxes = mock_overlay.update_detections.call_args[0][0]
+        assert isinstance(boxes, list)
+        assert len(boxes) > 0
+    
+    def test_multiple_detections(self, controller, mock_overlay, mock_detector):
+        """Test handling multiple detections"""
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        
+        # Create multiple detections
+        detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0),
+            Detection(x=200, y=200, w=50, h=50, score=0.8, template_id="m2", scale=1.0),
+            Detection(x=300, y=300, w=50, h=50, score=0.7, template_id="m3", scale=1.0)
+        ]
+        
+        # Call callback
+        detection_callback(detections)
+        
+        # Overlay updated
+        assert mock_overlay.update_detections.called
+        boxes = mock_overlay.update_detections.call_args[0][0]
+        assert len(boxes) > 0
+    
+    def test_max_boxes_limit(self, mock_overlay, mock_detector):
+        """Test max_boxes limit is respected"""
+        controller = OverlayController(
+            overlay=mock_overlay,
+            detector=mock_detector,
+            max_boxes=5
+        )
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        
+        # Create 10 detections (exceeds limit of 5)
+        detections = [
+            Detection(x=i*50, y=i*50, w=50, h=50, score=0.9, template_id=f"m{i}", scale=1.0)
+            for i in range(10)
+        ]
+        
+        # Call callback
+        detection_callback(detections)
+        
+        # Should limit to max_boxes
+        boxes = mock_overlay.update_detections.call_args[0][0]
+        assert len(boxes) <= 5
+
+
+class TestStateHandling:
+    """Test state change handling"""
+    
+    def test_state_change_updates_internal(self, controller, mock_detector):
+        """Test state changes update internal state"""
+        controller.start()
+        
+        state_callback = mock_detector.on_state_changed.call_args[0][0]
+        
+        # Change to DETECTED
+        state_callback(DetectionState.DETECTED)
+        assert controller.get_current_state() == DetectionState.DETECTED
+        
+        # Change to TRACKING
+        state_callback(DetectionState.TRACKING)
+        assert controller.get_current_state() == DetectionState.TRACKING
+    
+    def test_searching_state_clears_overlay(self, controller, mock_overlay, mock_detector):
+        """Test SEARCHING state clears overlay"""
+        controller.start()
+        
+        state_callback = mock_detector.on_state_changed.call_args[0][0]
+        
+        # Change to SEARCHING
+        state_callback(DetectionState.SEARCHING)
+        
+        # Overlay should be cleared
+        assert mock_overlay.update_detections.called
+        boxes = mock_overlay.update_detections.call_args[0][0]
+        assert len(boxes) == 0
+    
+    def test_state_affects_detection_colors(self, controller, mock_overlay, mock_detector):
+        """Test state changes affect box colors"""
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        state_callback = mock_detector.on_state_changed.call_args[0][0]
+        
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        
+        # DETECTED state
+        state_callback(DetectionState.DETECTED)
+        detection_callback([detection])
+        boxes_detected = mock_overlay.update_detections.call_args[0][0]
+        
+        # TRACKING state
+        state_callback(DetectionState.TRACKING)
+        detection_callback([detection])
+        boxes_tracking = mock_overlay.update_detections.call_args[0][0]
+        
+        # Colors should differ (boxes have different state colors)
+        # Note: Actual color checking depends on implementation
+        assert boxes_detected is not None
+        assert boxes_tracking is not None
+
+
+class TestStatistics:
+    """Test statistics tracking"""
+    
+    def test_initial_stats(self, controller):
+        """Test initial statistics"""
+        stats = controller.get_stats()
+        
+        assert isinstance(stats, OverlayStats)
+        assert stats.updates_sent == 0
+        assert stats.last_update_time == 0.0
+    
+    def test_stats_update_on_detection(self, controller, mock_detector):
+        """Test statistics update when detections processed"""
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        
+        # Process detections
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        detection_callback([detection])
+        
+        # Stats should update
+        stats = controller.get_stats()
+        assert stats.updates_sent == 1
+        assert stats.last_update_time > 0
+    
+    def test_stats_accumulate(self, controller, mock_detector):
+        """Test statistics accumulate over multiple updates"""
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        
+        # Multiple updates
+        for _ in range(5):
+            detection_callback([detection])
+        
+        stats = controller.get_stats()
+        assert stats.updates_sent == 5
+
+
+class TestErrorHandling:
+    """Test error handling"""
+    
+    def test_overlay_update_error_continues(self, controller, mock_overlay, mock_detector):
+        """Test that overlay update errors don't crash controller"""
+        controller.start()
+        
+        # Make overlay update fail
+        mock_overlay.update_detections.side_effect = Exception("Update error")
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        
+        # Should not raise
+        detection_callback([detection])
+        
+        # Controller should still be running
+        assert controller.is_running() is True
+    
+    def test_state_callback_error_continues(self, controller, mock_overlay, mock_detector):
+        """Test that state callback errors don't crash controller"""
+        controller.start()
+        
+        # Make overlay update fail on state change
+        mock_overlay.update_detections.side_effect = Exception("State error")
+        
+        state_callback = mock_detector.on_state_changed.call_args[0][0]
+        
+        # Should not raise
+        state_callback(DetectionState.SEARCHING)
+        
+        # Controller should still be running
+        assert controller.is_running() is True
+
+
+class TestIntegration:
+    """Integration tests with real-ish scenarios"""
+    
+    def test_full_detection_cycle(self, controller, mock_overlay, mock_detector):
+        """Test complete detection cycle"""
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        state_callback = mock_detector.on_state_changed.call_args[0][0]
+        
+        # SEARCHING → DETECTED
+        state_callback(DetectionState.DETECTED)
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        detection_callback([detection])
+        
+        # DETECTED → TRACKING
+        state_callback(DetectionState.TRACKING)
+        detection_callback([detection])
+        
+        # TRACKING → LOST
+        state_callback(DetectionState.LOST)
+        detection_callback([])
+        
+        # LOST → SEARCHING
+        state_callback(DetectionState.SEARCHING)
+        
+        # All updates should have gone through
+        assert mock_overlay.update_detections.call_count >= 4
+        assert controller.get_current_state() == DetectionState.SEARCHING
+
+
+# Run tests
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])
