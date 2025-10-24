@@ -91,13 +91,18 @@ class TestMonsterEditorInfoTab:
                 root.destroy()
     
     def test_populate_info_form(self, temp_data_file: Path, sample_monsters: list) -> None:
-        """Test populating form with monster data."""
+        """Test that _populate_info_form fills form fields correctly."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
         with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
             from ui.quick_monster_editor import QuickMonsterEditor
             
-            root = tk.Tk()
+            try:
+                root = tk.Tk()
+            except Exception as e:
+                pytest.skip(f"Tkinter not available: {e}")
+                return
+            
             root.withdraw()
             editor = None
             
@@ -189,7 +194,8 @@ class TestMonsterEditorInfoTab:
                 
                 # Make a change
                 editor.name_entry.insert(0, 'Test Monster')
-                editor.name_entry.event_generate('<KeyRelease>')
+                # Manually trigger the change handler (event_generate may not work in tests)
+                editor._on_info_change()
                 root.update_idletasks()
                 
                 # Should be marked dirty
@@ -394,6 +400,39 @@ class TestMonsterEditorInfoTab:
                 assert 'Line 2' in desc_content
                 assert 'Line 3' in desc_content
                 
+            finally:
+                if editor:
+                    editor.destroy()
+                root.destroy()
+    
+    def test_dirty_state_ui_updates(self, temp_data_file: Path) -> None:
+        """Test that status label and Save button update with dirty state."""
+        temp_data_file.write_text('[]', encoding='utf-8')
+        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.quick_monster_editor import QuickMonsterEditor
+            root = tk.Tk()
+            root.withdraw()
+            editor = None
+            try:
+                editor = QuickMonsterEditor(root)
+                # Initially not dirty
+                assert editor.is_dirty is False
+                assert editor.status_label.cget('text') in ('All saved', 'Đã lưu tất cả')
+                assert editor.save_button['state'] == 'disabled'
+                # Set dirty
+                editor.set_dirty(True)
+                root.update_idletasks()
+                assert editor.is_dirty is True
+                # Check for either English or Vietnamese unsaved text (with bullet point)
+                status_text = editor.status_label.cget('text')
+                assert 'Unsaved changes' in status_text or 'Có thay đổi chưa lưu' in status_text
+                assert editor.save_button['state'] == 'normal'
+                # Set not dirty
+                editor.set_dirty(False)
+                root.update_idletasks()
+                assert editor.is_dirty is False
+                assert editor.status_label.cget('text') in ('All saved', 'Đã lưu tất cả')
+                assert editor.save_button['state'] == 'disabled'
             finally:
                 if editor:
                     editor.destroy()

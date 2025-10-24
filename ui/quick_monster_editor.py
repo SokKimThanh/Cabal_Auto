@@ -139,12 +139,6 @@ class QuickMonsterEditor(tk.Toplevel):
         self.is_dirty = False  # Global unsaved changes
         self.is_monster_dirty = False  # Current monster modified
         
-        # Data state
-        self.monsters: List[Dict[str, Any]] = []
-        self.current_monster_id: Optional[str] = monster_id
-        self.is_dirty = False  # Global unsaved changes
-        self.is_monster_dirty = False  # Current monster modified
-        
         # Result queue for worker thread communication
         self.result_queue: queue.Queue = queue.Queue()
         self.is_working = False
@@ -176,14 +170,21 @@ class QuickMonsterEditor(tk.Toplevel):
         self.damage_entry: Optional[tk.Entry] = None
         self.desc_text: Optional[tk.Text] = None
         
+        # Templates tab widgets
+        self.template_listbox: Optional[tk.Listbox] = None
+        self.template_scrollbar: Optional[tk.Scrollbar] = None
+        self.capture_button: Optional[tk.Button] = None
+        self.browse_button: Optional[tk.Button] = None
+        self.delete_template_button: Optional[tk.Button] = None
+        self.test_template_button: Optional[tk.Button] = None
         # Legacy widgets (from quick editor, may be removed later)
-        self.threshold_scale: Optional[tk.Scale] = None
-        self.threshold_label: Optional[tk.Label] = None
         self.progress_label: Optional[tk.Label] = None
         self.save_button: Optional[tk.Button] = None
         self.cancel_button: Optional[tk.Button] = None
         self.capture_button: Optional[tk.Button] = None
         self.test_button: Optional[tk.Button] = None
+        self.threshold_scale: Optional[tk.Scale] = None
+        self.threshold_label: Optional[tk.Label] = None
         
         # Window configuration
         title = i18n_t('quick_editor_title', ns='monster_editor', default='Quick Monster Editor')
@@ -203,6 +204,9 @@ class QuickMonsterEditor(tk.Toplevel):
         self._setup_ui()
         self._bind_events()
         self._start_queue_monitor()
+        
+        # Update UI to reflect initial dirty state
+        self._update_dirty_state_ui()
     
     def _load_monsters(self) -> None:
         """Load monsters from JSON file."""
@@ -224,6 +228,34 @@ class QuickMonsterEditor(tk.Toplevel):
             print(f"[MonsterEditor] Error loading monsters: {e}")
             self.monsters = []
     
+    def set_dirty(self, value: bool = True) -> None:
+        """Set dirty state and update UI."""
+        self.is_dirty = value
+        self._update_dirty_state_ui()
+
+    def set_monster_dirty(self, value: bool = True) -> None:
+        """Set monster dirty state and update UI."""
+        self.is_monster_dirty = value
+        self.set_dirty(value)
+    
+    def _update_dirty_state_ui(self) -> None:
+        """Update status label and Save button based on dirty state."""
+        if not hasattr(self, 'status_label') or self.status_label is None:
+            return
+        
+        if self.is_dirty:
+            # Show unsaved status
+            status_text = i18n_t('status_unsaved', ns='monster_editor', default='Unsaved changes')
+            self.status_label.config(text=f"● {status_text}", fg=UI.COLOR_WARNING)
+            if self.save_button is not None:
+                self.save_button.config(state='normal')
+        else:
+            # Show saved status
+            status_text = i18n_t('status_saved', ns='monster_editor', default='All saved')
+            self.status_label.config(text=status_text, fg=UI.COLOR_ACCENT)
+            if self.save_button is not None:
+                self.save_button.config(state='disabled')
+
     def _save_monsters(self) -> bool:
         """Save monsters to JSON file."""
         try:
@@ -232,6 +264,7 @@ class QuickMonsterEditor(tk.Toplevel):
                 json.dump(self.monsters, f, indent=2, ensure_ascii=False)
             self.is_dirty = False
             self.is_monster_dirty = False
+            self._update_dirty_state_ui()
             return True
         except Exception as e:
             print(f"[MonsterEditor] Error saving monsters: {e}")
@@ -278,6 +311,16 @@ class QuickMonsterEditor(tk.Toplevel):
             bg=UI.BG_PANEL
         )
         title_label.pack(side='left', padx=15, pady=15)
+
+        # Status label (dirty state)
+        self.status_label = tk.Label(
+            top_frame,
+            text='',
+            font=UI.FONT_SMALL,
+            fg=UI.COLOR_WARNING,
+            bg=UI.BG_PANEL
+        )
+        self.status_label.pack(side='left', padx=(5, 0), pady=15)
         
         # Action buttons (right side)
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
@@ -579,15 +622,105 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_templates', ns='monster_editor', default='Templates')
         self.notebook.add(self.templates_tab, text=tab_text)
         
-        # Placeholder label (content will be added in Batch 7)
-        placeholder_label = tk.Label(
-            self.templates_tab,
-            text='Templates Manager\n(To be implemented in Batch 7)',
+        # Layout: left (list), right (controls)
+        main_frame = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Template listbox with scrollbar
+        list_frame = tk.Frame(main_frame, bg=UI.BG_PANEL)
+        list_frame.pack(side='left', fill='y', padx=(0, 10), pady=0, anchor='n')
+
+        list_label = tk.Label(
+            list_frame,
+            text=i18n_t('template_list_title', ns='monster_editor', default='Template List:'),
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_PANEL
+        )
+        list_label.pack(side='top', anchor='w', pady=(0, 5))
+
+        self.template_scrollbar = tk.Scrollbar(list_frame, orient='vertical')
+        self.template_listbox = tk.Listbox(
+            list_frame,
             font=UI.FONT_TEXT,
-            fg=UI.COLOR_SUBTEXT,
+            yscrollcommand=self.template_scrollbar.set,
+            selectmode=tk.SINGLE,
+            height=10,
+            width=28
+        )
+        self.template_listbox.pack(side='left', fill='y', expand=False)
+        self.template_scrollbar.config(command=self.template_listbox.yview)
+        self.template_scrollbar.pack(side='right', fill='y')
+
+        # Controls frame (right)
+        controls_frame = tk.Frame(main_frame, bg=UI.BG_DEFAULT)
+        controls_frame.pack(side='left', fill='both', expand=True, padx=0, pady=0)
+
+        # Capture Template button
+        self.capture_button = tk.Button(
+            controls_frame,
+            text=i18n_t('btn_capture', ns='monster_editor', default='Capture Template'),
+            font=UI.FONT_BUTTON,
+            bg=UI.COLOR_ACCENT,
+            fg='#FFFFFF',
+            width=18
+        )
+        self.capture_button.pack(side='top', fill='x', pady=4)
+
+        # Browse File button
+        self.browse_button = tk.Button(
+            controls_frame,
+            text=i18n_t('btn_browse', ns='monster_editor', default='Browse File'),
+            font=UI.FONT_BUTTON,
+            bg=UI.BG_PANEL,
+            width=18
+        )
+        self.browse_button.pack(side='top', fill='x', pady=4)
+
+        # Delete Template button
+        self.delete_template_button = tk.Button(
+            controls_frame,
+            text=i18n_t('btn_delete_template', ns='monster_editor', default='Delete Template'),
+            font=UI.FONT_BUTTON,
+            bg=UI.COLOR_DANGER,
+            fg='#FFFFFF',
+            width=18
+        )
+        self.delete_template_button.pack(side='top', fill='x', pady=4)
+
+        # Test Recognition button
+        self.test_template_button = tk.Button(
+            controls_frame,
+            text=i18n_t('btn_test', ns='monster_editor', default='Test Recognition'),
+            font=UI.FONT_BUTTON,
+            bg=UI.COLOR_PRIMARY,
+            fg='#FFFFFF',
+            width=18
+        )
+        self.test_template_button.pack(side='top', fill='x', pady=4)
+
+        # Threshold slider
+        threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Recognition Threshold:')
+        self.threshold_label = tk.Label(
+            controls_frame,
+            text=threshold_label_text,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
         )
-        placeholder_label.pack(expand=True)
+        self.threshold_label.pack(side='top', anchor='w', pady=(12, 2))
+
+        self.threshold_scale = tk.Scale(
+            controls_frame,
+            from_=0.0,
+            to=1.0,
+            resolution=0.01,
+            orient='horizontal',
+            length=180,
+            showvalue=True
+        )
+        self.threshold_scale.set(0.7)
+        self.threshold_scale.pack(side='top', fill='x', pady=(0, 8))
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -1129,9 +1262,8 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def _on_info_change(self, event: Any = None) -> None:
         """Handle changes in Info tab form fields."""
-        # Mark current monster as dirty
-        self.is_monster_dirty = True
-        self.is_dirty = True
+        # Mark current monster as dirty and update UI
+        self.set_monster_dirty(True)
         
         # Update current monster data in memory (if selected)
         if self.current_monster_id and self.monsters:
