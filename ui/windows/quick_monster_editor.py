@@ -421,35 +421,31 @@ class QuickMonsterEditor(tk.Toplevel):
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
         button_frame.pack(side='right', padx=15, pady=15)
         
-        # Save button - using component
-        save_text = i18n_t('btn_save', ns='monster_editor', default='Save')
+        # Save button - icon only, no text
         self.save_button = create_icon_button(
             button_frame,
             icon_name='save',
             icon_fallback='💾',
             icon_size=16,
-            text=save_text,
             command=self._on_save,
             button_type='green_light',
-            variant='medium',
-            width=12,
+            variant='compact',
+            width=16,
             tooltip_key='tooltip_save',
             tooltip_ns='monster_editor'
         )
         self.save_button.pack(side='left', padx=5)
         
-        # Cancel button - using component
-        cancel_text = i18n_t('btn_cancel', ns='monster_editor', default='Cancel')
+        # Cancel button - icon only, no text
         self.cancel_button = create_icon_button(
             button_frame,
             icon_name='cancel',
             icon_fallback='✖',
             icon_size=16,
-            text=cancel_text,
             command=self._on_cancel,
             button_type='refresh',  # Gray neutral style
-            variant='medium',
-            width=12,
+            variant='compact',
+            width=16,
             tooltip_key='tooltip_cancel',
             tooltip_ns='monster_editor'
         )

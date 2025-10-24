@@ -212,6 +212,14 @@ def create_icon_button(
             tooltip_key='btn_delete'
         )
     """
+    # If button is disabled, replace icon with forbidden symbol
+    if state == 'disabled':
+        icon_name = 'forbidden'  # Try to use 'forbidden' icon from icon_helper
+        icon_fallback = '🚫'  # Fallback to red prohibition emoji
+        # Set default tooltip if none provided
+        if not tooltip_text and not tooltip_key:
+            tooltip_text = i18n_t('btn_disabled', ns='common', default='Nút hiện không khả dụng')
+    
     # Get icon
     icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
     
