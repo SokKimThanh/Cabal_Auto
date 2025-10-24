@@ -48,6 +48,15 @@ from lib.i18n import (
     GLOBAL_NS as I18N_GLOBAL,
 )
 
+# Import icon button component
+try:
+    from ui.components import create_icon_button as _create_icon_btn_component
+    _HAS_ICON_COMPONENT = True
+except ImportError:
+    _HAS_ICON_COMPONENT = False
+    _create_icon_btn_component = None  # type: ignore
+    print("Warning: Icon button component not available, using fallback")
+
 try:
     from lib.ui.capture_helper import capture_region_and_save
 except Exception:
@@ -1123,10 +1132,13 @@ class App(tk.Tk):
         **kwargs,
     ):
         """Create a standardized icon button following UIStyle guidelines.
+        
+        **DEPRECATED**: This method now uses the new icon_button component internally.
+        For new code, prefer using `from ui.components import create_icon_button` directly.
 
         Args:
             parent: Parent widget
-            icon_emoji: Emoji text for button (e.g., '➕', '↑', '↓')
+            icon_emoji: Emoji text for button (e.g., '➕', '↑', '↓') - used as fallback
             command: Button command callback
             style: Size style - 'compact', 'small', 'medium', or 'large'
             bg_color: Background color (uses BTN_ACCENT_BG if not specified)
@@ -1136,7 +1148,55 @@ class App(tk.Tk):
         Returns:
             tk.Button: Configured button widget
         """
-        # Style presets based on UIStyle constants
+        # If component available, use it for better icon quality
+        if _HAS_ICON_COMPONENT and _create_icon_btn_component is not None:
+            # Map emoji to icon names
+            emoji_to_icon = {
+                '➕': 'add',
+                '🗑️': 'delete', 
+                '💾': 'save',
+                '✖': 'cancel',
+                '🔄': 'refresh',
+                '↑': 'up',
+                '↓': 'down',
+                '📁': 'folder',
+                '⚙️': 'settings',
+                '🔍': 'search',
+            }
+            
+            # Map bg_color to button_type
+            button_type_map = {
+                UI.BTN_PRIMARY_BG: 'green_light',
+                UI.BTN_ACCENT_BG: 'green_light', 
+                UI.BTN_DANGER_BG: 'red',
+                UI.BTN_INFO_BG: 'blue',
+                UI.BTN_NEUTRAL_BG: 'refresh',
+            }
+            
+            icon_name = emoji_to_icon.get(icon_emoji, 'add')
+            button_type = button_type_map.get(bg_color or UI.BTN_ACCENT_BG, 'green_light')
+            
+            # Map style to variant
+            variant_map = {
+                'compact': 'compact',
+                'small': 'small', 
+                'medium': 'medium',
+                'large': 'large',
+            }
+            variant = variant_map.get(style, 'compact')
+            
+            return _create_icon_btn_component(
+                parent=parent,
+                icon_name=icon_name,
+                icon_fallback=icon_emoji,
+                command=command,
+                button_type=button_type,
+                variant=variant,
+                icon_size=16,
+                **kwargs
+            )
+        
+        # Fallback to old emoji-only method if component not available
         style_configs = {
             "compact": {
                 "width": 0,
@@ -1164,17 +1224,13 @@ class App(tk.Tk):
             },
         }
 
-        # Get style config
         config = style_configs.get(style, style_configs["compact"])
 
-        # Default colors
         if bg_color is None:
             bg_color = UI.BTN_ACCENT_BG
         if hover_color is None:
             hover_color = UI.BTN_ACCENT_HOVER
 
-        # Determine foreground color based on background color
-        # Map background colors to their corresponding foreground colors
         color_map = {
             UI.BTN_PRIMARY_BG: UI.BTN_PRIMARY_FG,
             UI.BTN_ACCENT_BG: UI.BTN_ACCENT_FG,
@@ -1182,9 +1238,8 @@ class App(tk.Tk):
             UI.BTN_NEUTRAL_BG: UI.BTN_NEUTRAL_FG,
             UI.BTN_DANGER_BG: UI.BTN_DANGER_FG,
         }
-        fg_color = color_map.get(bg_color, UI.BTN_ACCENT_FG)  # Default to white
+        fg_color = color_map.get(bg_color, UI.BTN_ACCENT_FG)
 
-        # Merge with user kwargs
         button_config = {
             "text": icon_emoji,
             "command": command,
@@ -1196,7 +1251,7 @@ class App(tk.Tk):
             "relief": UI.BTN_RELIEF_NORMAL,
             "cursor": "hand2",
             **config,
-            **kwargs,  # User kwargs override defaults
+            **kwargs,
         }
 
         return tk.Button(parent, **button_config)
