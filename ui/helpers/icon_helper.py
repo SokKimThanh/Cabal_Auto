@@ -104,6 +104,11 @@ class IconHelper:
             'test': ('question_mark.ico', '🧪'),
             'use': ('start.ico', '📌'),
             'library': ('list.ico', '📚'),
+            'check': ('check.ico', '✓'),  # Check/success icon (dedicated check.ico)
+            'warning': ('warning.ico', '⚠️'),  # Warning icon for unsaved state
+            'settings': ('setting.ico', '⚙️'),  # Settings icon (dedicated setting.ico)
+            'hotkey': ('hotkey.ico', '⌨️'),  # Hotkey icon (dedicated hotkey.ico)
+            'forbidden': ('prohibition.ico', '🚫'),  # Forbidden/disabled icon (red prohibition sign)
         }
     
     def _apply_color_tint(self, img: Any, hex_color: str) -> Any:

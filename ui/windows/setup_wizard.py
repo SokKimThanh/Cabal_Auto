@@ -25,13 +25,13 @@ import importlib.util
 
 # i18n and tooltip helpers
 try:
-    from lib.ui.tooltip import attach_i18n_tooltip
+    from ui.helpers.tooltip import attach_i18n_tooltip
 except Exception:
     attach_i18n_tooltip = None  # type: ignore
 
 # Icon helper for button icons
 try:
-    from lib.ui.icon_helper import get_icon_helper
+    from ui.helpers.icon_helper import get_icon_helper
 
     icon_helper = get_icon_helper()
 except Exception:
@@ -1458,7 +1458,7 @@ It takes about 2 minutes. Let's begin!"""
         """Open Library Manager with Rotation tab for new users."""
         try:
             # Import library manager
-            from lib.ui.library_manager import LibraryManagerWindow
+            from ui.windows.library_manager import LibraryManagerWindow
 
             # Load current monsters and skills data
             monsters_path = os.path.join(
@@ -2058,3 +2058,6 @@ if __name__ == "__main__":
             pass
 
     root.mainloop()
+
+
+

@@ -40,16 +40,16 @@ except Exception:  # pragma: no cover - environment dependent
 
 # Icon helper
 try:
-    from lib.ui.icon_helper import get_icon_helper
+    from ui.helpers.icon_helper import get_icon_helper
     icon_helper = get_icon_helper()
 except Exception:
     icon_helper = None
 
-from lib.ui.tooltip import attach_i18n_tooltip
+from ui.helpers.tooltip import attach_i18n_tooltip
 
 # Shared capture helper
 try:
-    from lib.ui.capture_helper import capture_region_and_save
+    from ui.helpers.capture_helper import capture_region_and_save
 except Exception:
     capture_region_and_save = None  # type: ignore
 
@@ -1992,7 +1992,7 @@ Track progress at:
             
             # Update tooltip
             try:
-                from lib.ui.tooltip import attach_i18n_tooltip
+                from ui.helpers.tooltip import attach_i18n_tooltip
                 # Unbind old tooltip
                 if hasattr(self.template_toggle_btn, '_i18n_tooltip'):
                     old_tooltip = getattr(self.template_toggle_btn, '_i18n_tooltip')
@@ -4338,7 +4338,7 @@ class MonsterDialog:
             
             # Add i18n tooltip if registry available
             if self.i18n_registry:
-                from lib.ui.tooltip import attach_i18n_tooltip
+                from ui.helpers.tooltip import attach_i18n_tooltip
                 attach_i18n_tooltip(
                     save_btn, 
                     'tip_save_monster', 
@@ -4636,7 +4636,7 @@ class SkillDialog:
             
             # Add i18n tooltip if registry available
             if self.i18n_registry:
-                from lib.ui.tooltip import attach_i18n_tooltip
+                from ui.helpers.tooltip import attach_i18n_tooltip
                 attach_i18n_tooltip(
                     save_btn, 
                     'tip_save_skill', 
@@ -4810,3 +4810,4 @@ if __name__ == '__main__':
     ).pack(expand=True)
     
     root.mainloop()
+

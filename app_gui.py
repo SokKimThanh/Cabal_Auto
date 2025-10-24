@@ -35,8 +35,12 @@ except Exception:
 from ctypes import wintypes
 
 from lib.vision.template_matcher import locate_template
+from lib.vision.vision_engine import VisionEngine
+from lib.system.screen_capture import ScreenCapture
+from lib.system.bot_manager import BotManager
+from ui.utils.overlay_controller import OverlayController
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
-from lib.ui.tooltip import attach_i18n_tooltip
+from ui.helpers.tooltip import attach_i18n_tooltip
 from lib.i18n import (
     register_bulk as i18n_register_bulk,
     t as i18n_t,
@@ -44,8 +48,53 @@ from lib.i18n import (
     GLOBAL_NS as I18N_GLOBAL,
 )
 
+# Import icon button component
 try:
-    from lib.ui.capture_helper import capture_region_and_save
+    from ui.components import create_icon_button as _create_icon_btn_component
+    from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector
+    _HAS_ICON_COMPONENT = True
+except ImportError:
+    _HAS_ICON_COMPONENT = False
+    
+    # Fallback function for create_icon_button
+    def _create_icon_btn_component(
+        parent,
+        icon_name,
+        command=None,
+        text=None,
+        button_type='green_light',
+        icon_size=16,
+        button_size=None,
+        icon_fallback='',
+        tooltip_key=None,
+        tooltip_ns=None,
+        tooltip_text=None,
+        state='normal',
+        variant=None,
+        width=None,
+        padding=None,
+        on_hover=None,
+        on_leave=None,
+        on_focus=None,
+        auto_hover_disabled=True,
+        **kwargs
+    ):
+        """Fallback icon button creator when component not available."""
+        import tkinter as tk
+        from typing import Literal, cast
+        # Cast state to proper type
+        btn_state = cast(Literal['normal', 'active', 'disabled'], state if state in ['normal', 'active', 'disabled'] else 'normal')
+        # Handle None command
+        btn_command = command if command is not None else lambda: None
+        btn = tk.Button(parent, text=icon_fallback or '?', command=btn_command, state=btn_state, **kwargs)
+        return btn
+    
+    create_app_window_selector = None  # type: ignore
+    create_game_window_selector = None  # type: ignore
+    print("Warning: Icon button component not available, using fallback")
+
+try:
+    from ui.helpers.capture_helper import capture_region_and_save
 except Exception:
     capture_region_and_save = None  # type: ignore
 
@@ -174,7 +223,7 @@ except Exception:
 
 # Optional setup wizard import
 try:
-    from ui.setup_wizard import show_setup_wizard  # type: ignore
+    from ui.windows.setup_wizard import show_setup_wizard  # type: ignore
 except Exception:
     show_setup_wizard = None  # type: ignore
 
@@ -619,7 +668,7 @@ class App(tk.Tk):
 
         # Centralized icon helper
         try:
-            from lib.ui.icon_helper import get_icon_helper
+            from ui.helpers.icon_helper import get_icon_helper
 
             self.icon_helper = get_icon_helper()
         except Exception:
@@ -721,16 +770,42 @@ class App(tk.Tk):
             
             vision_menu.add_separator()
             
-            # Toggle Overlay (Ctrl+Shift+O)
-            overlay_label = "Toggle Overlay" if self.lang == "en" else "Bật/Tắt Overlay"
+            # Toggle Overlay (Ctrl+Shift+O) - using translations
             vision_menu.add_command(
-                label=overlay_label,
+                label=self._t("vision_toggle_overlay"),
                 accelerator="Ctrl+Shift+O",
                 command=self._toggle_overlay
             )
             
+            # Overlay Settings - using translations
+            overlay_settings_label = "Overlay Settings..." if self.lang == "en" else "Cài Đặt Overlay..."
+            vision_menu.add_command(
+                label=overlay_settings_label,
+                command=self._open_overlay_settings
+            )
+            
             menubar.add_cascade(label="Vision", menu=vision_menu)
             print("[Vision Menu] Created successfully")
+            
+            # --- Menu: Monster Editor (Monster CRUD) ---
+            monster_menu = tk.Menu(menubar, tearoff=0)
+            
+            # Open Monster Editor (Ctrl+Shift+M)
+            try:
+                from lib.i18n import t as i18n_t
+                monster_label = i18n_t('menu_open_monster_editor', ns='monster_editor', 
+                                      default='Open Monster Manager' if self.lang == 'en' else 'Mở Quản Lý Quái Vật')
+            except:
+                monster_label = "Open Monster Manager" if self.lang == "en" else "Mở Quản Lý Quái Vật"
+            
+            monster_menu.add_command(
+                label=monster_label,
+                accelerator="Ctrl+Shift+M",
+                command=self._open_monster_editor
+            )
+            
+            menubar.add_cascade(label="Monster", menu=monster_menu)
+            print("[Monster Menu] Created successfully")
             
             try:
                 self.config(menu=menubar)
@@ -760,11 +835,24 @@ class App(tk.Tk):
         self._global_wizard_hotkey = None  # NEW: Setup Wizard (Ctrl+Shift+N)
         self._global_library_hotkey = None  # NEW: Library Manager (Ctrl+Shift+L)
         self._global_vision_hotkey = None  # NEW Sprint 22: Vision Wizard (Ctrl+Shift+V)
+        self._global_monster_hotkey = None  # NEW: Monster Editor (Ctrl+Shift+M)
         # Fallback when `keyboard` package not available in this interpreter
         self._hotkey_fallback_bound = (
             []
         )  # list of tkinter sequence strings bound via bind_all
         self._hotkey_import_diag = ""
+        
+        # Phase 5: Overlay window for vision detection
+        self._overlay_window: Optional[Any] = None  # OverlayWindow instance
+        self._overlay_enabled = False
+        self._overlay_update_thread: Optional[threading.Thread] = None
+        self._overlay_stop_event = threading.Event()
+        
+        # Phase 7: Monster tracking integration
+        self._vision_engine: Optional[VisionEngine] = None
+        self._screen_capture: Optional[ScreenCapture] = None
+        self._bot_manager: Optional[BotManager] = None
+        self._overlay_controller: Optional[OverlayController] = None
 
         self.monsters = load_monster_library()
         self.monster_selected_index = None
@@ -1004,6 +1092,20 @@ class App(tk.Tk):
         self.after(1000, self._auto_bring_to_front_on_startup)
 
     def destroy(self):
+        # Phase 7: Cleanup monster tracking components
+        try:
+            if self._overlay_controller is not None:
+                self._overlay_controller.stop()
+                self._overlay_controller = None
+                print("[MonsterTracking] OverlayController cleaned up")
+            
+            if self._bot_manager is not None:
+                self._bot_manager.destroy()
+                self._bot_manager = None
+                print("[MonsterTracking] BotManager cleaned up")
+        except Exception as e:
+            print(f"[MonsterTracking] Error during cleanup: {e}")
+        
         # Unregister global hotkeys on exit
         if keyboard is not None and hasattr(self, "_registered_hotkey_handlers"):
             for hk, handler in list(self._registered_hotkey_handlers.items()):
@@ -1066,10 +1168,13 @@ class App(tk.Tk):
         **kwargs,
     ):
         """Create a standardized icon button following UIStyle guidelines.
+        
+        **DEPRECATED**: This method now uses the new icon_button component internally.
+        For new code, prefer using `from ui.components import create_icon_button` directly.
 
         Args:
             parent: Parent widget
-            icon_emoji: Emoji text for button (e.g., '➕', '↑', '↓')
+            icon_emoji: Emoji text for button (e.g., '➕', '↑', '↓') - used as fallback
             command: Button command callback
             style: Size style - 'compact', 'small', 'medium', or 'large'
             bg_color: Background color (uses BTN_ACCENT_BG if not specified)
@@ -1079,7 +1184,55 @@ class App(tk.Tk):
         Returns:
             tk.Button: Configured button widget
         """
-        # Style presets based on UIStyle constants
+        # If component available, use it for better icon quality
+        if _HAS_ICON_COMPONENT and _create_icon_btn_component is not None:
+            # Map emoji to icon names
+            emoji_to_icon = {
+                '➕': 'add',
+                '🗑️': 'delete', 
+                '💾': 'save',
+                '✖': 'cancel',
+                '🔄': 'refresh',
+                '↑': 'up',
+                '↓': 'down',
+                '📁': 'folder',
+                '⚙️': 'settings',
+                '🔍': 'search',
+            }
+            
+            # Map bg_color to button_type
+            button_type_map = {
+                UI.BTN_PRIMARY_BG: 'green_light',
+                UI.BTN_ACCENT_BG: 'green_light', 
+                UI.BTN_DANGER_BG: 'red',
+                UI.BTN_INFO_BG: 'blue',
+                UI.BTN_NEUTRAL_BG: 'refresh',
+            }
+            
+            icon_name = emoji_to_icon.get(icon_emoji, 'add')
+            button_type = button_type_map.get(bg_color or UI.BTN_ACCENT_BG, 'green_light')
+            
+            # Map style to variant
+            variant_map = {
+                'compact': 'compact',
+                'small': 'small', 
+                'medium': 'medium',
+                'large': 'large',
+            }
+            variant = variant_map.get(style, 'compact')
+            
+            return _create_icon_btn_component(
+                parent=parent,
+                icon_name=icon_name,
+                icon_fallback=icon_emoji,
+                command=command,
+                button_type=button_type,
+                variant=variant,
+                icon_size=16,
+                **kwargs
+            )
+        
+        # Fallback to old emoji-only method if component not available
         style_configs = {
             "compact": {
                 "width": 0,
@@ -1107,17 +1260,13 @@ class App(tk.Tk):
             },
         }
 
-        # Get style config
         config = style_configs.get(style, style_configs["compact"])
 
-        # Default colors
         if bg_color is None:
             bg_color = UI.BTN_ACCENT_BG
         if hover_color is None:
             hover_color = UI.BTN_ACCENT_HOVER
 
-        # Determine foreground color based on background color
-        # Map background colors to their corresponding foreground colors
         color_map = {
             UI.BTN_PRIMARY_BG: UI.BTN_PRIMARY_FG,
             UI.BTN_ACCENT_BG: UI.BTN_ACCENT_FG,
@@ -1125,9 +1274,8 @@ class App(tk.Tk):
             UI.BTN_NEUTRAL_BG: UI.BTN_NEUTRAL_FG,
             UI.BTN_DANGER_BG: UI.BTN_DANGER_FG,
         }
-        fg_color = color_map.get(bg_color, UI.BTN_ACCENT_FG)  # Default to white
+        fg_color = color_map.get(bg_color, UI.BTN_ACCENT_FG)
 
-        # Merge with user kwargs
         button_config = {
             "text": icon_emoji,
             "command": command,
@@ -1139,7 +1287,7 @@ class App(tk.Tk):
             "relief": UI.BTN_RELIEF_NORMAL,
             "cursor": "hand2",
             **config,
-            **kwargs,  # User kwargs override defaults
+            **kwargs,
         }
 
         return tk.Button(parent, **button_config)
@@ -1527,10 +1675,10 @@ Alternative Solutions:
             side="left", fill="y", padx=12, pady=2
         )
 
-        # Right side: Window Selection Combobox with auto find & bring-to-front
+        # Right side: Window Selection Combobox - shortened to half width (20)
         self.win_combo_var = tk.StringVar()
         self.win_combo = ttk.Combobox(
-            top, textvariable=self.win_combo_var, state="readonly", width=40
+            top, textvariable=self.win_combo_var, state="readonly", width=20
         )
         self.win_combo.pack(side="left", padx=(0, 6))
 
@@ -1551,84 +1699,152 @@ Alternative Solutions:
         )
 
         # Import button styles for refresh button
-        from lib.ui.button_styles import get_button_config
+        from ui.helpers.button_styles import get_button_config
 
-        # Refresh button with icon (manual window refresh)
-        refresh_icon = self._icon("refresh", "🔄", size=16)
-        # Build kwargs for refresh button to avoid passing None to 'image'
-        refresh_kwargs = get_button_config("refresh")
-        if not isinstance(refresh_icon, str):
-            refresh_text = ""
-            refresh_kwargs.update({"image": refresh_icon, "compound": "left"})
-        else:
-            refresh_text = self._t("refresh_windows")
-        refresh_btn = tk.Button(
-            top,
-            text=refresh_text,
+        # Refresh button - Using icon_button component
+        # Icon 16px, Button 24px (padding auto-calculated)
+        refresh_tooltip = (
+            "Refresh Window List\n"
+            "Scans for game windows"
+            if self.lang == "en" else
+            "Làm Mới Danh Sách Cửa Sổ\n"
+            "Quét lại các cửa sổ game"
+        )
+        
+        refresh_btn = _create_icon_btn_component(
+            parent=top,
+            icon_name='refresh',
+            icon_fallback='🔄',
+            icon_size=16,
+            button_size=24,
             command=self.on_hunt_refresh_windows,
-            **refresh_kwargs,
+            button_type='refresh',
+            tooltip_text=refresh_tooltip,
+            state='normal',
+            auto_hover_disabled=False
         )
         refresh_btn.pack(side="left", padx=(0, 6))
-
-        # Keep reference to prevent garbage collection
-        if not isinstance(refresh_icon, str):
-            try:
-                self._image_refs.append(refresh_icon)
-            except Exception:
-                pass
+        
+        # Checkbox to toggle advanced controls (window selectors)
+        self.show_advanced_controls_var = tk.BooleanVar(value=False)
+        
+        def toggle_advanced_controls():
+            """Toggle visibility of window position selectors."""
+            show = self.show_advanced_controls_var.get()
+            
+            if hasattr(self, 'app_window_selector'):
+                if show:
+                    if hasattr(self.app_window_selector, 'show'):
+                        self.app_window_selector.show()
+                else:
+                    if hasattr(self.app_window_selector, 'hide'):
+                        self.app_window_selector.hide()
+            
+            if hasattr(self, 'game_window_selector'):
+                if show:
+                    if hasattr(self.game_window_selector, 'show'):
+                        self.game_window_selector.show()
+                else:
+                    if hasattr(self.game_window_selector, 'hide'):
+                        self.game_window_selector.hide()
+        
+        advanced_check = tk.Checkbutton(
+            top,
+            text="",  # No text, just checkbox
+            variable=self.show_advanced_controls_var,
+            command=toggle_advanced_controls,
+            bg=top.cget('bg')
+        )
+        advanced_check.pack(side="left", padx=(0, 6))
+        
+        # Tooltip for checkbox
+        check_tooltip = (
+            "Show Advanced Controls\n"
+            "• App window positioning\n"
+            "• Game window positioning"
+            if self.lang == "en" else
+            "Hiện Điều Khiển Nâng Cao\n"
+            "• Vị trí cửa sổ ứng dụng\n"
+            "• Vị trí cửa sổ game"
+        )
+        self._create_tooltip(advanced_check, check_tooltip)
 
         # Separator before hunt controls
         tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
             side="left", fill="y", padx=12, pady=2
         )
 
-        # Hunt Control Buttons - Using global button styles for consistency with icons
-        # Start Hunt Button - Green (CR: 5.8:1) with start icon
-        start_config = get_button_config("green")
-        start_icon = self._icon("start", "▶️", size=18)
-
-        # Start button kwargs (avoid passing None image)
-        start_kwargs = dict(start_config)
-        start_text = self._t("start_hunt")
-        if not isinstance(start_icon, str):
-            start_kwargs.update({"image": start_icon, "compound": "left"})
-            start_text = f" {start_text}"
-        self.hunt_start_btn = tk.Button(
-            top,
-            text=start_text,
+        # Hunt Control Buttons - Using icon_button component with auto hover effect
+        # Start Hunt Button - Icon 20px, Button 32px (green)
+        start_tooltip = self._t("start_hunt")
+        if self.lang == "vi":
+            start_tooltip += "\n(Ctrl+F5)"
+        else:
+            start_tooltip += "\n(Ctrl+F5)"
+        
+        self.hunt_start_btn = _create_icon_btn_component(
+            parent=top,
+            icon_name='start',
+            icon_fallback='▶️',
+            icon_size=20,
+            button_size=32,
             command=self.on_hunt_start,
-            padx=16,
-            pady=6,
-            **start_kwargs,
+            button_type='green',
+            tooltip_text=start_tooltip,
+            state='normal',
+            auto_hover_disabled=False  # Start button doesn't need hover effect
         )
         self.hunt_start_btn.pack(side="left", padx=(0, 6))
 
-        # Keep reference
-        if not isinstance(start_icon, str):
-            try:
-                self._image_refs.append(start_icon)
-            except Exception:
-                pass
-
-        # Stop Hunt Button - Red (CR: 6.3:1) with stop icon
-        stop_config = get_button_config("red")
-        stop_icon = self._icon("stop", "⏹️", size=18)
-
-        stop_kwargs = dict(stop_config)
-        stop_text = self._t("stop_hunt")
-        if not isinstance(stop_icon, str):
-            stop_kwargs.update({"image": stop_icon, "compound": "left"})
-            stop_text = f" {stop_text}"
-        self.hunt_stop_btn = tk.Button(
-            top,
-            text=stop_text,
+        # Stop Hunt Button - Icon 20px, Button 32px (red, disabled by default)
+        stop_tooltip = self._t("stop_hunt")
+        if self.lang == "vi":
+            stop_tooltip += "\n(Ctrl+F6)"
+        else:
+            stop_tooltip += "\n(Ctrl+F6)"
+        
+        self.hunt_stop_btn = _create_icon_btn_component(
+            parent=top,
+            icon_name='stop',
+            icon_fallback='⏹️',
+            icon_size=20,
+            button_size=32,
             command=self.on_hunt_stop,
-            state="disabled",
-            padx=16,
-            pady=6,
-            **stop_kwargs,
+            button_type='red',
+            tooltip_text=stop_tooltip,
+            state='disabled',
+            auto_hover_disabled=True  # Auto show forbidden icon/cursor on hover
         )
         self.hunt_stop_btn.pack(side="left")
+
+        # Separator before window controls
+        tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
+            side="left", fill="y", padx=12, pady=2
+        )
+
+        # Window Position Selectors (App + Game) - Hidden by default
+        if create_app_window_selector and create_game_window_selector:
+            # App window selector
+            self.app_window_selector = create_app_window_selector(
+                parent=top,
+                config_path="lib/data/hunt_config.json",
+                on_mode_change=self._on_app_window_mode_change
+            )
+            self.app_window_selector.pack(side="left", padx=(0, 8))
+            
+            # Game window selector
+            self.game_window_selector = create_game_window_selector(
+                parent=top,
+                config_path="lib/data/hunt_config.json",
+                on_mode_change=self._on_game_window_mode_change
+            )
+            self.game_window_selector.pack(side="left")
+            
+            # Hide both selectors by default (toggle with refresh button)
+            if hasattr(self.app_window_selector, 'hide'):
+                self.app_window_selector.hide()
+            if hasattr(self.game_window_selector, 'hide'):
+                self.game_window_selector.hide()
 
         # Store notebook reference for keyboard shortcuts
         self.notebook = ttk.Notebook(self)
@@ -1670,7 +1886,7 @@ Alternative Solutions:
 
         # Apply All Settings button (right side) - Using global green_light style with save icon
         # Optimized for: Negative Space, Hierarchy, Contrast Ratio (WCAG AA: 5.26:1)
-        from lib.ui.button_styles import get_button_config
+        from ui.helpers.button_styles import get_button_config
 
         apply_config = get_button_config("green_light")
 
@@ -2700,6 +2916,62 @@ Alternative Solutions:
         except Exception as e:
             print(f"Warning: Could not re-register hotkeys after mode change: {e}")
 
+    def _on_app_window_mode_change(self, mode: str):
+        """Handle app window positioning mode change."""
+        try:
+            # Apply mode to main app window
+            if mode == "topmost":
+                self.attributes("-topmost", True)
+                self.state("normal")
+            elif mode == "minimized":
+                self.attributes("-topmost", False)
+                self.iconify()
+            elif mode == "maximized":
+                self.attributes("-topmost", False)
+                self.state("zoomed")
+            else:  # normal
+                self.attributes("-topmost", False)
+                self.state("normal")
+            
+            # Update status
+            if hasattr(self, "hunt_status"):
+                mode_labels = {
+                    "normal": "Normal" if self.lang == "en" else "Bình thường",
+                    "topmost": "Always On Top" if self.lang == "en" else "Luôn ở trên",
+                    "minimized": "Minimized" if self.lang == "en" else "Thu nhỏ",
+                    "maximized": "Maximized" if self.lang == "en" else "Phóng to",
+                }
+                msg = f"App: {mode_labels.get(mode, mode)}"
+                self.hunt_status.set(msg)
+        except Exception as e:
+            print(f"[App Window] Error applying mode '{mode}': {e}")
+
+    def _on_game_window_mode_change(self, mode: str):
+        """Handle game window positioning mode change."""
+        try:
+            # Save to config
+            self.hunt_cfg["game_window_mode"] = mode
+            save_hunt_config(self.hunt_cfg)
+            
+            # Update status
+            if hasattr(self, "hunt_status"):
+                mode_labels = {
+                    "none": "None" if self.lang == "en" else "Không",
+                    "below": "Below App" if self.lang == "en" else "Dưới App",
+                    "above": "Above All" if self.lang == "en" else "Trên tất cả",
+                }
+                msg = f"Game: {mode_labels.get(mode, mode)}"
+                self.hunt_status.set(msg)
+            
+            # Apply immediately if hunt is not running
+            if not self.hunt_running:
+                if mode == "below":
+                    self.on_hunt_bring_front_below_app()
+                elif mode == "above":
+                    self.on_hunt_bring_front()
+        except Exception as e:
+            print(f"[Game Window] Error applying mode '{mode}': {e}")
+
     def _on_global_hotkey_toggle(self):
         """Handle enable/disable of global hotkeys checkbox.
 
@@ -2866,7 +3138,7 @@ Alternative Solutions:
 
         Sprint 19 Task #1: Library Manager Window
         """
-        from lib.ui.library_manager import LibraryManagerWindow
+        from ui.windows.library_manager import LibraryManagerWindow
 
         def on_library_changes(changes):
             """Handle changes from Library Manager."""
@@ -4114,9 +4386,9 @@ Alternative Solutions:
         # Store window items
         self.win_items = candidates
 
-        # Populate combobox
+        # Populate combobox (show only window titles without PID)
         self.win_combo["values"] = [
-            f"{w['title']}  [PID:{w['pid']}]" for w in candidates
+            w['title'] for w in candidates
         ]
 
         if not candidates:
@@ -4517,9 +4789,9 @@ Alternative Solutions:
         # Update hunt_selected
         self.hunt_selected = selected
 
-        # Update UI combobox
+        # Update UI combobox (show only window title without PID)
         if hasattr(self, "win_combo"):
-            self.win_combo["values"] = [f"{selected['title']}  [PID:{selected['pid']}]"]
+            self.win_combo["values"] = [selected['title']]
             self.win_combo.current(0)
             self.win_items = [selected]
 
@@ -4610,9 +4882,9 @@ Alternative Solutions:
                     "proc": None,  # Process name not saved in config
                 }
 
-                # Populate combobox with saved window
+                # Populate combobox with saved window (show only window title without PID)
                 if hasattr(self, "win_combo"):
-                    self.win_combo["values"] = [f"{window_title}  [PID:{window_pid}]"]
+                    self.win_combo["values"] = [window_title]
                     self.win_combo.current(0)
                     self.win_items = [self.hunt_selected]
 
@@ -4658,9 +4930,9 @@ Alternative Solutions:
             "proc": None,  # Process name not saved in config
         }
 
-        # Populate combobox with saved window
+        # Populate combobox with saved window (show only window title without PID)
         if hasattr(self, "win_combo"):
-            self.win_combo["values"] = [f"{window_title}  [PID:{window_pid}]"]
+            self.win_combo["values"] = [window_title]
             self.win_combo.current(0)
             self.win_items = [self.hunt_selected]
 
@@ -4966,6 +5238,73 @@ Alternative Solutions:
         except Exception as e:
             print(f"[Hotkeys] Error opening Vision Wizard: {e}")
 
+    def _on_monster_editor_hotkey(self):
+        """Callback for Monster Editor hotkey (Ctrl+Shift+M).
+
+        Opens Quick Monster Editor for rapid CRUD operations.
+        Always available regardless of UI mode.
+        """
+        try:
+            print("[Hotkeys] Monster Editor hotkey pressed")
+            
+            # Schedule Monster Editor to open in main thread
+            self.after(0, self._open_monster_editor)
+            
+        except Exception as e:
+            print(f"[Hotkeys] Error opening Monster Editor: {e}")
+
+    def _open_monster_editor(self):
+        """Open Quick Monster Editor dialog.
+        
+        Opens the quick monster editor for fast monster CRUD operations.
+        Uses singleton pattern to prevent multiple instances.
+        """
+        try:
+            print("[Monster Editor] Opening Quick Monster Editor...")
+            
+            # Import quick editor (lazy import to avoid circular dependencies)
+            try:
+                from ui.windows.quick_monster_editor import show_quick_monster_editor
+            except ImportError as ie:
+                print(f"[Monster Editor] Failed to import quick_monster_editor: {ie}")
+                messagebox.showerror(
+                    "Import Error",
+                    f"Could not load Monster Editor module:\n{ie}"
+                )
+                return
+            
+            # Show quick editor (singleton pattern handles existing instances)
+            editor = show_quick_monster_editor(
+                parent=self,
+                monster_id=None,  # None = create new monster
+                on_save=self._on_monster_saved
+            )
+            
+            print("[Monster Editor] Quick Monster Editor opened successfully")
+            
+        except Exception as e:
+            print(f"[Monster Editor] Error opening editor: {e}")
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror(
+                "Monster Editor Error",
+                f"Failed to open Monster Editor:\n{e}"
+            )
+
+    def _on_monster_saved(self, monster_id: str, monster_data: dict):
+        """Callback when monster is saved in Quick Editor.
+        
+        Args:
+            monster_id: ID of saved monster
+            monster_data: Monster data dictionary
+        """
+        try:
+            print(f"[Monster Editor] Monster saved: {monster_id}")
+            # TODO: Refresh monster list if needed
+            # TODO: Update library manager if open
+        except Exception as e:
+            print(f"[Monster Editor] Error in save callback: {e}")
+
     def _register_global_hotkeys(self):
         """Register global hotkeys (Ctrl+Shift+R/E) for hunt start/stop.
 
@@ -5054,12 +5393,14 @@ Alternative Solutions:
                 wizard_key = cfg.get("setup_wizard_key", "ctrl+shift+n")
                 library_key = cfg.get("library_manager_key", "ctrl+shift+l")
                 vision_key = cfg.get("vision_wizard_key", "ctrl+shift+v")  # Sprint 22
+                monster_key = cfg.get("monster_editor_key", "ctrl+shift+m")  # Monster Editor
 
                 seq_start = _to_tk_seq(start_key) or "<Control-Shift-R>"
                 seq_stop = _to_tk_seq(stop_key) or "<Control-Shift-E>"
                 seq_wiz = _to_tk_seq(wizard_key) or "<Control-Shift-N>"
                 seq_lib = _to_tk_seq(library_key) or "<Control-Shift-L>"
                 seq_vision = _to_tk_seq(vision_key) or "<Control-Shift-V>"  # Sprint 22
+                seq_monster = _to_tk_seq(monster_key) or "<Control-Shift-M>"  # Monster Editor
 
                 try:
                     # Unbind any previously-bound fallback sequences to avoid duplicates
@@ -5090,6 +5431,11 @@ Alternative Solutions:
                         seq_vision, lambda e: self._on_vision_wizard_hotkey(), add="+"
                     )
                     self._hotkey_fallback_bound.append(seq_vision)
+                    # Monster Editor fallback
+                    self.bind_all(
+                        seq_monster, lambda e: self._on_monster_editor_hotkey(), add="+"
+                    )
+                    self._hotkey_fallback_bound.append(seq_monster)
                     print(
                         f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}"
                     )
@@ -5115,6 +5461,7 @@ Alternative Solutions:
             wizard_key = hotkey_cfg.get("setup_wizard_key", "ctrl+shift+n")  # NEW
             library_key = hotkey_cfg.get("library_manager_key", "ctrl+shift+l")  # NEW
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")  # NEW Sprint 22
+            monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")  # NEW Monster Editor
 
             # Unregister old hotkeys first (in case of re-registration)
             self._unregister_global_hotkeys()
@@ -5169,6 +5516,15 @@ Alternative Solutions:
                 print(f"Failed to register vision hotkey '{vision_key}': {e}")
                 self._global_vision_hotkey = None
 
+            # NEW: Register Monster Editor hotkey (always active)
+            try:
+                self._global_monster_hotkey = keyboard.add_hotkey(
+                    monster_key, self._on_monster_editor_hotkey, suppress=False
+                )
+            except Exception as e:
+                print(f"Failed to register monster editor hotkey '{monster_key}': {e}")
+                self._global_monster_hotkey = None
+
             # Log successful registration
             registered = []
             if self._global_start_hotkey:
@@ -5181,6 +5537,8 @@ Alternative Solutions:
                 registered.append(f"Library={library_key}")
             if self._global_vision_hotkey:
                 registered.append(f"Vision={vision_key}")
+            if self._global_monster_hotkey:
+                registered.append(f"Monster={monster_key}")
 
             if registered:
                 print(f"Global hotkeys registered: {', '.join(registered)}")
@@ -5254,6 +5612,15 @@ Alternative Solutions:
                     print(f"Error unregistering vision hotkey: {e}")
                 finally:
                     self._global_vision_hotkey = None
+
+            # NEW: Unregister monster editor hotkey
+            if self._global_monster_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_monster_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering monster editor hotkey: {e}")
+                finally:
+                    self._global_monster_hotkey = None
 
         except Exception as e:
             print(f"Error in _unregister_global_hotkeys: {e}")
@@ -7318,7 +7685,7 @@ Alternative Solutions:
             btn_frame = tk.Frame(dialog)
             btn_frame.pack(fill="x", padx=10, pady=(0, 10))
 
-            from lib.ui.button_styles import get_button_config
+            from ui.helpers.button_styles import get_button_config
 
             tk.Button(
                 btn_frame,
@@ -8678,10 +9045,10 @@ Alternative Solutions:
         Uses singleton pattern - only one instance at a time.
         """
         try:
-            from ui.setup_wizard_vision import create_or_show_vision_wizard
+            from ui.windows.setup_wizard_vision import create_or_show_vision_wizard
             
             wizard = create_or_show_vision_wizard(
-                self,
+                self, # type: ignore
                 config_path=str(CONFIG_PATH),  # Use global CONFIG_PATH
                 on_close=self._on_vision_wizard_closed
             )
@@ -8768,17 +9135,623 @@ Alternative Solutions:
     def _toggle_overlay(self):
         """
         Toggle overlay display (Ctrl+Shift+O).
-        TODO Phase 5: Toggle overlay on/off.
+        Phase 5: Show/hide transparent overlay on game window.
         """
-        print("[Vision] Toggle overlay - TODO Phase 5")
-        messagebox.showinfo(
-            "Vision - Toggle Overlay",
-            "Overlay toggle will be available in Phase 5.\n\n"
-            "This will allow you to:\n"
-            "• Show/hide detection overlay\n"
-            "• See real-time template matching\n"
-            "• Display confidence scores"
+        print("[Vision] Toggle overlay - Starting...")
+        
+        try:
+            # Import PyWin32 overlay module (Phase 5 refactor)
+            try:
+                print("[Overlay] Attempting to import OverlayWindowPyWin32...")
+                from ui.windows.overlay_window import OverlayWindowPyWin32
+                print("[Overlay] ✅ Import successful!")
+            except ImportError as import_err:
+                # PyWin32 not installed - show translated error
+                print(f"[Overlay] ❌ ImportError caught: {import_err}")
+                print(f"[Overlay] Error type: {type(import_err)}")
+                import traceback
+                traceback.print_exc()
+                messagebox.showerror(
+                    self._t("overlay_missing_dependency_title"),
+                    self._t("overlay_missing_dependency_message")
+                )
+                self._overlay_enabled = False
+                return
+            except Exception as other_err:
+                # Other errors during import
+                print(f"[Overlay] ❌ Unexpected error during import: {other_err}")
+                import traceback
+                traceback.print_exc()
+                messagebox.showerror(
+                    self._t("error"),
+                    f"Cannot import overlay module:\n{other_err}"
+                )
+                self._overlay_enabled = False
+                return
+            
+            # Toggle state
+            self._overlay_enabled = not self._overlay_enabled
+            
+            if self._overlay_enabled:
+                # ========================================
+                # STEP 1: ALWAYS REFRESH LIVE POSITION FIRST
+                # ========================================
+                target_hwnd = self.hunt_cfg.get('window_hwnd')
+                window_bounds = None
+                
+                # Get CURRENT window position from LIVE game window (not from config cache)
+                if target_hwnd:
+                    try:
+                        from lib.system.window_manager import WindowManager
+                        wm = WindowManager()
+                        current_window = wm.get_window_info(target_hwnd)
+                        
+                        if current_window:
+                            # Update with LIVE position
+                            window_bounds = current_window.rect
+                            
+                            # Handle minimized window
+                            if current_window.is_minimized:
+                                print(f"[Overlay] ⚠️ Game is minimized, restoring...")
+                                wm.restore(target_hwnd)
+                                time.sleep(0.3)
+                                
+                                # Get updated position after restore
+                                current_window = wm.get_window_info(target_hwnd)
+                                if current_window:
+                                    window_bounds = current_window.rect
+                                    print(f"[Overlay] ✅ Window restored to: {window_bounds}")
+                            
+                            # Validate rect is not minimized position
+                            if window_bounds and (window_bounds.get('left', 0) < -30000 or window_bounds.get('top', 0) < -30000):
+                                print(f"[Overlay] ⚠️ Detected minimized rect, clearing: {window_bounds}")
+                                window_bounds = None
+                            
+                            if window_bounds:
+                                # Save LIVE position to config
+                                self.hunt_cfg['window_bounds'] = window_bounds
+                                save_hunt_config(self.hunt_cfg)
+                                print(f"[Overlay] ✅ Refreshed LIVE position: {window_bounds}")
+                        else:
+                            print(f"[Overlay] ⚠️ Could not get current window info for HWND:{target_hwnd}")
+                    except Exception as e:
+                        print(f"[Overlay] ❌ Error refreshing position: {e}")
+                
+                # ========================================
+                # STEP 2: AUTO-DETECT IF NO VALID POSITION
+                # ========================================
+                if window_bounds is None:
+                    print("[Overlay] No valid window position, attempting auto-detect...")
+                    
+                    # Try to find CABAL window
+                    try:
+                        from lib.system.window_manager import WindowManager
+                        wm = WindowManager()
+                        
+                        # Search for CABAL window
+                        windows = wm.list_windows()
+                        cabal_window = None
+                        
+                        for w in windows:
+                            if 'CABAL' in w.title.upper():
+                                cabal_window = w
+                                print(f"[Overlay] Found CABAL window: {w.title} [HWND:{w.hwnd}]")
+                                break
+                        
+                        if cabal_window:
+                            # Bring game window to foreground FIRST if minimized/hidden
+                            try:
+                                if cabal_window.is_minimized:
+                                    print(f"[Overlay] Game is minimized, restoring...")
+                                    wm.restore(cabal_window.hwnd)
+                                    time.sleep(0.3)  # Wait for window to restore
+                                    
+                                    # Get updated window info after restore
+                                    restored_window = wm.get_window_info(cabal_window.hwnd)
+                                    if restored_window:
+                                        cabal_window = restored_window
+                                        print(f"[Overlay] Window restored, new rect: {cabal_window.rect}")
+                                    else:
+                                        print(f"[Overlay] ⚠️ Could not get window info after restore")
+                                
+                                if not cabal_window.is_foreground:
+                                    print(f"[Overlay] Bringing game window to foreground...")
+                                    wm.set_foreground(cabal_window.hwnd)
+                                    print(f"[Overlay] ✅ Game window focused")
+                            except Exception as e:
+                                print(f"[Overlay] Failed to restore/foreground window: {e}")
+                            
+                            # Use detected window (after restore)
+                            window_bounds = cabal_window.rect
+                            target_hwnd = cabal_window.hwnd
+                            
+                            # Validate rect is not minimized position
+                            if window_bounds['left'] < -30000 or window_bounds['top'] < -30000:
+                                messagebox.showerror(
+                                    "Invalid Window Position",
+                                    f"Game window appears to be minimized or invalid.\n\n"
+                                    f"Current position: {window_bounds}\n\n"
+                                    f"Please restore the game window and try again.",
+                                    parent=self
+                                )
+                                self._overlay_enabled = False
+                                return
+                            
+                            # Save to config for next time
+                            self.hunt_cfg['window_bounds'] = window_bounds
+                            self.hunt_cfg['window_hwnd'] = target_hwnd
+                            self.hunt_cfg['window_title'] = cabal_window.title
+                            
+                            # save_hunt_config is already defined at module level (line 566)
+                            save_hunt_config(self.hunt_cfg)
+                            
+                            print(f"[Overlay] Auto-configured window: {cabal_window.title}")
+                                
+                        else:
+                            # Still no window found - show warning
+                            messagebox.showwarning(
+                                self._t("overlay_no_window_title"),
+                                self._t("overlay_no_window_message") + "\n\n💡 Tip: Open CABAL game window first!"
+                            )
+                            self._overlay_enabled = False
+                            return
+                            
+                    except Exception as e:
+                        print(f"[Overlay] Auto-detect failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        # Show original warning
+                        messagebox.showwarning(
+                            self._t("overlay_no_window_title"),
+                            self._t("overlay_no_window_message")
+                        )
+                        self._overlay_enabled = False
+                        return
+                
+                # ========================================
+                # STEP 3: VALIDATE WE HAVE VALID POSITION
+                # ========================================
+                if window_bounds is None:
+                    messagebox.showwarning(
+                        self._t("overlay_no_window_title"),
+                        self._t("overlay_no_window_message")
+                    )
+                    self._overlay_enabled = False
+                    return
+                
+                # ========================================
+                # STEP 4: CREATE OR UPDATE OVERLAY
+                # ========================================
+                # Get overlay config from hunt_cfg (or use defaults)
+                overlay_cfg = self.hunt_cfg.get('overlay', {})
+                alpha = float(overlay_cfg.get('alpha', 0.7))  # Default 70% for testing (more visible)
+                fps_limit = int(overlay_cfg.get('fps_limit', 15))
+                
+                # Create overlay if not exists
+                if self._overlay_window is None:
+                    print(f"[Overlay] Creating NEW overlay with alpha={alpha}, fps={fps_limit}")
+                    print(f"[Overlay] Target rect: {window_bounds}")
+                    print(f"[Overlay] Target HWND: {target_hwnd}")
+                    
+                    # Create PyWin32 overlay window
+                    self._overlay_window = OverlayWindowPyWin32(
+                        target_rect=window_bounds,
+                        alpha=alpha,
+                        fps_limit=fps_limit,
+                        enable_click_through=True
+                    )
+                    
+                    # Create window
+                    self._overlay_window.create()
+                    
+                    print(f"[Overlay] Window created with HWND: {self._overlay_window.hwnd}")
+                    print(f"[Overlay] {self._t('overlay_created').format(hwnd=target_hwnd, rect=window_bounds)}")
+                else:
+                    # Overlay already exists, just update position
+                    print(f"[Overlay] Overlay exists, updating to LIVE position: {window_bounds}")
+                    self._overlay_window.update_target_rect(window_bounds)
+                
+                # Show overlay
+                self._overlay_window.show()
+                
+                # ========================================
+                # PHASE 7: Initialize Monster Tracking
+                # ========================================
+                try:
+                    # Initialize VisionEngine if needed
+                    if self._vision_engine is None:
+                        from lib.vision.vision_engine import VisionEngine
+                        self._vision_engine = VisionEngine()
+                        print("[MonsterTracking] VisionEngine initialized")
+                    
+                    # Initialize ScreenCapture if needed
+                    if self._screen_capture is None:
+                        from lib.system.screen_capture import ScreenCapture
+                        self._screen_capture = ScreenCapture()
+                        print("[MonsterTracking] ScreenCapture initialized")
+                    
+                    # Initialize BotManager if needed
+                    if self._bot_manager is None:
+                        # Get configuration from hunt_cfg
+                        tracking_cfg = self.hunt_cfg.get('monster_tracking', {})
+                        stable_frames = int(tracking_cfg.get('stable_frames', 3))
+                        lost_timeout = float(tracking_cfg.get('lost_timeout', 3.0))
+                        auto_start = bool(tracking_cfg.get('auto_start_with_hunt', False))
+                        
+                        self._bot_manager = BotManager(
+                            vision_engine=self._vision_engine,
+                            screen_capture=self._screen_capture,
+                            stable_frames=stable_frames,
+                            lost_timeout=lost_timeout,
+                            enable_auto_start=auto_start
+                        )
+                        print(f"[MonsterTracking] BotManager initialized (stable_frames={stable_frames}, lost_timeout={lost_timeout})")
+                    
+                    # Start detection to create detector instance
+                    if not self._bot_manager.is_detection_running():
+                        tracking_cfg = self.hunt_cfg.get('monster_tracking', {})
+                        confidence = float(tracking_cfg.get('confidence_threshold', 0.7))
+                        
+                        success = self._bot_manager.start_detection(
+                            confidence_threshold=confidence,
+                            target_rect=window_bounds
+                        )
+                        if success:
+                            print(f"[MonsterTracking] Detection started (confidence={confidence})")
+                        else:
+                            print("[MonsterTracking] Failed to start detection")
+                    
+                    # Create OverlayController to connect detector → overlay
+                    # Only create if we have a detector instance
+                    if self._overlay_controller is None and self._bot_manager._detector is not None:
+                        # Get configuration
+                        tracking_cfg = self.hunt_cfg.get('monster_tracking', {})
+                        max_boxes = int(tracking_cfg.get('max_detections_display', 20))
+                        show_stats = bool(tracking_cfg.get('show_stats', True))
+                        stats_interval = float(tracking_cfg.get('stats_update_interval', 0.5))
+                        
+                        # Get window tracker if available
+                        window_tracker = getattr(self, '_window_tracker', None)
+                        
+                        self._overlay_controller = OverlayController(
+                            overlay=self._overlay_window,
+                            detector=self._bot_manager._detector,
+                            max_boxes=max_boxes,
+                            show_stats=show_stats,
+                            stats_update_interval=stats_interval,
+                            window_tracker=window_tracker
+                        )
+                        
+                        # Start controller to activate callbacks
+                        self._overlay_controller.start()
+                        print(f"[MonsterTracking] OverlayController started (max_boxes={max_boxes}, show_stats={show_stats})")
+                    
+                    print("[MonsterTracking] Monster tracking active")
+                    
+                except Exception as e:
+                    print(f"[MonsterTracking] Error initializing tracking: {e}")
+                    import traceback
+                    traceback.print_exc()
+                
+                # ALWAYS re-add test detection boxes to fix white screen issue
+                from ui.windows.overlay_window import DetectionBox
+                test_boxes = [
+                    DetectionBox(
+                        x=100, y=100, w=200, h=150,
+                        label="TEST OVERLAY - Visible?",
+                        color=(255, 0, 0),  # Red
+                        confidence=1.0
+                    ),
+                    DetectionBox(
+                        x=350, y=250, w=150, h=100,
+                        label="Detection Test",
+                        color=(0, 255, 0),  # Green
+                        confidence=0.95
+                    )
+                ]
+                self._overlay_window.update_detections(test_boxes)
+                print(f"[Overlay] Test detection boxes updated")
+                
+                # Start window tracker instead of position sync
+                self._start_overlay_window_tracker()
+                
+                # Update menu/config
+                self.hunt_cfg.setdefault('overlay', {})['enabled'] = True
+                save_hunt_config(self.hunt_cfg)
+                
+                print(f"[Overlay] {self._t('overlay_enabled')}")
+                
+            else:
+                # ========================================
+                # PHASE 7: Stop Monster Tracking
+                # ========================================
+                try:
+                    # Stop overlay controller
+                    if self._overlay_controller is not None:
+                        self._overlay_controller.stop()
+                        self._overlay_controller = None
+                        print("[MonsterTracking] OverlayController stopped")
+                    
+                    # Stop detection
+                    if self._bot_manager is not None:
+                        self._bot_manager.stop_detection()
+                        print("[MonsterTracking] Detection stopped")
+                    
+                except Exception as e:
+                    print(f"[MonsterTracking] Error stopping tracking: {e}")
+                
+                # Hide overlay
+                if self._overlay_window is not None:
+                    self._overlay_window.hide()
+                
+                # Stop window tracker
+                self._stop_overlay_window_tracker()
+                
+                # Update config
+                self.hunt_cfg.setdefault('overlay', {})['enabled'] = False
+                save_hunt_config(self.hunt_cfg)
+                
+                print(f"[Overlay] {self._t('overlay_disabled')}")
+                
+        except Exception as e:
+            print(f"[Overlay] Toggle error: {e}")
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror(
+                self._t("overlay_error_title"),
+                self._t("overlay_toggle_failed").format(error=str(e))
+            )
+            self._overlay_enabled = False
+    
+    def _start_overlay_window_tracker(self):
+        """Start real-time window tracker for overlay sync."""
+        if hasattr(self, '_window_tracker') and self._window_tracker and self._window_tracker.is_running():
+            return  # Already running
+        
+        target_hwnd = self.hunt_cfg.get('window_hwnd')
+        if target_hwnd is None:
+            print("[Overlay] No target hwnd for window tracker")
+            return
+        
+        try:
+            from ui.utils.window_tracker import WindowTracker, WindowState
+            
+            # Define callbacks for window changes
+            def on_position_change(rect):
+                try:
+                    if self._overlay_window:
+                        self._overlay_window.update_target_rect(rect)
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_position_change: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            def on_size_change(rect):
+                try:
+                    if self._overlay_window:
+                        self._overlay_window.update_target_rect(rect)
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_size_change: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            def on_visibility_change(visible):
+                try:
+                    if self._overlay_window:
+                        if visible:
+                            self._overlay_window.show()
+                        else:
+                            self._overlay_window.hide()
+                        print(f"[Overlay] Visibility: {visible}")
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_visibility_change: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            def on_state_change(state):
+                try:
+                    if state == WindowState.MINIMIZED:
+                        if self._overlay_window:
+                            self._overlay_window.hide()
+                    elif state == WindowState.NORMAL or state == WindowState.MAXIMIZED:
+                        if self._overlay_window and self._overlay_enabled:
+                            self._overlay_window.show()
+                    print(f"[Overlay] State: {state.value}")
+                except Exception as e:
+                    print(f"[Overlay] ❌ Error in on_state_change: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # Create and start tracker
+            self._window_tracker = WindowTracker(
+                target_hwnd=target_hwnd,
+                poll_rate=60,  # 60 FPS for smooth tracking
+                on_position_change=on_position_change,
+                on_size_change=on_size_change,
+                on_visibility_change=on_visibility_change,
+                on_state_change=on_state_change
+            )
+            self._window_tracker.start()
+            
+            print(f"[Overlay] Window tracker started (60 FPS)")
+            
+        except Exception as e:
+            print(f"[Overlay] Failed to start window tracker: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _stop_overlay_window_tracker(self):
+        """Stop window tracker."""
+        if hasattr(self, '_window_tracker') and self._window_tracker:
+            self._window_tracker.stop()
+            self._window_tracker = None
+            print("[Overlay] Window tracker stopped")
+    
+    def _start_overlay_position_sync(self):
+        """Start background thread to sync overlay position with game window."""
+        if self._overlay_update_thread is not None and self._overlay_update_thread.is_alive():
+            return  # Already running
+        
+        self._overlay_stop_event.clear()
+        
+        def position_sync_loop():
+            """Update overlay position at 15 FPS."""
+            try:
+                # Import WindowManager for position tracking
+                from lib.system.window_manager import WindowManager
+                
+                window_manager = WindowManager()
+                target_hwnd = self.hunt_cfg.get('window_hwnd')
+                
+                if target_hwnd is None:
+                    print("[Overlay] No target hwnd for position sync")
+                    return
+                
+                print(f"[Overlay] Position sync loop started for HWND: {target_hwnd}")
+                last_rect = None
+                update_count = 0
+                force_topmost_counter = 0  # Force topmost every 30 frames (~2 seconds)
+                
+                while not self._overlay_stop_event.is_set():
+                    try:
+                        # Get current window position
+                        window_info = window_manager.get_window_info(target_hwnd)
+                        
+                        if window_info is not None and self._overlay_window is not None:
+                            new_rect = window_info.rect
+                            
+                            # Check if window rect changed (position or size)
+                            if last_rect is None or (
+                                new_rect['left'] != last_rect['left'] or
+                                new_rect['top'] != last_rect['top'] or
+                                new_rect['width'] != last_rect['width'] or
+                                new_rect['height'] != last_rect['height']
+                            ):
+                                # Update overlay position/size
+                                self._overlay_window.update_target_rect(new_rect)
+                                last_rect = new_rect
+                                update_count += 1
+                                print(f"[Overlay] Update #{update_count}: pos=({new_rect['left']},{new_rect['top']}) size=({new_rect['width']}x{new_rect['height']})")
+                                
+                                # Force overlay to stay on top after position update
+                                try:
+                                    import win32gui, win32con
+                                    win32gui.SetWindowPos(
+                                        self._overlay_window.hwnd,
+                                        win32con.HWND_TOPMOST,
+                                        0, 0, 0, 0,
+                                        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE
+                                    )
+                                except Exception as e:
+                                    print(f"[Overlay] Failed to force topmost: {e}")
+                            
+                            # Periodically force topmost even if no position change
+                            force_topmost_counter += 1
+                            if force_topmost_counter >= 30:  # Every ~2 seconds
+                                force_topmost_counter = 0
+                                try:
+                                    import win32gui, win32con
+                                    win32gui.SetWindowPos(
+                                        self._overlay_window.hwnd,
+                                        win32con.HWND_TOPMOST,
+                                        0, 0, 0, 0,
+                                        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE
+                                    )
+                                except Exception:
+                                    pass
+                        
+                    except Exception as e:
+                        print(f"[Overlay] Position sync error: {e}")
+                    
+                    # 15 FPS = ~67ms per frame
+                    self._overlay_stop_event.wait(timeout=0.067)
+                    
+            except Exception as e:
+                print(f"[Overlay] Position sync loop error: {e}")
+        
+        self._overlay_update_thread = threading.Thread(
+            target=position_sync_loop,
+            name="OverlayPositionSync",
+            daemon=True
         )
+        self._overlay_update_thread.start()
+        print("[Overlay] Position sync started")
+    
+    def _stop_overlay_position_sync(self):
+        """Stop the overlay position sync thread."""
+        if self._overlay_update_thread is None:
+            return
+        
+        self._overlay_stop_event.set()
+        
+        if self._overlay_update_thread.is_alive():
+            self._overlay_update_thread.join(timeout=1.0)
+        
+        self._overlay_update_thread = None
+        print("[Overlay] Position sync stopped")
+    
+    def _open_overlay_settings(self):
+        """Open overlay settings dialog."""
+        print("[Overlay] Opening settings dialog")
+        
+        try:
+            from ui.utils.overlay_settings import OverlaySettingsDialog
+            
+            # Get current overlay config
+            overlay_config = self.hunt_cfg.get('overlay', {})
+            
+            def on_apply(new_config: Dict[str, Any]):
+                """Apply new overlay settings."""
+                print("[Overlay] Applying new settings")
+                
+                # Update hunt config
+                self.hunt_cfg['overlay'] = new_config
+                save_hunt_config(self.hunt_cfg)
+                
+                # Update existing overlay if active
+                if self._overlay_window is not None:
+                    try:
+                        # Update alpha
+                        alpha = float(new_config.get('alpha', 0.7))
+                        self._overlay_window.set_alpha(alpha)
+                        
+                        # Update FPS limit (requires recreating overlay)
+                        fps_limit = int(new_config.get('fps_limit', 15))
+                        if fps_limit != self._overlay_window.fps_limit:
+                            # Recreate overlay with new FPS
+                            was_visible = self._overlay_window.is_visible()
+                            self._overlay_window.destroy()
+                            self._overlay_window = None
+                            
+                            if was_visible:
+                                # Re-toggle to recreate
+                                self._overlay_enabled = False
+                                self._toggle_overlay()
+                        
+                        print(f"[Overlay] Settings updated: alpha={alpha}, fps={fps_limit}")
+                    except Exception as e:
+                        print(f"[Overlay] Error updating settings: {e}")
+                
+                messagebox.showinfo(
+                    self._t("overlay_settings_title"),
+                    self._t("overlay_settings_applied")
+                )
+            
+            # Show settings dialog
+            dialog = OverlaySettingsDialog(
+                parent=self,
+                current_config=overlay_config,
+                lang=self.lang,
+                on_apply=on_apply
+            )
+            dialog.show()
+            
+        except Exception as e:
+            print(f"[Overlay] Settings dialog error: {e}")
+            messagebox.showerror(
+                self._t("overlay_settings_error_title"),
+                self._t("overlay_settings_error").format(error=str(e))
+            )
 
     # -----------------
     def _t(self, key: str) -> str:
@@ -8809,6 +9782,15 @@ Alternative Solutions:
 
 def main():
     """Main entry point with single instance lock."""
+    # Check critical dependencies (pywin32 for overlay)
+    try:
+        import win32gui  # Test pywin32 availability
+    except ImportError:
+        # Show warning but don't block - overlay will show error when toggled
+        print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
+        print("   Run: pip install pywin32")
+        print("   Or: python scripts/check_dependencies.py --install")
+    
     # Create single instance lock (using mutex on Windows, file lock on Unix)
     instance_lock = SingleInstanceLock("CabalAutoHunt_v1")
 
@@ -8845,3 +9827,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+

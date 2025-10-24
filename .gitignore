@@ -123,12 +123,14 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
+.venv/
 env/
-venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Note: Keep 'venv/' (our main virtual environment) in git
+# Only ignore '.venv/' (alternate/incomplete venv)
 
 # Spyder project settings
 .spyderproject
@@ -166,6 +168,9 @@ cython_debug/
 
 # VSCode
 .vscode/
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
 *.code-workspace
 .history/
 
@@ -357,4 +362,20 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# ===============================================
+# LOGGING FILES (Monster Editor)
+# ===============================================
+# Log directories
+logs/
+log/
+*.log
+
+# Structured logs (JSONL format)
+*.jsonl
+!hunt_structured.example.jsonl
+
+# Hunt session logs
+hunt_*.log
+hunt_*.jsonl
 

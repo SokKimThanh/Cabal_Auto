@@ -1,6 +1,6 @@
 [
   {
-    "name": "ádasd",
+    "name": "Cọc Gỗ",
     "hp": 122,
     "damage_per_hit": 12,
     "priority": 1,
@@ -18,6 +18,8 @@
           "height": 230
         }
       }
-    ]
+    ],
+    "id": "fa8433ca-19fc-456e-96eb-b02182413000",
+    "level": 1
   }
 ]

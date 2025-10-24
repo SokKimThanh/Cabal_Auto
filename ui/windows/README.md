@@ -1,0 +1,44 @@
+# UI Windows
+
+Main window and dialog classes for the Cabal Auto Manager application.
+
+## Modules
+
+### auto_hunt.py
+Auto hunt window for managing hunt configuration and execution.
+
+### library_manager.py
+Library manager dialog for managing monsters and skills libraries.
+
+### overlay_window.py
+Overlay window for displaying hunt information on top of the game.
+
+### quick_monster_editor.py
+Quick monster editor dialog (Ctrl+Shift+M) for fast monster editing.
+
+### setup_wizard.py
+Setup wizard window for first-time configuration.
+
+### setup_wizard_vision.py
+Vision setup wizard for configuring detection regions.
+
+### template_matcher.py
+Template matcher dialog for testing and adjusting template matching.
+
+## Migration from ui/ and lib/ui
+
+All window modules have been consolidated into `ui/windows/` for better organization.
+
+**Old imports:**
+```python
+from ui.auto_hunt import AutoHuntWindow
+from ui.quick_monster_editor import QuickMonsterEditor
+from lib.ui.library_manager import LibraryManager
+```
+
+**New imports:**
+```python
+from ui.windows.auto_hunt import AutoHuntWindow
+from ui.windows.quick_monster_editor import QuickMonsterEditor
+from ui.windows.library_manager import LibraryManager
+```
