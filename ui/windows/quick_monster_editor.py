@@ -246,10 +246,14 @@ class QuickMonsterEditor(tk.Toplevel):
         self.browse_button: Optional[tk.Button] = None
         self.delete_template_button: Optional[tk.Button] = None
         self.test_template_button: Optional[tk.Button] = None
-        # Legacy widgets (from quick editor, may be removed later)
-        self.progress_label: Optional[tk.Label] = None
+        
+        # Top bar widgets
         self.save_button: Optional[tk.Button] = None
         self.cancel_button: Optional[tk.Button] = None
+        self.status_badge: Optional[tk.Label] = None
+        
+        # Legacy widgets (from quick editor, may be removed later)
+        self.progress_label: Optional[tk.Label] = None
         self.capture_button: Optional[tk.Button] = None
         self.test_button: Optional[tk.Button] = None
         self.threshold_scale: Optional[tk.Scale] = None
@@ -324,32 +328,41 @@ class QuickMonsterEditor(tk.Toplevel):
         self.set_dirty(value)
     
     def _update_dirty_state_ui(self) -> None:
-        """Update status label and Save button based on dirty state."""
-        if not hasattr(self, 'status_label') or self.status_label is None:
-            return
+        """Update status badge and Save button based on dirty state."""
+        # Update status badge
+        if self.status_badge:
+            if self.is_dirty:
+                # Orange badge for unsaved
+                self.status_badge.config(
+                    text=i18n_t('badge_unsaved', ns='monster_editor', default='Unsaved'),
+                    bg='#FF8C00',  # Orange
+                    fg='white'
+                )
+            else:
+                # Green badge for saved
+                self.status_badge.config(
+                    text=i18n_t('badge_saved', ns='monster_editor', default='Saved'),
+                    bg='#28A745',  # Green
+                    fg='white'
+                )
         
-        if self.is_dirty:
-            # Show unsaved status
-            status_text = i18n_t('status_unsaved', ns='monster_editor', default='Unsaved changes')
-            self.status_label.config(text=f"● {status_text}", fg=UI.COLOR_WARNING)
-            if self.save_button is not None:
-                # Enable save button with icon
-                set_button_enabled(
-                    self.save_button, 
-                    enabled=True,
-                    tooltip='Save changes' if get_lang() == 'en' else 'Lưu thay đổi'
-                )
-        else:
-            # Show saved status
-            status_text = i18n_t('status_saved', ns='monster_editor', default='All saved')
-            self.status_label.config(text=f"✓ {status_text}", fg=UI.COLOR_ACCENT)
-            if self.save_button is not None:
-                # Disable save button - icon auto-changes to forbidden
-                set_button_enabled(
-                    self.save_button,
-                    enabled=False,
-                    tooltip='No changes to save' if get_lang() == 'en' else 'Không có thay đổi để lưu'
-                )
+        # Update Save button state
+        if self.save_button:
+            if self.is_dirty:
+                # Enable save button
+                self.save_button.config(state='normal')
+            else:
+                # Disable save button (auto hover shows prohibition icon)
+                self.save_button.config(state='disabled')
+        
+        # Legacy: Update old status label if exists
+        if hasattr(self, 'status_label') and self.status_label is not None:
+            if self.is_dirty:
+                status_text = i18n_t('status_unsaved', ns='monster_editor', default='Unsaved changes')
+                self.status_label.config(text=f"● {status_text}", fg=UI.COLOR_WARNING)
+            else:
+                status_text = i18n_t('status_saved', ns='monster_editor', default='All saved')
+                self.status_label.config(text=f"✓ {status_text}", fg=UI.COLOR_ACCENT)
     
     def _flash_save_success(self) -> None:
         """Flash status label to indicate save success (subtle feedback)."""
@@ -553,7 +566,20 @@ class QuickMonsterEditor(tk.Toplevel):
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
         button_frame.pack(side='right', padx=15, pady=15)
         
-        # Save button - icon only, no text
+        # Status badge (shows saved/unsaved state)
+        self.status_badge = tk.Label(
+            button_frame,
+            text=i18n_t('badge_saved', ns='monster_editor', default='Saved'),
+            font=UI.FONT_SMALL,
+            fg='white',
+            bg='#28A745',  # Green for saved
+            padx=8,
+            pady=2,
+            relief='flat'
+        )
+        self.status_badge.pack(side='left', padx=(0, 10))
+        
+        # Save button - icon only, with auto disabled hover
         self.save_button = create_icon_button(
             button_frame,
             icon_name='save',
@@ -563,10 +589,14 @@ class QuickMonsterEditor(tk.Toplevel):
             button_type='green_light',
             variant='compact',
             width=16,
+            auto_hover_disabled=True,  # Show prohibition when disabled
             tooltip_key='tooltip_save',
             tooltip_ns='monster_editor'
         )
         self.save_button.pack(side='left', padx=5)
+        
+        # Initially disable save button (no changes)
+        self.save_button.config(state='disabled')
         
         # Cancel button - icon only, no text
         self.cancel_button = create_icon_button(
