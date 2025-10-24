@@ -1063,7 +1063,7 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_fallback='📸',
             icon_size=16,
             text=capture_text,
-            command=lambda: None,  # Will be bound later
+            command=self._capture_template,
             button_type='blue',
             variant='medium',
             width=18,
@@ -1081,7 +1081,7 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_fallback='📂',
             icon_size=16,
             text=browse_text,
-            command=lambda: None,  # Will be bound later
+            command=self._browse_template_image,
             button_type='refresh',  # Gray neutral style
             variant='medium',
             width=18,
@@ -1099,7 +1099,7 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_fallback='🗑️',
             icon_size=16,
             text=delete_text,
-            command=lambda: None,  # Will be bound later
+            command=self._delete_template,
             button_type='red',
             variant='medium',
             width=18,
@@ -1117,7 +1117,7 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_fallback='🧪',
             icon_size=16,
             text=test_text,
-            command=lambda: None,  # Will be bound later
+            command=self._test_template_recognition,
             button_type='blue',
             variant='medium',
             width=18,
@@ -2071,6 +2071,15 @@ class QuickMonsterEditor(tk.Toplevel):
 
     # ========== Template Management Methods (Library Manager functions) ==========
     
+    def _find_monster_by_id(self, monster_id: str) -> Optional[Dict[str, Any]]:
+        """Find monster by ID from self.monsters list."""
+        if not monster_id or not self.monsters:
+            return None
+        for monster in self.monsters:
+            if monster.get('id') == monster_id:
+                return monster
+        return None
+    
     def _sanitize_filename(self, name: str) -> str:
         """Sanitize a string for use as a filename."""
         # Remove invalid filename characters
@@ -2078,43 +2087,41 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def _capture_template(self) -> None:
         """Capture template image from a selected screen region and attach to current monster."""
-        if not self.selected_monster_id:
+        if not self.current_monster_id:
             messagebox.showwarning(
-                i18n_t('warning_title', ns='monster_editor', default='Warning'),
-                i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster first.')
+                'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
             )
             return
         
         # Check PIL availability
         if not PIL_AVAILABLE or ImageGrab is None:
-            message = i18n_t(
-                'msg_pillow_required', 
-                ns='monster_editor', 
-                default='This feature requires Pillow. Please install with:\n\npip install pillow'
-            )
             messagebox.showerror(
-                i18n_t('error_pillow_title', ns='monster_editor', default='Pillow Required'),
-                message
+                'Pillow Required' if get_lang() == 'en' else 'Cần Pillow',
+                'This feature requires Pillow. Please install with:\n\npip install pillow' if get_lang() == 'en'
+                else 'Tính năng này cần Pillow. Vui lòng cài đặt bằng:\n\npip install pillow'
             )
             return
         
-        # Hide our window to capture cleanly
+        # Find monster
+        monster = self._find_monster_by_id(self.current_monster_id)
+        if not monster:
+            return
+        
+        # Hide window and capture region
         try:
             self.withdraw()
             self.update_idletasks()
-            import time
             time.sleep(0.15)
         except Exception:
             pass
         
-        # Region selection overlay
         try:
             overlay = self._RegionCaptureOverlay(self)
             bbox = overlay.show_modal()
-        except Exception as e:
+        except Exception:
             bbox = None
         finally:
-            # Restore window
             try:
                 self.deiconify()
                 self.lift()
@@ -2123,30 +2130,22 @@ class QuickMonsterEditor(tk.Toplevel):
                 pass
         
         if not bbox:
-            # User canceled or invalid selection
             return
         
-        # Capture and save
+        # Capture image
         try:
             img = ImageGrab.grab(bbox=bbox)
         except Exception as e:
             messagebox.showerror(
-                i18n_t('error_capture_failed_title', ns='monster_editor', default='Capture Failed'),
-                f"Error during capture: {e}"
+                'Capture Failed' if get_lang() == 'en' else 'Chụp Thất Bại',
+                f"Error: {e}"
             )
             return
         
-        # Build save path - use assets/images/monsters
-        monster = self._find_monster_by_id(self.selected_monster_id)
-        if not monster:
-            return
-        
+        # Save image
         base = self._sanitize_filename(monster.get('name', 'monster'))
-        import time
         ts = int(time.time())
         filename = f"{base}_capture_{ts}.png"
-        
-        # Use Path for assets directory
         assets_dir = Path("assets/images/monsters")
         assets_dir.mkdir(parents=True, exist_ok=True)
         save_path = assets_dir / filename
@@ -2155,59 +2154,46 @@ class QuickMonsterEditor(tk.Toplevel):
             img.save(save_path)
         except Exception as e:
             messagebox.showerror(
-                i18n_t('error_save_failed_title', ns='monster_editor', default='Save Failed'),
-                f"Cannot save image: {e}"
+                'Save Failed' if get_lang() == 'en' else 'Lưu Thất Bại',
+                f"Error: {e}"
             )
             return
         
-        # Append to monster templates with relative path
-        tmpl = {
-            'name': filename,
-            'path': f'assets/images/monsters/{filename}',
-            'threshold': 0.85,
-        }
-        templates = monster.setdefault('templates', [])
-        templates.append(tmpl)
-        
-        # Mark as modified
+        # Add to templates
+        tmpl = {'name': filename, 'path': f'assets/images/monsters/{filename}', 'threshold': 0.85}
+        monster.setdefault('templates', []).append(tmpl)
         self.has_unsaved_changes = True
         
-        # Refresh Template tab
-        self._populate_template_tab(monster)
+        # Refresh template list
+        self._refresh_template_list()
         
-        # Notify
         messagebox.showinfo(
-            i18n_t('msg_captured_title', ns='monster_editor', default='Captured'),
-            i18n_t('msg_captured_success', ns='monster_editor', default='Template captured and saved.')
+            'Captured' if get_lang() == 'en' else 'Đã Chụp',
+            'Template captured and saved.' if get_lang() == 'en' else 'Đã chụp và lưu template.'
         )
     
     def _browse_template_image(self) -> None:
         """Browse for template image file and add to current monster."""
-        if not self.selected_monster_id:
+        if not self.current_monster_id:
             messagebox.showwarning(
-                i18n_t('warning_title', ns='monster_editor', default='Warning'),
-                i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster first.')
+                'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
             )
             return
         
         file_path = filedialog.askopenfilename(
-            title=i18n_t('title_select_template', ns='monster_editor', default='Select Template Image'),
-            filetypes=[
-                ('Image files', '*.png *.jpg *.jpeg *.bmp'),
-                ('All files', '*.*')
-            ]
+            title='Select Template Image' if get_lang() == 'en' else 'Chọn Ảnh Template',
+            filetypes=[('Image files', '*.png *.jpg *.jpeg *.bmp'), ('All files', '*.*')]
         )
         
         if not file_path:
             return
         
-        # Find monster
-        monster = self._find_monster_by_id(self.selected_monster_id)
+        monster = self._find_monster_by_id(self.current_monster_id)
         if not monster:
             return
         
-        # Copy file to assets/images/monsters with unique name
-        import time
+        # Copy file to assets directory
         import shutil
         filename = Path(file_path).name
         base_name = Path(filename).stem
@@ -2223,53 +2209,40 @@ class QuickMonsterEditor(tk.Toplevel):
             shutil.copy2(file_path, dest_path)
         except Exception as e:
             messagebox.showerror(
-                i18n_t('error_copy_failed_title', ns='monster_editor', default='Copy Failed'),
-                f"Cannot copy file: {e}"
+                'Copy Failed' if get_lang() == 'en' else 'Sao Chép Thất Bại',
+                f"Error: {e}"
             )
             return
         
-        # Add to monster templates
-        tmpl = {
-            'name': new_filename,
-            'path': f'assets/images/monsters/{new_filename}',
-            'threshold': 0.85,
-        }
-        templates = monster.setdefault('templates', [])
-        templates.append(tmpl)
-        
-        # Mark as modified
+        # Add to templates
+        tmpl = {'name': new_filename, 'path': f'assets/images/monsters/{new_filename}', 'threshold': 0.85}
+        monster.setdefault('templates', []).append(tmpl)
         self.has_unsaved_changes = True
         
-        # Refresh Template tab
-        self._populate_template_tab(monster)
+        # Refresh template list
+        self._refresh_template_list()
         
-        # Notify
         messagebox.showinfo(
-            i18n_t('msg_added_title', ns='monster_editor', default='Added'),
-            i18n_t('msg_template_added', ns='monster_editor', default='Template added successfully.')
+            'Added' if get_lang() == 'en' else 'Đã Thêm',
+            'Template added successfully.' if get_lang() == 'en' else 'Đã thêm template thành công.'
         )
     
     def _delete_template(self) -> None:
         """Delete selected template (with confirmation)."""
-        if not self.selected_monster_id:
+        if not self.current_monster_id or not self.template_listbox:
             return
         
-        # Get selection from template tree
-        if not self.template_tree:
-            return
-        selection = self.template_tree.selection()
+        # Get selection
+        selection = self.template_listbox.curselection()
         if not selection:
             messagebox.showwarning(
-                i18n_t('warning_title', ns='monster_editor', default='Warning'),
-                i18n_t('warning_no_template_selected', ns='monster_editor', default='Please select a template to delete.')
+                'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
             )
             return
         
-        # Get template index
-        item = selection[0]
-        idx = self.template_tree.index(item)
-        
-        monster = self._find_monster_by_id(self.selected_monster_id)
+        idx = selection[0]
+        monster = self._find_monster_by_id(self.current_monster_id)
         if not monster:
             return
         
@@ -2279,59 +2252,45 @@ class QuickMonsterEditor(tk.Toplevel):
         
         template = templates[idx]
         
-        # Confirm deletion
+        # Confirm
         response = messagebox.askyesno(
-            i18n_t('confirm_delete_template_title', ns='monster_editor', default='Confirm Delete Template'),
-            f"{i18n_t('confirm_delete_template_message', ns='monster_editor', default='Are you sure you want to delete this template?')}\n\n{template.get('name', 'Unknown')}"
+            'Confirm Delete' if get_lang() == 'en' else 'Xác Nhận Xóa',
+            f"Delete template '{template.get('name', 'Unknown')}'?" if get_lang() == 'en'
+            else f"Xóa template '{template.get('name', 'Unknown')}'?"
         )
         
-        if not response:
-            return
-        
-        # Remove from list
-        del templates[idx]
-        
-        # Mark as modified
-        self.has_unsaved_changes = True
-        
-        # Refresh Template tab
-        self._populate_template_tab(monster)
-        
-        # Notify
-        messagebox.showinfo(
-            i18n_t('msg_deleted_title', ns='monster_editor', default='Deleted'),
-            i18n_t('msg_template_removed', ns='monster_editor', default='Template removed successfully.')
-        )
+        if response:
+            del templates[idx]
+            self.has_unsaved_changes = True
+            self._refresh_template_list()
+            messagebox.showinfo(
+                'Deleted' if get_lang() == 'en' else 'Đã Xóa',
+                'Template removed successfully.' if get_lang() == 'en' else 'Đã xóa template thành công.'
+            )
     
     def _test_template_recognition(self) -> None:
-        """Test match for current template on screen; minimize app to avoid covering game."""
-        if not self.selected_monster_id:
+        """Test match for current template on screen."""
+        if not self.current_monster_id or not self.template_listbox:
             return
         
-        # Check if template_matcher is available
         if locate_template is None:
             messagebox.showerror(
-                i18n_t('error_title', ns='monster_editor', default='Error'),
-                i18n_t('error_template_matcher_unavailable', ns='monster_editor', default='template_matcher not available')
+                'Error' if get_lang() == 'en' else 'Lỗi',
+                'template_matcher not available' if get_lang() == 'en' else 'template_matcher không khả dụng'
             )
             return
         
-        # Get selected template from tree
-        if not self.template_tree:
-            return
-        selection = self.template_tree.selection()
+        # Get selection
+        selection = self.template_listbox.curselection()
         if not selection:
             messagebox.showinfo(
-                i18n_t('info_title', ns='monster_editor', default='Info'),
-                i18n_t('info_no_template_selected', ns='monster_editor', default='Please select a template to test.')
+                'Info' if get_lang() == 'en' else 'Thông báo',
+                'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
             )
             return
         
-        # Get template data
-        item = selection[0]
-        idx = self.template_tree.index(item)
-        
-        monster = self._find_monster_by_id(self.selected_monster_id)
+        idx = selection[0]
+        monster = self._find_monster_by_id(self.current_monster_id)
         if not monster:
             return
         
@@ -2345,21 +2304,19 @@ class QuickMonsterEditor(tk.Toplevel):
         
         if not path:
             messagebox.showinfo(
-                i18n_t('info_title', ns='monster_editor', default='Info'),
-                i18n_t('info_no_template_path', ns='monster_editor', default='Template has no path.')
+                'Info' if get_lang() == 'en' else 'Thông báo',
+                'Template has no path.' if get_lang() == 'en' else 'Template không có đường dẫn.'
             )
             return
         
-        # Minimize to avoid covering game
+        # Minimize and test
         try:
             self.iconify()
         except Exception:
             pass
         self.update()
-        import time
         time.sleep(0.4)
         
-        # Run template matching
         try:
             box, conf = locate_template(path, region=None, threshold=threshold, method='auto')
         except Exception as exc:
@@ -2368,10 +2325,7 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.lift()
             except Exception:
                 pass
-            messagebox.showerror(
-                i18n_t('error_title', ns='monster_editor', default='Error'),
-                str(exc)
-            )
+            messagebox.showerror('Error' if get_lang() == 'en' else 'Lỗi', str(exc))
             return
         
         # Restore window
@@ -2386,18 +2340,27 @@ class QuickMonsterEditor(tk.Toplevel):
             x = int(box[0] + box[2] // 2)
             y = int(box[1] + box[3] // 2)
             if conf is None:
-                msg = i18n_t('msg_test_found_at', ns='monster_editor', default='Match found at ({x}, {y})').format(x=x, y=y)
+                msg = f"Match found at ({x}, {y})" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y})"
             else:
-                msg = i18n_t('msg_test_found_conf', ns='monster_editor', default='Match found at ({x}, {y}) - Confidence: {conf:.2f}').format(x=x, y=y, conf=conf)
-            messagebox.showinfo(
-                i18n_t('title_test_recognition', ns='monster_editor', default='Test Recognition'),
-                msg
-            )
+                msg = f"Match found at ({x}, {y}) - Confidence: {conf:.2f}" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y}) - Độ tin cậy: {conf:.2f}"
+            messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', msg)
         else:
-            messagebox.showinfo(
-                i18n_t('title_test_recognition', ns='monster_editor', default='Test Recognition'),
-                i18n_t('msg_test_failed', ns='monster_editor', default='No match found')
-            )
+            messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', 'No match found' if get_lang() == 'en' else 'Không tìm thấy')
+    
+    def _refresh_template_list(self) -> None:
+        """Refresh template listbox with current monster's templates."""
+        if not self.template_listbox:
+            return
+        
+        self.template_listbox.delete(0, tk.END)
+        
+        if self.current_monster_id:
+            monster = self._find_monster_by_id(self.current_monster_id)
+            if monster:
+                templates = monster.get('templates', [])
+                for tmpl in templates:
+                    name = tmpl.get('name', 'Unknown')
+                    self.template_listbox.insert(tk.END, name)
     
     # Inner class for region capture overlay
     class _RegionCaptureOverlay(tk.Toplevel):
