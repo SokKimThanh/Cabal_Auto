@@ -201,6 +201,10 @@ class QuickMonsterEditor(tk.Toplevel):
         self.result_queue: queue.Queue = queue.Queue()
         self.is_working = False
         
+        # Window position selectors (created in _setup_ui)
+        self.app_mode_selector: Any = None  # WindowPositionSelector
+        self.game_mode_selector: Any = None  # WindowPositionSelector
+        
         # Data
         self.monster_data: Dict[str, Any] = {
             'name': '',
@@ -645,7 +649,7 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.add_monster_button.pack(side='top', fill='x', pady=(0, 5))
         
-        # Delete Monster button - using component
+        # Delete Monster button - using component with auto disabled hover
         delete_text = i18n_t('btn_delete', ns='monster_editor', default='Delete')
         self.delete_monster_button = create_icon_button(
             button_frame,
@@ -656,10 +660,14 @@ class QuickMonsterEditor(tk.Toplevel):
             command=self._on_delete_monster,
             button_type='red',
             variant='medium',
+            auto_hover_disabled=True,  # Show prohibition icon when disabled
             tooltip_key='tooltip_delete_monster',
             tooltip_ns='monster_editor'
         )
         self.delete_monster_button.pack(side='top', fill='x', pady=(0, 5))
+        
+        # Initially disable delete button (no selection)
+        self.delete_monster_button.config(state='disabled')
         
         # Initial load
         self._refresh_monster_list()
@@ -1461,54 +1469,104 @@ class QuickMonsterEditor(tk.Toplevel):
         if self.monster_listbox is None:
             return
         
-        # Clear Treeview
-        for item in self.monster_listbox.get_children():
-            self.monster_listbox.delete(item)
-        
-        # Load monsters if not already loaded
-        if not self.monsters:
-            self._load_monsters()
-        
-        # Populate Treeview with 2 columns: icon + name
-        for idx, monster in enumerate(self.monsters):
-            name = monster.get('name', 'Unnamed')
-            level = monster.get('level', 1)
-            icon = '👹'  # Monster emoji as icon
-            display_name = f"{name} (Lv.{level})"
+        # Handle Treeview vs Listbox
+        if isinstance(self.monster_listbox, ttk.Treeview):
+            # Clear Treeview
+            for item in self.monster_listbox.get_children():
+                self.monster_listbox.delete(item)
             
-            # Insert with monster id as item id for easy lookup
-            item_id = monster.get('id', str(idx))
-            self.monster_listbox.insert('', 'end', iid=item_id, values=(icon, display_name))
-        
-        # Select current monster if editing
-        if self.current_monster_id:
-            try:
-                self.monster_listbox.selection_set(self.current_monster_id)
-                self.monster_listbox.see(self.current_monster_id)
-            except:
-                pass  # Item not found
+            # Load monsters if not already loaded
+            if not self.monsters:
+                self._load_monsters()
+            
+            # Populate Treeview with 2 columns: icon + name
+            for idx, monster in enumerate(self.monsters):
+                name = monster.get('name', 'Unnamed')
+                level = monster.get('level', 1)
+                icon = '👹'  # Monster emoji as icon
+                display_name = f"{name} (Lv.{level})"
+                
+                # Insert with monster id as item id for easy lookup
+                item_id = monster.get('id', str(idx))
+                self.monster_listbox.insert('', 'end', iid=item_id, values=(icon, display_name))
+            
+            # Select current monster if editing
+            if self.current_monster_id:
+                try:
+                    self.monster_listbox.selection_set(self.current_monster_id)
+                    self.monster_listbox.see(self.current_monster_id)
+                except:
+                    pass  # Item not found
+        else:
+            # Legacy Listbox support
+            self.monster_listbox.delete(0, tk.END)
+            
+            if not self.monsters:
+                self._load_monsters()
+            
+            for idx, monster in enumerate(self.monsters):
+                name = monster.get('name', 'Unnamed')
+                level = monster.get('level', 1)
+                display_name = f"👹 {name} (Lv.{level})"
+                self.monster_listbox.insert(tk.END, display_name)
+            
+            # Select current monster if editing
+            if self.current_monster_id:
+                for idx, monster in enumerate(self.monsters):
+                    if monster.get('id') == self.current_monster_id:
+                        self.monster_listbox.selection_set(idx)
+                        self.monster_listbox.see(idx)
+                        break
     
     def _on_monster_select(self, event: Any) -> None:
         """Handle monster selection from Treeview."""
         if self.monster_listbox is None:
             return
         
-        # Get selected item (Treeview uses selection() instead of curselection())
-        selection = self.monster_listbox.selection()
-        if not selection:
-            return
-        
-        # Get the item id (which is the monster id)
-        selected_id = selection[0]
-        self.current_monster_id = selected_id
-        
-        # Find monster by id
-        for monster in self.monsters:
-            if monster.get('id') == selected_id:
-                # Populate form with monster data
+        # Handle Treeview vs Listbox
+        if isinstance(self.monster_listbox, ttk.Treeview):
+            # Get selected item (Treeview uses selection() instead of curselection())
+            selection = self.monster_listbox.selection()
+            if not selection:
+                # Disable delete button when no selection
+                if self.delete_monster_button:
+                    self.delete_monster_button.config(state='disabled')
+                return
+            
+            # Enable delete button when has selection
+            if self.delete_monster_button:
+                self.delete_monster_button.config(state='normal')
+            
+            # Get the item id (which is the monster id)
+            selected_id = selection[0]
+            self.current_monster_id = selected_id
+            
+            # Find monster by id
+            for monster in self.monsters:
+                if monster.get('id') == selected_id:
+                    # Populate form with monster data
+                    self._populate_info_form(monster)
+                    print(f"[MonsterEditor] Selected monster: {monster.get('name')}")
+                    break
+        else:
+            # Legacy Listbox support
+            selection_idx = self.monster_listbox.curselection()
+            if not selection_idx:
+                # Disable delete button when no selection
+                if self.delete_monster_button:
+                    self.delete_monster_button.config(state='disabled')
+                return
+            
+            # Enable delete button when has selection
+            if self.delete_monster_button:
+                self.delete_monster_button.config(state='normal')
+            
+            index = selection_idx[0]
+            if 0 <= index < len(self.monsters):
+                monster = self.monsters[index]
+                self.current_monster_id = monster.get('id')
                 self._populate_info_form(monster)
                 print(f"[MonsterEditor] Selected monster: {monster.get('name')}")
-                break
     
     def _on_add_monster(self) -> None:
         """Handle add monster button click."""
@@ -1551,46 +1609,81 @@ class QuickMonsterEditor(tk.Toplevel):
         if self.monster_listbox is None:
             return
         
-        selection = self.monster_listbox.curselection()
-        if not selection:
-            self._show_warning(
-                'No Selection',
-                i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster to delete.')
-            )
-            return
-        
-        index = selection[0]
-        if 0 <= index < len(self.monsters):
-            monster = self.monsters[index]
-            
-            # Confirm deletion
-            confirm = self._ask_yes_no(
-                'Confirm Deletion',
-                i18n_t(
-                    'confirm_delete_monster',
-                    ns='monster_editor',
-                    default=f"Are you sure you want to delete '{monster.get('name', 'Unnamed')}'?"
+        # Handle Treeview vs Listbox
+        if isinstance(self.monster_listbox, ttk.Treeview):
+            selection = self.monster_listbox.selection()
+            if not selection:
+                self._show_warning(
+                    'No Selection',
+                    i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster to delete.')
                 )
-            )
+                return
             
-            if confirm:
-                # Delete monster
-                deleted_id = monster.get('id')
-                self.monsters.pop(index)
-                self.is_dirty = True
-                
-                # Clear form and current selection if deleted monster was selected
-                if self.current_monster_id == deleted_id:
-                    self.current_monster_id = None
-                    self._clear_info_form()
-                
-                # Refresh listbox
-                self._refresh_monster_list()
-                
-                # Update dirty state UI
-                self._update_dirty_state_ui()
-                
-                print(f"[MonsterEditor] Deleted monster: {monster.get('name')}")
+            # Get selected item values
+            item_id = selection[0]
+            values = self.monster_listbox.item(item_id, 'values')
+            if not values or len(values) < 2:
+                return
+            
+            # Find monster by name
+            monster_name = values[1]  # Column 1 is name
+            monster = None
+            monster_index = -1
+            for idx, m in enumerate(self.monsters):
+                if m.get('name') == monster_name:
+                    monster = m
+                    monster_index = idx
+                    break
+            
+            if monster is None or monster_index < 0:
+                return
+        else:
+            # Legacy Listbox support
+            selection_idx = self.monster_listbox.curselection()
+            if not selection_idx:
+                self._show_warning(
+                    'No Selection',
+                    i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster to delete.')
+                )
+                return
+            
+            monster_index = selection_idx[0]
+            if not (0 <= monster_index < len(self.monsters)):
+                return
+            monster = self.monsters[monster_index]
+        
+        # Confirm deletion
+        confirm = self._ask_yes_no(
+            'Confirm Deletion',
+            i18n_t(
+                'confirm_delete_monster',
+                ns='monster_editor',
+                default=f"Are you sure you want to delete '{monster.get('name', 'Unnamed')}'?"
+            )
+        )
+        
+        if confirm:
+            # Delete monster
+            deleted_id = monster.get('id')
+            self.monsters.pop(monster_index)
+            self.is_dirty = True
+            
+            # Clear form and current selection if deleted monster was selected
+            if self.current_monster_id == deleted_id:
+                self.current_monster_id = None
+                self._clear_info_form()
+            
+            # Disable delete button (no selection after delete)
+            if self.delete_monster_button:
+                self.delete_monster_button.config(state='disabled')
+            
+            # Refresh listbox
+            self._refresh_monster_list()
+            
+            # Update dirty state UI
+            self._update_dirty_state_ui()
+            
+            print(f"[MonsterEditor] Deleted monster: {monster.get('name')}")
     
     def _populate_info_form(self, monster: Dict[str, Any]) -> None:
         """Populate Info tab form with monster data."""
