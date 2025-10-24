@@ -35,9 +35,12 @@ except ImportError:
         FONT_BUTTON = ('Segoe UI', 10)
         FONT_SMALL = ('Segoe UI', 8)
         COLOR_PRIMARY = '#2196F3'
+        COLOR_PRIMARY_TEXT = '#0D47A1'
         COLOR_TEXT = '#212121'
+        COLOR_SUBTEXT = '#666666'
         COLOR_ACCENT = '#4CAF50'
         COLOR_DANGER = '#F44336'
+        COLOR_WARNING = '#FF7043'
         BG_DEFAULT = '#FFFFFF'
         BG_PANEL = '#F5F5F5'
     UI = UIStyle  # Alias for consistency
@@ -514,6 +517,9 @@ class VisionWizard(tk.Toplevel):
         
     def _create_general_tab(self) -> None:
         """Tạo tab Tổng quan (General) với search mode và threshold."""
+        if self.notebook is None:
+            return
+            
         self.general_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
         self.notebook.add(
             self.general_tab,
@@ -594,6 +600,9 @@ class VisionWizard(tk.Toplevel):
         
     def _create_hotkeys_tab(self) -> None:
         """Tạo tab Phím tắt (Hotkeys Settings) với overlay hotkey combobox."""
+        if self.notebook is None:
+            return
+            
         self.hotkeys_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
         self.notebook.add(
             self.hotkeys_tab,
@@ -660,6 +669,9 @@ class VisionWizard(tk.Toplevel):
         
     def _create_overlay_tab(self) -> None:
         """Tạo tab Overlay Settings với các cài đặt overlay."""
+        if self.notebook is None:
+            return
+            
         self.overlay_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
         self.notebook.add(
             self.overlay_tab,
@@ -877,6 +889,9 @@ class VisionWizard(tk.Toplevel):
         
     def _create_templates_tab(self) -> None:
         """Tạo tab Templates với danh sách template và preview."""
+        if self.notebook is None:
+            return
+            
         self.templates_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
         self.notebook.add(
             self.templates_tab,
@@ -1099,9 +1114,10 @@ class VisionWizard(tk.Toplevel):
         """Xử lý khi người dùng thay đổi hotkey (sẽ implement sync trong Batch 4.1)."""
         # TODO: Implement synchronization in Batch 4.1
         # Mark tab as having unsaved changes
-        current_tab = self.notebook.select()
-        self.unsaved_tabs.add(current_tab)
-        self._update_save_status()
+        if self.notebook is not None:
+            current_tab = self.notebook.select()
+            self.unsaved_tabs.add(current_tab)
+            self._update_save_status()
         
     def _update_save_status(self) -> None:
         """Cập nhật trạng thái Save All button và status label."""
@@ -1109,20 +1125,24 @@ class VisionWizard(tk.Toplevel):
             # Has unsaved changes - orange warning state
             from lib.ui.button_styles import get_button_config
             config = get_button_config('orange')
-            self.save_all_button.config(**config)
-            self.status_label.config(
-                text=i18n_t('status_unsaved', ns='vision_wizard', default='⚠️ Chưa lưu'),
-                fg=UI.COLOR_WARNING
-            )
+            if self.save_all_button is not None:
+                self.save_all_button.config(**config)
+            if self.status_label is not None:
+                self.status_label.config(
+                    text=i18n_t('status_unsaved', ns='vision_wizard', default='⚠️ Chưa lưu'),
+                    fg=UI.COLOR_WARNING
+                )
         else:
             # All saved - green success state
             from lib.ui.button_styles import get_button_config
             config = get_button_config('green')
-            self.save_all_button.config(**config)
-            self.status_label.config(
-                text=i18n_t('status_saved', ns='vision_wizard', default='✓ Đã lưu'),
-                fg=UI.COLOR_ACCENT
-            )
+            if self.save_all_button is not None:
+                self.save_all_button.config(**config)
+            if self.status_label is not None:
+                self.status_label.config(
+                    text=i18n_t('status_saved', ns='vision_wizard', default='✓ Đã lưu'),
+                    fg=UI.COLOR_ACCENT
+                )
     
     def _save_all_changes(self) -> None:
         """
@@ -1177,21 +1197,21 @@ class VisionWizard(tk.Toplevel):
         """
         try:
             # Get overlay hotkey from combobox
-            if self.overlay_hotkey_combo_hotkeys:
+            if self.overlay_hotkey_combo_hotkeys is not None:
                 selected_index = self.overlay_hotkey_combo_hotkeys.current()
                 hotkey_value = self._get_hotkey_from_index(selected_index)
                 self.local_data['overlay_hotkey'] = hotkey_value
             
             # Get overlay enabled
-            if self.overlay_enabled_var:
+            if self.overlay_enabled_var is not None:
                 self.local_data['overlay_enabled'] = self.overlay_enabled_var.get()
             
             # Get confidence threshold
-            if self.overlay_confidence_scale:
+            if self.overlay_confidence_scale is not None:
                 self.local_data['confidence_threshold'] = self.overlay_confidence_scale.get()
             
             # Get detection interval
-            if self.overlay_detection_interval_spinbox:
+            if self.overlay_detection_interval_spinbox is not None:
                 try:
                     interval_str = self.overlay_detection_interval_spinbox.get()
                     self.local_data['detection_interval'] = float(interval_str)
@@ -1199,7 +1219,7 @@ class VisionWizard(tk.Toplevel):
                     self.local_data['detection_interval'] = 0.1  # Default
             
             # Get stable frames
-            if self.overlay_stable_frames_spinbox:
+            if self.overlay_stable_frames_spinbox is not None:
                 try:
                     frames_str = self.overlay_stable_frames_spinbox.get()
                     self.local_data['stable_frames'] = int(frames_str)
@@ -1207,7 +1227,7 @@ class VisionWizard(tk.Toplevel):
                     self.local_data['stable_frames'] = 3  # Default
             
             # Get lost timeout
-            if self.overlay_lost_timeout_spinbox:
+            if self.overlay_lost_timeout_spinbox is not None:
                 try:
                     timeout_str = self.overlay_lost_timeout_spinbox.get()
                     self.local_data['lost_timeout'] = float(timeout_str)
@@ -1438,36 +1458,36 @@ class VisionWizard(tk.Toplevel):
             overlay_hotkey = self.local_data.get('overlay_hotkey', 'ctrl+shift+o')
             hotkey_index = self._find_hotkey_index(overlay_hotkey)
             
-            if self.overlay_hotkey_combo_hotkeys:
+            if self.overlay_hotkey_combo_hotkeys is not None:
                 self.overlay_hotkey_combo_hotkeys.current(hotkey_index)
-            if self.overlay_hotkey_combo_overlay:
+            if self.overlay_hotkey_combo_overlay is not None:
                 self.overlay_hotkey_combo_overlay.current(hotkey_index)
             
             # Populate overlay enabled checkbox
-            if self.overlay_enabled_var:
+            if self.overlay_enabled_var is not None:
                 self.overlay_enabled_var.set(self.local_data.get('overlay_enabled', False))
             
             # Populate confidence slider
-            if self.overlay_confidence_scale:
+            if self.overlay_confidence_scale is not None:
                 confidence = self.local_data.get('confidence_threshold', 0.7)
                 self.overlay_confidence_scale.set(confidence)
-                if self.overlay_confidence_label:
+                if self.overlay_confidence_label is not None:
                     self.overlay_confidence_label.config(text=f'{confidence:.1f}')
             
             # Populate detection interval spinbox
-            if self.overlay_detection_interval_spinbox:
+            if self.overlay_detection_interval_spinbox is not None:
                 interval = self.local_data.get('detection_interval', 0.1)
                 self.overlay_detection_interval_spinbox.delete(0, 'end')
                 self.overlay_detection_interval_spinbox.insert(0, str(interval))
             
             # Populate stable frames spinbox
-            if self.overlay_stable_frames_spinbox:
+            if self.overlay_stable_frames_spinbox is not None:
                 frames = self.local_data.get('stable_frames', 3)
                 self.overlay_stable_frames_spinbox.delete(0, 'end')
                 self.overlay_stable_frames_spinbox.insert(0, str(frames))
             
             # Populate lost timeout spinbox
-            if self.overlay_lost_timeout_spinbox:
+            if self.overlay_lost_timeout_spinbox is not None:
                 timeout = self.local_data.get('lost_timeout', 3.0)
                 self.overlay_lost_timeout_spinbox.delete(0, 'end')
                 self.overlay_lost_timeout_spinbox.insert(0, str(timeout))
@@ -1520,7 +1540,7 @@ class VisionWizard(tk.Toplevel):
         Args:
             value: Giá trị từ Scale widget (string)
         """
-        if self.overlay_confidence_label:
+        if self.overlay_confidence_label is not None:
             self.overlay_confidence_label.config(text=f'{float(value):.1f}')
         
     def bind_events(self) -> None:
