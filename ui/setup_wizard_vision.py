@@ -123,6 +123,58 @@ VISION_WIZARD_TRANSLATIONS = {
         'tooltip_remove_template': 'Xóa template đang chọn khỏi danh sách',
         'tooltip_save_threshold': 'Lưu ngưỡng nhận diện cho template đang chọn',
         'tooltip_test_recognition': 'Chạy test nhận diện với cấu hình hiện tại',
+        
+        # Tabs
+        'tab_general': 'Tổng quan',
+        'tab_hotkeys': 'Phím tắt',
+        'tab_overlay': 'Overlay',
+        'tab_templates': 'Templates',
+        
+        # Hotkey Settings
+        'hotkey_settings_title': 'Cấu hình phím tắt',
+        'overlay_hotkey_label': 'Phím tắt Overlay:',
+        'overlay_hotkey_tooltip': 'Phím tắt để bật/tắt overlay hiển thị nhận diện quái vật',
+        'hotkey_option_default': 'Ctrl+Shift+O (Mặc định)',
+        'hotkey_option_f_key': 'F{} - Phím chức năng',
+        'hotkey_option_ctrl_f': 'Ctrl+F{} - Ctrl + Phím F',
+        'hotkey_option_alt_f': 'Alt+F{} - Alt + Phím F',
+        'hotkey_option_ctrl_shift_f': 'Ctrl+Shift+F{} - Ctrl+Shift+F',
+        
+        # Overlay Settings
+        'overlay_settings_title': 'Cấu hình Overlay',
+        'overlay_enabled_label': 'Bật overlay:',
+        'overlay_enabled_tooltip': 'Hiển thị overlay theo dõi quái vật khi hunting',
+        'overlay_confidence_label': 'Độ tin cậy (Confidence):',
+        'overlay_confidence_tooltip': 'Ngưỡng độ tin cậy để nhận diện quái vật (0.0 - 1.0)',
+        'overlay_detection_interval_label': 'Tần suất phát hiện (giây):',
+        'overlay_detection_interval_tooltip': 'Khoảng thời gian giữa các lần quét phát hiện quái vật',
+        'overlay_stable_frames_label': 'Số khung hình ổn định:',
+        'overlay_stable_frames_tooltip': 'Số khung hình liên tiếp cần phát hiện để xác nhận quái vật',
+        'overlay_lost_timeout_label': 'Timeout mất dấu (giây):',
+        'overlay_lost_timeout_tooltip': 'Thời gian chờ trước khi đánh dấu quái vật là đã mất',
+        
+        # Edit Mode
+        'btn_edit': 'Sửa',
+        'btn_save_all': 'Lưu toàn bộ',
+        'btn_cancel_edit': 'Hủy',
+        'tooltip_edit': 'Chuyển sang chế độ chỉnh sửa cho tab này',
+        'tooltip_save_all': 'Lưu tất cả thay đổi vào file cấu hình',
+        'tooltip_cancel_edit': 'Hủy bỏ các thay đổi chưa lưu',
+        'status_unsaved': '⚠️ Chưa lưu',
+        'status_saved': '✓ Đã lưu',
+        
+        # Confirmation Dialog
+        'confirm_unsaved_title': 'Có thay đổi chưa lưu',
+        'confirm_unsaved_message': 'Bạn có thay đổi chưa lưu.\n\nChọn "OK" để lưu và đóng.\nChọn "Hủy" để bỏ thay đổi và đóng.',
+        'confirm_save_and_close': 'OK (Lưu và đóng)',
+        'confirm_discard_and_close': 'Hủy (Bỏ thay đổi)',
+        
+        # Validation Messages
+        'error_hotkey_empty': 'Phím tắt không được để trống',
+        'error_hotkey_conflict': 'Phím tắt này đã được sử dụng cho: {}',
+        'error_confidence_range': 'Độ tin cậy phải từ 0.0 đến 1.0',
+        'error_interval_range': 'Tần suất phát hiện phải lớn hơn 0',
+        'info_settings_saved': 'Đã lưu cài đặt thành công',
     },
     'en': {
         'vision_wizard_title': 'Vision System Manager',
@@ -167,6 +219,58 @@ VISION_WIZARD_TRANSLATIONS = {
         'tooltip_remove_template': 'Remove selected template from list',
         'tooltip_save_threshold': 'Save recognition threshold for selected template',
         'tooltip_test_recognition': 'Run recognition test with current configuration',
+        
+        # Tabs
+        'tab_general': 'General',
+        'tab_hotkeys': 'Hotkeys',
+        'tab_overlay': 'Overlay',
+        'tab_templates': 'Templates',
+        
+        # Hotkey Settings
+        'hotkey_settings_title': 'Hotkey Settings',
+        'overlay_hotkey_label': 'Overlay Hotkey:',
+        'overlay_hotkey_tooltip': 'Hotkey to toggle monster tracking overlay display',
+        'hotkey_option_default': 'Ctrl+Shift+O (Default)',
+        'hotkey_option_f_key': 'F{} - Function key',
+        'hotkey_option_ctrl_f': 'Ctrl+F{} - Ctrl + F key',
+        'hotkey_option_alt_f': 'Alt+F{} - Alt + F key',
+        'hotkey_option_ctrl_shift_f': 'Ctrl+Shift+F{} - Ctrl+Shift+F',
+        
+        # Overlay Settings
+        'overlay_settings_title': 'Overlay Settings',
+        'overlay_enabled_label': 'Enable overlay:',
+        'overlay_enabled_tooltip': 'Display monster tracking overlay during hunt',
+        'overlay_confidence_label': 'Confidence Threshold:',
+        'overlay_confidence_tooltip': 'Confidence threshold for monster detection (0.0 - 1.0)',
+        'overlay_detection_interval_label': 'Detection Interval (seconds):',
+        'overlay_detection_interval_tooltip': 'Time interval between monster detection scans',
+        'overlay_stable_frames_label': 'Stable Frames:',
+        'overlay_stable_frames_tooltip': 'Consecutive frames required to confirm monster detection',
+        'overlay_lost_timeout_label': 'Lost Timeout (seconds):',
+        'overlay_lost_timeout_tooltip': 'Wait time before marking monster as lost',
+        
+        # Edit Mode
+        'btn_edit': 'Edit',
+        'btn_save_all': 'Save All',
+        'btn_cancel_edit': 'Cancel',
+        'tooltip_edit': 'Switch to edit mode for this tab',
+        'tooltip_save_all': 'Save all changes to configuration file',
+        'tooltip_cancel_edit': 'Cancel unsaved changes',
+        'status_unsaved': '⚠️ Unsaved',
+        'status_saved': '✓ Saved',
+        
+        # Confirmation Dialog
+        'confirm_unsaved_title': 'Unsaved Changes',
+        'confirm_unsaved_message': 'You have unsaved changes.\n\nClick "OK" to save and close.\nClick "Cancel" to discard changes and close.',
+        'confirm_save_and_close': 'OK (Save and close)',
+        'confirm_discard_and_close': 'Cancel (Discard changes)',
+        
+        # Validation Messages
+        'error_hotkey_empty': 'Hotkey cannot be empty',
+        'error_hotkey_conflict': 'This hotkey is already used for: {}',
+        'error_confidence_range': 'Confidence must be between 0.0 and 1.0',
+        'error_interval_range': 'Detection interval must be greater than 0',
+        'info_settings_saved': 'Settings saved successfully',
     }
 }
 
@@ -251,6 +355,11 @@ class VisionWizard(tk.Toplevel):
         self.current_template: Optional[Dict[str, Any]] = None
         self.search_mode: str = "position"  # position, fullscreen, region
         
+        # Local data storage for unsaved changes
+        self.local_data: Dict[str, Any] = {}
+        self.unsaved_tabs: set = set()  # Track tabs with unsaved changes
+        self._syncing_hotkey = False  # Flag to prevent infinite loop during combobox sync
+        
         # Vision Engine
         self.vision_engine = None
         if get_vision_engine:
@@ -260,11 +369,36 @@ class VisionWizard(tk.Toplevel):
                 print(f"Error initializing vision engine: {e}")
         
         # UI Components (sẽ được khởi tạo trong setup_ui)
+        self.notebook: Optional[ttk.Notebook] = None  # Main tab container
+        self.general_tab: Optional[tk.Frame] = None
+        self.hotkeys_tab: Optional[tk.Frame] = None
+        self.overlay_tab: Optional[tk.Frame] = None
+        self.templates_tab: Optional[tk.Frame] = None
+        
+        # General tab widgets
         self.search_mode_combo: Optional[ttk.Combobox] = None
         self.threshold_entry: Optional[tk.Entry] = None
         self.threshold_frame: Optional[tk.Frame] = None  # tk.Frame (not ttk) for bg support
+        
+        # Hotkeys tab widgets
+        self.overlay_hotkey_combo_hotkeys: Optional[ttk.Combobox] = None  # In Hotkeys tab
+        
+        # Overlay tab widgets
+        self.overlay_enabled_var: Optional[tk.BooleanVar] = None
+        self.overlay_confidence_scale: Optional[tk.Scale] = None
+        self.overlay_confidence_label: Optional[tk.Label] = None
+        self.overlay_detection_interval_spinbox: Optional[tk.Spinbox] = None
+        self.overlay_stable_frames_spinbox: Optional[tk.Spinbox] = None
+        self.overlay_lost_timeout_spinbox: Optional[tk.Spinbox] = None
+        self.overlay_hotkey_combo_overlay: Optional[ttk.Combobox] = None  # In Overlay tab
+        
+        # Templates tab widgets
         self.template_tree: Optional[ttk.Treeview] = None
         self.preview_canvas: Optional[tk.Canvas] = None
+        
+        # Footer widgets
+        self.save_all_button: Optional[tk.Button] = None
+        self.status_label: Optional[tk.Label] = None
         
         # Cấu hình cửa sổ
         self._setup_window()
@@ -314,14 +448,16 @@ class VisionWizard(tk.Toplevel):
         
     def setup_ui(self) -> None:
         """
-        Thiết lập giao diện người dùng.
+        Thiết lập giao diện người dùng với cấu trúc tab.
         
         Layout:
         - Header: Tiêu đề và subtitle
-        - Top Panel: Chế độ tìm kiếm và threshold
-        - Middle Panel: Danh sách template (Treeview)
-        - Bottom Panel: Buttons (Thêm, Xóa, Lưu, Test)
-        - Preview Panel: Canvas để preview ảnh/overlay
+        - Notebook (Tabs):
+          - General: Search mode, threshold
+          - Hotkeys Settings: Overlay hotkey configuration
+          - Overlay Settings: Confidence, interval, hotkey
+          - Templates: Template list and preview
+        - Footer: Save All button, status label
         """
         # ===== HEADER =====
         header_frame = tk.Frame(self, bg=UI.COLOR_PRIMARY, height=80)
@@ -350,16 +486,41 @@ class VisionWizard(tk.Toplevel):
         main_container = tk.Frame(self, bg=UI.BG_DEFAULT)
         main_container.pack(fill='both', expand=True, padx=15, pady=15)
         
-        # ===== TOP PANEL: Chế độ tìm kiếm và Threshold =====
-        top_panel = ttk.LabelFrame(
-            main_container,
-            text=i18n_t('search_mode_label', ns='vision_wizard', default='Chế độ tìm kiếm'),
-            padding=10
+        # ===== NOTEBOOK (TABS) =====
+        self.notebook = ttk.Notebook(main_container)
+        self.notebook.pack(fill='both', expand=True, pady=(0, 10))
+        
+        # Create tabs
+        self._create_general_tab()
+        self._create_hotkeys_tab()
+        self._create_overlay_tab()
+        self._create_templates_tab()
+        
+        # ===== FOOTER =====
+        self._create_footer(main_container)
+        
+    def _create_general_tab(self) -> None:
+        """Tạo tab Tổng quan (General) với search mode và threshold."""
+        self.general_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        self.notebook.add(
+            self.general_tab,
+            text=i18n_t('tab_general', ns='vision_wizard', default='Tổng quan')
         )
-        top_panel.pack(fill='x', pady=(0, 10))
+        
+        # Container với padding
+        container = tk.Frame(self.general_tab, bg=UI.BG_DEFAULT)
+        container.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Search Mode Section
+        search_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('search_mode_label', ns='vision_wizard', default='Chế độ tìm kiếm'),
+            padding=15
+        )
+        search_section.pack(fill='x', pady=(0, 15))
         
         # Chế độ tìm kiếm
-        search_mode_frame = tk.Frame(top_panel, bg=UI.BG_DEFAULT)
+        search_mode_frame = tk.Frame(search_section, bg=UI.BG_DEFAULT)
         search_mode_frame.pack(fill='x', pady=5)
         
         tk.Label(
@@ -373,7 +534,7 @@ class VisionWizard(tk.Toplevel):
             search_mode_frame,
             font=UI.FONT_TEXT,
             state='readonly',
-            width=30
+            width=35
         )
         self.search_mode_combo['values'] = (
             i18n_t('search_mode_position', ns='vision_wizard', default='Tìm tại vị trí chỉ định'),
@@ -383,8 +544,15 @@ class VisionWizard(tk.Toplevel):
         self.search_mode_combo.current(0)
         self.search_mode_combo.pack(side='left', fill='x', expand=True)
         
-        # Threshold (có thể ẩn/hiện tùy theo chế độ)
-        self.threshold_frame = tk.Frame(top_panel, bg=UI.BG_DEFAULT)
+        # Threshold Section
+        threshold_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('threshold_label', ns='vision_wizard', default='Ngưỡng nhận diện'),
+            padding=15
+        )
+        threshold_section.pack(fill='x', pady=(0, 15))
+        
+        self.threshold_frame = tk.Frame(threshold_section, bg=UI.BG_DEFAULT)
         self.threshold_frame.pack(fill='x', pady=5)
         
         tk.Label(
@@ -402,12 +570,313 @@ class VisionWizard(tk.Toplevel):
         self.threshold_entry.pack(side='left')
         self.threshold_entry.insert(0, '0.7')  # Giá trị mặc định
         
-        # Tooltip (không dùng attach_i18n_tooltip vì thiếu lang_provider)
-        # TODO: Add proper tooltip với lang_provider khi có
+        # Info label
+        tk.Label(
+            self.threshold_frame,
+            text=i18n_t('threshold_tooltip', ns='vision_wizard', default='Độ chính xác cần thiết (0.7 = 70%)'),
+            font=UI.FONT_SMALL,
+            fg=UI.COLOR_SUBTEXT,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left', padx=(10, 0))
         
-        # ===== MIDDLE PANEL: Danh sách Template =====
+    def _create_hotkeys_tab(self) -> None:
+        """Tạo tab Phím tắt (Hotkeys Settings) với overlay hotkey combobox."""
+        self.hotkeys_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        self.notebook.add(
+            self.hotkeys_tab,
+            text=i18n_t('tab_hotkeys', ns='vision_wizard', default='Phím tắt')
+        )
+        
+        # Container với padding
+        container = tk.Frame(self.hotkeys_tab, bg=UI.BG_DEFAULT)
+        container.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Title with Edit button
+        title_frame = tk.Frame(container, bg=UI.BG_DEFAULT)
+        title_frame.pack(fill='x', pady=(0, 15))
+        
+        tk.Label(
+            title_frame,
+            text=i18n_t('hotkey_settings_title', ns='vision_wizard', default='Cấu hình phím tắt'),
+            font=UI.FONT_SECTION,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left')
+        
+        # Edit button (will be added in Batch 3.2)
+        # TODO: Add edit button here
+        
+        # Overlay Hotkey Section
+        hotkey_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('overlay_hotkey_label', ns='vision_wizard', default='Phím tắt Overlay'),
+            padding=15
+        )
+        hotkey_section.pack(fill='x', pady=(0, 15))
+        
+        hotkey_frame = tk.Frame(hotkey_section, bg=UI.BG_DEFAULT)
+        hotkey_frame.pack(fill='x', pady=5)
+        
+        tk.Label(
+            hotkey_frame,
+            text=i18n_t('overlay_hotkey_label', ns='vision_wizard', default='Phím tắt Overlay:'),
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left', padx=(0, 10))
+        
+        self.overlay_hotkey_combo_hotkeys = ttk.Combobox(
+            hotkey_frame,
+            font=UI.FONT_TEXT,
+            state='disabled',  # Disabled until edit mode
+            width=35
+        )
+        self.overlay_hotkey_combo_hotkeys['values'] = self._get_hotkey_options()
+        self.overlay_hotkey_combo_hotkeys.current(0)  # Default: Ctrl+Shift+O
+        self.overlay_hotkey_combo_hotkeys.pack(side='left', fill='x', expand=True)
+        
+        # Tooltip
+        attach_i18n_tooltip(
+            self.overlay_hotkey_combo_hotkeys,
+            'overlay_hotkey_tooltip',
+            ns='vision_wizard',
+            lang_provider=get_lang
+        )
+        
+        # Bind change event for synchronization (will be implemented in Batch 4.1)
+        self.overlay_hotkey_combo_hotkeys.bind('<<ComboboxSelected>>', self._on_hotkey_changed)
+        
+    def _create_overlay_tab(self) -> None:
+        """Tạo tab Overlay Settings với các cài đặt overlay."""
+        self.overlay_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        self.notebook.add(
+            self.overlay_tab,
+            text=i18n_t('tab_overlay', ns='vision_wizard', default='Overlay')
+        )
+        
+        # Container với padding
+        container = tk.Frame(self.overlay_tab, bg=UI.BG_DEFAULT)
+        container.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Title with Edit button
+        title_frame = tk.Frame(container, bg=UI.BG_DEFAULT)
+        title_frame.pack(fill='x', pady=(0, 15))
+        
+        tk.Label(
+            title_frame,
+            text=i18n_t('overlay_settings_title', ns='vision_wizard', default='Cấu hình Overlay'),
+            font=UI.FONT_SECTION,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left')
+        
+        # Edit button (will be added in Batch 3.2)
+        # TODO: Add edit button here
+        
+        # Overlay Enabled Section
+        enabled_frame = tk.Frame(container, bg=UI.BG_DEFAULT)
+        enabled_frame.pack(fill='x', pady=(0, 15))
+        
+        self.overlay_enabled_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            enabled_frame,
+            text=i18n_t('overlay_enabled_label', ns='vision_wizard', default='Bật overlay'),
+            variable=self.overlay_enabled_var,
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT,
+            state='disabled'  # Disabled until edit mode
+        ).pack(side='left')
+        
+        # Confidence Threshold Section with Slider
+        confidence_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('overlay_confidence_label', ns='vision_wizard', default='Độ tin cậy'),
+            padding=15
+        )
+        confidence_section.pack(fill='x', pady=(0, 15))
+        
+        confidence_frame = tk.Frame(confidence_section, bg=UI.BG_DEFAULT)
+        confidence_frame.pack(fill='x', pady=5)
+        
+        tk.Label(
+            confidence_frame,
+            text=i18n_t('overlay_confidence_label', ns='vision_wizard', default='Confidence:'),
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left', padx=(0, 10))
+        
+        self.overlay_confidence_scale = tk.Scale(
+            confidence_frame,
+            from_=0.0,
+            to=1.0,
+            resolution=0.1,
+            orient='horizontal',
+            length=300,
+            font=UI.FONT_TEXT,
+            bg=UI.BG_DEFAULT,
+            state='disabled'  # Disabled until edit mode
+        )
+        self.overlay_confidence_scale.set(0.7)  # Default value
+        self.overlay_confidence_scale.pack(side='left', fill='x', expand=True, padx=(0, 10))
+        
+        self.overlay_confidence_label = tk.Label(
+            confidence_frame,
+            text='0.7',
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT,
+            width=5
+        )
+        self.overlay_confidence_label.pack(side='left')
+        
+        # Update label when scale changes
+        self.overlay_confidence_scale.config(command=lambda v: self.overlay_confidence_label.config(text=f'{float(v):.1f}'))
+        
+        # Detection Interval Section with Spinbox
+        interval_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('overlay_detection_interval_label', ns='vision_wizard', default='Tần suất phát hiện'),
+            padding=15
+        )
+        interval_section.pack(fill='x', pady=(0, 15))
+        
+        interval_frame = tk.Frame(interval_section, bg=UI.BG_DEFAULT)
+        interval_frame.pack(fill='x', pady=5)
+        
+        tk.Label(
+            interval_frame,
+            text=i18n_t('overlay_detection_interval_label', ns='vision_wizard', default='Interval (s):'),
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left', padx=(0, 10))
+        
+        # Spinbox with +/- buttons for integer values
+        spinbox_frame = tk.Frame(interval_frame, bg=UI.BG_DEFAULT)
+        spinbox_frame.pack(side='left')
+        
+        self.overlay_detection_interval_spinbox = tk.Spinbox(
+            spinbox_frame,
+            from_=0.1,
+            to=10.0,
+            increment=0.1,
+            width=10,
+            font=UI.FONT_TEXT,
+            state='disabled'  # Disabled until edit mode
+        )
+        self.overlay_detection_interval_spinbox.delete(0, 'end')
+        self.overlay_detection_interval_spinbox.insert(0, '0.1')
+        self.overlay_detection_interval_spinbox.pack(side='left')
+        
+        # Stable Frames Section
+        frames_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('overlay_stable_frames_label', ns='vision_wizard', default='Số khung hình ổn định'),
+            padding=15
+        )
+        frames_section.pack(fill='x', pady=(0, 15))
+        
+        frames_frame = tk.Frame(frames_section, bg=UI.BG_DEFAULT)
+        frames_frame.pack(fill='x', pady=5)
+        
+        tk.Label(
+            frames_frame,
+            text=i18n_t('overlay_stable_frames_label', ns='vision_wizard', default='Stable Frames:'),
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left', padx=(0, 10))
+        
+        # +/- buttons with spinbox for integer
+        stable_frame_controls = tk.Frame(frames_frame, bg=UI.BG_DEFAULT)
+        stable_frame_controls.pack(side='left')
+        
+        self.overlay_stable_frames_spinbox = tk.Spinbox(
+            stable_frame_controls,
+            from_=1,
+            to=10,
+            increment=1,
+            width=10,
+            font=UI.FONT_TEXT,
+            state='disabled'  # Disabled until edit mode
+        )
+        self.overlay_stable_frames_spinbox.delete(0, 'end')
+        self.overlay_stable_frames_spinbox.insert(0, '3')
+        self.overlay_stable_frames_spinbox.pack(side='left')
+        
+        # Lost Timeout Section
+        timeout_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('overlay_lost_timeout_label', ns='vision_wizard', default='Timeout mất dấu'),
+            padding=15
+        )
+        timeout_section.pack(fill='x', pady=(0, 15))
+        
+        timeout_frame = tk.Frame(timeout_section, bg=UI.BG_DEFAULT)
+        timeout_frame.pack(fill='x', pady=5)
+        
+        tk.Label(
+            timeout_frame,
+            text=i18n_t('overlay_lost_timeout_label', ns='vision_wizard', default='Timeout (s):'),
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left', padx=(0, 10))
+        
+        self.overlay_lost_timeout_spinbox = tk.Spinbox(
+            timeout_frame,
+            from_=0.5,
+            to=30.0,
+            increment=0.5,
+            width=10,
+            font=UI.FONT_TEXT,
+            state='disabled'  # Disabled until edit mode
+        )
+        self.overlay_lost_timeout_spinbox.delete(0, 'end')
+        self.overlay_lost_timeout_spinbox.insert(0, '3.0')
+        self.overlay_lost_timeout_spinbox.pack(side='left')
+        
+        # Overlay Hotkey Section (synced with Hotkeys tab)
+        hotkey_section = ttk.LabelFrame(
+            container,
+            text=i18n_t('overlay_hotkey_label', ns='vision_wizard', default='Phím tắt Overlay'),
+            padding=15
+        )
+        hotkey_section.pack(fill='x', pady=(0, 15))
+        
+        hotkey_frame = tk.Frame(hotkey_section, bg=UI.BG_DEFAULT)
+        hotkey_frame.pack(fill='x', pady=5)
+        
+        tk.Label(
+            hotkey_frame,
+            text=i18n_t('overlay_hotkey_label', ns='vision_wizard', default='Phím tắt:'),
+            font=UI.FONT_LABEL,
+            bg=UI.BG_DEFAULT
+        ).pack(side='left', padx=(0, 10))
+        
+        self.overlay_hotkey_combo_overlay = ttk.Combobox(
+            hotkey_frame,
+            font=UI.FONT_TEXT,
+            state='disabled',  # Disabled until edit mode
+            width=35
+        )
+        self.overlay_hotkey_combo_overlay['values'] = self._get_hotkey_options()
+        self.overlay_hotkey_combo_overlay.current(0)  # Default: Ctrl+Shift+O
+        self.overlay_hotkey_combo_overlay.pack(side='left', fill='x', expand=True)
+        
+        # Bind change event for synchronization (will be implemented in Batch 4.1)
+        self.overlay_hotkey_combo_overlay.bind('<<ComboboxSelected>>', self._on_hotkey_changed)
+        
+    def _create_templates_tab(self) -> None:
+        """Tạo tab Templates với danh sách template và preview."""
+        self.templates_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        self.notebook.add(
+            self.templates_tab,
+            text=i18n_t('tab_templates', ns='vision_wizard', default='Templates')
+        )
+        
+        # Container với padding
+        container = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
+        container.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # ===== TEMPLATE LIST =====
         template_panel = ttk.LabelFrame(
-            main_container,
+            container,
             text=i18n_t('template_list_label', ns='vision_wizard', default='Danh sách Template'),
             padding=10
         )
@@ -442,7 +911,7 @@ class VisionWizard(tk.Toplevel):
         
         # Column widths
         self.template_tree.column('name', width=150, minwidth=100)
-        self.template_tree.column('path', width=400, minwidth=200)
+        self.template_tree.column('path', width=350, minwidth=200)
         self.template_tree.column('threshold', width=100, minwidth=80)
         
         # Pack components
@@ -453,8 +922,8 @@ class VisionWizard(tk.Toplevel):
         tree_frame.grid_rowconfigure(0, weight=1)
         tree_frame.grid_columnconfigure(0, weight=1)
         
-        # ===== BOTTOM PANEL: Buttons =====
-        button_panel = tk.Frame(main_container, bg=UI.BG_DEFAULT)
+        # ===== BUTTONS =====
+        button_panel = tk.Frame(container, bg=UI.BG_DEFAULT)
         button_panel.pack(fill='x', pady=(0, 10))
         
         # Left buttons (Thêm, Xóa)
@@ -477,7 +946,7 @@ class VisionWizard(tk.Toplevel):
         btn_remove.pack(side='left', padx=5)
         attach_i18n_tooltip(btn_remove, 'tooltip_remove_template', ns='vision_wizard', lang_provider=get_lang)
         
-        # Right buttons (Lưu, Test, Đóng)
+        # Right buttons (Lưu, Test)
         right_buttons = tk.Frame(button_panel, bg=UI.BG_DEFAULT)
         right_buttons.pack(side='right')
         
@@ -497,16 +966,9 @@ class VisionWizard(tk.Toplevel):
         btn_test.pack(side='left', padx=5)
         attach_i18n_tooltip(btn_test, 'tooltip_test_recognition', ns='vision_wizard', lang_provider=get_lang)
         
-        btn_close = ttk.Button(
-            right_buttons,
-            text=i18n_t('btn_close', ns='vision_wizard', default='Đóng'),
-            command=self._on_window_close
-        )
-        btn_close.pack(side='left', padx=5)
-        
         # ===== PREVIEW PANEL =====
         preview_panel = ttk.LabelFrame(
-            main_container,
+            container,
             text=i18n_t('preview_label', ns='vision_wizard', default='Preview / Overlay'),
             padding=10
         )
@@ -515,8 +977,8 @@ class VisionWizard(tk.Toplevel):
         # Canvas để hiển thị preview
         self.preview_canvas = tk.Canvas(
             preview_panel,
-            width=860,
-            height=150,
+            width=700,
+            height=120,
             bg='#f0f0f0',
             relief='sunken',
             bd=2
@@ -525,13 +987,134 @@ class VisionWizard(tk.Toplevel):
         
         # Placeholder text
         self.preview_canvas.create_text(
-            430, 75,
+            350, 60,
             text=i18n_t('preview_placeholder', ns='vision_wizard', default='Vùng preview sẽ hiển thị ở đây'),
             font=UI.FONT_LABEL,
             fill='gray'
         )
         
-        # TODO: Bổ sung logic preview ảnh và overlay sau
+    def _create_footer(self, parent: tk.Widget) -> None:
+        """Tạo footer với Save All button và status label."""
+        footer_frame = tk.Frame(parent, bg=UI.BG_DEFAULT, height=50)
+        footer_frame.pack(fill='x', pady=(10, 0))
+        footer_frame.pack_propagate(False)
+        
+        # Status label (left side)
+        status_frame = tk.Frame(footer_frame, bg=UI.BG_DEFAULT)
+        status_frame.pack(side='left', fill='y')
+        
+        self.status_label = tk.Label(
+            status_frame,
+            text=i18n_t('status_saved', ns='vision_wizard', default='✓ Đã lưu'),
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_ACCENT,
+            bg=UI.BG_DEFAULT
+        )
+        self.status_label.pack(pady=10)
+        
+        # Buttons (right side)
+        button_frame = tk.Frame(footer_frame, bg=UI.BG_DEFAULT)
+        button_frame.pack(side='right', fill='y')
+        
+        # Close button
+        from lib.ui.button_styles import get_button_config
+        
+        btn_close = tk.Button(
+            button_frame,
+            text=i18n_t('btn_close', ns='vision_wizard', default='Đóng'),
+            command=self._on_window_close,
+            **get_button_config('blue'),
+            width=10
+        )
+        btn_close.pack(side='right', padx=5, pady=10)
+        
+        # Save All button (will be fully implemented in Batch 3.3)
+        self.save_all_button = tk.Button(
+            button_frame,
+            text=i18n_t('btn_save_all', ns='vision_wizard', default='Lưu toàn bộ'),
+            command=self._save_all_changes,
+            **get_button_config('green'),
+            width=12
+        )
+        self.save_all_button.pack(side='right', padx=5, pady=10)
+        attach_i18n_tooltip(
+            self.save_all_button,
+            'tooltip_save_all',
+            ns='vision_wizard',
+            lang_provider=get_lang
+        )
+        
+    def _get_hotkey_options(self) -> tuple:
+        """Lấy danh sách các tùy chọn phím tắt cho overlay."""
+        options = [
+            i18n_t('hotkey_option_default', ns='vision_wizard', default='Ctrl+Shift+O (Mặc định)'),
+        ]
+        
+        # Add F1-F12
+        for i in range(1, 13):
+            options.append(
+                i18n_t('hotkey_option_f_key', ns='vision_wizard', default=f'F{i}').format(i)
+            )
+        
+        # Add Ctrl+F1-F12
+        for i in range(1, 13):
+            options.append(
+                i18n_t('hotkey_option_ctrl_f', ns='vision_wizard', default=f'Ctrl+F{i}').format(i)
+            )
+        
+        # Add Alt+F1-F12
+        for i in range(1, 13):
+            options.append(
+                i18n_t('hotkey_option_alt_f', ns='vision_wizard', default=f'Alt+F{i}').format(i)
+            )
+        
+        # Add Ctrl+Shift+F1-F12
+        for i in range(1, 13):
+            options.append(
+                i18n_t('hotkey_option_ctrl_shift_f', ns='vision_wizard', default=f'Ctrl+Shift+F{i}').format(i)
+            )
+        
+        return tuple(options)
+    
+    def _on_hotkey_changed(self, event: Any) -> None:
+        """Xử lý khi người dùng thay đổi hotkey (sẽ implement sync trong Batch 4.1)."""
+        # TODO: Implement synchronization in Batch 4.1
+        # Mark tab as having unsaved changes
+        current_tab = self.notebook.select()
+        self.unsaved_tabs.add(current_tab)
+        self._update_save_status()
+        
+    def _update_save_status(self) -> None:
+        """Cập nhật trạng thái Save All button và status label."""
+        if len(self.unsaved_tabs) > 0:
+            # Has unsaved changes - orange warning state
+            from lib.ui.button_styles import get_button_config
+            config = get_button_config('orange')
+            self.save_all_button.config(**config)
+            self.status_label.config(
+                text=i18n_t('status_unsaved', ns='vision_wizard', default='⚠️ Chưa lưu'),
+                fg=UI.COLOR_WARNING
+            )
+        else:
+            # All saved - green success state
+            from lib.ui.button_styles import get_button_config
+            config = get_button_config('green')
+            self.save_all_button.config(**config)
+            self.status_label.config(
+                text=i18n_t('status_saved', ns='vision_wizard', default='✓ Đã lưu'),
+                fg=UI.COLOR_ACCENT
+            )
+    
+    def _save_all_changes(self) -> None:
+        """Lưu tất cả thay đổi vào file config (will be fully implemented in Batch 3.3)."""
+        # TODO: Implement full save logic in Batch 3.3
+        # For now, just clear unsaved tabs
+        self.unsaved_tabs.clear()
+        self._update_save_status()
+        messagebox.showinfo(
+            i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu'),
+            i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu cài đặt thành công')
+        )
         
     def bind_events(self) -> None:
         """

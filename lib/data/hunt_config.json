@@ -47,19 +47,14 @@
     }
   ],
   "window_bounds": {
-    "left": -8,
-    "top": -8,
-    "right": 1928,
-    "bottom": 1040,
-    "width": 1936,
-    "height": 1048
+    "left": 133,
+    "top": 158,
+    "right": 1051,
+    "bottom": 914,
+    "width": 918,
+    "height": 756
   },
   "monster_list": [
-    {
-      "name": "Plant Sừng Báo",
-      "priority": 3,
-      "enabled": false
-    },
     {
       "name": "Scorlug",
       "priority": 2,
