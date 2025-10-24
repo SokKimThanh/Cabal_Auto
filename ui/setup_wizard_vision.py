@@ -409,7 +409,10 @@ class VisionWizard(tk.Toplevel):
         # Kết nối sự kiện
         self.bind_events()
         
-        # Tải dữ liệu
+        # Tải cấu hình từ hunt_config.json và populate widgets
+        self._load_from_config()
+        
+        # Tải dữ liệu templates
         self.load_templates()
         self.load_thresholds()
         
@@ -1115,6 +1118,154 @@ class VisionWizard(tk.Toplevel):
             i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu'),
             i18n_t('info_settings_saved', ns='vision_wizard', default='Đã lưu cài đặt thành công')
         )
+    
+    def _load_from_config(self) -> None:
+        """
+        Load cấu hình từ hunt_config.json và populate widgets.
+        
+        Loads:
+        - global_hotkeys.overlay_toggle_key (default: 'ctrl+shift+o')
+        - monster_tracking.* settings (enabled, confidence, interval, etc.)
+        - overlay.enabled
+        
+        Populates all tab widgets with loaded values.
+        """
+        config_path = "lib/data/hunt_config.json"
+        
+        # Default values
+        defaults = {
+            'overlay_hotkey': 'ctrl+shift+o',
+            'overlay_enabled': False,
+            'confidence_threshold': 0.7,
+            'detection_interval': 0.1,
+            'stable_frames': 3,
+            'lost_timeout': 3.0,
+        }
+        
+        # Try to load from config file
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                    
+                # Extract global_hotkeys.overlay_toggle_key
+                global_hotkeys = config.get('global_hotkeys', {})
+                overlay_hotkey = global_hotkeys.get('overlay_toggle_key', defaults['overlay_hotkey'])
+                
+                # Extract overlay.enabled
+                overlay = config.get('overlay', {})
+                overlay_enabled = overlay.get('enabled', defaults['overlay_enabled'])
+                
+                # Extract monster_tracking settings
+                monster_tracking = config.get('monster_tracking', {})
+                confidence_threshold = monster_tracking.get('confidence_threshold', defaults['confidence_threshold'])
+                detection_interval = monster_tracking.get('detection_interval', defaults['detection_interval'])
+                stable_frames = monster_tracking.get('stable_frames', defaults['stable_frames'])
+                lost_timeout = monster_tracking.get('lost_timeout', defaults['lost_timeout'])
+                
+                # Store in local_data
+                self.local_data = {
+                    'overlay_hotkey': overlay_hotkey,
+                    'overlay_enabled': overlay_enabled,
+                    'confidence_threshold': confidence_threshold,
+                    'detection_interval': detection_interval,
+                    'stable_frames': stable_frames,
+                    'lost_timeout': lost_timeout,
+                }
+                
+                print(f"[VisionWizard] Loaded config: {self.local_data}")
+                
+            except Exception as e:
+                print(f"[VisionWizard] Error loading config: {e}")
+                self.local_data = defaults.copy()
+        else:
+            print(f"[VisionWizard] Config not found, using defaults")
+            self.local_data = defaults.copy()
+        
+        # Populate widgets with loaded values
+        self._populate_widgets_from_local_data()
+    
+    def _populate_widgets_from_local_data(self) -> None:
+        """Populate tất cả widgets với giá trị từ local_data."""
+        try:
+            # Populate overlay hotkey comboboxes
+            overlay_hotkey = self.local_data.get('overlay_hotkey', 'ctrl+shift+o')
+            hotkey_index = self._find_hotkey_index(overlay_hotkey)
+            
+            if self.overlay_hotkey_combo_hotkeys:
+                self.overlay_hotkey_combo_hotkeys.current(hotkey_index)
+            if self.overlay_hotkey_combo_overlay:
+                self.overlay_hotkey_combo_overlay.current(hotkey_index)
+            
+            # Populate overlay enabled checkbox
+            if self.overlay_enabled_var:
+                self.overlay_enabled_var.set(self.local_data.get('overlay_enabled', False))
+            
+            # Populate confidence slider
+            if self.overlay_confidence_scale:
+                confidence = self.local_data.get('confidence_threshold', 0.7)
+                self.overlay_confidence_scale.set(confidence)
+                if self.overlay_confidence_label:
+                    self.overlay_confidence_label.config(text=f'{confidence:.1f}')
+            
+            # Populate detection interval spinbox
+            if self.overlay_detection_interval_spinbox:
+                interval = self.local_data.get('detection_interval', 0.1)
+                self.overlay_detection_interval_spinbox.delete(0, 'end')
+                self.overlay_detection_interval_spinbox.insert(0, str(interval))
+            
+            # Populate stable frames spinbox
+            if self.overlay_stable_frames_spinbox:
+                frames = self.local_data.get('stable_frames', 3)
+                self.overlay_stable_frames_spinbox.delete(0, 'end')
+                self.overlay_stable_frames_spinbox.insert(0, str(frames))
+            
+            # Populate lost timeout spinbox
+            if self.overlay_lost_timeout_spinbox:
+                timeout = self.local_data.get('lost_timeout', 3.0)
+                self.overlay_lost_timeout_spinbox.delete(0, 'end')
+                self.overlay_lost_timeout_spinbox.insert(0, str(timeout))
+            
+            print("[VisionWizard] Widgets populated from local_data")
+            
+        except Exception as e:
+            print(f"[VisionWizard] Error populating widgets: {e}")
+    
+    def _find_hotkey_index(self, hotkey_str: str) -> int:
+        """
+        Tìm index của hotkey trong combobox values.
+        
+        Args:
+            hotkey_str: Hotkey string (e.g., 'ctrl+shift+o', 'f1', 'ctrl+f5')
+        
+        Returns:
+            int: Index trong combobox, hoặc 0 (default) nếu không tìm thấy
+        """
+        # Normalize hotkey string
+        hotkey_normalized = hotkey_str.lower().strip()
+        
+        # Map hotkey to display format
+        hotkey_map = {
+            'ctrl+shift+o': 0,  # Default
+        }
+        
+        # F1-F12
+        for i in range(1, 13):
+            hotkey_map[f'f{i}'] = i
+        
+        # Ctrl+F1-F12
+        for i in range(1, 13):
+            hotkey_map[f'ctrl+f{i}'] = 12 + i
+        
+        # Alt+F1-F12
+        for i in range(1, 13):
+            hotkey_map[f'alt+f{i}'] = 24 + i
+        
+        # Ctrl+Shift+F1-F12
+        for i in range(1, 13):
+            hotkey_map[f'ctrl+shift+f{i}'] = 36 + i
+        
+        return hotkey_map.get(hotkey_normalized, 0)
         
     def bind_events(self) -> None:
         """
