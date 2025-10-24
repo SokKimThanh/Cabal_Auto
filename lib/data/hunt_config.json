@@ -103,5 +103,5 @@
     "auto_start_with_hunt": false
   },
   "game_window_mode": "below",
-  "app_window_mode": "normal"
+  "app_window_mode": "topmost"
 }

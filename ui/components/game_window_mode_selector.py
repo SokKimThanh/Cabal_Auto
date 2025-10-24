@@ -63,9 +63,9 @@ class GameWindowModeSelector:
         on_mode_change: Optional[Callable[[str], None]] = None,
         initial_mode: str = "none",
         icon_size: int = 16,
-        show_label: bool = True,
+        show_label: bool = False,  # Changed default to False
         label_text: str = "Game:",
-        tooltip_text: str = "Chọn cách hiển thị cửa sổ game so với app"
+        tooltip_text: str = "Điều khiển vị trí cửa sổ game\n• None: Không làm gì\n• Below: Đặt dưới app\n• Above: Đặt trên tất cả"
     ):
         """
         Initialize game window mode selector.
@@ -301,9 +301,9 @@ def create_game_window_mode_selector(
     on_mode_change: Optional[Callable[[str], None]] = None,
     initial_mode: str = "none",
     icon_size: int = 16,
-    show_label: bool = True,
+    show_label: bool = False,  # Changed default to False
     label_text: str = "Game:",
-    tooltip_text: str = "Chọn cách hiển thị cửa sổ game so với app"
+    tooltip_text: str = "Điều khiển vị trí cửa sổ game\n• None: Không làm gì\n• Below: Đặt dưới app\n• Above: Đặt trên tất cả"
 ) -> GameWindowModeSelector:
     """
     Factory function to create game window mode selector.

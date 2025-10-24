@@ -167,8 +167,8 @@ class WindowPositionSelector:
     def _generate_tooltip(self) -> str:
         """Generate default tooltip based on window type."""
         tooltips = {
-            'app': 'Chọn cách hiển thị cửa sổ ứng dụng',
-            'game': 'Chọn cách hiển thị cửa sổ game',
+            'app': 'Điều khiển vị trí cửa sổ ứng dụng\n• Normal: Bình thường\n• Topmost: Luôn ở trên\n• Minimized: Thu nhỏ\n• Maximized: Phóng to',
+            'game': 'Điều khiển vị trí cửa sổ game\n• None: Không làm gì\n• Below: Đặt dưới app\n• Above: Đặt trên tất cả',
             'window': 'Chọn chế độ hiển thị cửa sổ'
         }
         return tooltips.get(self.window_type, tooltips['window'])
@@ -374,7 +374,7 @@ def create_app_window_selector(
         config_path=config_path,
         config_key="app_window_mode",
         modes=['normal', 'topmost', 'minimized', 'maximized'],
-        label_text="App:",
+        show_label=False,  # No label
         window_type="app",
         on_mode_change=on_mode_change,
         **kwargs
@@ -393,7 +393,7 @@ def create_game_window_selector(
         config_path=config_path,
         config_key="game_window_mode",
         modes=['none', 'below', 'above'],
-        label_text="Game:",
+        show_label=False,  # No label
         window_type="game",
         on_mode_change=on_mode_change,
         **kwargs
