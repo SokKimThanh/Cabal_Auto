@@ -10,8 +10,9 @@ import pytest
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import patch
 import tkinter as tk
+from typing import Any
 
 # Mock the imports before importing the module
 import sys
@@ -55,7 +56,7 @@ class TestMonsterEditorData:
             }
         ]
     
-    def test_load_monsters_empty_file(self, temp_data_file):
+    def test_load_monsters_empty_file(self, temp_data_file: Path) -> None:
         """Test loading from empty file."""
         # Create empty file
         temp_data_file.write_text('[]', encoding='utf-8')
@@ -66,6 +67,7 @@ class TestMonsterEditorData:
             
             root = tk.Tk()
             root.withdraw()
+            editor = None
             
             try:
                 editor = QuickMonsterEditor(root)
@@ -73,10 +75,11 @@ class TestMonsterEditorData:
                 
                 assert editor.monsters == []
             finally:
-                editor.destroy()
+                if editor:
+                    editor.destroy()
                 root.destroy()
     
-    def test_load_monsters_valid_data(self, temp_data_file, sample_monsters):
+    def test_load_monsters_valid_data(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test loading valid monster data."""
         # Write sample data
         temp_data_file.write_text(
@@ -89,6 +92,7 @@ class TestMonsterEditorData:
             
             root = tk.Tk()
             root.withdraw()
+            editor = None
             
             try:
                 editor = QuickMonsterEditor(root)
@@ -98,10 +102,11 @@ class TestMonsterEditorData:
                 assert editor.monsters[0]['name'] == 'Test Monster'
                 assert editor.monsters[1]['name'] == 'Another Monster'
             finally:
-                editor.destroy()
+                if editor:
+                    editor.destroy()
                 root.destroy()
     
-    def test_load_monsters_auto_generate_ids(self, temp_data_file):
+    def test_load_monsters_auto_generate_ids(self, temp_data_file: Path) -> None:
         """Test auto-generating IDs for monsters without IDs."""
         # Monsters without IDs
         monsters_without_ids = [
@@ -122,6 +127,7 @@ class TestMonsterEditorData:
             
             root = tk.Tk()
             root.withdraw()
+            editor = None
             
             try:
                 editor = QuickMonsterEditor(root)
@@ -131,10 +137,11 @@ class TestMonsterEditorData:
                 assert 'id' in editor.monsters[0]
                 assert len(editor.monsters[0]['id']) > 0
             finally:
-                editor.destroy()
+                if editor:
+                    editor.destroy()
                 root.destroy()
     
-    def test_load_monsters_file_not_found(self, temp_data_file):
+    def test_load_monsters_file_not_found(self, temp_data_file: Path) -> None:
         """Test handling missing file."""
         # Use non-existent path
         non_existent = temp_data_file.parent / 'non_existent.json'
@@ -144,6 +151,7 @@ class TestMonsterEditorData:
             
             root = tk.Tk()
             root.withdraw()
+            editor = None
             
             try:
                 editor = QuickMonsterEditor(root)
@@ -156,16 +164,18 @@ class TestMonsterEditorData:
                 # Clean up
                 non_existent.unlink()
             finally:
-                editor.destroy()
+                if editor:
+                    editor.destroy()
                 root.destroy()
     
-    def test_save_monsters(self, temp_data_file, sample_monsters):
+    def test_save_monsters(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test saving monsters to file."""
         with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
             from ui.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
+            editor = None
             
             try:
                 editor = QuickMonsterEditor(root)
@@ -184,15 +194,17 @@ class TestMonsterEditorData:
                 assert len(saved_data) == 2
                 assert saved_data[0]['name'] == 'Test Monster'
             finally:
-                editor.destroy()
+                if editor:
+                    editor.destroy()
                 root.destroy()
     
-    def test_save_monsters_error_handling(self):
+    def test_save_monsters_error_handling(self) -> None:
         """Test error handling when save fails."""
         from ui.quick_monster_editor import QuickMonsterEditor
         
         root = tk.Tk()
         root.withdraw()
+        editor = None
         
         try:
             editor = QuickMonsterEditor(root)
@@ -204,15 +216,17 @@ class TestMonsterEditorData:
                 
                 assert result is False
         finally:
-            editor.destroy()
+            if editor:
+                editor.destroy()
             root.destroy()
     
-    def test_dirty_state_tracking(self):
+    def test_dirty_state_tracking(self) -> None:
         """Test dirty state flags."""
         from ui.quick_monster_editor import QuickMonsterEditor
         
         root = tk.Tk()
         root.withdraw()
+        editor = None
         
         try:
             editor = QuickMonsterEditor(root)
@@ -235,7 +249,8 @@ class TestMonsterEditorData:
             assert editor.is_dirty is False
             assert editor.is_monster_dirty is False
         finally:
-            editor.destroy()
+            if editor:
+                editor.destroy()
             root.destroy()
 
 
