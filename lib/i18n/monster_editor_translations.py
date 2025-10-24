@@ -10,6 +10,10 @@ Created: 2025-10-24
 
 MONSTER_EDITOR_TRANSLATIONS = {
     'vi': {
+        # Menu items
+        'menu_open_monster_editor': 'Mở Quản Lý Quái Vật',
+        'menu_monster_editor_settings': 'Cài Đặt Quái Vật',
+        
         # Window titles
         'quick_editor_title': 'Sửa Quái Nhanh',
         'full_editor_title': 'Quản Lý Quái Vật',
@@ -80,6 +84,10 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'col_path': 'Đường dẫn',
     },
     'en': {
+        # Menu items
+        'menu_open_monster_editor': 'Open Monster Manager',
+        'menu_monster_editor_settings': 'Monster Settings',
+        
         # Window titles
         'quick_editor_title': 'Quick Monster Editor',
         'full_editor_title': 'Monster Manager',
