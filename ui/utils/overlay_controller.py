@@ -27,9 +27,9 @@ import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 
-from lib.ui.overlay_window_pywin32 import OverlayWindowPyWin32, DetectionBox
-from lib.ui.detection_converter import detections_to_boxes, get_state_color
-from lib.ui.window_tracker import WindowTracker, WindowState
+from ui.windows.overlay_window import OverlayWindowPyWin32, DetectionBox
+from ui.utils.detection_converter import detections_to_boxes, get_state_color
+from ui.utils.window_tracker import WindowTracker, WindowState
 from lib.vision.monster_detector import MonsterDetector, DetectionState, DetectionStats
 
 # Setup logging

@@ -56,7 +56,7 @@ except ImportError:
         pass
 
 try:
-    from lib.ui.tooltip import attach_i18n_tooltip, I18nToolTip  # type: ignore
+    from ui.helpers.tooltip import attach_i18n_tooltip, I18nToolTip  # type: ignore
 except ImportError:
     class I18nToolTip:  # type: ignore
         """Fallback tooltip class"""
@@ -73,7 +73,7 @@ except ImportError:
         return I18nToolTip()  # type: ignore
 
 try:
-    from lib.ui.icon_helper import get_icon_helper
+    from ui.helpers.icon_helper import get_icon_helper
     icon_helper = get_icon_helper()
 except ImportError:
     icon_helper = None
@@ -1051,7 +1051,7 @@ class VisionWizard(tk.Toplevel):
         button_frame.pack(side='right', fill='y')
         
         # Close button
-        from lib.ui.button_styles import get_button_config
+        from ui.helpers.button_styles import get_button_config
         
         btn_close = tk.Button(
             button_frame,
@@ -1123,7 +1123,7 @@ class VisionWizard(tk.Toplevel):
         """Cập nhật trạng thái Save All button và status label."""
         if len(self.unsaved_tabs) > 0:
             # Has unsaved changes - orange warning state
-            from lib.ui.button_styles import get_button_config
+            from ui.helpers.button_styles import get_button_config
             config = get_button_config('orange')
             if self.save_all_button is not None:
                 self.save_all_button.config(**config)
@@ -1134,7 +1134,7 @@ class VisionWizard(tk.Toplevel):
                 )
         else:
             # All saved - green success state
-            from lib.ui.button_styles import get_button_config
+            from ui.helpers.button_styles import get_button_config
             config = get_button_config('green')
             if self.save_all_button is not None:
                 self.save_all_button.config(**config)
@@ -2269,3 +2269,4 @@ if __name__ == '__main__':
     
     print('Test window started. Press Ctrl+Shift+L or click button to open Vision Wizard.')
     root.mainloop()
+

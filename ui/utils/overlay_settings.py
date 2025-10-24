@@ -11,7 +11,7 @@ Features:
 - Live preview
 
 Usage:
-    from lib.ui.overlay_settings import OverlaySettingsDialog
+    from ui.utils.overlay_settings import OverlaySettingsDialog
     
     dialog = OverlaySettingsDialog(
         parent=main_app,
@@ -29,7 +29,7 @@ import json
 
 # Global translations and tooltip support
 from lib.i18n import t as i18n_t
-from lib.ui.tooltip import attach_i18n_tooltip
+from ui.helpers.tooltip import attach_i18n_tooltip
 from lib.ui_style import UIStyle as UI
 
 

@@ -8,7 +8,7 @@ to OverlayWindow DetectionBox format for real-time visualization.
 
 from typing import List, Tuple, Optional
 from lib.vision.vision_engine import Detection
-from lib.ui.overlay_window_pywin32 import DetectionBox
+from ui.windows.overlay_window import DetectionBox
 
 
 def detection_to_box(
