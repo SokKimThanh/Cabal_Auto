@@ -54,6 +54,7 @@ try:
     from ui.components import create_icon_button, create_icon_label
     from ui.components.game_window_mode_selector import create_game_window_mode_selector
     from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector
+    from ui.components.icon_button import set_button_enabled
 except ImportError:
     # Fallback if component not available
     def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
@@ -75,6 +76,14 @@ except ImportError:
     
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
         return tk.Label(parent, text=f"{icon_fallback} {text}", **kwargs)
+    
+    def set_button_enabled(button, enabled: bool, tooltip: Optional[str] = None):
+        """Fallback for set_button_enabled."""
+        button.config(state='normal' if enabled else 'disabled')
+        if tooltip and enabled:
+            button.config(text=f"💾")
+        elif tooltip and not enabled:
+            button.config(text=f"🚫")
         """Fallback if button_styles not available."""
         return {
             'font': ('Arial', 10, 'bold'),
@@ -319,13 +328,23 @@ class QuickMonsterEditor(tk.Toplevel):
             status_text = i18n_t('status_unsaved', ns='monster_editor', default='Unsaved changes')
             self.status_label.config(text=f"● {status_text}", fg=UI.COLOR_WARNING)
             if self.save_button is not None:
-                self.save_button.config(state='normal')
+                # Enable save button with icon
+                set_button_enabled(
+                    self.save_button, 
+                    enabled=True,
+                    tooltip='Save changes' if get_lang() == 'en' else 'Lưu thay đổi'
+                )
         else:
             # Show saved status
             status_text = i18n_t('status_saved', ns='monster_editor', default='All saved')
             self.status_label.config(text=f"✓ {status_text}", fg=UI.COLOR_ACCENT)
             if self.save_button is not None:
-                self.save_button.config(state='disabled')
+                # Disable save button - icon auto-changes to forbidden
+                set_button_enabled(
+                    self.save_button,
+                    enabled=False,
+                    tooltip='No changes to save' if get_lang() == 'en' else 'Không có thay đổi để lưu'
+                )
     
     def _flash_save_success(self) -> None:
         """Flash status label to indicate save success (subtle feedback)."""
@@ -1142,25 +1161,46 @@ class QuickMonsterEditor(tk.Toplevel):
             if self.progress_label is not None:
                 self.progress_label.config(text=progress_text)
             
-            # Disable buttons
+            # Disable buttons - icons auto-change to forbidden
             if self.capture_button is not None:
-                self.capture_button.config(state='disabled')
+                set_button_enabled(
+                    self.capture_button,
+                    enabled=False,
+                    tooltip='Busy...' if get_lang() == 'en' else 'Đang xử lý...'
+                )
             if self.test_button is not None:
-                self.test_button.config(state='disabled')
+                set_button_enabled(
+                    self.test_button,
+                    enabled=False,
+                    tooltip='Busy...' if get_lang() == 'en' else 'Đang xử lý...'
+                )
             if self.save_button is not None:
-                self.save_button.config(state='disabled')
+                set_button_enabled(
+                    self.save_button,
+                    enabled=False,
+                    tooltip='Busy...' if get_lang() == 'en' else 'Đang xử lý...'
+                )
         else:
             # Hide progress
             if self.progress_label is not None:
                 self.progress_label.config(text='')
             
-            # Enable buttons
+            # Enable buttons - icons restore
             if self.capture_button is not None:
-                self.capture_button.config(state='normal')
+                set_button_enabled(
+                    self.capture_button,
+                    enabled=True,
+                    tooltip='Capture template' if get_lang() == 'en' else 'Chụp template'
+                )
             if self.test_button is not None:
-                self.test_button.config(state='normal')
+                set_button_enabled(
+                    self.test_button,
+                    enabled=True,
+                    tooltip='Test detection' if get_lang() == 'en' else 'Kiểm tra phát hiện'
+                )
             if self.save_button is not None:
-                self.save_button.config(state='normal')
+                # Save button state depends on dirty flag
+                self._update_dirty_state_ui()
     
     def _on_threshold_changed(self, value: str) -> None:
         """Handle threshold scale change."""

@@ -212,13 +212,24 @@ def create_icon_button(
             tooltip_key='btn_delete'
         )
     """
-    # If button is disabled, replace icon with forbidden symbol
-    if state == 'disabled':
-        icon_name = 'forbidden'  # Try to use 'forbidden' icon from icon_helper
-        icon_fallback = '🚫'  # Fallback to red prohibition emoji
+    # Auto-detect state from button state and adjust icon accordingly
+    # Priority: explicit state > tkinter state > normal
+    actual_state = state
+    
+    # If state is 'disabled' or button will be disabled, show forbidden icon
+    if state == 'disabled' or kwargs.get('state') == 'disabled':
+        actual_state = 'disabled'
+        # Replace icon with forbidden symbol
+        original_icon_name = icon_name
+        icon_name = 'forbidden'
+        icon_fallback = '🚫'
         # Set default tooltip if none provided
         if not tooltip_text and not tooltip_key:
-            tooltip_text = i18n_t('btn_disabled', ns='common', default='Nút hiện không khả dụng')
+            lang = get_lang()
+            if lang == 'vi':
+                tooltip_text = f'Không thể {original_icon_name} lúc này'
+            else:
+                tooltip_text = f'Cannot {original_icon_name} at this time'
     
     # Get icon
     icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
@@ -624,3 +635,125 @@ def create_icon_label(
         )
     
     return label
+
+
+# Utility functions for button state management
+def update_button_state(
+    button: tk.Button,
+    enabled: bool,
+    icon_name: Optional[str] = None,
+    icon_fallback: str = '',
+    icon_size: int = 16,
+    tooltip_text: Optional[str] = None
+) -> None:
+    """
+    Update button state and icon dynamically.
+    
+    When disabled, automatically changes icon to forbidden symbol.
+    
+    Args:
+        button: Button widget to update
+        enabled: Whether button should be enabled
+        icon_name: New icon name (optional, keeps current if None)
+        icon_fallback: Fallback emoji for new icon
+        icon_size: Icon size in pixels
+        tooltip_text: New tooltip text (optional)
+    
+    Example:
+        # Disable button and change icon to forbidden
+        update_button_state(save_btn, enabled=False, tooltip_text='No changes to save')
+        
+        # Enable button and restore icon
+        update_button_state(save_btn, enabled=True, icon_name='save', tooltip_text='Save changes')
+        
+        # Just disable without changing icon
+        update_button_state(stop_btn, enabled=False)
+    """
+    # Determine icon to use
+    if enabled:
+        # Enabled: use specified icon or keep current
+        if icon_name:
+            icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
+        else:
+            # Keep current icon if available
+            icon = getattr(button, '_icon_ref', None)
+            if not icon:
+                return  # Can't update icon, just update state
+    else:
+        # Disabled: use forbidden icon
+        icon = icon_helper.get_icon('forbidden', fallback='🚫', size=icon_size)
+        if not tooltip_text:
+            lang = get_lang()
+            if lang == 'vi':
+                tooltip_text = 'Không khả dụng'
+            else:
+                tooltip_text = 'Not available'
+    
+    # Update button state
+    button.config(state='normal' if enabled else 'disabled')
+    
+    # Update icon
+    is_photoimage = not isinstance(icon, str)
+    if is_photoimage:
+        button.config(image=icon)
+        button._icon_ref = icon  # type: ignore[attr-defined]
+        _ICON_REFS.append(icon)  # Prevent garbage collection
+    else:
+        button.config(text=icon)
+    
+    # Update tooltip if provided
+    if tooltip_text:
+        # Remove old tooltip bindings
+        button.unbind('<Enter>')
+        button.unbind('<Leave>')
+        button.unbind('<Button>')
+        # Attach new tooltip
+        _attach_simple_tooltip(button, tooltip_text)
+
+
+def set_button_enabled(button: tk.Button, enabled: bool, tooltip: Optional[str] = None) -> None:
+    """
+    Simple helper to enable/disable button with automatic icon change.
+    
+    Args:
+        button: Button to update
+        enabled: True to enable, False to disable (shows forbidden icon)
+        tooltip: Optional tooltip text
+    
+    Example:
+        # Disable save button
+        set_button_enabled(save_btn, False, 'No changes to save')
+        
+        # Enable save button
+        set_button_enabled(save_btn, True, 'Save changes')
+    """
+    update_button_state(button, enabled=enabled, tooltip_text=tooltip)
+
+
+def set_button_icon(button: tk.Button, icon_name: str, fallback: str = '', size: int = 16) -> None:
+    """
+    Change button icon without affecting state.
+    
+    Args:
+        button: Button to update
+        icon_name: New icon name
+        fallback: Fallback emoji
+        size: Icon size
+    
+    Example:
+        # Change to save icon
+        set_button_icon(btn, 'save', '💾')
+        
+        # Change to loading icon
+        set_button_icon(btn, 'loading', '⏳')
+    """
+    icon = icon_helper.get_icon(icon_name, fallback=fallback, size=size)
+    is_photoimage = not isinstance(icon, str)
+    
+    if is_photoimage:
+        button.config(image=icon)
+        button._icon_ref = icon  # type: ignore[attr-defined]
+        _ICON_REFS.append(icon)
+    else:
+        button.config(text=icon)
+
