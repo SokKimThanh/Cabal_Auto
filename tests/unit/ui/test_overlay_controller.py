@@ -16,6 +16,7 @@ from unittest.mock import Mock, MagicMock, call
 from typing import List
 
 from lib.ui.overlay_controller import OverlayController, OverlayStats
+from lib.ui.window_tracker import WindowState
 from lib.vision.monster_detector import DetectionState
 from lib.vision.vision_engine import Detection
 
@@ -509,6 +510,150 @@ class TestStatsDisplay:
             assert box.h > 0
             assert isinstance(box.color, tuple)
             assert len(box.color) == 3  # RGB
+
+
+class TestWindowStateHandling:
+    """Test window state handling (Task 2.3)"""
+    
+    def test_minimize_pauses_detection(self, mock_overlay, mock_detector):
+        """Test that minimizing window pauses detection"""
+        mock_tracker = Mock()
+        mock_detector.pause = Mock()
+        mock_detector.resume = Mock()
+        
+        controller = OverlayController(
+            mock_overlay,
+            mock_detector,
+            window_tracker=mock_tracker
+        )
+        controller.start()
+        
+        # Get window state callback
+        window_callback = mock_tracker.on_state_change
+        
+        # Minimize window
+        window_callback(WindowState.MINIMIZED)
+        
+        # Should pause detector
+        mock_detector.pause.assert_called_once()
+    
+    def test_minimize_hides_overlay(self, mock_overlay, mock_detector):
+        """Test that minimizing window hides overlay"""
+        mock_tracker = Mock()
+        mock_detector.pause = Mock()
+        
+        controller = OverlayController(
+            mock_overlay,
+            mock_detector,
+            window_tracker=mock_tracker
+        )
+        controller.start()
+        
+        window_callback = mock_tracker.on_state_change
+        
+        # Minimize window
+        window_callback(WindowState.MINIMIZED)
+        
+        # Should hide overlay
+        mock_overlay.hide.assert_called_once()
+    
+    def test_restore_resumes_detection(self, mock_overlay, mock_detector):
+        """Test that restoring window resumes detection"""
+        mock_tracker = Mock()
+        mock_detector.pause = Mock()
+        mock_detector.resume = Mock()
+        
+        controller = OverlayController(
+            mock_overlay,
+            mock_detector,
+            window_tracker=mock_tracker
+        )
+        controller.start()
+        
+        window_callback = mock_tracker.on_state_change
+        
+        # Minimize then restore
+        window_callback(WindowState.MINIMIZED)
+        window_callback(WindowState.NORMAL)
+        
+        # Should resume detector
+        mock_detector.resume.assert_called_once()
+    
+    def test_restore_shows_overlay(self, mock_overlay, mock_detector):
+        """Test that restoring window shows overlay"""
+        mock_tracker = Mock()
+        mock_detector.pause = Mock()
+        mock_detector.resume = Mock()
+        
+        controller = OverlayController(
+            mock_overlay,
+            mock_detector,
+            window_tracker=mock_tracker
+        )
+        controller.start()
+        
+        window_callback = mock_tracker.on_state_change
+        
+        # Minimize then restore
+        window_callback(WindowState.MINIMIZED)
+        window_callback(WindowState.NORMAL)
+        
+        # Should show overlay
+        assert mock_overlay.show.call_count >= 1
+    
+    def test_maximize_resumes_if_minimized(self, mock_overlay, mock_detector):
+        """Test that maximize also resumes from minimize"""
+        mock_tracker = Mock()
+        mock_detector.pause = Mock()
+        mock_detector.resume = Mock()
+        
+        controller = OverlayController(
+            mock_overlay,
+            mock_detector,
+            window_tracker=mock_tracker
+        )
+        controller.start()
+        
+        window_callback = mock_tracker.on_state_change
+        
+        # Minimize then maximize
+        window_callback(WindowState.MINIMIZED)
+        window_callback(WindowState.MAXIMIZED)
+        
+        # Should resume detector
+        mock_detector.resume.assert_called_once()
+    
+    def test_no_tracker_no_errors(self, mock_overlay, mock_detector):
+        """Test controller works without window tracker"""
+        controller = OverlayController(
+            mock_overlay,
+            mock_detector,
+            window_tracker=None  # No tracker
+        )
+        
+        # Should start/stop normally
+        assert controller.start() is True
+        assert controller.stop() is True
+    
+    def test_window_state_error_handling(self, mock_overlay, mock_detector):
+        """Test window state callback handles errors gracefully"""
+        mock_tracker = Mock()
+        mock_detector.pause = Mock(side_effect=Exception("Pause error"))
+        
+        controller = OverlayController(
+            mock_overlay,
+            mock_detector,
+            window_tracker=mock_tracker
+        )
+        controller.start()
+        
+        window_callback = mock_tracker.on_state_change
+        
+        # Should not raise
+        window_callback(WindowState.MINIMIZED)
+        
+        # Controller should still be running
+        assert controller.is_running() is True
 
 
 # Run tests

@@ -29,6 +29,7 @@ from dataclasses import dataclass
 
 from lib.ui.overlay_window_pywin32 import OverlayWindowPyWin32, DetectionBox
 from lib.ui.detection_converter import detections_to_boxes, get_state_color
+from lib.ui.window_tracker import WindowTracker, WindowState
 from lib.vision.monster_detector import MonsterDetector, DetectionState, DetectionStats
 
 # Setup logging
@@ -89,7 +90,8 @@ class OverlayController:
         detector: MonsterDetector,
         max_boxes: int = 20,
         show_stats: bool = True,
-        stats_update_interval: float = 0.5
+        stats_update_interval: float = 0.5,
+        window_tracker: Optional[WindowTracker] = None
     ):
         """
         Initialize OverlayController
@@ -100,16 +102,19 @@ class OverlayController:
             max_boxes: Maximum detection boxes to display
             show_stats: Whether to display FPS and stats overlay
             stats_update_interval: How often to update stats display (seconds)
+            window_tracker: Optional WindowTracker for window state handling
         """
         self._overlay = overlay
         self._detector = detector
         self._max_boxes = max_boxes
         self._show_stats = show_stats
         self._stats_update_interval = stats_update_interval
+        self._window_tracker = window_tracker
         
         # State tracking
         self._running = False
         self._current_state = DetectionState.SEARCHING
+        self._window_minimized = False
         
         # Statistics
         self._stats = OverlayStats()
@@ -137,6 +142,11 @@ class OverlayController:
         self._detector.on_detections_changed(self._on_detections_changed)
         self._detector.on_state_changed(self._on_state_changed)
         
+        # Register window tracker callback if available
+        if self._window_tracker:
+            # Note: WindowTracker uses on_state_change attribute, not method
+            self._window_tracker.on_state_change = self._on_window_state_changed
+        
         self._running = True
         logger.info("[OverlayController] Started - listening to detector events")
         return True
@@ -155,6 +165,10 @@ class OverlayController:
         # Unregister callbacks
         self._detector.remove_detection_callback(self._on_detections_changed)
         self._detector.remove_state_callback(self._on_state_changed)
+        
+        # Unregister window tracker callback
+        if self._window_tracker:
+            self._window_tracker.on_state_change = None
         
         self._running = False
         logger.info("[OverlayController] Stopped")
@@ -355,6 +369,50 @@ class OverlayController:
             
         except Exception as e:
             logger.error(f"[OverlayController] State change error: {e}", exc_info=True)
+    
+    def _on_window_state_changed(self, window_state: WindowState) -> None:
+        """
+        Handle window state changes from WindowTracker
+        
+        Pause/resume detection and hide/show overlay based on window state.
+        
+        Args:
+            window_state: New WindowState from tracker
+        """
+        try:
+            logger.info(f"[OverlayController] Window state changed: {window_state.value}")
+            
+            # Handle minimize/restore
+            if window_state == WindowState.MINIMIZED:
+                if not self._window_minimized:
+                    self._window_minimized = True
+                    
+                    # Pause detection
+                    if hasattr(self._detector, 'pause'):
+                        self._detector.pause()
+                        logger.info("[OverlayController] Paused detection (window minimized)")
+                    
+                    # Hide overlay
+                    if hasattr(self._overlay, 'hide'):
+                        self._overlay.hide()
+                        logger.debug("[OverlayController] Hid overlay (window minimized)")
+            
+            elif window_state in [WindowState.NORMAL, WindowState.MAXIMIZED]:
+                if self._window_minimized:
+                    self._window_minimized = False
+                    
+                    # Resume detection
+                    if hasattr(self._detector, 'resume'):
+                        self._detector.resume()
+                        logger.info("[OverlayController] Resumed detection (window restored)")
+                    
+                    # Show overlay (if controller is running)
+                    if self._running and hasattr(self._overlay, 'show'):
+                        self._overlay.show()
+                        logger.debug("[OverlayController] Showed overlay (window restored)")
+        
+        except Exception as e:
+            logger.error(f"[OverlayController] Window state change error: {e}", exc_info=True)
     
     # =================================================================
     # Cleanup
