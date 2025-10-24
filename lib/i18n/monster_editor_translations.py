@@ -35,6 +35,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_new_monster': 'Tạo Mới',
         'btn_edit_monster': 'Sửa',
         'btn_delete_monster': 'Xóa',
+        'btn_edit': 'Sửa',
+        'btn_save_changes': 'Lưu',
         
         # Tooltips
         'tooltip_capture': 'Chụp vùng màn hình để tạo template',
@@ -159,6 +161,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_new_monster': 'New',
         'btn_edit_monster': 'Edit',
         'btn_delete_monster': 'Delete',
+        'btn_edit': 'Edit',
+        'btn_save_changes': 'Save',
         
         # Tooltips
         'tooltip_capture': 'Capture screen region to create template',
