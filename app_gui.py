@@ -35,6 +35,10 @@ except Exception:
 from ctypes import wintypes
 
 from lib.vision.template_matcher import locate_template
+from lib.vision.vision_engine import VisionEngine
+from lib.system.screen_capture import ScreenCapture
+from lib.system.bot_manager import BotManager
+from lib.ui.overlay_controller import OverlayController
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
 from lib.ui.tooltip import attach_i18n_tooltip
 from lib.i18n import (
@@ -777,6 +781,12 @@ class App(tk.Tk):
         self._overlay_enabled = False
         self._overlay_update_thread: Optional[threading.Thread] = None
         self._overlay_stop_event = threading.Event()
+        
+        # Phase 7: Monster tracking integration
+        self._vision_engine: Optional[VisionEngine] = None
+        self._screen_capture: Optional[ScreenCapture] = None
+        self._bot_manager: Optional[BotManager] = None
+        self._overlay_controller: Optional[OverlayController] = None
 
         self.monsters = load_monster_library()
         self.monster_selected_index = None
@@ -1016,6 +1026,20 @@ class App(tk.Tk):
         self.after(1000, self._auto_bring_to_front_on_startup)
 
     def destroy(self):
+        # Phase 7: Cleanup monster tracking components
+        try:
+            if self._overlay_controller is not None:
+                self._overlay_controller.stop()
+                self._overlay_controller = None
+                print("[MonsterTracking] OverlayController cleaned up")
+            
+            if self._bot_manager is not None:
+                self._bot_manager.destroy()
+                self._bot_manager = None
+                print("[MonsterTracking] BotManager cleaned up")
+        except Exception as e:
+            print(f"[MonsterTracking] Error during cleanup: {e}")
+        
         # Unregister global hotkeys on exit
         if keyboard is not None and hasattr(self, "_registered_hotkey_handlers"):
             for hk, handler in list(self._registered_hotkey_handlers.items()):
@@ -8999,6 +9023,67 @@ Alternative Solutions:
                 # Show overlay
                 self._overlay_window.show()
                 
+                # ========================================
+                # PHASE 7: Initialize Monster Tracking
+                # ========================================
+                try:
+                    # Initialize VisionEngine if needed
+                    if self._vision_engine is None:
+                        from lib.vision.vision_engine import VisionEngine
+                        self._vision_engine = VisionEngine()
+                        print("[MonsterTracking] VisionEngine initialized")
+                    
+                    # Initialize ScreenCapture if needed
+                    if self._screen_capture is None:
+                        from lib.system.screen_capture import ScreenCapture
+                        self._screen_capture = ScreenCapture()
+                        print("[MonsterTracking] ScreenCapture initialized")
+                    
+                    # Initialize BotManager if needed
+                    if self._bot_manager is None:
+                        self._bot_manager = BotManager(
+                            vision_engine=self._vision_engine,
+                            screen_capture=self._screen_capture,
+                            stable_frames=3,
+                            lost_timeout=3.0,
+                            enable_auto_start=False  # Manual control for now
+                        )
+                        print("[MonsterTracking] BotManager initialized")
+                    
+                    # Start detection to create detector instance
+                    if not self._bot_manager.is_detection_running():
+                        success = self._bot_manager.start_detection(target_rect=window_bounds)
+                        if success:
+                            print("[MonsterTracking] Detection started")
+                        else:
+                            print("[MonsterTracking] Failed to start detection")
+                    
+                    # Create OverlayController to connect detector → overlay
+                    # Only create if we have a detector instance
+                    if self._overlay_controller is None and self._bot_manager._detector is not None:
+                        # Get window tracker if available
+                        window_tracker = getattr(self, '_window_tracker', None)
+                        
+                        self._overlay_controller = OverlayController(
+                            overlay=self._overlay_window,
+                            detector=self._bot_manager._detector,
+                            max_boxes=20,
+                            show_stats=True,
+                            stats_update_interval=0.5,
+                            window_tracker=window_tracker
+                        )
+                        
+                        # Start controller to activate callbacks
+                        self._overlay_controller.start()
+                        print("[MonsterTracking] OverlayController started")
+                    
+                    print("[MonsterTracking] Monster tracking active")
+                    
+                except Exception as e:
+                    print(f"[MonsterTracking] Error initializing tracking: {e}")
+                    import traceback
+                    traceback.print_exc()
+                
                 # ALWAYS re-add test detection boxes to fix white screen issue
                 from lib.ui.overlay_window_pywin32 import DetectionBox
                 test_boxes = [
@@ -9028,6 +9113,24 @@ Alternative Solutions:
                 print(f"[Overlay] {self._t('overlay_enabled')}")
                 
             else:
+                # ========================================
+                # PHASE 7: Stop Monster Tracking
+                # ========================================
+                try:
+                    # Stop overlay controller
+                    if self._overlay_controller is not None:
+                        self._overlay_controller.stop()
+                        self._overlay_controller = None
+                        print("[MonsterTracking] OverlayController stopped")
+                    
+                    # Stop detection
+                    if self._bot_manager is not None:
+                        self._bot_manager.stop_detection()
+                        print("[MonsterTracking] Detection stopped")
+                    
+                except Exception as e:
+                    print(f"[MonsterTracking] Error stopping tracking: {e}")
+                
                 # Hide overlay
                 if self._overlay_window is not None:
                     self._overlay_window.hide()
