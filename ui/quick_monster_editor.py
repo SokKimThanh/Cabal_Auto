@@ -89,6 +89,10 @@ except ImportError:
     pass
 
 
+# Constants
+DATA_PATH = Path("lib/data/monsters.json")
+
+
 class QuickMonsterEditor(tk.Toplevel):
     """
     Quick monster editor modal dialog with dock layout.
@@ -128,6 +132,18 @@ class QuickMonsterEditor(tk.Toplevel):
         self.parent = parent
         self.monster_id = monster_id
         self.on_save_callback = on_save
+        
+        # Data state
+        self.monsters: List[Dict[str, Any]] = []
+        self.current_monster_id: Optional[str] = monster_id
+        self.is_dirty = False  # Global unsaved changes
+        self.is_monster_dirty = False  # Current monster modified
+        
+        # Data state
+        self.monsters: List[Dict[str, Any]] = []
+        self.current_monster_id: Optional[str] = monster_id
+        self.is_dirty = False  # Global unsaved changes
+        self.is_monster_dirty = False  # Current monster modified
         
         # Result queue for worker thread communication
         self.result_queue: queue.Queue = queue.Queue()
@@ -170,6 +186,40 @@ class QuickMonsterEditor(tk.Toplevel):
         self._setup_ui()
         self._bind_events()
         self._start_queue_monitor()
+    
+    def _load_monsters(self) -> None:
+        """Load monsters from JSON file."""
+        try:
+            if DATA_PATH.exists():
+                with open(DATA_PATH, 'r', encoding='utf-8') as f:
+                    self.monsters = json.load(f)
+                # Ensure all monsters have ID
+                for monster in self.monsters:
+                    if 'id' not in monster:
+                        monster['id'] = str(uuid.uuid4())
+            else:
+                self.monsters = []
+                # Create empty file
+                DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+                with open(DATA_PATH, 'w', encoding='utf-8') as f:
+                    json.dump([], f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"[MonsterEditor] Error loading monsters: {e}")
+            self.monsters = []
+    
+    def _save_monsters(self) -> bool:
+        """Save monsters to JSON file."""
+        try:
+            DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(DATA_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.monsters, f, indent=2, ensure_ascii=False)
+            self.is_dirty = False
+            self.is_monster_dirty = False
+            return True
+        except Exception as e:
+            print(f"[MonsterEditor] Error saving monsters: {e}")
+            messagebox.showerror('Error', f'Failed to save: {e}')
+            return False
     
     def _load_monster(self) -> None:
         """Load monster data if editing existing monster."""
