@@ -59,7 +59,13 @@ except ImportError:
         """Fallback tooltip class"""
         pass
     
-    def attach_i18n_tooltip(widget, key: str, ns: Optional[str], lang_provider: Callable[[], str], delay: int = 400) -> I18nToolTip:  # type: ignore
+    def attach_i18n_tooltip(
+        widget,
+        key: str,
+        ns: Optional[str],
+        lang_provider: Callable[[], str],
+        delay: int = 400
+    ) -> I18nToolTip:  # type: ignore
         """Fallback tooltip function when lib.ui.tooltip not available"""
         return I18nToolTip()  # type: ignore
 
@@ -478,7 +484,11 @@ class VisionWizard(tk.Toplevel):
         
         subtitle_label = tk.Label(
             header_frame,
-            text=i18n_t('vision_wizard_subtitle', ns='vision_wizard', default='Cấu hình nhận diện hình ảnh và tracking'),
+            text=i18n_t(
+                'vision_wizard_subtitle',
+                ns='vision_wizard',
+                default='Cấu hình nhận diện hình ảnh và tracking'
+            ),
             font=UI.FONT_LABEL,
             bg=UI.COLOR_PRIMARY,
             fg='white'
@@ -731,7 +741,7 @@ class VisionWizard(tk.Toplevel):
         self.overlay_confidence_label.pack(side='left')
         
         # Update label when scale changes
-        self.overlay_confidence_scale.config(command=lambda v: self.overlay_confidence_label.config(text=f'{float(v):.1f}'))
+        self.overlay_confidence_scale.config(command=self._update_confidence_label)
         
         # Detection Interval Section with Spinbox
         interval_section = ttk.LabelFrame(
@@ -908,9 +918,15 @@ class VisionWizard(tk.Toplevel):
         hsb.config(command=self.template_tree.xview)
         
         # Column headings
-        self.template_tree.heading('name', text=i18n_t('template_name_col', ns='vision_wizard', default='Tên'))
-        self.template_tree.heading('path', text=i18n_t('template_path_col', ns='vision_wizard', default='Đường dẫn'))
-        self.template_tree.heading('threshold', text=i18n_t('template_threshold_col', ns='vision_wizard', default='Ngưỡng'))
+        self.template_tree.heading(
+            'name', text=i18n_t('template_name_col', ns='vision_wizard', default='Tên')
+        )
+        self.template_tree.heading(
+            'path', text=i18n_t('template_path_col', ns='vision_wizard', default='Đường dẫn')
+        )
+        self.template_tree.heading(
+            'threshold', text=i18n_t('template_threshold_col', ns='vision_wizard', default='Ngưỡng')
+        )
         
         # Column widths
         self.template_tree.column('name', width=150, minwidth=100)
@@ -1266,6 +1282,16 @@ class VisionWizard(tk.Toplevel):
             hotkey_map[f'ctrl+shift+f{i}'] = 36 + i
         
         return hotkey_map.get(hotkey_normalized, 0)
+    
+    def _update_confidence_label(self, value: str) -> None:
+        """
+        Update confidence label khi slider thay đổi.
+        
+        Args:
+            value: Giá trị từ Scale widget (string)
+        """
+        if self.overlay_confidence_label:
+            self.overlay_confidence_label.config(text=f'{float(value):.1f}')
         
     def bind_events(self) -> None:
         """
@@ -1502,7 +1528,8 @@ class VisionWizard(tk.Toplevel):
         try:
             test_frame = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
             return test_frame
-        except:
+        except Exception as e:
+            print(f"[VisionWizard] Error creating test frame: {e}")
             return None
     
     def _poll_queue(self) -> None:
