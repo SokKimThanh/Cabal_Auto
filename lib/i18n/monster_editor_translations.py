@@ -114,6 +114,10 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'msg_test_result': 'Tìm thấy: {}, Độ tin cậy: {:.1%}',
         'msg_save_success': 'Đã lưu danh sách quái vật thành công',
         'msg_no_data': 'Không có dữ liệu để lưu',
+        'msg_unsaved_changes': 'Bạn có thay đổi chưa lưu. Bỏ qua chúng?',
+        
+        # Titles
+        'title_confirm': 'Xác nhận',
         
         # Warnings
         'warning_no_monster_selected': 'Vui lòng chọn một quái để xóa.',
@@ -226,6 +230,10 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'msg_test_result': 'Found: {}, Confidence: {:.1%}',
         'msg_save_success': 'Monsters saved successfully',
         'msg_no_data': 'No data to save',
+        'msg_unsaved_changes': 'You have unsaved changes. Discard them?',
+        
+        # Titles
+        'title_confirm': 'Confirm',
         
         # Warnings
         'warning_no_monster_selected': 'Please select a monster to delete.',

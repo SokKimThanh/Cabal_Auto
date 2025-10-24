@@ -1009,7 +1009,27 @@ class QuickMonsterEditor(tk.Toplevel):
             pass
     
     def _on_cancel(self) -> None:
-        """Handle cancel button click."""
+        """
+        Handle cancel/close button click.
+        
+        Prompts user if there are unsaved changes.
+        Following PYTHON_CODING_GUIDELINES.md:
+        - Rule 2: Check is_dirty before prompting
+        """
+        # Rule 2: Check if there are unsaved changes
+        if self.is_dirty:
+            # Prompt user
+            msg = i18n_t('msg_unsaved_changes', ns='monster_editor', 
+                        default='You have unsaved changes. Discard them?')
+            title = i18n_t('title_confirm', ns='monster_editor', default='Confirm')
+            
+            response = messagebox.askyesno(title, msg)
+            
+            if not response:
+                # User chose "No" - don't close
+                return
+        
+        # No unsaved changes or user confirmed - close window
         self.destroy()
     
     def _on_capture(self) -> None:
