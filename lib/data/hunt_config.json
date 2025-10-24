@@ -97,5 +97,16 @@
   "window_hwnd": 264136,
   "overlay": {
     "enabled": false
+  },
+  "monster_tracking": {
+    "enabled": true,
+    "detection_interval": 0.1,
+    "confidence_threshold": 0.7,
+    "stable_frames": 3,
+    "lost_timeout": 3.0,
+    "max_detections_display": 20,
+    "show_stats": true,
+    "stats_update_interval": 0.5,
+    "auto_start_with_hunt": false
   }
 }

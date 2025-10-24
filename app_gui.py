@@ -9041,41 +9041,59 @@ Alternative Solutions:
                     
                     # Initialize BotManager if needed
                     if self._bot_manager is None:
+                        # Get configuration from hunt_cfg
+                        tracking_cfg = self.hunt_cfg.get('monster_tracking', {})
+                        stable_frames = int(tracking_cfg.get('stable_frames', 3))
+                        lost_timeout = float(tracking_cfg.get('lost_timeout', 3.0))
+                        auto_start = bool(tracking_cfg.get('auto_start_with_hunt', False))
+                        
                         self._bot_manager = BotManager(
                             vision_engine=self._vision_engine,
                             screen_capture=self._screen_capture,
-                            stable_frames=3,
-                            lost_timeout=3.0,
-                            enable_auto_start=False  # Manual control for now
+                            stable_frames=stable_frames,
+                            lost_timeout=lost_timeout,
+                            enable_auto_start=auto_start
                         )
-                        print("[MonsterTracking] BotManager initialized")
+                        print(f"[MonsterTracking] BotManager initialized (stable_frames={stable_frames}, lost_timeout={lost_timeout})")
                     
                     # Start detection to create detector instance
                     if not self._bot_manager.is_detection_running():
-                        success = self._bot_manager.start_detection(target_rect=window_bounds)
+                        tracking_cfg = self.hunt_cfg.get('monster_tracking', {})
+                        confidence = float(tracking_cfg.get('confidence_threshold', 0.7))
+                        
+                        success = self._bot_manager.start_detection(
+                            confidence_threshold=confidence,
+                            target_rect=window_bounds
+                        )
                         if success:
-                            print("[MonsterTracking] Detection started")
+                            print(f"[MonsterTracking] Detection started (confidence={confidence})")
                         else:
                             print("[MonsterTracking] Failed to start detection")
                     
                     # Create OverlayController to connect detector → overlay
                     # Only create if we have a detector instance
                     if self._overlay_controller is None and self._bot_manager._detector is not None:
+                        # Get configuration
+                        tracking_cfg = self.hunt_cfg.get('monster_tracking', {})
+                        max_boxes = int(tracking_cfg.get('max_detections_display', 20))
+                        show_stats = bool(tracking_cfg.get('show_stats', True))
+                        stats_interval = float(tracking_cfg.get('stats_update_interval', 0.5))
+                        
                         # Get window tracker if available
                         window_tracker = getattr(self, '_window_tracker', None)
                         
                         self._overlay_controller = OverlayController(
                             overlay=self._overlay_window,
                             detector=self._bot_manager._detector,
-                            max_boxes=20,
-                            show_stats=True,
-                            stats_update_interval=0.5,
+                            max_boxes=max_boxes,
+                            show_stats=show_stats,
+                            stats_update_interval=stats_interval,
                             window_tracker=window_tracker
                         )
                         
                         # Start controller to activate callbacks
                         self._overlay_controller.start()
-                        print("[MonsterTracking] OverlayController started")
+                        print(f"[MonsterTracking] OverlayController started (max_boxes={max_boxes}, show_stats={show_stats})")
                     
                     print("[MonsterTracking] Monster tracking active")
                     
