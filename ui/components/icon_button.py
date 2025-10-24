@@ -1,7 +1,7 @@
 """
-Icon Button Component
+Icon Button & Label Component
 
-Reusable icon button component with:
+Reusable icon button and label components with:
 - Global icon integration (lib.ui.icon_helper)
 - Global button styles (lib.ui.button_styles)
 - Tooltip support (lib.ui.tooltip)
@@ -11,8 +11,9 @@ Reusable icon button component with:
 - Automatic reference management (prevent garbage collection)
 
 Usage:
-    from ui.components import create_icon_button
+    from ui.components import create_icon_button, create_icon_label
     
+    # Icon button
     btn = create_icon_button(
         parent=frame,
         icon_name='add',
@@ -21,6 +22,14 @@ Usage:
         button_type='green_light',
         tooltip_key='btn_add',
         state='normal'
+    )
+    
+    # Icon label
+    label = create_icon_label(
+        parent=frame,
+        icon_name='monster',
+        text='Monster Name:',
+        tooltip_text='Enter the monster name'
     )
 """
 
@@ -37,7 +46,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from lib.ui.icon_helper import IconHelper
+    from ui.helpers.icon_helper import IconHelper
     icon_helper = IconHelper()
 except ImportError as e:
     print(f"Warning: Could not import IconHelper: {e}")
@@ -48,7 +57,7 @@ except ImportError as e:
     icon_helper = MockIconHelper()
 
 try:
-    from lib.ui.button_styles import get_button_config
+    from ui.helpers.button_styles import get_button_config
 except ImportError as e:
     print(f"Warning: Could not import get_button_config: {e}")
     def get_button_config(button_type: str) -> dict:
@@ -108,7 +117,7 @@ except ImportError as e:
         return configs.get(button_type, configs['green_light'])
 
 try:
-    from lib.ui.tooltip import attach_i18n_tooltip
+    from ui.helpers.tooltip import attach_i18n_tooltip
 except ImportError:
     def attach_i18n_tooltip(widget, key: str, ns: Optional[str], lang_provider: Callable, delay: int = 400) -> Any:
         pass
@@ -206,15 +215,12 @@ def create_icon_button(
     # Get icon
     icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
     
-    # Keep icon reference to prevent garbage collection
-    if icon != icon_fallback:
-        _ICON_REFS.append(icon)
+    # Determine if icon is PhotoImage or emoji string
+    is_photoimage = not isinstance(icon, str)
     
-    # Build button text
-    if text:
-        button_text = f"{icon} {text}"
-    else:
-        button_text = icon
+    # Keep icon reference to prevent garbage collection
+    if is_photoimage:
+        _ICON_REFS.append(icon)
     
     # Get base button config from global styles
     base_config = get_button_config(button_type)
@@ -267,16 +273,43 @@ def create_icon_button(
         **kwargs
     }
     
-    # Create button
-    button = tk.Button(
-        parent,
-        text=button_text,
-        command=command,
-        **final_config
-    )
+    # Create button with proper image/text handling
+    if is_photoimage:
+        # PhotoImage: use image= parameter
+        if text:
+            # Icon + text: use compound='left' to show both
+            button = tk.Button(
+                parent,
+                image=icon,
+                text=text,
+                compound='left',
+                command=command,
+                **final_config
+            )
+        else:
+            # Icon only: just image
+            button = tk.Button(
+                parent,
+                image=icon,
+                command=command,
+                **final_config
+            )
+    else:
+        # Emoji string: use text= parameter
+        if text:
+            button_text = f"{icon} {text}"
+        else:
+            button_text = icon
+        button = tk.Button(
+            parent,
+            text=button_text,
+            command=command,
+            **final_config
+        )
     
     # Store icon reference on button to prevent garbage collection
-    button._icon_ref = icon  # type: ignore[attr-defined]
+    if is_photoimage:
+        button._icon_ref = icon  # type: ignore[attr-defined]
     
     # Attach tooltip
     if tooltip_text:
@@ -452,3 +485,134 @@ def create_refresh_button(parent: Any, command: Callable, **kwargs) -> tk.Button
         button_type='refresh',
         **kwargs
     )
+
+
+def create_icon_label(
+    parent: Any,
+    icon_name: str,
+    text: str = '',
+    icon_fallback: str = '❓',
+    icon_size: int = 16,
+    tooltip_text: Optional[str] = None,
+    tooltip_key: Optional[str] = None,
+    tooltip_ns: Optional[str] = None,
+    font: Optional[tuple] = None,
+    fg: Optional[str] = None,
+    bg: Optional[str] = None,
+    **kwargs
+) -> tk.Label:
+    """
+    Create a label with icon and text.
+    
+    Args:
+        parent: Parent widget
+        icon_name: Icon name (e.g., 'monster', 'list', 'info')
+        text: Label text (optional)
+        icon_fallback: Fallback emoji if icon not found
+        icon_size: Icon size in pixels (default: 16)
+        tooltip_text: Direct tooltip text (optional)
+        tooltip_key: i18n tooltip key (optional)
+        tooltip_ns: i18n namespace for tooltip (optional)
+        font: Font tuple (family, size, weight), uses UI.FONT_LABEL if None
+        fg: Foreground color, uses UI.COLOR_TEXT if None
+        bg: Background color, uses UI.BG_DEFAULT if None
+        **kwargs: Additional Label configuration
+    
+    Returns:
+        tk.Label: Configured label with icon and text
+    
+    Example:
+        # Simple icon label
+        label = create_icon_label(
+            parent=frame,
+            icon_name='monster',
+            text='Monster Name:',
+            tooltip_text='Enter the monster name'
+        )
+        
+        # Title with icon
+        title = create_icon_label(
+            parent=frame,
+            icon_name='list',
+            text='Monster List',
+            font=('Segoe UI', 11, 'bold'),
+            fg='#0D47A1'
+        )
+    """
+    # Get default styles
+    try:
+        from lib.ui_style import UIStyle as UI
+    except ImportError:
+        # Fallback UIStyle
+        class UIStyle:
+            FONT_LABEL = ('Segoe UI', 10)
+            COLOR_TEXT = '#333'
+            BG_DEFAULT = '#FFFFFF'
+        UI = UIStyle
+    
+    # Get icon
+    icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
+    
+    # Determine if icon is PhotoImage or emoji string
+    is_photoimage = not isinstance(icon, str)
+    
+    # Keep icon reference to prevent garbage collection
+    if is_photoimage:
+        _ICON_REFS.append(icon)
+    
+    # Apply default styles
+    label_config = {
+        'font': font or UI.FONT_LABEL,
+        'fg': fg or UI.COLOR_TEXT,
+        'bg': bg or UI.BG_DEFAULT
+    }
+    
+    # Merge with user kwargs
+    label_config.update(kwargs)
+    
+    # Create label with proper image/text handling
+    if is_photoimage:
+        # PhotoImage: use image= and compound='left'
+        if text:
+            label = tk.Label(
+                parent,
+                image=icon,
+                text=text,
+                compound='left',
+                **label_config
+            )
+        else:
+            # Icon only
+            label = tk.Label(
+                parent,
+                image=icon,
+                **label_config
+            )
+        # Store icon reference on label
+        label._icon_ref = icon  # type: ignore[attr-defined]
+    else:
+        # Emoji string: use text= parameter
+        if text:
+            label_text = f"{icon} {text}"
+        else:
+            label_text = icon
+        label = tk.Label(
+            parent,
+            text=label_text,
+            **label_config
+        )
+    
+    # Attach tooltip
+    if tooltip_text:
+        # Direct tooltip text
+        _attach_simple_tooltip(label, tooltip_text)
+    elif tooltip_key:
+        # i18n tooltip
+        attach_i18n_tooltip(
+            label,
+            tooltip_key,
+            ns=tooltip_ns,
+            lang_provider=get_lang
+        )
+    
+    return label
