@@ -49,8 +49,6 @@
   "window_bounds": {
     "left": 133,
     "top": 158,
-    "right": 1051,
-    "bottom": 914,
     "width": 918,
     "height": 756
   },
@@ -71,13 +69,13 @@
   "window_pid": 21928,
   "templates": [],
   "training_mode_enabled": true,
-  "ui_mode": "beginner",
+  "ui_mode": "intermediate",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,
     "start_key": "ctrl+shift+r",
     "stop_key": "ctrl+shift+e",
-    "setup_wizard_key": "ctrl+shift+n",
+    "setup_wizard_key": "ctrl+alt+n",
     "library_manager_key": "ctrl+shift+l",
     "vision_wizard_key": "ctrl+shift+v"
   },
