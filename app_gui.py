@@ -38,9 +38,9 @@ from lib.vision.template_matcher import locate_template
 from lib.vision.vision_engine import VisionEngine
 from lib.system.screen_capture import ScreenCapture
 from lib.system.bot_manager import BotManager
-from lib.ui.overlay_controller import OverlayController
+from ui.utils.overlay_controller import OverlayController
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
-from lib.ui.tooltip import attach_i18n_tooltip
+from ui.helpers.tooltip import attach_i18n_tooltip
 from lib.i18n import (
     register_bulk as i18n_register_bulk,
     t as i18n_t,
@@ -58,7 +58,7 @@ except ImportError:
     print("Warning: Icon button component not available, using fallback")
 
 try:
-    from lib.ui.capture_helper import capture_region_and_save
+    from ui.helpers.capture_helper import capture_region_and_save
 except Exception:
     capture_region_and_save = None  # type: ignore
 
@@ -187,7 +187,7 @@ except Exception:
 
 # Optional setup wizard import
 try:
-    from ui.setup_wizard import show_setup_wizard  # type: ignore
+    from ui.windows.setup_wizard import show_setup_wizard  # type: ignore
 except Exception:
     show_setup_wizard = None  # type: ignore
 
@@ -632,7 +632,7 @@ class App(tk.Tk):
 
         # Centralized icon helper
         try:
-            from lib.ui.icon_helper import get_icon_helper
+            from ui.helpers.icon_helper import get_icon_helper
 
             self.icon_helper = get_icon_helper()
         except Exception:
@@ -1663,7 +1663,7 @@ Alternative Solutions:
         )
 
         # Import button styles for refresh button
-        from lib.ui.button_styles import get_button_config
+        from ui.helpers.button_styles import get_button_config
 
         # Refresh button with icon (manual window refresh)
         refresh_icon = self._icon("refresh", "🔄", size=16)
@@ -1782,7 +1782,7 @@ Alternative Solutions:
 
         # Apply All Settings button (right side) - Using global green_light style with save icon
         # Optimized for: Negative Space, Hierarchy, Contrast Ratio (WCAG AA: 5.26:1)
-        from lib.ui.button_styles import get_button_config
+        from ui.helpers.button_styles import get_button_config
 
         apply_config = get_button_config("green_light")
 
@@ -2978,7 +2978,7 @@ Alternative Solutions:
 
         Sprint 19 Task #1: Library Manager Window
         """
-        from lib.ui.library_manager import LibraryManagerWindow
+        from ui.windows.library_manager import LibraryManagerWindow
 
         def on_library_changes(changes):
             """Handle changes from Library Manager."""
@@ -5104,7 +5104,7 @@ Alternative Solutions:
             
             # Import quick editor (lazy import to avoid circular dependencies)
             try:
-                from ui.quick_monster_editor import show_quick_monster_editor
+                from ui.windows.quick_monster_editor import show_quick_monster_editor
             except ImportError as ie:
                 print(f"[Monster Editor] Failed to import quick_monster_editor: {ie}")
                 messagebox.showerror(
@@ -7525,7 +7525,7 @@ Alternative Solutions:
             btn_frame = tk.Frame(dialog)
             btn_frame.pack(fill="x", padx=10, pady=(0, 10))
 
-            from lib.ui.button_styles import get_button_config
+            from ui.helpers.button_styles import get_button_config
 
             tk.Button(
                 btn_frame,
@@ -8885,7 +8885,7 @@ Alternative Solutions:
         Uses singleton pattern - only one instance at a time.
         """
         try:
-            from ui.setup_wizard_vision import create_or_show_vision_wizard
+            from ui.windows.setup_wizard_vision import create_or_show_vision_wizard
             
             wizard = create_or_show_vision_wizard(
                 self, # type: ignore
@@ -8983,7 +8983,7 @@ Alternative Solutions:
             # Import PyWin32 overlay module (Phase 5 refactor)
             try:
                 print("[Overlay] Attempting to import OverlayWindowPyWin32...")
-                from lib.ui.overlay_window_pywin32 import OverlayWindowPyWin32
+                from ui.windows.overlay_window import OverlayWindowPyWin32
                 print("[Overlay] ✅ Import successful!")
             except ImportError as import_err:
                 # PyWin32 not installed - show translated error
@@ -9274,7 +9274,7 @@ Alternative Solutions:
                     traceback.print_exc()
                 
                 # ALWAYS re-add test detection boxes to fix white screen issue
-                from lib.ui.overlay_window_pywin32 import DetectionBox
+                from ui.windows.overlay_window import DetectionBox
                 test_boxes = [
                     DetectionBox(
                         x=100, y=100, w=200, h=150,
@@ -9354,7 +9354,7 @@ Alternative Solutions:
             return
         
         try:
-            from lib.ui.window_tracker import WindowTracker, WindowState
+            from ui.utils.window_tracker import WindowTracker, WindowState
             
             # Define callbacks for window changes
             def on_position_change(rect):
@@ -9535,7 +9535,7 @@ Alternative Solutions:
         print("[Overlay] Opening settings dialog")
         
         try:
-            from lib.ui.overlay_settings import OverlaySettingsDialog
+            from ui.utils.overlay_settings import OverlaySettingsDialog
             
             # Get current overlay config
             overlay_config = self.hunt_cfg.get('overlay', {})
@@ -9667,3 +9667,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
