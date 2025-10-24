@@ -19,10 +19,13 @@ Status: Implementation
 """
 from __future__ import annotations
 import tkinter as tk
-from tkinter import ttk, messagebox
-from typing import Optional, Dict, Any, Callable
+from tkinter import ttk, messagebox, filedialog
+from typing import Optional, Dict, Any, Callable, List
 import queue
 import threading
+import json
+import uuid
+from pathlib import Path
 
 # Import lib modules
 try:
@@ -61,6 +64,22 @@ except ImportError:
         BG_DEFAULT = '#FFFFFF'
         BG_PANEL = '#F5F5F5'
     UI = UIStyle
+
+try:
+    from lib.ui.icon_helper import IconHelper
+    icon_helper = IconHelper()
+except ImportError:
+    class MockIconHelper:
+        def get_icon(self, name: str, fallback: str = '', size: int = 16) -> str:
+            return fallback
+    icon_helper = MockIconHelper()
+
+try:
+    from lib.ui.capture_helper import capture_region_and_save
+    PIL_AVAILABLE = True
+except ImportError:
+    capture_region_and_save = None
+    PIL_AVAILABLE = False
 
 # Register translations
 try:
