@@ -764,7 +764,7 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_name='edit',
             icon_fallback='✏️',
             icon_size=16,
-            text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
+            text=i18n_t('btn_edit', ns='monster_editor', default='Edit'),
             command=self._toggle_edit_mode,
             button_type='primary',
             variant='compact',
@@ -981,7 +981,7 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_name='edit',
             icon_fallback='✏️',
             icon_size=16,
-            text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
+            text=i18n_t('btn_edit', ns='monster_editor', default='Edit'),
             command=self._toggle_template_edit_mode,
             button_type='primary',
             variant='compact',
@@ -1707,7 +1707,7 @@ class QuickMonsterEditor(tk.Toplevel):
             
             # Update button text to Save
             if self.edit_toggle_button:
-                self.edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='Lưu'))
+                self.edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='Save'))
             
             # Show editing badge
             if self.editing_badge and not self.editing_badge.winfo_ismapped():
@@ -1719,7 +1719,7 @@ class QuickMonsterEditor(tk.Toplevel):
             
             # Update button text to Edit
             if self.edit_toggle_button:
-                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'))
+                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Edit'))
             
             # Hide editing badge
             if self.editing_badge and self.editing_badge.winfo_ismapped():
@@ -1742,7 +1742,7 @@ class QuickMonsterEditor(tk.Toplevel):
             
             # Update button text to Save
             if self.template_edit_toggle_button:
-                self.template_edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='Lưu'))
+                self.template_edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='Save'))
             
             # Show editing badge
             if self.template_editing_badge and not self.template_editing_badge.winfo_ismapped():
@@ -1760,7 +1760,7 @@ class QuickMonsterEditor(tk.Toplevel):
             
             # Update button text to Edit
             if self.template_edit_toggle_button:
-                self.template_edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'))
+                self.template_edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Edit'))
             
             # Hide editing badge
             if self.template_editing_badge and self.template_editing_badge.winfo_ismapped():
@@ -1956,7 +1956,7 @@ class QuickMonsterEditor(tk.Toplevel):
         if self.is_editing:
             self.is_editing = False
             if self.edit_toggle_button:
-                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'))
+                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Edit'))
             if self.editing_badge and self.editing_badge.winfo_ismapped():
                 self.editing_badge.pack_forget()
         
