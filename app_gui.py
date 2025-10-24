@@ -1668,8 +1668,8 @@ Alternative Solutions:
         # Import button styles for refresh button
         from ui.helpers.button_styles import get_button_config
 
-        # Refresh button with icon (manual window refresh) - size 24, padding 12x8
-        refresh_icon = self._icon("refresh", "🔄", size=24)
+        # Refresh button with icon (manual window refresh) - icon 16, button size 24, padding 12x8
+        refresh_icon = self._icon("refresh", "🔄", size=16)
         # Build kwargs for refresh button to avoid passing None to 'image'
         refresh_kwargs = get_button_config("refresh")
         if not isinstance(refresh_icon, str):
@@ -1754,101 +1754,50 @@ Alternative Solutions:
             side="left", fill="y", padx=12, pady=2
         )
 
-        # Hunt Control Buttons - Using global button styles for consistency with icons
-        # Start Hunt Button - Green (CR: 5.8:1) with start icon (icon only)
-        start_config = get_button_config("green")
-        start_icon = self._icon("start", "▶️", size=20)
-
-        # Start button - Icon only
-        start_kwargs = dict(start_config)
-        if not isinstance(start_icon, str):
-            start_kwargs.update({"image": start_icon})
-        self.hunt_start_btn = tk.Button(
-            top,
-            text="▶️" if isinstance(start_icon, str) else "",
-            command=self.on_hunt_start,
-            padx=12,
-            pady=8,
-            **start_kwargs,
-        )
-        self.hunt_start_btn.pack(side="left", padx=(0, 6))
-        
-        # Tooltip for Start button
+        # Hunt Control Buttons - Using icon_button component with auto hover effect
+        # Start Hunt Button - Green with start icon (icon only)
         start_tooltip = self._t("start_hunt")
         if self.lang == "vi":
             start_tooltip += "\n(Ctrl+F5)"
         else:
             start_tooltip += "\n(Ctrl+F5)"
-        self._create_tooltip(self.hunt_start_btn, start_tooltip)
-
-        # Keep reference
-        if not isinstance(start_icon, str):
-            try:
-                self._image_refs.append(start_icon)
-            except Exception:
-                pass
-
-        # Stop Hunt Button - Red (CR: 6.3:1) with stop icon (icon only)
-        stop_config = get_button_config("red")
-        stop_icon = self._icon("stop", "⏹️", size=20)
-
-        # Stop button - Icon only
-        stop_kwargs = dict(stop_config)
-        if not isinstance(stop_icon, str):
-            stop_kwargs.update({"image": stop_icon})
-        self.hunt_stop_btn = tk.Button(
-            top,
-            text="⏹️" if isinstance(stop_icon, str) else "",
-            command=self.on_hunt_stop,
-            state="disabled",
-            padx=12,
-            pady=8,
-            **stop_kwargs,
-        )
-        self.hunt_stop_btn.pack(side="left")
         
-        # Tooltip for Stop button
+        self.hunt_start_btn = _create_icon_btn_component(
+            parent=top,
+            icon_name='start',
+            icon_fallback='▶️',
+            icon_size=20,
+            command=self.on_hunt_start,
+            button_type='green',
+            tooltip_text=start_tooltip,
+            state='normal',
+            auto_hover_disabled=False,  # Start button doesn't need hover effect
+            padx=12,
+            pady=8
+        )
+        self.hunt_start_btn.pack(side="left", padx=(0, 6))
+
+        # Stop Hunt Button - Red with stop icon (icon only, disabled by default)
         stop_tooltip = self._t("stop_hunt")
         if self.lang == "vi":
             stop_tooltip += "\n(Ctrl+F6)"
         else:
             stop_tooltip += "\n(Ctrl+F6)"
-        self._create_tooltip(self.hunt_stop_btn, stop_tooltip)
         
-        # Add hover effect for Stop button - show forbidden icon and cursor when disabled
-        forbidden_icon = self._icon("forbidden", "🚫", size=20)
-        
-        # Keep references to both icons for the Stop button
-        self._stop_normal_icon = stop_icon
-        self._stop_forbidden_icon = forbidden_icon
-        
-        def on_stop_hover(event):
-            """Show forbidden icon and cursor when hovering over disabled Stop button."""
-            if str(self.hunt_stop_btn['state']) == 'disabled':
-                # Change icon and cursor to forbidden
-                if not isinstance(forbidden_icon, str):
-                    self.hunt_stop_btn.config(image=forbidden_icon, text="", cursor="X_cursor")
-                else:
-                    self.hunt_stop_btn.config(text="🚫", cursor="X_cursor")
-        
-        def on_stop_leave(event):
-            """Restore stop icon and cursor when leaving Stop button."""
-            if str(self.hunt_stop_btn['state']) == 'disabled':
-                # Restore original icon and cursor
-                if not isinstance(stop_icon, str):
-                    self.hunt_stop_btn.config(image=stop_icon, text="", cursor="arrow")
-                else:
-                    self.hunt_stop_btn.config(text="⏹️", cursor="arrow")
-        
-        self.hunt_stop_btn.bind("<Enter>", on_stop_hover)
-        self.hunt_stop_btn.bind("<Leave>", on_stop_leave)
-        
-        # Keep reference to forbidden icon
-        if not isinstance(forbidden_icon, str):
-            try:
-                self._image_refs.append(forbidden_icon)
-            except Exception:
-                pass
+        self.hunt_stop_btn = _create_icon_btn_component(
+            parent=top,
+            icon_name='stop',
+            icon_fallback='⏹️',
+            icon_size=20,
+            command=self.on_hunt_stop,
+            button_type='red',
+            tooltip_text=stop_tooltip,
+            state='disabled',
+            auto_hover_disabled=True,  # Auto show forbidden icon/cursor on hover
+            padx=12,
+            pady=8
+        )
+        self.hunt_stop_btn.pack(side="left")
 
         # Separator before window controls
         tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(

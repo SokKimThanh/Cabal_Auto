@@ -108,7 +108,7 @@ class IconHelper:
             'warning': ('warning.ico', '⚠️'),  # Warning icon for unsaved state
             'settings': ('setting.ico', '⚙️'),  # Settings icon (dedicated setting.ico)
             'hotkey': ('hotkey.ico', '⌨️'),  # Hotkey icon (dedicated hotkey.ico)
-            'forbidden': ('forbidden.ico', '🚫'),  # Forbidden/disabled icon (red prohibition sign)
+            'forbidden': ('prohibition.ico', '🚫'),  # Forbidden/disabled icon (red prohibition sign)
         }
     
     def _apply_color_tint(self, img: Any, hex_color: str) -> Any:

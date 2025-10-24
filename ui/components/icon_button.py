@@ -138,10 +138,11 @@ _ICON_REFS: List[Any] = []
 def create_icon_button(
     parent: Any,
     icon_name: str,
-    command: Callable,
+    command: Optional[Callable] = None,
     text: Optional[str] = None,
     button_type: str = 'green_light',
     icon_size: int = 16,
+    button_size: Optional[int] = None,
     icon_fallback: str = '',
     tooltip_key: Optional[str] = None,
     tooltip_ns: Optional[str] = None,
@@ -153,6 +154,7 @@ def create_icon_button(
     on_hover: Optional[Callable] = None,
     on_leave: Optional[Callable] = None,
     on_focus: Optional[Callable] = None,
+    auto_hover_disabled: bool = True,
     **kwargs
 ) -> tk.Button:
     """
@@ -164,7 +166,8 @@ def create_icon_button(
         command: Button command callback
         text: Optional button text (icon will be prepended)
         button_type: Button style type ('green_light', 'red', 'blue', 'orange', 'refresh')
-        icon_size: Icon size in pixels (default: 16)
+        icon_size: Icon size in pixels (default: 16) - controls the icon image size
+        button_size: Total button size in pixels (optional) - auto-calculates padding if provided
         icon_fallback: Fallback emoji if icon not found
         tooltip_key: i18n key for tooltip
         tooltip_ns: i18n namespace for tooltip
@@ -172,10 +175,11 @@ def create_icon_button(
         state: Button state ('normal', 'disabled', 'highlight', 'danger')
         variant: Button variant ('compact', 'small', 'medium', 'large', 'text')
         width: Custom button width (overrides variant width)
-        padding: Custom padding dict {'padx': int, 'pady': int}
+        padding: Custom padding dict {'padx': int, 'pady': int} (overrides button_size)
         on_hover: Callback when mouse enters button (event)
         on_leave: Callback when mouse leaves button (event)
         on_focus: Callback when button receives focus (event)
+        auto_hover_disabled: Auto change icon/cursor to forbidden when hovering over disabled button (default: True)
         **kwargs: Additional button configuration (overrides defaults)
     
     Returns:
@@ -256,11 +260,22 @@ def create_icon_button(
         if variant in variant_configs:
             base_config.update(variant_configs[variant])
     
+    # Auto-calculate padding from button_size if provided (only for icon-only buttons)
+    if button_size is not None and not text:
+        # button_size = icon_size + 2*padding + 2*border
+        # Assuming border=2 (from relief='raised', bd=2)
+        border_width = base_config.get('bd', 2)
+        calculated_padding = (button_size - icon_size - 2 * border_width) // 2
+        # Ensure minimum padding of 2
+        calculated_padding = max(2, calculated_padding)
+        base_config['padx'] = calculated_padding
+        base_config['pady'] = calculated_padding
+    
     # Apply custom width
     if width is not None:
         base_config['width'] = width
     
-    # Apply custom padding
+    # Apply custom padding (overrides button_size calculation)
     if padding:
         if 'padx' in padding:
             base_config['padx'] = padding['padx']
@@ -330,6 +345,44 @@ def create_icon_button(
     if is_photoimage:
         button._icon_ref = icon  # type: ignore[attr-defined]
     
+    # Store original icon name and size for hover restoration
+    button._original_icon_name = icon_name  # type: ignore[attr-defined]
+    button._original_icon_size = icon_size  # type: ignore[attr-defined]
+    button._original_icon_fallback = icon_fallback  # type: ignore[attr-defined]
+    
+    # Auto hover effect for disabled buttons
+    if auto_hover_disabled and (state == 'disabled' or kwargs.get('state') == 'disabled'):
+        # Get forbidden icon for hover
+        forbidden_icon = icon_helper.get_icon('forbidden', fallback='🚫', size=icon_size)
+        is_forbidden_photoimage = not isinstance(forbidden_icon, str)
+        
+        # Store forbidden icon reference
+        if is_forbidden_photoimage:
+            button._forbidden_icon_ref = forbidden_icon  # type: ignore[attr-defined]
+            _ICON_REFS.append(forbidden_icon)
+        
+        def _auto_hover_enter(event):
+            """Show forbidden icon and cursor when hovering over disabled button."""
+            if str(button['state']) == 'disabled':
+                # Change icon and cursor to forbidden
+                if is_forbidden_photoimage:
+                    button.config(image=forbidden_icon, cursor='X_cursor')
+                else:
+                    button.config(text='🚫', cursor='X_cursor')
+        
+        def _auto_hover_leave(event):
+            """Restore original icon and cursor when leaving disabled button."""
+            if str(button['state']) == 'disabled':
+                # Restore original icon and cursor
+                if is_photoimage:
+                    button.config(image=icon, cursor='arrow')
+                else:
+                    button.config(text=icon, cursor='arrow')
+        
+        # Bind auto hover events
+        button.bind('<Enter>', _auto_hover_enter, add='+')
+        button.bind('<Leave>', _auto_hover_leave, add='+')
+    
     # Attach tooltip
     if tooltip_text:
         # Direct tooltip text
@@ -343,11 +396,11 @@ def create_icon_button(
             lang_provider=get_lang
         )
     
-    # Bind hover callbacks
+    # Bind custom hover callbacks (will be added after auto hover)
     if on_hover:
-        button.bind('<Enter>', on_hover)
+        button.bind('<Enter>', on_hover, add='+')
     if on_leave:
-        button.bind('<Leave>', on_leave)
+        button.bind('<Leave>', on_leave, add='+')
     if on_focus:
         button.bind('<FocusIn>', on_focus)
     
