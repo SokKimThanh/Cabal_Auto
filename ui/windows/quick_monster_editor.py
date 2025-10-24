@@ -170,6 +170,13 @@ class QuickMonsterEditor(tk.Toplevel):
         self.is_dirty = False  # Global unsaved changes
         self.is_monster_dirty = False  # Current monster modified
         
+        # Hunt config path
+        self.hunt_config_path = Path("lib/data/hunt_config.json")
+        
+        # Game window mode (none, below, above)
+        self.game_window_mode_var = tk.StringVar(value="none")
+        self._load_hunt_config()
+        
         # UI update debounce
         self._refresh_list_after_id: Optional[str] = None
         
@@ -263,6 +270,20 @@ class QuickMonsterEditor(tk.Toplevel):
         except Exception as e:
             print(f"[MonsterEditor] Error loading monsters: {e}")
             self.monsters = []
+    
+    def _load_hunt_config(self) -> None:
+        """Load hunt_config.json and set game_window_mode."""
+        try:
+            if self.hunt_config_path.exists():
+                with open(self.hunt_config_path, 'r', encoding='utf-8') as f:
+                    hunt_config = json.load(f)
+                mode = hunt_config.get('game_window_mode', 'none')
+                self.game_window_mode_var.set(mode)
+                print(f"[MonsterEditor] Loaded game_window_mode: {mode}")
+            else:
+                print(f"[MonsterEditor] hunt_config.json not found, using default 'none'")
+        except Exception as e:
+            print(f"[MonsterEditor] Error loading hunt_config.json: {e}")
     
     def set_dirty(self, value: bool = True) -> None:
         """Set dirty state and update UI."""
@@ -416,6 +437,38 @@ class QuickMonsterEditor(tk.Toplevel):
             bg=UI.BG_PANEL
         )
         self.status_label.pack(side='left', padx=(5, 0), pady=15)
+        
+        # Game window mode selector
+        game_mode_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
+        game_mode_frame.pack(side='left', padx=(15, 0), pady=15)
+        
+        game_mode_label = tk.Label(
+            game_mode_frame,
+            text=i18n_t('label_game_mode', ns='monster_editor', default='Game:'),
+            font=UI.FONT_SMALL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_PANEL
+        )
+        game_mode_label.pack(side='left', padx=(0, 5))
+        
+        self.game_mode_combo = ttk.Combobox(
+            game_mode_frame,
+            textvariable=self.game_window_mode_var,
+            values=['none', 'below', 'above'],
+            state='readonly',
+            width=10,
+            font=UI.FONT_SMALL
+        )
+        self.game_mode_combo.pack(side='left')
+        self.game_mode_combo.bind('<<ComboboxSelected>>', self._on_game_mode_change)
+        
+        # Attach tooltip
+        attach_i18n_tooltip(
+            self.game_mode_combo,
+            'tooltip_game_mode',
+            ns='monster_editor',
+            lang_provider=get_lang
+        )
         
         # Action buttons (right side)
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
@@ -1174,6 +1227,43 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # No unsaved changes or user confirmed - close window
         self.destroy()
+    
+    def _on_game_mode_change(self, event: Any = None) -> None:
+        """
+        Handle game window mode change - save to hunt_config.json.
+        
+        Args:
+            event: Combobox event (unused)
+        """
+        try:
+            new_mode = self.game_window_mode_var.get()
+            print(f"[MonsterEditor] Game window mode changed to: {new_mode}")
+            
+            # Load current hunt_config
+            if self.hunt_config_path.exists():
+                with open(self.hunt_config_path, 'r', encoding='utf-8') as f:
+                    hunt_config = json.load(f)
+            else:
+                hunt_config = {}
+            
+            # Update game_window_mode
+            hunt_config['game_window_mode'] = new_mode
+            
+            # Save back to file
+            with open(self.hunt_config_path, 'w', encoding='utf-8') as f:
+                json.dump(hunt_config, f, indent=2, ensure_ascii=False)
+            
+            print(f"[MonsterEditor] Saved game_window_mode to hunt_config.json")
+            
+            # TODO: Trigger game window launch if needed
+            # if new_mode == 'above':
+            #     self._launch_game_window(topmost=True)
+            # elif new_mode == 'below':
+            #     self._launch_game_window(topmost=False)
+            
+        except Exception as e:
+            print(f"[MonsterEditor] Error saving game_window_mode: {e}")
+            self._show_error('Error', f'Failed to save game mode: {e}')
     
     def _on_capture(self) -> None:
         """Handle capture button click."""
