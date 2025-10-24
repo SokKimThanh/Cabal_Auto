@@ -45,22 +45,50 @@ except ImportError:
         pass
 
 try:
+    from lib.ui.button_styles import get_button_config
+except ImportError:
+    def get_button_config(button_type: str) -> dict:
+        return {'font': ('Arial', 10, 'bold')}
+
+try:
+    from ui.components.icon_button import create_icon_button
+except ImportError:
+    # Fallback if component not available
+    def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
+        config = get_button_config(button_type)
+        config.update(kwargs)
+        return tk.Button(parent, text=text or icon_name, command=command, **config)
+        """Fallback if button_styles not available."""
+        return {
+            'font': ('Arial', 10, 'bold'),
+            'relief': 'raised',
+            'bd': 2,
+            'cursor': 'hand2'
+        }
+
+try:
     from lib.ui_style import UIStyle as UI
 except ImportError:
+    # Fallback UIStyle matching lib.ui.button_styles colors
     class UIStyle:
+        # Fonts
         FONT_TITLE = ('Segoe UI', 12, 'bold')
         FONT_SECTION = ('Segoe UI', 11, 'bold')
         FONT_LABEL = ('Segoe UI', 10)
         FONT_TEXT = ('Segoe UI', 10)
-        FONT_BUTTON = ('Segoe UI', 10)
+        FONT_BUTTON = ('Arial', 10, 'bold')  # Match button_styles
         FONT_SMALL = ('Segoe UI', 8)
-        COLOR_PRIMARY = '#2196F3'
-        COLOR_PRIMARY_TEXT = '#0D47A1'
-        COLOR_TEXT = '#212121'
-        COLOR_SUBTEXT = '#666666'
-        COLOR_ACCENT = '#4CAF50'
-        COLOR_DANGER = '#F44336'
-        COLOR_WARNING = '#FF7043'
+        
+        # Colors matching button_styles.py
+        COLOR_PRIMARY = '#2196F3'        # BTN_BLUE_BG
+        COLOR_PRIMARY_TEXT = '#0D47A1'   # Darker blue for text
+        COLOR_TEXT = '#333'              # TEXT_DARK
+        COLOR_SUBTEXT = '#666'           # TEXT_GRAY
+        COLOR_ACCENT = '#357A38'         # BTN_GREEN_LIGHT_BG
+        COLOR_DANGER = '#C62828'         # BTN_RED_BG
+        COLOR_WARNING = '#FF9800'        # BTN_ORANGE_BG
+        
+        # Backgrounds
         BG_DEFAULT = '#FFFFFF'
         BG_PANEL = '#F5F5F5'
     UI = UIStyle
@@ -139,6 +167,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.is_dirty = False  # Global unsaved changes
         self.is_monster_dirty = False  # Current monster modified
         
+        # UI update debounce
+        self._refresh_list_after_id: Optional[str] = None
+        
+        # Icon references (prevent garbage collection)
+        self._icon_refs: List[Any] = []
+        
         # Result queue for worker thread communication
         self.result_queue: queue.Queue = queue.Queue()
         self.is_working = False
@@ -200,7 +234,7 @@ class QuickMonsterEditor(tk.Toplevel):
         self.geometry(f"+{x}+{y}")
         
         # Setup
-        self._load_monster()
+        self._load_monsters()  # Load monsters list from JSON
         self._setup_ui()
         self._bind_events()
         self._start_queue_monitor()
@@ -214,12 +248,14 @@ class QuickMonsterEditor(tk.Toplevel):
             if DATA_PATH.exists():
                 with open(DATA_PATH, 'r', encoding='utf-8') as f:
                     self.monsters = json.load(f)
+                print(f"[MonsterEditor] Loaded {len(self.monsters)} monsters from {DATA_PATH}")
                 # Ensure all monsters have ID
                 for monster in self.monsters:
                     if 'id' not in monster:
                         monster['id'] = str(uuid.uuid4())
             else:
                 self.monsters = []
+                print(f"[MonsterEditor] No data file found at {DATA_PATH}, creating empty list")
                 # Create empty file
                 DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
                 with open(DATA_PATH, 'w', encoding='utf-8') as f:
@@ -252,9 +288,96 @@ class QuickMonsterEditor(tk.Toplevel):
         else:
             # Show saved status
             status_text = i18n_t('status_saved', ns='monster_editor', default='All saved')
-            self.status_label.config(text=status_text, fg=UI.COLOR_ACCENT)
+            self.status_label.config(text=f"✓ {status_text}", fg=UI.COLOR_ACCENT)
             if self.save_button is not None:
                 self.save_button.config(state='disabled')
+    
+    def _flash_save_success(self) -> None:
+        """Flash status label to indicate save success (subtle feedback)."""
+        if not hasattr(self, 'status_label') or self.status_label is None:
+            return
+        
+        # Flash green "Saved!" message
+        original_text = self.status_label.cget('text')
+        self.status_label.config(text="✓ Saved!", fg='#4CAF50', font=('Segoe UI', 10, 'bold'))
+        
+        # Restore after 1.5 seconds
+        def restore():
+            if self.status_label and self.status_label.winfo_exists():
+                self._update_dirty_state_ui()
+        
+        self.after(1500, restore)
+    
+    def _get_icon(self, name: str, fallback: str = '', size: int = 16) -> str:
+        """
+        Get icon and keep reference to prevent garbage collection.
+        
+        Args:
+            name: Icon name
+            fallback: Fallback emoji
+            size: Icon size
+            
+        Returns:
+            Icon string (emoji or empty if PhotoImage)
+        """
+        icon = icon_helper.get_icon(name, fallback=fallback, size=size)
+        # Keep reference to prevent garbage collection
+        if icon != fallback:
+            self._icon_refs.append(icon)
+            return ''  # Return empty string, button will use image parameter
+        return icon  # Return emoji fallback
+    
+    def _show_error(self, title: str, message: str) -> None:
+        """
+        Show error messagebox that appears on top.
+        
+        Args:
+            title: Dialog title
+            message: Error message
+        """
+        self.attributes('-topmost', False)  # Temporarily disable
+        messagebox.showerror(title, message, parent=self)
+        self.attributes('-topmost', True)  # Re-enable
+    
+    def _show_info(self, title: str, message: str) -> None:
+        """
+        Show info messagebox that appears on top.
+        
+        Args:
+            title: Dialog title
+            message: Info message
+        """
+        self.attributes('-topmost', False)
+        messagebox.showinfo(title, message, parent=self)
+        self.attributes('-topmost', True)
+    
+    def _show_warning(self, title: str, message: str) -> None:
+        """
+        Show warning messagebox that appears on top.
+        
+        Args:
+            title: Dialog title
+            message: Warning message
+        """
+        self.attributes('-topmost', False)
+        messagebox.showwarning(title, message, parent=self)
+        self.attributes('-topmost', True)
+    
+    def _ask_yes_no(self, title: str, message: str) -> bool:
+        """
+        Show yes/no question dialog that appears on top.
+        
+        Args:
+            title: Dialog title
+            message: Question message
+            
+        Returns:
+            True if user clicked Yes, False otherwise
+        """
+        self.attributes('-topmost', False)
+        result = messagebox.askyesno(title, message, parent=self)
+        self.attributes('-topmost', True)
+        return result
 
     def _save_monsters(self) -> bool:
         """Save monsters to JSON file."""
@@ -268,17 +391,8 @@ class QuickMonsterEditor(tk.Toplevel):
             return True
         except Exception as e:
             print(f"[MonsterEditor] Error saving monsters: {e}")
-            messagebox.showerror('Error', f'Failed to save: {e}')
+            self._show_error('Error', f'Failed to save: {e}')
             return False
-    
-    def _load_monster(self) -> None:
-        """Load monster data if editing existing monster."""
-        if self.monster_id is None:
-            return
-        
-        # TODO: Load from monster_manager when implemented
-        # For now, use default data
-        print(f"[QuickEditor] Loading monster: {self.monster_id}")
     
     def _setup_ui(self) -> None:
         """Create UI components with dock layout."""
@@ -326,46 +440,39 @@ class QuickMonsterEditor(tk.Toplevel):
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
         button_frame.pack(side='right', padx=15, pady=15)
         
-        # Save button
+        # Save button - using component
         save_text = i18n_t('btn_save', ns='monster_editor', default='Save')
-        self.save_button = tk.Button(
+        self.save_button = create_icon_button(
             button_frame,
+            icon_name='save',
+            icon_fallback='💾',
+            icon_size=16,
             text=save_text,
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_ACCENT,
-            fg='#FFFFFF',
-            width=10,
-            command=self._on_save
+            command=self._on_save,
+            button_type='green_light',
+            variant='medium',
+            width=12,
+            tooltip_key='tooltip_save',
+            tooltip_ns='monster_editor'
         )
         self.save_button.pack(side='left', padx=5)
         
-        # Tooltip
-        attach_i18n_tooltip(
-            self.save_button,
-            'tooltip_save',
-            ns='monster_editor',
-            lang_provider=get_lang
-        )
-        
-        # Cancel button
+        # Cancel button - using component
         cancel_text = i18n_t('btn_cancel', ns='monster_editor', default='Cancel')
-        self.cancel_button = tk.Button(
+        self.cancel_button = create_icon_button(
             button_frame,
+            icon_name='cancel',
+            icon_fallback='✖',
+            icon_size=16,
             text=cancel_text,
-            font=UI.FONT_BUTTON,
-            bg=UI.BG_PANEL,
-            width=10,
-            command=self._on_cancel
+            command=self._on_cancel,
+            button_type='refresh',  # Gray neutral style
+            variant='medium',
+            width=12,
+            tooltip_key='tooltip_cancel',
+            tooltip_ns='monster_editor'
         )
         self.cancel_button.pack(side='left', padx=5)
-        
-        # Tooltip
-        attach_i18n_tooltip(
-            self.cancel_button,
-            'tooltip_cancel',
-            ns='monster_editor',
-            lang_provider=get_lang
-        )
     
     def _create_left_panel(self, parent: Any) -> None:
         """Create left panel with monster list and CRUD buttons."""
@@ -373,11 +480,13 @@ class QuickMonsterEditor(tk.Toplevel):
         left_frame.pack(side='left', fill='y', padx=0, pady=0)
         left_frame.pack_propagate(False)
         
-        # Title
-        title_text = i18n_t('label_monster_list', ns='monster_editor', default='Monster List')
+        # Title with icon
+        list_icon = icon_helper.get_icon('list', fallback='🗂️', size=16)
+        self._icon_refs.append(list_icon)  # Keep reference!
+        title_text = i18n_t('label_monster_list', ns='monster_editor', default='Monsters')
         title_label = tk.Label(
             left_frame,
-            text=title_text,
+            text=f"{list_icon} {title_text}",
             font=UI.FONT_SECTION,
             fg=UI.COLOR_PRIMARY_TEXT,
             bg=UI.BG_PANEL
@@ -408,31 +517,37 @@ class QuickMonsterEditor(tk.Toplevel):
         button_frame = tk.Frame(left_frame, bg=UI.BG_PANEL)
         button_frame.pack(side='top', fill='x', padx=10, pady=(5, 10))
         
-        # Add Monster button
-        add_icon = icon_helper.get_icon('add', fallback='➕', size=16)
+        # Add Monster button - using component
         add_text = i18n_t('btn_add_monster', ns='monster_editor', default='Add Monster')
-        self.add_monster_button = tk.Button(
+        self.add_monster_button = create_icon_button(
             button_frame,
-            text=f"{add_icon} {add_text}",
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_ACCENT,
-            fg='#FFFFFF',
-            command=self._on_add_monster
+            icon_name='add',
+            icon_fallback='➕',
+            icon_size=16,
+            text=add_text,
+            command=self._on_add_monster,
+            button_type='green_light',
+            variant='medium',
+            tooltip_key='tooltip_add_monster',
+            tooltip_ns='monster_editor'
         )
-        self.add_monster_button.pack(side='top', fill='x', pady=2)
+        self.add_monster_button.pack(side='top', fill='x', pady=(0, 5))
         
-        # Delete Monster button
-        delete_icon = icon_helper.get_icon('delete', fallback='🗑️', size=16)
+        # Delete Monster button - using component
         delete_text = i18n_t('btn_delete', ns='monster_editor', default='Delete')
-        self.delete_monster_button = tk.Button(
+        self.delete_monster_button = create_icon_button(
             button_frame,
-            text=f"{delete_icon} {delete_text}",
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_DANGER,
-            fg='#FFFFFF',
-            command=self._on_delete_monster
+            icon_name='delete',
+            icon_fallback='🗑️',
+            icon_size=16,
+            text=delete_text,
+            command=self._on_delete_monster,
+            button_type='red',
+            variant='medium',
+            tooltip_key='tooltip_delete_monster',
+            tooltip_ns='monster_editor'
         )
-        self.delete_monster_button.pack(side='top', fill='x', pady=2)
+        self.delete_monster_button.pack(side='top', fill='x', pady=(0, 5))
         
         # Initial load
         self._refresh_monster_list()
@@ -483,10 +598,12 @@ class QuickMonsterEditor(tk.Toplevel):
         form_frame.pack(fill='both', expand=True)
         
         # Monster Name
-        name_label_text = i18n_t('monster_name_label', ns='monster_editor', default='Monster name:')
+        name_icon = icon_helper.get_icon('monster', fallback='👹', size=16)
+        self._icon_refs.append(name_icon)  # Keep reference!
+        name_label_text = i18n_t('monster_name_label', ns='monster_editor', default='Name')
         tk.Label(
             form_frame,
-            text=name_label_text,
+            text=f"{name_icon} {name_label_text}:",
             font=UI.FONT_LABEL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
@@ -501,10 +618,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.name_entry.bind('<KeyRelease>', self._on_info_change)
         
         # Level
-        level_label_text = i18n_t('monster_level_label', ns='monster_editor', default='Level:')
+        level_icon = icon_helper.get_icon('up', fallback='↑', size=16)
+        self._icon_refs.append(level_icon)  # Keep reference!
+        level_label_text = i18n_t('monster_level_label', ns='monster_editor', default='Level')
         tk.Label(
             form_frame,
-            text=level_label_text,
+            text=f"{level_icon} {level_label_text}:",
             font=UI.FONT_LABEL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
@@ -523,10 +642,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.level_spinbox.bind('<<Decrement>>', self._on_info_change)
         
         # Priority
-        priority_label_text = i18n_t('monster_priority_label', ns='monster_editor', default='Priority:')
+        priority_icon = icon_helper.get_icon('priority', fallback='🎯', size=16)
+        self._icon_refs.append(priority_icon)  # Keep reference!
+        priority_label_text = i18n_t('monster_priority_label', ns='monster_editor', default='Priority')
         tk.Label(
             form_frame,
-            text=priority_label_text,
+            text=f"{priority_icon} {priority_label_text}:",
             font=UI.FONT_LABEL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
@@ -545,10 +666,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.priority_spinbox.bind('<<Decrement>>', self._on_info_change)
         
         # HP
-        hp_label_text = i18n_t('monster_hp_label', ns='monster_editor', default='HP:')
+        hp_icon = icon_helper.get_icon('hp', fallback='❤️', size=16)
+        self._icon_refs.append(hp_icon)  # Keep reference!
+        hp_label_text = i18n_t('monster_hp_label', ns='monster_editor', default='HP')
         tk.Label(
             form_frame,
-            text=hp_label_text,
+            text=f"{hp_icon} {hp_label_text}:",
             font=UI.FONT_LABEL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
@@ -563,10 +686,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.hp_entry.bind('<KeyRelease>', self._on_info_change)
         
         # Damage per hit
-        damage_label_text = i18n_t('monster_damage_label', ns='monster_editor', default='Damage per hit:')
+        damage_icon = icon_helper.get_icon('damage', fallback='⚔️', size=16)
+        self._icon_refs.append(damage_icon)  # Keep reference!
+        damage_label_text = i18n_t('monster_damage_label', ns='monster_editor', default='Damage')
         tk.Label(
             form_frame,
-            text=damage_label_text,
+            text=f"{damage_icon} {damage_label_text}:",
             font=UI.FONT_LABEL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
@@ -581,10 +706,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.damage_entry.bind('<KeyRelease>', self._on_info_change)
         
         # Description
-        desc_label_text = i18n_t('monster_desc_label', ns='monster_editor', default='Description:')
+        desc_icon = icon_helper.get_icon('info', fallback='📋', size=16)
+        self._icon_refs.append(desc_icon)  # Keep reference!
+        desc_label_text = i18n_t('monster_desc_label', ns='monster_editor', default='Description')
         tk.Label(
             form_frame,
-            text=desc_label_text,
+            text=f"{desc_icon} {desc_label_text}:",
             font=UI.FONT_LABEL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
@@ -656,54 +783,81 @@ class QuickMonsterEditor(tk.Toplevel):
         controls_frame = tk.Frame(main_frame, bg=UI.BG_DEFAULT)
         controls_frame.pack(side='left', fill='both', expand=True, padx=0, pady=0)
 
-        # Capture Template button
-        self.capture_button = tk.Button(
+        # Capture Template button - using component
+        capture_text = i18n_t('btn_capture', ns='monster_editor', default='Capture')
+        self.capture_button = create_icon_button(
             controls_frame,
-            text=i18n_t('btn_capture', ns='monster_editor', default='Capture Template'),
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_ACCENT,
-            fg='#FFFFFF',
-            width=18
+            icon_name='capture',
+            icon_fallback='📸',
+            icon_size=16,
+            text=capture_text,
+            command=lambda: None,  # Will be bound later
+            button_type='blue',
+            variant='medium',
+            width=18,
+            tooltip_key='tooltip_capture',
+            tooltip_ns='monster_editor'
         )
-        self.capture_button.pack(side='top', fill='x', pady=4)
+        self.capture_button.pack(side='top', fill='x', pady=(0, 5))
 
-        # Browse File button
-        self.browse_button = tk.Button(
+        # Browse File button - using component
+        browse_text = i18n_t('btn_browse', ns='monster_editor', default='Browse')
+        self.browse_button = create_icon_button(
             controls_frame,
-            text=i18n_t('btn_browse', ns='monster_editor', default='Browse File'),
-            font=UI.FONT_BUTTON,
-            bg=UI.BG_PANEL,
-            width=18
+            icon_name='browse',
+            icon_fallback='📂',
+            icon_size=16,
+            text=browse_text,
+            command=lambda: None,  # Will be bound later
+            button_type='refresh',  # Gray neutral style
+            variant='medium',
+            width=18,
+            tooltip_key='tooltip_browse',
+            tooltip_ns='monster_editor'
         )
-        self.browse_button.pack(side='top', fill='x', pady=4)
+        self.browse_button.pack(side='top', fill='x', pady=(0, 5))
 
-        # Delete Template button
-        self.delete_template_button = tk.Button(
+        # Delete Template button - using component
+        delete_text = i18n_t('btn_delete_template', ns='monster_editor', default='Delete')
+        self.delete_template_button = create_icon_button(
             controls_frame,
-            text=i18n_t('btn_delete_template', ns='monster_editor', default='Delete Template'),
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_DANGER,
-            fg='#FFFFFF',
-            width=18
+            icon_name='delete',
+            icon_fallback='🗑️',
+            icon_size=16,
+            text=delete_text,
+            command=lambda: None,  # Will be bound later
+            button_type='red',
+            variant='medium',
+            width=18,
+            tooltip_key='tooltip_delete_template',
+            tooltip_ns='monster_editor'
         )
-        self.delete_template_button.pack(side='top', fill='x', pady=4)
+        self.delete_template_button.pack(side='top', fill='x', pady=(0, 5))
 
-        # Test Recognition button
-        self.test_template_button = tk.Button(
+        # Test Recognition button - using component
+        test_text = i18n_t('btn_test', ns='monster_editor', default='Test')
+        self.test_template_button = create_icon_button(
             controls_frame,
-            text=i18n_t('btn_test', ns='monster_editor', default='Test Recognition'),
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_PRIMARY,
-            fg='#FFFFFF',
-            width=18
+            icon_name='test',
+            icon_fallback='🧪',
+            icon_size=16,
+            text=test_text,
+            command=lambda: None,  # Will be bound later
+            button_type='blue',
+            variant='medium',
+            width=18,
+            tooltip_key='tooltip_test_template',
+            tooltip_ns='monster_editor'
         )
-        self.test_template_button.pack(side='top', fill='x', pady=4)
+        self.test_template_button.pack(side='top', fill='x', pady=(0, 5))
 
         # Threshold slider
-        threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Recognition Threshold:')
+        threshold_icon = icon_helper.get_icon('settings', fallback='⚙️', size=16)
+        self._icon_refs.append(threshold_icon)  # Keep reference!
+        threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Threshold')
         self.threshold_label = tk.Label(
             controls_frame,
-            text=threshold_label_text,
+            text=f"{threshold_icon} {threshold_label_text}:",
             font=UI.FONT_LABEL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
@@ -817,14 +971,13 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Capture button
         capture_text = i18n_t('btn_capture', ns='monster_editor', default='Capture Region')
+        capture_config = get_button_config('blue')
         self.capture_button = tk.Button(
             button_container,
             text=capture_text,
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_PRIMARY,
-            fg='#FFFFFF',
             width=15,
-            command=self._on_capture
+            command=self._on_capture,
+            **capture_config
         )
         self.capture_button.pack(side='left', padx=5)
         
@@ -838,14 +991,13 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Test button
         test_text = i18n_t('btn_test', ns='monster_editor', default='Test Recognition')
+        test_config = get_button_config('blue')
         self.test_button = tk.Button(
             button_container,
             text=test_text,
-            font=UI.FONT_BUTTON,
-            bg=UI.COLOR_PRIMARY,
-            fg='#FFFFFF',
             width=15,
-            command=self._on_test
+            command=self._on_test,
+            **test_config
         )
         self.test_button.pack(side='left', padx=5)
         
@@ -909,13 +1061,13 @@ class QuickMonsterEditor(tk.Toplevel):
         if error is not None:
             # Show error message
             error_msg = i18n_t('error_capture_failed', ns='monster_editor', default='Capture failed: {}')
-            messagebox.showerror('Error', error_msg.format(error))
+            self._show_error('Error', error_msg.format(error))
             return
         
         if result_type == 'capture':
             # Handle capture result
             success_msg = i18n_t('msg_template_added', ns='monster_editor', default='Template added successfully')
-            messagebox.showinfo('Success', success_msg)
+            self._show_info('Success', success_msg)
             
         elif result_type == 'test':
             # Handle test result
@@ -924,10 +1076,10 @@ class QuickMonsterEditor(tk.Toplevel):
             
             if matches > 0:
                 success_msg = i18n_t('msg_test_success', ns='monster_editor', default='Found {} matches (confidence: {:.1%})')
-                messagebox.showinfo('Test Result', success_msg.format(matches, confidence))
+                self._show_info('Test Result', success_msg.format(matches, confidence))
             else:
                 fail_msg = i18n_t('msg_test_failed', ns='monster_editor', default='No matches found')
-                messagebox.showinfo('Test Result', fail_msg)
+                self._show_info('Test Result', fail_msg)
     
     def _set_working(self, working: bool) -> None:
         """
@@ -981,29 +1133,29 @@ class QuickMonsterEditor(tk.Toplevel):
         # Rule 2: Check if there's anything to save
         if not self.monsters or not isinstance(self.monsters, list):
             error_msg = i18n_t('msg_no_data', ns='monster_editor', default='No data to save')
-            messagebox.showwarning('Warning', error_msg)
+            self._show_warning('Warning', error_msg)
             return
         
         # Validate all monsters before saving
         for idx, monster in enumerate(self.monsters):
             # Rule 2: Check monster is dict
             if not isinstance(monster, dict):
-                messagebox.showerror('Error', f'Invalid monster data at index {idx}')
+                self._show_error('Error', f'Invalid monster data at index {idx}')
                 return
             
             # Rule 1: Validate required fields
             name = monster.get('name', '').strip()
             if not name:
-                messagebox.showerror('Error', f'Monster at index {idx} has no name')
+                self._show_error('Error', f'Monster at index {idx} has no name')
                 return
         
         # Rule 5: Call save once, cache result
         success = self._save_monsters()
         
         if success:
-            # Show success message
-            success_msg = i18n_t('msg_save_success', ns='monster_editor', default='Monsters saved successfully')
-            messagebox.showinfo('Success', success_msg)
+            # Flash status label instead of popup (subtle feedback)
+            self._flash_save_success()
+            print(f"[MonsterEditor] Saved {len(self.monsters)} monsters successfully")
         else:
             # Error already shown by _save_monsters()
             pass
@@ -1023,7 +1175,7 @@ class QuickMonsterEditor(tk.Toplevel):
                         default='You have unsaved changes. Discard them?')
             title = i18n_t('title_confirm', ns='monster_editor', default='Confirm')
             
-            response = messagebox.askyesno(title, msg)
+            response = self._ask_yes_no(title, msg)
             
             if not response:
                 # User chose "No" - don't close
@@ -1057,7 +1209,7 @@ class QuickMonsterEditor(tk.Toplevel):
         except Exception as e:
             print(f"[QuickEditor] Error in capture: {e}")
             self._set_working(False)
-            messagebox.showerror('Error', f'Capture failed: {e}')
+            self._show_error('Error', f'Capture failed: {e}')
     
     def _on_test(self) -> None:
         """Handle test button click."""
@@ -1084,7 +1236,7 @@ class QuickMonsterEditor(tk.Toplevel):
         except Exception as e:
             print(f"[QuickEditor] Error in test: {e}")
             self._set_working(False)
-            messagebox.showerror('Error', f'Test failed: {e}')
+            self._show_error('Error', f'Test failed: {e}')
     
     def _validate(self) -> bool:
         """
@@ -1098,7 +1250,7 @@ class QuickMonsterEditor(tk.Toplevel):
             name = self.name_entry.get().strip()
             if not name:
                 error_msg = i18n_t('error_name_empty', ns='monster_editor', default='Monster name cannot be empty')
-                messagebox.showerror('Validation Error', error_msg)
+                self._show_error('Validation Error', error_msg)
                 return False
         
         # Check level is positive integer
@@ -1109,7 +1261,7 @@ class QuickMonsterEditor(tk.Toplevel):
                     raise ValueError()
             except ValueError:
                 error_msg = i18n_t('error_level_invalid', ns='monster_editor', default='Level must be a positive integer')
-                messagebox.showerror('Validation Error', error_msg)
+                self._show_error('Validation Error', error_msg)
                 return False
         
         return True
@@ -1201,7 +1353,7 @@ class QuickMonsterEditor(tk.Toplevel):
         
         selection = self.monster_listbox.curselection()
         if not selection:
-            messagebox.showwarning(
+            self._show_warning(
                 'No Selection',
                 i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster to delete.')
             )
@@ -1212,7 +1364,7 @@ class QuickMonsterEditor(tk.Toplevel):
             monster = self.monsters[index]
             
             # Confirm deletion
-            confirm = messagebox.askyesno(
+            confirm = self._ask_yes_no(
                 'Confirm Deletion',
                 i18n_t(
                     'confirm_delete_monster',
@@ -1223,15 +1375,20 @@ class QuickMonsterEditor(tk.Toplevel):
             
             if confirm:
                 # Delete monster
+                deleted_id = monster.get('id')
                 self.monsters.pop(index)
                 self.is_dirty = True
                 
-                # Clear current selection if deleted
-                if self.current_monster_id == monster.get('id'):
+                # Clear form and current selection if deleted monster was selected
+                if self.current_monster_id == deleted_id:
                     self.current_monster_id = None
+                    self._clear_info_form()
                 
                 # Refresh listbox
                 self._refresh_monster_list()
+                
+                # Update dirty state UI
+                self._update_dirty_state_ui()
                 
                 print(f"[MonsterEditor] Deleted monster: {monster.get('name')}")
     
@@ -1316,8 +1473,10 @@ class QuickMonsterEditor(tk.Toplevel):
                     if self.desc_text:
                         monster['description'] = self.desc_text.get('1.0', tk.END).strip()
                     
-                    # Refresh list to show updated name
-                    self._refresh_monster_list()
+                    # Debounced refresh - cancel previous, schedule new
+                    if self._refresh_list_after_id is not None:
+                        self.after_cancel(self._refresh_list_after_id)
+                    self._refresh_list_after_id = self.after(300, self._refresh_monster_list)
                     break
 
 
