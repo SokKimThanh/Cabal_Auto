@@ -227,9 +227,13 @@ class QuickMonsterEditor(tk.Toplevel):
         self.info_tab: Optional[tk.Frame] = None
         self.templates_tab: Optional[tk.Frame] = None
         
-        # Edit mode widgets
+        # Edit mode widgets (Info tab)
         self.edit_toggle_button: Optional[tk.Button] = None
         self.editing_badge: Optional[tk.Label] = None
+        
+        # Edit mode widgets (Template tab)
+        self.template_edit_toggle_button: Optional[tk.Button] = None
+        self.template_editing_badge: Optional[tk.Label] = None
         
         # Info tab widgets
         self.name_entry: Optional[tk.Entry] = None
@@ -951,8 +955,56 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_templates', ns='monster_editor', default='Templates')
         self.notebook.add(self.templates_tab, text=tab_text)
         
+        # Create scrollable container
+        canvas = tk.Canvas(self.templates_tab, bg=UI.BG_DEFAULT, highlightthickness=0)
+        scrollbar_main = tk.Scrollbar(self.templates_tab, orient='vertical', command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=UI.BG_DEFAULT)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar_main.set)
+        
+        canvas.pack(side='left', fill='both', expand=True, padx=10, pady=10)
+        scrollbar_main.pack(side='right', fill='y')
+        
+        # Header with Edit button and badge (similar to Info tab)
+        header_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
+        header_frame.pack(fill='x', padx=5, pady=(0, 10))
+        
+        # Edit/Save toggle button for Template tab
+        self.template_edit_toggle_button = create_icon_button(
+            header_frame,
+            icon_name='edit',
+            icon_fallback='✏️',
+            icon_size=16,
+            text=i18n_t('btn_edit', ns='monster_editor', default='Edit'),
+            command=self._toggle_template_edit_mode,
+            button_type='primary',
+            variant='compact',
+            tooltip_key='tooltip_edit_mode_template',
+            tooltip_ns='monster_editor'
+        )
+        self.template_edit_toggle_button.pack(side='left', padx=(0, 10))
+        
+        # Editing badge for Template tab
+        self.template_editing_badge = tk.Label(
+            header_frame,
+            text=i18n_t('badge_editing', ns='monster_editor', default='Editing'),
+            font=UI.FONT_SMALL,
+            fg='white',
+            bg='#FF8C00',  # Orange
+            padx=8,
+            pady=2,
+            relief='flat'
+        )
+        # Initially hidden (not in edit mode)
+        
         # Layout: left (list), right (controls)
-        main_frame = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
+        main_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Template listbox with scrollbar
@@ -985,7 +1037,7 @@ class QuickMonsterEditor(tk.Toplevel):
         controls_frame = tk.Frame(main_frame, bg=UI.BG_DEFAULT)
         controls_frame.pack(side='left', fill='both', expand=True, padx=0, pady=0)
 
-        # Capture Template button - using component
+        # Capture Template button - using component with auto disabled hover
         capture_text = i18n_t('btn_capture', ns='monster_editor', default='Capture')
         self.capture_button = create_icon_button(
             controls_frame,
@@ -997,12 +1049,13 @@ class QuickMonsterEditor(tk.Toplevel):
             button_type='blue',
             variant='medium',
             width=18,
+            auto_hover_disabled=True,
             tooltip_key='tooltip_capture',
             tooltip_ns='monster_editor'
         )
         self.capture_button.pack(side='top', fill='x', pady=(0, 5))
 
-        # Browse File button - using component
+        # Browse File button - using component with auto disabled hover
         browse_text = i18n_t('btn_browse', ns='monster_editor', default='Browse')
         self.browse_button = create_icon_button(
             controls_frame,
@@ -1014,12 +1067,13 @@ class QuickMonsterEditor(tk.Toplevel):
             button_type='refresh',  # Gray neutral style
             variant='medium',
             width=18,
+            auto_hover_disabled=True,
             tooltip_key='tooltip_browse',
             tooltip_ns='monster_editor'
         )
         self.browse_button.pack(side='top', fill='x', pady=(0, 5))
 
-        # Delete Template button - using component
+        # Delete Template button - using component with auto disabled hover
         delete_text = i18n_t('btn_delete_template', ns='monster_editor', default='Delete')
         self.delete_template_button = create_icon_button(
             controls_frame,
@@ -1031,12 +1085,13 @@ class QuickMonsterEditor(tk.Toplevel):
             button_type='red',
             variant='medium',
             width=18,
+            auto_hover_disabled=True,
             tooltip_key='tooltip_delete_template',
             tooltip_ns='monster_editor'
         )
         self.delete_template_button.pack(side='top', fill='x', pady=(0, 5))
 
-        # Test Recognition button - using component
+        # Test Recognition button - using component with auto disabled hover
         test_text = i18n_t('btn_test', ns='monster_editor', default='Test')
         self.test_template_button = create_icon_button(
             controls_frame,
@@ -1048,10 +1103,17 @@ class QuickMonsterEditor(tk.Toplevel):
             button_type='blue',
             variant='medium',
             width=18,
+            auto_hover_disabled=True,
             tooltip_key='tooltip_test_template',
             tooltip_ns='monster_editor'
         )
         self.test_template_button.pack(side='top', fill='x', pady=(0, 5))
+        
+        # Initially disable all template buttons (locked mode)
+        self.capture_button.config(state='disabled')
+        self.browse_button.config(state='disabled')
+        self.delete_template_button.config(state='disabled')
+        self.test_template_button.config(state='disabled')
 
         # Threshold slider
         threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Threshold')
@@ -1662,6 +1724,47 @@ class QuickMonsterEditor(tk.Toplevel):
             # Hide editing badge
             if self.editing_badge and self.editing_badge.winfo_ismapped():
                 self.editing_badge.pack_forget()
+    
+    def _toggle_template_edit_mode(self) -> None:
+        """Toggle between locked and edit mode for template buttons."""
+        self.is_editing = not self.is_editing
+        
+        if self.is_editing:
+            # Switch to edit mode - enable template buttons
+            if self.capture_button:
+                self.capture_button.config(state='normal')
+            if self.browse_button:
+                self.browse_button.config(state='normal')
+            if self.delete_template_button:
+                self.delete_template_button.config(state='normal')
+            if self.test_template_button:
+                self.test_template_button.config(state='normal')
+            
+            # Update button text to Save
+            if self.template_edit_toggle_button:
+                self.template_edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='💾 Save'))
+            
+            # Show editing badge
+            if self.template_editing_badge and not self.template_editing_badge.winfo_ismapped():
+                self.template_editing_badge.pack(side='left')
+        else:
+            # Switch to locked mode - disable template buttons
+            if self.capture_button:
+                self.capture_button.config(state='disabled')
+            if self.browse_button:
+                self.browse_button.config(state='disabled')
+            if self.delete_template_button:
+                self.delete_template_button.config(state='disabled')
+            if self.test_template_button:
+                self.test_template_button.config(state='disabled')
+            
+            # Update button text to Edit
+            if self.template_edit_toggle_button:
+                self.template_edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='✏️ Edit'))
+            
+            # Hide editing badge
+            if self.template_editing_badge and self.template_editing_badge.winfo_ismapped():
+                self.template_editing_badge.pack_forget()
     
     def _set_fields_state(self, state: str) -> None:
         """Set state of all form fields.
