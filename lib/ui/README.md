@@ -1,50 +1,97 @@
-# UI Module - User Interface Components
+# lib.ui - DEPRECATED# UI Module - User Interface Components
 
-This directory contains UI-related components for the CABAL Auto Hunt application.
 
----
 
-## 📁 Directory Structure
+⚠️ **This package has been reorganized and moved to `ui/`**This directory contains UI-related components for the CABAL Auto Hunt application.
 
-```
-lib/ui/
-├── __init__.py                       # Module initialization
-├── README.md                         # This file
-├── ui_style.py                       # Global UI styling
-├── auto_hunt.py                      # Hunt loop UI
-├── setup_wizard.py                   # Initial setup wizard
-├── setup_wizard_vision.py            # Vision template setup
+
+
+## Migration---
+
+
+
+All modules from `lib/ui/` have been moved to the new `ui/` package structure:## 📁 Directory Structure
+
+
+
+### New Structure:```
+
+```lib/ui/
+
+ui/├── __init__.py                       # Module initialization
+
+├── helpers/          # UI helper utilities (button_styles, icon_helper, tooltip, etc.)├── README.md                         # This file
+
+├── windows/          # Main windows & dialogs (library_manager, quick_monster_editor, etc.)├── ui_style.py                       # Global UI styling
+
+├── utils/            # UI utilities (overlay_controller, window_tracker, etc.)├── auto_hunt.py                      # Hunt loop UI
+
+└── components/       # Reusable UI components (icon_button, icon_label, etc.)├── setup_wizard.py                   # Initial setup wizard
+
+```├── setup_wizard_vision.py            # Vision template setup
+
 ├── template_matcher.py               # Template matching UI
-├── win_input.py                      # Windows input simulation
+
+### Import Changes:├── win_input.py                      # Windows input simulation
+
 ├── overlay_window_pywin32.py         # PyWin32 overlay (Sprint 23)
-├── window_tracker.py                 # Window position tracking (Sprint 23)
-├── detection_converter.py            # Vision → Overlay converter (Sprint 23)
-└── overlay_settings.py               # Overlay settings dialog
-```
 
----
+**Old imports:**├── window_tracker.py                 # Window position tracking (Sprint 23)
 
-## 🆕 Sprint 23 - Overlay System
+```python├── detection_converter.py            # Vision → Overlay converter (Sprint 23)
 
-### New Components
+from lib.ui.icon_helper import IconHelper└── overlay_settings.py               # Overlay settings dialog
 
-#### 1. **OverlayWindowPyWin32** (`overlay_window_pywin32.py`)
-Real-time transparent overlay for vision detection display.
+from lib.ui.button_styles import get_button_config```
 
-**Features:**
-- Semi-transparent, click-through window
-- GDI rendering for detection boxes
-- FPS-limited updates (configurable)
-- Thread-safe detection updates
+from lib.ui.tooltip import attach_i18n_tooltip
 
-**Usage:**
+from lib.ui.library_manager import LibraryManagerWindow---
+
+from lib.ui.overlay_controller import OverlayController
+
+```## 🆕 Sprint 23 - Overlay System
+
+
+
+**New imports:**### New Components
+
 ```python
-from lib.ui.overlay_window_pywin32 import OverlayWindowPyWin32, DetectionBox
 
-overlay = OverlayWindowPyWin32(
-    target_rect={'left': 100, 'top': 100, 'width': 800, 'height': 600},
+from ui.helpers import IconHelper, get_button_config, attach_i18n_tooltip#### 1. **OverlayWindowPyWin32** (`overlay_window_pywin32.py`)
+
+from ui.windows.library_manager import LibraryManagerWindowReal-time transparent overlay for vision detection display.
+
+from ui.utils.overlay_controller import OverlayController
+
+```**Features:**
+
+- Semi-transparent, click-through window
+
+## Documentation- GDI rendering for detection boxes
+
+- FPS-limited updates (configurable)
+
+For complete migration guide, see: `docs/UI_PACKAGE_REORGANIZATION.md`- Thread-safe detection updates
+
+
+
+## Status**Usage:**
+
+```python
+
+- ✅ All files moved to new structurefrom lib.ui.overlay_window_pywin32 import OverlayWindowPyWin32, DetectionBox
+
+- ✅ All imports updated
+
+- ✅ Old files removedoverlay = OverlayWindowPyWin32(
+
+- ✅ New documentation created    target_rect={'left': 100, 'top': 100, 'width': 800, 'height': 600},
+
     alpha=0.7,
-    fps_limit=15
+
+This directory now only contains `__init__.py` and `README.md` for reference.    fps_limit=15
+
 )
 overlay.create()
 overlay.show()
