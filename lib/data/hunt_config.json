@@ -102,6 +102,6 @@
     "stats_update_interval": 0.5,
     "auto_start_with_hunt": false
   },
-  "game_window_mode": "below",
+  "game_window_mode": "above",
   "app_window_mode": "topmost"
 }

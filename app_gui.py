@@ -1642,10 +1642,10 @@ Alternative Solutions:
             side="left", fill="y", padx=12, pady=2
         )
 
-        # Right side: Window Selection Combobox with auto find & bring-to-front
+        # Right side: Window Selection Combobox - shortened to half width (20)
         self.win_combo_var = tk.StringVar()
         self.win_combo = ttk.Combobox(
-            top, textvariable=self.win_combo_var, state="readonly", width=40
+            top, textvariable=self.win_combo_var, state="readonly", width=20
         )
         self.win_combo.pack(side="left", padx=(0, 6))
 
@@ -1668,8 +1668,8 @@ Alternative Solutions:
         # Import button styles for refresh button
         from ui.helpers.button_styles import get_button_config
 
-        # Refresh button with icon (manual window refresh)
-        refresh_icon = self._icon("refresh", "🔄", size=16)
+        # Refresh button with icon (manual window refresh) - size 24, padding 12x8
+        refresh_icon = self._icon("refresh", "🔄", size=24)
         # Build kwargs for refresh button to avoid passing None to 'image'
         refresh_kwargs = get_button_config("refresh")
         if not isinstance(refresh_icon, str):
@@ -1677,13 +1677,26 @@ Alternative Solutions:
             refresh_kwargs.update({"image": refresh_icon, "compound": "left"})
         else:
             refresh_text = self._t("refresh_windows")
+        
         refresh_btn = tk.Button(
             top,
             text=refresh_text,
-            command=self.on_hunt_refresh_windows,
+            command=self.on_hunt_refresh_windows,  # Keep original function
+            padx=12,
+            pady=8,
             **refresh_kwargs,
         )
         refresh_btn.pack(side="left", padx=(0, 6))
+        
+        # Tooltip for refresh button - more specific
+        refresh_tooltip = (
+            "Refresh Window List\n"
+            "Scans for game windows"
+            if self.lang == "en" else
+            "Làm Mới Danh Sách Cửa Sổ\n"
+            "Quét lại các cửa sổ game"
+        )
+        self._create_tooltip(refresh_btn, refresh_tooltip)
 
         # Keep reference to prevent garbage collection
         if not isinstance(refresh_icon, str):
@@ -1691,6 +1704,50 @@ Alternative Solutions:
                 self._image_refs.append(refresh_icon)
             except Exception:
                 pass
+        
+        # Checkbox to toggle advanced controls (window selectors)
+        self.show_advanced_controls_var = tk.BooleanVar(value=False)
+        
+        def toggle_advanced_controls():
+            """Toggle visibility of window position selectors."""
+            show = self.show_advanced_controls_var.get()
+            
+            if hasattr(self, 'app_window_selector'):
+                if show:
+                    if hasattr(self.app_window_selector, 'show'):
+                        self.app_window_selector.show()
+                else:
+                    if hasattr(self.app_window_selector, 'hide'):
+                        self.app_window_selector.hide()
+            
+            if hasattr(self, 'game_window_selector'):
+                if show:
+                    if hasattr(self.game_window_selector, 'show'):
+                        self.game_window_selector.show()
+                else:
+                    if hasattr(self.game_window_selector, 'hide'):
+                        self.game_window_selector.hide()
+        
+        advanced_check = tk.Checkbutton(
+            top,
+            text="",  # No text, just checkbox
+            variable=self.show_advanced_controls_var,
+            command=toggle_advanced_controls,
+            bg=top.cget('bg')
+        )
+        advanced_check.pack(side="left", padx=(0, 6))
+        
+        # Tooltip for checkbox
+        check_tooltip = (
+            "Show Advanced Controls\n"
+            "• App window positioning\n"
+            "• Game window positioning"
+            if self.lang == "en" else
+            "Hiện Điều Khiển Nâng Cao\n"
+            "• Vị trí cửa sổ ứng dụng\n"
+            "• Vị trí cửa sổ game"
+        )
+        self._create_tooltip(advanced_check, check_tooltip)
 
         # Separator before hunt controls
         tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
@@ -1763,7 +1820,7 @@ Alternative Solutions:
             side="left", fill="y", padx=12, pady=2
         )
 
-        # Window Position Selectors (App + Game)
+        # Window Position Selectors (App + Game) - Hidden by default
         if create_app_window_selector and create_game_window_selector:
             # App window selector
             self.app_window_selector = create_app_window_selector(
@@ -1780,6 +1837,12 @@ Alternative Solutions:
                 on_mode_change=self._on_game_window_mode_change
             )
             self.game_window_selector.pack(side="left")
+            
+            # Hide both selectors by default (toggle with refresh button)
+            if hasattr(self.app_window_selector, 'hide'):
+                self.app_window_selector.hide()
+            if hasattr(self.game_window_selector, 'hide'):
+                self.game_window_selector.hide()
 
         # Store notebook reference for keyboard shortcuts
         self.notebook = ttk.Notebook(self)
