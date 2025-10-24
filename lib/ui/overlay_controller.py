@@ -46,6 +46,14 @@ class OverlayStats:
     updates_sent: int = 0
     last_update_time: float = 0.0
     update_latency_ms: float = 0.0
+    
+    # Detection metrics
+    current_monster_count: int = 0
+    total_detections: int = 0
+    
+    # FPS tracking
+    fps: float = 0.0
+    last_fps_update: float = 0.0
 
 
 # =====================================================================
@@ -79,26 +87,34 @@ class OverlayController:
         self,
         overlay: OverlayWindowPyWin32,
         detector: MonsterDetector,
-        max_boxes: int = 20
+        max_boxes: int = 20,
+        show_stats: bool = True,
+        stats_update_interval: float = 0.5
     ):
         """
-        Initialize overlay controller
+        Initialize OverlayController
         
         Args:
             overlay: OverlayWindowPyWin32 instance for rendering
             detector: MonsterDetector instance for detection events
-            max_boxes: Maximum number of boxes to display
+            max_boxes: Maximum detection boxes to display
+            show_stats: Whether to display FPS and stats overlay
+            stats_update_interval: How often to update stats display (seconds)
         """
         self._overlay = overlay
         self._detector = detector
         self._max_boxes = max_boxes
+        self._show_stats = show_stats
+        self._stats_update_interval = stats_update_interval
         
-        # State
+        # State tracking
         self._running = False
         self._current_state = DetectionState.SEARCHING
         
         # Statistics
         self._stats = OverlayStats()
+        self._fps_frame_count = 0
+        self._fps_timer_start = time.time()
         
         logger.info("[OverlayController] Initialized")
     
@@ -162,12 +178,103 @@ class OverlayController:
         return OverlayStats(
             updates_sent=self._stats.updates_sent,
             last_update_time=self._stats.last_update_time,
-            update_latency_ms=self._stats.update_latency_ms
+            update_latency_ms=self._stats.update_latency_ms,
+            current_monster_count=self._stats.current_monster_count,
+            total_detections=self._stats.total_detections,
+            fps=self._stats.fps,
+            last_fps_update=self._stats.last_fps_update
         )
     
     def get_current_state(self) -> DetectionState:
         """Get current detection state"""
         return self._current_state
+    
+    # =================================================================
+    # Private - Stats Display
+    # =================================================================
+    
+    def _create_stats_boxes(self) -> List[DetectionBox]:
+        """
+        Create overlay boxes for stats display
+        
+        Returns:
+            List of DetectionBox objects for stats overlay
+        """
+        if not self._show_stats:
+            return []
+        
+        stats_boxes = []
+        
+        # Stats positioned at top-left corner
+        x_offset = 10
+        y_offset = 10
+        line_height = 20
+        
+        # FPS display
+        fps_text = f"FPS: {self._stats.fps:.1f}"
+        stats_boxes.append(DetectionBox(
+            x=x_offset,
+            y=y_offset,
+            w=100,
+            h=line_height,
+            label=fps_text,
+            color=(0, 255, 0),  # Green
+            confidence=1.0
+        ))
+        
+        # Monster count
+        count_text = f"Monsters: {self._stats.current_monster_count}"
+        stats_boxes.append(DetectionBox(
+            x=x_offset,
+            y=y_offset + line_height,
+            w=120,
+            h=line_height,
+            label=count_text,
+            color=(0, 255, 255),  # Cyan
+            confidence=1.0
+        ))
+        
+        # Current state
+        state_text = f"State: {self._current_state.value}"
+        state_color_rgb = get_state_color(self._current_state.value)
+        stats_boxes.append(DetectionBox(
+            x=x_offset,
+            y=y_offset + line_height * 2,
+            w=150,
+            h=line_height,
+            label=state_text,
+            color=state_color_rgb,
+            confidence=1.0
+        ))
+        
+        # Latency
+        latency_text = f"Latency: {self._stats.update_latency_ms:.1f}ms"
+        stats_boxes.append(DetectionBox(
+            x=x_offset,
+            y=y_offset + line_height * 3,
+            w=140,
+            h=line_height,
+            label=latency_text,
+            color=(255, 255, 0),  # Yellow
+            confidence=1.0
+        ))
+        
+        return stats_boxes
+    
+    def _update_fps(self) -> None:
+        """Update FPS calculation"""
+        self._fps_frame_count += 1
+        now = time.time()
+        elapsed = now - self._fps_timer_start
+        
+        # Update FPS every stats_update_interval
+        if elapsed >= self._stats_update_interval:
+            self._stats.fps = self._fps_frame_count / elapsed
+            self._stats.last_fps_update = now
+            
+            # Reset counters
+            self._fps_frame_count = 0
+            self._fps_timer_start = now
     
     # =================================================================
     # Private - Callback Handlers
@@ -187,14 +294,24 @@ class OverlayController:
             update_start = time.time()
             
             # Convert detections to overlay boxes
-            boxes = detections_to_boxes(
+            detection_boxes = detections_to_boxes(
                 detections,
                 state=self._current_state.value,
                 max_boxes=self._max_boxes
             )
             
+            # Update statistics
+            self._stats.current_monster_count = len(detection_boxes)
+            self._stats.total_detections += len(detections)
+            
+            # Update FPS
+            self._update_fps()
+            
+            # Combine detection boxes with stats display
+            all_boxes = detection_boxes + self._create_stats_boxes()
+            
             # Update overlay
-            self._overlay.update_detections(boxes)
+            self._overlay.update_detections(all_boxes)
             
             # Update statistics
             self._stats.updates_sent += 1
@@ -205,7 +322,9 @@ class OverlayController:
             if self._stats.updates_sent % 30 == 0:
                 logger.debug(
                     f"[OverlayController] Updated overlay: "
-                    f"{len(boxes)} boxes, latency: {self._stats.update_latency_ms:.1f}ms"
+                    f"{len(detection_boxes)} detections + stats, "
+                    f"FPS: {self._stats.fps:.1f}, "
+                    f"latency: {self._stats.update_latency_ms:.1f}ms"
                 )
             
         except Exception as e:

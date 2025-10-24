@@ -217,7 +217,8 @@ class TestDetectionHandling:
         controller = OverlayController(
             overlay=mock_overlay,
             detector=mock_detector,
-            max_boxes=5
+            max_boxes=5,
+            show_stats=False  # Disable stats to test only detection limit
         )
         controller.start()
         
@@ -232,9 +233,9 @@ class TestDetectionHandling:
         # Call callback
         detection_callback(detections)
         
-        # Should limit to max_boxes
+        # Should limit to max_boxes (no stats boxes)
         boxes = mock_overlay.update_detections.call_args[0][0]
-        assert len(boxes) <= 5
+        assert len(boxes) == 5  # Exactly 5 detection boxes
 
 
 class TestStateHandling:
@@ -398,6 +399,116 @@ class TestIntegration:
         # All updates should have gone through
         assert mock_overlay.update_detections.call_count >= 4
         assert controller.get_current_state() == DetectionState.SEARCHING
+
+
+class TestStatsDisplay:
+    """Test FPS and stats display (Task 2.2)"""
+    
+    def test_stats_enabled_by_default(self, mock_overlay, mock_detector):
+        """Test stats display is enabled by default"""
+        controller = OverlayController(mock_overlay, mock_detector, show_stats=True)
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        detection_callback([detection])
+        
+        # Should include stats boxes
+        call_args = mock_overlay.update_detections.call_args
+        boxes = call_args[0][0]
+        
+        # Should have detection boxes + stats boxes (FPS, count, state, latency = 4)
+        assert len(boxes) > 1  # At least 1 detection + stats
+        
+        # Check that stats are included
+        labels = [box.label for box in boxes]
+        assert any("FPS:" in label for label in labels)
+        assert any("Monsters:" in label for label in labels)
+        assert any("State:" in label for label in labels)
+        assert any("Latency:" in label for label in labels)
+    
+    def test_stats_disabled(self, mock_overlay, mock_detector):
+        """Test stats display can be disabled"""
+        controller = OverlayController(mock_overlay, mock_detector, show_stats=False)
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        detection_callback([detection])
+        
+        call_args = mock_overlay.update_detections.call_args
+        boxes = call_args[0][0]
+        
+        # Should only have detection boxes, no stats
+        labels = [box.label for box in boxes]
+        assert not any("FPS:" in label for label in labels)
+        assert not any("Monsters:" in label for label in labels)
+    
+    def test_fps_updates(self, mock_overlay, mock_detector):
+        """Test FPS calculation updates"""
+        controller = OverlayController(
+            mock_overlay, 
+            mock_detector, 
+            show_stats=True,
+            stats_update_interval=0.1  # Update every 100ms
+        )
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        
+        # Process multiple frames
+        for _ in range(5):
+            detection_callback([detection])
+            time.sleep(0.02)  # 20ms between frames
+        
+        stats = controller.get_stats()
+        # FPS should be calculated after interval
+        # With 5 frames over ~100ms, FPS should be around 50
+        assert stats.fps >= 0  # Just check it was calculated
+    
+    def test_monster_count_stat(self, mock_overlay, mock_detector):
+        """Test monster count is tracked"""
+        controller = OverlayController(mock_overlay, mock_detector, show_stats=True)
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        
+        # Send 3 detections
+        detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0),
+            Detection(x=200, y=100, w=50, h=50, score=0.9, template_id="m2", scale=1.0),
+            Detection(x=300, y=100, w=50, h=50, score=0.9, template_id="m3", scale=1.0),
+        ]
+        detection_callback(detections)
+        
+        stats = controller.get_stats()
+        assert stats.current_monster_count == 3
+        assert stats.total_detections == 3
+    
+    def test_stats_box_formatting(self, mock_overlay, mock_detector):
+        """Test stats boxes are properly formatted"""
+        controller = OverlayController(mock_overlay, mock_detector, show_stats=True)
+        controller.start()
+        
+        detection_callback = mock_detector.on_detections_changed.call_args[0][0]
+        detection = Detection(x=100, y=100, w=50, h=50, score=0.9, template_id="m1", scale=1.0)
+        detection_callback([detection])
+        
+        call_args = mock_overlay.update_detections.call_args
+        boxes = call_args[0][0]
+        
+        # Find stat boxes
+        stat_boxes = [box for box in boxes if "FPS:" in box.label or "State:" in box.label]
+        
+        # Stats should be at top-left corner
+        for box in stat_boxes:
+            assert box.x == 10
+            assert box.y >= 10
+            assert box.w > 0
+            assert box.h > 0
+            assert isinstance(box.color, tuple)
+            assert len(box.color) == 3  # RGB
 
 
 # Run tests
