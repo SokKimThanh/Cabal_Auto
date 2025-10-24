@@ -1698,25 +1698,31 @@ Alternative Solutions:
         )
 
         # Hunt Control Buttons - Using global button styles for consistency with icons
-        # Start Hunt Button - Green (CR: 5.8:1) with start icon
+        # Start Hunt Button - Green (CR: 5.8:1) with start icon (icon only)
         start_config = get_button_config("green")
-        start_icon = self._icon("start", "▶️", size=18)
+        start_icon = self._icon("start", "▶️", size=20)
 
-        # Start button kwargs (avoid passing None image)
+        # Start button - Icon only
         start_kwargs = dict(start_config)
-        start_text = self._t("start_hunt")
         if not isinstance(start_icon, str):
-            start_kwargs.update({"image": start_icon, "compound": "left"})
-            start_text = f" {start_text}"
+            start_kwargs.update({"image": start_icon})
         self.hunt_start_btn = tk.Button(
             top,
-            text=start_text,
+            text="▶️" if isinstance(start_icon, str) else "",
             command=self.on_hunt_start,
-            padx=16,
-            pady=6,
+            padx=12,
+            pady=8,
             **start_kwargs,
         )
         self.hunt_start_btn.pack(side="left", padx=(0, 6))
+        
+        # Tooltip for Start button
+        start_tooltip = self._t("start_hunt")
+        if self.lang == "vi":
+            start_tooltip += "\n(Ctrl+F5)"
+        else:
+            start_tooltip += "\n(Ctrl+F5)"
+        self._create_tooltip(self.hunt_start_btn, start_tooltip)
 
         # Keep reference
         if not isinstance(start_icon, str):
@@ -1725,25 +1731,32 @@ Alternative Solutions:
             except Exception:
                 pass
 
-        # Stop Hunt Button - Red (CR: 6.3:1) with stop icon
+        # Stop Hunt Button - Red (CR: 6.3:1) with stop icon (icon only)
         stop_config = get_button_config("red")
-        stop_icon = self._icon("stop", "⏹️", size=18)
+        stop_icon = self._icon("stop", "⏹️", size=20)
 
+        # Stop button - Icon only
         stop_kwargs = dict(stop_config)
-        stop_text = self._t("stop_hunt")
         if not isinstance(stop_icon, str):
-            stop_kwargs.update({"image": stop_icon, "compound": "left"})
-            stop_text = f" {stop_text}"
+            stop_kwargs.update({"image": stop_icon})
         self.hunt_stop_btn = tk.Button(
             top,
-            text=stop_text,
+            text="⏹️" if isinstance(stop_icon, str) else "",
             command=self.on_hunt_stop,
             state="disabled",
-            padx=16,
-            pady=6,
+            padx=12,
+            pady=8,
             **stop_kwargs,
         )
         self.hunt_stop_btn.pack(side="left")
+        
+        # Tooltip for Stop button
+        stop_tooltip = self._t("stop_hunt")
+        if self.lang == "vi":
+            stop_tooltip += "\n(Ctrl+F6)"
+        else:
+            stop_tooltip += "\n(Ctrl+F6)"
+        self._create_tooltip(self.hunt_stop_btn, stop_tooltip)
 
         # Separator before window controls
         tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
