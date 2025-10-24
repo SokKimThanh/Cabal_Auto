@@ -105,12 +105,13 @@ class GameWindowModeSelector:
             self.label.pack(side='left', padx=(0, 5))
         
         # Mode selector combobox
+        # Optimal width for game window modes (none, below, above)
         self.mode_combo = ttk.Combobox(
             self.container,
             textvariable=self.current_mode,
             values=['none', 'below', 'above'],
             state='readonly',
-            width=10,
+            width=8,  # Reduced from 10 for better spacing
             font=('Segoe UI', 9)
         )
         self.mode_combo.pack(side='left')
@@ -281,6 +282,25 @@ class GameWindowModeSelector:
             self._save_mode_to_config(mode)
         else:
             print(f"[GameWindowMode] Invalid mode: {mode}")
+    
+    def show(self) -> None:
+        """Show the selector (make visible)."""
+        self.container.pack(side='left', padx=(0, 8))
+    
+    def hide(self) -> None:
+        """Hide the selector (make invisible)."""
+        self.container.pack_forget()
+    
+    def is_visible(self) -> bool:
+        """Check if selector is currently visible."""
+        return self.container.winfo_ismapped()
+    
+    def toggle(self) -> None:
+        """Toggle visibility of selector."""
+        if self.is_visible():
+            self.hide()
+        else:
+            self.show()
     
     def pack(self, **kwargs) -> None:
         """Pack the container frame."""

@@ -132,12 +132,16 @@ class WindowPositionSelector:
             self.label.pack(side='left', padx=(0, 5))
         
         # Mode selector combobox
+        # Calculate optimal width based on longest mode name
+        max_mode_len = max(len(m) for m in self.modes)
+        combo_width = max(8, min(max_mode_len + 1, 12))  # Between 8-12 characters
+        
         self.mode_combo = ttk.Combobox(
             self.container,
             textvariable=self.current_mode,
             values=self.modes,
             state='readonly',
-            width=max(len(m) for m in self.modes) + 2,
+            width=combo_width,
             font=('Segoe UI', 9)
         )
         self.mode_combo.pack(side='left')
@@ -281,6 +285,25 @@ class WindowPositionSelector:
             self._save_mode_to_config(mode)
         else:
             print(f"[WindowPositionSelector] Invalid mode: {mode}")
+    
+    def show(self) -> None:
+        """Show the selector (make visible)."""
+        self.container.pack(side='left', padx=(0, 8))
+    
+    def hide(self) -> None:
+        """Hide the selector (make invisible)."""
+        self.container.pack_forget()
+    
+    def is_visible(self) -> bool:
+        """Check if selector is currently visible."""
+        return self.container.winfo_ismapped()
+    
+    def toggle(self) -> None:
+        """Toggle visibility of selector."""
+        if self.is_visible():
+            self.hide()
+        else:
+            self.show()
     
     def pack(self, **kwargs) -> None:
         """Pack the container."""
