@@ -163,7 +163,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.add_monster_button: Optional[tk.Button] = None
         self.delete_monster_button: Optional[tk.Button] = None
         
-        # Center/Right panels
+        # Right panel - Notebook tabs
+        self.notebook: Optional[ttk.Notebook] = None
+        self.info_tab: Optional[tk.Frame] = None
+        self.templates_tab: Optional[tk.Frame] = None
+        
+        # Center/Right panels (legacy from quick editor)
         self.name_entry: Optional[tk.Entry] = None
         self.level_spinbox: Optional[tk.Spinbox] = None
         self.threshold_scale: Optional[tk.Scale] = None
@@ -248,15 +253,8 @@ class QuickMonsterEditor(tk.Toplevel):
         # Left: Monster List
         self._create_left_panel(main_container)
         
-        # Right container for Center + Bottom
-        right_container = tk.Frame(main_container, bg=UI.BG_DEFAULT)
-        right_container.pack(side='right', fill='both', expand=True)
-        
-        # Center: Form Fields
-        self._create_center_panel(right_container)
-        
-        # Bottom: Capture/Test + Progress
-        self._create_bottom_panel(right_container)
+        # Right: Tabbed panel
+        self._create_right_panel(main_container)
     
     def _create_top_panel(self) -> None:
         """Create top panel with title and action buttons."""
@@ -389,6 +387,63 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Initial load
         self._refresh_monster_list()
+    
+    def _create_right_panel(self, parent: Any) -> None:
+        """Create right panel with tabbed interface."""
+        right_container = tk.Frame(parent, bg=UI.BG_DEFAULT)
+        right_container.pack(side='right', fill='both', expand=True, padx=10, pady=10)
+        
+        # Create notebook (tabs)
+        self.notebook = ttk.Notebook(right_container)
+        self.notebook.pack(fill='both', expand=True)
+        
+        # Create tabs
+        self._create_info_tab()
+        self._create_templates_tab()
+    
+    def _create_info_tab(self) -> None:
+        """Create Monster Info tab."""
+        if self.notebook is None:
+            return
+        
+        # Create tab frame
+        self.info_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        
+        # Add to notebook
+        tab_text = i18n_t('tab_info', ns='monster_editor', default='Monster Info')
+        self.notebook.add(self.info_tab, text=tab_text)
+        
+        # Placeholder label (content will be added in Batch 6)
+        placeholder_label = tk.Label(
+            self.info_tab,
+            text='Monster Info Form\n(To be implemented in Batch 6)',
+            font=UI.FONT_TEXT,
+            fg=UI.COLOR_SUBTEXT,
+            bg=UI.BG_DEFAULT
+        )
+        placeholder_label.pack(expand=True)
+    
+    def _create_templates_tab(self) -> None:
+        """Create Templates tab."""
+        if self.notebook is None:
+            return
+        
+        # Create tab frame
+        self.templates_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        
+        # Add to notebook
+        tab_text = i18n_t('tab_templates', ns='monster_editor', default='Templates')
+        self.notebook.add(self.templates_tab, text=tab_text)
+        
+        # Placeholder label (content will be added in Batch 7)
+        placeholder_label = tk.Label(
+            self.templates_tab,
+            text='Templates Manager\n(To be implemented in Batch 7)',
+            font=UI.FONT_TEXT,
+            fg=UI.COLOR_SUBTEXT,
+            bg=UI.BG_DEFAULT
+        )
+        placeholder_label.pack(expand=True)
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -827,9 +882,10 @@ class QuickMonsterEditor(tk.Toplevel):
         self._refresh_monster_list()
         
         # Select new monster
-        self.monster_listbox.selection_clear(0, tk.END)
-        self.monster_listbox.selection_set(len(self.monsters) - 1)
-        self.monster_listbox.see(len(self.monsters) - 1)
+        if self.monster_listbox:
+            self.monster_listbox.selection_clear(0, tk.END)
+            self.monster_listbox.selection_set(len(self.monsters) - 1)
+            self.monster_listbox.see(len(self.monsters) - 1)
         
         # Set as current
         self.current_monster_id = new_monster['id']
