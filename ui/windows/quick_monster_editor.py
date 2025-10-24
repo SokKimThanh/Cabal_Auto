@@ -201,6 +201,9 @@ class QuickMonsterEditor(tk.Toplevel):
         self.result_queue: queue.Queue = queue.Queue()
         self.is_working = False
         
+        # Edit mode state
+        self.is_editing: bool = False  # Lock/unlock fields
+        
         # Window position selectors (created in _setup_ui)
         self.app_mode_selector: Any = None  # WindowPositionSelector
         self.game_mode_selector: Any = None  # WindowPositionSelector
@@ -223,6 +226,10 @@ class QuickMonsterEditor(tk.Toplevel):
         self.notebook: Optional[ttk.Notebook] = None
         self.info_tab: Optional[tk.Frame] = None
         self.templates_tab: Optional[tk.Frame] = None
+        
+        # Edit mode widgets
+        self.edit_toggle_button: Optional[tk.Button] = None
+        self.editing_badge: Optional[tk.Label] = None
         
         # Info tab widgets
         self.name_entry: Optional[tk.Entry] = None
@@ -712,6 +719,39 @@ class QuickMonsterEditor(tk.Toplevel):
         
         canvas.pack(side='left', fill='both', expand=True, padx=10, pady=10)
         scrollbar.pack(side='right', fill='y')
+        
+        # Header with Edit button and badge
+        header_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
+        header_frame.pack(fill='x', padx=5, pady=(0, 10))
+        
+        # Edit/Save toggle button
+        self.edit_toggle_button = create_icon_button(
+            header_frame,
+            icon_name='edit',
+            icon_fallback='✏️',
+            icon_size=16,
+            text=i18n_t('btn_edit', ns='monster_editor', default='Edit'),
+            command=self._toggle_edit_mode,
+            button_type='primary',
+            variant='compact',
+            tooltip_key='tooltip_edit_mode',
+            tooltip_ns='monster_editor'
+        )
+        self.edit_toggle_button.pack(side='left', padx=(0, 10))
+        
+        # Editing badge (orange background, white text)
+        self.editing_badge = tk.Label(
+            header_frame,
+            text=i18n_t('badge_editing', ns='monster_editor', default='Editing'),
+            font=UI.FONT_SMALL,
+            fg='white',
+            bg='#FF8C00',  # Orange
+            padx=8,
+            pady=2,
+            relief='flat'
+        )
+        # Initially hidden (not in edit mode)
+        # self.editing_badge.pack(side='left')  # Don't pack yet
         
         # Form content
         form_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
@@ -1565,6 +1605,94 @@ class QuickMonsterEditor(tk.Toplevel):
                 self._populate_info_form(monster)
                 print(f"[MonsterEditor] Selected monster: {monster.get('name')}")
     
+    def _toggle_edit_mode(self) -> None:
+        """Toggle between locked and edit mode for form fields."""
+        self.is_editing = not self.is_editing
+        
+        if self.is_editing:
+            # Switch to edit mode
+            self._set_fields_state('normal')
+            
+            # Update button text to Save
+            if self.edit_toggle_button:
+                self.edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='💾 Save'))
+            
+            # Show editing badge
+            if self.editing_badge and not self.editing_badge.winfo_ismapped():
+                self.editing_badge.pack(side='left')
+        else:
+            # Switch to locked mode (save changes)
+            self._save_form_to_current_monster()
+            self._set_fields_state('readonly')
+            
+            # Update button text to Edit
+            if self.edit_toggle_button:
+                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='✏️ Edit'))
+            
+            # Hide editing badge
+            if self.editing_badge and self.editing_badge.winfo_ismapped():
+                self.editing_badge.pack_forget()
+    
+    def _set_fields_state(self, state: str) -> None:
+        """Set state of all form fields.
+        
+        Args:
+            state: 'normal', 'readonly', or 'disabled'
+        """
+        # Entry widgets
+        if self.name_entry:
+            self.name_entry.config(state=state)  # type: ignore
+        if self.hp_entry:
+            self.hp_entry.config(state=state)  # type: ignore
+        if self.damage_entry:
+            self.damage_entry.config(state=state)  # type: ignore
+        
+        # Spinbox widgets (use 'readonly' for locked, 'normal' for edit)
+        spinbox_state = 'readonly' if state == 'readonly' else state
+        if self.level_spinbox:
+            self.level_spinbox.config(state=spinbox_state)  # type: ignore
+        if self.priority_spinbox:
+            self.priority_spinbox.config(state=spinbox_state)  # type: ignore
+        
+        # Text widget (use 'disabled' for locked, 'normal' for edit)
+        if self.desc_text:
+            text_state = 'disabled' if state == 'readonly' else state
+            self.desc_text.config(state=text_state)  # type: ignore
+    
+    def _save_form_to_current_monster(self) -> None:
+        """Save current form values to the selected monster."""
+        if not self.current_monster_id:
+            return
+        
+        # Find current monster
+        for monster in self.monsters:
+            if monster.get('id') == self.current_monster_id:
+                # Save form values
+                if self.name_entry:
+                    monster['name'] = self.name_entry.get().strip()
+                if self.level_spinbox:
+                    try:
+                        monster['level'] = int(self.level_spinbox.get())
+                    except:
+                        pass
+                if self.priority_spinbox:
+                    try:
+                        monster['priority'] = int(self.priority_spinbox.get())
+                    except:
+                        pass
+                if self.hp_entry:
+                    monster['hp'] = self.hp_entry.get().strip()
+                if self.damage_entry:
+                    monster['damage'] = self.damage_entry.get().strip()
+                if self.desc_text:
+                    monster['description'] = self.desc_text.get('1.0', 'end-1c').strip()
+                
+                self.is_dirty = True
+                self._update_dirty_state_ui()
+                self._refresh_monster_list()
+                print(f"[MonsterEditor] Saved changes to monster: {monster.get('name')}")
+                break
+    
     def _on_add_monster(self) -> None:
         """Handle add monster button click."""
         # Create new monster with default values
@@ -1691,6 +1819,17 @@ class QuickMonsterEditor(tk.Toplevel):
         # Clear form first
         self._clear_info_form()
         
+        # Reset edit mode to locked
+        if self.is_editing:
+            self.is_editing = False
+            if self.edit_toggle_button:
+                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='✏️ Edit'))
+            if self.editing_badge and self.editing_badge.winfo_ismapped():
+                self.editing_badge.pack_forget()
+        
+        # Temporarily enable fields to populate them
+        self._set_fields_state('normal')
+        
         # Populate fields (null checks already done above)
         assert self.name_entry is not None
         assert self.level_spinbox is not None
@@ -1710,9 +1849,16 @@ class QuickMonsterEditor(tk.Toplevel):
         desc = monster.get('description', '')
         if desc:
             self.desc_text.insert('1.0', desc)
+        
+        # Lock fields after populating
+        self._set_fields_state('readonly')
     
     def _clear_info_form(self) -> None:
         """Clear all fields in Info tab form."""
+        # Temporarily enable fields to clear them
+        old_state = 'readonly' if not self.is_editing else 'normal'
+        self._set_fields_state('normal')
+        
         if self.name_entry:
             self.name_entry.delete(0, tk.END)
         if self.level_spinbox:
@@ -1727,6 +1873,9 @@ class QuickMonsterEditor(tk.Toplevel):
             self.damage_entry.delete(0, tk.END)
         if self.desc_text:
             self.desc_text.delete('1.0', tk.END)
+        
+        # Restore previous state
+        self._set_fields_state(old_state)
     
     def _on_info_change(self, event: Any = None) -> None:
         """Handle changes in Info tab form fields."""
