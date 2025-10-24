@@ -363,3 +363,19 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# ===============================================
+# LOGGING FILES (Monster Editor)
+# ===============================================
+# Log directories
+logs/
+log/
+*.log
+
+# Structured logs (JSONL format)
+*.jsonl
+!hunt_structured.example.jsonl
+
+# Hunt session logs
+hunt_*.log
+hunt_*.jsonl
+
