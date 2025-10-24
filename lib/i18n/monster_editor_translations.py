@@ -93,12 +93,14 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tab_templates': 'Templates',
         
         # Additional labels
+        'label_monster_list': 'Danh Sách Quái Vật',
         'monster_list_title': 'Danh Sách Quái Vật',
         'monster_priority_label': 'Độ ưu tiên:',
         'monster_hp_label': 'HP:',
         'monster_damage_label': 'Sát thương mỗi đòn:',
         'monster_desc_label': 'Mô tả:',
         'template_list_title': 'Danh sách Templates:',
+        'default_monster_name': 'Quái Mới',
         
         # Additional buttons
         'btn_save_all': 'Lưu Tất Cả',
@@ -106,9 +108,16 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_add_monster': 'Thêm Quái',
         'btn_browse': 'Chọn File',
         'btn_delete_template': 'Xóa Template',
+        'btn_delete': 'Xóa',
         
         # Additional messages
         'msg_test_result': 'Tìm thấy: {}, Độ tin cậy: {:.1%}',
+        
+        # Warnings
+        'warning_no_monster_selected': 'Vui lòng chọn một quái để xóa.',
+        
+        # Confirmations
+        'confirm_delete_monster': "Bạn có chắc muốn xóa '{}' không?",
     },
     'en': {
         # Menu items
@@ -194,12 +203,14 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tab_templates': 'Templates',
         
         # Additional labels
+        'label_monster_list': 'Monster List',
         'monster_list_title': 'Monster List',
         'monster_priority_label': 'Priority:',
         'monster_hp_label': 'HP:',
         'monster_damage_label': 'Damage per hit:',
         'monster_desc_label': 'Description:',
         'template_list_title': 'Template List:',
+        'default_monster_name': 'New Monster',
         
         # Additional buttons
         'btn_save_all': 'Save All',
@@ -207,8 +218,16 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_add_monster': 'Add Monster',
         'btn_browse': 'Browse',
         'btn_delete_template': 'Delete Template',
+        'btn_delete': 'Delete',
         
         # Additional messages
+        'msg_test_result': 'Found: {}, Confidence: {:.1%}',
+        
+        # Warnings
+        'warning_no_monster_selected': 'Please select a monster to delete.',
+        
+        # Confirmations
+        'confirm_delete_monster': "Are you sure you want to delete '{}'?",
         'msg_test_result': 'Matches: {}, Confidence: {:.1%}',
     }
 }

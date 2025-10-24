@@ -115,7 +115,7 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def __init__(
         self,
-        parent: tk.Widget,
+        parent: Any,  # Accept Tk or Widget
         monster_id: Optional[str] = None,
         on_save: Optional[Callable] = None
     ):
@@ -158,6 +158,12 @@ class QuickMonsterEditor(tk.Toplevel):
         }
         
         # Widgets (initialized in setup_ui)
+        # Left panel
+        self.monster_listbox: Optional[tk.Listbox] = None
+        self.add_monster_button: Optional[tk.Button] = None
+        self.delete_monster_button: Optional[tk.Button] = None
+        
+        # Center/Right panels
         self.name_entry: Optional[tk.Entry] = None
         self.level_spinbox: Optional[tk.Spinbox] = None
         self.threshold_scale: Optional[tk.Scale] = None
@@ -171,14 +177,14 @@ class QuickMonsterEditor(tk.Toplevel):
         # Window configuration
         title = i18n_t('quick_editor_title', ns='monster_editor', default='Quick Monster Editor')
         self.title(title)
-        self.geometry("500x400")
+        self.geometry("750x450")  # Increased to accommodate left panel
         self.resizable(False, False)
         self.attributes('-topmost', True)
         
         # Center window on screen
         self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (500 // 2)
-        y = (self.winfo_screenheight() // 2) - (400 // 2)
+        x = (self.winfo_screenwidth() // 2) - (750 // 2)  # Updated for new width
+        y = (self.winfo_screenheight() // 2) - (450 // 2)  # Updated for new height
         self.geometry(f"+{x}+{y}")
         
         # Setup
@@ -235,11 +241,22 @@ class QuickMonsterEditor(tk.Toplevel):
         # Top: Title + Action Buttons
         self._create_top_panel()
         
+        # Create main container for left + right panels
+        main_container = tk.Frame(self, bg=UI.BG_DEFAULT)
+        main_container.pack(side='top', fill='both', expand=True)
+        
+        # Left: Monster List
+        self._create_left_panel(main_container)
+        
+        # Right container for Center + Bottom
+        right_container = tk.Frame(main_container, bg=UI.BG_DEFAULT)
+        right_container.pack(side='right', fill='both', expand=True)
+        
         # Center: Form Fields
-        self._create_center_panel()
+        self._create_center_panel(right_container)
         
         # Bottom: Capture/Test + Progress
-        self._create_bottom_panel()
+        self._create_bottom_panel(right_container)
     
     def _create_top_panel(self) -> None:
         """Create top panel with title and action buttons."""
@@ -303,9 +320,81 @@ class QuickMonsterEditor(tk.Toplevel):
             lang_provider=get_lang
         )
     
-    def _create_center_panel(self) -> None:
+    def _create_left_panel(self, parent: Any) -> None:
+        """Create left panel with monster list and CRUD buttons."""
+        left_frame = tk.Frame(parent, bg=UI.BG_PANEL, width=250)
+        left_frame.pack(side='left', fill='y', padx=0, pady=0)
+        left_frame.pack_propagate(False)
+        
+        # Title
+        title_text = i18n_t('label_monster_list', ns='monster_editor', default='Monster List')
+        title_label = tk.Label(
+            left_frame,
+            text=title_text,
+            font=UI.FONT_SECTION,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_PANEL
+        )
+        title_label.pack(side='top', padx=10, pady=(10, 5))
+        
+        # Monster listbox with scrollbar
+        listbox_frame = tk.Frame(left_frame, bg=UI.BG_PANEL)
+        listbox_frame.pack(side='top', fill='both', expand=True, padx=10, pady=5)
+        
+        scrollbar = tk.Scrollbar(listbox_frame, orient=tk.VERTICAL)
+        scrollbar.pack(side='right', fill='y')
+        
+        self.monster_listbox = tk.Listbox(
+            listbox_frame,
+            font=UI.FONT_TEXT,
+            yscrollcommand=scrollbar.set,
+            selectmode=tk.SINGLE,
+            height=15
+        )
+        self.monster_listbox.pack(side='left', fill='both', expand=True)
+        scrollbar.config(command=self.monster_listbox.yview)
+        
+        # Bind selection event
+        self.monster_listbox.bind('<<ListboxSelect>>', self._on_monster_select)
+        
+        # Button container
+        button_frame = tk.Frame(left_frame, bg=UI.BG_PANEL)
+        button_frame.pack(side='top', fill='x', padx=10, pady=(5, 10))
+        
+        # Add Monster button
+        add_icon = icon_helper.get_icon('add', fallback='➕', size=16)
+        add_text = i18n_t('btn_add_monster', ns='monster_editor', default='Add Monster')
+        self.add_monster_button = tk.Button(
+            button_frame,
+            text=f"{add_icon} {add_text}",
+            font=UI.FONT_BUTTON,
+            bg=UI.COLOR_ACCENT,
+            fg='#FFFFFF',
+            command=self._on_add_monster
+        )
+        self.add_monster_button.pack(side='top', fill='x', pady=2)
+        
+        # Delete Monster button
+        delete_icon = icon_helper.get_icon('delete', fallback='🗑️', size=16)
+        delete_text = i18n_t('btn_delete', ns='monster_editor', default='Delete')
+        self.delete_monster_button = tk.Button(
+            button_frame,
+            text=f"{delete_icon} {delete_text}",
+            font=UI.FONT_BUTTON,
+            bg=UI.COLOR_DANGER,
+            fg='#FFFFFF',
+            command=self._on_delete_monster
+        )
+        self.delete_monster_button.pack(side='top', fill='x', pady=2)
+        
+        # Initial load
+        self._refresh_monster_list()
+    
+    def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
-        center_frame = tk.Frame(self, bg=UI.BG_DEFAULT)
+        if parent is None:
+            parent = self
+        center_frame = tk.Frame(parent, bg=UI.BG_DEFAULT)
         center_frame.pack(side='top', fill='both', expand=True, padx=20, pady=20)
         
         # Monster Name
@@ -382,9 +471,11 @@ class QuickMonsterEditor(tk.Toplevel):
         # Configure grid weights
         center_frame.columnconfigure(1, weight=1)
     
-    def _create_bottom_panel(self) -> None:
+    def _create_bottom_panel(self, parent: Optional[Any] = None) -> None:
         """Create bottom panel with capture/test buttons and progress."""
-        bottom_frame = tk.Frame(self, bg=UI.BG_PANEL, height=80)
+        if parent is None:
+            parent = self
+        bottom_frame = tk.Frame(parent, bg=UI.BG_PANEL, height=80)
         bottom_frame.pack(side='bottom', fill='x', padx=0, pady=0)
         bottom_frame.pack_propagate(False)
         
@@ -669,6 +760,123 @@ class QuickMonsterEditor(tk.Toplevel):
                 return False
         
         return True
+    
+    def _refresh_monster_list(self) -> None:
+        """Refresh the monster listbox with current monsters."""
+        if self.monster_listbox is None:
+            return
+        
+        # Clear listbox
+        self.monster_listbox.delete(0, tk.END)
+        
+        # Load monsters if not already loaded
+        if not self.monsters:
+            self._load_monsters()
+        
+        # Populate listbox
+        for monster in self.monsters:
+            name = monster.get('name', 'Unnamed')
+            level = monster.get('level', 1)
+            display_text = f"{name} (Lv.{level})"
+            self.monster_listbox.insert(tk.END, display_text)
+        
+        # Select current monster if editing
+        if self.current_monster_id:
+            for i, monster in enumerate(self.monsters):
+                if monster.get('id') == self.current_monster_id:
+                    self.monster_listbox.selection_set(i)
+                    self.monster_listbox.see(i)
+                    break
+    
+    def _on_monster_select(self, event: Any) -> None:
+        """Handle monster selection from listbox."""
+        if self.monster_listbox is None:
+            return
+        
+        selection = self.monster_listbox.curselection()
+        if not selection:
+            return
+        
+        index = selection[0]
+        if 0 <= index < len(self.monsters):
+            selected_monster = self.monsters[index]
+            self.current_monster_id = selected_monster.get('id')
+            
+            # Load monster data into form
+            # TODO: Implement form population in Batch 6
+            print(f"[MonsterEditor] Selected monster: {selected_monster.get('name')}")
+    
+    def _on_add_monster(self) -> None:
+        """Handle add monster button click."""
+        # Create new monster with default values
+        new_monster = {
+            'id': str(uuid.uuid4()),
+            'name': i18n_t('default_monster_name', ns='monster_editor', default='New Monster'),
+            'level': 1,
+            'priority': 1,
+            'hp': 100,
+            'damage_per_hit': 10,
+            'templates': []
+        }
+        
+        # Add to list
+        self.monsters.append(new_monster)
+        self.is_dirty = True
+        
+        # Refresh listbox
+        self._refresh_monster_list()
+        
+        # Select new monster
+        self.monster_listbox.selection_clear(0, tk.END)
+        self.monster_listbox.selection_set(len(self.monsters) - 1)
+        self.monster_listbox.see(len(self.monsters) - 1)
+        
+        # Set as current
+        self.current_monster_id = new_monster['id']
+        
+        # TODO: Clear form and prepare for new monster (Batch 6)
+        print(f"[MonsterEditor] Added new monster: {new_monster['id']}")
+    
+    def _on_delete_monster(self) -> None:
+        """Handle delete monster button click."""
+        if self.monster_listbox is None:
+            return
+        
+        selection = self.monster_listbox.curselection()
+        if not selection:
+            messagebox.showwarning(
+                'No Selection',
+                i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster to delete.')
+            )
+            return
+        
+        index = selection[0]
+        if 0 <= index < len(self.monsters):
+            monster = self.monsters[index]
+            
+            # Confirm deletion
+            confirm = messagebox.askyesno(
+                'Confirm Deletion',
+                i18n_t(
+                    'confirm_delete_monster',
+                    ns='monster_editor',
+                    default=f"Are you sure you want to delete '{monster.get('name', 'Unnamed')}'?"
+                )
+            )
+            
+            if confirm:
+                # Delete monster
+                self.monsters.pop(index)
+                self.is_dirty = True
+                
+                # Clear current selection if deleted
+                if self.current_monster_id == monster.get('id'):
+                    self.current_monster_id = None
+                
+                # Refresh listbox
+                self._refresh_monster_list()
+                
+                print(f"[MonsterEditor] Deleted monster: {monster.get('name')}")
 
 
 # Singleton instance
