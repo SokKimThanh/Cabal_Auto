@@ -82,6 +82,33 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'col_templates': 'Templates',
         'col_threshold': 'Ngưỡng',
         'col_path': 'Đường dẫn',
+        
+        # Status indicators
+        'status_modified': '● Đã chỉnh sửa (chưa lưu)',
+        'status_unsaved': 'Có thay đổi chưa lưu',
+        'status_saved': 'Đã lưu tất cả',
+        
+        # Tabs
+        'tab_info': 'Thông Tin Quái',
+        'tab_templates': 'Templates',
+        
+        # Additional labels
+        'monster_list_title': 'Danh Sách Quái Vật',
+        'monster_priority_label': 'Độ ưu tiên:',
+        'monster_hp_label': 'HP:',
+        'monster_damage_label': 'Sát thương mỗi đòn:',
+        'monster_desc_label': 'Mô tả:',
+        'template_list_title': 'Danh sách Templates:',
+        
+        # Additional buttons
+        'btn_save_all': 'Lưu Tất Cả',
+        'btn_close': 'Đóng',
+        'btn_add_monster': 'Thêm Quái',
+        'btn_browse': 'Chọn File',
+        'btn_delete_template': 'Xóa Template',
+        
+        # Additional messages
+        'msg_test_result': 'Tìm thấy: {}, Độ tin cậy: {:.1%}',
     },
     'en': {
         # Menu items
@@ -156,5 +183,32 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'col_templates': 'Templates',
         'col_threshold': 'Threshold',
         'col_path': 'Path',
+        
+        # Status indicators
+        'status_modified': '● Modified (not saved)',
+        'status_unsaved': 'Unsaved changes',
+        'status_saved': 'All saved',
+        
+        # Tabs
+        'tab_info': 'Monster Info',
+        'tab_templates': 'Templates',
+        
+        # Additional labels
+        'monster_list_title': 'Monster List',
+        'monster_priority_label': 'Priority:',
+        'monster_hp_label': 'HP:',
+        'monster_damage_label': 'Damage per hit:',
+        'monster_desc_label': 'Description:',
+        'template_list_title': 'Template List:',
+        
+        # Additional buttons
+        'btn_save_all': 'Save All',
+        'btn_close': 'Close',
+        'btn_add_monster': 'Add Monster',
+        'btn_browse': 'Browse',
+        'btn_delete_template': 'Delete Template',
+        
+        # Additional messages
+        'msg_test_result': 'Matches: {}, Confidence: {:.1%}',
     }
 }
