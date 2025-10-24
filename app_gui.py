@@ -55,7 +55,40 @@ try:
     _HAS_ICON_COMPONENT = True
 except ImportError:
     _HAS_ICON_COMPONENT = False
-    _create_icon_btn_component = None  # type: ignore
+    
+    # Fallback function for create_icon_button
+    def _create_icon_btn_component(
+        parent,
+        icon_name,
+        command=None,
+        text=None,
+        button_type='green_light',
+        icon_size=16,
+        button_size=None,
+        icon_fallback='',
+        tooltip_key=None,
+        tooltip_ns=None,
+        tooltip_text=None,
+        state='normal',
+        variant=None,
+        width=None,
+        padding=None,
+        on_hover=None,
+        on_leave=None,
+        on_focus=None,
+        auto_hover_disabled=True,
+        **kwargs
+    ):
+        """Fallback icon button creator when component not available."""
+        import tkinter as tk
+        from typing import Literal, cast
+        # Cast state to proper type
+        btn_state = cast(Literal['normal', 'active', 'disabled'], state if state in ['normal', 'active', 'disabled'] else 'normal')
+        # Handle None command
+        btn_command = command if command is not None else lambda: None
+        btn = tk.Button(parent, text=icon_fallback or '?', command=btn_command, state=btn_state, **kwargs)
+        return btn
+    
     create_app_window_selector = None  # type: ignore
     create_game_window_selector = None  # type: ignore
     print("Warning: Icon button component not available, using fallback")
