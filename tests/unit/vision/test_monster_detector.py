@@ -454,6 +454,209 @@ class TestCleanup:
         assert not detector.is_running()
 
 
+class TestStateMachine:
+    """Test detection state machine (Task 1.2)"""
+    
+    def test_initial_state_is_searching(self, detector):
+        """Test initial state is SEARCHING"""
+        assert detector.get_state() == DetectionState.SEARCHING
+    
+    def test_searching_to_detected_on_detection(self, detector, mock_vision_engine):
+        """Test SEARCHING -> DETECTED when detections found"""
+        # Mock detections
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        
+        detector.start(detection_interval=0.05)
+        time.sleep(0.15)  # Wait for a few frames
+        
+        # Should transition to DETECTED
+        state = detector.get_state()
+        assert state == DetectionState.DETECTED or state == DetectionState.TRACKING
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_detected_to_tracking_after_stable_frames(self, detector, mock_vision_engine):
+        """Test DETECTED -> TRACKING after N stable frames"""
+        # Mock continuous detections
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        
+        # Start with 3 frame threshold
+        detector._stable_frames_threshold = 3
+        detector.start(detection_interval=0.05)
+        
+        # Wait for enough frames to reach TRACKING
+        time.sleep(0.3)  # ~6 frames at 50ms interval
+        
+        state = detector.get_state()
+        assert state == DetectionState.TRACKING
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_detected_to_lost_on_no_detection(self, detector, mock_vision_engine):
+        """Test DETECTED -> LOST when detections disappear"""
+        # First have detections
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        
+        detector.start(detection_interval=0.05)
+        time.sleep(0.1)  # Let it detect
+        
+        # Now remove detections
+        mock_vision_engine.match_templates.return_value = []
+        time.sleep(0.1)  # Wait for state update
+        
+        state = detector.get_state()
+        assert state == DetectionState.LOST
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_tracking_to_lost_on_no_detection(self, detector, mock_vision_engine):
+        """Test TRACKING -> LOST when target lost"""
+        # First establish tracking
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        detector._stable_frames_threshold = 2
+        
+        detector.start(detection_interval=0.05)
+        time.sleep(0.2)  # Establish TRACKING
+        
+        # Verify in TRACKING
+        assert detector.get_state() == DetectionState.TRACKING
+        
+        # Now lose target
+        mock_vision_engine.match_templates.return_value = []
+        time.sleep(0.1)
+        
+        state = detector.get_state()
+        assert state == DetectionState.LOST
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_lost_to_searching_after_timeout(self, detector, mock_vision_engine):
+        """Test LOST -> SEARCHING after timeout"""
+        # Set short timeout for testing
+        detector._lost_timeout_sec = 0.2
+        
+        # First get to LOST state
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        
+        detector.start(detection_interval=0.05)
+        time.sleep(0.1)  # Get to DETECTED
+        
+        # Lose target
+        mock_vision_engine.match_templates.return_value = []
+        time.sleep(0.1)  # Get to LOST
+        
+        # Wait for timeout
+        time.sleep(0.3)  # Wait beyond timeout
+        
+        state = detector.get_state()
+        assert state == DetectionState.SEARCHING
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_lost_to_detected_on_reacquisition(self, detector, mock_vision_engine):
+        """Test LOST -> DETECTED when target reacquired"""
+        # Get to LOST state
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        
+        detector.start(detection_interval=0.05)
+        time.sleep(0.1)  # DETECTED
+        
+        # Lose target
+        mock_vision_engine.match_templates.return_value = []
+        time.sleep(0.1)  # LOST
+        
+        # Reacquire target
+        mock_vision_engine.match_templates.return_value = mock_detections
+        time.sleep(0.1)
+        
+        state = detector.get_state()
+        assert state == DetectionState.DETECTED or state == DetectionState.TRACKING
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_state_change_triggers_callback(self, detector, mock_vision_engine):
+        """Test state changes trigger callbacks"""
+        state_changes = []
+        
+        def state_callback(state: DetectionState):
+            state_changes.append(state)
+        
+        detector.on_state_changed(state_callback)
+        
+        # Trigger state change: SEARCHING -> DETECTED
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        
+        detector.start(detection_interval=0.05)
+        time.sleep(0.15)
+        
+        # Should have state change callbacks
+        assert len(state_changes) > 0
+        assert DetectionState.DETECTED in state_changes or DetectionState.TRACKING in state_changes
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_get_time_in_state(self, detector):
+        """Test getting time in current state"""
+        detector.start(detection_interval=0.05)
+        time.sleep(0.1)
+        
+        time_in_state = detector.get_time_in_state()
+        assert time_in_state >= 0.0
+        assert time_in_state < 1.0  # Should be recent
+        
+        # Cleanup
+        detector.stop()
+    
+    def test_stable_frame_counter_reset_on_lost(self, detector, mock_vision_engine):
+        """Test stable frame counter resets when entering LOST state"""
+        # Get some stable frames
+        mock_detections = [
+            Detection(x=100, y=100, w=50, h=50, score=0.9, template_id='monster1', scale=1.0)
+        ]
+        mock_vision_engine.match_templates.return_value = mock_detections
+        
+        detector.start(detection_interval=0.05)
+        time.sleep(0.1)  # Build up stable frames
+        
+        # Lose target
+        mock_vision_engine.match_templates.return_value = []
+        time.sleep(0.1)
+        
+        # Counter should be reset
+        assert detector._stable_frame_count == 0
+        
+        # Cleanup
+        detector.stop()
+
+
 # Run tests
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

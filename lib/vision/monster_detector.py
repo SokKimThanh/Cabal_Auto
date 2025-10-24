@@ -81,7 +81,9 @@ class MonsterDetector:
         self, 
         vision_engine: VisionEngine,
         screen_capture: ScreenCapture,
-        target_rect: Optional[Dict[str, int]] = None
+        target_rect: Optional[Dict[str, int]] = None,
+        stable_frames_threshold: int = 3,
+        lost_timeout_sec: float = 3.0
     ):
         """
         Initialize detector
@@ -90,6 +92,8 @@ class MonsterDetector:
             vision_engine: VisionEngine instance for template matching
             screen_capture: ScreenCapture instance for game capture
             target_rect: Optional initial capture region
+            stable_frames_threshold: Frames needed to transition DETECTED -> TRACKING
+            lost_timeout_sec: Seconds to wait before LOST -> SEARCHING
         """
         self._vision_engine = vision_engine
         self._screen_capture = screen_capture
@@ -106,6 +110,11 @@ class MonsterDetector:
         self._latest_detections: List[Detection] = []
         self._detection_state = DetectionState.SEARCHING
         self._state_changed_time = time.time()
+        
+        # State machine configuration
+        self._stable_frames_threshold = stable_frames_threshold
+        self._lost_timeout_sec = lost_timeout_sec
+        self._stable_frame_count = 0
         
         # Statistics
         self._stats = DetectionStats()
@@ -383,6 +392,9 @@ class MonsterDetector:
                     self._latest_detections = detections
                     self._frame_count += 1
                     
+                    # Update state machine
+                    self._update_state(detections)
+                    
                     # Update stats
                     self._stats.frames_processed += 1
                     self._stats.total_detections += len(detections)
@@ -491,7 +503,7 @@ class MonsterDetector:
                 )
     
     # =================================================================
-    # Private - State Management (for Task 1.2)
+    # Private - State Management
     # =================================================================
     
     def _update_state(self, detections: List[Detection]) -> None:
@@ -499,17 +511,89 @@ class MonsterDetector:
         Update detection state based on current detections
         
         State machine transitions:
-        SEARCHING -> DETECTED: detections > 0
-        DETECTED -> TRACKING: stable N frames
-        DETECTED -> LOST: detections == 0
-        TRACKING -> LOST: detections == 0
-        LOST -> SEARCHING: timeout
+        - SEARCHING -> DETECTED: detections > 0
+        - DETECTED -> TRACKING: stable N frames with detections
+        - DETECTED -> LOST: detections == 0
+        - TRACKING -> LOST: detections == 0
+        - LOST -> SEARCHING: timeout exceeded
         
         Args:
             detections: Current frame detections
         """
-        # TODO: Implement in Task 1.2
-        pass
+        current_state = self._detection_state
+        new_state = current_state
+        has_detections = len(detections) > 0
+        time_in_state = time.time() - self._state_changed_time
+        
+        # State transition logic
+        if current_state == DetectionState.SEARCHING:
+            if has_detections:
+                new_state = DetectionState.DETECTED
+                self._stable_frame_count = 1
+                logger.info(f"[MonsterDetector] State: SEARCHING -> DETECTED ({len(detections)} found)")
+        
+        elif current_state == DetectionState.DETECTED:
+            if has_detections:
+                self._stable_frame_count += 1
+                if self._stable_frame_count >= self._stable_frames_threshold:
+                    new_state = DetectionState.TRACKING
+                    logger.info(
+                        f"[MonsterDetector] State: DETECTED -> TRACKING "
+                        f"({self._stable_frame_count} stable frames)"
+                    )
+            else:
+                new_state = DetectionState.LOST
+                logger.info("[MonsterDetector] State: DETECTED -> LOST (no detections)")
+        
+        elif current_state == DetectionState.TRACKING:
+            if not has_detections:
+                new_state = DetectionState.LOST
+                logger.info("[MonsterDetector] State: TRACKING -> LOST (target lost)")
+            # else: stay in TRACKING
+        
+        elif current_state == DetectionState.LOST:
+            if has_detections:
+                new_state = DetectionState.DETECTED
+                self._stable_frame_count = 1
+                logger.info(f"[MonsterDetector] State: LOST -> DETECTED (reacquired)")
+            elif time_in_state >= self._lost_timeout_sec:
+                new_state = DetectionState.SEARCHING
+                logger.info(
+                    f"[MonsterDetector] State: LOST -> SEARCHING "
+                    f"(timeout {time_in_state:.1f}s)"
+                )
+        
+        # Apply state change
+        if new_state != current_state:
+            self._set_state(new_state)
+    
+    def _set_state(self, new_state: DetectionState) -> None:
+        """
+        Set new detection state and trigger callbacks
+        
+        Args:
+            new_state: New DetectionState to set
+        """
+        old_state = self._detection_state
+        self._detection_state = new_state
+        self._state_changed_time = time.time()
+        
+        # Reset stable frame counter on certain transitions
+        if new_state == DetectionState.SEARCHING or new_state == DetectionState.LOST:
+            self._stable_frame_count = 0
+        
+        # Trigger state callbacks (outside lock to prevent deadlock)
+        self._trigger_state_callbacks(new_state)
+    
+    def get_time_in_state(self) -> float:
+        """
+        Get time spent in current state
+        
+        Returns:
+            Time in seconds since last state change
+        """
+        with self._lock:
+            return time.time() - self._state_changed_time
     
     # =================================================================
     # Cleanup
