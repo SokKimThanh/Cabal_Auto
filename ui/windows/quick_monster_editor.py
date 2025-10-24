@@ -20,7 +20,7 @@ Status: Implementation
 from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from typing import Optional, Dict, Any, Callable, List
+from typing import Optional, Dict, Any, Callable, List, Union
 import queue
 import threading
 import json
@@ -52,8 +52,8 @@ except ImportError:
 
 try:
     from ui.components import create_icon_button, create_icon_label
-    from ui.components.game_window_mode_selector import create_game_window_mode_selector
-    from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector
+    from ui.components.game_window_mode_selector import create_game_window_mode_selector  # type: ignore[assignment]
+    from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector  # type: ignore[assignment]
     from ui.components.icon_button import set_button_enabled
 except ImportError:
     # Fallback if component not available
@@ -77,21 +77,15 @@ except ImportError:
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
         return tk.Label(parent, text=f"{icon_fallback} {text}", **kwargs)
     
-    def set_button_enabled(button, enabled: bool, tooltip: Optional[str] = None):
+    def set_button_enabled(button, enabled: bool, tooltip: Optional[str] = None) -> None:
         """Fallback for set_button_enabled."""
         button.config(state='normal' if enabled else 'disabled')
         if tooltip and enabled:
             button.config(text=f"💾")
         elif tooltip and not enabled:
             button.config(text=f"🚫")
-        """Fallback if button_styles not available."""
-        return {
-            'font': ('Arial', 10, 'bold'),
-            'relief': 'raised',
-            'bd': 2,
-            'cursor': 'hand2'
-        }
 
+# Capture helper imports
 try:
     from lib.ui_style import UIStyle as UI
 except ImportError:
@@ -1615,7 +1609,7 @@ _quick_editor_instance: Optional[QuickMonsterEditor] = None
 
 
 def show_quick_monster_editor(
-    parent: tk.Widget,
+    parent: Union[tk.Widget, tk.Tk],
     monster_id: Optional[str] = None,
     on_save: Optional[Callable] = None
 ) -> QuickMonsterEditor:
@@ -1623,7 +1617,7 @@ def show_quick_monster_editor(
     Show quick monster editor (singleton).
     
     Args:
-        parent: Parent widget
+        parent: Parent widget (can be tk.Tk or tk.Widget)
         monster_id: Monster to edit (None for new)
         on_save: Callback when saved
     
