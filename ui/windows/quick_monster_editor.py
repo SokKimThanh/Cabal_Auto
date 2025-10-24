@@ -25,6 +25,8 @@ import queue
 import threading
 import json
 import uuid
+import re
+import time
 from pathlib import Path
 
 # Import lib modules
@@ -128,6 +130,22 @@ try:
 except ImportError:
     capture_region_and_save = None
     PIL_AVAILABLE = False
+
+# PIL imports for image capture
+try:
+    from PIL import ImageGrab, Image, ImageTk
+    PIL_AVAILABLE = True
+except ImportError:
+    ImageGrab = None
+    Image = None
+    ImageTk = None
+    PIL_AVAILABLE = False
+
+# Template matcher for Test Recognition
+try:
+    from lib.vision.template_matcher import locate_template
+except ImportError:
+    locate_template = None
 
 # Register translations
 try:
@@ -2050,6 +2068,424 @@ class QuickMonsterEditor(tk.Toplevel):
                         self.after_cancel(self._refresh_list_after_id)
                     self._refresh_list_after_id = self.after(300, self._refresh_monster_list)
                     break
+
+    # ========== Template Management Methods (Library Manager functions) ==========
+    
+    def _sanitize_filename(self, name: str) -> str:
+        """Sanitize a string for use as a filename."""
+        # Remove invalid filename characters
+        return re.sub(r'[<>:"/\\|?*]', '_', name)
+    
+    def _capture_template(self) -> None:
+        """Capture template image from a selected screen region and attach to current monster."""
+        if not self.selected_monster_id:
+            messagebox.showwarning(
+                i18n_t('warning_title', ns='monster_editor', default='Warning'),
+                i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster first.')
+            )
+            return
+        
+        # Check PIL availability
+        if not PIL_AVAILABLE or ImageGrab is None:
+            message = i18n_t(
+                'msg_pillow_required', 
+                ns='monster_editor', 
+                default='This feature requires Pillow. Please install with:\n\npip install pillow'
+            )
+            messagebox.showerror(
+                i18n_t('error_pillow_title', ns='monster_editor', default='Pillow Required'),
+                message
+            )
+            return
+        
+        # Hide our window to capture cleanly
+        try:
+            self.withdraw()
+            self.update_idletasks()
+            import time
+            time.sleep(0.15)
+        except Exception:
+            pass
+        
+        # Region selection overlay
+        try:
+            overlay = self._RegionCaptureOverlay(self)
+            bbox = overlay.show_modal()
+        except Exception as e:
+            bbox = None
+        finally:
+            # Restore window
+            try:
+                self.deiconify()
+                self.lift()
+                self.focus_force()
+            except Exception:
+                pass
+        
+        if not bbox:
+            # User canceled or invalid selection
+            return
+        
+        # Capture and save
+        try:
+            img = ImageGrab.grab(bbox=bbox)
+        except Exception as e:
+            messagebox.showerror(
+                i18n_t('error_capture_failed_title', ns='monster_editor', default='Capture Failed'),
+                f"Error during capture: {e}"
+            )
+            return
+        
+        # Build save path - use assets/images/monsters
+        monster = self._find_monster_by_id(self.selected_monster_id)
+        if not monster:
+            return
+        
+        base = self._sanitize_filename(monster.get('name', 'monster'))
+        import time
+        ts = int(time.time())
+        filename = f"{base}_capture_{ts}.png"
+        
+        # Use Path for assets directory
+        assets_dir = Path("assets/images/monsters")
+        assets_dir.mkdir(parents=True, exist_ok=True)
+        save_path = assets_dir / filename
+        
+        try:
+            img.save(save_path)
+        except Exception as e:
+            messagebox.showerror(
+                i18n_t('error_save_failed_title', ns='monster_editor', default='Save Failed'),
+                f"Cannot save image: {e}"
+            )
+            return
+        
+        # Append to monster templates with relative path
+        tmpl = {
+            'name': filename,
+            'path': f'assets/images/monsters/{filename}',
+            'threshold': 0.85,
+        }
+        templates = monster.setdefault('templates', [])
+        templates.append(tmpl)
+        
+        # Mark as modified
+        self.has_unsaved_changes = True
+        
+        # Refresh Template tab
+        self._populate_template_tab(monster)
+        
+        # Notify
+        messagebox.showinfo(
+            i18n_t('msg_captured_title', ns='monster_editor', default='Captured'),
+            i18n_t('msg_captured_success', ns='monster_editor', default='Template captured and saved.')
+        )
+    
+    def _browse_template_image(self) -> None:
+        """Browse for template image file and add to current monster."""
+        if not self.selected_monster_id:
+            messagebox.showwarning(
+                i18n_t('warning_title', ns='monster_editor', default='Warning'),
+                i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster first.')
+            )
+            return
+        
+        file_path = filedialog.askopenfilename(
+            title=i18n_t('title_select_template', ns='monster_editor', default='Select Template Image'),
+            filetypes=[
+                ('Image files', '*.png *.jpg *.jpeg *.bmp'),
+                ('All files', '*.*')
+            ]
+        )
+        
+        if not file_path:
+            return
+        
+        # Find monster
+        monster = self._find_monster_by_id(self.selected_monster_id)
+        if not monster:
+            return
+        
+        # Copy file to assets/images/monsters with unique name
+        import time
+        import shutil
+        filename = Path(file_path).name
+        base_name = Path(filename).stem
+        ext = Path(filename).suffix
+        ts = int(time.time())
+        new_filename = f"{base_name}_{ts}{ext}"
+        
+        assets_dir = Path("assets/images/monsters")
+        assets_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = assets_dir / new_filename
+        
+        try:
+            shutil.copy2(file_path, dest_path)
+        except Exception as e:
+            messagebox.showerror(
+                i18n_t('error_copy_failed_title', ns='monster_editor', default='Copy Failed'),
+                f"Cannot copy file: {e}"
+            )
+            return
+        
+        # Add to monster templates
+        tmpl = {
+            'name': new_filename,
+            'path': f'assets/images/monsters/{new_filename}',
+            'threshold': 0.85,
+        }
+        templates = monster.setdefault('templates', [])
+        templates.append(tmpl)
+        
+        # Mark as modified
+        self.has_unsaved_changes = True
+        
+        # Refresh Template tab
+        self._populate_template_tab(monster)
+        
+        # Notify
+        messagebox.showinfo(
+            i18n_t('msg_added_title', ns='monster_editor', default='Added'),
+            i18n_t('msg_template_added', ns='monster_editor', default='Template added successfully.')
+        )
+    
+    def _delete_template(self) -> None:
+        """Delete selected template (with confirmation)."""
+        if not self.selected_monster_id:
+            return
+        
+        # Get selection from template tree
+        if not self.template_tree:
+            return
+        selection = self.template_tree.selection()
+        if not selection:
+            messagebox.showwarning(
+                i18n_t('warning_title', ns='monster_editor', default='Warning'),
+                i18n_t('warning_no_template_selected', ns='monster_editor', default='Please select a template to delete.')
+            )
+            return
+        
+        # Get template index
+        item = selection[0]
+        idx = self.template_tree.index(item)
+        
+        monster = self._find_monster_by_id(self.selected_monster_id)
+        if not monster:
+            return
+        
+        templates = monster.get('templates', [])
+        if idx >= len(templates):
+            return
+        
+        template = templates[idx]
+        
+        # Confirm deletion
+        response = messagebox.askyesno(
+            i18n_t('confirm_delete_template_title', ns='monster_editor', default='Confirm Delete Template'),
+            f"{i18n_t('confirm_delete_template_message', ns='monster_editor', default='Are you sure you want to delete this template?')}\n\n{template.get('name', 'Unknown')}"
+        )
+        
+        if not response:
+            return
+        
+        # Remove from list
+        del templates[idx]
+        
+        # Mark as modified
+        self.has_unsaved_changes = True
+        
+        # Refresh Template tab
+        self._populate_template_tab(monster)
+        
+        # Notify
+        messagebox.showinfo(
+            i18n_t('msg_deleted_title', ns='monster_editor', default='Deleted'),
+            i18n_t('msg_template_removed', ns='monster_editor', default='Template removed successfully.')
+        )
+    
+    def _test_template_recognition(self) -> None:
+        """Test match for current template on screen; minimize app to avoid covering game."""
+        if not self.selected_monster_id:
+            return
+        
+        # Check if template_matcher is available
+        if locate_template is None:
+            messagebox.showerror(
+                i18n_t('error_title', ns='monster_editor', default='Error'),
+                i18n_t('error_template_matcher_unavailable', ns='monster_editor', default='template_matcher not available')
+            )
+            return
+        
+        # Get selected template from tree
+        if not self.template_tree:
+            return
+        selection = self.template_tree.selection()
+        if not selection:
+            messagebox.showinfo(
+                i18n_t('info_title', ns='monster_editor', default='Info'),
+                i18n_t('info_no_template_selected', ns='monster_editor', default='Please select a template to test.')
+            )
+            return
+        
+        # Get template data
+        item = selection[0]
+        idx = self.template_tree.index(item)
+        
+        monster = self._find_monster_by_id(self.selected_monster_id)
+        if not monster:
+            return
+        
+        templates = monster.get('templates', [])
+        if idx >= len(templates):
+            return
+        
+        template = templates[idx]
+        path = template.get('path', '')
+        threshold = template.get('threshold', 0.85)
+        
+        if not path:
+            messagebox.showinfo(
+                i18n_t('info_title', ns='monster_editor', default='Info'),
+                i18n_t('info_no_template_path', ns='monster_editor', default='Template has no path.')
+            )
+            return
+        
+        # Minimize to avoid covering game
+        try:
+            self.iconify()
+        except Exception:
+            pass
+        self.update()
+        import time
+        time.sleep(0.4)
+        
+        # Run template matching
+        try:
+            box, conf = locate_template(path, region=None, threshold=threshold, method='auto')
+        except Exception as exc:
+            try:
+                self.deiconify()
+                self.lift()
+            except Exception:
+                pass
+            messagebox.showerror(
+                i18n_t('error_title', ns='monster_editor', default='Error'),
+                str(exc)
+            )
+            return
+        
+        # Restore window
+        try:
+            self.deiconify()
+            self.lift()
+        except Exception:
+            pass
+        
+        # Show results
+        if box:
+            x = int(box[0] + box[2] // 2)
+            y = int(box[1] + box[3] // 2)
+            if conf is None:
+                msg = i18n_t('msg_test_found_at', ns='monster_editor', default='Match found at ({x}, {y})').format(x=x, y=y)
+            else:
+                msg = i18n_t('msg_test_found_conf', ns='monster_editor', default='Match found at ({x}, {y}) - Confidence: {conf:.2f}').format(x=x, y=y, conf=conf)
+            messagebox.showinfo(
+                i18n_t('title_test_recognition', ns='monster_editor', default='Test Recognition'),
+                msg
+            )
+        else:
+            messagebox.showinfo(
+                i18n_t('title_test_recognition', ns='monster_editor', default='Test Recognition'),
+                i18n_t('msg_test_failed', ns='monster_editor', default='No match found')
+            )
+    
+    # Inner class for region capture overlay
+    class _RegionCaptureOverlay(tk.Toplevel):
+        """Fullscreen overlay for selecting a screen region."""
+        def __init__(self, parent):
+            super().__init__(parent)
+            self.parent = parent
+            self.withdraw()
+            self.overrideredirect(True)
+            self.attributes('-topmost', True)
+            try:
+                self.attributes('-alpha', 0.25)
+            except Exception:
+                pass
+            self.configure(bg='black')
+            # Fullscreen size
+            self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
+            # Canvas to draw selection
+            self.canvas = tk.Canvas(self, bg='black', highlightthickness=0, cursor='crosshair')
+            self.canvas.pack(fill='both', expand=True)
+            # State
+            self._start = None
+            self._rect = None
+            self._bbox = None
+            self._size_text = None
+            # Bindings
+            self.canvas.bind('<ButtonPress-1>', self._on_press)
+            self.canvas.bind('<B1-Motion>', self._on_drag)
+            self.canvas.bind('<ButtonRelease-1>', self._on_release)
+            self.bind('<Escape>', lambda e: self._cancel())
+        
+        def show_modal(self):
+            self.deiconify()
+            self.grab_set()
+            self.focus_force()
+            self.wait_window(self)
+            return self._bbox
+        
+        def _on_press(self, event):
+            self._start = (event.x, event.y, event.x_root, event.y_root)
+            if self._rect is not None:
+                self.canvas.delete(self._rect)
+                self._rect = None
+            self._rect = self.canvas.create_rectangle(event.x, event.y, event.x, event.y, outline='#00E5FF', width=2)
+            if self._size_text:
+                self.canvas.delete(self._size_text)
+                self._size_text = None
+        
+        def _on_drag(self, event):
+            if self._start and self._rect:
+                x0, y0, _, _ = self._start
+                x1, y1 = event.x, event.y
+                self.canvas.coords(self._rect, x0, y0, x1, y1)
+                # Live size label
+                w = abs(x1 - x0)
+                h = abs(y1 - y0)
+                label = f"{w} x {h}"
+                if self._size_text:
+                    self.canvas.delete(self._size_text)
+                self._size_text = self.canvas.create_text(x1 + 10, y1 + 10, text=label, fill='white', anchor='nw')
+        
+        def _on_release(self, event):
+            if not self._start:
+                self.destroy()
+                return
+            x0, y0, xr0, yr0 = self._start
+            x1, y1 = event.x, event.y
+            # Convert to screen coords using root deltas
+            dx = xr0 - x0
+            dy = yr0 - y0
+            sx0 = x0 + dx
+            sy0 = y0 + dy
+            sx1 = x1 + dx
+            sy1 = y1 + dy
+            left = int(min(sx0, sx1))
+            top = int(min(sy0, sy1))
+            right = int(max(sx0, sx1))
+            bottom = int(max(sy0, sy1))
+            # Minimum size safeguard
+            if right - left < 5 or bottom - top < 5:
+                self._bbox = None
+            else:
+                self._bbox = (left, top, right, bottom)
+            self.destroy()
+        
+        def _cancel(self):
+            self._bbox = None
+            self.destroy()
 
 
 # Singleton instance
