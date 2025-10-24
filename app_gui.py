@@ -1814,6 +1814,35 @@ Alternative Solutions:
         else:
             stop_tooltip += "\n(Ctrl+F6)"
         self._create_tooltip(self.hunt_stop_btn, stop_tooltip)
+        
+        # Add hover effect for Stop button - show forbidden icon when disabled
+        forbidden_icon = self._icon("forbidden", "🚫", size=20)
+        
+        def on_stop_hover(event):
+            """Show forbidden icon when hovering over disabled Stop button."""
+            if str(self.hunt_stop_btn['state']) == 'disabled':
+                if not isinstance(forbidden_icon, str):
+                    self.hunt_stop_btn.config(image=forbidden_icon)
+                else:
+                    self.hunt_stop_btn.config(text="🚫")
+        
+        def on_stop_leave(event):
+            """Restore stop icon when leaving Stop button."""
+            if str(self.hunt_stop_btn['state']) == 'disabled':
+                if not isinstance(stop_icon, str):
+                    self.hunt_stop_btn.config(image=stop_icon)
+                else:
+                    self.hunt_stop_btn.config(text="⏹️")
+        
+        self.hunt_stop_btn.bind("<Enter>", on_stop_hover)
+        self.hunt_stop_btn.bind("<Leave>", on_stop_leave)
+        
+        # Keep reference to forbidden icon
+        if not isinstance(forbidden_icon, str):
+            try:
+                self._image_refs.append(forbidden_icon)
+            except Exception:
+                pass
 
         # Separator before window controls
         tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
@@ -4384,9 +4413,9 @@ Alternative Solutions:
         # Store window items
         self.win_items = candidates
 
-        # Populate combobox
+        # Populate combobox (show only window titles without PID)
         self.win_combo["values"] = [
-            f"{w['title']}  [PID:{w['pid']}]" for w in candidates
+            w['title'] for w in candidates
         ]
 
         if not candidates:
@@ -4787,9 +4816,9 @@ Alternative Solutions:
         # Update hunt_selected
         self.hunt_selected = selected
 
-        # Update UI combobox
+        # Update UI combobox (show only window title without PID)
         if hasattr(self, "win_combo"):
-            self.win_combo["values"] = [f"{selected['title']}  [PID:{selected['pid']}]"]
+            self.win_combo["values"] = [selected['title']]
             self.win_combo.current(0)
             self.win_items = [selected]
 
@@ -4880,9 +4909,9 @@ Alternative Solutions:
                     "proc": None,  # Process name not saved in config
                 }
 
-                # Populate combobox with saved window
+                # Populate combobox with saved window (show only window title without PID)
                 if hasattr(self, "win_combo"):
-                    self.win_combo["values"] = [f"{window_title}  [PID:{window_pid}]"]
+                    self.win_combo["values"] = [window_title]
                     self.win_combo.current(0)
                     self.win_items = [self.hunt_selected]
 
@@ -4928,9 +4957,9 @@ Alternative Solutions:
             "proc": None,  # Process name not saved in config
         }
 
-        # Populate combobox with saved window
+        # Populate combobox with saved window (show only window title without PID)
         if hasattr(self, "win_combo"):
-            self.win_combo["values"] = [f"{window_title}  [PID:{window_pid}]"]
+            self.win_combo["values"] = [window_title]
             self.win_combo.current(0)
             self.win_items = [self.hunt_selected]
 
