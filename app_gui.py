@@ -1668,27 +1668,8 @@ Alternative Solutions:
         # Import button styles for refresh button
         from ui.helpers.button_styles import get_button_config
 
-        # Refresh button with icon (manual window refresh) - icon 16, button size 24, padding 12x8
-        refresh_icon = self._icon("refresh", "🔄", size=16)
-        # Build kwargs for refresh button to avoid passing None to 'image'
-        refresh_kwargs = get_button_config("refresh")
-        if not isinstance(refresh_icon, str):
-            refresh_text = ""
-            refresh_kwargs.update({"image": refresh_icon, "compound": "left"})
-        else:
-            refresh_text = self._t("refresh_windows")
-        
-        refresh_btn = tk.Button(
-            top,
-            text=refresh_text,
-            command=self.on_hunt_refresh_windows,  # Keep original function
-            padx=12,
-            pady=8,
-            **refresh_kwargs,
-        )
-        refresh_btn.pack(side="left", padx=(0, 6))
-        
-        # Tooltip for refresh button - more specific
+        # Refresh button - Using icon_button component
+        # Icon 16px, Button 24px (padding auto-calculated)
         refresh_tooltip = (
             "Refresh Window List\n"
             "Scans for game windows"
@@ -1696,14 +1677,20 @@ Alternative Solutions:
             "Làm Mới Danh Sách Cửa Sổ\n"
             "Quét lại các cửa sổ game"
         )
-        self._create_tooltip(refresh_btn, refresh_tooltip)
-
-        # Keep reference to prevent garbage collection
-        if not isinstance(refresh_icon, str):
-            try:
-                self._image_refs.append(refresh_icon)
-            except Exception:
-                pass
+        
+        refresh_btn = _create_icon_btn_component(
+            parent=top,
+            icon_name='refresh',
+            icon_fallback='🔄',
+            icon_size=16,
+            button_size=24,
+            command=self.on_hunt_refresh_windows,
+            button_type='refresh',
+            tooltip_text=refresh_tooltip,
+            state='normal',
+            auto_hover_disabled=False
+        )
+        refresh_btn.pack(side="left", padx=(0, 6))
         
         # Checkbox to toggle advanced controls (window selectors)
         self.show_advanced_controls_var = tk.BooleanVar(value=False)
@@ -1755,7 +1742,7 @@ Alternative Solutions:
         )
 
         # Hunt Control Buttons - Using icon_button component with auto hover effect
-        # Start Hunt Button - Green with start icon (icon only)
+        # Start Hunt Button - Icon 20px, Button 32px (green)
         start_tooltip = self._t("start_hunt")
         if self.lang == "vi":
             start_tooltip += "\n(Ctrl+F5)"
@@ -1767,17 +1754,16 @@ Alternative Solutions:
             icon_name='start',
             icon_fallback='▶️',
             icon_size=20,
+            button_size=32,
             command=self.on_hunt_start,
             button_type='green',
             tooltip_text=start_tooltip,
             state='normal',
-            auto_hover_disabled=False,  # Start button doesn't need hover effect
-            padx=12,
-            pady=8
+            auto_hover_disabled=False  # Start button doesn't need hover effect
         )
         self.hunt_start_btn.pack(side="left", padx=(0, 6))
 
-        # Stop Hunt Button - Red with stop icon (icon only, disabled by default)
+        # Stop Hunt Button - Icon 20px, Button 32px (red, disabled by default)
         stop_tooltip = self._t("stop_hunt")
         if self.lang == "vi":
             stop_tooltip += "\n(Ctrl+F6)"
@@ -1789,13 +1775,12 @@ Alternative Solutions:
             icon_name='stop',
             icon_fallback='⏹️',
             icon_size=20,
+            button_size=32,
             command=self.on_hunt_stop,
             button_type='red',
             tooltip_text=stop_tooltip,
             state='disabled',
-            auto_hover_disabled=True,  # Auto show forbidden icon/cursor on hover
-            padx=12,
-            pady=8
+            auto_hover_disabled=True  # Auto show forbidden icon/cursor on hover
         )
         self.hunt_stop_btn.pack(side="left")
 
