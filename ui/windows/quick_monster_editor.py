@@ -719,44 +719,13 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_info', ns='monster_editor', default='Monster Info')
         self.notebook.add(self.info_tab, text=tab_text)
         
-        # Create scrollable container
-        canvas = tk.Canvas(self.info_tab, bg=UI.BG_DEFAULT, highlightthickness=0)
-        scrollbar = tk.Scrollbar(self.info_tab, orient='vertical', command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg=UI.BG_DEFAULT)
+        # Header with Edit button and badge (OUTSIDE scrollable area)
+        header_frame = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
+        header_frame.pack(fill='x', padx=10, pady=(10, 5))
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side='left', fill='both', expand=True, padx=10, pady=10)
-        scrollbar.pack(side='right', fill='y')
-        
-        # Header with Edit button and badge
-        header_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
-        header_frame.pack(fill='x', padx=5, pady=(0, 10))
-        
-        # Left side: Edit/Save toggle button
+        # Left side: Editing badge and confirmation buttons
         left_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
         left_buttons.pack(side='left')
-        
-        self.edit_toggle_button = create_icon_button(
-            left_buttons,
-            icon_name='edit',
-            icon_fallback='✏️',
-            icon_size=16,
-            command=self._toggle_edit_mode,
-            button_type='primary',
-            variant='icon_only',  # Icon only
-            width=20,
-            height=20,
-            tooltip_key='tooltip_edit_mode',
-            tooltip_ns='monster_editor'
-        )
-        self.edit_toggle_button.pack(side='left', padx=(0, 10))
         
         # Editing badge (orange background, white text)
         self.editing_badge = tk.Label(
@@ -772,9 +741,66 @@ class QuickMonsterEditor(tk.Toplevel):
         # Initially hidden (not in edit mode)
         # self.editing_badge.pack(side='left')  # Don't pack yet
         
-        # Right side: Add/Delete/Edit buttons (20x20, icon 16px)
+        # Confirmation buttons container (inline confirmation)
+        self.confirmation_frame = tk.Frame(left_buttons, bg='#F2F2F2', relief='flat', bd=1)
+        # Initially hidden
+        # self.confirmation_frame.pack(side='left', padx=(0, 5))
+        
+        # Yes button (accept.ico - red icon)
+        self.confirm_yes_button = create_icon_button(
+            self.confirmation_frame,
+            icon_name='accept',
+            icon_fallback='✓',
+            icon_size=16,
+            command=self._on_confirm_yes,
+            button_type='green_light',
+            variant='icon_only',
+            width=20,
+            height=20,
+            tooltip_key='tooltip_confirm_yes',
+            tooltip_ns='monster_editor'
+        )
+        self.confirm_yes_button.pack(side='left', padx=2, pady=2)
+        
+        # No button (cancel.ico - gray icon)
+        self.confirm_no_button = create_icon_button(
+            self.confirmation_frame,
+            icon_name='cancel',
+            icon_fallback='✗',
+            icon_size=16,
+            command=self._on_confirm_no,
+            button_type='secondary',
+            variant='icon_only',
+            width=20,
+            height=20,
+            tooltip_key='tooltip_confirm_no',
+            tooltip_ns='monster_editor'
+        )
+        self.confirm_no_button.pack(side='left', padx=2, pady=2)
+        
+        # Store pending confirmation action
+        self.pending_confirmation_action = None
+        self.confirmation_auto_hide_id = None
+        
+        # Right side: Edit/Add/Delete buttons (20x20, icon 16px)
         right_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
         right_buttons.pack(side='right')
+        
+        # Edit button
+        self.edit_toggle_button = create_icon_button(
+            right_buttons,
+            icon_name='edit',
+            icon_fallback='✏️',
+            icon_size=16,
+            command=self._toggle_edit_mode,
+            button_type='primary',
+            variant='icon_only',  # Icon only
+            width=20,
+            height=20,
+            tooltip_key='tooltip_edit_mode',
+            tooltip_ns='monster_editor'
+        )
+        self.edit_toggle_button.pack(side='left', padx=(0, 2))
         
         # Add Monster button
         self.add_monster_button = create_icon_button(
@@ -791,7 +817,7 @@ class QuickMonsterEditor(tk.Toplevel):
             tooltip_key='tooltip_add_monster',
             tooltip_ns='monster_editor'
         )
-        self.add_monster_button.pack(side='left', padx=(0, 2))
+        self.add_monster_button.pack(side='left', padx=2)
         
         # Delete Monster button
         self.delete_monster_button = create_icon_button(
@@ -810,13 +836,27 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.delete_monster_button.pack(side='left', padx=2)
         
-        # Note: Edit button is already in left_buttons as edit_toggle_button
-        
         # Initially enable Add button, Delete depends on selection
         if self.add_monster_button:
             self.add_monster_button.config(state='normal')
         if self.delete_monster_button:
             self.delete_monster_button.config(state='disabled')  # Will be enabled when monster selected
+        
+        # Create scrollable container (BELOW header)
+        canvas = tk.Canvas(self.info_tab, bg=UI.BG_DEFAULT, highlightthickness=0)
+        scrollbar = tk.Scrollbar(self.info_tab, orient='vertical', command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=UI.BG_DEFAULT)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side='left', fill='both', expand=True, padx=10, pady=(0, 10))
+        scrollbar.pack(side='right', fill='y')
         
         # Form content
         form_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
@@ -2179,6 +2219,71 @@ class QuickMonsterEditor(tk.Toplevel):
                 print(f"[MonsterEditor] Saved changes to monster: {monster.get('name')}")
                 break
     
+    # ============================================
+    # Inline Confirmation System
+    # ============================================
+    
+    def _show_confirmation(self, action_callback, auto_hide_seconds: int = 5) -> None:
+        """Show inline confirmation buttons (Yes/No) for an action.
+        
+        Args:
+            action_callback: Function to call if user clicks Yes
+            auto_hide_seconds: Seconds before auto-hiding (default 5)
+        """
+        # Store the pending action
+        self.pending_confirmation_action = action_callback
+        
+        # Cancel previous auto-hide timer if exists
+        if self.confirmation_auto_hide_id:
+            self.after_cancel(self.confirmation_auto_hide_id)
+            self.confirmation_auto_hide_id = None
+        
+        # Show confirmation frame
+        if self.confirmation_frame and not self.confirmation_frame.winfo_ismapped():
+            self.confirmation_frame.pack(side='left', padx=(0, 5))
+        
+        # Auto-hide after specified seconds
+        if auto_hide_seconds > 0:
+            self.confirmation_auto_hide_id = self.after(
+                auto_hide_seconds * 1000,
+                self._hide_confirmation
+            )
+    
+    def _hide_confirmation(self) -> None:
+        """Hide inline confirmation buttons."""
+        # Cancel auto-hide timer if exists
+        if self.confirmation_auto_hide_id:
+            self.after_cancel(self.confirmation_auto_hide_id)
+            self.confirmation_auto_hide_id = None
+        
+        # Hide confirmation frame
+        if self.confirmation_frame and self.confirmation_frame.winfo_ismapped():
+            self.confirmation_frame.pack_forget()
+        
+        # Clear pending action
+        self.pending_confirmation_action = None
+    
+    def _on_confirm_yes(self) -> None:
+        """Handle Yes button click - execute pending action."""
+        if self.pending_confirmation_action:
+            try:
+                # Execute the action
+                self.pending_confirmation_action()
+            except Exception as e:
+                print(f"[MonsterEditor] Error executing confirmed action: {e}")
+        
+        # Hide confirmation
+        self._hide_confirmation()
+    
+    def _on_confirm_no(self) -> None:
+        """Handle No button click - cancel action."""
+        # Just hide confirmation without executing action
+        self._hide_confirmation()
+    
+    # ============================================
+    # Monster CRUD Operations
+    # ============================================
+    
     def _on_add_monster(self) -> None:
         """Handle add monster button click."""
         # Create new monster with default values
@@ -2216,7 +2321,7 @@ class QuickMonsterEditor(tk.Toplevel):
         print(f"[MonsterEditor] Added new monster: {new_monster['id']}")
     
     def _on_delete_monster(self) -> None:
-        """Handle delete monster button click."""
+        """Handle delete monster button click - show inline confirmation."""
         if self.monster_listbox is None:
             return
         
@@ -2224,10 +2329,7 @@ class QuickMonsterEditor(tk.Toplevel):
         if isinstance(self.monster_listbox, ttk.Treeview):
             selection = self.monster_listbox.selection()
             if not selection:
-                self._show_warning(
-                    'No Selection',
-                    i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster to delete.')
-                )
+                # Button should be disabled, return silently
                 return
             
             # Get selected item values
@@ -2252,10 +2354,7 @@ class QuickMonsterEditor(tk.Toplevel):
             # Legacy Listbox support
             selection_idx = self.monster_listbox.curselection()
             if not selection_idx:
-                self._show_warning(
-                    'No Selection',
-                    i18n_t('warning_no_monster_selected', ns='monster_editor', default='Please select a monster to delete.')
-                )
+                # Button should be disabled, return silently
                 return
             
             monster_index = selection_idx[0]
@@ -2263,19 +2362,11 @@ class QuickMonsterEditor(tk.Toplevel):
                 return
             monster = self.monsters[monster_index]
         
-        # Confirm deletion
-        confirm = self._ask_yes_no(
-            'Confirm Deletion',
-            i18n_t(
-                'confirm_delete_monster',
-                ns='monster_editor',
-                default=f"Are you sure you want to delete '{monster.get('name', 'Unnamed')}'?"
-            )
-        )
-        
-        if confirm:
-            # Delete monster
+        # Show inline confirmation instead of popup
+        def delete_action():
+            """The actual delete action to execute if confirmed."""
             deleted_id = monster.get('id')
+            deleted_name = monster.get('name', 'Unnamed')
             self.monsters.pop(monster_index)
             self.is_dirty = True
             
@@ -2294,7 +2385,10 @@ class QuickMonsterEditor(tk.Toplevel):
             # Update dirty state UI
             self._update_dirty_state_ui()
             
-            print(f"[MonsterEditor] Deleted monster: {monster.get('name')}")
+            print(f"[MonsterEditor] Deleted monster: {deleted_name}")
+        
+        # Show inline confirmation (Yes/No buttons)
+        self._show_confirmation(delete_action, auto_hide_seconds=5)
     
     def _populate_info_form(self, monster: Dict[str, Any]) -> None:
         """Populate Info tab form with monster data and keep fields locked."""

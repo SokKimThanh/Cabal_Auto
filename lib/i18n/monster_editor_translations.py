@@ -55,6 +55,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tooltip_edit_mode': 'Bật/tắt chế độ chỉnh sửa',
         'tooltip_edit_mode_template': 'Bật/tắt chế độ chỉnh sửa template',
         'tooltip_add_template': 'Thêm template mới',
+        'tooltip_confirm_yes': 'Xác nhận thực hiện',
+        'tooltip_confirm_no': 'Hủy bỏ',
         
         # Messages
         'msg_monster_created': 'Đã tạo quái vật thành công',
@@ -194,6 +196,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tooltip_edit_mode': 'Toggle edit mode',
         'tooltip_edit_mode_template': 'Toggle template edit mode',
         'tooltip_add_template': 'Add new template',
+        'tooltip_confirm_yes': 'Confirm action',
+        'tooltip_confirm_no': 'Cancel action',
         
         # Messages
         'msg_monster_created': 'Monster created successfully',
