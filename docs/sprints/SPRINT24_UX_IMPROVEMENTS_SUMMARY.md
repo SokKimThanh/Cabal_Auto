@@ -6,12 +6,13 @@
 ---
 
 ## 🎯 Overview
-Sau khi hoàn thành bug fix cho QuickMonsterEditor (duplicate windows), Sprint 24 tập trung vào **4 cải tiến UX** được user yêu cầu:
+Sprint 24 tập trung vào **5 cải tiến UX/Bugfix** được user yêu cầu:
 
-1. ✅ **Empty data notification** - Thông báo inline khi không có dữ liệu
+1. ✅ **Sample data** - Thêm dữ liệu mẫu cho testing
 2. ✅ **Window activation robustness** - Cải thiện logic bring-to-front
 3. ✅ **Wizard state persistence** - Lưu trạng thái để không hỏi lại
-4. ✅ **Sample data** - Thêm dữ liệu mẫu cho testing
+4. ✅ **Empty data notification** - Thông báo inline khi không có dữ liệu
+5. ✅ **Singleton pattern fix** - Sửa duplicate windows bug
 
 ---
 
@@ -215,6 +216,50 @@ Consider adding `last_wizard_prompt_date` to allow re-prompting after X days if 
 
 ---
 
+### 5. Singleton Pattern Fix (Bugfix #5)
+**Problem:** Nhấn `Ctrl+Shift+M` nhiều lần tạo duplicate Monster Editor windows.
+
+**Root Cause:**
+- `_on_cancel()` không clear global `_quick_editor_instance`
+- `winfo_exists()` trả về `0` (False) cho destroyed windows
+- Stale reference → validation fails → creates duplicate
+
+**Solution:** Clear singleton on close + robust validation.
+
+**Files Modified:**
+- `ui/windows/quick_monster_editor.py`
+  - `_on_cancel()`: Clear singleton before destroy
+  - `show_quick_monster_editor()`: Robust validation with exception handling
+
+**Implementation:**
+```python
+# Fix 1: Clear singleton on close
+def _on_cancel(self) -> None:
+    global _quick_editor_instance
+    _quick_editor_instance = None
+    self.destroy()
+
+# Fix 2: Robust validation
+instance_valid = False
+if _quick_editor_instance is not None:
+    try:
+        exists = _quick_editor_instance.winfo_exists()
+        instance_valid = bool(exists)
+    except Exception as e:
+        _quick_editor_instance = None
+        instance_valid = False
+```
+
+**Benefits:**
+- ✅ Prevents duplicate windows
+- ✅ Auto-clears stale references
+- ✅ Exception-safe validation
+- ✅ Clear debug logs
+
+**Detailed Documentation:** `docs/bugfixes/BUGFIX_MONSTER_EDITOR_SINGLETON.md`
+
+---
+
 ## 🧪 Testing Checklist
 
 ### Test Case 1: Empty Data Notification
@@ -249,6 +294,17 @@ Consider adding `last_wizard_prompt_date` to allow re-prompting after X days if 
 - [ ] **Expected:** Monster list shows "Slime Xanh" and "Goblin Chiến Binh"
 - [ ] **Expected:** Log shows `[MonsterEditor] Loaded 2 monsters from lib\data\monsters.json`
 
+### Test Case 5: Singleton Pattern (NO Duplicates)
+- [ ] Press `Ctrl+Shift+M` → Editor opens
+- [ ] Press `Ctrl+Shift+M` again
+- [ ] **Expected:** Log shows `Singleton valid: True` + `Reusing existing instance`
+- [ ] **Expected:** Only 1 editor window visible
+- [ ] Close editor (X button)
+- [ ] **Expected:** Log shows `Singleton instance cleared on close`
+- [ ] Press `Ctrl+Shift+M` again
+- [ ] **Expected:** Log shows `Singleton exists: False` + `Creating NEW instance`
+- [ ] **Expected:** Still only 1 editor window visible
+
 ---
 
 ## 📊 Before/After Comparison
@@ -259,6 +315,7 @@ Consider adding `last_wizard_prompt_date` to allow re-prompting after X days if 
 | **Window activation** | ~60% success rate | ~95% success rate (estimated) |
 | **Wizard re-prompt** | Every launch for new users | Only first launch, respects skip |
 | **Sample data** | 0 monsters | 2 example monsters |
+| **Duplicate windows** | Multiple instances created | Singleton enforced ✅ |
 
 ---
 

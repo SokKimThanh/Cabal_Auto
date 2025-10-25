@@ -2141,6 +2141,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 # User chose "No" - don't close
                 return
         
+        # ✅ Sprint 24 Fix: Clear singleton instance before destroy
+        global _quick_editor_instance
+        _quick_editor_instance = None
+        print("[MonsterEditor] Singleton instance cleared on close")
+        
         # No unsaved changes or user confirmed - close window
         self.destroy()
     
@@ -3883,17 +3888,21 @@ def show_quick_monster_editor(
             print(line.strip())
         print("")
     
+    # ✅ Sprint 24 Fix: Robust singleton validation
+    instance_valid = False
     if _quick_editor_instance is not None:
         try:
+            # winfo_exists() returns 1 (True) if window exists, 0 (False) if destroyed
             exists = _quick_editor_instance.winfo_exists()
-            print(f"  Singleton valid: {exists}")
+            instance_valid = bool(exists)  # Convert to proper boolean
+            print(f"  Singleton valid: {instance_valid}")
         except Exception as e:
-            print(f"  Singleton valid check error: {e}")
-            exists = False
-    else:
-        exists = False
+            # Window was destroyed or reference is stale
+            print(f"  Singleton check error (clearing stale reference): {e}")
+            _quick_editor_instance = None
+            instance_valid = False
     
-    if _quick_editor_instance is not None and _quick_editor_instance.winfo_exists():
+    if instance_valid:
         print(f"[show_quick_monster_editor] ✓ Reusing existing instance")
         _quick_editor_instance.lift()
         _quick_editor_instance.focus_force()

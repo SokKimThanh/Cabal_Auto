@@ -5325,14 +5325,14 @@ Alternative Solutions:
             
             # Import quick editor (lazy import to avoid circular dependencies)
             try:
-                from ui.windows.quick_monster_editor import show_quick_monster_editor, _quick_editor_instance
+                import ui.windows.quick_monster_editor as monster_editor_module
                 
                 if False:  # Detailed debug logging
                     print(f"[Monster Editor] Import successful")
-                    print(f"  Singleton instance exists: {_quick_editor_instance is not None}")
-                    if _quick_editor_instance:
+                    print(f"  Singleton instance exists: {monster_editor_module._quick_editor_instance is not None}")
+                    if monster_editor_module._quick_editor_instance:
                         try:
-                            print(f"  Singleton valid: {_quick_editor_instance.winfo_exists()}")
+                            print(f"  Singleton valid: {monster_editor_module._quick_editor_instance.winfo_exists()}")
                         except:
                             print(f"  Singleton valid: <error checking>")
             except ImportError as ie:
@@ -5344,11 +5344,13 @@ Alternative Solutions:
                 self._monster_editor_opening = False
                 return
             
-            # ✅ FIX: Check singleton instance BEFORE creating new one
-            if _quick_editor_instance is not None and _quick_editor_instance.winfo_exists():
+            # ✅ Sprint 24 Fix: Check singleton via module reference (not local import)
+            # This ensures we see the actual global variable state
+            if (monster_editor_module._quick_editor_instance is not None and 
+                monster_editor_module._quick_editor_instance.winfo_exists()):
                 print("[Monster Editor] ✓ Bringing existing instance to front")
-                _quick_editor_instance.lift()
-                _quick_editor_instance.focus_force()
+                monster_editor_module._quick_editor_instance.lift()
+                monster_editor_module._quick_editor_instance.focus_force()
                 self._monster_editor_opening = False
                 return
             
@@ -5358,7 +5360,7 @@ Alternative Solutions:
                 print(f"  Parent class: {self.__class__.__name__}")
             
             # Show quick editor (singleton pattern handles existing instances)
-            editor = show_quick_monster_editor(
+            editor = monster_editor_module.show_quick_monster_editor(
                 parent=self,
                 monster_id=None,  # None = create new monster
                 on_save=self._on_monster_saved
