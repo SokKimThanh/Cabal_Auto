@@ -48,9 +48,6 @@ from lib.i18n import (
     GLOBAL_NS as I18N_GLOBAL,
 )
 
-# Monster Editor hotkey handler
-from lib.hotkey.monster_editor_handler import create_monster_editor_handler
-
 # Import icon button component
 try:
     from ui.components import create_icon_button as _create_icon_btn_component
@@ -787,27 +784,6 @@ class App(tk.Tk):
             menubar.add_cascade(label="Vision", menu=vision_menu)
             print("[Vision Menu] Created successfully")
             
-            # --- Menu: Monster Editor (Monster CRUD) ---
-            monster_menu = tk.Menu(menubar, tearoff=0)
-            
-            # Open Monster Editor (Ctrl+Shift+M)
-            try:
-                from lib.i18n import t as i18n_t
-                monster_label = i18n_t('menu_open_monster_editor', ns='monster_editor', 
-                                      default='Open Monster Manager' if self.lang == 'en' else 'Mở Quản Lý Quái Vật')
-            except:
-                monster_label = "Open Monster Manager" if self.lang == "en" else "Mở Quản Lý Quái Vật"
-            
-            monster_menu.add_command(
-                label=monster_label,
-                # ✅ FIX: Remove accelerator to prevent double-trigger with global hotkey
-                # accelerator="Ctrl+Shift+M",  # Display only, doesn't prevent global hotkey
-                command=lambda: self._monster_editor_handler.open_monster_editor()
-            )
-            
-            menubar.add_cascade(label="Monster", menu=monster_menu)
-            print("[Monster Menu] Created successfully")
-            
             try:
                 self.config(menu=menubar)
             except Exception:
@@ -829,9 +805,6 @@ class App(tk.Tk):
         self.win_items = []  # list of {'hwnd','pid','title','proc'}
         self.hunt_selected = None  # currently selected window info
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
-        
-        # Monster Editor Handler (Sprint 24 - Extracted to separate module)
-        self._monster_editor_handler = create_monster_editor_handler(self, debug=False)
 
         # Global hotkeys - registered after config load
         self._global_start_hotkey = None
@@ -839,7 +812,6 @@ class App(tk.Tk):
         self._global_wizard_hotkey = None  # NEW: Setup Wizard (Ctrl+Shift+N)
         self._global_library_hotkey = None  # NEW: Library Manager (Ctrl+Shift+L)
         self._global_vision_hotkey = None  # NEW Sprint 22: Vision Wizard (Ctrl+Shift+V)
-        self._global_monster_hotkey = None  # NEW: Monster Editor (Ctrl+Shift+M)
         # Fallback when `keyboard` package not available in this interpreter
         self._hotkey_fallback_bound = (
             []
@@ -5234,14 +5206,12 @@ Alternative Solutions:
                 wizard_key = cfg.get("setup_wizard_key", "ctrl+shift+n")
                 library_key = cfg.get("library_manager_key", "ctrl+shift+l")
                 vision_key = cfg.get("vision_wizard_key", "ctrl+shift+v")  # Sprint 22
-                monster_key = cfg.get("monster_editor_key", "ctrl+shift+m")  # Monster Editor
 
                 seq_start = _to_tk_seq(start_key) or "<Control-Shift-R>"
                 seq_stop = _to_tk_seq(stop_key) or "<Control-Shift-E>"
                 seq_wiz = _to_tk_seq(wizard_key) or "<Control-Shift-N>"
                 seq_lib = _to_tk_seq(library_key) or "<Control-Shift-L>"
                 seq_vision = _to_tk_seq(vision_key) or "<Control-Shift-V>"  # Sprint 22
-                seq_monster = _to_tk_seq(monster_key) or "<Control-Shift-M>"  # Monster Editor
 
                 try:
                     # Unbind any previously-bound fallback sequences to avoid duplicates
@@ -5272,13 +5242,6 @@ Alternative Solutions:
                         seq_vision, lambda e: self._on_vision_wizard_hotkey(), add="+"
                     )
                     self._hotkey_fallback_bound.append(seq_vision)
-                    # Monster Editor - REMOVED fallback bind (already registered as global hotkey at line ~5522)
-                    # This was causing double-trigger when app is focused (both bind_all + global hotkey fire)
-                    # Only global hotkey is needed since Monster Editor works regardless of focus
-                    # self.bind_all(
-                    #     seq_monster, lambda e: self._on_monster_editor_hotkey(), add="+"
-                    # )
-                    # self._hotkey_fallback_bound.append(seq_monster)
                     print(
                         f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}"
                     )
@@ -5304,7 +5267,6 @@ Alternative Solutions:
             wizard_key = hotkey_cfg.get("setup_wizard_key", "ctrl+shift+n")  # NEW
             library_key = hotkey_cfg.get("library_manager_key", "ctrl+shift+l")  # NEW
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")  # NEW Sprint 22
-            monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")  # NEW Monster Editor
 
             # Unregister old hotkeys first (in case of re-registration)
             self._unregister_global_hotkeys()
@@ -5359,15 +5321,6 @@ Alternative Solutions:
                 print(f"Failed to register vision hotkey '{vision_key}': {e}")
                 self._global_vision_hotkey = None
 
-            # NEW: Register Monster Editor hotkey (always active)
-            try:
-                self._global_monster_hotkey = keyboard.add_hotkey(
-                    monster_key, self._monster_editor_handler.on_hotkey_pressed, suppress=False
-                )
-            except Exception as e:
-                print(f"Failed to register monster editor hotkey '{monster_key}': {e}")
-                self._global_monster_hotkey = None
-
             # Log successful registration
             registered = []
             if self._global_start_hotkey:
@@ -5380,8 +5333,6 @@ Alternative Solutions:
                 registered.append(f"Library={library_key}")
             if self._global_vision_hotkey:
                 registered.append(f"Vision={vision_key}")
-            if self._global_monster_hotkey:
-                registered.append(f"Monster={monster_key}")
 
             if registered:
                 print(f"Global hotkeys registered: {', '.join(registered)}")
@@ -5455,15 +5406,6 @@ Alternative Solutions:
                     print(f"Error unregistering vision hotkey: {e}")
                 finally:
                     self._global_vision_hotkey = None
-
-            # NEW: Unregister monster editor hotkey
-            if self._global_monster_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_monster_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering monster editor hotkey: {e}")
-                finally:
-                    self._global_monster_hotkey = None
 
         except Exception as e:
             print(f"Error in _unregister_global_hotkeys: {e}")

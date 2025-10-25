@@ -13,15 +13,38 @@
   "attack_min_duration_sec": 5.0,
   "bring_to_front_each_cycle": false,
   "skill_slots": [
-    "Dark Explosion",
-    "Bone Javelin",
-    "Skull Shooter",
-    "Regeneration",
-    "",
-    "",
-    "",
-    "",
-    ""
+    {
+      "name": "Dark Explosion",
+      "key": "1",
+      "type": "attack",
+      "cooldown": 1.9,
+      "cast_time": 1.7,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
+    },
+    {
+      "name": "Bone Javelin",
+      "key": "2",
+      "type": "attack",
+      "cooldown": 2.4,
+      "cast_time": 1.5,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
+    },
+    {
+      "name": "Skull Shooter",
+      "key": "3",
+      "type": "attack",
+      "cooldown": 2.2,
+      "cast_time": 1.5,
+      "image": "assets/images/skills/skull_shooter_1760739255501.png"
+    },
+    {
+      "name": "Regeneration",
+      "key": "4",
+      "type": "buff",
+      "cooldown": 2.2,
+      "cast_time": 1.0,
+      "image": "assets/images/skills/regeneration_1760739255499.png"
+    }
   ],
   "window_bounds": {
     "left": 133,
@@ -29,13 +52,19 @@
     "width": 918,
     "height": 756
   },
-  "monster_list": [],
+  "monster_list": [
+    {
+      "name": "Slime Xanh",
+      "priority": 1,
+      "enabled": true
+    }
+  ],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
   "window_pid": 27992,
   "templates": [],
   "training_mode_enabled": true,
-  "ui_mode": "intermediate",
+  "ui_mode": "beginner",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,
