@@ -52,18 +52,7 @@
     "width": 918,
     "height": 756
   },
-  "monster_list": [
-    {
-      "name": "Scorlug",
-      "priority": 2,
-      "enabled": false
-    },
-    {
-      "name": "con ga",
-      "priority": 4,
-      "enabled": false
-    }
-  ],
+  "monster_list": [],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
   "window_pid": 21928,
@@ -79,14 +68,7 @@
     "library_manager_key": "ctrl+shift+l",
     "vision_wizard_key": "ctrl+shift+v"
   },
-  "training_monster_list": [
-    {
-      "name": "Coc go~",
-      "priority": 1,
-      "enabled": true,
-      "training_mode": true
-    }
-  ],
+  "training_monster_list": [],
   "window_hwnd": 264136,
   "overlay": {
     "enabled": false

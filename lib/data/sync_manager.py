@@ -50,6 +50,36 @@ class DataSyncManager:
     # Load Operations
     # ============================================
     
+    def get_monster_by_id(self, monster_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get monster data by ID.
+        
+        Args:
+            monster_id: Monster ID to find
+            
+        Returns:
+            Monster dictionary or None if not found
+        """
+        monsters = self.load_monsters()
+        for monster in monsters:
+            if monster.get('id') == monster_id:
+                return monster
+        return None
+    
+    def get_monsters_by_ids(self, monster_ids: List[str]) -> List[Dict[str, Any]]:
+        """
+        Get multiple monsters by IDs.
+        
+        Args:
+            monster_ids: List of monster IDs
+            
+        Returns:
+            List of monster dictionaries (only found monsters)
+        """
+        monsters = self.load_monsters()
+        monster_map = {m.get('id'): m for m in monsters if m.get('id')}
+        return [monster_map[mid] for mid in monster_ids if mid in monster_map]
+    
     def load_monsters(self) -> List[Dict[str, Any]]:
         """Load monsters from monsters.json."""
         try:
@@ -130,6 +160,42 @@ class DataSyncManager:
     # Synchronization Operations
     # ============================================
     
+    def add_monster_to_hunt(self, monster_id: str, is_training: bool = False) -> bool:
+        """
+        Add monster ID to hunt config list.
+        
+        Args:
+            monster_id: ID of monster to add
+            is_training: If True, add to training_monster_list, else monster_list
+            
+        Returns:
+            True if add successful
+        """
+        try:
+            # Load hunt config
+            config = self.load_hunt_config()
+            if not config:
+                config = {}
+            
+            list_key = 'training_monster_list' if is_training else 'monster_list'
+            
+            # Ensure list exists
+            if list_key not in config:
+                config[list_key] = []
+            
+            # Add ID if not already present
+            if monster_id not in config[list_key]:
+                config[list_key].append(monster_id)
+                print(f"[DataSyncManager] Added ID {monster_id} to {list_key}")
+                return self.save_hunt_config(config)
+            else:
+                print(f"[DataSyncManager] ID {monster_id} already in {list_key}")
+                return True
+                
+        except Exception as e:
+            print(f"[DataSyncManager] Error adding monster to hunt: {e}")
+            return False
+    
     def delete_monster(self, monster_id: str) -> bool:
         """
         Delete monster and sync across all files.
@@ -147,9 +213,9 @@ class DataSyncManager:
         """
         Synchronize monster deletion across all files.
         
-        When a monster is deleted from monsters.json, also remove it from:
-        - hunt_config.json: monster_list
-        - hunt_config.json: training_monster_list
+        When a monster is deleted from monsters.json, also remove its ID from:
+        - hunt_config.json: monster_list (array of IDs)
+        - hunt_config.json: training_monster_list (array of IDs)
         
         Args:
             monster_id: ID of monster to delete
@@ -169,28 +235,28 @@ class DataSyncManager:
             # Track if any changes made
             changes_made = False
             
-            # Remove from monster_list
+            # Remove ID from monster_list (now just array of IDs)
             if 'monster_list' in config:
                 original_count = len(config['monster_list'])
                 config['monster_list'] = [
-                    m for m in config['monster_list']
-                    if m.get('id') != monster_id
+                    mid for mid in config['monster_list']
+                    if mid != monster_id
                 ]
                 removed = original_count - len(config['monster_list'])
                 if removed > 0:
-                    print(f"[DataSyncManager] Removed {removed} from monster_list")
+                    print(f"[DataSyncManager] Removed {removed} ID from monster_list")
                     changes_made = True
             
-            # Remove from training_monster_list
+            # Remove ID from training_monster_list (now just array of IDs)
             if 'training_monster_list' in config:
                 original_count = len(config['training_monster_list'])
                 config['training_monster_list'] = [
-                    m for m in config['training_monster_list']
-                    if m.get('id') != monster_id
+                    mid for mid in config['training_monster_list']
+                    if mid != monster_id
                 ]
                 removed = original_count - len(config['training_monster_list'])
                 if removed > 0:
-                    print(f"[DataSyncManager] Removed {removed} from training_monster_list")
+                    print(f"[DataSyncManager] Removed {removed} ID from training_monster_list")
                     changes_made = True
             
             # Save if changes made
@@ -210,9 +276,8 @@ class DataSyncManager:
         """
         Synchronize monster update across all files.
         
-        When a monster is updated in monsters.json, update it in:
-        - hunt_config.json: monster_list
-        - hunt_config.json: training_monster_list
+        Since hunt_config now only stores IDs, this method just validates
+        that the monster ID exists in the lists. No actual update needed.
         
         Args:
             monster: Updated monster dictionary with 'id' field
@@ -227,37 +292,9 @@ class DataSyncManager:
                 return False
             
             print(f"[DataSyncManager] Syncing update for monster: {monster.get('name', 'Unknown')}")
+            print("[DataSyncManager] Hunt config stores IDs only, no update needed")
             
-            # Load hunt config
-            config = self.load_hunt_config()
-            if not config:
-                print("[DataSyncManager] No hunt config to sync")
-                return True
-            
-            # Track if any changes made
-            changes_made = False
-            
-            # Update in monster_list
-            if 'monster_list' in config:
-                for idx, m in enumerate(config['monster_list']):
-                    if m.get('id') == monster_id:
-                        config['monster_list'][idx] = monster.copy()
-                        print(f"[DataSyncManager] Updated in monster_list at index {idx}")
-                        changes_made = True
-            
-            # Update in training_monster_list
-            if 'training_monster_list' in config:
-                for idx, m in enumerate(config['training_monster_list']):
-                    if m.get('id') == monster_id:
-                        config['training_monster_list'][idx] = monster.copy()
-                        print(f"[DataSyncManager] Updated in training_monster_list at index {idx}")
-                        changes_made = True
-            
-            # Save if changes made
-            if changes_made:
-                return self.save_hunt_config(config)
-            
-            print("[DataSyncManager] No changes needed in hunt config")
+            # No changes needed since we only store IDs
             return True
             
         except Exception as e:
@@ -270,8 +307,9 @@ class DataSyncManager:
         """
         Full synchronization - rebuild hunt config monster lists from monsters.json.
         
-        This is a destructive operation that replaces all monster references
-        in hunt config with current monsters.json data.
+        Hunt config now stores only IDs. This method:
+        - Keeps existing IDs that still exist in monsters.json
+        - Removes IDs that no longer exist in monsters.json
         
         Args:
             monsters: Complete list of monsters from monsters.json
@@ -288,28 +326,20 @@ class DataSyncManager:
                 print("[DataSyncManager] No hunt config to sync")
                 return True
             
-            # Build map of monster ID -> monster data
-            monster_map = {m.get('id'): m for m in monsters if m.get('id')}
+            # Build set of valid monster IDs
+            valid_ids = {m.get('id') for m in monsters if m.get('id')}
             
-            # Rebuild monster_list (keep order, remove non-existent)
+            # Filter monster_list to keep only valid IDs
             if 'monster_list' in config:
-                new_list = []
-                for m in config['monster_list']:
-                    monster_id = m.get('id')
-                    if monster_id in monster_map:
-                        new_list.append(monster_map[monster_id].copy())
-                config['monster_list'] = new_list
-                print(f"[DataSyncManager] Rebuilt monster_list: {len(new_list)} monsters")
+                original_list = config['monster_list']
+                config['monster_list'] = [mid for mid in original_list if mid in valid_ids]
+                print(f"[DataSyncManager] Monster list: {len(original_list)} -> {len(config['monster_list'])} IDs")
             
-            # Rebuild training_monster_list (keep order, remove non-existent)
+            # Filter training_monster_list to keep only valid IDs
             if 'training_monster_list' in config:
-                new_list = []
-                for m in config['training_monster_list']:
-                    monster_id = m.get('id')
-                    if monster_id in monster_map:
-                        new_list.append(monster_map[monster_id].copy())
-                config['training_monster_list'] = new_list
-                print(f"[DataSyncManager] Rebuilt training_monster_list: {len(new_list)} monsters")
+                original_list = config['training_monster_list']
+                config['training_monster_list'] = [mid for mid in original_list if mid in valid_ids]
+                print(f"[DataSyncManager] Training list: {len(original_list)} -> {len(config['training_monster_list'])} IDs")
             
             # Save updated config
             return self.save_hunt_config(config)
@@ -333,10 +363,10 @@ class DataSyncManager:
             {
                 'valid': bool,
                 'monsters_count': int,
-                'hunt_monsters_count': int,
-                'training_monsters_count': int,
-                'orphaned_in_hunt': List[str],  # Monster IDs in hunt but not in monsters.json
-                'orphaned_in_training': List[str]  # Monster IDs in training but not in monsters.json
+                'hunt_ids_count': int,
+                'training_ids_count': int,
+                'orphaned_in_hunt': List[str],  # IDs in hunt but not in monsters.json
+                'orphaned_in_training': List[str]  # IDs in training but not in monsters.json
             }
         """
         try:
@@ -349,24 +379,22 @@ class DataSyncManager:
             # Build monster ID set
             monster_ids = {m.get('id') for m in monsters if m.get('id')}
             
-            # Check hunt monster_list
-            hunt_monsters = config.get('monster_list', [])
-            hunt_ids = {m.get('id') for m in hunt_monsters if m.get('id')}
-            orphaned_hunt = hunt_ids - monster_ids
+            # Check hunt monster_list (now array of IDs)
+            hunt_ids = config.get('monster_list', [])
+            orphaned_hunt = [mid for mid in hunt_ids if mid not in monster_ids]
             
-            # Check training_monster_list
-            training_monsters = config.get('training_monster_list', [])
-            training_ids = {m.get('id') for m in training_monsters if m.get('id')}
-            orphaned_training = training_ids - monster_ids
+            # Check training_monster_list (now array of IDs)
+            training_ids = config.get('training_monster_list', [])
+            orphaned_training = [mid for mid in training_ids if mid not in monster_ids]
             
             # Build result
             result = {
                 'valid': len(orphaned_hunt) == 0 and len(orphaned_training) == 0,
                 'monsters_count': len(monsters),
-                'hunt_monsters_count': len(hunt_monsters),
-                'training_monsters_count': len(training_monsters),
-                'orphaned_in_hunt': list(orphaned_hunt),
-                'orphaned_in_training': list(orphaned_training)
+                'hunt_ids_count': len(hunt_ids),
+                'training_ids_count': len(training_ids),
+                'orphaned_in_hunt': orphaned_hunt,
+                'orphaned_in_training': orphaned_training
             }
             
             print(f"[DataSyncManager] Validation result: {result}")
@@ -383,7 +411,7 @@ class DataSyncManager:
         """
         Fix orphaned monster references in hunt config.
         
-        Removes any monsters from hunt_config.json that don't exist in monsters.json.
+        Removes any IDs from hunt_config.json that don't exist in monsters.json.
         
         Returns:
             True if fix successful
@@ -407,24 +435,18 @@ class DataSyncManager:
             # Filter monster_list
             if 'monster_list' in config:
                 original_count = len(config['monster_list'])
-                config['monster_list'] = [
-                    m for m in config['monster_list']
-                    if m.get('id') in valid_ids
-                ]
+                config['monster_list'] = [mid for mid in config['monster_list'] if mid in valid_ids]
                 removed = original_count - len(config['monster_list'])
                 if removed > 0:
-                    print(f"[DataSyncManager] Removed {removed} orphaned from monster_list")
+                    print(f"[DataSyncManager] Removed {removed} orphaned IDs from monster_list")
             
             # Filter training_monster_list
             if 'training_monster_list' in config:
                 original_count = len(config['training_monster_list'])
-                config['training_monster_list'] = [
-                    m for m in config['training_monster_list']
-                    if m.get('id') in valid_ids
-                ]
+                config['training_monster_list'] = [mid for mid in config['training_monster_list'] if mid in valid_ids]
                 removed = original_count - len(config['training_monster_list'])
                 if removed > 0:
-                    print(f"[DataSyncManager] Removed {removed} orphaned from training_monster_list")
+                    print(f"[DataSyncManager] Removed {removed} orphaned IDs from training_monster_list")
             
             # Save fixed config
             return self.save_hunt_config(config)

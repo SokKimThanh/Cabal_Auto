@@ -1,12 +1,1 @@
-[
-  {
-    "name": "Cọc Gỗ",
-    "hp": 122.0,
-    "damage_per_hit": 12.0,
-    "template": "",
-    "description": "dfasdf",
-    "training_mode": false,
-    "window_bounds": null,
-    "templates": []
-  }
-]
+[]
