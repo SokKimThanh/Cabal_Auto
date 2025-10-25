@@ -1,5 +1,5 @@
 {
-  "window_title": "CABAL",
+  "window_title": "Trợ lý săn Cabal",
   "target_key": "z",
   "attack_press_ms": 60,
   "target_cycle_delay": 0.2,
@@ -32,7 +32,7 @@
   "monster_list": [],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 27992,
+  "window_pid": 23072,
   "templates": [],
   "training_mode_enabled": true,
   "ui_mode": "beginner",
@@ -46,7 +46,7 @@
     "vision_wizard_key": "ctrl+shift+v"
   },
   "training_monster_list": [],
-  "window_hwnd": 12978414,
+  "window_hwnd": 4982268,
   "overlay": {
     "enabled": false
   },

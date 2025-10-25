@@ -5271,13 +5271,22 @@ Alternative Solutions:
             
             # Import quick editor (lazy import to avoid circular dependencies)
             try:
-                from ui.windows.quick_monster_editor import show_quick_monster_editor
+                from ui.windows.quick_monster_editor import show_quick_monster_editor, _quick_editor_instance
             except ImportError as ie:
                 print(f"[Monster Editor] Failed to import quick_monster_editor: {ie}")
                 messagebox.showerror(
                     "Import Error",
                     f"Could not load Monster Editor module:\n{ie}"
                 )
+                self._monster_editor_opening = False
+                return
+            
+            # ✅ FIX: Check singleton instance BEFORE creating new one
+            if _quick_editor_instance is not None and _quick_editor_instance.winfo_exists():
+                print("[Monster Editor] Instance already exists, bringing to front")
+                _quick_editor_instance.lift()
+                _quick_editor_instance.focus_force()
+                self._monster_editor_opening = False
                 return
             
             # Show quick editor (singleton pattern handles existing instances)
