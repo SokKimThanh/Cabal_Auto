@@ -351,6 +351,9 @@ class QuickMonsterEditor(tk.Toplevel):
         self._bind_events()
         self._start_queue_monitor()
         
+        # Update button states based on initial data
+        self._update_button_states()
+        
         # Update UI to reflect initial dirty state
         self._update_dirty_state_ui()
         
@@ -516,6 +519,59 @@ class QuickMonsterEditor(tk.Toplevel):
                 self._update_dirty_state_ui()
         
         self.after(1500, restore)
+    
+    def _update_button_states(self) -> None:
+        """
+        Update button states based on monster and template selection.
+        
+        Rules:
+        - Info tab: Requires monster selected
+        - Template tab: Requires monster selected
+        - Template operations: Some require template selected
+        - Add buttons: Always enabled (or only monster needed for template add)
+        - Delete buttons: Enabled when item selected
+        """
+        has_monster = bool(self.current_monster_id)
+        has_template = False
+        
+        # Check if template is selected
+        if has_monster and self.template_listbox and isinstance(self.template_listbox, ttk.Treeview):
+            selection = self.template_listbox.selection()
+            has_template = bool(selection)
+        
+        # === Info Tab Buttons ===
+        # Edit button: Enabled when monster selected
+        if self.edit_toggle_button:
+            self.edit_toggle_button.config(state='normal' if has_monster else 'disabled')
+        
+        # Delete monster: Enabled when monster selected
+        if self.delete_monster_button:
+            self.delete_monster_button.config(state='normal' if has_monster else 'disabled')
+        
+        # === Template Tab Buttons ===
+        # Add template: Enabled when monster selected
+        if self.add_template_button:
+            self.add_template_button.config(state='normal' if has_monster else 'disabled')
+        
+        # Delete template: Enabled when template selected
+        if self.delete_template_button:
+            self.delete_template_button.config(state='normal' if has_template else 'disabled')
+        
+        # Edit template: Enabled when template selected
+        if self.template_edit_toggle_button:
+            self.template_edit_toggle_button.config(state='normal' if has_template else 'disabled')
+        
+        # Capture: Enabled when monster selected (can update existing or create new)
+        if hasattr(self, 'capture_preview_button') and self.capture_preview_button:
+            self.capture_preview_button.config(state='normal' if has_monster else 'disabled')
+        
+        # Browse: Enabled when monster selected (can update existing or create new)
+        if hasattr(self, 'browse_preview_button') and self.browse_preview_button:
+            self.browse_preview_button.config(state='normal' if has_monster else 'disabled')
+        
+        # Test: Enabled when template selected
+        if self.test_template_button:
+            self.test_template_button.config(state='normal' if has_template else 'disabled')
     
     def _show_error(self, title: str, message: str) -> None:
         """
@@ -2129,6 +2185,9 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.current_monster_id = monster.get('id')
                 self._populate_info_form(monster)
                 print(f"[MonsterEditor] Selected monster: {monster.get('name')}")
+        
+        # Update button states after selection change
+        self._update_button_states()
     
     def _toggle_edit_mode(self) -> None:
         """Toggle between locked and edit mode for form fields."""
@@ -2398,6 +2457,9 @@ class QuickMonsterEditor(tk.Toplevel):
         # Populate form with new monster data
         self._populate_info_form(new_monster)
         
+        # Update button states
+        self._update_button_states()
+        
         print(f"[MonsterEditor] Added new monster: {new_monster['id']}")
     
     def _on_delete_monster(self) -> None:
@@ -2492,6 +2554,9 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.is_dirty = False
                 self.is_monster_dirty = False
                 self._update_dirty_state_ui()
+            
+            # Update button states after delete
+            self._update_button_states()
             
             print(f"[MonsterEditor] Deleted monster: {deleted_name}")
         
@@ -2734,6 +2799,9 @@ class QuickMonsterEditor(tk.Toplevel):
                     image=''
                 )
         
+        # Update button states after template selection
+        self._update_button_states()
+        
         print(f"[MonsterEditor] Selected template: {template_name} (threshold: {threshold:.2f})")
     
     def _add_template(self) -> None:
@@ -2765,6 +2833,9 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Refresh template list
         self._refresh_template_list()
+        
+        # Update button states after adding template
+        self._update_button_states()
         
         # Show info
         messagebox.showinfo(
@@ -2904,6 +2975,9 @@ class QuickMonsterEditor(tk.Toplevel):
             # Refresh template list
             self._refresh_template_list()
             
+            # Update button states after capture
+            self._update_button_states()
+            
             # Re-select the template if it was an update
             if selected_template_idx is not None and self.template_listbox:
                 try:
@@ -3011,6 +3085,9 @@ class QuickMonsterEditor(tk.Toplevel):
             # Refresh template list
             self._refresh_template_list()
             
+            # Update button states after browse
+            self._update_button_states()
+            
             # Re-select the template if it was an update
             if selected_template_idx is not None and self.template_listbox:
                 try:
@@ -3099,6 +3176,9 @@ class QuickMonsterEditor(tk.Toplevel):
                 
                 # Refresh template list
                 self._refresh_template_list()
+                
+                # Update button states after deleting template
+                self._update_button_states()
                 
                 # Save to file immediately
                 self._save_monsters()
