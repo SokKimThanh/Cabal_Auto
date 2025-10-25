@@ -61,9 +61,25 @@ try:
 except ImportError:
     # Fallback if component not available
     def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
+        """Fallback create_icon_button - filter invalid tk.Button parameters."""
+        # Get base config
         config = get_button_config(button_type)
-        config.update(kwargs)
-        return tk.Button(parent, text=text or icon_name, command=command, **config)
+        
+        # Remove parameters that tk.Button doesn't support
+        invalid_params = [
+            'icon_fallback', 'icon_size', 'variant', 
+            'tooltip_key', 'tooltip_ns', 'auto_hover_disabled'
+        ]
+        
+        # Filter kwargs
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
+        config.update(filtered_kwargs)
+        
+        # Use icon_fallback as text if provided
+        icon_fallback = kwargs.get('icon_fallback', icon_name)
+        display_text = text or icon_fallback
+        
+        return tk.Button(parent, text=display_text, command=command, **config)
     
     def create_game_window_mode_selector(parent, **kwargs):
         """Fallback if game_window_mode_selector not available."""
@@ -78,7 +94,11 @@ except ImportError:
         return tk.Label(parent, text="[Game Selector unavailable]")
     
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
-        return tk.Label(parent, text=f"{icon_fallback} {text}", **kwargs)
+        """Fallback create_icon_label."""
+        # Filter out invalid Label parameters
+        invalid_params = ['icon_size']
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
+        return tk.Label(parent, text=f"{icon_fallback} {text}", **filtered_kwargs)
     
     ConfirmationWidget = None  # type: ignore
     
@@ -704,6 +724,9 @@ class QuickMonsterEditor(tk.Toplevel):
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(right_container)
         self.notebook.pack(fill='both', expand=True)
+        
+        # Bind tab change event to cancel confirmation
+        self.notebook.bind('<<NotebookTabChanged>>', self._on_tab_changed)
         
         # Create tabs
         self._create_info_tab()
@@ -1732,6 +1755,9 @@ class QuickMonsterEditor(tk.Toplevel):
         Following PYTHON_CODING_GUIDELINES.md:
         - Rule 2: Check is_dirty before prompting
         """
+        # Cancel any pending confirmation first
+        self._cancel_confirmation()
+        
         # Rule 2: Check if there are unsaved changes
         if self.is_dirty:
             # Prompt user
@@ -1984,8 +2010,16 @@ class QuickMonsterEditor(tk.Toplevel):
             self._on_template_select(FakeEvent())
             print(f"[MonsterEditor] Auto-selected first template")
     
+    def _on_tab_changed(self, event: Any) -> None:
+        """Handle notebook tab change - cancel any pending confirmation."""
+        self._cancel_confirmation()
+        print("[MonsterEditor] Tab changed, confirmation cancelled")
+    
     def _on_monster_select(self, event: Any) -> None:
         """Handle monster selection from Treeview."""
+        # Cancel any pending confirmation when selection changes
+        self._cancel_confirmation()
+        
         if self.monster_listbox is None:
             return
         
@@ -2209,8 +2243,23 @@ class QuickMonsterEditor(tk.Toplevel):
             auto_hide_seconds: Seconds before auto-hiding (default 5)
         """
         if self.confirmation_widget:
-            # Set the callback
-            self.confirmation_widget.set_confirm_callback(action_callback)
+            # Set the callback (wraps with validation)
+            def safe_callback():
+                """Wrapper to validate state before executing action."""
+                try:
+                    # Check if widget still exists
+                    if not self.confirmation_widget or not self.confirmation_widget.winfo_exists():
+                        print("[MonsterEditor] Confirmation widget destroyed, action cancelled")
+                        return
+                    
+                    # Execute the action
+                    action_callback()
+                except Exception as e:
+                    print(f"[MonsterEditor] Error executing action: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            self.confirmation_widget.set_confirm_callback(safe_callback)
             # Show widget
             self.confirmation_widget.show(side='left', padx=(0, 5))
         else:
@@ -2225,6 +2274,11 @@ class QuickMonsterEditor(tk.Toplevel):
         """Hide inline confirmation widget."""
         if self.confirmation_widget:
             self.confirmation_widget.hide()
+    
+    def _cancel_confirmation(self) -> None:
+        """Cancel confirmation - hide and clear callbacks without executing."""
+        if self.confirmation_widget:
+            self.confirmation_widget.cancel()
     
     # ============================================
     # Monster CRUD Operations
@@ -2311,8 +2365,20 @@ class QuickMonsterEditor(tk.Toplevel):
         # Show inline confirmation instead of popup
         def delete_action():
             """The actual delete action to execute if confirmed."""
+            # Validate monster still exists before deletion
+            if monster_index < 0 or monster_index >= len(self.monsters):
+                print(f"[MonsterEditor] Monster index {monster_index} out of range, action cancelled")
+                return
+            
+            # Validate it's still the same monster
+            if self.monsters[monster_index] != monster:
+                print("[MonsterEditor] Monster changed, action cancelled")
+                return
+            
             deleted_id = monster.get('id')
             deleted_name = monster.get('name', 'Unnamed')
+            
+            # Perform deletion
             self.monsters.pop(monster_index)
             self.is_dirty = True
             

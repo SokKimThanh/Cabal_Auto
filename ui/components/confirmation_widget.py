@@ -37,7 +37,19 @@ from typing import Callable, Optional, Literal
 try:
     from ui.components.create_icon_button import create_icon_button
 except ImportError:
-    from create_icon_button import create_icon_button
+    try:
+        from create_icon_button import create_icon_button
+    except ImportError:
+        # Final fallback - create safe button creator
+        def create_icon_button(parent, icon_name: str, command, icon_fallback: str = '?', **kwargs):
+            """Safe fallback for create_icon_button."""
+            # Filter out non-Button parameters
+            invalid_params = [
+                'icon_size', 'variant', 'tooltip_key', 'tooltip_ns', 
+                'auto_hover_disabled', 'button_type'
+            ]
+            safe_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
+            return tk.Button(parent, text=icon_fallback, command=command, **safe_kwargs)
 
 try:
     from lib.i18n import i18n_t
@@ -127,28 +139,45 @@ class ConfirmationWidget(tk.Frame):
         self.no_button.pack(side='left', padx=2, pady=2)
     
     def _on_yes_clicked(self) -> None:
-        """Handle Yes button click."""
+        """Handle Yes button click with safety checks."""
+        # Store callback before hiding (in case callback modifies it)
+        callback = self.on_confirm
+        
+        # Hide first to prevent double-click
+        self.hide()
+        
+        # Execute callback with safety checks
         try:
-            # Execute confirm callback
-            if self.on_confirm:
-                self.on_confirm()
+            if callback and callable(callback):
+                # Verify parent still exists
+                if self.winfo_exists():
+                    callback()
+                else:
+                    print("[ConfirmationWidget] Parent destroyed, callback cancelled")
+        except tk.TclError as e:
+            print(f"[ConfirmationWidget] Widget destroyed: {e}")
         except Exception as e:
             print(f"[ConfirmationWidget] Error in confirm callback: {e}")
-        finally:
-            # Always hide after action
-            self.hide()
+            import traceback
+            traceback.print_exc()
     
     def _on_no_clicked(self) -> None:
-        """Handle No button click."""
+        """Handle No button click with safety checks."""
+        # Store callback before hiding
+        callback = self.on_cancel
+        
+        # Hide first
+        self.hide()
+        
+        # Execute cancel callback if provided
         try:
-            # Execute cancel callback if provided
-            if self.on_cancel:
-                self.on_cancel()
+            if callback and callable(callback):
+                if self.winfo_exists():
+                    callback()
+        except tk.TclError as e:
+            print(f"[ConfirmationWidget] Widget destroyed: {e}")
         except Exception as e:
             print(f"[ConfirmationWidget] Error in cancel callback: {e}")
-        finally:
-            # Always hide after action
-            self.hide()
     
     def show(self, side: Literal['left', 'right', 'top', 'bottom'] = 'left', padx: tuple = (0, 5), pady: int = 0) -> None:
         """
@@ -174,23 +203,46 @@ class ConfirmationWidget(tk.Frame):
             )
     
     def hide(self) -> None:
-        """Hide the confirmation widget."""
+        """Hide the confirmation widget and clear callbacks."""
         # Cancel auto-hide timer
         self._cancel_auto_hide()
         
         # Hide widget
-        if self.winfo_ismapped():
-            self.pack_forget()
+        try:
+            if self.winfo_exists() and self.winfo_ismapped():
+                self.pack_forget()
+        except tk.TclError:
+            pass  # Widget already destroyed
+    
+    def cancel(self) -> None:
+        """Cancel confirmation - hide and clear callbacks without executing them."""
+        # Clear callbacks first to prevent execution
+        self.on_confirm = None
+        self.on_cancel = None
+        
+        # Then hide
+        self.hide()
+    
+    def reset(self) -> None:
+        """Reset widget state - hide and clear callbacks."""
+        self.cancel()
     
     def _cancel_auto_hide(self) -> None:
         """Cancel auto-hide timer if active."""
         if self._auto_hide_id:
-            self.after_cancel(self._auto_hide_id)
-            self._auto_hide_id = None
+            try:
+                self.after_cancel(self._auto_hide_id)
+            except tk.TclError:
+                pass  # Timer already cancelled or widget destroyed
+            finally:
+                self._auto_hide_id = None
     
     def is_visible(self) -> bool:
         """Check if widget is currently visible."""
-        return self.winfo_ismapped()
+        try:
+            return self.winfo_exists() and self.winfo_ismapped()
+        except tk.TclError:
+            return False
     
     def set_confirm_callback(self, callback: Callable[[], None]) -> None:
         """Update the confirm callback function."""
@@ -202,8 +254,18 @@ class ConfirmationWidget(tk.Frame):
     
     def destroy(self) -> None:
         """Clean up resources before destroying."""
+        # Cancel any pending timers
         self._cancel_auto_hide()
-        super().destroy()
+        
+        # Clear callbacks to prevent execution after destroy
+        self.on_confirm = None
+        self.on_cancel = None
+        
+        # Destroy widget
+        try:
+            super().destroy()
+        except tk.TclError:
+            pass  # Already destroyed
 
 
 # Example usage and testing
