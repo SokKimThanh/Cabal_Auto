@@ -18,6 +18,7 @@ import json
 import os
 import ctypes
 from ctypes import wintypes
+from pathlib import Path
 
 # Optional psutil: import only if available to avoid static analysis/import errors
 import importlib
@@ -290,15 +291,11 @@ class SetupWizard:
         Returns True if user has not completed setup (missing window, monster, or skills).
         """
         try:
-            # Try to load hunt_config
-            hunt_config_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "lib",
-                "data",
-                "hunt_config.json",
-            )
+            # Try to load hunt_config using project root
+            project_root = Path(__file__).parent.parent.parent
+            hunt_config_path = project_root / "lib" / "data" / "hunt_config.json"
 
-            if not os.path.exists(hunt_config_path):
+            if not hunt_config_path.exists():
                 return True  # No config file = first run
 
             with open(hunt_config_path, "r", encoding="utf-8") as f:
@@ -895,7 +892,7 @@ It takes about 2 minutes. Let's begin!"""
         self.dialog.after(100, self._search_windows)
 
     def _build_step3_monster(self):
-        """Step 3: Monster selection."""
+        """Step 3: Monster selection (OPTIONAL)."""
         title = tk.Label(
             self.content_frame,
             text=self._t("step3_title"),
@@ -906,17 +903,20 @@ It takes about 2 minutes. Let's begin!"""
 
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t("step3_subtitle"),
+            text=self._t("step3_subtitle") + " (Optional - you can add monsters later)",
             font=("Arial", 10),
             bg="white",
             fg="#666",
         )
         subtitle.pack(pady=(0, 15))
 
-        # Load monsters (lib/data/ is in parent directory)
-        monsters_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "lib", "data", "monsters.json"
-        )
+        # Load monsters from lib/data/monsters.json (use project root)
+        # Get project root: ui/windows/setup_wizard.py -> go up 2 levels to project root
+        project_root = Path(__file__).parent.parent.parent
+        monsters_path = project_root / "lib" / "data" / "monsters.json"
+        
+        print(f"[SetupWizard] Loading monsters from: {monsters_path}")
+        
         try:
             with open(monsters_path, "r", encoding="utf-8") as f:
                 self.monsters_data = json.load(f)
@@ -931,12 +931,41 @@ It takes about 2 minutes. Let's begin!"""
             return
 
         if not self.monsters_data:
+            # Show helpful message for empty monster list
+            info_frame = tk.Frame(self.content_frame, bg="white")
+            info_frame.pack(pady=30, padx=20, fill=tk.BOTH, expand=True)
+            
             tk.Label(
-                self.content_frame,
-                text=self._t("no_monsters_found"),
-                fg="orange",
+                info_frame,
+                text="📋 No Monsters Yet",
+                font=("Arial", 14, "bold"),
                 bg="white",
-            ).pack(pady=20)
+                fg="#FF9800",
+            ).pack(pady=(20, 10))
+            
+            tk.Label(
+                info_frame,
+                text=self._t("no_monsters_found"),
+                font=("Arial", 10),
+                bg="white",
+                fg="#666",
+            ).pack(pady=5)
+            
+            tk.Label(
+                info_frame,
+                text="✓ You can skip this step and add monsters later via Library Manager",
+                font=("Arial", 10),
+                bg="white",
+                fg="#4CAF50",
+            ).pack(pady=10)
+            
+            tk.Label(
+                info_frame,
+                text="💡 Tip: Click 'Next' to continue setup without selecting a monster",
+                font=("Arial", 9, "italic"),
+                bg="white",
+                fg="#2196F3",
+            ).pack(pady=(20, 10))
             return
 
         # Monster list frame
@@ -987,7 +1016,7 @@ It takes about 2 minutes. Let's begin!"""
         self.monster_info_label.pack(pady=(5, 0))
 
     def _build_step4_skills(self):
-        """Step 4: Skill configuration."""
+        """Step 4: Skill configuration (OPTIONAL)."""
         title = tk.Label(
             self.content_frame,
             text=self._t("step4_title"),
@@ -998,17 +1027,19 @@ It takes about 2 minutes. Let's begin!"""
 
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t("step4_subtitle"),
+            text=self._t("step4_subtitle") + " (Optional - you can configure later)",
             font=("Arial", 10),
             bg="white",
             fg="#666",
         )
         subtitle.pack(pady=(0, 15))
 
-        # Load skills (lib/data/ is in parent directory)
-        skills_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "lib", "data", "skills.json"
-        )
+        # Load skills from lib/data/skills.json (use project root)
+        project_root = Path(__file__).parent.parent.parent
+        skills_path = project_root / "lib" / "data" / "skills.json"
+        
+        print(f"[SetupWizard] Loading skills from: {skills_path}")
+        
         try:
             with open(skills_path, "r", encoding="utf-8") as f:
                 self.skills_data = json.load(f)
@@ -1293,23 +1324,32 @@ It takes about 2 minutes. Let's begin!"""
             anchor="w",
         ).pack(fill=tk.X, pady=(0, 10))
 
-        # Warning if incomplete
+        # Warning if incomplete (REDUCED - only window is critical)
         if not window_info or window_info == "Not selected":
             tk.Label(
                 self.content_frame,
-                text="⚠️ Warning: No game window selected",
+                text="⚠️ Warning: No game window selected (Required)",
                 font=("Arial", 9, "bold"),
                 bg="white",
-                fg="orange",
+                fg="red",
             ).pack(pady=(10, 0))
 
         if not monster_name or monster_name == "Not selected":
             tk.Label(
                 self.content_frame,
-                text="⚠️ Warning: No monster selected",
-                font=("Arial", 9, "bold"),
+                text="ℹ️ Note: No monster selected (Can be added later)",
+                font=("Arial", 9),
                 bg="white",
-                fg="orange",
+                fg="#2196F3",
+            ).pack(pady=(5, 0))
+        
+        if not assigned_skills:
+            tk.Label(
+                self.content_frame,
+                text="ℹ️ Note: No skills configured (Can be added later)",
+                font=("Arial", 9),
+                bg="white",
+                fg="#2196F3",
             ).pack(pady=(5, 0))
 
     def _on_language_change(self):
@@ -1461,15 +1501,10 @@ It takes about 2 minutes. Let's begin!"""
             from ui.windows.library_manager import LibraryManagerWindow
 
             # Load current monsters and skills data
-            monsters_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "lib",
-                "data",
-                "monsters.json",
-            )
-            skills_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), "lib", "data", "skills.json"
-            )
+            # Use project root for loading data files
+            project_root = Path(__file__).parent.parent.parent
+            monsters_path = project_root / "lib" / "data" / "monsters.json"
+            skills_path = project_root / "lib" / "data" / "skills.json"
 
             try:
                 with open(monsters_path, "r", encoding="utf-8") as f:
@@ -1606,31 +1641,41 @@ It takes about 2 minutes. Let's begin!"""
             self._on_finish()
 
     def _validate_current_step(self):
-        """Validate current step data before moving to next step."""
+        """Validate current step data before moving to next step.
+        
+        REQUIRED: Only Step 2 (Window selection) is mandatory
+        OPTIONAL: Steps 3 (Monster) and 4 (Skills) can be skipped
+        
+        Purpose: Early sync of basic settings prevents data duplication issues
+        """
         # Step 1: Always valid (language selection is optional)
         if self.current_step == 1:
             return True
 
-        # Step 2: Window selection
+        # Step 2: Window selection - REQUIRED (only mandatory step)
         if self.current_step == 2:
             if not self.wizard_data.get("window_title"):
                 messagebox.showwarning(
                     "Window Required",
-                    "Please select a game window before continuing.",
+                    "⚠️ Game window selection is required to continue.\n\n"
+                    "Please select your game window from the list.",
                     parent=self.dialog,
                 )
                 return False
             return True
 
-        # Step 3: Monster selection
+        # Step 3: Monster selection (OPTIONAL - allow skip)
         if self.current_step == 3:
+            # Monster selection is optional - user can skip to add later
+            # This prevents data duplication issues for first-time users
             if not self.wizard_data.get("monster_name"):
-                messagebox.showwarning(
-                    "Monster Required",
-                    "Please select a monster before continuing.",
+                # Show info message but allow proceeding
+                messagebox.showinfo(
+                    "Monster Selection (Optional)",
+                    "No monster selected. You can add monsters later via Library Manager.\n\n"
+                    "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
                     parent=self.dialog,
                 )
-                return False
             return True
 
         # Step 4: Skills (optional - can proceed with empty slots)
@@ -1643,15 +1688,15 @@ It takes about 2 minutes. Let's begin!"""
 
             self.wizard_data["skill_slots"] = skill_slots
 
-            # Check if at least one skill is assigned (optional warning)
+            # Skills are optional - just show info if none assigned
             assigned = [s for s in skill_slots if s]
             if not assigned:
-                confirm = messagebox.askyesno(
-                    "No Skills",
-                    "You haven't assigned any skills. Continue anyway?",
+                messagebox.showinfo(
+                    "Skills (Optional)",
+                    "No skills assigned. You can configure skills later via Library Manager.\n\n"
+                    "💡 Completing basic setup first helps prevent data sync issues.",
                     parent=self.dialog,
                 )
-                return confirm
             return True
 
         # Step 5: Review - always valid

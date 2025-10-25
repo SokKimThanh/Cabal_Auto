@@ -828,6 +828,7 @@ class App(tk.Tk):
         self.win_items = []  # list of {'hwnd','pid','title','proc'}
         self.hunt_selected = None  # currently selected window info
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
+        self._monster_editor_opening = False  # Flag to prevent double opening Monster Editor
 
         # Global hotkeys - registered after config load
         self._global_start_hotkey = None
@@ -5259,7 +5260,13 @@ Alternative Solutions:
         Opens the quick monster editor for fast monster CRUD operations.
         Uses singleton pattern to prevent multiple instances.
         """
+        # Prevent double-opening if already in progress
+        if self._monster_editor_opening:
+            print("[Monster Editor] Already opening, ignoring duplicate request")
+            return
+        
         try:
+            self._monster_editor_opening = True
             print("[Monster Editor] Opening Quick Monster Editor...")
             
             # Import quick editor (lazy import to avoid circular dependencies)
@@ -5290,6 +5297,9 @@ Alternative Solutions:
                 "Monster Editor Error",
                 f"Failed to open Monster Editor:\n{e}"
             )
+        finally:
+            # Reset flag after a short delay to allow for next legitimate open
+            self.after(1000, lambda: setattr(self, '_monster_editor_opening', False))
 
     def _on_monster_saved(self, monster_id: str, monster_data: dict):
         """Callback when monster is saved in Quick Editor.
@@ -5431,11 +5441,13 @@ Alternative Solutions:
                         seq_vision, lambda e: self._on_vision_wizard_hotkey(), add="+"
                     )
                     self._hotkey_fallback_bound.append(seq_vision)
-                    # Monster Editor fallback
-                    self.bind_all(
-                        seq_monster, lambda e: self._on_monster_editor_hotkey(), add="+"
-                    )
-                    self._hotkey_fallback_bound.append(seq_monster)
+                    # Monster Editor - REMOVED fallback bind (already registered as global hotkey at line ~5522)
+                    # This was causing double-trigger when app is focused (both bind_all + global hotkey fire)
+                    # Only global hotkey is needed since Monster Editor works regardless of focus
+                    # self.bind_all(
+                    #     seq_monster, lambda e: self._on_monster_editor_hotkey(), add="+"
+                    # )
+                    # self._hotkey_fallback_bound.append(seq_monster)
                     print(
                         f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}"
                     )
