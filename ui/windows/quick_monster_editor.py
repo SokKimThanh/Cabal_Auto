@@ -64,6 +64,7 @@ try:
     from ui.components.icon_button import set_button_enabled
     from ui.components.confirmation_widget import ConfirmationWidget
     from ui.components.notification_widget import NotificationWidget
+    from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
     # Fallback if component not available
     def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
@@ -108,6 +109,7 @@ except ImportError:
     
     ConfirmationWidget = None  # type: ignore
     NotificationWidget = None  # type: ignore
+    ActionNotificationMixin = object  # type: ignore - Fallback to object if not available
     
     def set_button_enabled(button, enabled: bool, tooltip: Optional[str] = None) -> None:
         """Fallback for set_button_enabled."""
@@ -189,7 +191,7 @@ except ImportError:
 DATA_PATH = Path("lib/data/monsters.json")
 
 
-class QuickMonsterEditor(tk.Toplevel):
+class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
     """
     Quick monster editor modal dialog with dock layout.
     
@@ -207,6 +209,7 @@ class QuickMonsterEditor(tk.Toplevel):
     - Queue-based worker communication
     - Progress indication
     - Form validation
+    - Integrated notification system (ActionNotificationMixin)
     """
     
     def __init__(
@@ -224,6 +227,10 @@ class QuickMonsterEditor(tk.Toplevel):
             on_save: Callback when monster is saved
         """
         super().__init__(parent)
+        
+        # Initialize ActionNotificationMixin
+        if hasattr(ActionNotificationMixin, '__init__') and ActionNotificationMixin != object:
+            ActionNotificationMixin.__init__(self, debug_mode=False)
         
         self.parent = parent
         self.monster_id = monster_id
@@ -348,6 +355,7 @@ class QuickMonsterEditor(tk.Toplevel):
         # Setup
         self._load_monsters()  # Load monsters list from JSON
         self._setup_ui()
+        self._register_action_notification_rules()  # Register notification rules for actions
         self._bind_events()
         self._start_queue_monitor()
         
@@ -856,6 +864,10 @@ class QuickMonsterEditor(tk.Toplevel):
             )
             self.notification_widget.pack(fill='x', pady=(0, 5))
             self.notification_widget.hide()  # Hide initially
+            
+            # Set notification widget for ActionNotificationMixin
+            if hasattr(self, 'set_notification_widget'):
+                self.set_notification_widget(self.notification_widget)
         else:
             self.notification_widget = None
         
@@ -1706,6 +1718,147 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.progress_label.pack(side='top', pady=(0, 10))
     
+    
+    def _register_action_notification_rules(self) -> None:
+        """
+        Register action notification rules for button actions.
+        
+        This defines when and what notifications to show for each action:
+        - Validation: Check conditions before action (warning if failed)
+        - Success: Show feedback after successful action
+        - Error: Show feedback after failed action
+        - Confirmation: Ask user before destructive actions
+        """
+        # Only register if ActionNotificationMixin is available
+        if not hasattr(self, 'register_action_rules'):
+            return
+        
+        try:
+            self.register_action_rules({
+                'add_monster': {
+                    'validation': {
+                        'check': lambda: self.is_editing,
+                        'message': i18n_t(
+                            'msg_enable_edit_mode_first',
+                            ns='monster_editor',
+                            default='⚠️ Please enable Edit Mode first to add monsters'
+                        ),
+                        'type': 'warning'
+                    },
+                    'success': {
+                        'message': i18n_t(
+                            'msg_monster_added',
+                            ns='monster_editor',
+                            default='✅ Monster added successfully!'
+                        ),
+                        'type': 'success'
+                    },
+                    'error': {
+                        'message': i18n_t(
+                            'msg_monster_add_failed',
+                            ns='monster_editor',
+                            default='❌ Failed to add monster: {error}'
+                        ),
+                        'type': 'error'
+                    }
+                },
+                'delete_monster': {
+                    'validation': {
+                        'check': lambda: self.is_editing and self._has_monster_selection(),
+                        'message': i18n_t(
+                            'msg_select_monster_to_delete',
+                            ns='monster_editor',
+                            default='⚠️ Please enable Edit Mode and select a monster to delete'
+                        ),
+                        'type': 'warning'
+                    },
+                    'confirmation': {
+                        'check': lambda: self._monster_has_templates(),
+                        'message': i18n_t(
+                            'msg_delete_monster_with_templates',
+                            ns='monster_editor',
+                            default='This monster has templates. Deleting it will also delete all templates. Continue?'
+                        ),
+                        'type': 'warning'
+                    },
+                    'success': {
+                        'message': i18n_t(
+                            'msg_monster_deleted',
+                            ns='monster_editor',
+                            default='✅ Monster deleted successfully!'
+                        ),
+                        'type': 'success'
+                    },
+                    'error': {
+                        'message': i18n_t(
+                            'msg_monster_delete_failed',
+                            ns='monster_editor',
+                            default='❌ Failed to delete monster: {error}'
+                        ),
+                        'type': 'error'
+                    }
+                },
+                'save_changes': {
+                    'validation': {
+                        'check': lambda: self.is_dirty,
+                        'message': i18n_t(
+                            'msg_no_changes_to_save',
+                            ns='monster_editor',
+                            default='ℹ️ No changes to save'
+                        ),
+                        'type': 'info'
+                    },
+                    'success': {
+                        'message': i18n_t(
+                            'msg_changes_saved',
+                            ns='monster_editor',
+                            default='✅ Changes saved successfully!'
+                        ),
+                        'type': 'success'
+                    },
+                    'error': {
+                        'message': i18n_t(
+                            'msg_save_failed',
+                            ns='monster_editor',
+                            default='❌ Failed to save changes: {error}'
+                        ),
+                        'type': 'error'
+                    }
+                }
+            })
+        except Exception as e:
+            print(f"[MonsterEditor] Failed to register action rules: {e}")
+    
+    def _has_monster_selection(self) -> bool:
+        """Check if a monster is selected."""
+        if self.monster_listbox is None:
+            return False
+        
+        if isinstance(self.monster_listbox, ttk.Treeview):
+            return len(self.monster_listbox.selection()) > 0
+        else:
+            return len(self.monster_listbox.curselection()) > 0
+    
+    def _monster_has_templates(self) -> bool:
+        """Check if selected monster has templates."""
+        if not self._has_monster_selection():
+            return False
+        
+        # Get selected monster
+        if isinstance(self.monster_listbox, ttk.Treeview):
+            selection = self.monster_listbox.selection()
+            if not selection:
+                return False
+            item_id = selection[0]
+            
+            # Find monster by ID
+            for monster in self.monsters:
+                if monster.get('id') == item_id:
+                    templates = monster.get('templates', [])
+                    return len(templates) > 0
+        
+        return False
+    
     def _bind_events(self) -> None:
         """Bind event handlers."""
         # Window close event
@@ -2424,7 +2577,28 @@ class QuickMonsterEditor(tk.Toplevel):
     # ============================================
     
     def _on_add_monster(self) -> None:
-        """Handle add monster button click."""
+        """Handle add monster button click - with integrated notifications."""
+        # Use ActionNotificationMixin if available, otherwise fallback to direct execution
+        if hasattr(self, 'execute_action') and hasattr(self, 'has_action_rule') and self.has_action_rule('add_monster'):
+            self.execute_action('add_monster', self._do_add_monster)
+        else:
+            # Fallback: direct execution
+            self._do_add_monster()
+    
+    def _do_add_monster(self) -> Dict[str, Any]:
+        """
+        Actual implementation of add monster logic.
+        
+        Returns:
+            The newly created monster dict
+            
+        Raises:
+            ValueError: If validation fails
+        """
+        # Validation: Check edit mode
+        if not self.is_editing:
+            raise ValueError("Edit mode is not enabled")
+        
         # Create new monster with default values
         new_monster = {
             'id': str(uuid.uuid4()),
@@ -2461,9 +2635,20 @@ class QuickMonsterEditor(tk.Toplevel):
         self._update_button_states()
         
         print(f"[MonsterEditor] Added new monster: {new_monster['id']}")
+        
+        return new_monster
     
     def _on_delete_monster(self) -> None:
-        """Handle delete monster button click - show inline confirmation."""
+        """Handle delete monster button click - with integrated notifications."""
+        # Use ActionNotificationMixin if available, otherwise fallback to confirmation widget
+        if hasattr(self, 'execute_action') and hasattr(self, 'has_action_rule') and self.has_action_rule('delete_monster'):
+            self.execute_action('delete_monster', self._do_delete_monster)
+        else:
+            # Fallback: use existing confirmation widget
+            self._show_delete_confirmation()
+    
+    def _show_delete_confirmation(self) -> None:
+        """Show confirmation dialog for delete (fallback when mixin not available)."""
         if self.monster_listbox is None:
             return
         
@@ -2564,6 +2749,100 @@ class QuickMonsterEditor(tk.Toplevel):
         monster_name = monster.get('name', 'Unnamed')
         message = f"⚠️ Xác nhận xóa Quái vật: {monster_name}?"
         self._show_confirmation(delete_action, message=message, auto_hide_seconds=10)
+    
+    def _do_delete_monster(self) -> str:
+        """
+        Actual implementation of delete monster logic.
+        
+        Returns:
+            Name of deleted monster
+            
+        Raises:
+            ValueError: If validation fails
+        """
+        # Validation: Check edit mode
+        if not self.is_editing:
+            raise ValueError("Edit mode is not enabled")
+        
+        # Validation: Check selection
+        if self.monster_listbox is None:
+            raise ValueError("Monster list not available")
+        
+        # Get selected monster
+        monster = None
+        monster_index = -1
+        
+        if isinstance(self.monster_listbox, ttk.Treeview):
+            selection = self.monster_listbox.selection()
+            if not selection:
+                raise ValueError("No monster selected")
+            
+            item_id = selection[0]
+            for idx, m in enumerate(self.monsters):
+                if m.get('id') == item_id:
+                    monster = m
+                    monster_index = idx
+                    break
+        else:
+            selection_idx = self.monster_listbox.curselection()
+            if not selection_idx:
+                raise ValueError("No monster selected")
+            
+            monster_index = selection_idx[0]
+            if not (0 <= monster_index < len(self.monsters)):
+                raise ValueError("Invalid monster index")
+            monster = self.monsters[monster_index]
+        
+        if monster is None or monster_index < 0:
+            raise ValueError("Monster not found")
+        
+        deleted_id = monster.get('id')
+        deleted_name = monster.get('name', 'Unnamed')
+        
+        if not deleted_id:
+            raise ValueError(f"Monster has no ID: {deleted_name}")
+        
+        print(f"[MonsterEditor] Deleting monster: {deleted_name} (ID: {deleted_id})")
+        
+        # Use sync manager to delete
+        if self.sync_manager is not None:
+            success = self.sync_manager.delete_monster(deleted_id)
+            if not success:
+                raise RuntimeError(f'Failed to sync delete: {deleted_name}')
+            # Update local list
+            self.monsters.pop(monster_index)
+        else:
+            # Fallback: Direct deletion
+            self.monsters.pop(monster_index)
+        
+        self.is_dirty = True
+        
+        # Clear form if deleted monster was selected
+        if self.current_monster_id == deleted_id:
+            self.current_monster_id = None
+            self._clear_info_form()
+        
+        # Disable delete button
+        if self.delete_monster_button:
+            self.delete_monster_button.config(state='disabled')
+        
+        # Refresh listbox
+        self._refresh_monster_list()
+        
+        # Save to file
+        if self.sync_manager is None:
+            self._save_monsters()
+        else:
+            self.is_dirty = False
+            self.is_monster_dirty = False
+            self._update_dirty_state_ui()
+        
+        # Update button states
+        self._update_button_states()
+        
+        print(f"[MonsterEditor] Deleted monster: {deleted_name}")
+        
+        return deleted_name
     
     def _populate_info_form(self, monster: Dict[str, Any]) -> None:
         """Populate Info tab form with monster data and keep fields locked."""
