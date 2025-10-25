@@ -94,8 +94,6 @@ class ConfirmationWidget(tk.Frame):
         """
         super().__init__(parent, bg=bg, relief='flat', bd=1, **kwargs)
         
-        print(f"[ConfirmationWidget] Initialized with parent: {parent}")
-        
         self.on_confirm = on_confirm
         self.on_cancel = on_cancel
         self.auto_hide_seconds = auto_hide_seconds
@@ -103,10 +101,8 @@ class ConfirmationWidget(tk.Frame):
         
         self._create_widgets()
         
-        # Initially hidden
-        self.pack_forget()
-        
-        print("[ConfirmationWidget] Widget created and hidden initially")
+        # Store initial pack info but don't pack yet
+        self._is_visible = False
     
     def _create_widgets(self) -> None:
         """Create Yes/No buttons."""
@@ -192,18 +188,20 @@ class ConfirmationWidget(tk.Frame):
             padx: Horizontal padding
             pady: Vertical padding
         """
-        print(f"[ConfirmationWidget] show() called, side={side}, padx={padx}")
-        
         # Cancel previous auto-hide timer if exists
         self._cancel_auto_hide()
         
-        # Show widget
-        if not self.winfo_ismapped():
-            print("[ConfirmationWidget] Packing widget...")
-            self.pack(side=side, padx=padx, pady=pady)  # type: ignore
-            print(f"[ConfirmationWidget] Widget packed, winfo_ismapped={self.winfo_ismapped()}")
-        else:
-            print("[ConfirmationWidget] Widget already mapped")
+        # Show widget if not already visible
+        if not self._is_visible:
+            try:
+                self.pack(side=side, padx=padx, pady=pady)  # type: ignore
+                self._is_visible = True
+                
+                # Force Tkinter to render the widget immediately
+                self.update_idletasks()
+            except Exception as e:
+                print(f"[ConfirmationWidget] Error packing widget: {e}")
+                self._is_visible = False
         
         # Start auto-hide timer if enabled
         if self.auto_hide_seconds > 0:
@@ -218,11 +216,12 @@ class ConfirmationWidget(tk.Frame):
         self._cancel_auto_hide()
         
         # Hide widget
-        try:
-            if self.winfo_exists() and self.winfo_ismapped():
+        if self._is_visible:
+            try:
                 self.pack_forget()
-        except tk.TclError:
-            pass  # Widget already destroyed
+                self._is_visible = False
+            except tk.TclError:
+                self._is_visible = False
     
     def cancel(self) -> None:
         """Cancel confirmation - hide and clear callbacks without executing them."""
@@ -249,10 +248,7 @@ class ConfirmationWidget(tk.Frame):
     
     def is_visible(self) -> bool:
         """Check if widget is currently visible."""
-        try:
-            return self.winfo_exists() and self.winfo_ismapped()
-        except tk.TclError:
-            return False
+        return self._is_visible
     
     def set_confirm_callback(self, callback: Callable[[], None]) -> None:
         """Update the confirm callback function."""

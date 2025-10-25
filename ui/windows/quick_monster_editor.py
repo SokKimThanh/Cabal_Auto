@@ -2242,18 +2242,13 @@ class QuickMonsterEditor(tk.Toplevel):
             action_callback: Function to call if user clicks Yes
             auto_hide_seconds: Seconds before auto-hiding (default 5)
         """
-        print(f"[MonsterEditor] _show_confirmation called, widget exists: {self.confirmation_widget is not None}")
-        
         if self.confirmation_widget:
-            print("[MonsterEditor] Showing confirmation widget...")
-            
             # Set the callback (wraps with validation)
             def safe_callback():
                 """Wrapper to validate state before executing action."""
                 try:
                     # Check if widget still exists
                     if not self.confirmation_widget or not self.confirmation_widget.winfo_exists():
-                        print("[MonsterEditor] Confirmation widget destroyed, action cancelled")
                         return
                     
                     # Execute the action
@@ -2266,10 +2261,8 @@ class QuickMonsterEditor(tk.Toplevel):
             self.confirmation_widget.set_confirm_callback(safe_callback)
             # Show widget
             self.confirmation_widget.show(side='left', padx=(0, 5))
-            print(f"[MonsterEditor] Confirmation widget shown, is_visible: {self.confirmation_widget.is_visible()}")
         else:
             # Fallback: execute action immediately if widget not available
-            print("[MonsterEditor] Confirmation widget not available, executing action immediately")
             try:
                 action_callback()
             except Exception as e:
@@ -2367,19 +2360,15 @@ class QuickMonsterEditor(tk.Toplevel):
                 return
             monster = self.monsters[monster_index]
         
-        print(f"[MonsterEditor] _on_delete_monster: About to show confirmation for monster: {monster.get('name')}")
-        
         # Show inline confirmation instead of popup
         def delete_action():
             """The actual delete action to execute if confirmed."""
             # Validate monster still exists before deletion
             if monster_index < 0 or monster_index >= len(self.monsters):
-                print(f"[MonsterEditor] Monster index {monster_index} out of range, action cancelled")
                 return
             
             # Validate it's still the same monster
             if self.monsters[monster_index] != monster:
-                print("[MonsterEditor] Monster changed, action cancelled")
                 return
             
             deleted_id = monster.get('id')
@@ -2956,8 +2945,6 @@ class QuickMonsterEditor(tk.Toplevel):
         
         template = templates[idx]
         
-        print(f"[MonsterEditor] _delete_template: About to show confirmation for template: {template.get('name')}")
-        
         # Show inline confirmation instead of popup
         def delete_action():
             """The actual delete action to execute if confirmed."""
@@ -2967,23 +2954,19 @@ class QuickMonsterEditor(tk.Toplevel):
             try:
                 # Validate current_monster_id still exists
                 if not self.current_monster_id:
-                    print("[MonsterEditor] No current monster, action cancelled")
                     return
                 
                 # Validate template still exists before deletion
                 current_monster = self._find_monster_by_id(self.current_monster_id)
                 if not current_monster:
-                    print("[MonsterEditor] Monster not found, action cancelled")
                     return
                 
                 current_templates = current_monster.get('templates', [])
                 if idx >= len(current_templates):
-                    print(f"[MonsterEditor] Template index {idx} out of range, action cancelled")
                     return
                 
                 # Validate it's still the same template
                 if current_templates[idx] != template:
-                    print("[MonsterEditor] Template changed, action cancelled")
                     return
                 
                 # Perform deletion
@@ -2996,8 +2979,6 @@ class QuickMonsterEditor(tk.Toplevel):
                 
                 # Update dirty state UI
                 self._update_dirty_state_ui()
-                
-                print(f"[MonsterEditor] Deleted template: {template.get('name', 'Unknown')}")
             except Exception as e:
                 print(f"[MonsterEditor] Error deleting template: {e}")
                 import traceback
