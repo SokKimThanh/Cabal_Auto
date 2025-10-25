@@ -46,12 +46,15 @@ The AI Assistant will **automatically** follow these guidelines for all code:
 
 #### Quick Check (Before Writing Code)
 
-Open `CODING_RULES_QUICK_REFERENCE.md` and verify your code against the 7 rules.
+**For Python Code**: Open `CODING_RULES_QUICK_REFERENCE.md` and verify against the 7 core rules.
+
+**For UI Forms**: Review Section 8 in `docs/PYTHON_CODING_GUIDELINES.md` - use the form template and checklist.
 
 #### Detailed Review (Before Commit)
 
-Open `docs/PYTHON_CODING_GUIDELINES.md` and go through the pre-commit checklist:
+Open `docs/PYTHON_CODING_GUIDELINES.md` and go through the appropriate checklist:
 
+**Python Code Checklist**:
 ```markdown
 □ Type Hints: All parameters and returns typed?
 □ None Checks: Checked before accessing?
@@ -59,7 +62,18 @@ Open `docs/PYTHON_CODING_GUIDELINES.md` and go through the pre-commit checklist:
 □ Method Calls: Proper instance/static pattern?
 □ No Duplication: Cached results, no repeated calls?
 □ Dependencies: Stable versions only?
-□ Compatibility: Fallbacks for version differences?
+□ Imports: Consistent namespace usage?
+```
+
+**UI Form Checklist** (Section 8.11):
+```markdown
+□ Architecture: Data/Logic/UI separated?
+□ Components: Consistent labels, entries, buttons?
+□ Validation: Inline notifications, no popups?
+□ Lifecycle: winfo_exists() checks, try-except?
+□ State: ButtonStateMixin, update on changes?
+□ i18n: All text through i18n.get()?
+□ Accessibility: Enter/Escape keys, focus, tab order?
 ```
 
 ## 🔧 Integration with Tools
