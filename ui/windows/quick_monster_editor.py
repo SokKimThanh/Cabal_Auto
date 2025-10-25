@@ -310,6 +310,9 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Update UI to reflect initial dirty state
         self._update_dirty_state_ui()
+        
+        # Auto-select first monster and first template
+        self.after(100, self._auto_select_first_items)
     
     def _load_monsters(self) -> None:
         """Load monsters from JSON file."""
@@ -479,9 +482,14 @@ class QuickMonsterEditor(tk.Toplevel):
         # Top: Title + Action Buttons
         self._create_top_panel()
         
-        # Create main container for left + right panels
+        # Create main container for left + right panels with grid (3:9 ratio)
         main_container = tk.Frame(self, bg=UI.BG_DEFAULT)
         main_container.pack(side='top', fill='both', expand=True)
+        
+        # Configure grid weights for 3:9 ratio
+        main_container.grid_rowconfigure(0, weight=1)
+        main_container.grid_columnconfigure(0, weight=3)  # Left: Monster List (3 parts)
+        main_container.grid_columnconfigure(1, weight=9)  # Right: Tabbed panel (9 parts)
         
         # Left: Monster List
         self._create_left_panel(main_container)
@@ -505,79 +513,6 @@ class QuickMonsterEditor(tk.Toplevel):
             bg=UI.BG_PANEL
         )
         title_label.pack(side='left', padx=15, pady=15)
-        
-        # Checkbox to toggle window controls visibility
-        self.show_window_controls_var = tk.BooleanVar(value=False)  # Default: hidden
-        
-        def toggle_window_controls():
-            """Toggle visibility of window position selectors."""
-            show = self.show_window_controls_var.get()
-            if show:
-                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'show'):
-                    self.app_mode_selector.show()
-                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'show'):
-                    self.game_mode_selector.show()
-            else:
-                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'hide'):
-                    self.app_mode_selector.hide()
-                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'hide'):
-                    self.game_mode_selector.hide()
-        
-        window_check = tk.Checkbutton(
-            top_frame,
-            text="",  # No text, just checkbox
-            variable=self.show_window_controls_var,
-            command=toggle_window_controls,
-            bg=UI.BG_PANEL
-        )
-        window_check.pack(side='left', padx=(15, 6), pady=15)
-        
-        # Tooltip for checkbox
-        check_tooltip = (
-            "Show Window Controls\n"
-            "• App window positioning\n"
-            "• Game window positioning"
-            if get_lang() == "en" else
-            "Hiện Điều Khiển Cửa Sổ\n"
-            "• Vị trí cửa sổ ứng dụng\n"
-            "• Vị trí cửa sổ game"
-        )
-        try:
-            attach_i18n_tooltip(
-                window_check,
-                'tooltip_window_controls',
-                ns='monster_editor',
-                lang_provider=get_lang
-            )
-        except:
-            # Fallback if tooltip fails
-            pass
-        
-        # Window controls frame (App + Game) - Hidden by default
-        windows_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
-        windows_frame.pack(side='left', padx=(0, 0), pady=15)
-        
-        # App window mode selector (no label, tooltip explains)
-        self.app_mode_selector = create_app_window_selector(
-            parent=windows_frame,
-            config_path=str(self.hunt_config_path),
-            on_mode_change=self._on_app_mode_change
-        )
-        self.app_mode_selector.pack(side='left', padx=(0, 8))
-        
-        # Game window mode selector (no label, tooltip explains)
-        self.game_mode_selector = create_game_window_selector(
-            parent=windows_frame,
-            config_path=str(self.hunt_config_path),
-            on_mode_change=self._on_game_mode_change
-        )
-        self.game_mode_selector.pack(side='left')
-        
-        # Hide both by default (after packing)
-        if hasattr(self.app_mode_selector, 'hide'):
-            self.app_mode_selector.hide()
-        if hasattr(self.game_mode_selector, 'hide'):
-            self.game_mode_selector.hide()
         
         # Action buttons (right side)
         button_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
@@ -634,9 +569,8 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def _create_left_panel(self, parent: Any) -> None:
         """Create left panel with monster list and CRUD buttons."""
-        left_frame = tk.Frame(parent, bg=UI.BG_PANEL, width=250)
-        left_frame.pack(side='left', fill='y', padx=0, pady=0)
-        left_frame.pack_propagate(False)
+        left_frame = tk.Frame(parent, bg=UI.BG_PANEL)
+        left_frame.grid(row=0, column=0, sticky='nsew', padx=0, pady=0)
         
         # Title with icon
         title_text = i18n_t('label_monster_list', ns='monster_editor', default='Monsters')
@@ -729,7 +663,7 @@ class QuickMonsterEditor(tk.Toplevel):
     def _create_right_panel(self, parent: Any) -> None:
         """Create right panel with tabbed interface."""
         right_container = tk.Frame(parent, bg=UI.BG_DEFAULT)
-        right_container.pack(side='right', fill='both', expand=True, padx=10, pady=10)
+        right_container.grid(row=0, column=1, sticky='nsew', padx=10, pady=10)
         
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(right_container)
@@ -738,6 +672,7 @@ class QuickMonsterEditor(tk.Toplevel):
         # Create tabs
         self._create_info_tab()
         self._create_templates_tab()
+        self._create_settings_tab()
     
     def _create_info_tab(self) -> None:
         """Create Monster Info tab."""
@@ -980,49 +915,34 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_templates', ns='monster_editor', default='Templates')
         self.notebook.add(self.templates_tab, text=tab_text)
         
-        # ========== TOP LAYER: Badge + Buttons (Right aligned) ==========
-        top_layer = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT, height=50)
-        top_layer.pack(side='top', fill='x', padx=10, pady=(10, 5))
-        top_layer.pack_propagate(False)
+        # ========== Main Layout: 2 Columns (6:6 ratio) - Full Height ==========
+        main_row = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
+        main_row.pack(side='top', fill='both', expand=True, padx=10, pady=10)
         
-        # Left spacer to push everything to the right
-        left_spacer = tk.Frame(top_layer, bg=UI.BG_DEFAULT)
-        left_spacer.pack(side='left', fill='both', expand=True)
+        # Configure grid weights for 6:6 ratio
+        main_row.grid_rowconfigure(0, weight=1)
+        main_row.grid_columnconfigure(0, weight=6)  # Left column: 6 parts
+        main_row.grid_columnconfigure(1, weight=6)  # Right column: 6 parts
         
-        # Right container for badge + buttons
-        right_container = tk.Frame(top_layer, bg=UI.BG_DEFAULT)
-        right_container.pack(side='right')
+        # === Left Column: Template List (6 parts) ===
+        left_column = tk.Frame(main_row, bg=UI.BG_DEFAULT)
+        left_column.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
         
-        # (editing badge will be created inside the edit-group so it sits next to the Edit button)
+        # Top area: action buttons for template management
+        top_list_area = tk.Frame(left_column, bg=UI.BG_DEFAULT)
+        top_list_area.pack(side='top', fill='x', pady=(0, 4))
         
-        # Button container (right of badge)
-        button_container = tk.Frame(right_container, bg=UI.BG_DEFAULT)
-        button_container.pack(side='left', padx=(10, 0))
-
-        # Delete Template button (remains on right side)
-        self.delete_template_button = create_icon_button(
-            button_container,
-            icon_name='delete',
-            icon_fallback='🗑️',
-            icon_size=16,
-            command=self._delete_template,
-            button_type='red',
-            variant='icon_only',
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_delete_template',
-            tooltip_ns='monster_editor'
-        )
-        self.delete_template_button.pack(side='left', padx=3)
-
-        # Group to keep badge and edit button together
-        edit_group = tk.Frame(button_container, bg=UI.BG_DEFAULT)
-        edit_group.pack(side='left', padx=(6, 0))
-
-        # Editing badge (placed inside edit_group so it sits next to Edit button)
+        # Action buttons frame (Add/Delete/Edit) - Left side
+        action_buttons_frame = tk.Frame(top_list_area, bg=UI.BG_DEFAULT)
+        action_buttons_frame.pack(side='left')
+        
+        # Badge for edit mode - Right side
+        badge_frame = tk.Frame(top_list_area, bg=UI.BG_DEFAULT)
+        badge_frame.pack(side='right')
+        
+        # Editing badge for template tab
         self.template_editing_badge = tk.Label(
-            edit_group,
+            badge_frame,
             text=i18n_t('badge_editing', ns='monster_editor', default='Đang chỉnh sửa'),
             font=UI.FONT_SMALL,
             fg='white',
@@ -1031,78 +951,64 @@ class QuickMonsterEditor(tk.Toplevel):
             pady=2,
             relief='flat'
         )
-        # Initially hidden; will be packed into edit_group when edit mode enabled
-
-        # Edit/Save toggle button (stays in edit_group so badge appears next to it)
-        self.template_edit_toggle_button = create_icon_button(
-            edit_group,
-            icon_name='edit',
-            icon_fallback='✏️',
-            icon_size=16,
-            command=self._toggle_template_edit_mode,
-            button_type='primary',
-            variant='icon_only',
-            width=32,
-            height=32,
-            tooltip_key='tooltip_edit_mode_template',
-            tooltip_ns='monster_editor'
-        )
-        self.template_edit_toggle_button.pack(side='left', padx=3)
-        
-    # Initially disable template buttons (locked mode) - will set after all buttons are created
-        
-        # ========== SECOND ROW: 2 Columns (6:6 ratio) ==========
-        second_row = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
-        second_row.pack(side='top', fill='both', expand=True, padx=10, pady=(5, 10))
-        
-        # Configure grid weights for 6:6 ratio
-        second_row.grid_rowconfigure(0, weight=1)
-        second_row.grid_columnconfigure(0, weight=6)  # Left column: 6 parts
-        second_row.grid_columnconfigure(1, weight=6)  # Right column: 6 parts
-        
-        # === Left Column: Template List (6 parts) ===
-        left_column = tk.Frame(second_row, bg=UI.BG_DEFAULT)
-        left_column.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
-        
-        # Top area above the list: add button aligned to the right
-        top_list_buttons = tk.Frame(left_column, bg=UI.BG_DEFAULT)
-        top_list_buttons.pack(side='top', fill='x', pady=(0, 4))
-
-        # Add Template button (moved here from top layer)
+        # Initially hidden; will be shown when edit mode enabled
+        self.template_editing_badge.pack(side='left')
+        self.template_editing_badge.pack_forget()  # Hide initially
+        # Add Template button (20x20, icon 16px)
         self.add_template_button = create_icon_button(
-            top_list_buttons,
+            action_buttons_frame,
             icon_name='add',
             icon_fallback='➕',
             icon_size=16,
             command=self._add_template,
             button_type='green_light',
             variant='icon_only',
-            width=32,
-            height=32,
+            width=20,
+            height=20,
             auto_hover_disabled=True,
             tooltip_key='tooltip_add_template',
             tooltip_ns='monster_editor'
         )
-        self.add_template_button.pack(side='right', padx=3)
+        self.add_template_button.pack(side='left', padx=(0, 2))
+
+        # Delete Template button (20x20, icon 16px)
+        self.delete_template_button = create_icon_button(
+            action_buttons_frame,
+            icon_name='delete',
+            icon_fallback='🗑️',
+            icon_size=16,
+            command=self._delete_template,
+            button_type='red',
+            variant='icon_only',
+            width=20,
+            height=20,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_delete_template',
+            tooltip_ns='monster_editor'
+        )
+        self.delete_template_button.pack(side='left', padx=2)
+
+        # Edit Template button (20x20, icon 16px)
+        self.template_edit_toggle_button = create_icon_button(
+            action_buttons_frame,
+            icon_name='edit',
+            icon_fallback='✏️',
+            icon_size=16,
+            command=self._toggle_template_edit_mode,
+            button_type='primary',
+            variant='icon_only',
+            width=20,
+            height=20,
+            tooltip_key='tooltip_edit_mode_template',
+            tooltip_ns='monster_editor'
+        )
+        self.template_edit_toggle_button.pack(side='left', padx=2)
+        
         # Start locked
         self.add_template_button.config(state='disabled')
-        try:
-            # delete button was created earlier in the top layer; ensure it's disabled too
-            self.delete_template_button.config(state='disabled')
-        except Exception:
-            pass
-
-        # Template list title
-        list_label = tk.Label(
-            left_column,
-            text=i18n_t('template_list_title', ns='monster_editor', default='Danh sách Templates:'),
-            font=UI.FONT_LABEL,
-            fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_DEFAULT
-        )
-        list_label.pack(side='top', anchor='w', pady=(0, 5))
+        self.delete_template_button.config(state='disabled')
         
-        # Treeview with 3 columns: Image | Name | Threshold
+        # Treeview with 3 columns: Image | Threshold | Name
         list_frame = tk.Frame(left_column, bg=UI.BG_DEFAULT)
         list_frame.pack(side='top', fill='both', expand=True)
         
@@ -1135,21 +1041,85 @@ class QuickMonsterEditor(tk.Toplevel):
         # Bind selection event
         self.template_listbox.bind('<<TreeviewSelect>>', self._on_template_select)
         
-        # === Right Column: Preview + Threshold + Buttons (6 parts) ===
-        right_column = tk.Frame(second_row, bg=UI.BG_PANEL)
+        # === Right Column: Preview + Buttons (6 parts) ===
+        right_column = tk.Frame(main_row, bg=UI.BG_PANEL)
         right_column.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
         
-        # Preview title (TOP)
+        # Preview header: title + action buttons on same row
+        preview_header = tk.Frame(right_column, bg=UI.BG_PANEL)
+        preview_header.pack(side='top', fill='x', padx=10, pady=(10, 5))
+        
+        # Preview title (left side)
         preview_title = tk.Label(
-            right_column,
+            preview_header,
             text=i18n_t('preview_label', ns='monster_editor', default='Xem trước'),
             font=UI.FONT_LABEL,
             fg=UI.COLOR_PRIMARY_TEXT,
             bg=UI.BG_PANEL
         )
-        preview_title.pack(side='top', anchor='w', padx=10, pady=(10, 5))
+        preview_title.pack(side='left')
         
-        # Preview image container (MIDDLE - expand to fill)
+        # Action buttons container (right side of header)
+        header_buttons = tk.Frame(preview_header, bg=UI.BG_PANEL)
+        header_buttons.pack(side='right')
+        
+        # Capture button (20x20, icon 16px)
+        self.capture_preview_button = create_icon_button(
+            header_buttons,
+            icon_name='capture',
+            icon_fallback='📸',
+            icon_size=16,
+            command=self._capture_template,
+            button_type='blue',
+            variant='icon_only',
+            width=20,
+            height=20,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_capture',
+            tooltip_ns='monster_editor'
+        )
+        self.capture_preview_button.pack(side='left', padx=2)
+        
+        # Browse button (20x20, icon 16px)
+        self.browse_preview_button = create_icon_button(
+            header_buttons,
+            icon_name='browse',
+            icon_fallback='📂',
+            icon_size=16,
+            command=self._browse_template_image,
+            button_type='refresh',
+            variant='icon_only',
+            width=20,
+            height=20,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_browse',
+            tooltip_ns='monster_editor'
+        )
+        self.browse_preview_button.pack(side='left', padx=2)
+        
+        # Test Recognition button (20x20, icon 16px)
+        self.test_template_button = create_icon_button(
+            header_buttons,
+            icon_name='test',
+            icon_fallback='🧪',
+            icon_size=16,
+            command=self._test_template_recognition,
+            button_type='blue',
+            variant='icon_only',
+            width=20,
+            height=20,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_test_template',
+            tooltip_ns='monster_editor'
+        )
+        self.test_template_button.pack(side='left', padx=2)
+        
+        # Initially disable all action buttons
+        self.capture_preview_button.config(state='disabled')
+        self.browse_preview_button.config(state='disabled')
+        self.test_template_button.config(state='disabled')
+        
+        # Preview image container (expand to fill)
         preview_container = tk.Frame(right_column, bg='white', relief='sunken', borderwidth=2)
         preview_container.pack(side='top', fill='both', expand=True, padx=10, pady=(0, 10))
         
@@ -1163,20 +1133,13 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.template_preview_label.pack(fill='both', expand=True, padx=5, pady=5)
         
-        # (Threshold will be shown compact next to action buttons below; preview expands)
-        
-        # Action row (BOTTOM): compact threshold on the left, action buttons on the right
-        action_buttons_frame = tk.Frame(right_column, bg=UI.BG_PANEL)
-        action_buttons_frame.pack(side='bottom', fill='x', padx=10, pady=(0, 10))
-
-        # Compact threshold (left side)
-        threshold_compact = tk.Frame(action_buttons_frame, bg=UI.BG_PANEL)
-        threshold_compact.pack(side='left', fill='x', expand=False)
+        # Threshold slider section (BOTTOM)
+        threshold_frame = tk.Frame(right_column, bg=UI.BG_PANEL)
+        threshold_frame.pack(side='bottom', fill='x', padx=10, pady=(0, 10))
 
         threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Ngưỡng nhận diện')
-        # small label
         self.threshold_label = create_icon_label(
-            threshold_compact,
+            threshold_frame,
             icon_name='settings',
             text=f"{threshold_label_text}:",
             icon_fallback='⚙️',
@@ -1187,82 +1150,157 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.threshold_label.pack(side='left', padx=(0, 6))
 
-        # compact scale next to label
         self.threshold_scale = tk.Scale(
-            threshold_compact,
+            threshold_frame,
             from_=0.0,
             to=1.0,
             resolution=0.01,
             orient='horizontal',
-            showvalue=False,
-            length=140,
+            showvalue=True,
+            length=200,
             font=UI.FONT_SMALL
         )
         self.threshold_scale.set(0.7)
-        self.threshold_scale.pack(side='left')
-
-        # Button container (right side)
-        buttons_container = tk.Frame(action_buttons_frame, bg=UI.BG_PANEL)
-        buttons_container.pack(side='right')
-
-        # Capture button
-        self.capture_preview_button = create_icon_button(
-            buttons_container,
-            icon_name='capture',
-            icon_fallback='📸',
-            icon_size=16,
-            command=self._capture_template,
-            button_type='blue',
-            variant='icon_only',
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_capture',
-            tooltip_ns='monster_editor'
+        self.threshold_scale.pack(side='left', fill='x', expand=True)
+    
+    def _create_settings_tab(self) -> None:
+        """Create Settings tab for display options and window controls."""
+        if self.notebook is None:
+            return
+        
+        # Create tab frame
+        self.settings_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        
+        # Add to notebook
+        tab_text = i18n_t('tab_settings', ns='monster_editor', default='Cài đặt')
+        self.notebook.add(self.settings_tab, text=tab_text)
+        
+        # Main container with padding
+        main_container = tk.Frame(self.settings_tab, bg=UI.BG_DEFAULT)
+        main_container.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # ========== Column Visibility Options ==========
+        col_visibility_frame = tk.LabelFrame(
+            main_container,
+            text='Hiển thị cột trong danh sách Template' if get_lang() == 'vi' else 'Template List Column Visibility',
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_DEFAULT,
+            padx=15,
+            pady=10
         )
-        self.capture_preview_button.pack(side='left', padx=(0, 6))
-
-        # Browse button
-        self.browse_preview_button = create_icon_button(
-            buttons_container,
-            icon_name='browse',
-            icon_fallback='📂',
-            icon_size=16,
-            command=self._browse_template_image,
-            button_type='refresh',
-            variant='icon_only',
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_browse',
-            tooltip_ns='monster_editor'
+        col_visibility_frame.pack(fill='x', pady=(0, 20))
+        
+        # Initialize column visibility variables
+        self.col_image_visible = tk.BooleanVar(value=True)
+        self.col_threshold_visible = tk.BooleanVar(value=True)
+        self.col_path_visible = tk.BooleanVar(value=True)
+        
+        # Checkboxes for column visibility
+        tk.Checkbutton(
+            col_visibility_frame,
+            text='🖼️ Hình ảnh' if get_lang() == 'vi' else '🖼️ Image',
+            variable=self.col_image_visible,
+            command=self._toggle_column_visibility,
+            bg=UI.BG_DEFAULT
+        ).pack(anchor='w', pady=5)
+        
+        tk.Checkbutton(
+            col_visibility_frame,
+            text='% Ngưỡng nhận diện' if get_lang() == 'vi' else '% Threshold',
+            variable=self.col_threshold_visible,
+            command=self._toggle_column_visibility,
+            bg=UI.BG_DEFAULT
+        ).pack(anchor='w', pady=5)
+        
+        tk.Checkbutton(
+            col_visibility_frame,
+            text='📁 Đường dẫn' if get_lang() == 'vi' else '📁 Path',
+            variable=self.col_path_visible,
+            command=self._toggle_column_visibility,
+            bg=UI.BG_DEFAULT
+        ).pack(anchor='w', pady=5)
+        
+        # ========== Window Controls ==========
+        window_controls_frame = tk.LabelFrame(
+            main_container,
+            text='Điều khiển cửa sổ' if get_lang() == 'vi' else 'Window Controls',
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_DEFAULT,
+            padx=15,
+            pady=10
         )
-        self.browse_preview_button.pack(side='left', padx=(0, 6))
-
-        # Test Recognition button
-        self.test_template_button = create_icon_button(
-            buttons_container,
-            icon_name='test',
-            icon_fallback='🧪',
-            icon_size=16,
-            command=self._test_template_recognition,
-            button_type='blue',
-            variant='icon_only',
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_test_template',
-            tooltip_ns='monster_editor'
+        window_controls_frame.pack(fill='both', expand=True)
+        
+        # Window controls checkbox
+        self.show_window_controls_var = tk.BooleanVar(value=True)  # Default: visible in settings
+        
+        def toggle_window_controls():
+            """Toggle visibility of window position selectors."""
+            show = self.show_window_controls_var.get()
+            if show:
+                windows_frame.pack(fill='x', pady=(10, 0))
+                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'show'):
+                    self.app_mode_selector.show()
+                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'show'):
+                    self.game_mode_selector.show()
+            else:
+                windows_frame.pack_forget()
+                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'hide'):
+                    self.app_mode_selector.hide()
+                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'hide'):
+                    self.game_mode_selector.hide()
+        
+        window_check = tk.Checkbutton(
+            window_controls_frame,
+            text="Hiển thị điều khiển vị trí cửa sổ" if get_lang() == 'vi' else "Show Window Position Controls",
+            variable=self.show_window_controls_var,
+            command=toggle_window_controls,
+            bg=UI.BG_DEFAULT
         )
-        self.test_template_button.pack(side='left', padx=(0, 0))
-
-        # Initially disable all action buttons
+        window_check.pack(anchor='w', pady=5)
+        
+        # Tooltip for checkbox
+        check_tooltip = (
+            "Show Window Controls\n"
+            "• App window positioning\n"
+            "• Game window positioning"
+            if get_lang() == "en" else
+            "Hiện Điều Khiển Cửa Sổ\n"
+            "• Vị trí cửa sổ ứng dụng\n"
+            "• Vị trí cửa sổ game"
+        )
         try:
-            self.capture_preview_button.config(state='disabled')
-            self.browse_preview_button.config(state='disabled')
-            self.test_template_button.config(state='disabled')
-        except Exception:
+            attach_i18n_tooltip(
+                window_check,
+                'tooltip_window_controls',
+                ns='monster_editor',
+                lang_provider=get_lang
+            )
+        except:
+            # Fallback if tooltip fails
             pass
+        
+        # Window controls frame (App + Game)
+        windows_frame = tk.Frame(window_controls_frame, bg=UI.BG_DEFAULT)
+        windows_frame.pack(fill='x', pady=(10, 0))
+        
+        # App window mode selector (no label, tooltip explains)
+        self.app_mode_selector = create_app_window_selector(
+            parent=windows_frame,
+            config_path=str(self.hunt_config_path),
+            on_mode_change=self._on_app_mode_change
+        )
+        self.app_mode_selector.pack(side='left', padx=(0, 8))
+        
+        # Game window mode selector (no label, tooltip explains)
+        self.game_mode_selector = create_game_window_selector(
+            parent=windows_frame,
+            config_path=str(self.hunt_config_path),
+            on_mode_change=self._on_game_mode_change
+        )
+        self.game_mode_selector.pack(side='left')
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -1770,6 +1808,62 @@ class QuickMonsterEditor(tk.Toplevel):
                         self.monster_listbox.see(idx)
                         break
     
+    def _auto_select_first_items(self) -> None:
+        """Auto-select first monster and first template when opening form."""
+        # Select first monster
+        if self.monster_listbox and self.monsters:
+            if isinstance(self.monster_listbox, ttk.Treeview):
+                # Get first item in Treeview
+                children = self.monster_listbox.get_children()
+                if children:
+                    first_item_id = children[0]
+                    self.monster_listbox.selection_set(first_item_id)
+                    self.monster_listbox.see(first_item_id)
+                    # Trigger selection event manually
+                    self.current_monster_id = first_item_id
+                    
+                    # Find and populate first monster
+                    for monster in self.monsters:
+                        if monster.get('id') == first_item_id:
+                            self._populate_info_form(monster)
+                            print(f"[MonsterEditor] Auto-selected first monster: {monster.get('name')}")
+                            
+                            # Auto-select first template after a short delay
+                            self.after(50, self._auto_select_first_template)
+                            break
+            else:
+                # Legacy Listbox
+                if len(self.monsters) > 0:
+                    self.monster_listbox.selection_set(0)
+                    self.monster_listbox.see(0)
+                    monster = self.monsters[0]
+                    self.current_monster_id = monster.get('id')
+                    self._populate_info_form(monster)
+                    print(f"[MonsterEditor] Auto-selected first monster: {monster.get('name')}")
+                    
+                    # Auto-select first template after a short delay
+                    self.after(50, self._auto_select_first_template)
+    
+    def _auto_select_first_template(self) -> None:
+        """Auto-select first template in template list."""
+        if not self.template_listbox or not isinstance(self.template_listbox, ttk.Treeview):
+            return
+        
+        # Get first template item
+        children = self.template_listbox.get_children()
+        if children:
+            first_template_id = children[0]
+            self.template_listbox.selection_set(first_template_id)
+            self.template_listbox.see(first_template_id)
+            
+            # Trigger template selection to show preview
+            # Create a fake event to pass to _on_template_select
+            class FakeEvent:
+                pass
+            
+            self._on_template_select(FakeEvent())
+            print(f"[MonsterEditor] Auto-selected first template")
+    
     def _on_monster_select(self, event: Any) -> None:
         """Handle monster selection from Treeview."""
         if self.monster_listbox is None:
@@ -1867,21 +1961,9 @@ class QuickMonsterEditor(tk.Toplevel):
             if hasattr(self, 'browse_preview_button'):
                 self.browse_preview_button.config(state='normal')
             
-            # Show editing badge next to Edit button (ensure ordering: badge then edit button)
+            # Show editing badge (simple pack, already in correct position)
             if self.template_editing_badge and not self.template_editing_badge.winfo_ismapped():
-                # pack badge first, then re-pack edit button to keep order
                 self.template_editing_badge.pack(side='left', padx=(0, 4))
-                edit_btn = getattr(self, 'template_edit_toggle_button', None)
-                if edit_btn:
-                    try:
-                        edit_btn.pack_forget()
-                    except Exception:
-                        pass
-                    # re-pack edit button so it sits to the right of the badge
-                    try:
-                        edit_btn.pack(side='left', padx=3)
-                    except Exception:
-                        pass
                 
             # Mark as dirty to enable save button
             self.set_monster_dirty(True)
@@ -1892,7 +1974,7 @@ class QuickMonsterEditor(tk.Toplevel):
             if self.delete_template_button:
                 self.delete_template_button.config(state='disabled')
             if self.test_template_button:
-                self.test_template_button.config(state='disabled')
+                self.test_template_button.config(state='normal')  # Test can stay enabled
             
             # Disable preview action buttons
             if hasattr(self, 'capture_preview_button'):
@@ -1903,17 +1985,29 @@ class QuickMonsterEditor(tk.Toplevel):
             # Hide editing badge
             if self.template_editing_badge and self.template_editing_badge.winfo_ismapped():
                 self.template_editing_badge.pack_forget()
-                # ensure edit button remains visible (re-pack if needed)
-                edit_btn = getattr(self, 'template_edit_toggle_button', None)
-                if edit_btn:
-                    try:
-                        edit_btn.pack_forget()
-                    except Exception:
-                        pass
-                    try:
-                        edit_btn.pack(side='left', padx=3)
-                    except Exception:
-                        pass
+    
+    def _toggle_column_visibility(self) -> None:
+        """Toggle visibility of Treeview columns based on checkboxes."""
+        if not isinstance(self.template_listbox, ttk.Treeview):
+            return
+        
+        # Get current column configuration
+        display_cols = []
+        
+        if self.col_image_visible.get():
+            display_cols.append('image')
+        if self.col_threshold_visible.get():
+            display_cols.append('threshold')
+        if self.col_path_visible.get():
+            display_cols.append('name')
+        
+        # Update displaycolumns (empty tuple shows all, list shows selected)
+        if len(display_cols) == 3:
+            # Show all columns
+            self.template_listbox.config(displaycolumns=('image', 'threshold', 'name'))
+        else:
+            # Show only selected columns
+            self.template_listbox.config(displaycolumns=tuple(display_cols))
     
     def _set_fields_state(self, state: str) -> None:
         """Set state of all form fields.
