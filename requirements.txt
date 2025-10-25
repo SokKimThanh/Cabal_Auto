@@ -8,8 +8,8 @@ pillow>=10.0.0
 
 # GUI Automation
 pyautogui>=0.9.50
-keyboard>=0.13.5
-pywin32>=306  # Required for overlay window (Win32 GDI rendering)
+keyboard<2.3.0
+pywin32>=306; sys_platform == "win32"  # Required for overlay window (Win32 GDI rendering)
 
 # Testing
 pytest>=8.0.0
