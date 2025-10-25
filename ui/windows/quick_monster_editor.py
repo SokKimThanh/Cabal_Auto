@@ -2070,6 +2070,9 @@ class QuickMonsterEditor(tk.Toplevel):
         # Remove focus from name entry (no auto focus)
         if self.name_entry:
             self.focus_set()  # Set focus to window instead of entry
+        
+        # Refresh template list for this monster
+        self._refresh_template_list()
     
     def _clear_info_form(self) -> None:
         """Clear all fields in Info tab form."""
@@ -2237,7 +2240,7 @@ class QuickMonsterEditor(tk.Toplevel):
         print(f"[MonsterEditor] Selected template: {template_name} (threshold: {threshold:.2f})")
     
     def _add_template(self) -> None:
-        """Add a new template to the current monster."""
+        """Add a new empty template to the current monster."""
         # Check if monster is selected - with spam prevention
         if not self.current_monster_id:
             current_time = time.time()
@@ -2249,10 +2252,35 @@ class QuickMonsterEditor(tk.Toplevel):
                 )
             return
         
-        # For now, show info message
+        # Find monster
+        monster = self._find_monster_by_id(self.current_monster_id)
+        if not monster:
+            return
+        
+        # Create new template with placeholder data
+        new_template = {
+            'name': i18n_t('default_template_name', ns='monster_editor', default='New Template'),
+            'path': '',
+            'threshold': 0.7
+        }
+        
+        # Add to templates list
+        if 'templates' not in monster:
+            monster['templates'] = []
+        
+        monster['templates'].append(new_template)
+        
+        # Mark as dirty
+        self.set_dirty(True)
+        
+        # Refresh template list
+        self._refresh_template_list()
+        
+        # Show info
         messagebox.showinfo(
-            'Add Template' if get_lang() == 'en' else 'Thêm Template',
-            'Use Capture or Browse to add templates.' if get_lang() == 'en' else 'Dùng Chụp hoặc Chọn File để thêm template.'
+            'Template Added' if get_lang() == 'en' else 'Đã Thêm Template',
+            'Use Capture or Browse to set the template image.' if get_lang() == 'en' 
+            else 'Dùng Chụp hoặc Chọn File để đặt ảnh template.'
         )
     
     def _capture_template(self) -> None:
