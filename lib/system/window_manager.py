@@ -328,13 +328,55 @@ class WindowManager:
             True if successful
         """
         try:
-            # Restore if minimized
+            # Sprint 24 Enhancement: More robust window activation
+            # Step 1: Check if window is valid
+            if not win32gui.IsWindow(hwnd):
+                logger.warning(f"Invalid window handle: {hwnd}")
+                return False
+            
+            # Step 2: Restore if minimized
             if win32gui.IsIconic(hwnd):
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                # Give time for restore animation
+                import time
+                time.sleep(0.05)
             
-            # Set foreground
-            win32gui.SetForegroundWindow(hwnd)
-            return True
+            # Step 3: Attach to foreground thread (improves reliability)
+            try:
+                current_fg = win32gui.GetForegroundWindow()
+                if current_fg != hwnd:
+                    current_thread = win32api.GetCurrentThreadId()
+                    fg_thread, _ = win32process.GetWindowThreadProcessId(current_fg)
+                    
+                    # Attach input processing
+                    windll.user32.AttachThreadInput(fg_thread, current_thread, True)
+                    
+                    # Set foreground
+                    win32gui.SetForegroundWindow(hwnd)
+                    win32gui.BringWindowToTop(hwnd)
+                    win32gui.SetActiveWindow(hwnd)
+                    
+                    # Detach input processing
+                    windll.user32.AttachThreadInput(fg_thread, current_thread, False)
+                else:
+                    # Already foreground
+                    win32gui.SetForegroundWindow(hwnd)
+            except Exception as thread_err:
+                # Fallback: Simple SetForegroundWindow
+                logger.debug(f"Thread attach failed, using simple method: {thread_err}")
+                win32gui.SetForegroundWindow(hwnd)
+            
+            # Step 4: Verify success
+            import time
+            time.sleep(0.02)
+            success = (win32gui.GetForegroundWindow() == hwnd)
+            
+            if success:
+                logger.info(f"Window brought to foreground: {hwnd}")
+            else:
+                logger.warning(f"Window activation uncertain: {hwnd}")
+            
+            return success
         
         except Exception as e:
             logger.error(f"set_foreground failed for {hwnd}: {e}")

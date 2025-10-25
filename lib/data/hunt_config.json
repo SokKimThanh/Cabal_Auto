@@ -13,15 +13,38 @@
   "attack_min_duration_sec": 5.0,
   "bring_to_front_each_cycle": false,
   "skill_slots": [
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
+    {
+      "name": "Dark Explosion",
+      "key": "1",
+      "type": "attack",
+      "cooldown": 1.9,
+      "cast_time": 1.7,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
+    },
+    {
+      "name": "Bone Javelin",
+      "key": "2",
+      "type": "attack",
+      "cooldown": 2.4,
+      "cast_time": 1.5,
+      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
+    },
+    {
+      "name": "Skull Shooter",
+      "key": "3",
+      "type": "attack",
+      "cooldown": 2.2,
+      "cast_time": 1.5,
+      "image": "assets/images/skills/skull_shooter_1760739255501.png"
+    },
+    {
+      "name": "Regeneration",
+      "key": "4",
+      "type": "buff",
+      "cooldown": 2.2,
+      "cast_time": 1.0,
+      "image": "assets/images/skills/regeneration_1760739255499.png"
+    }
   ],
   "window_bounds": {
     "left": 133,
@@ -32,10 +55,10 @@
   "monster_list": [],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 23072,
+  "window_pid": 512,
   "templates": [],
   "training_mode_enabled": true,
-  "ui_mode": "beginner",
+  "ui_mode": "intermediate",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,
@@ -46,7 +69,7 @@
     "vision_wizard_key": "ctrl+shift+v"
   },
   "training_monster_list": [],
-  "window_hwnd": 4982268,
+  "window_hwnd": 16648954,
   "overlay": {
     "enabled": false
   },
@@ -62,5 +85,6 @@
     "auto_start_with_hunt": false
   },
   "game_window_mode": "above",
-  "app_window_mode": "topmost"
+  "app_window_mode": "topmost",
+  "is_configured": true
 }

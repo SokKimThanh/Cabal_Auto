@@ -226,7 +226,76 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             monster_id: Monster to edit (None for new monster)
             on_save: Callback when monster is saved
         """
+        # ✅ DEBUG: Log parent info to diagnose empty window issue
+        import os
+        import tkinter as tk  # ✅ FIX: Import tk outside conditional block
+        
+        print(f"\n{'='*60}")
+        print(f"[QuickMonsterEditor] __init__ called (PID: {os.getpid()})")
+        print(f"  Parent: {parent.__class__.__name__}")
+        
+        # Detailed logging (can be disabled for production)
+        if False:  # Set to True for detailed debugging
+            print(f"  Parent type: {type(parent)}")
+            print(f"  Parent class: {parent.__class__.__name__ if hasattr(parent, '__class__') else 'N/A'}")
+            print(f"  Parent repr: {repr(parent)[:100]}")
+            
+            if hasattr(parent, 'winfo_exists'):
+                try:
+                    print(f"  Parent exists: {parent.winfo_exists()}")
+                    print(f"  Parent class: {parent.winfo_class()}")
+                    print(f"  Parent name: {parent.winfo_name()}")
+                    print(f"  Parent toplevel: {parent.winfo_toplevel()}")
+                except Exception as e:
+                    print(f"  Error getting parent info: {e}")
+            
+            # Log all top-level windows
+            try:
+                all_toplevels = [w for w in tk._default_root.winfo_children() if isinstance(w, tk.Toplevel)] if tk._default_root else []
+                print(f"  Existing Toplevel windows: {len(all_toplevels)}")
+                for i, w in enumerate(all_toplevels):
+                    try:
+                        print(f"    [{i}] {w.winfo_class()} - {w.title()}")
+                    except:
+                        print(f"    [{i}] <destroyed or invalid>")
+            except Exception as e:
+                print(f"  Error listing toplevels: {e}")
+        
+        print(f"{'='*60}\n")
+        
+        # ✅ Count toplevel windows BEFORE creating this one
+        # (Disabled for production - enable for debugging)
+        if False:
+            try:
+                if hasattr(parent, 'winfo_children'):
+                    toplevels_before = [w for w in parent.winfo_children() if isinstance(w, tk.Toplevel)]
+                    print(f"[QuickMonsterEditor] Toplevel windows BEFORE super().__init__: {len(toplevels_before)}")
+                    for i, w in enumerate(toplevels_before):
+                        try:
+                            print(f"    [{i}] {w.winfo_class()} - {w.title()}")
+                        except:
+                            print(f"    [{i}] <error>")
+            except Exception as e:
+                print(f"[QuickMonsterEditor] Error counting toplevels before: {e}")
+        
+        print(f"[QuickMonsterEditor] Creating Toplevel window...")
         super().__init__(parent)
+        print(f"[QuickMonsterEditor] Toplevel created")
+        
+        # ✅ Count toplevel windows AFTER creating this one
+        # (Disabled for production - enable for debugging)
+        if False:
+            try:
+                if hasattr(parent, 'winfo_children'):
+                    toplevels_after = [w for w in parent.winfo_children() if isinstance(w, tk.Toplevel)]
+                    print(f"[QuickMonsterEditor] Toplevel windows AFTER super().__init__: {len(toplevels_after)}")
+                    for i, w in enumerate(toplevels_after):
+                        try:
+                            print(f"    [{i}] {w.winfo_class()} - {w.title()}")
+                        except:
+                            print(f"    [{i}] <error>")
+            except Exception as e:
+                print(f"[QuickMonsterEditor] Error counting toplevels after: {e}")
         
         # Initialize ActionNotificationMixin
         if hasattr(ActionNotificationMixin, '__init__') and ActionNotificationMixin != object:
@@ -342,6 +411,9 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         # Window configuration
         title = i18n_t('quick_editor_title', ns='monster_editor', default='Quick Monster Editor')
         self.title(title)
+        print(f"[QuickMonsterEditor] Window title set to: {title}")
+        print(f"[QuickMonsterEditor] Actual title: {self.title()}")
+        
         self.geometry("750x450")  # Increased to accommodate left panel
         self.resizable(False, False)
         self.attributes('-topmost', True)
@@ -379,6 +451,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 for monster in self.monsters:
                     if 'id' not in monster:
                         monster['id'] = str(uuid.uuid4())
+                
+                # ✅ Sprint 24 Enhancement: Show inline notification if no monsters
+                if len(self.monsters) == 0:
+                    # Schedule notification after UI is ready
+                    self.after(500, lambda: self._show_empty_data_notification())
             else:
                 self.monsters = []
                 print(f"[MonsterEditor] No data file found at {DATA_PATH}, creating empty list")
@@ -386,9 +463,31 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
                 with open(DATA_PATH, 'w', encoding='utf-8') as f:
                     json.dump([], f, indent=2, ensure_ascii=False)
+                
+                # ✅ Show notification for missing file
+                self.after(500, lambda: self._show_empty_data_notification())
         except Exception as e:
             print(f"[MonsterEditor] Error loading monsters: {e}")
             self.monsters = []
+    
+    def _show_empty_data_notification(self) -> None:
+        """Show inline notification when no monster data exists."""
+        try:
+            if hasattr(self, 'notification_widget') and self.notification_widget:
+                message = (
+                    "📦 Chưa có dữ liệu quái vật.\n"
+                    "💡 Nhấn '+ Thêm Mới' để tạo quái vật đầu tiên."
+                )
+                self.notification_widget.show(
+                    message,
+                    notification_type='info',
+                    side='top',
+                    fill='x',
+                    pady=5
+                )
+                print("[MonsterEditor] Showed empty data notification")
+        except Exception as e:
+            print(f"[MonsterEditor] Error showing empty data notification: {e}")
     
     def _load_hunt_config(self) -> None:
         """Load hunt_config.json and set game_window_mode."""
@@ -3767,10 +3866,40 @@ def show_quick_monster_editor(
     """
     global _quick_editor_instance
     
+    import os
+    
+    print(f"[show_quick_monster_editor] Called (PID: {os.getpid()})")
+    print(f"  Singleton exists: {_quick_editor_instance is not None}")
+    
+    # Detailed debug logs (can be disabled for production)
+    if False:  # Set to True for detailed debugging
+        import traceback
+        print(f"  Parent: {parent}")
+        print(f"  Parent type: {type(parent)}")
+        
+        # ✅ Print call stack to see who called this function
+        print(f"\n[show_quick_monster_editor] Call stack:")
+        for line in traceback.format_stack()[:-1]:
+            print(line.strip())
+        print("")
+    
+    if _quick_editor_instance is not None:
+        try:
+            exists = _quick_editor_instance.winfo_exists()
+            print(f"  Singleton valid: {exists}")
+        except Exception as e:
+            print(f"  Singleton valid check error: {e}")
+            exists = False
+    else:
+        exists = False
+    
     if _quick_editor_instance is not None and _quick_editor_instance.winfo_exists():
+        print(f"[show_quick_monster_editor] ✓ Reusing existing instance")
         _quick_editor_instance.lift()
         _quick_editor_instance.focus_force()
         return _quick_editor_instance
     else:
+        print(f"[show_quick_monster_editor] ✓ Creating NEW instance")
         _quick_editor_instance = QuickMonsterEditor(parent, monster_id, on_save)
+        print(f"[show_quick_monster_editor] ✓ Instance created: {_quick_editor_instance}")
         return _quick_editor_instance
