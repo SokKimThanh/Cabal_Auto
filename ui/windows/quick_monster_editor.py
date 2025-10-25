@@ -2535,6 +2535,9 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def _on_template_select(self, event: Any) -> None:
         """Handle template selection from Treeview - show preview and update threshold."""
+        # Cancel any pending confirmation when selection changes
+        self._cancel_confirmation()
+        
         if self.template_listbox is None or not isinstance(self.template_listbox, ttk.Treeview):
             return
         
@@ -2911,7 +2914,7 @@ class QuickMonsterEditor(tk.Toplevel):
             self._is_browsing = False
     
     def _delete_template(self) -> None:
-        """Delete selected template (with confirmation)."""
+        """Delete selected template (with inline confirmation)."""
         # Prevent concurrent delete operations
         if self._is_deleting:
             return
@@ -2919,55 +2922,83 @@ class QuickMonsterEditor(tk.Toplevel):
         if not self.current_monster_id or not self.template_listbox:
             return
         
-        # Set flag
-        self._is_deleting = True
+        # Get selection - handle both Listbox and Treeview
+        if isinstance(self.template_listbox, ttk.Treeview):
+            selection = self.template_listbox.selection()
+            if not selection:
+                # No selection - button should be disabled, so just return silently
+                return
+            # For Treeview, use item_id as index
+            item_id = selection[0]
+            idx = int(item_id.split('_')[-1]) if '_' in item_id else 0
+        else:
+            # Legacy Listbox support
+            selection = self.template_listbox.curselection()
+            if not selection:
+                # No selection - button should be disabled, so just return silently
+                return
+            idx = selection[0]
         
-        try:
-            # Get selection - handle both Listbox and Treeview
-            if isinstance(self.template_listbox, ttk.Treeview):
-                selection = self.template_listbox.selection()
-                if not selection:
-                    # No selection - button should be disabled, so just return silently
+        monster = self._find_monster_by_id(self.current_monster_id)
+        if not monster:
+            return
+        
+        templates = monster.get('templates', [])
+        if idx >= len(templates):
+            return
+        
+        template = templates[idx]
+        
+        # Show inline confirmation instead of popup
+        def delete_action():
+            """The actual delete action to execute if confirmed."""
+            # Set flag to prevent concurrent operations
+            self._is_deleting = True
+            
+            try:
+                # Validate current_monster_id still exists
+                if not self.current_monster_id:
+                    print("[MonsterEditor] No current monster, action cancelled")
                     return
-                # For Treeview, use item_id as index
-                item_id = selection[0]
-                idx = int(item_id.split('_')[-1]) if '_' in item_id else 0
-            else:
-                # Legacy Listbox support
-                selection = self.template_listbox.curselection()
-                if not selection:
-                    # No selection - button should be disabled, so just return silently
+                
+                # Validate template still exists before deletion
+                current_monster = self._find_monster_by_id(self.current_monster_id)
+                if not current_monster:
+                    print("[MonsterEditor] Monster not found, action cancelled")
                     return
-                idx = selection[0]
-            
-            monster = self._find_monster_by_id(self.current_monster_id)
-            if not monster:
-                return
-            
-            templates = monster.get('templates', [])
-            if idx >= len(templates):
-                return
-            
-            template = templates[idx]
-            
-            # Confirm
-            response = messagebox.askyesno(
-                'Confirm Delete' if get_lang() == 'en' else 'Xác Nhận Xóa',
-                f"Delete template '{template.get('name', 'Unknown')}'?" if get_lang() == 'en'
-                else f"Xóa template '{template.get('name', 'Unknown')}'?"
-            )
-            
-            if response:
-                del templates[idx]
+                
+                current_templates = current_monster.get('templates', [])
+                if idx >= len(current_templates):
+                    print(f"[MonsterEditor] Template index {idx} out of range, action cancelled")
+                    return
+                
+                # Validate it's still the same template
+                if current_templates[idx] != template:
+                    print("[MonsterEditor] Template changed, action cancelled")
+                    return
+                
+                # Perform deletion
+                del current_templates[idx]
                 self.has_unsaved_changes = True
+                self.is_dirty = True
+                
+                # Refresh template list
                 self._refresh_template_list()
-                messagebox.showinfo(
-                    'Deleted' if get_lang() == 'en' else 'Đã Xóa',
-                    'Template removed successfully.' if get_lang() == 'en' else 'Đã xóa template thành công.'
-                )
-        finally:
-            # Always reset flag
-            self._is_deleting = False
+                
+                # Update dirty state UI
+                self._update_dirty_state_ui()
+                
+                print(f"[MonsterEditor] Deleted template: {template.get('name', 'Unknown')}")
+            except Exception as e:
+                print(f"[MonsterEditor] Error deleting template: {e}")
+                import traceback
+                traceback.print_exc()
+            finally:
+                # Always reset flag
+                self._is_deleting = False
+        
+        # Show inline confirmation (Yes/No buttons)
+        self._show_confirmation(delete_action, auto_hide_seconds=5)
     
     def _test_template_recognition(self) -> None:
         """Test match for current template on screen."""
