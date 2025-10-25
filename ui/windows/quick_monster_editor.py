@@ -210,6 +210,7 @@ class QuickMonsterEditor(tk.Toplevel):
         self._is_browsing = False
         self._is_deleting = False
         self._is_testing = False
+        self._last_warning_time = 0.0  # Track last warning to prevent spam
         
         # Hunt config path
         self.hunt_config_path = Path("lib/data/hunt_config.json")
@@ -268,8 +269,10 @@ class QuickMonsterEditor(tk.Toplevel):
         self.desc_text: Optional[tk.Text] = None
         
         # Templates tab widgets
-        self.template_listbox: Optional[tk.Listbox] = None
+        self.template_listbox: Optional[Union[tk.Listbox, ttk.Treeview]] = None
         self.template_scrollbar: Optional[tk.Scrollbar] = None
+        self.template_preview_label: Optional[tk.Label] = None
+        self.add_template_button: Optional[tk.Button] = None
         self.capture_button: Optional[tk.Button] = None
         self.browse_button: Optional[tk.Button] = None
         self.delete_template_button: Optional[tk.Button] = None
@@ -361,14 +364,14 @@ class QuickMonsterEditor(tk.Toplevel):
             if self.is_dirty:
                 # Orange badge for unsaved
                 self.status_badge.config(
-                    text=i18n_t('badge_unsaved', ns='monster_editor', default='Unsaved'),
+                    text=i18n_t('badge_unsaved', ns='monster_editor', default='Chưa lưu'),
                     bg='#FF8C00',  # Orange
                     fg='white'
                 )
             else:
                 # Green badge for saved
                 self.status_badge.config(
-                    text=i18n_t('badge_saved', ns='monster_editor', default='Saved'),
+                    text=i18n_t('badge_saved', ns='monster_editor', default='Đã lưu tất cả'),
                     bg='#28A745',  # Green
                     fg='white'
                 )
@@ -596,7 +599,7 @@ class QuickMonsterEditor(tk.Toplevel):
         # Status badge (shows saved/unsaved state)
         self.status_badge = tk.Label(
             button_frame,
-            text=i18n_t('badge_saved', ns='monster_editor', default='Saved'),
+            text=i18n_t('badge_saved', ns='monster_editor', default='Đã lưu tất cả'),
             font=UI.FONT_SMALL,
             fg='white',
             bg='#28A745',  # Green for saved
@@ -614,8 +617,9 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_size=16,
             command=self._on_save,
             button_type='green_light',
-            variant='compact',
-            width=16,
+            variant='icon_only',  # Icon only, no text
+            width=32,
+            height=32,
             auto_hover_disabled=True,  # Show prohibition when disabled
             tooltip_key='tooltip_save',
             tooltip_ns='monster_editor'
@@ -633,8 +637,9 @@ class QuickMonsterEditor(tk.Toplevel):
             icon_size=16,
             command=self._on_cancel,
             button_type='refresh',  # Gray neutral style
-            variant='compact',
-            width=16,
+            variant='icon_only',  # Icon only, no text
+            width=32,
+            height=32,
             tooltip_key='tooltip_cancel',
             tooltip_ns='monster_editor'
         )
@@ -697,33 +702,31 @@ class QuickMonsterEditor(tk.Toplevel):
         button_frame = tk.Frame(left_frame, bg=UI.BG_PANEL)
         button_frame.pack(side='top', fill='x', padx=10, pady=(5, 10))
         
-        # Add Monster button - using component
-        add_text = i18n_t('btn_add_monster', ns='monster_editor', default='Add Monster')
+        # Add Monster button - icon only
         self.add_monster_button = create_icon_button(
             button_frame,
             icon_name='add',
             icon_fallback='➕',
             icon_size=16,
-            text=add_text,
             command=self._on_add_monster,
             button_type='green_light',
-            variant='medium',
+            variant='icon_only',  # Icon only
+            width=None,  # Full width
             tooltip_key='tooltip_add_monster',
             tooltip_ns='monster_editor'
         )
         self.add_monster_button.pack(side='top', fill='x', pady=(0, 5))
         
-        # Delete Monster button - using component with auto disabled hover
-        delete_text = i18n_t('btn_delete', ns='monster_editor', default='Delete')
+        # Delete Monster button - icon only with auto disabled hover
         self.delete_monster_button = create_icon_button(
             button_frame,
             icon_name='delete',
             icon_fallback='🗑️',
             icon_size=16,
-            text=delete_text,
             command=self._on_delete_monster,
             button_type='red',
-            variant='medium',
+            variant='icon_only',  # Icon only
+            width=None,  # Full width
             auto_hover_disabled=True,  # Show prohibition icon when disabled
             tooltip_key='tooltip_delete_monster',
             tooltip_ns='monster_editor'
@@ -781,16 +784,17 @@ class QuickMonsterEditor(tk.Toplevel):
         header_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
         header_frame.pack(fill='x', padx=5, pady=(0, 10))
         
-        # Edit/Save toggle button
+        # Edit/Save toggle button - icon only
         self.edit_toggle_button = create_icon_button(
             header_frame,
             icon_name='edit',
             icon_fallback='✏️',
             icon_size=16,
-            text=i18n_t('btn_edit', ns='monster_editor', default='Edit'),
             command=self._toggle_edit_mode,
             button_type='primary',
-            variant='compact',
+            variant='icon_only',  # Icon only
+            width=32,
+            height=32,
             tooltip_key='tooltip_edit_mode',
             tooltip_ns='monster_editor'
         )
@@ -799,7 +803,7 @@ class QuickMonsterEditor(tk.Toplevel):
         # Editing badge (orange background, white text)
         self.editing_badge = tk.Label(
             header_frame,
-            text=i18n_t('badge_editing', ns='monster_editor', default='Đang sửa'),
+            text=i18n_t('badge_editing', ns='monster_editor', default='Đang chỉnh sửa'),
             font=UI.FONT_SMALL,
             fg='white',
             bg='#FF8C00',  # Orange
@@ -998,16 +1002,17 @@ class QuickMonsterEditor(tk.Toplevel):
         header_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
         header_frame.pack(fill='x', padx=5, pady=(0, 10))
         
-        # Edit/Save toggle button for Template tab
+        # Edit/Save toggle button for Template tab - icon only
         self.template_edit_toggle_button = create_icon_button(
             header_frame,
             icon_name='edit',
             icon_fallback='✏️',
             icon_size=16,
-            text=i18n_t('btn_edit', ns='monster_editor', default='Edit'),
             command=self._toggle_template_edit_mode,
             button_type='primary',
-            variant='compact',
+            variant='icon_only',  # Icon only
+            width=32,
+            height=32,
             tooltip_key='tooltip_edit_mode_template',
             tooltip_ns='monster_editor'
         )
@@ -1016,7 +1021,7 @@ class QuickMonsterEditor(tk.Toplevel):
         # Editing badge for Template tab
         self.template_editing_badge = tk.Label(
             header_frame,
-            text=i18n_t('badge_editing', ns='monster_editor', default='Đang sửa'),
+            text=i18n_t('badge_editing', ns='monster_editor', default='Đang chỉnh sửa'),
             font=UI.FONT_SMALL,
             fg='white',
             bg='#FF8C00',  # Orange
@@ -1026,122 +1031,155 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         # Initially hidden (not in edit mode)
         
-        # Layout: left (list), right (controls)
-        main_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
-        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
-
-        # Template listbox with scrollbar
-        list_frame = tk.Frame(main_frame, bg=UI.BG_PANEL)
-        list_frame.pack(side='left', fill='y', padx=(0, 10), pady=0, anchor='n')
-
+        # Main container: left (template list + controls), right (preview)
+        main_container = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
+        main_container.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Left panel: template list + controls
+        left_panel = tk.Frame(main_container, bg=UI.BG_DEFAULT)
+        left_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
+        
+        # Template list with 3 columns: Image | Name | Threshold
         list_label = tk.Label(
-            list_frame,
+            left_panel,
             text=i18n_t('template_list_title', ns='monster_editor', default='Template List:'),
             font=UI.FONT_LABEL,
             fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_PANEL
+            bg=UI.BG_DEFAULT
         )
         list_label.pack(side='top', anchor='w', pady=(0, 5))
-
+        
+        # Create Treeview with scrollbar
+        list_frame = tk.Frame(left_panel, bg=UI.BG_DEFAULT)
+        list_frame.pack(side='top', fill='both', expand=True, pady=(0, 10))
+        
         self.template_scrollbar = tk.Scrollbar(list_frame, orient='vertical')
-        self.template_listbox = tk.Listbox(
+        self.template_listbox = ttk.Treeview(
             list_frame,
-            font=UI.FONT_TEXT,
+            columns=('image', 'name', 'threshold'),
+            show='headings',
+            selectmode='browse',
             yscrollcommand=self.template_scrollbar.set,
-            selectmode=tk.SINGLE,
-            height=10,
-            width=28
+            height=10
         )
-        self.template_listbox.pack(side='left', fill='y', expand=False)
+        
+        # Configure columns
+        self.template_listbox.column('image', width=50, minwidth=50, anchor='center', stretch=False)
+        self.template_listbox.column('name', width=150, minwidth=100, anchor='w')
+        self.template_listbox.column('threshold', width=80, minwidth=60, anchor='center')
+        
+        # Set headings
+        self.template_listbox.heading('image', text=i18n_t('col_image', ns='monster_editor', default='Image'), anchor='center')
+        self.template_listbox.heading('name', text=i18n_t('col_name', ns='monster_editor', default='Name'), anchor='center')
+        self.template_listbox.heading('threshold', text=i18n_t('col_threshold', ns='monster_editor', default='Threshold'), anchor='center')
+        
+        self.template_listbox.pack(side='left', fill='both', expand=True)
         self.template_scrollbar.config(command=self.template_listbox.yview)
         self.template_scrollbar.pack(side='right', fill='y')
+        
+        # Bind selection event
+        self.template_listbox.bind('<<TreeviewSelect>>', self._on_template_select)
+        
+        # Button row - all icon buttons in one horizontal line
+        button_row = tk.Frame(left_panel, bg=UI.BG_DEFAULT)
+        button_row.pack(side='top', fill='x', pady=(0, 10))
 
-        # Controls frame (right)
-        controls_frame = tk.Frame(main_frame, bg=UI.BG_DEFAULT)
-        controls_frame.pack(side='left', fill='both', expand=True, padx=0, pady=0)
-
-        # Capture Template button - using component with auto disabled hover
-        capture_text = i18n_t('btn_capture', ns='monster_editor', default='Capture')
+        # Capture Template button - icon only with auto disabled hover
         self.capture_button = create_icon_button(
-            controls_frame,
+            button_row,
             icon_name='capture',
             icon_fallback='📸',
             icon_size=16,
-            text=capture_text,
             command=self._capture_template,
             button_type='blue',
-            variant='medium',
-            width=18,
+            variant='icon_only',  # Icon only
+            width=32,
+            height=32,
             auto_hover_disabled=True,
             tooltip_key='tooltip_capture',
             tooltip_ns='monster_editor'
         )
-        self.capture_button.pack(side='top', fill='x', pady=(0, 5))
+        self.capture_button.pack(side='left', padx=(0, 5))
 
-        # Browse File button - using component with auto disabled hover
-        browse_text = i18n_t('btn_browse', ns='monster_editor', default='Browse')
+        # Browse File button - icon only with auto disabled hover
         self.browse_button = create_icon_button(
-            controls_frame,
+            button_row,
             icon_name='browse',
             icon_fallback='📂',
             icon_size=16,
-            text=browse_text,
             command=self._browse_template_image,
             button_type='refresh',  # Gray neutral style
-            variant='medium',
-            width=18,
+            variant='icon_only',  # Icon only
+            width=32,
+            height=32,
             auto_hover_disabled=True,
             tooltip_key='tooltip_browse',
             tooltip_ns='monster_editor'
         )
-        self.browse_button.pack(side='top', fill='x', pady=(0, 5))
+        self.browse_button.pack(side='left', padx=(0, 5))
 
-        # Delete Template button - using component with auto disabled hover
-        delete_text = i18n_t('btn_delete_template', ns='monster_editor', default='Delete')
+        # Add Template button - icon only (+ icon)
+        self.add_template_button = create_icon_button(
+            button_row,
+            icon_name='add',
+            icon_fallback='➕',
+            icon_size=16,
+            command=self._add_template,
+            button_type='green_light',
+            variant='icon_only',  # Icon only
+            width=32,
+            height=32,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_add_template',
+            tooltip_ns='monster_editor'
+        )
+        self.add_template_button.pack(side='left', padx=(0, 5))
+
+        # Delete Template button - icon only with auto disabled hover
         self.delete_template_button = create_icon_button(
-            controls_frame,
+            button_row,
             icon_name='delete',
             icon_fallback='🗑️',
             icon_size=16,
-            text=delete_text,
             command=self._delete_template,
             button_type='red',
-            variant='medium',
-            width=18,
+            variant='icon_only',  # Icon only
+            width=32,
+            height=32,
             auto_hover_disabled=True,
             tooltip_key='tooltip_delete_template',
             tooltip_ns='monster_editor'
         )
-        self.delete_template_button.pack(side='top', fill='x', pady=(0, 5))
+        self.delete_template_button.pack(side='left', padx=(0, 5))
 
-        # Test Recognition button - using component with auto disabled hover
-        test_text = i18n_t('btn_test', ns='monster_editor', default='Test')
+        # Test Recognition button - icon only with auto disabled hover
         self.test_template_button = create_icon_button(
-            controls_frame,
+            button_row,
             icon_name='test',
             icon_fallback='🧪',
             icon_size=16,
-            text=test_text,
             command=self._test_template_recognition,
             button_type='blue',
-            variant='medium',
-            width=18,
+            variant='icon_only',  # Icon only
+            width=32,
+            height=32,
             auto_hover_disabled=True,
             tooltip_key='tooltip_test_template',
             tooltip_ns='monster_editor'
         )
-        self.test_template_button.pack(side='top', fill='x', pady=(0, 5))
+        self.test_template_button.pack(side='left', padx=(0, 5))
         
         # Initially disable all template buttons (locked mode)
         self.capture_button.config(state='disabled')
         self.browse_button.config(state='disabled')
+        self.add_template_button.config(state='disabled')
         self.delete_template_button.config(state='disabled')
         self.test_template_button.config(state='disabled')
-
-        # Threshold slider
+        
+        # Threshold slider below button row
         threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Threshold')
         self.threshold_label = create_icon_label(
-            controls_frame,
+            left_panel,
             icon_name='settings',
             text=f"{threshold_label_text}:",
             icon_fallback='⚙️',
@@ -1150,19 +1188,45 @@ class QuickMonsterEditor(tk.Toplevel):
             fg=UI.COLOR_TEXT,
             bg=UI.BG_DEFAULT
         )
-        self.threshold_label.pack(side='top', anchor='w', pady=(12, 2))
+        self.threshold_label.pack(side='top', anchor='w', pady=(0, 2))
 
         self.threshold_scale = tk.Scale(
-            controls_frame,
+            left_panel,
             from_=0.0,
             to=1.0,
             resolution=0.01,
             orient='horizontal',
-            length=180,
+            length=280,
             showvalue=True
         )
         self.threshold_scale.set(0.7)
         self.threshold_scale.pack(side='top', fill='x', pady=(0, 8))
+        
+        # Right panel: Template preview
+        preview_panel = tk.Frame(main_container, bg=UI.BG_PANEL, width=200, height=200)
+        preview_panel.pack(side='right', fill='y', anchor='n')
+        preview_panel.pack_propagate(False)
+        
+        preview_label = tk.Label(
+            preview_panel,
+            text=i18n_t('preview_label', ns='monster_editor', default='Preview'),
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_PANEL
+        )
+        preview_label.pack(side='top', anchor='w', padx=10, pady=(10, 5))
+        
+        # Preview image label
+        self.template_preview_label = tk.Label(
+            preview_panel,
+            text='No template selected' if get_lang() == 'en' else 'Chưa chọn template',
+            font=UI.FONT_SMALL,
+            fg=UI.COLOR_SUBTEXT,
+            bg=UI.BG_PANEL,
+            relief='sunken',
+            borderwidth=1
+        )
+        self.template_preview_label.pack(side='top', fill='both', expand=True, padx=10, pady=(0, 10))
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -1728,21 +1792,21 @@ class QuickMonsterEditor(tk.Toplevel):
             # Switch to edit mode
             self._set_fields_state('normal')
             
-            # Update button text to Save
-            if self.edit_toggle_button:
-                self.edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='Save'))
+            # Note: Button is now icon-only, so we don't change text
+            # Tooltip will guide users that it's now in "save" mode
             
-            # Show editing badge
+            # Show editing badge at top-left of tab
             if self.editing_badge and not self.editing_badge.winfo_ismapped():
                 self.editing_badge.pack(side='left')
+                
+            # Mark as dirty to enable save button
+            self.set_monster_dirty(True)
         else:
             # Switch to locked mode (save changes)
             self._save_form_to_current_monster()
             self._set_fields_state('readonly')
             
-            # Update button text to Edit
-            if self.edit_toggle_button:
-                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Edit'))
+            # Note: Button is now icon-only, so we don't change text
             
             # Hide editing badge
             if self.editing_badge and self.editing_badge.winfo_ismapped():
@@ -1758,32 +1822,35 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.capture_button.config(state='normal')
             if self.browse_button:
                 self.browse_button.config(state='normal')
+            if self.add_template_button:
+                self.add_template_button.config(state='normal')
             if self.delete_template_button:
                 self.delete_template_button.config(state='normal')
             if self.test_template_button:
                 self.test_template_button.config(state='normal')
             
-            # Update button text to Save
-            if self.template_edit_toggle_button:
-                self.template_edit_toggle_button.config(text=i18n_t('btn_save_changes', ns='monster_editor', default='Save'))
+            # Note: Button is now icon-only, so we don't change text
             
-            # Show editing badge
+            # Show editing badge at top-left of tab
             if self.template_editing_badge and not self.template_editing_badge.winfo_ismapped():
                 self.template_editing_badge.pack(side='left')
+                
+            # Mark as dirty to enable save button
+            self.set_monster_dirty(True)
         else:
             # Switch to locked mode - disable template buttons
             if self.capture_button:
                 self.capture_button.config(state='disabled')
             if self.browse_button:
                 self.browse_button.config(state='disabled')
+            if self.add_template_button:
+                self.add_template_button.config(state='disabled')
             if self.delete_template_button:
                 self.delete_template_button.config(state='disabled')
             if self.test_template_button:
                 self.test_template_button.config(state='disabled')
             
-            # Update button text to Edit
-            if self.template_edit_toggle_button:
-                self.template_edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Edit'))
+            # Note: Button is now icon-only, so we don't change text
             
             # Hide editing badge
             if self.template_editing_badge and self.template_editing_badge.winfo_ismapped():
@@ -1967,7 +2034,7 @@ class QuickMonsterEditor(tk.Toplevel):
             print(f"[MonsterEditor] Deleted monster: {monster.get('name')}")
     
     def _populate_info_form(self, monster: Dict[str, Any]) -> None:
-        """Populate Info tab form with monster data."""
+        """Populate Info tab form with monster data and keep fields locked."""
         if not all([self.name_entry, self.level_spinbox, self.priority_spinbox, 
                     self.hp_entry, self.damage_entry, self.desc_text]):
             return
@@ -1975,11 +2042,11 @@ class QuickMonsterEditor(tk.Toplevel):
         # Clear form first
         self._clear_info_form()
         
-        # Reset edit mode to locked
+        # Reset edit mode to locked (always start locked when selecting a monster)
         if self.is_editing:
             self.is_editing = False
-            if self.edit_toggle_button:
-                self.edit_toggle_button.config(text=i18n_t('btn_edit', ns='monster_editor', default='Edit'))
+            # Note: Button is icon-only, no text change needed
+            # Hide editing badge if showing
             if self.editing_badge and self.editing_badge.winfo_ismapped():
                 self.editing_badge.pack_forget()
         
@@ -2006,8 +2073,12 @@ class QuickMonsterEditor(tk.Toplevel):
         if desc:
             self.desc_text.insert('1.0', desc)
         
-        # Lock fields after populating
+        # Lock fields after populating (readonly mode)
         self._set_fields_state('readonly')
+        
+        # Remove focus from name entry (no auto focus)
+        if self.name_entry:
+            self.focus_set()  # Set focus to window instead of entry
     
     def _clear_info_form(self) -> None:
         """Clear all fields in Info tab form."""
@@ -2090,17 +2161,64 @@ class QuickMonsterEditor(tk.Toplevel):
         # Remove invalid filename characters
         return re.sub(r'[<>:"/\\|?*]', '_', name)
     
+    def _on_template_select(self, event: Any) -> None:
+        """Handle template selection from Treeview - show preview."""
+        if self.template_listbox is None or not isinstance(self.template_listbox, ttk.Treeview):
+            return
+        
+        # Get selected item
+        selection = self.template_listbox.selection()
+        if not selection:
+            return
+        
+        # Get template data from selection
+        item_id = selection[0]
+        values = self.template_listbox.item(item_id, 'values')
+        if not values or len(values) < 2:
+            return
+        
+        # TODO: Load and display template image in preview
+        template_name = values[1]  # Column 1 is name
+        print(f"[MonsterEditor] Selected template: {template_name}")
+        
+        # Update preview label
+        if self.template_preview_label:
+            self.template_preview_label.config(text=f"Preview: {template_name}")
+    
+    def _add_template(self) -> None:
+        """Add a new template to the current monster."""
+        # Check if monster is selected - with spam prevention
+        if not self.current_monster_id:
+            current_time = time.time()
+            if current_time - self._last_warning_time > 3.0:
+                self._last_warning_time = current_time
+                messagebox.showwarning(
+                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                    'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
+                )
+            return
+        
+        # For now, show info message
+        messagebox.showinfo(
+            'Add Template' if get_lang() == 'en' else 'Thêm Template',
+            'Use Capture or Browse to add templates.' if get_lang() == 'en' else 'Dùng Chụp hoặc Chọn File để thêm template.'
+        )
+    
     def _capture_template(self) -> None:
         """Capture template image from a selected screen region and attach to current monster."""
         # Prevent concurrent captures
         if self._is_capturing:
             return
         
+        # Check if monster is selected - with spam prevention (3 second cooldown)
         if not self.current_monster_id:
-            messagebox.showwarning(
-                'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
-            )
+            current_time = time.time()
+            if current_time - self._last_warning_time > 3.0:  # Only show warning once per 3 seconds
+                self._last_warning_time = current_time
+                messagebox.showwarning(
+                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                    'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
+                )
             return
         
         # Check PIL availability
@@ -2194,11 +2312,15 @@ class QuickMonsterEditor(tk.Toplevel):
         if self._is_browsing:
             return
         
+        # Check if monster is selected - with spam prevention
         if not self.current_monster_id:
-            messagebox.showwarning(
-                'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
-            )
+            current_time = time.time()
+            if current_time - self._last_warning_time > 3.0:
+                self._last_warning_time = current_time
+                messagebox.showwarning(
+                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                    'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
+                )
             return
         
         # Set flag
@@ -2267,16 +2389,29 @@ class QuickMonsterEditor(tk.Toplevel):
         self._is_deleting = True
         
         try:
-            # Get selection
-            selection = self.template_listbox.curselection()
-            if not selection:
-                messagebox.showwarning(
-                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                    'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
-                )
-                return
+            # Get selection - handle both Listbox and Treeview
+            if isinstance(self.template_listbox, ttk.Treeview):
+                selection = self.template_listbox.selection()
+                if not selection:
+                    messagebox.showwarning(
+                        'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                        'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
+                    )
+                    return
+                # For Treeview, use item_id as index
+                item_id = selection[0]
+                idx = int(item_id.split('_')[-1]) if '_' in item_id else 0
+            else:
+                # Legacy Listbox support
+                selection = self.template_listbox.curselection()
+                if not selection:
+                    messagebox.showwarning(
+                        'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                        'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
+                    )
+                    return
+                idx = selection[0]
             
-            idx = selection[0]
             monster = self._find_monster_by_id(self.current_monster_id)
             if not monster:
                 return
@@ -2326,16 +2461,29 @@ class QuickMonsterEditor(tk.Toplevel):
         self._is_testing = True
         
         try:
-            # Get selection
-            selection = self.template_listbox.curselection()
-            if not selection:
-                messagebox.showinfo(
-                    'Info' if get_lang() == 'en' else 'Thông báo',
-                    'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
-                )
-                return
+            # Get selection - handle both Listbox and Treeview
+            if isinstance(self.template_listbox, ttk.Treeview):
+                selection = self.template_listbox.selection()
+                if not selection:
+                    messagebox.showinfo(
+                        'Info' if get_lang() == 'en' else 'Thông báo',
+                        'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
+                    )
+                    return
+                # For Treeview, use item_id as index
+                item_id = selection[0]
+                idx = int(item_id.split('_')[-1]) if '_' in item_id else 0
+            else:
+                # Legacy Listbox support
+                selection = self.template_listbox.curselection()
+                if not selection:
+                    messagebox.showinfo(
+                        'Info' if get_lang() == 'en' else 'Thông báo',
+                        'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
+                    )
+                    return
+                idx = selection[0]
             
-            idx = selection[0]
             monster = self._find_monster_by_id(self.current_monster_id)
             if not monster:
                 return
