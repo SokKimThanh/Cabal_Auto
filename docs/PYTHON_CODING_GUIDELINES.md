@@ -1,7 +1,7 @@
 # Python Coding Guidelines for AI Assistant
 
-**Version**: 1.0.0  
-**Date**: October 23, 2025  
+**Version**: 2.0.0  
+**Date**: October 25, 2025  
 **Status**: ACTIVE & ENFORCED  
 **Applies to**: All Python code written by AI Assistant
 
@@ -11,9 +11,33 @@
 
 These guidelines are **mandatory** and must be followed for every line of Python code written. No exceptions.
 
+**New in v2.0**: Added comprehensive UI Form Design Guidelines for Tkinter applications (Section 8)
+
 ---
 
-## 📋 The 7 Golden Rules
+## 📋 The Rules
+
+### Python Core Rules (1-7)
+1. Always Check Data Types Before Use
+2. Never Call Attributes/Methods on None
+3. Never Call Instance Methods via Class
+4. Never Call Functions with Missing Required Arguments
+5. Never Duplicate Expensive Operations
+6. Use Only Stable Package Versions
+7. Never Mix Namespace Imports
+
+### UI Form Rules (8)
+8. Follow Tkinter UI Form Design Standards
+   - Three-layer architecture
+   - Inline notifications (no popups)
+   - Widget lifecycle safety
+   - Consistent component patterns
+   - i18n integration
+   - Accessibility support
+
+---
+
+## 📋 The 7 Golden Rules (Python Core)
 
 ### Rule 1: Always Check Data Types Before Use
 
@@ -1266,15 +1290,33 @@ label = tk.Label(self, text=self.i18n.get("save"))
 **Status**: ACTIVE  
 **Authority**: Mandatory for all AI-generated code  
 **Violations**: Must be fixed before code submission  
-**Review**: Every code suggestion must pass all 7 rules  
+**Review**: Every code suggestion must pass all rules (Python + UI)  
 
 **Signed**: GitHub Copilot AI Assistant  
-**Date**: October 23, 2025  
-**Version**: 1.0.0
+**Date**: October 25, 2025  
+**Version**: 2.0.0
 
 ---
 
 ## 📝 Change Log
+
+### Version 2.0.0 (2025-10-25)
+- **MAJOR UPDATE**: Added comprehensive UI Form Design Guidelines (Section 8)
+- Added Rule 8: Tkinter UI Form Standards
+  - Three-layer architecture (Data/Logic/UI separation)
+  - Form component standards (labels, entries, buttons)
+  - Inline notifications (no popup messageboxes)
+  - Widget lifecycle management (winfo_exists + try-except)
+  - Button state management with mixins
+  - Data flow patterns (Collect → Validate → Save → Feedback)
+  - i18n integration for all text
+  - Accessibility & keyboard shortcuts
+  - Complete form template with 400+ lines of example code
+  - Anti-patterns and correct patterns
+  - Comprehensive checklist (11 sections)
+- Updated enforcement to include UI guidelines
+- Added Tkinter and Material Design references
+- **Purpose**: Ensure consistent UI implementation for both developers and AI assistants
 
 ### Version 1.0.0 (2025-10-23)
 - Initial version
