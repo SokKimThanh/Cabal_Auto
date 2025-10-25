@@ -508,16 +508,6 @@ class QuickMonsterEditor(tk.Toplevel):
             bg=UI.BG_PANEL
         )
         title_label.pack(side='left', padx=15, pady=15)
-
-        # Status label (dirty state)
-        self.status_label = tk.Label(
-            top_frame,
-            text='',
-            font=UI.FONT_SMALL,
-            fg=UI.COLOR_WARNING,
-            bg=UI.BG_PANEL
-        )
-        self.status_label.pack(side='left', padx=(5, 0), pady=15)
         
         # Checkbox to toggle window controls visibility
         self.show_window_controls_var = tk.BooleanVar(value=False)  # Default: hidden
@@ -971,7 +961,18 @@ class QuickMonsterEditor(tk.Toplevel):
         form_frame.columnconfigure(1, weight=1)
     
     def _create_templates_tab(self) -> None:
-        """Create Templates tab."""
+        """
+        Create Templates tab with DockLayer layout.
+        
+        Layout:
+        ┌─────────────────────────────────────────────────────┐
+        │ Top Layer: Button Row (Capture|Browse|Test|Add|Del|Edit) │
+        ├────────────────────────┬────────────────────────────┤
+        │ Left Column:           │ Right Column:              │
+        │ - Template List (3col) │ - Preview Image            │
+        │                        │ - Threshold Slider         │
+        └────────────────────────┴────────────────────────────┘
+        """
         if self.notebook is None:
             return
         
@@ -982,45 +983,119 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_templates', ns='monster_editor', default='Templates')
         self.notebook.add(self.templates_tab, text=tab_text)
         
-        # Create scrollable container
-        canvas = tk.Canvas(self.templates_tab, bg=UI.BG_DEFAULT, highlightthickness=0)
-        scrollbar_main = tk.Scrollbar(self.templates_tab, orient='vertical', command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg=UI.BG_DEFAULT)
+        # ========== TOP LAYER: Button Row ==========
+        top_layer = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT, height=50)
+        top_layer.pack(side='top', fill='x', padx=10, pady=(10, 5))
+        top_layer.pack_propagate(False)
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        # Button container (centered)
+        button_container = tk.Frame(top_layer, bg=UI.BG_DEFAULT)
+        button_container.pack(side='left', anchor='w')
+        
+        # Capture Template button
+        self.capture_button = create_icon_button(
+            button_container,
+            icon_name='capture',
+            icon_fallback='📸',
+            icon_size=20,
+            command=self._capture_template,
+            button_type='blue',
+            variant='icon_only',
+            width=40,
+            height=40,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_capture',
+            tooltip_ns='monster_editor'
         )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
-        canvas.configure(yscrollcommand=scrollbar_main.set)
-        
-        canvas.pack(side='left', fill='both', expand=True, padx=10, pady=10)
-        scrollbar_main.pack(side='right', fill='y')
-        
-        # Header with Edit button and badge (similar to Info tab)
-        header_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
-        header_frame.pack(fill='x', padx=5, pady=(0, 10))
-        
-        # Edit/Save toggle button for Template tab - icon only
+        self.capture_button.pack(side='left', padx=3)
+
+        # Browse File button
+        self.browse_button = create_icon_button(
+            button_container,
+            icon_name='browse',
+            icon_fallback='📂',
+            icon_size=20,
+            command=self._browse_template_image,
+            button_type='refresh',
+            variant='icon_only',
+            width=40,
+            height=40,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_browse',
+            tooltip_ns='monster_editor'
+        )
+        self.browse_button.pack(side='left', padx=3)
+
+        # Test Recognition button
+        self.test_template_button = create_icon_button(
+            button_container,
+            icon_name='test',
+            icon_fallback='🧪',
+            icon_size=20,
+            command=self._test_template_recognition,
+            button_type='blue',
+            variant='icon_only',
+            width=40,
+            height=40,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_test_template',
+            tooltip_ns='monster_editor'
+        )
+        self.test_template_button.pack(side='left', padx=3)
+
+        # Add Template button
+        self.add_template_button = create_icon_button(
+            button_container,
+            icon_name='add',
+            icon_fallback='➕',
+            icon_size=20,
+            command=self._add_template,
+            button_type='green_light',
+            variant='icon_only',
+            width=40,
+            height=40,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_add_template',
+            tooltip_ns='monster_editor'
+        )
+        self.add_template_button.pack(side='left', padx=3)
+
+        # Delete Template button
+        self.delete_template_button = create_icon_button(
+            button_container,
+            icon_name='delete',
+            icon_fallback='🗑️',
+            icon_size=20,
+            command=self._delete_template,
+            button_type='red',
+            variant='icon_only',
+            width=40,
+            height=40,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_delete_template',
+            tooltip_ns='monster_editor'
+        )
+        self.delete_template_button.pack(side='left', padx=3)
+
+        # Edit/Save toggle button
         self.template_edit_toggle_button = create_icon_button(
-            header_frame,
+            button_container,
             icon_name='edit',
             icon_fallback='✏️',
-            icon_size=16,
+            icon_size=20,
             command=self._toggle_template_edit_mode,
             button_type='primary',
-            variant='icon_only',  # Icon only
-            width=32,
-            height=32,
+            variant='icon_only',
+            width=40,
+            height=40,
             tooltip_key='tooltip_edit_mode_template',
             tooltip_ns='monster_editor'
         )
-        self.template_edit_toggle_button.pack(side='left', padx=(0, 10))
+        self.template_edit_toggle_button.pack(side='left', padx=3)
         
-        # Editing badge for Template tab
+        # Editing badge (pack on right side of top layer)
         self.template_editing_badge = tk.Label(
-            header_frame,
+            top_layer,
             text=i18n_t('badge_editing', ns='monster_editor', default='Đang chỉnh sửa'),
             font=UI.FONT_SMALL,
             fg='white',
@@ -1030,144 +1105,7 @@ class QuickMonsterEditor(tk.Toplevel):
             relief='flat'
         )
         # Initially hidden (not in edit mode)
-        
-        # Main container: left (template list + controls), right (preview)
-        main_container = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
-        main_container.pack(fill='both', expand=True, padx=10, pady=10)
-        
-        # Left panel: template list + controls
-        left_panel = tk.Frame(main_container, bg=UI.BG_DEFAULT)
-        left_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
-        
-        # Template list with 3 columns: Image | Name | Threshold
-        list_label = tk.Label(
-            left_panel,
-            text=i18n_t('template_list_title', ns='monster_editor', default='Template List:'),
-            font=UI.FONT_LABEL,
-            fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_DEFAULT
-        )
-        list_label.pack(side='top', anchor='w', pady=(0, 5))
-        
-        # Create Treeview with scrollbar
-        list_frame = tk.Frame(left_panel, bg=UI.BG_DEFAULT)
-        list_frame.pack(side='top', fill='both', expand=True, pady=(0, 10))
-        
-        self.template_scrollbar = tk.Scrollbar(list_frame, orient='vertical')
-        self.template_listbox = ttk.Treeview(
-            list_frame,
-            columns=('image', 'name', 'threshold'),
-            show='headings',
-            selectmode='browse',
-            yscrollcommand=self.template_scrollbar.set,
-            height=10
-        )
-        
-        # Configure columns
-        self.template_listbox.column('image', width=50, minwidth=50, anchor='center', stretch=False)
-        self.template_listbox.column('name', width=150, minwidth=100, anchor='w')
-        self.template_listbox.column('threshold', width=80, minwidth=60, anchor='center')
-        
-        # Set headings
-        self.template_listbox.heading('image', text=i18n_t('col_image', ns='monster_editor', default='Image'), anchor='center')
-        self.template_listbox.heading('name', text=i18n_t('col_name', ns='monster_editor', default='Name'), anchor='center')
-        self.template_listbox.heading('threshold', text=i18n_t('col_threshold', ns='monster_editor', default='Threshold'), anchor='center')
-        
-        self.template_listbox.pack(side='left', fill='both', expand=True)
-        self.template_scrollbar.config(command=self.template_listbox.yview)
-        self.template_scrollbar.pack(side='right', fill='y')
-        
-        # Bind selection event
-        self.template_listbox.bind('<<TreeviewSelect>>', self._on_template_select)
-        
-        # Button row - all icon buttons in one horizontal line
-        button_row = tk.Frame(left_panel, bg=UI.BG_DEFAULT)
-        button_row.pack(side='top', fill='x', pady=(0, 10))
-
-        # Capture Template button - icon only with auto disabled hover
-        self.capture_button = create_icon_button(
-            button_row,
-            icon_name='capture',
-            icon_fallback='📸',
-            icon_size=16,
-            command=self._capture_template,
-            button_type='blue',
-            variant='icon_only',  # Icon only
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_capture',
-            tooltip_ns='monster_editor'
-        )
-        self.capture_button.pack(side='left', padx=(0, 5))
-
-        # Browse File button - icon only with auto disabled hover
-        self.browse_button = create_icon_button(
-            button_row,
-            icon_name='browse',
-            icon_fallback='📂',
-            icon_size=16,
-            command=self._browse_template_image,
-            button_type='refresh',  # Gray neutral style
-            variant='icon_only',  # Icon only
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_browse',
-            tooltip_ns='monster_editor'
-        )
-        self.browse_button.pack(side='left', padx=(0, 5))
-
-        # Add Template button - icon only (+ icon)
-        self.add_template_button = create_icon_button(
-            button_row,
-            icon_name='add',
-            icon_fallback='➕',
-            icon_size=16,
-            command=self._add_template,
-            button_type='green_light',
-            variant='icon_only',  # Icon only
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_add_template',
-            tooltip_ns='monster_editor'
-        )
-        self.add_template_button.pack(side='left', padx=(0, 5))
-
-        # Delete Template button - icon only with auto disabled hover
-        self.delete_template_button = create_icon_button(
-            button_row,
-            icon_name='delete',
-            icon_fallback='🗑️',
-            icon_size=16,
-            command=self._delete_template,
-            button_type='red',
-            variant='icon_only',  # Icon only
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_delete_template',
-            tooltip_ns='monster_editor'
-        )
-        self.delete_template_button.pack(side='left', padx=(0, 5))
-
-        # Test Recognition button - icon only with auto disabled hover
-        self.test_template_button = create_icon_button(
-            button_row,
-            icon_name='test',
-            icon_fallback='🧪',
-            icon_size=16,
-            command=self._test_template_recognition,
-            button_type='blue',
-            variant='icon_only',  # Icon only
-            width=32,
-            height=32,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_test_template',
-            tooltip_ns='monster_editor'
-        )
-        self.test_template_button.pack(side='left', padx=(0, 5))
+        # self.template_editing_badge.pack(side='left', padx=(10, 0))
         
         # Initially disable all template buttons (locked mode)
         self.capture_button.config(state='disabled')
@@ -1176,57 +1114,113 @@ class QuickMonsterEditor(tk.Toplevel):
         self.delete_template_button.config(state='disabled')
         self.test_template_button.config(state='disabled')
         
-        # Threshold slider below button row
-        threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Threshold')
-        self.threshold_label = create_icon_label(
-            left_panel,
-            icon_name='settings',
-            text=f"{threshold_label_text}:",
-            icon_fallback='⚙️',
-            icon_size=16,
+        # ========== SECOND ROW: 2 Columns ==========
+        second_row = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
+        second_row.pack(side='top', fill='both', expand=True, padx=10, pady=(5, 10))
+        
+        # === Left Column: Template List ===
+        left_column = tk.Frame(second_row, bg=UI.BG_DEFAULT)
+        left_column.pack(side='left', fill='both', expand=True, padx=(0, 10))
+        
+        # Template list title
+        list_label = tk.Label(
+            left_column,
+            text=i18n_t('template_list_title', ns='monster_editor', default='Template List:'),
             font=UI.FONT_LABEL,
-            fg=UI.COLOR_TEXT,
+            fg=UI.COLOR_PRIMARY_TEXT,
             bg=UI.BG_DEFAULT
         )
-        self.threshold_label.pack(side='top', anchor='w', pady=(0, 2))
-
-        self.threshold_scale = tk.Scale(
-            left_panel,
-            from_=0.0,
-            to=1.0,
-            resolution=0.01,
-            orient='horizontal',
-            length=280,
-            showvalue=True
+        list_label.pack(side='top', anchor='w', pady=(0, 5))
+        
+        # Treeview with 3 columns: Image | Name | Threshold
+        list_frame = tk.Frame(left_column, bg=UI.BG_DEFAULT)
+        list_frame.pack(side='top', fill='both', expand=True)
+        
+        self.template_scrollbar = tk.Scrollbar(list_frame, orient='vertical')
+        self.template_listbox = ttk.Treeview(
+            list_frame,
+            columns=('image', 'name', 'threshold'),
+            show='headings',
+            selectmode='browse',
+            yscrollcommand=self.template_scrollbar.set,
+            height=12
         )
-        self.threshold_scale.set(0.7)
-        self.threshold_scale.pack(side='top', fill='x', pady=(0, 8))
         
-        # Right panel: Template preview
-        preview_panel = tk.Frame(main_container, bg=UI.BG_PANEL, width=200, height=200)
-        preview_panel.pack(side='right', fill='y', anchor='n')
-        preview_panel.pack_propagate(False)
+        # Configure columns
+        self.template_listbox.column('image', width=60, minwidth=50, anchor='center', stretch=False)
+        self.template_listbox.column('name', width=180, minwidth=120, anchor='w')
+        self.template_listbox.column('threshold', width=100, minwidth=80, anchor='center')
         
-        preview_label = tk.Label(
-            preview_panel,
-            text=i18n_t('preview_label', ns='monster_editor', default='Preview'),
+        # Set headings
+        self.template_listbox.heading('image', text=i18n_t('col_image', ns='monster_editor', default='Hình'), anchor='center')
+        self.template_listbox.heading('name', text=i18n_t('col_name', ns='monster_editor', default='Tên'), anchor='center')
+        self.template_listbox.heading('threshold', text=i18n_t('col_threshold', ns='monster_editor', default='Ngưỡng'), anchor='center')
+        
+        self.template_listbox.pack(side='left', fill='both', expand=True)
+        self.template_scrollbar.config(command=self.template_listbox.yview)
+        self.template_scrollbar.pack(side='right', fill='y')
+        
+        # Bind selection event
+        self.template_listbox.bind('<<TreeviewSelect>>', self._on_template_select)
+        
+        # === Right Column: Preview + Threshold ===
+        right_column = tk.Frame(second_row, bg=UI.BG_PANEL, width=280)
+        right_column.pack(side='right', fill='y')
+        right_column.pack_propagate(False)
+        
+        # Preview title
+        preview_title = tk.Label(
+            right_column,
+            text=i18n_t('preview_label', ns='monster_editor', default='Xem trước'),
             font=UI.FONT_LABEL,
             fg=UI.COLOR_PRIMARY_TEXT,
             bg=UI.BG_PANEL
         )
-        preview_label.pack(side='top', anchor='w', padx=10, pady=(10, 5))
+        preview_title.pack(side='top', anchor='w', padx=10, pady=(10, 5))
         
-        # Preview image label
+        # Preview image container
+        preview_container = tk.Frame(right_column, bg='white', relief='sunken', borderwidth=2)
+        preview_container.pack(side='top', fill='both', expand=True, padx=10, pady=(0, 10))
+        
         self.template_preview_label = tk.Label(
-            preview_panel,
-            text='No template selected' if get_lang() == 'en' else 'Chưa chọn template',
+            preview_container,
+            text='No template\nselected' if get_lang() == 'en' else 'Chưa chọn\ntemplate',
             font=UI.FONT_SMALL,
             fg=UI.COLOR_SUBTEXT,
-            bg=UI.BG_PANEL,
-            relief='sunken',
-            borderwidth=1
+            bg='white',
+            justify='center'
         )
-        self.template_preview_label.pack(side='top', fill='both', expand=True, padx=10, pady=(0, 10))
+        self.template_preview_label.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Threshold slider section
+        threshold_frame = tk.Frame(right_column, bg=UI.BG_PANEL)
+        threshold_frame.pack(side='top', fill='x', padx=10, pady=(0, 10))
+        
+        threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Ngưỡng nhận diện')
+        self.threshold_label = create_icon_label(
+            threshold_frame,
+            icon_name='settings',
+            text=f"{threshold_label_text}:",
+            icon_fallback='⚙️',
+            icon_size=14,
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_PANEL
+        )
+        self.threshold_label.pack(side='top', anchor='w', pady=(0, 5))
+
+        self.threshold_scale = tk.Scale(
+            threshold_frame,
+            from_=0.0,
+            to=1.0,
+            resolution=0.01,
+            orient='horizontal',
+            showvalue=True,
+            length=240,
+            font=UI.FONT_SMALL
+        )
+        self.threshold_scale.set(0.7)
+        self.threshold_scale.pack(side='top', fill='x')
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
