@@ -41,6 +41,11 @@ except ImportError:
         pass
 
 try:
+    from lib.data.sync_manager import DataSyncManager
+except ImportError:
+    DataSyncManager = None  # type: ignore[misc,assignment]
+
+try:
     from ui.helpers.tooltip import attach_i18n_tooltip
 except ImportError:
     def attach_i18n_tooltip(widget, key: str, ns: Optional[str], lang_provider: Callable, delay: int = 400) -> Any:
@@ -227,6 +232,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.current_monster_id: Optional[str] = monster_id
         self.is_dirty = False  # Global unsaved changes
         self.is_monster_dirty = False  # Current monster modified
+        
+        # Initialize DataSyncManager
+        if DataSyncManager is not None:
+            self.sync_manager = DataSyncManager()
+        else:
+            self.sync_manager = None
         
         # Processing flags to prevent concurrent operations
         self._is_capturing = False
@@ -557,11 +568,19 @@ class QuickMonsterEditor(tk.Toplevel):
         return result
 
     def _save_monsters(self) -> bool:
-        """Save monsters to JSON file."""
+        """Save monsters to JSON file and sync with hunt_config."""
         try:
-            DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(DATA_PATH, 'w', encoding='utf-8') as f:
-                json.dump(self.monsters, f, indent=2, ensure_ascii=False)
+            # Use sync manager if available, otherwise fallback to direct save
+            if self.sync_manager is not None:
+                success = self.sync_manager.save_monsters(self.monsters)
+                if not success:
+                    raise Exception("DataSyncManager failed to save")
+            else:
+                # Fallback: Direct save to monsters.json only
+                DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+                with open(DATA_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(self.monsters, f, indent=2, ensure_ascii=False)
+            
             self.is_dirty = False
             self.is_monster_dirty = False
             self._update_dirty_state_ui()
@@ -2416,14 +2435,26 @@ class QuickMonsterEditor(tk.Toplevel):
             deleted_id = monster.get('id')
             deleted_name = monster.get('name', 'Unnamed')
             
+            # Validate ID exists
+            if not deleted_id:
+                print(f"[MonsterEditor] Monster has no ID: {deleted_name}")
+                return
+            
             print(f"[MonsterEditor] Deleting monster: {deleted_name} (ID: {deleted_id})")
-            print(f"[MonsterEditor] Monsters before delete: {len(self.monsters)}")
             
-            # Perform deletion
-            self.monsters.pop(monster_index)
+            # Use sync manager to delete (handles both monsters.json and hunt_config.json)
+            if self.sync_manager is not None:
+                success = self.sync_manager.delete_monster(deleted_id)
+                if not success:
+                    self._show_error('Error', f'Failed to sync delete: {deleted_name}')
+                    return
+                # Update local list
+                self.monsters.pop(monster_index)
+            else:
+                # Fallback: Direct deletion without hunt_config sync
+                self.monsters.pop(monster_index)
+            
             self.is_dirty = True
-            
-            print(f"[MonsterEditor] Monsters after delete: {len(self.monsters)}")
             
             # Clear form and current selection if deleted monster was selected
             if self.current_monster_id == deleted_id:
@@ -2435,17 +2466,15 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.delete_monster_button.config(state='disabled')
             
             # Refresh listbox
-            print("[MonsterEditor] Calling _refresh_monster_list()...")
             self._refresh_monster_list()
-            print("[MonsterEditor] _refresh_monster_list() completed")
             
-            # Save to file immediately
-            print("[MonsterEditor] Saving monsters to file...")
-            self._save_monsters()
-            print("[MonsterEditor] Save completed")
-            
-            # Update dirty state UI
-            self._update_dirty_state_ui()
+            # Save to file immediately (sync manager already saved, but update dirty flag)
+            if self.sync_manager is None:
+                self._save_monsters()
+            else:
+                self.is_dirty = False
+                self.is_monster_dirty = False
+                self._update_dirty_state_ui()
             
             print(f"[MonsterEditor] Deleted monster: {deleted_name}")
         
