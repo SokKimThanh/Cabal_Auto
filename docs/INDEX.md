@@ -38,6 +38,12 @@ docs/
 │   │   ├── ICON_BUTTON_STYLE_GUIDE.md
 │   │   ├── BUTTON_STYLE_CONSISTENCY.md
 │   │   └── FEATURE_ICON_RECOLORING.md
+│   ├── ui-components/                 # NEW: UI Component Systems
+│   │   ├── BUTTON_STATE_MANAGEMENT.md # Complete API reference
+│   │   ├── BUTTON_STATE_SYSTEM_OVERVIEW.md # Vietnamese overview
+│   │   ├── MIGRATION_QUICK_MONSTER_EDITOR.md
+│   │   ├── MIGRATION_LIBRARY_MANAGER.md
+│   │   └── ACTION_ITEMS_BUTTON_STATE.md
 │   └── testing/
 │       └── TESTS_REORGANIZATION_SUMMARY.md
 │
@@ -69,8 +75,10 @@ docs/
 ├── maintenance/                       # 🔧 Maintenance
 │   └── LOG_FILES_MANAGEMENT_SUMMARY.md
 │
+├── bugfixes/                          # 🐛 Bug Fixes
+│   └── TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md
+│
 ├── enhancements/                      # ✨ Enhancements (Legacy)
-├── bugfixes/                          # 🐛 Bug Fixes (Legacy)
 ├── context/                           # 📝 Context Documentation
 ├── translations/                      # 🌐 Translations
 ├── ux-enhancements/                   # 💫 UX Enhancements
@@ -101,10 +109,22 @@ docs/
 - [Button Consistency](guides/ui-design/BUTTON_STYLE_CONSISTENCY.md) - Button styling
 - [Icon Recoloring](guides/ui-design/FEATURE_ICON_RECOLORING.md) - Icon color system
 
+### For UI/Component Development 🆕
+
+- [Button State Management](guides/ui-components/BUTTON_STATE_MANAGEMENT.md) - Complete API reference
+- [System Overview](guides/ui-components/BUTTON_STATE_SYSTEM_OVERVIEW.md) - Overview (Vietnamese)
+- [Action Items](guides/ui-components/ACTION_ITEMS_BUTTON_STATE.md) - Quick checklist
+- [Migration Guides](guides/ui-components/MIGRATION_QUICK_MONSTER_EDITOR.md) - How to migrate existing code
+
 ### For Testers
 
 - [Testing Guide](guides/testing/TESTS_REORGANIZATION_SUMMARY.md) - Test organization
 - [Vision Menu Checklist](features/vision/VISION_MENU_CHECKLIST.md) - Vision testing
+
+### Bug Fixes & Troubleshooting 🆕
+
+- [**Quick Fix: Tkinter Empty Window**](QUICK_FIX_TKINTER_EMPTY_WINDOW.md) - Common bug & solution
+- [**Detailed: Tkinter Bug Lessons**](bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md) - Complete analysis
 
 ### Latest Sprint (Sprint 23) ✅ Phase 7 COMPLETE
 

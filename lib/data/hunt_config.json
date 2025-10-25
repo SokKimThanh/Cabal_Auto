@@ -5,7 +5,7 @@
   "target_cycle_delay": 0.2,
   "search_interval": 0.25,
   "attack_interval": 0.15,
-  "template_path": "assets/images/monsters/coc_go__1760737532564.png",
+  "template_path": "assets/images/monsters/slime_green.png",
   "region": null,
   "confidence": 0.5,
   "grayscale": true,
@@ -54,19 +54,14 @@
   },
   "monster_list": [
     {
-      "name": "Scorlug",
-      "priority": 2,
-      "enabled": false
-    },
-    {
-      "name": "con ga",
-      "priority": 4,
-      "enabled": false
+      "name": "Slime Xanh",
+      "priority": 1,
+      "enabled": true
     }
   ],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 21928,
+  "window_pid": 27992,
   "templates": [],
   "training_mode_enabled": true,
   "ui_mode": "beginner",
@@ -79,15 +74,8 @@
     "library_manager_key": "ctrl+shift+l",
     "vision_wizard_key": "ctrl+shift+v"
   },
-  "training_monster_list": [
-    {
-      "name": "Coc go~",
-      "priority": 1,
-      "enabled": true,
-      "training_mode": true
-    }
-  ],
-  "window_hwnd": 264136,
+  "training_monster_list": [],
+  "window_hwnd": 12978414,
   "overlay": {
     "enabled": false
   },
@@ -103,5 +91,7 @@
     "auto_start_with_hunt": false
   },
   "game_window_mode": "above",
-  "app_window_mode": "topmost"
+  "app_window_mode": "topmost",
+  "is_configured": true,
+  "monster_selected_name": "Slime Xanh"
 }

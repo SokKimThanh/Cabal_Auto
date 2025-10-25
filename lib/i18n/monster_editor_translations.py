@@ -35,12 +35,14 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_new_monster': 'Tạo Mới',
         'btn_edit_monster': 'Sửa',
         'btn_delete_monster': 'Xóa',
+        'btn_edit': 'Sửa',
+        'btn_save_changes': 'Lưu',
         
         # Tooltips
         'tooltip_capture': 'Chụp vùng màn hình để tạo template',
         'tooltip_test': 'Test nhận diện template trên màn hình hiện tại',
         'tooltip_save': 'Lưu thay đổi vào file cấu hình',
-        'tooltip_cancel': 'Hủy thay đổi',
+        'tooltip_cancel': 'Hủy và đóng cửa sổ',
         'tooltip_new_monster': 'Tạo quái vật mới',
         'tooltip_edit_monster': 'Sửa quái vật đang chọn',
         'tooltip_delete_monster': 'Xóa quái vật đang chọn',
@@ -50,6 +52,11 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tooltip_browse': 'Chọn file template từ máy tính',
         'tooltip_delete_template': 'Xóa template đã chọn',
         'tooltip_test_template': 'Kiểm tra độ chính xác của template',
+        'tooltip_edit_mode': 'Bật/tắt chế độ chỉnh sửa',
+        'tooltip_edit_mode_template': 'Bật/tắt chế độ chỉnh sửa template',
+        'tooltip_add_template': 'Thêm template mới',
+        'tooltip_confirm_yes': 'Xác nhận thực hiện',
+        'tooltip_confirm_no': 'Hủy bỏ',
         
         # Messages
         'msg_monster_created': 'Đã tạo quái vật thành công',
@@ -88,11 +95,19 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'col_templates': 'Templates',
         'col_threshold': 'Ngưỡng',
         'col_path': 'Đường dẫn',
+        'col_image': 'Hình',
+        'header_name': 'Tên',
+        'header_image': 'Hình',
         
         # Status indicators
         'status_modified': '● Đã chỉnh sửa (chưa lưu)',
         'status_unsaved': 'Có thay đổi chưa lưu',
         'status_saved': 'Đã lưu tất cả',
+        
+        # Badge labels
+        'badge_saved': 'Đã lưu tất cả',
+        'badge_unsaved': 'Chưa lưu',
+        'badge_editing': 'Đang chỉnh sửa',
         
         # Tabs
         'tab_info': 'Thông Tin Quái',
@@ -109,6 +124,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'monster_desc_label': 'Mô tả:',
         'template_list_title': 'Danh sách Templates:',
         'default_monster_name': 'Quái Mới',
+        'default_template_name': 'Template Mới',
+        'preview_label': 'Xem trước',
         
         # Additional buttons
         'btn_save_all': 'Lưu Tất Cả',
@@ -159,12 +176,14 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_new_monster': 'New',
         'btn_edit_monster': 'Edit',
         'btn_delete_monster': 'Delete',
+        'btn_edit': 'Edit',
+        'btn_save_changes': 'Save',
         
         # Tooltips
         'tooltip_capture': 'Capture screen region to create template',
         'tooltip_test': 'Test template recognition on current screen',
         'tooltip_save': 'Save changes to configuration file',
-        'tooltip_cancel': 'Cancel changes',
+        'tooltip_cancel': 'Cancel and close window',
         'tooltip_new_monster': 'Create new monster',
         'tooltip_edit_monster': 'Edit selected monster',
         'tooltip_delete_monster': 'Delete selected monster',
@@ -174,6 +193,11 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'tooltip_browse': 'Select template file from computer',
         'tooltip_delete_template': 'Delete selected template',
         'tooltip_test_template': 'Test template accuracy',
+        'tooltip_edit_mode': 'Toggle edit mode',
+        'tooltip_edit_mode_template': 'Toggle template edit mode',
+        'tooltip_add_template': 'Add new template',
+        'tooltip_confirm_yes': 'Confirm action',
+        'tooltip_confirm_no': 'Cancel action',
         
         # Messages
         'msg_monster_created': 'Monster created successfully',
@@ -212,11 +236,19 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'col_templates': 'Templates',
         'col_threshold': 'Threshold',
         'col_path': 'Path',
+        'col_image': 'Image',
+        'header_name': 'Name',
+        'header_image': 'Image',
         
         # Status indicators
         'status_modified': '● Modified (not saved)',
         'status_unsaved': 'Unsaved changes',
         'status_saved': 'All saved',
+        
+        # Badge labels
+        'badge_saved': 'All Saved',
+        'badge_unsaved': 'Unsaved',
+        'badge_editing': 'Editing',
         
         # Tabs
         'tab_info': 'Monster Info',
@@ -233,6 +265,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'monster_desc_label': 'Description:',
         'template_list_title': 'Template List:',
         'default_monster_name': 'New Monster',
+        'default_template_name': 'New Template',
+        'preview_label': 'Preview',
         
         # Additional buttons
         'btn_save_all': 'Save All',

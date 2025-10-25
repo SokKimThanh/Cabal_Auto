@@ -51,7 +51,6 @@ from lib.i18n import (
 # Import icon button component
 try:
     from ui.components import create_icon_button as _create_icon_btn_component
-    from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector
     _HAS_ICON_COMPONENT = True
 except ImportError:
     _HAS_ICON_COMPONENT = False
@@ -89,8 +88,6 @@ except ImportError:
         btn = tk.Button(parent, text=icon_fallback or '?', command=btn_command, state=btn_state, **kwargs)
         return btn
     
-    create_app_window_selector = None  # type: ignore
-    create_game_window_selector = None  # type: ignore
     print("Warning: Icon button component not available, using fallback")
 
 try:
@@ -786,26 +783,6 @@ class App(tk.Tk):
             
             menubar.add_cascade(label="Vision", menu=vision_menu)
             print("[Vision Menu] Created successfully")
-            
-            # --- Menu: Monster Editor (Monster CRUD) ---
-            monster_menu = tk.Menu(menubar, tearoff=0)
-            
-            # Open Monster Editor (Ctrl+Shift+M)
-            try:
-                from lib.i18n import t as i18n_t
-                monster_label = i18n_t('menu_open_monster_editor', ns='monster_editor', 
-                                      default='Open Monster Manager' if self.lang == 'en' else 'Mở Quản Lý Quái Vật')
-            except:
-                monster_label = "Open Monster Manager" if self.lang == "en" else "Mở Quản Lý Quái Vật"
-            
-            monster_menu.add_command(
-                label=monster_label,
-                accelerator="Ctrl+Shift+M",
-                command=self._open_monster_editor
-            )
-            
-            menubar.add_cascade(label="Monster", menu=monster_menu)
-            print("[Monster Menu] Created successfully")
             
             try:
                 self.config(menu=menubar)
@@ -1724,50 +1701,6 @@ Alternative Solutions:
             auto_hover_disabled=False
         )
         refresh_btn.pack(side="left", padx=(0, 6))
-        
-        # Checkbox to toggle advanced controls (window selectors)
-        self.show_advanced_controls_var = tk.BooleanVar(value=False)
-        
-        def toggle_advanced_controls():
-            """Toggle visibility of window position selectors."""
-            show = self.show_advanced_controls_var.get()
-            
-            if hasattr(self, 'app_window_selector'):
-                if show:
-                    if hasattr(self.app_window_selector, 'show'):
-                        self.app_window_selector.show()
-                else:
-                    if hasattr(self.app_window_selector, 'hide'):
-                        self.app_window_selector.hide()
-            
-            if hasattr(self, 'game_window_selector'):
-                if show:
-                    if hasattr(self.game_window_selector, 'show'):
-                        self.game_window_selector.show()
-                else:
-                    if hasattr(self.game_window_selector, 'hide'):
-                        self.game_window_selector.hide()
-        
-        advanced_check = tk.Checkbutton(
-            top,
-            text="",  # No text, just checkbox
-            variable=self.show_advanced_controls_var,
-            command=toggle_advanced_controls,
-            bg=top.cget('bg')
-        )
-        advanced_check.pack(side="left", padx=(0, 6))
-        
-        # Tooltip for checkbox
-        check_tooltip = (
-            "Show Advanced Controls\n"
-            "• App window positioning\n"
-            "• Game window positioning"
-            if self.lang == "en" else
-            "Hiện Điều Khiển Nâng Cao\n"
-            "• Vị trí cửa sổ ứng dụng\n"
-            "• Vị trí cửa sổ game"
-        )
-        self._create_tooltip(advanced_check, check_tooltip)
 
         # Separator before hunt controls
         tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
@@ -1816,35 +1749,6 @@ Alternative Solutions:
             auto_hover_disabled=True  # Auto show forbidden icon/cursor on hover
         )
         self.hunt_stop_btn.pack(side="left")
-
-        # Separator before window controls
-        tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
-            side="left", fill="y", padx=12, pady=2
-        )
-
-        # Window Position Selectors (App + Game) - Hidden by default
-        if create_app_window_selector and create_game_window_selector:
-            # App window selector
-            self.app_window_selector = create_app_window_selector(
-                parent=top,
-                config_path="lib/data/hunt_config.json",
-                on_mode_change=self._on_app_window_mode_change
-            )
-            self.app_window_selector.pack(side="left", padx=(0, 8))
-            
-            # Game window selector
-            self.game_window_selector = create_game_window_selector(
-                parent=top,
-                config_path="lib/data/hunt_config.json",
-                on_mode_change=self._on_game_window_mode_change
-            )
-            self.game_window_selector.pack(side="left")
-            
-            # Hide both selectors by default (toggle with refresh button)
-            if hasattr(self.app_window_selector, 'hide'):
-                self.app_window_selector.hide()
-            if hasattr(self.game_window_selector, 'hide'):
-                self.game_window_selector.hide()
 
         # Store notebook reference for keyboard shortcuts
         self.notebook = ttk.Notebook(self)
@@ -2559,6 +2463,37 @@ Alternative Solutions:
         self.vision_hotkey_combo = vision_combo
         self.vision_hotkey_label = vision_label_widget
 
+        # NEW: Monster Editor hotkey
+        monster_label = "Monster Editor:" if self.lang == "en" else "Quái Editor:"
+        monster_label_widget = tk.Label(
+            hotkey_frame, text=monster_label, font=("Arial", 9)
+        )
+        monster_label_widget.grid(row=7, column=0, sticky="e", padx=(0, 8), pady=4)
+
+        monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
+        self.global_hotkey_monster_var = tk.StringVar(value=monster_key)
+
+        monster_combo = ttk.Combobox(
+            hotkey_frame,
+            textvariable=self.global_hotkey_monster_var,
+            values=hotkey_options + ["ctrl+shift+m", "ctrl+alt+m"],
+            width=15,
+            state="readonly",
+        )
+        monster_combo.grid(row=7, column=1, sticky="w", pady=4)
+        
+        # Tooltip for Monster Editor
+        monster_tooltip = (
+            "Hotkey to open Monster Editor (default: Ctrl+Shift+M)"
+            if self.lang == "en"
+            else "Phím tắt mở trình chỉnh sửa quái (mặc định: Ctrl+Shift+M)"
+        )
+        self._create_tooltip(monster_combo, monster_tooltip)
+
+        # Store for future use
+        self.monster_hotkey_combo = monster_combo
+        self.monster_hotkey_label = monster_label_widget
+
         # Hint: Hotkeys apply automatically
         hint_hotkey = "Hotkeys apply automatically when you click any field outside this section."
         if self.lang == "vi":
@@ -2570,7 +2505,7 @@ Alternative Solutions:
             font=("Arial", 8),
             wraplength=500,
             justify="left",
-        ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        ).grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
         # Status indicator - Shows success/warning/error state with icon
         # This replaces the old diagnostic banner with a clearer status-driven design
@@ -2915,62 +2850,6 @@ Alternative Solutions:
             self._register_global_hotkeys()
         except Exception as e:
             print(f"Warning: Could not re-register hotkeys after mode change: {e}")
-
-    def _on_app_window_mode_change(self, mode: str):
-        """Handle app window positioning mode change."""
-        try:
-            # Apply mode to main app window
-            if mode == "topmost":
-                self.attributes("-topmost", True)
-                self.state("normal")
-            elif mode == "minimized":
-                self.attributes("-topmost", False)
-                self.iconify()
-            elif mode == "maximized":
-                self.attributes("-topmost", False)
-                self.state("zoomed")
-            else:  # normal
-                self.attributes("-topmost", False)
-                self.state("normal")
-            
-            # Update status
-            if hasattr(self, "hunt_status"):
-                mode_labels = {
-                    "normal": "Normal" if self.lang == "en" else "Bình thường",
-                    "topmost": "Always On Top" if self.lang == "en" else "Luôn ở trên",
-                    "minimized": "Minimized" if self.lang == "en" else "Thu nhỏ",
-                    "maximized": "Maximized" if self.lang == "en" else "Phóng to",
-                }
-                msg = f"App: {mode_labels.get(mode, mode)}"
-                self.hunt_status.set(msg)
-        except Exception as e:
-            print(f"[App Window] Error applying mode '{mode}': {e}")
-
-    def _on_game_window_mode_change(self, mode: str):
-        """Handle game window positioning mode change."""
-        try:
-            # Save to config
-            self.hunt_cfg["game_window_mode"] = mode
-            save_hunt_config(self.hunt_cfg)
-            
-            # Update status
-            if hasattr(self, "hunt_status"):
-                mode_labels = {
-                    "none": "None" if self.lang == "en" else "Không",
-                    "below": "Below App" if self.lang == "en" else "Dưới App",
-                    "above": "Above All" if self.lang == "en" else "Trên tất cả",
-                }
-                msg = f"Game: {mode_labels.get(mode, mode)}"
-                self.hunt_status.set(msg)
-            
-            # Apply immediately if hunt is not running
-            if not self.hunt_running:
-                if mode == "below":
-                    self.on_hunt_bring_front_below_app()
-                elif mode == "above":
-                    self.on_hunt_bring_front()
-        except Exception as e:
-            print(f"[Game Window] Error applying mode '{mode}': {e}")
 
     def _on_global_hotkey_toggle(self):
         """Handle enable/disable of global hotkeys checkbox.
@@ -4713,6 +4592,9 @@ Alternative Solutions:
             f"[First-time check] window={has_window}, monster={has_monster}, skills={has_skills}, is_new={is_new_user}"
         )
 
+        # Track user response for persistence logic
+        user_skipped_wizard = False
+
         if is_new_user:
             print("[First-time check] Showing messagebox to ask user...")
 
@@ -4746,6 +4628,7 @@ Alternative Solutions:
                 )
                 self._auto_detect_and_save_cabal_window()
                 self.hunt_status.set(self._t("wizard_skipped_hint"))
+                user_skipped_wizard = True
 
         # Check PIL availability and show one-time warning if missing
         if not self.pil_available:
@@ -4755,6 +4638,21 @@ Alternative Solutions:
             messagebox.showinfo(
                 self._t("info_title"), self._t("pil_not_installed_message"), parent=self
             )
+        
+        # ✅ Mark first-time check as complete
+        self._first_time_check_complete = True
+        print("[First-time check] Check completed, global hotkeys now fully active")
+        
+        # ✅ Sprint 24 Enhancement: Persist wizard completion state
+        # Save to config to avoid re-showing wizard on next launch
+        if user_skipped_wizard:
+            # User skipped wizard - mark as configured to prevent re-prompt
+            try:
+                self.hunt_cfg["is_configured"] = True
+                save_hunt_config(self.hunt_cfg)
+                print("[First-time check] Saved is_configured=True to prevent wizard re-prompt")
+            except Exception as e:
+                print(f"[First-time check] Failed to save is_configured state: {e}")
 
     def _auto_detect_and_save_cabal_window(self):
         """Auto-detect Cabal window PID and save to config when user skips setup."""
@@ -5019,7 +4917,9 @@ Alternative Solutions:
                 library_key = self.global_hotkey_library_var.get()  # NEW
 
                 # Validate: all hotkeys must be unique
-                all_keys = [start_key, stop_key, wizard_key, library_key]
+                vision_key = self.global_hotkey_vision_var.get()
+                monster_key = self.global_hotkey_monster_var.get()
+                all_keys = [start_key, stop_key, wizard_key, library_key, vision_key, monster_key]
                 if len(all_keys) != len(set(all_keys)):
                     messagebox.showerror(
                         self._t("error_title"),
@@ -5032,7 +4932,6 @@ Alternative Solutions:
                     return
 
                 # Update config
-                vision_key = self.global_hotkey_vision_var.get()
                 cfg["global_hotkeys"] = {
                     "enabled": enabled,
                     "start_key": start_key,
@@ -5040,6 +4939,7 @@ Alternative Solutions:
                     "setup_wizard_key": wizard_key,
                     "library_manager_key": library_key,
                     "vision_wizard_key": vision_key,
+                    "monster_editor_key": monster_key,
                 }
 
                 # Re-register hotkeys with new settings
@@ -5238,59 +5138,6 @@ Alternative Solutions:
         except Exception as e:
             print(f"[Hotkeys] Error opening Vision Wizard: {e}")
 
-    def _on_monster_editor_hotkey(self):
-        """Callback for Monster Editor hotkey (Ctrl+Shift+M).
-
-        Opens Quick Monster Editor for rapid CRUD operations.
-        Always available regardless of UI mode.
-        """
-        try:
-            print("[Hotkeys] Monster Editor hotkey pressed")
-            
-            # Schedule Monster Editor to open in main thread
-            self.after(0, self._open_monster_editor)
-            
-        except Exception as e:
-            print(f"[Hotkeys] Error opening Monster Editor: {e}")
-
-    def _open_monster_editor(self):
-        """Open Quick Monster Editor dialog.
-        
-        Opens the quick monster editor for fast monster CRUD operations.
-        Uses singleton pattern to prevent multiple instances.
-        """
-        try:
-            print("[Monster Editor] Opening Quick Monster Editor...")
-            
-            # Import quick editor (lazy import to avoid circular dependencies)
-            try:
-                from ui.windows.quick_monster_editor import show_quick_monster_editor
-            except ImportError as ie:
-                print(f"[Monster Editor] Failed to import quick_monster_editor: {ie}")
-                messagebox.showerror(
-                    "Import Error",
-                    f"Could not load Monster Editor module:\n{ie}"
-                )
-                return
-            
-            # Show quick editor (singleton pattern handles existing instances)
-            editor = show_quick_monster_editor(
-                parent=self,
-                monster_id=None,  # None = create new monster
-                on_save=self._on_monster_saved
-            )
-            
-            print("[Monster Editor] Quick Monster Editor opened successfully")
-            
-        except Exception as e:
-            print(f"[Monster Editor] Error opening editor: {e}")
-            import traceback
-            traceback.print_exc()
-            messagebox.showerror(
-                "Monster Editor Error",
-                f"Failed to open Monster Editor:\n{e}"
-            )
-
     def _on_monster_saved(self, monster_id: str, monster_data: dict):
         """Callback when monster is saved in Quick Editor.
         
@@ -5304,6 +5151,28 @@ Alternative Solutions:
             # TODO: Update library manager if open
         except Exception as e:
             print(f"[Monster Editor] Error in save callback: {e}")
+
+    def _on_monster_editor_hotkey(self):
+        """Callback for Monster Editor hotkey (Ctrl+Shift+M).
+
+        Opens Quick Monster Editor for fast monster management.
+        Always available regardless of UI mode.
+        """
+        try:
+            print("[Hotkeys] Monster Editor hotkey pressed")
+            
+            # Import here to avoid circular dependency
+            from ui.windows.quick_monster_editor import show_quick_monster_editor
+            
+            # Open Monster Editor using singleton pattern
+            self.after(0, lambda: show_quick_monster_editor(
+                parent=self,
+                monster_id=None,  # None = create new or edit existing
+                on_save=self._on_monster_saved
+            ))
+            
+        except Exception as e:
+            print(f"[Hotkeys] Error opening Monster Editor: {e}")
 
     def _register_global_hotkeys(self):
         """Register global hotkeys (Ctrl+Shift+R/E) for hunt start/stop.
@@ -5393,14 +5262,12 @@ Alternative Solutions:
                 wizard_key = cfg.get("setup_wizard_key", "ctrl+shift+n")
                 library_key = cfg.get("library_manager_key", "ctrl+shift+l")
                 vision_key = cfg.get("vision_wizard_key", "ctrl+shift+v")  # Sprint 22
-                monster_key = cfg.get("monster_editor_key", "ctrl+shift+m")  # Monster Editor
 
                 seq_start = _to_tk_seq(start_key) or "<Control-Shift-R>"
                 seq_stop = _to_tk_seq(stop_key) or "<Control-Shift-E>"
                 seq_wiz = _to_tk_seq(wizard_key) or "<Control-Shift-N>"
                 seq_lib = _to_tk_seq(library_key) or "<Control-Shift-L>"
                 seq_vision = _to_tk_seq(vision_key) or "<Control-Shift-V>"  # Sprint 22
-                seq_monster = _to_tk_seq(monster_key) or "<Control-Shift-M>"  # Monster Editor
 
                 try:
                     # Unbind any previously-bound fallback sequences to avoid duplicates
@@ -5431,11 +5298,6 @@ Alternative Solutions:
                         seq_vision, lambda e: self._on_vision_wizard_hotkey(), add="+"
                     )
                     self._hotkey_fallback_bound.append(seq_vision)
-                    # Monster Editor fallback
-                    self.bind_all(
-                        seq_monster, lambda e: self._on_monster_editor_hotkey(), add="+"
-                    )
-                    self._hotkey_fallback_bound.append(seq_monster)
                     print(
                         f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}"
                     )
@@ -5618,7 +5480,7 @@ Alternative Solutions:
                 try:
                     keyboard.remove_hotkey(self._global_monster_hotkey)
                 except Exception as e:
-                    print(f"Error unregistering monster editor hotkey: {e}")
+                    print(f"Error unregistering monster hotkey: {e}")
                 finally:
                     self._global_monster_hotkey = None
 

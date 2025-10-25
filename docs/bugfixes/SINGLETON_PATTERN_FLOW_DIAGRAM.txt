@@ -1,0 +1,204 @@
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  BEFORE FIX: Duplicate Windows Bug                                  │
+└─────────────────────────────────────────────────────────────────────┘
+
+User Action: Press Ctrl+Shift+M (First time)
+    │
+    ├─► show_quick_monster_editor() called
+    │   ├─► _quick_editor_instance = None
+    │   ├─► Create QuickMonsterEditor()
+    │   └─► _quick_editor_instance = <editor1>
+    │
+    └─► ✅ Window #1 appears
+
+
+User Action: Close window (X button)
+    │
+    ├─► _on_cancel() called
+    │   ├─► Check unsaved changes
+    │   └─► self.destroy()         ← ❌ Does NOT clear singleton!
+    │
+    └─► Window destroyed BUT _quick_editor_instance still holds reference
+
+
+User Action: Press Ctrl+Shift+M (Second time)
+    │
+    ├─► show_quick_monster_editor() called
+    │   ├─► _quick_editor_instance is not None  ✓
+    │   ├─► winfo_exists() returns 0 (False)    ← ❌ Window destroyed!
+    │   ├─► Condition fails: True and 0 = False
+    │   └─► Create NEW QuickMonsterEditor()     ← ❌ DUPLICATE!
+    │
+    └─► ✗ Window #2 appears (Duplicate!)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  AFTER FIX: Singleton Enforced                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+User Action: Press Ctrl+Shift+M (First time)
+    │
+    ├─► show_quick_monster_editor() called
+    │   ├─► _quick_editor_instance = None
+    │   ├─► instance_valid = False
+    │   ├─► Create QuickMonsterEditor()
+    │   └─► _quick_editor_instance = <editor1>
+    │
+    └─► ✅ Window #1 appears
+
+
+User Action: Close window (X button)
+    │
+    ├─► _on_cancel() called
+    │   ├─► Check unsaved changes
+    │   ├─► _quick_editor_instance = None       ← ✅ Clear singleton!
+    │   └─► self.destroy()
+    │
+    └─► Window destroyed AND singleton cleared
+
+
+User Action: Press Ctrl+Shift+M (Second time)
+    │
+    ├─► show_quick_monster_editor() called
+    │   ├─► _quick_editor_instance = None       ✓
+    │   ├─► instance_valid = False              ✓
+    │   ├─► Create QuickMonsterEditor()         ✓
+    │   └─► _quick_editor_instance = <editor2>
+    │
+    └─► ✅ Window #2 appears (Fresh instance, no duplicate)
+
+
+User Action: Press Ctrl+Shift+M (Third time - window still open)
+    │
+    ├─► show_quick_monster_editor() called
+    │   ├─► _quick_editor_instance is not None  ✓
+    │   ├─► winfo_exists() returns 1 (True)     ✓
+    │   ├─► instance_valid = True               ✓
+    │   ├─► Reuse existing instance             ✓
+    │   ├─► editor.lift()                       ← Bring to front
+    │   └─► editor.focus_force()                ← Give focus
+    │
+    └─► ✅ Same window brought to front (No duplicate)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  Edge Case: Stale Reference (Window destroyed externally)           │
+└─────────────────────────────────────────────────────────────────────┘
+
+User Action: Kill window via Task Manager
+    │
+    └─► Window destroyed BUT singleton not cleared (edge case)
+
+
+User Action: Press Ctrl+Shift+M
+    │
+    ├─► show_quick_monster_editor() called
+    │   ├─► _quick_editor_instance is not None  ✓
+    │   ├─► Try: winfo_exists()
+    │   └─► Exception: TclError (window invalid) ← ✅ Catch it!
+    │       ├─► _quick_editor_instance = None    ← ✅ Auto-clear
+    │       └─► instance_valid = False
+    │
+    ├─► Create NEW QuickMonsterEditor()
+    │
+    └─► ✅ Fresh window (Exception handled gracefully)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  Key Validation Logic Changes                                       │
+└─────────────────────────────────────────────────────────────────────┘
+
+BEFORE:
+───────
+if _quick_editor_instance is not None and _quick_editor_instance.winfo_exists():
+    # reuse
+    ❌ Problem: winfo_exists() returns int (0/1)
+    ❌ 0 is falsy → condition fails even if instance exists
+
+
+AFTER:
+──────
+instance_valid = False
+if _quick_editor_instance is not None:
+    try:
+        exists = _quick_editor_instance.winfo_exists()
+        instance_valid = bool(exists)  ← ✅ Explicit boolean
+    except Exception as e:
+        _quick_editor_instance = None  ← ✅ Auto-clear stale
+        instance_valid = False
+
+if instance_valid:
+    # reuse
+    ✅ Explicit boolean check
+    ✅ Exception-safe
+    ✅ Auto-cleanup
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  Test Scenario: Multiple Rapid Presses                              │
+└─────────────────────────────────────────────────────────────────────┘
+
+Press #1: Ctrl+Shift+M
+    │
+    └─► Creates Window A ✅
+
+Press #2: Ctrl+Shift+M (immediate)
+    │
+    └─► Reuses Window A (brings to front) ✅
+
+Press #3: Ctrl+Shift+M (immediate)
+    │
+    └─► Reuses Window A (brings to front) ✅
+
+Close Window A
+
+Press #4: Ctrl+Shift+M
+    │
+    └─► Creates Window B ✅ (Singleton cleared on close)
+
+Press #5: Ctrl+Shift+M (immediate)
+    │
+    └─► Reuses Window B (brings to front) ✅
+
+
+Result: ✅ Only 1 window visible at any time
+        ✅ No duplicate instances
+        ✅ Proper reuse when window open
+        ✅ Fresh instance when window closed
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  Debug Log Comparison                                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+BEFORE (Buggy):
+───────────────
+[show_quick_monster_editor] Called (PID: 512)
+  Singleton exists: True
+  Singleton valid: 0              ← ❌ Integer, not boolean!
+[show_quick_monster_editor] ✓ Creating NEW instance  ← ❌ Wrong!
+
+
+AFTER (Fixed):
+──────────────
+[show_quick_monster_editor] Called (PID: 512)
+  Singleton exists: True
+  Singleton valid: True           ← ✅ Proper boolean
+[show_quick_monster_editor] ✓ Reusing existing instance  ← ✅ Correct!
+```

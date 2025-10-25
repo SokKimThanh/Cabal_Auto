@@ -18,6 +18,8 @@ import json
 import os
 import ctypes
 from ctypes import wintypes
+from pathlib import Path
+from typing import Optional
 
 # Optional psutil: import only if available to avoid static analysis/import errors
 import importlib
@@ -36,6 +38,12 @@ try:
     icon_helper = get_icon_helper()
 except Exception:
     icon_helper = None  # type: ignore
+
+# Notification widget for inline messages
+try:
+    from ui.components.notification_widget import NotificationWidget
+except Exception:
+    NotificationWidget = None  # type: ignore
 
 try:
     from lib.i18n import (
@@ -108,6 +116,9 @@ class SetupWizard:
         self.skills_data = []  # Step 4: Skills list
         self.skill_slot_vars = []  # Step 4: Skill slot variables
         self.skill_slot_combos = []  # Step 4: Skill slot comboboxes
+        
+        # Inline notification widget for step validation messages
+        self.notification_widget = None  # Will be created in _build_ui
 
         # Collected data from wizard steps
         self.wizard_data = {
@@ -290,15 +301,11 @@ class SetupWizard:
         Returns True if user has not completed setup (missing window, monster, or skills).
         """
         try:
-            # Try to load hunt_config
-            hunt_config_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "lib",
-                "data",
-                "hunt_config.json",
-            )
+            # Try to load hunt_config using project root
+            project_root = Path(__file__).parent.parent.parent
+            hunt_config_path = project_root / "lib" / "data" / "hunt_config.json"
 
-            if not os.path.exists(hunt_config_path):
+            if not hunt_config_path.exists():
                 return True  # No config file = first run
 
             with open(hunt_config_path, "r", encoding="utf-8") as f:
@@ -395,6 +402,17 @@ class SetupWizard:
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
         self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        # Inline notification area (below content, above footer)
+        # Create notification widget for validation messages
+        if NotificationWidget:
+            self.notification_widget = NotificationWidget(
+                main_frame,
+                auto_hide_seconds=5,  # Auto-hide after 5 seconds
+                show_close_button=True,
+                bg="white"
+            )
+            # Don't pack yet - will be shown when needed
 
         # Separator line above footer
         separator = tk.Frame(main_frame, height=2, bg="#ddd")
@@ -508,67 +526,81 @@ class SetupWizard:
             )
 
     def _show_step(self, step_number):
-        """Show specified wizard step."""
+        """Show specified wizard step.
+        
+        Safely updates UI elements with widget existence checks.
+        """
         self.current_step = step_number
 
-        # Update progress indicator
-        self.progress_label.config(text=f"Step {step_number} of {self.total_steps}")
+        # Update progress indicator (safe - persistent widget)
+        try:
+            self.progress_label.config(text=f"Step {step_number} of {self.total_steps}")
+        except (tk.TclError, AttributeError):
+            pass
 
-        # Update progress dots
-        for i, dot in enumerate(self.progress_dots):
-            if i < step_number:
-                dot.config(fg="#4CAF50")  # Green for completed/current
-            else:
-                dot.config(fg="#ccc")  # Gray for upcoming
+        # Update progress dots (safe - persistent widgets)
+        try:
+            for i, dot in enumerate(self.progress_dots):
+                if i < step_number:
+                    dot.config(fg="#4CAF50")  # Green for completed/current
+                else:
+                    dot.config(fg="#ccc")  # Gray for upcoming
+        except (tk.TclError, AttributeError):
+            pass
 
-        # Update button states
-        self.back_button.config(state=tk.NORMAL if step_number > 1 else tk.DISABLED)
+        # Update button states (safe - persistent widgets)
+        try:
+            self.back_button.config(state=tk.NORMAL if step_number > 1 else tk.DISABLED)
+        except (tk.TclError, AttributeError):
+            pass
+
 
         # Update Next/Finish button based on step (icon placement rule: Next=right, Finish=left)
-        if step_number == self.total_steps:
-            # Finish button: icon on LEFT, different icon (save/check)
-            # NO emoji in text when icon present, only use emoji as fallback
-            finish_icon = self._icon("save", "✓", size=18)
-            self.next_button.config(
-                text=(
-                    " Finish" if not isinstance(finish_icon, str) else "✓ Finish"
-                ),  # Emoji only when fallback
-                image=finish_icon if not isinstance(finish_icon, str) else "",
-                compound="left" if not isinstance(finish_icon, str) else "none",
-                bg="#2196F3",
-                activebackground="#1976D2",
-                font=("Arial", 11, "bold"),
-            )
-            if not isinstance(finish_icon, str):
-                try:
-                    if not hasattr(self, "_image_refs"):
-                        self._image_refs = []
-                    self._image_refs.append(finish_icon)
-                except Exception:
-                    pass
-        else:
-            # Next button: icon on RIGHT (directional)
-            # NO emoji in text when icon present, only use emoji as fallback
-            next_icon = self._icon("next", "→", size=18)
-            self.next_button.config(
-                text=(
-                    "Next " if not isinstance(next_icon, str) else "Next →"
-                ),  # Emoji only when fallback
-                image=next_icon if not isinstance(next_icon, str) else "",
-                compound="right" if not isinstance(next_icon, str) else "none",
-                bg="#357A38",
-                activebackground="#2E7D32",
-                font=("Arial", 11, "bold"),
-            )
-            if not isinstance(next_icon, str):
-                try:
-                    if not hasattr(self, "_image_refs"):
-                        self._image_refs = []
-                    self._image_refs.append(next_icon)
-                except Exception:
-                    pass
-
-        # Clear content frame
+        try:
+            if step_number == self.total_steps:
+                # Finish button: icon on LEFT, different icon (save/check)
+                # NO emoji in text when icon present, only use emoji as fallback
+                finish_icon = self._icon("save", "✓", size=18)
+                self.next_button.config(
+                    text=(
+                        " Finish" if not isinstance(finish_icon, str) else "✓ Finish"
+                    ),  # Emoji only when fallback
+                    image=finish_icon if not isinstance(finish_icon, str) else "",
+                    compound="left" if not isinstance(finish_icon, str) else "none",
+                    bg="#2196F3",
+                    activebackground="#1976D2",
+                    font=("Arial", 11, "bold"),
+                )
+                if not isinstance(finish_icon, str):
+                    try:
+                        if not hasattr(self, "_image_refs"):
+                            self._image_refs = []
+                        self._image_refs.append(finish_icon)
+                    except Exception:
+                        pass
+            else:
+                # Next button: icon on RIGHT (directional)
+                # NO emoji in text when icon present, only use emoji as fallback
+                next_icon = self._icon("next", "→", size=18)
+                self.next_button.config(
+                    text=(
+                        "Next " if not isinstance(next_icon, str) else "Next →"
+                    ),  # Emoji only when fallback
+                    image=next_icon if not isinstance(next_icon, str) else "",
+                    compound="right" if not isinstance(next_icon, str) else "none",
+                    bg="#357A38",
+                    activebackground="#2E7D32",
+                    font=("Arial", 11, "bold"),
+                )
+                if not isinstance(next_icon, str):
+                    try:
+                        if not hasattr(self, "_image_refs"):
+                            self._image_refs = []
+                        self._image_refs.append(next_icon)
+                    except Exception:
+                        pass
+        except (tk.TclError, AttributeError):
+            pass        # Clear content frame
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 
@@ -895,7 +927,7 @@ It takes about 2 minutes. Let's begin!"""
         self.dialog.after(100, self._search_windows)
 
     def _build_step3_monster(self):
-        """Step 3: Monster selection."""
+        """Step 3: Monster selection (OPTIONAL)."""
         title = tk.Label(
             self.content_frame,
             text=self._t("step3_title"),
@@ -906,17 +938,20 @@ It takes about 2 minutes. Let's begin!"""
 
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t("step3_subtitle"),
+            text=self._t("step3_subtitle") + " (Optional - you can add monsters later)",
             font=("Arial", 10),
             bg="white",
             fg="#666",
         )
         subtitle.pack(pady=(0, 15))
 
-        # Load monsters (lib/data/ is in parent directory)
-        monsters_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "lib", "data", "monsters.json"
-        )
+        # Load monsters from lib/data/monsters.json (use project root)
+        # Get project root: ui/windows/setup_wizard.py -> go up 2 levels to project root
+        project_root = Path(__file__).parent.parent.parent
+        monsters_path = project_root / "lib" / "data" / "monsters.json"
+        
+        print(f"[SetupWizard] Loading monsters from: {monsters_path}")
+        
         try:
             with open(monsters_path, "r", encoding="utf-8") as f:
                 self.monsters_data = json.load(f)
@@ -931,12 +966,41 @@ It takes about 2 minutes. Let's begin!"""
             return
 
         if not self.monsters_data:
+            # Show helpful message for empty monster list
+            info_frame = tk.Frame(self.content_frame, bg="white")
+            info_frame.pack(pady=30, padx=20, fill=tk.BOTH, expand=True)
+            
             tk.Label(
-                self.content_frame,
-                text=self._t("no_monsters_found"),
-                fg="orange",
+                info_frame,
+                text="📋 No Monsters Yet",
+                font=("Arial", 14, "bold"),
                 bg="white",
-            ).pack(pady=20)
+                fg="#FF9800",
+            ).pack(pady=(20, 10))
+            
+            tk.Label(
+                info_frame,
+                text=self._t("no_monsters_found"),
+                font=("Arial", 10),
+                bg="white",
+                fg="#666",
+            ).pack(pady=5)
+            
+            tk.Label(
+                info_frame,
+                text="✓ You can skip this step and add monsters later via Library Manager",
+                font=("Arial", 10),
+                bg="white",
+                fg="#4CAF50",
+            ).pack(pady=10)
+            
+            tk.Label(
+                info_frame,
+                text="💡 Tip: Click 'Next' to continue setup without selecting a monster",
+                font=("Arial", 9, "italic"),
+                bg="white",
+                fg="#2196F3",
+            ).pack(pady=(20, 10))
             return
 
         # Monster list frame
@@ -987,7 +1051,7 @@ It takes about 2 minutes. Let's begin!"""
         self.monster_info_label.pack(pady=(5, 0))
 
     def _build_step4_skills(self):
-        """Step 4: Skill configuration."""
+        """Step 4: Skill configuration (OPTIONAL)."""
         title = tk.Label(
             self.content_frame,
             text=self._t("step4_title"),
@@ -998,17 +1062,19 @@ It takes about 2 minutes. Let's begin!"""
 
         subtitle = tk.Label(
             self.content_frame,
-            text=self._t("step4_subtitle"),
+            text=self._t("step4_subtitle") + " (Optional - you can configure later)",
             font=("Arial", 10),
             bg="white",
             fg="#666",
         )
         subtitle.pack(pady=(0, 15))
 
-        # Load skills (lib/data/ is in parent directory)
-        skills_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "lib", "data", "skills.json"
-        )
+        # Load skills from lib/data/skills.json (use project root)
+        project_root = Path(__file__).parent.parent.parent
+        skills_path = project_root / "lib" / "data" / "skills.json"
+        
+        print(f"[SetupWizard] Loading skills from: {skills_path}")
+        
         try:
             with open(skills_path, "r", encoding="utf-8") as f:
                 self.skills_data = json.load(f)
@@ -1293,23 +1359,32 @@ It takes about 2 minutes. Let's begin!"""
             anchor="w",
         ).pack(fill=tk.X, pady=(0, 10))
 
-        # Warning if incomplete
+        # Warning if incomplete (REDUCED - only window is critical)
         if not window_info or window_info == "Not selected":
             tk.Label(
                 self.content_frame,
-                text="⚠️ Warning: No game window selected",
+                text="⚠️ Warning: No game window selected (Required)",
                 font=("Arial", 9, "bold"),
                 bg="white",
-                fg="orange",
+                fg="red",
             ).pack(pady=(10, 0))
 
         if not monster_name or monster_name == "Not selected":
             tk.Label(
                 self.content_frame,
-                text="⚠️ Warning: No monster selected",
-                font=("Arial", 9, "bold"),
+                text="ℹ️ Note: No monster selected (Can be added later)",
+                font=("Arial", 9),
                 bg="white",
-                fg="orange",
+                fg="#2196F3",
+            ).pack(pady=(5, 0))
+        
+        if not assigned_skills:
+            tk.Label(
+                self.content_frame,
+                text="ℹ️ Note: No skills configured (Can be added later)",
+                font=("Arial", 9),
+                bg="white",
+                fg="#2196F3",
             ).pack(pady=(5, 0))
 
     def _on_language_change(self):
@@ -1317,29 +1392,45 @@ It takes about 2 minutes. Let's begin!"""
         self.language = self.language_var.get()
         self.wizard_data["language"] = self.language
 
-        # Update user level section texts if they exist (Step 1)
-        if hasattr(self, "level_new_radio"):
-            self.level_new_radio.config(text=self._t("user_level_new"))
+        # Update user level section texts if they exist AND are still valid (Step 1)
+        # Check winfo_exists() to avoid TclError when widgets have been destroyed
+        try:
+            if hasattr(self, "level_new_radio") and self.level_new_radio.winfo_exists():
+                self.level_new_radio.config(text=self._t("user_level_new"))
+        except tk.TclError:
+            pass
 
-        if hasattr(self, "level_new_desc"):
-            self.level_new_desc.config(text="  " + self._t("user_level_new_desc"))
+        try:
+            if hasattr(self, "level_new_desc") and self.level_new_desc.winfo_exists():
+                self.level_new_desc.config(text="  " + self._t("user_level_new_desc"))
+        except tk.TclError:
+            pass
 
-        if hasattr(self, "level_experienced_radio"):
-            self.level_experienced_radio.config(text=self._t("user_level_experienced"))
+        try:
+            if hasattr(self, "level_experienced_radio") and self.level_experienced_radio.winfo_exists():
+                self.level_experienced_radio.config(text=self._t("user_level_experienced"))
+        except tk.TclError:
+            pass
 
-        if hasattr(self, "level_experienced_desc"):
-            self.level_experienced_desc.config(
-                text="  " + self._t("user_level_experienced_desc")
-            )
+        try:
+            if hasattr(self, "level_experienced_desc") and self.level_experienced_desc.winfo_exists():
+                self.level_experienced_desc.config(
+                    text="  " + self._t("user_level_experienced_desc")
+                )
+        except tk.TclError:
+            pass
 
         # Update first-time hint if exists
-        if hasattr(self, "first_time_hint") and self.is_first_run:
-            hint_text = (
-                "First-time users must start with 'New User' option"
-                if self.lang == "en"
-                else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
-            )
-            self.first_time_hint.config(text="ℹ️ " + hint_text)
+        try:
+            if hasattr(self, "first_time_hint") and self.is_first_run and self.first_time_hint.winfo_exists():
+                hint_text = (
+                    "First-time users must start with 'New User' option"
+                    if self.lang == "en"
+                    else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
+                )
+                self.first_time_hint.config(text="ℹ️ " + hint_text)
+        except tk.TclError:
+            pass
 
         # Note: Tooltips will auto-update through lang_provider lambda
 
@@ -1435,24 +1526,47 @@ It takes about 2 minutes. Let's begin!"""
             var.set("(Empty)")
 
     def _update_rotation_builder_button_state(self):
-        """Enable/disable rotation builder button based on user level."""
+        """Enable/disable rotation builder button based on user level.
+        
+        Safely handles widget existence checks to avoid TclError.
+        """
+        # Check if button exists and is still valid
         if not hasattr(self, "rotation_builder_button"):
             return
+        
+        try:
+            if not self.rotation_builder_button.winfo_exists():
+                return
+        except tk.TclError:
+            return
 
-        if self.user_level == "new":
-            # Enable button for new users
-            self.rotation_builder_button.config(state=tk.NORMAL, cursor="hand2")
-            # Hide hint
-            if hasattr(self, "rotation_builder_hint"):
-                self.rotation_builder_hint.config(text="")
-        else:
-            # Disable button for experienced users
-            self.rotation_builder_button.config(state=tk.DISABLED, cursor="arrow")
-            # Show hint
-            if hasattr(self, "rotation_builder_hint"):
-                self.rotation_builder_hint.config(
-                    text=self._t("rotation_builder_disabled_hint")
-                )
+        # Update button state
+        try:
+            if self.user_level == "new":
+                # Enable button for new users
+                self.rotation_builder_button.config(state=tk.NORMAL, cursor="hand2")
+                # Hide hint
+                if hasattr(self, "rotation_builder_hint"):
+                    try:
+                        if self.rotation_builder_hint.winfo_exists():
+                            self.rotation_builder_hint.config(text="")
+                    except tk.TclError:
+                        pass
+            else:
+                # Disable button for experienced users
+                self.rotation_builder_button.config(state=tk.DISABLED, cursor="arrow")
+                # Show hint
+                if hasattr(self, "rotation_builder_hint"):
+                    try:
+                        if self.rotation_builder_hint.winfo_exists():
+                            self.rotation_builder_hint.config(
+                                text=self._t("rotation_builder_disabled_hint")
+                            )
+                    except tk.TclError:
+                        pass
+        except tk.TclError:
+            # Button config failed - widget likely destroyed
+            pass
 
     def _open_rotation_builder(self):
         """Open Library Manager with Rotation tab for new users."""
@@ -1461,15 +1575,10 @@ It takes about 2 minutes. Let's begin!"""
             from ui.windows.library_manager import LibraryManagerWindow
 
             # Load current monsters and skills data
-            monsters_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "lib",
-                "data",
-                "monsters.json",
-            )
-            skills_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), "lib", "data", "skills.json"
-            )
+            # Use project root for loading data files
+            project_root = Path(__file__).parent.parent.parent
+            monsters_path = project_root / "lib" / "data" / "monsters.json"
+            skills_path = project_root / "lib" / "data" / "skills.json"
 
             try:
                 with open(monsters_path, "r", encoding="utf-8") as f:
@@ -1590,9 +1699,19 @@ It takes about 2 minutes. Let's begin!"""
 
         return results
 
+    def _hide_notification(self):
+        """Hide inline notification if visible."""
+        if self.notification_widget:
+            try:
+                self.notification_widget.hide()
+            except (tk.TclError, AttributeError):
+                pass
+
     def _on_back(self):
         """Navigate to previous step."""
         if self.current_step > 1:
+            # Hide any notification when navigating
+            self._hide_notification()
             self._show_step(self.current_step - 1)
 
     def _on_next(self):
@@ -1600,37 +1719,74 @@ It takes about 2 minutes. Let's begin!"""
         if self.current_step < self.total_steps:
             # Validate current step before proceeding
             if self._validate_current_step():
+                # Hide notification on successful validation
+                self._hide_notification()
                 self._show_step(self.current_step + 1)
         else:
             # Final step - finish wizard
             self._on_finish()
 
     def _validate_current_step(self):
-        """Validate current step data before moving to next step."""
+        """Validate current step data before moving to next step.
+        
+        REQUIRED: Only Step 2 (Window selection) is mandatory
+        OPTIONAL: Steps 3 (Monster) and 4 (Skills) can be skipped
+        
+        Purpose: Early sync of basic settings prevents data duplication issues
+        """
         # Step 1: Always valid (language selection is optional)
         if self.current_step == 1:
             return True
 
-        # Step 2: Window selection
+        # Step 2: Window selection - REQUIRED (only mandatory step)
         if self.current_step == 2:
             if not self.wizard_data.get("window_title"):
-                messagebox.showwarning(
-                    "Window Required",
-                    "Please select a game window before continuing.",
-                    parent=self.dialog,
-                )
+                # Show inline warning notification
+                if self.notification_widget:
+                    self.notification_widget.show(
+                        message="⚠️ Game window selection is required to continue.\n\n"
+                                "Please select your game window from the list.",
+                        notification_type='warning',
+                        side='bottom',
+                        fill='x',
+                        padx=20,
+                        pady=10
+                    )
+                else:
+                    # Fallback to messagebox if NotificationWidget not available
+                    messagebox.showwarning(
+                        "Window Required",
+                        "⚠️ Game window selection is required to continue.\n\n"
+                        "Please select your game window from the list.",
+                        parent=self.dialog,
+                    )
                 return False
             return True
 
-        # Step 3: Monster selection
+        # Step 3: Monster selection (OPTIONAL - allow skip)
         if self.current_step == 3:
+            # Monster selection is optional - user can skip to add later
+            # This prevents data duplication issues for first-time users
             if not self.wizard_data.get("monster_name"):
-                messagebox.showwarning(
-                    "Monster Required",
-                    "Please select a monster before continuing.",
-                    parent=self.dialog,
-                )
-                return False
+                # Show inline info notification
+                if self.notification_widget:
+                    self.notification_widget.show(
+                        message="ℹ️ No monster selected. You can add monsters later via Library Manager.\n\n"
+                                "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
+                        notification_type='info',
+                        side='bottom',
+                        fill='x',
+                        padx=20,
+                        pady=10
+                    )
+                else:
+                    # Fallback to messagebox
+                    messagebox.showinfo(
+                        "Monster Selection (Optional)",
+                        "No monster selected. You can add monsters later via Library Manager.\n\n"
+                        "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
+                        parent=self.dialog,
+                    )
             return True
 
         # Step 4: Skills (optional - can proceed with empty slots)
@@ -1643,15 +1799,27 @@ It takes about 2 minutes. Let's begin!"""
 
             self.wizard_data["skill_slots"] = skill_slots
 
-            # Check if at least one skill is assigned (optional warning)
+            # Skills are optional - show inline info if none assigned
             assigned = [s for s in skill_slots if s]
             if not assigned:
-                confirm = messagebox.askyesno(
-                    "No Skills",
-                    "You haven't assigned any skills. Continue anyway?",
-                    parent=self.dialog,
-                )
-                return confirm
+                if self.notification_widget:
+                    self.notification_widget.show(
+                        message="ℹ️ No skills assigned. You can configure skills later via Library Manager.\n\n"
+                                "💡 Completing basic setup first helps prevent data sync issues.",
+                        notification_type='info',
+                        side='bottom',
+                        fill='x',
+                        padx=20,
+                        pady=10
+                    )
+                else:
+                    # Fallback to messagebox
+                    messagebox.showinfo(
+                        "Skills (Optional)",
+                        "No skills assigned. You can configure skills later via Library Manager.\n\n"
+                        "💡 Completing basic setup first helps prevent data sync issues.",
+                        parent=self.dialog,
+                    )
             return True
 
         # Step 5: Review - always valid

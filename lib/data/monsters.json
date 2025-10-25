@@ -1,25 +1,34 @@
 [
   {
-    "name": "Cọc Gỗ",
-    "hp": 122,
-    "damage_per_hit": 12,
+    "id": "example_monster_1",
+    "name": "Slime Xanh",
+    "level": 5,
     "priority": 1,
-    "description": "dfasdf",
+    "hp": 500,
+    "damage": 20,
+    "description": "Quái vật mẫu cấp thấp",
     "templates": [
       {
-        "name": "New Template",
-        "path": "assets/images/monsters/dasd__new_template_1761221146449.png",
-        "threshold": 0.85,
-        "region_strategy": "custom",
-        "region": {
-          "left": 859,
-          "top": 498,
-          "width": 244,
-          "height": 230
-        }
+        "path": "assets/images/monsters/slime_green.png",
+        "threshold": 0.75
       }
     ],
-    "id": "fa8433ca-19fc-456e-96eb-b02182413000",
-    "level": 1
+    "enabled": true
+  },
+  {
+    "id": "example_monster_2",
+    "name": "Goblin Chiến Binh",
+    "level": 15,
+    "priority": 2,
+    "hp": 1500,
+    "damage": 50,
+    "description": "Quái vật mẫu cấp trung",
+    "templates": [
+      {
+        "path": "assets/images/monsters/goblin_warrior.png",
+        "threshold": 0.70
+      }
+    ],
+    "enabled": true
   }
 ]

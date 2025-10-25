@@ -5,22 +5,25 @@
 The coding guidelines are saved in two locations:
 
 1. **Detailed Version**: `docs/PYTHON_CODING_GUIDELINES.md`
-   - Complete documentation (400+ lines)
+   - Complete documentation (1200+ lines)
+   - **Python Core Rules** (1-7): Type hints, None checks, method calls, etc.
+   - **UI Form Design Rules** (8): Tkinter form standards, patterns, templates
    - Examples and anti-patterns
    - Code templates
    - References and links
 
 2. **Quick Reference**: `CODING_RULES_QUICK_REFERENCE.md`
    - Quick lookup (70 lines)
-   - Condensed rules
+   - Condensed Python core rules (1-7)
    - Fast checklist
 
 ## 🎯 Usage
 
 ### For AI Assistant (Automatic)
 
-The AI Assistant will **automatically** follow these guidelines for all Python code:
+The AI Assistant will **automatically** follow these guidelines for all code:
 
+**Python Code** (Rules 1-7):
 - ✅ Type hints on all functions
 - ✅ None checks before access
 - ✅ Proper method calls
@@ -29,18 +32,29 @@ The AI Assistant will **automatically** follow these guidelines for all Python c
 - ✅ Stable versions only
 - ✅ Namespace compatibility
 
+**UI Code** (Rule 8):
+- ✅ Three-layer architecture (Data/Logic/UI)
+- ✅ Inline notifications (no popups)
+- ✅ Widget lifecycle safety (winfo_exists)
+- ✅ Consistent component patterns
+- ✅ i18n for all text
+- ✅ Accessibility (keyboard shortcuts)
+
 **No need to remind the AI** - these rules are now built-in!
 
 ### For Human Developers
 
 #### Quick Check (Before Writing Code)
 
-Open `CODING_RULES_QUICK_REFERENCE.md` and verify your code against the 7 rules.
+**For Python Code**: Open `CODING_RULES_QUICK_REFERENCE.md` and verify against the 7 core rules.
+
+**For UI Forms**: Review Section 8 in `docs/PYTHON_CODING_GUIDELINES.md` - use the form template and checklist.
 
 #### Detailed Review (Before Commit)
 
-Open `docs/PYTHON_CODING_GUIDELINES.md` and go through the pre-commit checklist:
+Open `docs/PYTHON_CODING_GUIDELINES.md` and go through the appropriate checklist:
 
+**Python Code Checklist**:
 ```markdown
 □ Type Hints: All parameters and returns typed?
 □ None Checks: Checked before accessing?
@@ -48,7 +62,18 @@ Open `docs/PYTHON_CODING_GUIDELINES.md` and go through the pre-commit checklist:
 □ Method Calls: Proper instance/static pattern?
 □ No Duplication: Cached results, no repeated calls?
 □ Dependencies: Stable versions only?
-□ Compatibility: Fallbacks for version differences?
+□ Imports: Consistent namespace usage?
+```
+
+**UI Form Checklist** (Section 8.11):
+```markdown
+□ Architecture: Data/Logic/UI separated?
+□ Components: Consistent labels, entries, buttons?
+□ Validation: Inline notifications, no popups?
+□ Lifecycle: winfo_exists() checks, try-except?
+□ State: ButtonStateMixin, update on changes?
+□ i18n: All text through i18n.get()?
+□ Accessibility: Enter/Escape keys, focus, tab order?
 ```
 
 ## 🔧 Integration with Tools
