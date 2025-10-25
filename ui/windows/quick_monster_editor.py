@@ -1111,18 +1111,23 @@ class QuickMonsterEditor(tk.Toplevel):
         self.delete_template_button.config(state='disabled')
         self.test_template_button.config(state='disabled')
         
-        # ========== SECOND ROW: 2 Columns ==========
+        # ========== SECOND ROW: 2 Columns (6:6 ratio) ==========
         second_row = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
         second_row.pack(side='top', fill='both', expand=True, padx=10, pady=(5, 10))
         
-        # === Left Column: Template List ===
+        # Configure grid weights for 6:6 ratio
+        second_row.grid_rowconfigure(0, weight=1)
+        second_row.grid_columnconfigure(0, weight=6)  # Left column: 6 parts
+        second_row.grid_columnconfigure(1, weight=6)  # Right column: 6 parts
+        
+        # === Left Column: Template List (6 parts) ===
         left_column = tk.Frame(second_row, bg=UI.BG_DEFAULT)
-        left_column.pack(side='left', fill='both', expand=True, padx=(0, 10))
+        left_column.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
         
         # Template list title
         list_label = tk.Label(
             left_column,
-            text=i18n_t('template_list_title', ns='monster_editor', default='Template List:'),
+            text=i18n_t('template_list_title', ns='monster_editor', default='Danh sách Templates:'),
             font=UI.FONT_LABEL,
             fg=UI.COLOR_PRIMARY_TEXT,
             bg=UI.BG_DEFAULT
@@ -1140,12 +1145,12 @@ class QuickMonsterEditor(tk.Toplevel):
             show='headings',
             selectmode='browse',
             yscrollcommand=self.template_scrollbar.set,
-            height=12
+            height=15
         )
         
         # Configure columns
         self.template_listbox.column('image', width=60, minwidth=50, anchor='center', stretch=False)
-        self.template_listbox.column('name', width=180, minwidth=120, anchor='w')
+        self.template_listbox.column('name', width=200, minwidth=120, anchor='w')
         self.template_listbox.column('threshold', width=100, minwidth=80, anchor='center')
         
         # Set headings
@@ -1160,38 +1165,13 @@ class QuickMonsterEditor(tk.Toplevel):
         # Bind selection event
         self.template_listbox.bind('<<TreeviewSelect>>', self._on_template_select)
         
-        # === Right Column: Preview + Threshold ===
-        right_column = tk.Frame(second_row, bg=UI.BG_PANEL, width=280)
-        right_column.pack(side='right', fill='y')
-        right_column.pack_propagate(False)
+        # === Right Column: Threshold + Preview + Buttons (6 parts) ===
+        right_column = tk.Frame(second_row, bg=UI.BG_PANEL)
+        right_column.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
         
-        # Preview title
-        preview_title = tk.Label(
-            right_column,
-            text=i18n_t('preview_label', ns='monster_editor', default='Xem trước'),
-            font=UI.FONT_LABEL,
-            fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_PANEL
-        )
-        preview_title.pack(side='top', anchor='w', padx=10, pady=(10, 5))
-        
-        # Preview image container
-        preview_container = tk.Frame(right_column, bg='white', relief='sunken', borderwidth=2)
-        preview_container.pack(side='top', fill='both', expand=True, padx=10, pady=(0, 10))
-        
-        self.template_preview_label = tk.Label(
-            preview_container,
-            text='No template\nselected' if get_lang() == 'en' else 'Chưa chọn\ntemplate',
-            font=UI.FONT_SMALL,
-            fg=UI.COLOR_SUBTEXT,
-            bg='white',
-            justify='center'
-        )
-        self.template_preview_label.pack(fill='both', expand=True, padx=5, pady=5)
-        
-        # Threshold slider section
+        # Threshold slider section (TOP - above preview)
         threshold_frame = tk.Frame(right_column, bg=UI.BG_PANEL)
-        threshold_frame.pack(side='top', fill='x', padx=10, pady=(0, 10))
+        threshold_frame.pack(side='top', fill='x', padx=10, pady=(10, 10))
         
         threshold_label_text = i18n_t('monster_threshold_label', ns='monster_editor', default='Ngưỡng nhận diện')
         self.threshold_label = create_icon_label(
@@ -1213,11 +1193,95 @@ class QuickMonsterEditor(tk.Toplevel):
             resolution=0.01,
             orient='horizontal',
             showvalue=True,
-            length=240,
+            length=300,
             font=UI.FONT_SMALL
         )
         self.threshold_scale.set(0.7)
         self.threshold_scale.pack(side='top', fill='x')
+        
+        # Preview title
+        preview_title = tk.Label(
+            right_column,
+            text=i18n_t('preview_label', ns='monster_editor', default='Xem trước'),
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.BG_PANEL
+        )
+        preview_title.pack(side='top', anchor='w', padx=10, pady=(5, 5))
+        
+        # Preview image container (MIDDLE - expand to fill)
+        preview_container = tk.Frame(right_column, bg='white', relief='sunken', borderwidth=2)
+        preview_container.pack(side='top', fill='both', expand=True, padx=10, pady=(0, 10))
+        
+        self.template_preview_label = tk.Label(
+            preview_container,
+            text='No template\nselected' if get_lang() == 'en' else 'Chưa chọn\ntemplate',
+            font=UI.FONT_SMALL,
+            fg=UI.COLOR_SUBTEXT,
+            bg='white',
+            justify='center'
+        )
+        self.template_preview_label.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Action buttons section (BOTTOM - below preview)
+        action_buttons_frame = tk.Frame(right_column, bg=UI.BG_PANEL)
+        action_buttons_frame.pack(side='bottom', fill='x', padx=10, pady=(0, 10))
+        
+        # Label for action buttons
+        action_label = tk.Label(
+            action_buttons_frame,
+            text='Chụp / Chọn File:' if get_lang() == 'vi' else 'Capture / Browse:',
+            font=UI.FONT_SMALL,
+            fg=UI.COLOR_TEXT,
+            bg=UI.BG_PANEL
+        )
+        action_label.pack(side='top', anchor='w', pady=(0, 5))
+        
+        # Button container (horizontal)
+        buttons_container = tk.Frame(action_buttons_frame, bg=UI.BG_PANEL)
+        buttons_container.pack(side='top', fill='x')
+        
+        # Re-pack Capture button here (already created above, just need to re-parent)
+        # We'll create new buttons specific to this area
+        capture_preview_btn = create_icon_button(
+            buttons_container,
+            icon_name='capture',
+            icon_fallback='📸',
+            icon_size=18,
+            command=self._capture_template,
+            button_type='blue',
+            variant='icon_only',
+            width=38,
+            height=38,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_capture',
+            tooltip_ns='monster_editor'
+        )
+        capture_preview_btn.pack(side='left', padx=(0, 5))
+        
+        browse_preview_btn = create_icon_button(
+            buttons_container,
+            icon_name='browse',
+            icon_fallback='📂',
+            icon_size=18,
+            command=self._browse_template_image,
+            button_type='refresh',
+            variant='icon_only',
+            width=38,
+            height=38,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_browse',
+            tooltip_ns='monster_editor'
+        )
+        browse_preview_btn.pack(side='left', padx=(0, 5))
+        
+        # Store references to these buttons for enable/disable in edit mode
+        self.capture_preview_button = capture_preview_btn
+        self.browse_preview_button = browse_preview_btn
+        
+        # Initially disable
+        self.capture_preview_button.config(state='disabled')
+        self.browse_preview_button.config(state='disabled')
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -1820,6 +1884,12 @@ class QuickMonsterEditor(tk.Toplevel):
             if self.test_template_button:
                 self.test_template_button.config(state='normal')
             
+            # Enable preview action buttons
+            if hasattr(self, 'capture_preview_button'):
+                self.capture_preview_button.config(state='normal')
+            if hasattr(self, 'browse_preview_button'):
+                self.browse_preview_button.config(state='normal')
+            
             # Note: Button is now icon-only, so we don't change text
             
             # Show editing badge at top-left of tab
@@ -1840,6 +1910,12 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.delete_template_button.config(state='disabled')
             if self.test_template_button:
                 self.test_template_button.config(state='disabled')
+            
+            # Disable preview action buttons
+            if hasattr(self, 'capture_preview_button'):
+                self.capture_preview_button.config(state='disabled')
+            if hasattr(self, 'browse_preview_button'):
+                self.browse_preview_button.config(state='disabled')
             
             # Note: Button is now icon-only, so we don't change text
             
