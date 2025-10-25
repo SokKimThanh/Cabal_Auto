@@ -19,6 +19,7 @@ import os
 import ctypes
 from ctypes import wintypes
 from pathlib import Path
+from typing import Optional
 
 # Optional psutil: import only if available to avoid static analysis/import errors
 import importlib
@@ -37,6 +38,12 @@ try:
     icon_helper = get_icon_helper()
 except Exception:
     icon_helper = None  # type: ignore
+
+# Notification widget for inline messages
+try:
+    from ui.components.notification_widget import NotificationWidget
+except Exception:
+    NotificationWidget = None  # type: ignore
 
 try:
     from lib.i18n import (
@@ -109,6 +116,9 @@ class SetupWizard:
         self.skills_data = []  # Step 4: Skills list
         self.skill_slot_vars = []  # Step 4: Skill slot variables
         self.skill_slot_combos = []  # Step 4: Skill slot comboboxes
+        
+        # Inline notification widget for step validation messages
+        self.notification_widget = None  # Will be created in _build_ui
 
         # Collected data from wizard steps
         self.wizard_data = {
@@ -392,6 +402,17 @@ class SetupWizard:
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
         self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        # Inline notification area (below content, above footer)
+        # Create notification widget for validation messages
+        if NotificationWidget:
+            self.notification_widget = NotificationWidget(
+                main_frame,
+                auto_hide_seconds=5,  # Auto-hide after 5 seconds
+                show_close_button=True,
+                bg="white"
+            )
+            # Don't pack yet - will be shown when needed
 
         # Separator line above footer
         separator = tk.Frame(main_frame, height=2, bg="#ddd")
@@ -1678,9 +1699,19 @@ It takes about 2 minutes. Let's begin!"""
 
         return results
 
+    def _hide_notification(self):
+        """Hide inline notification if visible."""
+        if self.notification_widget:
+            try:
+                self.notification_widget.hide()
+            except (tk.TclError, AttributeError):
+                pass
+
     def _on_back(self):
         """Navigate to previous step."""
         if self.current_step > 1:
+            # Hide any notification when navigating
+            self._hide_notification()
             self._show_step(self.current_step - 1)
 
     def _on_next(self):
@@ -1688,6 +1719,8 @@ It takes about 2 minutes. Let's begin!"""
         if self.current_step < self.total_steps:
             # Validate current step before proceeding
             if self._validate_current_step():
+                # Hide notification on successful validation
+                self._hide_notification()
                 self._show_step(self.current_step + 1)
         else:
             # Final step - finish wizard
@@ -1708,12 +1741,25 @@ It takes about 2 minutes. Let's begin!"""
         # Step 2: Window selection - REQUIRED (only mandatory step)
         if self.current_step == 2:
             if not self.wizard_data.get("window_title"):
-                messagebox.showwarning(
-                    "Window Required",
-                    "⚠️ Game window selection is required to continue.\n\n"
-                    "Please select your game window from the list.",
-                    parent=self.dialog,
-                )
+                # Show inline warning notification
+                if self.notification_widget:
+                    self.notification_widget.show(
+                        message="⚠️ Game window selection is required to continue.\n\n"
+                                "Please select your game window from the list.",
+                        notification_type='warning',
+                        side='bottom',
+                        fill='x',
+                        padx=20,
+                        pady=10
+                    )
+                else:
+                    # Fallback to messagebox if NotificationWidget not available
+                    messagebox.showwarning(
+                        "Window Required",
+                        "⚠️ Game window selection is required to continue.\n\n"
+                        "Please select your game window from the list.",
+                        parent=self.dialog,
+                    )
                 return False
             return True
 
@@ -1722,13 +1768,25 @@ It takes about 2 minutes. Let's begin!"""
             # Monster selection is optional - user can skip to add later
             # This prevents data duplication issues for first-time users
             if not self.wizard_data.get("monster_name"):
-                # Show info message but allow proceeding
-                messagebox.showinfo(
-                    "Monster Selection (Optional)",
-                    "No monster selected. You can add monsters later via Library Manager.\n\n"
-                    "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
-                    parent=self.dialog,
-                )
+                # Show inline info notification
+                if self.notification_widget:
+                    self.notification_widget.show(
+                        message="ℹ️ No monster selected. You can add monsters later via Library Manager.\n\n"
+                                "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
+                        notification_type='info',
+                        side='bottom',
+                        fill='x',
+                        padx=20,
+                        pady=10
+                    )
+                else:
+                    # Fallback to messagebox
+                    messagebox.showinfo(
+                        "Monster Selection (Optional)",
+                        "No monster selected. You can add monsters later via Library Manager.\n\n"
+                        "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
+                        parent=self.dialog,
+                    )
             return True
 
         # Step 4: Skills (optional - can proceed with empty slots)
@@ -1741,15 +1799,27 @@ It takes about 2 minutes. Let's begin!"""
 
             self.wizard_data["skill_slots"] = skill_slots
 
-            # Skills are optional - just show info if none assigned
+            # Skills are optional - show inline info if none assigned
             assigned = [s for s in skill_slots if s]
             if not assigned:
-                messagebox.showinfo(
-                    "Skills (Optional)",
-                    "No skills assigned. You can configure skills later via Library Manager.\n\n"
-                    "💡 Completing basic setup first helps prevent data sync issues.",
-                    parent=self.dialog,
-                )
+                if self.notification_widget:
+                    self.notification_widget.show(
+                        message="ℹ️ No skills assigned. You can configure skills later via Library Manager.\n\n"
+                                "💡 Completing basic setup first helps prevent data sync issues.",
+                        notification_type='info',
+                        side='bottom',
+                        fill='x',
+                        padx=20,
+                        pady=10
+                    )
+                else:
+                    # Fallback to messagebox
+                    messagebox.showinfo(
+                        "Skills (Optional)",
+                        "No skills assigned. You can configure skills later via Library Manager.\n\n"
+                        "💡 Completing basic setup first helps prevent data sync issues.",
+                        parent=self.dialog,
+                    )
             return True
 
         # Step 5: Review - always valid
