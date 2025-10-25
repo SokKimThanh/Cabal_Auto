@@ -5346,13 +5346,33 @@ Alternative Solutions:
             
             # ✅ Sprint 24 Fix: Check singleton via module reference (not local import)
             # This ensures we see the actual global variable state
-            if (monster_editor_module._quick_editor_instance is not None and 
-                monster_editor_module._quick_editor_instance.winfo_exists()):
-                print("[Monster Editor] ✓ Bringing existing instance to front")
-                monster_editor_module._quick_editor_instance.lift()
-                monster_editor_module._quick_editor_instance.focus_force()
-                self._monster_editor_opening = False
-                return
+            try:
+                instance = monster_editor_module._quick_editor_instance
+                instance_exists = instance is not None
+                instance_alive = False
+                
+                if instance_exists and instance:  # Explicit None check for type checker
+                    try:
+                        instance_alive = bool(instance.winfo_exists())
+                    except Exception as check_err:
+                        print(f"[Monster Editor] Stale instance detected: {check_err}")
+                        monster_editor_module._quick_editor_instance = None
+                        instance_alive = False
+                
+                print(f"[Monster Editor] Check: exists={instance_exists}, alive={instance_alive}")
+                
+                if instance_exists and instance_alive and instance:
+                    print("[Monster Editor] ✓ Instance already exists, bringing to front")
+                    print(f"  Instance: {instance}")
+                    instance.lift()
+                    instance.focus_force()
+                    self._monster_editor_opening = False
+                    return
+            except Exception as e:
+                print(f"[Monster Editor] Error checking singleton: {e}")
+                # Continue to create new instance
+            
+            print(f"[Monster Editor] No valid instance found, creating new...")
             
             if False:  # Detailed debug logging
                 print(f"[Monster Editor] Creating new instance with parent: {self}")

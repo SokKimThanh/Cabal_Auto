@@ -230,9 +230,18 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         import os
         import tkinter as tk  # ✅ FIX: Import tk outside conditional block
         
+        # ✅ Sprint 24 Fix: Validate parent is proper Tk instance
+        # This prevents "extra empty window" issue from Toplevel without proper root
+        if not parent:
+            raise ValueError("Parent widget is required for QuickMonsterEditor")
+        
+        if not isinstance(parent, (tk.Tk, tk.Toplevel, tk.Widget)):
+            raise TypeError(f"Parent must be Tk/Toplevel/Widget, got {type(parent)}")
+        
         print(f"\n{'='*60}")
         print(f"[QuickMonsterEditor] __init__ called (PID: {os.getpid()})")
         print(f"  Parent: {parent.__class__.__name__}")
+        print(f"  Parent type: {type(parent).__name__}")
         
         # Detailed logging (can be disabled for production)
         if False:  # Set to True for detailed debugging

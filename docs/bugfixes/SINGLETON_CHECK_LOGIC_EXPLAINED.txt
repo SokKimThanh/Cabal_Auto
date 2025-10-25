@@ -1,0 +1,275 @@
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  SINGLETON PATTERN - DOUBLE CHECK LOGIC                             │
+│  "Lúc mở thêm cái mới thì phải coi app có tồn tại chưa mới đúng"   │
+└─────────────────────────────────────────────────────────────────────┘
+
+User Action: Press Ctrl+Shift+M
+    │
+    ├─► _on_monster_editor_hotkey() [app_gui.py]
+    │   └─► self.after(0, self._open_monster_editor)
+    │
+    ├─► _open_monster_editor() [app_gui.py]
+    │   │
+    │   ├─► 🔍 CHECK #1: App fully initialized?
+    │   │   if not hasattr(self, '_first_time_check_complete'):
+    │   │       return  # Don't open during startup
+    │   │
+    │   ├─► 🔍 CHECK #2: Already opening?
+    │   │   if self._monster_editor_opening:
+    │   │       return  # Prevent double-open
+    │   │
+    │   ├─► Import module reference
+    │   │   import ui.windows.quick_monster_editor as monster_editor_module
+    │   │
+    │   ├─► 🔍 CHECK #3: Instance already exists? (NEW - Sprint 24)
+    │   │   │
+    │   │   ├─► Step 1: Get instance reference
+    │   │   │   instance = monster_editor_module._quick_editor_instance
+    │   │   │
+    │   │   ├─► Step 2: Check if not None
+    │   │   │   instance_exists = instance is not None
+    │   │   │
+    │   │   ├─► Step 3: Check if window alive
+    │   │   │   if instance_exists:
+    │   │   │       try:
+    │   │   │           instance_alive = bool(instance.winfo_exists())
+    │   │   │       except:
+    │   │   │           instance_alive = False  # Stale reference
+    │   │   │
+    │   │   └─► Step 4: Decision
+    │   │       if instance_exists and instance_alive:
+    │   │           ✅ REUSE: instance.lift() + instance.focus_force()
+    │   │           return  # Exit early
+    │   │       else:
+    │   │           ❌ CREATE NEW: Continue to show_quick_monster_editor()
+    │   │
+    │   └─► Call show_quick_monster_editor() [only if no valid instance]
+    │       │
+    │       └─► 🔍 CHECK #4: Double-check singleton (defense in depth)
+    │           (Same logic as CHECK #3, but in module itself)
+    │
+    └─► Result: Only 1 window exists
+
+
+═══════════════════════════════════════════════════════════════════════
+
+DETAILED CHECK #3 LOGIC (app_gui.py)
+─────────────────────────────────────
+
+try:
+    # Get reference to global singleton
+    instance = monster_editor_module._quick_editor_instance
+    
+    # Phase 1: Existence check
+    instance_exists = instance is not None
+    instance_alive = False
+    
+    # Phase 2: Liveness check
+    if instance_exists and instance:
+        try:
+            # winfo_exists() returns:
+            # - 1 (True) if window still exists in memory
+            # - 0 (False) if window destroyed
+            # - Exception if reference is completely invalid
+            instance_alive = bool(instance.winfo_exists())
+        except Exception as check_err:
+            # Stale reference detected - clean it up
+            print(f"Stale instance: {check_err}")
+            monster_editor_module._quick_editor_instance = None
+            instance_alive = False
+    
+    # Phase 3: Log for debugging
+    print(f"Check: exists={instance_exists}, alive={instance_alive}")
+    
+    # Phase 4: Decision
+    if instance_exists and instance_alive and instance:
+        # ✅ Window tồn tại VÀ còn sống → Reuse
+        print("✓ Instance already exists, bringing to front")
+        instance.lift()
+        instance.focus_force()
+        return  # EXIT - Don't create new
+    
+except Exception as e:
+    # Any error → Continue to create new
+    print(f"Error checking: {e}")
+
+# If we reach here: No valid instance → Create new
+print("No valid instance found, creating new...")
+show_quick_monster_editor(...)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+WHY DOUBLE CHECK? (CHECK #3 in app_gui + CHECK #4 in module)
+─────────────────────────────────────────────────────────────
+
+Defense in Depth Pattern:
+
+1. CHECK #3 (app_gui.py):
+   - Fast path optimization
+   - Avoid function call overhead if instance exists
+   - Can add app-specific logic (e.g., check permissions)
+   - Easier to debug (logs in main app file)
+
+2. CHECK #4 (quick_monster_editor.py):
+   - Last line of defense
+   - Handles direct calls to show_quick_monster_editor()
+   - Module encapsulation (doesn't rely on caller checking)
+   - Protects against future code changes
+
+Example scenario where both are needed:
+
+    # Scenario A: Called via hotkey
+    app_gui._open_monster_editor()
+        └─► CHECK #3 catches existing instance ✅
+        └─► Never calls show_quick_monster_editor()
+
+    # Scenario B: Called directly (legacy code, tests, etc.)
+    show_quick_monster_editor(...)
+        └─► CHECK #3 bypassed (not called from app_gui)
+        └─► CHECK #4 catches existing instance ✅
+
+
+═══════════════════════════════════════════════════════════════════════
+
+TEST SCENARIOS
+──────────────
+
+Scenario 1: First Open
+─────────────────────
+Press Ctrl+Shift+M
+├─► CHECK #1: ✅ App initialized
+├─► CHECK #2: ✅ Not already opening
+├─► CHECK #3: instance=None → CREATE NEW
+├─► show_quick_monster_editor()
+│   └─► CHECK #4: instance=None → CREATE NEW
+└─► Result: Window #1 created
+
+
+Scenario 2: Reopen While Open
+──────────────────────────────
+Press Ctrl+Shift+M (window already open)
+├─► CHECK #1: ✅ App initialized
+├─► CHECK #2: ✅ Not already opening
+├─► CHECK #3: exists=True, alive=True → REUSE
+│   ├─► instance.lift()
+│   └─► instance.focus_force()
+└─► Result: Window #1 brought to front (NO duplicate)
+
+
+Scenario 3: Reopen After Close
+───────────────────────────────
+Close window → Press Ctrl+Shift+M
+├─► User closes window
+│   └─► _on_cancel() clears singleton
+├─► CHECK #1: ✅ App initialized
+├─► CHECK #2: ✅ Not already opening
+├─► CHECK #3: instance=None → CREATE NEW
+├─► show_quick_monster_editor()
+│   └─► CHECK #4: instance=None → CREATE NEW
+└─► Result: Window #2 created (fresh instance)
+
+
+Scenario 4: Stale Reference
+────────────────────────────
+Window destroyed externally → Press Ctrl+Shift+M
+├─► Window killed (Task Manager, etc.)
+│   └─► Singleton NOT cleared (edge case)
+├─► CHECK #1: ✅ App initialized
+├─► CHECK #2: ✅ Not already opening
+├─► CHECK #3:
+│   ├─► exists=True
+│   ├─► winfo_exists() → Exception!
+│   ├─► Catch exception → Clear singleton
+│   └─► alive=False → CREATE NEW
+└─► Result: Window created (stale reference handled)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+LOG OUTPUT EXAMPLES
+───────────────────
+
+First Open:
+───────────
+[Monster Editor] Opening...
+[Monster Editor] Check: exists=False, alive=False
+[Monster Editor] No valid instance found, creating new...
+[show_quick_monster_editor] Called (PID: 8076)
+  Singleton exists: False
+[show_quick_monster_editor] ✓ Creating NEW instance
+[Monster Editor] ✓ Opened successfully
+
+
+Reopen (While Open):
+────────────────────
+[Monster Editor] Opening...
+[Monster Editor] Check: exists=True, alive=True
+[Monster Editor] ✓ Instance already exists, bringing to front
+  Instance: .!quickmonstereditor2
+
+
+Reopen (After Close):
+─────────────────────
+[MonsterEditor] Singleton instance cleared on close  ← From _on_cancel()
+[Monster Editor] Opening...
+[Monster Editor] Check: exists=False, alive=False
+[Monster Editor] No valid instance found, creating new...
+[show_quick_monster_editor] Called (PID: 8076)
+  Singleton exists: False
+[show_quick_monster_editor] ✓ Creating NEW instance
+
+
+Stale Reference:
+────────────────
+[Monster Editor] Opening...
+[Monster Editor] Stale instance detected: TclError(...)
+[Monster Editor] Check: exists=True, alive=False
+[Monster Editor] No valid instance found, creating new...
+
+
+═══════════════════════════════════════════════════════════════════════
+
+KEY IMPROVEMENTS (Sprint 24)
+─────────────────────────────
+
+1. ✅ Module-level import
+   - Was: from module import variable  (creates snapshot)
+   - Now: import module  (live reference)
+
+2. ✅ Explicit liveness check
+   - Was: Simple if statement
+   - Now: Try-except with winfo_exists()
+
+3. ✅ Stale reference cleanup
+   - Was: No cleanup on error
+   - Now: Auto-clear on exception
+
+4. ✅ Detailed logging
+   - Was: Basic "Creating new"
+   - Now: "exists=X, alive=Y"
+
+5. ✅ Triple None check
+   - instance is not None (exists)
+   - instance.winfo_exists() (alive)
+   - instance (type checker happy)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+SUMMARY
+───────
+
+Q: "Lúc mở thêm cái mới thì phải coi app có tồn tại chưa mới đúng"
+
+A: ✅ ĐÚNG! Code hiện tại đã có:
+
+   CHECK #3 (app_gui.py - line 5347):
+   ├─► Kiểm tra instance tồn tại (exists)
+   ├─► Kiểm tra window còn sống (alive)
+   ├─► Nếu TỒN TẠI VÀ SỐNG → Reuse (lift + focus)
+   └─► Nếu KHÔNG → Tạo mới
+
+   Result: Không bao giờ tạo duplicate nếu window đang mở ✅
+```

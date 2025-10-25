@@ -1,11 +1,11 @@
 {
-  "window_title": "Trợ lý săn Cabal",
+  "window_title": "CABAL",
   "target_key": "z",
   "attack_press_ms": 60,
   "target_cycle_delay": 0.2,
   "search_interval": 0.25,
   "attack_interval": 0.15,
-  "template_path": "assets/images/monsters/coc_go__1760737532564.png",
+  "template_path": "assets/images/monsters/slime_green.png",
   "region": null,
   "confidence": 0.5,
   "grayscale": true,
@@ -13,38 +13,15 @@
   "attack_min_duration_sec": 5.0,
   "bring_to_front_each_cycle": false,
   "skill_slots": [
-    {
-      "name": "Dark Explosion",
-      "key": "1",
-      "type": "attack",
-      "cooldown": 1.9,
-      "cast_time": 1.7,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
-    },
-    {
-      "name": "Bone Javelin",
-      "key": "2",
-      "type": "attack",
-      "cooldown": 2.4,
-      "cast_time": 1.5,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
-    },
-    {
-      "name": "Skull Shooter",
-      "key": "3",
-      "type": "attack",
-      "cooldown": 2.2,
-      "cast_time": 1.5,
-      "image": "assets/images/skills/skull_shooter_1760739255501.png"
-    },
-    {
-      "name": "Regeneration",
-      "key": "4",
-      "type": "buff",
-      "cooldown": 2.2,
-      "cast_time": 1.0,
-      "image": "assets/images/skills/regeneration_1760739255499.png"
-    }
+    "Dark Explosion",
+    "Bone Javelin",
+    "Skull Shooter",
+    "Regeneration",
+    "",
+    "",
+    "",
+    "",
+    ""
   ],
   "window_bounds": {
     "left": 133,
@@ -55,7 +32,7 @@
   "monster_list": [],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 3604,
+  "window_pid": 27992,
   "templates": [],
   "training_mode_enabled": true,
   "ui_mode": "intermediate",
@@ -69,7 +46,7 @@
     "vision_wizard_key": "ctrl+shift+v"
   },
   "training_monster_list": [],
-  "window_hwnd": 26872352,
+  "window_hwnd": 12978414,
   "overlay": {
     "enabled": false
   },
@@ -86,5 +63,6 @@
   },
   "game_window_mode": "above",
   "app_window_mode": "topmost",
-  "is_configured": true
+  "is_configured": true,
+  "monster_selected_name": "Slime Xanh"
 }
