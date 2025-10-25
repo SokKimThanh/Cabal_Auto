@@ -29,33 +29,85 @@ Date: 2025-10-25
 from typing import Dict, List, Optional, Union, Callable, Any
 import tkinter as tk
 from tkinter import ttk
+import logging
+
+
+class ButtonState:
+    """Enumeration of button states."""
+    ENABLED = 'normal'
+    DISABLED = 'disabled'
+    HIDDEN = 'hidden'
+    VISIBLE = 'visible'
 
 
 class ButtonStateMixin:
     """
-    Mixin class for automatic button state management.
+    Mixin class for comprehensive button state management.
     
     Features:
-    - Centralized button state logic
+    - Centralized button state logic (enabled/disabled/visible/hidden)
+    - Edit mode vs View mode support
+    - Check All handling
     - Support for hierarchical dependencies (parent-child)
+    - Context-based state management
     - Custom validation functions
-    - Automatic enable/disable based on selection
+    - Automatic state updates based on selection
     - Easy integration with any Tkinter window
+    - Comprehensive error handling
+    - Optional logging for debugging
+    
+    Button Types Supported:
+    - Data operation buttons (Add/Edit/Delete)
+    - Hierarchical buttons (Parent-Child relationship)
+    - Global/aggregate buttons (Check All, Confirm, etc.)
+    - Mode toggle buttons (Edit/View mode)
     
     Attributes:
         _button_rules: Dictionary mapping button names to their enable conditions
+        _visibility_rules: Dictionary mapping button names to visibility conditions
         _selection_widgets: Dictionary mapping widget names to widget instances
+        _button_refs: Dictionary mapping button names to button instances
+        _context: State context (edit_mode, check_all, selections, etc.)
+        _logger: Optional logger for debugging
+        _debug_mode: Enable/disable debug logging
     """
     
-    def __init__(self):
-        """Initialize the button state mixin."""
+    def __init__(self, debug_mode: bool = False, logger: Optional[logging.Logger] = None):
+        """
+        Initialize the button state mixin.
+        
+        Args:
+            debug_mode: Enable debug logging (default: False)
+            logger: Custom logger instance (default: creates new logger)
+        """
         self._button_rules: Dict[str, Dict[str, Any]] = {}
+        self._visibility_rules: Dict[str, Dict[str, Any]] = {}
         self._selection_widgets: Dict[str, Union[tk.Listbox, ttk.Treeview]] = {}
         self._button_refs: Dict[str, Union[tk.Button, ttk.Button]] = {}
         
+        # Context state tracking
+        self._context: Dict[str, Any] = {
+            'edit_mode': False,
+            'check_all': False,
+            'selections': {},
+            'data_count': {}
+        }
+        
+        self._debug_mode = debug_mode
+        self._logger = logger or logging.getLogger(__name__)
+        
+        if debug_mode:
+            self._logger.setLevel(logging.DEBUG)
+            if not self._logger.handlers:
+                handler = logging.StreamHandler()
+                handler.setFormatter(logging.Formatter(
+                    '[%(name)s] %(levelname)s: %(message)s'
+                ))
+                self._logger.addHandler(handler)
+        
     def register_button_rules(self, rules: Dict[str, Dict[str, Any]]) -> None:
         """
-        Register button state rules.
+        Register button state rules with validation.
         
         Args:
             rules: Dictionary mapping button names to their conditions.
@@ -65,6 +117,10 @@ class ButtonStateMixin:
                    - 'requires_parent': str - Requires parent selection before enabling
                    - 'requires_multiple': List[str] - Requires selection in multiple widgets
                    - 'custom': Callable - Custom validation function returning bool
+                   
+        Raises:
+            TypeError: If rules is not a dictionary
+            ValueError: If rule format is invalid
                    
         Example:
             {
@@ -79,31 +135,105 @@ class ButtonStateMixin:
                 }
             }
         """
+        if not isinstance(rules, dict):
+            raise TypeError(f"rules must be a dictionary, got {type(rules).__name__}")
+        
+        # Validate each rule
+        valid_keys = {
+            'always', 'requires_selection', 'requires_parent', 'requires_multiple', 'custom',
+            'requires_edit_mode', 'requires_check_all', 'disabled_in_edit_mode',
+            'enabled_with_check_all_or_selection', 'requires_context'
+        }
+        for button_name, rule in rules.items():
+            if not isinstance(rule, dict):
+                raise ValueError(f"Rule for '{button_name}' must be a dictionary, got {type(rule).__name__}")
+            
+            # Check for unknown keys
+            unknown_keys = set(rule.keys()) - valid_keys
+            if unknown_keys:
+                self._logger.warning(f"Unknown rule keys for '{button_name}': {unknown_keys}")
+            
+            # Validate 'always' type
+            if 'always' in rule and not isinstance(rule['always'], bool):
+                raise ValueError(f"'always' rule for '{button_name}' must be bool, got {type(rule['always']).__name__}")
+            
+            # Validate 'requires_selection' type
+            if 'requires_selection' in rule and not isinstance(rule['requires_selection'], str):
+                raise ValueError(f"'requires_selection' for '{button_name}' must be str, got {type(rule['requires_selection']).__name__}")
+            
+            # Validate 'requires_parent' type
+            if 'requires_parent' in rule and not isinstance(rule['requires_parent'], str):
+                raise ValueError(f"'requires_parent' for '{button_name}' must be str, got {type(rule['requires_parent']).__name__}")
+            
+            # Validate 'requires_multiple' type
+            if 'requires_multiple' in rule:
+                if not isinstance(rule['requires_multiple'], (list, tuple)):
+                    raise ValueError(f"'requires_multiple' for '{button_name}' must be list/tuple, got {type(rule['requires_multiple']).__name__}")
+            
+            # Validate 'custom' type
+            if 'custom' in rule and not callable(rule['custom']):
+                raise ValueError(f"'custom' rule for '{button_name}' must be callable, got {type(rule['custom']).__name__}")
+        
         self._button_rules.update(rules)
+        
+        if self._debug_mode:
+            self._logger.debug(f"Registered {len(rules)} button rules")
         
     def register_selection_widget(self, name: str, widget: Union[tk.Listbox, ttk.Treeview]) -> None:
         """
-        Register a selection widget (Listbox or Treeview).
+        Register a selection widget (Listbox or Treeview) with validation.
         
         Args:
             name: Name to reference this widget in button rules
             widget: The widget instance
+            
+        Raises:
+            TypeError: If widget is not Listbox or Treeview
+            ValueError: If name is empty or widget is None
         """
+        if not name:
+            raise ValueError("Widget name cannot be empty")
+        
+        if widget is None:
+            raise ValueError(f"Widget for '{name}' cannot be None")
+        
+        if not isinstance(widget, (tk.Listbox, ttk.Treeview)):
+            raise TypeError(f"Widget '{name}' must be Listbox or Treeview, got {type(widget).__name__}")
+        
         self._selection_widgets[name] = widget
+        
+        if self._debug_mode:
+            self._logger.debug(f"Registered selection widget '{name}' ({type(widget).__name__})")
         
     def register_button(self, name: str, button: Union[tk.Button, ttk.Button]) -> None:
         """
-        Register a button widget for state management.
+        Register a button widget for state management with validation.
         
         Args:
             name: Name used in button rules
             button: The button widget instance
+            
+        Raises:
+            TypeError: If button is not Button or ttk.Button
+            ValueError: If name is empty or button is None
         """
+        if not name:
+            raise ValueError("Button name cannot be empty")
+        
+        if button is None:
+            raise ValueError(f"Button for '{name}' cannot be None")
+        
+        if not isinstance(button, (tk.Button, ttk.Button)):
+            raise TypeError(f"Button '{name}' must be tk.Button or ttk.Button, got {type(button).__name__}")
+        
         self._button_refs[name] = button
+        
+        if self._debug_mode:
+            self._logger.debug(f"Registered button '{name}' ({type(button).__name__})")
         
     def has_selection(self, widget_name: str) -> bool:
         """
-        Check if a widget has selection.
+        Check if a widget has selection with error handling.
         
         Args:
             widget_name: Name of the registered widget
@@ -113,18 +243,31 @@ class ButtonStateMixin:
         """
         widget = self._selection_widgets.get(widget_name)
         if not widget:
+            if self._debug_mode:
+                self._logger.warning(f"Widget '{widget_name}' not registered")
             return False
-            
-        if isinstance(widget, ttk.Treeview):
-            return bool(widget.selection())
-        elif isinstance(widget, tk.Listbox):
-            return bool(widget.curselection())
-        else:
+        
+        try:
+            # Check if widget still exists
+            if not widget.winfo_exists():
+                if self._debug_mode:
+                    self._logger.warning(f"Widget '{widget_name}' no longer exists")
+                return False
+                
+            if isinstance(widget, ttk.Treeview):
+                return bool(widget.selection())
+            elif isinstance(widget, tk.Listbox):
+                return bool(widget.curselection())
+            else:
+                return False
+        except tk.TclError as e:
+            if self._debug_mode:
+                self._logger.error(f"Error checking selection for '{widget_name}': {e}")
             return False
             
     def get_selection_value(self, widget_name: str) -> Optional[Any]:
         """
-        Get the current selection value from a widget.
+        Get the current selection value from a widget with error handling.
         
         Args:
             widget_name: Name of the registered widget
@@ -134,16 +277,187 @@ class ButtonStateMixin:
         """
         widget = self._selection_widgets.get(widget_name)
         if not widget:
+            if self._debug_mode:
+                self._logger.warning(f"Widget '{widget_name}' not registered")
             return None
+        
+        try:
+            if not widget.winfo_exists():
+                return None
+                
+            if isinstance(widget, ttk.Treeview):
+                selection = widget.selection()
+                return selection[0] if selection else None
+            elif isinstance(widget, tk.Listbox):
+                selection = widget.curselection()
+                return selection[0] if selection else None
+            else:
+                return None
+        except tk.TclError as e:
+            if self._debug_mode:
+                self._logger.error(f"Error getting selection from '{widget_name}': {e}")
+            return None
+    
+    # === Batch Registration Methods ===
+    
+    def register_buttons_batch(self, buttons: Dict[str, Union[tk.Button, ttk.Button]]) -> None:
+        """
+        Register multiple buttons at once.
+        
+        Args:
+            buttons: Dictionary mapping button names to button instances
             
-        if isinstance(widget, ttk.Treeview):
-            selection = widget.selection()
-            return selection[0] if selection else None
-        elif isinstance(widget, tk.Listbox):
-            selection = widget.curselection()
-            return selection[0] if selection else None
-        else:
-            return None
+        Example:
+            self.register_buttons_batch({
+                'add_btn': self.add_button,
+                'edit_btn': self.edit_button,
+                'delete_btn': self.delete_button
+            })
+        """
+        for name, button in buttons.items():
+            try:
+                self.register_button(name, button)
+            except (TypeError, ValueError) as e:
+                self._logger.error(f"Failed to register button '{name}': {e}")
+                
+    def register_widgets_batch(self, widgets: Dict[str, Union[tk.Listbox, ttk.Treeview]]) -> None:
+        """
+        Register multiple selection widgets at once.
+        
+        Args:
+            widgets: Dictionary mapping widget names to widget instances
+            
+        Example:
+            self.register_widgets_batch({
+                'monsters': self.monster_tree,
+                'templates': self.template_tree
+            })
+        """
+        for name, widget in widgets.items():
+            try:
+                self.register_selection_widget(name, widget)
+            except (TypeError, ValueError) as e:
+                self._logger.error(f"Failed to register widget '{name}': {e}")
+    
+    # === Context Management Methods ===
+    
+    def set_edit_mode(self, edit_mode: bool) -> None:
+        """
+        Set edit mode state and update button states.
+        
+        Args:
+            edit_mode: True for edit mode, False for view mode
+        """
+        self._context['edit_mode'] = edit_mode
+        
+        if self._debug_mode:
+            self._logger.debug(f"Edit mode: {edit_mode}")
+        
+        self.update_button_states()
+    
+    def set_check_all(self, check_all: bool) -> None:
+        """
+        Set check all state and update button states.
+        
+        Args:
+            check_all: True if all items are checked
+        """
+        self._context['check_all'] = check_all
+        
+        if self._debug_mode:
+            self._logger.debug(f"Check all: {check_all}")
+        
+        self.update_button_states()
+    
+    def update_context(self, **kwargs) -> None:
+        """
+        Update multiple context values at once.
+        
+        Args:
+            **kwargs: Context key-value pairs to update
+            
+        Example:
+            self.update_context(
+                edit_mode=True,
+                check_all=False,
+                monster_count=5
+            )
+        """
+        self._context.update(kwargs)
+        
+        if self._debug_mode:
+            self._logger.debug(f"Context updated: {kwargs}")
+        
+        self.update_button_states()
+    
+    def get_context(self, key: Optional[str] = None) -> Any:
+        """
+        Get context value(s).
+        
+        Args:
+            key: Specific key to get, or None for entire context
+            
+        Returns:
+            Context value or entire context dict
+        """
+        if key is None:
+            return self._context.copy()
+        return self._context.get(key)
+    
+    def is_edit_mode(self) -> bool:
+        """Check if currently in edit mode."""
+        return bool(self._context.get('edit_mode', False))
+    
+    def is_check_all(self) -> bool:
+        """Check if check all is enabled."""
+        return bool(self._context.get('check_all', False))
+    
+    # === State Inspection Methods ===
+    
+    def get_enabled_buttons(self) -> List[str]:
+        """
+        Get list of currently enabled button names.
+        
+        Returns:
+            List of button names that are currently enabled
+        """
+        enabled = []
+        for button_name in self._button_refs.keys():
+            if self.should_enable_button(button_name):
+                enabled.append(button_name)
+        return enabled
+    
+    def get_disabled_buttons(self) -> List[str]:
+        """
+        Get list of currently disabled button names.
+        
+        Returns:
+            List of button names that are currently disabled
+        """
+        disabled = []
+        for button_name in self._button_refs.keys():
+            if not self.should_enable_button(button_name):
+                disabled.append(button_name)
+        return disabled
+    
+    def debug_state(self) -> Dict[str, Any]:
+        """
+        Get current state information for debugging.
+        
+        Returns:
+            Dictionary containing current state information
+        """
+        return {
+            'registered_widgets': list(self._selection_widgets.keys()),
+            'registered_buttons': list(self._button_refs.keys()),
+            'button_rules': self._button_rules.copy(),
+            'selections': {
+                name: self.has_selection(name) 
+                for name in self._selection_widgets.keys()
+            },
+            'enabled_buttons': self.get_enabled_buttons(),
+            'disabled_buttons': self.get_disabled_buttons()
+        }
             
     def should_enable_button(self, button_name: str) -> bool:
         """
@@ -160,9 +474,30 @@ class ButtonStateMixin:
             # No rule defined, default to enabled
             return True
             
-        # Check 'always' condition
-        if rule.get('always'):
-            return True
+        # Check 'always' condition - can be True or False
+        if 'always' in rule:
+            return bool(rule['always'])
+            
+        # Check 'requires_edit_mode' condition
+        if 'requires_edit_mode' in rule:
+            required_mode = rule['requires_edit_mode']
+            if self.is_edit_mode() != required_mode:
+                return False
+        
+        # Check 'requires_check_all' condition  
+        if 'requires_check_all' in rule:
+            if not self.is_check_all():
+                return False
+        
+        # Check 'disabled_in_edit_mode' condition
+        if rule.get('disabled_in_edit_mode') and self.is_edit_mode():
+            return False
+        
+        # Check 'enabled_with_check_all_or_selection' condition
+        if rule.get('enabled_with_check_all_or_selection'):
+            widget_name = rule['enabled_with_check_all_or_selection']
+            if not (self.is_check_all() or self.has_selection(widget_name)):
+                return False
             
         # Check 'requires_selection' condition
         if 'requires_selection' in rule:
@@ -182,15 +517,30 @@ class ButtonStateMixin:
             for widget_name in widget_names:
                 if not self.has_selection(widget_name):
                     return False
+        
+        # Check 'requires_context' condition
+        if 'requires_context' in rule:
+            context_checks = rule['requires_context']
+            for key, expected_value in context_checks.items():
+                actual_value = self._context.get(key)
+                if actual_value != expected_value:
+                    return False
                     
         # Check 'custom' condition
         if 'custom' in rule:
             custom_func = rule['custom']
             if callable(custom_func):
                 try:
-                    return bool(custom_func())
+                    # Pass context to custom function if it accepts it
+                    import inspect
+                    sig = inspect.signature(custom_func)
+                    if len(sig.parameters) > 0:
+                        return bool(custom_func(self._context))
+                    else:
+                        return bool(custom_func())
                 except Exception as e:
-                    print(f"[ButtonStateMixin] Error in custom validation for {button_name}: {e}")
+                    if self._debug_mode:
+                        self._logger.error(f"Error in custom validation for {button_name}: {e}")
                     return False
                     
         return True
