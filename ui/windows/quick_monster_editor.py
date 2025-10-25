@@ -2242,7 +2242,11 @@ class QuickMonsterEditor(tk.Toplevel):
             action_callback: Function to call if user clicks Yes
             auto_hide_seconds: Seconds before auto-hiding (default 5)
         """
+        print(f"[MonsterEditor] _show_confirmation called, widget exists: {self.confirmation_widget is not None}")
+        
         if self.confirmation_widget:
+            print("[MonsterEditor] Showing confirmation widget...")
+            
             # Set the callback (wraps with validation)
             def safe_callback():
                 """Wrapper to validate state before executing action."""
@@ -2262,6 +2266,7 @@ class QuickMonsterEditor(tk.Toplevel):
             self.confirmation_widget.set_confirm_callback(safe_callback)
             # Show widget
             self.confirmation_widget.show(side='left', padx=(0, 5))
+            print(f"[MonsterEditor] Confirmation widget shown, is_visible: {self.confirmation_widget.is_visible()}")
         else:
             # Fallback: execute action immediately if widget not available
             print("[MonsterEditor] Confirmation widget not available, executing action immediately")
@@ -2361,6 +2366,8 @@ class QuickMonsterEditor(tk.Toplevel):
             if not (0 <= monster_index < len(self.monsters)):
                 return
             monster = self.monsters[monster_index]
+        
+        print(f"[MonsterEditor] _on_delete_monster: About to show confirmation for monster: {monster.get('name')}")
         
         # Show inline confirmation instead of popup
         def delete_action():
@@ -2948,6 +2955,8 @@ class QuickMonsterEditor(tk.Toplevel):
             return
         
         template = templates[idx]
+        
+        print(f"[MonsterEditor] _delete_template: About to show confirmation for template: {template.get('name')}")
         
         # Show inline confirmation instead of popup
         def delete_action():
