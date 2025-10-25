@@ -2153,7 +2153,7 @@ class QuickMonsterEditor(tk.Toplevel):
         return re.sub(r'[<>:"/\\|?*]', '_', name)
     
     def _on_template_select(self, event: Any) -> None:
-        """Handle template selection from Treeview - show preview."""
+        """Handle template selection from Treeview - show preview and update threshold."""
         if self.template_listbox is None or not isinstance(self.template_listbox, ttk.Treeview):
             return
         
@@ -2164,17 +2164,77 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Get template data from selection
         item_id = selection[0]
-        values = self.template_listbox.item(item_id, 'values')
-        if not values or len(values) < 2:
+        
+        # Extract index from item_id (format: template_<idx>)
+        try:
+            idx = int(item_id.split('_')[-1])
+        except (ValueError, IndexError):
             return
         
-        # TODO: Load and display template image in preview
-        template_name = values[1]  # Column 1 is name
-        print(f"[MonsterEditor] Selected template: {template_name}")
+        # Get monster and template
+        if not self.current_monster_id:
+            return
         
-        # Update preview label
-        if self.template_preview_label:
-            self.template_preview_label.config(text=f"Preview: {template_name}")
+        monster = self._find_monster_by_id(self.current_monster_id)
+        if not monster:
+            return
+        
+        templates = monster.get('templates', [])
+        if idx >= len(templates):
+            return
+        
+        template = templates[idx]
+        
+        # Update threshold slider
+        threshold = template.get('threshold', 0.7)
+        if self.threshold_scale:
+            self.threshold_scale.set(threshold)
+        
+        # Load and display template image preview
+        template_path = template.get('path', '')
+        template_name = template.get('name', 'Unknown')
+        
+        if template_path and Path(template_path).exists():
+            try:
+                # Load image with PIL if available
+                if PIL_AVAILABLE and Image and ImageTk:
+                    img = Image.open(template_path)
+                    
+                    # Resize to fit preview (max 250x250, maintain aspect ratio)
+                    max_size = (250, 250)
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                    
+                    # Convert to PhotoImage
+                    photo = ImageTk.PhotoImage(img)
+                    
+                    # Update preview label
+                    if self.template_preview_label:
+                        self.template_preview_label.config(image=photo, text='')
+                        # Keep reference to prevent garbage collection
+                        self.template_preview_label.image = photo  # type: ignore
+                else:
+                    # Fallback if PIL not available
+                    if self.template_preview_label:
+                        self.template_preview_label.config(
+                            text=f"Preview:\n{template_name}\n\n(PIL required for image preview)",
+                            image=''
+                        )
+            except Exception as e:
+                print(f"[MonsterEditor] Error loading template preview: {e}")
+                if self.template_preview_label:
+                    self.template_preview_label.config(
+                        text=f"Error loading\n{template_name}",
+                        image=''
+                    )
+        else:
+            # No valid path
+            if self.template_preview_label:
+                self.template_preview_label.config(
+                    text=f"No preview\n{template_name}",
+                    image=''
+                )
+        
+        print(f"[MonsterEditor] Selected template: {template_name} (threshold: {threshold:.2f})")
     
     def _add_template(self) -> None:
         """Add a new template to the current monster."""
