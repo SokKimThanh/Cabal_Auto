@@ -690,44 +690,6 @@ class QuickMonsterEditor(tk.Toplevel):
         # Bind selection event
         self.monster_listbox.bind('<<TreeviewSelect>>', self._on_monster_select)
         
-        # Button container
-        button_frame = tk.Frame(left_frame, bg=UI.BG_PANEL)
-        button_frame.pack(side='top', fill='x', padx=10, pady=(5, 10))
-        
-        # Add Monster button - icon only
-        self.add_monster_button = create_icon_button(
-            button_frame,
-            icon_name='add',
-            icon_fallback='➕',
-            icon_size=16,
-            command=self._on_add_monster,
-            button_type='green_light',
-            variant='icon_only',  # Icon only
-            width=None,  # Full width
-            tooltip_key='tooltip_add_monster',
-            tooltip_ns='monster_editor'
-        )
-        self.add_monster_button.pack(side='top', fill='x', pady=(0, 5))
-        
-        # Delete Monster button - icon only with auto disabled hover
-        self.delete_monster_button = create_icon_button(
-            button_frame,
-            icon_name='delete',
-            icon_fallback='🗑️',
-            icon_size=16,
-            command=self._on_delete_monster,
-            button_type='red',
-            variant='icon_only',  # Icon only
-            width=None,  # Full width
-            auto_hover_disabled=True,  # Show prohibition icon when disabled
-            tooltip_key='tooltip_delete_monster',
-            tooltip_ns='monster_editor'
-        )
-        self.delete_monster_button.pack(side='top', fill='x', pady=(0, 5))
-        
-        # Initially disable delete button (no selection)
-        self.delete_monster_button.config(state='disabled')
-        
         # Initial load
         self._refresh_monster_list()
     
@@ -777,9 +739,12 @@ class QuickMonsterEditor(tk.Toplevel):
         header_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
         header_frame.pack(fill='x', padx=5, pady=(0, 10))
         
-        # Edit/Save toggle button - icon only
+        # Left side: Edit/Save toggle button
+        left_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
+        left_buttons.pack(side='left')
+        
         self.edit_toggle_button = create_icon_button(
-            header_frame,
+            left_buttons,
             icon_name='edit',
             icon_fallback='✏️',
             icon_size=16,
@@ -795,7 +760,7 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Editing badge (orange background, white text)
         self.editing_badge = tk.Label(
-            header_frame,
+            left_buttons,
             text=i18n_t('badge_editing', ns='monster_editor', default='Đang chỉnh sửa'),
             font=UI.FONT_SMALL,
             fg='white',
@@ -806,6 +771,46 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         # Initially hidden (not in edit mode)
         # self.editing_badge.pack(side='left')  # Don't pack yet
+        
+        # Right side: Add/Delete/Edit buttons (20x20, icon 16px)
+        right_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
+        right_buttons.pack(side='right')
+        
+        # Add Monster button
+        self.add_monster_button = create_icon_button(
+            right_buttons,
+            icon_name='add',
+            icon_fallback='➕',
+            icon_size=16,
+            command=self._on_add_monster,
+            button_type='green_light',
+            variant='icon_only',
+            width=20,
+            height=20,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_add_monster',
+            tooltip_ns='monster_editor'
+        )
+        self.add_monster_button.pack(side='left', padx=(0, 2))
+        
+        # Delete Monster button
+        self.delete_monster_button = create_icon_button(
+            right_buttons,
+            icon_name='delete',
+            icon_fallback='🗑️',
+            icon_size=16,
+            command=self._on_delete_monster,
+            button_type='red',
+            variant='icon_only',
+            width=20,
+            height=20,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_delete_monster',
+            tooltip_ns='monster_editor'
+        )
+        self.delete_monster_button.pack(side='left', padx=2)
+        
+        # Note: Edit button is already in left_buttons as edit_toggle_button
         
         # Form content
         form_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
