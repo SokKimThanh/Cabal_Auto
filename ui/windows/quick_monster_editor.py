@@ -205,6 +205,12 @@ class QuickMonsterEditor(tk.Toplevel):
         self.is_dirty = False  # Global unsaved changes
         self.is_monster_dirty = False  # Current monster modified
         
+        # Processing flags to prevent concurrent operations
+        self._is_capturing = False
+        self._is_browsing = False
+        self._is_deleting = False
+        self._is_testing = False
+        
         # Hunt config path
         self.hunt_config_path = Path("lib/data/hunt_config.json")
         
@@ -274,9 +280,8 @@ class QuickMonsterEditor(tk.Toplevel):
         self.cancel_button: Optional[tk.Button] = None
         self.status_badge: Optional[tk.Label] = None
         
-        # Legacy widgets (from quick editor, may be removed later)
+        # Legacy widgets (from quick editor) - may be removed later
         self.progress_label: Optional[tk.Label] = None
-        self.capture_button: Optional[tk.Button] = None
         self.test_button: Optional[tk.Button] = None
         self.threshold_scale: Optional[tk.Scale] = None
         self.threshold_label: Optional[tk.Label] = None
@@ -2087,6 +2092,10 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def _capture_template(self) -> None:
         """Capture template image from a selected screen region and attach to current monster."""
+        # Prevent concurrent captures
+        if self._is_capturing:
+            return
+        
         if not self.current_monster_id:
             messagebox.showwarning(
                 'Warning' if get_lang() == 'en' else 'Cảnh báo',
@@ -2103,77 +2112,88 @@ class QuickMonsterEditor(tk.Toplevel):
             )
             return
         
-        # Find monster
-        monster = self._find_monster_by_id(self.current_monster_id)
-        if not monster:
-            return
-        
-        # Hide window and capture region
-        try:
-            self.withdraw()
-            self.update_idletasks()
-            time.sleep(0.15)
-        except Exception:
-            pass
+        # Set flag
+        self._is_capturing = True
         
         try:
-            overlay = self._RegionCaptureOverlay(self)
-            bbox = overlay.show_modal()
-        except Exception:
-            bbox = None
-        finally:
+            # Find monster
+            monster = self._find_monster_by_id(self.current_monster_id)
+            if not monster:
+                return
+            
+            # Hide window and capture region
             try:
-                self.deiconify()
-                self.lift()
-                self.focus_force()
+                self.withdraw()
+                self.update_idletasks()
+                time.sleep(0.15)
             except Exception:
                 pass
-        
-        if not bbox:
-            return
-        
-        # Capture image
-        try:
-            img = ImageGrab.grab(bbox=bbox)
-        except Exception as e:
-            messagebox.showerror(
-                'Capture Failed' if get_lang() == 'en' else 'Chụp Thất Bại',
-                f"Error: {e}"
+            
+            try:
+                overlay = self._RegionCaptureOverlay(self)
+                bbox = overlay.show_modal()
+            except Exception:
+                bbox = None
+            finally:
+                try:
+                    self.deiconify()
+                    self.lift()
+                    self.focus_force()
+                except Exception:
+                    pass
+            
+            if not bbox:
+                return
+            
+            # Capture image
+            try:
+                img = ImageGrab.grab(bbox=bbox)
+            except Exception as e:
+                messagebox.showerror(
+                    'Capture Failed' if get_lang() == 'en' else 'Chụp Thất Bại',
+                    f"Error: {e}"
+                )
+                return
+            
+            # Save image
+            base = self._sanitize_filename(monster.get('name', 'monster'))
+            ts = int(time.time())
+            filename = f"{base}_capture_{ts}.png"
+            assets_dir = Path("assets/images/monsters")
+            assets_dir.mkdir(parents=True, exist_ok=True)
+            save_path = assets_dir / filename
+            
+            try:
+                img.save(save_path)
+            except Exception as e:
+                messagebox.showerror(
+                    'Save Failed' if get_lang() == 'en' else 'Lưu Thất Bại',
+                    f"Error: {e}"
+                )
+                return
+            
+            # Add to templates
+            tmpl = {'name': filename, 'path': f'assets/images/monsters/{filename}', 'threshold': 0.85}
+            monster.setdefault('templates', []).append(tmpl)
+            self.has_unsaved_changes = True
+            
+            # Refresh template list
+            self._refresh_template_list()
+            
+            messagebox.showinfo(
+                'Captured' if get_lang() == 'en' else 'Đã Chụp',
+                'Template captured and saved.' if get_lang() == 'en' else 'Đã chụp và lưu template.'
             )
-            return
-        
-        # Save image
-        base = self._sanitize_filename(monster.get('name', 'monster'))
-        ts = int(time.time())
-        filename = f"{base}_capture_{ts}.png"
-        assets_dir = Path("assets/images/monsters")
-        assets_dir.mkdir(parents=True, exist_ok=True)
-        save_path = assets_dir / filename
-        
-        try:
-            img.save(save_path)
-        except Exception as e:
-            messagebox.showerror(
-                'Save Failed' if get_lang() == 'en' else 'Lưu Thất Bại',
-                f"Error: {e}"
-            )
-            return
-        
-        # Add to templates
-        tmpl = {'name': filename, 'path': f'assets/images/monsters/{filename}', 'threshold': 0.85}
-        monster.setdefault('templates', []).append(tmpl)
-        self.has_unsaved_changes = True
-        
-        # Refresh template list
-        self._refresh_template_list()
-        
-        messagebox.showinfo(
-            'Captured' if get_lang() == 'en' else 'Đã Chụp',
-            'Template captured and saved.' if get_lang() == 'en' else 'Đã chụp và lưu template.'
-        )
+        finally:
+            # Always reset flag
+            self._is_capturing = False
     
     def _browse_template_image(self) -> None:
         """Browse for template image file and add to current monster."""
+        # Prevent concurrent browse operations
+        if self._is_browsing:
+            return
+        
         if not self.current_monster_id:
             messagebox.showwarning(
                 'Warning' if get_lang() == 'en' else 'Cảnh báo',
@@ -2181,95 +2201,117 @@ class QuickMonsterEditor(tk.Toplevel):
             )
             return
         
-        file_path = filedialog.askopenfilename(
-            title='Select Template Image' if get_lang() == 'en' else 'Chọn Ảnh Template',
-            filetypes=[('Image files', '*.png *.jpg *.jpeg *.bmp'), ('All files', '*.*')]
-        )
-        
-        if not file_path:
-            return
-        
-        monster = self._find_monster_by_id(self.current_monster_id)
-        if not monster:
-            return
-        
-        # Copy file to assets directory
-        import shutil
-        filename = Path(file_path).name
-        base_name = Path(filename).stem
-        ext = Path(filename).suffix
-        ts = int(time.time())
-        new_filename = f"{base_name}_{ts}{ext}"
-        
-        assets_dir = Path("assets/images/monsters")
-        assets_dir.mkdir(parents=True, exist_ok=True)
-        dest_path = assets_dir / new_filename
+        # Set flag
+        self._is_browsing = True
         
         try:
-            shutil.copy2(file_path, dest_path)
-        except Exception as e:
-            messagebox.showerror(
-                'Copy Failed' if get_lang() == 'en' else 'Sao Chép Thất Bại',
-                f"Error: {e}"
+            file_path = filedialog.askopenfilename(
+                title='Select Template Image' if get_lang() == 'en' else 'Chọn Ảnh Template',
+                filetypes=[('Image files', '*.png *.jpg *.jpeg *.bmp'), ('All files', '*.*')]
             )
-            return
-        
-        # Add to templates
-        tmpl = {'name': new_filename, 'path': f'assets/images/monsters/{new_filename}', 'threshold': 0.85}
-        monster.setdefault('templates', []).append(tmpl)
-        self.has_unsaved_changes = True
-        
-        # Refresh template list
-        self._refresh_template_list()
-        
-        messagebox.showinfo(
-            'Added' if get_lang() == 'en' else 'Đã Thêm',
-            'Template added successfully.' if get_lang() == 'en' else 'Đã thêm template thành công.'
-        )
+            
+            if not file_path:
+                return
+            
+            monster = self._find_monster_by_id(self.current_monster_id)
+            if not monster:
+                return
+            
+            # Copy file to assets directory
+            import shutil
+            filename = Path(file_path).name
+            base_name = Path(filename).stem
+            ext = Path(filename).suffix
+            ts = int(time.time())
+            new_filename = f"{base_name}_{ts}{ext}"
+            
+            assets_dir = Path("assets/images/monsters")
+            assets_dir.mkdir(parents=True, exist_ok=True)
+            dest_path = assets_dir / new_filename
+            
+            try:
+                shutil.copy2(file_path, dest_path)
+            except Exception as e:
+                messagebox.showerror(
+                    'Copy Failed' if get_lang() == 'en' else 'Sao Chép Thất Bại',
+                    f"Error: {e}"
+                )
+                return
+            
+            # Add to templates
+            tmpl = {'name': new_filename, 'path': f'assets/images/monsters/{new_filename}', 'threshold': 0.85}
+            monster.setdefault('templates', []).append(tmpl)
+            self.has_unsaved_changes = True
+            
+            # Refresh template list
+            self._refresh_template_list()
+            
+            messagebox.showinfo(
+                'Added' if get_lang() == 'en' else 'Đã Thêm',
+                'Template added successfully.' if get_lang() == 'en' else 'Đã thêm template thành công.'
+            )
+        finally:
+            # Always reset flag
+            self._is_browsing = False
     
     def _delete_template(self) -> None:
         """Delete selected template (with confirmation)."""
+        # Prevent concurrent delete operations
+        if self._is_deleting:
+            return
+        
         if not self.current_monster_id or not self.template_listbox:
             return
         
-        # Get selection
-        selection = self.template_listbox.curselection()
-        if not selection:
-            messagebox.showwarning(
-                'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
+        # Set flag
+        self._is_deleting = True
+        
+        try:
+            # Get selection
+            selection = self.template_listbox.curselection()
+            if not selection:
+                messagebox.showwarning(
+                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
+                    'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
+                )
+                return
+            
+            idx = selection[0]
+            monster = self._find_monster_by_id(self.current_monster_id)
+            if not monster:
+                return
+            
+            templates = monster.get('templates', [])
+            if idx >= len(templates):
+                return
+            
+            template = templates[idx]
+            
+            # Confirm
+            response = messagebox.askyesno(
+                'Confirm Delete' if get_lang() == 'en' else 'Xác Nhận Xóa',
+                f"Delete template '{template.get('name', 'Unknown')}'?" if get_lang() == 'en'
+                else f"Xóa template '{template.get('name', 'Unknown')}'?"
             )
-            return
-        
-        idx = selection[0]
-        monster = self._find_monster_by_id(self.current_monster_id)
-        if not monster:
-            return
-        
-        templates = monster.get('templates', [])
-        if idx >= len(templates):
-            return
-        
-        template = templates[idx]
-        
-        # Confirm
-        response = messagebox.askyesno(
-            'Confirm Delete' if get_lang() == 'en' else 'Xác Nhận Xóa',
-            f"Delete template '{template.get('name', 'Unknown')}'?" if get_lang() == 'en'
-            else f"Xóa template '{template.get('name', 'Unknown')}'?"
-        )
-        
-        if response:
-            del templates[idx]
-            self.has_unsaved_changes = True
-            self._refresh_template_list()
-            messagebox.showinfo(
-                'Deleted' if get_lang() == 'en' else 'Đã Xóa',
-                'Template removed successfully.' if get_lang() == 'en' else 'Đã xóa template thành công.'
-            )
+            
+            if response:
+                del templates[idx]
+                self.has_unsaved_changes = True
+                self._refresh_template_list()
+                messagebox.showinfo(
+                    'Deleted' if get_lang() == 'en' else 'Đã Xóa',
+                    'Template removed successfully.' if get_lang() == 'en' else 'Đã xóa template thành công.'
+                )
+        finally:
+            # Always reset flag
+            self._is_deleting = False
     
     def _test_template_recognition(self) -> None:
         """Test match for current template on screen."""
+        # Prevent concurrent test operations
+        if self._is_testing:
+            return
+        
         if not self.current_monster_id or not self.template_listbox:
             return
         
@@ -2280,72 +2322,79 @@ class QuickMonsterEditor(tk.Toplevel):
             )
             return
         
-        # Get selection
-        selection = self.template_listbox.curselection()
-        if not selection:
-            messagebox.showinfo(
-                'Info' if get_lang() == 'en' else 'Thông báo',
-                'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
-            )
-            return
-        
-        idx = selection[0]
-        monster = self._find_monster_by_id(self.current_monster_id)
-        if not monster:
-            return
-        
-        templates = monster.get('templates', [])
-        if idx >= len(templates):
-            return
-        
-        template = templates[idx]
-        path = template.get('path', '')
-        threshold = template.get('threshold', 0.85)
-        
-        if not path:
-            messagebox.showinfo(
-                'Info' if get_lang() == 'en' else 'Thông báo',
-                'Template has no path.' if get_lang() == 'en' else 'Template không có đường dẫn.'
-            )
-            return
-        
-        # Minimize and test
-        try:
-            self.iconify()
-        except Exception:
-            pass
-        self.update()
-        time.sleep(0.4)
+        # Set flag
+        self._is_testing = True
         
         try:
-            box, conf = locate_template(path, region=None, threshold=threshold, method='auto')
-        except Exception as exc:
+            # Get selection
+            selection = self.template_listbox.curselection()
+            if not selection:
+                messagebox.showinfo(
+                    'Info' if get_lang() == 'en' else 'Thông báo',
+                    'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
+                )
+                return
+            
+            idx = selection[0]
+            monster = self._find_monster_by_id(self.current_monster_id)
+            if not monster:
+                return
+            
+            templates = monster.get('templates', [])
+            if idx >= len(templates):
+                return
+            
+            template = templates[idx]
+            path = template.get('path', '')
+            threshold = template.get('threshold', 0.85)
+            
+            if not path:
+                messagebox.showinfo(
+                    'Info' if get_lang() == 'en' else 'Thông báo',
+                    'Template has no path.' if get_lang() == 'en' else 'Template không có đường dẫn.'
+                )
+                return
+            
+            # Minimize and test
+            try:
+                self.iconify()
+            except Exception:
+                pass
+            self.update()
+            time.sleep(0.4)
+            
+            try:
+                box, conf = locate_template(path, region=None, threshold=threshold, method='auto')
+            except Exception as exc:
+                try:
+                    self.deiconify()
+                    self.lift()
+                except Exception:
+                    pass
+                messagebox.showerror('Error' if get_lang() == 'en' else 'Lỗi', str(exc))
+                return
+            
+            # Restore window
             try:
                 self.deiconify()
                 self.lift()
             except Exception:
                 pass
-            messagebox.showerror('Error' if get_lang() == 'en' else 'Lỗi', str(exc))
-            return
-        
-        # Restore window
-        try:
-            self.deiconify()
-            self.lift()
-        except Exception:
-            pass
-        
-        # Show results
-        if box:
-            x = int(box[0] + box[2] // 2)
-            y = int(box[1] + box[3] // 2)
-            if conf is None:
-                msg = f"Match found at ({x}, {y})" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y})"
+            
+            # Show results
+            if box:
+                x = int(box[0] + box[2] // 2)
+                y = int(box[1] + box[3] // 2)
+                if conf is None:
+                    msg = f"Match found at ({x}, {y})" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y})"
+                else:
+                    msg = f"Match found at ({x}, {y}) - Confidence: {conf:.2f}" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y}) - Độ tin cậy: {conf:.2f}"
+                messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', msg)
             else:
-                msg = f"Match found at ({x}, {y}) - Confidence: {conf:.2f}" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y}) - Độ tin cậy: {conf:.2f}"
-            messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', msg)
-        else:
-            messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', 'No match found' if get_lang() == 'en' else 'Không tìm thấy')
+                messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', 'No match found' if get_lang() == 'en' else 'Không tìm thấy')
+        finally:
+            # Always reset flag
+            self._is_testing = False
     
     def _refresh_template_list(self) -> None:
         """Refresh template listbox with current monster's templates."""
