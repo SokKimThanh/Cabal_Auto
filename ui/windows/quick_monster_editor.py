@@ -384,28 +384,25 @@ class QuickMonsterEditor(tk.Toplevel):
             else:
                 # Disable save button (auto hover shows prohibition icon)
                 self.save_button.config(state='disabled')
-        
-        # Legacy: Update old status label if exists
-        if hasattr(self, 'status_label') and self.status_label is not None:
-            if self.is_dirty:
-                status_text = i18n_t('status_unsaved', ns='monster_editor', default='Unsaved changes')
-                self.status_label.config(text=f"● {status_text}", fg=UI.COLOR_WARNING)
-            else:
-                status_text = i18n_t('status_saved', ns='monster_editor', default='All saved')
-                self.status_label.config(text=f"✓ {status_text}", fg=UI.COLOR_ACCENT)
     
     def _flash_save_success(self) -> None:
-        """Flash status label to indicate save success (subtle feedback)."""
-        if not hasattr(self, 'status_label') or self.status_label is None:
+        """Flash status badge to indicate save success (subtle feedback)."""
+        if not self.status_badge:
             return
         
-        # Flash green "Saved!" message
-        original_text = self.status_label.cget('text')
-        self.status_label.config(text="✓ Saved!", fg='#4CAF50', font=('Segoe UI', 10, 'bold'))
+        # Flash green "Saved!" message on badge
+        original_bg = self.status_badge.cget('bg')
+        original_text = self.status_badge.cget('text')
+        
+        self.status_badge.config(
+            text="✓ Saved!" if get_lang() == 'en' else "✓ Đã lưu!",
+            bg='#4CAF50',
+            fg='white'
+        )
         
         # Restore after 1.5 seconds
         def restore():
-            if self.status_label and self.status_label.winfo_exists():
+            if self.status_badge and self.status_badge.winfo_exists():
                 self._update_dirty_state_ui()
         
         self.after(1500, restore)
