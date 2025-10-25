@@ -215,9 +215,13 @@ class QuickMonsterEditor(tk.Toplevel):
         # Hunt config path
         self.hunt_config_path = Path("lib/data/hunt_config.json")
         
+        # UI settings path (for saving column visibility, window controls, etc.)
+        self.ui_settings_path = Path("lib/data/monster_editor_ui_settings.json")
+        
         # Game window mode (none, below, above)
         self.game_window_mode_var = tk.StringVar(value="none")
         self._load_hunt_config()
+        self._load_ui_settings()  # Load UI settings
         
         # UI update debounce
         self._refresh_list_after_id: Optional[str] = None
@@ -282,6 +286,9 @@ class QuickMonsterEditor(tk.Toplevel):
         self.save_button: Optional[tk.Button] = None
         self.cancel_button: Optional[tk.Button] = None
         self.status_badge: Optional[tk.Label] = None
+        
+        # Settings tab widgets
+        self.settings_saved_badge: Optional[tk.Label] = None
         
         # Legacy widgets (from quick editor) - may be removed later
         self.progress_label: Optional[tk.Label] = None
@@ -349,6 +356,70 @@ class QuickMonsterEditor(tk.Toplevel):
                 print(f"[MonsterEditor] hunt_config.json not found, using default 'none'")
         except Exception as e:
             print(f"[MonsterEditor] Error loading hunt_config.json: {e}")
+    
+    def _load_ui_settings(self) -> None:
+        """Load UI settings from JSON file."""
+        try:
+            if self.ui_settings_path.exists():
+                with open(self.ui_settings_path, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                
+                # Store settings to be applied after UI is created
+                self._ui_settings = settings
+                print(f"[MonsterEditor] Loaded UI settings: {settings}")
+            else:
+                # Default settings
+                self._ui_settings = {
+                    'col_image_visible': True,
+                    'col_threshold_visible': True,
+                    'col_path_visible': True,
+                    'show_window_controls': True
+                }
+                print(f"[MonsterEditor] No UI settings file found, using defaults")
+        except Exception as e:
+            print(f"[MonsterEditor] Error loading UI settings: {e}")
+            self._ui_settings = {
+                'col_image_visible': True,
+                'col_threshold_visible': True,
+                'col_path_visible': True,
+                'show_window_controls': True
+            }
+    
+    def _save_ui_settings(self) -> None:
+        """Save UI settings to JSON file."""
+        try:
+            settings = {
+                'col_image_visible': self.col_image_visible.get(),
+                'col_threshold_visible': self.col_threshold_visible.get(),
+                'col_path_visible': self.col_path_visible.get(),
+                'show_window_controls': self.show_window_controls_var.get()
+            }
+            
+            # Ensure directory exists
+            self.ui_settings_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(self.ui_settings_path, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=2, ensure_ascii=False)
+            
+            print(f"[MonsterEditor] Saved UI settings: {settings}")
+            
+            # Show saved badge
+            self._show_settings_saved_badge()
+        except Exception as e:
+            print(f"[MonsterEditor] Error saving UI settings: {e}")
+    
+    def _show_settings_saved_badge(self) -> None:
+        """Show settings saved badge and auto-hide after 2 seconds."""
+        if hasattr(self, 'settings_saved_badge') and self.settings_saved_badge:
+            # Show badge
+            self.settings_saved_badge.pack(side='right')
+            
+            # Hide after 2 seconds
+            def hide_badge():
+                if self.settings_saved_badge:
+                    self.settings_saved_badge.pack_forget()
+            
+            self.after(2000, hide_badge)
     
     def set_dirty(self, value: bool = True) -> None:
         """Set dirty state and update UI."""
@@ -1175,9 +1246,27 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_settings', ns='monster_editor', default='Cài đặt')
         self.notebook.add(self.settings_tab, text=tab_text)
         
+        # Top bar with badge
+        top_bar = tk.Frame(self.settings_tab, bg=UI.BG_DEFAULT)
+        top_bar.pack(side='top', fill='x', padx=20, pady=(20, 10))
+        
+        # Settings saved badge (right side)
+        self.settings_saved_badge = tk.Label(
+            top_bar,
+            text=i18n_t('badge_settings_saved', ns='monster_editor', default='✓ Đã lưu cài đặt'),
+            font=UI.FONT_SMALL,
+            fg='white',
+            bg='#28A745',  # Green for saved
+            padx=8,
+            pady=2,
+            relief='flat'
+        )
+        self.settings_saved_badge.pack(side='right')
+        self.settings_saved_badge.pack_forget()  # Initially hidden
+        
         # Main container with padding
         main_container = tk.Frame(self.settings_tab, bg=UI.BG_DEFAULT)
-        main_container.pack(fill='both', expand=True, padx=20, pady=20)
+        main_container.pack(fill='both', expand=True, padx=20, pady=(0, 20))
         
         # ========== Column Visibility Options ==========
         col_visibility_frame = tk.LabelFrame(
@@ -1191,17 +1280,17 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         col_visibility_frame.pack(fill='x', pady=(0, 20))
         
-        # Initialize column visibility variables
-        self.col_image_visible = tk.BooleanVar(value=True)
-        self.col_threshold_visible = tk.BooleanVar(value=True)
-        self.col_path_visible = tk.BooleanVar(value=True)
+        # Initialize column visibility variables with saved settings
+        self.col_image_visible = tk.BooleanVar(value=self._ui_settings.get('col_image_visible', True))
+        self.col_threshold_visible = tk.BooleanVar(value=self._ui_settings.get('col_threshold_visible', True))
+        self.col_path_visible = tk.BooleanVar(value=self._ui_settings.get('col_path_visible', True))
         
         # Checkboxes for column visibility
         tk.Checkbutton(
             col_visibility_frame,
             text='🖼️ Hình ảnh' if get_lang() == 'vi' else '🖼️ Image',
             variable=self.col_image_visible,
-            command=self._toggle_column_visibility,
+            command=self._on_column_visibility_change,
             bg=UI.BG_DEFAULT
         ).pack(anchor='w', pady=5)
         
@@ -1209,7 +1298,7 @@ class QuickMonsterEditor(tk.Toplevel):
             col_visibility_frame,
             text='% Ngưỡng nhận diện' if get_lang() == 'vi' else '% Threshold',
             variable=self.col_threshold_visible,
-            command=self._toggle_column_visibility,
+            command=self._on_column_visibility_change,
             bg=UI.BG_DEFAULT
         ).pack(anchor='w', pady=5)
         
@@ -1217,7 +1306,7 @@ class QuickMonsterEditor(tk.Toplevel):
             col_visibility_frame,
             text='📁 Đường dẫn' if get_lang() == 'vi' else '📁 Path',
             variable=self.col_path_visible,
-            command=self._toggle_column_visibility,
+            command=self._on_column_visibility_change,
             bg=UI.BG_DEFAULT
         ).pack(anchor='w', pady=5)
         
@@ -1233,8 +1322,8 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         window_controls_frame.pack(fill='both', expand=True)
         
-        # Window controls checkbox
-        self.show_window_controls_var = tk.BooleanVar(value=True)  # Default: visible in settings
+        # Window controls checkbox with saved setting
+        self.show_window_controls_var = tk.BooleanVar(value=self._ui_settings.get('show_window_controls', True))
         
         def toggle_window_controls():
             """Toggle visibility of window position selectors."""
@@ -1251,6 +1340,9 @@ class QuickMonsterEditor(tk.Toplevel):
                     self.app_mode_selector.hide()
                 if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'hide'):
                     self.game_mode_selector.hide()
+            
+            # Save settings when changed
+            self._save_ui_settings()
         
         window_check = tk.Checkbutton(
             window_controls_frame,
@@ -1301,6 +1393,14 @@ class QuickMonsterEditor(tk.Toplevel):
             on_mode_change=self._on_game_mode_change
         )
         self.game_mode_selector.pack(side='left')
+        
+        # Apply saved visibility state
+        if not self.show_window_controls_var.get():
+            windows_frame.pack_forget()
+            if hasattr(self.app_mode_selector, 'hide'):
+                self.app_mode_selector.hide()
+            if hasattr(self.game_mode_selector, 'hide'):
+                self.game_mode_selector.hide()
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -2008,6 +2108,11 @@ class QuickMonsterEditor(tk.Toplevel):
         else:
             # Show only selected columns
             self.template_listbox.config(displaycolumns=tuple(display_cols))
+    
+    def _on_column_visibility_change(self) -> None:
+        """Handle column visibility checkbox changes - update display and save settings."""
+        self._toggle_column_visibility()
+        self._save_ui_settings()
     
     def _set_fields_state(self, state: str) -> None:
         """Set state of all form fields.
