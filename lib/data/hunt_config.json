@@ -55,7 +55,7 @@
   "monster_list": [],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 21928,
+  "window_pid": 27992,
   "templates": [],
   "training_mode_enabled": true,
   "ui_mode": "beginner",
@@ -69,7 +69,7 @@
     "vision_wizard_key": "ctrl+shift+v"
   },
   "training_monster_list": [],
-  "window_hwnd": 264136,
+  "window_hwnd": 12978414,
   "overlay": {
     "enabled": false
   },

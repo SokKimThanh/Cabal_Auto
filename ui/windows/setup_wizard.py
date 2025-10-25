@@ -505,67 +505,81 @@ class SetupWizard:
             )
 
     def _show_step(self, step_number):
-        """Show specified wizard step."""
+        """Show specified wizard step.
+        
+        Safely updates UI elements with widget existence checks.
+        """
         self.current_step = step_number
 
-        # Update progress indicator
-        self.progress_label.config(text=f"Step {step_number} of {self.total_steps}")
+        # Update progress indicator (safe - persistent widget)
+        try:
+            self.progress_label.config(text=f"Step {step_number} of {self.total_steps}")
+        except (tk.TclError, AttributeError):
+            pass
 
-        # Update progress dots
-        for i, dot in enumerate(self.progress_dots):
-            if i < step_number:
-                dot.config(fg="#4CAF50")  # Green for completed/current
-            else:
-                dot.config(fg="#ccc")  # Gray for upcoming
+        # Update progress dots (safe - persistent widgets)
+        try:
+            for i, dot in enumerate(self.progress_dots):
+                if i < step_number:
+                    dot.config(fg="#4CAF50")  # Green for completed/current
+                else:
+                    dot.config(fg="#ccc")  # Gray for upcoming
+        except (tk.TclError, AttributeError):
+            pass
 
-        # Update button states
-        self.back_button.config(state=tk.NORMAL if step_number > 1 else tk.DISABLED)
+        # Update button states (safe - persistent widgets)
+        try:
+            self.back_button.config(state=tk.NORMAL if step_number > 1 else tk.DISABLED)
+        except (tk.TclError, AttributeError):
+            pass
+
 
         # Update Next/Finish button based on step (icon placement rule: Next=right, Finish=left)
-        if step_number == self.total_steps:
-            # Finish button: icon on LEFT, different icon (save/check)
-            # NO emoji in text when icon present, only use emoji as fallback
-            finish_icon = self._icon("save", "✓", size=18)
-            self.next_button.config(
-                text=(
-                    " Finish" if not isinstance(finish_icon, str) else "✓ Finish"
-                ),  # Emoji only when fallback
-                image=finish_icon if not isinstance(finish_icon, str) else "",
-                compound="left" if not isinstance(finish_icon, str) else "none",
-                bg="#2196F3",
-                activebackground="#1976D2",
-                font=("Arial", 11, "bold"),
-            )
-            if not isinstance(finish_icon, str):
-                try:
-                    if not hasattr(self, "_image_refs"):
-                        self._image_refs = []
-                    self._image_refs.append(finish_icon)
-                except Exception:
-                    pass
-        else:
-            # Next button: icon on RIGHT (directional)
-            # NO emoji in text when icon present, only use emoji as fallback
-            next_icon = self._icon("next", "→", size=18)
-            self.next_button.config(
-                text=(
-                    "Next " if not isinstance(next_icon, str) else "Next →"
-                ),  # Emoji only when fallback
-                image=next_icon if not isinstance(next_icon, str) else "",
-                compound="right" if not isinstance(next_icon, str) else "none",
-                bg="#357A38",
-                activebackground="#2E7D32",
-                font=("Arial", 11, "bold"),
-            )
-            if not isinstance(next_icon, str):
-                try:
-                    if not hasattr(self, "_image_refs"):
-                        self._image_refs = []
-                    self._image_refs.append(next_icon)
-                except Exception:
-                    pass
-
-        # Clear content frame
+        try:
+            if step_number == self.total_steps:
+                # Finish button: icon on LEFT, different icon (save/check)
+                # NO emoji in text when icon present, only use emoji as fallback
+                finish_icon = self._icon("save", "✓", size=18)
+                self.next_button.config(
+                    text=(
+                        " Finish" if not isinstance(finish_icon, str) else "✓ Finish"
+                    ),  # Emoji only when fallback
+                    image=finish_icon if not isinstance(finish_icon, str) else "",
+                    compound="left" if not isinstance(finish_icon, str) else "none",
+                    bg="#2196F3",
+                    activebackground="#1976D2",
+                    font=("Arial", 11, "bold"),
+                )
+                if not isinstance(finish_icon, str):
+                    try:
+                        if not hasattr(self, "_image_refs"):
+                            self._image_refs = []
+                        self._image_refs.append(finish_icon)
+                    except Exception:
+                        pass
+            else:
+                # Next button: icon on RIGHT (directional)
+                # NO emoji in text when icon present, only use emoji as fallback
+                next_icon = self._icon("next", "→", size=18)
+                self.next_button.config(
+                    text=(
+                        "Next " if not isinstance(next_icon, str) else "Next →"
+                    ),  # Emoji only when fallback
+                    image=next_icon if not isinstance(next_icon, str) else "",
+                    compound="right" if not isinstance(next_icon, str) else "none",
+                    bg="#357A38",
+                    activebackground="#2E7D32",
+                    font=("Arial", 11, "bold"),
+                )
+                if not isinstance(next_icon, str):
+                    try:
+                        if not hasattr(self, "_image_refs"):
+                            self._image_refs = []
+                        self._image_refs.append(next_icon)
+                    except Exception:
+                        pass
+        except (tk.TclError, AttributeError):
+            pass        # Clear content frame
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 
@@ -1357,29 +1371,45 @@ It takes about 2 minutes. Let's begin!"""
         self.language = self.language_var.get()
         self.wizard_data["language"] = self.language
 
-        # Update user level section texts if they exist (Step 1)
-        if hasattr(self, "level_new_radio"):
-            self.level_new_radio.config(text=self._t("user_level_new"))
+        # Update user level section texts if they exist AND are still valid (Step 1)
+        # Check winfo_exists() to avoid TclError when widgets have been destroyed
+        try:
+            if hasattr(self, "level_new_radio") and self.level_new_radio.winfo_exists():
+                self.level_new_radio.config(text=self._t("user_level_new"))
+        except tk.TclError:
+            pass
 
-        if hasattr(self, "level_new_desc"):
-            self.level_new_desc.config(text="  " + self._t("user_level_new_desc"))
+        try:
+            if hasattr(self, "level_new_desc") and self.level_new_desc.winfo_exists():
+                self.level_new_desc.config(text="  " + self._t("user_level_new_desc"))
+        except tk.TclError:
+            pass
 
-        if hasattr(self, "level_experienced_radio"):
-            self.level_experienced_radio.config(text=self._t("user_level_experienced"))
+        try:
+            if hasattr(self, "level_experienced_radio") and self.level_experienced_radio.winfo_exists():
+                self.level_experienced_radio.config(text=self._t("user_level_experienced"))
+        except tk.TclError:
+            pass
 
-        if hasattr(self, "level_experienced_desc"):
-            self.level_experienced_desc.config(
-                text="  " + self._t("user_level_experienced_desc")
-            )
+        try:
+            if hasattr(self, "level_experienced_desc") and self.level_experienced_desc.winfo_exists():
+                self.level_experienced_desc.config(
+                    text="  " + self._t("user_level_experienced_desc")
+                )
+        except tk.TclError:
+            pass
 
         # Update first-time hint if exists
-        if hasattr(self, "first_time_hint") and self.is_first_run:
-            hint_text = (
-                "First-time users must start with 'New User' option"
-                if self.lang == "en"
-                else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
-            )
-            self.first_time_hint.config(text="ℹ️ " + hint_text)
+        try:
+            if hasattr(self, "first_time_hint") and self.is_first_run and self.first_time_hint.winfo_exists():
+                hint_text = (
+                    "First-time users must start with 'New User' option"
+                    if self.lang == "en"
+                    else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
+                )
+                self.first_time_hint.config(text="ℹ️ " + hint_text)
+        except tk.TclError:
+            pass
 
         # Note: Tooltips will auto-update through lang_provider lambda
 
@@ -1475,24 +1505,47 @@ It takes about 2 minutes. Let's begin!"""
             var.set("(Empty)")
 
     def _update_rotation_builder_button_state(self):
-        """Enable/disable rotation builder button based on user level."""
+        """Enable/disable rotation builder button based on user level.
+        
+        Safely handles widget existence checks to avoid TclError.
+        """
+        # Check if button exists and is still valid
         if not hasattr(self, "rotation_builder_button"):
             return
+        
+        try:
+            if not self.rotation_builder_button.winfo_exists():
+                return
+        except tk.TclError:
+            return
 
-        if self.user_level == "new":
-            # Enable button for new users
-            self.rotation_builder_button.config(state=tk.NORMAL, cursor="hand2")
-            # Hide hint
-            if hasattr(self, "rotation_builder_hint"):
-                self.rotation_builder_hint.config(text="")
-        else:
-            # Disable button for experienced users
-            self.rotation_builder_button.config(state=tk.DISABLED, cursor="arrow")
-            # Show hint
-            if hasattr(self, "rotation_builder_hint"):
-                self.rotation_builder_hint.config(
-                    text=self._t("rotation_builder_disabled_hint")
-                )
+        # Update button state
+        try:
+            if self.user_level == "new":
+                # Enable button for new users
+                self.rotation_builder_button.config(state=tk.NORMAL, cursor="hand2")
+                # Hide hint
+                if hasattr(self, "rotation_builder_hint"):
+                    try:
+                        if self.rotation_builder_hint.winfo_exists():
+                            self.rotation_builder_hint.config(text="")
+                    except tk.TclError:
+                        pass
+            else:
+                # Disable button for experienced users
+                self.rotation_builder_button.config(state=tk.DISABLED, cursor="arrow")
+                # Show hint
+                if hasattr(self, "rotation_builder_hint"):
+                    try:
+                        if self.rotation_builder_hint.winfo_exists():
+                            self.rotation_builder_hint.config(
+                                text=self._t("rotation_builder_disabled_hint")
+                            )
+                    except tk.TclError:
+                        pass
+        except tk.TclError:
+            # Button config failed - widget likely destroyed
+            pass
 
     def _open_rotation_builder(self):
         """Open Library Manager with Rotation tab for new users."""
