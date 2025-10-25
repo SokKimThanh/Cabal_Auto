@@ -48,6 +48,9 @@ from lib.i18n import (
     GLOBAL_NS as I18N_GLOBAL,
 )
 
+# Monster Editor hotkey handler
+from lib.hotkey.monster_editor_handler import create_monster_editor_handler
+
 # Import icon button component
 try:
     from ui.components import create_icon_button as _create_icon_btn_component
@@ -799,7 +802,7 @@ class App(tk.Tk):
                 label=monster_label,
                 # ✅ FIX: Remove accelerator to prevent double-trigger with global hotkey
                 # accelerator="Ctrl+Shift+M",  # Display only, doesn't prevent global hotkey
-                command=self._open_monster_editor
+                command=lambda: self._monster_editor_handler.open_monster_editor()
             )
             
             menubar.add_cascade(label="Monster", menu=monster_menu)
@@ -826,7 +829,9 @@ class App(tk.Tk):
         self.win_items = []  # list of {'hwnd','pid','title','proc'}
         self.hunt_selected = None  # currently selected window info
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
-        self._monster_editor_opening = False  # Flag to prevent double opening Monster Editor
+        
+        # Monster Editor Handler (Sprint 24 - Extracted to separate module)
+        self._monster_editor_handler = create_monster_editor_handler(self, debug=False)
 
         # Global hotkeys - registered after config load
         self._global_start_hotkey = None
@@ -5127,153 +5132,6 @@ Alternative Solutions:
         except Exception as e:
             print(f"[Hotkeys] Error opening Vision Wizard: {e}")
 
-    def _on_monster_editor_hotkey(self):
-        """Callback for Monster Editor hotkey (Ctrl+Shift+M).
-
-        Opens Quick Monster Editor for rapid CRUD operations.
-        Always available regardless of UI mode.
-        """
-        try:
-            print("[Hotkeys] Monster Editor hotkey (Ctrl+Shift+M) pressed")
-            
-            # Detailed debug logs (can be disabled for production)
-            if False:  # Set to True for detailed debugging
-                import os
-                print(f"  Trigger PID: {os.getpid()}")
-                print(f"  App window exists: {self.winfo_exists()}")
-                print(f"  App window class: {self.winfo_class()}")
-                print(f"  Opening flag: {self._monster_editor_opening}")
-                
-                # Log all current toplevel windows
-                try:
-                    all_toplevels = [w for w in self.winfo_children() if isinstance(w, tk.Toplevel)]
-                    print(f"  Current Toplevel windows: {len(all_toplevels)}")
-                    for i, w in enumerate(all_toplevels):
-                        try:
-                            print(f"    [{i}] {w.winfo_class()} - {w.title() if hasattr(w, 'title') else 'N/A'}")
-                        except:
-                            print(f"    [{i}] <destroyed or invalid>")
-                except Exception as e:
-                    print(f"  Error listing toplevels: {e}")
-            
-            # Schedule Monster Editor to open in main thread
-            self.after(0, self._open_monster_editor)
-            
-        except Exception as e:
-            print(f"[Hotkeys] Error opening Monster Editor: {e}")
-            import traceback
-            traceback.print_exc()
-
-    def _open_monster_editor(self):
-        """Open Quick Monster Editor dialog.
-        
-        Opens the quick monster editor for fast monster CRUD operations.
-        Uses singleton pattern to prevent multiple instances.
-        """
-        print("[Monster Editor] Opening...")
-        
-        # Detailed debug logs (can be disabled for production)
-        if False:  # Set to True for detailed debugging
-            import os
-            print(f"  Current PID: {os.getpid()}")
-            print(f"  Opening flag: {self._monster_editor_opening}")
-        
-        # ✅ FIX: Don't open editor if app is not fully initialized
-        if not hasattr(self, '_first_time_check_complete'):
-            print("[Monster Editor] ⚠ App not fully initialized, ignoring request")
-            return
-        
-        # Prevent double-opening if already in progress
-        if self._monster_editor_opening:
-            print("[Monster Editor] ⚠ Already opening, ignoring duplicate request")
-            return
-        
-        try:
-            self._monster_editor_opening = True
-            
-            # Import quick editor (lazy import to avoid circular dependencies)
-            try:
-                import ui.windows.quick_monster_editor as monster_editor_module
-                
-                if False:  # Detailed debug logging
-                    print(f"[Monster Editor] Import successful")
-                    print(f"  Singleton instance exists: {monster_editor_module._quick_editor_instance is not None}")
-                    if monster_editor_module._quick_editor_instance:
-                        try:
-                            print(f"  Singleton valid: {monster_editor_module._quick_editor_instance.winfo_exists()}")
-                        except:
-                            print(f"  Singleton valid: <error checking>")
-            except ImportError as ie:
-                print(f"[Monster Editor] ✗ Failed to import: {ie}")
-                messagebox.showerror(
-                    "Import Error",
-                    f"Could not load Monster Editor module:\n{ie}"
-                )
-                self._monster_editor_opening = False
-                return
-            
-            # ✅ Sprint 24 Fix: Check singleton via module reference (not local import)
-            # This ensures we see the actual global variable state
-            try:
-                instance = monster_editor_module._quick_editor_instance
-                instance_exists = instance is not None
-                instance_alive = False
-                
-                if instance_exists and instance:  # Explicit None check for type checker
-                    try:
-                        instance_alive = bool(instance.winfo_exists())
-                    except Exception as check_err:
-                        print(f"[Monster Editor] Stale instance detected: {check_err}")
-                        monster_editor_module._quick_editor_instance = None
-                        instance_alive = False
-                
-                print(f"[Monster Editor] Check: exists={instance_exists}, alive={instance_alive}")
-                
-                if instance_exists and instance_alive and instance:
-                    print("[Monster Editor] ✓ Instance already exists, bringing to front")
-                    print(f"  Instance: {instance}")
-                    instance.lift()
-                    instance.focus_force()
-                    self._monster_editor_opening = False
-                    return
-            except Exception as e:
-                print(f"[Monster Editor] Error checking singleton: {e}")
-                # Continue to create new instance
-            
-            print(f"[Monster Editor] No valid instance found, creating new...")
-            
-            if False:  # Detailed debug logging
-                print(f"[Monster Editor] Creating new instance with parent: {self}")
-                print(f"  Parent type: {type(self)}")
-                print(f"  Parent class: {self.__class__.__name__}")
-            
-            # Show quick editor (singleton pattern handles existing instances)
-            editor = monster_editor_module.show_quick_monster_editor(
-                parent=self,
-                monster_id=None,  # None = create new monster
-                on_save=self._on_monster_saved
-            )
-            
-            print(f"[Monster Editor] ✓ Opened successfully")
-            
-            if False:  # Detailed debug logging
-                print(f"  Editor instance: {editor}")
-                print(f"  Editor type: {type(editor)}")
-            
-            # ✅ FIX: Reset flag immediately after successful creation
-            self._monster_editor_opening = False
-            
-        except Exception as e:
-            print(f"[Monster Editor] ✗ Error: {e}")
-            import traceback
-            traceback.print_exc()
-            messagebox.showerror(
-                "Monster Editor Error",
-                f"Failed to open Monster Editor:\n{e}"
-            )
-            # Reset flag immediately on error
-            self._monster_editor_opening = False
-
     def _on_monster_saved(self, monster_id: str, monster_data: dict):
         """Callback when monster is saved in Quick Editor.
         
@@ -5504,7 +5362,7 @@ Alternative Solutions:
             # NEW: Register Monster Editor hotkey (always active)
             try:
                 self._global_monster_hotkey = keyboard.add_hotkey(
-                    monster_key, self._on_monster_editor_hotkey, suppress=False
+                    monster_key, self._monster_editor_handler.on_hotkey_pressed, suppress=False
                 )
             except Exception as e:
                 print(f"Failed to register monster editor hotkey '{monster_key}': {e}")
