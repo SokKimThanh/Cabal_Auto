@@ -51,7 +51,6 @@ from lib.i18n import (
 # Import icon button component
 try:
     from ui.components import create_icon_button as _create_icon_btn_component
-    from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector
     _HAS_ICON_COMPONENT = True
 except ImportError:
     _HAS_ICON_COMPONENT = False
@@ -89,8 +88,6 @@ except ImportError:
         btn = tk.Button(parent, text=icon_fallback or '?', command=btn_command, state=btn_state, **kwargs)
         return btn
     
-    create_app_window_selector = None  # type: ignore
-    create_game_window_selector = None  # type: ignore
     print("Warning: Icon button component not available, using fallback")
 
 try:
@@ -1726,50 +1723,6 @@ Alternative Solutions:
             auto_hover_disabled=False
         )
         refresh_btn.pack(side="left", padx=(0, 6))
-        
-        # Checkbox to toggle advanced controls (window selectors)
-        self.show_advanced_controls_var = tk.BooleanVar(value=False)
-        
-        def toggle_advanced_controls():
-            """Toggle visibility of window position selectors."""
-            show = self.show_advanced_controls_var.get()
-            
-            if hasattr(self, 'app_window_selector'):
-                if show:
-                    if hasattr(self.app_window_selector, 'show'):
-                        self.app_window_selector.show()
-                else:
-                    if hasattr(self.app_window_selector, 'hide'):
-                        self.app_window_selector.hide()
-            
-            if hasattr(self, 'game_window_selector'):
-                if show:
-                    if hasattr(self.game_window_selector, 'show'):
-                        self.game_window_selector.show()
-                else:
-                    if hasattr(self.game_window_selector, 'hide'):
-                        self.game_window_selector.hide()
-        
-        advanced_check = tk.Checkbutton(
-            top,
-            text="",  # No text, just checkbox
-            variable=self.show_advanced_controls_var,
-            command=toggle_advanced_controls,
-            bg=top.cget('bg')
-        )
-        advanced_check.pack(side="left", padx=(0, 6))
-        
-        # Tooltip for checkbox
-        check_tooltip = (
-            "Show Advanced Controls\n"
-            "• App window positioning\n"
-            "• Game window positioning"
-            if self.lang == "en" else
-            "Hiện Điều Khiển Nâng Cao\n"
-            "• Vị trí cửa sổ ứng dụng\n"
-            "• Vị trí cửa sổ game"
-        )
-        self._create_tooltip(advanced_check, check_tooltip)
 
         # Separator before hunt controls
         tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
@@ -1818,35 +1771,6 @@ Alternative Solutions:
             auto_hover_disabled=True  # Auto show forbidden icon/cursor on hover
         )
         self.hunt_stop_btn.pack(side="left")
-
-        # Separator before window controls
-        tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
-            side="left", fill="y", padx=12, pady=2
-        )
-
-        # Window Position Selectors (App + Game) - Hidden by default
-        if create_app_window_selector and create_game_window_selector:
-            # App window selector
-            self.app_window_selector = create_app_window_selector(
-                parent=top,
-                config_path="lib/data/hunt_config.json",
-                on_mode_change=self._on_app_window_mode_change
-            )
-            self.app_window_selector.pack(side="left", padx=(0, 8))
-            
-            # Game window selector
-            self.game_window_selector = create_game_window_selector(
-                parent=top,
-                config_path="lib/data/hunt_config.json",
-                on_mode_change=self._on_game_window_mode_change
-            )
-            self.game_window_selector.pack(side="left")
-            
-            # Hide both selectors by default (toggle with refresh button)
-            if hasattr(self.app_window_selector, 'hide'):
-                self.app_window_selector.hide()
-            if hasattr(self.game_window_selector, 'hide'):
-                self.game_window_selector.hide()
 
         # Store notebook reference for keyboard shortcuts
         self.notebook = ttk.Notebook(self)
@@ -2917,62 +2841,6 @@ Alternative Solutions:
             self._register_global_hotkeys()
         except Exception as e:
             print(f"Warning: Could not re-register hotkeys after mode change: {e}")
-
-    def _on_app_window_mode_change(self, mode: str):
-        """Handle app window positioning mode change."""
-        try:
-            # Apply mode to main app window
-            if mode == "topmost":
-                self.attributes("-topmost", True)
-                self.state("normal")
-            elif mode == "minimized":
-                self.attributes("-topmost", False)
-                self.iconify()
-            elif mode == "maximized":
-                self.attributes("-topmost", False)
-                self.state("zoomed")
-            else:  # normal
-                self.attributes("-topmost", False)
-                self.state("normal")
-            
-            # Update status
-            if hasattr(self, "hunt_status"):
-                mode_labels = {
-                    "normal": "Normal" if self.lang == "en" else "Bình thường",
-                    "topmost": "Always On Top" if self.lang == "en" else "Luôn ở trên",
-                    "minimized": "Minimized" if self.lang == "en" else "Thu nhỏ",
-                    "maximized": "Maximized" if self.lang == "en" else "Phóng to",
-                }
-                msg = f"App: {mode_labels.get(mode, mode)}"
-                self.hunt_status.set(msg)
-        except Exception as e:
-            print(f"[App Window] Error applying mode '{mode}': {e}")
-
-    def _on_game_window_mode_change(self, mode: str):
-        """Handle game window positioning mode change."""
-        try:
-            # Save to config
-            self.hunt_cfg["game_window_mode"] = mode
-            save_hunt_config(self.hunt_cfg)
-            
-            # Update status
-            if hasattr(self, "hunt_status"):
-                mode_labels = {
-                    "none": "None" if self.lang == "en" else "Không",
-                    "below": "Below App" if self.lang == "en" else "Dưới App",
-                    "above": "Above All" if self.lang == "en" else "Trên tất cả",
-                }
-                msg = f"Game: {mode_labels.get(mode, mode)}"
-                self.hunt_status.set(msg)
-            
-            # Apply immediately if hunt is not running
-            if not self.hunt_running:
-                if mode == "below":
-                    self.on_hunt_bring_front_below_app()
-                elif mode == "above":
-                    self.on_hunt_bring_front()
-        except Exception as e:
-            print(f"[Game Window] Error applying mode '{mode}': {e}")
 
     def _on_global_hotkey_toggle(self):
         """Handle enable/disable of global hotkeys checkbox.
