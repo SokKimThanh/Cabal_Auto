@@ -60,7 +60,6 @@ except ImportError:
 try:
     from ui.components import create_icon_button, create_icon_label
     from ui.components.game_window_mode_selector import create_game_window_mode_selector  # type: ignore[assignment]
-    from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector  # type: ignore[assignment]
     from ui.components.icon_button import set_button_enabled
     from ui.components.confirmation_widget import ConfirmationWidget
     from ui.components.notification_widget import NotificationWidget
@@ -92,14 +91,6 @@ except ImportError:
         """Fallback if game_window_mode_selector not available."""
         return tk.Label(parent, text="[Game Mode Selector unavailable]")
     
-    def create_app_window_selector(parent, **kwargs):
-        """Fallback if app window selector not available."""
-        return tk.Label(parent, text="[App Selector unavailable]")
-    
-    def create_game_window_selector(parent, **kwargs):
-        """Fallback if game window selector not available."""
-        return tk.Label(parent, text="[Game Selector unavailable]")
-    
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
         """Fallback create_icon_label."""
         # Filter out invalid Label parameters
@@ -109,7 +100,37 @@ except ImportError:
     
     ConfirmationWidget = None  # type: ignore
     NotificationWidget = None  # type: ignore
-    ActionNotificationMixin = object  # type: ignore - Fallback to object if not available
+    
+    # Fallback mixin - empty class to avoid MRO conflicts
+    class ActionNotificationMixin:
+        """Fallback mixin when real ActionNotificationMixin not available."""
+        def __init__(self, *args, debug_mode=False, **kwargs):
+            """Accept and ignore debug_mode, pass other args to next in MRO."""
+            # Call next in MRO chain (tk.Toplevel)
+            if args:  # If parent provided
+                super().__init__(args[0])  # tk.Toplevel.__init__(parent)
+        
+        def show_notification(self, *args, **kwargs):
+            """Fallback notification method."""
+            pass
+        
+        def set_notification_widget(self, *args, **kwargs):
+            """Fallback set notification widget method."""
+            pass
+        
+        def register_action_rules(self, *args, **kwargs):
+            """Fallback register action rules method."""
+            pass
+        
+        def execute_action(self, *args, **kwargs):
+            """Fallback execute action method."""
+            # Execute the callback directly if provided
+            if len(args) > 1 and callable(args[1]):
+                args[1]()
+        
+        def has_action_rule(self, *args, **kwargs):
+            """Fallback has action rule method."""
+            return False
     
     def set_button_enabled(button, enabled: bool, tooltip: Optional[str] = None) -> None:
         """Fallback for set_button_enabled."""
@@ -228,7 +249,6 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         """
         # ✅ DEBUG: Log parent info to diagnose empty window issue
         import os
-        import tkinter as tk  # ✅ FIX: Import tk outside conditional block
         
         # ✅ Sprint 24 Fix: Validate parent is proper Tk instance
         # This prevents "extra empty window" issue from Toplevel without proper root
@@ -244,7 +264,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         print(f"  Parent type: {type(parent).__name__}")
         
         # Detailed logging (can be disabled for production)
-        if False:  # Set to True for detailed debugging
+        if False:  # Set to False to disable detailed debugging
             print(f"  Parent type: {type(parent)}")
             print(f"  Parent class: {parent.__class__.__name__ if hasattr(parent, '__class__') else 'N/A'}")
             print(f"  Parent repr: {repr(parent)[:100]}")
@@ -288,27 +308,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 print(f"[QuickMonsterEditor] Error counting toplevels before: {e}")
         
         print(f"[QuickMonsterEditor] Creating Toplevel window...")
-        super().__init__(parent)
+        # ✅ Call super().__init__() with all kwargs to support MRO properly
+        try:
+            super().__init__(parent, debug_mode=False)
+        except TypeError:
+            # Fallback if debug_mode not supported (when mixin is fallback class)
+            super().__init__(parent)
         print(f"[QuickMonsterEditor] Toplevel created")
-        
-        # ✅ Count toplevel windows AFTER creating this one
-        # (Disabled for production - enable for debugging)
-        if False:
-            try:
-                if hasattr(parent, 'winfo_children'):
-                    toplevels_after = [w for w in parent.winfo_children() if isinstance(w, tk.Toplevel)]
-                    print(f"[QuickMonsterEditor] Toplevel windows AFTER super().__init__: {len(toplevels_after)}")
-                    for i, w in enumerate(toplevels_after):
-                        try:
-                            print(f"    [{i}] {w.winfo_class()} - {w.title()}")
-                        except:
-                            print(f"    [{i}] <error>")
-            except Exception as e:
-                print(f"[QuickMonsterEditor] Error counting toplevels after: {e}")
-        
-        # Initialize ActionNotificationMixin
-        if hasattr(ActionNotificationMixin, '__init__') and ActionNotificationMixin != object:
-            ActionNotificationMixin.__init__(self, debug_mode=False)
         
         self.parent = parent
         self.monster_id = monster_id
@@ -340,7 +346,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.ui_settings_path = Path("lib/data/monster_editor_ui_settings.json")
         
         # Game window mode (none, below, above)
+        # ✅ FIX: Don't use master=self before super().__init__() completes
+        # Using no master parameter - will use default root (safe after super().__init__())
         self.game_window_mode_var = tk.StringVar(value="none")
+        
         self._load_hunt_config()
         self._load_ui_settings()  # Load UI settings
         
@@ -353,10 +362,6 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         
         # Edit mode state
         self.is_editing: bool = False  # Lock/unlock fields
-        
-        # Window position selectors (created in _setup_ui)
-        self.app_mode_selector: Any = None  # WindowPositionSelector
-        self.game_mode_selector: Any = None  # WindowPositionSelector
         
         # Data
         self.monster_data: Dict[str, Any] = {
@@ -527,8 +532,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 self._ui_settings = {
                     'col_image_visible': True,
                     'col_threshold_visible': True,
-                    'col_path_visible': True,
-                    'show_window_controls': True
+                    'col_path_visible': True
                 }
                 print(f"[MonsterEditor] No UI settings file found, using defaults")
         except Exception as e:
@@ -536,8 +540,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self._ui_settings = {
                 'col_image_visible': True,
                 'col_threshold_visible': True,
-                'col_path_visible': True,
-                'show_window_controls': True
+                'col_path_visible': True
             }
     
     def _save_ui_settings(self) -> None:
@@ -546,8 +549,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             settings = {
                 'col_image_visible': self.col_image_visible.get(),
                 'col_threshold_visible': self.col_threshold_visible.get(),
-                'col_path_visible': self.col_path_visible.get(),
-                'show_window_controls': self.show_window_controls_var.get()
+                'col_path_visible': self.col_path_visible.get()
             }
             
             # Ensure directory exists
@@ -1562,9 +1564,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         col_visibility_frame.pack(fill='x', pady=(0, 20))
         
         # Initialize column visibility variables with saved settings
-        self.col_image_visible = tk.BooleanVar(value=self._ui_settings.get('col_image_visible', True))
-        self.col_threshold_visible = tk.BooleanVar(value=self._ui_settings.get('col_threshold_visible', True))
-        self.col_path_visible = tk.BooleanVar(value=self._ui_settings.get('col_path_visible', True))
+        # ✅ FIX: Pass master=self to prevent tk from creating hidden root
+        self.col_image_visible = tk.BooleanVar(master=self, value=self._ui_settings.get('col_image_visible', True))
+        self.col_threshold_visible = tk.BooleanVar(master=self, value=self._ui_settings.get('col_threshold_visible', True))
+        self.col_path_visible = tk.BooleanVar(master=self, value=self._ui_settings.get('col_path_visible', True))
         
         # Checkboxes for column visibility
         tk.Checkbutton(
@@ -1590,98 +1593,6 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             command=self._on_column_visibility_change,
             bg=UI.BG_DEFAULT
         ).pack(anchor='w', pady=5)
-        
-        # ========== Window Controls ==========
-        window_controls_frame = tk.LabelFrame(
-            main_container,
-            text='Điều khiển cửa sổ' if get_lang() == 'vi' else 'Window Controls',
-            font=UI.FONT_LABEL,
-            fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_DEFAULT,
-            padx=15,
-            pady=10
-        )
-        window_controls_frame.pack(fill='both', expand=True)
-        
-        # Window controls checkbox with saved setting
-        self.show_window_controls_var = tk.BooleanVar(value=self._ui_settings.get('show_window_controls', True))
-        
-        def toggle_window_controls():
-            """Toggle visibility of window position selectors."""
-            show = self.show_window_controls_var.get()
-            if show:
-                windows_frame.pack(fill='x', pady=(10, 0))
-                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'show'):
-                    self.app_mode_selector.show()
-                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'show'):
-                    self.game_mode_selector.show()
-            else:
-                windows_frame.pack_forget()
-                if hasattr(self, 'app_mode_selector') and hasattr(self.app_mode_selector, 'hide'):
-                    self.app_mode_selector.hide()
-                if hasattr(self, 'game_mode_selector') and hasattr(self.game_mode_selector, 'hide'):
-                    self.game_mode_selector.hide()
-            
-            # Save settings when changed
-            self._save_ui_settings()
-        
-        window_check = tk.Checkbutton(
-            window_controls_frame,
-            text="Hiển thị điều khiển vị trí cửa sổ" if get_lang() == 'vi' else "Show Window Position Controls",
-            variable=self.show_window_controls_var,
-            command=toggle_window_controls,
-            bg=UI.BG_DEFAULT
-        )
-        window_check.pack(anchor='w', pady=5)
-        
-        # Tooltip for checkbox
-        check_tooltip = (
-            "Show Window Controls\n"
-            "• App window positioning\n"
-            "• Game window positioning"
-            if get_lang() == "en" else
-            "Hiện Điều Khiển Cửa Sổ\n"
-            "• Vị trí cửa sổ ứng dụng\n"
-            "• Vị trí cửa sổ game"
-        )
-        try:
-            attach_i18n_tooltip(
-                window_check,
-                'tooltip_window_controls',
-                ns='monster_editor',
-                lang_provider=get_lang
-            )
-        except:
-            # Fallback if tooltip fails
-            pass
-        
-        # Window controls frame (App + Game)
-        windows_frame = tk.Frame(window_controls_frame, bg=UI.BG_DEFAULT)
-        windows_frame.pack(fill='x', pady=(10, 0))
-        
-        # App window mode selector (no label, tooltip explains)
-        self.app_mode_selector = create_app_window_selector(
-            parent=windows_frame,
-            config_path=str(self.hunt_config_path),
-            on_mode_change=self._on_app_mode_change
-        )
-        self.app_mode_selector.pack(side='left', padx=(0, 8))
-        
-        # Game window mode selector (no label, tooltip explains)
-        self.game_mode_selector = create_game_window_selector(
-            parent=windows_frame,
-            config_path=str(self.hunt_config_path),
-            on_mode_change=self._on_game_mode_change
-        )
-        self.game_mode_selector.pack(side='left')
-        
-        # Apply saved visibility state
-        if not self.show_window_controls_var.get():
-            windows_frame.pack_forget()
-            if hasattr(self.app_mode_selector, 'hide'):
-                self.app_mode_selector.hide()
-            if hasattr(self.game_mode_selector, 'hide'):
-                self.game_mode_selector.hide()
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -2157,50 +2068,6 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         
         # No unsaved changes or user confirmed - close window
         self.destroy()
-    
-    def _on_app_mode_change(self, mode: str) -> None:
-        """
-        Handle app window mode change from component callback.
-        
-        Args:
-            mode: New mode string ('normal', 'topmost', 'minimized', 'maximized')
-        
-        Note: Component already saves to hunt_config.json.
-        """
-        print(f"[MonsterEditor] App window mode changed to: {mode}")
-        
-        # Apply to current window
-        if mode == 'topmost':
-            self.attributes('-topmost', True)
-        elif mode == 'normal':
-            self.attributes('-topmost', False)
-        elif mode == 'minimized':
-            self.iconify()
-        elif mode == 'maximized':
-            self.state('zoomed')  # Windows maximize
-    
-    def _on_game_mode_change(self, mode: str) -> None:
-        """
-        Handle game window mode change from component callback.
-        
-        Args:
-            mode: New mode string ('none', 'below', 'above')
-        
-        Note: Component already saves to hunt_config.json, 
-              this is just for additional app-level logic.
-        """
-        print(f"[MonsterEditor] Game window mode changed to: {mode}")
-        
-        # Update internal StringVar (for consistency)
-        self.game_window_mode_var.set(mode)
-        
-        # TODO: Trigger game window launch if needed
-        # if mode == 'above':
-        #     self._launch_game_window(topmost=True)
-        # elif mode == 'below':
-        #     self._launch_game_window(topmost=False)
-        # elif mode == 'none':
-        #     self._close_game_window()
     
     def _on_capture(self) -> None:
         """Handle capture button click."""

@@ -812,6 +812,7 @@ class App(tk.Tk):
         self._global_wizard_hotkey = None  # NEW: Setup Wizard (Ctrl+Shift+N)
         self._global_library_hotkey = None  # NEW: Library Manager (Ctrl+Shift+L)
         self._global_vision_hotkey = None  # NEW Sprint 22: Vision Wizard (Ctrl+Shift+V)
+        self._global_monster_hotkey = None  # NEW: Monster Editor (Ctrl+Shift+M)
         # Fallback when `keyboard` package not available in this interpreter
         self._hotkey_fallback_bound = (
             []
@@ -2462,6 +2463,37 @@ Alternative Solutions:
         self.vision_hotkey_combo = vision_combo
         self.vision_hotkey_label = vision_label_widget
 
+        # NEW: Monster Editor hotkey
+        monster_label = "Monster Editor:" if self.lang == "en" else "Quái Editor:"
+        monster_label_widget = tk.Label(
+            hotkey_frame, text=monster_label, font=("Arial", 9)
+        )
+        monster_label_widget.grid(row=7, column=0, sticky="e", padx=(0, 8), pady=4)
+
+        monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
+        self.global_hotkey_monster_var = tk.StringVar(value=monster_key)
+
+        monster_combo = ttk.Combobox(
+            hotkey_frame,
+            textvariable=self.global_hotkey_monster_var,
+            values=hotkey_options + ["ctrl+shift+m", "ctrl+alt+m"],
+            width=15,
+            state="readonly",
+        )
+        monster_combo.grid(row=7, column=1, sticky="w", pady=4)
+        
+        # Tooltip for Monster Editor
+        monster_tooltip = (
+            "Hotkey to open Monster Editor (default: Ctrl+Shift+M)"
+            if self.lang == "en"
+            else "Phím tắt mở trình chỉnh sửa quái (mặc định: Ctrl+Shift+M)"
+        )
+        self._create_tooltip(monster_combo, monster_tooltip)
+
+        # Store for future use
+        self.monster_hotkey_combo = monster_combo
+        self.monster_hotkey_label = monster_label_widget
+
         # Hint: Hotkeys apply automatically
         hint_hotkey = "Hotkeys apply automatically when you click any field outside this section."
         if self.lang == "vi":
@@ -2473,7 +2505,7 @@ Alternative Solutions:
             font=("Arial", 8),
             wraplength=500,
             justify="left",
-        ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        ).grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
         # Status indicator - Shows success/warning/error state with icon
         # This replaces the old diagnostic banner with a clearer status-driven design
@@ -4885,7 +4917,9 @@ Alternative Solutions:
                 library_key = self.global_hotkey_library_var.get()  # NEW
 
                 # Validate: all hotkeys must be unique
-                all_keys = [start_key, stop_key, wizard_key, library_key]
+                vision_key = self.global_hotkey_vision_var.get()
+                monster_key = self.global_hotkey_monster_var.get()
+                all_keys = [start_key, stop_key, wizard_key, library_key, vision_key, monster_key]
                 if len(all_keys) != len(set(all_keys)):
                     messagebox.showerror(
                         self._t("error_title"),
@@ -4898,7 +4932,6 @@ Alternative Solutions:
                     return
 
                 # Update config
-                vision_key = self.global_hotkey_vision_var.get()
                 cfg["global_hotkeys"] = {
                     "enabled": enabled,
                     "start_key": start_key,
@@ -4906,6 +4939,7 @@ Alternative Solutions:
                     "setup_wizard_key": wizard_key,
                     "library_manager_key": library_key,
                     "vision_wizard_key": vision_key,
+                    "monster_editor_key": monster_key,
                 }
 
                 # Re-register hotkeys with new settings
@@ -5118,6 +5152,28 @@ Alternative Solutions:
         except Exception as e:
             print(f"[Monster Editor] Error in save callback: {e}")
 
+    def _on_monster_editor_hotkey(self):
+        """Callback for Monster Editor hotkey (Ctrl+Shift+M).
+
+        Opens Quick Monster Editor for fast monster management.
+        Always available regardless of UI mode.
+        """
+        try:
+            print("[Hotkeys] Monster Editor hotkey pressed")
+            
+            # Import here to avoid circular dependency
+            from ui.windows.quick_monster_editor import show_quick_monster_editor
+            
+            # Open Monster Editor using singleton pattern
+            self.after(0, lambda: show_quick_monster_editor(
+                parent=self,
+                monster_id=None,  # None = create new or edit existing
+                on_save=self._on_monster_saved
+            ))
+            
+        except Exception as e:
+            print(f"[Hotkeys] Error opening Monster Editor: {e}")
+
     def _register_global_hotkeys(self):
         """Register global hotkeys (Ctrl+Shift+R/E) for hunt start/stop.
 
@@ -5267,6 +5323,7 @@ Alternative Solutions:
             wizard_key = hotkey_cfg.get("setup_wizard_key", "ctrl+shift+n")  # NEW
             library_key = hotkey_cfg.get("library_manager_key", "ctrl+shift+l")  # NEW
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")  # NEW Sprint 22
+            monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")  # NEW Monster Editor
 
             # Unregister old hotkeys first (in case of re-registration)
             self._unregister_global_hotkeys()
@@ -5321,6 +5378,15 @@ Alternative Solutions:
                 print(f"Failed to register vision hotkey '{vision_key}': {e}")
                 self._global_vision_hotkey = None
 
+            # NEW: Register Monster Editor hotkey (always active)
+            try:
+                self._global_monster_hotkey = keyboard.add_hotkey(
+                    monster_key, self._on_monster_editor_hotkey, suppress=False
+                )
+            except Exception as e:
+                print(f"Failed to register monster editor hotkey '{monster_key}': {e}")
+                self._global_monster_hotkey = None
+
             # Log successful registration
             registered = []
             if self._global_start_hotkey:
@@ -5333,6 +5399,8 @@ Alternative Solutions:
                 registered.append(f"Library={library_key}")
             if self._global_vision_hotkey:
                 registered.append(f"Vision={vision_key}")
+            if self._global_monster_hotkey:
+                registered.append(f"Monster={monster_key}")
 
             if registered:
                 print(f"Global hotkeys registered: {', '.join(registered)}")
@@ -5406,6 +5474,15 @@ Alternative Solutions:
                     print(f"Error unregistering vision hotkey: {e}")
                 finally:
                     self._global_vision_hotkey = None
+
+            # NEW: Unregister monster editor hotkey
+            if self._global_monster_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_monster_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering monster hotkey: {e}")
+                finally:
+                    self._global_monster_hotkey = None
 
         except Exception as e:
             print(f"Error in _unregister_global_hotkeys: {e}")
