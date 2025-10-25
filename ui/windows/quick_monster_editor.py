@@ -723,10 +723,49 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(right_container)
-        self.notebook.pack(fill='both', expand=True)
+        self.notebook.pack(fill='both', expand=True, pady=(0, 10))
         
         # Bind tab change event to cancel confirmation
         self.notebook.bind('<<NotebookTabChanged>>', self._on_tab_changed)
+        
+        # ============================================
+        # Confirmation Area (below tabs, always visible)
+        # ============================================
+        confirmation_frame = tk.Frame(right_container, bg='#FFF3CD', relief='solid', bd=1)
+        confirmation_frame.pack(fill='x', pady=(0, 5))
+        
+        # Message label (left side)
+        self.confirmation_message = tk.Label(
+            confirmation_frame,
+            text="",
+            font=('Segoe UI', 10),
+            fg='#856404',
+            bg='#FFF3CD',
+            anchor='w',
+            padx=10,
+            pady=8
+        )
+        self.confirmation_message.pack(side='left', fill='x', expand=True)
+        
+        # Buttons container (right side)
+        buttons_container = tk.Frame(confirmation_frame, bg='#FFF3CD')
+        buttons_container.pack(side='right', padx=10, pady=5)
+        
+        # Confirmation widget (Yes/No buttons)
+        if ConfirmationWidget:
+            self.confirmation_widget = ConfirmationWidget(
+                parent=buttons_container,
+                on_confirm=lambda: None,  # Will be set dynamically
+                on_cancel=None,
+                auto_hide_seconds=10,  # 10 seconds timeout
+                bg='#FFF3CD'
+            )
+        else:
+            self.confirmation_widget = None
+        
+        # Initially hide entire confirmation frame
+        confirmation_frame.pack_forget()
+        self.confirmation_frame = confirmation_frame
         
         # Create tabs
         self._create_info_tab()
@@ -749,7 +788,7 @@ class QuickMonsterEditor(tk.Toplevel):
         header_frame = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
         header_frame.pack(fill='x', padx=10, pady=(10, 5))
         
-        # Left side: Editing badge and confirmation widget
+        # Left side: Editing badge
         left_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
         left_buttons.pack(side='left')
         
@@ -766,19 +805,6 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         # Initially hidden (not in edit mode)
         # self.editing_badge.pack(side='left')  # Don't pack yet
-        
-        # Confirmation widget (reusable inline confirmation)
-        if ConfirmationWidget:
-            self.confirmation_widget = ConfirmationWidget(
-                parent=left_buttons,
-                on_confirm=lambda: None,  # Will be set dynamically
-                on_cancel=None,
-                auto_hide_seconds=5,
-                bg='#F2F2F2'
-            )
-            # Initially hidden, will show when needed
-        else:
-            self.confirmation_widget = None
         
         # Right side: Edit/Add/Delete buttons (20x20, icon 16px)
         right_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
@@ -2012,8 +2038,8 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def _on_tab_changed(self, event: Any) -> None:
         """Handle notebook tab change - cancel any pending confirmation."""
+        # Cancel confirmation when tab changes
         self._cancel_confirmation()
-        print("[MonsterEditor] Tab changed, confirmation cancelled")
     
     def _on_monster_select(self, event: Any) -> None:
         """Handle monster selection from Treeview."""
@@ -2235,48 +2261,68 @@ class QuickMonsterEditor(tk.Toplevel):
     # Inline Confirmation System (using ConfirmationWidget)
     # ============================================
     
-    def _show_confirmation(self, action_callback, auto_hide_seconds: int = 5) -> None:
+    def _show_confirmation(self, action_callback, message: str = "", auto_hide_seconds: int = 10) -> None:
         """Show inline confirmation widget for an action.
         
         Args:
             action_callback: Function to call if user clicks Yes
-            auto_hide_seconds: Seconds before auto-hiding (default 5)
+            message: Confirmation message to display
+            auto_hide_seconds: Seconds before auto-hiding (default 10)
         """
-        if self.confirmation_widget:
-            # Set the callback (wraps with validation)
-            def safe_callback():
-                """Wrapper to validate state before executing action."""
-                try:
-                    # Check if widget still exists
-                    if not self.confirmation_widget or not self.confirmation_widget.winfo_exists():
-                        return
-                    
-                    # Execute the action
-                    action_callback()
-                except Exception as e:
-                    print(f"[MonsterEditor] Error executing action: {e}")
-                    import traceback
-                    traceback.print_exc()
-            
-            self.confirmation_widget.set_confirm_callback(safe_callback)
-            # Show widget
-            self.confirmation_widget.show(side='left', padx=(0, 5))
-        else:
+        if not self.confirmation_widget or not hasattr(self, 'confirmation_frame'):
             # Fallback: execute action immediately if widget not available
             try:
                 action_callback()
             except Exception as e:
                 print(f"[MonsterEditor] Error executing action: {e}")
+            return
+        
+        # Set message
+        if hasattr(self, 'confirmation_message'):
+            self.confirmation_message.config(text=message)
+        
+        # Set the callback (wraps with validation)
+        def safe_callback():
+            """Wrapper to validate state before executing action."""
+            try:
+                # Hide confirmation first
+                self._hide_confirmation()
+                
+                # Execute the action
+                action_callback()
+            except Exception as e:
+                print(f"[MonsterEditor] Error executing action: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        def cancel_callback():
+            """Cancel confirmation."""
+            self._hide_confirmation()
+        
+        self.confirmation_widget.set_confirm_callback(safe_callback)
+        self.confirmation_widget.set_cancel_callback(cancel_callback)
+        
+        # Show confirmation frame and widget
+        if self.notebook:
+            self.confirmation_frame.pack(fill='x', pady=(0, 5), before=self.notebook)
+        else:
+            self.confirmation_frame.pack(fill='x', pady=(0, 5))
+        self.confirmation_widget.show(side='right', padx=(5, 0))
     
     def _hide_confirmation(self) -> None:
-        """Hide inline confirmation widget."""
+        """Hide inline confirmation widget and frame."""
         if self.confirmation_widget:
             self.confirmation_widget.hide()
+        if hasattr(self, 'confirmation_frame'):
+            self.confirmation_frame.pack_forget()
     
     def _cancel_confirmation(self) -> None:
         """Cancel confirmation - hide and clear callbacks without executing."""
         if self.confirmation_widget:
             self.confirmation_widget.cancel()
+        # Also hide the confirmation frame
+        if hasattr(self, 'confirmation_frame'):
+            self.confirmation_frame.pack_forget()
     
     # ============================================
     # Monster CRUD Operations
@@ -2330,18 +2376,14 @@ class QuickMonsterEditor(tk.Toplevel):
                 # Button should be disabled, return silently
                 return
             
-            # Get selected item values
+            # Get selected item ID (which is the monster ID)
             item_id = selection[0]
-            values = self.monster_listbox.item(item_id, 'values')
-            if not values or len(values) < 2:
-                return
             
-            # Find monster by name
-            monster_name = values[1]  # Column 1 is name
+            # Find monster by ID
             monster = None
             monster_index = -1
             for idx, m in enumerate(self.monsters):
-                if m.get('name') == monster_name:
+                if m.get('id') == item_id:
                     monster = m
                     monster_index = idx
                     break
@@ -2374,9 +2416,14 @@ class QuickMonsterEditor(tk.Toplevel):
             deleted_id = monster.get('id')
             deleted_name = monster.get('name', 'Unnamed')
             
+            print(f"[MonsterEditor] Deleting monster: {deleted_name} (ID: {deleted_id})")
+            print(f"[MonsterEditor] Monsters before delete: {len(self.monsters)}")
+            
             # Perform deletion
             self.monsters.pop(monster_index)
             self.is_dirty = True
+            
+            print(f"[MonsterEditor] Monsters after delete: {len(self.monsters)}")
             
             # Clear form and current selection if deleted monster was selected
             if self.current_monster_id == deleted_id:
@@ -2388,15 +2435,24 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.delete_monster_button.config(state='disabled')
             
             # Refresh listbox
+            print("[MonsterEditor] Calling _refresh_monster_list()...")
             self._refresh_monster_list()
+            print("[MonsterEditor] _refresh_monster_list() completed")
+            
+            # Save to file immediately
+            print("[MonsterEditor] Saving monsters to file...")
+            self._save_monsters()
+            print("[MonsterEditor] Save completed")
             
             # Update dirty state UI
             self._update_dirty_state_ui()
             
             print(f"[MonsterEditor] Deleted monster: {deleted_name}")
         
-        # Show inline confirmation (Yes/No buttons)
-        self._show_confirmation(delete_action, auto_hide_seconds=5)
+        # Show inline confirmation with message
+        monster_name = monster.get('name', 'Unnamed')
+        message = f"⚠️ Xác nhận xóa Quái vật: {monster_name}?"
+        self._show_confirmation(delete_action, message=message, auto_hide_seconds=10)
     
     def _populate_info_form(self, monster: Dict[str, Any]) -> None:
         """Populate Info tab form with monster data and keep fields locked."""
@@ -2977,6 +3033,9 @@ class QuickMonsterEditor(tk.Toplevel):
                 # Refresh template list
                 self._refresh_template_list()
                 
+                # Save to file immediately
+                self._save_monsters()
+                
                 # Update dirty state UI
                 self._update_dirty_state_ui()
             except Exception as e:
@@ -2987,8 +3046,10 @@ class QuickMonsterEditor(tk.Toplevel):
                 # Always reset flag
                 self._is_deleting = False
         
-        # Show inline confirmation (Yes/No buttons)
-        self._show_confirmation(delete_action, auto_hide_seconds=5)
+        # Show inline confirmation with message
+        template_name = template.get('name', 'Unknown')
+        message = f"⚠️ Xác nhận xóa Template: {template_name}?"
+        self._show_confirmation(delete_action, message=message, auto_hide_seconds=10)
     
     def _test_template_recognition(self) -> None:
         """Test match for current template on screen."""

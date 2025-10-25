@@ -1,25 +1,12 @@
 [
   {
     "name": "Cọc Gỗ",
-    "hp": 122,
-    "damage_per_hit": 12,
-    "priority": 1,
+    "hp": 122.0,
+    "damage_per_hit": 12.0,
+    "template": "",
     "description": "dfasdf",
-    "templates": [
-      {
-        "name": "New Template",
-        "path": "assets/images/monsters/dasd__new_template_1761221146449.png",
-        "threshold": 0.85,
-        "region_strategy": "custom",
-        "region": {
-          "left": 859,
-          "top": 498,
-          "width": 244,
-          "height": 230
-        }
-      }
-    ],
-    "id": "fa8433ca-19fc-456e-96eb-b02182413000",
-    "level": 1
+    "training_mode": false,
+    "window_bounds": null,
+    "templates": []
   }
 ]

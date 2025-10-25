@@ -106,35 +106,35 @@ class ConfirmationWidget(tk.Frame):
     
     def _create_widgets(self) -> None:
         """Create Yes/No buttons."""
-        # Yes button (accept icon - green)
-        self.yes_button = create_icon_button(
+        # Yes button (green background, white checkmark)
+        self.yes_button = tk.Button(
             self,
-            icon_name='accept',
-            icon_fallback='✓',
-            icon_size=16,
-            command=self._on_yes_clicked,
-            button_type='green_light',
-            variant='icon_only',
-            width=20,
-            height=20,
-            tooltip_key='tooltip_confirm_yes',
-            tooltip_ns='monster_editor'
+            text='✓',
+            font=('Arial', 12, 'bold'),
+            fg='white',
+            bg='#4CAF50',  # Green
+            activebackground='#45a049',
+            width=2,
+            height=1,
+            relief='flat',
+            cursor='hand2',
+            command=self._on_yes_clicked
         )
         self.yes_button.pack(side='left', padx=2, pady=2)
         
-        # No button (cancel icon - gray)
-        self.no_button = create_icon_button(
+        # No button (gray background, white X)
+        self.no_button = tk.Button(
             self,
-            icon_name='cancel',
-            icon_fallback='✗',
-            icon_size=16,
-            command=self._on_no_clicked,
-            button_type='secondary',
-            variant='icon_only',
-            width=20,
-            height=20,
-            tooltip_key='tooltip_confirm_no',
-            tooltip_ns='monster_editor'
+            text='✗',
+            font=('Arial', 12, 'bold'),
+            fg='white',
+            bg='#757575',  # Gray
+            activebackground='#616161',
+            width=2,
+            height=1,
+            relief='flat',
+            cursor='hand2',
+            command=self._on_no_clicked
         )
         self.no_button.pack(side='left', padx=2, pady=2)
     
@@ -207,7 +207,7 @@ class ConfirmationWidget(tk.Frame):
         if self.auto_hide_seconds > 0:
             self._auto_hide_id = self.after(
                 self.auto_hide_seconds * 1000,
-                self.hide
+                self.cancel  # Call cancel to trigger on_cancel callback and hide
             )
     
     def hide(self) -> None:
