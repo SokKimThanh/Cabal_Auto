@@ -2536,19 +2536,47 @@ class QuickMonsterEditor(tk.Toplevel):
             self._is_testing = False
     
     def _refresh_template_list(self) -> None:
-        """Refresh template listbox with current monster's templates."""
+        """Refresh template list with current monster's templates."""
         if not self.template_listbox:
             return
         
-        self.template_listbox.delete(0, tk.END)
-        
-        if self.current_monster_id:
-            monster = self._find_monster_by_id(self.current_monster_id)
-            if monster:
-                templates = monster.get('templates', [])
-                for tmpl in templates:
-                    name = tmpl.get('name', 'Unknown')
-                    self.template_listbox.insert(tk.END, name)
+        # Handle both Treeview and Listbox
+        if isinstance(self.template_listbox, ttk.Treeview):
+            # Clear Treeview
+            for item in self.template_listbox.get_children():
+                self.template_listbox.delete(item)
+            
+            # Populate with current monster's templates
+            if self.current_monster_id:
+                monster = self._find_monster_by_id(self.current_monster_id)
+                if monster:
+                    templates = monster.get('templates', [])
+                    for idx, tmpl in enumerate(templates):
+                        # Get template data
+                        name = tmpl.get('name', 'Unknown')
+                        threshold = tmpl.get('threshold', 0.7)
+                        path = tmpl.get('path', '')
+                        
+                        # Icon placeholder (use emoji or load actual thumbnail)
+                        icon = '🖼️'
+                        
+                        # Display threshold as percentage
+                        threshold_display = f"{threshold:.0%}"
+                        
+                        # Insert row with item_id as template_<idx>
+                        item_id = f"template_{idx}"
+                        self.template_listbox.insert('', 'end', iid=item_id, values=(icon, name, threshold_display))
+        else:
+            # Legacy Listbox support
+            self.template_listbox.delete(0, tk.END)
+            
+            if self.current_monster_id:
+                monster = self._find_monster_by_id(self.current_monster_id)
+                if monster:
+                    templates = monster.get('templates', [])
+                    for tmpl in templates:
+                        name = tmpl.get('name', 'Unknown')
+                        self.template_listbox.insert(tk.END, name)
     
     # Inner class for region capture overlay
     class _RegionCaptureOverlay(tk.Toplevel):
