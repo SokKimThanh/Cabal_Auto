@@ -75,8 +75,10 @@ docs/
 ├── maintenance/                       # 🔧 Maintenance
 │   └── LOG_FILES_MANAGEMENT_SUMMARY.md
 │
+├── bugfixes/                          # 🐛 Bug Fixes
+│   └── TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md
+│
 ├── enhancements/                      # ✨ Enhancements (Legacy)
-├── bugfixes/                          # 🐛 Bug Fixes (Legacy)
 ├── context/                           # 📝 Context Documentation
 ├── translations/                      # 🌐 Translations
 ├── ux-enhancements/                   # 💫 UX Enhancements
@@ -118,6 +120,11 @@ docs/
 
 - [Testing Guide](guides/testing/TESTS_REORGANIZATION_SUMMARY.md) - Test organization
 - [Vision Menu Checklist](features/vision/VISION_MENU_CHECKLIST.md) - Vision testing
+
+### Bug Fixes & Troubleshooting 🆕
+
+- [**Quick Fix: Tkinter Empty Window**](QUICK_FIX_TKINTER_EMPTY_WINDOW.md) - Common bug & solution
+- [**Detailed: Tkinter Bug Lessons**](bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md) - Complete analysis
 
 ### Latest Sprint (Sprint 23) ✅ Phase 7 COMPLETE
 
