@@ -57,6 +57,7 @@ try:
     from ui.components.game_window_mode_selector import create_game_window_mode_selector  # type: ignore[assignment]
     from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector  # type: ignore[assignment]
     from ui.components.icon_button import set_button_enabled
+    from ui.components.confirmation_widget import ConfirmationWidget
 except ImportError:
     # Fallback if component not available
     def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
@@ -78,6 +79,8 @@ except ImportError:
     
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
         return tk.Label(parent, text=f"{icon_fallback} {text}", **kwargs)
+    
+    ConfirmationWidget = None  # type: ignore
     
     def set_button_enabled(button, enabled: bool, tooltip: Optional[str] = None) -> None:
         """Fallback for set_button_enabled."""
@@ -723,7 +726,7 @@ class QuickMonsterEditor(tk.Toplevel):
         header_frame = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
         header_frame.pack(fill='x', padx=10, pady=(10, 5))
         
-        # Left side: Editing badge and confirmation buttons
+        # Left side: Editing badge and confirmation widget
         left_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
         left_buttons.pack(side='left')
         
@@ -741,46 +744,18 @@ class QuickMonsterEditor(tk.Toplevel):
         # Initially hidden (not in edit mode)
         # self.editing_badge.pack(side='left')  # Don't pack yet
         
-        # Confirmation buttons container (inline confirmation)
-        self.confirmation_frame = tk.Frame(left_buttons, bg='#F2F2F2', relief='flat', bd=1)
-        # Initially hidden
-        # self.confirmation_frame.pack(side='left', padx=(0, 5))
-        
-        # Yes button (accept.ico - red icon)
-        self.confirm_yes_button = create_icon_button(
-            self.confirmation_frame,
-            icon_name='accept',
-            icon_fallback='✓',
-            icon_size=16,
-            command=self._on_confirm_yes,
-            button_type='green_light',
-            variant='icon_only',
-            width=20,
-            height=20,
-            tooltip_key='tooltip_confirm_yes',
-            tooltip_ns='monster_editor'
-        )
-        self.confirm_yes_button.pack(side='left', padx=2, pady=2)
-        
-        # No button (cancel.ico - gray icon)
-        self.confirm_no_button = create_icon_button(
-            self.confirmation_frame,
-            icon_name='cancel',
-            icon_fallback='✗',
-            icon_size=16,
-            command=self._on_confirm_no,
-            button_type='secondary',
-            variant='icon_only',
-            width=20,
-            height=20,
-            tooltip_key='tooltip_confirm_no',
-            tooltip_ns='monster_editor'
-        )
-        self.confirm_no_button.pack(side='left', padx=2, pady=2)
-        
-        # Store pending confirmation action
-        self.pending_confirmation_action = None
-        self.confirmation_auto_hide_id = None
+        # Confirmation widget (reusable inline confirmation)
+        if ConfirmationWidget:
+            self.confirmation_widget = ConfirmationWidget(
+                parent=left_buttons,
+                on_confirm=lambda: None,  # Will be set dynamically
+                on_cancel=None,
+                auto_hide_seconds=5,
+                bg='#F2F2F2'
+            )
+            # Initially hidden, will show when needed
+        else:
+            self.confirmation_widget = None
         
         # Right side: Edit/Add/Delete buttons (20x20, icon 16px)
         right_buttons = tk.Frame(header_frame, bg=UI.BG_DEFAULT)
@@ -2222,63 +2197,34 @@ class QuickMonsterEditor(tk.Toplevel):
     # ============================================
     # Inline Confirmation System
     # ============================================
+    # ============================================
+    # Inline Confirmation System (using ConfirmationWidget)
+    # ============================================
     
     def _show_confirmation(self, action_callback, auto_hide_seconds: int = 5) -> None:
-        """Show inline confirmation buttons (Yes/No) for an action.
+        """Show inline confirmation widget for an action.
         
         Args:
             action_callback: Function to call if user clicks Yes
             auto_hide_seconds: Seconds before auto-hiding (default 5)
         """
-        # Store the pending action
-        self.pending_confirmation_action = action_callback
-        
-        # Cancel previous auto-hide timer if exists
-        if self.confirmation_auto_hide_id:
-            self.after_cancel(self.confirmation_auto_hide_id)
-            self.confirmation_auto_hide_id = None
-        
-        # Show confirmation frame
-        if self.confirmation_frame and not self.confirmation_frame.winfo_ismapped():
-            self.confirmation_frame.pack(side='left', padx=(0, 5))
-        
-        # Auto-hide after specified seconds
-        if auto_hide_seconds > 0:
-            self.confirmation_auto_hide_id = self.after(
-                auto_hide_seconds * 1000,
-                self._hide_confirmation
-            )
+        if self.confirmation_widget:
+            # Set the callback
+            self.confirmation_widget.set_confirm_callback(action_callback)
+            # Show widget
+            self.confirmation_widget.show(side='left', padx=(0, 5))
+        else:
+            # Fallback: execute action immediately if widget not available
+            print("[MonsterEditor] Confirmation widget not available, executing action immediately")
+            try:
+                action_callback()
+            except Exception as e:
+                print(f"[MonsterEditor] Error executing action: {e}")
     
     def _hide_confirmation(self) -> None:
-        """Hide inline confirmation buttons."""
-        # Cancel auto-hide timer if exists
-        if self.confirmation_auto_hide_id:
-            self.after_cancel(self.confirmation_auto_hide_id)
-            self.confirmation_auto_hide_id = None
-        
-        # Hide confirmation frame
-        if self.confirmation_frame and self.confirmation_frame.winfo_ismapped():
-            self.confirmation_frame.pack_forget()
-        
-        # Clear pending action
-        self.pending_confirmation_action = None
-    
-    def _on_confirm_yes(self) -> None:
-        """Handle Yes button click - execute pending action."""
-        if self.pending_confirmation_action:
-            try:
-                # Execute the action
-                self.pending_confirmation_action()
-            except Exception as e:
-                print(f"[MonsterEditor] Error executing confirmed action: {e}")
-        
-        # Hide confirmation
-        self._hide_confirmation()
-    
-    def _on_confirm_no(self) -> None:
-        """Handle No button click - cancel action."""
-        # Just hide confirmation without executing action
-        self._hide_confirmation()
+        """Hide inline confirmation widget."""
+        if self.confirmation_widget:
+            self.confirmation_widget.hide()
     
     # ============================================
     # Monster CRUD Operations
