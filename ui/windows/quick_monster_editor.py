@@ -63,6 +63,7 @@ try:
     from ui.components.window_position_selector import create_app_window_selector, create_game_window_selector  # type: ignore[assignment]
     from ui.components.icon_button import set_button_enabled
     from ui.components.confirmation_widget import ConfirmationWidget
+    from ui.components.notification_widget import NotificationWidget
 except ImportError:
     # Fallback if component not available
     def create_icon_button(parent, icon_name: str, command, text: str = '', button_type: str = 'green_light', **kwargs):
@@ -106,6 +107,7 @@ except ImportError:
         return tk.Label(parent, text=f"{icon_fallback} {text}", **filtered_kwargs)
     
     ConfirmationWidget = None  # type: ignore
+    NotificationWidget = None  # type: ignore
     
     def set_button_enabled(button, enabled: bool, tooltip: Optional[str] = None) -> None:
         """Fallback for set_button_enabled."""
@@ -748,7 +750,7 @@ class QuickMonsterEditor(tk.Toplevel):
         self.notebook.bind('<<NotebookTabChanged>>', self._on_tab_changed)
         
         # ============================================
-        # Confirmation Area (below tabs, always visible)
+        # Confirmation Area (below tabs, for Yes/No actions)
         # ============================================
         confirmation_frame = tk.Frame(right_container, bg='#FFF3CD', relief='solid', bd=1)
         confirmation_frame.pack(fill='x', pady=(0, 5))
@@ -785,6 +787,21 @@ class QuickMonsterEditor(tk.Toplevel):
         # Initially hide entire confirmation frame
         confirmation_frame.pack_forget()
         self.confirmation_frame = confirmation_frame
+        
+        # ============================================
+        # Notification Area (below confirmation, for info/success/error)
+        # ============================================
+        if NotificationWidget:
+            self.notification_widget = NotificationWidget(
+                parent=right_container,
+                auto_hide_seconds=3,
+                show_close_button=True,
+                bg=UI.BG_DEFAULT
+            )
+            self.notification_widget.pack(fill='x', pady=(0, 5))
+            self.notification_widget.hide()  # Hide initially
+        else:
+            self.notification_widget = None
         
         # Create tabs
         self._create_info_tab()
@@ -2771,11 +2788,16 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Check PIL availability
         if not PIL_AVAILABLE or ImageGrab is None:
-            messagebox.showerror(
-                'Pillow Required' if get_lang() == 'en' else 'Cần Pillow',
-                'This feature requires Pillow. Please install with:\n\npip install pillow' if get_lang() == 'en'
-                else 'Tính năng này cần Pillow. Vui lòng cài đặt bằng:\n\npip install pillow'
-            )
+            if self.notification_widget:
+                msg = ('This feature requires Pillow. Please install with:\npip install pillow' if get_lang() == 'en'
+                      else 'Tính năng này cần Pillow. Vui lòng cài đặt bằng:\npip install pillow')
+                self.notification_widget.show_error(msg)
+            else:
+                messagebox.showerror(
+                    'Pillow Required' if get_lang() == 'en' else 'Cần Pillow',
+                    'This feature requires Pillow. Please install with:\n\npip install pillow' if get_lang() == 'en'
+                    else 'Tính năng này cần Pillow. Vui lòng cài đặt bằng:\n\npip install pillow'
+                )
             return
         
         # Check if updating existing template or creating new
@@ -2826,10 +2848,14 @@ class QuickMonsterEditor(tk.Toplevel):
             try:
                 img = ImageGrab.grab(bbox=bbox)
             except Exception as e:
-                messagebox.showerror(
-                    'Capture Failed' if get_lang() == 'en' else 'Chụp Thất Bại',
-                    f"Error: {e}"
-                )
+                if self.notification_widget:
+                    msg = f"Error: {e}" if get_lang() == 'en' else f"Lỗi: {e}"
+                    self.notification_widget.show_error(msg)
+                else:
+                    messagebox.showerror(
+                        'Capture Failed' if get_lang() == 'en' else 'Chụp Thất Bại',
+                        f"Error: {e}"
+                    )
                 return
             
             # Save image
@@ -2843,10 +2869,14 @@ class QuickMonsterEditor(tk.Toplevel):
             try:
                 img.save(save_path)
             except Exception as e:
-                messagebox.showerror(
-                    'Save Failed' if get_lang() == 'en' else 'Lưu Thất Bại',
-                    f"Error: {e}"
-                )
+                if self.notification_widget:
+                    msg = f"Error: {e}" if get_lang() == 'en' else f"Lỗi: {e}"
+                    self.notification_widget.show_error(msg)
+                else:
+                    messagebox.showerror(
+                        'Save Failed' if get_lang() == 'en' else 'Lưu Thất Bại',
+                        f"Error: {e}"
+                    )
                 return
             
             # Update existing template or create new
@@ -2883,10 +2913,14 @@ class QuickMonsterEditor(tk.Toplevel):
                 except:
                     pass
             
-            messagebox.showinfo(
-                'Success' if get_lang() == 'en' else 'Thành công',
-                message
-            )
+            # Show success notification
+            if self.notification_widget:
+                self.notification_widget.show_success(message)
+            else:
+                messagebox.showinfo(
+                    'Success' if get_lang() == 'en' else 'Thành công',
+                    message
+                )
         finally:
             # Always reset flag
             self._is_capturing = False
@@ -2986,10 +3020,14 @@ class QuickMonsterEditor(tk.Toplevel):
                 except:
                     pass
             
-            messagebox.showinfo(
-                'Success' if get_lang() == 'en' else 'Thành công',
-                message
-            )
+            # Show success notification
+            if self.notification_widget:
+                self.notification_widget.show_success(message)
+            else:
+                messagebox.showinfo(
+                    'Success' if get_lang() == 'en' else 'Thành công',
+                    message
+                )
         finally:
             # Always reset flag
             self._is_browsing = False
@@ -3090,10 +3128,14 @@ class QuickMonsterEditor(tk.Toplevel):
             return
         
         if locate_template is None:
-            messagebox.showerror(
-                'Error' if get_lang() == 'en' else 'Lỗi',
-                'template_matcher not available' if get_lang() == 'en' else 'template_matcher không khả dụng'
-            )
+            if self.notification_widget:
+                msg = 'template_matcher not available' if get_lang() == 'en' else 'template_matcher không khả dụng'
+                self.notification_widget.show_error(msg)
+            else:
+                messagebox.showerror(
+                    'Error' if get_lang() == 'en' else 'Lỗi',
+                    'template_matcher not available' if get_lang() == 'en' else 'template_matcher không khả dụng'
+                )
             return
         
         # Set flag
@@ -3104,10 +3146,14 @@ class QuickMonsterEditor(tk.Toplevel):
             if isinstance(self.template_listbox, ttk.Treeview):
                 selection = self.template_listbox.selection()
                 if not selection:
-                    messagebox.showinfo(
-                        'Info' if get_lang() == 'en' else 'Thông báo',
-                        'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
-                    )
+                    if self.notification_widget:
+                        msg = 'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
+                        self.notification_widget.show_info(msg)
+                    else:
+                        messagebox.showinfo(
+                            'Info' if get_lang() == 'en' else 'Thông báo',
+                            'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
+                        )
                     return
                 # For Treeview, use item_id as index
                 item_id = selection[0]
@@ -3116,10 +3162,14 @@ class QuickMonsterEditor(tk.Toplevel):
                 # Legacy Listbox support
                 selection = self.template_listbox.curselection()
                 if not selection:
-                    messagebox.showinfo(
-                        'Info' if get_lang() == 'en' else 'Thông báo',
-                        'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
-                    )
+                    if self.notification_widget:
+                        msg = 'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
+                        self.notification_widget.show_info(msg)
+                    else:
+                        messagebox.showinfo(
+                            'Info' if get_lang() == 'en' else 'Thông báo',
+                            'Please select a template to test.' if get_lang() == 'en' else 'Vui lòng chọn template để test.'
+                        )
                     return
                 idx = selection[0]
             
@@ -3136,10 +3186,14 @@ class QuickMonsterEditor(tk.Toplevel):
             threshold = template.get('threshold', 0.85)
             
             if not path:
-                messagebox.showinfo(
-                    'Info' if get_lang() == 'en' else 'Thông báo',
-                    'Template has no path.' if get_lang() == 'en' else 'Template không có đường dẫn.'
-                )
+                if self.notification_widget:
+                    msg = 'Template has no path.' if get_lang() == 'en' else 'Template không có đường dẫn.'
+                    self.notification_widget.show_warning(msg)
+                else:
+                    messagebox.showinfo(
+                        'Info' if get_lang() == 'en' else 'Thông báo',
+                        'Template has no path.' if get_lang() == 'en' else 'Template không có đường dẫn.'
+                    )
                 return
             
             # Minimize and test
@@ -3158,7 +3212,10 @@ class QuickMonsterEditor(tk.Toplevel):
                     self.lift()
                 except Exception:
                     pass
-                messagebox.showerror('Error' if get_lang() == 'en' else 'Lỗi', str(exc))
+                if self.notification_widget:
+                    self.notification_widget.show_error(str(exc))
+                else:
+                    messagebox.showerror('Error' if get_lang() == 'en' else 'Lỗi', str(exc))
                 return
             
             # Restore window
@@ -3176,9 +3233,16 @@ class QuickMonsterEditor(tk.Toplevel):
                     msg = f"Match found at ({x}, {y})" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y})"
                 else:
                     msg = f"Match found at ({x}, {y}) - Confidence: {conf:.2f}" if get_lang() == 'en' else f"Tìm thấy tại ({x}, {y}) - Độ tin cậy: {conf:.2f}"
-                messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', msg)
+                if self.notification_widget:
+                    self.notification_widget.show_success(msg)
+                else:
+                    messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', msg)
             else:
-                messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', 'No match found' if get_lang() == 'en' else 'Không tìm thấy')
+                msg = 'No match found' if get_lang() == 'en' else 'Không tìm thấy'
+                if self.notification_widget:
+                    self.notification_widget.show_warning(msg)
+                else:
+                    messagebox.showinfo('Test Recognition' if get_lang() == 'en' else 'Test Nhận Diện', msg)
         finally:
             # Always reset flag
             self._is_testing = False
