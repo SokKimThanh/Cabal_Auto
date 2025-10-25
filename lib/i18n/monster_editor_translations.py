@@ -122,6 +122,7 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'monster_desc_label': 'Mô tả:',
         'template_list_title': 'Danh sách Templates:',
         'default_monster_name': 'Quái Mới',
+        'default_template_name': 'Template Mới',
         'preview_label': 'Xem trước',
         
         # Additional buttons
@@ -260,6 +261,7 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'monster_desc_label': 'Description:',
         'template_list_title': 'Template List:',
         'default_monster_name': 'New Monster',
+        'default_template_name': 'New Template',
         'preview_label': 'Preview',
         
         # Additional buttons
