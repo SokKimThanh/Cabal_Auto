@@ -980,65 +980,35 @@ class QuickMonsterEditor(tk.Toplevel):
         tab_text = i18n_t('tab_templates', ns='monster_editor', default='Templates')
         self.notebook.add(self.templates_tab, text=tab_text)
         
-        # ========== TOP LAYER: Button Row ==========
+        # ========== TOP LAYER: Badge + Buttons (Right aligned) ==========
         top_layer = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT, height=50)
         top_layer.pack(side='top', fill='x', padx=10, pady=(10, 5))
         top_layer.pack_propagate(False)
         
-        # Button container (centered)
-        button_container = tk.Frame(top_layer, bg=UI.BG_DEFAULT)
-        button_container.pack(side='left', anchor='w')
+        # Left spacer to push everything to the right
+        left_spacer = tk.Frame(top_layer, bg=UI.BG_DEFAULT)
+        left_spacer.pack(side='left', fill='both', expand=True)
         
-        # Capture Template button
-        self.capture_button = create_icon_button(
-            button_container,
-            icon_name='capture',
-            icon_fallback='📸',
-            icon_size=20,
-            command=self._capture_template,
-            button_type='blue',
-            variant='icon_only',
-            width=40,
-            height=40,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_capture',
-            tooltip_ns='monster_editor'
+        # Right container for badge + buttons
+        right_container = tk.Frame(top_layer, bg=UI.BG_DEFAULT)
+        right_container.pack(side='right')
+        
+        # Editing badge (initially hidden, will show when edit mode active)
+        self.template_editing_badge = tk.Label(
+            right_container,
+            text=i18n_t('badge_editing', ns='monster_editor', default='Đang chỉnh sửa'),
+            font=UI.FONT_SMALL,
+            fg='white',
+            bg='#FF8C00',  # Orange
+            padx=8,
+            pady=2,
+            relief='flat'
         )
-        self.capture_button.pack(side='left', padx=3)
-
-        # Browse File button
-        self.browse_button = create_icon_button(
-            button_container,
-            icon_name='browse',
-            icon_fallback='📂',
-            icon_size=20,
-            command=self._browse_template_image,
-            button_type='refresh',
-            variant='icon_only',
-            width=40,
-            height=40,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_browse',
-            tooltip_ns='monster_editor'
-        )
-        self.browse_button.pack(side='left', padx=3)
-
-        # Test Recognition button
-        self.test_template_button = create_icon_button(
-            button_container,
-            icon_name='test',
-            icon_fallback='🧪',
-            icon_size=20,
-            command=self._test_template_recognition,
-            button_type='blue',
-            variant='icon_only',
-            width=40,
-            height=40,
-            auto_hover_disabled=True,
-            tooltip_key='tooltip_test_template',
-            tooltip_ns='monster_editor'
-        )
-        self.test_template_button.pack(side='left', padx=3)
+        # Don't pack initially, will be shown in edit mode
+        
+        # Button container (right of badge)
+        button_container = tk.Frame(right_container, bg=UI.BG_DEFAULT)
+        button_container.pack(side='left', padx=(10, 0))
 
         # Add Template button
         self.add_template_button = create_icon_button(
@@ -1090,26 +1060,9 @@ class QuickMonsterEditor(tk.Toplevel):
         )
         self.template_edit_toggle_button.pack(side='left', padx=3)
         
-        # Editing badge (pack on right side of top layer)
-        self.template_editing_badge = tk.Label(
-            top_layer,
-            text=i18n_t('badge_editing', ns='monster_editor', default='Đang chỉnh sửa'),
-            font=UI.FONT_SMALL,
-            fg='white',
-            bg='#FF8C00',  # Orange
-            padx=8,
-            pady=2,
-            relief='flat'
-        )
-        # Initially hidden (not in edit mode)
-        # self.template_editing_badge.pack(side='left', padx=(10, 0))
-        
         # Initially disable all template buttons (locked mode)
-        self.capture_button.config(state='disabled')
-        self.browse_button.config(state='disabled')
         self.add_template_button.config(state='disabled')
         self.delete_template_button.config(state='disabled')
-        self.test_template_button.config(state='disabled')
         
         # ========== SECOND ROW: 2 Columns (6:6 ratio) ==========
         second_row = tk.Frame(self.templates_tab, bg=UI.BG_DEFAULT)
@@ -1148,10 +1101,10 @@ class QuickMonsterEditor(tk.Toplevel):
             height=15
         )
         
-        # Configure columns
-        self.template_listbox.column('image', width=60, minwidth=50, anchor='center', stretch=False)
-        self.template_listbox.column('name', width=200, minwidth=120, anchor='w')
-        self.template_listbox.column('threshold', width=100, minwidth=80, anchor='center')
+        # Configure columns with shorter widths
+        self.template_listbox.column('image', width=40, minwidth=40, anchor='center', stretch=False)
+        self.template_listbox.column('name', width=150, minwidth=100, anchor='w')
+        self.template_listbox.column('threshold', width=70, minwidth=60, anchor='center')
         
         # Set headings
         self.template_listbox.heading('image', text=i18n_t('col_image', ns='monster_editor', default='Hình'), anchor='center')
@@ -1230,7 +1183,7 @@ class QuickMonsterEditor(tk.Toplevel):
         # Label for action buttons
         action_label = tk.Label(
             action_buttons_frame,
-            text='Chụp / Chọn File:' if get_lang() == 'vi' else 'Capture / Browse:',
+            text='Chụp / Chọn / Kiểm tra:' if get_lang() == 'vi' else 'Capture / Browse / Test:',
             font=UI.FONT_SMALL,
             fg=UI.COLOR_TEXT,
             bg=UI.BG_PANEL
@@ -1241,9 +1194,8 @@ class QuickMonsterEditor(tk.Toplevel):
         buttons_container = tk.Frame(action_buttons_frame, bg=UI.BG_PANEL)
         buttons_container.pack(side='top', fill='x')
         
-        # Re-pack Capture button here (already created above, just need to re-parent)
-        # We'll create new buttons specific to this area
-        capture_preview_btn = create_icon_button(
+        # Capture button
+        self.capture_preview_button = create_icon_button(
             buttons_container,
             icon_name='capture',
             icon_fallback='📸',
@@ -1257,9 +1209,10 @@ class QuickMonsterEditor(tk.Toplevel):
             tooltip_key='tooltip_capture',
             tooltip_ns='monster_editor'
         )
-        capture_preview_btn.pack(side='left', padx=(0, 5))
+        self.capture_preview_button.pack(side='left', padx=(0, 5))
         
-        browse_preview_btn = create_icon_button(
+        # Browse button
+        self.browse_preview_button = create_icon_button(
             buttons_container,
             icon_name='browse',
             icon_fallback='📂',
@@ -1273,15 +1226,29 @@ class QuickMonsterEditor(tk.Toplevel):
             tooltip_key='tooltip_browse',
             tooltip_ns='monster_editor'
         )
-        browse_preview_btn.pack(side='left', padx=(0, 5))
+        self.browse_preview_button.pack(side='left', padx=(0, 5))
         
-        # Store references to these buttons for enable/disable in edit mode
-        self.capture_preview_button = capture_preview_btn
-        self.browse_preview_button = browse_preview_btn
+        # Test Recognition button
+        self.test_template_button = create_icon_button(
+            buttons_container,
+            icon_name='test',
+            icon_fallback='🧪',
+            icon_size=18,
+            command=self._test_template_recognition,
+            button_type='blue',
+            variant='icon_only',
+            width=38,
+            height=38,
+            auto_hover_disabled=True,
+            tooltip_key='tooltip_test_template',
+            tooltip_ns='monster_editor'
+        )
+        self.test_template_button.pack(side='left', padx=(0, 5))
         
-        # Initially disable
+        # Initially disable all action buttons
         self.capture_preview_button.config(state='disabled')
         self.browse_preview_button.config(state='disabled')
+        self.test_template_button.config(state='disabled')
     
     def _create_center_panel(self, parent: Optional[Any] = None) -> None:
         """Create center panel with form fields."""
@@ -1873,10 +1840,6 @@ class QuickMonsterEditor(tk.Toplevel):
         
         if self.is_editing:
             # Switch to edit mode - enable template buttons
-            if self.capture_button:
-                self.capture_button.config(state='normal')
-            if self.browse_button:
-                self.browse_button.config(state='normal')
             if self.add_template_button:
                 self.add_template_button.config(state='normal')
             if self.delete_template_button:
@@ -1890,9 +1853,7 @@ class QuickMonsterEditor(tk.Toplevel):
             if hasattr(self, 'browse_preview_button'):
                 self.browse_preview_button.config(state='normal')
             
-            # Note: Button is now icon-only, so we don't change text
-            
-            # Show editing badge at top-left of tab
+            # Show editing badge at top-right
             if self.template_editing_badge and not self.template_editing_badge.winfo_ismapped():
                 self.template_editing_badge.pack(side='left')
                 
@@ -1900,10 +1861,6 @@ class QuickMonsterEditor(tk.Toplevel):
             self.set_monster_dirty(True)
         else:
             # Switch to locked mode - disable template buttons
-            if self.capture_button:
-                self.capture_button.config(state='disabled')
-            if self.browse_button:
-                self.browse_button.config(state='disabled')
             if self.add_template_button:
                 self.add_template_button.config(state='disabled')
             if self.delete_template_button:
@@ -1916,8 +1873,6 @@ class QuickMonsterEditor(tk.Toplevel):
                 self.capture_preview_button.config(state='disabled')
             if hasattr(self, 'browse_preview_button'):
                 self.browse_preview_button.config(state='disabled')
-            
-            # Note: Button is now icon-only, so we don't change text
             
             # Hide editing badge
             if self.template_editing_badge and self.template_editing_badge.winfo_ismapped():
