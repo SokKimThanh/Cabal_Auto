@@ -751,8 +751,8 @@ class QuickMonsterEditor(tk.Toplevel):
             command=self._toggle_edit_mode,
             button_type='primary',
             variant='icon_only',  # Icon only
-            width=32,
-            height=32,
+            width=20,
+            height=20,
             tooltip_key='tooltip_edit_mode',
             tooltip_ns='monster_editor'
         )
@@ -812,6 +812,12 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Note: Edit button is already in left_buttons as edit_toggle_button
         
+        # Initially enable Add button, Delete depends on selection
+        if self.add_monster_button:
+            self.add_monster_button.config(state='normal')
+        if self.delete_monster_button:
+            self.delete_monster_button.config(state='disabled')  # Will be enabled when monster selected
+        
         # Form content
         form_frame = tk.Frame(scrollable_frame, bg=UI.BG_DEFAULT)
         form_frame.pack(fill='both', expand=True)
@@ -832,8 +838,7 @@ class QuickMonsterEditor(tk.Toplevel):
         
         self.name_entry = tk.Entry(
             form_frame,
-            font=UI.FONT_TEXT,
-            width=30
+            font=UI.FONT_TEXT
         )
         self.name_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
         self.name_entry.bind('<KeyRelease>', self._on_info_change)
@@ -856,10 +861,9 @@ class QuickMonsterEditor(tk.Toplevel):
             form_frame,
             from_=1,
             to=999,
-            font=UI.FONT_TEXT,
-            width=10
+            font=UI.FONT_TEXT
         )
-        self.level_spinbox.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.level_spinbox.grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
         self.level_spinbox.bind('<KeyRelease>', self._on_info_change)
         self.level_spinbox.bind('<<Increment>>', self._on_info_change)
         self.level_spinbox.bind('<<Decrement>>', self._on_info_change)
@@ -882,10 +886,9 @@ class QuickMonsterEditor(tk.Toplevel):
             form_frame,
             from_=1,
             to=10,
-            font=UI.FONT_TEXT,
-            width=10
+            font=UI.FONT_TEXT
         )
-        self.priority_spinbox.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.priority_spinbox.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
         self.priority_spinbox.bind('<KeyRelease>', self._on_info_change)
         self.priority_spinbox.bind('<<Increment>>', self._on_info_change)
         self.priority_spinbox.bind('<<Decrement>>', self._on_info_change)
@@ -906,10 +909,9 @@ class QuickMonsterEditor(tk.Toplevel):
         
         self.hp_entry = tk.Entry(
             form_frame,
-            font=UI.FONT_TEXT,
-            width=15
+            font=UI.FONT_TEXT
         )
-        self.hp_entry.grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.hp_entry.grid(row=3, column=1, sticky='ew', pady=5, padx=(10, 0))
         self.hp_entry.bind('<KeyRelease>', self._on_info_change)
         
         # Damage per hit
@@ -928,10 +930,9 @@ class QuickMonsterEditor(tk.Toplevel):
         
         self.damage_entry = tk.Entry(
             form_frame,
-            font=UI.FONT_TEXT,
-            width=15
+            font=UI.FONT_TEXT
         )
-        self.damage_entry.grid(row=4, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.damage_entry.grid(row=4, column=1, sticky='ew', pady=5, padx=(10, 0))
         self.damage_entry.bind('<KeyRelease>', self._on_info_change)
         
         # Description
@@ -954,7 +955,6 @@ class QuickMonsterEditor(tk.Toplevel):
         self.desc_text = tk.Text(
             desc_frame,
             font=UI.FONT_TEXT,
-            width=30,
             height=5,
             wrap=tk.WORD
         )
@@ -1258,10 +1258,10 @@ class QuickMonsterEditor(tk.Toplevel):
         # Settings saved badge (right side)
         self.settings_saved_badge = tk.Label(
             top_bar,
-            text=i18n_t('badge_settings_saved', ns='monster_editor', default='✓ Đã lưu cài đặt'),
+            text=i18n_t('badge_settings_saved', ns='monster_editor', default='✓ Đã lưu setting mới'),
             font=UI.FONT_SMALL,
             fg='white',
-            bg='#28A745',  # Green for saved
+            bg='#2196F3',  # Blue for settings saved
             padx=8,
             pady=2,
             relief='flat'
@@ -2052,40 +2052,40 @@ class QuickMonsterEditor(tk.Toplevel):
         self.is_editing = not self.is_editing
         
         if self.is_editing:
-            # Switch to edit mode - enable template buttons
+            # Switch to edit mode
+            # Add button always enabled (can create new template anytime)
             if self.add_template_button:
                 self.add_template_button.config(state='normal')
-            if self.delete_template_button:
-                self.delete_template_button.config(state='normal')
-            if self.test_template_button:
-                self.test_template_button.config(state='normal')
             
-            # Enable preview action buttons
-            if hasattr(self, 'capture_preview_button'):
-                self.capture_preview_button.config(state='normal')
-            if hasattr(self, 'browse_preview_button'):
-                self.browse_preview_button.config(state='normal')
+            # Delete and Test buttons depend on selection (handled by _on_template_select)
             
-            # Show editing badge (simple pack, already in correct position)
+            # Enable preview action buttons (Capture, Browse)
+            if hasattr(self, 'capture_button') and self.capture_button:
+                self.capture_button.config(state='normal')
+            if hasattr(self, 'browse_button') and self.browse_button:
+                self.browse_button.config(state='normal')
+            
+            # Show editing badge
             if self.template_editing_badge and not self.template_editing_badge.winfo_ismapped():
                 self.template_editing_badge.pack(side='left', padx=(0, 4))
                 
             # Mark as dirty to enable save button
             self.set_monster_dirty(True)
         else:
-            # Switch to locked mode - disable template buttons
+            # Switch to locked mode
+            # All buttons disabled in locked mode
             if self.add_template_button:
                 self.add_template_button.config(state='disabled')
             if self.delete_template_button:
                 self.delete_template_button.config(state='disabled')
             if self.test_template_button:
-                self.test_template_button.config(state='normal')  # Test can stay enabled
+                self.test_template_button.config(state='disabled')
             
             # Disable preview action buttons
-            if hasattr(self, 'capture_preview_button'):
-                self.capture_preview_button.config(state='disabled')
-            if hasattr(self, 'browse_preview_button'):
-                self.browse_preview_button.config(state='disabled')
+            if hasattr(self, 'capture_button') and self.capture_button:
+                self.capture_button.config(state='disabled')
+            if hasattr(self, 'browse_button') and self.browse_button:
+                self.browse_button.config(state='disabled')
             
             # Hide editing badge
             if self.template_editing_badge and self.template_editing_badge.winfo_ismapped():
@@ -2434,7 +2434,25 @@ class QuickMonsterEditor(tk.Toplevel):
         
         # Get selected item
         selection = self.template_listbox.selection()
+        
+        # Update button states based on selection
+        has_selection = bool(selection)
+        
+        # Enable/disable buttons based on selection
+        if self.delete_template_button:
+            self.delete_template_button.config(state='normal' if has_selection else 'disabled')
+        if self.test_template_button:
+            self.test_template_button.config(state='normal' if has_selection else 'disabled')
+        
+        # Browse and Capture buttons work differently:
+        # - If has selection: update existing template
+        # - If no selection: create new template
+        # So they should always be enabled when monster is selected
+        
         if not selection:
+            # Clear preview when no selection
+            if self.template_preview_label:
+                self.template_preview_label.config(text='No template selected', image='')
             return
         
         # Get template data from selection
@@ -2513,15 +2531,8 @@ class QuickMonsterEditor(tk.Toplevel):
     
     def _add_template(self) -> None:
         """Add a new empty template to the current monster."""
-        # Check if monster is selected - with spam prevention
+        # Check if monster is selected
         if not self.current_monster_id:
-            current_time = time.time()
-            if current_time - self._last_warning_time > 3.0:
-                self._last_warning_time = current_time
-                messagebox.showwarning(
-                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                    'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
-                )
             return
         
         # Find monster
@@ -2556,20 +2567,16 @@ class QuickMonsterEditor(tk.Toplevel):
         )
     
     def _capture_template(self) -> None:
-        """Capture template image from a selected screen region and attach to current monster."""
+        """Capture template image from a selected screen region.
+        - If a template is selected: update that template's image
+        - If no template selected: create new template
+        """
         # Prevent concurrent captures
         if self._is_capturing:
             return
         
-        # Check if monster is selected - with spam prevention (3 second cooldown)
+        # Check if monster is selected
         if not self.current_monster_id:
-            current_time = time.time()
-            if current_time - self._last_warning_time > 3.0:  # Only show warning once per 3 seconds
-                self._last_warning_time = current_time
-                messagebox.showwarning(
-                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                    'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
-                )
             return
         
         # Check PIL availability
@@ -2580,6 +2587,17 @@ class QuickMonsterEditor(tk.Toplevel):
                 else 'Tính năng này cần Pillow. Vui lòng cài đặt bằng:\n\npip install pillow'
             )
             return
+        
+        # Check if updating existing template or creating new
+        selected_template_idx = None
+        if self.template_listbox and isinstance(self.template_listbox, ttk.Treeview):
+            selection = self.template_listbox.selection()
+            if selection:
+                item_id = selection[0]
+                try:
+                    selected_template_idx = int(item_id.split('_')[-1])
+                except (ValueError, IndexError):
+                    pass
         
         # Set flag
         self._is_capturing = True
@@ -2641,38 +2659,71 @@ class QuickMonsterEditor(tk.Toplevel):
                 )
                 return
             
-            # Add to templates
-            tmpl = {'name': filename, 'path': f'assets/images/monsters/{filename}', 'threshold': 0.85}
-            monster.setdefault('templates', []).append(tmpl)
+            # Update existing template or create new
+            if selected_template_idx is not None:
+                # Update existing template
+                templates = monster.setdefault('templates', [])
+                if selected_template_idx < len(templates):
+                    templates[selected_template_idx]['name'] = filename
+                    templates[selected_template_idx]['path'] = f'assets/images/monsters/{filename}'
+                    message = 'Template updated successfully.' if get_lang() == 'en' else 'Đã cập nhật template.'
+                else:
+                    # Index out of range, create new instead
+                    tmpl = {'name': filename, 'path': f'assets/images/monsters/{filename}', 'threshold': 0.85}
+                    templates.append(tmpl)
+                    message = 'Template created successfully.' if get_lang() == 'en' else 'Đã tạo template mới.'
+            else:
+                # Create new template
+                tmpl = {'name': filename, 'path': f'assets/images/monsters/{filename}', 'threshold': 0.85}
+                monster.setdefault('templates', []).append(tmpl)
+                message = 'Template created successfully.' if get_lang() == 'en' else 'Đã tạo template mới.'
+            
             self.has_unsaved_changes = True
+            self.set_dirty(True)
             
             # Refresh template list
             self._refresh_template_list()
             
+            # Re-select the template if it was an update
+            if selected_template_idx is not None and self.template_listbox:
+                try:
+                    item_id = f'template_{selected_template_idx}'
+                    self.template_listbox.selection_set(item_id)
+                    self.template_listbox.see(item_id)
+                except:
+                    pass
+            
             messagebox.showinfo(
-                'Captured' if get_lang() == 'en' else 'Đã Chụp',
-                'Template captured and saved.' if get_lang() == 'en' else 'Đã chụp và lưu template.'
+                'Success' if get_lang() == 'en' else 'Thành công',
+                message
             )
         finally:
             # Always reset flag
             self._is_capturing = False
     
     def _browse_template_image(self) -> None:
-        """Browse for template image file and add to current monster."""
+        """Browse for template image file.
+        - If a template is selected: update that template's image
+        - If no template selected: create new template
+        """
         # Prevent concurrent browse operations
         if self._is_browsing:
             return
         
-        # Check if monster is selected - with spam prevention
+        # Check if monster is selected
         if not self.current_monster_id:
-            current_time = time.time()
-            if current_time - self._last_warning_time > 3.0:
-                self._last_warning_time = current_time
-                messagebox.showwarning(
-                    'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                    'Please select a monster first.' if get_lang() == 'en' else 'Vui lòng chọn quái trước.'
-                )
             return
+        
+        # Check if updating existing template or creating new
+        selected_template_idx = None
+        if self.template_listbox and isinstance(self.template_listbox, ttk.Treeview):
+            selection = self.template_listbox.selection()
+            if selection:
+                item_id = selection[0]
+                try:
+                    selected_template_idx = int(item_id.split('_')[-1])
+                except (ValueError, IndexError):
+                    pass
         
         # Set flag
         self._is_browsing = True
@@ -2711,17 +2762,43 @@ class QuickMonsterEditor(tk.Toplevel):
                 )
                 return
             
-            # Add to templates
-            tmpl = {'name': new_filename, 'path': f'assets/images/monsters/{new_filename}', 'threshold': 0.85}
-            monster.setdefault('templates', []).append(tmpl)
+            # Update existing template or create new
+            if selected_template_idx is not None:
+                # Update existing template
+                templates = monster.setdefault('templates', [])
+                if selected_template_idx < len(templates):
+                    templates[selected_template_idx]['name'] = new_filename
+                    templates[selected_template_idx]['path'] = f'assets/images/monsters/{new_filename}'
+                    message = 'Template updated successfully.' if get_lang() == 'en' else 'Đã cập nhật template.'
+                else:
+                    # Index out of range, create new instead
+                    tmpl = {'name': new_filename, 'path': f'assets/images/monsters/{new_filename}', 'threshold': 0.85}
+                    templates.append(tmpl)
+                    message = 'Template created successfully.' if get_lang() == 'en' else 'Đã tạo template mới.'
+            else:
+                # Create new template
+                tmpl = {'name': new_filename, 'path': f'assets/images/monsters/{new_filename}', 'threshold': 0.85}
+                monster.setdefault('templates', []).append(tmpl)
+                message = 'Template created successfully.' if get_lang() == 'en' else 'Đã tạo template mới.'
+            
             self.has_unsaved_changes = True
+            self.set_dirty(True)
             
             # Refresh template list
             self._refresh_template_list()
             
+            # Re-select the template if it was an update
+            if selected_template_idx is not None and self.template_listbox:
+                try:
+                    item_id = f'template_{selected_template_idx}'
+                    self.template_listbox.selection_set(item_id)
+                    self.template_listbox.see(item_id)
+                except:
+                    pass
+            
             messagebox.showinfo(
-                'Added' if get_lang() == 'en' else 'Đã Thêm',
-                'Template added successfully.' if get_lang() == 'en' else 'Đã thêm template thành công.'
+                'Success' if get_lang() == 'en' else 'Thành công',
+                message
             )
         finally:
             # Always reset flag
@@ -2744,10 +2821,7 @@ class QuickMonsterEditor(tk.Toplevel):
             if isinstance(self.template_listbox, ttk.Treeview):
                 selection = self.template_listbox.selection()
                 if not selection:
-                    messagebox.showwarning(
-                        'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                        'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
-                    )
+                    # No selection - button should be disabled, so just return silently
                     return
                 # For Treeview, use item_id as index
                 item_id = selection[0]
@@ -2756,10 +2830,7 @@ class QuickMonsterEditor(tk.Toplevel):
                 # Legacy Listbox support
                 selection = self.template_listbox.curselection()
                 if not selection:
-                    messagebox.showwarning(
-                        'Warning' if get_lang() == 'en' else 'Cảnh báo',
-                        'Please select a template to delete.' if get_lang() == 'en' else 'Vui lòng chọn template để xóa.'
-                    )
+                    # No selection - button should be disabled, so just return silently
                     return
                 idx = selection[0]
             
@@ -2938,6 +3009,12 @@ class QuickMonsterEditor(tk.Toplevel):
                     for tmpl in templates:
                         name = tmpl.get('name', 'Unknown')
                         self.template_listbox.insert(tk.END, name)
+        
+        # Update button states after refresh (no selection by default)
+        if self.delete_template_button:
+            self.delete_template_button.config(state='disabled')
+        if self.test_template_button:
+            self.test_template_button.config(state='disabled')
     
     # Inner class for region capture overlay
     class _RegionCaptureOverlay(tk.Toplevel):
