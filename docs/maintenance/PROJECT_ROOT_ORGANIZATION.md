@@ -191,7 +191,7 @@ Cabal_Auto/
 
 ### Future Considerations
 1. **interception.dll**: Có thể xóa nếu không còn dùng
-2. **tmp_test_dir/**: Có thể xóa nếu là test directory cũ
+2. **tmp_test_dir/**: ✅ Removed (was an old test directory)
 3. **run.bat**: Consider deprecating in favor of run_venv.bat
 
 ### Potential Improvements

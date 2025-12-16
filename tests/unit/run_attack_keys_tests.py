@@ -1,5 +1,6 @@
 import importlib.util
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -13,7 +14,8 @@ for name in dir(t):
         func = getattr(t, name)
         if callable(func):
             try:
-                func(Path.cwd() / 'tmp_test_dir')
+                with tempfile.TemporaryDirectory(prefix='cabal_auto_tmp_test_dir_') as temp_dir:
+                    func(Path(temp_dir))
             except TypeError:
                 # no args
                 try:
