@@ -168,6 +168,14 @@ keyboard==0.13.5
 
 ## 📦 Cài đặt
 
+> **Khuyến nghị (Windows):** dùng **Python Launcher** `py` thay vì `python` để tránh lỗi *"Python was not found"* do Windows/Microsoft Store alias.
+
+### Troubleshooting nhanh (Windows)
+
+- Nếu chạy `python ...` mà báo: **"Python was not found; run without arguments to install from the Microsoft Store"**
+  - Dùng `py` để kiểm tra Python đã cài: `py -0p`
+  - Hoặc tắt alias tại: **Settings → Apps → Advanced app settings → App execution aliases** (tắt `python.exe`, `python3.exe`)
+
 ### 1. Clone repository
 ```bash
 git clone https://github.com/SokKimThanh/Cabal_Auto.git
@@ -176,23 +184,23 @@ cd Cabal_Auto
 
 ### 2. Tạo virtual environment
 ```powershell
-python -m venv venv
+py -3.10 -m venv venv
 ```
 
 ### 3. Kích hoạt venv
 ```powershell
-E:\Cabal_Auto\venv\Scripts\Activate.ps1
+venv\Scripts\Activate.ps1
 ```
 
 Nếu PowerShell chặn script:
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-E:\Cabal_Auto\venv\Scripts\Activate.ps1
+venv\Scripts\Activate.ps1
 ```
 
 ### 4. Cài đặt dependencies
 ```powershell
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ## 🚀 Quick Start
