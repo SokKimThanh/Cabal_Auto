@@ -103,7 +103,7 @@ Cabal_Auto/
 │
 ├── 📝 logs/                # Runtime logs (auto-generated)
 │   ├── hunt_structured.jsonl  # JSON structured logs
-│   └── README.md          # Logs documentation
+│   └── (gitignored)       # Logs are created at runtime
 │
 ├── 📂 tmp/                 # Temporary files (gitignored)
 │   └── captures/          # Screenshot captures

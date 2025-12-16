@@ -1,7 +1,0 @@
-{"event": "HUNT_START", "config": {"window_title": "CABAL", "target_key": "z", "attack_keys": ["1", "2", "3", "4"], "search_interval": 0.25, "attack_interval": 0.15, "lost_timeout_sec": 0.5, "attack_min_duration_sec": 5.0, "template_count": 5}, "timestamp": "2025-10-21T00:00:00.000000"}
-{"event": "STATE_CHANGE", "old_state": "search", "new_state": "attack", "reason": "target_found", "timestamp": "2025-10-21T00:00:02.500000"}
-{"event": "MATCH", "template": "Coc Go 5", "monster": "Coc Go", "box": {"left": 1022, "top": 387, "width": 167, "height": 264}, "center": {"x": 1105, "y": 519}, "threshold": 0.85, "confidence": 0.9279982447624207, "timestamp": "2025-10-21T00:00:02.500000"}
-{"event": "MATCH", "template": "Coc Go 5", "monster": "Coc Go", "box": {"left": 1022, "top": 387, "width": 167, "height": 264}, "center": {"x": 1105, "y": 519}, "threshold": 0.85, "confidence": 0.9736181497573853, "timestamp": "2025-10-21T00:00:07.500000"}
-{"event": "LOST", "template": "Coc Go 5", "monster": "Coc Go", "duration": 13.841285228729248, "timestamp": "2025-10-21T00:00:20.500000"}
-{"event": "STATE_CHANGE", "old_state": "attack", "new_state": "search", "reason": "target_lost_timeout", "timestamp": "2025-10-21T00:00:20.500000"}
-{"event": "HUNT_STOP", "reason": "manual_stop", "duration_sec": 37.371488, "timestamp": "2025-10-21T00:00:37.500000"}
