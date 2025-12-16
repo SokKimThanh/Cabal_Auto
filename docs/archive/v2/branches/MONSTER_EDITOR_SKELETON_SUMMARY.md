@@ -12,7 +12,7 @@ Independent Monster Editor module for Cabal Auto bot with clean architecture.
 ## 📦 Deliverables
 
 ### 1. Documentation (377 lines)
-- ✅ `docs/branches/feature-monster-editor-refactor.md`
+- ✅ `docs/archive/v2/branches/feature-monster-editor-refactor.md`
   - Complete feature specification
   - 8 tasks with acceptance criteria
   - API specifications
@@ -181,7 +181,7 @@ Independent Monster Editor module for Cabal Auto bot with clean architecture.
 
 ## 🔗 Related Documents
 
-- Full specification: `docs/branches/feature-monster-editor-refactor.md`
+- Full specification: `docs/archive/v2/branches/feature-monster-editor-refactor.md`
 - Coding guidelines: `docs/HOW_TO_USE_CODING_GUIDELINES.md`
 - Python guidelines: `docs/PYTHON_CODING_GUIDELINES.md`
 

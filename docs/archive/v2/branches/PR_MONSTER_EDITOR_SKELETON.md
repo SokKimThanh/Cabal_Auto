@@ -68,8 +68,8 @@ Create standalone Monster Editor module independent from Library Manager with cl
 ## 📁 Files Changed
 
 ```
-+ docs/branches/feature-monster-editor-refactor.md (377 lines)
-+ docs/branches/MONSTER_EDITOR_SKELETON_SUMMARY.md (214 lines)
++ docs/archive/v2/branches/feature-monster-editor-refactor.md (377 lines)
++ docs/archive/v2/branches/MONSTER_EDITOR_SKELETON_SUMMARY.md (214 lines)
 + lib/features/monster_manager.py (277 lines)
 + lib/features/worker.py (254 lines)
 + lib/hotkey/hotkey_manager.py (164 lines)
@@ -195,8 +195,8 @@ list_registered_hotkeys() -> List[Dict]
 
 ## 🔗 Related
 
-- Feature spec: `docs/branches/feature-monster-editor-refactor.md`
-- Summary: `docs/branches/MONSTER_EDITOR_SKELETON_SUMMARY.md`
+- Feature spec: `docs/archive/v2/branches/feature-monster-editor-refactor.md`
+- Summary: `docs/archive/v2/branches/MONSTER_EDITOR_SKELETON_SUMMARY.md`
 - Coding guidelines: `docs/HOW_TO_USE_CODING_GUIDELINES.md`
 
 ## 👥 Reviewers

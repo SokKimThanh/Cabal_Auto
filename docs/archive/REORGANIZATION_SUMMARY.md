@@ -113,8 +113,8 @@ docs/
 1. **`docs/sprints/sprint16/`** - Sprint 16 documentation
 2. **`docs/sprints/sprint18/`** - Sprint 18 documentation (current)
 3. **`docs/bugfixes/`** - Bug fix documentation
-4. **`docs/ux-enhancements/`** - UX improvement documentation
-5. **`docs/translations/`** - Translation and PIL fix documentation
+4. **`docs/archive/v2/ux-enhancements/`** - UX improvement documentation
+5. **`docs/archive/v2/translations/`** - Translation and PIL fix documentation
 
 ## 📊 Thống kê / Statistics
 
@@ -150,8 +150,8 @@ docs/sprints/           → Earlier sprints
 ### Tìm tài liệu theo chủ đề:
 ```
 docs/bugfixes/          → Bug fixes
-docs/ux-enhancements/   → UX improvements
-docs/translations/      → Translation docs
+docs/archive/v2/ux-enhancements/   → UX improvements
+docs/archive/v2/translations/      → Translation docs
 ```
 
 ### Xem chỉ mục:

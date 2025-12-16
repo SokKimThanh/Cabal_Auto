@@ -617,7 +617,7 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 ### ✅ Files đã di chuyển:
 1. **bot_config.json** → `config/bot_config.json` (Legacy config)
 2. **test_migration.py** → `tests/test_migration.py` (Test file)
-3. **hotkeyManager.txt** → `docs/legacy/hotkeyManager.txt` (Planning doc)
+3. **hotkeyManager.txt** → `docs/archive/v2/legacy/hotkeyManager.txt` (Planning doc)
 
 ### 📍 Files giữ nguyên ở root:
 1. **app_gui.py** - Main application (BẮT BUỘC)
@@ -629,7 +629,7 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 
 ### 🗂️ Thư mục mới:
 - **config/**: Reference samples (bot_config.json từ phần mềm khác)
-- **docs/legacy/**: Legacy planning documents (hotkeyManager.txt)
+- **docs/archive/v2/legacy/**: Legacy planning documents (hotkeyManager.txt)
 
 ### 🚫 Files đã xóa/deprecated:
 - **interception.dll**: Legacy DLL không còn sử dụng (có thể xóa an toàn)
@@ -639,7 +639,7 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 Khi update code, lưu ý các paths đã thay đổi:
 - `bot_config.json` → `config/bot_config.json`
 - Các test files ở root → `tests/`
-- Planning docs ở root → `docs/legacy/`
+- Planning docs ở root → `docs/archive/v2/legacy/`
 
 ## 📊 Development Timeline
 
@@ -865,7 +865,7 @@ docs/
 
 ### By Category
 - **Features**: [docs/features/](docs/features/)
-- **Enhancements**: [docs/enhancements/](docs/enhancements/)
+- **Enhancements**: [docs/archive/v2/enhancements/](docs/archive/v2/enhancements/)
 - **Guides**: [docs/guides/](docs/guides/)
 - **Bug Fixes**: [docs/bugfixes/](docs/bugfixes/)
 - **Sprint 21**: [docs/sprint21/](docs/sprint21/)
@@ -963,7 +963,7 @@ MIT License - See LICENSE file for details
 - **User guides**: `docs/guides/`
 - **Technical docs**: `docs/architecture/`, `docs/features/`
 - **Sprint docs**: `docs/sprints/sprint21/`, etc.
-- **Legacy planning**: `docs/legacy/` (ví dụ: hotkeyManager.txt)
+- **Legacy planning**: `docs/archive/v2/legacy/` (ví dụ: hotkeyManager.txt)
 - **Archive**: `docs/archive/` (old summaries, outdated docs)
 
 #### 🔧 Scripts & Utilities
@@ -985,7 +985,7 @@ MIT License - See LICENSE file for details
 ```
 Moved: bot_config.json → config/bot_config.json
 Moved: test_migration.py → tests/test_migration.py
-Moved: hotkeyManager.txt → docs/legacy/hotkeyManager.txt
+Moved: hotkeyManager.txt → docs/archive/v2/legacy/hotkeyManager.txt
 ```
 
 ### Where to Put New Files?
@@ -999,7 +999,7 @@ Moved: hotkeyManager.txt → docs/legacy/hotkeyManager.txt
 | UI component | `lib/ui/` | `feature_dialog.py` |
 | Feature module | `lib/features/` | `feature/module.py` |
 | Legacy script | `scripts/` | `legacy_tool.py` |
-| Planning doc | `docs/legacy/` | `feature_plan.txt` |
+| Planning doc | `docs/archive/v2/legacy/` | `feature_plan.txt` |
 
 ---
 

@@ -2373,7 +2373,7 @@ Lệnh: git checkout -b feature/monster-editor-refactor
 
 Thêm khung nhiệm vụ trong repo
 
-Tạo file: docs/branches/feature-monster-editor-refactor.md
+Tạo file: docs/archive/v2/branches/feature-monster-editor-refactor.md
 
 Nội dung ngắn trong file: mục tiêu, scope, danh sách nhiệm vụ nhỏ (8 mục), acceptance criteria, files to modify, testing notes.
 
@@ -2413,7 +2413,7 @@ Acceptance: tests pass; events: monster_created, template_saved, template_test.
 
 Tạo tệp khung trong nhánh và commit nhanh
 
-Tạo các file rỗng hoặc skeleton: lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, docs/branches/feature-monster-editor-refactor.md.
+Tạo các file rỗng hoặc skeleton: lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, docs/archive/v2/branches/feature-monster-editor-refactor.md.
 
 Commit message: chore: add skeleton for monster editor refactor (branch setup)
 
@@ -2429,7 +2429,7 @@ Tạo Pull Request sẵn sàng làm việc
 
 Mở PR với tiêu đề: feature: monster editor refactor — skeleton
 
-PR description: paste nội dung file docs/branches/feature-monster-editor-refactor.md và nêu các bước tiếp theo.
+PR description: paste nội dung file docs/archive/v2/branches/feature-monster-editor-refactor.md và nêu các bước tiếp theo.
 
 Phân công và thứ tự thực hiện (ngắn)
 
@@ -2469,7 +2469,7 @@ Yêu cầu chính (bullet, rất ngắn):
 
 Tạo nhánh theo quy tắc: feature/<short-name>, fix/<short-name>, chore/<short-name>, hotfix/<short-name>, docs/<short-name>.
 
-Trong nhánh feature: tạo file skeleton và khung nhiệm vụ (docs/branches/<branch>.md) với danh sách task nhỏ, acceptance criteria, file cần sửa.
+Trong nhánh feature: tạo file skeleton và khung nhiệm vụ (docs/archive/v2/branches/<branch>.md) với danh sách task nhỏ, acceptance criteria, file cần sửa.
 
 Commit skeletons với message chuẩn: "<type>: <short-desc> (skeleton)".
 
@@ -2490,7 +2490,7 @@ Do:
 
 Create branch named feature/monster-editor-refactor.
 
-Add docs/branches/feature-monster-editor-refactor.md describing goal, scope, 8 tasks (each a single line) and acceptance criteria.
+Add docs/archive/v2/branches/feature-monster-editor-refactor.md describing goal, scope, 8 tasks (each a single line) and acceptance criteria.
 
 Add skeleton files: lib/library/monster_manager.py (empty functions), ui/quick_monster_editor.py (basic class), lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, tests/unit/test_monster_manager_skeleton.py.
 
@@ -2542,7 +2542,7 @@ Nếu repository có CI, thêm note trong PR: "CI must pass before merge" và y�
 
 Nếu có branch protection rules, PR sẽ được review; Claude chỉ tạo PR và cập nhật theo comments, không tự merge.
 
-Template ngắn file docs/branches/feature-monster-editor-refactor.md
+Template ngắn file docs/archive/v2/branches/feature-monster-editor-refactor.md
 Goal: short sentence.
 
 Scope: short bullets (what included / excluded).
@@ -2577,7 +2577,7 @@ git checkout -b feature/monster-editor-refactor
 Bước 2 — Tạo file khung (paths + nội dung mẫu)
 Tạo các file sau trong nhánh mới với nội dung skeleton tối giản; commit từng nhóm file nhỏ để review dễ dàng.
 
-docs/branches/feature-monster-editor-refactor.md
+docs/archive/v2/branches/feature-monster-editor-refactor.md
 
 Nội dung ngắn: mục tiêu, scope, 8 tasks (1 dòng mỗi task với acceptance criteria), files to modify, PR checklist.
 
@@ -2757,7 +2757,7 @@ def test_create_and_get(tmp_path, monkeypatch):
     from lib.library import monster_manager
     # use monkeypatch to point DATA_PATH to tmp_path file if needed in next iteration
     assert callable(monster_manager.create_monster)
-Bổ sung: docs/branches/feature-monster-editor-refactor.md mẫu (rất ngắn)
+Bổ sung: docs/archive/v2/branches/feature-monster-editor-refactor.md mẫu (rất ngắn)
 Goal, Scope, 8 tasks (1-line each), Files to change, Acceptance checklist, PR template.
 
 Bước 3 — Commit + push (nhỏ, dễ review)
@@ -2767,13 +2767,13 @@ bash
 
 
 Sao chép
-git add docs/branches/feature-monster-editor-refactor.md lib/library/monster_manager.py ui/quick_monster_editor.py lib/vision/capture_helper.py lib/tasks/worker.py lib/input/input_adapter.py tests/unit/test_monster_manager_skeleton.py
+git add docs/archive/v2/branches/feature-monster-editor-refactor.md lib/library/monster_manager.py ui/quick_monster_editor.py lib/vision/capture_helper.py lib/tasks/worker.py lib/input/input_adapter.py tests/unit/test_monster_manager_skeleton.py
 git commit -m "chore: add skeleton for monster editor refactor (skeleton)"
 git push -u origin feature/monster-editor-refactor
 Bước 4 — Tạo Pull Request
 Title: feature: monster editor refactor — skeleton
 
-Body: paste docs/branches/feature-monster-editor-refactor.md contents and checklist.
+Body: paste docs/archive/v2/branches/feature-monster-editor-refactor.md contents and checklist.
 
 Labels: ready-for-review, area/ui, area/lib
 
@@ -2788,7 +2788,7 @@ tests/unit/test_monster_manager_skeleton.py importable and runnable (no ImportEr
 
 PR created with doc file and checklist.
 
-Bạn muốn mình sinh nội dung đầy đủ cho docs/branches/feature-monster-editor-refactor.md ngay bây giờ để bạn dán, hoặc tạo các file skeleton code đầy đủ như trên để copy-paste?
+Bạn muốn mình sinh nội dung đầy đủ cho docs/archive/v2/branches/feature-monster-editor-refactor.md ngay bây giờ để bạn dán, hoặc tạo các file skeleton code đầy đủ như trên để copy-paste?
 
 
 
@@ -2810,7 +2810,7 @@ Tạo branch feature/monster-editor-refactor trên repo và checkout.
 
 Output: confirm branch created and checked out.
 
-Tạo file docs/branches/feature-monster-editor-refactor.md với nội dung ngắn: mục tiêu, scope, 8 task nhỏ (mỗi task 1 dòng) và acceptance criteria 1 dòng mỗi task.
+Tạo file docs/archive/v2/branches/feature-monster-editor-refactor.md với nội dung ngắn: mục tiêu, scope, 8 task nhỏ (mỗi task 1 dòng) và acceptance criteria 1 dòng mỗi task.
 
 Output: show file content.
 
@@ -2834,7 +2834,7 @@ Commit changes in small commits (group related files) with messages like "chore:
 
 Output: list of commits pushed (hash+message) or confirmation.
 
-Open Pull Request from feature/monster-editor-refactor into develop (or main if develop absent) with title "feature: monster editor refactor — skeleton" and PR body containing docs/branches/feature-monster-editor-refactor.md content, checklist of tasks, note "do not merge". Add labels: ready-for-review, area/ui, area/lib.
+Open Pull Request from feature/monster-editor-refactor into develop (or main if develop absent) with title "feature: monster editor refactor — skeleton" and PR body containing docs/archive/v2/branches/feature-monster-editor-refactor.md content, checklist of tasks, note "do not merge". Add labels: ready-for-review, area/ui, area/lib.
 
 Output: PR URL and short checklist status.
 
@@ -2852,7 +2852,7 @@ If any step fails (e.g., permission, branch exists), report error and stop.
 
 Files to create (exact paths) and minimal content expectations (Claude must produce code snippets in its responses so reviewer can copy-paste):
 
-docs/branches/feature-monster-editor-refactor.md (goal, scope, 8 tasks + acceptance)
+docs/archive/v2/branches/feature-monster-editor-refactor.md (goal, scope, 8 tasks + acceptance)
 
 lib/library/monster_manager.py (skeleton CRUD + add_template + test_template placeholders)
 
@@ -2961,7 +2961,7 @@ Constraints: do each step sequentially; keep files minimal; include unit test sk
 
 Files to create/edit (exact paths):
 
-Create: docs/branches/feature-monster-editor-refactor.md (goal, 8 tasks, acceptance)
+Create: docs/archive/v2/branches/feature-monster-editor-refactor.md (goal, 8 tasks, acceptance)
 
 Create: lib/library/monster_manager.py (CRUD + add_template + test_template placeholders)
 
@@ -3025,7 +3025,7 @@ Create branch feature/monster-editor-refactor and confirm checkout.
 
 Acceptance: branch exists remotely and locally.
 
-Create docs/branches/feature-monster-editor-refactor.md with goal, scope, 8 tasks and acceptance lines.
+Create docs/archive/v2/branches/feature-monster-editor-refactor.md with goal, scope, 8 tasks and acceptance lines.
 
 Acceptance: file content printed.
 
@@ -3406,7 +3406,7 @@ Diagnostics UI đọc recent events từ memory cache hoặc active log dir, kh�
 Kế hoạch nhánh và khung nhiệm vụ đã thống nhất
 Branch name cho feature: feature/monster-editor-refactor.
 
-Skeleton files cần tạo: docs/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py (nếu cần), tests/unit test skeletons.
+Skeleton files cần tạo: docs/archive/v2/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py (nếu cần), tests/unit test skeletons.
 
 Danh sách nhiệm vụ rút gọn, tuần tự và testable (ví dụ 8 bước): tạo monster_manager CRUD; Quick Editor modal + hotkey; capture_helper; connect Capture→add_template→test_template; worker queue non-blocking; InputAdapter queue; inline quick edit; tests + logging.
 
@@ -3425,7 +3425,7 @@ Viết unit tests cho CRUD, i18n lookup, hotkey registration; viết 1 integrati
 
 Push branch, tạo PR, review nhỏ từng commit, sau khi skeleton ổn định tiếp tục triển khai từng task theo thứ tự.
 
-Nếu bạn muốn mình tạo ngay nội dung file docs/branches/feature-monster-editor-refactor.md, hoặc skeleton code cho lib/system/hunt_logger.py với pytest fixture, mình sẽ sinh mã ready-to-copy.
+Nếu bạn muốn mình tạo ngay nội dung file docs/archive/v2/branches/feature-monster-editor-refactor.md, hoặc skeleton code cho lib/system/hunt_logger.py với pytest fixture, mình sẽ sinh mã ready-to-copy.
 
 
 
@@ -3458,7 +3458,7 @@ Thêm unit-test skeletons; dùng tmp_path fixture để tránh viết logs trong
 
 Files to create/edit (exact paths)
 
-docs/branches/feature-monster-editor-refactor.md (goal, scope, 8 tasks + 1-line acceptance each)
+docs/archive/v2/branches/feature-monster-editor-refactor.md (goal, scope, 8 tasks + 1-line acceptance each)
 
 .gitignore (add logs/ *.log *.jsonl) if not present
 
@@ -3504,7 +3504,7 @@ Create branch feature/monster-editor-refactor and checkout.
 
 Acceptance: branch exists locally and pushed remote.
 
-Add/print docs/branches/feature-monster-editor-refactor.md with goal, scope, 8 tasks and 1-line acceptance each.
+Add/print docs/archive/v2/branches/feature-monster-editor-refactor.md with goal, scope, 8 tasks and 1-line acceptance each.
 
 Acceptance: file content printed.
 
@@ -3682,7 +3682,7 @@ Ghi log sự kiện có cấu trúc vào hunt_structured.jsonl: monster_created,
 Mỗi file mới phải có test skeleton trong tests/unit/; test dùng tmp_path hoặc monkeypatch để tránh ghi log vào repo.
 
 📁 File cần tạo/sửa
-docs/branches/feature-monster-editor-refactor.md
+docs/archive/v2/branches/feature-monster-editor-refactor.md
 
 .gitignore (thêm dòng chặn logs)
 
@@ -3753,7 +3753,7 @@ quick_editor.tooltip.test
 ✅ Các bước Claude phải thực hiện (tuần tự)
 Tạo nhánh feature/monster-editor-refactor và checkout.
 
-Tạo docs/branches/feature-monster-editor-refactor.md với mục tiêu, 8 nhiệm vụ, mỗi nhiệm vụ 1 dòng acceptance.
+Tạo docs/archive/v2/branches/feature-monster-editor-refactor.md với mục tiêu, 8 nhiệm vụ, mỗi nhiệm vụ 1 dòng acceptance.
 
 Thêm .gitignore chặn logs và in nội dung đã thêm.
 
@@ -3873,7 +3873,7 @@ Không commit log runtime; dùng LOG_DIR env hoặc tmp_path; .gitignore bổ su
 Kế hoạch nhánh, file skeleton và quy ước làm việc
 Branch: feature/monster-editor-refactor.
 
-Tạo skeleton files: docs/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py, lib/system/hunt_logger.py, tests/unit/* skeletons.
+Tạo skeleton files: docs/archive/v2/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py, lib/system/hunt_logger.py, tests/unit/* skeletons.
 
 Commit message style: "<type>: <short-desc> (skeleton)" cho mỗi thay đổi nhỏ.
 
@@ -3905,7 +3905,7 @@ Logger phải chạy trên background writer thread, ghi đồng thời text + J
 
 CI behavior: set LOG_DIR to runner temp, upload logs as artifacts, do not commit; add docs/logging.md và .gitignore entries.
 
-Bước tiếp theo: tạo branch feature/monster-editor-refactor và thêm docs/branches/feature-monster-editor-refactor.md (mục tiêu + 8 task + acceptance) để bắt đầu triển khai skeletons.
+Bước tiếp theo: tạo branch feature/monster-editor-refactor và thêm docs/archive/v2/branches/feature-monster-editor-refactor.md (mục tiêu + 8 task + acceptance) để bắt đầu triển khai skeletons.
 
 
 

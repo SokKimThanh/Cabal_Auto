@@ -33,7 +33,7 @@
 
 ### Documentation Created
 1. **docs/bugfixes/BUGFIX_SETUP_WIZARD_PATH.md** - Path fix details
-2. **docs/enhancements/SETUP_WIZARD_OPTIONAL_STEPS.md** - Optional steps design
+2. **docs/archive/v2/enhancements/SETUP_WIZARD_OPTIONAL_STEPS.md** - Optional steps design
 3. **docs/bugfixes/RECENT_FIXES_SUMMARY.md** - Session summary
 
 ### Tests Created

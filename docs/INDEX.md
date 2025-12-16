@@ -3,6 +3,8 @@
 **Last Updated**: October 24, 2025 (Sprint 23 Phase 7 Complete)  
 **Current Sprint**: Sprint 23 - Advanced Vision Features ✅ Phase 7 COMPLETE
 
+**Note (Round 2 Cleanup, Dec 16, 2025)**: Historical folders were moved under `docs/archive/v2/`.
+
 ## 📁 New Documentation Structure
 
 ```
@@ -85,11 +87,9 @@ docs/
 ├── bugfixes/                          # 🐛 Bug Fixes
 │   └── TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md
 │
-├── enhancements/                      # ✨ Enhancements (Legacy)
-├── context/                           # 📝 Context Documentation
-├── translations/                      # 🌐 Translations
-├── ux-enhancements/                   # 💫 UX Enhancements
+├── (moved to archive/v2)              # branches/, sessions/, context/, business/, legacy/, translations/, enhancements/, ux-enhancements/
 └── archive/                           # 📦 Archived Documentation
+  └── v2/                            # Round 2 archive (branches, sessions, legacy, context, etc.)
 ```
 
 ## 🎯 Quick Navigation

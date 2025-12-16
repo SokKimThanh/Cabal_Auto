@@ -583,8 +583,8 @@ def test_unsaved_changes_flow():
 **Goal:** Cập nhật docs với full features
 
 **Files:**
-- `docs/branches/MONSTER_EDITOR_COMPLETE_SUMMARY.md`
-- `docs/branches/PR_MONSTER_EDITOR_COMPLETE.md`
+- `docs/archive/v2/branches/MONSTER_EDITOR_COMPLETE_SUMMARY.md`
+- `docs/archive/v2/branches/PR_MONSTER_EDITOR_COMPLETE.md`
 
 **Content:**
 - Full features list

@@ -38,7 +38,7 @@
 
 **Documentation**:
 - `docs/features/ACTION_NOTIFICATION_INTEGRATION.md`
-- `docs/enhancements/ACTION_NOTIFICATION_QUICK_REFERENCE.md`
+- `docs/features/ACTION_NOTIFICATION_QUICK_REFERENCE.md`
 
 ## Testing
 

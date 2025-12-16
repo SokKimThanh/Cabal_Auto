@@ -20,7 +20,7 @@ Tổ chức lại các file ở thư mục gốc (root directory) để:
 |--------------|----------|---------|
 | `bot_config.json` | `config/bot_config.json` | Reference sample từ phần mềm khác, không sử dụng trong app |
 | `test_migration.py` | `tests/test_migration.py` | Test file thuộc về tests/ directory |
-| `hotkeyManager.txt` | `docs/legacy/hotkeyManager.txt` | Planning doc thuộc documentation |
+| `hotkeyManager.txt` | `docs/archive/v2/legacy/hotkeyManager.txt` | Planning doc thuộc documentation |
 
 ### 2. Thư Mục Mới
 
@@ -28,7 +28,7 @@ Tổ chức lại các file ở thư mục gốc (root directory) để:
 Created:
   config/                  # Reference samples từ phần mềm khác
   config/README.md         # Config directory documentation (explains bot_config is reference only)
-  docs/legacy/             # Legacy planning documents
+  docs/archive/v2/legacy/             # Legacy planning documents
 ```
 
 ### 3. Root Directory - Trước và Sau
@@ -123,7 +123,7 @@ Cabal_Auto/
 | **Reference samples** | `config/` | `bot_config.json` (từ phần mềm khác) |
 | **Tests** | `tests/` | `test_*.py` |
 | **Demos** | `tests/demos/` | `demo_*.py` |
-| **Planning docs** | `docs/legacy/` | `hotkeyManager.txt` |
+| **Planning docs** | `docs/archive/v2/legacy/` | `hotkeyManager.txt` |
 | **UI components** | `lib/ui/` | `tooltip.py` |
 | **Features** | `lib/features/` | `skills/runtime.py` |
 | **Scripts** | `scripts/` | `main_safe.py` |
@@ -170,7 +170,7 @@ Cabal_Auto/
 
 - [x] Di chuyển `bot_config.json` → `config/`
 - [x] Di chuyển `test_migration.py` → `tests/`
-- [x] Di chuyển `hotkeyManager.txt` → `docs/legacy/`
+- [x] Di chuyển `hotkeyManager.txt` → `docs/archive/v2/legacy/`
 - [x] Tạo `config/README.md`
 - [x] Update main `README.md`:
   - [x] Cấu trúc dự án

@@ -34,7 +34,7 @@ Không commit log runtime; dùng LOG_DIR env hoặc tmp_path; .gitignore bổ su
 Kế hoạch nhánh, file skeleton và quy ước làm việc
 Branch: feature/monster-editor-refactor.
 
-Tạo skeleton files: docs/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py, lib/system/hunt_logger.py, tests/unit/* skeletons.
+Tạo skeleton files: docs/archive/v2/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py, lib/system/hunt_logger.py, tests/unit/* skeletons.
 
 Commit message style: "<type>: <short-desc> (skeleton)" cho mỗi thay đổi nhỏ.
 
@@ -66,4 +66,4 @@ Logger phải chạy trên background writer thread, ghi đồng thời text + J
 
 CI behavior: set LOG_DIR to runner temp, upload logs as artifacts, do not commit; add docs/logging.md và .gitignore entries.
 
-Bước tiếp theo: tạo branch feature/monster-editor-refactor và thêm docs/branches/feature-monster-editor-refactor.md (mục tiêu + 8 task + acceptance) để bắt đầu triển khai skeletons.
+Bước tiếp theo: tạo branch feature/monster-editor-refactor và thêm docs/archive/v2/branches/feature-monster-editor-refactor.md (mục tiêu + 8 task + acceptance) để bắt đầu triển khai skeletons.

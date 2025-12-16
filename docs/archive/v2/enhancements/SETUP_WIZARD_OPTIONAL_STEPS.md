@@ -280,7 +280,7 @@ else:
 
 ## Documentation
 
-- This file: `docs/enhancements/SETUP_WIZARD_OPTIONAL_STEPS.md`
+- This file: `docs/archive/v2/enhancements/SETUP_WIZARD_OPTIONAL_STEPS.md`
 - Test script: `tests/manual/test_wizard_optional_steps.py`
 - Related: `docs/bugfixes/BUGFIX_SETUP_WIZARD_PATH.md`
 

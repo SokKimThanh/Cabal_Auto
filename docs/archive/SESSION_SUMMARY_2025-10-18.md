@@ -114,7 +114,7 @@ Week 5: Polish (tooltips, errors, testing, docs)
 - `docs/REDESIGN_PROPOSAL_SPRINT16.md` (detailed proposal)
 - `docs/sprints/SPRINT16_PLANNING_SUMMARY.md` (executive summary)
 - `docs/SPRINT16_QUICK_REFERENCE.md` (user guide)
-- `docs/context/CONTEXT_MAIN.txt` (updated context)
+- `docs/archive/v2/context/CONTEXT_MAIN.txt` (updated context)
 
 ---
 
@@ -253,7 +253,7 @@ Expected outcomes:
    - FAQ
    - Timeline
 
-4. `docs/context/CONTEXT_MAIN.txt`
+4. `docs/archive/v2/context/CONTEXT_MAIN.txt`
    - Updated project context
    - Sprint 16 planning noted
    - Next steps outlined

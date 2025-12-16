@@ -14,4 +14,6 @@ Key folders:
 - `testing/` — pytest & test-process docs
 - `bugfixes/`, `ux-enhancements/`, `maintenance/` — focused notes
 - `sprints/` — sprint logs and implementation records
-- `archive/` — historical/obsolete documents kept for reference
+- `archive/` — historical/obsolete documents kept for reference (see `archive/v2` for Round 2)
+
+Round 2 archive (moved): see `archive/v2/` for `branches/`, `sessions/`, `context/`, `business/`, `legacy/`, `translations/`, `enhancements/`, `ux-enhancements/`.

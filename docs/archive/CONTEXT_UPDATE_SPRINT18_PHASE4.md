@@ -6,7 +6,7 @@
 
 ## 📝 What Was Updated
 
-Updated main context file: `docs/context/CONTEXT_MAIN.txt`
+Updated main context file: `docs/archive/v2/context/CONTEXT_MAIN.txt`
 
 ### Changes Made:
 

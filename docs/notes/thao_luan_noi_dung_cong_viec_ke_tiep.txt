@@ -46,7 +46,7 @@ Diagnostics UI đọc recent events từ memory cache hoặc active log dir, kh�
 Kế hoạch nhánh và khung nhiệm vụ đã thống nhất
 Branch name cho feature: feature/monster-editor-refactor.
 
-Skeleton files cần tạo: docs/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py (nếu cần), tests/unit test skeletons.
+Skeleton files cần tạo: docs/archive/v2/branches/feature-monster-editor-refactor.md, lib/library/monster_manager.py, ui/quick_monster_editor.py, lib/vision/capture_helper.py, lib/tasks/worker.py, lib/input/input_adapter.py, lib/hotkey/hotkey_manager.py (nếu cần), tests/unit test skeletons.
 
 Danh sách nhiệm vụ rút gọn, tuần tự và testable (ví dụ 8 bước): tạo monster_manager CRUD; Quick Editor modal + hotkey; capture_helper; connect Capture→add_template→test_template; worker queue non-blocking; InputAdapter queue; inline quick edit; tests + logging.
 
