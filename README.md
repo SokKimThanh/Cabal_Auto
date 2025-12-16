@@ -625,7 +625,7 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 - **docs/archive/v2/legacy/**: Legacy planning documents (hotkeyManager.txt)
 
 ### 🚫 Files đã xóa/deprecated:
-- **interception.dll**: Legacy DLL không còn sử dụng (có thể xóa an toàn)
+- **interception.dll**: ✅ Removed (legacy DLL)
 - **tmp_test_dir/**: Removed (was a temporary test directory)
 
 ### 📝 Migration Notes:
