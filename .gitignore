@@ -344,6 +344,7 @@ __pycache__/
 tmp/
 tmp_*/
 temp/
+tmp_test_dir/
 
 # Test reports (generated)
 TEST_REPORT_*.md

@@ -92,25 +92,18 @@ Cabal_Auto/
 ├── 📚 docs/                # Documentation (Reorganized v2.0)
 │   ├── INDEX.md           # Complete documentation index ⭐
 │   ├── README.md          # Documentation overview
-│   ├── features/          # Feature specifications (2 files)
-│   ├── enhancements/      # UI/UX enhancements (4 files)
-│   ├── guides/            # User guides (5 files) ⭐
 │   ├── architecture/      # Architecture docs
+│   ├── features/          # Feature specifications
+│   ├── guides/            # User guides ⭐
+│   ├── testing/           # Testing guides & references
+│   ├── bugfixes/          # Bug fix documentation
+│   ├── maintenance/       # Maintenance reports & cleanup notes
 │   ├── sprints/           # Sprint documentation
-│   │   ├── sprint21/      # Sprint 21 - UI/UX Icons ⭐
-│   │   ├── sprint20/      # Sprint 20 - Performance
-│   │   └── sprint16-19/   # Historical sprints
-│   ├── bugfixes/          # Bug fix documentation (16 files)
-│   ├── translations/      # Translation documentation
-│   ├── ux-enhancements/   # UX improvements
-│   ├── archive/           # Archived docs (18 files)
-│   ├── legacy/            # Legacy planning docs
-│   │   └── hotkeyManager.txt  # Hotkey system plan (moved)
-│   └── context/           # System context
+│   └── archive/           # Archived docs
 │
 ├── 📝 logs/                # Runtime logs (auto-generated)
 │   ├── hunt_structured.jsonl  # JSON structured logs
-│   └── README.md          # Logs documentation
+│   └── (gitignored)       # Logs are created at runtime
 │
 ├── 📂 tmp/                 # Temporary files (gitignored)
 │   └── captures/          # Screenshot captures
@@ -632,8 +625,8 @@ If you prefer not to install system-wide hotkeys, the app will automatically fal
 - **docs/archive/v2/legacy/**: Legacy planning documents (hotkeyManager.txt)
 
 ### 🚫 Files đã xóa/deprecated:
-- **interception.dll**: Legacy DLL không còn sử dụng (có thể xóa an toàn)
-- **tmp_test_dir/**: Temporary test directory (có thể xóa)
+- **interception.dll**: ✅ Removed (legacy DLL)
+- **tmp_test_dir/**: Removed (was a temporary test directory)
 
 ### 📝 Migration Notes:
 Khi update code, lưu ý các paths đã thay đổi:

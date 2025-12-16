@@ -44,7 +44,7 @@ Cabal_Auto/
 ├── CHANGELOG.md
 ├── requirements.txt
 ├── run*.bat/ps1
-├── interception.dll      ← Legacy DLL
+├── (removed) interception.dll      ← Legacy DLL
 └── ...
 ```
 
@@ -60,7 +60,7 @@ Cabal_Auto/
 ├── run.bat               # Launcher (legacy)
 ├── .gitignore            # Git config
 ├── .flake8               # Linting config
-└── interception.dll      # Legacy DLL (có thể xóa)
+└── (removed) interception.dll      # Legacy DLL
 ```
 
 **Result**: Root giờ chỉ có **6 essential files** + development configs!
@@ -95,7 +95,7 @@ Cabal_Auto/
 - Reference files (bot_config.json - từ phần mềm khác)
 - Test files (test_migration.py)
 - Planning docs (hotkeyManager.txt)
-- Legacy files (interception.dll)
+- Legacy files (interception.dll) ✅ removed
 
 **After**: Root chỉ chứa:
 1. **Entry point**: app_gui.py (BẮT BUỘC)
@@ -190,8 +190,8 @@ Cabal_Auto/
 - ✅ Commit changes với clear message
 
 ### Future Considerations
-1. **interception.dll**: Có thể xóa nếu không còn dùng
-2. **tmp_test_dir/**: Có thể xóa nếu là test directory cũ
+1. **interception.dll**: ✅ Removed (legacy DLL)
+2. **tmp_test_dir/**: ✅ Removed (was an old test directory)
 3. **run.bat**: Consider deprecating in favor of run_venv.bat
 
 ### Potential Improvements
