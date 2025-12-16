@@ -222,7 +222,6 @@ pytest tests/unit/test_timing_calculator_ui.py -v
 - `__pycache__/` - Python cache
 - `.pytest_cache/` - Pytest cache
 - `tmp/`, `tmp_*/` - Temporary directories
-- `docs/notes/*.txt` - Personal notes
 - `venv/`, `.venv/` - Virtual environments
 
 ### Backward Compatibility
@@ -234,7 +233,7 @@ pytest tests/unit/test_timing_calculator_ui.py -v
 ## 🔄 Recent Changes (2025-10-23)
 
 1. ✅ Reorganized launchers into `scripts/launchers/`
-2. ✅ Moved personal notes to `docs/notes/`
+2. ✅ Removed internal notes folder (`docs/notes/`) from repo (gitignored)
 3. ✅ Enhanced `.gitignore` with project-specific rules
 4. ✅ Added `.editorconfig` for code consistency
 5. ✅ Created structured documentation

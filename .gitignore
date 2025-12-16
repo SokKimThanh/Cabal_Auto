@@ -73,6 +73,9 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+# Internal project notes (do not commit)
+docs/notes/
+
 # PyBuilder
 .pybuilder/
 target/
@@ -341,10 +344,6 @@ __pycache__/
 tmp/
 tmp_*/
 temp/
-
-# Personal notes (keep structure but not content)
-docs/notes/*.txt
-!docs/notes/README.md
 
 # Test reports (generated)
 TEST_REPORT_*.md

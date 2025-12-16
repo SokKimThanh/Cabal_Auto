@@ -110,9 +110,8 @@ __pycache__/
 tmp/
 tmp_*/
 
-# Personal notes
-docs/notes/*.txt
-!docs/notes/README.md
+# Internal notes (do not commit)
+docs/notes/
 
 # Test reports (generated)
 TEST_REPORT_*.md
@@ -121,7 +120,6 @@ TEST_REPORT_*.md
 **Lợi ích:**
 - ✅ Ignore cache và temp files
 - ✅ Ignore personal notes
-- ✅ Keep README trong notes
 - ✅ Ignore generated reports
 
 ---
@@ -140,11 +138,6 @@ TEST_REPORT_*.md
    - Giải thích chi tiết từng launcher
    - Usage examples
    - Priority và features
-
-3. **docs/notes/README.md**
-   - Giải thích notes folder
-   - Cấu trúc notes
-   - Lưu ý về gitignore
 
 **Cập nhật:**
 - **README.md**: Updated launcher instructions, added PROJECT_STRUCTURE.md reference
@@ -210,7 +203,6 @@ Cabal_Auto/                         # ROOT - Gọn gàng hơn
 
 ### 2. **Better Organization**
 - ✅ Launchers grouped in `scripts/launchers/`
-- ✅ Notes grouped in `docs/notes/`
 - ✅ Each group có README riêng
 
 ### 3. **Improved Git History**
@@ -235,7 +227,6 @@ Cabal_Auto/                         # ROOT - Gọn gàng hơn
 ### Staged (Ready to commit)
 - **Renamed:** 6 files
   - Launchers → `scripts/launchers/`
-  - Notes → `docs/notes/` (with renamed, no diacritics)
 
 ### Modified
 - `.gitignore` - Enhanced rules
@@ -244,7 +235,6 @@ Cabal_Auto/                         # ROOT - Gọn gàng hơn
 ### New Files
 - `.editorconfig` - Code style config
 - `PROJECT_STRUCTURE.md` - Detailed structure doc
-- `docs/notes/README.md` - Notes documentation
 - `scripts/launchers/README.md` - Launchers documentation
 - `run.bat` - Backward compatible wrapper
 
@@ -261,11 +251,10 @@ git add .
 git commit -m "refactor: Reorganize project structure for better maintainability
 
 - Move launchers to scripts/launchers/ with documentation
-- Move personal notes to docs/notes/ (gitignored)
 - Add .editorconfig for code style consistency
 - Enhance .gitignore with project-specific rules
 - Add PROJECT_STRUCTURE.md for detailed documentation
-- Create README.md in scripts/launchers/ and docs/notes/
+- Create README.md in scripts/launchers/
 - Update main README.md with new structure
 - Keep backward compatibility with root run.bat wrapper
 
@@ -319,12 +308,10 @@ pytest -m "not windows and not gui"    # Should pass
 ## ✅ Checklist
 
 - [x] Move launchers to `scripts/launchers/`
-- [x] Move notes to `docs/notes/`
 - [x] Create `.editorconfig`
 - [x] Enhance `.gitignore`
 - [x] Create `PROJECT_STRUCTURE.md`
 - [x] Create launcher README
-- [x] Create notes README
 - [x] Update main README
 - [x] Create backward compatible wrapper
 - [x] Test all changes
