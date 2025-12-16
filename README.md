@@ -855,7 +855,6 @@ python app_gui.py
 docs/
 ├── INDEX.md              # Complete documentation index ⭐
 ├── features/             # Feature specifications (2 files)
-├── enhancements/         # UI/UX enhancements (4 files)
 ├── guides/               # User guides (5 files)
 ├── sprint21/             # Sprint 21 docs (8 files)
 ├── bugfixes/             # Bug fixes (16 files)
@@ -865,7 +864,6 @@ docs/
 
 ### By Category
 - **Features**: [docs/features/](docs/features/)
-- **Enhancements**: [docs/archive/v2/enhancements/](docs/archive/v2/enhancements/)
 - **Guides**: [docs/guides/](docs/guides/)
 - **Bug Fixes**: [docs/bugfixes/](docs/bugfixes/)
 - **Sprint 21**: [docs/sprint21/](docs/sprint21/)

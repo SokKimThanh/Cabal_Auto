@@ -656,7 +656,6 @@ else:
 
 **Created**:
 - `docs/testing/PYTEST_MARKERS_GUIDE.md` - Comprehensive guide
-- Updated `docs/archive/v2/branches/fix-pytest-cross-platform-errors.md` - Task status
 
 ---
 
