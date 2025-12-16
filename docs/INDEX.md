@@ -3,6 +3,8 @@
 **Last Updated**: October 24, 2025 (Sprint 23 Phase 7 Complete)  
 **Current Sprint**: Sprint 23 - Advanced Vision Features ✅ Phase 7 COMPLETE
 
+**Note (Round 2 Cleanup, Dec 16, 2025)**: Historical folders were moved under `docs/archive/v2/`.
+
 ## 📁 New Documentation Structure
 
 ```
@@ -34,18 +36,25 @@ docs/
 │       └── FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md
 │
 ├── guides/                            # 📖 User Guides
-│   ├── ui-design/
-│   │   ├── ICON_BUTTON_STYLE_GUIDE.md
-│   │   ├── BUTTON_STYLE_CONSISTENCY.md
-│   │   └── FEATURE_ICON_RECOLORING.md
-│   ├── ui-components/                 # NEW: UI Component Systems
-│   │   ├── BUTTON_STATE_MANAGEMENT.md # Complete API reference
-│   │   ├── BUTTON_STATE_SYSTEM_OVERVIEW.md # Vietnamese overview
-│   │   ├── MIGRATION_QUICK_MONSTER_EDITOR.md
-│   │   ├── MIGRATION_LIBRARY_MANAGER.md
-│   │   └── ACTION_ITEMS_BUTTON_STATE.md
-│   └── testing/
-│       └── TESTS_REORGANIZATION_SUMMARY.md
+│   ├── HUONG_DAN_NGUOI_MOI.md
+│   ├── HUONG_DAN_USER_LEVEL_WIZARD.md
+│   ├── OVERLAY_SETUP.md
+│   ├── ADVANCED_WINDOW_SETTINGS_GUIDE.md
+│   ├── SKILLS_EXPLANATION_SIMPLE.md
+│   ├── HOW_TO_USE_TEST_RECOGNITION.md
+│   ├── PYTEST_TEMPLATE_CI_CD.md
+│   ├── BUTTON_STATE_MANAGEMENT.md
+│   ├── BUTTON_STATE_SYSTEM_OVERVIEW.md
+│   ├── ACTION_ITEMS_BUTTON_STATE.md
+│   ├── MIGRATION_QUICK_MONSTER_EDITOR.md
+│   ├── MIGRATION_LIBRARY_MANAGER.md
+│   ├── ui-design                      # Icon/button style guide (single-file)
+│   └── testing                        # Tests folder reorg summary (single-file)
+│
+├── testing/                           # 🧪 Testing Process Docs
+│   ├── PYTEST_MARKERS_GUIDE.md
+│   ├── TEST_STANDARDIZATION_PROGRESS.md
+│   └── TEST_VIOLATIONS_CHECKLIST.md
 │
 ├── sprints/                           # 🚀 Sprint Documentation
 │   ├── sprint21/                      # Sprint 21 (UI/UX Icons)
@@ -78,11 +87,9 @@ docs/
 ├── bugfixes/                          # 🐛 Bug Fixes
 │   └── TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md
 │
-├── enhancements/                      # ✨ Enhancements (Legacy)
-├── context/                           # 📝 Context Documentation
-├── translations/                      # 🌐 Translations
-├── ux-enhancements/                   # 💫 UX Enhancements
+├── (moved to archive/v2)              # branches/, sessions/, context/, business/, legacy/, translations/, enhancements/, ux-enhancements/
 └── archive/                           # 📦 Archived Documentation
+  └── v2/                            # Round 2 archive (branches, sessions, legacy, context, etc.)
 ```
 
 ## 🎯 Quick Navigation
@@ -105,20 +112,21 @@ docs/
 
 ### For Designers
 
-- [Icon Button Style Guide](guides/ui-design/ICON_BUTTON_STYLE_GUIDE.md) - Icon design rules
-- [Button Consistency](guides/ui-design/BUTTON_STYLE_CONSISTENCY.md) - Button styling
-- [Icon Recoloring](guides/ui-design/FEATURE_ICON_RECOLORING.md) - Icon color system
+- [Icon/Button Style Guide](guides/ui-design) - Icon button design rules
+- [Icon System Verification](features/ICON_SYSTEM_VERIFICATION.md) - Icon system notes
+- [Icon Placement Rules](sprints/sprint21/ICON_PLACEMENT_RULES.md) - Placement conventions
 
 ### For UI/Component Development 🆕
 
-- [Button State Management](guides/ui-components/BUTTON_STATE_MANAGEMENT.md) - Complete API reference
-- [System Overview](guides/ui-components/BUTTON_STATE_SYSTEM_OVERVIEW.md) - Overview (Vietnamese)
-- [Action Items](guides/ui-components/ACTION_ITEMS_BUTTON_STATE.md) - Quick checklist
-- [Migration Guides](guides/ui-components/MIGRATION_QUICK_MONSTER_EDITOR.md) - How to migrate existing code
+- [Button State Management](guides/BUTTON_STATE_MANAGEMENT.md) - Complete API reference
+- [System Overview](guides/BUTTON_STATE_SYSTEM_OVERVIEW.md) - Overview (Vietnamese)
+- [Action Items](guides/ACTION_ITEMS_BUTTON_STATE.md) - Quick checklist
+- [Migration Guides](guides/MIGRATION_QUICK_MONSTER_EDITOR.md) - How to migrate existing code
 
 ### For Testers
 
-- [Testing Guide](guides/testing/TESTS_REORGANIZATION_SUMMARY.md) - Test organization
+- [Tests Reorganization Summary](guides/testing) - Test organization
+- [Pytest Markers Guide](testing/PYTEST_MARKERS_GUIDE.md) - Markers & how to run subsets
 - [Vision Menu Checklist](features/vision/VISION_MENU_CHECKLIST.md) - Vision testing
 
 ### Bug Fixes & Troubleshooting 🆕
@@ -280,12 +288,13 @@ docs/
 - [Hotkey Migration](features/hotkeys/GLOBAL_HOTKEY_MIGRATION.md)
 
 ### UI Design
-- [Icon Style Guide](guides/ui-design/ICON_BUTTON_STYLE_GUIDE.md)
-- [Button Consistency](guides/ui-design/BUTTON_STYLE_CONSISTENCY.md)
-- [Icon Recoloring](guides/ui-design/FEATURE_ICON_RECOLORING.md)
+- [Icon/Button Style Guide](guides/ui-design)
+- [Icon Placement Rules](sprints/sprint21/ICON_PLACEMENT_RULES.md)
+- [Icon System Verification](features/ICON_SYSTEM_VERIFICATION.md)
 
 ### Testing
-- [Test Organization](guides/testing/TESTS_REORGANIZATION_SUMMARY.md)
+- [Test Organization](guides/testing)
+- [Pytest Markers](testing/PYTEST_MARKERS_GUIDE.md)
 - [Vision Checklist](features/vision/VISION_MENU_CHECKLIST.md)
 
 ## 📊 Statistics

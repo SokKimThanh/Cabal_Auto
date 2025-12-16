@@ -360,7 +360,7 @@ H: 217
 - `docs/bugfixes/BUGFIX_TIMING_UNHASHABLE_DICT.md`: ~350 lines (new)
 - `docs/ADVANCED_WINDOW_SETTINGS_GUIDE.md`: ~600 lines (new)
 - `docs/INDEX.md`: Updated với 2 files mới
-- `docs/context/CONTEXT_MAIN.txt`: Updated bug count (5 bugs)
+- `docs/archive/v2/context/CONTEXT_MAIN.txt`: Updated bug count (5 bugs)
 
 ### Bug Fixes Count (Sprint 18 Phase 4)
 1. ✅ Setup apply settings error

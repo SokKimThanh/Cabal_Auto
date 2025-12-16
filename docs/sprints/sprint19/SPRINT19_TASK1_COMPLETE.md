@@ -389,7 +389,7 @@ Updates appropriate data:
 1. **This document** - Sprint 19 Task #1 completion summary
 
 ### Context Updated
-- `docs/context/CONTEXT_MAIN.txt` - Added Sprint 19 planning section
+- `docs/archive/v2/context/CONTEXT_MAIN.txt` - Added Sprint 19 planning section
 
 ### Files to Update (Next)
 - `docs/INDEX.md` - Add library manager documentation

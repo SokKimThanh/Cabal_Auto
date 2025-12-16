@@ -1,6 +1,6 @@
 # Auto Cabal Origin – Project Context (Updated 2025-10-18)
 
-This document summarizes the current project context from “docs/context/CONTEXT_MAIN.txt” (migrated from assets/documents) so developers have a concise, actionable reference linked to code modules and data schemas.
+This document summarizes the current project context from “docs/archive/v2/context/CONTEXT_MAIN.txt” (migrated from assets/documents) so developers have a concise, actionable reference linked to code modules and data schemas.
 
 ## 🎯 Goals
 - Safe auto-hunting for Cabal VTC Origin on Windows.
@@ -95,7 +95,7 @@ This document summarizes the current project context from “docs/context/CONTEX
 - Logging captures confidence and template details during hunt.
 
 ## 🔗 Cross‑References
-- Source context: docs/context/CONTEXT_MAIN.txt (updated 2025‑10‑19).
+- Source context: docs/archive/v2/context/CONTEXT_MAIN.txt (updated 2025‑10‑19).
 - Implementation details: docs/sprints/sprint16/* and sprint18/*.
 - Modules: lib/template_matcher.py, lib/timing_calculator.py, lib/skill_runtime.py, lib/hunt_logger.py.
 

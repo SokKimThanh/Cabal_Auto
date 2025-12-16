@@ -8,13 +8,13 @@
 ```
 bot_config.json      → config/bot_config.json (reference sample từ phần mềm khác)
 test_migration.py    → tests/test_migration.py  
-hotkeyManager.txt    → docs/legacy/hotkeyManager.txt
+hotkeyManager.txt    → docs/archive/v2/legacy/hotkeyManager.txt
 ```
 
 ### New Directories (2)
 ```
 config/          - Reference samples từ phần mềm auto Cabal khác
-docs/legacy/     - Legacy planning documents
+docs/archive/v2/legacy/     - Legacy planning documents
 ```
 
 ### New Documentation (2)

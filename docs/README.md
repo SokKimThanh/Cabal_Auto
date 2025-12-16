@@ -1,72 +1,19 @@
-# Documentation Directory
+# Documentation
 
-This directory contains all project documentation, summaries, and sprint records.
+Entry points:
 
-**📋 [Xem INDEX.md](INDEX.md)** để tìm tài liệu nhanh / See INDEX.md for quick reference
+- [INDEX.md](INDEX.md) — full documentation index (start here)
+- [../README.md](../README.md) — project overview & quick start
+- [../PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md) — repository structure
 
-## 📁 Structure
+Key folders:
 
-```
-docs/
-├── 📄 INDEX.md                          # Chỉ mục đầy đủ / Full index
-├── 📄 REORGANIZATION_SUMMARY.md         # Tóm tắt tổ chức / Reorganization summary
-├── 📄 HUONG_DAN_NGUOI_MOI.md           # Hướng dẫn người mới / Beginner guide
-├── 📄 HOW_TO_USE_TEST_RECOGNITION.md   # Test recognition guide
-├── 📂 sprints/                          # Sprint documentation (25 files)
-│   ├── sprint15/
-│   ├── sprint16/                        # UI Redesign
-│   └── sprint18/                        # 4-Tab Reorganization (current)
-├── 📂 bugfixes/                         # Bug fixes (1 file)
-├── 📂 ux-enhancements/                  # UX improvements (3 files)
-└── 📂 translations/                     # Translation docs (5 files)
-```
+- `architecture/` — system architecture
+- `features/` — feature documentation
+- `guides/` — user/developer guides (including `guides/ui-design` and `guides/testing`)
+- `testing/` — pytest & test-process docs
+- `bugfixes/`, `ux-enhancements/`, `maintenance/` — focused notes
+- `sprints/` — sprint logs and implementation records
+- `archive/` — historical/obsolete documents kept for reference (see `archive/v2` for Round 2)
 
-### 📚 Main Documents
-- **[INDEX.md](INDEX.md)** - Complete documentation index with quick links
-- **[REORGANIZATION_SUMMARY.md](REORGANIZATION_SUMMARY.md)** - How docs are organized
-- **[PROJECT_SUMMARY.py](PROJECT_SUMMARY.py)** - Complete project summary script
-
-### 🚀 Current Sprint: Sprint 18 Phase 4
-- **Location**: `sprints/sprint18/`
-- **Goal**: 4-Tab UI Reorganization (Hunt, Setup, Stats, Help)
-- **Progress**: 75% complete (6/8 tasks done)
-- **Latest**: Window Selection UX Enhancement ✅
-
-## Sprint Documentation Format
-
-Each sprint includes:
-1. **Demo Script** (`sprintXX_demo.py`): 
-   - Demonstrates new features
-   - Shows usage examples
-   - Explains benefits
-
-2. **Summary Document** (`SPRINTXX_SUMMARY.txt`):
-   - Technical details
-   - Code changes
-   - Implementation notes
-
-3. **Complete Guide** (`SPRINTXX_COMPLETE.md`):
-   - User-friendly overview
-   - Usage instructions
-   - Benefits and examples
-
-## Running Documentation Scripts
-
-```bash
-# Run project summary
-python docs/PROJECT_SUMMARY.py
-
-# Run sprint demos
-python docs/sprints/sprint13_demo.py
-python docs/sprints/sprint14_demo.py
-python docs/sprints/sprint15_demo.py
-```
-
-## Contributing Documentation
-
-When adding new sprints or features:
-1. Create demo script in `/sprints/`
-2. Write technical summary
-3. Create user-friendly guide
-4. Update PROJECT_SUMMARY.py
-5. Update main README.md
+Round 2 archive (moved): see `archive/v2/` for `branches/`, `sessions/`, `context/`, `business/`, `legacy/`, `translations/`, `enhancements/`, `ux-enhancements/`.
