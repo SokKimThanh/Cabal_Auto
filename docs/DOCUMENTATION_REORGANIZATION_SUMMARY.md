@@ -46,12 +46,9 @@ docs/
 │       └── FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md
 │
 ├── guides/                    # 📖 User Guides
-│   ├── ui-design/
-│   │   ├── ICON_BUTTON_STYLE_GUIDE.md
-│   │   ├── BUTTON_STYLE_CONSISTENCY.md
-│   │   └── FEATURE_ICON_RECOLORING.md
-│   └── testing/
-│       └── TESTS_REORGANIZATION_SUMMARY.md
+│   ├── (multiple guide .md files)
+│   ├── ui-design              # Icon/button style guide (single-file)
+│   └── testing                # Tests folder reorg summary (single-file)
 │
 ├── sprints/                   # 🚀 Sprint Documentation
 │   ├── sprint21/             # Sprint 21 (UI/UX Icons)
@@ -134,13 +131,11 @@ docs/
 #### Templates (1 file → features/templates/)
 - `FEATURE_TEMPLATE_LOCK_HOLD_TO_SAVE.md`
 
-#### UI Design (3 files → guides/ui-design/)
-- `ICON_BUTTON_STYLE_GUIDE.md`
-- `BUTTON_STYLE_CONSISTENCY.md`
-- `FEATURE_ICON_RECOLORING.md`
+#### UI Design (guide)
+- `guides/ui-design`
 
-#### Testing (1 file → guides/testing/)
-- `TESTS_REORGANIZATION_SUMMARY.md`
+#### Testing (guide)
+- `guides/testing`
 
 #### Maintenance (1 file → maintenance/)
 - `LOG_FILES_MANAGEMENT_SUMMARY.md`
@@ -283,10 +278,10 @@ docs/sprint22/QUICK_START_VISION_WIZARD.md → docs/features/vision/QUICK_START_
 docs/GLOBAL_HOTKEY_MIGRATION.md → docs/features/hotkeys/GLOBAL_HOTKEY_MIGRATION.md
 
 # UI Design
-docs/ICON_BUTTON_STYLE_GUIDE.md → docs/guides/ui-design/ICON_BUTTON_STYLE_GUIDE.md
+docs/ICON_BUTTON_STYLE_GUIDE.md → docs/guides/ui-design
 
 # Testing
-docs/TESTS_REORGANIZATION_SUMMARY.md → docs/guides/testing/TESTS_REORGANIZATION_SUMMARY.md
+docs/TESTS_REORGANIZATION_SUMMARY.md → docs/guides/testing
 
 # Sprint 22
 docs/sprint22/PHASE1_COMPLETE_SUMMARY.md → docs/sprints/sprint22/phases/PHASE1_COMPLETE_SUMMARY.md

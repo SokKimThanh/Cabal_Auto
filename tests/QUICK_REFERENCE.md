@@ -105,7 +105,7 @@ python tests/demos/demo_save_tooltip.py
 
 For complete documentation, see [README.md](README.md)
 
-For reorganization details, see `/docs/TESTS_REORGANIZATION_SUMMARY.md`
+For reorganization details, see `docs/guides/testing`
 
 ---
 

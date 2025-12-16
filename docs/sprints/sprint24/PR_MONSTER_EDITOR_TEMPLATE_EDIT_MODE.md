@@ -417,19 +417,19 @@ Setup → Global Hotkeys:
 ## 📚 Related Documentation
 
 ### Bug Fix Documentation
-- [Comprehensive Guide](../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md)
-- [Quick Reference](../QUICK_FIX_TKINTER_EMPTY_WINDOW.md)
-- [Test Cleanup Summary](../maintenance/TEST_FILES_CLEANUP_SUMMARY.md)
+- [Comprehensive Guide](../../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md)
+- [Quick Reference](../../QUICK_FIX_TKINTER_EMPTY_WINDOW.md)
+- [Test Cleanup Summary](../../maintenance/TEST_FILES_CLEANUP_SUMMARY.md)
 
 ### Feature Documentation
 - [Monster Editor](../../README.md) - Main feature overview
 - [Global Hotkeys](../../architecture/GLOBAL_HOTKEY_ARCHITECTURE.md)
-- [Button System](../../guides/ui-components/BUTTON_STATE_MANAGEMENT.md)
+- [Button System](../../guides/BUTTON_STATE_MANAGEMENT.md)
 
 ### Developer References
-- [Prevention Checklist](../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md#prevention-checklist)
-- [Code Examples](../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md#the-solution)
-- [Technical Details](../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md#technical-details)
+- [Prevention Checklist](../../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md#prevention-checklist)
+- [Code Examples](../../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md#the-solution)
+- [Technical Details](../../bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md#technical-details)
 
 ---
 
@@ -525,9 +525,9 @@ Setup → Global Hotkeys:
 - [Tkinter Best Practices](https://docs.python.org/3/library/tkinter.html)
 
 ### Internal Resources
-- [Project Structure](../../PROJECT_STRUCTURE.md)
+- [Project Structure](../../../PROJECT_STRUCTURE.md)
 - [Coding Guidelines](../../PYTHON_CODING_GUIDELINES.md)
-- [UI Style Guide](../../guides/ui-design/ICON_BUTTON_STYLE_GUIDE.md)
+- [UI Style Guide](../../guides/ui-design)
 
 ---
 
