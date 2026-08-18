@@ -11,9 +11,15 @@ Run:
     python tests/manual/test_quick_monster_editor_notifications.py
 """
 
+import pytest
 import sys
 import tkinter as tk
 from pathlib import Path
+
+pytestmark = [
+    pytest.mark.manual,
+    pytest.mark.gui
+]
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent

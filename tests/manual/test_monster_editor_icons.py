@@ -1,8 +1,14 @@
 """
 Test Monster Editor with new icon_button component
 """
+import pytest
 import sys
 from pathlib import Path
+
+pytestmark = [
+    pytest.mark.manual,
+    pytest.mark.gui
+]
 
 # Add project to path
 project_root = Path(__file__).resolve().parents[2]  # tests/manual/* -> project root
@@ -12,7 +18,10 @@ if str(project_root) not in sys.path:
 import tkinter as tk
 
 # Now import from ui
-from ui.quick_monster_editor import QuickMonsterEditor
+try:
+    from ui.quick_monster_editor import QuickMonsterEditor
+except ImportError:
+    QuickMonsterEditor = None  # type: ignore
 
 def test_monster_editor():
     """Test Monster Editor window with icons."""

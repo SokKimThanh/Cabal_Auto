@@ -8,15 +8,24 @@ Tests all potential issues:
 4. Garbage collection prevention
 5. Icon sizing and quality
 """
+import pytest
 import sys
 from pathlib import Path
 import tkinter as tk
+
+pytestmark = [
+    pytest.mark.manual,
+    pytest.mark.gui
+]
 
 # Add project to path
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from lib.ui.icon_helper import IconHelper
+try:
+    from lib.ui.icon_helper import IconHelper
+except ImportError:
+    IconHelper = None  # type: ignore
 
 def test_icon_loading():
     """Comprehensive icon loading test."""

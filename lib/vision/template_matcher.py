@@ -30,7 +30,7 @@ except ImportError:
 try:
     import pyautogui
     HAS_PYAUTOGUI = True
-except ImportError:
+except (ImportError, Exception):
     HAS_PYAUTOGUI = False
 
 

@@ -16,12 +16,18 @@ import threading
 from unittest.mock import Mock, MagicMock, patch
 from typing import List
 
+import sys
 from lib.vision.monster_detector import (
     MonsterDetector,
     DetectionState,
     DetectionStats
 )
 from lib.vision.vision_engine import Detection
+
+pytestmark = pytest.mark.skipif(
+    sys.platform != "win32",
+    reason="MonsterDetector tests require Windows (screen_capture dependency)"
+)
 
 
 @pytest.fixture
