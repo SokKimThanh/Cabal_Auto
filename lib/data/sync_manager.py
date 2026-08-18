@@ -123,9 +123,10 @@ class DataSyncManager:
             True if save successful
         """
         try:
-            self.monsters_file.parent.mkdir(parents=True, exist_ok=True)
+            target_path = getattr(self, 'monsters_path', None) or self.monsters_file
+            target_path.parent.mkdir(parents=True, exist_ok=True)
             
-            with open(self.monsters_file, 'w', encoding='utf-8') as f:
+            with open(target_path, 'w', encoding='utf-8') as f:
                 json.dump(monsters, f, indent=2, ensure_ascii=False)
             
             print(f"[DataSyncManager] Saved {len(monsters)} monsters")

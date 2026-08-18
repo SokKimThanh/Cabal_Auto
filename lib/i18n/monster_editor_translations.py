@@ -15,7 +15,7 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'menu_monster_editor_settings': 'Cài Đặt Quái Vật',
         
         # Window titles
-        'quick_editor_title': 'Sửa Quái Nhanh',
+        'quick_editor_title': 'Quản Lý Quái Vật',
         'full_editor_title': 'Quản Lý Quái Vật',
         'capture_panel_title': 'Chụp Template',
         
@@ -156,8 +156,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'menu_monster_editor_settings': 'Monster Settings',
         
         # Window titles
-        'quick_editor_title': 'Quick Monster Editor',
-        'full_editor_title': 'Monster Manager',
+        'quick_editor_title': 'Quản Lý Quái Vật',
+        'full_editor_title': 'Quản Lý Quái Vật',
         'capture_panel_title': 'Capture Template',
         
         # Labels
