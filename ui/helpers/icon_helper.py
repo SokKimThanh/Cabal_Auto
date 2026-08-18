@@ -188,6 +188,20 @@ class IconHelper:
                     del self._cache[cache_key]
             else:
                 return cached_val
+        else:
+            # Clean up stale image references from previous Tk root instances
+            stale_keys = []
+            for k, val in self._cache.items():
+                if not isinstance(val, str):
+                    try:
+                        import tkinter as tk
+                        root = tk._default_root
+                        if root is not None:
+                            root.tk.call('image', 'height', str(val))
+                    except Exception:
+                        stale_keys.append(k)
+            for k in stale_keys:
+                del self._cache[k]
         
         # Get icon info
         if name not in self.icon_map:
