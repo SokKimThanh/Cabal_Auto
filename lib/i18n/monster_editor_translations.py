@@ -134,6 +134,21 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_browse': 'Chọn File',
         'btn_delete_template': 'Xóa Template',
         'btn_delete': 'Xóa',
+        'btn_open_folder': 'Mở Thư Mục',
+        'btn_confirm': '✔ Đồng ý',
+        'btn_cancel_confirm': '✖ Hủy',
+
+        # Search and settings
+        'search_label': 'Tìm kiếm:',
+        'search_placeholder': 'Nhập tên hoặc cấp quái vật...',
+        'confirm_delete_banner': 'Xác nhận xóa?',
+        'settings_dialog_title': 'Cài Đặt Hiển Thị',
+        'group_template_cols': 'Hiển thị cột trong danh sách Template',
+        'chk_col_image': 'Hình ảnh',
+        'chk_col_threshold': '% Ngưỡng nhận diện',
+        'chk_col_path': 'Đường dẫn',
+        'tab_settings': 'Cài đặt',
+        'tooltip_open_folder': 'Mở thư mục chứa template',
         
         # Additional messages
         'msg_test_result': 'Tìm thấy: {}, Độ tin cậy: {:.1%}',
@@ -275,6 +290,21 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'btn_browse': 'Browse',
         'btn_delete_template': 'Delete Template',
         'btn_delete': 'Delete',
+        'btn_open_folder': 'Open Folder',
+        'btn_confirm': '✔ Confirm',
+        'btn_cancel_confirm': '✖ Cancel',
+
+        # Search and settings
+        'search_label': 'Search:',
+        'search_placeholder': 'Enter monster name or level...',
+        'confirm_delete_banner': 'Confirm deletion?',
+        'settings_dialog_title': 'Display Settings',
+        'group_template_cols': 'Display columns in Template list',
+        'chk_col_image': 'Image',
+        'chk_col_threshold': '% Recognition threshold',
+        'chk_col_path': 'Path',
+        'tab_settings': 'Settings',
+        'tooltip_open_folder': 'Open template folder',
         
         # Additional messages
         'msg_test_result': 'Found: {}, Confidence: {:.1%}',

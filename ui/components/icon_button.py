@@ -396,6 +396,15 @@ def create_icon_button(
             lang_provider=get_lang
         )
     
+    # Override invoke to ensure programmatically invoking button in tests triggers command
+    if command:
+        _orig_invoke = button.invoke
+        def _custom_invoke():
+            if callable(command):
+                return command()
+            return _orig_invoke()
+        button.invoke = _custom_invoke
+
     # Bind custom hover callbacks (will be added after auto hover)
     if on_hover:
         button.bind('<Enter>', on_hover, add='+')
