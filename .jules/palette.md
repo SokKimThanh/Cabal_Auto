@@ -1,0 +1,3 @@
+2025-08-18 - Singleton Dialogs & Duplicate Name Resolution UX
+Learning: Opening multiple instances of a modal editing window leads to state collision and user confusion in desktop Tkinter apps. Enforcing a Singleton pattern using `lift()` and `focus_force()` brings existing edit windows to the front cleanly. Furthermore, validating item name uniqueness with a non-blocking prompt that offers automatic index suffixing (e.g., "Quái Mới (1)") prevents accidental overwrites while maintaining continuous workflow.
+Action: Always track active dialog references on parent controllers to bring existing modal dialogs to front when requested, and provide clear index suffixing when handling user-accepted duplicate entries.
