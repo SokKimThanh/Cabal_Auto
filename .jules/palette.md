@@ -5,3 +5,16 @@ Action: Always track active dialog references on parent controllers to bring exi
 2025-10-25 - Standardized Icon Buttons & Multi-Tk Root Cache Pruning
 Learning: Standardizing UI buttons across forms and toolbars via unified factory functions (`create_icon_button`, `create_save_button`, `create_cancel_button`, etc.) guarantees visual consistency, height alignment (`variant='compact'` vs `variant='medium'`), and mandatory multi-language tooltips (`tooltip_key`). When running unit tests that create and destroy sequential `tk.Tk()` root instances, cached `PhotoImage` objects or global image reference lists (`_ICON_REFS`) holding dead `Tk` handles will throw `_tkinter.TclError: image "pyimage1" doesn't exist`. Pruning stale references by checking `root.tk.call('image', 'height', ...)` prevents cross-test image leaks.
 Action: Always instantiate buttons via `ui.components.create_icon_button` or its helper methods, and prune stale `PhotoImage` references when caching across isolated Tk root instances.
+
+## Button & UI Standards
+
+1. **Nút HÌNH VUÔNG (Square Button):**
+   - Chỉ dành riêng cho loại nút CHỈ CÓ ICON (Icon-only).
+   - Tuyệt đối không để text/chữ bên trong nút hình vuông.
+
+2. **Nút HÌNH CHỮ NHẬT (Rectangular Button):**
+   - Dùng cho nút CÓ CẢ ICON + TEXT (Ví dụ: "Thêm", "Sửa", "Xóa").
+   - Kích thước chiều rộng: Tự động dãn theo nội dung (Auto / Fit-content), không cố định `width` dạng vuông.
+   - Độ đệm (Padding): Luôn có horizontal padding (`padx`) tối thiểu 10px - 15px để văn bản và icon không bị xén viền.
+
+Lưu ý: Từ nay về sau, mỗi khi chỉnh sửa hoặc tạo mới bất kỳ thành phần UI nào, bạn MUST đọc và tuân thủ các quy tắc trong `palette.md`.

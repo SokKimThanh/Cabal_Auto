@@ -332,7 +332,7 @@ class DisplaySettingsDialog(tk.Toplevel):
             btn_box,
             command=self._on_save,
             text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
-            variant='medium',
+            padding={'padx': 12, 'pady': 6},
             tooltip_key='tooltip_save',
             tooltip_ns='monster_editor'
         )
@@ -342,7 +342,7 @@ class DisplaySettingsDialog(tk.Toplevel):
             btn_box,
             command=self.destroy,
             text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
-            variant='medium',
+            padding={'padx': 12, 'pady': 6},
             tooltip_key='tooltip_cancel',
             tooltip_ns='monster_editor'
         )
@@ -437,22 +437,22 @@ class MonsterEditDialog(tk.Toplevel):
 
         self.btn_edit = create_icon_button(
             info_actions, icon_name='edit', text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
-            icon_fallback='✏️', command=lambda: None, button_type='blue', variant='medium',
-            tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
+            icon_fallback='✏️', command=lambda: None, button_type='blue',
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
         )
         self.btn_edit.pack(side='left', padx=3)
 
         self.btn_add = create_add_button(
             info_actions, command=self._on_reset_form,
             text=i18n_t('btn_add_monster', ns='monster_editor', default='Thêm'),
-            variant='medium', tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
         )
         self.btn_add.pack(side='left', padx=3)
 
         self.btn_delete = create_delete_button(
             info_actions, command=self._on_clear_form,
             text=i18n_t('btn_delete', ns='monster_editor', default='Xóa'),
-            variant='medium', tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
         )
         self.btn_delete.pack(side='left', padx=3)
 
@@ -531,21 +531,21 @@ class MonsterEditDialog(tk.Toplevel):
         self.btn_add_template = create_add_button(
             left_tb, command=self._on_browse,
             text=i18n_t('btn_add_template', ns='monster_editor', default='Thêm'),
-            variant='medium', tooltip_key='tooltip_add_template', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_add_template', tooltip_ns='monster_editor'
         )
         self.btn_add_template.pack(side='left', padx=2)
 
         self.btn_delete_template = create_delete_button(
             left_tb, command=self._on_delete_template,
             text=i18n_t('btn_delete_template', ns='monster_editor', default='Xóa'),
-            variant='medium', tooltip_key='tooltip_delete_template', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_delete_template', tooltip_ns='monster_editor'
         )
         self.btn_delete_template.pack(side='left', padx=2)
 
         self.btn_edit_template = create_icon_button(
             left_tb, icon_name='edit', text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
-            icon_fallback='✏️', command=lambda: None, button_type='blue', variant='medium',
-            tooltip_key='tooltip_edit_mode_template', tooltip_ns='monster_editor'
+            icon_fallback='✏️', command=lambda: None, button_type='blue',
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_edit_mode_template', tooltip_ns='monster_editor'
         )
         self.btn_edit_template.pack(side='left', padx=2)
 
@@ -582,22 +582,22 @@ class MonsterEditDialog(tk.Toplevel):
 
         self.capture_button = create_icon_button(
             right_tb, icon_name='capture', text=i18n_t('btn_capture', ns='monster_editor', default='Chụp Vùng'),
-            icon_fallback='🔳', command=self._on_capture, button_type='blue', variant='medium',
-            tooltip_key='tooltip_capture', tooltip_ns='monster_editor'
+            icon_fallback='🔳', command=self._on_capture, button_type='blue',
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_capture', tooltip_ns='monster_editor'
         )
         self.capture_button.pack(side='left', padx=2)
 
         self.open_folder_button = create_refresh_button(
             right_tb, command=self._on_open_folder,
             text=i18n_t('btn_open_folder', ns='monster_editor', default='Mở Thư Mục'),
-            variant='medium', tooltip_key='tooltip_open_folder', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_open_folder', tooltip_ns='monster_editor'
         )
         self.open_folder_button.pack(side='left', padx=2)
 
         self.test_template_button = create_icon_button(
             right_tb, icon_name='test', text=i18n_t('btn_test', ns='monster_editor', default='Test Match'),
-            icon_fallback='❓', command=self._on_test_match, button_type='orange', variant='medium',
-            tooltip_key='tooltip_test', tooltip_ns='monster_editor'
+            icon_fallback='❓', command=self._on_test_match, button_type='orange',
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_test', tooltip_ns='monster_editor'
         )
         self.test_template_button.pack(side='left', padx=2)
 
@@ -673,14 +673,14 @@ class MonsterEditDialog(tk.Toplevel):
         self.save_btn = create_save_button(
             bottom_bar, command=self._on_save,
             text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
-            variant='medium', tooltip_key='tooltip_save', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_save', tooltip_ns='monster_editor'
         )
         self.save_btn.pack(side='right', padx=5)
 
         self.cancel_btn = create_cancel_button(
             bottom_bar, command=self.destroy,
             text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
-            variant='medium', tooltip_key='tooltip_cancel', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_cancel', tooltip_ns='monster_editor'
         )
         self.cancel_btn.pack(side='right', padx=5)
 
@@ -1018,10 +1018,22 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         self.template_scrollbar = tk.Scrollbar(self.templates_tab)
         self.template_listbox = tk.Listbox(self.templates_tab, selectmode=tk.SINGLE)
-        self.capture_button = create_icon_button(self.templates_tab, icon_name='capture', text="Capture", variant='medium')
-        self.browse_button = create_icon_button(self.templates_tab, icon_name='browse', text="Browse", variant='medium')
-        self.delete_template_button = create_delete_button(self.templates_tab, command=lambda: None, text="Delete", variant='medium')
-        self.test_template_button = create_icon_button(self.templates_tab, icon_name='test', text="Test", variant='medium')
+        self.capture_button = create_icon_button(
+            self.templates_tab, icon_name='capture', text="Capture",
+            padding={'padx': 12, 'pady': 6}
+        )
+        self.browse_button = create_icon_button(
+            self.templates_tab, icon_name='browse', text="Browse",
+            padding={'padx': 12, 'pady': 6}
+        )
+        self.delete_template_button = create_delete_button(
+            self.templates_tab, command=lambda: None, text="Delete",
+            padding={'padx': 12, 'pady': 6}
+        )
+        self.test_template_button = create_icon_button(
+            self.templates_tab, icon_name='test', text="Test",
+            padding={'padx': 12, 'pady': 6}
+        )
         self.threshold_scale = tk.Scale(self.templates_tab, from_=0.0, to=1.0, resolution=0.01, orient='horizontal')
         self.threshold_scale.set(0.7)
         self.threshold_label = tk.Label(self.templates_tab, text="0.70")
@@ -1288,14 +1300,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.btn_confirm_delete = create_delete_button(
             btn_box, command=self._execute_delete_monster,
             text=i18n_t('btn_confirm', ns='monster_editor', default='✔ Đồng ý'),
-            variant='medium', tooltip_text=i18n_t('btn_confirm', ns='monster_editor', default='✔ Đồng ý')
+            padding={'padx': 12, 'pady': 6}, tooltip_text=i18n_t('btn_confirm', ns='monster_editor', default='✔ Đồng ý')
         )
         self.btn_confirm_delete.pack(side='right', padx=3)
 
         self.btn_cancel_delete = create_cancel_button(
             btn_box, command=self._hide_confirmation_banner,
             text=i18n_t('btn_cancel_confirm', ns='monster_editor', default='✖ Hủy'),
-            variant='medium', tooltip_text=i18n_t('btn_cancel_confirm', ns='monster_editor', default='✖ Hủy')
+            padding={'padx': 12, 'pady': 6}, tooltip_text=i18n_t('btn_cancel_confirm', ns='monster_editor', default='✖ Hủy')
         )
         self.btn_cancel_delete.pack(side='right', padx=3)
 
@@ -1347,15 +1359,15 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.add_monster_button = create_add_button(
             self.bottom_bar_frame, command=self._on_add_monster,
             text=i18n_t('btn_add_monster', ns='monster_editor', default=' Thêm Quái'),
-            variant='medium', tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
         )
         self.add_monster_button.pack(side='left', padx=10, pady=5)
 
         # "✏️ Sửa" Button
         self.edit_btn = create_icon_button(
             self.bottom_bar_frame, icon_name='edit', text=i18n_t('btn_edit_monster', ns='monster_editor', default=' Sửa'),
-            icon_fallback='✏️', command=self._on_edit_monster_selected, button_type='blue', variant='medium',
-            tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
+            icon_fallback='✏️', command=self._on_edit_monster_selected, button_type='blue',
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
         )
         self.edit_btn.pack(side='left', padx=5, pady=5)
 
@@ -1363,7 +1375,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.delete_monster_button = create_delete_button(
             self.bottom_bar_frame, command=self._on_delete_monster,
             text=i18n_t('btn_delete_monster', ns='monster_editor', default=' Xóa'),
-            variant='medium', tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
+            padding={'padx': 12, 'pady': 6}, tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
         )
         self.delete_monster_button.pack(side='left', padx=5, pady=5)
 
