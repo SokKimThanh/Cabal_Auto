@@ -174,7 +174,20 @@ class IconHelper:
         # Check cache (include color in cache key)
         cache_key = f"{name}_{size}_{color or 'default'}"
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            cached_val = self._cache[cache_key]
+            # Verify cached image is still valid in current tk root
+            if not isinstance(cached_val, str):
+                try:
+                    import tkinter as tk
+                    root = tk._default_root
+                    if root is not None:
+                        root.tk.call('image', 'height', str(cached_val))
+                    return cached_val
+                except Exception:
+                    # Invalidate stale image reference from previous tk root
+                    del self._cache[cache_key]
+            else:
+                return cached_val
         
         # Get icon info
         if name not in self.icon_map:
