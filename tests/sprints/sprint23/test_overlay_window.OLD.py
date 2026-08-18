@@ -13,11 +13,12 @@ Tests:
 
 import pytest
 import time
+import tkinter as tk
 from typing import List
 from unittest.mock import Mock, patch, MagicMock
 
 from lib.ui.overlay_window_pywin32 import (
-    OverlayWindowPyWin32,
+    OverlayWindowPyWin32 as OverlayWindow,
     DetectionBox,
     create_detection_box
 )
