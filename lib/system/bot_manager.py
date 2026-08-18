@@ -27,7 +27,11 @@ from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 
 from lib.vision.vision_engine import VisionEngine
-from lib.system.screen_capture import ScreenCapture
+import sys
+if sys.platform == "win32":
+    from lib.system.screen_capture import ScreenCapture
+else:
+    ScreenCapture = None  # type: ignore
 from lib.vision.monster_detector import MonsterDetector, DetectionState, DetectionStats
 
 # Setup logging

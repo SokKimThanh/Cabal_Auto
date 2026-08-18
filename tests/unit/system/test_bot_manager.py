@@ -13,9 +13,16 @@ Tests:
 """
 
 import pytest
+import sys
 import time
 from unittest.mock import Mock, MagicMock, call, patch
 from typing import List
+
+pytestmark = [
+    pytest.mark.windows,
+    pytest.mark.unit,
+    pytest.mark.skipif(sys.platform != "win32", reason="Requires Windows OS and pywin32")
+]
 
 from lib.system.bot_manager import BotManager, BotStats
 from lib.vision.monster_detector import DetectionState, DetectionStats

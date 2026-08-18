@@ -24,7 +24,15 @@ import sys
 import logging
 from typing import List, Dict, Optional, Tuple, Callable, Any
 from dataclasses import dataclass
-from ctypes import windll, c_int, byref, c_void_p
+import sys
+
+if sys.platform == "win32":
+    from ctypes import windll, c_int, byref, c_void_p
+else:
+    windll = None  # type: ignore
+    c_int = None  # type: ignore
+    byref = None  # type: ignore
+    c_void_p = None  # type: ignore
 
 # Platform check - Windows only
 if sys.platform != "win32":

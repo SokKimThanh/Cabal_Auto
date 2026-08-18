@@ -4,13 +4,27 @@ Tests window detection, manipulation, and monitoring
 """
 
 import pytest
+import sys
+
+pytestmark = [
+    pytest.mark.windows,
+    pytest.mark.skipif(sys.platform != "win32", reason="Requires Windows OS and pywin32/ctypes")
+]
+
 from unittest.mock import Mock, patch, MagicMock
-from lib.system.window_manager import (
-    WindowManager,
-    WindowInfo,
-    find_cabal_window,
-    get_cabal_rect
-)
+import sys
+if sys.platform == "win32":
+    from lib.system.window_manager import (
+        WindowManager,
+        WindowInfo,
+        find_cabal_window,
+        get_cabal_rect
+    )
+else:
+    WindowManager = None  # type: ignore
+    WindowInfo = None  # type: ignore
+    find_cabal_window = None  # type: ignore
+    get_cabal_rect = None  # type: ignore
 
 
 # =====================================================================

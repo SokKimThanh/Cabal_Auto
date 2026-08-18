@@ -10,13 +10,29 @@ Sprint 23 Phase 7 Batch 4 Task 4.1
 import json
 import time
 import unittest
+import sys
+import pytest
 from pathlib import Path
 from unittest.mock import Mock
 
+pytestmark = [
+    pytest.mark.windows,
+    pytest.mark.integration,
+    pytest.mark.vision,
+    pytest.mark.skipif(sys.platform != "win32", reason="Requires Windows OS and pywin32")
+]
+
 from lib.vision.vision_engine import VisionEngine
-from lib.system.screen_capture import ScreenCapture
+import sys
+if sys.platform == "win32":
+    from lib.system.screen_capture import ScreenCapture
+else:
+    ScreenCapture = None  # type: ignore
 from lib.vision.monster_detector import MonsterDetector
-from lib.ui.overlay_controller import OverlayController
+try:
+    from lib.ui.overlay_controller import OverlayController
+except ImportError:
+    OverlayController = None  # type: ignore
 from lib.system.bot_manager import BotManager
 
 
