@@ -134,6 +134,24 @@ except ImportError:
 # Global icon references to prevent garbage collection
 _ICON_REFS: List[Any] = []
 
+def _clean_stale_icon_refs():
+    """Remove PhotoImage references belonging to destroyed Tk roots."""
+    global _ICON_REFS
+    valid_refs = []
+    for ref in _ICON_REFS:
+        if not isinstance(ref, str):
+            try:
+                import tkinter as tk
+                root = tk._default_root
+                if root is not None:
+                    root.tk.call('image', 'height', str(ref))
+                    valid_refs.append(ref)
+            except Exception:
+                pass
+        else:
+            valid_refs.append(ref)
+    _ICON_REFS = valid_refs
+
 
 def create_icon_button(
     parent: Any,
@@ -241,6 +259,9 @@ def create_icon_button(
     # Determine if icon is PhotoImage or emoji string
     is_photoimage = not isinstance(icon, str)
     
+    # Prune stale refs from destroyed Tk roots
+    _clean_stale_icon_refs()
+
     # Keep icon reference to prevent garbage collection
     if is_photoimage:
         _ICON_REFS.append(icon)

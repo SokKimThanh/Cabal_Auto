@@ -91,18 +91,21 @@ except ImportError:
 
 try:
     from ui.components import create_icon_button, create_icon_label
-    from ui.components.icon_button import set_button_enabled
+    from ui.components.icon_button import (
+        create_add_button, create_delete_button, create_save_button,
+        create_cancel_button, create_refresh_button, set_button_enabled
+    )
     from ui.components.confirmation_widget import ConfirmationWidget
     from ui.components.notification_widget import NotificationWidget
     from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
-    def create_icon_button(parent, icon_name: str, command=None, text: str = '', button_type: str = 'green_light', **kwargs):
+    def create_icon_button(parent, icon_name: str, command=None, text: Optional[str] = None, button_type: str = 'green_light', **kwargs):
         config = get_button_config(button_type)
-        invalid_params = ['icon_fallback', 'icon_size', 'variant', 'tooltip_key', 'tooltip_ns', 'auto_hover_disabled']
+        invalid_params = ['icon_fallback', 'icon_size', 'variant', 'tooltip_key', 'tooltip_ns', 'tooltip_text', 'auto_hover_disabled']
         filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
         config.update(filtered_kwargs)
         icon_fallback = kwargs.get('icon_fallback', icon_name)
-        display_text = text or icon_fallback
+        display_text = text if text is not None else icon_fallback
         btn = tk.Button(parent, text=display_text, command=command, **config)
         if command:
             _orig = btn.invoke
@@ -117,6 +120,21 @@ except ImportError:
         invalid_params = ['icon_size']
         filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
         return tk.Label(parent, text=f"{icon_fallback} {text}", **filtered_kwargs)
+
+    def create_add_button(parent, command=None, text=None, **kwargs):
+        return create_icon_button(parent, icon_name='add', command=command, text=text, button_type='green_light', **kwargs)
+
+    def create_delete_button(parent, command=None, text=None, **kwargs):
+        return create_icon_button(parent, icon_name='delete', command=command, text=text, button_type='red', **kwargs)
+
+    def create_save_button(parent, command=None, text=None, **kwargs):
+        return create_icon_button(parent, icon_name='save', command=command, text=text, button_type='green_light', **kwargs)
+
+    def create_cancel_button(parent, command=None, text=None, **kwargs):
+        return create_icon_button(parent, icon_name='cancel', command=command, text=text, button_type='refresh', **kwargs)
+
+    def create_refresh_button(parent, command=None, text=None, **kwargs):
+        return create_icon_button(parent, icon_name='refresh', command=command, text=text, button_type='refresh', **kwargs)
     
     ConfirmationWidget = None  # type: ignore
     NotificationWidget = None  # type: ignore
@@ -310,17 +328,23 @@ class DisplaySettingsDialog(tk.Toplevel):
         btn_box = tk.Frame(main_frame, bg=UI.BG_PANEL)
         btn_box.pack(fill='x', side='bottom')
 
-        save_btn = create_icon_button(
-            btn_box, icon_name='save', text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
-            icon_fallback='💾', command=self._on_save, button_type='green_light',
-            tooltip_key='tooltip_save', tooltip_ns='monster_editor'
+        save_btn = create_save_button(
+            btn_box,
+            command=self._on_save,
+            text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
+            variant='medium',
+            tooltip_key='tooltip_save',
+            tooltip_ns='monster_editor'
         )
         save_btn.pack(side='right', padx=5)
 
-        cancel_btn = create_icon_button(
-            btn_box, icon_name='cancel', text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
-            icon_fallback='✖', command=self.destroy, button_type='refresh',
-            tooltip_key='tooltip_cancel', tooltip_ns='monster_editor'
+        cancel_btn = create_cancel_button(
+            btn_box,
+            command=self.destroy,
+            text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
+            variant='medium',
+            tooltip_key='tooltip_cancel',
+            tooltip_ns='monster_editor'
         )
         cancel_btn.pack(side='right', padx=5)
 
@@ -413,22 +437,22 @@ class MonsterEditDialog(tk.Toplevel):
 
         self.btn_edit = create_icon_button(
             info_actions, icon_name='edit', text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
-            icon_fallback='✏️', command=lambda: None, button_type='primary',
+            icon_fallback='✏️', command=lambda: None, button_type='blue', variant='medium',
             tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
         )
         self.btn_edit.pack(side='left', padx=3)
 
-        self.btn_add = create_icon_button(
-            info_actions, icon_name='add', text=i18n_t('btn_add_monster', ns='monster_editor', default='Thêm'),
-            icon_fallback='➕', command=self._on_reset_form, button_type='green_light',
-            tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
+        self.btn_add = create_add_button(
+            info_actions, command=self._on_reset_form,
+            text=i18n_t('btn_add_monster', ns='monster_editor', default='Thêm'),
+            variant='medium', tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
         )
         self.btn_add.pack(side='left', padx=3)
 
-        self.btn_delete = create_icon_button(
-            info_actions, icon_name='delete', text=i18n_t('btn_delete', ns='monster_editor', default='Xóa'),
-            icon_fallback='❌', command=self._on_clear_form, button_type='red',
-            tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
+        self.btn_delete = create_delete_button(
+            info_actions, command=self._on_clear_form,
+            text=i18n_t('btn_delete', ns='monster_editor', default='Xóa'),
+            variant='medium', tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
         )
         self.btn_delete.pack(side='left', padx=3)
 
@@ -504,23 +528,23 @@ class MonsterEditDialog(tk.Toplevel):
         left_tb = tk.Frame(left_sub, bg=UI.BG_PANEL)
         left_tb.pack(fill='x', pady=(0, 5))
 
-        self.btn_add_template = create_icon_button(
-            left_tb, icon_name='add', text=i18n_t('btn_add_template', ns='monster_editor', default='Thêm'),
-            icon_fallback='➕', command=self._on_browse, button_type='green_light',
-            tooltip_key='tooltip_add_template', tooltip_ns='monster_editor'
+        self.btn_add_template = create_add_button(
+            left_tb, command=self._on_browse,
+            text=i18n_t('btn_add_template', ns='monster_editor', default='Thêm'),
+            variant='medium', tooltip_key='tooltip_add_template', tooltip_ns='monster_editor'
         )
         self.btn_add_template.pack(side='left', padx=2)
 
-        self.btn_delete_template = create_icon_button(
-            left_tb, icon_name='delete', text=i18n_t('btn_delete_template', ns='monster_editor', default='Xóa'),
-            icon_fallback='❌', command=self._on_delete_template, button_type='red',
-            tooltip_key='tooltip_delete_template', tooltip_ns='monster_editor'
+        self.btn_delete_template = create_delete_button(
+            left_tb, command=self._on_delete_template,
+            text=i18n_t('btn_delete_template', ns='monster_editor', default='Xóa'),
+            variant='medium', tooltip_key='tooltip_delete_template', tooltip_ns='monster_editor'
         )
         self.btn_delete_template.pack(side='left', padx=2)
 
         self.btn_edit_template = create_icon_button(
             left_tb, icon_name='edit', text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
-            icon_fallback='✏️', command=lambda: None, button_type='primary',
+            icon_fallback='✏️', command=lambda: None, button_type='blue', variant='medium',
             tooltip_key='tooltip_edit_mode_template', tooltip_ns='monster_editor'
         )
         self.btn_edit_template.pack(side='left', padx=2)
@@ -558,21 +582,21 @@ class MonsterEditDialog(tk.Toplevel):
 
         self.capture_button = create_icon_button(
             right_tb, icon_name='capture', text=i18n_t('btn_capture', ns='monster_editor', default='Chụp Vùng'),
-            icon_fallback='🔳', command=self._on_capture, button_type='blue',
+            icon_fallback='🔳', command=self._on_capture, button_type='blue', variant='medium',
             tooltip_key='tooltip_capture', tooltip_ns='monster_editor'
         )
         self.capture_button.pack(side='left', padx=2)
 
-        self.open_folder_button = create_icon_button(
-            right_tb, icon_name='browse', text=i18n_t('btn_open_folder', ns='monster_editor', default='Mở Thư Mục'),
-            icon_fallback='📁', command=self._on_open_folder, button_type='refresh',
-            tooltip_key='tooltip_open_folder', tooltip_ns='monster_editor'
+        self.open_folder_button = create_refresh_button(
+            right_tb, command=self._on_open_folder,
+            text=i18n_t('btn_open_folder', ns='monster_editor', default='Mở Thư Mục'),
+            variant='medium', tooltip_key='tooltip_open_folder', tooltip_ns='monster_editor'
         )
         self.open_folder_button.pack(side='left', padx=2)
 
         self.test_template_button = create_icon_button(
             right_tb, icon_name='test', text=i18n_t('btn_test', ns='monster_editor', default='Test Match'),
-            icon_fallback='❓', command=self._on_test_match, button_type='orange',
+            icon_fallback='❓', command=self._on_test_match, button_type='orange', variant='medium',
             tooltip_key='tooltip_test', tooltip_ns='monster_editor'
         )
         self.test_template_button.pack(side='left', padx=2)
@@ -646,17 +670,17 @@ class MonsterEditDialog(tk.Toplevel):
         bottom_bar = tk.Frame(main_container, bg=UI.BG_PANEL)
         bottom_bar.pack(fill='x', side='bottom')
 
-        self.save_btn = create_icon_button(
-            bottom_bar, icon_name='save', text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
-            icon_fallback='💾', command=self._on_save, button_type='green_light',
-            tooltip_key='tooltip_save', tooltip_ns='monster_editor'
+        self.save_btn = create_save_button(
+            bottom_bar, command=self._on_save,
+            text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
+            variant='medium', tooltip_key='tooltip_save', tooltip_ns='monster_editor'
         )
         self.save_btn.pack(side='right', padx=5)
 
-        self.cancel_btn = create_icon_button(
-            bottom_bar, icon_name='cancel', text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
-            icon_fallback='✖', command=self.destroy, button_type='refresh',
-            tooltip_key='tooltip_cancel', tooltip_ns='monster_editor'
+        self.cancel_btn = create_cancel_button(
+            bottom_bar, command=self.destroy,
+            text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
+            variant='medium', tooltip_key='tooltip_cancel', tooltip_ns='monster_editor'
         )
         self.cancel_btn.pack(side='right', padx=5)
 
@@ -994,10 +1018,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         self.template_scrollbar = tk.Scrollbar(self.templates_tab)
         self.template_listbox = tk.Listbox(self.templates_tab, selectmode=tk.SINGLE)
-        self.capture_button = tk.Button(self.templates_tab, text="Capture")
-        self.browse_button = tk.Button(self.templates_tab, text="Browse")
-        self.delete_template_button = tk.Button(self.templates_tab, text="Delete")
-        self.test_template_button = tk.Button(self.templates_tab, text="Test")
+        self.capture_button = create_icon_button(self.templates_tab, icon_name='capture', text="Capture", variant='medium')
+        self.browse_button = create_icon_button(self.templates_tab, icon_name='browse', text="Browse", variant='medium')
+        self.delete_template_button = create_delete_button(self.templates_tab, command=lambda: None, text="Delete", variant='medium')
+        self.test_template_button = create_icon_button(self.templates_tab, icon_name='test', text="Test", variant='medium')
         self.threshold_scale = tk.Scale(self.templates_tab, from_=0.0, to=1.0, resolution=0.01, orient='horizontal')
         self.threshold_scale.set(0.7)
         self.threshold_label = tk.Label(self.templates_tab, text="0.70")
@@ -1178,10 +1202,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.settings_button = None
 
         # Save Button
-        self.save_button = create_icon_button(
-            btn_frame, icon_name='save', icon_fallback='💾', icon_size=16,
-            command=self._on_save, button_type='green_light', variant='icon_only',
-            width=32, height=32, auto_hover_disabled=True, tooltip_key='tooltip_save', tooltip_ns='monster_editor'
+        self.save_button = create_save_button(
+            btn_frame, command=self._on_save,
+            icon_size=16,
+            variant='compact', auto_hover_disabled=True,
+            tooltip_key='tooltip_save', tooltip_ns='monster_editor'
         )
         self.save_button.pack(side='left', padx=3)
 
@@ -1260,15 +1285,17 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         btn_box = tk.Frame(self.confirm_banner, bg='#FFF3CD')
         btn_box.pack(side='right', padx=10, pady=5)
 
-        self.btn_confirm_delete = create_icon_button(
-            btn_box, icon_name='delete', text=i18n_t('btn_confirm', ns='monster_editor', default='✔ Đồng ý'),
-            icon_fallback='✔', command=self._execute_delete_monster, button_type='red'
+        self.btn_confirm_delete = create_delete_button(
+            btn_box, command=self._execute_delete_monster,
+            text=i18n_t('btn_confirm', ns='monster_editor', default='✔ Đồng ý'),
+            variant='medium', tooltip_text=i18n_t('btn_confirm', ns='monster_editor', default='✔ Đồng ý')
         )
         self.btn_confirm_delete.pack(side='right', padx=3)
 
-        self.btn_cancel_delete = create_icon_button(
-            btn_box, icon_name='cancel', text=i18n_t('btn_cancel_confirm', ns='monster_editor', default='✖ Hủy'),
-            icon_fallback='✖', command=self._hide_confirmation_banner, button_type='refresh'
+        self.btn_cancel_delete = create_cancel_button(
+            btn_box, command=self._hide_confirmation_banner,
+            text=i18n_t('btn_cancel_confirm', ns='monster_editor', default='✖ Hủy'),
+            variant='medium', tooltip_text=i18n_t('btn_cancel_confirm', ns='monster_editor', default='✖ Hủy')
         )
         self.btn_cancel_delete.pack(side='right', padx=3)
 
@@ -1317,26 +1344,26 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.bottom_bar_frame.pack(side='bottom', fill='x')
 
         # "+ Thêm Quái" Button
-        self.add_monster_button = create_icon_button(
-            self.bottom_bar_frame, icon_name='add', text=i18n_t('btn_add_monster', ns='monster_editor', default=' Thêm Quái'),
-            icon_fallback='➕', command=self._on_add_monster, button_type='green_light',
-            tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
+        self.add_monster_button = create_add_button(
+            self.bottom_bar_frame, command=self._on_add_monster,
+            text=i18n_t('btn_add_monster', ns='monster_editor', default=' Thêm Quái'),
+            variant='medium', tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
         )
         self.add_monster_button.pack(side='left', padx=10, pady=5)
 
         # "✏️ Sửa" Button
         self.edit_btn = create_icon_button(
             self.bottom_bar_frame, icon_name='edit', text=i18n_t('btn_edit_monster', ns='monster_editor', default=' Sửa'),
-            icon_fallback='✏️', command=self._on_edit_monster_selected, button_type='primary',
+            icon_fallback='✏️', command=self._on_edit_monster_selected, button_type='blue', variant='medium',
             tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
         )
         self.edit_btn.pack(side='left', padx=5, pady=5)
 
         # "❌ Xóa" Button
-        self.delete_monster_button = create_icon_button(
-            self.bottom_bar_frame, icon_name='delete', text=i18n_t('btn_delete_monster', ns='monster_editor', default=' Xóa'),
-            icon_fallback='🗑️', command=self._on_delete_monster, button_type='red',
-            tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
+        self.delete_monster_button = create_delete_button(
+            self.bottom_bar_frame, command=self._on_delete_monster,
+            text=i18n_t('btn_delete_monster', ns='monster_editor', default=' Xóa'),
+            variant='medium', tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
         )
         self.delete_monster_button.pack(side='left', padx=5, pady=5)
 
