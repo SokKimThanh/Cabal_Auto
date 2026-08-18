@@ -23,8 +23,13 @@ from typing import List, Dict, Any, Optional, Callable, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
+import sys
 from lib.vision.vision_engine import VisionEngine, Detection
-from lib.system.screen_capture import ScreenCapture
+
+if sys.platform == "win32":
+    from lib.system.screen_capture import ScreenCapture
+else:
+    ScreenCapture = None  # type: ignore
 
 # Setup logging
 logger = logging.getLogger(__name__)
