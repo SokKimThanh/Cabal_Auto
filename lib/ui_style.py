@@ -66,8 +66,11 @@ class UIStyle:
     # =========================================================================
     
     # Button Spacing (Negative Space)
+    # Rule: text/icon+text buttons must be rectangular and auto-sized, not fixed-width squares.
     BTN_PADDING_X = 16        # Horizontal padding inside button (left/right) - for text buttons
     BTN_PADDING_Y = 8         # Vertical padding inside button (top/bottom) - for text buttons
+    BTN_TEXT_PADX_MIN = 10    # Minimum horizontal padding for text/icon+text buttons
+    BTN_TEXT_PADX_DEFAULT = 12  # Recommended padding for readable icon+text controls
     BTN_MIN_WIDTH = 64        # Minimum button width in pixels
     BTN_MIN_HEIGHT = 36       # Minimum button height (follows Material Design)
     BTN_SPACING = 8           # Space between buttons

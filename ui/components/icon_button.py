@@ -269,7 +269,8 @@ def create_icon_button(
     # Get base button config from global styles
     base_config = get_button_config(button_type)
     
-    # Apply variant sizing
+    # Apply variant sizing.
+    # Icon-only buttons may be square; buttons with text must stay rectangular and auto-size.
     if variant:
         variant_configs = {
             'compact': {'width': 0, 'padx': 2, 'pady': 2},
@@ -280,7 +281,7 @@ def create_icon_button(
         }
         if variant in variant_configs:
             base_config.update(variant_configs[variant])
-    
+
     # Auto-calculate padding from button_size if provided (only for icon-only buttons)
     if button_size is not None and not text:
         # button_size = icon_size + 2*padding + 2*border
@@ -291,11 +292,11 @@ def create_icon_button(
         calculated_padding = max(2, calculated_padding)
         base_config['padx'] = calculated_padding
         base_config['pady'] = calculated_padding
-    
-    # Apply custom width
-    if width is not None:
+
+    # Apply custom width only to icon-only buttons; text buttons must auto-fit content.
+    if width is not None and not text:
         base_config['width'] = width
-    
+
     # Apply custom padding (overrides button_size calculation)
     if padding:
         if 'padx' in padding:
@@ -327,7 +328,21 @@ def create_icon_button(
         **state_overrides,
         **kwargs
     }
-    
+
+    # Enforce the project UI rule: text/buttons with label must stay rectangular and auto-sized.
+    if text:
+        final_config.pop('width', None)
+        try:
+            padx_value = int(final_config.get('padx', 12))
+        except (TypeError, ValueError):
+            padx_value = 12
+        final_config['padx'] = max(padx_value, 10)
+        try:
+            pady_value = int(final_config.get('pady', 6))
+        except (TypeError, ValueError):
+            pady_value = 6
+        final_config['pady'] = max(pady_value, 4)
+
     # Create button with proper image/text handling
     if is_photoimage:
         # PhotoImage: use image= parameter
