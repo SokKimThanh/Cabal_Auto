@@ -443,7 +443,7 @@ class MonsterDetector:
     
     def _run_detection(self, frame: Any) -> List[Detection]:
         """
-        Run template matching on frame
+        Run detection pipeline on frame
         
         Args:
             frame: Captured screen frame
@@ -452,8 +452,8 @@ class MonsterDetector:
             List of Detection objects
         """
         try:
-            # Use VisionEngine to match templates
-            detections = self._vision_engine.match_templates(frame)
+            # Use VisionEngine's priority detection pipeline
+            detections = self._vision_engine.detect_monster_pipeline(frame)
             return detections
             
         except Exception as e:
