@@ -29,6 +29,38 @@ import os
 import subprocess
 from pathlib import Path
 
+# Import monster_service validation logic
+try:
+    from lib.features.monster_service import check_duplicate_name, generate_unique_name, ensure_unique_monster_id
+except ImportError:
+    def check_duplicate_name(monsters: List[Dict[str, Any]], name: str, current_id: Optional[str] = None) -> bool:
+        if not name:
+            return False
+        tn = name.strip().lower()
+        for m in monsters:
+            if current_id and str(m.get('id', '')) == str(current_id):
+                continue
+            if str(m.get('name', '')).strip().lower() == tn:
+                return True
+        return False
+
+    def generate_unique_name(monsters: List[Dict[str, Any]], name: str, current_id: Optional[str] = None) -> str:
+        base = name.strip() if name else "Quái Mới"
+        match = re.search(r"^(.*?)\s*\(\d+\)$", base)
+        root = match.group(1).strip() if match else base
+        candidate, idx = base, 1
+        while check_duplicate_name(monsters, candidate, current_id):
+            candidate = f"{root} ({idx})"
+            idx += 1
+        return candidate
+
+    def ensure_unique_monster_id(monster_data: Dict[str, Any], existing_monsters: Optional[List[Dict[str, Any]]] = None) -> str:
+        m_id = str(monster_data.get('id', '')).strip()
+        if not m_id:
+            m_id = str(uuid.uuid4())
+            monster_data['id'] = m_id
+        return m_id
+
 # Import lib modules
 try:
     from lib.i18n import t as i18n_t, get_lang, register_bulk as i18n_register_bulk
@@ -216,6 +248,10 @@ class DisplaySettingsDialog(tk.Toplevel):
 
         self._setup_ui()
 
+        # Keyboard shortcuts
+        self.bind('<Escape>', lambda event: self.destroy())
+        self.bind('<Return>', lambda event: self._on_save())
+
         # Center
         self.update_idletasks()
         x = (self.winfo_screenwidth() // 2) - (380 // 2)
@@ -323,7 +359,12 @@ class MonsterEditDialog(tk.Toplevel):
                 'templates': []
             }
 
-        title_text = i18n_t('btn_edit_monster', ns='monster_editor', default='Sửa Quái Vật') if not self.is_new else i18n_t('btn_new_monster', ns='monster_editor', default='Thêm Quái Vật Mới')
+        m_id = self.monster_data.get('id', '')
+        m_name = self.monster_data.get('name', '')
+        if not self.is_new:
+            title_text = f"Sửa Quái Vật: {m_name} (ID: #{m_id})"
+        else:
+            title_text = i18n_t('btn_new_monster', ns='monster_editor', default='Thêm Quái Vật Mới')
         self.title(title_text)
         self.geometry("780x540")
         self.resizable(False, False)
@@ -332,6 +373,9 @@ class MonsterEditDialog(tk.Toplevel):
 
         self._is_capturing = False
         self._is_browsing = False
+
+        # Keyboard shortcuts
+        self.bind('<Escape>', lambda event: self.destroy())
 
         self._setup_ui()
         self._populate_form()
@@ -566,9 +610,9 @@ class MonsterEditDialog(tk.Toplevel):
         self.threshold_value_label.pack(side='right', padx=(5, 0))
         self.threshold_label = self.threshold_value_label  # alias compatibility
 
-        # --- Tab 3: Cài đặt (Column Visibility Settings) ---
+        # --- Tab 3: Hiển thị (Column Visibility Settings) ---
         self.settings_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
-        self.notebook.add(self.settings_tab, text=i18n_t('tab_settings', ns='monster_editor', default='Cài đặt'))
+        self.notebook.add(self.settings_tab, text=i18n_t('tab_display', ns='monster_editor', default='Hiển thị'))
 
         settings_group = tk.LabelFrame(
             self.settings_tab,
@@ -818,6 +862,25 @@ class MonsterEditDialog(tk.Toplevel):
             messagebox.showerror("Lỗi", "Cấp độ, HP, Độ ưu tiên, Sát thương phải là số nguyên", parent=self)
             return
 
+        # Check duplicate name
+        monsters_list = getattr(self.parent, 'monsters', [])
+        current_id = self.monster_data.get('id')
+
+        if check_duplicate_name(monsters_list, name, current_id=current_id):
+            unique_name = generate_unique_name(monsters_list, name, current_id=current_id)
+            title = i18n_t('title_duplicate_name', ns='monster_editor', default='Tên Quái Trùng Lặp')
+            msg = i18n_t(
+                'msg_duplicate_name_confirm',
+                ns='monster_editor',
+                default=f"Tên quái '{name}' đã tồn tại!\n\nBạn có muốn tự động đổi tên thành '{unique_name}' không?"
+            )
+            if messagebox.askyesno(title, msg, parent=self):
+                name = unique_name
+                self.name_entry.delete(0, tk.END)
+                self.name_entry.insert(0, name)
+            else:
+                return
+
         self.monster_data['name'] = name
         self.monster_data['level'] = level
         self.monster_data['priority'] = priority
@@ -872,6 +935,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.result_queue: queue.Queue = queue.Queue()
         self.is_working = False
         self.is_editing = False
+        self._active_edit_dialog: Optional[MonsterEditDialog] = None
 
         title = i18n_t('quick_editor_title', ns='monster_editor', default='Quản Lý Quái Vật')
         self.title(title)
@@ -1111,13 +1175,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         )
         self.status_badge.pack(side='left', padx=(0, 10))
 
-        # Standalone Gear Settings Button
-        self.settings_button = create_icon_button(
-            btn_frame, icon_name='settings', icon_fallback='⚙️', icon_size=16,
-            command=self._open_settings_dialog, button_type='refresh', variant='icon_only',
-            width=32, height=32, tooltip_text=i18n_t('settings_dialog_title', ns='monster_editor', default='Cài đặt hiển thị')
-        )
-        self.settings_button.pack(side='left', padx=3)
+        self.settings_button = None
 
         # Save Button
         self.save_button = create_icon_button(
@@ -1139,6 +1197,12 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.search_entry = tk.Entry(search_frame, font=UI.FONT_TEXT)
         self.search_entry.pack(side='left', fill='x', expand=True, padx=(0, 5), pady=5)
         self.search_entry.bind('<KeyRelease>', self._on_search_changed)
+        self.search_entry.bind('<Escape>', self._on_clear_search)
+
+    def _on_clear_search(self, event: Any = None) -> None:
+        if hasattr(self, 'search_entry') and self.search_entry:
+            self.search_entry.delete(0, tk.END)
+            self._refresh_monster_table()
 
     def _on_search_changed(self, event: Any = None) -> None:
         self._refresh_monster_table()
@@ -1363,9 +1427,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self._show_status_message(i18n_t('warning_no_monster_selected', ns='monster_editor', default='Vui lòng chọn quái vật để sửa'), is_error=True)
 
     def _on_add_monster(self) -> Dict[str, Any]:
+        default_name = i18n_t('default_monster_name', ns='monster_editor', default='Quái Mới')
+        if check_duplicate_name(self.monsters, default_name):
+            default_name = generate_unique_name(self.monsters, default_name)
+
         new_monster = {
             'id': str(uuid.uuid4()),
-            'name': i18n_t('default_monster_name', ns='monster_editor', default='Quái Mới'),
+            'name': default_name,
             'level': 1,
             'priority': 1,
             'hp': 100,
@@ -1385,7 +1453,16 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self._populate_info_form(new_monster)
         return new_monster
 
-    def _open_edit_dialog(self, monster_id: Optional[str] = None) -> None:
+    def _open_edit_dialog(self, monster_id: Optional[str] = None) -> Optional[MonsterEditDialog]:
+        if getattr(self, '_active_edit_dialog', None) is not None:
+            try:
+                if self._active_edit_dialog.winfo_exists():
+                    self._active_edit_dialog.lift()
+                    self._active_edit_dialog.focus_force()
+                    return self._active_edit_dialog
+            except Exception:
+                self._active_edit_dialog = None
+
         target_monster = None
         if monster_id:
             for m in self.monsters:
@@ -1394,22 +1471,33 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                     break
 
         def on_dialog_save(updated_data: Dict[str, Any]) -> None:
-            if monster_id:
-                for idx, m in enumerate(self.monsters):
-                    if m.get('id') == monster_id:
-                        self.monsters[idx] = updated_data
-                        break
-                msg = i18n_t('msg_monster_updated', ns='monster_editor', default='Đã cập nhật quái vật thành công')
-                self._show_status_message(f"{msg}: '{updated_data.get('name')}'")
-            else:
+            m_id = updated_data.get('id')
+            updated = False
+            for idx, m in enumerate(self.monsters):
+                if m.get('id') == m_id:
+                    self.monsters[idx] = updated_data
+                    updated = True
+                    break
+            if not updated:
                 self.monsters.append(updated_data)
                 msg = i18n_t('msg_monster_created', ns='monster_editor', default='Đã tạo quái vật thành công')
+                self._show_status_message(f"{msg}: '{updated_data.get('name')}'")
+            else:
+                msg = i18n_t('msg_monster_updated', ns='monster_editor', default='Đã cập nhật quái vật thành công')
                 self._show_status_message(f"{msg}: '{updated_data.get('name')}'")
 
             self.set_dirty(True)
             self._refresh_monster_table()
 
-        MonsterEditDialog(self, monster=target_monster, on_save=on_dialog_save)
+        dialog = MonsterEditDialog(self, monster=target_monster, on_save=on_dialog_save)
+        self._active_edit_dialog = dialog
+
+        def _on_dialog_close(event=None):
+            if getattr(self, '_active_edit_dialog', None) == dialog:
+                self._active_edit_dialog = None
+
+        dialog.bind('<Destroy>', _on_dialog_close, add='+')
+        return dialog
 
     def _on_delete_monster(self) -> None:
         has_sel = False
