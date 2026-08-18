@@ -422,7 +422,8 @@ class ButtonStateMixin:
             List of button names that are currently enabled
         """
         enabled = []
-        for button_name in self._button_refs.keys():
+        all_buttons = list(dict.fromkeys(list(self._button_refs.keys()) + list(self._button_rules.keys())))
+        for button_name in all_buttons:
             if self.should_enable_button(button_name):
                 enabled.append(button_name)
         return enabled
@@ -435,7 +436,8 @@ class ButtonStateMixin:
             List of button names that are currently disabled
         """
         disabled = []
-        for button_name in self._button_refs.keys():
+        all_buttons = list(dict.fromkeys(list(self._button_refs.keys()) + list(self._button_rules.keys())))
+        for button_name in all_buttons:
             if not self.should_enable_button(button_name):
                 disabled.append(button_name)
         return disabled

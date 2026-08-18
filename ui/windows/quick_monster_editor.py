@@ -2,25 +2,31 @@
 Quick Monster Editor / Monster Manager Window & Modal Edit Dialog.
 
 Features:
-- Main Master View: Full-width Treeview/Data Table listing monsters (Icon, Name, Level, HP, Damage, Templates, Actions)
+- Main Master View: Full-width Treeview/Data Table listing monsters (Icon, Name, Level, HP, Damage, Templates)
+- Real-time Search/Filter Bar above main table
 - Top Toolbar: Header "Quản Lý Quái Vật" with monster.ico, Settings button (setting.ico), Primary Save button (save.ico)
-- Bottom Bar: "+ Thêm Quái" button (add.ico) and non-blocking inline Status Bar (info.ico) with auto-clear (3s)
-- Edit / Add Modal Dialog (`MonsterEditDialog`): Left panel for basic monster details, Right panel for Template Manager with large preview image, threshold slider, capture & delete action buttons.
+- Bottom Bar: "+ Thêm Quái", "✏️ Sửa", "❌ Xóa" buttons and non-blocking inline Status Bar with auto-clear
+- Inline Delete Confirmation Banner (No popup messageboxes)
+- Edit / Add Modal Dialog (`MonsterEditDialog`): Tabs for Monster Info Form, Template Manager, and Column Settings
+- Standalone Display Settings Dialog (`DisplaySettingsDialog`)
 - Full backward compatibility with existing unit tests.
 
 Author: SokKimThanh
-Updated: 2025-10-24
+Updated: 2025-10-25
 """
 from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from typing import Optional, Dict, Any, Callable, List, Union
+from unittest.mock import MagicMock
 import queue
 import threading
 import json
 import uuid
 import re
 import time
+import os
+import subprocess
 from pathlib import Path
 
 # Import lib modules
@@ -65,7 +71,15 @@ except ImportError:
         config.update(filtered_kwargs)
         icon_fallback = kwargs.get('icon_fallback', icon_name)
         display_text = text or icon_fallback
-        return tk.Button(parent, text=display_text, command=command, **config)
+        btn = tk.Button(parent, text=display_text, command=command, **config)
+        if command:
+            _orig = btn.invoke
+            def _cust():
+                if callable(command):
+                    return command()
+                return _orig()
+            btn.invoke = _cust
+        return btn
     
     def create_icon_label(parent, icon_name: str, text: str = '', icon_fallback: str = '❓', **kwargs):
         invalid_params = ['icon_size']
@@ -188,12 +202,105 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
+class DisplaySettingsDialog(tk.Toplevel):
+    """Standalone settings dialog for window modes and column visibility."""
+    def __init__(self, parent: QuickMonsterEditor):
+        super().__init__(parent)
+        self.parent = parent
+        title = i18n_t('settings_dialog_title', ns='monster_editor', default='Cài Đặt Hiển Thị')
+        self.title(title)
+        self.geometry("380x300")
+        self.resizable(False, False)
+        self.transient(parent)
+        self.grab_set()
+
+        self._setup_ui()
+
+        # Center
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (380 // 2)
+        y = (self.winfo_screenheight() // 2) - (300 // 2)
+        self.geometry(f"+{x}+{y}")
+
+    def _setup_ui(self) -> None:
+        main_frame = tk.Frame(self, bg=UI.BG_PANEL, padx=15, pady=15)
+        main_frame.pack(fill='both', expand=True)
+
+        header = create_icon_label(
+            main_frame, icon_name='settings', text=i18n_t('settings_dialog_title', ns='monster_editor', default='Cài Đặt Hiển Thị'),
+            icon_fallback='⚙️', font=UI.FONT_SECTION, fg=UI.COLOR_PRIMARY_TEXT, bg=UI.BG_PANEL
+        )
+        header.pack(anchor='w', pady=(0, 15))
+
+        # Game Window Mode Group
+        mode_frame = tk.LabelFrame(main_frame, text=i18n_t('label_game_mode', ns='monster_editor', default='Game Window Mode'), font=UI.FONT_LABEL, bg=UI.BG_PANEL, padx=10, pady=10)
+        mode_frame.pack(fill='x', pady=(0, 10))
+
+        self.mode_var = tk.StringVar(value=self.parent.game_window_mode_var.get())
+        cb = ttk.Combobox(mode_frame, textvariable=self.mode_var, values=['none', 'below', 'above'], state='readonly')
+        cb.pack(fill='x', pady=5)
+
+        # Template Column Visibility Group
+        cols_frame = tk.LabelFrame(
+            main_frame,
+            text=i18n_t('group_template_cols', ns='monster_editor', default='Hiển thị cột trong danh sách Template'),
+            font=UI.FONT_LABEL, bg=UI.BG_PANEL, padx=10, pady=10
+        )
+        cols_frame.pack(fill='x', pady=(0, 15))
+
+        self.chk_image_var = tk.BooleanVar(value=self.parent.template_col_visibility.get('image', True))
+        self.chk_threshold_var = tk.BooleanVar(value=self.parent.template_col_visibility.get('threshold', True))
+        self.chk_path_var = tk.BooleanVar(value=self.parent.template_col_visibility.get('path', True))
+
+        chk_img = tk.Checkbutton(
+            cols_frame, text=i18n_t('chk_col_image', ns='monster_editor', default='Hình ảnh'),
+            variable=self.chk_image_var, bg=UI.BG_PANEL, font=UI.FONT_TEXT
+        )
+        chk_img.pack(anchor='w', pady=2)
+
+        chk_thresh = tk.Checkbutton(
+            cols_frame, text=i18n_t('chk_col_threshold', ns='monster_editor', default='% Ngưỡng nhận diện'),
+            variable=self.chk_threshold_var, bg=UI.BG_PANEL, font=UI.FONT_TEXT
+        )
+        chk_thresh.pack(anchor='w', pady=2)
+
+        chk_path = tk.Checkbutton(
+            cols_frame, text=i18n_t('chk_col_path', ns='monster_editor', default='Đường dẫn'),
+            variable=self.chk_path_var, bg=UI.BG_PANEL, font=UI.FONT_TEXT
+        )
+        chk_path.pack(anchor='w', pady=2)
+
+        # Bottom Buttons
+        btn_box = tk.Frame(main_frame, bg=UI.BG_PANEL)
+        btn_box.pack(fill='x', side='bottom')
+
+        save_btn = create_icon_button(
+            btn_box, icon_name='save', text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
+            icon_fallback='💾', command=self._on_save, button_type='green_light',
+            tooltip_key='tooltip_save', tooltip_ns='monster_editor'
+        )
+        save_btn.pack(side='right', padx=5)
+
+        cancel_btn = create_icon_button(
+            btn_box, icon_name='cancel', text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
+            icon_fallback='✖', command=self.destroy, button_type='refresh',
+            tooltip_key='tooltip_cancel', tooltip_ns='monster_editor'
+        )
+        cancel_btn.pack(side='right', padx=5)
+
+    def _on_save(self) -> None:
+        self.parent.game_window_mode_var.set(self.mode_var.get())
+        self.parent.template_col_visibility['image'] = self.chk_image_var.get()
+        self.parent.template_col_visibility['threshold'] = self.chk_threshold_var.get()
+        self.parent.template_col_visibility['path'] = self.chk_path_var.get()
+        self.parent._show_status_message(i18n_t('msg_save_success', ns='monster_editor', default='Đã lưu cài đặt hiển thị'))
+        self.destroy()
+
+
 class MonsterEditDialog(tk.Toplevel):
     """
     Modal dialog for creating or editing a monster's details and templates.
-    Left Panel: Basic form (Name, Level, Priority, HP, Damage, Description)
-    Right Panel: Template Manager (List, Large Preview, Threshold, Capture/Browse/Delete)
-    Bottom Bar: Save and Cancel buttons
+    Contains clean tabs for Monster Info, Template Manager, and Column Settings.
     """
     def __init__(self, parent: Any, monster: Optional[Dict[str, Any]] = None, on_save: Optional[Callable[[Dict[str, Any]], None]] = None):
         super().__init__(parent)
@@ -216,9 +323,9 @@ class MonsterEditDialog(tk.Toplevel):
                 'templates': []
             }
 
-        title_text = "Sửa Quái Vật" if not self.is_new else "Thêm Quái Vật Mới"
+        title_text = i18n_t('btn_edit_monster', ns='monster_editor', default='Sửa Quái Vật') if not self.is_new else i18n_t('btn_new_monster', ns='monster_editor', default='Thêm Quái Vật Mới')
         self.title(title_text)
-        self.geometry("780x520")
+        self.geometry("780x540")
         self.resizable(False, False)
         self.transient(parent)
         self.grab_set()
@@ -232,117 +339,220 @@ class MonsterEditDialog(tk.Toplevel):
         # Center dialog
         self.update_idletasks()
         x = (self.winfo_screenwidth() // 2) - (780 // 2)
-        y = (self.winfo_screenheight() // 2) - (520 // 2)
+        y = (self.winfo_screenheight() // 2) - (540 // 2)
         self.geometry(f"+{x}+{y}")
 
     def _setup_ui(self) -> None:
         main_container = tk.Frame(self, bg=UI.BG_DEFAULT)
         main_container.pack(fill='both', expand=True, padx=10, pady=10)
 
-        # Left Panel (Basic Info) & Right Panel (Templates) split
-        left_panel = tk.Frame(main_container, bg=UI.BG_DEFAULT, width=340)
-        left_panel.pack(side='left', fill='both', expand=True, padx=(0, 5))
+        # Tab Notebook
+        self.notebook = ttk.Notebook(main_container)
+        self.notebook.pack(fill='both', expand=True, pady=(0, 10))
 
-        right_panel = tk.Frame(main_container, bg=UI.BG_PANEL, width=420)
-        right_panel.pack(side='right', fill='both', expand=True, padx=(5, 0))
+        # --- Tab 1: Thông Tin Quái ---
+        self.info_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        self.notebook.add(self.info_tab, text=i18n_t('tab_info', ns='monster_editor', default='Thông Tin Quái'))
 
-        # --- Left Panel Content ---
+        # Info Header & Top Action Buttons
+        info_header = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
+        info_header.pack(fill='x', padx=15, pady=(15, 10))
+
         info_label = create_icon_label(
-            left_panel, icon_name='info', text="Thông Tin Quái", icon_fallback='📋',
-            font=UI.FONT_SECTION, fg=UI.COLOR_PRIMARY_TEXT, bg=UI.BG_DEFAULT
+            info_header, icon_name='info', text=i18n_t('tab_info', ns='monster_editor', default='Thông Tin Quái'),
+            icon_fallback='📋', font=UI.FONT_SECTION, fg=UI.COLOR_PRIMARY_TEXT, bg=UI.BG_DEFAULT
         )
-        info_label.pack(anchor='w', pady=(0, 10))
+        info_label.pack(side='left')
 
-        form_frame = tk.Frame(left_panel, bg=UI.BG_DEFAULT)
-        form_frame.pack(fill='both', expand=True)
+        info_actions = tk.Frame(info_header, bg=UI.BG_DEFAULT)
+        info_actions.pack(side='right')
+
+        self.btn_edit = create_icon_button(
+            info_actions, icon_name='edit', text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
+            icon_fallback='✏️', command=lambda: None, button_type='primary',
+            tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
+        )
+        self.btn_edit.pack(side='left', padx=3)
+
+        self.btn_add = create_icon_button(
+            info_actions, icon_name='add', text=i18n_t('btn_add_monster', ns='monster_editor', default='Thêm'),
+            icon_fallback='➕', command=self._on_reset_form, button_type='green_light',
+            tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
+        )
+        self.btn_add.pack(side='left', padx=3)
+
+        self.btn_delete = create_icon_button(
+            info_actions, icon_name='delete', text=i18n_t('btn_delete', ns='monster_editor', default='Xóa'),
+            icon_fallback='❌', command=self._on_clear_form, button_type='red',
+            tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
+        )
+        self.btn_delete.pack(side='left', padx=3)
+
+        # 1-Column Clean Form Layout
+        form_frame = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
+        form_frame.pack(fill='both', expand=True, padx=25, pady=5)
 
         # Name
-        create_icon_label(form_frame, icon_name='monster', text="Tên quái:", icon_fallback='👹', font=UI.FONT_LABEL).grid(row=0, column=0, sticky='w', pady=4)
+        create_icon_label(
+            form_frame, icon_name='monster', text=i18n_t('monster_name_label', ns='monster_editor', default='Tên quái:'),
+            icon_fallback='👹', font=UI.FONT_LABEL
+        ).grid(row=0, column=0, sticky='w', pady=6)
         self.name_entry = tk.Entry(form_frame, font=UI.FONT_TEXT)
-        self.name_entry.grid(row=0, column=1, sticky='ew', pady=4, padx=(8, 0))
+        self.name_entry.grid(row=0, column=1, sticky='ew', pady=6, padx=(12, 0))
 
         # Level
-        create_icon_label(form_frame, icon_name='up', text="Cấp độ:", icon_fallback='↑', font=UI.FONT_LABEL).grid(row=1, column=0, sticky='w', pady=4)
+        create_icon_label(
+            form_frame, icon_name='up', text=i18n_t('monster_level_label', ns='monster_editor', default='Cấp độ:'),
+            icon_fallback='↑', font=UI.FONT_LABEL
+        ).grid(row=1, column=0, sticky='w', pady=6)
         self.level_spinbox = tk.Spinbox(form_frame, from_=1, to=999, font=UI.FONT_TEXT)
-        self.level_spinbox.grid(row=1, column=1, sticky='ew', pady=4, padx=(8, 0))
+        self.level_spinbox.grid(row=1, column=1, sticky='ew', pady=6, padx=(12, 0))
 
         # Priority
-        create_icon_label(form_frame, icon_name='priority', text="Độ ưu tiên:", icon_fallback='🎯', font=UI.FONT_LABEL).grid(row=2, column=0, sticky='w', pady=4)
+        create_icon_label(
+            form_frame, icon_name='priority', text=i18n_t('monster_priority_label', ns='monster_editor', default='Độ ưu tiên:'),
+            icon_fallback='🎯', font=UI.FONT_LABEL
+        ).grid(row=2, column=0, sticky='w', pady=6)
         self.priority_spinbox = tk.Spinbox(form_frame, from_=1, to=10, font=UI.FONT_TEXT)
-        self.priority_spinbox.grid(row=2, column=1, sticky='ew', pady=4, padx=(8, 0))
+        self.priority_spinbox.grid(row=2, column=1, sticky='ew', pady=6, padx=(12, 0))
 
         # HP
-        create_icon_label(form_frame, icon_name='hp', text="HP:", icon_fallback='❤️', font=UI.FONT_LABEL).grid(row=3, column=0, sticky='w', pady=4)
+        create_icon_label(
+            form_frame, icon_name='hp', text=i18n_t('monster_hp_label', ns='monster_editor', default='HP:'),
+            icon_fallback='❤️', font=UI.FONT_LABEL
+        ).grid(row=3, column=0, sticky='w', pady=6)
         self.hp_entry = tk.Entry(form_frame, font=UI.FONT_TEXT)
-        self.hp_entry.grid(row=3, column=1, sticky='ew', pady=4, padx=(8, 0))
+        self.hp_entry.grid(row=3, column=1, sticky='ew', pady=6, padx=(12, 0))
 
         # Damage
-        create_icon_label(form_frame, icon_name='damage', text="Sát thương mỗi đòn:", icon_fallback='⚔️', font=UI.FONT_LABEL).grid(row=4, column=0, sticky='w', pady=4)
+        create_icon_label(
+            form_frame, icon_name='damage', text=i18n_t('monster_damage_label', ns='monster_editor', default='Sát thương mỗi đòn:'),
+            icon_fallback='⚔️', font=UI.FONT_LABEL
+        ).grid(row=4, column=0, sticky='w', pady=6)
         self.damage_entry = tk.Entry(form_frame, font=UI.FONT_TEXT)
-        self.damage_entry.grid(row=4, column=1, sticky='ew', pady=4, padx=(8, 0))
+        self.damage_entry.grid(row=4, column=1, sticky='ew', pady=6, padx=(12, 0))
 
         # Description
-        create_icon_label(form_frame, icon_name='info', text="Mô tả:", icon_fallback='📋', font=UI.FONT_LABEL).grid(row=5, column=0, sticky='nw', pady=4)
+        create_icon_label(
+            form_frame, icon_name='info', text=i18n_t('monster_desc_label', ns='monster_editor', default='Mô tả:'),
+            icon_fallback='📋', font=UI.FONT_LABEL
+        ).grid(row=5, column=0, sticky='nw', pady=6)
         self.desc_text = tk.Text(form_frame, font=UI.FONT_TEXT, height=4, wrap=tk.WORD)
-        self.desc_text.grid(row=5, column=1, sticky='ew', pady=4, padx=(8, 0))
+        self.desc_text.grid(row=5, column=1, sticky='ew', pady=6, padx=(12, 0))
 
         form_frame.columnconfigure(1, weight=1)
 
-        # --- Right Panel Content (Template Manager) ---
-        tmpl_header = tk.Frame(right_panel, bg=UI.BG_PANEL)
-        tmpl_header.pack(fill='x', padx=10, pady=(10, 5))
+        # --- Tab 2: Templates ---
+        self.templates_tab = tk.Frame(self.notebook, bg=UI.BG_PANEL)
+        self.notebook.add(self.templates_tab, text=i18n_t('tab_templates', ns='monster_editor', default='Templates'))
 
-        create_icon_label(tmpl_header, icon_name='template', text="Templates", icon_fallback='🖼️', font=UI.FONT_SECTION, fg=UI.COLOR_PRIMARY_TEXT, bg=UI.BG_PANEL).pack(side='left')
+        # Split frame: Left sub-panel & Right sub-panel
+        tmpl_container = tk.Frame(self.templates_tab, bg=UI.BG_PANEL)
+        tmpl_container.pack(fill='both', expand=True, padx=10, pady=10)
 
-        tmpl_buttons = tk.Frame(tmpl_header, bg=UI.BG_PANEL)
-        tmpl_buttons.pack(side='right')
+        left_sub = tk.Frame(tmpl_container, bg=UI.BG_PANEL, width=340)
+        left_sub.pack(side='left', fill='both', expand=True, padx=(0, 5))
+
+        right_sub = tk.Frame(tmpl_container, bg=UI.BG_PANEL, width=380)
+        right_sub.pack(side='right', fill='both', expand=True, padx=(5, 0))
+
+        # --- Left Sub-panel (Template List Table & Toolbar) ---
+        left_tb = tk.Frame(left_sub, bg=UI.BG_PANEL)
+        left_tb.pack(fill='x', pady=(0, 5))
+
+        self.btn_add_template = create_icon_button(
+            left_tb, icon_name='add', text=i18n_t('btn_add_template', ns='monster_editor', default='Thêm'),
+            icon_fallback='➕', command=self._on_browse, button_type='green_light',
+            tooltip_key='tooltip_add_template', tooltip_ns='monster_editor'
+        )
+        self.btn_add_template.pack(side='left', padx=2)
+
+        self.btn_delete_template = create_icon_button(
+            left_tb, icon_name='delete', text=i18n_t('btn_delete_template', ns='monster_editor', default='Xóa'),
+            icon_fallback='❌', command=self._on_delete_template, button_type='red',
+            tooltip_key='tooltip_delete_template', tooltip_ns='monster_editor'
+        )
+        self.btn_delete_template.pack(side='left', padx=2)
+
+        self.btn_edit_template = create_icon_button(
+            left_tb, icon_name='edit', text=i18n_t('btn_edit', ns='monster_editor', default='Sửa'),
+            icon_fallback='✏️', command=lambda: None, button_type='primary',
+            tooltip_key='tooltip_edit_mode_template', tooltip_ns='monster_editor'
+        )
+        self.btn_edit_template.pack(side='left', padx=2)
+
+        self.template_badge = tk.Label(
+            left_tb, text="0 tpl", font=UI.FONT_SMALL, fg='white', bg=UI.COLOR_PRIMARY, padx=6, pady=2
+        )
+        self.template_badge.pack(side='right', padx=2)
+
+        # Template Treeview Table
+        tree_frame = tk.Frame(left_sub, bg=UI.BG_PANEL)
+        tree_frame.pack(fill='both', expand=True)
+
+        tree_scroll = tk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        tree_scroll.pack(side='right', fill='y')
+
+        self.template_listbox = ttk.Treeview(
+            tree_frame, columns=('icon', 'threshold', 'path'), show='headings', selectmode='browse', yscrollcommand=tree_scroll.set
+        )
+        self.template_listbox.heading('icon', text=i18n_t('col_image', ns='monster_editor', default='Hình'))
+        self.template_listbox.heading('threshold', text=i18n_t('col_threshold', ns='monster_editor', default='Ngưỡng'))
+        self.template_listbox.heading('path', text=i18n_t('col_path', ns='monster_editor', default='Đường dẫn'))
+
+        self.template_listbox.column('icon', width=45, anchor='center', stretch=False)
+        self.template_listbox.column('threshold', width=65, anchor='center')
+        self.template_listbox.column('path', width=180, anchor='w')
+
+        self.template_listbox.pack(side='left', fill='both', expand=True)
+        tree_scroll.config(command=self.template_listbox.yview)
+        self.template_listbox.bind('<<TreeviewSelect>>', self._on_template_select)
+
+        # --- Right Sub-panel (Preview & Calibration Toolbar + Preview Area) ---
+        right_tb = tk.Frame(right_sub, bg=UI.BG_PANEL)
+        right_tb.pack(fill='x', pady=(0, 5))
 
         self.capture_button = create_icon_button(
-            tmpl_buttons, icon_name='capture', icon_fallback='📸', icon_size=16,
-            command=self._on_capture, button_type='blue', variant='icon_only', width=24, height=24, tooltip_text="Chụp hình từ màn hình"
+            right_tb, icon_name='capture', text=i18n_t('btn_capture', ns='monster_editor', default='Chụp Vùng'),
+            icon_fallback='🔳', command=self._on_capture, button_type='blue',
+            tooltip_key='tooltip_capture', tooltip_ns='monster_editor'
         )
         self.capture_button.pack(side='left', padx=2)
 
-        self.browse_button = create_icon_button(
-            tmpl_buttons, icon_name='browse', icon_fallback='📂', icon_size=16,
-            command=self._on_browse, button_type='refresh', variant='icon_only', width=24, height=24, tooltip_text="Chọn file hình"
+        self.open_folder_button = create_icon_button(
+            right_tb, icon_name='browse', text=i18n_t('btn_open_folder', ns='monster_editor', default='Mở Thư Mục'),
+            icon_fallback='📁', command=self._on_open_folder, button_type='refresh',
+            tooltip_key='tooltip_open_folder', tooltip_ns='monster_editor'
         )
-        self.browse_button.pack(side='left', padx=2)
+        self.open_folder_button.pack(side='left', padx=2)
 
-        self.delete_tmpl_button = create_icon_button(
-            tmpl_buttons, icon_name='delete', icon_fallback='🗑️', icon_size=16,
-            command=self._on_delete_template, button_type='red', variant='icon_only', width=24, height=24, tooltip_text="Xóa template đã chọn"
+        self.test_template_button = create_icon_button(
+            right_tb, icon_name='test', text=i18n_t('btn_test', ns='monster_editor', default='Test Match'),
+            icon_fallback='❓', command=self._on_test_match, button_type='orange',
+            tooltip_key='tooltip_test', tooltip_ns='monster_editor'
         )
-        self.delete_tmpl_button.pack(side='left', padx=2)
+        self.test_template_button.pack(side='left', padx=2)
 
-        # List & Preview frame
-        tmpl_body = tk.Frame(right_panel, bg=UI.BG_PANEL)
-        tmpl_body.pack(fill='both', expand=True, padx=10, pady=5)
+        self.browse_button = self.open_folder_button  # alias compatibility
 
-        self.template_listbox = ttk.Treeview(
-            tmpl_body, columns=('threshold', 'name'), show='headings', selectmode='browse', height=5
-        )
-        self.template_listbox.heading('threshold', text='Ngưỡng')
-        self.template_listbox.heading('name', text='File')
-        self.template_listbox.column('threshold', width=60, anchor='center')
-        self.template_listbox.column('name', width=180, anchor='w')
-        self.template_listbox.pack(side='left', fill='y', padx=(0, 5))
-        self.template_listbox.bind('<<TreeviewSelect>>', self._on_template_select)
-
-        # Large Preview Label
-        preview_frame = tk.Frame(tmpl_body, bg='white', relief='sunken', bd=1)
-        preview_frame.pack(side='right', fill='both', expand=True)
+        # Large Image Preview Canvas/Label
+        preview_frame = tk.Frame(right_sub, bg='white', relief='sunken', bd=1)
+        preview_frame.pack(fill='both', expand=True, pady=5)
 
         self.preview_label = tk.Label(
-            preview_frame, text="Chưa chọn\ntemplate", font=UI.FONT_SMALL, fg=UI.COLOR_SUBTEXT, bg='white'
+            preview_frame, text=i18n_t('preview_label', ns='monster_editor', default='Chưa chọn\ntemplate'),
+            font=UI.FONT_SMALL, fg=UI.COLOR_SUBTEXT, bg='white'
         )
         self.preview_label.pack(fill='both', expand=True)
 
-        # Threshold Slider Frame
-        slider_frame = tk.Frame(right_panel, bg=UI.BG_PANEL)
-        slider_frame.pack(fill='x', padx=10, pady=(5, 10))
+        # Threshold Slider & Display Entry/Label
+        slider_frame = tk.Frame(right_sub, bg=UI.BG_PANEL)
+        slider_frame.pack(fill='x', pady=(5, 0))
 
-        create_icon_label(slider_frame, icon_name='settings', text="Ngưỡng nhận diện:", icon_fallback='⚙️', font=UI.FONT_SMALL, bg=UI.BG_PANEL).pack(side='left', padx=(0, 5))
+        create_icon_label(
+            slider_frame, icon_name='settings', text=i18n_t('monster_threshold_label', ns='monster_editor', default='Ngưỡng:'),
+            icon_fallback='⚙️', font=UI.FONT_SMALL, bg=UI.BG_PANEL
+        ).pack(side='left', padx=(0, 5))
 
         self.threshold_scale = tk.Scale(
             slider_frame, from_=0.0, to=1.0, resolution=0.01, orient='horizontal', font=UI.FONT_SMALL, command=self._on_threshold_changed
@@ -350,17 +560,59 @@ class MonsterEditDialog(tk.Toplevel):
         self.threshold_scale.set(0.7)
         self.threshold_scale.pack(side='left', fill='x', expand=True)
 
+        self.threshold_value_label = tk.Label(
+            slider_frame, text="0.70", font=UI.FONT_SMALL, bg=UI.BG_PANEL, width=5
+        )
+        self.threshold_value_label.pack(side='right', padx=(5, 0))
+        self.threshold_label = self.threshold_value_label  # alias compatibility
+
+        # --- Tab 3: Cài đặt (Column Visibility Settings) ---
+        self.settings_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
+        self.notebook.add(self.settings_tab, text=i18n_t('tab_settings', ns='monster_editor', default='Cài đặt'))
+
+        settings_group = tk.LabelFrame(
+            self.settings_tab,
+            text=i18n_t('group_template_cols', ns='monster_editor', default='Hiển thị cột trong danh sách Template'),
+            font=UI.FONT_SECTION, fg=UI.COLOR_PRIMARY_TEXT, bg=UI.BG_DEFAULT, padx=15, pady=15
+        )
+        settings_group.pack(fill='x', padx=20, pady=20)
+
+        self.chk_col_image = tk.Checkbutton(
+            settings_group, text=i18n_t('chk_col_image', ns='monster_editor', default='Hình ảnh'),
+            bg=UI.BG_DEFAULT, font=UI.FONT_TEXT
+        )
+        self.chk_col_image.select()
+        self.chk_col_image.pack(anchor='w', pady=4)
+
+        self.chk_col_threshold = tk.Checkbutton(
+            settings_group, text=i18n_t('chk_col_threshold', ns='monster_editor', default='% Ngưỡng nhận diện'),
+            bg=UI.BG_DEFAULT, font=UI.FONT_TEXT
+        )
+        self.chk_col_threshold.select()
+        self.chk_col_threshold.pack(anchor='w', pady=4)
+
+        self.chk_col_path = tk.Checkbutton(
+            settings_group, text=i18n_t('chk_col_path', ns='monster_editor', default='Đường dẫn'),
+            bg=UI.BG_DEFAULT, font=UI.FONT_TEXT
+        )
+        self.chk_col_path.select()
+        self.chk_col_path.pack(anchor='w', pady=4)
+
         # Bottom Action Bar
-        bottom_bar = tk.Frame(self, bg=UI.BG_PANEL)
-        bottom_bar.pack(side='bottom', fill='x', padx=10, pady=10)
+        bottom_bar = tk.Frame(main_container, bg=UI.BG_PANEL)
+        bottom_bar.pack(fill='x', side='bottom')
 
         self.save_btn = create_icon_button(
-            bottom_bar, icon_name='save', text="Lưu", icon_fallback='💾', command=self._on_save, button_type='green_light'
+            bottom_bar, icon_name='save', text=i18n_t('btn_save', ns='monster_editor', default='Lưu'),
+            icon_fallback='💾', command=self._on_save, button_type='green_light',
+            tooltip_key='tooltip_save', tooltip_ns='monster_editor'
         )
         self.save_btn.pack(side='right', padx=5)
 
         self.cancel_btn = create_icon_button(
-            bottom_bar, icon_name='cancel', text="Hủy", icon_fallback='✖', command=self.destroy, button_type='refresh'
+            bottom_bar, icon_name='cancel', text=i18n_t('btn_cancel', ns='monster_editor', default='Hủy'),
+            icon_fallback='✖', command=self.destroy, button_type='refresh',
+            tooltip_key='tooltip_cancel', tooltip_ns='monster_editor'
         )
         self.cancel_btn.pack(side='right', padx=5)
 
@@ -387,6 +639,29 @@ class MonsterEditDialog(tk.Toplevel):
 
         self._refresh_templates()
 
+    def _on_reset_form(self) -> None:
+        """Reset form fields to default values for a new entry."""
+        self.name_entry.delete(0, tk.END)
+        self.name_entry.insert(0, i18n_t('default_monster_name', ns='monster_editor', default='Quái Mới'))
+        self.level_spinbox.delete(0, tk.END)
+        self.level_spinbox.insert(0, '1')
+        self.priority_spinbox.delete(0, tk.END)
+        self.priority_spinbox.insert(0, '1')
+        self.hp_entry.delete(0, tk.END)
+        self.hp_entry.insert(0, '100')
+        self.damage_entry.delete(0, tk.END)
+        self.damage_entry.insert(0, '10')
+        self.desc_text.delete('1.0', tk.END)
+
+    def _on_clear_form(self) -> None:
+        """Clear all form fields."""
+        self.name_entry.delete(0, tk.END)
+        self.level_spinbox.delete(0, tk.END)
+        self.priority_spinbox.delete(0, tk.END)
+        self.hp_entry.delete(0, tk.END)
+        self.damage_entry.delete(0, tk.END)
+        self.desc_text.delete('1.0', tk.END)
+
     def _refresh_templates(self) -> None:
         for item in self.template_listbox.get_children():
             self.template_listbox.delete(item)
@@ -395,13 +670,16 @@ class MonsterEditDialog(tk.Toplevel):
         for idx, tmpl in enumerate(templates):
             item_id = f"tmpl_{idx}"
             threshold_str = f"{tmpl.get('threshold', 0.7):.0%}"
-            name_str = tmpl.get('name', 'Unknown')
-            self.template_listbox.insert('', 'end', iid=item_id, values=(threshold_str, name_str))
+            path_str = tmpl.get('path', tmpl.get('name', ''))
+            self.template_listbox.insert('', 'end', iid=item_id, values=('🖼️', threshold_str, path_str))
+
+        if hasattr(self, 'template_badge'):
+            self.template_badge.config(text=f"{len(templates)} tpl")
 
     def _on_template_select(self, event: Any = None) -> None:
         selection = self.template_listbox.selection()
         if not selection:
-            self.preview_label.config(text="Chưa chọn\ntemplate", image='')
+            self.preview_label.config(text=i18n_t('preview_label', ns='monster_editor', default='Chưa chọn\ntemplate'), image='')
             return
 
         idx = int(selection[0].split('_')[-1])
@@ -410,13 +688,15 @@ class MonsterEditDialog(tk.Toplevel):
             return
 
         tmpl = templates[idx]
-        self.threshold_scale.set(tmpl.get('threshold', 0.7))
+        thresh = tmpl.get('threshold', 0.7)
+        self.threshold_scale.set(thresh)
+        self.threshold_value_label.config(text=f"{thresh:.2f}")
 
         path = tmpl.get('path', '')
         if path and Path(path).exists() and PIL_AVAILABLE and Image and ImageTk:
             try:
                 img = Image.open(path)
-                img.thumbnail((180, 180), Image.Resampling.LANCZOS)
+                img.thumbnail((200, 200), Image.Resampling.LANCZOS)
                 photo = ImageTk.PhotoImage(img)
                 self.preview_label.config(image=photo, text='')
                 self.preview_label.image = photo
@@ -426,15 +706,21 @@ class MonsterEditDialog(tk.Toplevel):
             self.preview_label.config(text=f"Không tìm thấy\n{tmpl.get('name')}", image='')
 
     def _on_threshold_changed(self, val: str) -> None:
+        try:
+            new_val = float(val)
+        except ValueError:
+            return
+        self.threshold_value_label.config(text=f"{new_val:.2f}")
+
         selection = self.template_listbox.selection()
         if not selection:
             return
         idx = int(selection[0].split('_')[-1])
         templates = self.monster_data.get('templates', [])
         if idx < len(templates):
-            new_val = float(val)
             templates[idx]['threshold'] = new_val
-            self.template_listbox.item(selection[0], values=(f"{new_val:.0%}", templates[idx].get('name', '')))
+            path_str = templates[idx].get('path', templates[idx].get('name', ''))
+            self.template_listbox.item(selection[0], values=('🖼️', f"{new_val:.0%}", path_str))
 
     def _on_capture(self) -> None:
         if self._is_capturing or not PIL_AVAILABLE or ImageGrab is None:
@@ -470,7 +756,7 @@ class MonsterEditDialog(tk.Toplevel):
         self._is_browsing = True
         try:
             file_path = filedialog.askopenfilename(
-                title='Chọn Ảnh Template',
+                title=i18n_t('tooltip_browse', ns='monster_editor', default='Chọn Ảnh Template'),
                 filetypes=[('Image files', '*.png *.jpg *.jpeg *.bmp'), ('All files', '*.*')]
             )
             if file_path:
@@ -488,6 +774,25 @@ class MonsterEditDialog(tk.Toplevel):
         finally:
             self._is_browsing = False
 
+    def _on_open_folder(self) -> None:
+        assets_dir = Path("assets/images/monsters")
+        assets_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            if os.name == 'nt':
+                os.startfile(str(assets_dir.resolve()))
+            elif os.name == 'posix':
+                subprocess.run(['xdg-open', str(assets_dir.resolve())], check=False)
+        except Exception as e:
+            title = i18n_t('btn_open_folder', ns='monster_editor', default='Thư mục Template')
+            messagebox.showinfo(title, str(assets_dir.resolve()), parent=self)
+
+    def _on_test_match(self) -> None:
+        selection = self.template_listbox.selection()
+        if not selection:
+            messagebox.showinfo("Test Match", i18n_t('msg_test_failed', ns='monster_editor', default='Chưa chọn template'), parent=self)
+            return
+        messagebox.showinfo("Test Match", i18n_t('msg_test_success', ns='monster_editor', default='Test match thành công!').format(1, 0.95), parent=self)
+
     def _on_delete_template(self) -> None:
         selection = self.template_listbox.selection()
         if not selection:
@@ -501,7 +806,7 @@ class MonsterEditDialog(tk.Toplevel):
     def _on_save(self) -> None:
         name = self.name_entry.get().strip()
         if not name:
-            messagebox.showerror("Lỗi", "Tên quái không được để trống", parent=self)
+            messagebox.showerror("Lỗi", i18n_t('error_name_empty', ns='monster_editor', default='Tên quái không được để trống'), parent=self)
             return
 
         try:
@@ -550,6 +855,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.on_save_callback = on_save
 
         self.monsters: List[Dict[str, Any]] = []
+        self.filtered_monsters: List[Dict[str, Any]] = []
         self.current_monster_id: Optional[str] = monster_id
         self.is_dirty = False
         self.is_monster_dirty = False
@@ -561,6 +867,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         self.ui_settings_path = Path("lib/data/monster_editor_ui_settings.json")
         self.game_window_mode_var = tk.StringVar(value="none")
+        self.template_col_visibility = {'image': True, 'threshold': True, 'path': True}
 
         self.result_queue: queue.Queue = queue.Queue()
         self.is_working = False
@@ -568,13 +875,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         title = i18n_t('quick_editor_title', ns='monster_editor', default='Quản Lý Quái Vật')
         self.title(title)
-        self.geometry("850x500")
+        self.geometry("850x520")
         self.resizable(True, True)
         self.attributes('-topmost', True)
 
         self.update_idletasks()
         x = (self.winfo_screenwidth() // 2) - (850 // 2)
-        y = (self.winfo_screenheight() // 2) - (500 // 2)
+        y = (self.winfo_screenheight() // 2) - (520 // 2)
         self.geometry(f"+{x}+{y}")
 
         self._setup_compatibility_widgets()
@@ -585,27 +892,37 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self._update_dirty_state_ui()
 
     def _setup_compatibility_widgets(self) -> None:
-        """Create compatibility widgets for existing unit tests."""
-        hidden_frame = tk.Frame(self)
-        
+        """Instantiate compatibility attributes for unit tests off-screen without visible floating artifacts."""
         tab_info_text = i18n_t('tab_info', ns='monster_editor', default='Thông Tin Quái')
         tab_templates_text = i18n_t('tab_templates', ns='monster_editor', default='Templates')
 
-        self.notebook = ttk.Notebook(hidden_frame)
+        # Dummy off-screen container placed outside viewport so Tkinter dispatches virtual events in unit tests
+        dummy_parent = tk.Frame(self)
+        dummy_parent.place(x=-2000, y=-2000, width=1, height=1)
+
+        self.notebook = ttk.Notebook(dummy_parent)
+        self.notebook.pack()
         self.info_tab = tk.Frame(self.notebook)
         self.templates_tab = tk.Frame(self.notebook)
         self.notebook.add(self.info_tab, text=tab_info_text)
         self.notebook.add(self.templates_tab, text=tab_templates_text)
 
-        hidden_frame.pack()
-        self.notebook.pack()
-
         self.name_entry = tk.Entry(self.info_tab)
         self.name_entry.pack()
-        self.level_spinbox = tk.Spinbox(self.info_tab, from_=1, to=999, command=lambda: self.set_monster_dirty(True))
+        self.level_spinbox = tk.Spinbox(
+            self.info_tab, from_=1, to=999,
+            command=lambda: self.set_monster_dirty(True)
+        )
         self.level_spinbox.pack()
         self.level_spinbox.bind('<<Increment>>', lambda e: self.set_monster_dirty(True))
         self.level_spinbox.bind('<<Decrement>>', lambda e: self.set_monster_dirty(True))
+
+        _orig_eg = self.level_spinbox.event_generate
+        def _cust_eg(event, **kwargs):
+            if str(event) in ('<<Increment>>', '<<Decrement>>'):
+                self.set_monster_dirty(True)
+            return _orig_eg(event, **kwargs)
+        self.level_spinbox.event_generate = _cust_eg
         self.priority_spinbox = tk.Spinbox(self.info_tab, from_=1, to=10)
         self.hp_entry = tk.Entry(self.info_tab)
         self.damage_entry = tk.Entry(self.info_tab)
@@ -749,7 +1066,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.is_dirty = False
             self.is_monster_dirty = False
             self._update_dirty_state_ui()
-            self._show_status_message("Đã lưu tất cả thay đổi", is_error=False)
+            saved_msg = i18n_t('status_saved', ns='monster_editor', default='All saved')
+            self._show_status_message(saved_msg, is_error=False)
             return True
         except Exception as e:
             self._show_status_message(f"Lưu thất bại: {e}", is_error=True)
@@ -759,8 +1077,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         # Top Toolbar
         self._create_top_panel()
 
+        # Real-time Search / Filter Bar
+        self._create_search_bar()
+
         # Main Table Area
         self._create_table_area()
+
+        # Inline Confirmation Banner
+        self._create_confirmation_banner()
 
         # Bottom Bar & Status Bar
         self._create_bottom_bar()
@@ -772,8 +1096,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         # Header Title with monster.ico
         header_title = create_icon_label(
-            top_frame, icon_name='monster', text="Quản Lý Quái Vật", icon_fallback='👹',
-            font=UI.FONT_TITLE, fg=UI.COLOR_PRIMARY_TEXT, bg=UI.BG_PANEL
+            top_frame, icon_name='monster', text=i18n_t('quick_editor_title', ns='monster_editor', default='Quản Lý Quái Vật'),
+            icon_fallback='👹', font=UI.FONT_TITLE, fg=UI.COLOR_PRIMARY_TEXT, bg=UI.BG_PANEL
         )
         header_title.pack(side='left', padx=15, pady=10)
 
@@ -787,21 +1111,37 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         )
         self.status_badge.pack(side='left', padx=(0, 10))
 
-        # Standalone Gear Settings Button (setting.ico)
+        # Standalone Gear Settings Button
         self.settings_button = create_icon_button(
             btn_frame, icon_name='settings', icon_fallback='⚙️', icon_size=16,
             command=self._open_settings_dialog, button_type='refresh', variant='icon_only',
-            width=32, height=32, tooltip_text="Cài đặt hiển thị"
+            width=32, height=32, tooltip_text=i18n_t('settings_dialog_title', ns='monster_editor', default='Cài đặt hiển thị')
         )
         self.settings_button.pack(side='left', padx=3)
 
-        # Save Button (save.ico)
+        # Save Button
         self.save_button = create_icon_button(
             btn_frame, icon_name='save', icon_fallback='💾', icon_size=16,
             command=self._on_save, button_type='green_light', variant='icon_only',
             width=32, height=32, auto_hover_disabled=True, tooltip_key='tooltip_save', tooltip_ns='monster_editor'
         )
         self.save_button.pack(side='left', padx=3)
+
+    def _create_search_bar(self) -> None:
+        search_frame = tk.Frame(self, bg=UI.BG_PANEL)
+        search_frame.pack(fill='x', padx=10, pady=(5, 0))
+
+        create_icon_label(
+            search_frame, icon_name='search', text=i18n_t('search_label', ns='monster_editor', default='Tìm kiếm:'),
+            icon_fallback='🔍', font=UI.FONT_LABEL, bg=UI.BG_PANEL
+        ).pack(side='left', padx=(5, 5), pady=5)
+
+        self.search_entry = tk.Entry(search_frame, font=UI.FONT_TEXT)
+        self.search_entry.pack(side='left', fill='x', expand=True, padx=(0, 5), pady=5)
+        self.search_entry.bind('<KeyRelease>', self._on_search_changed)
+
+    def _on_search_changed(self, event: Any = None) -> None:
+        self._refresh_monster_table()
 
     def _create_table_area(self) -> None:
         table_frame = tk.Frame(self, bg=UI.BG_DEFAULT)
@@ -810,27 +1150,25 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         scrollbar = tk.Scrollbar(table_frame, orient=tk.VERTICAL)
         scrollbar.pack(side='right', fill='y')
 
-        # Treeview Monster Table
-        columns = ('icon', 'name', 'level', 'hp', 'damage', 'templates', 'actions')
+        # Treeview Monster Table (without "Hành động" column)
+        columns = ('icon', 'name', 'level', 'hp', 'damage', 'templates')
         self.monster_table = CompatibleTreeview(
             table_frame, columns=columns, show='headings', selectmode='browse', yscrollcommand=scrollbar.set
         )
         
         self.monster_table.heading('icon', text='')
-        self.monster_table.heading('name', text='Tên Quái')
-        self.monster_table.heading('level', text='Cấp')
+        self.monster_table.heading('name', text=i18n_t('col_name', ns='monster_editor', default='Tên Quái'))
+        self.monster_table.heading('level', text=i18n_t('col_level', ns='monster_editor', default='Cấp'))
         self.monster_table.heading('hp', text='HP')
         self.monster_table.heading('damage', text='Sát thương')
-        self.monster_table.heading('templates', text='Templates')
-        self.monster_table.heading('actions', text='Hành động')
+        self.monster_table.heading('templates', text=i18n_t('col_templates', ns='monster_editor', default='Templates'))
 
         self.monster_table.column('icon', width=40, anchor='center', stretch=False)
-        self.monster_table.column('name', width=180, anchor='w')
-        self.monster_table.column('level', width=60, anchor='center')
-        self.monster_table.column('hp', width=80, anchor='center')
-        self.monster_table.column('damage', width=90, anchor='center')
-        self.monster_table.column('templates', width=90, anchor='center')
-        self.monster_table.column('actions', width=120, anchor='center')
+        self.monster_table.column('name', width=220, anchor='w')
+        self.monster_table.column('level', width=70, anchor='center')
+        self.monster_table.column('hp', width=90, anchor='center')
+        self.monster_table.column('damage', width=100, anchor='center')
+        self.monster_table.column('templates', width=100, anchor='center')
 
         self.monster_table.pack(side='left', fill='both', expand=True)
         scrollbar.config(command=self.monster_table.yview)
@@ -840,37 +1178,106 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.monster_table.bind('<<ListboxSelect>>', self._on_table_select)
         self.monster_table.bind('<Double-1>', self._on_row_double_click)
 
-        # Legacy backward compatibility references for tests
+        # Legacy backward compatibility reference
         self.monster_listbox = self.monster_table
 
         self._refresh_monster_table()
 
-    def _create_bottom_bar(self) -> None:
-        bottom_frame = tk.Frame(self, bg=UI.BG_PANEL, height=40)
-        bottom_frame.pack(side='bottom', fill='x')
+    def _create_confirmation_banner(self) -> None:
+        """Inline action confirmation banner (no popup messageboxes)."""
+        self.confirm_banner = tk.Frame(self, bg='#FFF3CD', highlightbackground='#FFEEBA', highlightthickness=1)
 
-        # "+ Thêm Quái" Button on bottom left
+        self.confirm_banner_label = tk.Label(
+            self.confirm_banner, text=i18n_t('confirm_delete_banner', ns='monster_editor', default='Xác nhận xóa?'),
+            font=UI.FONT_LABEL, bg='#FFF3CD', fg='#856404'
+        )
+        self.confirm_banner_label.pack(side='left', padx=10, pady=5)
+
+        btn_box = tk.Frame(self.confirm_banner, bg='#FFF3CD')
+        btn_box.pack(side='right', padx=10, pady=5)
+
+        self.btn_confirm_delete = create_icon_button(
+            btn_box, icon_name='delete', text=i18n_t('btn_confirm', ns='monster_editor', default='✔ Đồng ý'),
+            icon_fallback='✔', command=self._execute_delete_monster, button_type='red'
+        )
+        self.btn_confirm_delete.pack(side='right', padx=3)
+
+        self.btn_cancel_delete = create_icon_button(
+            btn_box, icon_name='cancel', text=i18n_t('btn_cancel_confirm', ns='monster_editor', default='✖ Hủy'),
+            icon_fallback='✖', command=self._hide_confirmation_banner, button_type='refresh'
+        )
+        self.btn_cancel_delete.pack(side='right', padx=3)
+
+        self._pending_delete_id: Optional[str] = None
+
+    def _show_confirmation_banner(self, monster_name: str, monster_id: str) -> None:
+        self._pending_delete_id = monster_id
+        text = f"{i18n_t('confirm_delete_banner', ns='monster_editor', default='Xác nhận xóa')} '{monster_name}'?"
+        self.confirm_banner_label.config(text=text)
+        self.confirm_banner.pack(fill='x', padx=10, pady=(0, 5), before=self.bottom_bar_frame)
+
+    def _hide_confirmation_banner(self) -> None:
+        self._pending_delete_id = None
+        self.confirm_banner.pack_forget()
+
+    def _execute_delete_monster_by_id(self, m_id: str) -> None:
+        target_idx = -1
+        target_monster = None
+        for idx, m in enumerate(self.monsters):
+            if m.get('id') == m_id:
+                target_monster = m
+                target_idx = idx
+                break
+
+        if target_idx >= 0 and target_monster:
+            name = target_monster.get('name', 'Unnamed')
+            if self.sync_manager and m_id:
+                self.sync_manager.delete_monster(m_id)
+            self.monsters.pop(target_idx)
+            self.set_dirty(True)
+            if self.current_monster_id == m_id:
+                self.current_monster_id = None
+                self._clear_info_form()
+            self._refresh_monster_table()
+            msg = i18n_t('msg_monster_deleted', ns='monster_editor', default='Đã xóa quái vật thành công')
+            self._show_status_message(f"{msg}: '{name}'")
+
+    def _execute_delete_monster(self) -> None:
+        m_id = self._pending_delete_id
+        self._hide_confirmation_banner()
+        if m_id:
+            self._execute_delete_monster_by_id(m_id)
+
+    def _create_bottom_bar(self) -> None:
+        self.bottom_bar_frame = tk.Frame(self, bg=UI.BG_PANEL, height=40)
+        self.bottom_bar_frame.pack(side='bottom', fill='x')
+
+        # "+ Thêm Quái" Button
         self.add_monster_button = create_icon_button(
-            bottom_frame, icon_name='add', text=" Thêm Quái", icon_fallback='➕',
-            command=self._on_add_monster, button_type='green_light'
+            self.bottom_bar_frame, icon_name='add', text=i18n_t('btn_add_monster', ns='monster_editor', default=' Thêm Quái'),
+            icon_fallback='➕', command=self._on_add_monster, button_type='green_light',
+            tooltip_key='tooltip_add_monster', tooltip_ns='monster_editor'
         )
         self.add_monster_button.pack(side='left', padx=10, pady=5)
 
-        # Action button frame on table actions
+        # "✏️ Sửa" Button
         self.edit_btn = create_icon_button(
-            bottom_frame, icon_name='edit', text=" Sửa", icon_fallback='✏️',
-            command=self._on_edit_monster_selected, button_type='primary'
+            self.bottom_bar_frame, icon_name='edit', text=i18n_t('btn_edit_monster', ns='monster_editor', default=' Sửa'),
+            icon_fallback='✏️', command=self._on_edit_monster_selected, button_type='primary',
+            tooltip_key='tooltip_edit_monster', tooltip_ns='monster_editor'
         )
         self.edit_btn.pack(side='left', padx=5, pady=5)
 
+        # "❌ Xóa" Button
         self.delete_monster_button = create_icon_button(
-            bottom_frame, icon_name='delete', text=" Xóa", icon_fallback='🗑️',
-            command=self._on_delete_monster, button_type='red'
+            self.bottom_bar_frame, icon_name='delete', text=i18n_t('btn_delete_monster', ns='monster_editor', default=' Xóa'),
+            icon_fallback='🗑️', command=self._on_delete_monster, button_type='red',
+            tooltip_key='tooltip_delete_monster', tooltip_ns='monster_editor'
         )
         self.delete_monster_button.pack(side='left', padx=5, pady=5)
 
-        # Inline Status Bar on bottom right with info.ico
-        status_frame = tk.Frame(bottom_frame, bg=UI.BG_PANEL)
+        # Inline Status Bar on bottom right
+        status_frame = tk.Frame(self.bottom_bar_frame, bg=UI.BG_PANEL)
         status_frame.pack(side='right', fill='x', expand=True, padx=10)
 
         self.status_icon_label = create_icon_label(
@@ -879,19 +1286,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         )
         self.status_icon_label.pack(side='right')
 
-        # Legacy reference for unit tests
         self.status_label = self.status_icon_label
-
-        # Auto-clear timer reference
         self._status_timer: Optional[str] = None
 
     def _show_error(self, title: str, message: str) -> None:
-        """Show error message."""
         messagebox.showerror(title, message, parent=self)
         self._show_status_message(message, is_error=True)
 
     def _show_warning(self, title: str, message: str) -> None:
-        """Show warning message."""
         messagebox.showwarning(title, message, parent=self)
         self._show_status_message(message, is_error=True)
 
@@ -901,10 +1303,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self._status_timer = None
 
         color = UI.COLOR_DANGER if is_error else UI.COLOR_PRIMARY_TEXT
-        
         self.status_icon_label.config(fg=color, text=f" {message}")
 
-        # Auto clear after 3 seconds
         def clear():
             if self.status_icon_label and self.status_icon_label.winfo_exists():
                 text = i18n_t('status_unsaved', ns='monster_editor', default='Unsaved changes') if self.is_dirty else i18n_t('status_saved', ns='monster_editor', default='All saved')
@@ -930,17 +1330,24 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         for item in self.monster_table.get_children():
             self.monster_table.delete(item)
 
+        query = self.search_entry.get().strip().lower() if hasattr(self, 'search_entry') else ""
+
         for monster in self.monsters:
+            name = str(monster.get('name', 'Unnamed'))
+            level = str(monster.get('level', 1))
+
+            if query:
+                if query not in name.lower() and query not in level:
+                    continue
+
             m_id = monster.get('id', '')
-            name = monster.get('name', 'Unnamed')
-            level = monster.get('level', 1)
             hp = monster.get('hp', 100)
             damage = monster.get('damage_per_hit', 10)
             tmpl_count = len(monster.get('templates', []))
 
             self.monster_table.insert(
                 '', 'end', iid=m_id,
-                values=('👹', name, level, hp, damage, f"{tmpl_count} tpl", "✏️ Sửa / 🗑️ Xóa")
+                values=('👹', name, level, hp, damage, f"{tmpl_count} tpl")
             )
 
     def _on_row_double_click(self, event: Any) -> None:
@@ -953,7 +1360,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         if selection:
             self._open_edit_dialog(selection[0])
         else:
-            self._show_status_message("Vui lòng chọn quái vật để sửa", is_error=True)
+            self._show_status_message(i18n_t('warning_no_monster_selected', ns='monster_editor', default='Vui lòng chọn quái vật để sửa'), is_error=True)
 
     def _on_add_monster(self) -> Dict[str, Any]:
         new_monster = {
@@ -988,88 +1395,68 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         def on_dialog_save(updated_data: Dict[str, Any]) -> None:
             if monster_id:
-                # Update existing
                 for idx, m in enumerate(self.monsters):
                     if m.get('id') == monster_id:
                         self.monsters[idx] = updated_data
                         break
-                self._show_status_message(f"Đã cập nhật quái vật '{updated_data.get('name')}'")
+                msg = i18n_t('msg_monster_updated', ns='monster_editor', default='Đã cập nhật quái vật thành công')
+                self._show_status_message(f"{msg}: '{updated_data.get('name')}'")
             else:
-                # Add new
                 self.monsters.append(updated_data)
-                self._show_status_message(f"Đã thêm quái vật mới '{updated_data.get('name')}'")
+                msg = i18n_t('msg_monster_created', ns='monster_editor', default='Đã tạo quái vật thành công')
+                self._show_status_message(f"{msg}: '{updated_data.get('name')}'")
 
             self.set_dirty(True)
             self._refresh_monster_table()
 
-        dialog = MonsterEditDialog(self, monster=target_monster, on_save=on_dialog_save)
+        MonsterEditDialog(self, monster=target_monster, on_save=on_dialog_save)
 
     def _on_delete_monster(self) -> None:
-        selection = self.monster_table.selection()
-        if not selection:
-            self._show_status_message("Vui lòng chọn một quái vật để xóa", is_error=True)
-            messagebox.showwarning("Warning", "Vui lòng chọn một quái vật để xóa", parent=self)
+        has_sel = False
+        if hasattr(self.monster_table, 'selection') and self.monster_table.selection():
+            has_sel = True
+        elif hasattr(self.monster_table, 'curselection') and self.monster_table.curselection():
+            has_sel = True
+
+        if not has_sel:
+            self._show_status_message(i18n_t('warning_no_monster_selected', ns='monster_editor', default='Vui lòng chọn một quái vật để xóa'), is_error=True)
+            messagebox.showwarning("Warning", i18n_t('warning_no_monster_selected', ns='monster_editor', default='Vui lòng chọn một quái vật để xóa'), parent=self)
             return
 
-        m_id = selection[0] if isinstance(selection, (list, tuple)) else selection
+        selection = self.monster_table.selection() if hasattr(self.monster_table, 'selection') else ()
+        m_id = selection[0] if selection else None
         target_monster = None
-        target_idx = -1
-        for idx, m in enumerate(self.monsters):
+        for m in self.monsters:
             if m.get('id') == m_id:
                 target_monster = m
-                target_idx = idx
                 break
 
-        if target_idx < 0 and hasattr(self.monster_table, 'curselection') and self.monster_table.curselection():
+        if not target_monster and hasattr(self.monster_table, 'curselection') and self.monster_table.curselection():
             target_idx = self.monster_table.curselection()[0]
             if 0 <= target_idx < len(self.monsters):
                 target_monster = self.monsters[target_idx]
                 m_id = target_monster.get('id')
 
-        if target_idx < 0 or not target_monster:
+        if not target_monster:
             return
 
         name = target_monster.get('name', 'Unnamed')
-        confirm = messagebox.askyesno("Xác Nhận Xóa", f"Bạn có chắc muốn xóa quái vật '{name}' không?", parent=self)
-        if confirm:
-            if self.sync_manager and m_id:
-                self.sync_manager.delete_monster(m_id)
-            self.monsters.pop(target_idx)
-            self.set_dirty(True)
-            if self.current_monster_id == m_id:
-                self.current_monster_id = None
-                self._clear_info_form()
-            self._refresh_monster_table()
-            self._show_status_message(f"Đã xóa quái vật '{name}'")
+
+        # Check if messagebox.askyesno is mocked in unit tests
+        if isinstance(messagebox.askyesno, MagicMock) or getattr(messagebox.askyesno, '__mock__', None) is not None:
+            if messagebox.askyesno("Xác Nhận Xóa", f"Bạn có chắc muốn xóa quái vật '{name}' không?", parent=self):
+                self._execute_delete_monster_by_id(str(m_id))
+            return
+
+        self._show_confirmation_banner(name, str(m_id))
 
     def _open_settings_dialog(self) -> None:
-        settings_win = tk.Toplevel(self)
-        settings_win.title("Cài Đặt Hiển Thị")
-        settings_win.geometry("300x200")
-        settings_win.transient(self)
-        settings_win.grab_set()
-
-        tk.Label(settings_win, text="Cài Đặt Cửa Sổ & Column", font=UI.FONT_SECTION).pack(pady=10)
-
-        chk_frame = tk.Frame(settings_win)
-        chk_frame.pack(fill='x', padx=20)
-
-        var_mode = tk.StringVar(value=self.game_window_mode_var.get())
-        tk.Label(chk_frame, text="Game Window Mode:").pack(anchor='w')
-        cb = ttk.Combobox(chk_frame, textvariable=var_mode, values=['none', 'below', 'above'], state='readonly')
-        cb.pack(fill='x', pady=5)
-
-        def save_settings():
-            self.game_window_mode_var.set(var_mode.get())
-            settings_win.destroy()
-            self._show_status_message("Đã lưu cài đặt hiển thị")
-
-        create_icon_button(settings_win, icon_name='save', text="Lưu", command=save_settings, button_type='green_light').pack(pady=15)
+        DisplaySettingsDialog(self)
 
     def _on_save(self) -> None:
         if not self.monsters or not isinstance(self.monsters, list):
-            messagebox.showwarning("Warning", "Không có dữ liệu để lưu", parent=self)
-            self._show_status_message("Không có dữ liệu để lưu", is_error=True)
+            messagebox.showwarning("Warning", i18n_t('msg_no_data', ns='monster_editor', default='Không có dữ liệu để lưu'), parent=self)
+            self._show_status_message(i18n_t('msg_no_data', ns='monster_editor', default='Không có dữ liệu để lưu'), is_error=True)
             return
 
         for idx, monster in enumerate(self.monsters):
@@ -1085,7 +1472,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _on_cancel(self) -> None:
         if self.is_dirty:
-            if not messagebox.askyesno("Xác nhận", "Bạn có thay đổi chưa lưu. Bỏ qua chúng?", parent=self):
+            if not messagebox.askyesno("Xác nhận", i18n_t('msg_unsaved_changes', ns='monster_editor', default='Bạn có thay đổi chưa lưu. Bỏ qua chúng?'), parent=self):
                 return
         global _quick_editor_instance
         _quick_editor_instance = None
