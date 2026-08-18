@@ -153,14 +153,15 @@ def test_roi_and_downscaling(vision_engine):
 def test_monster_pipeline_priority(vision_engine):
     """Test Fast Priority Pipeline: Fast HSV path executes first when available"""
     frame = np.zeros((400, 600, 3), dtype=np.uint8)
-    # Add target outline/HP bar
+    # Add target outline/HP bar (Red tag)
     cv2.rectangle(frame, (200, 200), (250, 230), (0, 0, 255), -1)
 
-    # Set engine HSV params
+    # Set engine HSV params & enable red threat level for this test
     vision_engine.set_params({
         'hsv_lower': (0, 150, 150),
         'hsv_upper': (10, 255, 255),
-        'hsv_min_area': 10
+        'hsv_min_area': 10,
+        'target_threat_levels': ["gray", "yellow", "red"]
     })
 
     detections = vision_engine.detect_monster_pipeline(frame, use_fast_hsv=True)
@@ -168,6 +169,48 @@ def test_monster_pipeline_priority(vision_engine):
     assert len(detections) > 0
     assert detections[0].method_used == "hsv_mask"
     assert abs(detections[0].x - 200) <= 2
+
+
+def test_multicolor_hsv_and_threat_filtering(vision_engine):
+    """Test Multi-Color HSV tag detection (Yellow, Gray, Red) and Threat Filtering"""
+    # 1. Test Frame with Yellow, Gray, and Red tags
+    frame = np.zeros((400, 600, 3), dtype=np.uint8)
+
+    # Yellow tag (BGR: 0, 255, 255 -> HSV ~ (30, 255, 255)) at (100, 100, 50, 20)
+    cv2.rectangle(frame, (100, 100), (150, 120), (0, 255, 255), -1)
+
+    # Gray tag (BGR: 180, 180, 180 -> HSV ~ (0, 0, 180)) at (200, 100, 50, 20)
+    cv2.rectangle(frame, (200, 100), (250, 120), (180, 180, 180), -1)
+
+    # Red tag (BGR: 0, 0, 255 -> HSV ~ (0, 255, 255)) at (300, 100, 50, 20)
+    cv2.rectangle(frame, (300, 100), (350, 120), (0, 0, 255), -1)
+
+    # By default, target_threat_levels is ["gray", "yellow"]. Red tag should be ignored.
+    dets_default = vision_engine.detect_hsv_target(frame, min_area=50)
+    assert len(dets_default) == 2
+    x_coords = [d.x for d in dets_default]
+    assert any(abs(x - 100) <= 2 for x in x_coords)  # Yellow detected
+    assert any(abs(x - 200) <= 2 for x in x_coords)  # Gray detected
+    assert not any(abs(x - 300) <= 2 for x in x_coords)  # Red ignored
+
+    # Enable "red" threat level in target_threat_levels: ["gray", "yellow", "red"]
+    dets_all = vision_engine.detect_hsv_target(
+        frame,
+        min_area=50,
+        target_threat_levels=["gray", "yellow", "red"]
+    )
+    assert len(dets_all) == 3
+    x_coords_all = [d.x for d in dets_all]
+    assert any(abs(x - 300) <= 2 for x in x_coords_all)  # Red now detected
+
+    # Test only "red" threat level enabled
+    dets_red_only = vision_engine.detect_hsv_target(
+        frame,
+        min_area=50,
+        target_threat_levels=["red"]
+    )
+    assert len(dets_red_only) == 1
+    assert abs(dets_red_only[0].x - 300) <= 2
 
 
 def test_edge_cases_empty_and_black_images(vision_engine):
