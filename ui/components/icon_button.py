@@ -451,7 +451,7 @@ def _attach_simple_tooltip(widget: Any, text: str, delay: int = 400):
     after_id = None
     
     def show_tooltip(event):
-        nonlocal tooltip_window, after_id
+        nonlocal after_id
         
         def _show():
             nonlocal tooltip_window

@@ -47,14 +47,15 @@ else:
 
 @dataclass
 class Detection:
-    """Single template detection result"""
+    """Single detection result"""
     x: int
     y: int
     w: int
     h: int
     score: float
     template_id: str
-    scale: float
+    scale: float = 1.0
+    method_used: str = "template"
     timestamp: float = 0.0
     
     def to_dict(self) -> Dict[str, Any]:
@@ -158,6 +159,12 @@ class VisionEngine:
             'tracker_type': 'CSRT',  # CSRT or KCF
             'match_method': cv2.TM_CCOEFF_NORMED,  # Matching method
             'fps_limit': 15,  # UI update rate (10-15 FPS default)
+            'downscale_factor': 1.0,  # Default downscale factor for fast processing
+            'feature_type': 'ORB',  # 'ORB' or 'SIFT'
+            'hsv_lower': (0, 120, 120),  # Default HSV lower range (e.g. Red target/health bar)
+            'hsv_upper': (10, 255, 255),  # Default HSV upper range
+            'hsv_min_area': 50,  # Noise filtering min area
+            'hsv_max_area': 100000,  # Max contour area
         }
         
         # State
@@ -808,6 +815,351 @@ class VisionEngine:
         except Exception as e:
             logger.error(f"Error saving region config: {e}")
     
+    # =====================================================================
+    # Advanced Detection: HSV Color Masking, Feature Matching & Fast Priority Pipeline
+    # =====================================================================
+
+    def detect_hsv_target(
+        self,
+        frame: np.ndarray,
+        lower_hsv: Optional[Tuple[int, int, int]] = None,
+        upper_hsv: Optional[Tuple[int, int, int]] = None,
+        min_area: Optional[float] = None,
+        max_area: Optional[float] = None,
+        roi: Optional[Tuple[int, int, int, int]] = None,
+        downscale_factor: float = 1.0
+    ) -> List[Detection]:
+        """
+        Fast HSV color mask / Target outline / Health bar detection.
+
+        Args:
+            frame: Input BGR frame
+            lower_hsv: Lower HSV threshold tuple (H, S, V)
+            upper_hsv: Upper HSV threshold tuple (H, S, V)
+            min_area: Minimum contour area
+            max_area: Maximum contour area
+            roi: Optional ROI tuple (x, y, w, h)
+            downscale_factor: Scale factor <= 1.0 for processing speedup
+
+        Returns:
+            List of Detection objects
+        """
+        if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+            return []
+
+        lh = lower_hsv if lower_hsv is not None else self.params.get('hsv_lower', (0, 120, 120))
+        uh = upper_hsv if upper_hsv is not None else self.params.get('hsv_upper', (10, 255, 255))
+        min_a = min_area if min_area is not None else self.params.get('hsv_min_area', 50)
+        max_a = max_area if max_area is not None else self.params.get('hsv_max_area', 100000)
+
+        frame_h, frame_w = frame.shape[:2]
+
+        # Crop ROI
+        offset_x, offset_y = 0, 0
+        if roi is not None:
+            rx, ry, rw, rh = roi
+            # Clamp ROI bounds
+            rx = max(0, min(rx, frame_w - 1))
+            ry = max(0, min(ry, frame_h - 1))
+            rw = max(1, min(rw, frame_w - rx))
+            rh = max(1, min(rh, frame_h - ry))
+            work_frame = frame[ry:ry+rh, rx:rx+rw]
+            offset_x, offset_y = rx, ry
+        else:
+            work_frame = frame
+
+        if work_frame.size == 0 or work_frame.shape[0] == 0 or work_frame.shape[1] == 0:
+            return []
+
+        # Downscale if requested
+        if downscale_factor < 1.0 and downscale_factor > 0.0:
+            scaled_w = max(1, int(work_frame.shape[1] * downscale_factor))
+            scaled_h = max(1, int(work_frame.shape[0] * downscale_factor))
+            proc_frame = cv2.resize(work_frame, (scaled_w, scaled_h))
+            scale_x = work_frame.shape[1] / float(scaled_w)
+            scale_y = work_frame.shape[0] / float(scaled_h)
+        else:
+            proc_frame = work_frame
+            scale_x, scale_y = 1.0, 1.0
+
+        hsv = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2HSV)
+
+        # Handle wrap-around hue if lower_hsv hue is higher than upper_hsv hue or for red (e.g. 170-180 and 0-10)
+        lower_b = np.array(lh, dtype=np.uint8)
+        upper_b = np.array(uh, dtype=np.uint8)
+        mask = cv2.inRange(hsv, lower_b, upper_b)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Guard against empty contours
+        if not contours:
+            return []
+
+        detections = []
+        now = time.time()
+
+        for cnt in contours:
+            area_proc = cv2.contourArea(cnt)
+            # Re-scale area check to unscaled domain
+            area_orig = area_proc * scale_x * scale_y
+            if min_a <= area_orig <= max_a:
+                bx, by, bw, bh = cv2.boundingRect(cnt)
+                # Remap to original full frame coordinates
+                orig_x = int(offset_x + bx * scale_x)
+                orig_y = int(offset_y + by * scale_y)
+                orig_w = int(bw * scale_x)
+                orig_h = int(bh * scale_y)
+
+                # Clamp coordinates to valid frame bounds
+                orig_x = max(0, min(orig_x, frame_w - 1))
+                orig_y = max(0, min(orig_y, frame_h - 1))
+                orig_w = max(1, min(orig_w, frame_w - orig_x))
+                orig_h = max(1, min(orig_h, frame_h - orig_y))
+
+                score = min(1.0, float(area_orig / max_a)) if max_a > 0 else 1.0
+
+                detections.append(Detection(
+                    x=orig_x,
+                    y=orig_y,
+                    w=orig_w,
+                    h=orig_h,
+                    score=score if score > 0 else 0.85,
+                    template_id="hsv_target",
+                    scale=1.0,
+                    method_used="hsv_mask",
+                    timestamp=now
+                ))
+
+        detections.sort(key=lambda d: d.w * d.h, reverse=True)
+        return detections
+
+    def detect_features(
+        self,
+        frame: np.ndarray,
+        template: Template,
+        feature_type: Optional[str] = None,
+        min_matches: int = 4,
+        roi: Optional[Tuple[int, int, int, int]] = None,
+        downscale_factor: float = 1.0
+    ) -> List[Detection]:
+        """
+        Feature matching (ORB/SIFT) supporting 3D rotation, scale, and perspective invariance.
+
+        Args:
+            frame: Input BGR frame
+            template: Reference Template object
+            feature_type: 'ORB' or 'SIFT'
+            min_matches: Minimum good matches required for homography
+            roi: Optional ROI tuple (x, y, w, h)
+            downscale_factor: Scale factor <= 1.0 for processing speedup
+
+        Returns:
+            List of Detection objects
+        """
+        if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+            return []
+        if template is None or template.image is None or template.image.size == 0:
+            return []
+
+        ftype = (feature_type or self.params.get('feature_type', 'ORB')).upper()
+        frame_h, frame_w = frame.shape[:2]
+
+        # Crop ROI
+        offset_x, offset_y = 0, 0
+        if roi is not None:
+            rx, ry, rw, rh = roi
+            rx = max(0, min(rx, frame_w - 1))
+            ry = max(0, min(ry, frame_h - 1))
+            rw = max(1, min(rw, frame_w - rx))
+            rh = max(1, min(rh, frame_h - ry))
+            work_frame = frame[ry:ry+rh, rx:rx+rw]
+            offset_x, offset_y = rx, ry
+        else:
+            work_frame = frame
+
+        if work_frame.size == 0 or work_frame.shape[0] == 0 or work_frame.shape[1] == 0:
+            return []
+
+        # Downscale if requested
+        if downscale_factor < 1.0 and downscale_factor > 0.0:
+            scaled_w = max(1, int(work_frame.shape[1] * downscale_factor))
+            scaled_h = max(1, int(work_frame.shape[0] * downscale_factor))
+            proc_frame = cv2.resize(work_frame, (scaled_w, scaled_h))
+            scale_x = work_frame.shape[1] / float(scaled_w)
+            scale_y = work_frame.shape[0] / float(scaled_h)
+        else:
+            proc_frame = work_frame
+            scale_x, scale_y = 1.0, 1.0
+
+        # Initialize feature detector
+        if ftype == 'SIFT':
+            if not hasattr(cv2, 'SIFT_create'):
+                logger.warning("SIFT not available in OpenCV build, falling back to ORB")
+                detector = cv2.ORB_create(nfeatures=500)
+                norm = cv2.NORM_HAMMING
+            else:
+                detector = cv2.SIFT_create(nfeatures=500)
+                norm = cv2.NORM_L2
+        else:
+            detector = cv2.ORB_create(nfeatures=500)
+            norm = cv2.NORM_HAMMING
+
+        gray_frame = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2GRAY)
+        gray_template = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+
+        kp1, des1 = detector.detectAndCompute(gray_template, None)
+        kp2, des2 = detector.detectAndCompute(gray_frame, None)
+
+        # Guard Clauses for descriptors
+        if des1 is None or des2 is None or len(kp1) < 2 or len(kp2) < 2:
+            return []
+
+        matcher = cv2.BFMatcher(norm, crossCheck=False)
+
+        try:
+            matches = matcher.knnMatch(des1, des2, k=2)
+        except Exception as e:
+            logger.error(f"Error in feature matching: {e}")
+            return []
+
+        # Apply Lowe's ratio test
+        good_matches = []
+        for match in matches:
+            if len(match) == 2:
+                m, n = match
+                if m.distance < 0.75 * n.distance:
+                    good_matches.append(m)
+
+        # Guard Clause for homography calculation (requires >= 4 points)
+        if len(good_matches) < max(4, min_matches):
+            return []
+
+        src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+
+        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+        if M is None:
+            return []
+
+        th, tw = gray_template.shape
+        pts = np.float32([[0, 0], [0, th - 1], [tw - 1, th - 1], [tw - 1, 0]]).reshape(-1, 1, 2)
+        try:
+            dst = cv2.perspectiveTransform(pts, M)
+        except Exception:
+            return []
+
+        # Calculate bounding box in processed frame
+        x_coords = dst[:, 0, 0]
+        y_coords = dst[:, 0, 1]
+        min_x, max_x = np.min(x_coords), np.max(x_coords)
+        min_y, max_y = np.min(y_coords), np.max(y_coords)
+
+        # Remap coordinates back to original frame
+        orig_x = int(offset_x + min_x * scale_x)
+        orig_y = int(offset_y + min_y * scale_y)
+        orig_w = int((max_x - min_x) * scale_x)
+        orig_h = int((max_y - min_y) * scale_y)
+
+        # Clamp remapped screen coordinates strictly within valid bounds
+        orig_x = max(0, min(orig_x, frame_w - 1))
+        orig_y = max(0, min(orig_y, frame_h - 1))
+        orig_w = max(1, min(orig_w, frame_w - orig_x))
+        orig_h = max(1, min(orig_h, frame_h - orig_y))
+
+        score = min(1.0, float(len(good_matches)) / 50.0)
+
+        detection = Detection(
+            x=orig_x,
+            y=orig_y,
+            w=orig_w,
+            h=orig_h,
+            score=score,
+            template_id=template.id,
+            scale=1.0,
+            method_used=ftype.lower() + "_features",
+            timestamp=time.time()
+        )
+
+        return [detection]
+
+    def detect_monster_pipeline(
+        self,
+        frame: np.ndarray,
+        template_ids: Optional[List[str]] = None,
+        roi: Optional[Tuple[int, int, int, int]] = None,
+        downscale_factor: Optional[float] = None,
+        confidence_threshold: float = 0.6,
+        use_fast_hsv: bool = True
+    ) -> List[Detection]:
+        """
+        Fast Priority Pipeline:
+        1. Fast Path: HSV color mask / Target HUD (HP bar or lock-on circle). Returns immediately if detected.
+        2. Fallback Path: Feature matching / Multi-template matching across multiple views/scales if fast path fails.
+
+        Args:
+            frame: Input BGR image
+            template_ids: List of target template IDs to search for (e.g. front/side/back views)
+            roi: Optional ROI tuple (x, y, w, h)
+            downscale_factor: Frame downscaling factor
+            confidence_threshold: Threshold to accept secondary detections
+            use_fast_hsv: Whether to execute fast HSV priority check
+
+        Returns:
+            List of Detection objects
+        """
+        if frame is None or frame.size == 0:
+            return []
+
+        scale_factor = downscale_factor if downscale_factor is not None else self.params.get('downscale_factor', 1.0)
+        search_roi = roi if roi is not None else self.default_region
+
+        # Step 1: Fast Priority Path (HSV Masking / Target HUD)
+        if use_fast_hsv:
+            hsv_detections = self.detect_hsv_target(
+                frame,
+                roi=search_roi,
+                downscale_factor=scale_factor
+            )
+            if hsv_detections:
+                logger.debug(f"[Pipeline] Fast HSV target detected ({len(hsv_detections)} found)")
+                return hsv_detections
+
+        # Step 2: Fallback Path (Feature Matching & Multi-template / Multi-scale)
+        templates_to_search = []
+        if template_ids:
+            templates_to_search = [self.templates[tid] for tid in template_ids if tid in self.templates and self.templates[tid].enabled]
+        else:
+            templates_to_search = [t for t in self.templates.values() if t.enabled]
+
+        secondary_detections = []
+
+        # Try Feature matching for each view/template
+        for tpl in templates_to_search:
+            feat_dets = self.detect_features(
+                frame,
+                template=tpl,
+                roi=search_roi,
+                downscale_factor=scale_factor
+            )
+            for d in feat_dets:
+                if d.score >= confidence_threshold:
+                    secondary_detections.append(d)
+
+        # If feature matching found targets, return them
+        if secondary_detections:
+            secondary_detections.sort(key=lambda d: d.score, reverse=True)
+            return secondary_detections
+
+        # Fallback to multi-template / multi-scale standard template matching
+        tmpl_dets = self.match_templates(
+            frame,
+            roi=search_roi,
+            templates=template_ids,
+            scales=[0.8, 1.0, 1.2]
+        )
+        filtered_tmpl_dets = [d for d in tmpl_dets if d.score >= confidence_threshold]
+        return filtered_tmpl_dets
+
     # =====================================================================
     # Utility
     # =====================================================================
