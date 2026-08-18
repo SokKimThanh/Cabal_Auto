@@ -165,6 +165,12 @@ class VisionEngine:
             'hsv_upper': (10, 255, 255),  # Default HSV upper range
             'hsv_min_area': 50,  # Noise filtering min area
             'hsv_max_area': 100000,  # Max contour area
+            'target_threat_levels': ["gray", "yellow"],  # Enabled threat levels ("red" disabled by default)
+            'hsv_ranges': {
+                'yellow': [((20, 100, 100), (35, 255, 255))],
+                'gray': [((0, 0, 150), (180, 30, 230))],  # Tight S (0-30) & V (150-230) for gray tags
+                'red': [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))],  # Dual range for Red
+            },
         }
         
         # State
@@ -856,10 +862,11 @@ class VisionEngine:
         min_area: Optional[float] = None,
         max_area: Optional[float] = None,
         roi: Optional[Tuple[int, int, int, int]] = None,
-        downscale_factor: float = 1.0
+        downscale_factor: float = 1.0,
+        target_threat_levels: Optional[List[str]] = None
     ) -> List[Detection]:
         """
-        Fast HSV color mask / Target outline / Health bar detection.
+        Fast Multi-Color HSV mask / Target outline / Threat filtering detection.
 
         Args:
             frame: Input BGR frame
@@ -869,6 +876,7 @@ class VisionEngine:
             max_area: Maximum contour area
             roi: Optional ROI tuple (x, y, w, h)
             downscale_factor: Scale factor <= 1.0 for processing speedup
+            target_threat_levels: List of active threat levels to detect (e.g. ['gray', 'yellow', 'red'])
 
         Returns:
             List of Detection objects
@@ -876,8 +884,6 @@ class VisionEngine:
         if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
             return []
 
-        lh = lower_hsv if lower_hsv is not None else self.params.get('hsv_lower', (0, 120, 120))
-        uh = upper_hsv if upper_hsv is not None else self.params.get('hsv_upper', (10, 255, 255))
         min_a = min_area if min_area is not None else self.params.get('hsv_min_area', 50)
         max_a = max_area if max_area is not None else self.params.get('hsv_max_area', 100000)
 
@@ -913,10 +919,61 @@ class VisionEngine:
 
         hsv = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2HSV)
 
-        # Handle wrap-around hue if lower_hsv hue is higher than upper_hsv hue or for red (e.g. 170-180 and 0-10)
-        lower_b = np.array(lh, dtype=np.uint8)
-        upper_b = np.array(uh, dtype=np.uint8)
-        mask = cv2.inRange(hsv, lower_b, upper_b)
+        # Active threat levels configuration
+        active_levels = target_threat_levels if target_threat_levels is not None else self.params.get('target_threat_levels', ["gray", "yellow"])
+        active_levels_lower = [str(l).lower() for l in active_levels]
+
+        hsv_ranges = self.params.get('hsv_ranges', {
+            'yellow': [((20, 100, 100), (35, 255, 255))],
+            'gray': [((0, 0, 150), (180, 30, 230))],
+            'red': [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))]
+        })
+
+        if lower_hsv is not None and upper_hsv is not None:
+            lower_b = np.array(lower_hsv, dtype=np.uint8)
+            upper_b = np.array(upper_hsv, dtype=np.uint8)
+            if lower_b[0] > upper_b[0]:
+                m1 = cv2.inRange(hsv, np.array([0, lower_b[1], lower_b[2]], dtype=np.uint8), upper_b)
+                m2 = cv2.inRange(hsv, lower_b, np.array([180, upper_b[1], upper_b[2]], dtype=np.uint8))
+                mask = cv2.bitwise_or(m1, m2)
+            else:
+                mask = cv2.inRange(hsv, lower_b, upper_b)
+            apply_red_filter = (target_threat_levels is not None and "red" not in active_levels_lower)
+        else:
+            # Build combined mask using cv2.bitwise_or() based on active target colors
+            combined_mask = None
+            for level in active_levels_lower:
+                ranges = hsv_ranges.get(level, [])
+                for r_lower, r_upper in ranges:
+                    sub_m = cv2.inRange(
+                        hsv,
+                        np.array(r_lower, dtype=np.uint8),
+                        np.array(r_upper, dtype=np.uint8)
+                    )
+                    if combined_mask is None:
+                        combined_mask = sub_m
+                    else:
+                        combined_mask = cv2.bitwise_or(combined_mask, sub_m)
+
+            if combined_mask is None:
+                return []
+            mask = combined_mask
+            apply_red_filter = ("red" not in active_levels_lower)
+
+        # Build red mask for threat filtering if red is disabled
+        red_mask = None
+        if apply_red_filter:
+            red_ranges = hsv_ranges.get('red', [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))])
+            for r_lower, r_upper in red_ranges:
+                sub_r = cv2.inRange(
+                    hsv,
+                    np.array(r_lower, dtype=np.uint8),
+                    np.array(r_upper, dtype=np.uint8)
+                )
+                if red_mask is None:
+                    red_mask = sub_r
+                else:
+                    red_mask = cv2.bitwise_or(red_mask, sub_r)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -933,6 +990,16 @@ class VisionEngine:
             area_orig = area_proc * scale_x * scale_y
             if min_a <= area_orig <= max_a:
                 bx, by, bw, bh = cv2.boundingRect(cnt)
+
+                # Threat filtering: Ignore red monster tag if "red" threat level disabled to prevent bot suicide
+                if apply_red_filter and red_mask is not None:
+                    red_roi = red_mask[by:by+bh, bx:bx+bw]
+                    if red_roi.size > 0:
+                        red_pixel_count = cv2.countNonZero(red_roi)
+                        if red_pixel_count > 0.25 * (bw * bh):
+                            logger.debug("Red monster tag detected but 'red' threat level disabled; ignoring to prevent bot suicide")
+                            continue
+
                 # Remap to original full frame coordinates
                 orig_x = int(offset_x + bx * scale_x)
                 orig_y = int(offset_y + by * scale_y)
