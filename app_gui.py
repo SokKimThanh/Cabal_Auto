@@ -4895,9 +4895,7 @@ Alternative Solutions:
             try:
                 db = MonsterDatabase()
                 db.init_db()
-                cursor = db.conn.cursor()
-                cursor.execute("SELECT COUNT(*) FROM monsters")
-                total_monsters = cursor.fetchone()[0]
+                total_monsters = db.get_monster_count()
                 
                 # Connection successful
                 status_msg = f"✓ CSDL: Đã kết nối (monsters.db) | Loaded {total_monsters} quái vật"
@@ -9728,6 +9726,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
