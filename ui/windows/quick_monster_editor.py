@@ -1396,6 +1396,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.current_page = 1
         self._refresh_monster_table()
 
+    def _refresh_table_headings(self, register_commands: bool = False) -> None:
+        for column in list(self.monster_table['columns']):
+            heading_kwargs = {'text': self._column_heading_text(column)}
+            if register_commands:
+                heading_kwargs['command'] = lambda c=column: self._on_sort_column(c)
+            self.monster_table.heading(column, **heading_kwargs)
+
     def _local_sort_key(self, monster: Dict[str, Any], column: str) -> Any:
         if column in {'name', 'dungeonId', 'serverBossType'}:
             if column == 'dungeonId':
@@ -1722,6 +1729,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 self.monster_table.column('resistSkillAmp', width=120, anchor='center', stretch=False)
             if 'resistCritDamage' in self.monster_table['columns']:
                 self.monster_table.column('resistCritDamage', width=130, anchor='center', stretch=False)
+        else:
+            self._refresh_table_headings(register_commands=False)
 
         for item in self.monster_table.get_children():
             self.monster_table.delete(item)

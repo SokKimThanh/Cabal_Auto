@@ -128,3 +128,34 @@ def test_clicking_hp_header_toggles_numeric_sort(monkeypatch, tmp_path: Path) ->
         if editor is not None:
             editor.destroy()
         root.destroy()
+
+
+def test_sort_click_updates_heading_state(monkeypatch, tmp_path: Path) -> None:
+    editor_module = _load_editor_module()
+    db = _build_db(
+        tmp_path,
+        [
+            {"id": "m1", "name": "Mob C", "hp": 40, "damage_per_hit": 8},
+            {"id": "m2", "name": "Mob A", "hp": 10, "damage_per_hit": 5},
+        ],
+    )
+    monkeypatch.setattr(editor_module, "get_db", lambda: db)
+
+    root = tk.Tk()
+    root.withdraw()
+    editor = None
+    try:
+        editor = editor_module.QuickMonsterEditor(root)
+
+        editor._on_sort_column("hp")
+        assert editor.sort_column == "hp"
+        assert editor.sort_order == "ASC"
+        assert editor.monster_table.heading("hp")["text"].endswith("▲")
+
+        editor._on_sort_column("hp")
+        assert editor.sort_order == "DESC"
+        assert editor.monster_table.heading("hp")["text"].endswith("▼")
+    finally:
+        if editor is not None:
+            editor.destroy()
+        root.destroy()
