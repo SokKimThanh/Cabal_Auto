@@ -1,5 +1,6 @@
 import sqlite3
 from pathlib import Path
+import re
 
 import pytest
 
@@ -48,19 +49,19 @@ def test_init_db_reuses_existing_database_without_overwriting(monkeypatch, tmp_p
 
     db = MonsterDatabase()
     db.init_db()
-    db.conn.execute(
-        """
-        INSERT INTO monsters (id, name, level, hp, defense, attackRate, defenseRate, hpRecharge,
-            accuracy, penetration, damageReduction, evasion, resistCritRate,
-            primaryAttackMin, primaryAttackMax, secondaryAttackMin, secondaryAttackMax,
-            ignoreAccuracy, ignoreDamageReduction, ignorePenetration, absoluteDamage,
-            resistSkillAmp, resistCritDamage, resistSuppress, resistSilence,
-            resistDiffDamage, hpProportionDamage, serverBossType, dungeonId, exp)
-        VALUES (?, ?, 1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0)
-        """,
-        ("m-existing", "Existing Monster"),
-    )
-    db.conn.commit()
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO monsters (id, name, level, hp, defense, attackRate, defenseRate, hpRecharge,
+                accuracy, penetration, damageReduction, evasion, resistCritRate,
+                primaryAttackMin, primaryAttackMax, secondaryAttackMin, secondaryAttackMax,
+                ignoreAccuracy, ignoreDamageReduction, ignorePenetration, absoluteDamage,
+                resistSkillAmp, resistCritDamage, resistSuppress, resistSilence,
+                resistDiffDamage, hpProportionDamage, serverBossType, dungeonId, exp)
+            VALUES (?, ?, 1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0)
+            """,
+            ("m-existing", "Existing Monster"),
+        )
 
     stub = _AppStub()
     App._check_db_connection(stub)
@@ -70,3 +71,37 @@ def test_init_db_reuses_existing_database_without_overwriting(monkeypatch, tmp_p
 
     assert count == 1
     assert "Loaded 1 quái vật" in stub.hunt_status.get()
+
+
+def test_init_db_seeds_location_and_monster_type_tables(tmp_path: Path) -> None:
+    db_path = tmp_path / "monsters.db"
+    source_data_dir = Path("F:/Cabal_Auto.worktrees/tdd-automation-testing-upgrade/lib/data")
+    db = MonsterDatabase(db_path=db_path, data_dir=source_data_dir)
+
+    db.init_db()
+
+    location_seed = (source_data_dir / "location-db-cabal.txt").read_text(encoding="utf-8")
+    monster_type_seed = (source_data_dir / "type-monster-db-cabal.txt").read_text(encoding="utf-8")
+    expected_locations = len(re.findall(r"(\d+):\s*\"([^\"]+)\"", location_seed))
+    expected_types = len(re.findall(r'value:\s*"(\d+)"\s*,\s*label:\s*"([^\"]+)"', monster_type_seed))
+
+    with sqlite3.connect(db_path) as conn:
+        location_count = conn.execute("SELECT COUNT(*) FROM location").fetchone()[0]
+        monster_type_count = conn.execute("SELECT COUNT(*) FROM monster_type").fetchone()[0]
+
+    assert location_count == expected_locations
+    assert monster_type_count == expected_types
+
+
+def test_init_db_logs_warning_when_seed_files_are_missing(caplog, tmp_path: Path) -> None:
+    db_path = tmp_path / "monsters.db"
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    db = MonsterDatabase(db_path=db_path, data_dir=data_dir)
+
+    with caplog.at_level("WARNING"):
+        db.init_db()
+
+    assert db_path.exists()
+    assert "Missing location seed file" in caplog.text
+    assert "Missing monster type seed file" in caplog.text
