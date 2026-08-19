@@ -39,9 +39,11 @@ class _AppStub:
 
 
 def test_init_db_creates_database_and_updates_status(monkeypatch, tmp_path: Path) -> None:
+    from database import close_db
+    close_db()
+
     db_path = tmp_path / "monsters.db"
     monkeypatch.setattr(MonsterDatabase, "DB_PATH", db_path)
-
     # Bỏ qua messagebox trong test
     import tkinter.messagebox as mb
     monkeypatch.setattr(mb, "showwarning", lambda *a, **kw: None)
