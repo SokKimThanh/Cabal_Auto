@@ -1067,6 +1067,9 @@ class App(tk.Tk):
 
         # Auto bring-to-front saved window (after setup check)
         self.after(1000, self._auto_bring_to_front_on_startup)
+        
+        # Check database connection on startup
+        self.after(150, self._check_db_connection)
 
     def destroy(self):
         # Phase 7: Cleanup monster tracking components
@@ -4883,6 +4886,39 @@ Alternative Solutions:
 
         except Exception as e:
             print(f"[Auto Bring] Error: {e}")
+
+    def _check_db_connection(self):
+        """Check database connection on startup and update status bar"""
+        try:
+            from database import MonsterDatabase
+            
+            db_path = Path("monsters.db")
+            
+            # Try to establish connection
+            try:
+                db = MonsterDatabase()
+                # Try a simple query to verify connection
+                cursor = db.conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM monsters")
+                total_monsters = cursor.fetchone()[0]
+                db.conn.close()
+                
+                # Connection successful
+                status_msg = f"✓ CSDL: Đã kết nối (monsters.db) | Loaded {total_monsters} quái vật"
+                if hasattr(self, 'hunt_status'):
+                    self.hunt_status.set(status_msg)
+                print(f"[DB Connection] ✓ Database connected successfully. Total monsters: {total_monsters}")
+            except Exception as e:
+                # Connection failed
+                status_msg = f"❌ Lỗi CSDL: Không thể kết nối file monsters.db!"
+                if hasattr(self, 'hunt_status'):
+                    self.hunt_status.set(status_msg)
+                print(f"[DB Connection] ✗ Failed to connect to database: {e}")
+        except ImportError:
+            # database module not available
+            print("[DB Connection] Database module not available")
+        except Exception as e:
+            print(f"[DB Connection] Unexpected error: {e}")
 
     def on_hunt_save(self):
         try:
