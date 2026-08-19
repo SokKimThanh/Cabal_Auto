@@ -4,7 +4,8 @@ import re
 
 import pytest
 
-from database import MonsterDatabase
+import app_gui
+from database import MonsterDatabase, close_db
 from app_gui import App
 
 
@@ -105,3 +106,33 @@ def test_init_db_logs_warning_when_seed_files_are_missing(caplog, tmp_path: Path
     assert db_path.exists()
     assert "Missing location seed file" in caplog.text
     assert "Missing monster type seed file" in caplog.text
+
+
+def test_monster_library_roundtrip_uses_database(monkeypatch, tmp_path: Path) -> None:
+    db_path = tmp_path / "monsters.db"
+    json_path = tmp_path / "monsters.json"
+    monkeypatch.setattr(MonsterDatabase, "DB_PATH", db_path)
+    monkeypatch.setattr(app_gui, "MONSTER_DB_PATH", json_path)
+    close_db()
+
+    app_gui.save_monster_library(
+        [
+            {
+                "id": "lib-1",
+                "name": "Goblin",
+                "hp": 150,
+                "damage_per_hit": 20,
+                "description": "DB only",
+                "template": "",
+                "templates": [],
+                "training_mode": False,
+            }
+        ]
+    )
+    loaded = app_gui.load_monster_library()
+
+    assert len(loaded) == 1
+    assert loaded[0]["name"] == "Goblin"
+    assert loaded[0]["damage_per_hit"] == 20
+    assert not json_path.exists()
+    close_db()

@@ -301,11 +301,10 @@ def _sanitize_templates(value):
 
 
 def load_monster_library():
-    if not MONSTER_DB_PATH.exists():
-        return []
     try:
-        with open(MONSTER_DB_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        from database import get_db
+
+        data = get_db().get_all_monsters(limit=5000)
         monsters = []
         if isinstance(data, list):
             for item in data:
@@ -328,6 +327,7 @@ def load_monster_library():
                 templates = _sanitize_templates(item.get("templates"))
                 monsters.append(
                     {
+                        "id": str(item.get("id", "") or "").strip(),
                         "name": name,
                         "hp": hp,
                         "damage_per_hit": dmg,
@@ -363,6 +363,7 @@ def save_monster_library(monsters):
         templates = _sanitize_templates(item.get("templates"))
         safe.append(
             {
+                "id": str(item.get("id", "") or "").strip(),
                 "name": name,
                 "hp": hp,
                 "damage_per_hit": dmg,
@@ -373,8 +374,9 @@ def save_monster_library(monsters):
                 "templates": templates,
             }
         )
-    with open(MONSTER_DB_PATH, "w", encoding="utf-8") as f:
-        json.dump(safe, f, ensure_ascii=False, indent=2)
+    from database import get_db
+
+    get_db().replace_monsters(safe)
 
 
 def load_skill_library():
@@ -9726,5 +9728,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
