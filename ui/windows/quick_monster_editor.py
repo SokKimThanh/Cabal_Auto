@@ -2416,11 +2416,15 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.monster_table.insert("", "end", iid=iid, values=values)
 
         # Áp dụng sắp xếp hiện tại
-        if hasattr(self, 'sort_column') and self.sort_column:
+        if hasattr(self, "sort_column") and self.sort_column:
             if self.sort_column not in self.visible_columns:
-                self.sort_column = self.visible_columns[0] if self.visible_columns else ''
+                self.sort_column = self.visible_columns[0] if self.visible_columns else ""
             if self.sort_column:
+                _prev_reverse = self.sort_reverse
                 self._sort_table(self.sort_column)
+                # _sort_table() toggle sort_reverse khi gọi lại cùng cột; gọi lần 2 để giữ nguyên hướng sort hiện tại
+                if self.sort_reverse != _prev_reverse:
+                    self._sort_table(self.sort_column)
 
         # Update stats label with record count and pagination info
         self._update_stats_label()
