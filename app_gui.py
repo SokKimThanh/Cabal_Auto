@@ -1776,6 +1776,21 @@ Alternative Solutions:
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
 
+        # DB Status Bar (bottom of window)
+        self._db_status_var = tk.StringVar(value="⏳ Đang kiểm tra CSDL...")
+        self._db_status_bar = tk.Label(
+            self,
+            textvariable=self._db_status_var,
+            anchor="w",
+            padx=8,
+            pady=3,
+            font=("Arial", 9),
+            bg="#e8e8e8",
+            fg="#555555",
+            relief="sunken",
+        )
+        self._db_status_bar.pack(fill="x", side="bottom")
+
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
@@ -4888,33 +4903,64 @@ Alternative Solutions:
             print(f"[Auto Bring] Error: {e}")
 
     def _check_db_connection(self):
-        """Check database connection on startup and update status bar"""
+        """Kiểm tra tình trạng CSDL khi khởi động và cập nhật thanh trạng thái."""
         try:
-            from database import MonsterDatabase
+            from database import check_db_health, init_database
 
+            # Đảm bảo schema + seed đã được khởi tạo
             try:
-                db = MonsterDatabase()
-                db.init_db()
-                cursor = db.conn.cursor()
-                cursor.execute("SELECT COUNT(*) FROM monsters")
-                total_monsters = cursor.fetchone()[0]
-                
-                # Connection successful
-                status_msg = f"✓ CSDL: Đã kết nối (monsters.db) | Loaded {total_monsters} quái vật"
-                if hasattr(self, 'hunt_status'):
-                    self.hunt_status.set(status_msg)
-                print(f"[DB Connection] ✓ Database connected successfully. Total monsters: {total_monsters}")
-            except Exception as e:
-                # Connection failed
-                status_msg = f"❌ Lỗi CSDL: Không thể kết nối file monsters.db!"
-                if hasattr(self, 'hunt_status'):
-                    self.hunt_status.set(status_msg)
-                print(f"[DB Connection] ✗ Failed to connect to database: {e}")
+                init_database()
+            except Exception as init_err:
+                print(f"[DB] init_database error (non-fatal): {init_err}")
+
+            result = check_db_health()
+
+            if result['ok']:
+                counts = result['counts']
+                msg = (
+                    f"✅ CSDL sẵn sàng"
+                    f" | Quái: {counts.get('monsters', 0)}"
+                    f" | Phụ bản: {counts.get('dungeons', 0)}"
+                    f" | Vị trí: {counts.get('location', 0)}"
+                    f" | Loại quái: {counts.get('monster_type', 0)}"
+                )
+                self._set_db_status(msg, ok=True)
+                print(f"[DB] {msg}")
+            else:
+                missing = result['missing_tables']
+                missing_str = ", ".join(missing)
+                bar_msg = f"⚠️ CSDL chưa hoàn chỉnh: Thiếu bảng {missing_str}"
+                if result.get('error'):
+                    bar_msg = f"❌ {result['error']}"
+                self._set_db_status(bar_msg, ok=False)
+                print(f"[DB] {bar_msg}")
+
+                detail = (
+                    f"CSDL monsters.db chưa hoàn chỉnh!\n\n"
+                    f"Các bảng bị thiếu:\n• " + "\n• ".join(missing)
+                )
+                if result.get('error'):
+                    detail = f"Lỗi kết nối CSDL:\n{result['error']}"
+                messagebox.showwarning("⚠️ Cảnh báo CSDL", detail)
+
         except ImportError:
-            # database module not available
-            print("[DB Connection] Database module not available")
-        except Exception as e:
-            print(f"[DB Connection] Unexpected error: {e}")
+            msg = "⚠️ Không thể import module database"
+            self._set_db_status(msg, ok=False)
+            print(f"[DB] {msg}")
+        except Exception as exc:
+            msg = f"❌ Lỗi kiểm tra CSDL: {exc}"
+            self._set_db_status(msg, ok=False)
+            print(f"[DB] {msg}")
+
+    def _set_db_status(self, message: str, ok: bool) -> None:
+        """Cập nhật thanh trạng thái CSDL với màu phù hợp."""
+        if hasattr(self, '_db_status_var'):
+            self._db_status_var.set(message)
+        if hasattr(self, '_db_status_bar'):
+            if ok:
+                self._db_status_bar.config(bg="#d4edda", fg="#155724")  # Xanh lá
+            else:
+                self._db_status_bar.config(bg="#f8d7da", fg="#721c24")  # Đỏ/cảnh báo
 
     def on_hunt_save(self):
         try:
