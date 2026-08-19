@@ -1723,6 +1723,9 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             if 'resistCritDamage' in self.monster_table['columns']:
                 self.monster_table.column('resistCritDamage', width=130, anchor='center', stretch=False)
 
+        for column in list(self.monster_table['columns']):
+            self.monster_table.heading(column, text=self._column_heading_text(column), command=lambda c=column: self._on_sort_column(c))
+
         for item in self.monster_table.get_children():
             self.monster_table.delete(item)
 
