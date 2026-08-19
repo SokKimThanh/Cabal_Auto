@@ -953,7 +953,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.is_monster_dirty = False
 
         self.db = None
-        if get_db is not None and not DATA_PATH.exists():
+        # Try to connect to database (always attempt, regardless of JSON file existence)
+        if get_db is not None:
             try:
                 self.db = get_db()
             except Exception:
@@ -1014,6 +1015,17 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self._bind_events()
         self._start_queue_monitor()
         self._update_dirty_state_ui()
+        # Auto-load data into table
+        self._refresh_monster_table()
+
+    def deiconify(self) -> None:
+        """Override deiconify to auto-refresh data when form is opened"""
+        super().deiconify()
+        # Auto-load data when form is opened
+        try:
+            self._refresh_monster_table()
+        except Exception as e:
+            print(f"[QuickMonsterEditor] Error refreshing table on deiconify: {e}")
 
     def _setup_compatibility_widgets(self) -> None:
         """Instantiate compatibility attributes for unit tests off-screen without visible floating artifacts."""
@@ -1402,11 +1414,19 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self._search_job = self.after(300, self._apply_search)
 
     def _apply_search(self) -> None:
+        # Show loading status
+        if hasattr(self, 'stats_label') and self.stats_label:
+            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+        
         self.search_term = self.search_entry.get().strip() if hasattr(self, 'search_entry') else ''
         self.current_page = 1
         self._refresh_monster_table()
 
     def _on_filter_changed(self, event: Any = None) -> None:
+        # Show loading status
+        if hasattr(self, 'stats_label') and self.stats_label:
+            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+        
         self.current_page = 1
         self.monster_type_filter = self.monster_type_var.get() if hasattr(self, 'monster_type_var') else 'All Monsters'
         self.location_filter = self.location_var.get() if hasattr(self, 'location_var') else 'All Locations'
@@ -1531,7 +1551,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self._execute_delete_monster_by_id(m_id)
 
     def _create_bottom_bar(self) -> None:
-        self.bottom_bar_frame = tk.Frame(self, bg=UI.BG_PANEL, height=40)
+        self.bottom_bar_frame = tk.Frame(self, bg=UI.BG_PANEL, height=50)
         self.bottom_bar_frame.pack(side='bottom', fill='x')
 
         # "+ Thêm Quái" Button
@@ -1558,10 +1578,18 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         )
         self.delete_monster_button.pack(side='left', padx=5, pady=5)
 
-        # Inline Status Bar on bottom right
+        # Status Bar on bottom right (with pagination and record count)
         status_frame = tk.Frame(self.bottom_bar_frame, bg=UI.BG_PANEL)
         status_frame.pack(side='right', fill='x', expand=True, padx=10)
 
+        # Status label: left side of status bar (record count & pagination)
+        self.stats_label = tk.Label(
+            status_frame, text="📊 Hiển thị 0 / 0 quái vật (Trang 1/1)",
+            font=UI.FONT_SMALL, fg=UI.COLOR_TEXT, bg=UI.BG_PANEL
+        )
+        self.stats_label.pack(side='left', padx=5)
+
+        # Status label: right side (for loading/messages)
         self.status_icon_label = create_icon_label(
             status_frame, icon_name='info', text="", icon_fallback='ℹ️',
             font=UI.FONT_TEXT, fg=UI.COLOR_TEXT, bg=UI.BG_PANEL
@@ -1615,7 +1643,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         if not self.visible_columns:
             self.visible_columns = self.default_visible_columns
 
-        if self.db is None and get_db is not None and not DATA_PATH.exists():
+        if self.db is None and get_db is not None:
             try:
                 self.db = get_db()
             except Exception:
@@ -1692,6 +1720,47 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                     values.append(value if value is not None else '')
             iid = monster.get('id', str(len(self.monster_table.get_children())))
             self.monster_table.insert('', 'end', iid=iid, values=values)
+
+        # Update stats label with record count and pagination info
+        self._update_stats_label()
+
+    def _update_stats_label(self) -> None:
+        """Update the stats label with current record count and pagination info"""
+        if not hasattr(self, 'stats_label') or self.stats_label is None:
+            return
+
+        try:
+            # Get total records (from all monsters, not just filtered)
+            if self.db is not None:
+                try:
+                    total_payload = self.db.get_filtered_monsters(
+                        keyword="",
+                        monster_type="All Monsters",
+                        location="All Locations",
+                        page=1,
+                        page_size=10000,
+                        sort_column='name',
+                        sort_order='ASC',
+                    )
+                    total_records = len(total_payload.get('items', []))
+                except Exception:
+                    total_records = len(self.monsters)
+            else:
+                total_records = len(self.monsters)
+
+            # Get currently displayed records
+            displayed_records = len(self.filtered_monsters)
+            
+            # Calculate total pages
+            total_pages = max(1, (total_records + self.page_size - 1) // self.page_size)
+            
+            # Update label text
+            stats_text = f"📊 Hiển thị {displayed_records} / {total_records} quái vật (Trang {self.current_page}/{total_pages})"
+            self.stats_label.config(text=stats_text)
+        except Exception as e:
+            print(f"[Stats Label] Error updating: {e}")
+            # Fallback to simple display
+            self.stats_label.config(text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật")
 
     def _on_row_double_click(self, event: Any) -> None:
         selection = self.monster_table.selection()
