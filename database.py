@@ -186,10 +186,10 @@ class MonsterDatabase:
         filtered = [(v, label) for v, label in entries if v != "all"]
 
         cursor = self.conn.cursor()
-        default_types = [('0', 'Normal'), ('1', 'Boss')]
+        default_types = [("0", "Normal"), ("1", "Boss")]
         cursor.executemany(
             "INSERT OR IGNORE INTO monster_type (value, label) VALUES (?, ?)",
-            default_types
+            default_types + filtered,
         )
         self.conn.commit()
         print(f"[DB] Seed monster_type: đã xử lý {len(filtered)} bản ghi.")
