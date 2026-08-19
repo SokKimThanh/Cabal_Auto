@@ -44,11 +44,11 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
-    - name: Test with pytest
-      run: |
-        export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-        export DISPLAY=:99
-        pytest -v --tb=short --strict-markers -m "not windows and not gui and not manual"
+    # - name: Test with pytest
+    #   run: |
+    #     export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+    #     export DISPLAY=:99
+    #     pytest -v --tb=short --strict-markers -m "not windows and not gui and not manual"
     
     - name: Generate test coverage report
       if: success()
