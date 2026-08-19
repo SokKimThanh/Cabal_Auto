@@ -176,6 +176,11 @@ except ImportError:
     UI = UIStyle
 
 try:
+    from database import get_db
+except ImportError:
+    get_db = None
+
+try:
     from ui.helpers.icon_helper import IconHelper, get_icon_helper
     icon_helper = get_icon_helper()
 except ImportError:
@@ -947,6 +952,37 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.is_dirty = False
         self.is_monster_dirty = False
 
+        self.db = None
+        if get_db is not None and not DATA_PATH.exists():
+            try:
+                self.db = get_db()
+            except Exception:
+                self.db = None
+
+        self.monster_grid_columns = [
+            'id', 'name', 'level', 'exp', 'hp', 'defense', 'attackRate',
+            'defenseRate', 'hpRecharge', 'accuracy', 'penetration', 'damageReduction',
+            'evasion', 'resistCritRate', 'primaryAttackMin', 'primaryAttackMax',
+            'secondaryAttackMin', 'secondaryAttackMax', 'ignoreAccuracy',
+            'ignoreDamageReduction', 'ignorePenetration', 'absoluteDamage',
+            'resistSkillAmp', 'resistCritDamage', 'resistSuppress', 'resistSilence',
+            'resistDiffDamage', 'hpProportionDamage', 'serverBossType', 'dungeonId'
+        ]
+        self.default_visible_columns = [
+            'name', 'level', 'hp', 'defense', 'defenseRate',
+            'ignorePenetration', 'resistCritRate', 'resistSkillAmp', 'resistCritDamage'
+        ]
+        self.column_visibility = {col: (col in self.default_visible_columns) for col in self.monster_grid_columns}
+        self.visible_columns = [col for col in self.monster_grid_columns if self.column_visibility.get(col, False)]
+        self.current_page = 1
+        self.page_size = 25
+        self.search_term = ''
+        self.monster_type_filter = 'All Monsters'
+        self.location_filter = 'All Locations'
+        self._search_job = None
+        self._column_visibility_vars: Dict[str, tk.BooleanVar] = {}
+        self._column_visibility_menu: Optional[tk.Menu] = None
+
         if DataSyncManager is not None:
             self.sync_manager = DataSyncManager()
         else:
@@ -1115,6 +1151,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 for monster in self.monsters:
                     if 'id' not in monster:
                         monster['id'] = str(uuid.uuid4())
+            elif self.db is not None:
+                self.monsters = self.db.get_all_monsters(limit=5000)
             else:
                 self.monsters = []
                 DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -1123,6 +1161,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         except Exception as e:
             print(f"[MonsterEditor] Error loading monsters: {e}")
             self.monsters = []
+        self.filtered_monsters = list(self.monsters)
 
     def set_dirty(self, value: bool = True) -> None:
         self.is_dirty = value
@@ -1229,57 +1268,197 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         create_icon_label(
             search_frame, icon_name='search', text=i18n_t('search_label', ns='monster_editor', default='Tìm kiếm:'),
             icon_fallback='🔍', font=UI.FONT_LABEL, bg=UI.BG_PANEL
-        ).pack(side='left', padx=(5, 5), pady=5)
+        ).grid(row=0, column=0, padx=(5, 5), pady=5, sticky='w')
 
         self.search_entry = tk.Entry(search_frame, font=UI.FONT_TEXT)
-        self.search_entry.pack(side='left', fill='x', expand=True, padx=(0, 5), pady=5)
+        self.search_entry.grid(row=0, column=1, sticky='ew', padx=(0, 5), pady=5)
         self.search_entry.bind('<KeyRelease>', self._on_search_changed)
         self.search_entry.bind('<Escape>', self._on_clear_search)
+
+        self.monster_type_var = tk.StringVar(value='All Monsters')
+        self.location_var = tk.StringVar(value='All Locations')
+        self.page_size_var = tk.StringVar(value='25')
+
+        self.monster_type_box = ttk.Combobox(search_frame, textvariable=self.monster_type_var, state='readonly', width=18)
+        self.monster_type_box.grid(row=0, column=2, sticky='ew', padx=(0, 5), pady=5)
+        self.monster_type_box.bind('<<ComboboxSelected>>', self._on_filter_changed)
+
+        self.location_box = ttk.Combobox(search_frame, textvariable=self.location_var, state='readonly', width=18)
+        self.location_box.grid(row=0, column=3, sticky='ew', padx=(0, 5), pady=5)
+        self.location_box.bind('<<ComboboxSelected>>', self._on_filter_changed)
+
+        self.page_size_box = ttk.Combobox(search_frame, textvariable=self.page_size_var, state='readonly', width=10, values=['10', '25', '50', '100'])
+        self.page_size_box.grid(row=0, column=4, sticky='ew', padx=(0, 5), pady=5)
+        self.page_size_box.bind('<<ComboboxSelected>>', self._on_filter_changed)
+
+        self.column_visibility_button = tk.Button(
+            search_frame, text='Column Visibility', command=self._open_column_visibility_menu,
+            bg=UI.BG_DEFAULT, fg=UI.COLOR_TEXT, font=UI.FONT_LABEL
+        )
+        self.column_visibility_button.grid(row=0, column=5, sticky='ew', padx=(0, 5), pady=5)
+
+        self.clear_filters_button = tk.Button(
+            search_frame, text='Clear All Filters', command=self._clear_all_filters,
+            bg='#FDECEC', fg='#B42318', font=UI.FONT_LABEL, borderwidth=1, relief='solid'
+        )
+        self.clear_filters_button.grid(row=0, column=6, sticky='ew', pady=5)
+
+        search_frame.columnconfigure(1, weight=1)
+
+        self._refresh_filter_options()
+
+    def _open_column_visibility_menu(self) -> None:
+        menu = tk.Menu(self, tearoff=0)
+        self._column_visibility_menu = menu
+        self._column_visibility_vars = {}
+        for column in self.monster_grid_columns:
+            label = self._column_label(column)
+            var = tk.BooleanVar(value=self.column_visibility.get(column, False))
+            self._column_visibility_vars[column] = var
+            menu.add_checkbutton(
+                label=label,
+                variable=var,
+                command=lambda c=column, v=var: self._toggle_column_visibility(c, bool(v.get())),
+                onvalue=True,
+                offvalue=False,
+            )
+        try:
+            menu.post(
+                self.column_visibility_button.winfo_rootx(),
+                self.column_visibility_button.winfo_rooty() + self.column_visibility_button.winfo_height(),
+            )
+        except Exception:
+            pass
+
+    def _toggle_column_visibility(self, column: str, visible: bool) -> None:
+        if column not in self.column_visibility:
+            self.column_visibility[column] = visible
+            return
+        self.column_visibility[column] = visible
+        if column in self._column_visibility_vars:
+            self._column_visibility_vars[column].set(visible)
+        self.visible_columns = [col for col in self.monster_grid_columns if self.column_visibility.get(col, False)]
+        self._refresh_monster_table()
+
+    def _column_label(self, column: str) -> str:
+        mapping = {
+            'name': 'NAME',
+            'level': 'LEVEL',
+            'hp': 'HP',
+            'defense': 'DEFENSE',
+            'defenseRate': 'DEFENSE RATE',
+            'ignorePenetration': 'IGNORE PEN.',
+            'resistCritRate': 'RESIST CRIT RATE',
+            'resistSkillAmp': 'RESIST SKILL AMP',
+            'resistCritDamage': 'RESIST CRIT DMG',
+        }
+        return mapping.get(column, column.upper())
 
     def _on_clear_search(self, event: Any = None) -> None:
         if hasattr(self, 'search_entry') and self.search_entry:
             self.search_entry.delete(0, tk.END)
-            self._refresh_monster_table()
+            self.search_term = ''
+            self._reset_page_and_reload()
+
+    def _clear_all_filters(self) -> None:
+        if hasattr(self, 'search_entry') and self.search_entry:
+            self.search_entry.delete(0, tk.END)
+        if hasattr(self, 'monster_type_var'):
+            self.monster_type_var.set('All Monsters')
+        if hasattr(self, 'location_var'):
+            self.location_var.set('All Locations')
+        if hasattr(self, 'page_size_var'):
+            self.page_size_var.set('25')
+        self.current_page = 1
+        self.search_term = ''
+        self.monster_type_filter = 'All Monsters'
+        self.location_filter = 'All Locations'
+        self.page_size = 25
+        self._refresh_filter_options()
+        self._refresh_monster_table()
+
+    def _refresh_filter_options(self) -> None:
+        try:
+            if self.db is None and get_db is not None and not DATA_PATH.exists():
+                self.db = get_db()
+            if self.db is not None:
+                monster_types = self.db.get_monster_types()
+                location_values = self.db.get_locations()
+                values = ['All Monsters'] + [str(v) for v in monster_types if v not in (None, '')]
+                self.monster_type_box.config(values=values)
+                if self.monster_type_var.get() not in values:
+                    self.monster_type_var.set('All Monsters')
+                loc_values = ['All Locations'] + [str(v) for v in location_values if v not in (None, '')]
+                self.location_box.config(values=loc_values)
+                if self.location_var.get() not in loc_values:
+                    self.location_var.set('All Locations')
+        except Exception:
+            self.monster_type_box.config(values=['All Monsters'])
+            self.location_box.config(values=['All Locations'])
 
     def _on_search_changed(self, event: Any = None) -> None:
+        if self._search_job is not None:
+            self.after_cancel(self._search_job)
+        self._search_job = self.after(300, self._apply_search)
+
+    def _apply_search(self) -> None:
+        self.search_term = self.search_entry.get().strip() if hasattr(self, 'search_entry') else ''
+        self.current_page = 1
+        self._refresh_monster_table()
+
+    def _on_filter_changed(self, event: Any = None) -> None:
+        self.current_page = 1
+        self.monster_type_filter = self.monster_type_var.get() if hasattr(self, 'monster_type_var') else 'All Monsters'
+        self.location_filter = self.location_var.get() if hasattr(self, 'location_var') else 'All Locations'
+        self.page_size = int(self.page_size_var.get()) if hasattr(self, 'page_size_var') and self.page_size_var.get() else 25
+        self._refresh_monster_table()
+
+    def _reset_page_and_reload(self) -> None:
+        self.current_page = 1
         self._refresh_monster_table()
 
     def _create_table_area(self) -> None:
         table_frame = tk.Frame(self, bg=UI.BG_DEFAULT)
         table_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
-        scrollbar = tk.Scrollbar(table_frame, orient=tk.VERTICAL)
-        scrollbar.pack(side='right', fill='y')
+        self.table_scroll_y = tk.Scrollbar(table_frame, orient=tk.VERTICAL)
+        self.table_scroll_y.pack(side='right', fill='y')
 
-        # Treeview Monster Table (without "Hành động" column)
-        columns = ('icon', 'name', 'level', 'hp', 'damage', 'templates')
+        self.table_scroll_x = tk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
+        self.table_scroll_x.pack(side='bottom', fill='x')
+
         self.monster_table = CompatibleTreeview(
-            table_frame, columns=columns, show='headings', selectmode='browse', yscrollcommand=scrollbar.set
+            table_frame,
+            columns=self.visible_columns,
+            show='headings',
+            selectmode='browse',
+            yscrollcommand=self.table_scroll_y.set,
+            xscrollcommand=self.table_scroll_x.set,
         )
-        
-        self.monster_table.heading('icon', text='')
-        self.monster_table.heading('name', text=i18n_t('col_name', ns='monster_editor', default='Tên Quái'))
-        self.monster_table.heading('level', text=i18n_t('col_level', ns='monster_editor', default='Cấp'))
-        self.monster_table.heading('hp', text='HP')
-        self.monster_table.heading('damage', text='Sát thương')
-        self.monster_table.heading('templates', text=i18n_t('col_templates', ns='monster_editor', default='Templates'))
 
-        self.monster_table.column('icon', width=40, anchor='center', stretch=False)
+        for column in self.visible_columns:
+            label = self._column_label(column)
+            self.monster_table.heading(column, text=label)
+            self.monster_table.column(column, width=110, anchor='center', stretch=True)
+
         self.monster_table.column('name', width=220, anchor='w')
-        self.monster_table.column('level', width=70, anchor='center')
-        self.monster_table.column('hp', width=90, anchor='center')
-        self.monster_table.column('damage', width=100, anchor='center')
-        self.monster_table.column('templates', width=100, anchor='center')
+        self.monster_table.column('level', width=80, anchor='center', stretch=False)
+        self.monster_table.column('hp', width=90, anchor='center', stretch=False)
+        self.monster_table.column('defense', width=100, anchor='center', stretch=False)
+        self.monster_table.column('defenseRate', width=110, anchor='center', stretch=False)
+        self.monster_table.column('ignorePenetration', width=110, anchor='center', stretch=False)
+        self.monster_table.column('resistCritRate', width=120, anchor='center', stretch=False)
+        self.monster_table.column('resistSkillAmp', width=120, anchor='center', stretch=False)
+        self.monster_table.column('resistCritDamage', width=130, anchor='center', stretch=False)
 
         self.monster_table.pack(side='left', fill='both', expand=True)
-        scrollbar.config(command=self.monster_table.yview)
+        self.table_scroll_y.config(command=self.monster_table.yview)
+        self.table_scroll_x.config(command=self.monster_table.xview)
 
-        # Bind selection and double-click
         self.monster_table.bind('<<TreeviewSelect>>', self._on_table_select)
         self.monster_table.bind('<<ListboxSelect>>', self._on_table_select)
         self.monster_table.bind('<Double-1>', self._on_row_double_click)
 
-        # Legacy backward compatibility reference
         self.monster_listbox = self.monster_table
 
         self._refresh_monster_table()
@@ -1430,28 +1609,89 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.current_monster_id = None
 
     def _refresh_monster_table(self) -> None:
+        if not hasattr(self, 'monster_table') or self.monster_table is None:
+            return
+
+        if not self.visible_columns:
+            self.visible_columns = self.default_visible_columns
+
+        if self.db is None and get_db is not None and not DATA_PATH.exists():
+            try:
+                self.db = get_db()
+            except Exception:
+                self.db = None
+
+        if self.monster_table.cget('columns') != tuple(self.visible_columns):
+            self.monster_table.configure(columns=self.visible_columns)
+            for column in list(self.monster_table['columns']):
+                self.monster_table.heading(column, text=self._column_label(column))
+                self.monster_table.column(column, width=110, anchor='center', stretch=True)
+            if 'name' in self.monster_table['columns']:
+                self.monster_table.column('name', width=220, anchor='w')
+            if 'level' in self.monster_table['columns']:
+                self.monster_table.column('level', width=80, anchor='center', stretch=False)
+            if 'hp' in self.monster_table['columns']:
+                self.monster_table.column('hp', width=90, anchor='center', stretch=False)
+            if 'defense' in self.monster_table['columns']:
+                self.monster_table.column('defense', width=100, anchor='center', stretch=False)
+            if 'defenseRate' in self.monster_table['columns']:
+                self.monster_table.column('defenseRate', width=110, anchor='center', stretch=False)
+            if 'ignorePenetration' in self.monster_table['columns']:
+                self.monster_table.column('ignorePenetration', width=110, anchor='center', stretch=False)
+            if 'resistCritRate' in self.monster_table['columns']:
+                self.monster_table.column('resistCritRate', width=120, anchor='center', stretch=False)
+            if 'resistSkillAmp' in self.monster_table['columns']:
+                self.monster_table.column('resistSkillAmp', width=120, anchor='center', stretch=False)
+            if 'resistCritDamage' in self.monster_table['columns']:
+                self.monster_table.column('resistCritDamage', width=130, anchor='center', stretch=False)
+
         for item in self.monster_table.get_children():
             self.monster_table.delete(item)
 
-        query = self.search_entry.get().strip().lower() if hasattr(self, 'search_entry') else ""
-
-        for monster in self.monsters:
-            name = str(monster.get('name', 'Unnamed'))
-            level = str(monster.get('level', 1))
-
+        if self.db is not None:
+            try:
+                payload = self.db.get_filtered_monsters(
+                    keyword=self.search_term if hasattr(self, 'search_term') else self.search_entry.get().strip(),
+                    monster_type=self.monster_type_filter if hasattr(self, 'monster_type_filter') else 'All Monsters',
+                    location=self.location_filter if hasattr(self, 'location_filter') else 'All Locations',
+                    page=self.current_page,
+                    page_size=self.page_size,
+                    sort_column='name',
+                    sort_order='ASC',
+                )
+                self.filtered_monsters = payload.get('items', [])
+                self.monsters = self.filtered_monsters
+            except Exception:
+                self.filtered_monsters = list(self.monsters)
+                self.monsters = list(self.filtered_monsters)
+        else:
+            self.filtered_monsters = list(self.monsters)
+            query = self.search_entry.get().strip().lower() if hasattr(self, 'search_entry') else ""
             if query:
-                if query not in name.lower() and query not in level:
-                    continue
+                self.filtered_monsters = [
+                    monster for monster in self.filtered_monsters
+                    if query in str(monster.get('name', 'Unnamed')).lower()
+                ]
 
-            m_id = monster.get('id', '')
-            hp = monster.get('hp', 100)
-            damage = monster.get('damage_per_hit', 10)
-            tmpl_count = len(monster.get('templates', []))
-
-            self.monster_table.insert(
-                '', 'end', iid=m_id,
-                values=('👹', name, level, hp, damage, f"{tmpl_count} tpl")
-            )
+        for monster in self.filtered_monsters:
+            values = []
+            for col in self.visible_columns:
+                value = monster.get(col)
+                if col == 'name':
+                    raw_name = str(value or 'Unnamed')
+                    location = monster.get('dungeonId')
+                    if location and str(location).strip():
+                        values.append(f"{raw_name}\n{location}")
+                    else:
+                        values.append(raw_name)
+                elif col == 'dungeonId':
+                    values.append(str(value or ''))
+                elif col == 'serverBossType':
+                    values.append(str(value or ''))
+                else:
+                    values.append(value if value is not None else '')
+            iid = monster.get('id', str(len(self.monster_table.get_children())))
+            self.monster_table.insert('', 'end', iid=iid, values=values)
 
     def _on_row_double_click(self, event: Any) -> None:
         selection = self.monster_table.selection()
