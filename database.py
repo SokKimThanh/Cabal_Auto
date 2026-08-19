@@ -23,6 +23,11 @@ class MonsterDatabase:
     
     DB_PATH = Path(__file__).parent / "monsters.db"
     DATA_FILE = Path(__file__).parent / "lib" / "data" / "monster-db-cabal.txt"
+    LOCATION_FILE = Path(__file__).parent / "lib" / "data" / "location-db-cabal.txt"
+    MONSTER_TYPE_FILE = Path(__file__).parent / "lib" / "data" / "type-monster-db-cabal.txt"
+    
+    # Bảng bắt buộc phải tồn tại trong CSDL
+    REQUIRED_TABLES = ['monsters', 'dungeons', 'location', 'monster_type']
     
     # 30 cột chính xác cho bảng monsters
     MONSTER_COLUMNS = [
@@ -97,12 +102,92 @@ class MonsterDatabase:
                 FOREIGN KEY (dungeonId) REFERENCES dungeons(dungeonId) ON DELETE SET NULL
             )
         """)
+
+        # Bảng location: lưu danh sách các vị trí/khu vực trong game
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS location (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL
+            )
+        """)
+
+        # Bảng monster_type: lưu các loại quái vật
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS monster_type (
+                value TEXT PRIMARY KEY,
+                label TEXT NOT NULL
+            )
+        """)
         
         self.conn.commit()
 
+    def _seed_location(self) -> None:
+        """Đọc file location-db-cabal.txt và chèn dữ liệu vào bảng location (nếu chưa có)."""
+        if not self.LOCATION_FILE.exists():
+            print(f"[DB] Bỏ qua seed location: không tìm thấy {self.LOCATION_FILE}")
+            return
+
+        with open(self.LOCATION_FILE, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Parse các cặp id: "name" từ webpack bundle format
+        entries = re.findall(r'(\d+):\s*"([^"]+)"', content)
+        if not entries:
+            print("[DB] Không tìm thấy dữ liệu location trong file.")
+            return
+
+        with sqlite3.connect(str(self.DB_PATH)) as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                "INSERT OR IGNORE INTO location (id, name) VALUES (?, ?)",
+                [(int(loc_id), name) for loc_id, name in entries]
+            )
+            conn.commit()
+        print(f"[DB] Seed location: đã xử lý {len(entries)} bản ghi.")
+
+    def _seed_monster_type(self) -> None:
+        """Đọc file type-monster-db-cabal.txt và chèn dữ liệu vào bảng monster_type (nếu chưa có)."""
+        if not self.MONSTER_TYPE_FILE.exists():
+            print(f"[DB] Bỏ qua seed monster_type: không tìm thấy {self.MONSTER_TYPE_FILE}")
+            return
+
+        with open(self.MONSTER_TYPE_FILE, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Parse các cặp value/label từ format: {value: "X", label: "Y"}
+        entries = re.findall(r'value:\s*"([^"]+)"[^}]*label:\s*"([^"]+)"', content)
+        if not entries:
+            print("[DB] Không tìm thấy dữ liệu monster_type trong file.")
+            return
+
+        # Bỏ qua entry "all" vì không phải type cụ thể
+        filtered = [(v, label) for v, label in entries if v != 'all']
+
+        with sqlite3.connect(str(self.DB_PATH)) as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                "INSERT OR IGNORE INTO monster_type (value, label) VALUES (?, ?)",
+                filtered
+            )
+            conn.commit()
+        print(f"[DB] Seed monster_type: đã xử lý {len(filtered)} bản ghi.")
+
+    def seed_reference_data(self) -> None:
+        """Seed dữ liệu tham chiếu cho location và monster_type nếu bảng còn trống."""
+        cursor = self.conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM location")
+        if cursor.fetchone()[0] == 0:
+            self._seed_location()
+
+        cursor.execute("SELECT COUNT(*) FROM monster_type")
+        if cursor.fetchone()[0] == 0:
+            self._seed_monster_type()
+
     def init_db(self) -> None:
-        """Khởi tạo database schema mà không tự động import dữ liệu ngoài DB."""
+        """Khởi tạo database schema và seed dữ liệu tham chiếu."""
         self.setup_schema()
+        self.seed_reference_data()
     
     def _extract_json_from_webpack(self, content: str) -> str:
         """
@@ -436,3 +521,63 @@ def get_filtered_monsters(
         sort_column=sort_column,
         sort_order=sort_order,
     )
+
+
+def check_db_health() -> Dict[str, Any]:
+        """
+        Kiểm tra tình trạng hoàn chỉnh của CSDL monsters.db.
+
+        Returns:
+            dict với các keys:
+                - ok (bool): True nếu CSDL đầy đủ
+                - missing_tables (list): danh sách bảng bị thiếu
+                - counts (dict): số bản ghi của từng bảng (chỉ khi ok=True)
+                - error (str | None): mô tả lỗi nếu có
+        """
+        db_path = MonsterDatabase.DB_PATH
+        required = MonsterDatabase.REQUIRED_TABLES
+
+        if not db_path.exists():
+            return {
+                'ok': False,
+                'missing_tables': required,
+                'counts': {},
+                'error': f"Không tìm thấy file CSDL: {db_path}",
+            }
+
+        try:
+            with sqlite3.connect(str(db_path)) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                existing = {row[0] for row in cursor.fetchall()}
+
+            missing = [t for t in required if t not in existing]
+            if missing:
+                return {
+                    'ok': False,
+                    'missing_tables': missing,
+                    'counts': {},
+                    'error': None,
+                }
+
+            # CSDL đầy đủ — đếm bản ghi từng bảng
+            counts: Dict[str, int] = {}
+            with sqlite3.connect(str(db_path)) as conn:
+                cursor = conn.cursor()
+                for table in required:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    counts[table] = cursor.fetchone()[0]
+
+            return {
+                'ok': True,
+                'missing_tables': [],
+                'counts': counts,
+                'error': None,
+            }
+        except Exception as exc:
+            return {
+                'ok': False,
+                'missing_tables': required,
+                'counts': {},
+                'error': str(exc),
+            }
