@@ -4892,28 +4892,31 @@ Alternative Solutions:
         try:
             from database import MonsterDatabase
             
-            db_path = Path("monsters.db")
-            
-            # Try to establish connection
+            db = None
             try:
+                # Try to establish connection
                 db = MonsterDatabase()
                 # Try a simple query to verify connection
                 cursor = db.conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM monsters")
                 total_monsters = cursor.fetchone()[0]
-                db.conn.close()
                 
-                # Connection successful
-                status_msg = f"✓ CSDL: Đã kết nối (monsters.db) | Loaded {total_monsters} quái vật"
+                # Connection successful - use actual DB path from MonsterDatabase
+                db_file = MonsterDatabase.DB_PATH.name
+                status_msg = f"✓ CSDL: Đã kết nối ({db_file}) | Loaded {total_monsters} quái vật"
                 if hasattr(self, 'hunt_status'):
                     self.hunt_status.set(status_msg)
                 print(f"[DB Connection] ✓ Database connected successfully. Total monsters: {total_monsters}")
             except Exception as e:
                 # Connection failed
-                status_msg = f"❌ Lỗi CSDL: Không thể kết nối file monsters.db!"
+                status_msg = "❌ Lỗi CSDL: Không thể kết nối file monsters.db!"
                 if hasattr(self, 'hunt_status'):
                     self.hunt_status.set(status_msg)
                 print(f"[DB Connection] ✗ Failed to connect to database: {e}")
+            finally:
+                # Ensure connection is always closed
+                if db is not None and db.conn is not None:
+                    db.conn.close()
         except ImportError:
             # database module not available
             print("[DB Connection] Database module not available")

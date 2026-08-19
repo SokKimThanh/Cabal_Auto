@@ -1231,14 +1231,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         # Real-time Search / Filter Bar
         self._create_search_bar()
 
+        # Bottom Bar & Status Bar (must be created before table area so _refresh_monster_table can update it)
+        self._create_bottom_bar()
+
         # Main Table Area
         self._create_table_area()
 
         # Inline Confirmation Banner
         self._create_confirmation_banner()
-
-        # Bottom Bar & Status Bar
-        self._create_bottom_bar()
 
     def _create_top_panel(self) -> None:
         top_frame = tk.Frame(self, bg=UI.BG_PANEL, height=50)
@@ -1414,18 +1414,22 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self._search_job = self.after(300, self._apply_search)
 
     def _apply_search(self) -> None:
-        # Show loading status
+        # Show loading status with i18n support
         if hasattr(self, 'stats_label') and self.stats_label:
-            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+            loading_text = i18n_t('status_loading', ns='monster_editor', default='⌛ Đang tải dữ liệu...')
+            self.stats_label.config(text=loading_text)
+            self.update_idletasks()  # Flush pending UI updates to show loading message
         
         self.search_term = self.search_entry.get().strip() if hasattr(self, 'search_entry') else ''
         self.current_page = 1
         self._refresh_monster_table()
 
     def _on_filter_changed(self, event: Any = None) -> None:
-        # Show loading status
+        # Show loading status with i18n support
         if hasattr(self, 'stats_label') and self.stats_label:
-            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+            loading_text = i18n_t('status_loading', ns='monster_editor', default='⌛ Đang tải dữ liệu...')
+            self.stats_label.config(text=loading_text)
+            self.update_idletasks()  # Flush pending UI updates to show loading message
         
         self.current_page = 1
         self.monster_type_filter = self.monster_type_var.get() if hasattr(self, 'monster_type_var') else 'All Monsters'
@@ -1583,8 +1587,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         status_frame.pack(side='right', fill='x', expand=True, padx=10)
 
         # Status label: left side of status bar (record count & pagination)
+        # Initialize with default translation
+        default_stats_text = i18n_t('status_records_default', ns='monster_editor', default='📊 Hiển thị 0 / 0 quái vật (Trang 1/1)')
         self.stats_label = tk.Label(
-            status_frame, text="📊 Hiển thị 0 / 0 quái vật (Trang 1/1)",
+            status_frame, text=default_stats_text,
             font=UI.FONT_SMALL, fg=UI.COLOR_TEXT, bg=UI.BG_PANEL
         )
         self.stats_label.pack(side='left', padx=5)
@@ -1730,37 +1736,46 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             return
 
         try:
-            # Get total records (from all monsters, not just filtered)
+            displayed_records = len(self.filtered_monsters)
+            
+            # Get total records using current filters (page_size=1 for efficiency)
+            total_records = displayed_records
             if self.db is not None:
                 try:
                     total_payload = self.db.get_filtered_monsters(
-                        keyword="",
-                        monster_type="All Monsters",
-                        location="All Locations",
+                        keyword=self.search_term if hasattr(self, 'search_term') else '',
+                        monster_type=self.monster_type_filter if hasattr(self, 'monster_type_filter') else 'All Monsters',
+                        location=self.location_filter if hasattr(self, 'location_filter') else 'All Locations',
                         page=1,
-                        page_size=10000,
+                        page_size=1,  # Minimize query cost
                         sort_column='name',
                         sort_order='ASC',
                     )
-                    total_records = len(total_payload.get('items', []))
+                    # Use total_records from payload if available, otherwise count items
+                    total_records = total_payload.get('total_records', len(total_payload.get('items', [])))
                 except Exception:
-                    total_records = len(self.monsters)
-            else:
-                total_records = len(self.monsters)
-
-            # Get currently displayed records
-            displayed_records = len(self.filtered_monsters)
+                    total_records = displayed_records
             
-            # Calculate total pages
+            # Calculate total pages based on filtered results
             total_pages = max(1, (total_records + self.page_size - 1) // self.page_size)
             
-            # Update label text
-            stats_text = f"📊 Hiển thị {displayed_records} / {total_records} quái vật (Trang {self.current_page}/{total_pages})"
+            # Update label text with i18n support
+            stats_text = i18n_t(
+                'status_records',
+                ns='monster_editor',
+                default=f'📊 Hiển thị {displayed_records} / {total_records} quái vật (Trang {self.current_page}/{total_pages})'
+            )
             self.stats_label.config(text=stats_text)
         except Exception as e:
             print(f"[Stats Label] Error updating: {e}")
             # Fallback to simple display
-            self.stats_label.config(text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật")
+            self.stats_label.config(
+                text=i18n_t(
+                    'status_records_simple',
+                    ns='monster_editor',
+                    default=f'📊 Hiển thị {len(self.filtered_monsters)} quái vật'
+                )
+            )
 
     def _on_row_double_click(self, event: Any) -> None:
         selection = self.monster_table.selection()
