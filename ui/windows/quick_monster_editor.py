@@ -953,6 +953,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.is_monster_dirty = False
 
         self.db = None
+        if get_db is not None and not DATA_PATH.exists():
+            try:
+                self.db = get_db()
+            except Exception:
+                self.db = None
 
         self.monster_grid_columns = [
             'id', 'name', 'level', 'exp', 'hp', 'defense', 'attackRate',
@@ -975,6 +980,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.monster_type_filter = 'All Monsters'
         self.location_filter = 'All Locations'
         self._search_job = None
+        self._column_visibility_vars: Dict[str, tk.BooleanVar] = {}
+        self._column_visibility_menu: Optional[tk.Menu] = None
 
         if DataSyncManager is not None:
             self.sync_manager = DataSyncManager()
@@ -1302,13 +1309,24 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _open_column_visibility_menu(self) -> None:
         menu = tk.Menu(self, tearoff=0)
+        self._column_visibility_menu = menu
+        self._column_visibility_vars = {}
         for column in self.monster_grid_columns:
             label = self._column_label(column)
             var = tk.BooleanVar(value=self.column_visibility.get(column, False))
-            self.column_visibility[column] = var.get()
-            menu.add_checkbutton(label=label, variable=var, command=lambda c=column, v=var: self._toggle_column_visibility(c, v.get()))
+            self._column_visibility_vars[column] = var
+            menu.add_checkbutton(
+                label=label,
+                variable=var,
+                command=lambda c=column, v=var: self._toggle_column_visibility(c, bool(v.get())),
+                onvalue=True,
+                offvalue=False,
+            )
         try:
-            menu.post(self.column_visibility_button.winfo_rootx(), self.column_visibility_button.winfo_rooty() + self.column_visibility_button.winfo_height())
+            menu.post(
+                self.column_visibility_button.winfo_rootx(),
+                self.column_visibility_button.winfo_rooty() + self.column_visibility_button.winfo_height(),
+            )
         except Exception:
             pass
 
@@ -1317,6 +1335,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.column_visibility[column] = visible
             return
         self.column_visibility[column] = visible
+        if column in self._column_visibility_vars:
+            self._column_visibility_vars[column].set(visible)
         self.visible_columns = [col for col in self.monster_grid_columns if self.column_visibility.get(col, False)]
         self._refresh_monster_table()
 
@@ -1409,22 +1429,19 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         self.monster_table = CompatibleTreeview(
             table_frame,
-            columns=self.monster_grid_columns,
+            columns=self.visible_columns,
             show='headings',
             selectmode='browse',
             yscrollcommand=self.table_scroll_y.set,
             xscrollcommand=self.table_scroll_x.set,
         )
 
-        for column in self.monster_grid_columns:
+        for column in self.visible_columns:
             label = self._column_label(column)
             self.monster_table.heading(column, text=label)
             self.monster_table.column(column, width=110, anchor='center', stretch=True)
 
         self.monster_table.column('name', width=220, anchor='w')
-        self.monster_table.column('id', width=80, anchor='center', stretch=False)
-        self.monster_table.column('dungeonId', width=140, anchor='w', stretch=False)
-        self.monster_table.column('serverBossType', width=120, anchor='center', stretch=False)
         self.monster_table.column('level', width=80, anchor='center', stretch=False)
         self.monster_table.column('hp', width=90, anchor='center', stretch=False)
         self.monster_table.column('defense', width=100, anchor='center', stretch=False)
@@ -1433,7 +1450,6 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.monster_table.column('resistCritRate', width=120, anchor='center', stretch=False)
         self.monster_table.column('resistSkillAmp', width=120, anchor='center', stretch=False)
         self.monster_table.column('resistCritDamage', width=130, anchor='center', stretch=False)
-        self.monster_table['displaycolumns'] = self.visible_columns
 
         self.monster_table.pack(side='left', fill='both', expand=True)
         self.table_scroll_y.config(command=self.monster_table.yview)
@@ -1596,15 +1612,41 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         if not hasattr(self, 'monster_table') or self.monster_table is None:
             return
 
-        for item in self.monster_table.get_children():
-            self.monster_table.delete(item)
-
         if not self.visible_columns:
             self.visible_columns = self.default_visible_columns
-        self.monster_table['displaycolumns'] = self.visible_columns
 
         if self.db is None and get_db is not None and not DATA_PATH.exists():
-            self.db = get_db()
+            try:
+                self.db = get_db()
+            except Exception:
+                self.db = None
+
+        if self.monster_table.cget('columns') != tuple(self.visible_columns):
+            self.monster_table.configure(columns=self.visible_columns)
+            for column in list(self.monster_table['columns']):
+                self.monster_table.heading(column, text=self._column_label(column))
+                self.monster_table.column(column, width=110, anchor='center', stretch=True)
+            if 'name' in self.monster_table['columns']:
+                self.monster_table.column('name', width=220, anchor='w')
+            if 'level' in self.monster_table['columns']:
+                self.monster_table.column('level', width=80, anchor='center', stretch=False)
+            if 'hp' in self.monster_table['columns']:
+                self.monster_table.column('hp', width=90, anchor='center', stretch=False)
+            if 'defense' in self.monster_table['columns']:
+                self.monster_table.column('defense', width=100, anchor='center', stretch=False)
+            if 'defenseRate' in self.monster_table['columns']:
+                self.monster_table.column('defenseRate', width=110, anchor='center', stretch=False)
+            if 'ignorePenetration' in self.monster_table['columns']:
+                self.monster_table.column('ignorePenetration', width=110, anchor='center', stretch=False)
+            if 'resistCritRate' in self.monster_table['columns']:
+                self.monster_table.column('resistCritRate', width=120, anchor='center', stretch=False)
+            if 'resistSkillAmp' in self.monster_table['columns']:
+                self.monster_table.column('resistSkillAmp', width=120, anchor='center', stretch=False)
+            if 'resistCritDamage' in self.monster_table['columns']:
+                self.monster_table.column('resistCritDamage', width=130, anchor='center', stretch=False)
+
+        for item in self.monster_table.get_children():
+            self.monster_table.delete(item)
 
         if self.db is not None:
             try:
@@ -1620,19 +1662,18 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 self.filtered_monsters = payload.get('items', [])
                 self.monsters = self.filtered_monsters
             except Exception:
-                self.filtered_monsters = []
-                self.monsters = []
-
-        if not self.filtered_monsters:
-            self.filtered_monsters = self.monsters
-
-        query = self.search_entry.get().strip().lower() if hasattr(self, 'search_entry') else ""
-        for monster in self.filtered_monsters:
+                self.filtered_monsters = list(self.monsters)
+                self.monsters = list(self.filtered_monsters)
+        else:
+            self.filtered_monsters = list(self.monsters)
+            query = self.search_entry.get().strip().lower() if hasattr(self, 'search_entry') else ""
             if query:
-                name = str(monster.get('name', 'Unnamed'))
-                if query not in name.lower():
-                    continue
+                self.filtered_monsters = [
+                    monster for monster in self.filtered_monsters
+                    if query in str(monster.get('name', 'Unnamed')).lower()
+                ]
 
+        for monster in self.filtered_monsters:
             values = []
             for col in self.visible_columns:
                 value = monster.get(col)
