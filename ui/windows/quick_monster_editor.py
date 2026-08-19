@@ -213,6 +213,8 @@ except ImportError:
     pass
 
 DATA_PATH = Path("lib/data/monsters.json")
+ALL_FILTER_LABEL = "Tất cả"
+UNKNOWN_LOCATION_LABEL = "Chưa xác định"
 
 
 class CompatibleTreeview(ttk.Treeview):
@@ -978,8 +980,12 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.current_page = 1
         self.page_size = 25
         self.search_term = ''
-        self.monster_type_filter = 'All Monsters'
-        self.location_filter = 'All Locations'
+        self.monster_type_filter = ALL_FILTER_LABEL
+        self.location_filter = ALL_FILTER_LABEL
+        self.sort_column = 'name'
+        self.sort_order = 'ASC'
+        self.total_records = 0
+        self.total_pages = 1
         self._search_job = None
         self._column_visibility_vars: Dict[str, tk.BooleanVar] = {}
         self._column_visibility_menu: Optional[tk.Menu] = None
@@ -1157,7 +1163,9 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _load_monsters(self) -> None:
         try:
-            if DATA_PATH.exists():
+            if self.db is not None:
+                self.monsters = self.db.get_all_monsters(limit=5000)
+            elif DATA_PATH.exists():
                 with open(DATA_PATH, 'r', encoding='utf-8') as f:
                     self.monsters = json.load(f)
                 for monster in self.monsters:
@@ -1204,7 +1212,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _save_monsters(self) -> bool:
         try:
-            if self.sync_manager is not None:
+            if self.db is not None:
+                self.db.replace_monsters(self.monsters)
+                self.monsters = self.db.get_all_monsters(limit=5000)
+                self._refresh_filter_options()
+            elif self.sync_manager is not None:
                 self.sync_manager.monsters_path = DATA_PATH
                 success = self.sync_manager.save_monsters(self.monsters)
                 if not success:
@@ -1287,8 +1299,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.search_entry.bind('<KeyRelease>', self._on_search_changed)
         self.search_entry.bind('<Escape>', self._on_clear_search)
 
-        self.monster_type_var = tk.StringVar(value='All Monsters')
-        self.location_var = tk.StringVar(value='All Locations')
+        self.monster_type_var = tk.StringVar(value=ALL_FILTER_LABEL)
+        self.location_var = tk.StringVar(value=ALL_FILTER_LABEL)
         self.page_size_var = tk.StringVar(value='25')
 
         self.monster_type_box = ttk.Combobox(search_frame, textvariable=self.monster_type_var, state='readonly', width=18)
@@ -1363,8 +1375,42 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             'resistCritRate': 'RESIST CRIT RATE',
             'resistSkillAmp': 'RESIST SKILL AMP',
             'resistCritDamage': 'RESIST CRIT DMG',
+            'serverBossType': 'MONSTER TYPE',
+            'dungeonId': 'LOCATION',
         }
         return mapping.get(column, column.upper())
+
+    def _column_heading_text(self, column: str) -> str:
+        label = self._column_label(column)
+        if column != getattr(self, 'sort_column', 'name'):
+            return label
+        arrow = '▲' if getattr(self, 'sort_order', 'ASC') == 'ASC' else '▼'
+        return f"{label} {arrow}"
+
+    def _on_sort_column(self, column: str) -> None:
+        if getattr(self, 'sort_column', 'name') == column:
+            self.sort_order = 'DESC' if getattr(self, 'sort_order', 'ASC') == 'ASC' else 'ASC'
+        else:
+            self.sort_column = column
+            self.sort_order = 'ASC'
+        self.current_page = 1
+        self._refresh_monster_table()
+
+    def _local_sort_key(self, monster: Dict[str, Any], column: str) -> Any:
+        if column in {'name', 'dungeonId', 'serverBossType'}:
+            if column == 'dungeonId':
+                return str(monster.get('location_name') or monster.get(column) or '').lower()
+            if column == 'serverBossType':
+                return str(monster.get('monster_type_name') or monster.get(column) or '').lower()
+            return str(monster.get(column) or '').lower()
+
+        value = monster.get(column)
+        if value in (None, ''):
+            return 0
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0
 
     def _on_clear_search(self, event: Any = None) -> None:
         if hasattr(self, 'search_entry') and self.search_entry:
@@ -1376,37 +1422,37 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         if hasattr(self, 'search_entry') and self.search_entry:
             self.search_entry.delete(0, tk.END)
         if hasattr(self, 'monster_type_var'):
-            self.monster_type_var.set('All Monsters')
+            self.monster_type_var.set(ALL_FILTER_LABEL)
         if hasattr(self, 'location_var'):
-            self.location_var.set('All Locations')
+            self.location_var.set(ALL_FILTER_LABEL)
         if hasattr(self, 'page_size_var'):
             self.page_size_var.set('25')
         self.current_page = 1
         self.search_term = ''
-        self.monster_type_filter = 'All Monsters'
-        self.location_filter = 'All Locations'
+        self.monster_type_filter = ALL_FILTER_LABEL
+        self.location_filter = ALL_FILTER_LABEL
         self.page_size = 25
         self._refresh_filter_options()
         self._refresh_monster_table()
 
     def _refresh_filter_options(self) -> None:
         try:
-            if self.db is None and get_db is not None and not DATA_PATH.exists():
+            if self.db is None and get_db is not None:
                 self.db = get_db()
             if self.db is not None:
                 monster_types = self.db.get_monster_types()
                 location_values = self.db.get_locations()
-                values = ['All Monsters'] + [str(v) for v in monster_types if v not in (None, '')]
+                values = [ALL_FILTER_LABEL] + [str(v) for v in monster_types if v not in (None, '')]
                 self.monster_type_box.config(values=values)
                 if self.monster_type_var.get() not in values:
-                    self.monster_type_var.set('All Monsters')
-                loc_values = ['All Locations'] + [str(v) for v in location_values if v not in (None, '')]
+                    self.monster_type_var.set(ALL_FILTER_LABEL)
+                loc_values = [ALL_FILTER_LABEL] + [str(v) for v in location_values if v not in (None, '')]
                 self.location_box.config(values=loc_values)
                 if self.location_var.get() not in loc_values:
-                    self.location_var.set('All Locations')
+                    self.location_var.set(ALL_FILTER_LABEL)
         except Exception:
-            self.monster_type_box.config(values=['All Monsters'])
-            self.location_box.config(values=['All Locations'])
+            self.monster_type_box.config(values=[ALL_FILTER_LABEL])
+            self.location_box.config(values=[ALL_FILTER_LABEL])
 
     def _on_search_changed(self, event: Any = None) -> None:
         if self._search_job is not None:
@@ -1415,8 +1461,9 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _apply_search(self) -> None:
         # Show loading status
-        if hasattr(self, 'stats_label') and self.stats_label:
-            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+        stats_label = getattr(self, 'stats_label', None)
+        if stats_label is not None and hasattr(stats_label, 'config'):
+            stats_label.config(text="⌛ Đang tải dữ liệu...")
         
         self.search_term = self.search_entry.get().strip() if hasattr(self, 'search_entry') else ''
         self.current_page = 1
@@ -1424,12 +1471,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _on_filter_changed(self, event: Any = None) -> None:
         # Show loading status
-        if hasattr(self, 'stats_label') and self.stats_label:
-            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+        stats_label = getattr(self, 'stats_label', None)
+        if stats_label is not None and hasattr(stats_label, 'config'):
+            stats_label.config(text="⌛ Đang tải dữ liệu...")
         
         self.current_page = 1
-        self.monster_type_filter = self.monster_type_var.get() if hasattr(self, 'monster_type_var') else 'All Monsters'
-        self.location_filter = self.location_var.get() if hasattr(self, 'location_var') else 'All Locations'
+        self.monster_type_filter = self.monster_type_var.get() if hasattr(self, 'monster_type_var') else ALL_FILTER_LABEL
+        self.location_filter = self.location_var.get() if hasattr(self, 'location_var') else ALL_FILTER_LABEL
         self.page_size = int(self.page_size_var.get()) if hasattr(self, 'page_size_var') and self.page_size_var.get() else 25
         self._refresh_monster_table()
 
@@ -1457,8 +1505,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         )
 
         for column in self.visible_columns:
-            label = self._column_label(column)
-            self.monster_table.heading(column, text=label)
+            self.monster_table.heading(column, text=self._column_heading_text(column), command=lambda c=column: self._on_sort_column(c))
             self.monster_table.column(column, width=110, anchor='center', stretch=True)
 
         self.monster_table.column('name', width=220, anchor='w')
@@ -1533,7 +1580,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         if target_idx >= 0 and target_monster:
             name = target_monster.get('name', 'Unnamed')
-            if self.sync_manager and m_id:
+            if self.db is not None:
+                self.db.delete_monster(m_id)
+                self._refresh_filter_options()
+            elif self.sync_manager and m_id:
                 self.sync_manager.delete_monster(m_id)
             self.monsters.pop(target_idx)
             self.set_dirty(True)
@@ -1652,7 +1702,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         if self.monster_table.cget('columns') != tuple(self.visible_columns):
             self.monster_table.configure(columns=self.visible_columns)
             for column in list(self.monster_table['columns']):
-                self.monster_table.heading(column, text=self._column_label(column))
+                self.monster_table.heading(column, text=self._column_heading_text(column), command=lambda c=column: self._on_sort_column(c))
                 self.monster_table.column(column, width=110, anchor='center', stretch=True)
             if 'name' in self.monster_table['columns']:
                 self.monster_table.column('name', width=220, anchor='w')
@@ -1680,18 +1730,24 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             try:
                 payload = self.db.get_filtered_monsters(
                     keyword=self.search_term if hasattr(self, 'search_term') else self.search_entry.get().strip(),
-                    monster_type=self.monster_type_filter if hasattr(self, 'monster_type_filter') else 'All Monsters',
-                    location=self.location_filter if hasattr(self, 'location_filter') else 'All Locations',
+                    monster_type=self.monster_type_filter if hasattr(self, 'monster_type_filter') else ALL_FILTER_LABEL,
+                    location=self.location_filter if hasattr(self, 'location_filter') else ALL_FILTER_LABEL,
                     page=self.current_page,
                     page_size=self.page_size,
-                    sort_column='name',
-                    sort_order='ASC',
+                    sort_column=self.sort_column,
+                    sort_order=self.sort_order,
                 )
                 self.filtered_monsters = payload.get('items', [])
-                self.monsters = self.filtered_monsters
+                self.total_records = int(payload.get('total_records', len(self.filtered_monsters)) or 0)
+                self.total_pages = int(payload.get('total_pages', 1) or 1)
             except Exception:
                 self.filtered_monsters = list(self.monsters)
-                self.monsters = list(self.filtered_monsters)
+                self.filtered_monsters.sort(
+                    key=lambda monster: self._local_sort_key(monster, self.sort_column),
+                    reverse=self.sort_order == 'DESC',
+                )
+                self.total_records = len(self.monsters)
+                self.total_pages = max(1, (self.total_records + self.page_size - 1) // self.page_size)
         else:
             self.filtered_monsters = list(self.monsters)
             query = self.search_entry.get().strip().lower() if hasattr(self, 'search_entry') else ""
@@ -1700,6 +1756,12 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                     monster for monster in self.filtered_monsters
                     if query in str(monster.get('name', 'Unnamed')).lower()
                 ]
+            self.filtered_monsters.sort(
+                key=lambda monster: self._local_sort_key(monster, self.sort_column),
+                reverse=self.sort_order == 'DESC',
+            )
+            self.total_records = len(self.monsters)
+            self.total_pages = max(1, (self.total_records + self.page_size - 1) // self.page_size) if self.total_records else 1
 
         for monster in self.filtered_monsters:
             values = []
@@ -1707,15 +1769,15 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 value = monster.get(col)
                 if col == 'name':
                     raw_name = str(value or 'Unnamed')
-                    location = monster.get('dungeonId')
+                    location = monster.get('location_name')
                     if location and str(location).strip():
                         values.append(f"{raw_name}\n{location}")
                     else:
                         values.append(raw_name)
                 elif col == 'dungeonId':
-                    values.append(str(value or ''))
+                    values.append(str(monster.get('location_name') or UNKNOWN_LOCATION_LABEL))
                 elif col == 'serverBossType':
-                    values.append(str(value or ''))
+                    values.append(str(monster.get('monster_type_name') or ''))
                 else:
                     values.append(value if value is not None else '')
             iid = monster.get('id', str(len(self.monster_table.get_children())))
@@ -1726,41 +1788,20 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _update_stats_label(self) -> None:
         """Update the stats label with current record count and pagination info"""
-        if not hasattr(self, 'stats_label') or self.stats_label is None:
+        stats_label = getattr(self, 'stats_label', None)
+        if stats_label is None or not hasattr(stats_label, 'config'):
             return
 
         try:
-            # Get total records (from all monsters, not just filtered)
-            if self.db is not None:
-                try:
-                    total_payload = self.db.get_filtered_monsters(
-                        keyword="",
-                        monster_type="All Monsters",
-                        location="All Locations",
-                        page=1,
-                        page_size=10000,
-                        sort_column='name',
-                        sort_order='ASC',
-                    )
-                    total_records = len(total_payload.get('items', []))
-                except Exception:
-                    total_records = len(self.monsters)
-            else:
-                total_records = len(self.monsters)
-
-            # Get currently displayed records
             displayed_records = len(self.filtered_monsters)
-            
-            # Calculate total pages
-            total_pages = max(1, (total_records + self.page_size - 1) // self.page_size)
-            
-            # Update label text
+            total_records = getattr(self, 'total_records', len(self.monsters))
+            total_pages = getattr(self, 'total_pages', 1)
             stats_text = f"📊 Hiển thị {displayed_records} / {total_records} quái vật (Trang {self.current_page}/{total_pages})"
-            self.stats_label.config(text=stats_text)
+            stats_label.config(text=stats_text)
         except Exception as e:
             print(f"[Stats Label] Error updating: {e}")
             # Fallback to simple display
-            self.stats_label.config(text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật")
+            stats_label.config(text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật")
 
     def _on_row_double_click(self, event: Any) -> None:
         selection = self.monster_table.selection()

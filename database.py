@@ -140,51 +140,7 @@ class MonsterDatabase:
                 )
                 """
             )
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS monsters (
-                    id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL DEFAULT '',
-                    level INTEGER,
-                    exp INTEGER,
-                    hp INTEGER,
-                    defense INTEGER,
-                    attackRate INTEGER,
-                    defenseRate INTEGER,
-                    hpRecharge INTEGER,
-                    accuracy INTEGER,
-                    penetration INTEGER,
-                    damageReduction INTEGER,
-                    evasion INTEGER,
-                    resistCritRate INTEGER,
-                    primaryAttackMin INTEGER,
-                    primaryAttackMax INTEGER,
-                    secondaryAttackMin INTEGER,
-                    secondaryAttackMax INTEGER,
-                    ignoreAccuracy INTEGER,
-                    ignoreDamageReduction INTEGER,
-                    ignorePenetration INTEGER,
-                    absoluteDamage INTEGER,
-                    resistSkillAmp INTEGER,
-                    resistCritDamage INTEGER,
-                    resistSuppress INTEGER,
-                    resistSilence INTEGER,
-                    resistDiffDamage INTEGER,
-                    hpProportionDamage INTEGER,
-                    serverBossType INTEGER,
-                    dungeonId TEXT,
-                    priority INTEGER NOT NULL DEFAULT 1,
-                    damage_per_hit REAL NOT NULL DEFAULT 0,
-                    description TEXT NOT NULL DEFAULT '',
-                    template TEXT NOT NULL DEFAULT '',
-                    training_mode INTEGER NOT NULL DEFAULT 0,
-                    window_bounds TEXT,
-                    templates TEXT NOT NULL DEFAULT '[]',
-                    FOREIGN KEY (dungeonId) REFERENCES location(id) ON DELETE SET NULL,
-                    FOREIGN KEY (serverBossType) REFERENCES monster_type(id) ON DELETE SET NULL
-                )
-                """
-            )
+            self._create_monsters_table(conn)
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS dungeons (
@@ -193,6 +149,7 @@ class MonsterDatabase:
                 )
                 """
             )
+            self._rebuild_monsters_table_without_foreign_keys(conn)
             self._ensure_monsters_columns(conn)
 
         self._seed_location_table()
@@ -225,6 +182,72 @@ class MonsterDatabase:
                 conn.execute(
                     f"ALTER TABLE monsters ADD COLUMN {column_name} {definition}"
                 )
+
+    def _create_monsters_table(self, conn: sqlite3.Connection) -> None:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS monsters (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL DEFAULT '',
+                level INTEGER,
+                exp INTEGER,
+                hp INTEGER,
+                defense INTEGER,
+                attackRate INTEGER,
+                defenseRate INTEGER,
+                hpRecharge INTEGER,
+                accuracy INTEGER,
+                penetration INTEGER,
+                damageReduction INTEGER,
+                evasion INTEGER,
+                resistCritRate INTEGER,
+                primaryAttackMin INTEGER,
+                primaryAttackMax INTEGER,
+                secondaryAttackMin INTEGER,
+                secondaryAttackMax INTEGER,
+                ignoreAccuracy INTEGER,
+                ignoreDamageReduction INTEGER,
+                ignorePenetration INTEGER,
+                absoluteDamage INTEGER,
+                resistSkillAmp INTEGER,
+                resistCritDamage INTEGER,
+                resistSuppress INTEGER,
+                resistSilence INTEGER,
+                resistDiffDamage INTEGER,
+                hpProportionDamage INTEGER,
+                serverBossType INTEGER,
+                dungeonId TEXT,
+                priority INTEGER NOT NULL DEFAULT 1,
+                damage_per_hit REAL NOT NULL DEFAULT 0,
+                description TEXT NOT NULL DEFAULT '',
+                template TEXT NOT NULL DEFAULT '',
+                training_mode INTEGER NOT NULL DEFAULT 0,
+                window_bounds TEXT,
+                templates TEXT NOT NULL DEFAULT '[]'
+            )
+            """
+        )
+
+    def _rebuild_monsters_table_without_foreign_keys(self, conn: sqlite3.Connection) -> None:
+        if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='monsters'").fetchone():
+            return
+
+        foreign_keys = conn.execute("PRAGMA foreign_key_list(monsters)").fetchall()
+        if not foreign_keys:
+            return
+
+        existing_columns = [
+            row["name"] for row in conn.execute("PRAGMA table_info(monsters)").fetchall()
+            if row["name"] in self.MONSTER_COLUMNS
+        ]
+        columns_sql = ", ".join(existing_columns)
+        conn.execute("ALTER TABLE monsters RENAME TO monsters__old")
+        self._create_monsters_table(conn)
+        if existing_columns:
+            conn.execute(
+                f"INSERT INTO monsters ({columns_sql}) SELECT {columns_sql} FROM monsters__old"
+            )
+        conn.execute("DROP TABLE monsters__old")
 
     def _seed_location_table(self) -> None:
         seed_path = self.data_dir / self.LOCATION_SEED_FILE
@@ -323,9 +346,15 @@ class MonsterDatabase:
     def get_monster_types(self) -> List[Any]:
         with self._connect() as conn:
             rows = conn.execute(
-                "SELECT label FROM monster_type ORDER BY sort_order, label"
+                f"""
+                SELECT DISTINCT COALESCE(monster_type.label, '{UNKNOWN_MONSTER_TYPE_LABEL}') AS monster_type_name,
+                    COALESCE(monster_type.sort_order, 9999) AS monster_type_order
+                FROM monsters
+                LEFT JOIN monster_type ON monster_type.id = monsters.serverBossType
+                ORDER BY monster_type_order, LOWER(monster_type_name)
+                """
             ).fetchall()
-        return [row["label"] for row in rows]
+        return [row["monster_type_name"] for row in rows]
 
     def get_locations(self) -> List[Any]:
         with self._connect() as conn:
