@@ -4921,7 +4921,6 @@ Alternative Solutions:
                     f"✅ CSDL sẵn sàng"
                     f" | Quái: {counts.get('monsters', 0)}"
                     f" | Phụ bản: {counts.get('dungeons', 0)}"
-                    f" | Vị trí: {counts.get('location', 0)}"
                     f" | Loại quái: {counts.get('monster_type', 0)}"
                 )
                 self._set_db_status(msg, ok=True)
