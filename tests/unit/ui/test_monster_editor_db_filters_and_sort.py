@@ -150,11 +150,11 @@ def test_sort_click_updates_heading_state(monkeypatch, tmp_path: Path) -> None:
         editor._on_sort_column("hp")
         assert editor.sort_column == "hp"
         assert editor.sort_order == "ASC"
-        assert editor._column_heading_text("hp").endswith("▲")
+        assert editor.monster_table.heading("hp")["text"].endswith("▲")
 
         editor._on_sort_column("hp")
         assert editor.sort_order == "DESC"
-        assert editor._column_heading_text("hp").endswith("▼")
+        assert editor.monster_table.heading("hp")["text"].endswith("▼")
     finally:
         if editor is not None:
             editor.destroy()

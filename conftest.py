@@ -246,7 +246,17 @@ def mock_tk_headless(monkeypatch):
         def item(self, *args, **kwargs):
             return {}
         def heading(self, *args, **kwargs):
-            return None
+            if '_heading_config' not in self.__dict__:
+                self._heading_config = {}
+            if len(args) >= 1:
+                column = args[0]
+                if kwargs:
+                    current = dict(self._heading_config.get(column, {}))
+                    current.update(kwargs)
+                    self._heading_config[column] = current
+                    return None
+                return dict(self._heading_config.get(column, {}))
+            return {}
         def column(self, *args, **kwargs):
             return None
         def get(self, *args, **kwargs):
