@@ -1,0 +1,14 @@
+,
+                            options: [{
+                                value: "all",
+                                label: "All Monsters"
+                            }, {
+                                value: "0",
+                                label: "Regular Monsters"
+                            }, {
+                                value: "1",
+                                label: "Map Bosses"
+                            }, {
+                                value: "2",
+                                label: "World Bosses"
+                            }],
