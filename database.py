@@ -341,7 +341,7 @@ class MonsterDatabase:
             FROM dungeons
             ORDER BY id
         """)
-        return [(row[0], row[1]) for row in cursor.fetchall()]
+        return [row[0] for row in cursor.fetchall()]
 
     def get_filtered_monsters(
         self,
