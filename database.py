@@ -6,6 +6,7 @@ Xử lý schema setup, data import, và các query hỗ trợ UI.
 
 import sqlite3
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -240,6 +241,88 @@ class MonsterDatabase:
         except Exception as e:
             print(f"[ERROR] Loi khi import monsters: {e}")
     
+    def get_monster_types(self) -> List[Any]:
+        """Lấy danh sách các serverBossType distinct dùng cho filter Monster Type."""
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT serverBossType
+            FROM monsters
+            WHERE serverBossType IS NOT NULL AND serverBossType != ''
+            ORDER BY serverBossType
+        """)
+        return [row[0] for row in cursor.fetchall()]
+
+    def get_locations(self) -> List[Any]:
+        """Lấy danh sách location/dungeonId từ bảng dungeons."""
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT dungeonId
+            FROM dungeons
+            WHERE dungeonId IS NOT NULL AND dungeonId != ''
+            ORDER BY dungeonId
+        """)
+        return [row[0] for row in cursor.fetchall()]
+
+    def get_filtered_monsters(
+        self,
+        keyword: str = '',
+        monster_type: Optional[str] = None,
+        location: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 25,
+        sort_column: str = 'name',
+        sort_order: str = 'ASC',
+    ) -> Dict[str, Any]:
+        """Lấy danh sách quái vật theo filter, toàn bộ dữ liệu đã được sanitize và phân trang."""
+        safe_page = max(1, int(page or 1))
+        safe_page_size = max(1, int(page_size or 25))
+        allowed_columns = {
+            'name', 'level', 'hp', 'defense', 'defenseRate',
+            'ignorePenetration', 'resistCritRate', 'resistSkillAmp', 'resistCritDamage'
+        }
+        safe_sort_column = sort_column if sort_column in allowed_columns else 'name'
+        safe_sort_order = str(sort_order or 'ASC').upper()
+        if safe_sort_order not in {'ASC', 'DESC'}:
+            safe_sort_order = 'ASC'
+
+        filters: List[str] = []
+        params: List[Any] = []
+
+        if keyword and str(keyword).strip():
+            filters.append('name LIKE ?')
+            params.append(f"%{str(keyword).strip()}%")
+
+        if monster_type and str(monster_type).strip() not in ('All Monsters', 'All', ''):
+            filters.append('serverBossType = ?')
+            params.append(str(monster_type).strip())
+
+        if location and str(location).strip() not in ('All Locations', 'All', ''):
+            filters.append('dungeonId = ?')
+            params.append(str(location).strip())
+
+        where_clause = (f" WHERE {' AND '.join(filters)}" if filters else '')
+
+        count_query = f"SELECT COUNT(*) AS total FROM monsters{where_clause}"
+        cursor = self.conn.cursor()
+        cursor.execute(count_query, params)
+        total_records = int(cursor.fetchone()['total'] or 0)
+        total_pages = max(1, math.ceil(total_records / safe_page_size)) if total_records else 1
+
+        offset = (safe_page - 1) * safe_page_size
+        sql = (
+            f"SELECT * FROM monsters{where_clause} "
+            f"ORDER BY {safe_sort_column} {safe_sort_order} "
+            f"LIMIT ? OFFSET ?"
+        )
+        cursor.execute(sql, params + [safe_page_size, offset])
+        items = [dict(row) for row in cursor.fetchall()]
+
+        return {
+            'items': items,
+            'total_records': total_records,
+            'total_pages': total_pages,
+        }
+
     def get_all_monsters(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Lấy danh sách toàn bộ quái vật (id, name, level, hp).
@@ -247,7 +330,7 @@ class MonsterDatabase:
         
         Args:
             limit: Giới hạn số lượng bản ghi (default 100)
-            
+             
         Returns:
             List of dicts chứa: id, name, level, hp
         """
@@ -350,3 +433,34 @@ def get_monster_by_id(monster_id: str) -> Optional[Dict[str, Any]]:
 def search_monsters(keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
     """Tìm kiếm quái vật theo tên"""
     return get_db().search_monsters(keyword, limit)
+
+
+def get_monster_types() -> List[Any]:
+    """Lấy danh sách type toàn bộ quái vật."""
+    return get_db().get_monster_types()
+
+
+def get_locations() -> List[Any]:
+    """Lấy danh sách location/dungeonId."""
+    return get_db().get_locations()
+
+
+def get_filtered_monsters(
+    keyword: str = '',
+    monster_type: Optional[str] = None,
+    location: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 25,
+    sort_column: str = 'name',
+    sort_order: str = 'ASC',
+) -> Dict[str, Any]:
+    """Lấy danh sách quái vật theo filter, phân trang và sắp xếp an toàn."""
+    return get_db().get_filtered_monsters(
+        keyword=keyword,
+        monster_type=monster_type,
+        location=location,
+        page=page,
+        page_size=page_size,
+        sort_column=sort_column,
+        sort_order=sort_order,
+    )
