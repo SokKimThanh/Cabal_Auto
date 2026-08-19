@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from database import MonsterDatabase, check_db_health
+from database import MonsterDatabase
 from app_gui import App
 
 
