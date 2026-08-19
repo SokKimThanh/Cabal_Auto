@@ -4891,17 +4891,13 @@ Alternative Solutions:
         """Check database connection on startup and update status bar"""
         try:
             from database import MonsterDatabase
-            
-            db_path = Path("monsters.db")
-            
-            # Try to establish connection
+
             try:
                 db = MonsterDatabase()
-                # Try a simple query to verify connection
+                db.init_db()
                 cursor = db.conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM monsters")
                 total_monsters = cursor.fetchone()[0]
-                db.conn.close()
                 
                 # Connection successful
                 status_msg = f"✓ CSDL: Đã kết nối (monsters.db) | Loaded {total_monsters} quái vật"
@@ -9714,6 +9710,13 @@ def main():
         sys.exit(1)
 
     try:
+        try:
+            from database import MonsterDatabase
+
+            MonsterDatabase().init_db()
+        except Exception as e:
+            print(f"[DB Init] Failed to initialize monsters.db: {e}")
+
         # Start application
         app = App()
         app.protocol("WM_DELETE_WINDOW", app.on_close)
@@ -9725,7 +9728,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 

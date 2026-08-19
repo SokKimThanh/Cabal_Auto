@@ -99,6 +99,10 @@ class MonsterDatabase:
         """)
         
         self.conn.commit()
+
+    def init_db(self) -> None:
+        """Khởi tạo database schema mà không tự động import dữ liệu ngoài DB."""
+        self.setup_schema()
     
     def _extract_json_from_webpack(self, content: str) -> str:
         """
@@ -204,42 +208,10 @@ class MonsterDatabase:
     
     def init_database_data(self) -> None:
         """
-        Tự động khởi tạo schema và import dữ liệu nếu chưa có.
+        Tự động khởi tạo schema.
         Gọi hàm này khi ứng dụng khởi động.
         """
-        # Setup schema nếu chưa tồn tại
-        self.setup_schema()
-        
-        cursor = self.conn.cursor()
-        
-        # Kiểm tra nếu bảng monsters đã có dữ liệu
-        cursor.execute("SELECT COUNT(*) as count FROM monsters")
-        count = cursor.fetchone()['count']
-        
-        if count > 0:
-            print("[INFO] Database da co du lieu, bo qua import.")
-            return
-        
-        # Load dữ liệu từ file
-        try:
-            monsters_data = self._load_monsters_data()
-            print(f"[INFO] Loaded {len(monsters_data)} quai vat tu file du lieu.")
-        except Exception as e:
-            print(f"[ERROR] Loi khi load du lieu: {e}")
-            return
-        
-        # Bước A: Import Dungeons trước
-        try:
-            self._import_dungeons(monsters_data)
-            print("[SUCCESS] Da import dungeons thanh cong.")
-        except Exception as e:
-            print(f"[ERROR] Loi khi import dungeons: {e}")
-        
-        # Bước B: Import Monsters
-        try:
-            self._import_monsters(monsters_data)
-        except Exception as e:
-            print(f"[ERROR] Loi khi import monsters: {e}")
+        self.init_db()
     
     def get_monster_types(self) -> List[Any]:
         """Lấy danh sách các serverBossType distinct dùng cho filter Monster Type."""
@@ -399,7 +371,7 @@ def get_db() -> MonsterDatabase:
     global _db_instance
     if _db_instance is None:
         _db_instance = MonsterDatabase()
-        _db_instance.init_database_data()
+        _db_instance.init_db()
     return _db_instance
 
 
