@@ -71,7 +71,7 @@
     "monster_editor_key": "ctrl+shift+m"
   },
   "training_monster_list": [],
-  "window_hwnd": 396484,
+  "window_hwnd": null,
   "overlay": {
     "enabled": false
   },
