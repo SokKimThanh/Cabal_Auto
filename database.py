@@ -458,11 +458,13 @@ class MonsterDatabase:
         for col in ('dungeonId', 'serverBossType'):
             if col in data and (data[col] is None or str(data[col]).strip() == ''):
                 data[col] = None
+        if not data.get("id"):
+            print("[DB] Lỗi insert/update monster: missing 'id'")
+            return False
         # Đảm bảo các trường số có giá trị mặc định
         for col in columns:
             if col not in data:
-                data[col] = '' if col in ('name', 'id') else 0
-        # Tạo câu lệnh
+                data[col] = "" if col == "name" else 0
         placeholders = ','.join(['?' for _ in data])
         columns_str = ','.join(data.keys())
         values = list(data.values())
