@@ -21,7 +21,7 @@
   },
   {
     "id": "test_template",
-    "path": "E:\\Cabal_Auto\\tests\\vision\\samples\\test_template.png",
+    "path": "tests/vision/samples/test_template.png",
     "threshold": 0.7,
     "scales": [
       1.0
