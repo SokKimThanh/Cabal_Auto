@@ -806,7 +806,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.capture_button = create_icon_button(
             right_tb,
             icon_name="capture",
-            #text=i18n_t("btn_capture", ns="monster_editor", default="Chụp Vùng"),
+            text=None,
             icon_fallback="🔳",
             command=self._on_capture,
             button_type="blue",
@@ -819,7 +819,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.open_folder_button = create_refresh_button(
             right_tb,
             command=self._on_open_folder,
-            #text=i18n_t("btn_open_folder", ns="monster_editor", default="Mở Thư Mục"),
+            text=None,
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_open_folder",
             tooltip_ns="monster_editor",
@@ -829,7 +829,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.test_template_button = create_icon_button(
             right_tb,
             icon_name="test",
-            #text=i18n_t("btn_test", ns="monster_editor", default="Test Match"),
+            text=None,
             icon_fallback="❓",
             command=self._on_test_match,
             button_type="orange",
@@ -1556,35 +1556,31 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         try:
             # Ưu tiên load từ database
             if self.db is not None:
-                self.monsters = self.db.get_all_monsters()  # lấy tất cả, không giới hạn
+                # Lấy toàn bộ monsters từ database
+                payload = self.db.get_filtered_monsters(
+                    keyword="",
+                    monster_type=None,
+                    dungeon_id=None,
+                    page=1,
+                    page_size=5000,  # giới hạn đủ lớn để lấy hết
+                    sort_column="id",
+                    sort_order="ASC",
+                )
+                self.monsters = payload.get("items", [])
                 if not self.monsters:
-                    # Nếu DB rỗng, thử fallback từ JSON
+                    # Fallback JSON nếu DB rỗng
                     if DATA_PATH.exists():
                         with open(DATA_PATH, "r", encoding="utf-8") as f:
                             self.monsters = json.load(f)
-                        # Đảm bảo mỗi monster có id
-                        for monster in self.monsters:
-                            if "id" not in monster:
-                                monster["id"] = str(uuid.uuid4())
-                        # Sau khi đọc từ JSON, có thể lưu vào DB để đồng bộ
-                        if self.monsters:
-                            for monster in self.monsters:
-                                self.db.insert_or_update_monster(monster)
                     else:
                         self.monsters = []
             else:
-                # Fallback JSON khi không có DB
+                # Fallback JSON
                 if DATA_PATH.exists():
                     with open(DATA_PATH, "r", encoding="utf-8") as f:
                         self.monsters = json.load(f)
-                    for monster in self.monsters:
-                        if "id" not in monster:
-                            monster["id"] = str(uuid.uuid4())
                 else:
                     self.monsters = []
-                    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
-                    with open(DATA_PATH, "w", encoding="utf-8") as f:
-                        json.dump([], f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"[MonsterEditor] Error loading monsters: {e}")
             self.monsters = []
@@ -1631,14 +1627,19 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         try:
             if self.db is not None:
                 for monster in self.monsters:
-                    self.db.insert_or_update_monster(monster)
+                    if not self.db.insert_or_update_monster(monster):
+                        self._show_status_message("Lưu thất bại: không thể ghi monster vào DB", is_error=True)
+                        return False
             elif self.sync_manager is not None:
-                self.sync_manager.save_monsters(self.monsters)
+                if not self.sync_manager.save_monsters(self.monsters):
+                    self._show_status_message("Lưu thất bại: sync_manager", is_error=True)
+                    return False
             else:
                 # Fallback JSON
                 DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
                 with open(DATA_PATH, "w", encoding="utf-8") as f:
                     json.dump(self.monsters, f, indent=2, ensure_ascii=False)
+
             self.is_dirty = False
             self.is_monster_dirty = False
             self._update_dirty_state_ui()
@@ -2084,9 +2085,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         if target_idx >= 0 and target_monster:
             name = target_monster.get("name", "Unnamed")
             if self.db is not None:
-                self.db.delete_monster(m_id)
+                if not self.db.delete_monster(m_id):
+                    self._show_status_message("Xóa thất bại: không thể xóa trong DB", is_error=True)
+                    return
             elif self.sync_manager and m_id:
-                self.sync_manager.delete_monster(m_id)
+                if not self.sync_manager.delete_monster(m_id):
+                    self._show_status_message("Xóa thất bại: sync_manager", is_error=True)
+                    return
+            # Chỉ xóa khỏi danh sách nếu xóa DB thành công
             self.monsters.pop(target_idx)
             self.set_dirty(True)
             if self.current_monster_id == m_id:
