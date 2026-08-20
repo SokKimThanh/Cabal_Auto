@@ -19,7 +19,7 @@
       "type": "attack",
       "cooldown": 1.9,
       "cast_time": 1.7,
-      "image": "F:/Cabal_Auto/assets/images/monsters/coc_go__capture_1760738385336.png"
+      "image": "assets/images/monsters/coc_go__capture_1760738385336.png"
     },
     {
       "name": "Bone Javelin",
