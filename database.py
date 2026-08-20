@@ -447,6 +447,47 @@ class MonsterDatabase:
         cursor = self.conn.cursor()
         cursor.execute("SELECT id, name FROM dungeons ORDER BY id")
         return [{"id": row[0], "name": row[1]} for row in cursor.fetchall()]
+    
+    # Thêm
+    def insert_or_update_monster(self, monster: Dict[str, Any]) -> bool:
+        """Chèn hoặc cập nhật một quái vật (INSERT OR REPLACE)"""
+        columns = self.MONSTER_COLUMNS
+        # Lọc các trường có trong bảng
+        data = {k: v for k, v in monster.items() if k in columns}
+        # Xử lý giá trị rỗng cho dungeonId và serverBossType
+        for col in ('dungeonId', 'serverBossType'):
+            if col in data and (data[col] is None or str(data[col]).strip() == ''):
+                data[col] = None
+        if not data.get("id"):
+            print("[DB] Lỗi insert/update monster: missing 'id'")
+            return False
+        # Đảm bảo các trường số có giá trị mặc định
+        for col in columns:
+            if col not in data:
+                data[col] = "" if col == "name" else 0
+        placeholders = ','.join(['?' for _ in data])
+        columns_str = ','.join(data.keys())
+        values = list(data.values())
+        sql = f"INSERT OR REPLACE INTO monsters ({columns_str}) VALUES ({placeholders})"
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(sql, values)
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"[DB] Lỗi insert/update monster: {e}")
+            return False
+
+    def delete_monster(self, monster_id: str) -> bool:
+        """Xóa quái vật theo ID"""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("DELETE FROM monsters WHERE id = ?", (monster_id,))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"[DB] Lỗi xóa monster: {e}")
+            return False
 
 
 _db_instance: Optional[MonsterDatabase] = None

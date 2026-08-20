@@ -1,33 +1,41 @@
-{
-  "templates": [
-    {
-      "id": "monster_hp_bar",
-      "path": "assets/images/monsters/hp_bar.png",
-      "threshold": 0.8,
-      "scales": [
-        0.9,
-        1.0,
-        1.1
-      ],
-      "enabled": true
-    },
-    {
-      "id": "skill_icon_1",
-      "path": "assets/images/skills/skill_1.png",
-      "threshold": 0.85,
-      "scales": [
-        1.0
-      ],
-      "enabled": true
-    },
-    {
-      "id": "test_template",
-      "path": "E:\\Cabal_Auto\\tests\\vision\\samples\\test_template.png",
-      "threshold": 0.7,
-      "scales": [
-        1.0
-      ],
-      "enabled": true
-    }
-  ]
-}
+[
+  {
+    "id": "monster_hp_bar",
+    "path": "assets/images/monsters/hp_bar.png",
+    "threshold": 0.8,
+    "scales": [
+      0.9,
+      1.0,
+      1.1
+    ],
+    "enabled": true
+  },
+  {
+    "id": "skill_icon_1",
+    "path": "assets/images/skills/skill_1.png",
+    "threshold": 0.85,
+    "scales": [
+      1.0
+    ],
+    "enabled": true
+  },
+  {
+    "id": "test_template",
+    "path": "tests/vision/samples/test_template.png",
+    "threshold": 0.7,
+    "scales": [
+      1.0
+    ],
+    "enabled": true
+  },
+  {
+    "id": "coc_go__new_template_1761047821696",
+    "name": "coc_go__new_template_1761047821696",
+    "path": "F:/Cabal_Auto/assets/images/monsters/coc_go__new_template_1761047821696.png",
+    "threshold": 0.7,
+    "scales": [
+      1.0
+    ],
+    "enabled": true
+  }
+]

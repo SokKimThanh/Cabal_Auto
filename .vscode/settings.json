@@ -1,6 +1,5 @@
 {
   "reportMissingImports": "error",
-  "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe",
   "python.analysis.extraPaths": [
     "./lib"
   ],

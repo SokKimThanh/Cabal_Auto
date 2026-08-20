@@ -1,5 +1,5 @@
 {
-  "window_title": "CABAL",
+  "window_title": "Trợ lý săn Cabal",
   "target_key": "z",
   "attack_press_ms": 60,
   "target_cycle_delay": 0.2,
@@ -19,7 +19,7 @@
       "type": "attack",
       "cooldown": 1.9,
       "cast_time": 1.7,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
+      "image": "assets/images/monsters/coc_go__capture_1760738385336.png"
     },
     {
       "name": "Bone Javelin",
@@ -27,7 +27,7 @@
       "type": "attack",
       "cooldown": 2.4,
       "cast_time": 1.5,
-      "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
+      "image": "F:/Cabal_Auto/assets/images/monsters/coc_go__capture_1760736536758.png"
     },
     {
       "name": "Skull Shooter",
@@ -46,12 +46,7 @@
       "image": "assets/images/skills/regeneration_1760739255499.png"
     }
   ],
-  "window_bounds": {
-    "left": 133,
-    "top": 158,
-    "width": 918,
-    "height": 756
-  },
+  "window_bounds": null,
   "monster_list": [
     {
       "name": "Slime Xanh",
@@ -61,7 +56,7 @@
   ],
   "rotation_mode": "sequence",
   "current_monster_index": 0,
-  "window_pid": 27992,
+  "window_pid": null,
   "templates": [],
   "training_mode_enabled": true,
   "ui_mode": "beginner",
@@ -72,10 +67,11 @@
     "stop_key": "ctrl+shift+e",
     "setup_wizard_key": "ctrl+alt+n",
     "library_manager_key": "ctrl+shift+l",
-    "vision_wizard_key": "ctrl+shift+v"
+    "vision_wizard_key": "ctrl+shift+v",
+    "monster_editor_key": "ctrl+shift+m"
   },
   "training_monster_list": [],
-  "window_hwnd": 12978414,
+  "window_hwnd": null,
   "overlay": {
     "enabled": false
   },

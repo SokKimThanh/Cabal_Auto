@@ -5,7 +5,7 @@
     "type": "attack",
     "cooldown": 1.9,
     "cast_time": 1.7,
-    "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231632.png"
+    "image": "assets/images/monsters/coc_go__capture_1760738385336.png"
   },
   {
     "name": "Bone Javelin",
@@ -13,7 +13,7 @@
     "type": "attack",
     "cooldown": 2.4,
     "cast_time": 1.5,
-    "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 231715.png"
+    "image": "F:/Cabal_Auto/assets/images/monsters/coc_go__capture_1760736536758.png"
   },
   {
     "name": "Regeneration",
@@ -37,6 +37,6 @@
     "type": "attack",
     "cooldown": 1.0,
     "cast_time": 1.0,
-    "image": "C:/Users/Admin/Pictures/Screenshots/Screenshot 2025-10-17 155515.png"
+    "image": "F:/Cabal_Auto/assets/images/monsters/coc_go__capture_1760738385336.png"
   }
 ]
