@@ -31,8 +31,8 @@ class TestMonsterEditorRightPanel:
     
     def test_right_panel_creation(self, temp_data_file: Path) -> None:
         """Test that right panel with notebook is created correctly."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -52,8 +52,8 @@ class TestMonsterEditorRightPanel:
     
     def test_info_tab_creation(self, temp_data_file: Path) -> None:
         """Test that Info tab is created correctly."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -78,8 +78,8 @@ class TestMonsterEditorRightPanel:
     
     def test_templates_tab_creation(self, temp_data_file: Path) -> None:
         """Test that Templates tab is created correctly."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -104,8 +104,8 @@ class TestMonsterEditorRightPanel:
     
     def test_tab_switching(self, temp_data_file: Path) -> None:
         """Test switching between tabs."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -139,8 +139,8 @@ class TestMonsterEditorRightPanel:
     
     def test_both_tabs_exist(self, temp_data_file: Path) -> None:
         """Test that both tabs are created in correct order."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -170,8 +170,8 @@ class TestMonsterEditorRightPanel:
     
     def test_tab_frames_distinct(self, temp_data_file: Path) -> None:
         """Test that Info and Templates tabs have distinct frames."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -196,8 +196,8 @@ class TestMonsterEditorRightPanel:
     
     def test_placeholder_content_in_tabs(self, temp_data_file: Path) -> None:
         """Test that tabs contain placeholder content."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()

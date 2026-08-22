@@ -35,8 +35,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that Templates tab is created in notebook."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -67,8 +67,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that template listbox is created with scrollbar."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -102,8 +102,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that all control buttons are created."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -151,8 +151,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that threshold slider is created with correct range and default."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -193,8 +193,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that threshold slider accepts values in valid range."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -235,8 +235,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that all template tab widgets are properly typed as Optional."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()

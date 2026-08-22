@@ -59,8 +59,8 @@ class TestMonsterEditorInfoTab:
         """Test that all form widgets are created in Info tab."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -94,8 +94,8 @@ class TestMonsterEditorInfoTab:
         """Test that _populate_info_form fills form fields correctly."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -136,8 +136,8 @@ class TestMonsterEditorInfoTab:
         """Test clearing form fields."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -177,8 +177,8 @@ class TestMonsterEditorInfoTab:
         """Test that form changes mark monster as dirty."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -211,8 +211,10 @@ class TestMonsterEditorInfoTab:
         """Test that selecting a monster populates the form."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -252,8 +254,10 @@ class TestMonsterEditorInfoTab:
         """Test that adding a monster populates form with default values."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -261,23 +265,22 @@ class TestMonsterEditorInfoTab:
             
             try:
                 editor = QuickMonsterEditor(root)
-                assert editor.name_entry is not None
                 
-                # Add a monster
-                editor._on_add_monster()
-                root.update_idletasks()
+                # Add a monster via dialog
+                dialog = editor._open_edit_dialog(None)
+                assert dialog is not None
                 
-                # Verify form populated with defaults
-                name = editor.name_entry.get()
+                # Verify dialog form populated with defaults
+                name = dialog.name_entry.get()
                 assert 'New Monster' in name or 'Quái Mới' in name
-                assert editor.level_spinbox is not None
-                assert editor.priority_spinbox is not None
-                assert editor.hp_entry is not None
-                assert editor.damage_entry is not None
-                assert editor.level_spinbox.get() == '1'
-                assert editor.priority_spinbox.get() == '1'
-                assert editor.hp_entry.get() == '100'
-                assert editor.damage_entry.get() == '10'
+                assert dialog.level_spinbox is not None
+                assert dialog.priority_spinbox is not None
+                assert dialog.hp_entry is not None
+                assert dialog.damage_entry is not None
+                assert dialog.level_spinbox.get() == '1'
+                assert dialog.priority_spinbox.get() == '1'
+                assert dialog.hp_entry.get() == '100'
+                assert dialog.damage_entry.get() == '10'
                 
             finally:
                 if editor:
@@ -288,8 +291,10 @@ class TestMonsterEditorInfoTab:
         """Test that form changes update monster data in memory."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -297,19 +302,18 @@ class TestMonsterEditorInfoTab:
             
             try:
                 editor = QuickMonsterEditor(root)
-                assert editor.name_entry is not None
                 
-                # Add a monster
-                editor._on_add_monster()
-                root.update_idletasks()
+                # Add a monster via dialog
+                dialog = editor._open_edit_dialog(None)
+                assert dialog is not None
                 
-                monster_id = editor.current_monster_id
+                monster_id = dialog.monster_data.get('id')
                 assert monster_id is not None
                 
                 # Change name
-                editor.name_entry.delete(0, tk.END)
-                editor.name_entry.insert(0, 'Updated Monster')
-                editor._on_info_change()
+                dialog.name_entry.delete(0, tk.END)
+                dialog.name_entry.insert(0, 'Updated Monster')
+                dialog._on_save()
                 root.update_idletasks()
                 
                 # Verify monster data updated in memory
@@ -331,8 +335,8 @@ class TestMonsterEditorInfoTab:
         """Test that spinbox increment/decrement triggers change tracking."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -367,8 +371,8 @@ class TestMonsterEditorInfoTab:
         """Test description field handles multiline text."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -408,8 +412,8 @@ class TestMonsterEditorInfoTab:
     def test_dirty_state_ui_updates(self, temp_data_file: Path) -> None:
         """Test that status label and Save button update with dirty state."""
         temp_data_file.write_text('[]', encoding='utf-8')
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             root = tk.Tk()
             root.withdraw()
             editor = None

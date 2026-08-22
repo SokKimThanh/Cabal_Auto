@@ -35,8 +35,8 @@ class TestMonsterEditorWindowClose:
         """Test that closing with no changes destroys window immediately."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -83,8 +83,8 @@ class TestMonsterEditorWindowClose:
         """Test that closing with unsaved changes prompts user."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -125,8 +125,8 @@ class TestMonsterEditorWindowClose:
         """Test that closing with changes destroys if user confirms."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -178,8 +178,8 @@ class TestMonsterEditorWindowClose:
         """Test that WM_DELETE_WINDOW protocol is bound to _on_cancel."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()

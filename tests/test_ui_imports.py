@@ -6,6 +6,7 @@ This script tests all the new import paths to ensure they work correctly.
 
 import sys
 from pathlib import Path
+import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -23,8 +24,7 @@ def test_imports():
         from ui.components import create_icon_button, create_icon_label
         print("   ✅ ui.components imports OK")
     except ImportError as e:
-        print(f"   ❌ ui.components import failed: {e}")
-        return False
+        pytest.fail(f"ui.components import failed: {e}")
     
     # Test 2: Helpers
     print("\n2. Testing ui.helpers...")
@@ -32,8 +32,7 @@ def test_imports():
         from ui.helpers import IconHelper, get_button_config, attach_i18n_tooltip, get_icon_helper
         print("   ✅ ui.helpers imports OK")
     except ImportError as e:
-        print(f"   ❌ ui.helpers import failed: {e}")
-        return False
+        pytest.fail(f"ui.helpers import failed: {e}")
     
     # Test 3: Helpers - individual modules
     print("\n3. Testing ui.helpers submodules...")
@@ -44,8 +43,7 @@ def test_imports():
         from ui.helpers.capture_helper import capture_region_and_save
         print("   ✅ ui.helpers.* imports OK")
     except ImportError as e:
-        print(f"   ❌ ui.helpers.* import failed: {e}")
-        return False
+        pytest.fail(f"ui.helpers.* import failed: {e}")
     
     # Test 4: Windows
     print("\n4. Testing ui.windows...")
@@ -62,8 +60,7 @@ def test_imports():
                 raise
         print("   ✅ ui.windows imports OK")
     except ImportError as e:
-        print(f"   ❌ ui.windows import failed: {e}")
-        return False
+        pytest.fail(f"ui.windows import failed: {e}")
     
     # Test 5: Utils
     print("\n5. Testing ui.utils...")
@@ -85,8 +82,7 @@ def test_imports():
         from ui.utils.overlay_settings import OverlaySettingsDialog
         print("   ✅ ui.utils imports OK")
     except ImportError as e:
-        print(f"   ❌ ui.utils import failed: {e}")
-        return False
+        pytest.fail(f"ui.utils import failed: {e}")
     
     # Test 6: Main UI package
     print("\n6. Testing ui package exports...")
@@ -100,8 +96,7 @@ def test_imports():
         )
         print("   ✅ ui package exports OK")
     except ImportError as e:
-        print(f"   ❌ ui package exports failed: {e}")
-        return False
+        pytest.fail(f"ui package exports failed: {e}")
     
     print("\n" + "=" * 60)
     print("✅ All imports working correctly!")
@@ -112,8 +107,6 @@ def test_imports():
     print("  ├── windows/       - Main windows & dialogs")
     print("  └── utils/         - Utility functions (overlay, window_tracker)")
     print("\n" + "=" * 60)
-    
-    return True
 
 
 def test_entry_points_smoke():
@@ -143,8 +136,7 @@ def test_entry_points_smoke():
             if "Windows" in str(e) or "pywin32" in str(e):
                 print(f"   ℹ️  {name} ({mod_path}) platform guarded (Windows only)")
             else:
-                print(f"   ❌ {name} ({mod_path}) import failed: {e}")
-                return False
+                pytest.fail(f"{name} ({mod_path}) import failed: {e}")
 
     # Check sys.modules for any unexpected lib.ui modules
     stale_modules = [m for m in sys.modules if m.startswith('lib.ui.') or m == 'lib.ui']
@@ -155,7 +147,6 @@ def test_entry_points_smoke():
         print("   ✅ No stale lib.ui modules loaded in sys.modules")
 
     print("\n" + "=" * 60)
-    return True
 
 
 def test_old_imports():
@@ -176,12 +167,12 @@ def test_old_imports():
 
 
 if __name__ == '__main__':
-    success = test_imports() and test_entry_points_smoke()
-    test_old_imports()
-    
-    if success:
+    try:
+        test_imports()
+        test_entry_points_smoke()
+        test_old_imports()
         print("\n🎉 All tests passed! UI reorganization successful!")
         sys.exit(0)
-    else:
-        print("\n❌ Some tests failed. Please check the errors above.")
+    except Exception as e:
+        print(f"\n❌ Some tests failed: {e}")
         sys.exit(1)

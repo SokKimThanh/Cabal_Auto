@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 # from lib.features.monster_manager import get_monster_manager
 # from lib.features.worker import get_worker
-# from ui.quick_monster_editor import show_quick_monster_editor
+# from ui.windows.quick_monster_editor import show_quick_monster_editor
 
 
 class TestMonsterEditorFlow:

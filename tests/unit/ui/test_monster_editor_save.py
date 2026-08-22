@@ -65,8 +65,10 @@ class TestMonsterEditorSaveAll:
         # Write initial data
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -117,8 +119,10 @@ class TestMonsterEditorSaveAll:
         """Test that saving clears dirty state and updates UI."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -180,8 +184,10 @@ class TestMonsterEditorSaveAll:
         ]
         temp_data_file.write_text(json.dumps(invalid_monsters), encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -217,8 +223,10 @@ class TestMonsterEditorSaveAll:
         """Test that saving with no monsters shows warning."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -255,8 +263,10 @@ class TestMonsterEditorSaveAll:
         """Test that Save button is initially disabled when clean."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()

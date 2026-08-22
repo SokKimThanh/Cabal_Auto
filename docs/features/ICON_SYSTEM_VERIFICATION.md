@@ -298,7 +298,7 @@ save_icon = icon_helper.get_icon('save')
 |-----------|--------|-------|
 | `lib.ui.icon_helper` | ✅ WORKING | Core icon system |
 | `ui.components.icon_button` | ✅ WORKING | Component uses icon_helper |
-| `ui.quick_monster_editor` | 🔄 IN PROGRESS | Being updated |
+| `ui.windows.quick_monster_editor` | 🔄 IN PROGRESS | Being updated |
 | `app_gui.py` | ⏳ PENDING | Will be updated |
 
 ### Migration Progress

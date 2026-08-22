@@ -336,13 +336,17 @@ class CompatibleTreeview(ttk.Treeview):
         children = self.get_children()
         if 0 <= index < len(children):
             values = self.item(children[index], "values")
-            if len(values) >= 3:
-                name = values[1]
-                level = values[2]
-                return f"👹 {name} (Lv.{level})"
-            elif len(values) >= 2:
-                name = values[1]
-                return name
+            if values:
+                raw_name = str(values[0]).split("\n")[0].strip()
+                level = 1
+                if len(values) >= 2 and (isinstance(values[1], int) or str(values[1]).isdigit()):
+                    level = values[1]
+                else:
+                    for v in values[1:]:
+                        if isinstance(v, int) or (isinstance(v, str) and str(v).isdigit()):
+                            level = v
+                            break
+                return f"👹 {raw_name} (Lv.{level})"
         return ""
 
     def curselection(self) -> tuple:
@@ -1251,7 +1255,10 @@ class MonsterEditDialog(tk.Toplevel):
         self.monster_data["priority"] = priority
         self.monster_data["hp"] = hp
         self.monster_data["damage_per_hit"] = damage
-        self.monster_data["description"] = self.desc_text.get("1.0", tk.END).strip()
+        desc_val = self.desc_text.get("1.0", tk.END)
+        if isinstance(desc_val, list):
+            desc_val = "".join(str(x) for x in desc_val)
+        self.monster_data["description"] = str(desc_val).strip()
 
         if self.on_save_callback:
             self.on_save_callback(self.monster_data)
@@ -1546,9 +1553,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                         except ValueError:
                             pass
                     if self.desc_text:
-                        monster["description"] = self.desc_text.get(
-                            "1.0", tk.END
-                        ).strip()
+                        desc_val = self.desc_text.get("1.0", tk.END)
+                        if isinstance(desc_val, list):
+                            desc_val = "".join(str(x) for x in desc_val)
+                        monster["description"] = str(desc_val).strip()
                     self._refresh_monster_table()
                     break
 
@@ -1580,7 +1588,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                     with open(DATA_PATH, "r", encoding="utf-8") as f:
                         self.monsters = json.load(f)
                 else:
+                    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+                    with open(DATA_PATH, "w", encoding="utf-8") as f:
+                        json.dump([], f)
                     self.monsters = []
+
+            for m in self.monsters:
+                if isinstance(m, dict):
+                    ensure_unique_monster_id(m)
         except Exception as e:
             print(f"[MonsterEditor] Error loading monsters: {e}")
             self.monsters = []
@@ -2367,11 +2382,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.total_records = len(self.monsters)
             self.total_pages = 1
 
-            query = (
-                self.search_entry.get().strip().lower()
-                if hasattr(self, "search_entry")
-                else ""
-            )
+            query = ""
+            if hasattr(self, "search_entry") and hasattr(self.search_entry, "get"):
+                search_val = self.search_entry.get()
+                if isinstance(search_val, str):
+                    query = search_val.strip().lower()
             if query:
                 self.filtered_monsters = [
                     monster
@@ -2481,12 +2496,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self._update_page_entry()
         except Exception as e:
             print(f"[Stats Label] Error updating: {e}")
-            if hasattr(self, "filtered_monsters") and hasattr(self, "monsters"):
-                self.stats_label.config(
-                    text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật"
-                )
-            else:
-                self.stats_label.config(text="📊 Đang tải...")
+            if hasattr(self, "stats_label") and hasattr(self.stats_label, "config") and callable(getattr(self.stats_label, "config", None)):
+                if hasattr(self, "filtered_monsters") and hasattr(self, "monsters"):
+                    self.stats_label.config(
+                        text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật"
+                    )
+                else:
+                    self.stats_label.config(text="📊 Đang tải...")
 
     def _on_row_double_click(self, event: Any) -> None:
         selection = self.monster_table.selection()
@@ -2508,7 +2524,15 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             )
 
     def _on_add_monster(self) -> None:
-        # Mở dialog thêm mới (monster = None)
+        """Open the MonsterEditDialog to create a new monster."""
+        if getattr(self, "_active_edit_dialog", None) is not None:
+            try:
+                if self._active_edit_dialog.winfo_exists():
+                    self._active_edit_dialog.lift()
+                    self._active_edit_dialog.focus_force()
+                    return
+            except Exception:
+                self._active_edit_dialog = None
         self._open_edit_dialog(None)
 
     def _open_edit_dialog(
@@ -2732,7 +2756,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.sort_column = column
             self.sort_reverse = False
 
-        items = self.monster_table.get_children("")
+        items = self.monster_table.get_children()
         if not items:
             return
 

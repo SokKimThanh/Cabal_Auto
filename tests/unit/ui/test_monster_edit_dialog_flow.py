@@ -25,8 +25,8 @@ class TestMonsterEditDialogFlow:
 
     def test_header_settings_button_removed(self, temp_data_file: Path) -> None:
         """Test that header gear settings button is removed (None)."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -43,8 +43,8 @@ class TestMonsterEditDialogFlow:
 
     def test_edit_dialog_title_format_and_tab_name(self, temp_data_file: Path) -> None:
         """Test MonsterEditDialog title contains ID and tab 3 is renamed to 'Hiển thị'."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -70,8 +70,8 @@ class TestMonsterEditDialogFlow:
 
     def test_singleton_edit_dialog_enforcement(self, temp_data_file: Path) -> None:
         """Test that opening MonsterEditDialog twice lifts existing dialog instead of creating new."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -105,8 +105,10 @@ class TestMonsterEditDialogFlow:
 
     def test_duplicate_name_check_accepted(self, temp_data_file: Path) -> None:
         """Test duplicate name prompt on save: user accepts auto rename."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -137,8 +139,10 @@ class TestMonsterEditDialogFlow:
 
     def test_duplicate_name_check_rejected(self, temp_data_file: Path) -> None:
         """Test duplicate name prompt on save: user rejects auto rename (dialog stays open)."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -169,8 +173,8 @@ class TestMonsterEditDialogFlow:
 
     def test_search_entry_escape_clears_text(self, temp_data_file: Path) -> None:
         """Test that pressing Escape in search_entry clears search and refreshes table."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             try:
                 root = tk.Tk()
             except Exception as e:
