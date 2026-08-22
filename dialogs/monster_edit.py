@@ -585,9 +585,9 @@ class MonsterEditDialog(tk.Toplevel):
         path = tmpl.get("path", "")
         if path and Path(path).exists() and PIL_AVAILABLE and Image and ImageTk:
             try:
-                img = Image.open(path)
-                img.thumbnail((200, 200), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(img)
+                with Image.open(path) as img:
+                    img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                    photo = ImageTk.PhotoImage(img)
                 self.preview_label.config(image=photo, text="")
                 self.preview_label.image = photo
             except Exception as e:
