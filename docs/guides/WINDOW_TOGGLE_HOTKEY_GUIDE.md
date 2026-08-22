@@ -48,8 +48,8 @@ AutoHotkey (AHK) là công cụ nhẹ, phản hồi tức thì và cực kỳ hi
     ; Tên cửa sổ hoặc một phần tiêu đề cửa sổ cần đưa lên trên cùng
     targetTitle := "Cabal Auto Hunt"  ; Thay bằng tiêu đề cửa sổ của bạn
 
-    ; Đường dẫn tới file thực thi ứng dụng (để khởi chạy nếu chưa mở)
-    targetPath := "pythonw app_gui.py"  ; Hoặc đường dẫn file .exe / .bat
+    ; Lệnh/đường dẫn để khởi chạy nếu chưa mở (khuyên dùng đường dẫn tuyệt đối để tránh lỗi working directory)
+    targetPath := "pythonw ""C:\\path\\to\\Cabal_Auto\\app_gui.py"""  ; Hoặc đường dẫn file .exe / .bat
 
     if WinExist(targetTitle)
     {
