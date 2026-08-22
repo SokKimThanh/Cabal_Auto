@@ -53,7 +53,13 @@ def test_imports():
         from ui.windows.library_manager import LibraryManagerWindow
         from ui.windows.quick_monster_editor import QuickMonsterEditor
         from ui.windows.setup_wizard import show_setup_wizard
-        from ui.windows.overlay_window import OverlayWindowPyWin32
+        try:
+            from ui.windows.overlay_window import OverlayWindowPyWin32
+        except RuntimeError as e:
+            if "Windows" in str(e):
+                print("   ℹ️  ui.windows.overlay_window platform guarded (Windows only)")
+            else:
+                raise
         print("   ✅ ui.windows imports OK")
     except ImportError as e:
         print(f"   ❌ ui.windows import failed: {e}")
@@ -62,8 +68,20 @@ def test_imports():
     # Test 5: Utils
     print("\n5. Testing ui.utils...")
     try:
-        from ui.utils.overlay_controller import OverlayController
-        from ui.utils.window_tracker import WindowTracker
+        try:
+            from ui.utils.overlay_controller import OverlayController
+        except RuntimeError as e:
+            if "Windows" in str(e):
+                print("   ℹ️  ui.utils.overlay_controller platform guarded (Windows only)")
+            else:
+                raise
+        try:
+            from ui.utils.window_tracker import WindowTracker
+        except (ImportError, RuntimeError) as e:
+            if "pywin32" in str(e) or "Windows" in str(e):
+                print("   ℹ️  ui.utils.window_tracker platform guarded (Windows only)")
+            else:
+                raise
         from ui.utils.overlay_settings import OverlaySettingsDialog
         print("   ✅ ui.utils imports OK")
     except ImportError as e:
@@ -99,29 +117,22 @@ def test_imports():
 
 
 def test_old_imports():
-    """Test that old imports are properly deprecated."""
+    """Test that old imports have been completely removed."""
     
-    print("\nTesting deprecated imports...")
+    print("\nTesting removed imports...")
     print("=" * 60)
     
-    # Test that lib.ui is properly marked as deprecated
-    print("\n7. Testing lib.ui deprecation...")
+    # Test that lib.ui is cleanly removed
+    print("\n7. Testing lib.ui removal...")
     try:
         import lib.ui
-        print("   ℹ️  lib.ui still accessible (deprecated)")
-        
-        # Check if __init__ has deprecation notice
-        if hasattr(lib.ui, '__doc__') and lib.ui.__doc__:
-            if 'DEPRECATED' in lib.ui.__doc__:
-                print("   ✅ lib.ui properly marked as DEPRECATED")
-            else:
-                print("   ⚠️  lib.ui missing deprecation notice")
-        else:
-            print("   ⚠️  lib.ui missing documentation")
+        print("   ❌ lib.ui still accessible - removal incomplete!")
+        return False
     except ImportError:
         print("   ✅ lib.ui removed (clean)")
     
     print("\n" + "=" * 60)
+    return True
 
 
 if __name__ == '__main__':

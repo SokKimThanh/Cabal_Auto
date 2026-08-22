@@ -23,12 +23,12 @@ pytestmark = [
 ]
 
 try:
-    from lib.ui.overlay_controller import OverlayController, OverlayStats
+    from ui.utils.overlay_controller import OverlayController, OverlayStats
 except ImportError:
     OverlayController = None  # type: ignore
     OverlayStats = None  # type: ignore
 try:
-    from lib.ui.window_tracker import WindowState
+    from ui.utils.window_tracker import WindowState
 except ImportError:
     WindowState = None  # type: ignore
 from lib.vision.monster_detector import DetectionState

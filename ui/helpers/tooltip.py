@@ -3,7 +3,7 @@
 Centralized tooltip utilities with i18n support.
 
 Usage:
-    from lib.ui.tooltip import attach_i18n_tooltip
+    from ui.helpers.tooltip import attach_i18n_tooltip
     attach_i18n_tooltip(widget, key='tip_apply_all', ns='library_manager', lang_provider=lambda: self.lang)
 
 Design:

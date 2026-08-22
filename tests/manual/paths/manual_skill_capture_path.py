@@ -11,7 +11,7 @@ print("=" * 70)
 
 print("\n[1] Testing capture_helper paths...")
 try:
-    from lib.ui.capture_helper import ASSETS_DIR, ASSETS_SKILLS_DIR
+    from ui.helpers.capture_helper import ASSETS_DIR, ASSETS_SKILLS_DIR
     
     print(f"✓ Monster save dir: {ASSETS_DIR}")
     print(f"  Exists: {ASSETS_DIR.exists()}")
@@ -33,7 +33,7 @@ except Exception as e:
 print("\n[2] Testing capture function signature...")
 try:
     import inspect
-    from lib.ui.capture_helper import capture_region_and_save
+    from ui.helpers.capture_helper import capture_region_and_save
     
     sig = inspect.signature(capture_region_and_save)
     params = list(sig.parameters.keys())
@@ -55,7 +55,7 @@ except Exception as e:
 print("\n[3] Testing Library Manager skill capture call...")
 try:
     # Just check the code exists, don't actually run GUI
-    from lib.ui.library_manager import LibraryManagerWindow
+    from ui.windows.library_manager import LibraryManagerWindow
     import inspect
     
     # Get source of _capture_skill_image method

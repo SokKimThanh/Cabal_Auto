@@ -25,7 +25,7 @@ All utility modules have been consolidated into `ui/utils/` for better organizat
 
 **Old imports:**
 ```python
-from lib.ui.overlay_controller import OverlayController
+from ui.utils.overlay_controller import OverlayController
 from ui.win_input import send_key
 ```
 

@@ -23,7 +23,7 @@ project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
 try:
-    from lib.ui.icon_helper import IconHelper
+    from ui.helpers.icon_helper import IconHelper
 except ImportError:
     IconHelper = None  # type: ignore
 

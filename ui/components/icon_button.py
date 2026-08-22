@@ -2,9 +2,9 @@
 Icon Button & Label Component
 
 Reusable icon button and label components with:
-- Global icon integration (lib.ui.icon_helper)
-- Global button styles (lib.ui.button_styles)
-- Tooltip support (lib.ui.tooltip)
+- Global icon integration (ui.helpers.icon_helper)
+- Global button styles (ui.helpers.button_styles)
+- Tooltip support (ui.helpers.tooltip)
 - State management (enabled/disabled/highlight/danger)
 - Flexible sizing and variants
 - Hover/focus callbacks

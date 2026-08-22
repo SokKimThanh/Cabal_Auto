@@ -81,7 +81,7 @@ def test_import_library_manager():
     print("\n=== Testing Library Manager Import ===")
     
     try:
-        from lib.ui.library_manager import LibraryManagerWindow
+        from ui.windows.library_manager import LibraryManagerWindow
         print("✓ LibraryManagerWindow imported successfully!")
         return True
     except Exception as e:

@@ -6,7 +6,7 @@ This module provides a centralized way to load icons from files,
 with automatic fallback to Unicode emoji if icons are not available.
 
 Usage:
-    from lib.ui.icon_helper import IconHelper
+    from ui.helpers.icon_helper import IconHelper
     
     icon_helper = IconHelper()
     add_icon = icon_helper.get_icon('add', fallback='➕')
@@ -42,9 +42,9 @@ class IconHelper:
             # Running as compiled executable
             base_dir = Path(sys.executable).parent
         else:
-            # Running from source: project root is three levels up (lib/ui/* -> project root)
-            # __file__ = <project>/lib/ui/icon_helper.py
-            # parents[0]=ui, [1]=lib, [2]=<project>
+            # Running from source: project root is three levels up (ui/helpers/* -> project root)
+            # __file__ = <project>/ui/helpers/icon_helper.py
+            # parents[0]=helpers, [1]=ui, [2]=<project>
             try:
                 base_dir = Path(__file__).resolve().parents[2]
             except Exception:

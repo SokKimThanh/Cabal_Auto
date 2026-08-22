@@ -25,7 +25,7 @@ pytestmark = [
 ]
 
 try:
-    from lib.ui.overlay_window_pywin32 import (
+    from ui.windows.overlay_window import (
         OverlayWindowPyWin32 as OverlayWindow,
         DetectionBox,
         create_detection_box
