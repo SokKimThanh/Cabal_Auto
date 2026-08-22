@@ -36,7 +36,10 @@ from ctypes import wintypes
 
 from lib.vision.template_matcher import locate_template
 from lib.vision.vision_engine import VisionEngine
-from lib.system.screen_capture import ScreenCapture
+try:
+    from lib.system.screen_capture import ScreenCapture
+except ImportError:
+    ScreenCapture = None
 from lib.system.bot_manager import BotManager
 from ui.utils.overlay_controller import OverlayController
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
