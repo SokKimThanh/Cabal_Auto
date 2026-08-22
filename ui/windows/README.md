@@ -31,8 +31,8 @@ All window modules have been consolidated into `ui/windows/` for better organiza
 
 **Old imports (Legacy / Deprecated):**
 ```python
-from lib.ui.library_manager import LibraryManagerWindow  # Deprecated
-from ui.quick_monster_editor import QuickMonsterEditor    # Deprecated / Removed
+from lib.ui.library_manager import LibraryManagerWindow
+from ui.quick_monster_editor import QuickMonsterEditor
 ```
 
 **New imports:**
