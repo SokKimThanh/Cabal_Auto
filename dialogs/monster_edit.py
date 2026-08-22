@@ -89,7 +89,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.type_list: List[Dict[str, str]] = []
         self.existing_monsters: List[Dict[str, Any]] = getattr(parent, "monsters", [])
 
-        db = get_db() if get_db is not None else getattr(parent, "db", None)
+        db = getattr(parent, "db", None) or (get_db() if get_db is not None else None)
         if db is not None:
             try:
                 self.dungeon_list = db.get_dungeon_list() if hasattr(db, "get_dungeon_list") else []
