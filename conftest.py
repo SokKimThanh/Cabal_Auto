@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from typing import Any
 
@@ -108,8 +109,6 @@ def db_reset(db_session):
     yield
     db_session.rollback()
 
-
-import os
 
 @pytest.fixture(autouse=True)
 def mock_tk_headless(monkeypatch):

@@ -29,10 +29,10 @@ Template matcher dialog for testing and adjusting template matching.
 
 All window modules have been consolidated into `ui/windows/` for better organization.
 
-**Old imports:**
+**Old imports (Legacy / Deprecated):**
 ```python
-from lib.ui.library_manager import LibraryManagerWindow
-from ui.quick_monster_editor import QuickMonsterEditor
+from lib.ui.library_manager import LibraryManagerWindow  # Deprecated
+from ui.quick_monster_editor import QuickMonsterEditor    # Deprecated / Removed
 ```
 
 **New imports:**

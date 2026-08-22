@@ -82,7 +82,8 @@ class TestMonsterEditorLeftPanel:
         
         with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
              patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None), \
+             patch('tkinter.messagebox.askyesno', return_value=True):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -331,11 +332,13 @@ class TestMonsterEditorLeftPanel:
                 assert editor.monster_listbox is not None
                 
                 # Add 3 monsters
-                for _ in range(3):
+                for i in range(3):
                     dialog = editor._open_edit_dialog(None)
                     assert dialog is not None
+                    dialog.name_entry.delete(0, tk.END)
+                    dialog.name_entry.insert(0, f"Monster {i+1}")
                     dialog._on_save()
-                root.update_idletasks()
+                    root.update_idletasks()
                 
                 # Verify all added
                 assert len(editor.monsters) == 3
