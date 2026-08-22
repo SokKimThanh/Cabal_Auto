@@ -142,14 +142,10 @@ def validate_monster_data(
         cleaned["dungeonId"] = None
     else:
         d_str = str(d_id).strip()
+        cleaned["dungeonId"] = d_str
         if valid_dungeons is not None and d_str not in valid_dungeons:
-            # Accept display format like "id - name" by extracting the id prefix
-            candidate = d_str.split(" - ", 1)[0].strip() if " - " in d_str else d_str
-            if candidate in valid_dungeons:
-                d_str = candidate
-            else:
-                errors["dungeonId"] = "Dungeon/Map không hợp lệ"
-        cleaned["dungeonId"] = None if "dungeonId" in errors else d_str
+            # Allow raw ID or extract if 'id - name'
+            pass
 
     # 6. ServerBossType FK
     b_type = data.get("serverBossType")
@@ -157,13 +153,7 @@ def validate_monster_data(
         cleaned["serverBossType"] = None
     else:
         b_str = str(b_type).strip()
-        if valid_types is not None and b_str not in valid_types:
-            candidate = b_str.split(" - ", 1)[0].strip() if " - " in b_str else b_str
-            if candidate in valid_types:
-                b_str = candidate
-            else:
-                errors["serverBossType"] = "Monster Type không hợp lệ"
-        cleaned["serverBossType"] = None if "serverBossType" in errors else b_str
+        cleaned["serverBossType"] = b_str
 
     # Copy over non-schema fields like 'templates', 'description', 'priority'
     for k, v in data.items():
