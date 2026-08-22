@@ -82,7 +82,7 @@ class MonsterEditDialog(tk.Toplevel):
 
         # Deep copy monster or create new default
         if monster:
-            self.monster_data = json.loads(json.dumps(monster))
+            self.monster_data = copy.deepcopy(monster)
         else:
             self.monster_data = {
                 "id": str(uuid.uuid4()),
