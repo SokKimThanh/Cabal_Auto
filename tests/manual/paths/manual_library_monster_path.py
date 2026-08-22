@@ -11,7 +11,7 @@ print("=" * 60)
 
 try:
     # Import and check path calculation
-    from lib.ui.library_manager import LibraryManagerWindow
+    from ui.windows.library_manager import LibraryManagerWindow
     
     # Create a mock window (won't show GUI)
     import tkinter as tk

@@ -699,11 +699,11 @@ Track progress at:
         self.pil_available = (Image is not None)
         # Thumbnail image cache to prevent GC
         self._thumb_cache = {}
-        # Project paths - library_manager.py is in lib/ui/, need 3 levels up to reach project root
-        _current_file = Path(__file__).resolve()     # lib/ui/library_manager.py
-        _lib_ui_dir = _current_file.parent           # lib/ui/
-        _lib_dir = _lib_ui_dir.parent                # lib/
-        self.project_root = _lib_dir.parent          # project root
+        # Project paths - library_manager.py is in ui/windows/, need 2 levels up to reach project root
+        _current_file = Path(__file__).resolve()     # ui/windows/library_manager.py
+        _ui_windows_dir = _current_file.parent       # ui/windows/
+        _ui_dir = _ui_windows_dir.parent             # ui/
+        self.project_root = _ui_dir.parent           # project root
         self.assets_mon_dir = self.project_root / 'assets' / 'images' / 'monsters'
         self.assets_mon_dir.mkdir(parents=True, exist_ok=True)
         self.tmp_capture_dir = self.project_root / 'tmp' / 'captures'

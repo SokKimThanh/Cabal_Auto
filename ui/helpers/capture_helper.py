@@ -18,10 +18,9 @@ except Exception:
 import tkinter as tk
 from tkinter import messagebox
 
-# Get project root by going up from lib/ui/capture_helper.py
-_current_file = Path(__file__).resolve()  # lib/ui/capture_helper.py
-_lib_dir = _current_file.parent.parent    # lib/
-_project_root = _lib_dir.parent            # project root
+# Get project root by going up from ui/helpers/capture_helper.py
+_current_file = Path(__file__).resolve()  # ui/helpers/capture_helper.py
+_project_root = _current_file.parents[2]   # project root
 
 # Default ASSETS_DIR for monsters (backward compatibility)
 ASSETS_DIR = _project_root / 'assets' / 'images' / 'monsters'

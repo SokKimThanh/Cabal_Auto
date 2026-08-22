@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
 try:
-    from lib.ui.tooltip import attach_i18n_tooltip
+    from ui.helpers.tooltip import attach_i18n_tooltip
     from lib.i18n import register_bulk
     from lib.i18n.translations import LIBRARY_MANAGER_TRANSLATIONS
 except Exception as e:

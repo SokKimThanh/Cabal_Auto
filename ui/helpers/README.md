@@ -50,13 +50,6 @@ capture_region_and_save(x, y, width, height, output_path)
 
 All helper modules have been moved from `lib/ui/` to `ui/helpers/` for better organization.
 
-**Old imports:**
-```python
-from lib.ui.icon_helper import IconHelper
-from lib.ui.button_styles import get_button_config
-from lib.ui.tooltip import attach_i18n_tooltip
-```
-
 **New imports:**
 ```python
 from ui.helpers import IconHelper, get_button_config, attach_i18n_tooltip

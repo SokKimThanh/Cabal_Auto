@@ -328,7 +328,7 @@ If all tests pass:
 
 If any test fails:
 ❌ Review docs/sprints/sprint20/PHASE1_VISION_UI_CLEANUP.md
-❌ Check lib/ui/library_manager.py implementation
+❌ Check ui/windows/library_manager.py implementation
 ❌ Verify dialog content matches language
 ❌ Check console for errors
 

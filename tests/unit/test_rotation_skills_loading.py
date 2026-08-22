@@ -130,7 +130,7 @@ def test_rotation_tab_from_wizard():
     def open_library_manager():
         """Simulate opening library manager from wizard context"""
         try:
-            from lib.ui.library_manager import LibraryManagerWindow
+            from ui.windows.library_manager import LibraryManagerWindow
             
             status_label.config(
                 text="Status: Loading Library Manager with test skills...",
@@ -300,7 +300,7 @@ def test_rotation_tab_from_app():
     def open_library_manager():
         """Simulate opening library manager from main app"""
         try:
-            from lib.ui.library_manager import LibraryManagerWindow
+            from ui.windows.library_manager import LibraryManagerWindow
             
             status_label.config(
                 text="Status: Loading Library Manager (fallback to hunt_config)...",

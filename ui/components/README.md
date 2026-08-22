@@ -16,9 +16,9 @@ ui/components/
 ## Features
 
 ### ✅ Global Integration
-- **Icon System**: Uses `lib.ui.icon_helper.IconHelper` for consistent icons
-- **Button Styles**: Uses `lib.ui.button_styles.get_button_config()` for theme colors
-- **Tooltips**: Uses `lib.ui.tooltip.attach_i18n_tooltip()` for i18n tooltips
+- **Icon System**: Uses `ui.helpers.icon_helper.IconHelper` for consistent icons
+- **Button Styles**: Uses `ui.helpers.button_styles.get_button_config()` for theme colors
+- **Tooltips**: Uses `ui.helpers.tooltip.attach_i18n_tooltip()` for i18n tooltips
 - **i18n**: Supports internationalized text and tooltips
 
 ### ✅ State Management
@@ -330,9 +330,9 @@ def create_form_actions(parent):
 **Before:**
 ```python
 # Old manual way
-from lib.ui.icon_helper import IconHelper
-from lib.ui.button_styles import get_button_config
-from lib.ui.tooltip import attach_i18n_tooltip
+from ui.helpers.icon_helper import IconHelper
+from ui.helpers.button_styles import get_button_config
+from ui.helpers.tooltip import attach_i18n_tooltip
 
 icon_helper = IconHelper()
 save_icon = icon_helper.get_icon('save', fallback='💾')
@@ -514,15 +514,15 @@ icon_button.py
 
 ### Integration Points
 
-**Icon System** (`lib.ui.icon_helper`):
+**Icon System** (`ui.helpers.icon_helper`):
 - `IconHelper.get_icon()` - Load icons by name
 - Fallback to emojis if icon not found
 
-**Button Styles** (`lib.ui.button_styles`):
+**Button Styles** (`ui.helpers.button_styles`):
 - `get_button_config()` - Get themed button config
 - 5 button types: green_light, red, blue, orange, refresh
 
-**Tooltips** (`lib.ui.tooltip`):
+**Tooltips** (`ui.helpers.tooltip`):
 - `attach_i18n_tooltip()` - Attach i18n tooltips
 - Simple tooltip fallback for plain text
 

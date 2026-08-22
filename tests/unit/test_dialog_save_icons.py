@@ -26,8 +26,8 @@ if sys.platform != "win32":
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import tkinter as tk
-from lib.ui.library_manager import MonsterDialog, SkillDialog
-from lib.ui.icon_helper import get_icon_helper
+from ui.windows.library_manager import MonsterDialog, SkillDialog
+from ui.helpers.icon_helper import get_icon_helper
 from lib.i18n import t as i18n_t
 
 

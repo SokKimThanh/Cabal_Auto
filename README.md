@@ -68,7 +68,7 @@ Cabal_Auto/
 │   ├── ui_style.py        # Global UI styles
 │   └── README.md          # Library documentation ⭐
 │
-├── 🎮 ui/                  # UI modules (legacy, being migrated to lib/ui/)
+├── 🎮 ui/                  # UI modules (components, windows, helpers, utils)
 │   ├── setup_wizard.py    # 5-step Setup Wizard
 │   ├── template_matcher.py # Template matching UI
 │   └── auto_hunt.py       # Hunt UI module
@@ -995,7 +995,7 @@ Moved: hotkeyManager.txt → docs/archive/v2/legacy/hotkeyManager.txt
 | Demo script | `tests/demos/` | `demo_feature.py` |
 | Config file | `lib/data/` or `config/` | `feature_config.json` |
 | Documentation | `docs/guides/` or `docs/features/` | `FEATURE_GUIDE.md` |
-| UI component | `lib/ui/` | `feature_dialog.py` |
+| UI component | `ui/` | `feature_dialog.py` |
 | Feature module | `lib/features/` | `feature/module.py` |
 | Legacy script | `scripts/` | `legacy_tool.py` |
 | Planning doc | `docs/archive/v2/legacy/` | `feature_plan.txt` |

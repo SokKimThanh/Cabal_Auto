@@ -69,7 +69,7 @@ except ImportError:
         lang_provider: Callable[[], str],
         delay: int = 400
     ) -> I18nToolTip:  # type: ignore
-        """Fallback tooltip function when lib.ui.tooltip not available"""
+        """Fallback tooltip function when ui.helpers.tooltip not available"""
         return I18nToolTip()  # type: ignore
 
 try:
