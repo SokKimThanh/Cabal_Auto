@@ -59,8 +59,8 @@ class TestMonsterEditorInfoTab:
         """Test that all form widgets are created in Info tab."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -94,8 +94,8 @@ class TestMonsterEditorInfoTab:
         """Test that _populate_info_form fills form fields correctly."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             try:
                 root = tk.Tk()
@@ -136,8 +136,8 @@ class TestMonsterEditorInfoTab:
         """Test clearing form fields."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -177,8 +177,8 @@ class TestMonsterEditorInfoTab:
         """Test that form changes mark monster as dirty."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -211,8 +211,8 @@ class TestMonsterEditorInfoTab:
         """Test that selecting a monster populates the form."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -252,8 +252,8 @@ class TestMonsterEditorInfoTab:
         """Test that adding a monster populates form with default values."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -288,8 +288,8 @@ class TestMonsterEditorInfoTab:
         """Test that form changes update monster data in memory."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -331,8 +331,8 @@ class TestMonsterEditorInfoTab:
         """Test that spinbox increment/decrement triggers change tracking."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -367,8 +367,8 @@ class TestMonsterEditorInfoTab:
         """Test description field handles multiline text."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -408,8 +408,8 @@ class TestMonsterEditorInfoTab:
     def test_dirty_state_ui_updates(self, temp_data_file: Path) -> None:
         """Test that status label and Save button update with dirty state."""
         temp_data_file.write_text('[]', encoding='utf-8')
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             root = tk.Tk()
             root.withdraw()
             editor = None

@@ -19,7 +19,7 @@ import tkinter as tk
 
 # Now import from ui
 try:
-    from ui.quick_monster_editor import QuickMonsterEditor
+    from ui.windows.quick_monster_editor import QuickMonsterEditor
 except ImportError:
     QuickMonsterEditor = None  # type: ignore
 

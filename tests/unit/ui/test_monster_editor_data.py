@@ -62,8 +62,8 @@ class TestMonsterEditorData:
         temp_data_file.write_text('[]', encoding='utf-8')
         
         # Mock DATA_PATH
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -87,8 +87,8 @@ class TestMonsterEditorData:
             encoding='utf-8'
         )
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -122,8 +122,8 @@ class TestMonsterEditorData:
             encoding='utf-8'
         )
         
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -146,8 +146,8 @@ class TestMonsterEditorData:
         # Use non-existent path
         non_existent = temp_data_file.parent / 'non_existent.json'
         
-        with patch('ui.quick_monster_editor.DATA_PATH', non_existent):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', non_existent):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -170,8 +170,8 @@ class TestMonsterEditorData:
     
     def test_save_monsters(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test saving monsters to file."""
-        with patch('ui.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+            from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
             root.withdraw()
@@ -200,7 +200,7 @@ class TestMonsterEditorData:
     
     def test_save_monsters_error_handling(self) -> None:
         """Test error handling when save fails."""
-        from ui.quick_monster_editor import QuickMonsterEditor
+        from ui.windows.quick_monster_editor import QuickMonsterEditor
         
         root = tk.Tk()
         root.withdraw()
@@ -222,7 +222,7 @@ class TestMonsterEditorData:
     
     def test_dirty_state_tracking(self) -> None:
         """Test dirty state flags."""
-        from ui.quick_monster_editor import QuickMonsterEditor
+        from ui.windows.quick_monster_editor import QuickMonsterEditor
         
         root = tk.Tk()
         root.withdraw()
