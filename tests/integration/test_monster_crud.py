@@ -23,6 +23,7 @@ def test_db(tmp_path: Path):
     conn.row_factory = sqlite3.Row
 
     db = MonsterDatabase()
+    db.close()  # close initial connection created in __init__ before re-pointing
     db.DB_PATH = db_file
     db.conn = conn
     db.init_db()
