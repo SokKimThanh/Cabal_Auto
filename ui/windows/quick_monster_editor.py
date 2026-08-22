@@ -28,42 +28,27 @@ from dialogs.display_settings import DisplaySettingsDialog
 from dialogs.monster_edit import MonsterEditDialog
 from repositories.monster_repository import MonsterRepository
 from views.image_handler import ImageHandler
-try:
-    from lib.features.monster_service import (
-        check_duplicate_name,
-        generate_unique_name,
-        ensure_unique_monster_id,
-    )
-    from lib.i18n import t as i18n_t, get_lang
-    from ui.components import create_icon_button, create_icon_label
-    from ui.components.icon_button import (
-        create_add_button,
-        create_delete_button,
-        create_save_button,
-        create_cancel_button,
-        create_refresh_button,
-        set_button_enabled,
-    )
-    from ui.mixins.action_notification_mixin import ActionNotificationMixin
-    from lib.ui_style import UIStyle as UI
-except ImportError:
-    from mock.fallbacks import (
-        check_duplicate_name,
-        generate_unique_name,
-        ensure_unique_monster_id,
-        i18n_t,
-        get_lang,
-        create_icon_button,
-        create_icon_label,
-        create_add_button,
-        create_delete_button,
-        create_save_button,
-        create_cancel_button,
-        create_refresh_button,
-        ActionNotificationMixin,
-        set_button_enabled,
-        UIStyle as UI,
-    )
+from mock.fallbacks import (
+    check_duplicate_name,
+    generate_unique_name,
+    ensure_unique_monster_id,
+    i18n_t,
+    get_lang,
+    i18n_register_bulk,
+    attach_i18n_tooltip,
+    get_button_config,
+    create_icon_button,
+    create_icon_label,
+    create_add_button,
+    create_delete_button,
+    create_save_button,
+    create_cancel_button,
+    create_refresh_button,
+    ActionNotificationMixin,
+    set_button_enabled,
+    UIStyle as UI,
+    MockIconHelper,
+)
 
 try:
     from database import get_db
@@ -442,37 +427,25 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             monsters = []
         return monsters if monsters is not None else []
 
-def _load_monsters(self) -> None:
-    if threading.current_thread() is not threading.main_thread():
-        # Never touch UI state from worker threads.
-        self.result_queue.put(("load_monsters", self._load_monsters_sync()))
-        return
-
-    def _bg_worker() -> None:
-        if self.stop_event.is_set():
+    def _load_monsters(self) -> None:
+        if threading.current_thread() is not threading.main_thread():
+            self.monsters = self._load_monsters_sync()
+            self.filtered_monsters = list(self.monsters)
             return
-        data = self._load_monsters_sync()
-        if self.stop_event.is_set():
-            return
-        self.result_queue.put(("load_monsters", data))
 
-    def _drain_queue() -> None:
-        try:
-            while True:
-                action, data = self.result_queue.get_nowait()
-                if action == "load_monsters":
-                    self.monsters = data
-                    self.filtered_monsters = list(self.monsters)
-                    self._refresh_monster_table()
-        except queue.Empty:
-            pass
-        if self.winfo_exists() and not self.stop_event.is_set():
-            self._after_id = self.after(100, _drain_queue)
+        def _bg_worker():
+            if hasattr(self, "stop_event") and self.stop_event.is_set():
+                return
+            data = self._load_monsters_sync()
+            if hasattr(self, "stop_event") and self.stop_event.is_set():
+                return
+            self.result_queue.put(("load_monsters", data))
 
-    if self._after_id is None:
-        self._after_id = self.after(0, _drain_queue)
+        t = threading.Thread(target=_bg_worker, daemon=True)
+        t.start()
+        self.monsters = self._load_monsters_sync()
+        self.filtered_monsters = list(self.monsters)
 
-    threading.Thread(target=_bg_worker, daemon=True).start()
     def set_dirty(self, value: bool = True) -> None:
         self.is_dirty = value
         self._update_dirty_state_ui()

@@ -82,7 +82,7 @@ class MonsterEditDialog(tk.Toplevel):
 
         # Deep copy monster or create new default
         if monster:
-            self.monster_data = copy.deepcopy(monster)
+            self.monster_data = json.loads(json.dumps(monster))
         else:
             self.monster_data = {
                 "id": str(uuid.uuid4()),
@@ -586,9 +586,9 @@ class MonsterEditDialog(tk.Toplevel):
         if path and Path(path).exists() and PIL_AVAILABLE and Image and ImageTk:
             try:
                 img = Image.open(path)
-                resample = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
-                img.thumbnail((200, 200), resample)
+                img.thumbnail((200, 200), Image.Resampling.LANCZOS)
                 photo = ImageTk.PhotoImage(img)
+                self.preview_label.config(image=photo, text="")
                 self.preview_label.image = photo
             except Exception as e:
                 self.preview_label.config(text=f"Lỗi ảnh\n{tmpl.get('name')}", image="")
@@ -617,10 +617,6 @@ class MonsterEditDialog(tk.Toplevel):
             )
 
     def _on_capture(self) -> None:
-        import time
-        import re
-        from ui.windows.quick_monster_editor import QuickMonsterEditor
-
         if self._is_capturing or not PIL_AVAILABLE or ImageGrab is None:
             return
         self._is_capturing = True
@@ -661,10 +657,10 @@ class MonsterEditDialog(tk.Toplevel):
             self._is_capturing = False
 
     def _on_browse(self) -> None:
-        import time
         if self._is_browsing:
             return
         self._is_browsing = True
+        try:
             file_path = filedialog.askopenfilename(
                 title=i18n_t(
                     "tooltip_browse", ns="monster_editor", default="Chọn Ảnh Template"

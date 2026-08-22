@@ -24,11 +24,9 @@ class MonsterRepository:
     def _get_connection(self) -> Optional[sqlite3.Connection]:
         if get_db is not None:
             try:
-                db = get_db()
-                if isinstance(db, sqlite3.Connection):
-                    return db
-                if hasattr(db, "conn") and isinstance(db.conn, sqlite3.Connection):
-                    return db.conn
+                conn = get_db()
+                if conn:
+                    return conn
             except Exception:
                 pass
         if self.db_path:
