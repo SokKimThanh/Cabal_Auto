@@ -661,10 +661,10 @@ class MonsterEditDialog(tk.Toplevel):
             self._is_capturing = False
 
     def _on_browse(self) -> None:
+        import time
         if self._is_browsing:
             return
         self._is_browsing = True
-        try:
             file_path = filedialog.askopenfilename(
                 title=i18n_t(
                     "tooltip_browse", ns="monster_editor", default="Chọn Ảnh Template"
