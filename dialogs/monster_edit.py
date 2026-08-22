@@ -617,6 +617,10 @@ class MonsterEditDialog(tk.Toplevel):
             )
 
     def _on_capture(self) -> None:
+        import time
+        import re
+        from ui.windows.quick_monster_editor import QuickMonsterEditor
+
         if self._is_capturing or not PIL_AVAILABLE or ImageGrab is None:
             return
         self._is_capturing = True
