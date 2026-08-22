@@ -74,8 +74,6 @@ class ImageHandler:
             if ImageDraw:
                 draw = ImageDraw.Draw(img)
                 draw.rectangle([(0, 0), (size[0] - 1, size[1] - 1)], outline=(180, 180, 180))
-                if text:
-                    draw.text((4, 4), text, fill=(80, 80, 80))
             return ImageTk.PhotoImage(img)
         except Exception:
             return None

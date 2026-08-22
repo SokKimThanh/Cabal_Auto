@@ -37,12 +37,13 @@ def ensure_unique_monster_id(
     existing_monsters: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     import uuid
-
+    m_id = str(monster_data.get("id", "")).strip()
     existing_ids = set()
     if existing_monsters:
-        existing_ids = {str(m.get("id")) for m in existing_monsters if m.get("id")}
+        for m in existing_monsters:
+            if isinstance(m, dict) and m.get("id"):
+                existing_ids.add(str(m.get("id")).strip())
 
-    m_id = str(monster_data.get("id", "")).strip()
     if not m_id or m_id in existing_ids:
         m_id = str(uuid.uuid4())
         monster_data["id"] = m_id
@@ -80,8 +81,13 @@ def create_icon_button(
     **kwargs,
 ):
     config = get_button_config(button_type)
+    padding = kwargs.pop("padding", None)
+    if isinstance(padding, dict):
+        if "padx" in padding:
+            kwargs["padx"] = padding["padx"]
+        if "pady" in padding:
+            kwargs["pady"] = padding["pady"]
 
-    padding = kwargs.get("padding")
     invalid_params = [
         "icon_fallback",
         "icon_size",
@@ -90,17 +96,10 @@ def create_icon_button(
         "tooltip_ns",
         "tooltip_text",
         "auto_hover_disabled",
+        "padding",
     ]
-    filtered_kwargs = {
-        k: v for k, v in kwargs.items() if k not in invalid_params and k != "padding"
-    }
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
     config.update(filtered_kwargs)
-    if isinstance(padding, dict):
-        if "padx" in padding:
-            config["padx"] = padding["padx"]
-        if "pady" in padding:
-            config["pady"] = padding["pady"]
-
     icon_fallback = kwargs.get("icon_fallback", icon_name)
     display_text = text if text is not None else icon_fallback
     btn = tk.Button(parent, text=display_text, command=command, **config)
@@ -174,8 +173,7 @@ def create_refresh_button(parent, command=None, text=None, **kwargs):
 
 class ActionNotificationMixin:
     def __init__(self, *args, debug_mode=False, **kwargs):
-        if args:
-            super().__init__(args[0])
+        super().__init__(*args, **kwargs)
 
     def show_notification(self, *args, **kwargs):
         pass

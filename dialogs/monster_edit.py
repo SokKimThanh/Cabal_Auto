@@ -60,6 +60,8 @@ except ImportError:
     from mock.fallbacks import MockIconHelper
     icon_helper = MockIconHelper()
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 from views.image_handler import ImageHandler
 image_handler = ImageHandler()
 
@@ -544,6 +546,14 @@ class MonsterEditDialog(tk.Toplevel):
         self.hp_entry.delete(0, tk.END)
         self.damage_entry.delete(0, tk.END)
         self.desc_text.delete("1.0", tk.END)
+        if hasattr(self, "preview_label") and self.preview_label:
+            self.preview_label.config(
+                text=i18n_t(
+                    "preview_label", ns="monster_editor", default="Chưa chọn\ntemplate"
+                ),
+                image="",
+            )
+            self.preview_label.image = None
 
     def _refresh_templates(self) -> None:
         for item in self.template_listbox.get_children():
@@ -570,11 +580,19 @@ class MonsterEditDialog(tk.Toplevel):
                 ),
                 image="",
             )
+            self.preview_label.image = None
             return
 
         idx = int(selection[0].split("_")[-1])
         templates = self.monster_data.get("templates", [])
         if idx >= len(templates):
+            self.preview_label.config(
+                text=i18n_t(
+                    "preview_label", ns="monster_editor", default="Chưa chọn\ntemplate"
+                ),
+                image="",
+            )
+            self.preview_label.image = None
             return
 
         tmpl = templates[idx]
@@ -582,20 +600,25 @@ class MonsterEditDialog(tk.Toplevel):
         self.threshold_scale.set(thresh)
         self.threshold_value_label.config(text=f"{thresh:.2f}")
 
-        path = tmpl.get("path", "")
-        if path and Path(path).exists() and PIL_AVAILABLE and Image and ImageTk:
+        rel_path = tmpl.get("path", "")
+        resolved_path = PROJECT_ROOT / rel_path if rel_path and not Path(rel_path).is_absolute() else Path(rel_path) if rel_path else None
+
+        if resolved_path and resolved_path.exists() and PIL_AVAILABLE and Image and ImageTk:
             try:
-                with Image.open(path) as img:
-                    img.thumbnail((200, 200), Image.Resampling.LANCZOS)
-                    photo = ImageTk.PhotoImage(img)
+                with Image.open(resolved_path) as raw_img:
+                    img = raw_img.copy()
+                img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
                 self.preview_label.config(image=photo, text="")
                 self.preview_label.image = photo
-            except Exception as e:
+            except Exception:
                 self.preview_label.config(text=f"Lỗi ảnh\n{tmpl.get('name')}", image="")
+                self.preview_label.image = None
         else:
             self.preview_label.config(
                 text=f"Không tìm thấy\n{tmpl.get('name')}", image=""
             )
+            self.preview_label.image = None
 
     def _on_threshold_changed(self, val: str) -> None:
         try:

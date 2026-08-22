@@ -21,27 +21,33 @@ class MonsterRepository:
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = db_path
 
-    def _get_connection(self) -> Optional[sqlite3.Connection]:
+    def _get_connection(self) -> tuple[Optional[sqlite3.Connection], bool]:
+        """
+        Returns (connection, is_local_connection).
+        If is_local_connection is True, caller must close the connection in a finally block.
+        """
         if get_db is not None:
             try:
-                db = get_db()
-                conn = getattr(db, "conn", None)
-                if isinstance(conn, sqlite3.Connection):
-                    return conn
+                db_inst = get_db()
+                if db_inst:
+                    if hasattr(db_inst, "conn") and db_inst.conn is not None:
+                        return db_inst.conn, False
+                    if isinstance(db_inst, sqlite3.Connection):
+                        return db_inst, False
             except Exception:
                 pass
         if self.db_path:
             try:
                 conn = sqlite3.connect(self.db_path)
                 conn.row_factory = sqlite3.Row
-                return conn
+                return conn, True
             except Exception:
                 pass
-        return None
+        return None, False
 
     def load_all_monsters(self) -> List[Dict[str, Any]]:
         """Fetch all monster records safely from DB."""
-        conn = self._get_connection()
+        conn, is_local = self._get_connection()
         if not conn:
             return []
         try:
@@ -59,15 +65,26 @@ class MonsterRepository:
         except Exception as e:
             print(f"[MonsterRepository] Error loading monsters: {e}")
             return []
+        finally:
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def save_monster(self, monster: Dict[str, Any]) -> bool:
         """Save/update a single monster record with transaction rollback safety."""
-        conn = self._get_connection()
+        conn, is_local = self._get_connection()
         if not conn:
             return False
         try:
             conn.execute("BEGIN TRANSACTION")
             cursor = conn.cursor()
+
+            s_boss = monster.get("serverBossType")
+            if s_boss is not None:
+                s_boss = str(s_boss)
+
             cursor.execute(
                 """
                 INSERT INTO monsters (
@@ -146,7 +163,7 @@ class MonsterRepository:
                     "resistSilence": int(monster.get("resistSilence", 0)),
                     "resistDiffDamage": int(monster.get("resistDiffDamage", 0)),
                     "hpProportionDamage": int(monster.get("hpProportionDamage", 0)),
-                    "serverBossType": int(monster.get("serverBossType", 0)),
+                    "serverBossType": s_boss,
                     "dungeonId": str(monster.get("dungeonId", "101")),
                 },
             )
@@ -160,7 +177,7 @@ class MonsterRepository:
             print(f"[MonsterRepository] Transaction failed, rolled back save: {e}")
             return False
         finally:
-            if get_db is None and self.db_path:
+            if is_local and conn:
                 try:
                     conn.close()
                 except Exception:
@@ -168,7 +185,7 @@ class MonsterRepository:
 
     def delete_monster(self, monster_id: str) -> bool:
         """Delete monster by ID with transaction rollback safety."""
-        conn = self._get_connection()
+        conn, is_local = self._get_connection()
         if not conn:
             return False
         try:
@@ -184,3 +201,9 @@ class MonsterRepository:
                 pass
             print(f"[MonsterRepository] Transaction failed, rolled back delete: {e}")
             return False
+        finally:
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
