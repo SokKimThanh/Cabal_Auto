@@ -1,27 +1,18 @@
+from __future__ import annotations
+try:
+    from lib.data.sync_manager import DataSyncManager
+except ImportError:
+    DataSyncManager = None
+
+from unittest.mock import MagicMock
 """
 Quick Monster Editor / Monster Manager Window & Modal Edit Dialog.
-
-Features:
-- Main Master View: Full-width Treeview/Data Table listing monsters (Icon, Name, Level, HP, Damage, Templates)
-- Real-time Search/Filter Bar above main table
-- Top Toolbar: Header "Quản Lý Quái Vật" with monster.ico, Settings button (setting.ico), Primary Save button (save.ico)
-- Bottom Bar: "+ Thêm Quái", "✏️ Sửa", "❌ Xóa" buttons and non-blocking inline Status Bar with auto-clear
-- Inline Delete Confirmation Banner (No popup messageboxes)
-- Edit / Add Modal Dialog (`MonsterEditDialog`): Tabs for Monster Info Form, Template Manager, and Column Settings
-- Standalone Display Settings Dialog (`DisplaySettingsDialog`)
-- Full backward compatibility with existing unit tests.
-
-Author: SokKimThanh
-Updated: 2025-10-25
+Refactored architecture into dialogs/, repositories/, views/, and mock/.
 """
 
-from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from typing import Optional, Dict, Any, Callable, List, Union
-from unittest.mock import MagicMock
-from database import get_db
-
 import queue
 import threading
 import json
@@ -30,301 +21,42 @@ import re
 import time
 import os
 import subprocess
-
 from pathlib import Path
 
-# Import monster_service validation logic
-try:
-    from lib.features.monster_service import (
-        check_duplicate_name,
-        generate_unique_name,
-        ensure_unique_monster_id,
-    )
-except ImportError:
-
-    def check_duplicate_name(
-        monsters: List[Dict[str, Any]], name: str, current_id: Optional[str] = None
-    ) -> bool:
-        if not name:
-            return False
-        tn = name.strip().lower()
-        for m in monsters:
-            if current_id and str(m.get("id", "")) == str(current_id):
-                continue
-            if str(m.get("name", "")).strip().lower() == tn:
-                return True
-        return False
-
-    def generate_unique_name(
-        monsters: List[Dict[str, Any]], name: str, current_id: Optional[str] = None
-    ) -> str:
-        base = name.strip() if name else "Quái Mới"
-        match = re.search(r"^(.*?)\s*\(\d+\)$", base)
-        root = match.group(1).strip() if match else base
-        candidate, idx = base, 1
-        while check_duplicate_name(monsters, candidate, current_id):
-            candidate = f"{root} ({idx})"
-            idx += 1
-        return candidate
-
-    def ensure_unique_monster_id(
-        monster_data: Dict[str, Any],
-        existing_monsters: Optional[List[Dict[str, Any]]] = None,
-    ) -> str:
-        m_id = str(monster_data.get("id", "")).strip()
-        if not m_id:
-            m_id = str(uuid.uuid4())
-            monster_data["id"] = m_id
-        return m_id
-
-
-# Import lib modules
-try:
-    from lib.i18n import t as i18n_t, get_lang, register_bulk as i18n_register_bulk
-except ImportError:
-
-    def i18n_t(
-        key: str,
-        *,
-        ns: Optional[str] = None,
-        lang: Optional[str] = None,
-        default: Optional[str] = None,
-    ) -> str:
-        return default if default else key
-
-    def get_lang() -> str:
-        return "vi"
-
-    def i18n_register_bulk(namespace: str, translations: dict) -> None:
-        pass
-
-
-try:
-    from lib.data.sync_manager import DataSyncManager
-except ImportError:
-    DataSyncManager = None  # type: ignore[misc,assignment]
-
-try:
-    from ui.helpers.tooltip import attach_i18n_tooltip
-except ImportError:
-
-    def attach_i18n_tooltip(
-        widget, key: str, ns: Optional[str], lang_provider: Callable, delay: int = 400
-    ) -> Any:
-        pass
-
-
-try:
-    from ui.helpers.button_styles import get_button_config
-except ImportError:
-
-    def get_button_config(button_type: str) -> dict:
-        return {"font": ("Arial", 10, "bold")}
-
-
-try:
-    from ui.components import create_icon_button, create_icon_label
-    from ui.components.icon_button import (
-        create_add_button,
-        create_delete_button,
-        create_save_button,
-        create_cancel_button,
-        create_refresh_button,
-        set_button_enabled,
-    )
-    from ui.components.confirmation_widget import ConfirmationWidget
-    from ui.components.notification_widget import NotificationWidget
-    from ui.mixins.action_notification_mixin import ActionNotificationMixin
-except ImportError:
-
-    def create_icon_button(
-        parent,
-        icon_name: str,
-        command=None,
-        text: Optional[str] = None,
-        button_type: str = "green_light",
-        **kwargs,
-    ):
-        config = get_button_config(button_type)
-        invalid_params = [
-            "icon_fallback",
-            "icon_size",
-            "variant",
-            "tooltip_key",
-            "tooltip_ns",
-            "tooltip_text",
-            "auto_hover_disabled",
-        ]
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
-        config.update(filtered_kwargs)
-        icon_fallback = kwargs.get("icon_fallback", icon_name)
-        display_text = text if text is not None else icon_fallback
-        btn = tk.Button(parent, text=display_text, command=command, **config)
-        if command:
-            _orig = btn.invoke
-
-            def _cust():
-                if callable(command):
-                    return command()
-                return _orig()
-
-            btn.invoke = _cust
-        return btn
-
-    def create_icon_label(
-        parent, icon_name: str, text: str = "", icon_fallback: str = "❓", **kwargs
-    ):
-        invalid_params = ["icon_size"]
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
-        return tk.Label(parent, text=f"{icon_fallback} {text}", **filtered_kwargs)
-
-    def create_add_button(parent, command=None, text=None, **kwargs):
-        return create_icon_button(
-            parent,
-            icon_name="add",
-            command=command,
-            text=text,
-            button_type="green_light",
-            **kwargs,
-        )
-
-    def create_delete_button(parent, command=None, text=None, **kwargs):
-        return create_icon_button(
-            parent,
-            icon_name="delete",
-            command=command,
-            text=text,
-            button_type="red",
-            **kwargs,
-        )
-
-    def create_save_button(parent, command=None, text=None, **kwargs):
-        return create_icon_button(
-            parent,
-            icon_name="save",
-            command=command,
-            text=text,
-            button_type="green_light",
-            **kwargs,
-        )
-
-    def create_cancel_button(parent, command=None, text=None, **kwargs):
-        return create_icon_button(
-            parent,
-            icon_name="cancel",
-            command=command,
-            text=text,
-            button_type="refresh",
-            **kwargs,
-        )
-
-    def create_refresh_button(parent, command=None, text=None, **kwargs):
-        return create_icon_button(
-            parent,
-            icon_name="refresh",
-            command=command,
-            text=text,
-            button_type="refresh",
-            **kwargs,
-        )
-
-    ConfirmationWidget = None  # type: ignore
-    NotificationWidget = None  # type: ignore
-
-    class ActionNotificationMixin:
-        def __init__(self, *args, debug_mode=False, **kwargs):
-            if args:
-                super().__init__(args[0])
-
-        def show_notification(self, *args, **kwargs):
-            pass
-
-        def set_notification_widget(self, *args, **kwargs):
-            pass
-
-        def register_action_rules(self, *args, **kwargs):
-            pass
-
-        def execute_action(self, *args, **kwargs):
-            if len(args) > 1 and callable(args[1]):
-                args[1]()
-
-        def has_action_rule(self, *args, **kwargs):
-            return False
-
-    def set_button_enabled(
-        button, enabled: bool, tooltip: Optional[str] = None
-    ) -> None:
-        button.config(state="normal" if enabled else "disabled")
-
-
-try:
-    from lib.ui_style import UIStyle as UI
-except ImportError:
-
-    class UIStyle:
-        FONT_TITLE = ("Segoe UI", 12, "bold")
-        FONT_SECTION = ("Segoe UI", 11, "bold")
-        FONT_LABEL = ("Segoe UI", 10)
-        FONT_TEXT = ("Segoe UI", 10)
-        FONT_BUTTON = ("Arial", 10, "bold")
-        FONT_SMALL = ("Segoe UI", 8)
-        COLOR_PRIMARY = "#2196F3"
-        COLOR_PRIMARY_TEXT = "#0D47A1"
-        COLOR_TEXT = "#333"
-        COLOR_SUBTEXT = "#666"
-        COLOR_ACCENT = "#357A38"
-        COLOR_DANGER = "#C62828"
-        COLOR_WARNING = "#FF9800"
-        BG_DEFAULT = "#FFFFFF"
-        BG_PANEL = "#F5F5F5"
-
-    UI = UIStyle
+# Import extracted modules and dialogs
+from dialogs.display_settings import DisplaySettingsDialog
+from dialogs.monster_edit import MonsterEditDialog
+from repositories.monster_repository import MonsterRepository
+from views.image_handler import ImageHandler
+from mock.fallbacks import (
+    check_duplicate_name,
+    generate_unique_name,
+    ensure_unique_monster_id,
+    i18n_t,
+    get_lang,
+    i18n_register_bulk,
+    attach_i18n_tooltip,
+    get_button_config,
+    create_icon_button,
+    create_icon_label,
+    create_add_button,
+    create_delete_button,
+    create_save_button,
+    create_cancel_button,
+    create_refresh_button,
+    ActionNotificationMixin,
+    set_button_enabled,
+    UIStyle as UI,
+    MockIconHelper,
+)
 
 try:
     from database import get_db
 except ImportError:
     get_db = None
 
-try:
-    from ui.helpers.icon_helper import IconHelper, get_icon_helper
-
-    icon_helper = get_icon_helper()
-except ImportError:
-
-    class MockIconHelper:
-        def get_icon(self, name: str, fallback: str = "", size: int = 16) -> str:
-            return fallback
-
-    icon_helper = MockIconHelper()
-
-# PIL imports for image capture and preview
-try:
-    from PIL import ImageGrab, Image, ImageTk
-
-    PIL_AVAILABLE = True
-except ImportError:
-    ImageGrab = None
-    Image = None
-    ImageTk = None
-    PIL_AVAILABLE = False
-
-# Template matcher
-try:
-    from lib.vision.template_matcher import locate_template
-except ImportError:
-    locate_template = None
-
-# Register translations
-try:
-    from lib.i18n.monster_editor_translations import MONSTER_EDITOR_TRANSLATIONS
-
-    i18n_register_bulk("monster_editor", MONSTER_EDITOR_TRANSLATIONS)
-except ImportError:
-    pass
-
-DATA_PATH = Path("lib/data/monsters.json")
-
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+DATA_PATH = ROOT_DIR / "lib" / "data" / "monsters.json"
 
 class CompatibleTreeview(ttk.Treeview):
     """Treeview with backward compatibility for Listbox methods used in unit tests."""
@@ -368,164 +100,6 @@ class CompatibleTreeview(ttk.Treeview):
     def selection_clear(self, *args, **kwargs) -> None:
         super().selection_clear()
 
-
-class DisplaySettingsDialog(tk.Toplevel):
-    """Standalone settings dialog for window modes and column visibility."""
-
-    def __init__(self, parent: QuickMonsterEditor):
-        super().__init__(parent)
-        self.parent = parent
-        title = i18n_t(
-            "settings_dialog_title", ns="monster_editor", default="Cài Đặt Hiển Thị"
-        )
-        self.title(title)
-        self.geometry("380x300")
-        self.resizable(False, False)
-        self.transient(parent)
-        self.grab_set()
-
-        self._setup_ui()
-
-        # Keyboard shortcuts
-        self.bind("<Escape>", lambda event: self.destroy())
-        self.bind("<Return>", lambda event: self._on_save())
-
-        # Center
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (380 // 2)
-        y = (self.winfo_screenheight() // 2) - (300 // 2)
-        self.geometry(f"+{x}+{y}")
-
-    def _setup_ui(self) -> None:
-        main_frame = tk.Frame(self, bg=UI.BG_PANEL, padx=15, pady=15)
-        main_frame.pack(fill="both", expand=True)
-
-        header = create_icon_label(
-            main_frame,
-            icon_name="settings",
-            text=i18n_t(
-                "settings_dialog_title", ns="monster_editor", default="Cài Đặt Hiển Thị"
-            ),
-            icon_fallback="⚙️",
-            font=UI.FONT_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_PANEL,
-        )
-        header.pack(anchor="w", pady=(0, 15))
-
-        # Game Window Mode Group
-        mode_frame = tk.LabelFrame(
-            main_frame,
-            text=i18n_t(
-                "label_game_mode", ns="monster_editor", default="Game Window Mode"
-            ),
-            font=UI.FONT_LABEL,
-            bg=UI.BG_PANEL,
-            padx=10,
-            pady=10,
-        )
-        mode_frame.pack(fill="x", pady=(0, 10))
-
-        self.mode_var = tk.StringVar(value=self.parent.game_window_mode_var.get())
-        cb = ttk.Combobox(
-            mode_frame,
-            textvariable=self.mode_var,
-            values=["none", "below", "above"],
-            state="readonly",
-        )
-        cb.pack(fill="x", pady=5)
-
-        # Template Column Visibility Group
-        cols_frame = tk.LabelFrame(
-            main_frame,
-            text=i18n_t(
-                "group_template_cols",
-                ns="monster_editor",
-                default="Hiển thị cột trong danh sách Template",
-            ),
-            font=UI.FONT_LABEL,
-            bg=UI.BG_PANEL,
-            padx=10,
-            pady=10,
-        )
-        cols_frame.pack(fill="x", pady=(0, 15))
-
-        self.chk_image_var = tk.BooleanVar(
-            value=self.parent.template_col_visibility.get("image", True)
-        )
-        self.chk_threshold_var = tk.BooleanVar(
-            value=self.parent.template_col_visibility.get("threshold", True)
-        )
-        self.chk_path_var = tk.BooleanVar(
-            value=self.parent.template_col_visibility.get("path", True)
-        )
-
-        chk_img = tk.Checkbutton(
-            cols_frame,
-            text=i18n_t("chk_col_image", ns="monster_editor", default="Hình ảnh"),
-            variable=self.chk_image_var,
-            bg=UI.BG_PANEL,
-            font=UI.FONT_TEXT,
-        )
-        chk_img.pack(anchor="w", pady=2)
-
-        chk_thresh = tk.Checkbutton(
-            cols_frame,
-            text=i18n_t(
-                "chk_col_threshold", ns="monster_editor", default="% Ngưỡng nhận diện"
-            ),
-            variable=self.chk_threshold_var,
-            bg=UI.BG_PANEL,
-            font=UI.FONT_TEXT,
-        )
-        chk_thresh.pack(anchor="w", pady=2)
-
-        chk_path = tk.Checkbutton(
-            cols_frame,
-            text=i18n_t("chk_col_path", ns="monster_editor", default="Đường dẫn"),
-            variable=self.chk_path_var,
-            bg=UI.BG_PANEL,
-            font=UI.FONT_TEXT,
-        )
-        chk_path.pack(anchor="w", pady=2)
-
-        # Bottom Buttons
-        btn_box = tk.Frame(main_frame, bg=UI.BG_PANEL)
-        btn_box.pack(fill="x", side="bottom")
-
-        save_btn = create_save_button(
-            btn_box,
-            command=self._on_save,
-            text=i18n_t("btn_save", ns="monster_editor", default="Lưu"),
-            padding={"padx": 12, "pady": 6},
-            tooltip_key="tooltip_save",
-            tooltip_ns="monster_editor",
-        )
-        save_btn.pack(side="right", padx=5)
-
-        cancel_btn = create_cancel_button(
-            btn_box,
-            command=self.destroy,
-            text=i18n_t("btn_cancel", ns="monster_editor", default="Hủy"),
-            padding={"padx": 12, "pady": 6},
-            tooltip_key="tooltip_cancel",
-            tooltip_ns="monster_editor",
-        )
-        cancel_btn.pack(side="right", padx=5)
-
-    def _on_save(self) -> None:
-        self.parent.game_window_mode_var.set(self.mode_var.get())
-        self.parent.template_col_visibility["image"] = self.chk_image_var.get()
-        self.parent.template_col_visibility["threshold"] = self.chk_threshold_var.get()
-        self.parent.template_col_visibility["path"] = self.chk_path_var.get()
-        self.parent._show_status_message(
-            i18n_t(
-                "msg_save_success",
-                ns="monster_editor",
-                default="Đã lưu cài đặt hiển thị",
-            )
-        )
-        self.destroy()
 
 
 class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
@@ -642,6 +216,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.template_col_visibility = {"image": True, "threshold": True, "path": True}
 
         self.result_queue: queue.Queue = queue.Queue()
+        self.stop_event: threading.Event = threading.Event()
+        self._after_id: Optional[str] = None
+        self.repository = MonsterRepository()
+        self.image_handler = ImageHandler()
         self.is_working = False
         self.is_editing = False
         self._active_edit_dialog: Optional[MonsterEditDialog] = None
@@ -822,38 +400,50 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                     self._refresh_monster_table()
                     break
 
-    def _load_monsters(self) -> None:
+    def _load_monsters_sync(self) -> List[Dict[str, Any]]:
+        monsters = []
         try:
-            # Ưu tiên load từ database
             if self.db is not None:
-                # Lấy toàn bộ monsters từ database
                 payload = self.db.get_filtered_monsters(
                     keyword="",
                     monster_type=None,
                     dungeon_id=None,
                     page=1,
-                    page_size=5000,  # giới hạn đủ lớn để lấy hết
+                    page_size=5000,
                     sort_column="id",
                     sort_order="ASC",
                 )
-                self.monsters = payload.get("items", [])
-                if not self.monsters:
-                    # Fallback JSON nếu DB rỗng
-                    if DATA_PATH.exists():
-                        with open(DATA_PATH, "r", encoding="utf-8") as f:
-                            self.monsters = json.load(f)
-                    else:
-                        self.monsters = []
-            else:
-                # Fallback JSON
-                if DATA_PATH.exists():
-                    with open(DATA_PATH, "r", encoding="utf-8") as f:
-                        self.monsters = json.load(f)
-                else:
-                    self.monsters = []
+                monsters = payload.get("items", [])
+                if not monsters and hasattr(self, "repository"):
+                    monsters = self.repository.load_all_monsters()
+            elif hasattr(self, "repository"):
+                monsters = self.repository.load_all_monsters()
+
+            if not monsters and DATA_PATH.exists():
+                with open(DATA_PATH, "r", encoding="utf-8") as f:
+                    monsters = json.load(f)
         except Exception as e:
             print(f"[MonsterEditor] Error loading monsters: {e}")
-            self.monsters = []
+            monsters = []
+        return monsters if monsters is not None else []
+
+    def _load_monsters(self) -> None:
+        if threading.current_thread() is not threading.main_thread():
+            self.monsters = self._load_monsters_sync()
+            self.filtered_monsters = list(self.monsters)
+            return
+
+        def _bg_worker():
+            if hasattr(self, "stop_event") and self.stop_event.is_set():
+                return
+            data = self._load_monsters_sync()
+            if hasattr(self, "stop_event") and self.stop_event.is_set():
+                return
+            self.result_queue.put(("load_monsters", data))
+
+        t = threading.Thread(target=_bg_worker, daemon=True)
+        t.start()
+        self.monsters = self._load_monsters_sync()
         self.filtered_monsters = list(self.monsters)
 
     def set_dirty(self, value: bool = True) -> None:
@@ -1725,7 +1315,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
     def _update_stats_label(self) -> None:
         """Update the stats label with current record count and pagination info"""
-        if not hasattr(self, "stats_label") or self.stats_label is None:
+        label = getattr(self, "stats_label", None)
+        if label is None or callable(label) or not hasattr(label, "config"):
             return
 
         try:
@@ -1736,14 +1327,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             )
 
             stats_text = f"📊 Hiển thị {displayed_records} / {total_records} quái vật (Trang {self.current_page}/{total_pages})"
-            self.stats_label.config(text=stats_text)
+            label.config(text=stats_text)
 
             # Cập nhật trạng thái nút điều hướng
-            if hasattr(self, "btn_prev_page"):
+            if hasattr(self, "btn_prev_page") and hasattr(self.btn_prev_page, "config"):
                 self.btn_prev_page.config(
                     state="normal" if self.current_page > 1 else "disabled"
                 )
-            if hasattr(self, "btn_next_page"):
+            if hasattr(self, "btn_next_page") and hasattr(self.btn_next_page, "config"):
                 self.btn_next_page.config(
                     state="normal" if self.current_page < total_pages else "disabled"
                 )
@@ -1752,393 +1343,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         except Exception as e:
             print(f"[Stats Label] Error updating: {e}")
             if hasattr(self, "filtered_monsters") and hasattr(self, "monsters"):
-                self.stats_label.config(
+                label.config(
                     text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật"
                 )
             else:
-                self.stats_label.config(text="📊 Đang tải...")
-
-    def _on_row_double_click(self, event: Any) -> None:
-        selection = self.monster_table.selection()
-        if selection:
-            self._open_edit_dialog(selection[0])
-
-    def _on_edit_monster_selected(self) -> None:
-        selection = self.monster_table.selection()
-        if selection:
-            self._open_edit_dialog(selection[0])
-        else:
-            self._show_status_message(
-                i18n_t(
-                    "warning_no_monster_selected",
-                    ns="monster_editor",
-                    default="Vui lòng chọn quái vật để sửa",
-                ),
-                is_error=True,
-            )
-
-    def _on_add_monster(self) -> None:
-        # Mở dialog thêm mới (monster = None)
-        self._open_edit_dialog(None)
-
-    def _open_edit_dialog(
-        self, monster_id: Optional[str] = None
-    ) -> Optional[MonsterEditDialog]:
-        if getattr(self, "_active_edit_dialog", None) is not None:
-            try:
-                if self._active_edit_dialog.winfo_exists():
-                    self._active_edit_dialog.lift()
-                    self._active_edit_dialog.focus_force()
-                    return self._active_edit_dialog
-            except Exception:
-                self._active_edit_dialog = None
-
-        target_monster = None
-        if monster_id:
-            for m in self.monsters:
-                if m.get("id") == monster_id:
-                    target_monster = m
-                    break
-
-        def on_dialog_save(updated_data: Dict[str, Any]) -> None:
-            m_id = updated_data.get("id")
-            updated = False
-            for idx, m in enumerate(self.monsters):
-                if m.get("id") == m_id:
-                    self.monsters[idx] = updated_data
-                    updated = True
-                    break
-            if not updated:
-                self.monsters.append(updated_data)
-                msg = i18n_t(
-                    "msg_monster_created",
-                    ns="monster_editor",
-                    default="Đã tạo quái vật thành công",
-                )
-                self._show_status_message(f"{msg}: '{updated_data.get('name')}'")
-            else:
-                msg = i18n_t(
-                    "msg_monster_updated",
-                    ns="monster_editor",
-                    default="Đã cập nhật quái vật thành công",
-                )
-                self._show_status_message(f"{msg}: '{updated_data.get('name')}'")
-
-            self.set_dirty(True)
-            self._refresh_monster_table()
-
-        dialog = MonsterEditDialog(self, monster=target_monster, on_save=on_dialog_save)
-        self._active_edit_dialog = dialog
-
-        def _on_dialog_close(event=None):
-            if getattr(self, "_active_edit_dialog", None) == dialog:
-                self._active_edit_dialog = None
-
-        dialog.bind("<Destroy>", _on_dialog_close, add="+")
-        return dialog
-
-    def _on_delete_monster(self) -> None:
-        has_sel = False
-        if hasattr(self.monster_table, "selection") and self.monster_table.selection():
-            has_sel = True
-        elif (
-            hasattr(self.monster_table, "curselection")
-            and self.monster_table.curselection()
-        ):
-            has_sel = True
-
-        if not has_sel:
-            self._show_status_message(
-                i18n_t(
-                    "warning_no_monster_selected",
-                    ns="monster_editor",
-                    default="Vui lòng chọn một quái vật để xóa",
-                ),
-                is_error=True,
-            )
-            messagebox.showwarning(
-                "Warning",
-                i18n_t(
-                    "warning_no_monster_selected",
-                    ns="monster_editor",
-                    default="Vui lòng chọn một quái vật để xóa",
-                ),
-                parent=self,
-            )
-            return
-
-        selection = (
-            self.monster_table.selection()
-            if hasattr(self.monster_table, "selection")
-            else ()
-        )
-        m_id = selection[0] if selection else None
-        target_monster = None
-        for m in self.monsters:
-            if m.get("id") == m_id:
-                target_monster = m
-                break
-
-        if (
-            not target_monster
-            and hasattr(self.monster_table, "curselection")
-            and self.monster_table.curselection()
-        ):
-            target_idx = self.monster_table.curselection()[0]
-            if 0 <= target_idx < len(self.monsters):
-                target_monster = self.monsters[target_idx]
-                m_id = target_monster.get("id")
-
-        if not target_monster:
-            return
-
-        name = target_monster.get("name", "Unnamed")
-
-        # Check if messagebox.askyesno is mocked in unit tests
-        if (
-            isinstance(messagebox.askyesno, MagicMock)
-            or getattr(messagebox.askyesno, "__mock__", None) is not None
-        ):
-            if messagebox.askyesno(
-                "Xác Nhận Xóa",
-                f"Bạn có chắc muốn xóa quái vật '{name}' không?",
-                parent=self,
-            ):
-                self._execute_delete_monster_by_id(str(m_id))
-            return
-
-        self._show_confirmation_banner(name, str(m_id))
-
-    def _open_settings_dialog(self) -> None:
-        DisplaySettingsDialog(self)
-
-    def _on_save(self) -> None:
-        if not self.monsters or not isinstance(self.monsters, list):
-            messagebox.showwarning(
-                "Warning",
-                i18n_t(
-                    "msg_no_data",
-                    ns="monster_editor",
-                    default="Không có dữ liệu để lưu",
-                ),
-                parent=self,
-            )
-            self._show_status_message(
-                i18n_t(
-                    "msg_no_data",
-                    ns="monster_editor",
-                    default="Không có dữ liệu để lưu",
-                ),
-                is_error=True,
-            )
-            return
-
-        for idx, monster in enumerate(self.monsters):
-            if not isinstance(monster, dict):
-                messagebox.showerror(
-                    "Error", f"Invalid monster data at index {idx}", parent=self
-                )
-                return
-            name = monster.get("name", "").strip()
-            if not name:
-                messagebox.showerror(
-                    "Error", f"Monster at index {idx} has no name", parent=self
-                )
-                return
-
-        self._save_monsters()
-
-    def _on_cancel(self) -> None:
-        if self.is_dirty:
-            if not messagebox.askyesno(
-                "Xác nhận",
-                i18n_t(
-                    "msg_unsaved_changes",
-                    ns="monster_editor",
-                    default="Bạn có thay đổi chưa lưu. Bỏ qua chúng?",
-                ),
-                parent=self,
-            ):
-                return
-        global _quick_editor_instance
-        _quick_editor_instance = None
-        self.destroy()
-
-    def _bind_events(self) -> None:
-        self.protocol("WM_DELETE_WINDOW", self._on_cancel)
-
-    def _start_queue_monitor(self) -> None:
-        self._check_queue()
-
-    def _check_queue(self) -> None:
-        try:
-            while True:
-                result = self.result_queue.get_nowait()
-        except queue.Empty:
-            pass
-        finally:
-            if self.winfo_exists():
-                self.after(100, self._check_queue)
-
-    def _refresh_monster_list(self) -> None:
-        self._refresh_monster_table()
-
-    def _refresh_template_list(self) -> None:
-        pass
-
-    def _sort_table(self, column: str) -> None:
-        """Sắp xếp bảng theo cột, đảo chiều nếu click lại."""
-        # Nếu cột không còn hiển thị, chọn cột đầu tiên hoặc bỏ qua
-        if column not in self.visible_columns:
-            if self.visible_columns:
-                column = self.visible_columns[0]
-            else:
-                return  # không có cột nào để sắp xếp
-
-        # Cập nhật trạng thái sắp xếp
-        if self.sort_column == column:
-            self.sort_reverse = not self.sort_reverse
-        else:
-            self.sort_column = column
-            self.sort_reverse = False
-
-        items = self.monster_table.get_children("")
-        if not items:
-            return
-
-        # Xác định vị trí cột
-        try:
-            col_index = self.visible_columns.index(column)
-        except ValueError:
-            col_index = 0
-
-        # Hàm chuyển đổi giá trị để so sánh số
-        def _safe_convert(val):
-            if isinstance(val, str):
-                try:
-                    return float(val.replace(",", ""))
-                except ValueError:
-                    return val.lower() if val else ""
-            return val if val is not None else ""
-
-        # Thu thập dữ liệu
-        data = []
-        for item_id in items:
-            values = self.monster_table.item(item_id, "values")
-            raw = values[col_index] if col_index < len(values) else ""
-            data.append((_safe_convert(raw), item_id))
-
-        # Sắp xếp (hỗ trợ cả số và chuỗi)
-        data.sort(key=lambda x: x[0], reverse=self.sort_reverse)
-
-        # Áp dụng thứ tự mới
-        for new_idx, (_, item_id) in enumerate(data):
-            self.monster_table.move(item_id, "", new_idx)
-
-        # Cập nhật tiêu đề cột
-        self._update_column_headers()
-
-    def _update_column_headers(self) -> None:
-        """Hiển thị mũi tên chỉ hướng sắp xếp trên tiêu đề cột."""
-        for col in self.visible_columns:
-            text = self._column_label(col)
-            if col == self.sort_column:
-                text += " ▲" if not self.sort_reverse else " ▼"
-            # Chỉ cập nhật nếu heading tồn tại
-            try:
-                self.monster_table.heading(col, text=text)
-            except Exception:
-                pass
-
-    # Inner class for region capture overlay
-    class _RegionCaptureOverlay(tk.Toplevel):
-        def __init__(self, parent):
-            super().__init__(parent)
-            self.parent = parent
-            self.withdraw()
-            self.overrideredirect(True)
-            self.attributes("-topmost", True)
-            try:
-                self.attributes("-alpha", 0.25)
-            except Exception:
-                pass
-            self.configure(bg="black")
-            self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
-            self.canvas = tk.Canvas(
-                self, bg="black", highlightthickness=0, cursor="crosshair"
-            )
-            self.canvas.pack(fill="both", expand=True)
-            self._start = None
-            self._rect = None
-            self._bbox = None
-            self._size_text = None
-            self.canvas.bind("<ButtonPress-1>", self._on_press)
-            self.canvas.bind("<B1-Motion>", self._on_drag)
-            self.canvas.bind("<ButtonRelease-1>", self._on_release)
-            self.bind("<Escape>", lambda e: self._cancel())
-
-        def show_modal(self):
-            self.deiconify()
-            self.grab_set()
-            self.focus_force()
-            self.wait_window(self)
-            return self._bbox
-
-        def _on_press(self, event):
-            self._start = (event.x, event.y, event.x_root, event.y_root)
-            if self._rect is not None:
-                self.canvas.delete(self._rect)
-                self._rect = None
-            self._rect = self.canvas.create_rectangle(
-                event.x, event.y, event.x, event.y, outline="#00E5FF", width=2
-            )
-
-        def _on_drag(self, event):
-            if self._start and self._rect:
-                x0, y0, _, _ = self._start
-                x1, y1 = event.x, event.y
-                self.canvas.coords(self._rect, x0, y0, x1, y1)
-
-        def _on_release(self, event):
-            if not self._start:
-                self.destroy()
-                return
-            x0, y0, xr0, yr0 = self._start
-            x1, y1 = event.x, event.y
-            dx = xr0 - x0
-            dy = yr0 - y0
-            left = int(min(x0 + dx, x1 + dx))
-            top = int(min(y0 + dy, y1 + dy))
-            right = int(max(x0 + dx, x1 + dx))
-            bottom = int(max(y0 + dy, y1 + dy))
-            if right - left < 5 or bottom - top < 5:
-                self._bbox = None
-            else:
-                self._bbox = (left, top, right, bottom)
-            self.destroy()
-
-        def _cancel(self):
-            self._bbox = None
-            self.destroy()
+                label.config(text="📊 Đang tải...")
 
 
-_quick_editor_instance: Optional[QuickMonsterEditor] = None
-
-
-def show_quick_monster_editor(
-    parent: Union[tk.Widget, tk.Tk],
-    monster_id: Optional[str] = None,
-    on_save: Optional[Callable] = None,
-) -> QuickMonsterEditor:
-    global _quick_editor_instance
-    if _quick_editor_instance is not None:
-        try:
-            if _quick_editor_instance.winfo_exists():
-                _quick_editor_instance.lift()
-                _quick_editor_instance.focus_force()
-                return _quick_editor_instance
-        except Exception:
-            _quick_editor_instance = None
-
-    _quick_editor_instance = QuickMonsterEditor(parent, monster_id, on_save)
-    return _quick_editor_instance

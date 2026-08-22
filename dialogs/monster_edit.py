@@ -9,6 +9,9 @@ import os
 import subprocess
 import uuid
 import copy
+import json
+import time
+import re
 from pathlib import Path
 from typing import Optional, Dict, Any, Callable, List, TYPE_CHECKING
 
@@ -41,9 +44,9 @@ except ImportError:
 
 try:
     from ui.components import create_icon_label, create_icon_button
-    from ui.components.icon_button import create_add_button, create_delete_button, create_save_button, create_cancel_button
+    from ui.components.icon_button import create_add_button, create_delete_button, create_save_button, create_cancel_button, create_refresh_button
 except ImportError:
-    from mock.fallbacks import create_icon_label, create_icon_button, create_add_button, create_delete_button, create_save_button, create_cancel_button
+    from mock.fallbacks import create_icon_label, create_icon_button, create_add_button, create_delete_button, create_save_button, create_cancel_button, create_refresh_button
 
 try:
     from lib.ui_style import UIStyle as UI
@@ -620,8 +623,14 @@ class MonsterEditDialog(tk.Toplevel):
         try:
             self.withdraw()
             time.sleep(0.15)
-            overlay = QuickMonsterEditor._RegionCaptureOverlay(self.parent)
-            bbox = overlay.show_modal()
+            capture_cls = getattr(self.parent, "_RegionCaptureOverlay", None)
+            if capture_cls is None:
+                capture_cls = getattr(self.parent.__class__, "_RegionCaptureOverlay", None)
+            if capture_cls is not None:
+                overlay = capture_cls(self.parent)
+                bbox = overlay.show_modal()
+            else:
+                bbox = None
             self.deiconify()
             self.lift()
 
