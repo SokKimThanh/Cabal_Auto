@@ -170,12 +170,12 @@ def insert_or_update_monster(conn: sqlite3.Connection, monster: Dict[str, Any]) 
 
 
 def delete_monster(conn: sqlite3.Connection, monster_id: str) -> bool:
-    """Xóa quái vật theo ID."""
+    """Xóa quái vật theo ID. Chỉ trả về True nếu có hàng thực sự bị xóa."""
     try:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM monsters WHERE id = ?", (str(monster_id),))
         conn.commit()
-        return True
+        return cursor.rowcount > 0
     except sqlite3.Error as e:
         print(f"[DB] Lỗi xóa monster: {e}")
         return False

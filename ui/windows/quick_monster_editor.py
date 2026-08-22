@@ -10,11 +10,12 @@ Updated: 2025-10-25
 from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import Optional, Dict, Any, Callable, List, Union
+from typing import Optional, Dict, Any, Callable, List, Union, Set
 from unittest.mock import MagicMock
 from pathlib import Path
 import queue
 import json
+import math
 
 from ui.windows.monster_editor_overlay import RegionCaptureOverlay
 from ui.windows.monster_editor_toolbar import create_top_panel, create_search_bar
@@ -130,6 +131,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         self.monsters: List[Dict[str, Any]] = []
         self.filtered_monsters: List[Dict[str, Any]] = []
+        self.pending_deleted_ids: Set[str] = set()
         self.current_monster_id: Optional[str] = monster_id
         self.is_dirty = False
         self.is_monster_dirty = False
@@ -330,7 +332,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.save_button.config(state="normal" if self.is_dirty else "disabled")
 
     def _save_monsters(self) -> bool:
-        if not self.monsters or not isinstance(self.monsters, list):
+        if not self.monsters and not self.pending_deleted_ids:
             messagebox.showwarning("Warning", "Không có dữ liệu để lưu", parent=self)
             self._show_status_message("Không có dữ liệu để lưu", is_error=True)
             return False
@@ -346,11 +348,16 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         try:
             if self.db is not None:
+                for del_id in list(self.pending_deleted_ids):
+                    self.db.delete_monster(del_id)
+                self.pending_deleted_ids.clear()
+
                 for monster in self.monsters:
                     if not self.db.insert_or_update_monster(monster):
                         self._show_status_message("Lưu thất bại trong DB", is_error=True)
                         return False
             else:
+                self.pending_deleted_ids.clear()
                 DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
                 with open(DATA_PATH, "w", encoding="utf-8") as f:
                     json.dump(self.monsters, f, indent=2, ensure_ascii=False)
@@ -540,20 +547,18 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 break
 
         name = target_monster.get("name", "Unnamed") if target_monster else m_id
-        if self.db is not None:
-            if not self.db.delete_monster(m_id):
-                self._show_status_message("Xóa thất bại trong DB", is_error=True)
-                return
-
         if target_idx >= 0:
             self.monsters.pop(target_idx)
 
+        self.pending_deleted_ids.add(m_id)
         self.set_dirty(True)
+
         if self.current_monster_id == m_id:
             self.current_monster_id = None
             self._clear_info_form()
+
         self._refresh_monster_table()
-        self._show_status_message(f"Đã xóa quái vật: '{name}'")
+        self._show_status_message(f"Đã đánh dấu xóa: '{name}'")
 
     def _execute_delete_monster(self) -> None:
         m_id = self._pending_delete_id
@@ -632,7 +637,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         for item in self.monster_table.get_children():
             self.monster_table.delete(item)
 
-        if self.db is not None:
+        if self.db is not None and not self.is_dirty:
             try:
                 payload = self.db.get_filtered_monsters(
                     keyword=self.search_term,
@@ -651,9 +656,21 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 self.total_records = len(self.monsters)
                 self.total_pages = 1
         else:
-            self.filtered_monsters = list(self.monsters)
-            self.total_records = len(self.monsters)
-            self.total_pages = 1
+            filtered = list(self.monsters)
+            if self.search_term:
+                q = self.search_term.lower()
+                filtered = [m for m in filtered if q in str(m.get("name", "")).lower()]
+            if self.monster_type_filter != "All Monsters":
+                filtered = [m for m in filtered if str(m.get("serverBossType", "")) == self.monster_type_filter]
+            if self.location_filter != "All Locations":
+                filtered = [m for m in filtered if str(m.get("dungeonId", "")) == self.location_filter]
+
+            self.total_records = len(filtered)
+            self.total_pages = max(1, math.ceil(self.total_records / self.page_size)) if self.total_records else 1
+
+            start_idx = (self.current_page - 1) * self.page_size
+            end_idx = start_idx + self.page_size
+            self.filtered_monsters = filtered[start_idx:end_idx]
 
         for monster in self.filtered_monsters:
             values = []
@@ -765,6 +782,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self._save_monsters()
 
     def _on_cancel(self) -> None:
+        if self.is_dirty:
+            if not messagebox.askyesno(
+                "Xác nhận",
+                "Bạn có thay đổi chưa lưu. Bỏ qua chúng?",
+                parent=self,
+            ):
+                return
         global _quick_editor_instance
         _quick_editor_instance = None
         self.destroy()
