@@ -28,27 +28,42 @@ from dialogs.display_settings import DisplaySettingsDialog
 from dialogs.monster_edit import MonsterEditDialog
 from repositories.monster_repository import MonsterRepository
 from views.image_handler import ImageHandler
-from mock.fallbacks import (
-    check_duplicate_name,
-    generate_unique_name,
-    ensure_unique_monster_id,
-    i18n_t,
-    get_lang,
-    i18n_register_bulk,
-    attach_i18n_tooltip,
-    get_button_config,
-    create_icon_button,
-    create_icon_label,
-    create_add_button,
-    create_delete_button,
-    create_save_button,
-    create_cancel_button,
-    create_refresh_button,
-    ActionNotificationMixin,
-    set_button_enabled,
-    UIStyle as UI,
-    MockIconHelper,
-)
+try:
+    from lib.features.monster_service import (
+        check_duplicate_name,
+        generate_unique_name,
+        ensure_unique_monster_id,
+    )
+    from lib.i18n import t as i18n_t, get_lang
+    from ui.components import create_icon_button, create_icon_label
+    from ui.components.icon_button import (
+        create_add_button,
+        create_delete_button,
+        create_save_button,
+        create_cancel_button,
+        create_refresh_button,
+        set_button_enabled,
+    )
+    from ui.mixins.action_notification_mixin import ActionNotificationMixin
+    from lib.ui_style import UIStyle as UI
+except ImportError:
+    from mock.fallbacks import (
+        check_duplicate_name,
+        generate_unique_name,
+        ensure_unique_monster_id,
+        i18n_t,
+        get_lang,
+        create_icon_button,
+        create_icon_label,
+        create_add_button,
+        create_delete_button,
+        create_save_button,
+        create_cancel_button,
+        create_refresh_button,
+        ActionNotificationMixin,
+        set_button_enabled,
+        UIStyle as UI,
+    )
 
 try:
     from database import get_db
