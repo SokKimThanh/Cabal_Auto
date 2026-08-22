@@ -37,8 +37,13 @@ def ensure_unique_monster_id(
     existing_monsters: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     import uuid
+
+    existing_ids = set()
+    if existing_monsters:
+        existing_ids = {str(m.get("id")) for m in existing_monsters if m.get("id")}
+
     m_id = str(monster_data.get("id", "")).strip()
-    if not m_id:
+    if not m_id or m_id in existing_ids:
         m_id = str(uuid.uuid4())
         monster_data["id"] = m_id
     return m_id
