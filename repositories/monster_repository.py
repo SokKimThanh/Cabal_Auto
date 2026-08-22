@@ -159,6 +159,12 @@ class MonsterRepository:
                 pass
             print(f"[MonsterRepository] Transaction failed, rolled back save: {e}")
             return False
+        finally:
+            if get_db is None and self.db_path:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def delete_monster(self, monster_id: str) -> bool:
         """Delete monster by ID with transaction rollback safety."""
