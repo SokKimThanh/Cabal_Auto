@@ -75,6 +75,8 @@ def create_icon_button(
     **kwargs,
 ):
     config = get_button_config(button_type)
+
+    padding = kwargs.get("padding")
     invalid_params = [
         "icon_fallback",
         "icon_size",
@@ -84,8 +86,16 @@ def create_icon_button(
         "tooltip_text",
         "auto_hover_disabled",
     ]
-    filtered_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_params}
+    filtered_kwargs = {
+        k: v for k, v in kwargs.items() if k not in invalid_params and k != "padding"
+    }
     config.update(filtered_kwargs)
+    if isinstance(padding, dict):
+        if "padx" in padding:
+            config["padx"] = padding["padx"]
+        if "pady" in padding:
+            config["pady"] = padding["pady"]
+
     icon_fallback = kwargs.get("icon_fallback", icon_name)
     display_text = text if text is not None else icon_fallback
     btn = tk.Button(parent, text=display_text, command=command, **config)
