@@ -59,32 +59,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.on_save_callback = on_save
         self.is_new = monster is None
 
-        # Deep copy monster or create new default
-        if monster:
-            self.monster_data = json.loads(json.dumps(monster))
-        else:
-            self.monster_data = {
-                "id": f"m_{int(uuid.uuid4().hex[:8], 16)}",
-                "name": "Quái Mới",
-                "level": 1,
-                "priority": 1,
-                "hp": 100,
-                "damage_per_hit": 10,
-                "dungeonId": None,
-                "serverBossType": None,
-                "templates": [],
-            }
-
-        m_id = self.monster_data.get("id", "")
-        m_name = self.monster_data.get("name", "")
-        title_text = f"Sửa Quái Vật: {m_name} (ID: #{m_id})" if not self.is_new else "Thêm Quái Vật Mới"
-        self.title(title_text)
-        self.geometry("820x620")
-        self.resizable(True, True)
-        self.transient(parent)
-        self.grab_set()
-
-        # Fetch reference lists from DB/parent
+        # Fetch reference lists from DB/parent first to supply defaults
         self.dungeon_list: List[Dict[str, str]] = []
         self.type_list: List[Dict[str, str]] = []
         self.existing_monsters: List[Dict[str, Any]] = getattr(parent, "monsters", [])
@@ -96,6 +71,38 @@ class MonsterEditDialog(tk.Toplevel):
                 self.type_list = db.get_monster_type_list() if hasattr(db, "get_monster_type_list") else []
             except Exception:
                 pass
+
+        default_dungeon = self.dungeon_list[0]["id"] if self.dungeon_list else "101"
+        default_type = self.type_list[0]["value"] if self.type_list else "0"
+
+        # Deep copy monster or create new default
+        if monster:
+            self.monster_data = json.loads(json.dumps(monster))
+            if not self.monster_data.get("dungeonId"):
+                self.monster_data["dungeonId"] = default_dungeon
+            if not self.monster_data.get("serverBossType"):
+                self.monster_data["serverBossType"] = default_type
+        else:
+            self.monster_data = {
+                "id": f"m_{int(uuid.uuid4().hex[:8], 16)}",
+                "name": "Quái Mới",
+                "level": 1,
+                "priority": 1,
+                "hp": 100,
+                "damage_per_hit": 10,
+                "dungeonId": default_dungeon,
+                "serverBossType": default_type,
+                "templates": [],
+            }
+
+        m_id = self.monster_data.get("id", "")
+        m_name = self.monster_data.get("name", "")
+        title_text = f"Sửa Quái Vật: {m_name} (ID: #{m_id})" if not self.is_new else "Thêm Quái Vật Mới"
+        self.title(title_text)
+        self.geometry("820x620")
+        self.resizable(True, True)
+        self.transient(parent)
+        self.grab_set()
 
         self.bind("<Escape>", lambda event: self.destroy())
 
@@ -235,6 +242,8 @@ class MonsterEditDialog(tk.Toplevel):
             "name": "Quái Mới",
             "level": 1,
             "hp": 100,
+            "dungeonId": self.dungeon_list[0]["id"] if self.dungeon_list else "101",
+            "serverBossType": self.type_list[0]["value"] if self.type_list else "0",
         }
         self.basic_form.populate(default_data)
         self.extended_form.populate(default_data)

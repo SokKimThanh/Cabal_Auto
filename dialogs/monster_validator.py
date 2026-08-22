@@ -86,7 +86,7 @@ def validate_monster_data(
     errors: Dict[str, str] = {}
     cleaned: Dict[str, Any] = {}
 
-    # 1. Validate ID
+    # 1. Validate ID (Required)
     m_id = str(data.get("id", "") or "").strip()
     if not m_id:
         errors["id"] = "ID không được để trống"
@@ -98,18 +98,21 @@ def validate_monster_data(
                     errors["id"] = f"ID '{m_id}' đã tồn tại"
                     break
 
-    # 2. Validate Name
+    # 2. Validate Name (Required)
     name = str(data.get("name", "") or "").strip()
     if not name:
         errors["name"] = "Tên quái vật không được để trống"
     else:
         cleaned["name"] = name
 
-    # 3. Validate Integer Fields
+    # 3. Validate Integer Fields (level & hp are required ≥ 0)
     for field in INTEGER_FIELDS:
         val = data.get(field)
         if val is None or str(val).strip() == "":
-            cleaned[field] = 0
+            if field in ("level", "hp"):
+                errors[field] = f"{field.capitalize()} là trường bắt buộc"
+            else:
+                cleaned[field] = 0
             continue
 
         try:
@@ -127,19 +130,19 @@ def validate_monster_data(
     p_min = cleaned.get("primaryAttackMin", 0)
     p_max = cleaned.get("primaryAttackMax", 0)
     if "primaryAttackMin" not in errors and "primaryAttackMax" not in errors:
-        if p_min > p_max and p_max > 0:
+        if p_min > p_max:
             errors["primaryAttackMin"] = "primaryAttackMin phải ≤ primaryAttackMax"
 
     s_min = cleaned.get("secondaryAttackMin", 0)
     s_max = cleaned.get("secondaryAttackMax", 0)
     if "secondaryAttackMin" not in errors and "secondaryAttackMax" not in errors:
-        if s_min > s_max and s_max > 0:
+        if s_min > s_max:
             errors["secondaryAttackMin"] = "secondaryAttackMin phải ≤ secondaryAttackMax"
 
-    # 5. DungeonId FK
+    # 5. DungeonId FK (Required)
     d_id = data.get("dungeonId")
     if d_id is None or str(d_id).strip() in ("", "None", "null", "(None / Unassigned)", "All Locations", "All Dungeons"):
-        cleaned["dungeonId"] = None
+        errors["dungeonId"] = "Dungeon/Map là trường bắt buộc"
     else:
         d_str = str(d_id).strip()
         if " - " in d_str:
@@ -149,10 +152,10 @@ def validate_monster_data(
         else:
             cleaned["dungeonId"] = d_str
 
-    # 6. ServerBossType FK
+    # 6. ServerBossType FK (Required)
     b_type = data.get("serverBossType")
     if b_type is None or str(b_type).strip() in ("", "None", "null", "(None / Unassigned)", "All Monsters"):
-        cleaned["serverBossType"] = None
+        errors["serverBossType"] = "Monster Type là trường bắt buộc"
     else:
         b_str = str(b_type).strip()
         if " - " in b_str:

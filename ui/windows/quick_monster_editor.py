@@ -155,6 +155,8 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         self.current_page = 1
         self.page_size = 25
+        self.total_records = 0
+        self.total_pages = 1
         self.search_term = ""
         self.monster_type_filter = "All Monsters"
         self.location_filter = "All Locations"
@@ -349,10 +351,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         try:
             if self.db is not None:
                 for del_id in list(self.pending_deleted_ids):
-                    if not self.db.delete_monster(del_id):
-                        self._show_status_message(f"Xóa thất bại trong DB (id={del_id})", is_error=True)
+                    deleted_ok = self.db.delete_monster(del_id)
+                    if not deleted_ok and self.db.get_monster_by_id(del_id) is not None:
+                        self._show_status_message(f"Lưu thất bại: Không thể xóa record '{del_id}' trong DB", is_error=True)
                         return False
-                    self.pending_deleted_ids.discard(del_id)
+                    if del_id in self.pending_deleted_ids:
+                        self.pending_deleted_ids.remove(del_id)
+
                 for monster in self.monsters:
                     if not self.db.insert_or_update_monster(monster):
                         self._show_status_message("Lưu thất bại trong DB", is_error=True)
@@ -583,6 +588,26 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         status_frame = tk.Frame(self.bottom_bar_frame, bg=UI.BG_PANEL)
         status_frame.pack(side="right", fill="x", expand=True, padx=10)
 
+        # Pagination controls
+        self.btn_prev_page = create_icon_button(
+            status_frame, icon_name="left", text="◀", command=self._on_prev_page, icon_fallback="◀", button_type="refresh", padding={"padx": 6, "pady": 4}
+        )
+        self.btn_prev_page.pack(side="left", padx=2)
+
+        self.page_entry = tk.Entry(status_frame, width=4, font=UI.FONT_TEXT, justify="center")
+        self.page_entry.pack(side="left", padx=2)
+        self.page_entry.bind("<Return>", lambda e: self._go_to_page_from_entry())
+
+        self.btn_go_page = create_icon_button(
+            status_frame, icon_name="go", text="Go", command=self._go_to_page_from_entry, icon_fallback="▶", button_type="blue", padding={"padx": 8, "pady": 4}
+        )
+        self.btn_go_page.pack(side="left", padx=2)
+
+        self.btn_next_page = create_icon_button(
+            status_frame, icon_name="right", text="▶", command=self._on_next_page, icon_fallback="▶", button_type="refresh", padding={"padx": 6, "pady": 4}
+        )
+        self.btn_next_page.pack(side="left", padx=2)
+
         self.stats_label = tk.Label(status_frame, text="", font=UI.FONT_SMALL, fg=UI.COLOR_TEXT, bg=UI.BG_PANEL)
         self.stats_label.pack(side="left", padx=10)
 
@@ -590,6 +615,30 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         self.status_icon_label.pack(side="right")
         self.status_label = self.status_icon_label
         self._status_timer: Optional[str] = None
+
+    def _on_prev_page(self) -> None:
+        if self.current_page > 1:
+            self.current_page -= 1
+            self._refresh_monster_table()
+
+    def _on_next_page(self) -> None:
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            self._refresh_monster_table()
+
+    def _go_to_page_from_entry(self) -> None:
+        try:
+            p = int(self.page_entry.get().strip())
+            if 1 <= p <= self.total_pages:
+                self.current_page = p
+                self._refresh_monster_table()
+        except ValueError:
+            pass
+
+    def _update_page_entry(self) -> None:
+        if hasattr(self, "page_entry") and self.page_entry:
+            self.page_entry.delete(0, tk.END)
+            self.page_entry.insert(0, str(self.current_page))
 
     def _show_status_message(self, message: str, is_error: bool = False) -> None:
         if self._status_timer:
@@ -681,8 +730,9 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             iid = monster.get("id", str(len(self.monster_table.get_children())))
             self.monster_table.insert("", "end", iid=iid, values=values)
 
+        self._update_page_entry()
         if hasattr(self, "stats_label") and self.stats_label:
-            self.stats_label.config(text=f"📊 Hiển thị {len(self.filtered_monsters)} / {self.total_records} quái vật")
+            self.stats_label.config(text=f"📊 Hiển thị {len(self.filtered_monsters)} / {self.total_records} quái vật (Trang {self.current_page}/{self.total_pages})")
 
     def _on_row_double_click(self, event: Any) -> None:
         selection = self.monster_table.selection()
