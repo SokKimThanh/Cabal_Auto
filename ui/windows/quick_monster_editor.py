@@ -37,9 +37,10 @@ from pathlib import Path
 try:
     from dialogs.display_settings import DisplaySettingsDialog
     from dialogs.monster_edit import MonsterEditDialog
-except ImportError:
-    DisplaySettingsDialog = None
-    MonsterEditDialog = None
+except ImportError as e:
+    raise ImportError(
+        "Failed to import dialogs: dialogs.display_settings.DisplaySettingsDialog / dialogs.monster_edit.MonsterEditDialog"
+    ) from e
 
 # Import monster_service validation logic
 try:
