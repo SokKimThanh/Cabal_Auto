@@ -350,12 +350,25 @@ def mock_tk_headless(monkeypatch):
         pass
 
     class DummyNotebook(DummyWidget):
-        def add(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._tab_opts = {}
+
+        def add(self, child, *args, **kwargs):
+            kw = dict(kwargs)
+            if args and isinstance(args[0], dict):
+                kw.update(args[0])
+            self._tab_opts[child] = kw
             return None
-        def tab(self, *args, **kwargs):
-            if len(args) >= 2 and args[1] == "text":
-                return "Hiển thị"
-            return None
+
+        def tab(self, tab_id, option=None, **kwargs):
+            if tab_id not in self._tab_opts:
+                self._tab_opts[tab_id] = {}
+            if kwargs:
+                self._tab_opts[tab_id].update(kwargs)
+            if option:
+                return self._tab_opts[tab_id].get(option)
+            return self._tab_opts[tab_id]
 
     class DummyCombobox(DummyWidget):
         def __init__(self, *args, **kwargs):

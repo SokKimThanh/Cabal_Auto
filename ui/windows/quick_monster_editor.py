@@ -337,17 +337,16 @@ class CompatibleTreeview(ttk.Treeview):
         if 0 <= index < len(children):
             values = self.item(children[index], "values")
             if values:
-                name = values[0]
+                raw_name = str(values[0]).split("\n")[0].strip()
                 level = 1
-                for v in values:
-                    if isinstance(v, str) and not str(v).isdigit() and "\n" not in str(v):
-                        name = v
-                        break
-                for v in values:
-                    if isinstance(v, int) or (isinstance(v, str) and str(v).isdigit()):
-                        level = v
-                        break
-                return f"👹 {name} (Lv.{level})"
+                if len(values) >= 2 and (isinstance(values[1], int) or str(values[1]).isdigit()):
+                    level = values[1]
+                else:
+                    for v in values[1:]:
+                        if isinstance(v, int) or (isinstance(v, str) and str(v).isdigit()):
+                            level = v
+                            break
+                return f"👹 {raw_name} (Lv.{level})"
         return ""
 
     def curselection(self) -> tuple:
@@ -2382,11 +2381,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             self.total_records = len(self.monsters)
             self.total_pages = 1
 
-            query = (
-                self.search_entry.get().strip().lower()
-                if hasattr(self, "search_entry") and hasattr(self.search_entry, "get") and isinstance(self.search_entry.get(), str)
-                else ""
-            )
+            query = ""
+            if hasattr(self, "search_entry") and hasattr(self.search_entry, "get"):
+                search_val = self.search_entry.get()
+                if isinstance(search_val, str):
+                    query = search_val.strip().lower()
             if query:
                 self.filtered_monsters = [
                     monster
@@ -2524,26 +2523,16 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             )
 
     def _on_add_monster(self) -> None:
-        # Mở dialog thêm mới (monster = None)
+        """Open the MonsterEditDialog to create a new monster."""
         if getattr(self, "_active_edit_dialog", None) is not None:
             try:
-                self._active_edit_dialog.destroy()
+                if self._active_edit_dialog.winfo_exists():
+                    self._active_edit_dialog.lift()
+                    self._active_edit_dialog.focus_force()
+                    return
             except Exception:
-                pass
-            self._active_edit_dialog = None
-        dialog = self._open_edit_dialog(None)
-        if dialog and hasattr(dialog, "monster_data"):
-            self.current_monster_id = dialog.monster_data.get("id")
-            self._populate_info_form(dialog.monster_data)
-            if dialog.monster_data not in self.monsters:
-                self.monsters.append(dialog.monster_data)
-            self.set_dirty(True)
-            self._refresh_monster_table()
-            if hasattr(self, "monster_table") and self.current_monster_id:
-                try:
-                    self.monster_table.selection_set(self.current_monster_id)
-                except Exception:
-                    pass
+                self._active_edit_dialog = None
+        self._open_edit_dialog(None)
 
     def _open_edit_dialog(
         self, monster_id: Optional[str] = None

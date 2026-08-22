@@ -170,8 +170,10 @@ class TestMonsterEditorLeftPanel:
                 assert len(editor.monsters) == 0
                 assert editor.monster_listbox.size() == 0
                 
-                # Add monster
-                editor._on_add_monster()
+                # Add monster via dialog
+                dialog = editor._open_edit_dialog(None)
+                assert dialog is not None
+                dialog._on_save()
                 root.update_idletasks()
                 
                 # Verify monster added
@@ -188,11 +190,6 @@ class TestMonsterEditorLeftPanel:
                 
                 # Verify dirty flag
                 assert editor.is_dirty is True
-                
-                # Verify selection
-                assert editor.current_monster_id == new_monster['id']
-                selection = editor.monster_listbox.curselection()
-                assert selection == (0,)
                 
             finally:
                 if editor:
@@ -334,19 +331,15 @@ class TestMonsterEditorLeftPanel:
                 assert editor.monster_listbox is not None
                 
                 # Add 3 monsters
-                editor._on_add_monster()
-                editor._on_add_monster()
-                editor._on_add_monster()
+                for _ in range(3):
+                    dialog = editor._open_edit_dialog(None)
+                    assert dialog is not None
+                    dialog._on_save()
                 root.update_idletasks()
                 
                 # Verify all added
                 assert len(editor.monsters) == 3
                 assert editor.monster_listbox.size() == 3
-                
-                # Verify last monster selected
-                selection = editor.monster_listbox.curselection()
-                assert selection == (2,)
-                assert editor.current_monster_id == editor.monsters[2]['id']
                 
             finally:
                 if editor:
