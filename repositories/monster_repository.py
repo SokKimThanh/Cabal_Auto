@@ -10,10 +10,9 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 try:
-    from database import get_db, MonsterDatabase
+    from database import get_db
 except ImportError:
     get_db = None
-    MonsterDatabase = None
 
 class MonsterRepository:
     """Handles SQLite database interactions for monsters with transaction rollbacks."""
