@@ -13,7 +13,7 @@ print("=" * 80)
 print("\n[1] Testing Icon Helper - Save Icon")
 print("-" * 80)
 try:
-    from lib.ui.icon_helper import IconHelper
+    from ui.helpers.icon_helper import IconHelper
     
     helper = IconHelper()
     print(f"✓ IconHelper initialized")
@@ -125,7 +125,7 @@ try:
     
     # Test tooltip attachment
     print(f"\n  Testing tooltip system:")
-    from lib.ui.tooltip import attach_i18n_tooltip
+    from ui.helpers.tooltip import attach_i18n_tooltip
     print(f"  ✓ attach_i18n_tooltip imported")
     
     import inspect
@@ -142,7 +142,7 @@ except Exception as e:
 print("\n[4] Testing Library Manager Integration")
 print("-" * 80)
 try:
-    from lib.ui.library_manager import LibraryManagerWindow
+    from ui.windows.library_manager import LibraryManagerWindow
     import inspect
     
     # Check save button exists

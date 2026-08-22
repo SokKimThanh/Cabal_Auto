@@ -15,7 +15,7 @@ files_to_check = [
     'app_gui.py',
     'ui/setup_wizard.py',
     'ui/auto_hunt.py',
-    'lib/ui/library_manager.py',
+    'ui/windows/library_manager.py',
     'scripts/main.py',
     'scripts/main_skills.py',
 ]

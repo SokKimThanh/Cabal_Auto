@@ -120,7 +120,7 @@ if result:
 **Import trong app:**
 - `app_gui.py`: Line 37
 - `ui/auto_hunt.py`: Line 9
-- `lib/ui/library_manager.py`: Line 61
+- `ui/windows/library_manager.py`: Line 61
 
 ### Features Layer (`lib/features/`)
 
@@ -218,7 +218,7 @@ migrator.migrate()
 migrator.print_summary()
 ```
 
-### UI Layer (`lib/ui/`)
+### UI Layer (`ui/`)
 
 #### `ui/tooltip.py`
 Centralized tooltip utilities với i18n support.
@@ -231,7 +231,7 @@ Centralized tooltip utilities với i18n support.
 
 **Sử dụng:**
 ```python
-from lib.ui.tooltip import attach_i18n_tooltip
+from ui.helpers.tooltip import attach_i18n_tooltip
 
 attach_i18n_tooltip(
     widget, 
@@ -244,7 +244,7 @@ attach_i18n_tooltip(
 **Import trong app:**
 - `app_gui.py`: Line 39
 - `ui/setup_wizard.py`: Line 28
-- `lib/ui/library_manager.py`: Line 48
+- `ui/windows/library_manager.py`: Line 48
 
 #### `ui/icon_helper.py`
 Icon management với automatic fallback to Unicode emoji.
@@ -258,7 +258,7 @@ Icon management với automatic fallback to Unicode emoji.
 
 **Sử dụng:**
 ```python
-from lib.ui.icon_helper import get_icon_helper
+from ui.helpers.icon_helper import get_icon_helper
 
 icon_helper = get_icon_helper()
 add_icon = icon_helper.get_icon('add', fallback='➕')
@@ -267,7 +267,7 @@ add_icon = icon_helper.get_icon('add', fallback='➕')
 **Import trong app:**
 - `app_gui.py`: Line 622
 - `ui/setup_wizard.py`: Line 34
-- `lib/ui/library_manager.py`: Line 44-46
+- `ui/windows/library_manager.py`: Line 44-46
 
 #### `ui/library_manager.py`
 Library Manager Window - Quản lý tập trung cho Monsters, Skills, và Timing.
@@ -284,7 +284,7 @@ Library Manager Window - Quản lý tập trung cho Monsters, Skills, và Timing
 
 **Sử dụng:**
 ```python
-from lib.ui.library_manager import LibraryManagerWindow
+from ui.windows.library_manager import LibraryManagerWindow
 
 window = LibraryManagerWindow(parent, lang='vi', reload_callback=callback)
 ```
@@ -304,7 +304,7 @@ Button styling utilities và color presets.
 
 **Sử dụng:**
 ```python
-from lib.ui.button_styles import get_button_config
+from ui.helpers.button_styles import get_button_config
 
 config = get_button_config('save')  # returns green button config
 button = tk.Button(parent, **config)
@@ -390,7 +390,7 @@ button = tk.Button(
 
 **Import trong app:**
 - `app_gui.py`: Line 62
-- `lib/ui/library_manager.py`: Line 13
+- `ui/windows/library_manager.py`: Line 13
 
 ## 📊 Module Dependencies
 
@@ -475,17 +475,17 @@ Style:
 ```python
 from lib.vision.template_matcher import locate_template
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
-from lib.ui.tooltip import attach_i18n_tooltip
+from ui.helpers.tooltip import attach_i18n_tooltip
 from lib.i18n import (register_bulk, set_default_lang, t, get_lang, ...)
-from lib.ui.capture_helper import capture_region_and_save
+from ui.helpers.capture_helper import capture_region_and_save
 from lib.system.win_input import tap
 from lib.system.hunt_logger import get_hunt_logger
 from lib.features.timing.calculator import (calculate_timing, ...)
 from lib.features.skills.skill_stats import (load_skill_library, ...)
 from lib.ui_style import UIStyle as UI
-from lib.ui.icon_helper import get_icon_helper
-from lib.ui.button_styles import get_button_config
-from lib.ui.library_manager import LibraryManagerWindow
+from ui.helpers.icon_helper import get_icon_helper
+from ui.helpers.button_styles import get_button_config
+from ui.windows.library_manager import LibraryManagerWindow
 ```
 
 ### Từ ui/auto_hunt.py:
@@ -498,11 +498,11 @@ from lib.features.skills.runtime import SkillRuntime
 
 ### Từ ui/setup_wizard.py:
 ```python
-from lib.ui.tooltip import attach_i18n_tooltip
-from lib.ui.icon_helper import get_icon_helper
+from ui.helpers.tooltip import attach_i18n_tooltip
+from ui.helpers.icon_helper import get_icon_helper
 from lib.i18n import (register_bulk, set_default_lang, t, ...)
 from lib.i18n.translations import SETUP_WIZARD_TRANSLATIONS
-from lib.ui.library_manager import LibraryManagerWindow
+from ui.windows.library_manager import LibraryManagerWindow
 ```
 
 ## 📦 Data Files (`lib/data/`)

@@ -20,8 +20,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from lib.ui.overlay_window_pywin32 import OverlayWindowPyWin32, DetectionBox
-from lib.ui.detection_converter import detections_to_boxes, create_empty_search_box
+from ui.windows.overlay_window import OverlayWindowPyWin32, DetectionBox
+from ui.utils.detection_converter import detections_to_boxes, create_empty_search_box
 from lib.vision.vision_engine import Detection
 from lib.system.window_manager import WindowManager
 

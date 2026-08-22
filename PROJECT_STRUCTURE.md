@@ -226,7 +226,7 @@ pytest tests/unit/test_timing_calculator_ui.py -v
 
 ### Backward Compatibility
 - Root `run.bat` redirects to `scripts/launchers/run_venv.bat`
-- Legacy UI files in `/ui` to be refactored into `/lib/ui`
+- Legacy UI files refactored into new `/ui` structure (`ui/helpers`, `ui/windows`, `ui/utils`, `ui/components`)
 
 ---
 

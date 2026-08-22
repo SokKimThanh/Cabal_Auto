@@ -33,7 +33,7 @@ sys.path.insert(0, str(project_root))
 from lib.vision.vision_engine import VisionEngine
 from lib.system.screen_capture import ScreenCapture
 from lib.system.bot_manager import BotManager
-from lib.ui.overlay_controller import OverlayController
+from ui.utils.overlay_controller import OverlayController
 
 
 def load_config():

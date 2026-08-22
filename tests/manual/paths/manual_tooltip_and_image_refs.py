@@ -1,7 +1,7 @@
 import unittest
 import tkinter as tk
-from lib.ui.tooltip import attach_i18n_tooltip, I18nToolTip
-from lib.ui.library_manager import LibraryManagerWindow
+from ui.helpers.tooltip import attach_i18n_tooltip, I18nToolTip
+from ui.windows.library_manager import LibraryManagerWindow
 
 class TooltipAndImageRefsTests(unittest.TestCase):
     def setUp(self):

@@ -46,7 +46,7 @@ except Exception as e:
 
 print("\n[2] Testing LibraryManager has save button reference...")
 try:
-    from lib.ui.library_manager import LibraryManagerWindow
+    from ui.windows.library_manager import LibraryManagerWindow
     import inspect
     
     # Check __init__ creates save_btn
@@ -62,7 +62,7 @@ except Exception as e:
 
 print("\n[3] Testing _update_save_button_tooltip method exists...")
 try:
-    from lib.ui.library_manager import LibraryManagerWindow
+    from ui.windows.library_manager import LibraryManagerWindow
     
     if hasattr(LibraryManagerWindow, '_update_save_button_tooltip'):
         print("✓ _update_save_button_tooltip method exists")
@@ -84,7 +84,7 @@ except Exception as e:
 
 print("\n[4] Testing _mark_unsaved calls tooltip update...")
 try:
-    from lib.ui.library_manager import LibraryManagerWindow
+    from ui.windows.library_manager import LibraryManagerWindow
     import inspect
     
     source = inspect.getsource(LibraryManagerWindow._mark_unsaved)
@@ -99,7 +99,7 @@ except Exception as e:
 
 print("\n[5] Testing tooltip helper integration...")
 try:
-    from lib.ui.tooltip import attach_i18n_tooltip
+    from ui.helpers.tooltip import attach_i18n_tooltip
     print("✓ attach_i18n_tooltip imported successfully")
     
     import inspect

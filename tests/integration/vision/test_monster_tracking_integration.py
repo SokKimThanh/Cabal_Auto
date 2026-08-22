@@ -30,8 +30,8 @@ else:
     ScreenCapture = None  # type: ignore
 from lib.vision.monster_detector import MonsterDetector
 try:
-    from lib.ui.overlay_controller import OverlayController
-except ImportError:
+    from ui.utils.overlay_controller import OverlayController
+except (ImportError, RuntimeError):
     OverlayController = None  # type: ignore
 from lib.system.bot_manager import BotManager
 

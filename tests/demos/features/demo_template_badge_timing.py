@@ -230,7 +230,7 @@ If all tests pass:
 
 If any test fails:
 ❌ Review docs/sprints/sprint19/BUGFIX_TEMPLATE_BADGE_PREMATURE_DISPLAY.md
-❌ Check lib/ui/library_manager.py implementation
+❌ Check ui/windows/library_manager.py implementation
 
 ╚════════════════════════════════════════════════════════════════╝
 """)

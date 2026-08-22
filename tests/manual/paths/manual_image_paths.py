@@ -12,7 +12,7 @@ print("=" * 60)
 # Test 1: Icon Helper
 print("\n[1] Testing Icon Helper (icons)...")
 try:
-    from lib.ui.icon_helper import IconHelper
+    from ui.helpers.icon_helper import IconHelper
     helper = IconHelper()
     icons_dir = helper.icons_dir
     print(f"✓ Icons directory: {icons_dir}")
@@ -26,7 +26,7 @@ except Exception as e:
 # Test 2: Capture Helper  
 print("\n[2] Testing Capture Helper (monsters)...")
 try:
-    from lib.ui import capture_helper
+    from ui.helpers import capture_helper
     assets_dir = capture_helper.ASSETS_DIR
     print(f"✓ Monsters directory: {assets_dir}")
     print(f"  Exists: {assets_dir.exists()}")

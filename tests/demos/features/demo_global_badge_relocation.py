@@ -311,7 +311,7 @@ If all tests pass:
 
 If any test fails:
 ❌ Review docs/sprints/sprint19/UX_GLOBAL_BADGE_RELOCATION.md
-❌ Check lib/ui/library_manager.py implementation
+❌ Check ui/windows/library_manager.py implementation
 ❌ Verify badge widget references (unsaved_badge vs template_badge)
 
 ╚════════════════════════════════════════════════════════════════╝

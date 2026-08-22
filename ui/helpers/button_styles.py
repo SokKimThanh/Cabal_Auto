@@ -239,7 +239,7 @@ def get_label_color(color_type: str) -> dict:
 Example 1: Using constants directly
 -----------------------------------
 import tkinter as tk
-from lib.ui.button_styles import BTN_GREEN_BG, BTN_GREEN_FG, BTN_GREEN_ACTIVE_BG
+from ui.helpers.button_styles import BTN_GREEN_BG, BTN_GREEN_FG, BTN_GREEN_ACTIVE_BG
 
 btn = tk.Button(
     parent,
@@ -254,7 +254,7 @@ btn = tk.Button(
 Example 2: Using helper function
 ---------------------------------
 import tkinter as tk
-from lib.ui.button_styles import get_button_config
+from ui.helpers.button_styles import get_button_config
 
 config = get_button_config('green')
 btn = tk.Button(parent, text='Start Hunt', **config, command=start_hunt)
@@ -263,7 +263,7 @@ btn = tk.Button(parent, text='Start Hunt', **config, command=start_hunt)
 Example 3: Label styling
 ------------------------
 import tkinter as tk
-from lib.ui.button_styles import get_label_color
+from ui.helpers.button_styles import get_label_color
 
 config = get_label_color('info')
 label = tk.Label(parent, text='ℹ️ Information', **config, font=('Arial', 9))

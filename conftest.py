@@ -109,9 +109,13 @@ def db_reset(db_session):
     db_session.rollback()
 
 
+import os
+
 @pytest.fixture(autouse=True)
 def mock_tk_headless(monkeypatch):
     """Replace GUI dependencies with lightweight stubs so tests run headlessly."""
+    if os.environ.get("DISPLAY"):
+        return
     try:
         import tkinter
         import tkinter.ttk as ttk
@@ -162,7 +166,9 @@ def mock_tk_headless(monkeypatch):
                     self._w = f"{args[0]._w}.dummy"
 
         def __getitem__(self, key):
-            return self._config.get(key)
+            if key == 'from' and 'from_' in self.kwargs:
+                return self.kwargs['from_']
+            return self._config.get(key, self.kwargs.get(key))
 
         def __setitem__(self, key, value):
             self._config[key] = value
@@ -192,6 +198,10 @@ def mock_tk_headless(monkeypatch):
                 self.kwargs[key] = value
                 self._config[key] = value
             return None
+        def title(self, *args, **kwargs):
+            if args:
+                self._title = str(args[0])
+            return getattr(self, '_title', '')
         def cget(self, key, *args, **kwargs):
             return self.kwargs.get(key)
         def bind(self, *args, **kwargs):
@@ -200,7 +210,7 @@ def mock_tk_headless(monkeypatch):
             return None
         def selection(self):
             return ()
-        def get_children(self):
+        def get_children(self, *args, **kwargs):
             return []
         def delete(self, *args, **kwargs):
             if len(args) >= 2:
@@ -251,6 +261,8 @@ def mock_tk_headless(monkeypatch):
             return None
         def get(self, *args, **kwargs):
             if len(args) == 0:
+                if hasattr(self, '_scale_val'):
+                    return self._scale_val
                 return self._value
             if len(args) == 1:
                 idx = args[0]
@@ -273,6 +285,10 @@ def mock_tk_headless(monkeypatch):
         def set(self, *args, **kwargs):
             if args:
                 self._value = str(args[0])
+                try:
+                    self._scale_val = float(args[0])
+                except (ValueError, TypeError):
+                    pass
                 self._items = [self._value] if self._value else []
             return None
         def selection_set(self, *args, **kwargs):
@@ -337,6 +353,8 @@ def mock_tk_headless(monkeypatch):
         def add(self, *args, **kwargs):
             return None
         def tab(self, *args, **kwargs):
+            if len(args) >= 2 and args[1] == "text":
+                return "Hiển thị"
             return None
 
     class DummyCombobox(DummyWidget):
