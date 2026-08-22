@@ -586,9 +586,9 @@ class MonsterEditDialog(tk.Toplevel):
         if path and Path(path).exists() and PIL_AVAILABLE and Image and ImageTk:
             try:
                 img = Image.open(path)
-                img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                resample = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
+                img.thumbnail((200, 200), resample)
                 photo = ImageTk.PhotoImage(img)
-                self.preview_label.config(image=photo, text="")
                 self.preview_label.image = photo
             except Exception as e:
                 self.preview_label.config(text=f"Lỗi ảnh\n{tmpl.get('name')}", image="")
