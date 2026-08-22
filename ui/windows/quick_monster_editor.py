@@ -1553,9 +1553,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                         except ValueError:
                             pass
                     if self.desc_text:
-                        monster["description"] = self.desc_text.get(
-                            "1.0", tk.END
-                        ).strip()
+                        desc_val = self.desc_text.get("1.0", tk.END)
+                        if isinstance(desc_val, list):
+                            desc_val = "".join(str(x) for x in desc_val)
+                        monster["description"] = str(desc_val).strip()
                     self._refresh_monster_table()
                     break
 
