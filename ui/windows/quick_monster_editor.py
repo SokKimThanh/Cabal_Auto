@@ -349,9 +349,10 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         try:
             if self.db is not None:
                 for del_id in list(self.pending_deleted_ids):
-                    self.db.delete_monster(del_id)
-                self.pending_deleted_ids.clear()
-
+                    if not self.db.delete_monster(del_id):
+                        self._show_status_message(f"Xóa thất bại trong DB (id={del_id})", is_error=True)
+                        return False
+                    self.pending_deleted_ids.discard(del_id)
                 for monster in self.monsters:
                     if not self.db.insert_or_update_monster(monster):
                         self._show_status_message("Lưu thất bại trong DB", is_error=True)
