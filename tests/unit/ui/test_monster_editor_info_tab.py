@@ -211,7 +211,9 @@ class TestMonsterEditorInfoTab:
         """Test that selecting a monster populates the form."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -252,7 +254,9 @@ class TestMonsterEditorInfoTab:
         """Test that adding a monster populates form with default values."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -288,7 +292,9 @@ class TestMonsterEditorInfoTab:
         """Test that form changes update monster data in memory."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()

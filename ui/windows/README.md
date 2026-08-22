@@ -32,7 +32,7 @@ All window modules have been consolidated into `ui/windows/` for better organiza
 **Old imports:**
 ```python
 from ui.auto_hunt import AutoHuntWindow
-from ui.windows.quick_monster_editor import QuickMonsterEditor
+from ui.quick_monster_editor import QuickMonsterEditor
 from lib.ui.library_manager import LibraryManager
 ```
 

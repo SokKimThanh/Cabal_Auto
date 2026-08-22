@@ -61,8 +61,10 @@ class TestMonsterEditorData:
         # Create empty file
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        # Mock DATA_PATH
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        # Mock DATA_PATH, get_db, and DataSyncManager
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -87,7 +89,9 @@ class TestMonsterEditorData:
             encoding='utf-8'
         )
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -122,7 +126,9 @@ class TestMonsterEditorData:
             encoding='utf-8'
         )
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -146,7 +152,9 @@ class TestMonsterEditorData:
         # Use non-existent path
         non_existent = temp_data_file.parent / 'non_existent.json'
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', non_existent):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', non_existent), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -170,7 +178,9 @@ class TestMonsterEditorData:
     
     def test_save_monsters(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test saving monsters to file."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -207,14 +217,16 @@ class TestMonsterEditorData:
         editor = None
         
         try:
-            editor = QuickMonsterEditor(root)
-            editor.monsters = [{'id': '1', 'name': 'Test'}]
-            
-            # Mock open to raise error
-            with patch('builtins.open', side_effect=IOError('Mock error')):
-                result = editor._save_monsters()
+            with patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+                 patch('ui.windows.quick_monster_editor.DataSyncManager', None):
+                editor = QuickMonsterEditor(root)
+                editor.monsters = [{'id': '1', 'name': 'Test'}]
                 
-                assert result is False
+                # Mock open to raise error
+                with patch('builtins.open', side_effect=IOError('Mock error')):
+                    result = editor._save_monsters()
+
+                    assert result is False
         finally:
             if editor:
                 editor.destroy()

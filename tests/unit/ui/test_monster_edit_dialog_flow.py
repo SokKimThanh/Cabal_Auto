@@ -105,7 +105,9 @@ class TestMonsterEditDialogFlow:
 
     def test_duplicate_name_check_accepted(self, temp_data_file: Path) -> None:
         """Test duplicate name prompt on save: user accepts auto rename."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
             try:
                 root = tk.Tk()
@@ -137,7 +139,9 @@ class TestMonsterEditDialogFlow:
 
     def test_duplicate_name_check_rejected(self, temp_data_file: Path) -> None:
         """Test duplicate name prompt on save: user rejects auto rename (dialog stays open)."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
             try:
                 root = tk.Tk()

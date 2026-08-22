@@ -54,7 +54,9 @@ class TestMonsterEditorLeftPanel:
     
     def test_left_panel_creation(self, temp_data_file: Path) -> None:
         """Test that left panel widgets are created correctly."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -78,7 +80,9 @@ class TestMonsterEditorLeftPanel:
         """Test that monster list refreshes correctly."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -110,7 +114,9 @@ class TestMonsterEditorLeftPanel:
         """Test monster selection from listbox."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -147,7 +153,9 @@ class TestMonsterEditorLeftPanel:
         """Test adding a new monster."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -195,7 +203,9 @@ class TestMonsterEditorLeftPanel:
         """Test deleting a monster with confirmation."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -235,7 +245,9 @@ class TestMonsterEditorLeftPanel:
         """Test cancelling monster deletion."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -271,7 +283,9 @@ class TestMonsterEditorLeftPanel:
         """Test deleting monster with no selection shows warning."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
@@ -306,7 +320,9 @@ class TestMonsterEditorLeftPanel:
         """Test adding multiple monsters."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
+        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
+             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
+             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
             from ui.windows.quick_monster_editor import QuickMonsterEditor
             
             root = tk.Tk()
