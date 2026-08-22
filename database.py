@@ -82,6 +82,12 @@ class MonsterDatabase:
         """Tạo schema bảng với bảng dungeons và dungeonId trong monsters"""
         cursor = self.conn.cursor()
 
+        try:
+            from lib.db.schema import setup_skills_schema
+            setup_skills_schema(self.conn)
+        except ImportError as e:
+            print(f"[DB] Could not setup skills schema: {e}")
+
         # Bảng dungeons (thay thế cho locations cũ)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS dungeons (
