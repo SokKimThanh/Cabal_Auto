@@ -126,13 +126,11 @@ def test_old_imports():
     print("\n7. Testing lib.ui removal...")
     try:
         import lib.ui
-        print("   ❌ lib.ui still accessible - removal incomplete!")
-        return False
+        assert False, "lib.ui is still accessible - removal incomplete!"
     except ImportError:
         print("   ✅ lib.ui removed (clean)")
     
     print("\n" + "=" * 60)
-    return True
 
 
 if __name__ == '__main__':

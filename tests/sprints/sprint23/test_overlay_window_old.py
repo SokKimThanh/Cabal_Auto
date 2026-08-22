@@ -30,7 +30,7 @@ try:
         DetectionBox,
         create_detection_box
     )
-except ImportError:
+except (ImportError, RuntimeError):
     OverlayWindow = None  # type: ignore
     DetectionBox = None  # type: ignore
     create_detection_box = None  # type: ignore

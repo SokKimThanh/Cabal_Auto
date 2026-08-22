@@ -31,7 +31,7 @@ else:
 from lib.vision.monster_detector import MonsterDetector
 try:
     from ui.utils.overlay_controller import OverlayController
-except ImportError:
+except (ImportError, RuntimeError):
     OverlayController = None  # type: ignore
 from lib.system.bot_manager import BotManager
 
