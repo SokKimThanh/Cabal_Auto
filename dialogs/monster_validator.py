@@ -138,22 +138,29 @@ def validate_monster_data(
 
     # 5. DungeonId FK
     d_id = data.get("dungeonId")
-    if d_id is None or str(d_id).strip() in ("", "None", "null", "0", "All Locations", "All Dungeons"):
+    if d_id is None or str(d_id).strip() in ("", "None", "null", "(None / Unassigned)", "All Locations", "All Dungeons"):
         cleaned["dungeonId"] = None
     else:
         d_str = str(d_id).strip()
-        cleaned["dungeonId"] = d_str
+        if " - " in d_str:
+            d_str = d_str.split(" - ")[0].strip()
         if valid_dungeons is not None and d_str not in valid_dungeons:
-            # Allow raw ID or extract if 'id - name'
-            pass
+            errors["dungeonId"] = f"Dungeon ID '{d_str}' không hợp lệ"
+        else:
+            cleaned["dungeonId"] = d_str
 
     # 6. ServerBossType FK
     b_type = data.get("serverBossType")
-    if b_type is None or str(b_type).strip() in ("", "None", "null", "All Monsters"):
+    if b_type is None or str(b_type).strip() in ("", "None", "null", "(None / Unassigned)", "All Monsters"):
         cleaned["serverBossType"] = None
     else:
         b_str = str(b_type).strip()
-        cleaned["serverBossType"] = b_str
+        if " - " in b_str:
+            b_str = b_str.split(" - ")[0].strip()
+        if valid_types is not None and b_str not in valid_types:
+            errors["serverBossType"] = f"Loại quái '{b_str}' không hợp lệ"
+        else:
+            cleaned["serverBossType"] = b_str
 
     # Copy over non-schema fields like 'templates', 'description', 'priority'
     for k, v in data.items():

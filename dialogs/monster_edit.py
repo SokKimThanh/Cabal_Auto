@@ -177,7 +177,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.capture_button = self.templates_tab.capture_button
         self.browse_button = self.templates_tab.btn_add
         self.delete_template_button = self.templates_tab.btn_delete
-        self.test_template_button = self.templates_tab.capture_button
+        self.test_template_button = self.templates_tab.test_template_button
 
         # --- Tab 3: Display Settings ---
         self.settings_tab = tk.Frame(self.notebook, bg=UI.BG_DEFAULT)
@@ -250,10 +250,15 @@ class MonsterEditDialog(tk.Toplevel):
 
         merged_raw = {**self.monster_data, **raw_basic, **raw_extended}
 
+        valid_dungeons = [d["id"] for d in self.dungeon_list] if self.dungeon_list else None
+        valid_types = [t["value"] for t in self.type_list] if self.type_list else None
+
         is_valid, errors, cleaned = validate_monster_data(
             merged_raw,
             is_new=self.is_new,
             existing_monsters=self.existing_monsters,
+            valid_dungeons=valid_dungeons,
+            valid_types=valid_types,
         )
 
         self.basic_form.show_errors(errors)

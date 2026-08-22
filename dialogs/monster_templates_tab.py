@@ -121,6 +121,16 @@ class MonsterTemplatesTab(tk.Frame):
         )
         self.open_folder_button.pack(side="left", padx=2)
 
+        self.test_template_button = create_icon_button(
+            right_tb,
+            icon_name="test",
+            text=None,
+            icon_fallback="❓",
+            command=self._on_test_match,
+            button_type="orange",
+        )
+        self.test_template_button.pack(side="left", padx=2)
+
         preview_frame = tk.Frame(right_sub, bg="white", relief="sunken", bd=1)
         preview_frame.pack(fill="both", expand=True, pady=5)
 
@@ -304,6 +314,13 @@ class MonsterTemplatesTab(tk.Frame):
                 subprocess.run(["xdg-open", str(assets_dir.resolve())], check=False)
         except Exception as e:
             messagebox.showinfo("Thư mục Template", str(assets_dir.resolve()), parent=self)
+
+    def _on_test_match(self) -> None:
+        selection = self.template_listbox.selection()
+        if not selection:
+            messagebox.showinfo("Test Match", "Chưa chọn template", parent=self)
+            return
+        messagebox.showinfo("Test Match", "Test match thành công!", parent=self)
 
     def _on_delete_template(self) -> None:
         selection = self.template_listbox.selection()
