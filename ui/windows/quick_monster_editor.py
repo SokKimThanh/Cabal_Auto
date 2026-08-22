@@ -296,6 +296,9 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                     with open(DATA_PATH, "r", encoding="utf-8") as f:
                         self.monsters = json.load(f)
                 else:
+                    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+                    with open(DATA_PATH, "w", encoding="utf-8") as f:
+                        json.dump([], f)
                     self.monsters = []
 
             for m in self.monsters:
@@ -535,18 +538,21 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 target_idx = idx
                 break
 
-        if target_idx >= 0 and target_monster:
-            name = target_monster.get("name", "Unnamed")
-            if self.db is not None and not self.db.delete_monster(m_id):
+        name = target_monster.get("name", "Unnamed") if target_monster else m_id
+        if self.db is not None:
+            if not self.db.delete_monster(m_id):
                 self._show_status_message("Xóa thất bại trong DB", is_error=True)
                 return
+
+        if target_idx >= 0:
             self.monsters.pop(target_idx)
-            self.set_dirty(True)
-            if self.current_monster_id == m_id:
-                self.current_monster_id = None
-                self._clear_info_form()
-            self._refresh_monster_table()
-            self._show_status_message(f"Đã xóa quái vật: '{name}'")
+
+        self.set_dirty(True)
+        if self.current_monster_id == m_id:
+            self.current_monster_id = None
+            self._clear_info_form()
+        self._refresh_monster_table()
+        self._show_status_message(f"Đã xóa quái vật: '{name}'")
 
     def _execute_delete_monster(self) -> None:
         m_id = self._pending_delete_id
@@ -679,7 +685,11 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             except Exception:
                 self._active_edit_dialog = None
 
-        target_monster = next((m for m in self.monsters if m.get("id") == monster_id), None)
+        target_monster = None
+        if monster_id:
+            target_monster = next((m for m in self.monsters if m.get("id") == monster_id), None)
+            if not target_monster and self.db is not None:
+                target_monster = self.db.get_monster_by_id(monster_id)
 
         def on_dialog_save(updated_data: Dict[str, Any]) -> None:
             m_id = updated_data.get("id")
@@ -727,10 +737,13 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
                 target_monster = self.monsters[target_idx]
                 m_id = target_monster.get("id")
 
-        if not target_monster:
+        if not target_monster and m_id and self.db is not None:
+            target_monster = self.db.get_monster_by_id(m_id)
+
+        if not target_monster and not m_id:
             return
 
-        name = target_monster.get("name", "Unnamed")
+        name = target_monster.get("name", "Unnamed") if target_monster else m_id
         if isinstance(messagebox.askyesno, MagicMock) or getattr(messagebox.askyesno, "__mock__", None) is not None:
             if messagebox.askyesno("Xác Nhận Xóa", f"Bạn có chắc muốn xóa quái vật '{name}' không?", parent=self):
                 self._execute_delete_monster_by_id(str(m_id))
@@ -776,11 +789,23 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
             return
 
         col_index = self.visible_columns.index(column)
+
+        def _safe_convert(val):
+            if isinstance(val, (int, float)):
+                return float(val)
+            if isinstance(val, str):
+                s = val.strip()
+                try:
+                    return float(s.replace(",", ""))
+                except ValueError:
+                    return s.lower()
+            return ""
+
         data = []
         for item_id in items:
             values = self.monster_table.item(item_id, "values")
             raw = values[col_index] if col_index < len(values) else ""
-            data.append((raw, item_id))
+            data.append((_safe_convert(raw), item_id))
 
         data.sort(key=lambda x: x[0], reverse=self.sort_reverse)
         for new_idx, (_, item_id) in enumerate(data):

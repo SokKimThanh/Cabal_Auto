@@ -113,6 +113,9 @@ class MonsterTemplatesTab(tk.Frame):
         )
         self.capture_button.pack(side="left", padx=2)
 
+        if not PIL_AVAILABLE or ImageGrab is None:
+            self.capture_button.config(state="disabled")
+
         self.open_folder_button = create_refresh_button(
             right_tb, command=self._on_open_folder, text=None
         )
@@ -235,7 +238,7 @@ class MonsterTemplatesTab(tk.Frame):
                 filename = Path(file_path).name
                 ts = int(time.time())
                 new_filename = f"{Path(filename).stem}_{ts}{Path(filename).suffix}"
-                assets_dir = Path("assets/images/monsters")
+                assets_dir = PROJECT_ROOT / "assets" / "images" / "monsters"
                 assets_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(file_path, assets_dir / new_filename)
 
@@ -251,14 +254,33 @@ class MonsterTemplatesTab(tk.Frame):
 
     def _on_capture(self) -> None:
         if self._is_capturing or not PIL_AVAILABLE or ImageGrab is None:
+            messagebox.showwarning("Cảnh báo", "Tính năng chụp ảnh màn hình không khả dụng trên hệ thống này.", parent=self)
             return
         self._is_capturing = True
         try:
+            top_win = self.winfo_toplevel()
+            overlay_cls = getattr(top_win, "_RegionCaptureOverlay", None)
+            bbox = None
+            if overlay_cls is not None:
+                try:
+                    top_win.withdraw()
+                    time.sleep(0.15)
+                    overlay = overlay_cls(top_win)
+                    bbox = overlay.show_modal()
+                except Exception:
+                    bbox = None
+                finally:
+                    top_win.deiconify()
+                    top_win.lift()
+
+            img = ImageGrab.grab(bbox=bbox) if bbox else ImageGrab.grab()
             base = re.sub(r'[<>:"/\\|?*]', "_", self.get_monster_name_func() or "monster")
             ts = int(time.time())
             filename = f"{base}_capture_{ts}.png"
-            assets_dir = Path("assets/images/monsters")
+            assets_dir = PROJECT_ROOT / "assets" / "images" / "monsters"
             assets_dir.mkdir(parents=True, exist_ok=True)
+            save_path = assets_dir / filename
+            img.save(save_path)
 
             tmpl = {
                 "name": filename,
@@ -267,11 +289,13 @@ class MonsterTemplatesTab(tk.Frame):
             }
             self.monster_data.setdefault("templates", []).append(tmpl)
             self.refresh_templates()
+        except Exception as e:
+            messagebox.showerror("Lỗi Chụp Ảnh", f"Không thể lưu ảnh chụp: {e}", parent=self)
         finally:
             self._is_capturing = False
 
     def _on_open_folder(self) -> None:
-        assets_dir = Path("assets/images/monsters")
+        assets_dir = PROJECT_ROOT / "assets" / "images" / "monsters"
         assets_dir.mkdir(parents=True, exist_ok=True)
         try:
             if os.name == "nt":

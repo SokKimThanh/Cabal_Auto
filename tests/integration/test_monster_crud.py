@@ -12,22 +12,32 @@ Verifies:
 import sqlite3
 import pytest
 from pathlib import Path
-from database import MonsterDatabase, get_db
+from database import MonsterDatabase
 from dialogs.monster_validator import validate_monster_data, SCHEMA_COLUMNS
 
 
 @pytest.fixture
 def test_db(tmp_path: Path):
     db_file = tmp_path / "test_monsters.db"
-    conn = sqlite3.connect(str(db_file))
-    conn.row_factory = sqlite3.Row
+    orig_path = MonsterDatabase.DB_PATH
+    MonsterDatabase.DB_PATH = db_file
 
     db = MonsterDatabase()
-    db.DB_PATH = db_file
-    db.conn = conn
     db.init_db()
+
+    # Get a valid dungeon ID and type from seeded tables
+    dungeons = db.get_dungeon_list()
+    d_id = dungeons[0]["id"] if dungeons else "1"
+
+    types = db.get_monster_type_list()
+    t_id = types[0]["value"] if types else "0"
+
+    db.valid_d_id = d_id
+    db.valid_t_id = t_id
+
     yield db
     db.close()
+    MonsterDatabase.DB_PATH = orig_path
 
 
 class TestMonsterCRUD:
@@ -39,8 +49,8 @@ class TestMonsterCRUD:
             "name": "Wolf Leader",
             "level": 15,
             "hp": 500,
-            "dungeonId": "101",
-            "serverBossType": "0",
+            "dungeonId": test_db.valid_d_id,
+            "serverBossType": test_db.valid_t_id,
         }
 
         is_valid, errors, cleaned = validate_monster_data(basic_data, is_new=True)
@@ -55,8 +65,8 @@ class TestMonsterCRUD:
         assert retrieved["name"] == "Wolf Leader"
         assert retrieved["level"] == 15
         assert retrieved["hp"] == 500
-        assert retrieved["dungeonId"] == "101"
-        assert retrieved["serverBossType"] == "0"
+        assert retrieved["dungeonId"] == test_db.valid_d_id
+        assert retrieved["serverBossType"] == test_db.valid_t_id
         # Extended fields default to 0
         assert retrieved["defense"] == 0
         assert retrieved["accuracy"] == 0
@@ -92,8 +102,8 @@ class TestMonsterCRUD:
             "resistSilence": 10,
             "resistDiffDamage": 12,
             "hpProportionDamage": 8,
-            "serverBossType": "1",
-            "dungeonId": "102",
+            "serverBossType": test_db.valid_t_id,
+            "dungeonId": test_db.valid_d_id,
         }
 
         is_valid, errors, cleaned = validate_monster_data(full_data, is_new=True)
@@ -117,8 +127,8 @@ class TestMonsterCRUD:
             "name": "Skeleton Warrior",
             "level": 20,
             "hp": 800,
-            "dungeonId": "101",
-            "serverBossType": "0",
+            "dungeonId": test_db.valid_d_id,
+            "serverBossType": test_db.valid_t_id,
         }
         test_db.insert_or_update_monster(initial_data)
 
@@ -129,8 +139,8 @@ class TestMonsterCRUD:
             "level": 35,
             "hp": 2500,
             "defense": 150,
-            "dungeonId": "102",
-            "serverBossType": "1",
+            "dungeonId": test_db.valid_d_id,
+            "serverBossType": test_db.valid_t_id,
         }
 
         is_valid, errors, cleaned = validate_monster_data(update_data, is_new=False)
@@ -177,8 +187,8 @@ class TestMonsterCRUD:
             "defense": 600,
             "primaryAttackMin": 400,
             "primaryAttackMax": 650,
-            "dungeonId": "101",
-            "serverBossType": "0",
+            "dungeonId": test_db.valid_d_id,
+            "serverBossType": test_db.valid_t_id,
         }
         test_db.insert_or_update_monster(monster)
 
