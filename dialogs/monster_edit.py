@@ -8,7 +8,6 @@ from tkinter import ttk, messagebox, filedialog
 import os
 import subprocess
 import uuid
-import copy
 import json
 import time
 import re
