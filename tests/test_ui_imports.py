@@ -116,6 +116,48 @@ def test_imports():
     return True
 
 
+def test_entry_points_smoke():
+    """Smoke test to exercise main UI entry points and verify no lib.ui dependencies remain."""
+
+    print("\nTesting UI entry points smoke tests...")
+    print("=" * 60)
+
+    entry_points = [
+        ("ui.windows.auto_hunt", "AutoHunt UI"),
+        ("ui.windows.library_manager", "Library Manager"),
+        ("ui.windows.quick_monster_editor", "Quick Monster Editor"),
+        ("ui.windows.setup_wizard", "Setup Wizard"),
+        ("ui.windows.setup_wizard_vision", "Setup Wizard Vision"),
+        ("ui.components.icon_button", "Icon Button Component"),
+        ("ui.helpers.icon_helper", "Icon Helper"),
+        ("ui.helpers.button_styles", "Button Styles"),
+        ("ui.helpers.tooltip", "Tooltip Helper"),
+        ("ui.helpers.capture_helper", "Capture Helper"),
+    ]
+
+    for mod_path, name in entry_points:
+        try:
+            __import__(mod_path)
+            print(f"   ✅ {name} ({mod_path}) imported OK")
+        except (ImportError, RuntimeError) as e:
+            if "Windows" in str(e) or "pywin32" in str(e):
+                print(f"   ℹ️  {name} ({mod_path}) platform guarded (Windows only)")
+            else:
+                print(f"   ❌ {name} ({mod_path}) import failed: {e}")
+                return False
+
+    # Check sys.modules for any unexpected lib.ui modules
+    stale_modules = [m for m in sys.modules if m.startswith('lib.ui.') or m == 'lib.ui']
+    if stale_modules:
+        print(f"   ❌ Stale lib.ui modules found in sys.modules: {stale_modules}")
+        assert False, f"Stale lib.ui modules loaded: {stale_modules}"
+    else:
+        print("   ✅ No stale lib.ui modules loaded in sys.modules")
+
+    print("\n" + "=" * 60)
+    return True
+
+
 def test_old_imports():
     """Test that old imports have been completely removed."""
     
@@ -134,7 +176,7 @@ def test_old_imports():
 
 
 if __name__ == '__main__':
-    success = test_imports()
+    success = test_imports() and test_entry_points_smoke()
     test_old_imports()
     
     if success:
