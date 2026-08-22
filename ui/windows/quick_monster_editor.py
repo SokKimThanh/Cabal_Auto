@@ -409,6 +409,7 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         if hasattr(self, "search_entry") and self.search_entry:
             self.search_entry.delete(0, tk.END)
             self.search_term = ""
+            self.current_page = 1
             self._refresh_monster_table()
 
     def _clear_all_filters(self) -> None:
@@ -601,15 +602,20 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
         selection = self.monster_table.selection()
         if not selection and hasattr(self.monster_table, "curselection"):
             indices = self.monster_table.curselection()
-            if indices and 0 <= indices[0] < len(self.monsters):
-                target_monster = self.monsters[indices[0]]
+            if indices and 0 <= indices[0] < len(self.filtered_monsters):
+                target_monster = self.filtered_monsters[indices[0]]
                 self.current_monster_id = target_monster.get("id")
                 self._populate_info_form(target_monster)
                 return
 
         if selection:
             self.current_monster_id = selection[0]
-            target_monster = next((m for m in self.monsters if m.get("id") == self.current_monster_id), None)
+            target_monster = next((m for m in self.filtered_monsters if m.get("id") == self.current_monster_id), None)
+            if not target_monster:
+                target_monster = next((m for m in self.monsters if m.get("id") == self.current_monster_id), None)
+            if not target_monster and self.db is not None:
+                target_monster = self.db.get_monster_by_id(self.current_monster_id)
+
             if target_monster:
                 self._populate_info_form(target_monster)
 
@@ -687,7 +693,9 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         target_monster = None
         if monster_id:
-            target_monster = next((m for m in self.monsters if m.get("id") == monster_id), None)
+            target_monster = next((m for m in self.filtered_monsters if m.get("id") == monster_id), None)
+            if not target_monster:
+                target_monster = next((m for m in self.monsters if m.get("id") == monster_id), None)
             if not target_monster and self.db is not None:
                 target_monster = self.db.get_monster_by_id(monster_id)
 
@@ -729,12 +737,14 @@ class QuickMonsterEditor(ActionNotificationMixin, tk.Toplevel):
 
         selection = self.monster_table.selection() if hasattr(self.monster_table, "selection") else ()
         m_id = selection[0] if selection else None
-        target_monster = next((m for m in self.monsters if m.get("id") == m_id), None)
+        target_monster = next((m for m in self.filtered_monsters if m.get("id") == m_id), None)
+        if not target_monster:
+            target_monster = next((m for m in self.monsters if m.get("id") == m_id), None)
 
         if not target_monster and hasattr(self.monster_table, "curselection") and self.monster_table.curselection():
             target_idx = self.monster_table.curselection()[0]
-            if 0 <= target_idx < len(self.monsters):
-                target_monster = self.monsters[target_idx]
+            if 0 <= target_idx < len(self.filtered_monsters):
+                target_monster = self.filtered_monsters[target_idx]
                 m_id = target_monster.get("id")
 
         if not target_monster and m_id and self.db is not None:

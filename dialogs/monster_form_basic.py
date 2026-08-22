@@ -140,7 +140,7 @@ class BasicInfoForm(tk.Frame):
         self._add_error_label(group, "name", row + 1, 1)
         row += 2
 
-        # 3. Level & HP (placed side by side)
+        # 3. Level & HP (placed side by side with separate error rows)
         lh_frame = tk.Frame(group, bg=UI.BG_DEFAULT)
         lh_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=4)
 
@@ -150,10 +150,10 @@ class BasicInfoForm(tk.Frame):
             text="Cấp độ (*):",
             icon_fallback="↑",
             font=UI.FONT_LABEL,
-        ).pack(side="left")
+        ).grid(row=0, column=0, sticky="w")
 
         self.level_spin = tk.Spinbox(lh_frame, from_=0, to=999, font=UI.FONT_TEXT, width=8)
-        self.level_spin.pack(side="left", padx=(5, 20))
+        self.level_spin.grid(row=0, column=1, sticky="w", padx=(5, 20))
 
         create_icon_label(
             lh_frame,
@@ -161,14 +161,21 @@ class BasicInfoForm(tk.Frame):
             text="HP (*):",
             icon_fallback="❤️",
             font=UI.FONT_LABEL,
-        ).pack(side="left")
+        ).grid(row=0, column=2, sticky="w")
 
         self.hp_entry = tk.Entry(lh_frame, font=UI.FONT_TEXT, width=12)
-        self.hp_entry.pack(side="left", padx=(5, 0))
+        self.hp_entry.grid(row=0, column=3, sticky="w", padx=(5, 0))
 
-        row += 1
-        self._add_error_label(group, "level", row, 1)
-        self._add_error_label(group, "hp", row, 1)
+        err_level = tk.Label(lh_frame, text="", fg="red", font=UI.FONT_SMALL, bg=UI.BG_DEFAULT)
+        err_level.grid(row=1, column=1, sticky="w")
+        err_level.grid_remove()
+        self.error_labels["level"] = err_level
+
+        err_hp = tk.Label(lh_frame, text="", fg="red", font=UI.FONT_SMALL, bg=UI.BG_DEFAULT)
+        err_hp.grid(row=1, column=3, sticky="w")
+        err_hp.grid_remove()
+        self.error_labels["hp"] = err_hp
+
         row += 1
 
         # 4. Dungeon ID (FK)
@@ -188,7 +195,8 @@ class BasicInfoForm(tk.Frame):
         )
         self.dungeon_combo.grid(row=row, column=1, sticky="ew", pady=4, padx=(10, 0))
         self.dungeon_combo.current(0)
-        row += 1
+        self._add_error_label(group, "dungeonId", row + 1, 1)
+        row += 2
 
         # 5. Server Boss Type (FK)
         create_icon_label(
@@ -207,7 +215,8 @@ class BasicInfoForm(tk.Frame):
         )
         self.type_combo.grid(row=row, column=1, sticky="ew", pady=4, padx=(10, 0))
         self.type_combo.current(0)
-        row += 1
+        self._add_error_label(group, "serverBossType", row + 1, 1)
+        row += 2
 
     def _add_error_label(self, parent: tk.Widget, field: str, r: int, c: int) -> None:
         err_lbl = tk.Label(parent, text="", fg="red", font=UI.FONT_SMALL, bg=UI.BG_DEFAULT)
