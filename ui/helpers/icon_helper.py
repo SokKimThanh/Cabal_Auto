@@ -62,7 +62,7 @@ class IconHelper:
         # Icon cache
         self._cache = {}
         
-        # Default icon mappings (prefer .ico, fallback to .png)
+        # Default icon mappings (prefer .png, fallback to .ico)
         self.icon_map = {
             'add': ('add.ico', '➕'),
             'accept': ('accept.ico', '✔️'),  # Accept icon for training mode
@@ -210,10 +210,10 @@ class IconHelper:
         
         icon_file, emoji = self.icon_map[name]
         # Resolve first existing icon path across known dirs
-        # Priority: .ico > .png > emoji (always try .ico first)
+        # Priority: .png > .ico > emoji (always try .png first)
         icon_path = None
         icon_stem = Path(icon_file).stem  # e.g., 'save' from 'save.ico'
-        extensions = ['.ico', '.png']  # Always prioritize .ico over .png
+        extensions = ['.png', '.ico']  # Always prioritize .png over .ico
         
         for d in self.icon_dirs:
             for ext in extensions:
