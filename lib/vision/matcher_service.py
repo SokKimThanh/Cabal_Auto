@@ -53,11 +53,13 @@ class MatcherService:
         # Crop ROI with boundary validation
         if roi is not None:
             x, y, w, h = roi
-            x = max(0, min(x, frame_w - 1))
-            y = max(0, min(y, frame_h - 1))
-            w = max(1, min(w, frame_w - x))
-            h = max(1, min(h, frame_h - y))
-            search_region = frame[y:y+h, x:x+w]
+            x2 = min(frame_w, x + w)
+            y2 = min(frame_h, y + h)
+            x = max(0, x)
+            y = max(0, y)
+            if x >= x2 or y >= y2:
+                return []
+            search_region = frame[y:y2, x:x2]
             offset_x, offset_y = x, y
         else:
             search_region = frame
