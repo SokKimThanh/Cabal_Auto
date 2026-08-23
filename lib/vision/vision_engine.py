@@ -365,6 +365,8 @@ class VisionEngine:
             return []
         
         # Performance optimization: convert search region to 1-channel grayscale once per frame (~3x matchTemplate speedup)
+        if search_region.size == 0:
+            return []
         if len(search_region.shape) == 3 and search_region.shape[2] == 3:
             search_region_gray = cv2.cvtColor(search_region, cv2.COLOR_BGR2GRAY)
         else:
