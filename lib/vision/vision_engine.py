@@ -443,7 +443,13 @@ class VisionEngine:
                 return []
             
             # Match template on single-channel grayscale images for ~3x-5x speedup
-            result = cv2.matchTemplate(frame_gray, template_img, self.params['match_method'])
+            result = cv2.matchTemplate(
+                cv2.cvtColor(frame_gray, cv2.COLOR_BGR2GRAY)
+                if frame_gray.ndim == 3 and frame_gray.shape[2] == 3
+                else frame_gray,
+                template_img,
+                self.params['match_method']
+            )
             
             # Find all matches above threshold
             threshold = template.threshold
