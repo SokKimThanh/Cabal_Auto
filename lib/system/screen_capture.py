@@ -33,14 +33,24 @@ from dataclasses import dataclass
 
 # Platform check - Windows only
 if sys.platform != "win32":
-    raise ImportError("screen_capture module requires Windows (pywin32)")
+    pass # Linux check for headless test environment
 
 # Windows-specific imports
-import win32gui  # type: ignore
-import win32ui  # type: ignore
-import win32con  # type: ignore
-import win32api  # type: ignore
-from ctypes import windll
+try:
+    import win32gui  # type: ignore
+    import win32ui  # type: ignore
+    import win32con  # type: ignore
+    import win32api  # type: ignore
+    from ctypes import windll
+except ImportError as e:
+    # Only raise import error if not on linux test env
+    if sys.platform == "win32":
+        raise ImportError("pywin32 is required on Windows") from e
+    win32gui = None
+    win32ui = None
+    win32con = None
+    win32api = None
+    windll = None
 
 # Optional: OpenCV and NumPy (required for operation)
 try:

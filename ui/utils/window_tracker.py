@@ -28,10 +28,14 @@ from typing import Dict, Any, Callable, Optional
 from dataclasses import dataclass
 from enum import Enum
 
+import sys
+
 try:
     import win32gui
     import win32con
-except ImportError:
+except ImportError as e:
+    if sys.platform == "win32":
+        raise ImportError("pywin32 is required on Windows") from e
     win32gui = None
     win32con = None
 

@@ -90,7 +90,13 @@ class AutoScanner:
                     logger.warning("Failed to start screen capture.")
                     return {'monsters': [], 'skills': []}
 
-            frame = self.screen_capture.get_frame(timeout=1.0)
+            # Use get_frame(timeout) instead of capture() if available, fallback to capture()
+            frame = None
+            if hasattr(self.screen_capture, 'get_frame'):
+                frame = self.screen_capture.get_frame(timeout=1.0)
+            elif hasattr(self.screen_capture, 'capture'):
+                frame = self.screen_capture.capture()
+
             if frame is None:
                 logger.warning("Failed to capture frame.")
                 return {'monsters': [], 'skills': []}
@@ -105,14 +111,18 @@ class AutoScanner:
                 with open(skills_db_path, "r", encoding="utf-8") as f:
                     skills_data = json.load(f)
 
-                templates_added: List[str] = []
+                templates_added = []
                 for skill_info in skills_data:
+                    skill_id = skill_info.get("name", "").lower()
                     img_path = skill_info.get("image", "")
                     if img_path and Path(img_path).exists():
                         # Add template dynamically
                         tmpl = self.vision_engine.add_template(str(img_path), threshold=0.7)
                         if tmpl:
-                            templates_added.append(tmpl.id)
+                            # Do not override ID directly, use returned ID
+                            tmpl_id = getattr(tmpl, 'id', skill_id)
+                            templates_added.append(tmpl_id)
+
                 if templates_added:
                     # Match skills against screen
                     skill_detections = self.vision_engine.match_templates(
@@ -153,15 +163,29 @@ class AutoScanner:
             from lib.db.services.scan_service import ScanService
             scan_service = ScanService()
 
-            # Persist scan summary (scans table currently supports a single monster_id/skill_id)
+            scan_id = str(uuid.uuid4())
+            timestamp = time.time()
+
+            monster_id_str = ",".join([str(m.class_id) for m in scan_data['monsters']]) if scan_data['monsters'] else "None"
+
+            # Use template_id for skills
+            skill_ids = []
+            for s in scan_data['skills']:
+                tmpl_id = getattr(s, 'template_id', None) or getattr(s, 'class_id', None)
+                if tmpl_id:
+                    skill_ids.append(str(tmpl_id))
+            skill_id_str = ",".join(skill_ids) if skill_ids else "None"
+
             data = {
-                'monster_id': None,  # Keep None to avoid FK constraint fails if not loaded
+                'scan_id': scan_id,
+                'monster_id': None, # Keep None to avoid FK constraint fails if not loaded
                 'skill_id': None,
                 'class_id': None,
+                'location': 'Unknown',
                 'status': 'Success'
             }
-            persisted_id = scan_service.create_scan(data)
-            scan_id = persisted_id if persisted_id is not None else "error"
+            # Attempt to create
+            scan_service.create_scan(data)
         except Exception as e:
             logger.error(f"Error saving scan results: {e}")
             scan_id = "error"
@@ -170,7 +194,7 @@ class AutoScanner:
             'status': 'success',
             'scan_id': scan_id,
             'class': detected_class,
-            'monsters': [m.template_id for m in scan_data['monsters']],
-            'skills': [s.template_id for s in scan_data['skills']],
+            'monsters': [m.class_id for m in scan_data['monsters']],
+            'skills': [s.class_id for s in scan_data['skills']],
             'recommended_skills': recommended_skills
         }
