@@ -1,86 +1,110 @@
+# -*- coding: utf-8 -*-
+"""
+Database Schema Setup Module.
+Defines tables: dungeons, monster_type, monsters (30 columns).
+"""
+
 import sqlite3
 
-def setup_skills_schema(conn: sqlite3.Connection):
+REQUIRED_TABLES = ["monsters", "dungeons", "monster_type"]
+
+MONSTER_COLUMNS = [
+    "id",
+    "name",
+    "level",
+    "exp",
+    "hp",
+    "defense",
+    "attackRate",
+    "defenseRate",
+    "hpRecharge",
+    "accuracy",
+    "penetration",
+    "damageReduction",
+    "evasion",
+    "resistCritRate",
+    "primaryAttackMin",
+    "primaryAttackMax",
+    "secondaryAttackMin",
+    "secondaryAttackMax",
+    "ignoreAccuracy",
+    "ignoreDamageReduction",
+    "ignorePenetration",
+    "absoluteDamage",
+    "resistSkillAmp",
+    "resistCritDamage",
+    "resistSuppress",
+    "resistSilence",
+    "resistDiffDamage",
+    "hpProportionDamage",
+    "serverBossType",
+    "dungeonId",
+]
+
+
+def setup_schema(conn: sqlite3.Connection) -> None:
+    """Tạo schema bảng với dungeons, monster_type và monsters (30 cột)."""
     cursor = conn.cursor()
 
-    # Bảng classes
+    # Bảng dungeons
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS classes (
-            class_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT,
-            icon_path TEXT,
-            str_base INTEGER DEFAULT 0,
-            int_base INTEGER DEFAULT 0,
-            dex_base INTEGER DEFAULT 0
+        CREATE TABLE IF NOT EXISTS dungeons (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL
         )
     """)
 
-    # Bảng skills
+    # Bảng monster_type
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS skills (
-            skill_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            alias TEXT,
-            icon_x INTEGER DEFAULT 0,
-            icon_y INTEGER DEFAULT 0,
-            icon_w INTEGER DEFAULT 0,
-            icon_h INTEGER DEFAULT 0,
-            class_id INTEGER,
-            type TEXT,
-            FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
+        CREATE TABLE IF NOT EXISTS monster_type (
+            value TEXT PRIMARY KEY,
+            label TEXT NOT NULL
         )
     """)
 
-    # Bảng synergies
+    # Bảng monsters với 30 cột và khóa ngoại
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS synergies (
-            synergy_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            class_id INTEGER,
-            name TEXT NOT NULL,
-            activation_sequence TEXT,
-            recommendation TEXT,
-            FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
+        CREATE TABLE IF NOT EXISTS monsters (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            level INTEGER,
+            exp INTEGER,
+            hp INTEGER,
+            defense INTEGER,
+            attackRate INTEGER,
+            defenseRate INTEGER,
+            hpRecharge INTEGER,
+            accuracy INTEGER,
+            penetration INTEGER,
+            damageReduction INTEGER,
+            evasion INTEGER,
+            resistCritRate INTEGER,
+            primaryAttackMin INTEGER,
+            primaryAttackMax INTEGER,
+            secondaryAttackMin INTEGER,
+            secondaryAttackMax INTEGER,
+            ignoreAccuracy INTEGER,
+            ignoreDamageReduction INTEGER,
+            ignorePenetration INTEGER,
+            absoluteDamage INTEGER,
+            resistSkillAmp INTEGER,
+            resistCritDamage INTEGER,
+            resistSuppress INTEGER,
+            resistSilence INTEGER,
+            resistDiffDamage INTEGER,
+            hpProportionDamage INTEGER,
+            serverBossType TEXT,
+            dungeonId TEXT,
+            FOREIGN KEY (dungeonId) REFERENCES dungeons(id) ON DELETE SET NULL,
+            FOREIGN KEY (serverBossType) REFERENCES monster_type(value) ON DELETE SET NULL
         )
     """)
 
-    # Bảng synergy_effects
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS synergy_effects (
-            effect_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            synergy_id INTEGER,
-            stat TEXT NOT NULL,
-            value REAL,
-            duration REAL,
-            target TEXT,
-            FOREIGN KEY (synergy_id) REFERENCES synergies(synergy_id) ON DELETE CASCADE
-        )
-    """)
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_monsters_dungeonId ON monsters(dungeonId);"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_monsters_serverBossType ON monsters(serverBossType);"
+    )
 
-    # Bảng scans
-    # monster_id tham chiếu tới bảng monsters(id) hiện có (kiểu TEXT)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS scans (
-            scan_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            monster_id TEXT,
-            skill_id INTEGER,
-            class_id INTEGER,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            status TEXT,
-            FOREIGN KEY (monster_id) REFERENCES monsters(id) ON DELETE CASCADE,
-            FOREIGN KEY (skill_id) REFERENCES skills(skill_id) ON DELETE RESTRICT,
-            FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
-        )
-    """)
-
-    # Bảng builds
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS builds (
-            build_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            class_id INTEGER,
-            author TEXT,
-            description TEXT,
-            upvote_count INTEGER DEFAULT 0,
-            FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
-        )
-    """)
+    conn.commit()

@@ -191,8 +191,9 @@ class MonsterRepository:
             conn.execute("BEGIN TRANSACTION")
             cursor = conn.cursor()
             cursor.execute("DELETE FROM monsters WHERE id = ?", (str(monster_id),))
+            deleted = cursor.rowcount > 0
             conn.commit()
-            return True
+            return deleted
         except Exception as e:
             try:
                 conn.rollback()
