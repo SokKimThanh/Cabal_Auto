@@ -16,3 +16,10 @@ Files changed
 Notes
 - Tests: targeted unit tests for tooltip/image-ref retention passed locally.
 - Static diagnostics: no current errors after changes. Some uses include deliberate `# type: ignore` comments.
+
+## Refactor: decompose app_gui God Class into modular MVC architecture
+- Extract core services to lib/system (InstanceLock, HotkeyManager)
+- Extract domain repos and runner to lib/features (hunt, monsters, skills)
+- Split GUI tabs into standalone components in ui/tabs (Hunt, Setup, Stats, Help)
+- Extract dialogs and modals into ui/windows
+- Ensure clean separation of concerns and fix all flake8/test regressions
