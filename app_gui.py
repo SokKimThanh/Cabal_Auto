@@ -4964,11 +4964,10 @@ Alternative Solutions:
                 def update():
                     if isinstance(img, str):
                         self.btn_manual_scan.config(text=img, image="")
+                        self._btn_scan_img = None
                     else:
                         self.btn_manual_scan.config(image=img, text="")
-                        if not hasattr(self, "_btn_scan_refs"):
-                            self._btn_scan_refs = []
-                        self._btn_scan_refs.append(img)
+                        self._btn_scan_img = img
                 self.after(0, update)
             except Exception as e:
                 print(f"[UI] Error updating scan status icon: {e}")
