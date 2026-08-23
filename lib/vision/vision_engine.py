@@ -96,10 +96,13 @@ class Template:
     enabled: bool = True
     image: Optional[np.ndarray] = None  # Loaded image (not serialized)
     thumbnail: Optional[np.ndarray] = None  # For UI preview
+    image_gray: Optional[np.ndarray] = None  # Cached grayscale image for fast matching (~3x speedup)
     
     def __post_init__(self):
         if self.scales is None:
             self.scales = [1.0]  # Default: no scaling
+        if self.image is not None and self.image_gray is None:
+            self.image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize without image data"""
@@ -233,6 +236,9 @@ class VisionEngine:
                     logger.error(f"Failed to load image: {path}")
                     continue
                 
+                # Cache grayscale version for single-channel matching (~3x speedup)
+                image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
                 # Create thumbnail (for UI preview)
                 thumbnail = cv2.resize(image, (100, 100), interpolation=cv2.INTER_AREA)
                 
@@ -240,6 +246,7 @@ class VisionEngine:
                 if template_id in self.templates:
                     template = self.templates[template_id]
                     template.image = image
+                    template.image_gray = image_gray
                     template.thumbnail = thumbnail
                 else:
                     # Create new template with defaults
@@ -250,6 +257,7 @@ class VisionEngine:
                         scales=[1.0],
                         enabled=True,
                         image=image,
+                        image_gray=image_gray,
                         thumbnail=thumbnail
                     )
                 
@@ -356,6 +364,12 @@ class VisionEngine:
             logger.debug("No templates to match")
             return []
         
+        # Performance optimization: convert search region to 1-channel grayscale once per frame (~3x matchTemplate speedup)
+        if len(search_region.shape) == 3 and search_region.shape[2] == 3:
+            search_region_gray = cv2.cvtColor(search_region, cv2.COLOR_BGR2GRAY)
+        else:
+            search_region_gray = search_region
+
         # Detect all templates at all scales
         all_detections = []
         
@@ -369,7 +383,7 @@ class VisionEngine:
             
             for scale in template_scales[:self.params['max_scales']]:
                 detections = self._match_template_at_scale(
-                    search_region,
+                    search_region_gray,
                     template,
                     scale,
                     offset_x,
@@ -391,14 +405,14 @@ class VisionEngine:
     
     def _match_template_at_scale(
         self,
-        frame: np.ndarray,
+        frame_gray: np.ndarray,
         template: Template,
         scale: float,
         offset_x: int,
         offset_y: int
     ) -> List[Detection]:
         """
-        Match single template at specific scale.
+        Match single template at specific scale using 1-channel grayscale image (~3x speedup over 3-channel BGR).
         
         Returns:
             List of Detection objects above threshold
@@ -406,9 +420,12 @@ class VisionEngine:
         detections = []
         
         try:
-            # Resize template
-            template_img = template.image
-            if template_img is None:
+            # Use pre-computed grayscale image if available, fallback to converting image
+            if template.image_gray is not None:
+                template_img = template.image_gray
+            elif template.image is not None:
+                template_img = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+            else:
                 logger.warning(f"Template {template.id} has no image")
                 return []
             
@@ -420,11 +437,11 @@ class VisionEngine:
                 template_img = cv2.resize(template_img, (new_w, new_h))
             
             # Check if template fits in frame
-            if template_img.shape[0] > frame.shape[0] or template_img.shape[1] > frame.shape[1]:
+            if template_img.shape[0] > frame_gray.shape[0] or template_img.shape[1] > frame_gray.shape[1]:
                 return []
             
-            # Match template
-            result = cv2.matchTemplate(frame, template_img, self.params['match_method'])
+            # Match template on single-channel grayscale images for ~3x-5x speedup
+            result = cv2.matchTemplate(frame_gray, template_img, self.params['match_method'])
             
             # Find all matches above threshold
             threshold = template.threshold

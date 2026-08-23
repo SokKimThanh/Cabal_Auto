@@ -16,6 +16,38 @@ def vision_engine(tmp_path):
     return engine
 
 
+def test_template_grayscale_caching_and_matching(vision_engine):
+    """Test that Template automatically caches image_gray and matches accurately"""
+    tpl_img = np.random.randint(50, 200, (60, 60, 3), dtype=np.uint8)
+    template = Template(
+        id="grayscale_test",
+        path="test_path",
+        image=tpl_img,
+        threshold=0.8
+    )
+
+    # Verify image_gray was cached automatically in post_init
+    assert template.image_gray is not None
+    assert template.image_gray.shape == (60, 60)
+    assert len(template.image_gray.shape) == 2
+
+    # Register template in engine
+    vision_engine.templates[template.id] = template
+
+    # Place template in a larger frame
+    frame = np.zeros((300, 300, 3), dtype=np.uint8)
+    frame[100:160, 100:160] = tpl_img
+
+    detections = vision_engine.match_templates(frame, templates=[template.id])
+    assert len(detections) > 0
+    best_det = detections[0]
+    assert best_det.x == 100
+    assert best_det.y == 100
+    assert best_det.w == 60
+    assert best_det.h == 60
+    assert best_det.score >= 0.99
+
+
 def test_detection_dataclass():
     """Test Detection dataclass bbox and center calculations"""
     det = Detection(x=100, y=200, w=50, h=60, score=0.9, template_id="test_tpl", method_used="test")
