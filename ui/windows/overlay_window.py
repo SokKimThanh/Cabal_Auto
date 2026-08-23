@@ -62,7 +62,10 @@ if sys.platform == "win32":
             f"\nOriginal error: {e}"
         ) from e
 else:
-    pass
+    raise RuntimeError(
+        "ui.windows.overlay_window is only supported on Windows "
+        "(requires Win32 APIs via pywin32)."
+    )
 
 
 # =====================================================================
