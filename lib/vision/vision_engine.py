@@ -1,18 +1,10 @@
 """
-Vision Engine - Core OpenCV detection and tracking system
-Sprint 22 Phase 2
+Vision Engine - Core OpenCV detection, tracking, and worker thread facade.
+Sprint 22 Phase 2 / Refactored modular architecture (< 300 lines).
 
-Provides:
-- Multi-template, multi-scale detection
-- NMS (Non-Maximum Suppression)
-- Hybrid tracking (tracker + periodic re-verification)
-- Template management
-- Config persistence
-
-Architecture:
-- UI calls engine API (no cv2 in UI code)
-- Engine handles all CV operations
-- Returns data structures for UI overlay
+Delegates:
+- Template loading & caching -> TemplateService (lib/vision/template_loader.py)
+- Template matching & NMS -> MatcherService (lib/vision/matcher_service.py)
 """
 
 import cv2
@@ -28,6 +20,9 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple, Callable
 from dataclasses import dataclass, asdict
 
+from lib.vision.template_loader import Template, TemplateService
+from lib.vision.matcher_service import MatcherService
+
 # Setup logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -42,7 +37,7 @@ else:
 
 
 # =====================================================================
-# Data Classes
+# Data Classes (Re-exported for backward compatibility)
 # =====================================================================
 
 @dataclass
@@ -57,14 +52,14 @@ class Detection:
     scale: float = 1.0
     method_used: str = "template"
     timestamp: float = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
-    
+
     def bbox(self) -> Tuple[int, int, int, int]:
         """Return (x, y, w, h)"""
         return (self.x, self.y, self.w, self.h)
-    
+
     def center(self) -> Tuple[int, int]:
         """Return center point (cx, cy)"""
         return (self.x + self.w // 2, self.y + self.h // 2)
@@ -74,45 +69,16 @@ class Detection:
 class TrackedObject:
     """Tracked object with hybrid tracking"""
     tracker_id: str
-    bbox: Tuple[int, int, int, int]  # (x, y, w, h)
+    bbox: Tuple[int, int, int, int]
     template_id: str
     confidence: float
     last_verify_score: float
     frames_tracked: int = 0
     last_verify_frame: int = 0
-    detect_time: float = 0.0  # For FIFO prioritization
-    
+    detect_time: float = 0.0
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
-
-
-@dataclass
-class Template:
-    """Template metadata"""
-    id: str
-    path: str
-    threshold: float = 0.7
-    scales: Optional[List[float]] = None
-    enabled: bool = True
-    image: Optional[np.ndarray] = None  # Loaded image (not serialized)
-    thumbnail: Optional[np.ndarray] = None  # For UI preview
-    image_gray: Optional[np.ndarray] = None  # Cached grayscale image for fast matching (~3x speedup)
-    
-    def __post_init__(self):
-        if self.scales is None:
-            self.scales = [1.0]  # Default: no scaling
-        if self.image is not None and self.image_gray is None:
-            self.image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize without image data"""
-        return {
-            'id': self.id,
-            'path': self.path,
-            'threshold': self.threshold,
-            'scales': self.scales,
-            'enabled': self.enabled
-        }
 
 
 # =====================================================================
@@ -121,204 +87,105 @@ class Template:
 
 class VisionEngine:
     """
-    Core vision engine for detection and tracking.
-    
-    Features:
-    - Multi-template detection with multi-scale support
-    - NMS for duplicate removal
-    - Hybrid tracking (CV tracker + periodic template re-verification)
-    - Template management and persistence
-    - Debug mode with logging
+    Core vision engine facade coordinating template management, matching, tracking, and async worker threads.
     """
-    
+
     def __init__(self, config_dir: str = "lib/data"):
-        """
-        Initialize vision engine.
-        
-        Args:
-            config_dir: Directory for config files
-        """
         self.config_dir = Path(config_dir)
         self.config_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Templates
-        self.templates: Dict[str, Template] = {}
-        self.templates_config_path = self.config_dir / "vision_templates.json"
-        
+
+        # Services
+        self.template_service = TemplateService(self.config_dir)
+        self.matcher_service = MatcherService()
+
         # Region config
         self.region_config_path = self.config_dir / "vision_region.json"
-        self.default_region: Optional[Tuple[int, int, int, int]] = None  # (x, y, w, h)
-        
+        self.default_region: Optional[Tuple[int, int, int, int]] = None
+
         # Trackers
-        self.trackers: Dict[str, Dict[str, Any]] = {}  # tracker_id -> {tracker, tracked_obj, ...}
+        self.trackers: Dict[str, Dict[str, Any]] = {}
         self.next_tracker_id = 1
-        
+
         # Parameters
         self.params = {
             'nms_iou_threshold': 0.3,
-            'verify_interval': 30,  # Re-verify every N frames
-            'verify_threshold': 0.5,  # Min score to keep tracking
-            'max_scales': 3,  # Limit scale variations
-            'tracker_type': 'CSRT',  # CSRT or KCF
-            'match_method': cv2.TM_CCOEFF_NORMED,  # Matching method
-            'fps_limit': 15,  # UI update rate (10-15 FPS default)
-            'downscale_factor': 1.0,  # Default downscale factor for fast processing
-            'feature_type': 'ORB',  # 'ORB' or 'SIFT'
-            'hsv_lower': (0, 120, 120),  # Default HSV lower range (e.g. Red target/health bar)
-            'hsv_upper': (10, 255, 255),  # Default HSV upper range
-            'hsv_min_area': 50,  # Noise filtering min area
-            'hsv_max_area': 100000,  # Max contour area
-            'target_threat_levels': ["gray", "yellow"],  # Enabled threat levels ("red" disabled by default)
+            'verify_interval': 30,
+            'verify_threshold': 0.5,
+            'max_scales': 3,
+            'tracker_type': 'CSRT',
+            'match_method': cv2.TM_CCOEFF_NORMED,
+            'fps_limit': 15,
+            'downscale_factor': 1.0,
+            'feature_type': 'ORB',
+            'hsv_lower': (0, 120, 120),
+            'hsv_upper': (10, 255, 255),
+            'hsv_min_area': 50,
+            'hsv_max_area': 100000,
+            'target_threat_levels': ["gray", "yellow"],
             'hsv_ranges': {
                 'yellow': [((20, 100, 100), (35, 255, 255))],
-                'gray': [((0, 0, 150), (180, 30, 230))],  # Tight S (0-30) & V (150-230) for gray tags
-                'red': [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))],  # Dual range for Red
+                'gray': [((0, 0, 150), (180, 30, 230))],
+                'red': [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))],
             },
         }
-        
+
         # State
         self.frame_count = 0
         self.debug_mode = False
-        
-        # Screen capture integration (Sprint 23 Phase 8)
+
+        # Screen capture integration
         self.screen_capture: Optional['ScreenCapture'] = None  # type: ignore
         self.capture_hwnd: Optional[int] = None
         self.capture_enabled = False
         self.window_manager: Optional['WindowManager'] = None  # type: ignore
-        
-        # Initialize window manager if on Windows
+
         if sys.platform == "win32" and WindowManager:
             try:
                 self.window_manager = WindowManager()  # type: ignore
             except Exception as e:
                 logger.warning(f"Failed to initialize WindowManager: {e}")
-        
+
         # Worker threads and queue
         self.worker_running = False
         self.worker_thread: Optional[threading.Thread] = None
-        self.result_queue: queue.Queue = queue.Queue(maxsize=5)  # Limit queue size to avoid memory buildup
-        self.frame_callback: Optional[Callable] = None  # Callback to get frames (provided by UI)
-        
-        # Load configs
-        self._load_templates_config()
-        self._load_region_config()
-        
-        logger.info(f"VisionEngine initialized with {len(self.templates)} templates")
-    
-    # =====================================================================
-    # Template Management
-    # =====================================================================
-    
-    def load_templates(self, path_list: List[str]) -> Dict[str, Template]:
-        """
-        Load templates from file paths.
-        
-        Args:
-            path_list: List of image file paths
-            
-        Returns:
-            Dictionary of loaded templates {id: Template}
-        """
-        loaded = {}
-        
-        for path in path_list:
-            if not os.path.exists(path):
-                logger.warning(f"Template not found: {path}")
-                continue
-            
-            try:
-                # Generate template ID from filename
-                template_id = Path(path).stem
-                
-                # Load image
-                image = cv2.imread(path)
-                if image is None:
-                    logger.error(f"Failed to load image: {path}")
-                    continue
-                
-                # Cache grayscale version for single-channel matching (~3x speedup)
-                image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        self.result_queue: queue.Queue = queue.Queue(maxsize=5)
+        self.frame_callback: Optional[Callable] = None
 
-                # Create thumbnail (for UI preview)
-                thumbnail = cv2.resize(image, (100, 100), interpolation=cv2.INTER_AREA)
-                
-                # Check if template already exists in config
-                if template_id in self.templates:
-                    template = self.templates[template_id]
-                    template.image = image
-                    template.image_gray = image_gray
-                    template.thumbnail = thumbnail
-                else:
-                    # Create new template with defaults
-                    template = Template(
-                        id=template_id,
-                        path=path,
-                        threshold=0.7,
-                        scales=[1.0],
-                        enabled=True,
-                        image=image,
-                        image_gray=image_gray,
-                        thumbnail=thumbnail
-                    )
-                
-                loaded[template_id] = template
-                self.templates[template_id] = template
-                
-                logger.info(f"Loaded template: {template_id} ({image.shape})")
-                
-            except Exception as e:
-                logger.error(f"Error loading template {path}: {e}")
-        return loaded
-    
-    def add_template(self, path: str, threshold: float = 0.7, 
+        self._load_region_config()
+        logger.info(f"VisionEngine initialized with {len(self.templates)} templates")
+
+    @property
+    def templates(self) -> Dict[str, Template]:
+        return self.template_service.templates
+
+    @property
+    def templates_config_path(self) -> Path:
+        return self.template_service.templates_config_path
+
+    # =====================================================================
+    # Template Management Delegation
+    # =====================================================================
+
+    def load_templates(self, path_list: List[str]) -> Dict[str, Template]:
+        return self.template_service.load_templates(path_list)
+
+    def add_template(self, path: str, threshold: float = 0.7,
                      scales: Optional[List[float]] = None) -> Optional[Template]:
-        """
-        Add a single template.
-        
-        Args:
-            path: Path to template image
-            threshold: Detection threshold (0.0-1.0)
-            scales: Scale variations [0.8, 1.0, 1.2]
-            
-        Returns:
-            Template object if successful, None otherwise
-        """
-        if scales is None:
-            scales = [1.0]
-        
-        result = self.load_templates([path])
-        if result:
-            template_id = list(result.keys())[0]
-            template = result[template_id]
-            template.threshold = threshold
-            template.scales = scales[:self.params['max_scales']]  # Limit scales
-            
-            self._save_templates_config()
-            return template
-        
-        return None
-    
+        return self.template_service.add_template(path, threshold, scales, self.params['max_scales'])
+
     def remove_template(self, template_id: str) -> bool:
-        """Remove a template"""
-        if template_id in self.templates:
-            del self.templates[template_id]
-            self._save_templates_config()
-            logger.info(f"Removed template: {template_id}")
-            return True
-        return False
-    
+        return self.template_service.remove_template(template_id)
+
     def get_template(self, template_id: str) -> Optional[Template]:
-        """Get template by ID"""
-        return self.templates.get(template_id)
-    
+        return self.template_service.get_template(template_id)
+
     def list_templates(self) -> List[Template]:
-        """Get all templates"""
-        return list(self.templates.values())
-    
+        return self.template_service.list_templates()
+
     # =====================================================================
-    # Detection
+    # Detection Delegation
     # =====================================================================
-    
+
     def match_templates(
         self,
         frame: np.ndarray,
@@ -327,86 +194,19 @@ class VisionEngine:
         scales: Optional[List[float]] = None,
         max_results: int = 10
     ) -> List[Detection]:
-        """
-        Detect templates in frame with multi-scale matching.
-        
-        Args:
-            frame: Input frame (BGR)
-            roi: Region of interest (x, y, w, h) or None for full frame
-            templates: List of template IDs to match, or None for all enabled
-            scales: Override scales, or None to use template scales
-            max_results: Maximum detections to return
-            
-        Returns:
-            List of Detection objects
-        """
-        if frame is None or frame.size == 0:
-            logger.warning("Empty frame provided")
-            return []
-        
-        # Get region to search
-        if roi is not None:
-            x, y, w, h = roi
-            search_region = frame[y:y+h, x:x+w]
-            offset_x, offset_y = x, y
-        else:
-            search_region = frame
-            offset_x, offset_y = 0, 0
-        
-        # Guard against empty search region (out-of-bounds ROI) before grayscale conversion
-        if search_region.size == 0 or search_region.shape[0] == 0 or search_region.shape[1] == 0:
-            return []
+        self.matcher_service.match_method = self.params.get('match_method', cv2.TM_CCOEFF_NORMED)
+        self.matcher_service.nms_iou_threshold = self.params.get('nms_iou_threshold', 0.3)
+        return self.matcher_service.match_templates(
+            frame=frame,
+            templates=self.templates,
+            roi=roi,
+            template_ids=templates,
+            scales=scales,
+            max_scales=self.params['max_scales'],
+            max_results=max_results,
+            debug_mode=self.debug_mode
+        )
 
-        # Select templates to match
-        if templates is None:
-            templates_to_match = [t for t in self.templates.values() if t.enabled]
-        else:
-            templates_to_match = [self.templates[tid] for tid in templates 
-                                 if tid in self.templates and self.templates[tid].enabled]
-        
-        if not templates_to_match:
-            logger.debug("No templates to match")
-            return []
-        
-        # Performance optimization: convert search region to 1-channel grayscale once per frame (~3x matchTemplate speedup)
-        if len(search_region.shape) == 3 and search_region.shape[2] == 3:
-            search_region_gray = cv2.cvtColor(search_region, cv2.COLOR_BGR2GRAY)
-        else:
-            search_region_gray = search_region
-
-        # Detect all templates at all scales
-        all_detections = []
-        
-        for template in templates_to_match:
-            if template.image is None:
-                logger.warning(f"Template {template.id} has no image loaded")
-                continue
-            
-            # Get scales to try (ensure not None)
-            template_scales = scales if scales else (template.scales if template.scales else [1.0])
-            
-            for scale in template_scales[:self.params['max_scales']]:
-                detections = self._match_template_at_scale(
-                    search_region_gray,
-                    template,
-                    scale,
-                    offset_x,
-                    offset_y
-                )
-                all_detections.extend(detections)
-        
-        # Apply NMS to remove duplicates
-        filtered = self.nms(all_detections, self.params['nms_iou_threshold'])
-        
-        # Sort by score and limit results
-        filtered.sort(key=lambda d: d.score, reverse=True)
-        result = filtered[:max_results]
-        
-        if self.debug_mode:
-            logger.debug(f"Detected {len(result)} objects (from {len(all_detections)} before NMS)")
-        
-        return result
-    
     def _match_template_at_scale(
         self,
         frame: np.ndarray,
@@ -415,219 +215,28 @@ class VisionEngine:
         offset_x: int,
         offset_y: int
     ) -> List[Detection]:
-        """
-        Match single template at specific scale using 1-channel grayscale image (~3x speedup over 3-channel BGR).
+        return self.matcher_service.match_template_at_scale(frame, template, scale, offset_x, offset_y)
 
-        Handles callers like `reverify_track` that pass 3-channel BGR frames directly.
-        
-        Returns:
-            List of Detection objects above threshold
-        """
-        detections = []
-        
-        try:
-            if frame is None or frame.size == 0:
-                return []
-
-            # Ensure frame is 1-channel grayscale
-            if len(frame.shape) == 3 and frame.shape[2] == 3:
-                frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            else:
-                frame_gray = frame
-
-            # Use pre-computed grayscale image if available, fallback to converting image
-            if template.image_gray is not None:
-                template_img = template.image_gray
-            elif template.image is not None:
-                template_img = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
-            else:
-                logger.warning(f"Template {template.id} has no image")
-                return []
-            
-            if scale != 1.0:
-                new_w = int(template_img.shape[1] * scale)
-                new_h = int(template_img.shape[0] * scale)
-                if new_w <= 0 or new_h <= 0:
-                    return []
-                template_img = cv2.resize(template_img, (new_w, new_h))
-            
-            # Check if template fits in frame
-            if template_img.shape[0] > frame_gray.shape[0] or template_img.shape[1] > frame_gray.shape[1]:
-                return []
-            
-            # Match template on single-channel grayscale images for ~3x-5x speedup
-            result = cv2.matchTemplate(frame_gray, template_img, self.params['match_method'])
-            
-            # Find all matches above threshold
-            threshold = template.threshold
-            locations = np.where(result >= threshold)
-            
-            # Create detections
-            for pt in zip(*locations[::-1]):  # (x, y)
-                x, y = pt
-                w, h = template_img.shape[1], template_img.shape[0]
-                score = float(result[y, x])
-                
-                detection = Detection(
-                    x=x + offset_x,
-                    y=y + offset_y,
-                    w=w,
-                    h=h,
-                    score=score,
-                    template_id=template.id,
-                    scale=scale,
-                    timestamp=time.time()
-                )
-                detections.append(detection)
-        
-        except Exception as e:
-            logger.error(f"Error matching template {template.id} at scale {scale}: {e}")
-        
-        return detections
-    
     def nms(self, detections: List[Detection], iou_threshold: float = 0.3) -> List[Detection]:
-        """
-        Non-Maximum Suppression to remove overlapping detections.
-        
-        Optimized with NumPy vectorization: ~8x-10x faster than standard Python list filtering
-        for large candidate detection sets.
+        return self.matcher_service.nms(detections, iou_threshold)
 
-        Args:
-            detections: List of Detection objects
-            iou_threshold: IoU threshold (0.0-1.0)
-            
-        Returns:
-            Filtered list of detections
-        """
-        if not detections:
-            return []
-        if len(detections) == 1:
-            return list(detections)
-        
-        # Sort by score (descending)
-        sorted_dets = sorted(detections, key=lambda d: d.score, reverse=True)
-        boxes = np.array([d.bbox() for d in sorted_dets], dtype=np.float32)
-        
-        keep = []
-        indices = np.arange(len(sorted_dets))
-        
-        while len(indices) > 0:
-            current = indices[0]
-            keep.append(sorted_dets[current])
-            if len(indices) == 1:
-                break
-
-            # Compute vectorized IoU against all remaining bounding boxes
-            current_box = boxes[current]
-            remaining_boxes = boxes[indices[1:]]
-
-            x1, y1, w1, h1 = current_box
-            x2 = remaining_boxes[:, 0]
-            y2 = remaining_boxes[:, 1]
-            w2 = remaining_boxes[:, 2]
-            h2 = remaining_boxes[:, 3]
-
-            x_left = np.maximum(x1, x2)
-            y_top = np.maximum(y1, y2)
-            x_right = np.minimum(x1 + w1, x2 + w2)
-            y_bottom = np.minimum(y1 + h1, y2 + h2)
-
-            intersection_w = np.maximum(0.0, x_right - x_left)
-            intersection_h = np.maximum(0.0, y_bottom - y_top)
-            intersection = intersection_w * intersection_h
-
-            area1 = w1 * h1
-            area2 = w2 * h2
-            union = area1 + area2 - intersection
-
-            ious = np.where(union > 0, intersection / union, 0.0)
-            
-            # Keep indices where IoU < threshold
-            indices = indices[1:][ious < iou_threshold]
-        
-        return keep
-    
-    def _iou(self, box1: Tuple[int, int, int, int], 
-             box2: Tuple[int, int, int, int]) -> float:
-        """
-        Calculate IoU (Intersection over Union) between two boxes.
-        
-        Args:
-            box1, box2: (x, y, w, h)
-            
-        Returns:
-            IoU value (0.0-1.0)
-        """
-        x1, y1, w1, h1 = box1
-        x2, y2, w2, h2 = box2
-        
-        # Calculate intersection
-        x_left = max(x1, x2)
-        y_top = max(y1, y2)
-        x_right = min(x1 + w1, x2 + w2)
-        y_bottom = min(y1 + h1, y2 + h2)
-        
-        if x_right < x_left or y_bottom < y_top:
-            return 0.0
-        
-        intersection = (x_right - x_left) * (y_bottom - y_top)
-        
-        # Calculate union
-        area1 = w1 * h1
-        area2 = w2 * h2
-        union = area1 + area2 - intersection
-        
-        if union == 0:
-            return 0.0
-        
-        return intersection / union
-    
     # =====================================================================
-    # Tracking
+    # Tracking Logic
     # =====================================================================
-    
+
     def start_track(self, frame: np.ndarray, detection: Detection) -> str:
-        """
-        Start tracking a detection.
-        
-        Args:
-            frame: Current frame
-            detection: Detection to track
-            
-        Returns:
-            Tracker ID
-        """
         tracker_id = f"track_{self.next_tracker_id}"
         self.next_tracker_id += 1
-        
-        # Create tracker (OpenCV 4.5+ uses cv2.legacy)
+
         try:
-            if self.params['tracker_type'] == 'CSRT':
-                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
-            elif self.params['tracker_type'] == 'KCF':
-                tracker = cv2.legacy.TrackerKCF_create()  # type: ignore
-            else:
-                logger.warning(f"Unknown tracker type: {self.params['tracker_type']}, using CSRT")
-                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
+            tracker = cv2.legacy.TrackerCSRT_create() if self.params['tracker_type'] == 'CSRT' else cv2.legacy.TrackerKCF_create()  # type: ignore
         except AttributeError:
-            # Fallback for older OpenCV versions
-            if self.params['tracker_type'] == 'CSRT':
-                tracker = cv2.TrackerCSRT_create()  # type: ignore
-            elif self.params['tracker_type'] == 'KCF':
-                tracker = cv2.TrackerKCF_create()  # type: ignore
-            else:
-                logger.warning(f"Unknown tracker type: {self.params['tracker_type']}, using CSRT")
-                tracker = cv2.TrackerCSRT_create()  # type: ignore
-        
-        # Initialize tracker
+            tracker = cv2.TrackerCSRT_create() if self.params['tracker_type'] == 'CSRT' else cv2.TrackerKCF_create()  # type: ignore
+
         bbox = detection.bbox()
-        success = tracker.init(frame, bbox)
-        
-        if not success:
-            logger.error(f"Failed to initialize tracker for detection: {detection}")
+        if not tracker.init(frame, bbox):
             return ""
-        
-        # Create tracked object
+
         tracked_obj = TrackedObject(
             tracker_id=tracker_id,
             bbox=bbox,
@@ -638,252 +247,88 @@ class VisionEngine:
             last_verify_frame=self.frame_count,
             detect_time=detection.timestamp
         )
-        
-        # Store tracker
+
         self.trackers[tracker_id] = {
             'tracker': tracker,
             'tracked_obj': tracked_obj,
-            'template': self.templates.get(detection.template_id)
+            'template': self.get_template(detection.template_id)
         }
-        
-        logger.info(f"Started tracking: {tracker_id} for template {detection.template_id}")
-        
         return tracker_id
-    
+
     def update_tracks(self, frame: np.ndarray) -> List[TrackedObject]:
-        """
-        Update all active trackers.
-        
-        Args:
-            frame: Current frame
-            
-        Returns:
-            List of tracked objects
-        """
         self.frame_count += 1
-        
-        updated_tracks = []
-        to_remove = []
-        
+        updated_tracks, to_remove = [], []
+
         for tracker_id, track_data in self.trackers.items():
             tracker = track_data['tracker']
             tracked_obj = track_data['tracked_obj']
             template = track_data['template']
-            
-            # Update tracker
+
             success, bbox = tracker.update(frame)
-            
             if not success:
-                logger.debug(f"Tracker {tracker_id} lost target")
                 to_remove.append(tracker_id)
                 continue
-            
-            # Update tracked object
+
             tracked_obj.bbox = tuple(map(int, bbox))
             tracked_obj.frames_tracked += 1
-            
-            # Periodic re-verification
+
             if (self.frame_count - tracked_obj.last_verify_frame) >= self.params['verify_interval']:
                 verify_score = self.reverify_track(frame, tracked_obj, template)
                 tracked_obj.last_verify_score = verify_score
                 tracked_obj.last_verify_frame = self.frame_count
-                
+
                 if verify_score < self.params['verify_threshold']:
-                    logger.debug(f"Tracker {tracker_id} failed verification (score={verify_score:.2f})")
                     to_remove.append(tracker_id)
                     continue
-            
+
             updated_tracks.append(tracked_obj)
-        
-        # Remove failed trackers
-        for tracker_id in to_remove:
-            self.stop_track(tracker_id)
-        
+
+        for tid in to_remove:
+            self.stop_track(tid)
+
         return updated_tracks
-    
+
     def reverify_track(
         self,
         frame: np.ndarray,
         tracked_obj: TrackedObject,
         template: Optional[Template]
     ) -> float:
-        """
-        Re-verify tracked object using template matching.
-        
-        Args:
-            frame: Current frame
-            tracked_obj: Tracked object
-            template: Template to verify against
-            
-        Returns:
-            Verification score (0.0-1.0)
-        """
         if template is None or template.image is None:
             return 0.0
-        
+
         try:
-            # Extract region around tracked bbox (with margin)
             x, y, w, h = tracked_obj.bbox
             margin = 20
             x1 = max(0, x - margin)
             y1 = max(0, y - margin)
             x2 = min(frame.shape[1], x + w + margin)
             y2 = min(frame.shape[0], y + h + margin)
-            
+
             roi = frame[y1:y2, x1:x2]
-            
-            if roi.size == 0:
+            if roi.size == 0 or roi.shape[0] == 0 or roi.shape[1] == 0:
                 return 0.0
-            
-            # Match template in ROI
-            detections = self._match_template_at_scale(
-                roi,
-                template,
-                scale=1.0,
-                offset_x=x1,
-                offset_y=y1
-            )
-            
-            if detections:
-                # Return best match score
-                return max(d.score for d in detections)
-            
-            return 0.0
-        
+
+            detections = self._match_template_at_scale(roi, template, scale=1.0, offset_x=x1, offset_y=y1)
+            return max((d.score for d in detections), default=0.0)
         except Exception as e:
             logger.error(f"Error re-verifying track: {e}")
             return 0.0
-    
+
     def stop_track(self, tracker_id: str) -> bool:
-        """
-        Stop tracking a specific tracker.
-        
-        Args:
-            tracker_id: Tracker ID to stop
-            
-        Returns:
-            True if stopped successfully
-        """
         if tracker_id in self.trackers:
             del self.trackers[tracker_id]
-            logger.info(f"Stopped tracking: {tracker_id}")
             return True
         return False
-    
+
     def stop_all_tracks(self):
-        """Stop all active trackers"""
         self.trackers.clear()
-        logger.info("Stopped all trackers")
-    
+
     def get_tracked_objects(self) -> List[TrackedObject]:
-        """Get all currently tracked objects"""
         return [track_data['tracked_obj'] for track_data in self.trackers.values()]
-    
+
     # =====================================================================
-    # Configuration
-    # =====================================================================
-    
-    def set_params(self, params_dict: Dict[str, Any]):
-        """Update engine parameters"""
-        self.params.update(params_dict)
-        logger.info(f"Updated params: {params_dict}")
-    
-    def get_params(self) -> Dict[str, Any]:
-        """Get current parameters"""
-        return self.params.copy()
-    
-    def set_debug(self, enabled: bool):
-        """Enable/disable debug mode"""
-        self.debug_mode = enabled
-        if enabled:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
-        logger.info(f"Debug mode: {'enabled' if enabled else 'disabled'}")
-    
-    def set_region(self, region: Optional[Tuple[int, int, int, int]]):
-        """Set default search region"""
-        self.default_region = region
-        self._save_region_config()
-        logger.info(f"Set default region: {region}")
-    
-    def get_region(self) -> Optional[Tuple[int, int, int, int]]:
-        """Get default search region"""
-        return self.default_region
-    
-    # =====================================================================
-    # Persistence
-    # =====================================================================
-    
-    def _load_templates_config(self):
-        """Load templates from config file"""
-        if not self.templates_config_path.exists():
-            logger.info("No templates config found, using defaults")
-            return
-        
-        try:
-            with open(self.templates_config_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            for template_data in data.get('templates', []):
-                template = Template(**template_data)
-                self.templates[template.id] = template
-            
-            logger.info(f"Loaded {len(self.templates)} templates from config")
-        
-        except Exception as e:
-            logger.error(f"Error loading templates config: {e}")
-    
-    def _save_templates_config(self):
-        """Save templates to config file"""
-        try:
-            data = {
-                'templates': [t.to_dict() for t in self.templates.values()]
-            }
-            
-            with open(self.templates_config_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2)
-            
-            logger.debug(f"Saved {len(self.templates)} templates to config")
-        
-        except Exception as e:
-            logger.error(f"Error saving templates config: {e}")
-    
-    def _load_region_config(self):
-        """Load region from config file"""
-        if not self.region_config_path.exists():
-            return
-        
-        try:
-            with open(self.region_config_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            region = data.get('default_region')
-            if region:
-                self.default_region = tuple(region)
-            
-            logger.info(f"Loaded region config: {self.default_region}")
-        
-        except Exception as e:
-            logger.error(f"Error loading region config: {e}")
-    
-    def _save_region_config(self):
-        """Save region to config file"""
-        try:
-            data = {
-                'default_region': list(self.default_region) if self.default_region else None
-            }
-            
-            with open(self.region_config_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2)
-            
-            logger.debug(f"Saved region config: {self.default_region}")
-        
-        except Exception as e:
-            logger.error(f"Error saving region config: {e}")
-    
-    # =====================================================================
-    # Advanced Detection: HSV Color Masking, Feature Matching & Fast Priority Pipeline
+    # Advanced HSV Detection & Feature Matching
     # =====================================================================
 
     def detect_hsv_target(
@@ -897,35 +342,16 @@ class VisionEngine:
         downscale_factor: float = 1.0,
         target_threat_levels: Optional[List[str]] = None
     ) -> List[Detection]:
-        """
-        Fast Multi-Color HSV mask / Target outline / Threat filtering detection.
-
-        Args:
-            frame: Input BGR frame
-            lower_hsv: Lower HSV threshold tuple (H, S, V)
-            upper_hsv: Upper HSV threshold tuple (H, S, V)
-            min_area: Minimum contour area
-            max_area: Maximum contour area
-            roi: Optional ROI tuple (x, y, w, h)
-            downscale_factor: Scale factor <= 1.0 for processing speedup
-            target_threat_levels: List of active threat levels to detect (e.g. ['gray', 'yellow', 'red'])
-
-        Returns:
-            List of Detection objects
-        """
         if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
             return []
 
         min_a = min_area if min_area is not None else self.params.get('hsv_min_area', 50)
         max_a = max_area if max_area is not None else self.params.get('hsv_max_area', 100000)
-
         frame_h, frame_w = frame.shape[:2]
 
-        # Crop ROI
         offset_x, offset_y = 0, 0
         if roi is not None:
             rx, ry, rw, rh = roi
-            # Clamp ROI bounds
             rx = max(0, min(rx, frame_w - 1))
             ry = max(0, min(ry, frame_h - 1))
             rw = max(1, min(rw, frame_w - rx))
@@ -938,8 +364,7 @@ class VisionEngine:
         if work_frame.size == 0 or work_frame.shape[0] == 0 or work_frame.shape[1] == 0:
             return []
 
-        # Downscale if requested
-        if downscale_factor < 1.0 and downscale_factor > 0.0:
+        if 0.0 < downscale_factor < 1.0:
             scaled_w = max(1, int(work_frame.shape[1] * downscale_factor))
             scaled_h = max(1, int(work_frame.shape[0] * downscale_factor))
             proc_frame = cv2.resize(work_frame, (scaled_w, scaled_h))
@@ -950,8 +375,6 @@ class VisionEngine:
             scale_x, scale_y = 1.0, 1.0
 
         hsv = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2HSV)
-
-        # Active threat levels configuration
         active_levels = target_threat_levels if target_threat_levels is not None else self.params.get('target_threat_levels', ["gray", "yellow"])
         active_levels_lower = [str(l).lower() for l in active_levels]
 
@@ -962,8 +385,7 @@ class VisionEngine:
         })
 
         if lower_hsv is not None and upper_hsv is not None:
-            lower_b = np.array(lower_hsv, dtype=np.uint8)
-            upper_b = np.array(upper_hsv, dtype=np.uint8)
+            lower_b, upper_b = np.array(lower_hsv, dtype=np.uint8), np.array(upper_hsv, dtype=np.uint8)
             if lower_b[0] > upper_b[0]:
                 m1 = cv2.inRange(hsv, np.array([0, lower_b[1], lower_b[2]], dtype=np.uint8), upper_b)
                 m2 = cv2.inRange(hsv, lower_b, np.array([180, upper_b[1], upper_b[2]], dtype=np.uint8))
@@ -972,44 +394,24 @@ class VisionEngine:
                 mask = cv2.inRange(hsv, lower_b, upper_b)
             apply_red_filter = (target_threat_levels is not None and "red" not in active_levels_lower)
         else:
-            # Build combined mask using cv2.bitwise_or() based on active target colors
             combined_mask = None
             for level in active_levels_lower:
-                ranges = hsv_ranges.get(level, [])
-                for r_lower, r_upper in ranges:
-                    sub_m = cv2.inRange(
-                        hsv,
-                        np.array(r_lower, dtype=np.uint8),
-                        np.array(r_upper, dtype=np.uint8)
-                    )
-                    if combined_mask is None:
-                        combined_mask = sub_m
-                    else:
-                        combined_mask = cv2.bitwise_or(combined_mask, sub_m)
+                for r_lower, r_upper in hsv_ranges.get(level, []):
+                    sub_m = cv2.inRange(hsv, np.array(r_lower, dtype=np.uint8), np.array(r_upper, dtype=np.uint8))
+                    combined_mask = sub_m if combined_mask is None else cv2.bitwise_or(combined_mask, sub_m)
 
             if combined_mask is None:
                 return []
             mask = combined_mask
             apply_red_filter = ("red" not in active_levels_lower)
 
-        # Build red mask for threat filtering if red is disabled
         red_mask = None
         if apply_red_filter:
-            red_ranges = hsv_ranges.get('red', [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))])
-            for r_lower, r_upper in red_ranges:
-                sub_r = cv2.inRange(
-                    hsv,
-                    np.array(r_lower, dtype=np.uint8),
-                    np.array(r_upper, dtype=np.uint8)
-                )
-                if red_mask is None:
-                    red_mask = sub_r
-                else:
-                    red_mask = cv2.bitwise_or(red_mask, sub_r)
+            for r_lower, r_upper in hsv_ranges.get('red', []):
+                sub_r = cv2.inRange(hsv, np.array(r_lower, dtype=np.uint8), np.array(r_upper, dtype=np.uint8))
+                red_mask = sub_r if red_mask is None else cv2.bitwise_or(red_mask, sub_r)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # Guard against empty contours
         if not contours:
             return []
 
@@ -1018,44 +420,24 @@ class VisionEngine:
 
         for cnt in contours:
             area_proc = cv2.contourArea(cnt)
-            # Re-scale area check to unscaled domain
             area_orig = area_proc * scale_x * scale_y
             if min_a <= area_orig <= max_a:
                 bx, by, bw, bh = cv2.boundingRect(cnt)
-
-                # Threat filtering: Ignore red monster tag if "red" threat level disabled to prevent bot suicide
                 if apply_red_filter and red_mask is not None:
                     red_roi = red_mask[by:by+bh, bx:bx+bw]
-                    if red_roi.size > 0:
-                        red_pixel_count = cv2.countNonZero(red_roi)
-                        if red_pixel_count > 0.25 * (bw * bh):
-                            logger.debug("Red monster tag detected but 'red' threat level disabled; ignoring to prevent bot suicide")
-                            continue
+                    if red_roi.size > 0 and cv2.countNonZero(red_roi) > 0.25 * (bw * bh):
+                        continue
 
-                # Remap to original full frame coordinates
-                orig_x = int(offset_x + bx * scale_x)
-                orig_y = int(offset_y + by * scale_y)
-                orig_w = int(bw * scale_x)
-                orig_h = int(bh * scale_y)
-
-                # Clamp coordinates to valid frame bounds
-                orig_x = max(0, min(orig_x, frame_w - 1))
-                orig_y = max(0, min(orig_y, frame_h - 1))
-                orig_w = max(1, min(orig_w, frame_w - orig_x))
-                orig_h = max(1, min(orig_h, frame_h - orig_y))
+                orig_x = max(0, min(int(offset_x + bx * scale_x), frame_w - 1))
+                orig_y = max(0, min(int(offset_y + by * scale_y), frame_h - 1))
+                orig_w = max(1, min(int(bw * scale_x), frame_w - orig_x))
+                orig_h = max(1, min(int(bh * scale_y), frame_h - orig_y))
 
                 score = min(1.0, float(area_orig / max_a)) if max_a > 0 else 1.0
-
                 detections.append(Detection(
-                    x=orig_x,
-                    y=orig_y,
-                    w=orig_w,
-                    h=orig_h,
+                    x=orig_x, y=orig_y, w=orig_w, h=orig_h,
                     score=score if score > 0 else 0.85,
-                    template_id="hsv_target",
-                    scale=1.0,
-                    method_used="hsv_mask",
-                    timestamp=now
+                    template_id="hsv_target", scale=1.0, method_used="hsv_mask", timestamp=now
                 ))
 
         detections.sort(key=lambda d: d.w * d.h, reverse=True)
@@ -1070,20 +452,6 @@ class VisionEngine:
         roi: Optional[Tuple[int, int, int, int]] = None,
         downscale_factor: float = 1.0
     ) -> List[Detection]:
-        """
-        Feature matching (ORB/SIFT) supporting 3D rotation, scale, and perspective invariance.
-
-        Args:
-            frame: Input BGR frame
-            template: Reference Template object
-            feature_type: 'ORB' or 'SIFT'
-            min_matches: Minimum good matches required for homography
-            roi: Optional ROI tuple (x, y, w, h)
-            downscale_factor: Scale factor <= 1.0 for processing speedup
-
-        Returns:
-            List of Detection objects
-        """
         if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
             return []
         if template is None or template.image is None or template.image.size == 0:
@@ -1092,7 +460,6 @@ class VisionEngine:
         ftype = (feature_type or self.params.get('feature_type', 'ORB')).upper()
         frame_h, frame_w = frame.shape[:2]
 
-        # Crop ROI
         offset_x, offset_y = 0, 0
         if roi is not None:
             rx, ry, rw, rh = roi
@@ -1108,8 +475,7 @@ class VisionEngine:
         if work_frame.size == 0 or work_frame.shape[0] == 0 or work_frame.shape[1] == 0:
             return []
 
-        # Downscale if requested
-        if downscale_factor < 1.0 and downscale_factor > 0.0:
+        if 0.0 < downscale_factor < 1.0:
             scaled_w = max(1, int(work_frame.shape[1] * downscale_factor))
             scaled_h = max(1, int(work_frame.shape[0] * downscale_factor))
             proc_frame = cv2.resize(work_frame, (scaled_w, scaled_h))
@@ -1119,46 +485,30 @@ class VisionEngine:
             proc_frame = work_frame
             scale_x, scale_y = 1.0, 1.0
 
-        # Initialize feature detector
-        if ftype == 'SIFT':
-            if not hasattr(cv2, 'SIFT_create'):
-                logger.warning("SIFT not available in OpenCV build, falling back to ORB")
-                detector = cv2.ORB_create(nfeatures=500)
-                norm = cv2.NORM_HAMMING
-            else:
-                detector = cv2.SIFT_create(nfeatures=500)
-                norm = cv2.NORM_L2
+        if ftype == 'SIFT' and hasattr(cv2, 'SIFT_create'):
+            detector = cv2.SIFT_create(nfeatures=500)
+            norm = cv2.NORM_L2
         else:
             detector = cv2.ORB_create(nfeatures=500)
             norm = cv2.NORM_HAMMING
 
         gray_frame = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2GRAY)
-        gray_template = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+        gray_template = template.image_gray if template.image_gray is not None else cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
 
         kp1, des1 = detector.detectAndCompute(gray_template, None)
         kp2, des2 = detector.detectAndCompute(gray_frame, None)
 
-        # Guard Clauses for descriptors
         if des1 is None or des2 is None or len(kp1) < 2 or len(kp2) < 2:
             return []
 
         matcher = cv2.BFMatcher(norm, crossCheck=False)
-
         try:
             matches = matcher.knnMatch(des1, des2, k=2)
         except Exception as e:
             logger.error(f"Error in feature matching: {e}")
             return []
 
-        # Apply Lowe's ratio test
-        good_matches = []
-        for match in matches:
-            if len(match) == 2:
-                m, n = match
-                if m.distance < 0.75 * n.distance:
-                    good_matches.append(m)
-
-        # Guard Clause for homography calculation (requires >= 4 points)
+        good_matches = [m for m, n in matches if len((m, n)) == 2 and m.distance < 0.75 * n.distance]
         if len(good_matches) < max(4, min_matches):
             return []
 
@@ -1176,39 +526,21 @@ class VisionEngine:
         except Exception:
             return []
 
-        # Calculate bounding box in processed frame
-        x_coords = dst[:, 0, 0]
-        y_coords = dst[:, 0, 1]
+        x_coords, y_coords = dst[:, 0, 0], dst[:, 0, 1]
         min_x, max_x = np.min(x_coords), np.max(x_coords)
         min_y, max_y = np.min(y_coords), np.max(y_coords)
 
-        # Remap coordinates back to original frame
-        orig_x = int(offset_x + min_x * scale_x)
-        orig_y = int(offset_y + min_y * scale_y)
-        orig_w = int((max_x - min_x) * scale_x)
-        orig_h = int((max_y - min_y) * scale_y)
-
-        # Clamp remapped screen coordinates strictly within valid bounds
-        orig_x = max(0, min(orig_x, frame_w - 1))
-        orig_y = max(0, min(orig_y, frame_h - 1))
-        orig_w = max(1, min(orig_w, frame_w - orig_x))
-        orig_h = max(1, min(orig_h, frame_h - orig_y))
+        orig_x = max(0, min(int(offset_x + min_x * scale_x), frame_w - 1))
+        orig_y = max(0, min(int(offset_y + min_y * scale_y), frame_h - 1))
+        orig_w = max(1, min(int((max_x - min_x) * scale_x), frame_w - orig_x))
+        orig_h = max(1, min(int((max_y - min_y) * scale_y), frame_h - orig_y))
 
         score = min(1.0, float(len(good_matches)) / 50.0)
-
-        detection = Detection(
-            x=orig_x,
-            y=orig_y,
-            w=orig_w,
-            h=orig_h,
-            score=score,
-            template_id=template.id,
-            scale=1.0,
-            method_used=ftype.lower() + "_features",
-            timestamp=time.time()
-        )
-
-        return [detection]
+        return [Detection(
+            x=orig_x, y=orig_y, w=orig_w, h=orig_h,
+            score=score, template_id=template.id, scale=1.0,
+            method_used=f"{ftype.lower()}_features", timestamp=time.time()
+        )]
 
     def detect_monster_pipeline(
         self,
@@ -1219,523 +551,211 @@ class VisionEngine:
         confidence_threshold: float = 0.6,
         use_fast_hsv: bool = True
     ) -> List[Detection]:
-        """
-        Fast Priority Pipeline:
-        1. Fast Path: HSV color mask / Target HUD (HP bar or lock-on circle). Returns immediately if detected.
-        2. Fallback Path: Feature matching / Multi-template matching across multiple views/scales if fast path fails.
-
-        Args:
-            frame: Input BGR image
-            template_ids: List of target template IDs to search for (e.g. front/side/back views)
-            roi: Optional ROI tuple (x, y, w, h)
-            downscale_factor: Frame downscaling factor
-            confidence_threshold: Threshold to accept secondary detections
-            use_fast_hsv: Whether to execute fast HSV priority check
-
-        Returns:
-            List of Detection objects
-        """
         if frame is None or frame.size == 0:
             return []
 
         scale_factor = downscale_factor if downscale_factor is not None else self.params.get('downscale_factor', 1.0)
         search_roi = roi if roi is not None else self.default_region
 
-        # Step 1: Fast Priority Path (HSV Masking / Target HUD)
         if use_fast_hsv:
-            hsv_detections = self.detect_hsv_target(
-                frame,
-                roi=search_roi,
-                downscale_factor=scale_factor
-            )
+            hsv_detections = self.detect_hsv_target(frame, roi=search_roi, downscale_factor=scale_factor)
             if hsv_detections:
-                logger.debug(f"[Pipeline] Fast HSV target detected ({len(hsv_detections)} found)")
                 return hsv_detections
 
-        # Step 2: Fallback Path (Feature Matching & Multi-template / Multi-scale)
-        templates_to_search = []
-        if template_ids:
-            templates_to_search = [self.templates[tid] for tid in template_ids if tid in self.templates and self.templates[tid].enabled]
-        else:
-            templates_to_search = [t for t in self.templates.values() if t.enabled]
-
+        templates_to_search = [self.templates[tid] for tid in template_ids if tid in self.templates and self.templates[tid].enabled] if template_ids else [t for t in self.templates.values() if t.enabled]
         secondary_detections = []
 
-        # Try Feature matching for each view/template
         for tpl in templates_to_search:
-            feat_dets = self.detect_features(
-                frame,
-                template=tpl,
-                roi=search_roi,
-                downscale_factor=scale_factor
-            )
+            feat_dets = self.detect_features(frame, template=tpl, roi=search_roi, downscale_factor=scale_factor)
             for d in feat_dets:
                 if d.score >= confidence_threshold:
                     secondary_detections.append(d)
 
-        # If feature matching found targets, return them
         if secondary_detections:
             secondary_detections.sort(key=lambda d: d.score, reverse=True)
             return secondary_detections
 
-        # Fallback to multi-template / multi-scale standard template matching
-        tmpl_dets = self.match_templates(
-            frame,
-            roi=search_roi,
-            templates=template_ids,
-            scales=[0.8, 1.0, 1.2]
-        )
-        filtered_tmpl_dets = [d for d in tmpl_dets if d.score >= confidence_threshold]
-        return filtered_tmpl_dets
+        tmpl_dets = self.match_templates(frame, roi=search_roi, templates=template_ids, scales=[0.8, 1.0, 1.2])
+        return [d for d in tmpl_dets if d.score >= confidence_threshold]
 
     # =====================================================================
-    # Utility
+    # Async Worker Thread & Screen Capture API
     # =====================================================================
-    
-    def get_threshold_presets(self) -> Dict[str, float]:
-        """Get threshold presets"""
-        return {
-            'low': 0.5,
-            'normal': 0.7,
-            'strict': 0.85
-        }
-    
-    def reset(self):
-        """Reset engine state"""
-        self.stop_all_tracks()
-        self.frame_count = 0
-        logger.info("Engine reset")
-    
-    # =====================================================================
-    # Screen Capture Management (Sprint 23 Phase 8)
-    # =====================================================================
-    
-    def start_capture(self, window_title: str, target_fps: int = 15, 
-                     queue_size: int = 5) -> bool:
-        """
-        Start screen capture for a game window.
-        
-        Args:
-            window_title: Window title to capture (e.g., "Cabal")
-            target_fps: Target frames per second (default: 15)
-            queue_size: Frame queue size (default: 5)
-        
-        Returns:
-            True if capture started successfully, False otherwise
-        
-        Note:
-            - Only works on Windows platform
-            - Automatically sets up frame callback for worker
-            - Window must be visible and not minimized
-        """
-        if sys.platform != "win32":
-            logger.error("Screen capture only supported on Windows")
-            return False
-        
-        if not ScreenCapture or not self.window_manager:
-            logger.error("Screen capture modules not available")
-            return False
-        
-        # Find window
-        hwnd = self.window_manager.find_window(title_contains=window_title)  # type: ignore
-        if not hwnd:
-            logger.error(f"Window not found: {window_title}")
-            return False
-        
-        # Check window state
-        info = self.window_manager.get_window_info(hwnd)  # type: ignore
-        if info and info.is_minimized:
-            logger.warning(f"Window is minimized: {window_title}")
-            # Capture can still work with minimized windows
-            logger.info("Continuing with capture (minimized window)")
-        
-        # Stop existing capture
-        self.stop_capture()
-        
-        try:
-            # Create screen capture
-            self.screen_capture = ScreenCapture(hwnd, queue_size=queue_size,  # type: ignore
-                                               target_fps=target_fps)
-            self.screen_capture.start_capture()  # type: ignore
-            self.capture_hwnd = hwnd
-            self.capture_enabled = True
-            
-            # Update FPS limit to match capture rate
-            self.params['fps_limit'] = target_fps
-            
-            logger.info(f"Started screen capture: {window_title} (hwnd={hwnd}, fps={target_fps})")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to start screen capture: {e}")
-            self.screen_capture = None
-            self.capture_hwnd = None
-            self.capture_enabled = False
-            return False
-    
-    def stop_capture(self) -> None:
-        """
-        Stop screen capture and cleanup resources.
-        
-        Note:
-            - Safe to call even if capture not active
-            - Automatically called by stop_worker()
-        """
-        if self.screen_capture:
-            try:
-                self.screen_capture.stop_capture()  # type: ignore
-                logger.info("Stopped screen capture")
-            except Exception as e:
-                logger.error(f"Error stopping capture: {e}")
-            finally:
-                self.screen_capture = None
-                self.capture_hwnd = None
-                self.capture_enabled = False
-    
-    def get_capture_frame(self, timeout: float = 0.1) -> Optional[np.ndarray]:
-        """
-        Get latest frame from screen capture.
-        
-        Args:
-            timeout: Maximum wait time for frame (seconds)
-        
-        Returns:
-            BGR frame array or None if not available
-        
-        Note:
-            - This is the frame callback used by worker thread
-            - Returns None if capture not active
-        """
-        if not self.capture_enabled or not self.screen_capture:
-            return None
-        
-        try:
-            return self.screen_capture.get_frame(timeout=timeout)  # type: ignore
-        except Exception as e:
-            logger.error(f"Error getting capture frame: {e}")
-            return None
-    
-    def get_capture_stats(self) -> Optional[Dict[str, Any]]:
-        """
-        Get screen capture statistics.
-        
-        Returns:
-            Dictionary with keys:
-                - fps: Current capture FPS
-                - frames_captured: Total frames captured
-                - frames_dropped: Total frames dropped
-                - queue_size: Current queue size
-            
-            None if capture not active
-        """
-        if not self.capture_enabled or not self.screen_capture:
-            return None
-        
-        try:
-            stats = self.screen_capture.get_stats()  # type: ignore
-            return {
-                'fps': stats.fps,
-                'frames_captured': stats.frames_captured,
-                'frames_dropped': stats.frames_dropped,
-                'queue_size': stats.queue_size,
-                'last_update': stats.last_update
-            }
-        except Exception as e:
-            logger.error(f"Error getting capture stats: {e}")
-            return None
-    
-    def is_capture_active(self) -> bool:
-        """Check if screen capture is currently active"""
-        return (self.capture_enabled and 
-                self.screen_capture is not None and 
-                self.screen_capture.is_capturing)  # type: ignore
-    
-    def focus_capture_window(self) -> bool:
-        """
-        Bring captured window to foreground.
-        
-        Returns:
-            True if successful, False otherwise
-        """
-        if not self.capture_hwnd or sys.platform != "win32":
-            return False
-        
-        if not self.window_manager:
-            return False
-        
-        try:
-            return self.window_manager.set_foreground(self.capture_hwnd)  # type: ignore
-        except Exception as e:
-            logger.error(f"Error focusing window: {e}")
-            return False
-    
-    # =====================================================================
-    # Worker Thread Management (Async API)
-    # =====================================================================
-    
+
     def start_worker(self, frame_callback: Optional[Callable[[], Optional[np.ndarray]]] = None) -> None:
-        """
-        Start worker thread for async detection/tracking.
-        
-        Worker continuously:
-        1. Calls frame_callback() to get current frame
-        2. Runs match_templates() or update_tracks()
-        3. Puts results into result_queue
-        
-        Args:
-            frame_callback: Function that returns current frame (np.ndarray) or None.
-                           If None, uses internal screen capture if active.
-        
-        Note:
-            - Worker stops when worker_running = False
-            - UI should poll result_queue via get_result()
-            - FPS limited by params['fps_limit']
-            - If screen capture is active and no callback provided, uses get_capture_frame
-        """
         if self.worker_running:
-            logger.warning("Worker already running")
             return
-        
-        # Use screen capture if active and no callback provided
         if frame_callback is None and self.is_capture_active():
             self.frame_callback = self.get_capture_frame
-            logger.info("Using internal screen capture for worker")
         elif frame_callback is not None:
             self.frame_callback = frame_callback
         else:
-            logger.error("No frame source available (no callback or screen capture)")
             return
-        
+
         self.worker_running = True
         self.worker_thread = threading.Thread(target=self._worker_loop, daemon=True)
         self.worker_thread.start()
-        logger.info("Worker thread started")
-    
+
     def stop_worker(self) -> None:
-        """
-        Stop worker thread and clean up resources.
-        
-        Note:
-            - Blocks until worker exits
-            - Drains result_queue
-            - Stops all trackers
-            - Stops screen capture if active
-        """
         if not self.worker_running:
             return
-        
         self.worker_running = False
-        
-        # Wait for worker to exit
         if self.worker_thread and self.worker_thread.is_alive():
             self.worker_thread.join(timeout=2.0)
-        
-        # Drain queue
+
         while not self.result_queue.empty():
             try:
                 self.result_queue.get_nowait()
             except queue.Empty:
                 break
-        
-        # Stop trackers
+
         self.stop_all_tracks()
-        
-        # Stop screen capture if active
         if self.is_capture_active():
             self.stop_capture()
-        
-        logger.info("Worker thread stopped")
-    
+
     def get_result(self, timeout: float = 0.0) -> Optional[Dict[str, Any]]:
-        """
-        Get result from worker (non-blocking if timeout=0).
-        
-        Args:
-            timeout: Max wait time (0 = non-blocking)
-        
-        Returns:
-            Result dict with keys:
-                - 'type': 'detections' or 'tracks'
-                - 'data': List of Detection or TrackedObject
-                - 'frame': Rendered frame with overlay (np.ndarray)
-                - 'timestamp': time.time()
-            
-            None if queue empty or timeout
-        """
         try:
             return self.result_queue.get(timeout=timeout)
         except queue.Empty:
             return None
-    
+
     def _worker_loop(self) -> None:
-        """
-        Worker thread main loop.
-        
-        Continuously:
-        1. Get frame from callback
-        2. Run detection or tracking
-        3. Render overlay
-        4. Put result in queue
-        5. Sleep to limit FPS
-        """
         fps_limit = self.params.get('fps_limit', 15)
         frame_time = 1.0 / fps_limit
-        
+
         while self.worker_running:
             loop_start = time.time()
-            
             try:
-                # Get frame
                 if not self.frame_callback:
                     time.sleep(0.1)
                     continue
-                
+
                 frame = self.frame_callback()
                 if frame is None:
                     time.sleep(0.1)
                     continue
-                
-                # Process frame (detection or tracking)
+
                 result = self._process_frame(frame)
-                
-                # Put result in queue (non-blocking to avoid buildup)
                 try:
                     self.result_queue.put_nowait(result)
                 except queue.Full:
-                    # Drop oldest result
                     try:
                         self.result_queue.get_nowait()
                         self.result_queue.put_nowait(result)
-                    except:
+                    except Exception:
                         pass
-                
             except Exception as e:
                 logger.error(f"Worker error: {e}", exc_info=True)
-            
-            # FPS throttling
+
             elapsed = time.time() - loop_start
             sleep_time = frame_time - elapsed
             if sleep_time > 0:
                 time.sleep(sleep_time)
-    
+
     def _process_frame(self, frame: np.ndarray) -> Dict[str, Any]:
-        """
-        Process single frame (detection or tracking).
-        
-        Args:
-            frame: Input frame
-        
-        Returns:
-            Result dict with rendered overlay
-        """
-        # TODO Phase 3: Implement detection/tracking logic
-        # For now, return empty result
-        
         rendered_frame = frame.copy()
-        
-        # Example: Run detection if no trackers active
+
         if len(self.trackers) == 0:
             detections = self.match_templates(frame, roi=self.default_region)
-            
-            # Render detections
             for det in detections:
-                cv2.rectangle(
-                    rendered_frame,
-                    (det.x, det.y),
-                    (det.x + det.w, det.y + det.h),
-                    (0, 255, 0),  # Green
-                    2
-                )
-                label = f"{det.template_id} {det.score:.2f}"
-                cv2.putText(
-                    rendered_frame,
-                    label,
-                    (det.x, det.y - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    1
-                )
-            
-            return {
-                'type': 'detections',
-                'data': [d.to_dict() for d in detections],
-                'frame': rendered_frame,
-                'timestamp': time.time()
-            }
+                cv2.rectangle(rendered_frame, (det.x, det.y), (det.x + det.w, det.y + det.h), (0, 255, 0), 2)
+            return {'type': 'detections', 'data': [d.to_dict() for d in detections], 'frame': rendered_frame, 'timestamp': time.time()}
         else:
-            # Update trackers
             tracks = self.update_tracks(frame)
-            
-            # Render tracks
             for track in tracks:
                 x, y, w, h = track.bbox
-                cv2.rectangle(
-                    rendered_frame,
-                    (x, y),
-                    (x + w, y + h),
-                    (255, 0, 0),  # Blue
-                    2
-                )
-                label = f"{track.template_id} {track.confidence:.2f}"
-                cv2.putText(
-                    rendered_frame,
-                    label,
-                    (x, y - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 0, 0),
-                    1
-                )
-            
-            return {
-                'type': 'tracks',
-                'data': [t.to_dict() for t in tracks],
-                'frame': rendered_frame,
-                'timestamp': time.time()
-            }
+                cv2.rectangle(rendered_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            return {'type': 'tracks', 'data': [t.to_dict() for t in tracks], 'frame': rendered_frame, 'timestamp': time.time()}
 
+    def start_capture(self, window_title: str, target_fps: int = 15, queue_size: int = 5) -> bool:
+        if sys.platform != "win32" or not ScreenCapture or not self.window_manager:
+            return False
+        hwnd = self.window_manager.find_window(title_contains=window_title)
+        if not hwnd:
+            return False
+        self.stop_capture()
+        try:
+            self.screen_capture = ScreenCapture(hwnd, queue_size=queue_size, target_fps=target_fps)
+            self.screen_capture.start_capture()
+            self.capture_hwnd = hwnd
+            self.capture_enabled = True
+            self.params['fps_limit'] = target_fps
+            return True
+        except Exception as e:
+            logger.error(f"Failed to start screen capture: {e}")
+            return False
 
-# =====================================================================
-# Singleton instance getter
-# =====================================================================
+    def stop_capture(self) -> None:
+        if self.screen_capture:
+            try:
+                self.screen_capture.stop_capture()
+            finally:
+                self.screen_capture = None
+                self.capture_hwnd = None
+                self.capture_enabled = False
+
+    def get_capture_frame(self, timeout: float = 0.1) -> Optional[np.ndarray]:
+        if not self.capture_enabled or not self.screen_capture:
+            return None
+        try:
+            return self.screen_capture.get_frame(timeout=timeout)
+        except Exception:
+            return None
+
+    def is_capture_active(self) -> bool:
+        return bool(self.capture_enabled and self.screen_capture and self.screen_capture.is_capturing)
+
+    def set_params(self, params_dict: Dict[str, Any]):
+        self.params.update(params_dict)
+
+    def get_params(self) -> Dict[str, Any]:
+        return self.params.copy()
+
+    def set_debug(self, enabled: bool):
+        self.debug_mode = enabled
+
+    def get_threshold_presets(self) -> Dict[str, float]:
+        return {'low': 0.5, 'normal': 0.7, 'strict': 0.85}
+
+    def _save_templates_config(self):
+        self.template_service.save_templates_config()
+
+    def _load_templates_config(self):
+        self.template_service.load_templates_config()
+
+    def set_region(self, region: Optional[Tuple[int, int, int, int]]):
+        self.default_region = region
+        self._save_region_config()
+
+    def get_region(self) -> Optional[Tuple[int, int, int, int]]:
+        return self.default_region
+
+    def _load_region_config(self):
+        if not self.region_config_path.exists():
+            return
+        try:
+            with open(self.region_config_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            region = data.get('default_region')
+            if region:
+                self.default_region = tuple(region)
+        except Exception as e:
+            logger.error(f"Error loading region config: {e}")
+
+    def _save_region_config(self):
+        try:
+            data = {'default_region': list(self.default_region) if self.default_region else None}
+            with open(self.region_config_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            logger.error(f"Error saving region config: {e}")
+
 
 _engine_instance: Optional[VisionEngine] = None
 
 
 def get_vision_engine(config_dir: str = "lib/data") -> VisionEngine:
-    """
-    Get or create vision engine singleton.
-    
-    Args:
-        config_dir: Config directory path
-        
-    Returns:
-        VisionEngine instance
-    """
     global _engine_instance
-    
     if _engine_instance is None:
         _engine_instance = VisionEngine(config_dir)
-    
     return _engine_instance
-
-
-# =====================================================================
-# Example usage (for testing)
-# =====================================================================
-
-if __name__ == "__main__":
-    # Setup logging
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
-    print("Vision Engine initialized")
-    print("Use get_vision_engine() to get singleton instance")
-    
-    # Example
-    engine = get_vision_engine()
-    print(f"Threshold presets: {engine.get_threshold_presets()}")
-    print(f"Parameters: {engine.get_params()}")
