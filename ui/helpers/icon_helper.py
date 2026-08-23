@@ -62,7 +62,7 @@ class IconHelper:
         # Icon cache
         self._cache = {}
         
-        # Default icon mappings (prefer .ico, fallback to .png)
+        # Default icon mappings (prefer .png, fallback to .ico)
         self.icon_map = {
             'add': ('add.ico', '➕'),
             'accept': ('accept.ico', '✔️'),  # Accept icon for training mode

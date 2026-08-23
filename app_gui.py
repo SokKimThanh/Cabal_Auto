@@ -4964,10 +4964,9 @@ Alternative Solutions:
                 def update():
                     if isinstance(img, str):
                         self.btn_manual_scan.config(text=img, image="")
-                        self._btn_scan_img = None
                     else:
                         self.btn_manual_scan.config(image=img, text="")
-                        self._btn_scan_img = img
+                        self._btn_scan_ref = img # Store a single reference to avoid memory leak
                 self.after(0, update)
             except Exception as e:
                 print(f"[UI] Error updating scan status icon: {e}")

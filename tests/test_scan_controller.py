@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from lib.features.hunt.scan_controller import ScanController
 
 def test_scan_controller_init():
@@ -20,7 +20,8 @@ def test_scan_controller_init():
 
     assert controller.vision_engine_getter == mock_getter
 
-def test_scan_controller_run_scan():
+@patch("threading.Thread")
+def test_scan_controller_run_scan(mock_thread):
     mock_getter = MagicMock()
     mock_set_text = MagicMock()
     mock_set_icon = MagicMock()
