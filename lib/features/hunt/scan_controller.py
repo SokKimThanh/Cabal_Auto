@@ -21,14 +21,14 @@ class ScanController:
 
     def run_scan(self, manual: bool = False):
         if manual:
-            print("[UI] Manual scan triggered.")
+            self.logger.info("[UI] Manual scan triggered.")
             self.set_status_text("🔍 Đang quét…")
-            self.set_status_icon(self.icons.SCANING)
-            print("[UI] Scan status: scanning")
+            self.set_status_icon(self.icons.SCANNING)
+            self.logger.info("[UI] Scan status: scanning")
 
         def worker():
             try:
-                print("[AutoScan] Started after game window connected.")
+                self.logger.info("[AutoScan] Started after game window connected.")
 
                 # Check vision engine
                 vision_engine = self.vision_engine_getter()
@@ -41,22 +41,22 @@ class ScanController:
                 # Boundary check: window
                 window_info = scanner.detect_window()
                 if not window_info:
-                    print("[AutoScan] Warning: Game window not connected. Skipping scan.")
+                    self.logger.warning("[AutoScan] Warning: Game window not connected. Skipping scan.")
                     if manual:
                         self.set_status_text("❌ Lỗi khi quét: Game window chưa kết nối.")
                         self.set_status_icon(self.icons.SCAN_FAILED)
-                        print("[UI] Scan status: failed")
+                        self.logger.info("[UI] Scan status: failed")
                     return
 
                 # Check DB connection
                 from lib.db.connection import get_connection
                 conn, _ = get_connection()
                 if not conn:
-                    print("[AutoScan] Warning: DB not ready. Skipping scan creation.")
+                    self.logger.warning("[AutoScan] Warning: DB not ready. Skipping scan creation.")
                     if manual:
                         self.set_status_text("❌ Lỗi khi quét: DB chưa sẵn sàng.")
                         self.set_status_icon(self.icons.SCAN_FAILED)
-                        print("[UI] Scan status: failed")
+                        self.logger.info("[UI] Scan status: failed")
                     return
 
                 try:
@@ -65,16 +65,16 @@ class ScanController:
                     pass
 
                 # Boundary check: template lists (if empty)
-                if not vision_engine.templates and not hasattr(vision_engine, 'add_template'):
-                    print("[AutoScan] Warning: Template list empty. Skipping scan.")
+                if not getattr(vision_engine, 'templates', None) and not hasattr(vision_engine, 'add_template'):
+                    self.logger.warning("[AutoScan] Warning: Template list empty. Skipping scan.")
                     if manual:
                         self.set_status_text("❌ Lỗi khi quét: Không có templates.")
                         self.set_status_icon(self.icons.SCAN_FAILED)
-                        print("[UI] Scan status: failed")
+                        self.logger.info("[UI] Scan status: failed")
                     return
 
                 # Get frame and check
-                print("[AutoScan] Capturing frame...")
+                self.logger.info("[AutoScan] Capturing frame...")
 
                 if scanner.screen_capture is None:
                     raise Exception("Screen capture not available.")
@@ -91,13 +91,18 @@ class ScanController:
 
                 # Run scan logic
                 results = scanner.run_scan()
-                print("[AutoScan] Scan completed successfully.")
+                self.logger.info("[AutoScan] Scan completed successfully.")
 
                 if manual:
                     self.set_status_text("✅ Quét hoàn tất")
                     self.set_status_icon(self.icons.SCAN_COMPLETE)
-                    print("[UI] Scan status: completed")
-                    self.show_results(results)
+                    self.logger.info("[UI] Scan status: completed")
+                    import tkinter as tk
+                    root = tk._default_root
+                    if root:
+                        root.after(0, lambda: self.show_results(results))
+                    else:
+                        self.show_results(results)
 
                     def restore_icon():
                         import time
@@ -106,12 +111,11 @@ class ScanController:
                     threading.Thread(target=restore_icon, daemon=True).start()
 
             except Exception as e:
-                print(f"[AutoScan] Exception during scan: {e}")
-                self.logger.error(f"[AutoScan] Exception during scan: {traceback.format_exc()}")
+                self.logger.error(f"[AutoScan] Exception during scan: {e}\n{traceback.format_exc()}")
                 if manual:
                     self.set_status_text("❌ Lỗi khi quét")
                     self.set_status_icon(self.icons.SCAN_FAILED)
-                    print("[UI] Scan status: failed")
+                    self.logger.info("[UI] Scan status: failed")
                     def restore_icon():
                         import time
                         time.sleep(3)

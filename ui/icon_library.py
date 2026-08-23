@@ -1,11 +1,8 @@
-from typing import Optional
-from pathlib import Path
-
 class Icons:
     # Scan Icons
     SCAN_FAILED = "scan-failed"
     SCAN_SCREEN = "scan-screen"
-    SCANING = "scaning"
+    SCANNING = "scaning"
     SCAN_COMPLETE = "scan-complete"
 
     # General Icons
@@ -26,7 +23,7 @@ def register_icons(icon_helper):
     mapping = {
         Icons.SCAN_FAILED: ('scan-failed.ico', '❌'),
         Icons.SCAN_SCREEN: ('scan-screen.ico', '🔍'),
-        Icons.SCANING: ('scaning.ico', '⏳'),
+        Icons.SCANNING: ('scaning.ico', '⏳'),
         Icons.SCAN_COMPLETE: ('scan-complete.ico', '✅'),
 
         Icons.APP: ('app.ico', '📱'),

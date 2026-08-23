@@ -8,6 +8,6 @@ def test_register_icons():
     assert Icons.SCAN_SCREEN in helper.icon_map
     assert Icons.SCAN_FAILED in helper.icon_map
     assert Icons.SCAN_COMPLETE in helper.icon_map
-    assert Icons.SCANING in helper.icon_map
+    assert Icons.SCANNING in helper.icon_map
 
     assert helper.icon_map[Icons.SCAN_SCREEN][0] == 'scan-screen.ico'
