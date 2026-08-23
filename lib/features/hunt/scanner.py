@@ -156,22 +156,15 @@ class AutoScanner:
             from lib.db.services.scan_service import ScanService
             scan_service = ScanService()
 
-            scan_id = str(uuid.uuid4())
-            timestamp = time.time()
-
-            monster_id_str = ",".join([str(m.class_id) for m in scan_data['monsters']]) if scan_data['monsters'] else "None"
-            skill_id_str = ",".join([str(s.class_id) for s in scan_data['skills']]) if scan_data['skills'] else "None"
-
+            # Persist scan summary (scans table currently supports a single monster_id/skill_id)
             data = {
-                'scan_id': scan_id,
-                'monster_id': None, # Keep None to avoid FK constraint fails if not loaded
+                'monster_id': None,  # Keep None to avoid FK constraint fails if not loaded
                 'skill_id': None,
                 'class_id': None,
-                'location': 'Unknown',
                 'status': 'Success'
             }
-            # Attempt to create
-            scan_service.create_scan(data)
+            persisted_id = scan_service.create_scan(data)
+            scan_id = persisted_id if persisted_id is not None else "error"
         except Exception as e:
             logger.error(f"Error saving scan results: {e}")
             scan_id = "error"
@@ -180,7 +173,7 @@ class AutoScanner:
             'status': 'success',
             'scan_id': scan_id,
             'class': detected_class,
-            'monsters': [m.class_id for m in scan_data['monsters']],
-            'skills': [s.class_id for s in scan_data['skills']],
+            'monsters': [m.template_id for m in scan_data['monsters']],
+            'skills': [s.template_id for s in scan_data['skills']],
             'recommended_skills': recommended_skills
         }
