@@ -690,6 +690,22 @@ class VisionEngine:
                 cv2.putText(rendered_frame, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             return {'type': 'tracks', 'data': [t.to_dict() for t in tracks], 'frame': rendered_frame, 'timestamp': time.time()}
 
+    def reset(self):
+        """Reset engine state"""
+        self.stop_all_tracks()
+        self.frame_count = 0
+        logger.info("Engine reset")
+
+    def focus_capture_window(self) -> bool:
+        """Bring captured window to foreground"""
+        if not self.capture_hwnd or sys.platform != "win32" or not self.window_manager:
+            return False
+        try:
+            return self.window_manager.set_foreground(self.capture_hwnd)
+        except Exception as e:
+            logger.error(f"Error focusing window: {e}")
+            return False
+
     def start_capture(self, window_title: str, target_fps: int = 15, queue_size: int = 5) -> bool:
         if sys.platform != "win32" or not ScreenCapture or not self.window_manager:
             return False
@@ -698,20 +714,35 @@ class VisionEngine:
             return False
         self.stop_capture()
         try:
-            self.screen_capture = ScreenCapture(hwnd, queue_size=queue_size, target_fps=target_fps)
-            self.screen_capture.start_capture()
+            if hasattr(ScreenCapture, 'start_capture'):
+                cap = ScreenCapture(hwnd, queue_size=queue_size, target_fps=target_fps)
+                cap.start_capture()
+            else:
+                cap = ScreenCapture(queue_size=queue_size, target_fps=target_fps)
+                if not cap.start(window_title):
+                    return False
+
+            self.screen_capture = cap
             self.capture_hwnd = hwnd
             self.capture_enabled = True
             self.params['fps_limit'] = target_fps
             return True
         except Exception as e:
             logger.error(f"Failed to start screen capture: {e}")
+            self.screen_capture = None
+            self.capture_hwnd = None
+            self.capture_enabled = False
             return False
 
     def stop_capture(self) -> None:
         if self.screen_capture:
             try:
-                self.screen_capture.stop_capture()
+                if hasattr(self.screen_capture, 'stop_capture'):
+                    self.screen_capture.stop_capture()
+                elif hasattr(self.screen_capture, 'stop'):
+                    self.screen_capture.stop()
+            except Exception as e:
+                logger.error(f"Error stopping capture: {e}")
             finally:
                 self.screen_capture = None
                 self.capture_hwnd = None
