@@ -50,17 +50,20 @@ class MatcherService:
 
         frame_h, frame_w = frame.shape[:2]
 
-        # Crop ROI with boundary validation
+        # Crop ROI with clipped intersection boundary validation
         if roi is not None:
-            x, y, w, h = roi
-            x2 = min(frame_w, x + w)
-            y2 = min(frame_h, y + h)
-            x = max(0, x)
-            y = max(0, y)
-            if x >= x2 or y >= y2:
+            rx, ry, rw, rh = roi
+            x1 = max(0, rx)
+            y1 = max(0, ry)
+            x2 = min(frame_w, rx + rw)
+            y2 = min(frame_h, ry + rh)
+
+            if x1 >= x2 or y1 >= y2:
+                logger.debug("ROI intersection with frame is empty or out-of-bounds")
                 return []
-            search_region = frame[y:y2, x:x2]
-            offset_x, offset_y = x, y
+
+            search_region = frame[y1:y2, x1:x2]
+            offset_x, offset_y = x1, y1
         else:
             search_region = frame
             offset_x, offset_y = 0, 0

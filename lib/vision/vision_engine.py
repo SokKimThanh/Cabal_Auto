@@ -219,7 +219,8 @@ class VisionEngine:
         offset_x: int,
         offset_y: int
     ) -> List[Detection]:
-        return self.matcher_service.match_template_at_scale(frame, template, scale, offset_x, offset_y)
+        use_gray = self.params.get('use_grayscale', True)
+        return self.matcher_service.match_template_at_scale(frame, template, scale, offset_x, offset_y, use_grayscale=use_gray)
 
     def nms(self, detections: List[Detection], iou_threshold: float = 0.3) -> List[Detection]:
         return self.matcher_service.nms(detections, iou_threshold)
@@ -232,10 +233,24 @@ class VisionEngine:
         tracker_id = f"track_{self.next_tracker_id}"
         self.next_tracker_id += 1
 
+        tracker_type = self.params.get('tracker_type', 'CSRT').upper()
+
         try:
-            tracker = cv2.legacy.TrackerCSRT_create() if self.params['tracker_type'] == 'CSRT' else cv2.legacy.TrackerKCF_create()  # type: ignore
+            if tracker_type == 'CSRT':
+                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
+            elif tracker_type == 'KCF':
+                tracker = cv2.legacy.TrackerKCF_create()  # type: ignore
+            else:
+                logger.warning(f"Unknown tracker type: {tracker_type}, falling back to CSRT")
+                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
         except AttributeError:
-            tracker = cv2.TrackerCSRT_create() if self.params['tracker_type'] == 'CSRT' else cv2.TrackerKCF_create()  # type: ignore
+            if tracker_type == 'CSRT':
+                tracker = cv2.TrackerCSRT_create()  # type: ignore
+            elif tracker_type == 'KCF':
+                tracker = cv2.TrackerKCF_create()  # type: ignore
+            else:
+                logger.warning(f"Unknown tracker type: {tracker_type}, falling back to CSRT")
+                tracker = cv2.TrackerCSRT_create()  # type: ignore
 
         bbox = detection.bbox()
         if not tracker.init(frame, bbox):
@@ -512,7 +527,7 @@ class VisionEngine:
             logger.error(f"Error in feature matching: {e}")
             return []
 
-        good_matches = [m for m, n in matches if len((m, n)) == 2 and m.distance < 0.75 * n.distance]
+        good_matches = [m[0] for m in matches if len(m) == 2 and m[0].distance < 0.75 * m[1].distance]
         if len(good_matches) < max(4, min_matches):
             return []
 
@@ -663,12 +678,16 @@ class VisionEngine:
             detections = self.match_templates(frame, roi=self.default_region)
             for det in detections:
                 cv2.rectangle(rendered_frame, (det.x, det.y), (det.x + det.w, det.y + det.h), (0, 255, 0), 2)
+                label = f"{det.template_id} {det.score:.2f}"
+                cv2.putText(rendered_frame, label, (det.x, det.y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
             return {'type': 'detections', 'data': [d.to_dict() for d in detections], 'frame': rendered_frame, 'timestamp': time.time()}
         else:
             tracks = self.update_tracks(frame)
             for track in tracks:
                 x, y, w, h = track.bbox
                 cv2.rectangle(rendered_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                label = f"{track.template_id} {track.confidence:.2f}"
+                cv2.putText(rendered_frame, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
             return {'type': 'tracks', 'data': [t.to_dict() for t in tracks], 'frame': rendered_frame, 'timestamp': time.time()}
 
     def start_capture(self, window_title: str, target_fps: int = 15, queue_size: int = 5) -> bool:
@@ -717,6 +736,28 @@ class VisionEngine:
 
     def set_debug(self, enabled: bool):
         self.debug_mode = enabled
+        if enabled:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+
+    def get_capture_stats(self) -> Optional[Dict[str, Any]]:
+        if not self.capture_enabled or not self.screen_capture:
+            return None
+        try:
+            stats = self.screen_capture.get_stats() if hasattr(self.screen_capture, 'get_stats') else None
+            if stats:
+                return {
+                    'fps': stats.fps,
+                    'frames_captured': stats.frames_captured,
+                    'frames_dropped': stats.frames_dropped,
+                    'queue_size': stats.queue_size,
+                    'last_update': stats.last_update
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Error getting capture stats: {e}")
+            return None
 
     def get_threshold_presets(self) -> Dict[str, float]:
         return {'low': 0.5, 'normal': 0.7, 'strict': 0.85}
