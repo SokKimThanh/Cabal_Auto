@@ -1,6 +1,5 @@
 from typing import Optional
 from pathlib import Path
-import logging
 
 class Icons:
     # Scan Icons
