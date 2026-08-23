@@ -39,13 +39,15 @@ from lib.vision.vision_engine import VisionEngine
 try:
     from lib.system.screen_capture import ScreenCapture
 except ImportError as exc:
+    _screen_capture_import_error = exc
+
     class ScreenCapture:  # type: ignore[no-redef]
         """Fallback stub that raises a clear error when screen capture is unavailable."""
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, _exc=_screen_capture_import_error, **kwargs):
             raise RuntimeError(
                 "ScreenCapture is unavailable because lib.system.screen_capture could not "
-                f"be imported: {exc}. Install the required optional dependencies or use a "
+                f"be imported: {_exc}. Install the required optional dependencies or use a "
                 "supported platform/configuration for screen capture."
             )
 from lib.system.bot_manager import BotManager
