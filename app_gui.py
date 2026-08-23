@@ -38,8 +38,16 @@ from lib.vision.template_matcher import locate_template
 from lib.vision.vision_engine import VisionEngine
 try:
     from lib.system.screen_capture import ScreenCapture
-except ImportError:
-    ScreenCapture = None
+except ImportError as exc:
+    class ScreenCapture:  # type: ignore[no-redef]
+        """Fallback stub that raises a clear error when screen capture is unavailable."""
+
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError(
+                "ScreenCapture is unavailable because lib.system.screen_capture could not "
+                f"be imported: {exc}. Install the required optional dependencies or use a "
+                "supported platform/configuration for screen capture."
+            )
 from lib.system.bot_manager import BotManager
 from ui.utils.overlay_controller import OverlayController
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
