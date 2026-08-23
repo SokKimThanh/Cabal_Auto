@@ -84,5 +84,3 @@ def setup_skills_schema(conn: sqlite3.Connection):
             FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
         )
     """)
-
-    conn.commit()
