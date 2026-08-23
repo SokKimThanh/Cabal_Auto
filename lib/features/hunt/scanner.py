@@ -105,17 +105,14 @@ class AutoScanner:
                 with open(skills_db_path, "r", encoding="utf-8") as f:
                     skills_data = json.load(f)
 
-                templates_added = []
+                templates_added: List[str] = []
                 for skill_info in skills_data:
-                    skill_id = skill_info.get("name", "").lower()
                     img_path = skill_info.get("image", "")
                     if img_path and Path(img_path).exists():
                         # Add template dynamically
                         tmpl = self.vision_engine.add_template(str(img_path), threshold=0.7)
                         if tmpl:
-                            tmpl.id = skill_id  # override ID with name to track
-                            templates_added.append(skill_id)
-
+                            templates_added.append(tmpl.id)
                 if templates_added:
                     # Match skills against screen
                     skill_detections = self.vision_engine.match_templates(
