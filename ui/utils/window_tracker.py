@@ -32,7 +32,8 @@ try:
     import win32gui
     import win32con
 except ImportError:
-    raise ImportError("pywin32 required for WindowTracker")
+    win32gui = None
+    win32con = None
 
 
 class WindowState(Enum):
