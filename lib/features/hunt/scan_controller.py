@@ -61,8 +61,8 @@ class ScanController:
 
                 try:
                     conn.close()
-                except:
-                    pass
+                except Exception:
+                    self.logger.debug("[AutoScan] Failed to close DB connection after readiness check.", exc_info=True)
 
                 # Boundary check: template lists (if empty)
                 if not getattr(vision_engine, 'templates', None) and not hasattr(vision_engine, 'add_template'):
