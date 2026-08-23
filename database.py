@@ -489,8 +489,9 @@ class MonsterDatabase:
         try:
             cursor = self.conn.cursor()
             cursor.execute("DELETE FROM monsters WHERE id = ?", (monster_id,))
+            deleted = cursor.rowcount > 0
             self.conn.commit()
-            return True
+            return deleted
         except sqlite3.Error as e:
             print(f"[DB] Lỗi xóa monster: {e}")
             return False
