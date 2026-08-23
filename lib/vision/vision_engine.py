@@ -353,6 +353,10 @@ class VisionEngine:
             search_region = frame
             offset_x, offset_y = 0, 0
         
+        # Guard against empty search region (out-of-bounds ROI) before grayscale conversion
+        if search_region.size == 0 or search_region.shape[0] == 0 or search_region.shape[1] == 0:
+            return []
+
         # Select templates to match
         if templates is None:
             templates_to_match = [t for t in self.templates.values() if t.enabled]
@@ -365,8 +369,6 @@ class VisionEngine:
             return []
         
         # Performance optimization: convert search region to 1-channel grayscale once per frame (~3x matchTemplate speedup)
-        if search_region.size == 0:
-            return []
         if len(search_region.shape) == 3 and search_region.shape[2] == 3:
             search_region_gray = cv2.cvtColor(search_region, cv2.COLOR_BGR2GRAY)
         else:
@@ -407,7 +409,7 @@ class VisionEngine:
     
     def _match_template_at_scale(
         self,
-        frame_gray: np.ndarray,
+        frame: np.ndarray,
         template: Template,
         scale: float,
         offset_x: int,
@@ -415,6 +417,8 @@ class VisionEngine:
     ) -> List[Detection]:
         """
         Match single template at specific scale using 1-channel grayscale image (~3x speedup over 3-channel BGR).
+
+        Handles callers like `reverify_track` that pass 3-channel BGR frames directly.
         
         Returns:
             List of Detection objects above threshold
@@ -422,6 +426,15 @@ class VisionEngine:
         detections = []
         
         try:
+            if frame is None or frame.size == 0:
+                return []
+
+            # Ensure frame is 1-channel grayscale
+            if len(frame.shape) == 3 and frame.shape[2] == 3:
+                frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            else:
+                frame_gray = frame
+
             # Use pre-computed grayscale image if available, fallback to converting image
             if template.image_gray is not None:
                 template_img = template.image_gray
@@ -443,13 +456,7 @@ class VisionEngine:
                 return []
             
             # Match template on single-channel grayscale images for ~3x-5x speedup
-            result = cv2.matchTemplate(
-                cv2.cvtColor(frame_gray, cv2.COLOR_BGR2GRAY)
-                if frame_gray.ndim == 3 and frame_gray.shape[2] == 3
-                else frame_gray,
-                template_img,
-                self.params['match_method']
-            )
+            result = cv2.matchTemplate(frame_gray, template_img, self.params['match_method'])
             
             # Find all matches above threshold
             threshold = template.threshold
