@@ -1,0 +1,844 @@
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([[567], {
+    4700: (e, r, a) => {
+        a.d(r, {
+            A: () => n
+        });
+        var t = a(95155)
+          , i = a(5772)
+          , s = a(29004);
+        function n({src: e, alt: r="", className: a, imageClassName: l, fit: o="cover", positionX: d=.5, positionY: c=.5, priority: g=!1, sizes: u="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw", style: m}) {
+            return (0,
+            t.jsx)("div", {
+                className: (0,
+                s.cn)("relative overflow-hidden", a),
+                style: m,
+                children: (0,
+                t.jsx)(i.default, {
+                    src: e,
+                    alt: r,
+                    fill: !0,
+                    priority: g,
+                    sizes: u,
+                    className: (0,
+                    s.cn)("contain" === o ? "object-contain" : "object-cover", l),
+                    style: {
+                        objectPosition: `${100 * d}% ${100 * c}%`
+                    }
+                })
+            })
+        }
+    }
+    ,
+    28837: (e, r, a) => {
+        a.d(r, {
+            k0: () => i,
+            m9: () => s
+        });
+        let t = {
+            blader: {
+                ring: "#a68a5a",
+                glow: "rgba(166,138,90,0.22)",
+                pill: "rgba(136,113,76,0.24)",
+                wash: "linear-gradient(135deg,rgba(166,138,90,0.32),rgba(8,11,17,0.1) 48%,rgba(64,47,30,0.38))"
+            },
+            warrior: {
+                ring: "#a08b63",
+                glow: "rgba(160,139,99,0.22)",
+                pill: "rgba(122,103,72,0.24)",
+                wash: "linear-gradient(135deg,rgba(160,139,99,0.32),rgba(8,11,17,0.1) 48%,rgba(62,49,32,0.4))"
+            },
+            wizard: {
+                ring: "#8f67db",
+                glow: "rgba(143,103,219,0.24)",
+                pill: "rgba(90,67,144,0.24)",
+                wash: "linear-gradient(135deg,rgba(98,75,170,0.3),rgba(8,11,17,0.1) 48%,rgba(39,47,96,0.38))"
+            },
+            "dark-mage": {
+                ring: "#9a5ade",
+                glow: "rgba(154,90,222,0.24)",
+                pill: "rgba(96,58,138,0.24)",
+                wash: "linear-gradient(135deg,rgba(112,67,166,0.3),rgba(8,11,17,0.1) 48%,rgba(42,32,88,0.38))"
+            },
+            "force-archer": {
+                ring: "#6fa24f",
+                glow: "rgba(111,162,79,0.24)",
+                pill: "rgba(76,112,57,0.24)",
+                wash: "linear-gradient(135deg,rgba(88,136,66,0.3),rgba(8,11,17,0.1) 48%,rgba(40,70,48,0.38))"
+            },
+            "force-shielder": {
+                ring: "#4f94d1",
+                glow: "rgba(79,148,209,0.24)",
+                pill: "rgba(51,85,124,0.24)",
+                wash: "linear-gradient(135deg,rgba(61,111,171,0.3),rgba(8,11,17,0.1) 48%,rgba(32,52,90,0.38))"
+            },
+            "force-blader": {
+                ring: "#3b8cd6",
+                glow: "rgba(59,140,214,0.24)",
+                pill: "rgba(50,81,117,0.24)",
+                wash: "linear-gradient(135deg,rgba(56,111,177,0.3),rgba(8,11,17,0.1) 48%,rgba(28,56,98,0.38))"
+            },
+            gladiator: {
+                ring: "#ba8c42",
+                glow: "rgba(186,140,66,0.24)",
+                pill: "rgba(118,84,41,0.24)",
+                wash: "linear-gradient(135deg,rgba(186,140,66,0.32),rgba(8,11,17,0.1) 48%,rgba(80,50,28,0.4))"
+            },
+            "force-gunner": {
+                ring: "#4f94d1",
+                glow: "rgba(79,148,209,0.24)",
+                pill: "rgba(51,85,124,0.24)",
+                wash: "linear-gradient(135deg,rgba(59,116,174,0.3),rgba(8,11,17,0.1) 48%,rgba(32,58,90,0.38))"
+            }
+        }
+          , i = {
+            ring: "#72829a",
+            glow: "rgba(114,130,154,0.2)",
+            pill: "rgba(68,78,94,0.24)",
+            wash: "linear-gradient(135deg,rgba(89,104,126,0.28),rgba(8,11,17,0.12) 48%,rgba(38,48,65,0.34))"
+        };
+        function s(e) {
+            return t[e] ?? i
+        }
+    }
+    ,
+    29004: (e, r, a) => {
+        a.d(r, {
+            cn: () => s
+        });
+        var t = a(29722)
+          , i = a(622);
+        function s(...e) {
+            return (0,
+            i.QP)((0,
+            t.$)(e))
+        }
+    }
+    ,
+    29512: (e, r, a) => {
+        a.d(r, {
+            E: () => l,
+            a: () => c
+        });
+        var t = a(95155)
+          , i = a(29004);
+        let s = {
+            default: "border-white/10 bg-white/[0.04] text-ui-muted",
+            gold: "border-game-gold/18 bg-game-gold/10 text-game-gold/80",
+            new: "border-transparent bg-game-gold text-theme-darkest shadow-[0_8px_18px_rgba(255,204,0,0.18)]",
+            "stat-offensive": "border-stat-offensive/30 bg-stat-offensive-bg text-stat-offensive",
+            "stat-defensive": "border-stat-defensive/30 bg-stat-defensive-bg text-stat-defensive",
+            "stat-utility": "border-stat-utility/30 bg-stat-utility-bg text-stat-utility",
+            info: "border-cyan-500/30 bg-cyan-500/10 text-cyan-300",
+            success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+            warning: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+            danger: "border-red-500/30 bg-red-500/10 text-red-300"
+        }
+          , n = {
+            xs: "px-2 py-0.5 text-[9px] tracking-[0.14em]",
+            sm: "px-2.5 py-1 text-[10px] tracking-[0.13em]"
+        };
+        function l({children: e, className: r, tone: a="default", size: o="sm", ...d}) {
+            return (0,
+            t.jsx)("span", {
+                className: (0,
+                i.cn)("inline-flex items-center gap-1.5 rounded-full border font-bold uppercase", s[a], n[o], r),
+                ...d,
+                children: e
+            })
+        }
+        let o = {
+            default: "border-white/8 bg-white/[0.04] text-ui-secondary",
+            gold: "border-game-gold/18 bg-game-gold/10 text-game-gold/80",
+            subtle: "border-white/5 bg-black/20 text-ui-muted"
+        }
+          , d = {
+            sm: "px-3 py-1 text-[11px]",
+            md: "px-3.5 py-1.5 text-xs"
+        };
+        function c({children: e, className: r, tone: a="default", size: s="sm", ...n}) {
+            return (0,
+            t.jsx)("span", {
+                className: (0,
+                i.cn)("inline-flex items-center rounded-full border font-medium", o[a], d[s], r),
+                ...n,
+                children: e
+            })
+        }
+    }
+    ,
+    44037: (e, r, a) => {
+        a.d(r, {
+            BT: () => p,
+            Vo: () => c,
+            X9: () => b,
+            ZB: () => h,
+            Zp: () => d,
+            b9: () => u,
+            bw: () => m
+        });
+        var t = a(95155)
+          , i = a(12115)
+          , s = a(29004);
+        let n = {
+            default: "surface-panel surface-frame",
+            accent: "surface-panel surface-frame-accent",
+            dark: "surface-editor surface-frame",
+            flat: "bg-transparent border border-transparent",
+            showcase: "surface-panel surface-frame-accent relative overflow-hidden"
+        }
+          , l = {
+            panel: "radius-panel",
+            card: "radius-card",
+            pill: "radius-pill"
+        }
+          , o = {
+            none: "",
+            sm: "p-3",
+            md: "p-4 sm:p-5",
+            lg: "p-5 sm:p-6 md:p-8"
+        };
+        function d({as: e="div", children: r, className: a, tone: i="default", radius: c="card", padding: g="md", hover: u=!1, interactive: m=!1, ...h}) {
+            return (0,
+            t.jsx)(e, {
+                className: (0,
+                s.cn)(n[i], l[c], o[g], "transition-[border-color,box-shadow,transform] duration-200 ease-out", u && ["hover:-translate-y-0.5", "accent" === i && "hover:shadow-[0_18px_42px_rgba(0,0,0,0.38),0_0_18px_rgba(232,184,74,0.08),inset_0_0_0_1px_rgba(255,248,224,0.024)]", "showcase" === i && "hover:border-game-gold/35 hover:shadow-[0_18px_42px_rgba(0,0,0,0.38),0_0_18px_rgba(232,184,74,0.08),inset_0_0_0_1px_rgba(255,248,224,0.024)]", "accent" !== i && "showcase" !== i && "hover:shadow-elevation-md hover:border-white/12"], m && "cursor-pointer", a),
+                ...h,
+                children: r
+            })
+        }
+        let c = (0,
+        i.forwardRef)(function({children: e, className: r, height: a="h-[132px]", overlay: i=!0, ...n}, l) {
+            return (0,
+            t.jsxs)("div", {
+                ref: l,
+                className: (0,
+                s.cn)("relative overflow-visible", a, r),
+                ...n,
+                children: [e, i && (0,
+                t.jsx)("div", {
+                    className: "pointer-events-none absolute inset-0 border-b border-game-gold/10"
+                })]
+            })
+        })
+          , g = {
+            sm: "h-[54px] w-[54px]",
+            md: "h-[62px] w-[62px]"
+        };
+        function u({children: e, className: r, position: a="bottom-center", size: i="sm", ...n}) {
+            return (0,
+            t.jsxs)("div", {
+                className: (0,
+                s.cn)("absolute z-20 flex items-center justify-center rounded-full border-2 border-[#dca53a] bg-[#0c1320] text-game-gold shadow-[0_14px_24px_rgba(0,0,0,0.42)] transition-[border-color,box-shadow,color] duration-200 group-hover/card:border-game-gold group-hover/card:text-game-gold group-hover/card:shadow-[0_16px_28px_rgba(0,0,0,0.44),0_0_14px_rgba(232,184,74,0.16)]", g[i], "bottom-center" === a && "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2", "bottom-left" === a && "bottom-0 left-4 translate-y-1/2", r),
+                ...n,
+                children: [(0,
+                t.jsx)("div", {
+                    className: "absolute inset-[5px] rounded-full border border-game-gold/20"
+                }), (0,
+                t.jsx)("div", {
+                    className: "relative flex h-full w-full items-center justify-center",
+                    children: e
+                })]
+            })
+        }
+        function m({children: e, className: r, hasIconBadge: a=!1, ...i}) {
+            return (0,
+            t.jsx)("div", {
+                className: (0,
+                s.cn)("relative z-10 flex flex-1 flex-col", a ? "pt-10" : "pt-2", r),
+                ...i,
+                children: e
+            })
+        }
+        function h({as: e="h3", children: r, className: a, ...i}) {
+            return (0,
+            t.jsx)(e, {
+                className: (0,
+                s.cn)("text-[17px] font-bold leading-tight tracking-tight text-ui-primary", a),
+                ...i,
+                children: r
+            })
+        }
+        function p({children: e, className: r, ...a}) {
+            return (0,
+            t.jsx)("p", {
+                className: (0,
+                s.cn)("mt-2 text-[13px] leading-[1.5] text-ui-muted", r),
+                ...a,
+                children: e
+            })
+        }
+        function b({children: e, className: r, ...a}) {
+            return (0,
+            t.jsx)("span", {
+                className: (0,
+                s.cn)("mt-3 inline-flex items-center gap-2 text-[13px] font-bold text-game-gold", r),
+                ...a,
+                children: e
+            })
+        }
+    }
+    ,
+    45069: (e, r, a) => {
+        a.d(r, {
+            KX: () => n,
+            a2: () => s,
+            n5: () => l
+        });
+        var t = a(69784);
+        function i(e) {
+            return Object.prototype.hasOwnProperty.call(t.jU, e)
+        }
+        function s(e) {
+            if ("string" != typeof e)
+                return null;
+            let r = e.trim().toLowerCase().replaceAll("_", "-");
+            return /^[a-z0-9-]{2,40}$/.test(r) && i(r.replaceAll("-", "_")) ? r : null
+        }
+        function n(e) {
+            let r = s(e);
+            if (!r)
+                return null;
+            let a = r.replaceAll("-", "_");
+            return i(a) ? a : null
+        }
+        function l(e) {
+            let r = n(e);
+            return r ? t.jU[r].name : null
+        }
+    }
+    ,
+    65745: (e, r, a) => {
+        a.d(r, {
+            BM: () => m,
+            R0: () => u,
+            Rl: () => p,
+            U7: () => b
+        });
+        var t = a(20758)
+          , i = a(42964)
+          , s = a(72523)
+          , n = a(83327)
+          , l = a(65178)
+          , o = a(35984)
+          , d = a(51385)
+          , c = a(97355)
+          , g = a(25651);
+        let u = {
+            warrior: t.O,
+            blader: i.w,
+            wizard: s.r,
+            force_archer: n.l,
+            force_shielder: l.y,
+            force_blader: o.q,
+            gladiator: d.Z,
+            force_gunner: c.$,
+            dark_mage: g.T
+        }
+          , m = {
+            warrior: {
+                str: 24,
+                int: 3,
+                dex: 8
+            },
+            blader: {
+                str: 16,
+                int: 3,
+                dex: 16
+            },
+            wizard: {
+                str: 3,
+                int: 26,
+                dex: 6
+            },
+            force_archer: {
+                str: 6,
+                int: 17,
+                dex: 12
+            },
+            force_shielder: {
+                str: 15,
+                int: 11,
+                dex: 9
+            },
+            force_blader: {
+                str: 12,
+                int: 12,
+                dex: 11
+            },
+            gladiator: {
+                str: 17,
+                int: 5,
+                dex: 13
+            },
+            force_gunner: {
+                str: 8,
+                int: 16,
+                dex: 11
+            },
+            dark_mage: {
+                str: 5,
+                int: 22,
+                dex: 8
+            }
+        };
+        function h(e, r) {
+            if (!e || 0 === e.length)
+                return {
+                    penaltyStat: 0,
+                    slope: 0,
+                    intercept: 0
+                };
+            let a = e[0];
+            for (let t of e)
+                r > t.penaltyStat && (a = t);
+            return a
+        }
+        function p(e, r) {
+            let a = h(r, e);
+            return (a.slope * e + a.intercept) / 1e3
+        }
+        function b(e, r) {
+            return h(r, e).slope / 1e3
+        }
+    }
+    ,
+    69784: (e, r, a) => {
+        a.d(r, {
+            ew: () => i,
+            jU: () => t
+        }),
+        a(65745);
+        let t = {
+            blader: {
+                id: "blader",
+                name: "Blader",
+                description: "A swift warrior who excels in close combat with blade mastery.",
+                icon: "/images/classes/blader_icon.png"
+            },
+            wizard: {
+                id: "wizard",
+                name: "Wizard",
+                description: "A master of elemental magic with devastating spell power.",
+                icon: "/images/classes/wizard_icon.png"
+            },
+            warrior: {
+                id: "warrior",
+                name: "Warrior",
+                description: "A sturdy fighter with high defense and melee prowess.",
+                icon: "/images/classes/warrior_icon.png"
+            },
+            gladiator: {
+                id: "gladiator",
+                name: "Gladiator",
+                description: "A fierce combatant specializing in dual-wielding weapons.",
+                icon: "/images/classes/gladiator_icon.png"
+            },
+            dark_mage: {
+                id: "dark_mage",
+                name: "Dark Mage",
+                description: "A wielder of dark magic with powerful curse abilities.",
+                icon: "/images/classes/dark_mage_icon.png"
+            },
+            force_archer: {
+                id: "force_archer",
+                name: "Force Archer",
+                description: "A ranged specialist with enhanced archery skills.",
+                icon: "/images/classes/force_archer_icon.png"
+            },
+            force_gunner: {
+                id: "force_gunner",
+                name: "Force Gunner",
+                description: "A firearms expert with advanced shooting techniques.",
+                icon: "/images/classes/force_gunner_icon.png"
+            },
+            force_blader: {
+                id: "force_blader",
+                name: "Force Blader",
+                description: "A hybrid warrior combining blade skills with force powers.",
+                icon: "/images/classes/force_blader_icon.png"
+            },
+            force_shielder: {
+                id: "force_shielder",
+                name: "Force Shielder",
+                description: "A defensive specialist with shield mastery and protection abilities.",
+                icon: "/images/classes/force_shielder_icon.png"
+            }
+        }
+          , i = Object.values(t)
+    }
+    ,
+    76826: (e, r, a) => {
+        a.d(r, {
+            ClassIcon: () => n
+        });
+        var t = a(95155)
+          , i = a(12115);
+        let s = JSON.parse('{"image":"/images/classes/class_icons_spritesheet.webp?v=ac960a110be6","width":772,"height":772,"sprites":{"blader_icon":{"x":0,"y":0,"width":256,"height":256},"dark_mage_icon":{"x":258,"y":0,"width":256,"height":256},"force_archer_icon":{"x":0,"y":258,"width":256,"height":256},"force_blader_icon":{"x":258,"y":258,"width":256,"height":256},"force_gunner_icon":{"x":516,"y":0,"width":256,"height":256},"force_shielder_icon":{"x":516,"y":258,"width":256,"height":256},"gladiator_icon":{"x":0,"y":516,"width":256,"height":256},"warrior_icon":{"x":258,"y":516,"width":256,"height":256},"wizard_icon":{"x":516,"y":516,"width":256,"height":256}}}')
+          , n = (0,
+        i.memo)(function({iconPath: e, width: r=32, height: a=32, className: i="", alt: n, circular: l=!1}) {
+            let o, d, c, g = function(e) {
+                if (!e || !s.sprites)
+                    return null;
+                let r = (e.split("/").pop() || "").replace(/\.(png|webp)$/i, "");
+                return r && s.sprites[r] ? s.sprites[r] : (console.warn(`Class icon sprite not found: ${r} (from path: ${e})`),
+                null)
+            }(e);
+            if (!g)
+                return (0,
+                t.jsx)("div", {
+                    className: `inline-flex items-center justify-center ${i}`,
+                    style: {
+                        width: `${r}px`,
+                        height: `${a}px`,
+                        borderRadius: l ? "50%" : "0"
+                    },
+                    title: n || "Class Icon"
+                });
+            let u = g.width
+              , m = g.height;
+            if (l) {
+                let e = Math.max(u, m) / 35;
+                o = Math.min(o = Math.min(r / u, a / m) * (e > 1 ? Math.min(1.2, 1 + (e - 1) * .3) : 1), Math.min(r / u, a / m)),
+                d = u * o,
+                c = m * o
+            } else
+                o = Math.min(r / u, a / m),
+                d = u * o,
+                c = m * o;
+            let {width: h, height: p, image: b} = {
+                width: s.width,
+                height: s.height,
+                image: s.image
+            }
+              , x = h * o
+              , f = p * o
+              , w = g.x * o
+              , v = g.y * o;
+            return (0,
+            t.jsx)("div", {
+                className: `inline-flex items-center justify-center ${i}`,
+                style: {
+                    width: `${r}px`,
+                    height: `${a}px`
+                },
+                title: n || "Class Icon",
+                children: (0,
+                t.jsx)("div", {
+                    style: {
+                        width: `${d}px`,
+                        height: `${c}px`,
+                        backgroundImage: `url("${b}")`,
+                        backgroundPosition: `-${w}px -${v}px`,
+                        backgroundSize: `${x}px ${f}px`,
+                        backgroundRepeat: "no-repeat",
+                        imageRendering: "auto",
+                        borderRadius: l ? "50%" : "0",
+                        overflow: l ? "hidden" : "visible"
+                    }
+                })
+            })
+        });
+        n.displayName = "ClassIcon"
+    }
+    ,
+    80567: (e, r, a) => {
+        a.d(r, {
+            default: () => k
+        });
+        var t = a(95155)
+          , i = a(98500)
+          , s = a.n(i)
+          , n = a(12115)
+          , l = a(22368)
+          , o = a(72140)
+          , d = a(17463)
+          , c = a(92564)
+          , g = a(21628)
+          , u = a(38434)
+          , m = a(76826)
+          , h = a(4700)
+          , p = a(44037)
+          , b = a(29512)
+          , x = a(28837)
+          , f = a(69784)
+          , w = a(45069)
+          , v = a(29004);
+        let _ = {
+            default: {
+                border: "rgba(225,175,76,0.56)",
+                badge: "rgba(132,91,31,0.62)",
+                wash: "radial-gradient(circle at 18% 18%,rgba(225,175,76,0.42),transparent 34%),linear-gradient(135deg,rgba(132,91,31,0.52),rgba(8,11,17,0.08) 46%,rgba(84,55,24,0.42))",
+                line: "rgba(232,184,74,0.92)"
+            }
+        }
+          , j = _.default;
+        function y(e) {
+            return new Intl.DateTimeFormat("en",{
+                month: "short",
+                day: "numeric"
+            }).format(new Date(e))
+        }
+        function N({build: e}) {
+            var r;
+            let a, i = (r = e.classSlug,
+            (a = (0,
+            w.KX)(r)) ? f.jU[a] : null), k = (0,
+            x.m9)(e.classSlug), $ = _[e.serverProfileId] ?? j, [A,C] = (0,
+            n.useState)(e.upvoteCount), [z,S] = (0,
+            n.useState)(e.viewerHasUpvoted), [U,P] = (0,
+            n.useState)(!1);
+            (0,
+            n.useEffect)( () => {
+                C(e.upvoteCount),
+                S(e.viewerHasUpvoted)
+            }
+            , [e.id, e.upvoteCount, e.viewerHasUpvoted]);
+            let R = async () => {
+                if (!U) {
+                    P(!0);
+                    try {
+                        let r = await fetch(`/api/community/builds/${encodeURIComponent(e.id)}/upvote`, {
+                            method: z ? "DELETE" : "POST",
+                            headers: {
+                                Accept: "application/json"
+                            }
+                        })
+                          , a = await r.json().catch( () => null);
+                        if (401 === r.status)
+                            return void u.oR.error("Log in to upvote builds.");
+                        if (!r.ok)
+                            return void u.oR.error(a?.error ?? "Could not update upvote.");
+                        C("number" == typeof a?.upvoteCount ? a.upvoteCount : 0),
+                        S(a?.viewerHasUpvoted === !0)
+                    } finally {
+                        P(!1)
+                    }
+                }
+            }
+            ;
+            return (0,
+            t.jsxs)(p.Zp, {
+                as: "article",
+                tone: "default",
+                radius: "card",
+                padding: "none",
+                hover: !0,
+                className: "group/card relative flex h-full min-h-[330px] flex-col overflow-hidden",
+                style: {
+                    borderColor: $.border
+                },
+                children: [(0,
+                t.jsx)(s(), {
+                    href: e.sharePath,
+                    prefetch: !1,
+                    "aria-label": `Open ${e.name}`,
+                    className: "absolute inset-0 z-[25]"
+                }), (0,
+                t.jsxs)(p.Vo, {
+                    height: "h-[126px]",
+                    overlay: !1,
+                    children: [(0,
+                    t.jsx)(h.A, {
+                        src: `/images/class-guides/${e.classSlug}-thumb.webp`,
+                        alt: "",
+                        className: "absolute inset-0",
+                        imageClassName: "transition-transform duration-300 ease-out group-hover/card:scale-[1.025]",
+                        sizes: "(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    }), (0,
+                    t.jsx)("div", {
+                        className: "absolute inset-0",
+                        style: {
+                            background: $.wash
+                        }
+                    }), (0,
+                    t.jsx)("div", {
+                        className: "absolute inset-0 mix-blend-screen opacity-55",
+                        style: {
+                            background: $.wash
+                        }
+                    }), (0,
+                    t.jsx)("div", {
+                        className: "absolute inset-0 bg-[linear-gradient(180deg,rgba(8,11,17,0.02)_0%,rgba(8,11,17,0.16)_48%,rgba(8,11,17,0.72)_100%)]"
+                    }), (0,
+                    t.jsx)("div", {
+                        className: "pointer-events-none absolute inset-x-0 bottom-0 h-px",
+                        style: {
+                            background: `linear-gradient(90deg,rgba(114,130,154,0.12),${$.line},rgba(114,130,154,0.12))`
+                        }
+                    }), (0,
+                    t.jsx)("div", {
+                        className: "absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)] truncate",
+                        children: (0,
+                        t.jsxs)(b.E, {
+                            tone: "default",
+                            size: "xs",
+                            className: "text-white shadow-[0_10px_18px_rgba(0,0,0,0.32)]",
+                            style: {
+                                borderColor: $.border,
+                                backgroundColor: $.badge
+                            },
+                            title: e.serverProfileLabel,
+                            children: ["Server: ", e.serverProfileLabel]
+                        })
+                    }), (0,
+                    t.jsxs)(p.b9, {
+                        size: "md",
+                        style: {
+                            border: `2px solid ${k.ring}`,
+                            boxShadow: `0 14px 24px rgba(0,0,0,0.42), 0 0 0 6px ${k.glow}`
+                        },
+                        children: [(0,
+                        t.jsx)("div", {
+                            className: "absolute inset-[3px] rounded-full border border-white/10"
+                        }), i && (0,
+                        t.jsx)(m.ClassIcon, {
+                            iconPath: i.icon,
+                            width: 54,
+                            height: 54,
+                            alt: `${i.name} icon`,
+                            circular: !0
+                        })]
+                    })]
+                }), (0,
+                t.jsxs)(p.bw, {
+                    className: "pointer-events-none z-30 min-w-0 flex-1 px-4 pb-4 pt-10 text-center",
+                    children: [(0,
+                    t.jsx)("div", {
+                        className: "mx-auto mb-2 flex max-w-full justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-game-gold/80",
+                        children: (0,
+                        t.jsx)("span", {
+                            className: "truncate",
+                            children: i?.name ?? e.classSlug
+                        })
+                    }), (0,
+                    t.jsx)(p.ZB, {
+                        className: "mx-auto line-clamp-2 min-h-[2.5rem] max-w-full font-display [overflow-wrap:anywhere] transition-colors group-hover/card:text-game-highlight",
+                        title: e.name,
+                        children: e.name
+                    }), (0,
+                    t.jsx)("div", {
+                        className: "mx-auto mt-3 flex w-full max-w-[260px] flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ui-muted",
+                        children: (0,
+                        t.jsxs)("div", {
+                            className: "flex min-w-0 max-w-full items-center gap-1.5",
+                            children: [(0,
+                            t.jsx)(l.A, {
+                                className: "h-3.5 w-3.5 shrink-0 text-ui-faint"
+                            }), (0,
+                            t.jsxs)("span", {
+                                className: "truncate",
+                                title: e.authorName,
+                                children: ["By ", e.authorName]
+                            })]
+                        })
+                    }), (0,
+                    t.jsxs)("div", {
+                        className: "mx-auto mt-3 grid w-full max-w-[260px] grid-cols-1 gap-1.5 text-left text-[11px] font-semibold text-ui-muted",
+                        children: [(0,
+                        t.jsxs)("div", {
+                            className: "flex min-w-0 items-center justify-center gap-1.5",
+                            children: [(0,
+                            t.jsx)(o.A, {
+                                className: "h-3.5 w-3.5 shrink-0 text-ui-faint"
+                            }), (0,
+                            t.jsx)("span", {
+                                className: "text-ui-faint",
+                                children: "Created:"
+                            }), (0,
+                            t.jsx)("span", {
+                                className: "truncate",
+                                children: y(e.createdAt)
+                            })]
+                        }), (0,
+                        t.jsxs)("div", {
+                            className: "flex min-w-0 items-center justify-center gap-1.5",
+                            children: [(0,
+                            t.jsx)(o.A, {
+                                className: "h-3.5 w-3.5 shrink-0 text-ui-faint"
+                            }), (0,
+                            t.jsx)("span", {
+                                className: "text-ui-faint",
+                                children: "Last changed:"
+                            }), (0,
+                            t.jsx)("span", {
+                                className: "truncate",
+                                children: y(e.updatedAt)
+                            })]
+                        })]
+                    }), (0,
+                    t.jsxs)("div", {
+                        className: "mt-auto pt-4",
+                        children: [(0,
+                        t.jsx)("div", {
+                            className: "mx-auto h-px w-full bg-[linear-gradient(90deg,rgba(255,255,255,0.02),rgba(130,144,166,0.22)_18%,rgba(130,144,166,0.22)_82%,rgba(255,255,255,0.02))]"
+                        }), (0,
+                        t.jsxs)("div", {
+                            className: "flex items-center justify-between gap-3 pt-4",
+                            children: [(0,
+                            t.jsxs)("div", {
+                                className: "flex items-center gap-2",
+                                children: [(0,
+                                t.jsxs)("button", {
+                                    type: "button",
+                                    "aria-pressed": z,
+                                    disabled: U,
+                                    onClick: R,
+                                    className: (0,
+                                    v.cn)("btn btn-sm btn-pill pointer-events-auto", z ? "btn-secondary" : "btn-neutral"),
+                                    title: "Upvote this build",
+                                    children: [(0,
+                                    t.jsx)(d.A, {
+                                        className: z ? "h-4 w-4 fill-current" : "h-4 w-4"
+                                    }), (0,
+                                    t.jsx)("span", {
+                                        children: A
+                                    })]
+                                }), (0,
+                                t.jsxs)(b.a, {
+                                    tone: "default",
+                                    className: "min-h-9 gap-2 text-sm font-bold text-ui-secondary",
+                                    title: "Comments",
+                                    children: [(0,
+                                    t.jsx)(c.A, {
+                                        className: "h-4 w-4"
+                                    }), (0,
+                                    t.jsx)("span", {
+                                        children: e.commentCount
+                                    })]
+                                })]
+                            }), (0,
+                            t.jsxs)(p.X9, {
+                                className: "mt-0 text-[14px]",
+                                children: [(0,
+                                t.jsx)("span", {
+                                    children: "Open Build"
+                                }), (0,
+                                t.jsx)(g.A, {
+                                    className: "h-4 w-4 transition-transform duration-200 ease-out group-hover/card:translate-x-1"
+                                })]
+                            })]
+                        })]
+                    })]
+                })]
+            })
+        }
+        function k({builds: e, emptyMessage: r="No community builds match these filters yet."}) {
+            return 0 === e.length ? (0,
+            t.jsx)(p.Zp, {
+                tone: "default",
+                radius: "card",
+                padding: "md",
+                className: "text-sm font-semibold text-ui-muted",
+                children: r
+            }) : (0,
+            t.jsx)("div", {
+                className: "grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3",
+                children: e.map(e => (0,
+                t.jsx)(N, {
+                    build: e
+                }, e.id))
+            })
+        }
+    }
+}]);
