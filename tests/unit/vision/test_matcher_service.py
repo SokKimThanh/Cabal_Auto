@@ -24,6 +24,30 @@ def test_matcher_service_empty_frame_and_roi(matcher_service):
     assert matcher_service.match_templates(valid_frame, templates={}, roi=out_of_bounds_roi) == []
 
 
+def test_matcher_service_bgr_color_matching_mode(matcher_service):
+    """Test full 3-channel BGR color matching when use_grayscale=False"""
+    np.random.seed(42)
+    # Red textured template (high Red, zero Blue)
+    red_tpl = np.random.randint(50, 255, (30, 30, 3), dtype=np.uint8)
+    red_tpl[:, :, 0] = 0
+
+    template = Template(id="red_tpl", path="dummy", image=red_tpl, threshold=0.7)
+
+    # Blue textured frame patch (high Blue, zero Red)
+    blue_frame = np.zeros((100, 100, 3), dtype=np.uint8)
+    blue_tex = np.random.randint(50, 255, (30, 30, 3), dtype=np.uint8)
+    blue_tex[:, :, 2] = 0
+    blue_frame[30:60, 30:60] = blue_tex
+
+    # With use_grayscale=False, matching Red template on Blue frame should yield no detection due to color mismatch
+    dets_bgr = matcher_service.match_templates(
+        blue_frame,
+        templates={template.id: template},
+        use_grayscale=False
+    )
+    assert len(dets_bgr) == 0
+
+
 def test_matcher_service_channel_compatibility(matcher_service):
     """Test matching with 3-channel BGR frame and 1-channel grayscale frame inputs"""
     tpl_img = np.random.randint(50, 200, (30, 30, 3), dtype=np.uint8)

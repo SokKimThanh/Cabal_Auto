@@ -32,6 +32,7 @@ class MatcherService:
         scales: Optional[List[float]] = None,
         max_scales: int = 3,
         max_results: int = 10,
+        use_grayscale: bool = True,
         debug_mode: bool = False
     ) -> List[Any]:
         """
@@ -77,16 +78,19 @@ class MatcherService:
             logger.debug("No enabled templates available for matching")
             return []
 
-        # Normalize channel dimensions to 1-channel grayscale once per frame
-        if len(search_region.shape) == 3 and search_region.shape[2] == 3:
-            search_region_gray = cv2.cvtColor(search_region, cv2.COLOR_BGR2GRAY)
+        # Normalize channel dimensions based on use_grayscale setting
+        if use_grayscale:
+            if len(search_region.shape) == 3 and search_region.shape[2] in (3, 4):
+                proc_region = cv2.cvtColor(search_region, cv2.COLOR_BGR2GRAY)
+            else:
+                proc_region = search_region
         else:
-            search_region_gray = search_region
+            proc_region = search_region
 
         all_detections = []
 
         for template in templates_to_match:
-            if template.image is None:
+            if template.image is None or template.image.size == 0:
                 logger.warning(f"Template {template.id} has no image loaded; skipping")
                 continue
 
@@ -94,11 +98,12 @@ class MatcherService:
 
             for scale in template_scales[:max_scales]:
                 dets = self.match_template_at_scale(
-                    search_region_gray,
+                    proc_region,
                     template,
                     scale,
                     offset_x,
-                    offset_y
+                    offset_y,
+                    use_grayscale=use_grayscale
                 )
                 all_detections.extend(dets)
 
@@ -117,7 +122,8 @@ class MatcherService:
         template: Template,
         scale: float,
         offset_x: int,
-        offset_y: int
+        offset_y: int,
+        use_grayscale: bool = True
     ) -> List[Any]:
         """
         Match single template at specific scale using single-channel grayscale matching (~3x speedup).
@@ -130,23 +136,30 @@ class MatcherService:
             if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
                 return []
 
-            # Ensure 1-channel grayscale frame
-            if len(frame.shape) == 3 and frame.shape[2] == 3:
-                frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            else:
-                frame_gray = frame
-
-            # Retrieve cached grayscale template
-            if template.image_gray is not None:
-                template_img = template.image_gray
-            elif template.image is not None:
-                if len(template.image.shape) == 3 and template.image.shape[2] == 3:
-                    template_img = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+            if use_grayscale:
+                # Ensure 1-channel grayscale frame
+                if len(frame.shape) == 3 and frame.shape[2] in (3, 4):
+                    proc_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 else:
-                    template_img = template.image
+                    proc_frame = frame
+
+                # Retrieve cached grayscale template
+                if template.image_gray is not None and template.image_gray.size > 0:
+                    template_img = template.image_gray
+                elif template.image is not None and template.image.size > 0:
+                    if len(template.image.shape) == 3 and template.image.shape[2] in (3, 4):
+                        template_img = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+                    else:
+                        template_img = template.image
+                else:
+                    logger.warning(f"Template {template.id} missing image data")
+                    return []
             else:
-                logger.warning(f"Template {template.id} missing image data")
-                return []
+                proc_frame = frame
+                if template.image is None or template.image.size == 0:
+                    logger.warning(f"Template {template.id} missing image data")
+                    return []
+                template_img = template.image
 
             if scale != 1.0:
                 new_w = int(template_img.shape[1] * scale)
@@ -156,10 +169,10 @@ class MatcherService:
                 template_img = cv2.resize(template_img, (new_w, new_h))
 
             # Boundary Guard: template must fit inside search frame
-            if template_img.shape[0] > frame_gray.shape[0] or template_img.shape[1] > frame_gray.shape[1]:
+            if template_img.shape[0] > proc_frame.shape[0] or template_img.shape[1] > proc_frame.shape[1]:
                 return []
 
-            result = cv2.matchTemplate(frame_gray, template_img, self.match_method)
+            result = cv2.matchTemplate(proc_frame, template_img, self.match_method)
             threshold = template.threshold
             locations = np.where(result >= threshold)
 

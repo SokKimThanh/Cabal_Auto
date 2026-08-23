@@ -30,8 +30,8 @@ class Template:
     def __post_init__(self):
         if self.scales is None:
             self.scales = [1.0]  # Default: no scaling
-        if self.image is not None and self.image_gray is None:
-            if len(self.image.shape) == 3 and self.image.shape[2] == 3:
+        if self.image is not None and self.image.size > 0 and self.image_gray is None:
+            if len(self.image.shape) == 3 and self.image.shape[2] in (3, 4):
                 self.image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
             else:
                 self.image_gray = self.image

@@ -24,6 +24,17 @@ def test_template_post_init_grayscale_caching():
     assert template.image_gray.shape == (50, 50)
     assert len(template.image_gray.shape) == 2
 
+    # Test constructing Template with an empty numpy image
+    empty_img = np.empty((0, 0, 3), dtype=np.uint8)
+    empty_template = Template(id="empty_tpl", path="dummy", image=empty_img)
+    assert empty_template.image_gray is None
+
+    # Test constructing Template with an already 2D grayscale image
+    gray_img = np.zeros((40, 40), dtype=np.uint8)
+    gray_template = Template(id="gray_tpl", path="dummy", image=gray_img)
+    assert gray_template.image_gray is not None
+    assert gray_template.image_gray.shape == (40, 40)
+
 
 def test_template_service_add_remove_list(template_service, tmp_path):
     """Test adding, listing, and removing templates via TemplateService"""

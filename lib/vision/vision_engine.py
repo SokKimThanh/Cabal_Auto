@@ -116,6 +116,7 @@ class VisionEngine:
             'match_method': cv2.TM_CCOEFF_NORMED,
             'fps_limit': 15,
             'downscale_factor': 1.0,
+            'use_grayscale': True,
             'feature_type': 'ORB',
             'hsv_lower': (0, 120, 120),
             'hsv_upper': (10, 255, 255),
@@ -192,10 +193,12 @@ class VisionEngine:
         roi: Optional[Tuple[int, int, int, int]] = None,
         templates: Optional[List[str]] = None,
         scales: Optional[List[float]] = None,
-        max_results: int = 10
+        max_results: int = 10,
+        use_grayscale: Optional[bool] = None
     ) -> List[Detection]:
         self.matcher_service.match_method = self.params.get('match_method', cv2.TM_CCOEFF_NORMED)
         self.matcher_service.nms_iou_threshold = self.params.get('nms_iou_threshold', 0.3)
+        use_gray = use_grayscale if use_grayscale is not None else self.params.get('use_grayscale', True)
         return self.matcher_service.match_templates(
             frame=frame,
             templates=self.templates,
@@ -204,6 +207,7 @@ class VisionEngine:
             scales=scales,
             max_scales=self.params['max_scales'],
             max_results=max_results,
+            use_grayscale=use_gray,
             debug_mode=self.debug_mode
         )
 
