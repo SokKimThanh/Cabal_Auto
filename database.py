@@ -82,6 +82,12 @@ class MonsterDatabase:
         """Tạo schema bảng với bảng dungeons và dungeonId trong monsters"""
         cursor = self.conn.cursor()
 
+        try:
+            from lib.db.schema import setup_skills_schema
+            setup_skills_schema(self.conn)
+        except ImportError as e:
+            print(f"[DB] Could not setup skills schema: {e}")
+
         # Bảng dungeons (thay thế cho locations cũ)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS dungeons (
@@ -447,7 +453,7 @@ class MonsterDatabase:
         cursor = self.conn.cursor()
         cursor.execute("SELECT id, name FROM dungeons ORDER BY id")
         return [{"id": row[0], "name": row[1]} for row in cursor.fetchall()]
-    
+
     # Thêm
     def insert_or_update_monster(self, monster: Dict[str, Any]) -> bool:
         """Chèn hoặc cập nhật một quái vật (INSERT OR REPLACE)"""
@@ -483,8 +489,9 @@ class MonsterDatabase:
         try:
             cursor = self.conn.cursor()
             cursor.execute("DELETE FROM monsters WHERE id = ?", (monster_id,))
+            deleted = cursor.rowcount > 0
             self.conn.commit()
-            return True
+            return deleted
         except sqlite3.Error as e:
             print(f"[DB] Lỗi xóa monster: {e}")
             return False

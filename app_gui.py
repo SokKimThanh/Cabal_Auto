@@ -36,7 +36,10 @@ from ctypes import wintypes
 
 from lib.vision.template_matcher import locate_template
 from lib.vision.vision_engine import VisionEngine
-from lib.system.screen_capture import ScreenCapture
+try:
+    from lib.system.screen_capture import ScreenCapture
+except ImportError:
+    ScreenCapture = None
 from lib.system.bot_manager import BotManager
 from ui.utils.overlay_controller import OverlayController
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
@@ -4899,8 +4902,41 @@ Alternative Solutions:
             else:
                 print(f"[Auto Bring] ✗ Failed to bring window to front: {title}")
 
+            # Run startup auto scan
+            import threading
+            threading.Thread(target=self._run_startup_scan, daemon=True).start()
+
         except Exception as e:
             print(f"[Auto Bring] Error: {e}")
+
+    def _run_startup_scan(self):
+        """Run the auto scanner in the background and report results."""
+        print("[AutoScanner] Starting auto scan...")
+
+        # Instantiate auto scanner with the global vision engine if available
+        from lib.vision.vision_engine import get_vision_engine
+        try:
+            from lib.features.hunt.scanner import AutoScanner
+            scanner = AutoScanner(get_vision_engine())
+            results = scanner.run_scan()
+            self.after(0, lambda: self._show_scan_results(results))
+        except Exception as e:
+            print(f"[AutoScanner] Error during scan: {e}")
+
+    def _show_scan_results(self, results):
+        """Display scan results via messagebox."""
+        if results.get('status') == 'success':
+            msg = (
+                f"Class Detected: {results.get('class')}\n"
+                f"Monsters Detected: {len(results.get('monsters', []))}\n"
+                f"Skills Detected: {len(results.get('skills', []))}\n"
+                f"Recommended Actions: {', '.join(results.get('recommended_skills', []))}"
+            )
+            messagebox.showinfo("Scan Complete", msg)
+            if hasattr(self, "hunt_status"):
+                self.hunt_status.set(f"Scan complete. Class: {results.get('class')}")
+        else:
+            print(f"[AutoScanner] Scan failed: {results.get('message')}")
 
     def _check_db_connection(self):
         """Kiểm tra tình trạng CSDL khi khởi động và cập nhật thanh trạng thái."""

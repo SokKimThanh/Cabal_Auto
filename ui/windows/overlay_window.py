@@ -62,7 +62,7 @@ if sys.platform == "win32":
             f"\nOriginal error: {e}"
         ) from e
 else:
-    raise RuntimeError("OverlayWindowPyWin32 only works on Windows!")
+    pass
 
 
 # =====================================================================
