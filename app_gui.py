@@ -669,8 +669,10 @@ class App(tk.Tk):
         # Centralized icon helper
         try:
             from ui.helpers.icon_helper import get_icon_helper
+            from ui.icon_library import register_icons
 
             self.icon_helper = get_icon_helper()
+            register_icons(self.icon_helper)
         except Exception:
             self.icon_helper = None
 
@@ -679,6 +681,24 @@ class App(tk.Tk):
 
         self.title(self._t("app_title"))
         self.resizable(False, False)
+
+        # Initialize ScanController
+        from lib.features.hunt.scan_controller import ScanController
+        from ui.icon_library import Icons
+
+        def getter():
+            if hasattr(self, '_vision_engine') and self._vision_engine:
+                return self._vision_engine
+            from lib.vision.vision_engine import get_vision_engine
+            return get_vision_engine()
+
+        self.scan_controller = ScanController(
+            vision_engine_getter=getter,
+            set_status_text=self._update_scan_status_text,
+            set_status_icon=self._update_scan_status_icon,
+            show_results=self._show_scan_results,
+            icons=Icons
+        )
 
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
@@ -1836,6 +1856,27 @@ Alternative Solutions:
         self.global_apply_btn.pack(
             side="right", padx=10, pady=6
         )  # Increased external margins
+
+        # Scan Manual Button
+        from ui.components import create_icon_button
+        from ui.icon_library import Icons
+
+        self.scan_btn_icon_name = Icons.SCAN_SCREEN
+
+        def on_scan_clicked():
+            if hasattr(self, 'scan_controller'):
+                self.scan_controller.run_scan(manual=True)
+
+        self.btn_manual_scan = create_icon_button(
+            apply_frame,
+            icon_name=self.scan_btn_icon_name,
+            text="",
+            command=on_scan_clicked,
+            icon_fallback="🔍",
+            icon_size=22,
+            padding={"padx": 10, "pady": 10}
+        )
+        self.btn_manual_scan.pack(side="right", padx=8, pady=6)
 
         # Keep reference to prevent garbage collection
         if not isinstance(save_icon, str):
@@ -4902,26 +4943,35 @@ Alternative Solutions:
             else:
                 print(f"[Auto Bring] ✗ Failed to bring window to front: {title}")
 
-            # Run startup auto scan
-            import threading
-            threading.Thread(target=self._run_startup_scan, daemon=True).start()
+            # Run startup auto scan via controller
+            if hasattr(self, 'scan_controller'):
+                self.scan_controller.run_scan(manual=False)
 
         except Exception as e:
             print(f"[Auto Bring] Error: {e}")
 
-    def _run_startup_scan(self):
-        """Run the auto scanner in the background and report results."""
-        print("[AutoScanner] Starting auto scan...")
+    def _update_scan_status_text(self, text):
+        if hasattr(self, "hunt_status"):
+            self.after(0, lambda: self.hunt_status.set(text))
 
-        # Instantiate auto scanner with the global vision engine if available
-        from lib.vision.vision_engine import get_vision_engine
-        try:
-            from lib.features.hunt.scanner import AutoScanner
-            scanner = AutoScanner(get_vision_engine())
-            results = scanner.run_scan()
-            self.after(0, lambda: self._show_scan_results(results))
-        except Exception as e:
-            print(f"[AutoScanner] Error during scan: {e}")
+    def _update_scan_status_icon(self, icon_name):
+        if hasattr(self, 'btn_manual_scan') and self.btn_manual_scan:
+            try:
+                from ui.helpers.icon_helper import get_icon_helper
+                helper = get_icon_helper()
+                img = helper.get_icon(icon_name, fallback="🔍", size=22)
+
+                def update():
+                    if isinstance(img, str):
+                        self.btn_manual_scan.config(text=img, image="")
+                    else:
+                        self.btn_manual_scan.config(image=img, text="")
+                        if not hasattr(self, "_btn_scan_refs"):
+                            self._btn_scan_refs = []
+                        self._btn_scan_refs.append(img)
+                self.after(0, update)
+            except Exception as e:
+                print(f"[UI] Error updating scan status icon: {e}")
 
     def _show_scan_results(self, results):
         """Display scan results via messagebox."""

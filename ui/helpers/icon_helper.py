@@ -213,7 +213,7 @@ class IconHelper:
         # Priority: .ico > .png > emoji (always try .ico first)
         icon_path = None
         icon_stem = Path(icon_file).stem  # e.g., 'save' from 'save.ico'
-        extensions = ['.ico', '.png']  # Always prioritize .ico over .png
+        extensions = ['.png', '.ico']  # Always prioritize .png over .ico
         
         for d in self.icon_dirs:
             for ext in extensions:
