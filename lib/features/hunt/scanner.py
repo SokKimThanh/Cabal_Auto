@@ -90,7 +90,7 @@ class AutoScanner:
                     logger.warning("Failed to start screen capture.")
                     return {'monsters': [], 'skills': []}
 
-            frame = self.screen_capture.capture()
+            frame = self.screen_capture.get_frame(timeout=1.0)
             if frame is None:
                 logger.warning("Failed to capture frame.")
                 return {'monsters': [], 'skills': []}
