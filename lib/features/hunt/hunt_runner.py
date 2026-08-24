@@ -292,8 +292,8 @@ class HuntRunner:
             return None, 0, ""
 
         if ScreenCapture is None:
-            print("ScreenCapture unavailable, returning mock target.")
-            return (int(bounds[2] / 2), int(bounds[3] / 2)), 1.0, "Mock Target"
+            print("ScreenCapture unavailable; cannot locate targets.")
+            return None, 0, ""
 
         # Capture region
         screenshot = ScreenCapture.capture_region(
