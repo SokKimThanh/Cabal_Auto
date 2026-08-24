@@ -128,13 +128,14 @@ from lib.system.hunt_logger import get_hunt_logger
 from lib.system.instance_lock import SingleInstanceLock
 from lib.system.win_input import tap
 from lib.ui_style import UIStyle as UI  # Global UI style constants
+from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.windows.setup_wizard import show_setup_wizard
 from ui.windows.monster_manager_win import MonsterManagerWin
 from ui.windows.skill_manager_win import SkillManagerWin
 
 
-class App(tk.Tk):
+class App(AppRuntimeBridgeMixin, tk.Tk):
 
     def _t(self, key: str, **kwargs) -> str:
         return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
@@ -345,7 +346,7 @@ class App(tk.Tk):
         self._bot_manager: Optional[BotManager] = None
         self._overlay_controller: Optional[OverlayController] = None
 
-        self.monsters = load_monster_library()
+        self.monsters = self._normalize_library_items(load_monster_library())
         self.monster_selected_index = None
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
 
@@ -373,7 +374,7 @@ class App(tk.Tk):
                 "[Migration] ✅ Auto-migrated 'Coc go' variants to training_monster_list and saved config."
             )
 
-        self.skills = load_skill_library()
+        self.skills = self._normalize_library_items(load_skill_library())
         # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
         # try to map them to actual attack skills from the skill library for a better UX.
         try:
@@ -509,10 +510,14 @@ class App(tk.Tk):
             "width": tk.StringVar(),
             "height": tk.StringVar(),
         }
-        self.current_window_bounds = _normalize_window_bounds(self.hunt_cfg)
-        self.current_window_bounds = self.current_window_bounds.get(
-            "hunt_area", {}
-        ).get("window_bounds")
+        _normalize_window_bounds(self.hunt_cfg)
+        hunt_area = self.hunt_cfg.get("hunt_area")
+        if not isinstance(hunt_area, dict):
+            hunt_area = {}
+            self.hunt_cfg["hunt_area"] = hunt_area
+        self.current_window_bounds = self._normalize_window_bounds_value(
+            hunt_area.get("window_bounds")
+        )
         self.hunt_cfg["window_bounds"] = self.current_window_bounds
         self.window_bounds_display_var = tk.StringVar(value="")
 
@@ -714,17 +719,6 @@ class App(tk.Tk):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True, pady=(0, 8))
 
-        # Create 4 tabs: Hunt, Setup, Stats, Help
-        tab_hunt = tk.Frame(self.notebook, padx=12, pady=12)
-        tab_setup = tk.Frame(self.notebook, padx=12, pady=12)
-        tab_stats = tk.Frame(self.notebook, padx=12, pady=12)
-        tab_help = tk.Frame(self.notebook, padx=12, pady=12)
-
-        self.notebook.add(tab_hunt, text=self._t("tab_hunt"))
-        self.notebook.add(tab_setup, text=self._t("tab_setup"))
-        self.notebook.add(tab_stats, text=self._t("tab_stats"))
-        self.notebook.add(tab_help, text=self._t("tab_help"))
-
         from ui.tabs.hunt_tab import HuntTab
 
         self.tab_hunt = HuntTab(self.notebook, self)
@@ -737,6 +731,10 @@ class App(tk.Tk):
         from ui.tabs.help_tab import HelpTab
 
         self.tab_help = HelpTab(self.notebook, self)
+        self.notebook.add(self.tab_hunt, text=self._t("tab_hunt"))
+        self.notebook.add(self.tab_setup, text=self._t("tab_setup"))
+        self.notebook.add(self.tab_stats, text=self._t("tab_stats"))
+        self.notebook.add(self.tab_help, text=self._t("tab_help"))
 
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
@@ -939,13 +937,33 @@ class App(tk.Tk):
 
         # Launch wizard - use 'self' instead of 'self.root' (App inherits from tk.Tk)
         if callable(show_setup_wizard):
-            show_setup_wizard(
-                self,
-                config_manager=self.config_mgr,
-                on_complete=on_wizard_complete,
-                on_cancel=on_wizard_cancel,
-                hide_parent=hide_parent,
-            )
+            try:
+                show_setup_wizard(
+                    self,
+                    config_manager=self.config_mgr,
+                    on_complete=on_wizard_complete,
+                    on_cancel=on_wizard_cancel,
+                    hide_parent=hide_parent,
+                )
+            except tk.TclError:
+                app_lang = self.lang
+
+                class _HeadlessSetupWizardStub:
+                    def __init__(self):
+                        self.wizard_data = {"language": app_lang}
+                        self.dialog = self
+                        self._dirty = False
+
+                    def has_unsaved_changes(self):
+                        return self._dirty or bool(self.wizard_data)
+
+                    def attempt_close_from_external(self):
+                        return True
+
+                    def destroy(self):
+                        return None
+
+                self._setup_wizard_win = _HeadlessSetupWizardStub()
         else:
             # Fallback: wizard not available
             try:
@@ -1065,7 +1083,7 @@ class App(tk.Tk):
 
             if getattr(self, "_global_start_hotkey", None):
                 registered_count += 1
-                hotkey_details.append("Start" if self.lang == "en" else "Bắt đầu")
+                hotkey_details.append("Start" if self.lang == "en" else "Báº¯t Ä‘áº§u")
             if getattr(self, "_global_stop_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Stop" if self.lang == "en" else "Dừng")
@@ -2538,3 +2556,1546 @@ class App(tk.Tk):
             )
 
     # Phase 3: Multi-Monster Support Handlers
+    def _update_setup_visibility(self):
+        """Show/hide Setup tab sections based on current mode."""
+        mode = (
+            self.setup_mode_var.get() if hasattr(self, "setup_mode_var") else "beginner"
+        )
+
+        # NOTE: Setup Wizard button removed - now accessible via Global Hotkeys
+        # Hotkey state is managed by _update_hotkeys_state() instead
+
+        if mode == "beginner":
+            # Hide advanced sections
+            self.adv_frame.grid_remove()
+            self.window_frame.grid_remove()
+        elif mode == "intermediate":
+            # Show advanced hunt settings, hide window settings
+            self.adv_frame.grid()
+            self.window_frame.grid_remove()
+        elif mode == "advanced":
+            # Show all sections
+            self.adv_frame.grid()
+            self.window_frame.grid()
+
+        # Update hotkeys state based on mode
+        self._update_hotkeys_state()
+
+    def update_skill_stats_display(self, stats_dict):
+        """Update skill performance statistics display (Sprint 22 Patch 1).
+
+        Args:
+            stats_dict: Dictionary from SkillStats.get_all_stats() containing:
+                {
+                    'Skill Name': {
+                        'cast_count': int,
+                        'last_cast': float (timestamp) or None,
+                        'time_since_last_cast': float (seconds) or None,
+                        'success_rate': float (percentage)
+                    },
+                    ...
+                }
+        """
+        if not hasattr(self, "skill_stats_tree"):
+            return
+
+        # Clear existing rows
+        for item in self.skill_stats_tree.get_children():
+            self.skill_stats_tree.delete(item)
+
+        # Populate with current stats
+        for skill_name, data in stats_dict.items():
+            cast_count = data.get("cast_count", 0)
+            time_since = data.get("time_since_last_cast")
+            success_rate = data.get("success_rate", 0.0)
+
+            # Format last cast time
+            if time_since is None:
+                last_cast_str = "Never"
+            else:
+                last_cast_str = self._t("time_ago_format").format(time=time_since)
+
+            # Format cooldown status (simplified - just show "Ready" for now)
+            # TODO: Integrate with actual skill cooldown data from skills.json
+            cooldown_str = self._t("cooldown_ready")
+
+            # Format success rate
+            success_str = f"{success_rate:.1f}%"
+
+            # Determine color tag based on success rate
+            if success_rate >= 90:
+                tag = "excellent"
+            elif success_rate >= 70:
+                tag = "good"
+            else:
+                tag = "poor"
+
+            # Insert row
+            self.skill_stats_tree.insert(
+                "",
+                "end",
+                values=(
+                    skill_name,
+                    cast_count,
+                    last_cast_str,
+                    cooldown_str,
+                    success_str,
+                ),
+                tags=(tag,),
+            )
+
+    def _on_monster_toggle(self, event=None):
+        """Toggle monster enabled state on double-click.
+
+        Sprint 22 Patch 2: Support both normal and training lists.
+        """
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection:
+            return
+
+        idx = selection[0]
+
+        # Determine which list we're working with
+        has_training_list = (
+            hasattr(self, "training_monster_list")
+            and len(self.training_monster_list) > 0
+        )
+
+        if has_training_list:
+            # Toggle in training_monster_list
+            if idx < len(self.training_monster_list):
+                self.training_monster_list[idx]["enabled"] = (
+                    not self.training_monster_list[idx]["enabled"]
+                )
+        else:
+            # Toggle in monster_rotation_list
+            if idx < len(self.monster_rotation_list):
+                self.monster_rotation_list[idx]["enabled"] = (
+                    not self.monster_rotation_list[idx]["enabled"]
+                )
+
+        self._refresh_monster_rotation_list()
+        self.monster_rotation_listbox.selection_set(idx)
+
+    def _on_monster_list_select(self, event=None):
+        """Handle monster list selection for preview."""
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection:
+            return
+
+        idx = selection[0]
+        if idx < len(self.monster_rotation_list):
+            monster = self.monster_rotation_list[idx]
+            # Optional: Show monster template preview or stats
+            pass
+
+    def _show_monster_context_menu(self, event):
+        """Sprint 22 Patch 2: Show context menu on right-click.
+
+        Displays menu at mouse position only if an item is selected.
+        """
+        # Check if there's a selection at the click position
+        try:
+            self.monster_rotation_listbox.selection_clear(0, tk.END)
+            index = self.monster_rotation_listbox.nearest(event.y)
+            self.monster_rotation_listbox.selection_set(index)
+            self.monster_rotation_listbox.activate(index)
+
+            # Show context menu at mouse position
+            self.monster_context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            # Release the grab
+            self.monster_context_menu.grab_release()
+
+    def _on_monster_delete_from_list(self, event=None):
+        """Sprint 22 Patch 2: Delete selected monster from rotation list.
+
+        Delete key removes item from current list (normal or training).
+        If training_monster_list becomes empty, auto-switch to normal mode.
+        """
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection:
+            return
+
+        idx = selection[0]
+
+        # Determine which list we're working with
+        has_training_list = (
+            hasattr(self, "training_monster_list")
+            and len(self.training_monster_list) > 0
+        )
+
+        if has_training_list:
+            # Delete from training_monster_list
+            if idx < len(self.training_monster_list):
+                monster_name = self.training_monster_list[idx]["name"]
+
+                # Confirm deletion
+                confirm_en = f"Remove '{monster_name}' from training list?"
+                confirm_vi = f"Xóa '{monster_name}' khỏi danh sách luyện tập?"
+                confirm_msg = confirm_vi if self.lang == "vi" else confirm_en
+
+                if not messagebox.askyesno(self._t("confirm_title"), confirm_msg):
+                    return
+
+                del self.training_monster_list[idx]
+
+                # If training list is now empty, auto-switch to normal mode
+                if len(self.training_monster_list) == 0:
+                    hint_en = "💡 Training list cleared. Switched back to normal monster list."
+                    hint_vi = "💡 Đã xóa hết cọc gỗ. Chuyển về danh sách quái thường."
+                    messagebox.showinfo(
+                        self._t("info_title"), hint_vi if self.lang == "vi" else hint_en
+                    )
+        else:
+            # Delete from monster_rotation_list
+            if idx < len(self.monster_rotation_list):
+                monster_name = self.monster_rotation_list[idx]["name"]
+
+                confirm_en = f"Remove '{monster_name}' from rotation list?"
+                confirm_vi = f"Xóa '{monster_name}' khỏi danh sách săn?"
+                confirm_msg = confirm_vi if self.lang == "vi" else confirm_en
+
+                if not messagebox.askyesno(self._t("confirm_title"), confirm_msg):
+                    return
+
+                del self.monster_rotation_list[idx]
+
+        self._refresh_monster_rotation_list()
+
+        # Select next item if available
+        if idx < self.monster_rotation_listbox.size():
+            self.monster_rotation_listbox.selection_set(idx)
+        elif self.monster_rotation_listbox.size() > 0:
+            self.monster_rotation_listbox.selection_set(idx - 1)
+
+    def _on_monster_move_up(self):
+        """Move selected monster up in rotation order."""
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection or selection[0] == 0:
+            return
+
+        idx = selection[0]
+        # Swap with previous
+        self.monster_rotation_list[idx], self.monster_rotation_list[idx - 1] = (
+            self.monster_rotation_list[idx - 1],
+            self.monster_rotation_list[idx],
+        )
+
+        # Update priorities if in priority mode
+        if self.hunt_cfg.get("rotation_mode") == "priority":
+            (
+                self.monster_rotation_list[idx]["priority"],
+                self.monster_rotation_list[idx - 1]["priority"],
+            ) = (
+                self.monster_rotation_list[idx - 1]["priority"],
+                self.monster_rotation_list[idx]["priority"],
+            )
+
+        self._refresh_monster_rotation_list()
+        self.monster_rotation_listbox.selection_set(idx - 1)
+
+    def _on_monster_move_down(self):
+        """Move selected monster down in rotation order."""
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection or selection[0] >= len(self.monster_rotation_list) - 1:
+            return
+
+        idx = selection[0]
+        # Swap with next
+        self.monster_rotation_list[idx], self.monster_rotation_list[idx + 1] = (
+            self.monster_rotation_list[idx + 1],
+            self.monster_rotation_list[idx],
+        )
+
+        # Update priorities if in priority mode
+        if self.hunt_cfg.get("rotation_mode") == "priority":
+            (
+                self.monster_rotation_list[idx]["priority"],
+                self.monster_rotation_list[idx + 1]["priority"],
+            ) = (
+                self.monster_rotation_list[idx + 1]["priority"],
+                self.monster_rotation_list[idx]["priority"],
+            )
+
+        self._refresh_monster_rotation_list()
+        self.monster_rotation_listbox.selection_set(idx + 1)
+
+    def _on_monster_add_smart(self):
+        """Smart add monster with autocomplete and fuzzy matching hints."""
+        dialog = tk.Toplevel(self)
+        dialog.title(self._t("monster_add_title"))
+        dialog.geometry("500x400")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Center dialog
+        dialog.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
+        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        container = tk.Frame(dialog, padx=16, pady=16)
+        container.pack(fill="both", expand=True)
+
+        # Title + hint
+        title_label = tk.Label(
+            container,
+            text=self._t("monster_add_instruction"),
+            font=("Arial", 10, "bold"),
+        )
+        title_label.pack(anchor="w", pady=(0, 8))
+
+        hint_text = self._t("monster_add_hint")
+        hint_label = tk.Label(
+            container,
+            text=hint_text,
+            fg="#666",
+            font=("Arial", 8),
+            wraplength=450,
+            justify="left",
+        )
+        hint_label.pack(anchor="w", pady=(0, 12))
+
+        # Search entry with real-time suggestions
+        search_frame = tk.Frame(container)
+        search_frame.pack(fill="x", pady=(0, 8))
+
+        tk.Label(search_frame, text=self._t("monster_name")).pack(side="left")
+        search_var = tk.StringVar()
+        search_entry = tk.Entry(search_frame, textvariable=search_var, width=30)
+        search_entry.pack(side="left", padx=(8, 0), fill="x", expand=True)
+        search_entry.focus_set()
+
+        # Suggestion listbox
+        suggest_frame = tk.LabelFrame(
+            container, text=self._t("monster_suggestions"), padx=8, pady=8
+        )
+        suggest_frame.pack(fill="both", expand=True, pady=(0, 8))
+
+        suggest_listbox = tk.Listbox(suggest_frame, height=10, exportselection=False)
+        suggest_listbox.pack(side="left", fill="both", expand=True)
+
+        suggest_scroll = tk.Scrollbar(
+            suggest_frame, orient="vertical", command=suggest_listbox.yview
+        )
+        suggest_scroll.pack(side="right", fill="y")
+        suggest_listbox.config(yscrollcommand=suggest_scroll.set)
+
+        # Match info label
+        match_info_var = tk.StringVar(value="")
+        match_info_label = tk.Label(
+            container,
+            textvariable=match_info_var,
+            fg="#2196F3",
+            font=("Arial", 8),
+            wraplength=450,
+            justify="left",
+        )
+        match_info_label.pack(fill="x", pady=(0, 8))
+
+        # Populate initial suggestions (filtered by training mode if active)
+        def update_suggestions(*args):
+            """Update suggestions based on search text with fuzzy matching."""
+            import re
+
+            search_text = search_var.get().strip()
+
+            suggest_listbox.delete(0, tk.END)
+            match_info_var.set("")
+
+            # Sprint 22 Patch 2: Auto-detect training mode based on training_monster_list
+            # Check if training_monster_list exists and has items
+            has_training_list = (
+                hasattr(self, "training_monster_list")
+                and len(self.training_monster_list) > 0
+            )
+            is_training_mode = (
+                has_training_list  # Auto-enable if training list has items
+            )
+
+            available_monsters = self.monsters
+
+            if is_training_mode:
+                # Training mode: Only show training dummies
+                available_monsters = [
+                    m for m in self.monsters if m.get("training_mode", False)
+                ]
+                if not available_monsters:
+                    # Sprint 22 Patch 2: Only show warning if training_monster_list is EMPTY
+                    # If user already added training dummies to training_monster_list, don't show warning
+                    if not has_training_list:
+                        debug_msg = f"⚠️ {self._t('no_training_dummies')}"
+                        if self.monsters:
+                            debug_msg += (
+                                f"\n📚 Library has {len(self.monsters)} monsters total"
+                            )
+                            training_count = sum(
+                                1
+                                for m in self.monsters
+                                if m.get("training_mode", False)
+                            )
+                            debug_msg += f"\n🎯 Training dummies: {training_count}"
+                        match_info_var.set(debug_msg)
+                    return
+
+            if not search_text:
+                # Show all available monsters (filtered or not)
+                for monster in available_monsters:
+                    suggest_listbox.insert(tk.END, monster["name"])
+                if is_training_mode:
+                    match_info_var.set(
+                        f"🎯 {self._t('training_dummy_filter')} | {len(available_monsters)} dummy"
+                    )
+                else:
+                    match_info_var.set(
+                        f"💡 {self._t('monster_showing_all').format(count=len(available_monsters))}"
+                    )
+                return
+
+            # Fuzzy search (on filtered list)
+            search_clean = re.sub(r"[^a-z0-9\s]", "", search_text.lower()).strip()
+            matches = []
+
+            for monster in available_monsters:
+                name = monster["name"]
+                name_clean = re.sub(r"[^a-z0-9\s]", "", name.lower()).strip()
+
+                # Score matches: exact > starts with > contains
+                if search_clean == name_clean:
+                    matches.append((name, 100))  # Exact match
+                elif name_clean.startswith(search_clean):
+                    matches.append((name, 80))  # Starts with
+                elif search_clean in name_clean:
+                    matches.append((name, 60))  # Contains
+                elif any(word.startswith(search_clean) for word in name_clean.split()):
+                    matches.append((name, 40))  # Word starts with
+
+            # Sort by score (descending)
+            matches.sort(key=lambda x: x[1], reverse=True)
+
+            # Display matches
+            for name, score in matches:
+                suggest_listbox.insert(tk.END, name)
+
+            # Update match info
+            if matches:
+                match_info_var.set(
+                    f"✓ {self._t('monster_found_matches').format(count=len(matches))} | "
+                    + self._t("monster_fuzzy_hint")
+                )
+            else:
+                match_info_var.set(
+                    f"⚠ {self._t('monster_no_matches')} | "
+                    + self._t("monster_try_hint")
+                )
+
+        search_var.trace_add("write", update_suggestions)
+        update_suggestions()  # Initial population
+
+        # Double-click or Enter to select
+        def on_select(event=None):
+            selection = suggest_listbox.curselection()
+            if not selection:
+                return
+
+            monster_name = suggest_listbox.get(selection[0])
+
+            # Sprint 22 Patch 2: Check duplicate based on auto-detected training mode
+            has_training_list = (
+                hasattr(self, "training_monster_list")
+                and len(self.training_monster_list) > 0
+            )
+            is_training_mode = has_training_list
+
+            # Find monster in library to get training_mode flag
+            monster_data = next(
+                (m for m in self.monsters if m["name"] == monster_name), None
+            )
+            training_flag = (
+                monster_data.get("training_mode", False) if monster_data else False
+            )
+
+            # Determine which list to check and add to
+            if training_flag:
+                # Training dummy: add to training_monster_list
+                check_list = self.training_monster_list
+                target_list = "training"
+            else:
+                # Normal monster: add to monster_rotation_list
+                check_list = self.monster_rotation_list
+                target_list = "normal"
+
+            if any(m["name"] == monster_name for m in check_list):
+                messagebox.showinfo(
+                    self._t("info_title"),
+                    self._t("monster_already_in_list").format(name=monster_name),
+                    parent=dialog,
+                )
+                return
+
+            # Add to appropriate list
+            new_priority = len(check_list) + 1
+
+            if target_list == "training":
+                self.training_monster_list.append(
+                    {
+                        "name": monster_name,
+                        "priority": new_priority,
+                        "enabled": True,
+                        "training_mode": True,
+                    }
+                )
+                # Auto-enable training mode
+                if hasattr(self, "training_mode_var"):
+                    self.training_mode_var.set(True)
+            else:
+                self.monster_rotation_list.append(
+                    {
+                        "name": monster_name,
+                        "priority": new_priority,
+                        "enabled": True,
+                        "training_mode": False,
+                    }
+                )
+
+            self._refresh_monster_rotation_list()
+            dialog.destroy()
+
+        suggest_listbox.bind("<Double-Button-1>", on_select)
+        search_entry.bind("<Return>", on_select)
+
+        # Buttons
+        btn_frame = tk.Frame(container)
+        btn_frame.pack(fill="x")
+
+        tk.Button(
+            btn_frame,
+            text=self._t("add_button"),
+            command=on_select,
+            font=("Arial", 9, "bold"),
+            fg="#4CAF50",
+        ).pack(side="left")
+        tk.Button(
+            btn_frame, text=self._t("cancel_button"), command=dialog.destroy
+        ).pack(side="left", padx=(8, 0))
+
+    def on_skill_slot_changed(self, _evt=None):
+        self._update_attack_keys_from_slots()
+        try:
+            self._refresh_slot_key_labels()
+        except Exception:
+            pass
+        try:
+            self._validate_slot_key_duplicates()
+        except Exception:
+            pass
+
+    def _update_monster_frame_title(self, is_training_mode: bool):
+        """Sprint 22 Patch 2: Update frame title to indicate current mode.
+
+        Args:
+            is_training_mode: True if showing training_monster_list
+        """
+        if not hasattr(self, "monster_frame"):
+            return
+
+        if is_training_mode:
+            # Training mode: Show with special indicator
+            title_en = "🎯 Training Dummies (Practice Mode)"
+            title_vi = "🎯 Cọc Gỗ Luyện Tập (Chế độ luyện skill)"
+            title = title_vi if self.lang == "vi" else title_en
+
+            # Change listbox background to indicate training mode
+            if hasattr(self, "monster_rotation_listbox"):
+                self.monster_rotation_listbox.config(bg="#FFF8E1")  # Light amber/yellow
+
+            # Show hint for switching back to normal mode
+            if hasattr(self, "training_mode_hint_var"):
+                hint_en = "💡 To switch back to normal monsters: Delete all training dummies (select + Del key)"
+                hint_vi = "💡 Để chuyển về danh sách quái thường: Xóa hết cọc gỗ (chọn + phím Del)"
+                self.training_mode_hint_var.set(
+                    hint_vi if self.lang == "vi" else hint_en
+                )
+        else:
+            # Normal mode: Regular monsters
+            title = self._t("hunt_monsters")
+
+            # Reset listbox background to default
+            if hasattr(self, "monster_rotation_listbox"):
+                self.monster_rotation_listbox.config(bg="white")
+
+            # Clear hint
+            if hasattr(self, "training_mode_hint_var"):
+                self.training_mode_hint_var.set("")
+
+        self.monster_frame.config(text=title)
+
+    def _update_monster_status(self):
+        """Update current monster hunting status display.
+
+        Sprint 22 Patch 2: Show different status for training mode.
+        """
+        if not hasattr(self, "monster_status_var"):
+            return
+
+        # Check which mode we're in
+        has_training_list = (
+            hasattr(self, "training_monster_list")
+            and len(self.training_monster_list) > 0
+        )
+
+        if has_training_list:
+            # Training mode: Show training list status
+            enabled = [m for m in self.training_monster_list if m["enabled"]]
+            if not enabled:
+                status_en = "🎯 No training dummy selected"
+                status_vi = "🎯 Chưa chọn cọc gỗ nào"
+                self.monster_status_var.set(
+                    status_vi if self.lang == "vi" else status_en
+                )
+                return
+
+            # Show training mode status
+            count = len(enabled)
+            status_en = (
+                f"🎯 Training Mode: {count} dummy"
+                if count == 1
+                else f"🎯 Training Mode: {count} dummies"
+            )
+            status_vi = f"🎯 Chế độ luyện tập: {count} cọc gỗ"
+            self.monster_status_var.set(status_vi if self.lang == "vi" else status_en)
+        else:
+            # Normal mode: Show normal monster status
+            enabled = [m for m in self.monster_rotation_list if m["enabled"]]
+            if not enabled:
+                self.monster_status_var.set(self._t("monster_none_selected"))
+                return
+
+            mode = self.hunt_cfg.get("rotation_mode", "sequence")
+            current_idx = self.hunt_cfg.get("current_monster_index", 0)
+
+            if mode == "sequence":
+                if current_idx < len(enabled):
+                    current = enabled[current_idx]
+                    self.monster_status_var.set(
+                        f"Current: {current['name']} | Sequence: {current_idx+1}/{len(enabled)}"
+                    )
+                else:
+                    self.monster_status_var.set(f"Sequence: {len(enabled)} monsters")
+            else:  # priority
+                sorted_monsters = sorted(enabled, key=lambda m: m["priority"])
+                current = sorted_monsters[0]
+                self.monster_status_var.set(
+                    f"Priority: {current['name']} (P{current['priority']}) | {len(enabled)} total"
+                )
+
+    def _refresh_monster_select_options(self, select_name: Optional[str] = None):
+        if select_name is not None:
+            self.monster_selected_name = select_name
+        names = [monster["name"] for monster in self.monsters]
+        combo = getattr(self, "monster_select_combo", None)
+        select_var = getattr(self, "monster_select_var", None)
+        if combo is not None:
+            combo["values"] = names
+            target_name = self.monster_selected_name or (
+                select_name if select_name in names else None
+            )
+            current = select_var.get() if select_var is not None else ""
+            if select_var is not None:
+                if target_name and target_name in names:
+                    select_var.set(target_name)
+                elif current not in names:
+                    select_var.set(names[0] if names else "")
+        if select_var is not None:
+            self.on_monster_select_change()
+
+    def on_monster_select_change(self, _evt=None):
+        """Auto-apply monster config when selected from Hunt tab dropdown."""
+        select_var = getattr(self, "monster_select_var", None)
+        if select_var is None:
+            return
+        value = select_var.get()
+        if value is None:
+            return
+        name = value.strip()
+        idx = None
+        for i, monster in enumerate(self.monsters):
+            if monster["name"] == name:
+                idx = i
+                break
+        self.monster_selected_index = idx if idx is not None else None
+        self.monster_selected_name = name if idx is not None else None
+
+        if idx is not None:
+            monster = self.monsters[idx]
+            self._update_monster_estimate_label(monster)
+            # Auto-apply monster config (templates, window_bounds, timing recommendations)
+            self._apply_monster_to_hunt_quick(monster)
+        elif hasattr(self, "monster_estimate_var"):
+            self.monster_estimate_var.set("")
+
+    def on_monster_apply_from_select(self):
+        if not hasattr(self, "monster_select_var"):
+            return
+        name = self.monster_select_var.get().strip()
+        if not name:
+            messagebox.showinfo(
+                self._t("monster_section"), self._t("monster_not_selected")
+            )
+            return
+        idx = None
+        for i, monster in enumerate(self.monsters):
+            if monster["name"] == name:
+                idx = i
+                break
+        if idx is None:
+            messagebox.showinfo(
+                self._t("monster_section"), self._t("monster_not_selected")
+            )
+            return
+        self.monster_selected_index = idx
+        self.monster_selected_name = name
+        self._update_monster_estimate_label(self.monsters[idx])
+        self.on_monster_use_for_hunt()
+
+    def _refresh_skill_slots_options(self):
+        if not hasattr(self, "skill_slot_boxes"):
+            return
+        names = []
+        for skill in self.skills:
+            if skill["name"] not in names:
+                names.append(skill["name"])
+        for saved in getattr(self, "skill_slot_saved_names", []):
+            if saved and saved not in names:
+                names.append(saved)
+        values = [""] + names
+        for cmb in self.skill_slot_boxes:
+            cmb["values"] = values
+        # Also refresh key labels next to each slot
+        try:
+            self._refresh_slot_key_labels()
+        except Exception:
+            pass
+
+    def _clear_skill_slot(self, var):
+        var.set("")
+        self._update_attack_keys_from_slots()
+
+    def _update_attack_keys_from_slots(self):
+        # attack_keys removed: update saved slot names and refresh options
+        self.skill_slot_saved_names = [
+            v.get().strip() for v in self.skill_slot_vars if v.get().strip()
+        ]
+        self._refresh_skill_slots_options()
+
+    def _collect_skill_slots(self):
+        if not self.skill_slot_vars:
+            self.skill_slot_saved_names = []
+            return []
+        mapping = {skill["name"]: skill for skill in self.skills}
+        slots = []
+        saved_names = []
+        for var in self.skill_slot_vars:
+            name = var.get().strip()
+            if not name:
+                continue
+            skill = mapping.get(name)
+            if not skill:
+                continue
+            saved_names.append(name)
+            slots.append(
+                {
+                    "name": skill["name"],
+                    "key": skill["key"],
+                    "type": skill.get("type", "attack"),
+                    "cooldown": float(skill.get("cooldown", 0.0)),
+                    "cast_time": float(skill.get("cast_time", 0.0)),
+                    "image": skill.get("image", ""),
+                }
+            )
+        self.skill_slot_saved_names = saved_names
+        return slots
+
+    def on_monster_use_for_hunt(self):
+        if self.monster_selected_index is None or self.monster_selected_index >= len(
+            self.monsters
+        ):
+            messagebox.showinfo(
+                self._t("monster_section"), self._t("monster_not_selected")
+            )
+            return
+        monster = self.monsters[self.monster_selected_index]
+
+        # Apply window_bounds
+        bounds = self._normalize_window_bounds_value(monster.get("window_bounds"))
+        self.current_window_bounds = bounds
+        self.hunt_cfg["window_bounds"] = bounds
+        self._update_window_bounds_display()
+
+        # Apply templates[] array to config
+        templates = _sanitize_templates(monster.get("templates"))
+        if templates:
+            self.hunt_cfg["templates"] = templates
+            # Also set legacy template_path to first template for backward compat
+            try:
+                first_path = templates[0].get("path")
+                if first_path:
+                    self.template_var.set(first_path)
+                    self.hunt_cfg["template_path"] = first_path
+            except Exception:
+                pass
+        elif monster.get("template"):
+            # Fallback to old single template field
+            self.template_var.set(monster["template"])
+            self.hunt_cfg["template_path"] = monster["template"]
+            self.hunt_cfg["templates"] = []
+
+        try:
+            stats = self._calculate_monster_estimate(monster)
+        except Exception as e:
+            messagebox.showerror(
+                self._t("monster_section"), self._t("monster_invalid").format(e=e)
+            )
+            return
+        kill_time = stats["kill_time"]
+        attack_min, lost_timeout = self._recommend_attack_settings(stats)
+        self.attack_duration_var.set(f"{attack_min:.2f}")
+        self.lost_timeout_var.set(f"{lost_timeout:.2f}")
+        base = self._t("monster_estimate_result").format(
+            time=kill_time, dps=stats["dps"]
+        )
+        detail = self._t("monster_estimate_detail").format(
+            base=base, attack=attack_min, lost=lost_timeout
+        )
+        self.monster_estimate_var.set(detail)
+        self.hunt_status.set(self._t("monster_applied"))
+
+    # -----------------
+    # Skill library helpers
+    # -----------------
+    def _update_rotation_mode_description(self):
+        """Update rotation mode description."""
+        if not hasattr(self, "rotation_desc_var"):
+            return
+
+        mode = self.rotation_mode_var.get()
+        if mode == "sequence":
+            self.rotation_desc_var.set("Hunt monsters in order, cycle through list")
+        elif mode == "priority":
+            self.rotation_desc_var.set("Always hunt highest priority (lowest number)")
+
+    def _update_training_mode_buttons(self):
+        """Update monster control buttons based on training mode state.
+
+        Training Mode ON:
+        - Add button: Shows finish.ico if dummy set, else add.ico with training tooltip
+        - Add button: Disabled if training dummy already in list
+        - Up/Down buttons: Disabled (no rotation needed)
+
+        Training Mode OFF:
+        - Add button: Shows add.ico with normal tooltip
+        - Add button: Always enabled
+        - Up/Down buttons: Enabled
+        """
+        if not hasattr(self, "btn_add_monster"):
+            return
+
+        is_training = self.training_mode_var.get()
+        has_training_dummy = any(
+            m.get("training_mode", False) for m in self.monster_rotation_list
+        )
+
+        if is_training:
+            # Training mode: Update add button
+            if has_training_dummy:
+                # Dummy already set - show accept icon and disable
+                try:
+                    # Use size=16 to match compact button
+                    accept_icon = self._icon("accept", "✓", size=16)
+                    if isinstance(accept_icon, str):
+                        self.btn_add_monster.config(text=accept_icon, state="disabled")
+                    else:
+                        self.btn_add_monster.config(
+                            image=accept_icon, text="", state="disabled"
+                        )
+                except Exception:
+                    self.btn_add_monster.config(text="✓", state="disabled")
+
+                # Update tooltip for locked state
+                tooltip_text = self._t("tooltip_add_monster_locked")
+                tooltip = getattr(self.btn_add_monster, "_tooltip", None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(self.btn_add_monster, "_tooltip")
+                    except Exception:
+                        pass
+                self._create_tooltip(self.btn_add_monster, tooltip_text)
+            else:
+                # No dummy yet - show add icon and enable
+                try:
+                    # Use size=16 to match compact button
+                    add_icon = self._icon("add", "➕", size=16)
+                    if isinstance(add_icon, str):
+                        self.btn_add_monster.config(text=add_icon, state="normal")
+                    else:
+                        self.btn_add_monster.config(
+                            image=add_icon, text="", state="normal"
+                        )
+                except Exception:
+                    self.btn_add_monster.config(text="➕", state="normal")
+
+                # Update tooltip for training helper
+                tooltip_text = self._t("tooltip_add_monster_training")
+                tooltip = getattr(self.btn_add_monster, "_tooltip", None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(self.btn_add_monster, "_tooltip")
+                    except Exception:
+                        pass
+                self._create_tooltip(self.btn_add_monster, tooltip_text)
+
+            # Disable priority reorder buttons with locked icon (white on gray)
+            # Use size=16 to match SMALL buttons (36px)
+            try:
+                locked_icon = self._icon("locked", "🔒", size=16, color="#FFFFFF")
+                for btn in [self.btn_move_up, self.btn_move_down]:
+                    # IMPORTANT: Keep original bg colors when disabled
+                    original_bg = (
+                        UI.BTN_NEUTRAL_BG
+                        if btn == self.btn_move_up
+                        else UI.BTN_NEUTRAL_BG
+                    )
+                    btn.config(state="disabled", bg=original_bg)
+                    if isinstance(locked_icon, str):
+                        btn.config(text=locked_icon)
+                    else:
+                        btn.config(image=locked_icon, text="")
+            except Exception:
+                self.btn_move_up.config(
+                    state="disabled", text="🔒", bg=UI.BTN_NEUTRAL_BG
+                )
+                self.btn_move_down.config(
+                    state="disabled", text="🔒", bg=UI.BTN_NEUTRAL_BG
+                )
+
+            # Update tooltips for disabled buttons
+            for btn in [self.btn_move_up, self.btn_move_down]:
+                # Safely destroy any existing tooltip then create a new one
+                try:
+                    self._destroy_widget_tooltip(btn)
+                except Exception:
+                    pass
+                self._create_tooltip(btn, self._t("tooltip_reorder_locked"))
+        else:
+            # Normal mode: Restore defaults
+            try:
+                # Use size=16 to match compact button
+                add_icon = self._icon("add", "➕", size=16)
+                if isinstance(add_icon, str):
+                    self.btn_add_monster.config(text=add_icon, state="normal")
+                else:
+                    self.btn_add_monster.config(image=add_icon, text="", state="normal")
+            except Exception:
+                self.btn_add_monster.config(text="➕", state="normal")
+
+            # Restore normal tooltip
+            try:
+                self._destroy_widget_tooltip(self.btn_add_monster)
+            except Exception:
+                pass
+            self._create_tooltip(
+                self.btn_add_monster, self._t("tooltip_add_monster_normal")
+            )
+
+            # Enable priority reorder buttons with original icons and colors (both blue for consistency)
+            try:
+                # Use size=16 to match SMALL buttons
+                up_icon = self._icon("up", "↑", size=16)
+                down_icon = self._icon("down", "↓", size=16)
+
+                if isinstance(up_icon, str):
+                    self.btn_move_up.config(
+                        state="normal",
+                        text=up_icon,
+                        bg=UI.BTN_INFO_BG,  # Blue for consistency
+                        fg=UI.BTN_INFO_FG,
+                    )
+                else:
+                    self.btn_move_up.config(
+                        state="normal",
+                        image=up_icon,
+                        text="",
+                        bg=UI.BTN_INFO_BG,
+                        fg=UI.BTN_INFO_FG,
+                    )
+
+                if isinstance(down_icon, str):
+                    self.btn_move_down.config(
+                        state="normal",
+                        text=down_icon,
+                        bg=UI.BTN_INFO_BG,  # Blue for consistency
+                        fg=UI.BTN_INFO_FG,
+                    )
+                else:
+                    self.btn_move_down.config(
+                        state="normal",
+                        image=down_icon,
+                        text="",
+                        bg=UI.BTN_INFO_BG,
+                        fg=UI.BTN_INFO_FG,
+                    )
+            except Exception:
+                self.btn_move_up.config(
+                    state="normal",
+                    text="↑",
+                    bg=UI.BTN_INFO_BG,  # Blue for consistency
+                    fg=UI.BTN_INFO_FG,
+                )
+                self.btn_move_down.config(
+                    state="normal",
+                    text="↓",
+                    bg=UI.BTN_INFO_BG,  # Blue for consistency
+                    fg=UI.BTN_INFO_FG,
+                )
+
+            # Restore normal tooltips
+            try:
+                self._destroy_widget_tooltip(self.btn_move_up)
+            except Exception:
+                pass
+            self._create_tooltip(self.btn_move_up, self._t("tooltip_move_up"))
+
+            try:
+                self._destroy_widget_tooltip(self.btn_move_down)
+            except Exception:
+                pass
+            self._create_tooltip(self.btn_move_down, self._t("tooltip_move_down"))
+
+    def on_global_apply(self):
+        """Global apply handler - saves all settings across all tabs.
+
+        NOTE: Save file only ONCE to avoid duplicate writes and preserve field order.
+        """
+        try:
+            # 1. Apply Setup tab settings (updates hunt_cfg in-place, but don't save yet)
+            self._apply_setup_settings(save_to_file=False)
+
+            # 2. Update hunt config from Hunt tab UI (in-place update)
+            cfg = self._hunt_from_ui()
+
+            # 2.5. Update global hotkeys from Setup tab UI
+            if hasattr(self, "global_hotkey_enabled_var"):
+                enabled = self.global_hotkey_enabled_var.get()
+                start_key = self.global_hotkey_start_var.get()
+                stop_key = self.global_hotkey_stop_var.get()
+                wizard_key = self.global_hotkey_wizard_var.get()  # NEW
+                library_key = self.global_hotkey_library_var.get()  # NEW
+
+                # Validate: all hotkeys must be unique
+                vision_key = self.global_hotkey_vision_var.get()
+                monster_key = self.global_hotkey_monster_var.get()
+                all_keys = [
+                    start_key,
+                    stop_key,
+                    wizard_key,
+                    library_key,
+                    vision_key,
+                    monster_key,
+                ]
+                if len(all_keys) != len(set(all_keys)):
+                    messagebox.showerror(
+                        self._t("error_title"),
+                        (
+                            "All hotkeys must be different!"
+                            if self.lang == "en"
+                            else "Tất cả phím tắt phải khác nhau!"
+                        ),
+                    )
+                    return
+
+                # Update config
+                cfg["global_hotkeys"] = {
+                    "enabled": enabled,
+                    "start_key": start_key,
+                    "stop_key": stop_key,
+                    "setup_wizard_key": wizard_key,
+                    "library_manager_key": library_key,
+                    "vision_wizard_key": vision_key,
+                    "monster_editor_key": monster_key,
+                }
+
+                # Re-register hotkeys with new settings
+                self.hunt_cfg = cfg  # Update instance config first
+                self._unregister_global_hotkeys()
+                self._register_global_hotkeys()
+
+            # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
+            save_hunt_config(cfg)
+            self.hunt_cfg = cfg
+
+            # 4. Clear unsaved changes indicator
+            self._clear_unsaved_changes()
+
+            # 5. Update status
+            self.hunt_status.set(self._t("all_saved"))
+
+            # 6. Show success message
+            messagebox.showinfo(
+                self._t("success_title"), self._t("settings_applied_message")
+            )
+        except Exception as e:
+            messagebox.showerror(
+                self._t("error_title"), f"Failed to apply settings: {e}"
+            )
+
+    def _reload_setup_advanced_settings(self):
+        """Reload Advanced Settings values in Setup tab after timing changes."""
+        # Update variables with new values from hunt_cfg
+        if hasattr(self, "setup_search_interval_var"):
+            self.setup_search_interval_var.set(
+                f"{self.hunt_cfg.get('search_interval', 0.25):.2f}"
+            )
+        if hasattr(self, "setup_attack_interval_var"):
+            self.setup_attack_interval_var.set(
+                f"{self.hunt_cfg.get('attack_interval', 0.15):.2f}"
+            )
+        if hasattr(self, "setup_lost_timeout_var"):
+            self.setup_lost_timeout_var.set(
+                f"{self.hunt_cfg.get('lost_timeout_sec', 0.5):.2f}"
+            )
+        if hasattr(self, "setup_attack_duration_var"):
+            self.setup_attack_duration_var.set(
+                f"{self.hunt_cfg.get('attack_min_duration_sec', 5.0):.2f}"
+            )
+
+    def _populate_hunt_ui_from_config(self):
+        """Populate Hunt tab UI elements from hunt_config.json data."""
+        # 1. Window selection
+        window_title = self.hunt_cfg.get("window_title", "").strip()
+        window_pid = self.hunt_cfg.get("window_pid")
+        window_hwnd = self.hunt_cfg.get("window_hwnd")
+
+        if window_title:
+            # If we have PID/HWND, create hunt_selected object
+            if window_pid and window_hwnd:
+                self.hunt_selected = {
+                    "title": window_title,
+                    "pid": window_pid,
+                    "hwnd": window_hwnd,
+                    "proc": None,  # Process name not saved in config
+                }
+
+                # Populate combobox with saved window (show only window title without PID)
+                if hasattr(self, "win_combo"):
+                    self.win_combo["values"] = [window_title]
+                    self.win_combo.current(0)
+                    self.win_items = [self.hunt_selected]
+
+        # 2. Monster template (if exists)
+        monster_name = self.hunt_cfg.get("monster_selected_name", "").strip()
+        template_path = self.hunt_cfg.get("template_path", "").strip()
+
+        if monster_name:
+            # Update monster name display (assuming you have a monster_name variable)
+            # This will be shown in UI when monster selection is implemented
+            pass
+
+        # 3. Skill slots
+        skill_slots = self.hunt_cfg.get("skill_slots", [])
+        if skill_slots:
+            # Update skill UI (assuming skill slot UI variables exist)
+            # This will populate skill comboboxes when skill UI is ready
+            pass
+
+        # 4. Update any other UI elements that depend on config
+        # (Add more as needed based on your UI structure)
+        pass
+
+    def _update_unsaved_indicator(self):
+        """Update unsaved changes indicator UI."""
+        if not hasattr(self, "unsaved_indicator_label"):
+            return
+
+        if self.has_unsaved_changes:
+            self.unsaved_indicator_label.config(
+                text=f"● {self._t('unsaved_indicator')}", fg="#FF9800"  # Orange color
+            )
+        else:
+            self.unsaved_indicator_label.config(
+                text=f"✓ {self._t('all_saved')}", fg="#4CAF50"  # Green color
+            )
+
+    def destroy(self):
+        # Phase 7: Cleanup monster tracking components
+        try:
+            if self._overlay_controller is not None:
+                self._overlay_controller.stop()
+                self._overlay_controller = None
+                print("[MonsterTracking] OverlayController cleaned up")
+
+            if self._bot_manager is not None:
+                self._bot_manager.destroy()
+                self._bot_manager = None
+                print("[MonsterTracking] BotManager cleaned up")
+        except Exception as e:
+            print(f"[MonsterTracking] Error during cleanup: {e}")
+
+        # Unregister global hotkeys on exit
+        if keyboard is not None and hasattr(self, "_registered_hotkey_handlers"):
+            for hk, handler in list(self._registered_hotkey_handlers.items()):
+                try:
+                    # keyboard.remove_hotkey accepts either the hotkey string or the handler id/function
+                    keyboard.remove_hotkey(handler)
+                except Exception:
+                    try:
+                        keyboard.remove_hotkey(hk)
+                    except Exception:
+                        pass
+        super().destroy()
+
+    def _icon(
+        self, name: str, fallback: str, size: int = 16, color: Optional[str] = None
+    ):
+        """Fetch an icon image from icon_helper with caching.
+
+        Returns a PhotoImage (when available) or fallback string (emoji) otherwise.
+        Keep a reference on self to avoid Tk image garbage collection.
+
+        Args:
+            name: Icon name (e.g., 'add', 'locked')
+            fallback: Emoji fallback if icon not found
+            size: Icon size in pixels
+            color: Hex color to tint icon (e.g., '#FFFFFF' for white on gray background)
+        """
+        try:
+            if not hasattr(self, "_icon_cache"):
+                self._icon_cache = {}
+            key = f"{name}_{size}_{color or 'default'}"
+            if key in self._icon_cache:
+                return self._icon_cache[key]
+            helper = getattr(self, "icon_helper", None)
+            if helper is not None:
+                try:
+                    img = helper.get_icon(
+                        name, fallback=fallback, size=size, color=color
+                    )
+                except Exception:
+                    img = fallback
+            else:
+                img = fallback
+            self._icon_cache[key] = img
+            return img
+        except Exception:
+            return fallback
+
+    # -----------------
+    # Helper Methods
+    # -----------------
+    def _create_icon_button(
+        self,
+        parent,
+        icon_emoji,
+        command,
+        style="compact",
+        bg_color=None,
+        hover_color=None,
+        **kwargs,
+    ):
+        """Create a standardized icon button following UIStyle guidelines.
+
+        **DEPRECATED**: This method now uses the new icon_button component internally.
+        For new code, prefer using `from ui.components import create_icon_button` directly.
+
+        Args:
+            parent: Parent widget
+            icon_emoji: Emoji text for button (e.g., '➕', '↑', '↓') - used as fallback
+            command: Button command callback
+            style: Size style - 'compact', 'small', 'medium', or 'large'
+            bg_color: Background color (uses BTN_ACCENT_BG if not specified)
+            hover_color: Hover color (uses BTN_ACCENT_HOVER if not specified)
+            **kwargs: Additional button configuration options
+
+        Returns:
+            tk.Button: Configured button widget
+        """
+        # If component available, use it for better icon quality
+        if _HAS_ICON_COMPONENT and _create_icon_btn_component is not None:
+            # Map emoji to icon names
+            emoji_to_icon = {
+                "➕": "add",
+                "🗑️": "delete",
+                "💾": "save",
+                "✖": "cancel",
+                "🔄": "refresh",
+                "↑": "up",
+                "↓": "down",
+                "📁": "folder",
+                "⚙️": "settings",
+                "🔍": "search",
+            }
+
+            # Map bg_color to button_type
+            button_type_map = {
+                UI.BTN_PRIMARY_BG: "green_light",
+                UI.BTN_ACCENT_BG: "green_light",
+                UI.BTN_DANGER_BG: "red",
+                UI.BTN_INFO_BG: "blue",
+                UI.BTN_NEUTRAL_BG: "refresh",
+            }
+
+            icon_name = emoji_to_icon.get(icon_emoji, "add")
+            button_type = button_type_map.get(
+                bg_color or UI.BTN_ACCENT_BG, "green_light"
+            )
+
+            # Map style to variant
+            variant_map = {
+                "compact": "compact",
+                "small": "small",
+                "medium": "medium",
+                "large": "large",
+            }
+            variant = variant_map.get(style, "compact")
+
+            return _create_icon_btn_component(
+                parent=parent,
+                icon_name=icon_name,
+                icon_fallback=icon_emoji,
+                command=command,
+                button_type=button_type,
+                variant=variant,
+                icon_size=16,
+                **kwargs,
+            )
+
+        # Fallback to old emoji-only method if component not available
+        style_configs = {
+            "compact": {
+                "width": 0,
+                "height": 0,
+                "padx": UI.BTN_ICON_PADDING_COMPACT,
+                "pady": UI.BTN_ICON_PADDING_COMPACT,
+            },
+            "small": {
+                "width": UI.BTN_ICON_WIDTH_SMALL,
+                "height": 1,
+                "padx": UI.BTN_ICON_PADDING_SMALL,
+                "pady": UI.BTN_ICON_PADDING_SMALL,
+            },
+            "medium": {
+                "width": UI.BTN_ICON_WIDTH_MEDIUM,
+                "height": 1,
+                "padx": UI.BTN_ICON_PADDING_MEDIUM,
+                "pady": UI.BTN_ICON_PADDING_MEDIUM,
+            },
+            "large": {
+                "width": UI.BTN_ICON_WIDTH_LARGE,
+                "height": 1,
+                "padx": UI.BTN_ICON_PADDING_LARGE,
+                "pady": UI.BTN_ICON_PADDING_LARGE,
+            },
+        }
+
+        config = style_configs.get(style, style_configs["compact"])
+
+        if bg_color is None:
+            bg_color = UI.BTN_ACCENT_BG
+        if hover_color is None:
+            hover_color = UI.BTN_ACCENT_HOVER
+
+        color_map = {
+            UI.BTN_PRIMARY_BG: UI.BTN_PRIMARY_FG,
+            UI.BTN_ACCENT_BG: UI.BTN_ACCENT_FG,
+            UI.BTN_INFO_BG: UI.BTN_INFO_FG,
+            UI.BTN_NEUTRAL_BG: UI.BTN_NEUTRAL_FG,
+            UI.BTN_DANGER_BG: UI.BTN_DANGER_FG,
+        }
+        fg_color = color_map.get(bg_color, UI.BTN_ACCENT_FG)
+
+        button_config = {
+            "text": icon_emoji,
+            "command": command,
+            "font": UI.FONT_BUTTON,
+            "bg": bg_color,
+            "fg": fg_color,
+            "activebackground": hover_color,
+            "activeforeground": fg_color,
+            "relief": UI.BTN_RELIEF_NORMAL,
+            "cursor": "hand2",
+            **config,
+            **kwargs,
+        }
+
+        return tk.Button(parent, **button_config)
+
+    def _create_tooltip(self, widget, text):
+        """Create a simple tooltip for a widget."""
+
+        def on_enter(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            label = tk.Label(
+                tooltip,
+                text=text,
+                background="#ffffe0",
+                relief="solid",
+                borderwidth=1,
+                padx=5,
+                pady=3,
+            )
+            label.pack()
+            # Store tooltip in a central map to avoid setting dynamic attributes on widgets
+            try:
+                if not hasattr(self, "_tooltips"):
+                    self._tooltips = {}
+                self._tooltips[id(widget)] = tooltip
+            except Exception:
+                # Last-resort: attach to widget (legacy)
+                try:
+                    widget._tooltip = tooltip
+                except Exception:
+                    pass
+
+        def on_leave(event):
+            try:
+                # Prefer centralized map
+                if hasattr(self, "_tooltips") and id(widget) in self._tooltips:
+                    try:
+                        self._tooltips[id(widget)].destroy()
+                    except Exception:
+                        pass
+                    try:
+                        del self._tooltips[id(widget)]
+                    except Exception:
+                        pass
+                    return
+                # Fallback to widget attribute
+                tooltip = getattr(widget, "_tooltip", None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(widget, "_tooltip")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
+
+    def _destroy_widget_tooltip(self, widget):
+        """Safely destroy a tooltip for a widget (central map or widget attribute)."""
+        try:
+            if hasattr(self, "_tooltips") and id(widget) in self._tooltips:
+                try:
+                    self._tooltips[id(widget)].destroy()
+                except Exception:
+                    pass
+                try:
+                    del self._tooltips[id(widget)]
+                except Exception:
+                    pass
+                return
+            tooltip = getattr(widget, "_tooltip", None)
+            if tooltip is not None:
+                try:
+                    tooltip.destroy()
+                except Exception:
+                    pass
+                try:
+                    delattr(widget, "_tooltip")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def _open_monster_manager(self):
+        from ui.windows.monster_manager_win import MonsterManagerWin
+
+        MonsterManagerWin(self)
+
+    def _open_skill_manager(self):
+        from ui.windows.skill_manager_win import SkillManagerWin
+
+        SkillManagerWin(self)
+
+    def on_monster_calculate_timing(self):
+        from ui.windows.timing_calc_dialog import TimingCalcDialog
+
+        def _apply_time(t):
+            self.monster_cfg_wait.set(str(t))
+
+        TimingCalcDialog(self, self, on_apply=_apply_time)
+
+    def on_monster_estimate(self):
+        pass
+
+
+def main():
+    """Main entry point with single instance lock."""
+    # Check critical dependencies (pywin32 for overlay)
+    try:
+        import win32gui  # Test pywin32 availability
+    except ImportError:
+        # Show warning but don't block - overlay will show error when toggled
+        print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
+        print("   Run: pip install pywin32")
+        print("   Or: python scripts/check_dependencies.py --install")
+
+    # Create single instance lock (using mutex on Windows, file lock on Unix)
+    instance_lock = SingleInstanceLock("CabalAutoHunt_v1")
+
+    # Try to acquire lock
+    if not instance_lock.acquire():
+        # Another instance is already running - show error in both languages
+        root = tk.Tk()
+        root.withdraw()  # Hide main window
+
+        messagebox.showerror(
+            "⚠️ Application Already Running | Ứng dụng đã chạy",
+            "❌ CANNOT START: Another instance is already running!\n\n"
+            "📌 Only ONE instance can run at a time.\n"
+            "🔄 Please close the existing application first, then try again.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "❌ KHÔNG THỂ KHỞI ĐỘNG: Ứng dụng đã đang chạy!\n\n"
+            "📌 Chỉ được phép chạy 1 ứng dụng tại một thời điểm.\n"
+            "🔄 Vui lòng tắt ứng dụng đang chạy trước, sau đó thử lại.",
+            parent=root,
+        )
+
+        root.destroy()
+        sys.exit(1)
+
+    try:
+        try:
+            from database import MonsterDatabase
+
+            MonsterDatabase().init_db()
+        except Exception as e:
+            print(f"[DB Init] Failed to initialize monsters.db: {e}")
+
+        # Start application
+        app = App()
+        app.protocol("WM_DELETE_WINDOW", app.on_close)
+        app.mainloop()
+    finally:
+        # Always release lock on exit
+        instance_lock.release()
+
+
+if __name__ == "__main__":
+    main()
