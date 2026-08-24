@@ -129,7 +129,7 @@ class AppRuntimeBridgeMixin:
             self.win_combo.set("")
         self.on_hunt_find_windows()
 
-        count = len(self.win_items) if hasattr(self, "win_items") else 0
+        count = len(self.win_items)
         if hasattr(self, "hunt_status"):
             self.hunt_status.set(f"🔄 Refreshed: {count} window(s) found")
 
