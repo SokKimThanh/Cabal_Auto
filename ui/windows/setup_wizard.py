@@ -12,18 +12,17 @@ Sprint 16 Phase 2 - Task #4: Welcome Screen
 This module provides a friendly first-run experience.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox
-import json
-import os
 import ctypes
-from ctypes import wintypes
-from pathlib import Path
-from typing import Optional
-
 # Optional psutil: import only if available to avoid static analysis/import errors
 import importlib
 import importlib.util
+import json
+import os
+import tkinter as tk
+from ctypes import wintypes
+from pathlib import Path
+from tkinter import messagebox, ttk
+from typing import Optional
 
 # i18n and tooltip helpers
 try:
@@ -46,11 +45,9 @@ except Exception:
     NotificationWidget = None  # type: ignore
 
 try:
-    from lib.i18n import (
-        register_bulk as i18n_register_bulk,
-        t as i18n_t,
-        set_default_lang as i18n_set_lang,
-    )
+    from lib.i18n import register_bulk as i18n_register_bulk
+    from lib.i18n import set_default_lang as i18n_set_lang
+    from lib.i18n import t as i18n_t
 except Exception:
 
     def i18n_register_bulk(namespace, translations):  # type: ignore
@@ -84,7 +81,14 @@ class SetupWizard:
     Guides through: Welcome → Window → Monster → Skills → Review
     """
 
-    def __init__(self, parent, config_manager=None, on_complete=None, on_cancel=None, hide_parent=True):
+    def __init__(
+        self,
+        parent,
+        config_manager=None,
+        on_complete=None,
+        on_cancel=None,
+        hide_parent=True,
+    ):
         """
         Initialize setup wizard.
 
@@ -116,7 +120,7 @@ class SetupWizard:
         self.skills_data = []  # Step 4: Skills list
         self.skill_slot_vars = []  # Step 4: Skill slot variables
         self.skill_slot_combos = []  # Step 4: Skill slot comboboxes
-        
+
         # Inline notification widget for step validation messages
         self.notification_widget = None  # Will be created in _build_ui
 
@@ -410,7 +414,7 @@ class SetupWizard:
                 main_frame,
                 auto_hide_seconds=5,  # Auto-hide after 5 seconds
                 show_close_button=True,
-                bg="white"
+                bg="white",
             )
             # Don't pack yet - will be shown when needed
 
@@ -527,7 +531,7 @@ class SetupWizard:
 
     def _show_step(self, step_number):
         """Show specified wizard step.
-        
+
         Safely updates UI elements with widget existence checks.
         """
         self.current_step = step_number
@@ -553,7 +557,6 @@ class SetupWizard:
             self.back_button.config(state=tk.NORMAL if step_number > 1 else tk.DISABLED)
         except (tk.TclError, AttributeError):
             pass
-
 
         # Update Next/Finish button based on step (icon placement rule: Next=right, Finish=left)
         try:
@@ -600,7 +603,7 @@ class SetupWizard:
                     except Exception:
                         pass
         except (tk.TclError, AttributeError):
-            pass        # Clear content frame
+            pass  # Clear content frame
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 
@@ -949,9 +952,9 @@ It takes about 2 minutes. Let's begin!"""
         # Get project root: ui/windows/setup_wizard.py -> go up 2 levels to project root
         project_root = Path(__file__).parent.parent.parent
         monsters_path = project_root / "lib" / "data" / "monsters.json"
-        
+
         print(f"[SetupWizard] Loading monsters from: {monsters_path}")
-        
+
         try:
             with open(monsters_path, "r", encoding="utf-8") as f:
                 self.monsters_data = json.load(f)
@@ -969,7 +972,7 @@ It takes about 2 minutes. Let's begin!"""
             # Show helpful message for empty monster list
             info_frame = tk.Frame(self.content_frame, bg="white")
             info_frame.pack(pady=30, padx=20, fill=tk.BOTH, expand=True)
-            
+
             tk.Label(
                 info_frame,
                 text="📋 No Monsters Yet",
@@ -977,7 +980,7 @@ It takes about 2 minutes. Let's begin!"""
                 bg="white",
                 fg="#FF9800",
             ).pack(pady=(20, 10))
-            
+
             tk.Label(
                 info_frame,
                 text=self._t("no_monsters_found"),
@@ -985,7 +988,7 @@ It takes about 2 minutes. Let's begin!"""
                 bg="white",
                 fg="#666",
             ).pack(pady=5)
-            
+
             tk.Label(
                 info_frame,
                 text="✓ You can skip this step and add monsters later via Library Manager",
@@ -993,7 +996,7 @@ It takes about 2 minutes. Let's begin!"""
                 bg="white",
                 fg="#4CAF50",
             ).pack(pady=10)
-            
+
             tk.Label(
                 info_frame,
                 text="💡 Tip: Click 'Next' to continue setup without selecting a monster",
@@ -1072,9 +1075,9 @@ It takes about 2 minutes. Let's begin!"""
         # Load skills from lib/data/skills.json (use project root)
         project_root = Path(__file__).parent.parent.parent
         skills_path = project_root / "lib" / "data" / "skills.json"
-        
+
         print(f"[SetupWizard] Loading skills from: {skills_path}")
-        
+
         try:
             with open(skills_path, "r", encoding="utf-8") as f:
                 self.skills_data = json.load(f)
@@ -1377,7 +1380,7 @@ It takes about 2 minutes. Let's begin!"""
                 bg="white",
                 fg="#2196F3",
             ).pack(pady=(5, 0))
-        
+
         if not assigned_skills:
             tk.Label(
                 self.content_frame,
@@ -1407,13 +1410,21 @@ It takes about 2 minutes. Let's begin!"""
             pass
 
         try:
-            if hasattr(self, "level_experienced_radio") and self.level_experienced_radio.winfo_exists():
-                self.level_experienced_radio.config(text=self._t("user_level_experienced"))
+            if (
+                hasattr(self, "level_experienced_radio")
+                and self.level_experienced_radio.winfo_exists()
+            ):
+                self.level_experienced_radio.config(
+                    text=self._t("user_level_experienced")
+                )
         except tk.TclError:
             pass
 
         try:
-            if hasattr(self, "level_experienced_desc") and self.level_experienced_desc.winfo_exists():
+            if (
+                hasattr(self, "level_experienced_desc")
+                and self.level_experienced_desc.winfo_exists()
+            ):
                 self.level_experienced_desc.config(
                     text="  " + self._t("user_level_experienced_desc")
                 )
@@ -1422,7 +1433,11 @@ It takes about 2 minutes. Let's begin!"""
 
         # Update first-time hint if exists
         try:
-            if hasattr(self, "first_time_hint") and self.is_first_run and self.first_time_hint.winfo_exists():
+            if (
+                hasattr(self, "first_time_hint")
+                and self.is_first_run
+                and self.first_time_hint.winfo_exists()
+            ):
                 hint_text = (
                     "First-time users must start with 'New User' option"
                     if self.lang == "en"
@@ -1527,13 +1542,13 @@ It takes about 2 minutes. Let's begin!"""
 
     def _update_rotation_builder_button_state(self):
         """Enable/disable rotation builder button based on user level.
-        
+
         Safely handles widget existence checks to avoid TclError.
         """
         # Check if button exists and is still valid
         if not hasattr(self, "rotation_builder_button"):
             return
-        
+
         try:
             if not self.rotation_builder_button.winfo_exists():
                 return
@@ -1728,10 +1743,10 @@ It takes about 2 minutes. Let's begin!"""
 
     def _validate_current_step(self):
         """Validate current step data before moving to next step.
-        
+
         REQUIRED: Only Step 2 (Window selection) is mandatory
         OPTIONAL: Steps 3 (Monster) and 4 (Skills) can be skipped
-        
+
         Purpose: Early sync of basic settings prevents data duplication issues
         """
         # Step 1: Always valid (language selection is optional)
@@ -1745,12 +1760,12 @@ It takes about 2 minutes. Let's begin!"""
                 if self.notification_widget:
                     self.notification_widget.show(
                         message="⚠️ Game window selection is required to continue.\n\n"
-                                "Please select your game window from the list.",
-                        notification_type='warning',
-                        side='bottom',
-                        fill='x',
+                        "Please select your game window from the list.",
+                        notification_type="warning",
+                        side="bottom",
+                        fill="x",
                         padx=20,
-                        pady=10
+                        pady=10,
                     )
                 else:
                     # Fallback to messagebox if NotificationWidget not available
@@ -1772,12 +1787,12 @@ It takes about 2 minutes. Let's begin!"""
                 if self.notification_widget:
                     self.notification_widget.show(
                         message="ℹ️ No monster selected. You can add monsters later via Library Manager.\n\n"
-                                "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
-                        notification_type='info',
-                        side='bottom',
-                        fill='x',
+                        "💡 Tip: Configuring window and skills first helps prevent data sync issues.",
+                        notification_type="info",
+                        side="bottom",
+                        fill="x",
                         padx=20,
-                        pady=10
+                        pady=10,
                     )
                 else:
                     # Fallback to messagebox
@@ -1805,12 +1820,12 @@ It takes about 2 minutes. Let's begin!"""
                 if self.notification_widget:
                     self.notification_widget.show(
                         message="ℹ️ No skills assigned. You can configure skills later via Library Manager.\n\n"
-                                "💡 Completing basic setup first helps prevent data sync issues.",
-                        notification_type='info',
-                        side='bottom',
-                        fill='x',
+                        "💡 Completing basic setup first helps prevent data sync issues.",
+                        notification_type="info",
+                        side="bottom",
+                        fill="x",
                         padx=20,
-                        pady=10
+                        pady=10,
                     )
                 else:
                     # Fallback to messagebox
@@ -1968,7 +1983,9 @@ It takes about 2 minutes. Let's begin!"""
         try:
             import copy
 
-            return copy.deepcopy(self.wizard_data) != copy.deepcopy(self._initial_wizard_data)
+            return copy.deepcopy(self.wizard_data) != copy.deepcopy(
+                self._initial_wizard_data
+            )
         except Exception:
             try:
                 return dict(self.wizard_data) != dict(self._initial_wizard_data)
@@ -2005,7 +2022,11 @@ It takes about 2 minutes. Let's begin!"""
         try:
             resp = messagebox.askyesnocancel(
                 self._t("cancel_title"),
-                self._t("wizard_unsaved_changes_prompt") if hasattr(self, "_t") else "Save changes before closing?",
+                (
+                    self._t("wizard_unsaved_changes_prompt")
+                    if hasattr(self, "_t")
+                    else "Save changes before closing?"
+                ),
                 parent=self.dialog,
             )
         except Exception:
@@ -2023,8 +2044,8 @@ It takes about 2 minutes. Let's begin!"""
                 else:
                     # As fallback, attempt to save via config_manager if provided
                     try:
-                        cm = getattr(self, 'config_manager', None)
-                        if cm is not None and hasattr(cm, 'save'):
+                        cm = getattr(self, "config_manager", None)
+                        if cm is not None and hasattr(cm, "save"):
                             cm.save()
                     except Exception:
                         pass
@@ -2056,7 +2077,9 @@ It takes about 2 minutes. Let's begin!"""
             return True
 
 
-def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=None, hide_parent=True):
+def show_setup_wizard(
+    parent, config_manager=None, on_complete=None, on_cancel=None, hide_parent=True
+):
     """
     Convenience function to show setup wizard.
 
@@ -2084,13 +2107,17 @@ def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=N
                     ref = getattr(child, "_wizard_ref", None)
                     if ref is not None:
                         try:
-                            child.deiconify(); child.lift(); child.focus_force()
+                            child.deiconify()
+                            child.lift()
+                            child.focus_force()
                         except Exception:
                             pass
                         return ref
                     else:
                         try:
-                            child.deiconify(); child.lift(); child.focus_force()
+                            child.deiconify()
+                            child.lift()
+                            child.focus_force()
                         except Exception:
                             pass
                         return child
@@ -2127,7 +2154,9 @@ def show_setup_wizard(parent, config_manager=None, on_complete=None, on_cancel=N
         pass
 
     try:
-        wizard = SetupWizard(parent, config_manager, on_complete, on_cancel, hide_parent=hide_parent)
+        wizard = SetupWizard(
+            parent, config_manager, on_complete, on_cancel, hide_parent=hide_parent
+        )
     except Exception:
         # If creation failed, clear sentinel and re-raise
         try:
@@ -2226,6 +2255,3 @@ if __name__ == "__main__":
             pass
 
     root.mainloop()
-
-
-
