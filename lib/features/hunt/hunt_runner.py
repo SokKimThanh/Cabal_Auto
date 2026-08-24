@@ -1,21 +1,23 @@
-from typing import Optional
-from lib.system.win_input import tap
-import pyautogui
-import threading
 import time
-from tkinter import messagebox
+import threading
+from typing import Optional
 
+try:
+    import pyautogui
+except Exception:
+    pyautogui = None
+
+from tkinter import messagebox
 from lib.vision.template_matcher import locate_template
 from lib.vision.vision_engine import VisionEngine
-
 try:
     from lib.system.screen_capture import ScreenCapture
 except ImportError:
     ScreenCapture = None
-from lib.features.skills.skill_stats import SkillStats
+from lib.system.win_input import tap
 from lib.system.bot_manager import BotManager
+from lib.features.skills.skill_stats import SkillStats
 from lib.system.hunt_logger import get_hunt_logger
-
 
 class HuntRunner:
     def __init__(self, app, hunt_cfg):
@@ -420,3 +422,8 @@ class HuntRunner:
                     time.sleep(runtime["cast_time"])
                     break
         return cast_count
+    def _update_status(self, text: str) -> None:
+        if hasattr(self.app, "after") and hasattr(self, "hunt_status") and self.hunt_status:
+            self.app.after(0, lambda: self.hunt_status.set(text))
+        elif hasattr(self, "hunt_status") and self.hunt_status:
+            self.hunt_status.set(text)

@@ -1,4 +1,23 @@
+# Python cache
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+
+# Pytest & Test artifacts
 .pytest_cache/
+TEST_REPORT_*.md
+
+# Temporary directories & locks
+tmp/
+tmp_*/
+*.lock
+
+# Environments
+venv/
+.venv/
+env/
+.env
+
+# Logs
+logs/*.jsonl
+logs/*.log
