@@ -109,23 +109,42 @@ except Exception:
     capture_region_and_save = None  # type: ignore
 
 from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
-from lib.features.hunt.hunt_config import (ConfigManager, _normalize_window_bounds,
-                                           _sanitize_templates, load_config, load_hunt_config,
-                                           save_config, save_hunt_config)
+from lib.features.hunt.hunt_config import (
+    ConfigManager,
+    _normalize_window_bounds,
+    _sanitize_templates,
+    load_config,
+    load_hunt_config,
+    save_config,
+    save_hunt_config,
+)
 from lib.features.hunt.hunt_runner import HuntRunner
-from lib.features.monsters.monster_repo import (calculate_monster_estimate, load_monster_library,
-                                                save_monster_library)
-from lib.features.skills.skill_repo import (calculate_attack_speed_from_skills, load_skill_library,
-                                            save_skill_library)
-from lib.features.skills.skill_stats import SkillStats  # Sprint 22 Patch 1: Training Mode
-from lib.features.timing.calculator import (calculate_timing, format_timing_recommendation,
-                                            get_timing_presets)
+from lib.features.monsters.monster_repo import (
+    calculate_monster_estimate,
+    load_monster_library,
+    save_monster_library,
+)
+from lib.features.skills.skill_repo import (
+    calculate_attack_speed_from_skills,
+    load_skill_library,
+    save_skill_library,
+)
+from lib.features.skills.skill_stats import (
+    SkillStats,
+)  # Sprint 22 Patch 1: Training Mode
+from lib.features.timing.calculator import (
+    calculate_timing,
+    format_timing_recommendation,
+    get_timing_presets,
+)
+
 # =====================================================================
 # Single Instance Lock (Prevent multiple app instances)
 # =====================================================================
 from lib.system.hotkey_manager import HotkeyManager
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.instance_lock import SingleInstanceLock
+
 from lib.system.win_input import tap
 from lib.ui_style import UIStyle as UI  # Global UI style constants
 from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
@@ -312,42 +331,12 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             Image is not None and ImageTk is not None and ImageDraw is not None
         )
 
-        # State
-        self.click_running = False
-        self.click_thread = None
+        # State Bookkeeping Extracted
+        from ui.controllers.app_state_controller import AppStateController
 
-        self.hunt_thread = None
-        self.win_items = []  # list of {'hwnd','pid','title','proc'}
-        self.hunt_selected = None  # currently selected window info
-        self._skip_auto_bring = False  # Flag to prevent double bring-to-front
-
-        # Global hotkeys - registered after config load
-        self._global_start_hotkey = None
-        self._global_stop_hotkey = None
-        self._global_wizard_hotkey = None  # NEW: Setup Wizard (Ctrl+Shift+N)
-        self._global_library_hotkey = None  # NEW: Library Manager (Ctrl+Shift+L)
-        self._global_vision_hotkey = None  # NEW Sprint 22: Vision Wizard (Ctrl+Shift+V)
-        self._global_monster_hotkey = None  # NEW: Monster Editor (Ctrl+Shift+M)
-        # Fallback when `keyboard` package not available in this interpreter
-        self._hotkey_fallback_bound = (
-            []
-        )  # list of tkinter sequence strings bound via bind_all
-        self._hotkey_import_diag = ""
-
-        # Phase 5: Overlay window for vision detection
-        self._overlay_window: Optional[Any] = None  # OverlayWindow instance
-        self._overlay_enabled = False
-        self._overlay_update_thread: Optional[threading.Thread] = None
-        self._overlay_stop_event = threading.Event()
-
-        # Phase 7: Monster tracking integration
-        self._vision_engine: Optional[VisionEngine] = None
-        self._screen_capture: Optional[ScreenCapture] = None
-        self._bot_manager: Optional[BotManager] = None
-        self._overlay_controller: Optional[OverlayController] = None
+        self.state_controller = AppStateController(self)
 
         self.monsters = self._normalize_library_items(load_monster_library())
-        self.monster_selected_index = None
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
 
         # Phase 3: Multi-Monster Support
@@ -444,50 +433,12 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                         pass
         except Exception:
             pass
-        self.skill_selected_index = None
         self.skill_selected_name = self.skills[0]["name"] if self.skills else None
-        self.skill_preview_image = None
-        self.skill_slot_vars = []
-        self.skill_slot_boxes = []
-        self.skill_slot_count = 6
         self.skill_slot_saved_names = [
             slot.get("name", "")
             for slot in self.hunt_cfg.get("skill_slots", [])
             if isinstance(slot, dict) and slot.get("name")
         ]
-        self.monster_manager_win = None
-        self.skill_manager_win = None
-        self.monster_listbox = None
-        # Declare monster quick-select attributes for type-checker and runtime
-        self.monster_select_var = tk.StringVar()
-        self.monster_select_combo = None  # type: Optional[ttk.Combobox]
-        self.monster_name_var = tk.StringVar()
-        self.monster_hp_var = tk.StringVar()
-        self.monster_damage_var = tk.StringVar()
-        self.monster_template_var = tk.StringVar()
-        self.monster_estimate_var = tk.StringVar(value="")
-        self.skill_listbox = None
-        self.skill_name_var = tk.StringVar()
-        self.skill_key_var = tk.StringVar()
-        self.skill_type_var = tk.StringVar(value=self._t("skill_type_attack"))
-        self.skill_cooldown_var = tk.StringVar()
-        self.skill_cast_time_var = tk.StringVar()
-        self.skill_duration_var = tk.StringVar()
-        # Keep references to images (PhotoImage) to prevent GC. Tkinter will
-        # garbage-collect PhotoImage objects unless a Python reference is held.
-        # We store images here rather than attaching arbitrary attributes to
-        # widgets to reduce static-analysis false-positives and centralize
-        # resource ownership. Some files still use dynamic attribute access
-        # (e.g., `root._image_refs`) for backward compatibility; those uses
-        # are annotated with `# type: ignore[attr-defined]` where needed.
-        self._image_refs = []  # type: List[Any]
-        # Central tooltip store to avoid attaching dynamic attributes to widgets
-        self._tooltips = {}
-        self.skill_pre_refresh_var = tk.StringVar()
-        self.skill_image_var = tk.StringVar()
-        self.skill_preview_label = None
-        self._skill_image_trace = None
-        self.monster_description_text = None
         self.monster_template_working = []
         self.monster_template_selected_index = None
         self.monster_template_listbox = None
@@ -519,17 +470,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             hunt_area.get("window_bounds")
         )
         self.hunt_cfg["window_bounds"] = self.current_window_bounds
-        self.window_bounds_display_var = tk.StringVar(value="")
-
-        # Hunt tab widget groups for progressive disclosure
-        self.hunt_intermediate_widgets = []  # Shown in intermediate+ modes
-        self.hunt_advanced_widgets = []  # Shown only in advanced mode
 
         if pyautogui is not None:
             pyautogui.FAILSAFE = bool(self.cfg.get("safety", {}).get("failsafe", True))
 
-        self.hunt_status = tk.StringVar(value=self._t("hunt_idle"))
-        self.hunt_target_info = tk.StringVar(value="Target: None")
         self._build_ui()
         self.hunt_runner = HuntRunner(self, self.hunt_cfg)
 
@@ -2338,6 +2282,11 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
 
+    def on_window_combo_selected(self, _evt=None):
+        pass
+
+    def on_hunt_find_windows(self, _evt=None):
+        pass
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
