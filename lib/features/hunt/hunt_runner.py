@@ -341,11 +341,9 @@ class HuntRunner:
                 if box and val > best_val:
                     left, top, w, h = box
                     best_val = val
-                    best_pt = (
-                        int(left - bounds[0] + w / 2),
-                        int(top - bounds[1] + h / 2),
-                    )
+                    best_pt = (int(left - bounds[0] + w / 2), int(top - bounds[1] + h / 2))
                     best_name = monster.get("name", m_id)
+
         if best_pt:
             return best_pt, best_val, best_name
         return None, 0, ""

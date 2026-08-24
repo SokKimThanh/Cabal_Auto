@@ -42,14 +42,16 @@ class HotkeyManager:
                     tk_parts = []
                     for p in parts:
                         p = p.strip()
-                        if p == "ctrl":
+                        if p in ('ctrl', 'control'):
                             tk_parts.append("Control")
-                        elif p == "shift":
+                        elif p in ('shift',):
                             tk_parts.append("Shift")
-                        elif p == "alt":
+                        elif p in ('alt', 'menu'):
                             tk_parts.append("Alt")
                         elif len(p) == 1:
-                            tk_parts.append(p.lower())  # use lowercase for letters
+                            tk_parts.append(p.upper())
+                        elif p.startswith('f') and p[1:].isdigit():
+                            tk_parts.append(p.upper())
                         else:
                             tk_parts.append(p)
                     return f"<{'-'.join(tk_parts)}>"
@@ -231,6 +233,13 @@ class HotkeyManager:
     def unregister_all(self):
         """Unregister global hotkeys to clean up resources."""
         try:
+            if hasattr(self.app, 'unbind_all'):
+                for seq in list(self._hotkey_fallback_bound):
+                    try:
+                        self.app.unbind_all(seq)
+                    except Exception:
+                        pass
+            self._hotkey_fallback_bound = []
             if keyboard is None:
                 return
 
