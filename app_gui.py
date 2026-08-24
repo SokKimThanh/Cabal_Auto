@@ -511,8 +511,12 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             "height": tk.StringVar(),
         }
         _normalize_window_bounds(self.hunt_cfg)
+        hunt_area = self.hunt_cfg.get("hunt_area")
+        if not isinstance(hunt_area, dict):
+            hunt_area = {}
+            self.hunt_cfg["hunt_area"] = hunt_area
         self.current_window_bounds = self._normalize_window_bounds_value(
-            self.hunt_cfg.get("hunt_area", {}).get("window_bounds")
+            hunt_area.get("window_bounds")
         )
         self.hunt_cfg["window_bounds"] = self.current_window_bounds
         self.window_bounds_display_var = tk.StringVar(value="")

@@ -16,6 +16,16 @@ from ui.windows.monster_manager_win import MonsterManagerWin
 
 class AppRuntimeBridgeMixin:
     @staticmethod
+    def _normalize_hunt_area(cfg: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if not isinstance(cfg, dict):
+            return {}
+        hunt_area = cfg.get("hunt_area")
+        if not isinstance(hunt_area, dict):
+            hunt_area = {}
+            cfg["hunt_area"] = hunt_area
+        return hunt_area
+
+    @staticmethod
     def _normalize_library_items(items: Any) -> List[Dict[str, Any]]:
         if isinstance(items, list):
             return [item for item in items if isinstance(item, dict)]
@@ -186,7 +196,7 @@ class AppRuntimeBridgeMixin:
         self.hunt_cfg["window_pid"] = selected["pid"]
         self.hunt_cfg["window_hwnd"] = selected["hwnd"]
         self.hunt_cfg["window_bounds"] = bounds
-        hunt_area = self.hunt_cfg.setdefault("hunt_area", {})
+        hunt_area = self._normalize_hunt_area(self.hunt_cfg)
         hunt_area["window_title"] = selected["title"]
         hunt_area["window_bounds"] = bounds
         self._update_window_bounds_display()
@@ -246,8 +256,9 @@ class AppRuntimeBridgeMixin:
         if not title:
             return "Please select a target window first."
 
+        hunt_area = self._normalize_hunt_area(self.hunt_cfg)
         bounds = self._normalize_window_bounds_value(
-            self.hunt_cfg.get("hunt_area", {}).get("window_bounds")
+            hunt_area.get("window_bounds")
             or self.hunt_cfg.get("window_bounds")
             or getattr(self, "current_window_bounds", None)
         )
@@ -267,13 +278,13 @@ class AppRuntimeBridgeMixin:
             cfg["window_pid"] = self.hunt_selected.get("pid")
             cfg["window_hwnd"] = self.hunt_selected.get("hwnd")
 
+        hunt_area = self._normalize_hunt_area(cfg)
         bounds = self._normalize_window_bounds_value(
             getattr(self, "current_window_bounds", None)
-            or cfg.get("hunt_area", {}).get("window_bounds")
+            or hunt_area.get("window_bounds")
             or cfg.get("window_bounds")
         )
         cfg["window_bounds"] = bounds
-        hunt_area = cfg.setdefault("hunt_area", {})
         hunt_area["window_title"] = cfg.get("window_title", "")
         hunt_area["window_bounds"] = bounds
 
@@ -308,8 +319,9 @@ class AppRuntimeBridgeMixin:
         return cfg
 
     def _hunt_locate_target(self, cfg: Dict[str, Any]):
+        hunt_area = self._normalize_hunt_area(cfg)
         bounds = self._normalize_window_bounds_value(
-            cfg.get("hunt_area", {}).get("window_bounds") or cfg.get("window_bounds")
+            hunt_area.get("window_bounds") or cfg.get("window_bounds")
         )
         if not bounds:
             return None, None
@@ -442,7 +454,8 @@ class AppRuntimeBridgeMixin:
         if bounds:
             self.current_window_bounds = bounds
             self.hunt_cfg["window_bounds"] = bounds
-            self.hunt_cfg.setdefault("hunt_area", {})["window_bounds"] = bounds
+            hunt_area = self._normalize_hunt_area(self.hunt_cfg)
+            hunt_area["window_bounds"] = bounds
             self._update_window_bounds_display()
 
         templates = monster.get("templates") or []
@@ -607,7 +620,17 @@ class AppRuntimeBridgeMixin:
         self.after(0, self._open_vision_wizard)
 
     def _on_monster_editor_hotkey(self, *_args) -> None:
-        self.after(0, lambda: MonsterManagerWin(self))
+        existing = getattr(self, "monster_manager_win", None)
+        if existing is not None:
+            try:
+                if existing.winfo_exists():
+                    existing.deiconify()
+                    existing.lift()
+                    existing.focus_force()
+                    return
+            except Exception:
+                self.monster_manager_win = None
+        self.after(0, lambda: setattr(self, "monster_manager_win", MonsterManagerWin(self)))
 
     def try_close_library_manager(self) -> bool:
         win = getattr(self, "library_manager_win", None)
