@@ -20,8 +20,10 @@ Scope:
 
 Deliverable:
 - A concise map of responsibilities currently owned by app_gui.py.
+- A comparison plan for checking original app_gui behavior against split modules during later sessions.
 - Existing tests or smoke commands that validate app startup, close, hotkeys, overlay, hunt config, and modal reuse.
 - Boundary/edge cases already covered by tests and boundary cases still missing.
+- A lost-code watchlist: callbacks, public App attributes, imports, compatibility fallbacks, config migration, UI event bindings, cleanup paths, and helper methods that must not disappear during extraction.
 - A suggested order for Sprint 1 sessions if app_gui.py has hidden coupling.
 
 Do not edit application code in this session. Only create or update .jules/architecture-cleanup-baseline.md.

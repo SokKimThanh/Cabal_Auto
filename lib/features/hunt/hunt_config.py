@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 
 # Paths
@@ -69,7 +70,11 @@ def load_hunt_config():
 
                 # Normalize fields immediately after loading
                 _normalize_window_bounds(data)
-                _sanitize_templates(data)
+                if isinstance(data.get("hunt_area"), dict):
+                    data["hunt_area"]["window_bounds"] = _normalize_window_bounds_value(
+                        data["hunt_area"].get("window_bounds")
+                    )
+                _sanitize_config_templates(data)
 
                 return data
         except json.JSONDecodeError as e:
@@ -109,6 +114,65 @@ def save_hunt_config(cfg):
         return False
 
 
+def _normalize_window_bounds_value(value):
+    if isinstance(value, (list, tuple)) and len(value) == 4:
+        try:
+            l, t, w, h = [int(v) for v in value]
+            if w <= 0 or h <= 0:
+                return None
+            return [l, t, w, h]
+        except (ValueError, TypeError):
+            return None
+    if not isinstance(value, dict):
+        return None
+    try:
+        w = int(value["width"])
+        h = int(value["height"])
+        if w <= 0 or h <= 0:
+            return None
+        return [
+            int(value["left"]),
+            int(value["top"]),
+            w,
+            h
+        ]
+    except (KeyError, ValueError, TypeError):
+        return None
+
+def _normalize_template_entry(item):
+    if not isinstance(item, dict):
+        return None
+    path = str(item.get("path", "") or "").strip()
+    if not path:
+        return None
+    name = str(item.get("name", "") or "").strip()
+    if not name:
+        try:
+            name = Path(path).stem
+        except Exception:
+            name = "template"
+    try:
+        threshold = float(item.get("threshold", 0.85))
+    except (TypeError, ValueError):
+        threshold = 0.85
+    if not math.isfinite(threshold):
+        threshold = 0.85
+    threshold = max(0.0, min(threshold, 1.0))
+    region = _normalize_window_bounds_value(item.get("region"))
+    region_strategy = str(item.get("region_strategy", "") or "").strip()
+
+    grayscale = item.get("grayscale")
+    tmpl = {
+        "name": name,
+        "path": path,
+        "threshold": threshold,
+        "region": region,
+        "region_strategy": region_strategy
+    }
+    if grayscale is not None:
+        tmpl["grayscale"] = bool(grayscale)
+    return tmpl
+
 def _normalize_window_bounds(cfg):
     """Normalize window bounds into standard list format [x, y, w, h]."""
     if "hunt_area" in cfg:
@@ -131,21 +195,12 @@ def _normalize_window_bounds(cfg):
     return cfg
 
 
-def _sanitize_templates(cfg):
+def _sanitize_config_templates(cfg):
     """Ensure template paths are strings and relative paths where possible."""
-    # This might apply to embedded templates if they still exist in the config
-    # In the new architecture, templates are primarily in monster_repo, but
-    # we keep this for backward compatibility or global templates.
     if "monsters" in cfg and isinstance(cfg["monsters"], list):
         for m in cfg["monsters"]:
             if isinstance(m, dict) and "templates" in m:
-                for tmpl in m["templates"]:
-                    if isinstance(tmpl, dict):
-                        if "path" in tmpl and not isinstance(tmpl["path"], str):
-                            print(
-                                f"Warning: Fixing invalid template path in config: {tmpl['path']}"
-                            )
-                            tmpl["path"] = str(tmpl["path"]) if tmpl["path"] else ""
+                m["templates"] = _sanitize_templates(m["templates"])
     return cfg
 
 
@@ -170,3 +225,13 @@ class ConfigManager:
         """Reload configs from disk."""
         self.cfg.update(load_config())
         self.hunt_cfg.update(load_hunt_config())
+
+def _sanitize_templates(value):
+    """Ensure template paths are strings and relative paths where possible. Used for backward compatibility with list formats."""
+    templates = []
+    if isinstance(value, list):
+        for entry in value:
+            normalized = _normalize_template_entry(entry)
+            if normalized:
+                templates.append(normalized)
+    return templates
