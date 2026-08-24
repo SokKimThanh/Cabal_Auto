@@ -147,8 +147,17 @@ class TemplateService:
             with open(self.templates_config_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-            for template_data in data.get('templates', []):
-                template = Template(**template_data)
+            template_items = data if isinstance(data, list) else data.get('templates', [])
+            for template_data in template_items:
+                if not isinstance(template_data, dict):
+                    continue
+                template = Template(
+                    id=template_data['id'],
+                    path=template_data['path'],
+                    threshold=float(template_data.get('threshold', 0.7)),
+                    scales=template_data.get('scales'),
+                    enabled=bool(template_data.get('enabled', True)),
+                )
                 self.templates[template.id] = template
 
             logger.info(f"Loaded {len(self.templates)} templates from config")
