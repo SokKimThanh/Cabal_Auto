@@ -101,8 +101,9 @@ class MonsterManager:
             event_name: Name of the event to listen to
             callback: Function to call when event occurs
         """
-        # TODO: Implement callback registration
-        pass
+        if event_name not in self.callbacks:
+            self.callbacks[event_name] = []
+        self.callbacks[event_name].append(callback)
     
     def list_monsters(self, filter_dict: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
