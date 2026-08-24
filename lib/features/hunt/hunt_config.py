@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 
 # Paths
@@ -109,6 +110,51 @@ def save_hunt_config(cfg):
         return False
 
 
+def _normalize_window_bounds_value(value):
+    if not isinstance(value, dict):
+        return None
+    try:
+        return [
+            int(value["left"]),
+            int(value["top"]),
+            int(value["width"]),
+            int(value["height"])
+        ]
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
+def _normalize_template_entry(item):
+    if not isinstance(item, dict):
+        return None
+    path = str(item.get("path", "") or "").strip()
+    if not path:
+        return None
+    name = str(item.get("name", "") or "").strip()
+    if not name:
+        try:
+            name = Path(path).stem
+        except Exception:
+            name = "template"
+    try:
+        threshold = float(item.get("threshold", 0.85))
+    except (TypeError, ValueError):
+        threshold = 0.85
+    if not math.isfinite(threshold):
+        threshold = 0.85
+    threshold = max(0.0, min(threshold, 1.0))
+    region = _normalize_window_bounds_value(item.get("region"))
+    region_strategy = str(item.get("region_strategy", "") or "").strip()
+
+    return {
+        "name": name,
+        "path": path,
+        "threshold": threshold,
+        "region": region,
+        "region_strategy": region_strategy
+    }
+
+
 def _normalize_window_bounds(cfg):
     """Normalize window bounds into standard list format [x, y, w, h]."""
     if "hunt_area" in cfg:
@@ -139,13 +185,12 @@ def _sanitize_templates(cfg):
     if "monsters" in cfg and isinstance(cfg["monsters"], list):
         for m in cfg["monsters"]:
             if isinstance(m, dict) and "templates" in m:
+                templates = []
                 for tmpl in m["templates"]:
-                    if isinstance(tmpl, dict):
-                        if "path" in tmpl and not isinstance(tmpl["path"], str):
-                            print(
-                                f"Warning: Fixing invalid template path in config: {tmpl['path']}"
-                            )
-                            tmpl["path"] = str(tmpl["path"]) if tmpl["path"] else ""
+                    normalized = _normalize_template_entry(tmpl)
+                    if normalized:
+                        templates.append(normalized)
+                m["templates"] = templates
     return cfg
 
 
