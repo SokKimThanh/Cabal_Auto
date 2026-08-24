@@ -129,7 +129,7 @@ class AppRuntimeBridgeMixin:
             self.win_combo.set("")
         self.on_hunt_find_windows()
 
-        count = len(self.win_items)
+        count = len(self.win_items) if hasattr(self, "win_items") else 0
         if hasattr(self, "hunt_status"):
             self.hunt_status.set(f"🔄 Refreshed: {count} window(s) found")
 
@@ -224,18 +224,10 @@ class AppRuntimeBridgeMixin:
                         self.focus_force()
                         self.attributes("-topmost", True)
                         self.update()
-                        after_callback = getattr(self, "after", None)
-                        if callable(after_callback):
-                            after_callback(100, lambda: self.attributes("-topmost", False))
-                        else:
-                            self.attributes("-topmost", False)
+                        self.after(100, lambda: self.attributes("-topmost", False))
                     except Exception:
                         pass
-                after_callback = getattr(self, "after", None)
-                if callable(after_callback):
-                    after_callback(100, _lift_app)
-                else:
-                    _lift_app()
+                self.after(100, _lift_app)
 
         if hasattr(self, "hunt_status"):
             self.hunt_status.set(f"Window selected: {selected['title']}")
