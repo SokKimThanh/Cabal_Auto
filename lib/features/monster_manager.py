@@ -75,8 +75,13 @@ class MonsterManager:
             *args: Positional arguments for callback
             **kwargs: Keyword arguments for callback
         """
-        # TODO: Implement event emission
-        pass
+        if event_name in self.callbacks:
+            for callback in self.callbacks[event_name]:
+                try:
+                    callback(*args, **kwargs)
+                except Exception as e:
+                    # In a real app we would log this properly
+                    print(f"Error in callback for event {event_name}: {e}")
     
     def register_callback(self, event_name: str, callback: Callable) -> None:
         """
@@ -86,8 +91,10 @@ class MonsterManager:
             event_name: Name of the event to listen to
             callback: Function to call when event occurs
         """
-        # TODO: Implement callback registration
-        pass
+        if event_name not in self.callbacks:
+            self.callbacks[event_name] = []
+        if callback not in self.callbacks[event_name]:
+            self.callbacks[event_name].append(callback)
     
     def list_monsters(self, filter_dict: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
