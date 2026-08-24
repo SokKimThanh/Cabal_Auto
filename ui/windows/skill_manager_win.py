@@ -1,11 +1,11 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lib.i18n import t as i18n_t, GLOBAL_NS as I18N_GLOBAL
 
 if TYPE_CHECKING:
     from app_gui import App
+
 
 class SkillManagerWin(tk.Toplevel):
     def __init__(self, app: "App"):
