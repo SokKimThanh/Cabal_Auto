@@ -70,7 +70,7 @@ def load_hunt_config():
 
                 # Normalize fields immediately after loading
                 _normalize_window_bounds(data)
-                _sanitize_templates(data)
+                _sanitize_config_monsters(data)
 
                 return data
         except json.JSONDecodeError as e:
@@ -114,15 +114,18 @@ def _normalize_window_bounds_value(value):
     if not isinstance(value, dict):
         return None
     try:
+        w = int(value["width"])
+        h = int(value["height"])
+        if w <= 0 or h <= 0:
+            return None
         return [
             int(value["left"]),
             int(value["top"]),
-            int(value["width"]),
-            int(value["height"])
+            w,
+            h
         ]
     except (KeyError, ValueError, TypeError):
         return None
-
 
 def _normalize_template_entry(item):
     if not isinstance(item, dict):
@@ -146,14 +149,17 @@ def _normalize_template_entry(item):
     region = _normalize_window_bounds_value(item.get("region"))
     region_strategy = str(item.get("region_strategy", "") or "").strip()
 
-    return {
+    grayscale = item.get("grayscale")
+    tmpl = {
         "name": name,
         "path": path,
         "threshold": threshold,
         "region": region,
         "region_strategy": region_strategy
     }
-
+    if grayscale is not None:
+        tmpl["grayscale"] = bool(grayscale)
+    return tmpl
 
 def _normalize_window_bounds(cfg):
     """Normalize window bounds into standard list format [x, y, w, h]."""
@@ -177,7 +183,7 @@ def _normalize_window_bounds(cfg):
     return cfg
 
 
-def _sanitize_templates(cfg):
+def _sanitize_config_monsters(cfg):
     """Ensure template paths are strings and relative paths where possible."""
     # This might apply to embedded templates if they still exist in the config
     # In the new architecture, templates are primarily in monster_repo, but
@@ -215,3 +221,13 @@ class ConfigManager:
         """Reload configs from disk."""
         self.cfg.update(load_config())
         self.hunt_cfg.update(load_hunt_config())
+
+def _sanitize_templates(value):
+    """Ensure template paths are strings and relative paths where possible. Used for backward compatibility with list formats."""
+    templates = []
+    if isinstance(value, list):
+        for entry in value:
+            normalized = _normalize_template_entry(entry)
+            if normalized:
+                templates.append(normalized)
+    return templates
