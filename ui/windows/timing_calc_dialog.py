@@ -74,9 +74,12 @@ class TimingCalcDialog(tk.Toplevel):
                 aps = float(self.aps_var.get())
                 ehp = float(self.ehp_var.get())
                 dps = float(self.dps_var.get())
+                if aps <= 0:
+                    raise ValueError
+                damage_per_hit = dps / aps
 
                 from lib.features.timing.calculator import calculate_timing
-                rec = calculate_timing(monster_hp=ehp, damage_per_hit=dps, attacks_per_second=aps)
+                rec = calculate_timing(monster_hp=ehp, damage_per_hit=damage_per_hit, attacks_per_second=aps)
                 self.recommended_time = rec.estimated_kill_time_sec
 
                 # Format text
