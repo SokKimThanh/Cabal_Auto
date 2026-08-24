@@ -129,40 +129,39 @@ class AppStateController:
         """Inject state directly into the root application to maintain compatibility."""
         app = self.root
 
-        app.click_running = self.click_running
-        app.click_thread = self.click_thread
+        state_attrs = (
+            "click_running",
+            "click_thread",
+            "hunt_thread",
+            "win_items",
+            "hunt_selected",
+            "_skip_auto_bring",
+            "_global_start_hotkey",
+            "_global_stop_hotkey",
+            "_global_wizard_hotkey",
+            "_global_library_hotkey",
+            "_global_vision_hotkey",
+            "_global_monster_hotkey",
+            "_hotkey_fallback_bound",
+            "_hotkey_import_diag",
+            "_overlay_window",
+            "_overlay_enabled",
+            "_overlay_update_thread",
+            "_overlay_stop_event",
+            "_vision_engine",
+            "_screen_capture",
+            "_bot_manager",
+            "_overlay_controller",
+            "monster_selected_index",
+            "skill_selected_index",
+            "skill_preview_image",
+            "skill_slot_vars",
+            "skill_slot_boxes",
+            "skill_slot_count",
+        )
 
-        app.hunt_thread = self.hunt_thread
-        app.win_items = self.win_items
-        app.hunt_selected = self.hunt_selected
-        app._skip_auto_bring = self._skip_auto_bring
-
-        app._global_start_hotkey = self._global_start_hotkey
-        app._global_stop_hotkey = self._global_stop_hotkey
-        app._global_wizard_hotkey = self._global_wizard_hotkey
-        app._global_library_hotkey = self._global_library_hotkey
-        app._global_vision_hotkey = self._global_vision_hotkey
-        app._global_monster_hotkey = self._global_monster_hotkey
-        app._hotkey_fallback_bound = self._hotkey_fallback_bound
-        app._hotkey_import_diag = self._hotkey_import_diag
-
-        app._overlay_window = self._overlay_window
-        app._overlay_enabled = self._overlay_enabled
-        app._overlay_update_thread = self._overlay_update_thread
-        app._overlay_stop_event = self._overlay_stop_event
-
-        app._vision_engine = self._vision_engine
-        app._screen_capture = self._screen_capture
-        app._bot_manager = self._bot_manager
-        app._overlay_controller = self._overlay_controller
-
-        app.monster_selected_index = self.monster_selected_index
-
-        app.skill_selected_index = self.skill_selected_index
-        app.skill_preview_image = self.skill_preview_image
-        app.skill_slot_vars = self.skill_slot_vars
-        app.skill_slot_boxes = self.skill_slot_boxes
-        app.skill_slot_count = self.skill_slot_count
+        for name in state_attrs:
+            setattr(app, name, getattr(self, name))
 
         app.monster_manager_win = self.monster_manager_win
         app.skill_manager_win = self.skill_manager_win
