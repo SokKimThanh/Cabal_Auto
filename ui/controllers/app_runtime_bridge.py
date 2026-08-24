@@ -224,10 +224,18 @@ class AppRuntimeBridgeMixin:
                         self.focus_force()
                         self.attributes("-topmost", True)
                         self.update()
-                        self.after(100, lambda: self.attributes("-topmost", False))
+                        after_callback = getattr(self, "after", None)
+                        if callable(after_callback):
+                            after_callback(100, lambda: self.attributes("-topmost", False))
+                        else:
+                            self.attributes("-topmost", False)
                     except Exception:
                         pass
-                self.after(100, _lift_app)
+                after_callback = getattr(self, "after", None)
+                if callable(after_callback):
+                    after_callback(100, _lift_app)
+                else:
+                    _lift_app()
 
         if hasattr(self, "hunt_status"):
             self.hunt_status.set(f"Window selected: {selected['title']}")
