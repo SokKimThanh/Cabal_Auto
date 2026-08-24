@@ -110,10 +110,9 @@ class WorkerThread:
         
         Waits for current task to complete before stopping.
         """
-        # TODO: Implement worker stop
-        # Set running = False
-        # Wait for thread to finish
-        raise NotImplementedError("stop_worker not yet implemented")
+        self.running = False
+        if self.thread is not None and self.thread.is_alive():
+            self.thread.join()
     
     def enqueue(
         self,

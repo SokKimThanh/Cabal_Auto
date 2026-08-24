@@ -14,10 +14,13 @@ Status: Skeleton
 from __future__ import annotations
 from typing import Dict, List, Any, Optional, Callable
 import json
+import logging
 import os
 import uuid
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class MonsterManager:
@@ -53,23 +56,23 @@ class MonsterManager:
     
     def _load_data(self) -> None:
         """Load monster data from JSON file."""
-        path = Path(self.data_path)
-        if not path.exists():
-            self.monsters = {}
-            return
-
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                if isinstance(data, dict):
-                    self.monsters = data
-                else:
-                    self.monsters = {}
-        except json.JSONDecodeError:
-            print(f"Error decoding JSON from {self.data_path}")
+            if os.path.exists(self.data_path):
+                with open(self.data_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        self.monsters = data
+                    else:
+                        self.monsters = {}
+                logger.info(f"Successfully loaded {len(self.monsters)} monsters from {self.data_path}")
+            else:
+                logger.info(f"Monster data file not found at {self.data_path}. Starting with empty database.")
+                self.monsters = {}
+        except json.JSONDecodeError as e:
+            logger.error(f"Malformed JSON in monster data file {self.data_path}: {e}")
             self.monsters = {}
         except Exception as e:
-            print(f"Unexpected error reading {self.data_path}: {e}")
+            logger.error(f"Error loading monster data from {self.data_path}: {e}")
             self.monsters = {}
     
     def _save_data(self) -> bool:
@@ -102,8 +105,9 @@ class MonsterManager:
             event_name: Name of the event to listen to
             callback: Function to call when event occurs
         """
-        # TODO: Implement callback registration
-        pass
+        if event_name not in self.callbacks:
+            self.callbacks[event_name] = []
+        self.callbacks[event_name].append(callback)
     
     def list_monsters(self, filter_dict: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
@@ -147,12 +151,18 @@ class MonsterManager:
         Events:
             Emits monster_created(monster_id, data)
         """
-        # TODO: Implement monster creation with validation
-        # Generate UUID for monster_id
-        # Validate required fields
-        # Save to data store
-        # Emit event
-        pass
+        if not self._validate_monster_data(monster_data):
+            raise ValueError("Invalid monster data")
+
+        monster_id = str(uuid.uuid4())
+
+        # Store a copy of the data
+        self.monsters[monster_id] = monster_data.copy()
+
+        self._save_data()
+        self._emit_event("monster_created", monster_id, self.monsters[monster_id])
+
+        return monster_id
     
     def update_monster(self, monster_id: str, data: Dict[str, Any]) -> bool:
         """
@@ -270,10 +280,13 @@ class MonsterManager:
         Returns:
             bool: True if valid, False otherwise
         """
-        # TODO: Implement validation
-        # Required fields: name
-        # Optional: level, templates, metadata
-        pass
+        if not isinstance(data, dict):
+            return False
+        if "name" not in data or not isinstance(data["name"], str):
+            return False
+        if not data["name"].strip():
+            return False
+        return True
 
 
 # Singleton instance
