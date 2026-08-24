@@ -76,16 +76,16 @@ class TimingCalcDialog(tk.Toplevel):
                 dps = float(self.dps_var.get())
 
                 from lib.features.timing.calculator import calculate_timing
-                res = calculate_timing(aps, ehp, dps)
-                self.recommended_time = res["recommended_time"]
+                rec = calculate_timing(monster_hp=ehp, damage_per_hit=dps, attacks_per_second=aps)
+                self.recommended_time = rec.estimated_kill_time_sec
 
                 # Format text
                 text = (
                     f"EHP: {ehp:,.0f} | DPS: {dps:,.0f}\n"
-                    f"Time to kill: {res['time_to_kill']:.1f}s\n"
-                    f"Required Casts: {res['required_casts']:.1f}\n"
-                    f"Estimated Delay: {res['estimated_cast_time']:.1f}s\n\n"
-                    f"Recommended Setting: {res['recommended_time']:.1f}s"
+                    f"Time to kill: {rec.estimated_kill_time_sec:.1f}s\n"
+                    f"Required Casts: {rec.hits_to_kill:.1f}\n"
+                    f"Estimated Delay: {rec.attack_min_duration_sec:.1f}s\n\n"
+                    f"Recommended Setting: {rec.estimated_kill_time_sec:.1f}s"
                 )
                 self.res_label.config(text=text, foreground="#333")
             except ValueError:

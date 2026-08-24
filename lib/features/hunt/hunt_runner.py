@@ -124,7 +124,7 @@ class HuntRunner:
                         logger.log_warning(
                             f"Target window '{win_title}' lost. Pausing bot."
                         )
-                        self.hunt_status.set("Window Lost - Waiting...")
+                        self._update_status("Window Lost - Waiting...")
                         if hasattr(self.app, "overlay_ctrl") and self.app.overlay_ctrl:
                             self.app.overlay_ctrl.set_status("Window Lost")
                             self.app.overlay_ctrl.clear_target()

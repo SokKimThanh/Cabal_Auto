@@ -92,7 +92,7 @@ class SetupTab(tk.Frame):
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 8))
 
         hotkey_options = [
-            "ctrl+shift+r", "ctrl+shift+s", "ctrl+alt+r", "ctrl+alt+s",
+            "ctrl+shift+r", "ctrl+shift+e", "ctrl+shift+s", "ctrl+alt+r", "ctrl+alt+s",
             "f9", "f10", "f11", "f12",
         ]
 
