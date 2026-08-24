@@ -131,9 +131,7 @@ class HuntRunner:
                             f"Target window '{win_title}' lost. Pausing bot."
                         )
                         self._update_status("Window Lost - Waiting...")
-                        if hasattr(self.app, "overlay_ctrl") and self.app.overlay_ctrl:
-                            self.app.overlay_ctrl.set_status("Window Lost")
-                            self.app.overlay_ctrl.clear_target()
+                        self._update_overlay(status_text="Window Lost", clear=True)
                         time.sleep(2.0)
                         continue
 
@@ -143,24 +141,15 @@ class HuntRunner:
 
                     if target_pt:
                         if self.ui_mode in ["intermediate", "advanced"]:
-                            self.hunt_status.set(
+                            self._update_status(
                                 f"Attacking: {name} ({score * 100:.0f}%)"
                             )
                         else:
-                            self.hunt_status.set(f"Attacking: {name}")
+                            self._update_status(f"Attacking: {name}")
 
-                        # Update overlay if active
-                        if (
-                            hasattr(self.app, "overlay_ctrl")
-                            and self.app.overlay_ctrl
-                            and self.app.overlay_ctrl.is_overlay_active()
-                        ):
-                            self.app.overlay_ctrl.set_status(f"Attacking {name}")
-                            # Target point is relative to the bounds.
-                            # The overlay handles translation internally when given screen coordinates
-                            screen_x = bounds[0] + target_pt[0]
-                            screen_y = bounds[1] + target_pt[1]
-                            self.app.overlay_ctrl.draw_target_box(screen_x, screen_y)
+                        screen_x = bounds[0] + target_pt[0]
+                        screen_y = bounds[1] + target_pt[1]
+                        self._update_overlay(status_text=f"Attacking {name}", screen_x=screen_x, screen_y=screen_y)
 
                         # Attack Sequence
                         click_cfg = self.app.cfg.get("click", {})
@@ -225,14 +214,8 @@ class HuntRunner:
                         # Wait before next scan
                         time.sleep(click_cfg.get("interval_sec", 2.0))
                     else:
-                        self.hunt_status.set("Searching...")
-                        if (
-                            hasattr(self.app, "overlay_ctrl")
-                            and self.app.overlay_ctrl
-                            and self.app.overlay_ctrl.is_overlay_active()
-                        ):
-                            self.app.overlay_ctrl.set_status("Searching...")
-                            self.app.overlay_ctrl.clear_target()
+                        self._update_status("Searching...")
+                        self._update_overlay(status_text="Searching...", clear=True)
 
                         # Move randomly if enabled
                         options = self.hunt_cfg.get("options", {})

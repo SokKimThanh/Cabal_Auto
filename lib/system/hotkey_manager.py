@@ -298,7 +298,7 @@ class HotkeyManager:
                     self._global_monster_hotkey = None
 
         except Exception as e:
-            print(f"Error in _unregister_global_hotkeys: {e}")
+            print(f"Error in unregister_all: {e}")
             try:
                 self.app._hotkey_diag_var.set(str(e))
             except Exception:

@@ -1,3 +1,4 @@
+from typing import Optional, Dict, Any
 import json
 from pathlib import Path
 
@@ -34,7 +35,7 @@ def save_monster_library(monsters):
         return False
 
 
-def calculate_monster_estimate(monster):
+def calculate_monster_estimate(monster: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Given a monster config dict, calculate its estimated clear time and required DPS based on:
     - Base HP
