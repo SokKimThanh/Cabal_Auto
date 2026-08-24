@@ -70,6 +70,10 @@ def load_hunt_config():
 
                 # Normalize fields immediately after loading
                 _normalize_window_bounds(data)
+                if isinstance(data.get("hunt_area"), dict):
+                    data["hunt_area"]["window_bounds"] = _normalize_window_bounds_value(
+                        data["hunt_area"].get("window_bounds")
+                    )
                 _sanitize_config_monsters(data)
 
                 return data
