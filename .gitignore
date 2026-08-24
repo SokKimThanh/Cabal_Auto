@@ -28,3 +28,4 @@ automate_*.py
 split_*.py
 temp_*.py
 scratch_*.py
+.coverage
