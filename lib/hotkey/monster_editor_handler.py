@@ -167,14 +167,14 @@ class MonsterEditorHandler:
                 on_save=save_callback
             )
             
+            # ✅ FIX: Reset flag immediately after successful creation
+            self._opening_flag = False
+
             print(f"[Monster Editor] ✓ Opened successfully")
             
             if self.debug:
                 print(f"  Editor instance: {editor}")
                 print(f"  Editor type: {type(editor)}")
-            
-            # ✅ FIX: Reset flag immediately after successful creation
-            self._opening_flag = False
             
         except Exception as e:
             print(f"[Monster Editor] ✗ Error: {e}")
