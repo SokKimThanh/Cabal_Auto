@@ -124,7 +124,14 @@ class AppRuntimeBridgeMixin:
         return results
 
     def on_hunt_refresh_windows(self, *_args) -> None:
+        self.win_items = []
+        if hasattr(self, "win_combo"):
+            self.win_combo.set("")
         self.on_hunt_find_windows()
+
+        count = len(self.win_items) if hasattr(self, "win_items") else 0
+        if hasattr(self, "hunt_status"):
+            self.hunt_status.set(f"🔄 Refreshed: {count} window(s) found")
 
     def on_hunt_find_windows(self, _evt=None) -> None:
         try:
@@ -201,6 +208,20 @@ class AppRuntimeBridgeMixin:
         hunt_area["window_bounds"] = bounds
         self._update_window_bounds_display()
         save_hunt_config(self.hunt_cfg)
+
+        ok = self._bring_window_to_front_by_hwnd(selected["hwnd"])
+        if ok and hasattr(self, "lift"):
+            def _lift_app():
+                try:
+                    self.lift()
+                    self.focus_force()
+                    self.attributes("-topmost", True)
+                    self.update()
+                    self.after(100, lambda: self.attributes("-topmost", False))
+                except Exception:
+                    pass
+            self.after(100, _lift_app)
+
         if hasattr(self, "hunt_status"):
             self.hunt_status.set(f"Window selected: {selected['title']}")
 
