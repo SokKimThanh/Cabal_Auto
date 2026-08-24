@@ -115,6 +115,14 @@ def save_hunt_config(cfg):
 
 
 def _normalize_window_bounds_value(value):
+    if isinstance(value, (list, tuple)) and len(value) == 4:
+        try:
+            l, t, w, h = [int(v) for v in value]
+            if w <= 0 or h <= 0:
+                return None
+            return [l, t, w, h]
+        except (ValueError, TypeError):
+            return None
     if not isinstance(value, dict):
         return None
     try:
