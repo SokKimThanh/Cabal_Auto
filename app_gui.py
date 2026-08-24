@@ -271,7 +271,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             vision_menu.add_command(
                 label=vision_label,
                 accelerator="Ctrl+Shift+V",
-                command=self._open_vision_wizard,
+                command=self.window_controller.open_vision_wizard,
             )
 
             vision_menu.add_separator()
@@ -332,9 +332,11 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         )
 
         # State Bookkeeping Extracted
+        from ui.controllers.app_window_controller import AppWindowController
         from ui.controllers.app_state_controller import AppStateController
 
         self.state_controller = AppStateController(self)
+        self.window_controller = AppWindowController(self)
 
         self.monsters = self._normalize_library_items(load_monster_library())
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
@@ -850,102 +852,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self._build_ui()
 
     def on_setup_wizard(self, hide_parent=True):
-        """Launch setup wizard to guide user through initial configuration.
-
-        Args:
-            hide_parent: Whether to hide parent window (default True for startup, False for hotkey)
-        """
-
-        def on_wizard_complete(wizard_data):
-            """Callback when wizard completes - apply settings to UI."""
-            # Show main window again if it was hidden
-            if hide_parent:
-                self.deiconify()
-
-            # Reload config to get wizard changes
-            self.hunt_cfg = load_hunt_config()
-
-            # Populate Hunt tab UI with wizard data
-            self._populate_hunt_ui_from_config()
-
-            # Update status message
-            lang = wizard_data.get("language", "en")
-            self.hunt_status.set(
-                f"✅ Wizard completed! Configuration loaded. Ready to hunt. (Language: {lang})"
-            )
-
-        def on_wizard_cancel():
-            """Callback when wizard is cancelled - restore main window."""
-            if hide_parent:
-                self.deiconify()
-
-        # Launch wizard - use 'self' instead of 'self.root' (App inherits from tk.Tk)
-        if callable(show_setup_wizard):
-            try:
-                show_setup_wizard(
-                    self,
-                    config_manager=self.config_mgr,
-                    on_complete=on_wizard_complete,
-                    on_cancel=on_wizard_cancel,
-                    hide_parent=hide_parent,
-                )
-            except tk.TclError:
-                app_lang = self.lang
-
-                class _HeadlessSetupWizardStub:
-                    def __init__(self):
-                        self.wizard_data = {"language": app_lang}
-                        self.dialog = self
-                        self._dirty = False
-
-                    def has_unsaved_changes(self):
-                        return self._dirty or bool(self.wizard_data)
-
-                    def attempt_close_from_external(self):
-                        return True
-
-                    def destroy(self):
-                        return None
-
-                self._setup_wizard_win = _HeadlessSetupWizardStub()
-        else:
-            # Fallback: wizard not available
-            try:
-                messagebox.showinfo(
-                    self._t("info_title"),
-                    "Setup wizard is not available in this build.",
-                    parent=self,
-                )
-            except Exception:
-                pass
+        self.window_controller.on_setup_wizard(hide_parent)
 
     def try_close_setup_wizard(self) -> bool:
-        """Attempt to close the setup wizard if open.
-
-        Returns True if wizard not present or was closed. Returns False if close
-        was cancelled (e.g., user declined to discard/save changes).
-        """
-        try:
-            wiz = getattr(self, "_setup_wizard_win", None)
-            if wiz is None:
-                # Try to find dialog child
-                for c in list(self.winfo_children()):
-                    if getattr(c, "_is_setup_wizard", False):
-                        wiz = getattr(c, "_wizard_ref", None) or c
-                        break
-            if wiz is None:
-                return True
-            # If wizard exposes attempt_close_from_external use it
-            fn = getattr(wiz, "attempt_close_from_external", None)
-            if callable(fn):
-                try:
-                    return bool(fn())
-                except Exception:
-                    return False
-            # Fallback: call destroy (conservative: do not destroy without user confirmation)
-            return False
-        except Exception:
-            return False
+        return self.window_controller.try_close_setup_wizard()
 
     def _switch_to_tab(self, tab_index: int):
         """Switch to specified tab via keyboard shortcut."""
@@ -1208,7 +1118,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             if response:
                 # User clicked Yes - launch wizard
                 print("[First-time check] Launching wizard...")
-                self.on_setup_wizard()
+                self.window_controller.on_setup_wizard()
             else:
                 # User clicked No - auto-detect Cabal window and save
                 print(
@@ -1625,26 +1535,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
     # Close
     # -----------------
     def _open_vision_wizard(self):
-        """
-        Open Vision Wizard window (Ctrl+Shift+V).
-        Uses singleton pattern - only one instance at a time.
-        """
-        try:
-            from ui.windows.setup_wizard_vision import create_or_show_vision_wizard
-
-            wizard = create_or_show_vision_wizard(
-                self,  # type: ignore
-                config_path=str(CONFIG_PATH),  # Use global CONFIG_PATH
-                on_close=self._on_vision_wizard_closed,
-            )
-            print(f"[Vision] Wizard opened/focused: {wizard}")
-
-        except Exception as e:
-            print(f"[Vision] Error opening wizard: {e}")
-            import traceback
-
-            traceback.print_exc()
-            messagebox.showerror(self._t("error"), f"Cannot open Vision Wizard:\n{e}")
+        self.window_controller.open_vision_wizard()
 
     def _scan_region(self):
         """
@@ -1712,7 +1603,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         Shortcut to Vision Wizard.
         """
         print("[Vision] Manage templates - opening wizard")
-        self._open_vision_wizard()
+        self.window_controller.open_vision_wizard()
 
     def _toggle_overlay(self):
         """
@@ -2277,7 +2168,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             # No existing wizard - open directly without confirmation
             # (User actively pressed hotkey, no need to ask)
             print("[Hotkeys] Opening Setup Wizard directly from hotkey")
-            self.after(0, lambda: self.on_setup_wizard(hide_parent=False))
+            self.after(0, lambda: self.window_controller.on_setup_wizard(hide_parent=False))
 
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
@@ -3967,14 +3858,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             pass
 
     def _open_monster_manager(self):
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        MonsterManagerWin(self)
+        self.window_controller.open_monster_manager()
 
     def _open_skill_manager(self):
-        from ui.windows.skill_manager_win import SkillManagerWin
-
-        SkillManagerWin(self)
+        self.window_controller.open_skill_manager()
 
     def on_monster_calculate_timing(self):
         from ui.windows.timing_calc_dialog import TimingCalcDialog

@@ -11,7 +11,6 @@ from lib.features.monsters.monster_repo import calculate_monster_estimate
 from lib.system.hotkey_manager import HotkeyManager
 from lib.system.win_input import tap
 from lib.vision.template_matcher import locate_template
-from ui.windows.monster_manager_win import MonsterManagerWin
 
 
 class AppRuntimeBridgeMixin:
@@ -91,163 +90,28 @@ class AppRuntimeBridgeMixin:
             self.window_bounds_display_var.set("")
 
     def _list_windows(self, title_contains: Optional[str] = None) -> List[Dict[str, Any]]:
-        from lib.system.window_manager import WindowManager
-
-        wm = WindowManager()
-        windows = wm.list_windows(title_contains=title_contains, visible_only=True)
-        results: List[Dict[str, Any]] = []
-        own_title = ""
-        try:
-            own_title = self.title()
-        except Exception:
-            own_title = ""
-        for info in windows:
-            title = (info.title or "").strip()
-            if not title or title == own_title:
-                continue
-            results.append(
-                {
-                    "hwnd": int(info.hwnd),
-                    "pid": int(info.pid),
-                    "title": title,
-                    "proc": info.process_name,
-                    "bounds": self._normalize_window_bounds_value(info.rect),
-                }
-            )
-        results.sort(
-            key=lambda item: (
-                "cabal" not in item["title"].lower(),
-                item["title"].lower(),
-                item["pid"],
-            )
-        )
-        return results
+        return self.window_controller._list_windows(title_contains)
 
     def on_hunt_refresh_windows(self, *_args) -> None:
-        self.on_hunt_find_windows()
+        self.window_controller.on_hunt_refresh_windows(*_args)
 
     def on_hunt_find_windows(self, _evt=None) -> None:
-        try:
-            items = self._list_windows()
-        except Exception as exc:
-            self.win_items = []
-            if hasattr(self, "win_combo"):
-                self.win_combo["values"] = []
-            if hasattr(self, "hunt_status"):
-                self.hunt_status.set(f"Window scan failed: {exc}")
-            return
-
-        self.win_items = items
-        values = [item["title"] for item in items]
-        if hasattr(self, "win_combo"):
-            self.win_combo["values"] = values
-
-        if not items:
-            self.hunt_selected = None
-            if hasattr(self, "win_combo_var"):
-                self.win_combo_var.set("")
-            self.current_window_bounds = None
-            self._update_window_bounds_display()
-            if hasattr(self, "hunt_status"):
-                self.hunt_status.set("No visible windows found")
-            return
-
-        target_index = 0
-        selected = getattr(self, "hunt_selected", None) or {}
-        selected_hwnd = selected.get("hwnd") if isinstance(selected, dict) else None
-        selected_title = selected.get("title") if isinstance(selected, dict) else None
-        for idx, item in enumerate(items):
-            if selected_hwnd and item["hwnd"] == selected_hwnd:
-                target_index = idx
-                break
-            if selected_title and item["title"] == selected_title:
-                target_index = idx
-                break
-
-        if hasattr(self, "win_combo"):
-            self.win_combo.current(target_index)
-        if hasattr(self, "win_combo_var"):
-            self.win_combo_var.set(values[target_index])
-        self.on_window_combo_selected()
+        self.window_controller.on_hunt_find_windows(_evt)
 
     def on_window_combo_selected(self, _evt=None) -> None:
-        if not getattr(self, "win_items", None):
-            self.hunt_selected = None
-            return
-
-        index = 0
-        try:
-            index = int(self.win_combo.current())
-        except Exception:
-            selected_title = self.win_combo_var.get().strip() if hasattr(self, "win_combo_var") else ""
-            for idx, item in enumerate(self.win_items):
-                if item["title"] == selected_title:
-                    index = idx
-                    break
-
-        if index < 0 or index >= len(self.win_items):
-            index = 0
-
-        selected = dict(self.win_items[index])
-        bounds = self._normalize_window_bounds_value(selected.get("bounds"))
-        self.hunt_selected = selected
-        self.current_window_bounds = bounds
-        self.hunt_cfg["window_title"] = selected["title"]
-        self.hunt_cfg["window_pid"] = selected["pid"]
-        self.hunt_cfg["window_hwnd"] = selected["hwnd"]
-        self.hunt_cfg["window_bounds"] = bounds
-        hunt_area = self._normalize_hunt_area(self.hunt_cfg)
-        hunt_area["window_title"] = selected["title"]
-        hunt_area["window_bounds"] = bounds
-        self._update_window_bounds_display()
-        save_hunt_config(self.hunt_cfg)
-        if hasattr(self, "hunt_status"):
-            self.hunt_status.set(f"Window selected: {selected['title']}")
+        self.window_controller.on_window_combo_selected(_evt)
 
     def _auto_detect_and_save_cabal_window(self) -> None:
-        try:
-            items = self._list_windows(title_contains="Cabal")
-            if not items:
-                items = self._list_windows()
-            if not items:
-                return
-            self.win_items = items
-            if hasattr(self, "win_combo"):
-                self.win_combo["values"] = [item["title"] for item in items]
-            if hasattr(self, "win_combo"):
-                self.win_combo.current(0)
-            if hasattr(self, "win_combo_var"):
-                self.win_combo_var.set(items[0]["title"])
-            self.on_window_combo_selected()
-        except Exception:
-            return
+        self.window_controller._auto_detect_and_save_cabal_window()
 
     def _bring_window_to_front_by_hwnd(self, hwnd: int) -> bool:
-        try:
-            from lib.system.window_manager import WindowManager
-
-            return WindowManager().set_foreground(int(hwnd))
-        except Exception:
-            return False
+        return self.window_controller._bring_window_to_front_by_hwnd(hwnd)
 
     def _bring_window_to_front_by_pid(self, pid: int) -> bool:
-        try:
-            for item in self._list_windows():
-                if int(item["pid"]) == int(pid):
-                    return self._bring_window_to_front_by_hwnd(int(item["hwnd"]))
-        except Exception:
-            return False
-        return False
+        return self.window_controller._bring_window_to_front_by_pid(pid)
 
     def _bring_window_to_front(self, title: str) -> bool:
-        if not title:
-            return False
-        try:
-            for item in self._list_windows(title_contains=title):
-                return self._bring_window_to_front_by_hwnd(int(item["hwnd"]))
-        except Exception:
-            return False
-        return False
+        return self.window_controller._bring_window_to_front(title)
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         title = str(self.hunt_cfg.get("window_title", "") or "").strip()
@@ -547,109 +411,16 @@ class AppRuntimeBridgeMixin:
         dialog.show()
 
     def _open_library_manager(self) -> None:
-        existing = getattr(self, "library_manager_win", None)
-        if existing is not None:
-            try:
-                if existing.winfo_exists():
-                    existing.deiconify()
-                    existing.lift()
-                    existing.focus_force()
-                    return
-            except Exception:
-                self.library_manager_win = None
-
-        from ui.windows.library_manager import LibraryManagerWindow
-        from lib.features.monsters.monster_repo import save_monster_library
-        from lib.features.skills.skill_repo import save_skill_library
-
-        def on_close_callback(changes: Dict[str, Any]) -> None:
-            try:
-                hunt_cfg = changes.get("hunt_cfg")
-                if isinstance(hunt_cfg, dict):
-                    self.hunt_cfg.update(hunt_cfg)
-                    save_hunt_config(self.hunt_cfg)
-                monsters = changes.get("monsters")
-                if monsters is not None:
-                    self.monsters = self._normalize_library_items(monsters)
-                    save_monster_library(self.monsters)
-                    self._refresh_monster_select_options()
-                    self._refresh_monster_rotation_list()
-                skills = changes.get("skills")
-                if skills is not None:
-                    self.skills = self._normalize_library_items(skills)
-                    save_skill_library(self.skills)
-                    self._refresh_skill_slots_options()
-            finally:
-                self.library_manager_win = None
-
-        try:
-            self.library_manager_win = LibraryManagerWindow(
-                parent=self,
-                hunt_cfg=self.hunt_cfg,
-                monsters=self.monsters,
-                skills=self.skills,
-                lang=getattr(self, "lang", "vi"),
-                on_close_callback=on_close_callback,
-            )
-        except Exception:
-            class _HeadlessLibraryManagerStub:
-                def __init__(self):
-                    self._exists = True
-
-                def winfo_exists(self) -> bool:
-                    return self._exists
-
-                def deiconify(self) -> None:
-                    return None
-
-                def lift(self) -> None:
-                    return None
-
-                def focus_force(self) -> None:
-                    return None
-
-                def _on_window_close(self) -> None:
-                    self._exists = False
-
-                def destroy(self) -> None:
-                    self._exists = False
-
-            self.library_manager_win = _HeadlessLibraryManagerStub()
+        self.window_controller.open_library_manager()
 
     def _on_vision_wizard_hotkey(self, *_args) -> None:
-        self.after(0, self._open_vision_wizard)
+        self.after(0, self.window_controller.open_vision_wizard)
 
     def _on_monster_editor_hotkey(self, *_args) -> None:
-        existing = getattr(self, "monster_manager_win", None)
-        if existing is not None:
-            try:
-                if existing.winfo_exists():
-                    existing.deiconify()
-                    existing.lift()
-                    existing.focus_force()
-                    return
-            except Exception:
-                self.monster_manager_win = None
-        self.after(0, lambda: setattr(self, "monster_manager_win", MonsterManagerWin(self)))
+        self.after(0, self.window_controller.open_monster_manager)
 
     def try_close_library_manager(self) -> bool:
-        win = getattr(self, "library_manager_win", None)
-        if win is None:
-            return True
-        try:
-            if not win.winfo_exists():
-                self.library_manager_win = None
-                return True
-            if hasattr(win, "_on_window_close"):
-                win._on_window_close()
-            else:
-                win.destroy()
-            if win.winfo_exists():
-                return False
-        except Exception:
-            return False
-        self.library_manager_win = None
-        return True
+        return self.window_controller.try_close_library_manager()
 
     def _after_hunt_stop(self) -> None:
         self.hunt_running = False
