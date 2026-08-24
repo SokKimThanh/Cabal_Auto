@@ -84,6 +84,7 @@ class MonsterDatabase:
 
         try:
             from lib.db.schema import setup_skills_schema
+
             setup_skills_schema(self.conn)
         except ImportError as e:
             print(f"[DB] Could not setup skills schema: {e}")
@@ -288,39 +289,43 @@ class MonsterDatabase:
                 val = monster.get(col)
 
                 # Fallback: nếu dungeonId trống, thử lấy từ locationId
-                if not val and col == 'dungeonId':
-                    val = monster.get('locationId')
+                if not val and col == "dungeonId":
+                    val = monster.get("locationId")
 
-                if col == 'dungeonId':
+                if col == "dungeonId":
                     # Giữ giá trị nếu không phải None và không rỗng, kể cả '0'
-                    if val is not None and str(val).strip() != '':
+                    if val is not None and str(val).strip() != "":
                         row_data[col] = str(val).strip()
                     else:
                         row_data[col] = None
 
-                elif col == 'serverBossType':
+                elif col == "serverBossType":
                     # Giữ giá trị nếu không phải None và không rỗng, kể cả '0'
-                    if val is not None and str(val).strip() != '':
+                    if val is not None and str(val).strip() != "":
                         row_data[col] = str(val).strip()
                     else:
                         row_data[col] = None
 
                 else:
-                    if col in ('name', 'id') and not val:
-                        row_data[col] = ''
+                    if col in ("name", "id") and not val:
+                        row_data[col] = ""
                     else:
                         row_data[col] = val if val is not None else 0
 
             row = tuple(row_data.get(col) for col in self.MONSTER_COLUMNS)
             insert_data.append(row)
 
-        placeholders = ','.join(['?'] * len(self.MONSTER_COLUMNS))
-        columns_str = ','.join(self.MONSTER_COLUMNS)
-        query = f"INSERT OR REPLACE INTO monsters ({columns_str}) VALUES ({placeholders})"
+        placeholders = ",".join(["?"] * len(self.MONSTER_COLUMNS))
+        columns_str = ",".join(self.MONSTER_COLUMNS)
+        query = (
+            f"INSERT OR REPLACE INTO monsters ({columns_str}) VALUES ({placeholders})"
+        )
 
         cursor.executemany(query, insert_data)
         self.conn.commit()
-        print(f"[DB] Đã import thành công {len(insert_data)} quái vật vào bảng monsters.")
+        print(
+            f"[DB] Đã import thành công {len(insert_data)} quái vật vào bảng monsters."
+        )
 
     def get_monster_types(self) -> List[Any]:
         """Lấy danh sách các serverBossType distinct."""
@@ -401,7 +406,9 @@ class MonsterDatabase:
 
         cursor = self.conn.cursor()
 
-        count_query = f"SELECT COUNT(*) AS total FROM monsters{where_clause}"
+        count_query = (
+            f"SELECT COUNT(*) AS total FROM monsters{where_clause}"  # nosec B608
+        )
         cursor.execute(count_query, params)
         total_records = int(cursor.fetchone()["total"] or 0)
         total_pages = (
@@ -409,11 +416,7 @@ class MonsterDatabase:
         )
 
         offset = (safe_page - 1) * safe_page_size
-        sql = (
-            f"SELECT * FROM monsters{where_clause} "
-            f"ORDER BY {safe_sort_column} {safe_sort_order} "
-            f"LIMIT ? OFFSET ?"
-        )
+        sql = f"SELECT * FROM monsters{where_clause} ORDER BY {safe_sort_column} {safe_sort_order} LIMIT ? OFFSET ?"  # nosec B608
         cursor.execute(sql, params + [safe_page_size, offset])
 
         return {
@@ -461,8 +464,8 @@ class MonsterDatabase:
         # Lọc các trường có trong bảng
         data = {k: v for k, v in monster.items() if k in columns}
         # Xử lý giá trị rỗng cho dungeonId và serverBossType
-        for col in ('dungeonId', 'serverBossType'):
-            if col in data and (data[col] is None or str(data[col]).strip() == ''):
+        for col in ("dungeonId", "serverBossType"):
+            if col in data and (data[col] is None or str(data[col]).strip() == ""):
                 data[col] = None
         if not data.get("id"):
             print("[DB] Lỗi insert/update monster: missing 'id'")
@@ -471,8 +474,8 @@ class MonsterDatabase:
         for col in columns:
             if col not in data:
                 data[col] = "" if col == "name" else 0
-        placeholders = ','.join(['?' for _ in data])
-        columns_str = ','.join(data.keys())
+        placeholders = ",".join(["?" for _ in data])
+        columns_str = ",".join(data.keys())
         values = list(data.values())
         sql = f"INSERT OR REPLACE INTO monsters ({columns_str}) VALUES ({placeholders})"
         try:
@@ -569,7 +572,7 @@ def check_db_health() -> Dict[str, Any]:
         with sqlite3.connect(str(db_path)) as conn:
             cursor = conn.cursor()
             for table in required:
-                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                cursor.execute(f"SELECT COUNT(*) FROM {table}")  # nosec B608
                 counts[table] = cursor.fetchone()[0]
 
         return {"ok": True, "missing_tables": [], "counts": counts, "error": None}

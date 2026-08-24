@@ -2396,10 +2396,26 @@ class VisionWizard(tk.Toplevel):
         """
         Xử lý khi đóng cửa sổ.
 
-        TODO: Confirm nếu có thay đổi chưa lưu
         TODO: Cleanup resources
         """
-        # TODO: Check unsaved changes
+        # Check unsaved changes
+        if hasattr(self, "unsaved_tabs") and len(self.unsaved_tabs) > 0:
+            result = messagebox.askyesno(
+                i18n_t(
+                    "confirm_unsaved_title",
+                    ns="vision_wizard",
+                    default="Có thay đổi chưa lưu",
+                ),
+                i18n_t(
+                    "confirm_unsaved_message",
+                    ns="vision_wizard",
+                    default="Bạn có thay đổi chưa lưu.\nBạn có chắc chắn muốn thoát và mất các thay đổi?",
+                ),
+            )
+
+            if not result:
+                # User selected "No", abort closing
+                return
 
         # Call callback nếu có
         if self.on_close_callback:
