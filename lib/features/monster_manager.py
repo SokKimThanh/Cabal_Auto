@@ -59,7 +59,11 @@ class MonsterManager:
         try:
             if os.path.exists(self.data_path):
                 with open(self.data_path, 'r', encoding='utf-8') as f:
-                    self.monsters = json.load(f)
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        self.monsters = data
+                    else:
+                        self.monsters = {}
                 logger.info(f"Successfully loaded {len(self.monsters)} monsters from {self.data_path}")
             else:
                 logger.info(f"Monster data file not found at {self.data_path}. Starting with empty database.")
