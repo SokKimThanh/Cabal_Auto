@@ -1,13 +1,15 @@
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from PIL import Image
 
 from views.image_handler import ImageHandler
 
 @pytest.fixture
 def mock_pil_available():
-    with patch("views.image_handler.PIL_AVAILABLE", True):
+    with patch("views.image_handler.PIL_AVAILABLE", True), \
+         patch("views.image_handler.Image", MagicMock()), \
+         patch("views.image_handler.ImageTk", MagicMock()), \
+         patch("views.image_handler.ImageDraw", MagicMock()):
         yield
 
 @pytest.fixture
@@ -102,18 +104,17 @@ def test_clear_cache(handler):
     handler.clear_cache()
     assert len(handler._cache) == 0
 
-def test_create_placeholder_success():
+def test_create_placeholder_success(mock_pil_available):
     handler = ImageHandler()
-    with patch("views.image_handler.PIL_AVAILABLE", True):
-        with patch("views.image_handler.Image.new") as mock_new:
-            mock_img = MagicMock()
-            mock_new.return_value = mock_img
-            with patch("views.image_handler.ImageTk.PhotoImage", return_value="mock_placeholder_photo"):
-                # Disable ImageDraw logic since we are mocking image itself
-                with patch("views.image_handler.ImageDraw", None):
-                    result = handler._create_placeholder((32, 32), "test")
-                    assert result == "mock_placeholder_photo"
-                    mock_new.assert_called_once_with("RGB", (32, 32), color=(220, 220, 220))
+    with patch("views.image_handler.Image.new", create=True) as mock_new:
+        mock_img = MagicMock()
+        mock_new.return_value = mock_img
+        with patch("views.image_handler.ImageTk.PhotoImage", return_value="mock_placeholder_photo"):
+            # Disable ImageDraw logic since we are mocking image itself
+            with patch("views.image_handler.ImageDraw", None):
+                result = handler._create_placeholder((32, 32), "test")
+                assert result == "mock_placeholder_photo"
+                mock_new.assert_called_once_with("RGB", (32, 32), color=(220, 220, 220))
 
 def test_create_placeholder_pil_unavailable():
     handler = ImageHandler()
@@ -121,12 +122,11 @@ def test_create_placeholder_pil_unavailable():
         result = handler._create_placeholder((32, 32), "test")
         assert result is None
 
-def test_create_placeholder_exception():
+def test_create_placeholder_exception(mock_pil_available):
     handler = ImageHandler()
-    with patch("views.image_handler.PIL_AVAILABLE", True):
-        with patch("views.image_handler.Image.new", side_effect=Exception("Fake error")):
-            result = handler._create_placeholder((32, 32), "test")
-            assert result is None
+    with patch("views.image_handler.Image.new", create=True, side_effect=Exception("Fake error")):
+        result = handler._create_placeholder((32, 32), "test")
+        assert result is None
 
 
 def test_get_preview_image_absolute_path(handler, mock_pil_available):
@@ -142,21 +142,20 @@ def test_get_preview_image_absolute_path(handler, mock_pil_available):
                 assert error is None
 
 
-def test_create_placeholder_imagedraw():
+def test_create_placeholder_imagedraw(mock_pil_available):
     handler = ImageHandler()
-    with patch("views.image_handler.PIL_AVAILABLE", True):
-        with patch("views.image_handler.Image.new") as mock_new:
-            mock_img = MagicMock()
-            mock_new.return_value = mock_img
-            with patch("views.image_handler.ImageTk.PhotoImage", return_value="mock_placeholder_photo"):
-                # We need to mock ImageDraw itself
-                with patch("views.image_handler.ImageDraw") as mock_draw_module:
-                    mock_draw = MagicMock()
-                    mock_draw_module.Draw.return_value = mock_draw
+    with patch("views.image_handler.Image.new", create=True) as mock_new:
+        mock_img = MagicMock()
+        mock_new.return_value = mock_img
+        with patch("views.image_handler.ImageTk.PhotoImage", return_value="mock_placeholder_photo"):
+            # We need to mock ImageDraw itself
+            with patch("views.image_handler.ImageDraw") as mock_draw_module:
+                mock_draw = MagicMock()
+                mock_draw_module.Draw.return_value = mock_draw
 
-                    result = handler._create_placeholder((32, 32), "test")
-                    assert result == "mock_placeholder_photo"
+                result = handler._create_placeholder((32, 32), "test")
+                assert result == "mock_placeholder_photo"
 
-                    # Verify ImageDraw was called
-                    mock_draw_module.Draw.assert_called_once_with(mock_img)
-                    mock_draw.rectangle.assert_called_once_with([(0, 0), (31, 31)], outline=(180, 180, 180))
+                # Verify ImageDraw was called
+                mock_draw_module.Draw.assert_called_once_with(mock_img)
+                mock_draw.rectangle.assert_called_once_with([(0, 0), (31, 31)], outline=(180, 180, 180))
