@@ -267,14 +267,13 @@ class MonsterDatabase:
             if d_id and str(d_id).strip():
                 dungeon_ids.add(str(d_id).strip())
 
-        for d_id in dungeon_ids:
-            cursor.execute(
-                """
-                INSERT OR IGNORE INTO dungeons (id, name)
-                VALUES (?, ?)
-            """,
-                (d_id, d_id),
-            )
+        cursor.executemany(
+            """
+            INSERT OR IGNORE INTO dungeons (id, name)
+            VALUES (?, ?)
+        """,
+            ((d_id, d_id) for d_id in dungeon_ids),
+        )
 
         self.conn.commit()
 
