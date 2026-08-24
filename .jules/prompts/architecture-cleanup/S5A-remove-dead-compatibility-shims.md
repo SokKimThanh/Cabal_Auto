@@ -18,11 +18,14 @@ Boundaries:
 - Do not delete compatibility code unless repository search confirms no active caller remains.
 - Do not change behavior or public config shape.
 - Keep app_gui.py as a composition root with explicit controller construction.
+- Before deleting any shim, compare the original behavior with the replacement module and prove the replacement still handles the same callback/config/cleanup path.
+- If the replacement is more complex than the old code without improving testability or reducing duplication, simplify the replacement instead of deleting the shim.
 
 Acceptance criteria:
 - No stale duplicated lifecycle/config/window/modal logic remains.
 - Remaining bridge code is justified by active callers.
 - app_gui.py is visibly thin and explicit.
+- The final summary lists every removed shim and the evidence that it was safe to remove.
 
 Validation:
 - Run targeted smoke suite found in P0.

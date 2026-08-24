@@ -15,6 +15,7 @@ Hard constraints:
 - Keep the change small, reversible, and scoped to the files named in this prompt.
 - Preserve current behavior and config compatibility.
 - Do not move logic back into app_gui.py after extracting it.
+- Do not accept a newly split module design just because it is split; use the new design only if it is simpler, clearer, easier to test, or less error-prone than the old code. If it is not, improve it inside this prompt's scope or explicitly report the follow-up needed.
 - Do not perform broad rewrites, style-only refactors, or unrelated cleanup.
 - Do not commit changes.
 - Do not delete code unless the prompt explicitly asks for deletion and repository search proves the code is unused.
@@ -27,9 +28,18 @@ Hard constraints:
 
 Before editing:
 - Identify the current controlling code path.
+- Identify the original/source code path and the new split module path that should now own the behavior.
 - State one local hypothesis about the extraction.
 - State the cheapest validation that can falsify it.
 - Identify at least 3 boundary/edge cases relevant to this session.
+
+Original-vs-module comparison checks:
+- Compare the original behavior source with the module(s) that now own that behavior before changing code.
+- Build a short checklist of moved responsibilities: callbacks, public App attributes, imports, compatibility fallbacks, config migrations, UI event bindings, cleanup paths, and helper methods relevant to this session.
+- For each important original function/block touched by this session, state whether it is kept, moved, replaced, or intentionally removed.
+- If a function became a thin wrapper, prove the real behavior exists in the new module and the call path still reaches it.
+- If any original behavior cannot be found in the new modules, treat it as possibly lost code and either restore it or stop with a clear report.
+- When comparing old and new code, prefer the simpler and less error-prone version. If the split version adds unnecessary layers, forwarding methods, or duplicated logic, simplify it within scope instead of keeping a worse design.
 
 Boundary checks:
 - Cover empty, missing, malformed, legacy, repeated-call, cleanup/dispose, and startup/shutdown boundaries when relevant.
@@ -41,13 +51,23 @@ Code preservation checks:
 - Before deleting or heavily rewriting a block, search for references and document why deletion is safe.
 - Prefer extraction by moving existing logic into the new controller/service with minimal edits, then validate, then simplify only if still inside scope.
 - Keep fallback paths until the replacement path is validated and all active callers are updated.
+- Do not replace working code with a stub, pass-through, or placeholder unless the prompt explicitly asks for a temporary adapter and the missing behavior is tracked.
+- Watch especially for lost UI handlers, hotkey callbacks, menu commands, Tk bindings, config migration code, close/destroy cleanup, and app-level attributes consumed by split tab/window modules.
 - Review the diff before final response and call out any removed code intentionally.
+
+Simplicity and maintainability checks:
+- Prefer a small direct function or service method over a new class when no state/lifecycle ownership is needed.
+- Avoid extra forwarding layers unless they preserve compatibility during the migration.
+- If two modules now perform the same validation, migration, or lifecycle decision, centralize it in the owner named by the roadmap.
+- The final code should be easier to locate, test, and reason about than the original code. If not, report why and propose the smallest follow-up cleanup.
 
 Before final response:
 - Summarize changed files.
+- Include the original-vs-module comparison result: what moved, what stayed, what was replaced, and whether anything looked missing.
 - List validation commands and results.
 - List boundary/edge cases checked, including any that remain manual-only.
 - List any code removed or replaced and why it was safe.
+- Explain why the new version is simpler/safer than the old version, or list the improvement still required.
 - Call out any residual risks or follow-up tasks.
 ```
 
@@ -58,6 +78,7 @@ Wave 0 can run first and is read-only. Wave 1 must run after Wave 0. Later waves
 | Wave | Sessions | Parallel? | Dependency |
 | --- | --- | --- | --- |
 | 0 | P0 | No | None |
+| 0.5 | P0B | No | Run after split modules exist or whenever lost code is suspected |
 | 1 | S1A, S1B, S1C | Mostly sequential | P0 complete; run S1A first, then S1B/S1C can split if S1A leaves clean boundaries |
 | 2 | S2A, S2B, S2C, S2D | Partial parallel | Sprint 1 merged/clean |
 | 3 | S3A, S3B, S3C, S3D | Parallel after S3A interface pass | Sprint 1 merged/clean; S2 not required unless touching hunt window selection |
@@ -91,6 +112,49 @@ Deliverable:
 
 Do not edit application code in this session. Only create or update .jules/architecture-cleanup-baseline.md.
 Run no broad test suite unless it is already documented as cheap. If no cheap command exists, say so.
+```
+
+### P0B - Original-vs-Module Lost Code Audit
+
+```text
+Audit for lost code after module extraction. This is primarily a read/report session. Only edit code if the lost behavior is small, obvious, and safe to restore within a narrow scope.
+
+Comparison sources:
+- Original file if available: .jules/prompts/app_gui_original.md
+- Current file: app_gui.py or app_gui.md if the repository is using a markdown comparison copy
+- Split modules related to the behavior: ui/tabs/*, ui/controllers/*, ui/windows/*, lib/features/*
+
+Goals:
+1. Compare important original functions/blocks with the current file and split modules.
+2. Find behavior that may have been lost during module extraction.
+3. Decide whether the new module design is simpler, clearer, easier to test, or less error-prone than the old code.
+4. If the new design is more complex without clear benefit, propose the smallest simplification.
+
+Check especially:
+- Button, menu, hotkey, combobox, listbox, keyboard, and mouse callbacks.
+- Public App attributes used by tabs, windows, or controllers.
+- Imports removed while active callers still exist.
+- Compatibility fallbacks for old config, legacy data, missing dependencies, or headless environments.
+- Config migration and validation logic.
+- Close/destroy cleanup for hotkeys, overlay, threads, window tracker, bot manager, setup wizard, and library manager.
+- Original helper methods replaced by `pass`, stubs, placeholders, or empty wrappers.
+
+Required report:
+- A table: `Original -> Current/module -> Status`.
+- Status must be one of: `kept`, `moved`, `replaced`, `missing-risk`, `intentionally-removed`.
+- For every `missing-risk`, name the file/function and propose how to restore it.
+- For every `intentionally-removed`, provide reference-search evidence or a clear reason.
+- List places where the split code is more complex than the original and how to simplify it.
+
+Do not:
+- Do not delete code in this audit session without strong evidence.
+- Do not replace real behavior with `pass` or placeholders.
+- Do not mix multiple responsibility groups in one patch.
+
+Validation:
+- Run reference searches for suspicious missing functions/callbacks.
+- Run the narrowest relevant test only if code is changed.
+- If this is report-only, say clearly that no broad test was required.
 ```
 
 ## Wave 1 - Sprint 1 App Shell And Lifecycle
