@@ -1,0 +1,26 @@
+# .github/workflows/copilot-code-review.yml
+name: Copilot Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copilot Review
+        uses: github/copilot-code-review-action@latest
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post Comment to PR
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            @Jules Copilot đã chạy review cho commit mới.
+            Vui lòng phản hồi lại với phân tích chi tiết.
