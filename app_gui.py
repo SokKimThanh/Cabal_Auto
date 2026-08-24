@@ -108,6 +108,7 @@ try:
 except Exception:
     capture_region_and_save = None  # type: ignore
 
+from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
 from lib.features.hunt.hunt_config import (ConfigManager, _normalize_window_bounds,
                                            _sanitize_templates, load_config, load_hunt_config,
                                            save_config, save_hunt_config)
@@ -128,6 +129,7 @@ from lib.system.instance_lock import SingleInstanceLock
 from lib.system.win_input import tap
 from lib.ui_style import UIStyle as UI  # Global UI style constants
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
+from ui.windows.setup_wizard import show_setup_wizard
 from ui.windows.monster_manager_win import MonsterManagerWin
 from ui.windows.skill_manager_win import SkillManagerWin
 

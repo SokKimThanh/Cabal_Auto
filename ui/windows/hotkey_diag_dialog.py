@@ -1,14 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-import tkinter as tk
-from tkinter import ttk, messagebox
-import sys
-
 def show_hotkey_diagnostics_modal(parent):
     """Show diagnostics modal for hotkeys (e.g. keyboard package missing)."""
     try:
-        import keyboard
+        import keyboard  # noqa
         messagebox.showinfo(
             parent._t("diag_hotkeys_title"),
             parent._t("diag_hotkeys_ok"),

@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
+from lib.ui_style import UIStyle as UI
 try:
     from PIL import Image, ImageTk
 except ImportError:
     Image = None
     ImageTk = None
-from ui.components import create_icon_button as _create_icon_btn_component
-from lib.ui_style import UIStyle as UI
+
 
 class HuntTab(ttk.Frame):
     def __init__(self, parent, app):
@@ -286,7 +286,7 @@ class HuntTab(ttk.Frame):
             column=4,
             rowspan=1,
             columnspan=4,
-                    sticky='nsew',
+            sticky='nsew',
             padx=(5, 0),
             pady=(0, 10)
         )
