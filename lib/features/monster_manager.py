@@ -14,10 +14,13 @@ Status: Skeleton
 from __future__ import annotations
 from typing import Dict, List, Any, Optional, Callable
 import json
+import logging
 import os
 import uuid
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class MonsterManager:
@@ -53,8 +56,20 @@ class MonsterManager:
     
     def _load_data(self) -> None:
         """Load monster data from JSON file."""
-        # TODO: Implement JSON loading with error handling
-        pass
+        try:
+            if os.path.exists(self.data_path):
+                with open(self.data_path, 'r', encoding='utf-8') as f:
+                    self.monsters = json.load(f)
+                logger.info(f"Successfully loaded {len(self.monsters)} monsters from {self.data_path}")
+            else:
+                logger.info(f"Monster data file not found at {self.data_path}. Starting with empty database.")
+                self.monsters = {}
+        except json.JSONDecodeError as e:
+            logger.error(f"Malformed JSON in monster data file {self.data_path}: {e}")
+            self.monsters = {}
+        except Exception as e:
+            logger.error(f"Error loading monster data from {self.data_path}: {e}")
+            self.monsters = {}
     
     def _save_data(self) -> bool:
         """
