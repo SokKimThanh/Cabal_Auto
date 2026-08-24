@@ -20,7 +20,7 @@ class SingleInstanceLock:
             if sys.platform == "win32":
                 import ctypes
                 kernel32 = ctypes.windll.kernel32
-                mutex_name = f"Global\{self.app_name}_SingleInstance"
+                mutex_name = f"Global\\{self.app_name}_SingleInstance"
                 self.mutex = kernel32.CreateMutexW(None, False, mutex_name)
 
                 last_error = kernel32.GetLastError()

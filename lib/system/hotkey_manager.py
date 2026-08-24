@@ -1,4 +1,3 @@
-import sys
 
 try:
     import keyboard
@@ -24,6 +23,11 @@ class HotkeyManager:
 
     def register_all(self):
         """Registers all global hotkeys from config. Fallbacks to Tkinter bindings if keyboard module missing."""
+        hotkey_cfg = self.hunt_cfg.get("global_hotkeys", {})
+        if not hotkey_cfg.get("enabled", True):
+            print("[Hotkeys] Global hotkeys disabled by user")
+            return
+
         try:
             if keyboard is None:
                 print(

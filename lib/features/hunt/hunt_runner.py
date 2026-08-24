@@ -1,5 +1,6 @@
-import ctypes
-import math
+from typing import Optional
+from lib.system.win_input import tap
+import pyautogui
 import threading
 import time
 from tkinter import messagebox
@@ -14,7 +15,6 @@ except ImportError:
 from lib.features.skills.skill_stats import SkillStats
 from lib.system.bot_manager import BotManager
 from lib.system.hunt_logger import get_hunt_logger
-from lib.system.win_input import tap
 
 
 class HuntRunner:
@@ -174,7 +174,14 @@ class HuntRunner:
                         logger.log_info(f"Clicking target at ({jitter_x}, {jitter_y})")
                         try:
                             # 1. Select Target (Mouse Click)
-                            tap(jitter_x, jitter_y)
+                            if pyautogui is not None:
+                                pyautogui.click(x=jitter_x, y=jitter_y)
+                            else:
+                                import ctypes
+                                ctypes.windll.user32.SetCursorPos(int(jitter_x), int(jitter_y))
+                                ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                                time.sleep(0.05)
+                                ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
 
                             # 2. Wait for target selection to register
                             delay = click_cfg.get("delay_after_click", 0.5)
@@ -379,55 +386,36 @@ class HuntRunner:
             SkillStats.reset_stats(slot_id)
 
     def _try_cast_skills(self, skills_cfg):
-        """Attempts to cast available skills based on cooldowns.
-        Returns number of skills cast."""
-        import keyboard
+        """Attempts to cast available skills based on cooldowns. Returns number of skills cast."""
 
         cast_count = 0
         now = time.time()
 
         # Sort slots by priority if available, otherwise by slot ID
-        # Since we just have dict iteration, we might want to ensure '1' is cast before '2'
         slots = sorted(list(self.skill_runtime.keys()))
 
         for slot_id in slots:
             runtime = self.skill_runtime[slot_id]
-
-            # Check cooldown
             if now - runtime["last_cast"] >= runtime["cooldown"]:
                 key = runtime["key"]
-
-                # Check if it's a combo or modified key
-                modifiers = []
-                base_key = key
-                if "+" in key:
-                    parts = key.lower().split("+")
-                    base_key = parts[-1]
-                    modifiers = parts[:-1]
+                cast_success = False
 
                 try:
-                    # Press modifiers
-                    for mod in modifiers:
-                        keyboard.press(mod)
+                    tap(key, 60)
+                    cast_success = True
+                except Exception:
+                    try:
+                        import keyboard
+                        keyboard.press_and_release(key.lower())
+                        cast_success = True
+                    except (ImportError, Exception):
+                        cast_success = False
 
-                    # Press base key
-                    keyboard.press_and_release(base_key)
-
-                    # Release modifiers
-                    for mod in modifiers:
-                        keyboard.release(mod)
-
-                    runtime["last_cast"] = time.time()
+                if cast_success:
                     cast_count += 1
-
-                    # Record cast stats
+                    runtime["last_cast"] = time.time()
+                    from lib.features.skills.skill_stats import SkillStats
                     SkillStats.record_cast(slot_id, success=True, time_taken=0.1)
-
-                    # Wait cast time (Global cooldown basically)
                     time.sleep(runtime["cast_time"])
-                    break  # Only cast one skill at a time, wait for GCD
-                except Exception as e:
-                    print(f"Error casting skill '{key}': {e}")
-                    SkillStats.record_cast(slot_id, success=False, time_taken=0.1)
-
+                    break
         return cast_count
