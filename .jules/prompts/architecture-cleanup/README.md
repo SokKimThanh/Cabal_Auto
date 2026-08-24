@@ -33,6 +33,24 @@ Những phần dễ bị mất nhất cần kiểm tra:
 
 Nếu Jules không tìm thấy hành vi cũ trong module mới, coi như có nguy cơ mất code. Khi đó phải khôi phục, hoặc dừng lại và báo rõ phần nào cần xử lý bằng prompt nhỏ hơn.
 
+## P0B Là Gì?
+
+`P0B-original-vs-module-lost-code-audit.md` là prompt kiểm tra, không phải prompt sửa code lớn.
+
+Dùng P0B khi:
+
+- Sau một PR tách module lớn.
+- Khi nghi có code bị mất so với file gốc.
+- Trước khi chạy cleanup hoặc xóa code tương thích cũ.
+
+Nếu P0B phát hiện nhiều nhóm lỗi, không sửa tất cả trong một PR. Hãy chia theo nhóm nhỏ, ví dụ:
+
+- `hunt_config`: sửa trong một PR riêng.
+- `window_selection`: sửa trong một PR riêng.
+- `destroy/on_close`: để dành cho lifecycle controller hoặc PR riêng.
+
+P0B có thể chạy nhiều lần trong toàn bộ đợt trả nợ kiến trúc.
+
 ## Quy Tắc Mới: Chỉ Dùng Cách Mới Nếu Tốt Hơn
 
 Việc tách module không tự động làm code tốt hơn. Cách viết mới chỉ nên được giữ nếu nó đơn giản hơn, rõ hơn, dễ test hơn, hoặc ít gây lỗi hơn cách cũ.
@@ -46,7 +64,7 @@ Nói ngắn gọn: tách module để code dễ hiểu hơn, không phải để
 | Thứ tự | File | Có thể chạy song song? | Cần xong trước |
 | --- | --- | --- | --- |
 | 0 | `P0-baseline-architecture-and-smoke-inventory.md` | Không | Không có |
-| 0.5 | `P0B-original-vs-module-lost-code-audit.md` | Không | Chạy khi đã có code/module đã tách hoặc khi nghi ngờ mất code |
+| 0.5 | `P0B-original-vs-module-lost-code-audit.md` | Không | Chạy sau PR tách module lớn, khi nghi mất code, hoặc trước cleanup/xóa code tương thích |
 | 1 | `S1A-extract-app-state-controller.md` | Không | P0 xong |
 | 2 | `S1B-extract-app-window-controller.md` | Cẩn thận | S1A đã xong, test pass, diff đã review |
 | 3 | `S1C-extract-app-lifecycle-controller.md` | Cẩn thận | S1A đã xong, test pass, diff đã review; nếu đụng cùng vùng với S1B thì chạy sau S1B |

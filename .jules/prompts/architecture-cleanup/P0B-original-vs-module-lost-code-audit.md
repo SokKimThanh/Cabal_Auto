@@ -41,4 +41,15 @@ Validation:
 - Chạy search/reference checks phù hợp cho các hàm nghi ngờ bị mất.
 - Chạy test hẹp nhất có liên quan nếu có sửa code.
 - Nếu chỉ tạo báo cáo, không cần chạy test rộng; hãy ghi rõ đây là audit đọc/so sánh.
+
+P0B usage rule:
+- P0B is an audit/checkpoint session, not a broad implementation sprint.
+- If multiple missing-risk groups are found, do not fix them all in one patch.
+- Group findings by responsibility area and recommend one small follow-up prompt per group.
+- Mark each group as:
+  - done: already fixed and validated
+  - pending: should be fixed in a small follow-up PR
+  - defer: should wait for a later controller/service extraction
+  - blocked: not enough evidence to decide safely
+- Never run S5A cleanup until P0B has no unresolved missing-risk items, or all remaining items are explicitly marked defer with a clear owner.
 ```
