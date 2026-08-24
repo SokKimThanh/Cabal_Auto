@@ -74,7 +74,7 @@ def load_hunt_config():
                     data["hunt_area"]["window_bounds"] = _normalize_window_bounds_value(
                         data["hunt_area"].get("window_bounds")
                     )
-                _sanitize_config_monsters(data)
+                _sanitize_config_templates(data)
 
                 return data
         except json.JSONDecodeError as e:
@@ -187,20 +187,12 @@ def _normalize_window_bounds(cfg):
     return cfg
 
 
-def _sanitize_config_monsters(cfg):
+def _sanitize_config_templates(cfg):
     """Ensure template paths are strings and relative paths where possible."""
-    # This might apply to embedded templates if they still exist in the config
-    # In the new architecture, templates are primarily in monster_repo, but
-    # we keep this for backward compatibility or global templates.
     if "monsters" in cfg and isinstance(cfg["monsters"], list):
         for m in cfg["monsters"]:
             if isinstance(m, dict) and "templates" in m:
-                templates = []
-                for tmpl in m["templates"]:
-                    normalized = _normalize_template_entry(tmpl)
-                    if normalized:
-                        templates.append(normalized)
-                m["templates"] = templates
+                m["templates"] = _sanitize_templates(m["templates"])
     return cfg
 
 
