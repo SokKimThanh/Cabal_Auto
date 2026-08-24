@@ -58,7 +58,6 @@ def locate_template_opencv(template_path: str,
         raise ImportError("OpenCV not available")
     
     # Load template
-    global _TEMPLATE_CACHE
     if template_path in _TEMPLATE_CACHE:
         template_gray, th, tw = _TEMPLATE_CACHE[template_path]
     else:
