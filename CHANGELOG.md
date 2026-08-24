@@ -23,3 +23,4 @@ Notes
 - Split GUI tabs into standalone components in ui/tabs (Hunt, Setup, Stats, Help)
 - Extract dialogs and modals into ui/windows
 - Ensure clean separation of concerns and fix all flake8/test regressions
+- Solved recursive logic inside Dialog initializations to stop stack overflows.
