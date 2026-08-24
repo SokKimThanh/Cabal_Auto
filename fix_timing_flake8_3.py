@@ -1,4 +1,5 @@
-import tkinter as tk
+with open("ui/windows/timing_calc_dialog.py", "w") as f:
+    f.write('''import tkinter as tk
 from tkinter import ttk
 
 
@@ -81,10 +82,10 @@ class TimingCalcDialog(tk.Toplevel):
 
                 # Format text
                 text = (
-                    f"EHP: {ehp:,.0f} | DPS: {dps:,.0f}\n"
-                    f"Time to kill: {res['time_to_kill']:.1f}s\n"
-                    f"Required Casts: {res['required_casts']:.1f}\n"
-                    f"Estimated Delay: {res['estimated_cast_time']:.1f}s\n\n"
+                    f"EHP: {ehp:,.0f} | DPS: {dps:,.0f}\\n"
+                    f"Time to kill: {res['time_to_kill']:.1f}s\\n"
+                    f"Required Casts: {res['required_casts']:.1f}\\n"
+                    f"Estimated Delay: {res['estimated_cast_time']:.1f}s\\n\\n"
                     f"Recommended Setting: {res['recommended_time']:.1f}s"
                 )
                 self.res_label.config(text=text, foreground="#333")
@@ -121,3 +122,4 @@ class TimingCalcDialog(tk.Toplevel):
         )
 
         _do_calc()  # initial calc
+''')

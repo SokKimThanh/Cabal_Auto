@@ -1,5 +1,7 @@
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
+
 
 def show_hotkey_diagnostics_modal(parent):
     """Show diagnostics modal for hotkeys (e.g. keyboard package missing)."""
