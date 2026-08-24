@@ -1,10 +1,13 @@
 {
-    "window_title": "test window",
-    "window_pid": 456,
-    "window_hwnd": 123,
+    "window_title": null,
+    "window_pid": null,
+    "window_hwnd": null,
     "window_bounds": null,
     "hunt_area": {
-        "window_title": "test window",
+        "window_title": null,
         "window_bounds": null
-    }
+    },
+    "skills": [],
+    "intervals": {},
+    "hotkeys": {}
 }
