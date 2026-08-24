@@ -53,8 +53,24 @@ class MonsterManager:
     
     def _load_data(self) -> None:
         """Load monster data from JSON file."""
-        # TODO: Implement JSON loading with error handling
-        pass
+        path = Path(self.data_path)
+        if not path.exists():
+            self.monsters = {}
+            return
+
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    self.monsters = data
+                else:
+                    self.monsters = {}
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from {self.data_path}")
+            self.monsters = {}
+        except Exception as e:
+            print(f"Unexpected error reading {self.data_path}: {e}")
+            self.monsters = {}
     
     def _save_data(self) -> bool:
         """
