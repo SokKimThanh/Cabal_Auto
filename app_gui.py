@@ -2338,12 +2338,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
 
-    def on_window_combo_selected(self, _evt=None):
-        pass
-
-    def on_hunt_find_windows(self, _evt=None):
-        pass
-
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
