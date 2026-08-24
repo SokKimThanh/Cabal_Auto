@@ -1,6 +1,5 @@
 import time
 import threading
-from typing import Optional
 
 try:
     import pyautogui
@@ -10,6 +9,7 @@ except Exception:
 from tkinter import messagebox
 from lib.vision.template_matcher import locate_template
 from lib.vision.vision_engine import VisionEngine
+
 try:
     from lib.system.screen_capture import ScreenCapture
 except ImportError:
@@ -18,6 +18,7 @@ from lib.system.win_input import tap
 from lib.system.bot_manager import BotManager
 from lib.features.skills.skill_stats import SkillStats
 from lib.system.hunt_logger import get_hunt_logger
+
 
 class HuntRunner:
     def __init__(self, app, hunt_cfg):
@@ -35,7 +36,10 @@ class HuntRunner:
         self.vision_engine = VisionEngine()
 
         # Bot manager (handles screen scanning and logic state)
-        self.bot_manager = BotManager(self.vision_engine, ScreenCapture)
+        self.screen_capture = ScreenCapture() if ScreenCapture is not None else None
+        self.bot_manager = BotManager(
+            vision_engine=self.vision_engine, screen_capture=self.screen_capture
+        )
 
         # UI mode for features
         self.ui_mode = hunt_cfg.get("ui_mode", "beginner")
@@ -140,7 +144,7 @@ class HuntRunner:
                     if target_pt:
                         if self.ui_mode in ["intermediate", "advanced"]:
                             self.hunt_status.set(
-                                f"Attacking: {name} ({score*100:.0f}%)"
+                                f"Attacking: {name} ({score * 100:.0f}%)"
                             )
                         else:
                             self.hunt_status.set(f"Attacking: {name}")
@@ -180,7 +184,10 @@ class HuntRunner:
                                 pyautogui.click(x=jitter_x, y=jitter_y)
                             else:
                                 import ctypes
-                                ctypes.windll.user32.SetCursorPos(int(jitter_x), int(jitter_y))
+
+                                ctypes.windll.user32.SetCursorPos(
+                                    int(jitter_x), int(jitter_y)
+                                )
                                 ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
                                 time.sleep(0.05)
                                 ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
@@ -292,14 +299,7 @@ class HuntRunner:
             return None, 0, ""
 
         if ScreenCapture is None:
-            print("ScreenCapture unavailable; cannot locate targets.")
-            return None, 0, ""
-
-        # Capture region
-        screenshot = ScreenCapture.capture_region(
-            bounds[0], bounds[1], bounds[2], bounds[3]
-        )
-        if screenshot is None:
+            print("[HuntRunner] ScreenCapture unavailable; cannot locate targets.")
             return None, 0, ""
 
         best_pt = None
@@ -310,9 +310,6 @@ class HuntRunner:
         try:
             # Look for target HUD directly if enabled
             if cfg.get("options", {}).get("fast_hud_detection", True):
-                from lib.vision.matcher_service import MatcherService
-
-                matcher = MatcherService(use_grayscale=False)
                 # Implement HUD detection here (e.g. detect red health bar)
                 # For now, fallback to template matching
                 pass
@@ -343,7 +340,10 @@ class HuntRunner:
                 if box and val > best_val:
                     left, top, w, h = box
                     best_val = val
-                    best_pt = (int(left - bounds[0] + w / 2), int(top - bounds[1] + h / 2))
+                    best_pt = (
+                        int(left - bounds[0] + w / 2),
+                        int(top - bounds[1] + h / 2),
+                    )
                     best_name = monster.get("name", m_id)
 
         if best_pt:
@@ -409,6 +409,7 @@ class HuntRunner:
                 except Exception:
                     try:
                         import keyboard
+
                         keyboard.press_and_release(key.lower())
                         cast_success = True
                     except (ImportError, Exception):
@@ -418,12 +419,18 @@ class HuntRunner:
                     cast_count += 1
                     runtime["last_cast"] = time.time()
                     from lib.features.skills.skill_stats import SkillStats
+
                     SkillStats.record_cast(slot_id, success=True, time_taken=0.1)
                     time.sleep(runtime["cast_time"])
                     break
         return cast_count
+
     def _update_status(self, text: str) -> None:
-        if hasattr(self.app, "after") and hasattr(self, "hunt_status") and self.hunt_status:
+        if (
+            hasattr(self.app, "after")
+            and hasattr(self, "hunt_status")
+            and self.hunt_status
+        ):
             self.app.after(0, lambda: self.hunt_status.set(text))
         elif hasattr(self, "hunt_status") and self.hunt_status:
             self.hunt_status.set(text)

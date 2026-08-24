@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 
 MONSTERS_PATH = Path(__file__).parent.parent.parent / "data" / "monsters.json"
@@ -52,7 +51,14 @@ def calculate_monster_estimate(monster):
     }
     """
     if not monster:
-        return None
+        return {
+            "estimated_time_sec": 0.0,
+            "required_dps": 0.0,
+            "effective_hp": 0.0,
+            "base_hp": 0,
+            "defense": 0,
+            "level": 0
+        }
 
     # Get stats with defaults (Sprint 21 Phase 3 format)
     stats = monster.get("stats", {})
