@@ -335,7 +335,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         from ui.controllers.app_state_controller import AppStateController
 
         self.state_controller = AppStateController(self)
-        self.state_controller.attach_to_app()
 
         self.monsters = self._normalize_library_items(load_monster_library())
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
@@ -2283,6 +2282,11 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
 
+    def on_window_combo_selected(self, _evt=None):
+        pass
+
+    def on_hunt_find_windows(self, _evt=None):
+        pass
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
