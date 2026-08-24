@@ -131,12 +131,18 @@ class MonsterManager:
         Events:
             Emits monster_created(monster_id, data)
         """
-        # TODO: Implement monster creation with validation
-        # Generate UUID for monster_id
-        # Validate required fields
-        # Save to data store
-        # Emit event
-        pass
+        if not self._validate_monster_data(monster_data):
+            raise ValueError("Invalid monster data")
+
+        monster_id = str(uuid.uuid4())
+
+        # Store a copy of the data
+        self.monsters[monster_id] = monster_data.copy()
+
+        self._save_data()
+        self._emit_event("monster_created", monster_id, self.monsters[monster_id])
+
+        return monster_id
     
     def update_monster(self, monster_id: str, data: Dict[str, Any]) -> bool:
         """
@@ -254,10 +260,13 @@ class MonsterManager:
         Returns:
             bool: True if valid, False otherwise
         """
-        # TODO: Implement validation
-        # Required fields: name
-        # Optional: level, templates, metadata
-        pass
+        if not isinstance(data, dict):
+            return False
+        if "name" not in data or not isinstance(data["name"], str):
+            return False
+        if not data["name"].strip():
+            return False
+        return True
 
 
 # Singleton instance
