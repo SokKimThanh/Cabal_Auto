@@ -175,7 +175,13 @@ class AppRuntimeBridgeMixin:
             self.win_combo.current(target_index)
         if hasattr(self, "win_combo_var"):
             self.win_combo_var.set(values[target_index])
-        self.on_window_combo_selected()
+
+        # Temporarily skip auto-bring when auto-selecting from search
+        self._skip_auto_bring = True
+        try:
+            self.on_window_combo_selected()
+        finally:
+            self._skip_auto_bring = False
 
     def on_window_combo_selected(self, _evt=None) -> None:
         if not getattr(self, "win_items", None):
@@ -209,18 +215,19 @@ class AppRuntimeBridgeMixin:
         self._update_window_bounds_display()
         save_hunt_config(self.hunt_cfg)
 
-        ok = self._bring_window_to_front_by_hwnd(selected["hwnd"])
-        if ok and hasattr(self, "lift"):
-            def _lift_app():
-                try:
-                    self.lift()
-                    self.focus_force()
-                    self.attributes("-topmost", True)
-                    self.update()
-                    self.after(100, lambda: self.attributes("-topmost", False))
-                except Exception:
-                    pass
-            self.after(100, _lift_app)
+        if not getattr(self, "_skip_auto_bring", False):
+            ok = self._bring_window_to_front_by_hwnd(selected["hwnd"])
+            if ok and hasattr(self, "lift"):
+                def _lift_app():
+                    try:
+                        self.lift()
+                        self.focus_force()
+                        self.attributes("-topmost", True)
+                        self.update()
+                        self.after(100, lambda: self.attributes("-topmost", False))
+                    except Exception:
+                        pass
+                self.after(100, _lift_app)
 
         if hasattr(self, "hunt_status"):
             self.hunt_status.set(f"Window selected: {selected['title']}")
