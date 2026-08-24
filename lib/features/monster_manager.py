@@ -132,8 +132,7 @@ class MonsterManager:
         Returns:
             Monster dictionary or None if not found
         """
-        # TODO: Implement monster retrieval
-        pass
+        return self.monsters.get(monster_id)
     
     def create_monster(self, monster_data: Dict[str, Any]) -> str:
         """
