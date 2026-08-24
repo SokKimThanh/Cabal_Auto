@@ -98,11 +98,16 @@ class WorkerThread:
         
         Creates and starts a daemon thread that processes tasks from the queue.
         """
-        # TODO: Implement worker thread start
-        # Create daemon thread
-        # Set running flag
-        # Start thread
-        raise NotImplementedError("start_worker not yet implemented")
+        if self.running and self.thread and self.thread.is_alive():
+            return
+
+        self.running = True
+        self.thread = threading.Thread(
+            target=self._worker_loop,
+            name="BackgroundWorker",
+            daemon=True
+        )
+        self.thread.start()
     
     def stop_worker(self) -> None:
         """
@@ -110,10 +115,9 @@ class WorkerThread:
         
         Waits for current task to complete before stopping.
         """
-        # TODO: Implement worker stop
-        # Set running = False
-        # Wait for thread to finish
-        raise NotImplementedError("stop_worker not yet implemented")
+        self.running = False
+        if self.thread is not None and self.thread.is_alive():
+            self.thread.join()
     
     def enqueue(
         self,
