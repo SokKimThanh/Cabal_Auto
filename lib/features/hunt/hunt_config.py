@@ -25,50 +25,17 @@ def save_config(cfg):
         json.dump(cfg, f, indent=4)
 
 
+from lib.features.hunt.config_migrator import migrate_hunt_config
+
 def load_hunt_config():
     if HUNT_CONFIG_PATH.exists():
         try:
             with open(HUNT_CONFIG_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-                # Migration/Defaults for new Sprint 22 Phase 3 fields
-                if "ui_mode" not in data:
-                    data["ui_mode"] = "beginner"
-
-                # Migrate old format if needed (list to dict)
-                if isinstance(data.get("monsters"), list):
-                    # In older versions, monsters was a list of dicts.
-                    # We expect it to be a dict mapping string IDs to dicts, OR a list of string IDs.
-                    # The new system relies on monster_repo, so the hunt config just needs a list of IDs for rotation.
-                    old_list = data["monsters"]
-                    new_rotation = []
-                    for m in old_list:
-                        if isinstance(m, dict) and "id" in m:
-                            new_rotation.append(m["id"])
-                        elif isinstance(m, str):
-                            new_rotation.append(m)
-                    data["monster_rotation"] = new_rotation
-                    # Clear out the old embedded monsters to avoid confusion
-                    data["monsters"] = []
-
-                if "monster_rotation" not in data:
-                    data["monster_rotation"] = []
-
-                if "skills" not in data:
-                    data["skills"] = {}
-
-                # Ensure global hotkeys exist
-                if "global_hotkeys" not in data:
-                    data["global_hotkeys"] = {
-                        "enabled": True,
-                        "start_key": "ctrl+shift+r",
-                        "stop_key": "ctrl+shift+e",
-                    }
-                elif "enabled" not in data["global_hotkeys"]:
-                    data["global_hotkeys"]["enabled"] = True
+                data = migrate_hunt_config(data)
 
                 # Normalize fields immediately after loading
-                _normalize_window_bounds(data)
                 _sanitize_templates(data)
 
                 return data
@@ -107,28 +74,6 @@ def save_hunt_config(cfg):
     except Exception as e:
         print(f"Error saving hunt config: {e}")
         return False
-
-
-def _normalize_window_bounds(cfg):
-    """Normalize window bounds into standard list format [x, y, w, h]."""
-    if "hunt_area" in cfg:
-        bounds = cfg["hunt_area"].get("window_bounds")
-        if bounds:
-            if isinstance(bounds, dict):
-                try:
-                    cfg["hunt_area"]["window_bounds"] = [
-                        bounds["left"],
-                        bounds["top"],
-                        bounds["width"],
-                        bounds["height"],
-                    ]
-                except KeyError:
-                    cfg["hunt_area"]["window_bounds"] = None
-            elif isinstance(bounds, list) and len(bounds) == 4:
-                pass  # already normalized
-            else:
-                cfg["hunt_area"]["window_bounds"] = None
-    return cfg
 
 
 def _sanitize_templates(cfg):
