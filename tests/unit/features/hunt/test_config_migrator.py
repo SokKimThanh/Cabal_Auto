@@ -69,6 +69,33 @@ def test_migrate_hunt_config_normalizes_window_bounds():
     migrate_hunt_config(cfg)
     assert cfg["hunt_area"]["window_bounds"] == [10, 20, 100, 200]
 
+def test_migrate_hunt_config_malformed_hunt_area():
+    cfg = {"hunt_area": None}
+    migrate_hunt_config(cfg)
+    assert cfg["hunt_area"] == {"window_bounds": None}
+
+    cfg2 = {"hunt_area": []}
+    migrate_hunt_config(cfg2)
+    assert cfg2["hunt_area"] == {"window_bounds": None}
+
+def test_migrate_hunt_config_malformed_global_hotkeys():
+    cfg = {"global_hotkeys": None}
+    migrate_hunt_config(cfg)
+    assert cfg["global_hotkeys"]["enabled"] is True
+
+    cfg2 = {"global_hotkeys": []}
+    migrate_hunt_config(cfg2)
+    assert cfg2["global_hotkeys"]["enabled"] is True
+
+def test_migrate_hunt_config_malformed_top_level():
+    cfg = migrate_hunt_config(None)
+    assert isinstance(cfg, dict)
+    assert cfg["hunt_area"] == {"window_bounds": None}
+
+    cfg2 = migrate_hunt_config([])
+    assert isinstance(cfg2, dict)
+    assert cfg2["hunt_area"] == {"window_bounds": None}
+
 def test_migrate_hunt_config_keeps_existing_fields():
     cfg = {
         "ui_mode": "advanced",

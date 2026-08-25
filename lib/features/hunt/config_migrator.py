@@ -20,12 +20,15 @@ def normalize_window_bounds_value(bounds: Any) -> Optional[List[int]]:
                 return None
     return None
 
-def migrate_hunt_config(data: Dict[str, Any]) -> Dict[str, Any]:
+def migrate_hunt_config(data: Any) -> Dict[str, Any]:
     """Migrates and normalizes the hunt config dictionary in-place."""
+    if not isinstance(data, dict):
+        data = {}
+
     if "ui_mode" not in data:
         data["ui_mode"] = "beginner"
 
-    # Migrate old embedded monsters into monster_rotation as a list of IDs
+    # Migrate old format if needed (list to dict)
     if isinstance(data.get("monsters"), list):
         old_list = data["monsters"]
         new_rotation = []
@@ -45,21 +48,22 @@ def migrate_hunt_config(data: Dict[str, Any]) -> Dict[str, Any]:
         data["skills"] = {}
 
     # Ensure global hotkeys exist
-    if "global_hotkeys" not in data:
+    if not isinstance(data.get("global_hotkeys"), dict):
         data["global_hotkeys"] = {
             "enabled": True,
             "start_key": "ctrl+shift+r",
             "stop_key": "ctrl+shift+e",
         }
-    elif "enabled" not in data["global_hotkeys"]:
-        data["global_hotkeys"]["enabled"] = True
+    else:
+        if "enabled" not in data["global_hotkeys"]:
+            data["global_hotkeys"]["enabled"] = True
 
     # Normalize window_bounds
-    if "hunt_area" not in data or not isinstance(data["hunt_area"], dict):
-        # Default hunt area if missing or invalid
+    hunt_area = data.get("hunt_area")
+    if not isinstance(hunt_area, dict):
         data["hunt_area"] = {"window_bounds": None}
-
-    bounds = data["hunt_area"].get("window_bounds")
-    data["hunt_area"]["window_bounds"] = normalize_window_bounds_value(bounds)
+    else:
+        bounds = hunt_area.get("window_bounds")
+        data["hunt_area"]["window_bounds"] = normalize_window_bounds_value(bounds)
 
     return data
