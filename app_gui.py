@@ -1476,13 +1476,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                                         f"[Overlay] ✅ Window restored to: {window_bounds}"
                                     )
 
-                            # Validate rect is not minimized position
-                            if window_bounds and (
-                                window_bounds.get("left", 0) < -30000
-                                or window_bounds.get("top", 0) < -30000
-                            ):
+                            from lib.features.hunt.config_validator import normalize_window_bounds_value
+                            if window_bounds and not normalize_window_bounds_value(window_bounds):
                                 print(
-                                    f"[Overlay] ⚠️ Detected minimized rect, clearing: {window_bounds}"
+                                    f"[Overlay] ⚠️ Detected minimized or invalid rect, clearing: {window_bounds}"
                                 )
                                 window_bounds = None
 
@@ -1563,11 +1560,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                             window_bounds = cabal_window.rect
                             target_hwnd = cabal_window.hwnd
 
-                            # Validate rect is not minimized position
-                            if (
-                                window_bounds["left"] < -30000
-                                or window_bounds["top"] < -30000
-                            ):
+                            from lib.features.hunt.config_validator import normalize_window_bounds_value
+                            if not normalize_window_bounds_value(window_bounds):
                                 messagebox.showerror(
                                     "Invalid Window Position",
                                     f"Game window appears to be minimized or invalid.\n\n"

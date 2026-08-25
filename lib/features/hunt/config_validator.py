@@ -1,11 +1,14 @@
 from typing import Any, Dict, List, Optional
 
 def normalize_window_bounds_value(bounds: Any) -> Optional[List[int]]:
-    """Normalize window bounds into standard list format [x, y, w, h]."""
+    """Normalize window bounds into standard list format [x, y, w, h].
+    Returns None if bounds are malformed, minimized (e.g. -32000), or invalid.
+    """
     if bounds:
+        result = None
         if isinstance(bounds, dict):
             try:
-                return [
+                result = [
                     int(bounds["left"]),
                     int(bounds["top"]),
                     int(bounds["width"]),
@@ -15,9 +18,17 @@ def normalize_window_bounds_value(bounds: Any) -> Optional[List[int]]:
                 return None
         elif isinstance(bounds, list) and len(bounds) == 4:
             try:
-                return [int(v) for v in bounds]
+                result = [int(v) for v in bounds]
             except (ValueError, TypeError):
                 return None
+
+        # Guard against minimized windows (-32000, -32000 on Windows)
+        if result is not None:
+            if result[0] < -30000 or result[1] < -30000:
+                return None
+            if result[2] <= 0 or result[3] <= 0:
+                return None
+            return result
     return None
 
 def validate_hunt_area(hunt_area: Any) -> Dict[str, Any]:
