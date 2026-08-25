@@ -518,13 +518,28 @@ class VisionEngine:
 
         gray_frame = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2GRAY)
 
-        # ⚡ Bolt Optimization: Use cached template features if available
-        if ftype in template.features:
-            kp1, des1 = template.features[ftype]
+        # ⚡ Bolt Optimization: Use cached template features if available,
+        # but invalidate them when the underlying template image changes.
+        template_source = template.image_gray if template.image_gray is not None else template.image
+        template_cache_key = (
+            id(template_source),
+            getattr(template_source, "shape", None),
+            getattr(getattr(template_source, "dtype", None), "str", None),
+        )
+        cached_template_features = template.features.get(ftype)
+
+        if (
+            isinstance(cached_template_features, dict)
+            and cached_template_features.get("cache_key") == template_cache_key
+        ):
+            kp1, des1 = cached_template_features["features"]
         else:
             gray_template = template.image_gray if template.image_gray is not None else cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
             kp1, des1 = detector.detectAndCompute(gray_template, None)
-            template.features[ftype] = (kp1, des1)
+            template.features[ftype] = {
+                "cache_key": template_cache_key,
+                "features": (kp1, des1),
+            }
 
         kp2, des2 = detector.detectAndCompute(gray_frame, None)
 
