@@ -94,6 +94,9 @@ class VisionEngine:
         self.config_dir = Path(config_dir)
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
+        # ⚡ Bolt Optimization: Cache feature detectors
+        self._detectors = {}
+
         # Services
         self.template_service = TemplateService(self.config_dir)
         self.matcher_service = MatcherService()
@@ -504,6 +507,8 @@ class VisionEngine:
             proc_frame = work_frame
             scale_x, scale_y = 1.0, 1.0
 
+        # Create a detector per call to avoid sharing mutable OpenCV state
+        # across concurrent detect_features invocations.
         if ftype == 'SIFT' and hasattr(cv2, 'SIFT_create'):
             detector = cv2.SIFT_create(nfeatures=500)
             norm = cv2.NORM_L2
@@ -512,9 +517,30 @@ class VisionEngine:
             norm = cv2.NORM_HAMMING
 
         gray_frame = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2GRAY)
-        gray_template = template.image_gray if template.image_gray is not None else cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
 
-        kp1, des1 = detector.detectAndCompute(gray_template, None)
+        # ⚡ Bolt Optimization: Use cached template features if available,
+        # but invalidate them when the underlying template image changes.
+        template_source = template.image_gray if template.image_gray is not None else template.image
+        template_cache_key = (
+            id(template_source),
+            getattr(template_source, "shape", None),
+            getattr(getattr(template_source, "dtype", None), "str", None),
+        )
+        cached_template_features = template.features.get(ftype)
+
+        if (
+            isinstance(cached_template_features, dict)
+            and cached_template_features.get("cache_key") == template_cache_key
+        ):
+            kp1, des1 = cached_template_features["features"]
+        else:
+            gray_template = template.image_gray if template.image_gray is not None else cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+            kp1, des1 = detector.detectAndCompute(gray_template, None)
+            template.features[ftype] = {
+                "cache_key": template_cache_key,
+                "features": (kp1, des1),
+            }
+
         kp2, des2 = detector.detectAndCompute(gray_frame, None)
 
         if des1 is None or des2 is None or len(kp1) < 2 or len(kp2) < 2:

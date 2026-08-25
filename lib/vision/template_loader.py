@@ -26,8 +26,11 @@ class Template:
     image: Optional[np.ndarray] = None  # Loaded BGR image
     thumbnail: Optional[np.ndarray] = None  # For UI preview
     image_gray: Optional[np.ndarray] = None  # Cached 1-channel grayscale image for ~3x matchTemplate speedup
+    features: Optional[Dict[str, Any]] = None  # Cached keypoints and descriptors for feature detection
 
     def __post_init__(self):
+        if self.features is None:
+            self.features = {}
         if self.scales is None:
             self.scales = [1.0]  # Default: no scaling
         if self.image is not None and self.image.size > 0 and self.image_gray is None:

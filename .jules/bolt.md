@@ -29,3 +29,7 @@
 ## 2026-08-24 - Follow-up architecture roadmap for PR debt cleanup
 **Learning:** After a launch fix, the next safest move is not another giant refactor but a sequence of bounded sprints that peel responsibilities away from `app_gui.py` and the runtime bridge without reintroducing regression risk.
 **Action:** See `.jules/architecture-sprint-roadmap.md` for the exact sprint plan, module boundaries, file targets, validation steps, and PR ordering to continue the architecture cleanup safely.
+
+## 2025-08-27 - Feature Detector & Descriptor Caching in VisionEngine
+**Learning:** Instantiating `cv2.ORB_create` and running `detectAndCompute` on the template image *every time* `detect_features` is called causes severe CPU overhead, especially since templates are static.
+**Action:** Always cache OpenCV feature detector instances (ORB/SIFT) at the class level (`VisionEngine`), and cache the resulting keypoints and descriptors (`kp1`, `des1`) on the `Template` object on the first pass to avoid O(N) redundant computations per frame.
