@@ -470,7 +470,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         safe_area = get_valid_hunt_area(self.hunt_cfg)
         self.hunt_cfg["hunt_area"] = safe_area
         self.current_window_bounds = safe_area.get("window_bounds")
-        self.hunt_cfg["window_bounds"] = self.current_window_bounds
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+        WindowSelectionService.update_bounds(self.hunt_cfg, self.current_window_bounds)
 
         if pyautogui is not None:
             pyautogui.FAILSAFE = bool(self.cfg.get("safety", {}).get("failsafe", True))
@@ -1268,7 +1269,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
 
                             if window_bounds:
                                 # Save LIVE position to config
-                                self.hunt_cfg["window_bounds"] = window_bounds
+                                from lib.features.hunt.window_selection_service import WindowSelectionService
+                                WindowSelectionService.update_bounds(self.hunt_cfg, window_bounds)
                                 save_hunt_config(self.hunt_cfg)
                                 print(
                                     f"[Overlay] ✅ Refreshed LIVE position: {window_bounds}"
@@ -1356,7 +1358,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                                 return
 
                             # Save to config for next time
-                            self.hunt_cfg["window_bounds"] = window_bounds
+                            from lib.features.hunt.window_selection_service import WindowSelectionService
+                            WindowSelectionService.update_bounds(self.hunt_cfg, window_bounds)
                             self.hunt_cfg["window_hwnd"] = target_hwnd
                             self.hunt_cfg["window_title"] = cabal_window.title
 
@@ -2740,7 +2743,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         # Apply window_bounds
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
         self.current_window_bounds = bounds
-        self.hunt_cfg["window_bounds"] = bounds
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+        WindowSelectionService.update_bounds(self.hunt_cfg, bounds)
         self._update_window_bounds_display()
 
         # Apply templates[] array to config

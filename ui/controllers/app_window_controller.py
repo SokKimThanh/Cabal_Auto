@@ -9,21 +9,10 @@ class AppWindowController:
     def __init__(self, root: tk.Tk):
         self.root = root
 
-    def _normalize_window_bounds_value(self, bounds: Any) -> Optional[List[int]]:
-        from lib.features.hunt.config_migrator import normalize_window_bounds_value
-        return normalize_window_bounds_value(bounds)
-
-    def _normalize_hunt_area(self, cfg: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        if not isinstance(cfg, dict):
-            return {}
-        hunt_area = cfg.get("hunt_area")
-        if not isinstance(hunt_area, dict):
-            hunt_area = {}
-            cfg["hunt_area"] = hunt_area
-        return hunt_area
 
     def _list_windows(self, title_contains: Optional[str] = None) -> List[Dict[str, Any]]:
         from lib.system.window_manager import WindowManager
+        from lib.features.hunt.config_validator import normalize_window_bounds_value
 
         wm = WindowManager()
         windows = wm.list_windows(title_contains=title_contains, visible_only=True)
@@ -43,7 +32,7 @@ class AppWindowController:
                     "pid": int(info.pid),
                     "title": title,
                     "proc": info.process_name,
-                    "bounds": self._normalize_window_bounds_value(info.rect),
+                    "bounds": normalize_window_bounds_value(info.rect),
                 }
             )
         results.sort(
@@ -121,17 +110,23 @@ class AppWindowController:
         if index < 0 or index >= len(self.root.win_items):
             index = 0
 
+        from lib.features.hunt.config_validator import normalize_window_bounds_value
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
         selected = dict(self.root.win_items[index])
-        bounds = self._normalize_window_bounds_value(selected.get("bounds"))
+        bounds = normalize_window_bounds_value(selected.get("bounds"))
         self.root.hunt_selected = selected
         self.root.current_window_bounds = bounds
+
         self.root.hunt_cfg["window_title"] = selected["title"]
         self.root.hunt_cfg["window_pid"] = selected["pid"]
         self.root.hunt_cfg["window_hwnd"] = selected["hwnd"]
-        self.root.hunt_cfg["window_bounds"] = bounds
-        hunt_area = self._normalize_hunt_area(self.root.hunt_cfg)
-        hunt_area["window_title"] = selected["title"]
-        hunt_area["window_bounds"] = bounds
+
+        WindowSelectionService.update_bounds(self.root.hunt_cfg, bounds)
+
+        hunt_area = self.root.hunt_cfg.get("hunt_area")
+        if isinstance(hunt_area, dict):
+            hunt_area["window_title"] = selected["title"]
         if hasattr(self.root, "_update_window_bounds_display"):
             self.root._update_window_bounds_display()
         save_hunt_config(self.root.hunt_cfg)
