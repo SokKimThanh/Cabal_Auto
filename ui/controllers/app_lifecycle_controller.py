@@ -5,7 +5,7 @@ from lib.features.hunt.hunt_config import save_hunt_config
 
 try:
     import keyboard  # type: ignore
-except Exception:
+except ImportError:
     keyboard = None  # type: ignore
 
 
@@ -16,23 +16,38 @@ class AppLifecycleController:
         self.app = app
 
     def start_lifecycle(self) -> None:
-        """Schedules initial startup checks."""
-        self.app.after(100, getattr(self.app, "_update_hotkeys_state", lambda: None))
-        self.app.after(150, getattr(self.app, "_update_hotkey_diagnostics_ui", lambda: None))
-        self.app.after(500, self.check_first_time_setup)
-        self.app.after(1000, self.auto_bring_to_front_on_startup)
-        self.app.after(150, self.check_db_connection)
+        """Schedules initial startup checks in a sequence."""
+        self.app.after(100, self._step_update_hotkeys)
+
+    def _step_update_hotkeys(self):
+        if hasattr(self.app, "_update_hotkeys_state"):
+            self.app._update_hotkeys_state()
+        self.app.after(50, self._step_diagnostics)
+
+    def _step_diagnostics(self):
+        if hasattr(self.app, "_update_hotkey_diagnostics_ui"):
+            self.app._update_hotkey_diagnostics_ui()
+        self.app.after(50, self._step_db_connection)
+
+    def _step_db_connection(self):
+        self.check_db_connection()
+        self.app.after(200, self._step_first_time_setup)
+
+    def _step_first_time_setup(self):
+        self.check_first_time_setup()
+        self.app.after(500, self.auto_bring_to_front_on_startup)
 
     def check_first_time_setup(self) -> None:
         """Check if this is first-time user and auto-launch wizard if needed."""
         # Check if user has completed basic setup
         # Must have ALL THREE to be considered configured
-        has_window = bool(self.app.hunt_cfg.get("window_title", "").strip())
+        window_title = self.app.hunt_cfg.get("window_title", "")
+        has_window = bool(window_title.strip() if isinstance(window_title, str) else window_title)
 
         # Phase 3 compatibility: Check both legacy and new monster fields
-        has_monster_legacy = bool(
-            self.app.hunt_cfg.get("monster_selected_name", "").strip()
-        )
+        monster_selected_name = self.app.hunt_cfg.get("monster_selected_name", "")
+        has_monster_legacy = bool(monster_selected_name.strip() if isinstance(monster_selected_name, str) else monster_selected_name)
+
         has_monster_list = (
             bool(self.app.hunt_cfg.get("monster_list"))
             and len(self.app.hunt_cfg.get("monster_list", [])) > 0
@@ -97,7 +112,9 @@ class AppLifecycleController:
             # Use showinfo (blue icon) instead of showerror (red icon) for less scary UX
             # Don't force window to front - let user dismiss naturally
             messagebox.showinfo(
-                self.app._t("info_title"), self.app._t("pil_not_installed_message"), parent=self.app
+                self.app._t("info_title"),
+                self.app._t("pil_not_installed_message"),
+                parent=self.app
             )
 
         # ✅ Mark first-time check as complete
@@ -144,12 +161,14 @@ class AppLifecycleController:
 
             if ok:
                 # Keep app on top of game window
-                time.sleep(0.1)
-                self.app.lift()
-                self.app.focus_force()
-                self.app.attributes("-topmost", True)
-                self.app.update()
-                self.app.after(100, lambda: self.app.attributes("-topmost", False))
+                def _lift_and_focus():
+                    self.app.lift()
+                    self.app.focus_force()
+                    self.app.attributes("-topmost", True)
+                    self.app.update_idletasks()
+                    self.app.after(100, lambda: self.app.attributes("-topmost", False))
+
+                self.app.after(100, _lift_and_focus)
 
                 print(f"[Auto Bring] ✓ Window ready (below app): {title}")
                 # Update status briefly
@@ -181,8 +200,8 @@ class AppLifecycleController:
 
             result = check_db_health()
 
-            if result["ok"]:
-                counts = result["counts"]
+            if result.get("ok"):
+                counts = result.get("counts", {})
                 msg = (
                     f"✅ CSDL sẵn sàng"
                     f" | Quái: {counts.get('monsters', 0)}"
@@ -193,7 +212,7 @@ class AppLifecycleController:
                     self.app._set_db_status(msg, ok=True)
                 print(f"[DB] {msg}")
             else:
-                missing = result["missing_tables"]
+                missing = result.get("missing_tables", [])
                 missing_str = ", ".join(missing)
                 bar_msg = f"⚠️ CSDL chưa hoàn chỉnh: Thiếu bảng {missing_str}"
                 if result.get("error"):
@@ -222,7 +241,7 @@ class AppLifecycleController:
             print(f"[DB] {msg}")
 
     def on_close(self) -> None:
-        """Handles close orchestration."""
+        """Handles high-level close orchestration (abort checks, thread joining)."""
         if hasattr(self.app, "try_close_setup_wizard") and not self.app.try_close_setup_wizard():
             return
         if hasattr(self.app, "try_close_library_manager") and not self.app.try_close_library_manager():
@@ -234,26 +253,6 @@ class AppLifecycleController:
                 self.app.hunt_thread.join(timeout=1.0)
             except Exception:
                 pass
-
-        if hasattr(self.app, "_unregister_global_hotkeys"):
-            self.app._unregister_global_hotkeys()
-
-        if getattr(self.app, "_overlay_controller", None) is not None:
-            try:
-                self.app._overlay_controller.stop()
-            except Exception:
-                pass
-            self.app._overlay_controller = None
-
-        if getattr(self.app, "_bot_manager", None) is not None:
-            try:
-                self.app._bot_manager.destroy()
-            except Exception:
-                pass
-            self.app._bot_manager = None
-
-        if hasattr(self.app, "_stop_overlay_window_tracker"):
-            self.app._stop_overlay_window_tracker()
 
         for attr_name in ("monster_manager_win", "skill_manager_win"):
             win = getattr(self.app, attr_name, None)
@@ -267,8 +266,7 @@ class AppLifecycleController:
         self.app.destroy()
 
     def cleanup_before_destroy(self) -> None:
-        """Cleanup logic before destroying the app."""
-        # Phase 7: Cleanup monster tracking components
+        """Centralized cleanup of external resources (bot manager, overlay, hotkeys)."""
         try:
             if getattr(self.app, "_overlay_controller", None) is not None:
                 self.app._overlay_controller.stop()
@@ -281,6 +279,12 @@ class AppLifecycleController:
                 print("[MonsterTracking] BotManager cleaned up")
         except Exception as e:
             print(f"[MonsterTracking] Error during cleanup: {e}")
+
+        if hasattr(self.app, "_stop_overlay_window_tracker"):
+            try:
+                self.app._stop_overlay_window_tracker()
+            except Exception:
+                pass
 
         # Unregister global hotkeys on exit
         if keyboard is not None and hasattr(self.app, "_registered_hotkey_handlers"):
