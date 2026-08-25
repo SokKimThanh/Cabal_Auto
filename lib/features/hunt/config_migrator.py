@@ -55,11 +55,11 @@ def migrate_hunt_config(data: Dict[str, Any]) -> Dict[str, Any]:
         data["global_hotkeys"]["enabled"] = True
 
     # Normalize window_bounds
-    if "hunt_area" in data:
-        bounds = data["hunt_area"].get("window_bounds")
-        data["hunt_area"]["window_bounds"] = normalize_window_bounds_value(bounds)
-    else:
-        # Default hunt area if missing
+    if "hunt_area" not in data or not isinstance(data["hunt_area"], dict):
+        # Default hunt area if missing or invalid
         data["hunt_area"] = {"window_bounds": None}
+
+    bounds = data["hunt_area"].get("window_bounds")
+    data["hunt_area"]["window_bounds"] = normalize_window_bounds_value(bounds)
 
     return data
