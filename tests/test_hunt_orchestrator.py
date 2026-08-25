@@ -21,7 +21,7 @@ def test_orchestrator_init():
 
     assert orchestrator.hunt_running is False
 
-@patch('threading.Thread')
+@patch('lib.features.hunt.hunt_orchestrator.threading.Thread')
 def test_start_hunt(mock_thread):
     mock_schedule = MagicMock()
     orchestrator = HuntOrchestrator(
