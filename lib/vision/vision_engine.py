@@ -94,6 +94,9 @@ class VisionEngine:
         self.config_dir = Path(config_dir)
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
+        # ⚡ Bolt Optimization: Cache feature detectors
+        self._detectors = {}
+
         # Services
         self.template_service = TemplateService(self.config_dir)
         self.matcher_service = MatcherService()
@@ -504,17 +507,25 @@ class VisionEngine:
             proc_frame = work_frame
             scale_x, scale_y = 1.0, 1.0
 
-        if ftype == 'SIFT' and hasattr(cv2, 'SIFT_create'):
-            detector = cv2.SIFT_create(nfeatures=500)
-            norm = cv2.NORM_L2
-        else:
-            detector = cv2.ORB_create(nfeatures=500)
-            norm = cv2.NORM_HAMMING
+        # Get or create cached detector
+        if ftype not in self._detectors:
+            if ftype == 'SIFT' and hasattr(cv2, 'SIFT_create'):
+                self._detectors[ftype] = (cv2.SIFT_create(nfeatures=500), cv2.NORM_L2)
+            else:
+                self._detectors[ftype] = (cv2.ORB_create(nfeatures=500), cv2.NORM_HAMMING)
+
+        detector, norm = self._detectors[ftype]
 
         gray_frame = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2GRAY)
-        gray_template = template.image_gray if template.image_gray is not None else cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
 
-        kp1, des1 = detector.detectAndCompute(gray_template, None)
+        # ⚡ Bolt Optimization: Use cached template features if available
+        if ftype in template.features:
+            kp1, des1 = template.features[ftype]
+        else:
+            gray_template = template.image_gray if template.image_gray is not None else cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+            kp1, des1 = detector.detectAndCompute(gray_template, None)
+            template.features[ftype] = (kp1, des1)
+
         kp2, des2 = detector.detectAndCompute(gray_frame, None)
 
         if des1 is None or des2 is None or len(kp1) < 2 or len(kp2) < 2:
