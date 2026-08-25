@@ -111,7 +111,6 @@ except Exception:
 from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
 from lib.features.hunt.hunt_config import (
     ConfigManager,
-    _normalize_window_bounds,
     _sanitize_templates,
     load_config,
     load_hunt_config,
@@ -464,7 +463,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             "width": tk.StringVar(),
             "height": tk.StringVar(),
         }
-        _normalize_window_bounds(self.hunt_cfg)
+
+        # Configuration is already migrated during load_hunt_config
         hunt_area = self.hunt_cfg.get("hunt_area")
         if not isinstance(hunt_area, dict):
             hunt_area = {}

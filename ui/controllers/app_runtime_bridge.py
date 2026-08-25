@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import tkinter as tk
 from tkinter import messagebox
 
-from lib.features.hunt.hunt_config import _normalize_window_bounds, save_hunt_config
+from lib.features.hunt.hunt_config import save_hunt_config
 from lib.features.monsters.monster_repo import calculate_monster_estimate
 from lib.system.hotkey_manager import HotkeyManager
 from lib.system.win_input import tap
@@ -42,22 +42,8 @@ class AppRuntimeBridgeMixin:
 
     @staticmethod
     def _normalize_window_bounds_value(bounds: Any) -> Optional[List[int]]:
-        if isinstance(bounds, dict):
-            try:
-                return [
-                    int(bounds["left"]),
-                    int(bounds["top"]),
-                    int(bounds["width"]),
-                    int(bounds["height"]),
-                ]
-            except (KeyError, TypeError, ValueError):
-                return None
-        if isinstance(bounds, list) and len(bounds) == 4:
-            try:
-                return [int(value) for value in bounds]
-            except (TypeError, ValueError):
-                return None
-        return None
+        from lib.features.hunt.config_migrator import normalize_window_bounds_value
+        return normalize_window_bounds_value(bounds)
 
     def _register_global_hotkeys(self) -> None:
         if isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):

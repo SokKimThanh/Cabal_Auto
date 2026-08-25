@@ -97,16 +97,19 @@ class DataSyncManager:
     def load_hunt_config(self) -> Dict[str, Any]:
         """Load hunt configuration."""
         try:
+            from lib.features.hunt.config_migrator import migrate_hunt_config
             if not self.hunt_config_file.exists():
-                return {}
+                return migrate_hunt_config({})
             
             with open(self.hunt_config_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+                data = migrate_hunt_config(data)
                 print(f"[DataSyncManager] Loaded hunt config")
                 return data
         except Exception as e:
             print(f"[DataSyncManager] Error loading hunt config: {e}")
-            return {}
+            from lib.features.hunt.config_migrator import migrate_hunt_config
+            return migrate_hunt_config({})
     
     # ============================================
     # Save Operations

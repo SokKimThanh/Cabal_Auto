@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 import tkinter as tk
 from tkinter import messagebox
-from lib.features.hunt.hunt_config import _normalize_window_bounds, save_hunt_config, CONFIG_PATH
+from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
 
 class AppWindowController:
     """Manages dialog/window ownership tracking and target window selection lifecycle."""
@@ -10,22 +10,8 @@ class AppWindowController:
         self.root = root
 
     def _normalize_window_bounds_value(self, bounds: Any) -> Optional[List[int]]:
-        if isinstance(bounds, dict):
-            try:
-                return [
-                    int(bounds["left"]),
-                    int(bounds["top"]),
-                    int(bounds["width"]),
-                    int(bounds["height"]),
-                ]
-            except (KeyError, TypeError, ValueError):
-                return None
-        if isinstance(bounds, list) and len(bounds) == 4:
-            try:
-                return [int(value) for value in bounds]
-            except (TypeError, ValueError):
-                return None
-        return None
+        from lib.features.hunt.config_migrator import normalize_window_bounds_value
+        return normalize_window_bounds_value(bounds)
 
     def _normalize_hunt_area(self, cfg: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if not isinstance(cfg, dict):
