@@ -21,16 +21,25 @@ from lib.system.hunt_logger import get_hunt_logger
 
 
 class HuntRunner:
-    def __init__(self, app, hunt_cfg):
-        self.app = app
+    def __init__(
+        self,
+        hunt_cfg: dict,
+        set_status: callable,
+        set_target_info: callable,
+        get_overlay_ctrl: callable,
+        get_notebook: callable,
+        tab_setup,
+        tab_hunt,
+        schedule_ui_task: callable
+    ):
         self.hunt_cfg = hunt_cfg
-
-        # State variables
-        self.hunt_running = False
-        self.hunt_thread = None
-        self.hunt_stop_event = threading.Event()
-        self.hunt_status = app.hunt_status
-        self.hunt_target_info = app.hunt_target_info
+        self.set_status = set_status
+        self.set_target_info = set_target_info
+        self.get_overlay_ctrl = get_overlay_ctrl
+        self.get_notebook = get_notebook
+        self.tab_setup = tab_setup
+        self.tab_hunt = tab_hunt
+        self.schedule_ui_task = schedule_ui_task
 
         # Vision engine
         self.vision_engine = VisionEngine()
@@ -90,160 +99,29 @@ class HuntRunner:
 
         err = self._validate_hunt_prerequisites()
         if err:
-            if hasattr(self.app, "notebook"):
-                self.app.notebook.select(
-                    self.app.tab_setup if "window" in err.lower() else self.app.tab_hunt
-                )
-            messagebox.showwarning("Cannot Start Hunt", err, parent=self.app)
+            notebook = self.get_notebook()
+            if notebook:
+                notebook.select(self.tab_setup if "window" in err.lower() else self.tab_hunt)
+            messagebox.showwarning("Cannot Start Hunt", err, parent=None)
             return
 
         self.hunt_running = True
         self.hunt_stop_event.clear()
 
-        # Disable UI
-        if hasattr(self.app, "btn_start"):
-            self.app.btn_start.config(state="disabled")
-        if hasattr(self.app, "btn_stop"):
-            self.app.btn_stop.config(state="normal")
-        self.hunt_status.set("Starting hunt...")
-        self.hunt_target_info.set("Target: None")
+        self.schedule_ui_task(lambda: self.set_status("Starting hunt..."))
+        self.schedule_ui_task(lambda: self.set_target_info("Target: None"))
 
         # Overlay integration
-        if (
-            hasattr(self.app, "overlay_ctrl")
-            and self.app.overlay_ctrl
-            and self.app.overlay_ctrl.is_overlay_active()
-        ):
-            self.app.overlay_ctrl.set_status("Hunting...")
-            self.app.overlay_ctrl.set_mode_indicator(True)
-            self.app.overlay_ctrl.clear_target()
+        overlay_ctrl = self.get_overlay_ctrl()
+        if overlay_ctrl and overlay_ctrl.is_overlay_active():
+            overlay_ctrl.set_status("Hunting...")
+            overlay_ctrl.set_mode_indicator(True)
+            overlay_ctrl.clear_target()
 
         self._prepare_skill_runtime()
         logger = get_hunt_logger()
         logger.log_info(f"Hunt started (Mode: {self.ui_mode})")
 
-        def worker():
-            from lib.features.hunt.config_validator import get_valid_hunt_area
-            from lib.system.window_manager import find_window_by_title
-
-            while self.hunt_running and not self.hunt_stop_event.is_set():
-                try:
-                    safe_area = get_valid_hunt_area(self.hunt_cfg)
-                    win_title = safe_area.get("window_title")
-
-                    # Defensive check: Ensure window still exists
-                    hwnd = find_window_by_title(win_title)
-                    if not hwnd:
-                        logger.log_warning(
-                            f"Target window '{win_title}' lost. Pausing bot."
-                        )
-                        self._update_status("Window Lost - Waiting...")
-                        self._update_overlay(status_text="Window Lost", clear=True)
-                        time.sleep(2.0)
-                        continue
-
-                    bounds = safe_area.get("window_bounds")
-
-                    target_pt, score, name = self._hunt_locate_target()
-
-                    if target_pt:
-                        if self.ui_mode in ["intermediate", "advanced"]:
-                            self._update_status(
-                                f"Attacking: {name} ({score * 100:.0f}%)"
-                            )
-                        else:
-                            self._update_status(f"Attacking: {name}")
-
-                        screen_x = bounds[0] + target_pt[0]
-                        screen_y = bounds[1] + target_pt[1]
-                        self._update_overlay(status_text=f"Attacking {name}", screen_x=screen_x, screen_y=screen_y)
-
-                        # Attack Sequence
-                        click_cfg = self.app.cfg.get("click", {})
-
-                        # Apply jitter to coordinates to avoid detection
-                        jitter_x = (
-                            target_pt[0]
-                            + bounds[0]
-                            + int(click_cfg.get("jitter", 3) * (time.time() % 1 - 0.5))
-                        )
-                        jitter_y = (
-                            target_pt[1]
-                            + bounds[1]
-                            + int(click_cfg.get("jitter", 3) * (time.time() % 1 - 0.5))
-                        )
-
-                        logger.log_info(f"Clicking target at ({jitter_x}, {jitter_y})")
-                        try:
-                            # 1. Select Target (Mouse Click)
-                            if pyautogui is not None:
-                                pyautogui.click(x=jitter_x, y=jitter_y)
-                            else:
-                                import ctypes
-
-                                ctypes.windll.user32.SetCursorPos(
-                                    int(jitter_x), int(jitter_y)
-                                )
-                                ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
-                                time.sleep(0.05)
-                                ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
-
-                            # 2. Wait for target selection to register
-                            delay = click_cfg.get("delay_after_click", 0.5)
-                            time.sleep(delay)
-
-                            # 3. Cast Skills Loop
-                            skills_cfg = self.hunt_cfg.get("skills", {})
-                            cast_duration = float(
-                                click_cfg.get("cast_duration_sec", 3.0)
-                            )
-                            start_time = time.time()
-
-                            logger.log_info(
-                                f"Starting attack cycle ({cast_duration}s)..."
-                            )
-                            while (
-                                time.time() - start_time < cast_duration
-                                and not self.hunt_stop_event.is_set()
-                            ):
-                                # Try casting skills based on priority and cooldown
-                                cast_count = self._try_cast_skills(skills_cfg)
-
-                                # Break if no skills were cast (all on cooldown)
-                                if cast_count == 0:
-                                    # Wait a short bit before trying again
-                                    time.sleep(0.1)
-
-                        except Exception as e:
-                            print(f"Error clicking target: {e}")
-                            logger.log_error(f"Attack cycle error: {e}")
-
-                        # Wait before next scan
-                        time.sleep(click_cfg.get("interval_sec", 2.0))
-                    else:
-                        self._update_status("Searching...")
-                        self._update_overlay(status_text="Searching...", clear=True)
-
-                        # Move randomly if enabled
-                        options = self.hunt_cfg.get("options", {})
-                        if options.get("random_movement", False):
-                            # TODO: Implement random movement logic
-                            pass
-
-                        time.sleep(0.5)
-                except Exception as e:
-                    print(f"Error in hunt worker loop: {e}")
-                    time.sleep(1.0)
-
-            # Clean up on exit
-            if hasattr(self.app, "overlay_ctrl") and self.app.overlay_ctrl:
-                self.app.overlay_ctrl.set_mode_indicator(False)
-                self.app.overlay_ctrl.clear_target()
-
-            self.app.after(0, self._on_hunt_worker_finished)
-
-        self.hunt_thread = threading.Thread(target=worker, daemon=True)
-        self.hunt_thread.start()
 
     def on_hunt_stop(self):
         if not self.hunt_running:
@@ -257,28 +135,17 @@ class HuntRunner:
 
         # Reset UI
         self.hunt_status.set("Stopped")
-        self.hunt_target_info.set("Target: None")
+        self.schedule_ui_task(lambda: self.set_target_info("Target: None"))
 
-        if hasattr(self.app, "btn_start"):
-            self.app.btn_start.config(state="normal")
-        if hasattr(self.app, "btn_stop"):
-            self.app.btn_stop.config(state="disabled")
 
-        if (
-            hasattr(self.app, "overlay_ctrl")
-            and self.app.overlay_ctrl
-            and self.app.overlay_ctrl.is_overlay_active()
-        ):
-            self.app.overlay_ctrl.set_status("Idle")
-            self.app.overlay_ctrl.set_mode_indicator(False)
-            self.app.overlay_ctrl.clear_target()
+        overlay_ctrl = self.get_overlay_ctrl()
+        if overlay_ctrl and overlay_ctrl.is_overlay_active():
+            overlay_ctrl.set_status("Idle")
+            overlay_ctrl.set_mode_indicator(False)
+            overlay_ctrl.clear_target()
 
     def _on_hunt_worker_finished(self):
         self.hunt_running = False
-        if hasattr(self.app, "btn_start"):
-            self.app.btn_start.config(state="normal")
-        if hasattr(self.app, "btn_stop"):
-            self.app.btn_stop.config(state="disabled")
         self.hunt_status.set("Stopped")
 
     def _hunt_locate_target(self):
@@ -419,11 +286,4 @@ class HuntRunner:
         return cast_count
 
     def _update_status(self, text: str) -> None:
-        if (
-            hasattr(self.app, "after")
-            and hasattr(self, "hunt_status")
-            and self.hunt_status
-        ):
-            self.app.after(0, lambda: self.hunt_status.set(text))
-        elif hasattr(self, "hunt_status") and self.hunt_status:
-            self.hunt_status.set(text)
+        self.schedule_ui_task(lambda: self.set_status(text))

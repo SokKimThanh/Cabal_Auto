@@ -119,6 +119,7 @@ from lib.features.hunt.hunt_config import (
     save_hunt_config,
 )
 from lib.features.hunt.hunt_runner import HuntRunner
+from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 from lib.features.monsters.monster_repo import (
     calculate_monster_estimate,
     load_monster_library,
@@ -475,7 +476,31 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             pyautogui.FAILSAFE = bool(self.cfg.get("safety", {}).get("failsafe", True))
 
         self._build_ui()
-        self.hunt_runner = HuntRunner(self, self.hunt_cfg)
+        self.hunt_runner = HuntRunner(
+            hunt_cfg=self.hunt_cfg,
+            set_status=self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None,
+            set_target_info=self.hunt_target_info.set if hasattr(self, "hunt_target_info") else lambda _: None,
+            get_overlay_ctrl=lambda: getattr(self, "overlay_ctrl", None),
+            get_notebook=lambda: getattr(self, "notebook", None),
+            tab_setup=getattr(self, "tab_setup", None),
+            tab_hunt=getattr(self, "tab_hunt", None),
+            schedule_ui_task=lambda fn: self.after(0, fn) if hasattr(self, "after") else fn()
+        )
+
+        self.hunt_orchestrator = HuntOrchestrator(
+            on_status_update=self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None,
+            on_state_change=self._on_orchestrator_state_change,
+            locate_target=self._hunt_locate_target,
+            prepare_skill_runtime=self._prepare_skill_runtime,
+            try_cast_skills=self._try_cast_skills,
+            bring_window_to_front=self._bring_window_to_front,
+            bring_window_to_front_by_hwnd=self._bring_window_to_front_by_hwnd,
+            bring_window_to_front_by_pid=self._bring_window_to_front_by_pid,
+            iconify_app=self.iconify,
+            update_skill_stats_display=getattr(self, "update_skill_stats_display", lambda _: None),
+            get_hunt_selected=lambda: getattr(self, "hunt_selected", {}),
+            schedule_ui_task=lambda fn: self.after(0, fn) if hasattr(self, "after") else fn()
+        )
 
         # Keyboard shortcuts (Window-focused only)
         self.bind(
@@ -1048,11 +1073,22 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             except Exception:
                 pass
 
+    def _on_orchestrator_state_change(self, state: str):
+        if state == "running":
+            self.hunt_start_btn.config(state="disabled", bg="#A5D6A7", relief="sunken", cursor="arrow")
+            self.hunt_stop_btn.config(state="normal", bg="#C62828", relief="raised", cursor="hand2")
+            if hasattr(self, "hunt_status"):
+                self.hunt_status.set(self._t("hunt_running"))
+        elif state in ["idle", "error", "stopped"]:
+            self.hunt_start_btn.config(state="normal", bg="#4CAF50", relief="raised", cursor="hand2")
+            self.hunt_stop_btn.config(state="disabled", bg="#FFCDD2", relief="sunken", cursor="arrow")
+            if state == "idle" and hasattr(self, "hunt_status"):
+                self.hunt_status.set(self._t("hunt_idle") if hasattr(self, "_t") else "Idle")
+
     def on_hunt_start(self):
-        if self.hunt_running:
+        if hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running:
             return
 
-        # ✅ PATCH 6: Prerequisites validation
         validation_error = self._validate_hunt_prerequisites()
         if validation_error:
             messagebox.showerror(self._t("error_title"), validation_error, parent=self)
@@ -1067,265 +1103,12 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             return
         save_hunt_config(cfg)
         self.hunt_cfg = cfg
-        self.hunt_running = True
 
-        # Update button states with enhanced visual feedback
-        self.hunt_start_btn.config(
-            state="disabled",
-            bg="#A5D6A7",  # Light green when disabled
-            relief="sunken",
-            cursor="arrow",
-        )
-        self.hunt_stop_btn.config(
-            state="normal",
-            bg="#C62828",  # Bright red when active
-            relief="raised",
-            cursor="hand2",
-        )
-        self.hunt_status.set(self._t("hunt_running"))
-
-        def worker():
-            logger = get_hunt_logger()
-            try:
-                # Focus the target window; minimize GUI only if focus succeeded
-                try:
-                    focused = False
-                    if self.hunt_selected and self.hunt_selected.get("hwnd"):
-                        focused = self._bring_window_to_front_by_hwnd(
-                            int(self.hunt_selected["hwnd"])
-                        )
-                    elif cfg.get("window_pid"):
-                        focused = self._bring_window_to_front_by_pid(
-                            int(cfg["window_pid"])
-                        )
-                    if not focused:
-                        focused = self._bring_window_to_front(
-                            cfg.get("window_title", "Cabal")
-                        )
-                    if focused:
-                        try:
-                            self.iconify()
-                        except Exception:
-                            pass
-                    time.sleep(0.15)
-                except Exception:
-                    pass
-
-                # Note: Global hotkeys (Ctrl+Shift+R/E) are registered in __init__()
-                # No need to register hotkeys here anymore
-
-                # Start logging
-                logger.log_hunt_start(cfg)
-
-                last_search = 0.0
-                have_target = False
-                mode = "search"
-                last_seen = 0.0
-                attack_started = 0.0
-                lost_timeout = float(cfg.get("lost_timeout_sec", 0.8))
-                attack_min_duration = float(cfg.get("attack_min_duration_sec", 1.5))
-                skill_runtime = self._prepare_skill_runtime(cfg)
-                has_attack_skills = any(
-                    skill.get("type", "attack") != "buff" for skill in skill_runtime
-                )
-                last_match_info = None
-
-                # Sprint 22 Patch 2: Training mode should NOT cycle targets (no Tab spam)
-                training_mode_active = cfg.get("training_mode_enabled", False)
-                skill_stats = SkillStats() if training_mode_active else None
-                last_stats_update = 0.0
-                stats_update_interval = 0.5  # Update UI every 0.5 seconds
-
-                while self.hunt_running:
-                    now = time.time()
-                    if cfg.get("bring_to_front_each_cycle"):
-                        ok = False
-                        try:
-                            if self.hunt_selected and self.hunt_selected.get("hwnd"):
-                                ok = self._bring_window_to_front_by_hwnd(
-                                    int(self.hunt_selected["hwnd"])
-                                )
-                            elif cfg.get("window_pid"):
-                                ok = self._bring_window_to_front_by_pid(
-                                    int(cfg["window_pid"])
-                                )
-                        except Exception:
-                            ok = False
-                        if not ok:
-                            self._bring_window_to_front(
-                                cfg.get("window_title", "Cabal")
-                            )
-
-                    # periodic detection with multi-template support
-                    if now - last_search >= float(cfg["search_interval"]):
-                        box, match_info = self._hunt_locate_target(cfg)
-                        if box is not None:
-                            have_target = True
-                            last_seen = now
-                            # Log template match with accurate confidence from template_matcher
-                            if match_info and last_match_info != match_info:
-                                # Log match details
-                                template_name = (
-                                    match_info.get("name")
-                                    or Path(match_info.get("path", "")).stem
-                                )
-                                threshold = match_info.get("threshold", 0.8)
-                                confidence = match_info.get("confidence", 0.0)
-                                monster_name = match_info.get("monster_name", "")
-                                logger.log_match(
-                                    template_name,
-                                    box,
-                                    threshold,
-                                    confidence,
-                                    monster_name,
-                                )
-
-                                status_msg = (
-                                    f"Target: {template_name} (conf: {confidence:.3f})"
-                                )
-                                self.hunt_status.set(status_msg)
-                                last_match_info = match_info
-                        else:
-                            have_target = False
-                            if last_match_info:
-                                # Log target lost
-                                duration = (
-                                    now - attack_started if mode == "attack" else 0
-                                )
-                                template_name = (
-                                    last_match_info.get("name")
-                                    or Path(last_match_info.get("path", "")).stem
-                                )
-                                monster_name = last_match_info.get("monster_name", "")
-                                logger.log_lost(template_name, monster_name, duration)
-
-                                self.hunt_status.set(self._t("hunt_running"))
-                                last_match_info = None
-                        last_search = now
-
-                    # Sprint 22 Patch 1: Update skill stats display periodically
-                    if (
-                        skill_stats
-                        and (now - last_stats_update) >= stats_update_interval
-                    ):
-                        try:
-                            all_stats = skill_stats.get_all_stats()
-                            self.after(
-                                0, lambda: self.update_skill_stats_display(all_stats)
-                            )
-                            last_stats_update = now
-                        except Exception:
-                            pass  # Ignore stats update errors
-
-                    if skill_runtime:
-                        print(
-                            f"[Hunt] Search mode - Casting buffs only (have_target={have_target})"
-                        )
-                        self._try_cast_skills(
-                            skill_runtime,
-                            now,
-                            have_target,
-                            attack_phase=False,
-                            skill_stats=skill_stats,
-                        )
-
-                    if mode == "search":
-                        if have_target:
-                            logger.log_state_change("search", "attack", "target_found")
-                            mode = "attack"
-                            attack_started = now
-                            continue
-
-                        # Sprint 22 Patch 2: Training mode SKIP target cycling
-                        # Training dummy is stationary - no need to spam Tab/Z key
-                        if not training_mode_active:
-                            tap(cfg["target_key"])
-                            time.sleep(float(cfg["target_cycle_delay"]))
-                        else:
-                            # Training mode: Just wait for template detection
-                            time.sleep(0.1)
-                        continue
-
-                    # mode == 'attack'
-                    if (
-                        have_target
-                        or (now - last_seen) <= lost_timeout
-                        or (now - attack_started) <= attack_min_duration
-                    ):
-                        target_active = (
-                            have_target
-                            or (now - last_seen) <= lost_timeout
-                            or (now - attack_started) <= attack_min_duration
-                        )
-                        print(
-                            f"[Hunt] Attack mode - target_active={target_active}, have_target={have_target}, has_attack_skills={has_attack_skills}"
-                        )
-                        if skill_runtime and has_attack_skills:
-                            # Ensure target is selected before casting attack skills
-                            if target_active:
-                                tap(
-                                    cfg["target_key"]
-                                )  # Press Z to ensure target locked
-                                time.sleep(0.05)  # Small delay for target lock
-                            self._try_cast_skills(
-                                skill_runtime,
-                                now,
-                                target_active,
-                                attack_phase=True,
-                                skill_stats=skill_stats,
-                            )
-                            if not target_active:
-                                logger.log_state_change(
-                                    "attack", "search", "lost_timeout"
-                                )
-                                mode = "search"
-                                time.sleep(0.05)
-                                continue
-                            time.sleep(float(cfg["attack_interval"]))
-                            continue
-                        # Fallback: if no skill_runtime (no skills), derive keys from skill_slots
-                        fallback_keys = [
-                            s.get("key")
-                            for s in cfg.get("skill_slots", [])
-                            if s.get("key")
-                        ]
-                        if not fallback_keys:
-                            fallback_keys = ["1"]
-                        for k in fallback_keys:
-                            if not self.hunt_running:
-                                break
-                            try:
-                                tap(k, int(cfg["attack_press_ms"]))
-                            except Exception:
-                                pass
-                            time.sleep(float(cfg["attack_interval"]))
-                    else:
-                        logger.log_state_change("attack", "search", "lost_timeout")
-                        mode = "search"
-                        time.sleep(0.05)
-                    time.sleep(0.02)
-            except Exception as e:
-                logger.log_error("hunt_loop", f"Hunt error: {str(e)}", e)
-                logger.log_hunt_stop("error")
-            finally:
-                try:
-                    already_logged = bool(getattr(logger, "_stop_logged", False))
-                except Exception:
-                    already_logged = False
-                if not already_logged:
-                    logger.log_hunt_stop("manual_stop")
-                    try:
-                        setattr(logger, "_stop_logged", True)
-                    except Exception:
-                        pass
-                self.hunt_running = False
-                self.after(0, self._after_hunt_stop)
-
-        self.hunt_thread = threading.Thread(target=worker, daemon=True)
-        self.hunt_thread.start()
+        self.hunt_orchestrator.start_hunt(self.hunt_cfg)
 
     def on_hunt_stop(self):
-        self.hunt_running = False
+        if hasattr(self, "hunt_orchestrator"):
+            self.hunt_orchestrator.stop_hunt()
 
     # -----------------
     # Close
