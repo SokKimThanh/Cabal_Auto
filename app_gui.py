@@ -36,6 +36,7 @@ from ctypes import wintypes
 
 from lib.vision.template_matcher import locate_template
 from lib.vision.vision_engine import VisionEngine
+from lib.features.hunt.config_validator import get_valid_hunt_area
 
 try:
     from lib.system.screen_capture import ScreenCapture
@@ -465,13 +466,9 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         }
 
         # Configuration is already migrated during load_hunt_config
-        hunt_area = self.hunt_cfg.get("hunt_area")
-        if not isinstance(hunt_area, dict):
-            hunt_area = {}
-            self.hunt_cfg["hunt_area"] = hunt_area
-        self.current_window_bounds = self._normalize_window_bounds_value(
-            hunt_area.get("window_bounds")
-        )
+        safe_area = get_valid_hunt_area(self.hunt_cfg)
+        self.hunt_cfg["hunt_area"] = safe_area
+        self.current_window_bounds = safe_area.get("window_bounds")
         self.hunt_cfg["window_bounds"] = self.current_window_bounds
 
         if pyautogui is not None:
@@ -1479,13 +1476,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                                         f"[Overlay] ✅ Window restored to: {window_bounds}"
                                     )
 
-                            # Validate rect is not minimized position
-                            if window_bounds and (
-                                window_bounds.get("left", 0) < -30000
-                                or window_bounds.get("top", 0) < -30000
-                            ):
+                            from lib.features.hunt.config_validator import normalize_window_bounds_value
+                            if window_bounds and not normalize_window_bounds_value(window_bounds):
                                 print(
-                                    f"[Overlay] ⚠️ Detected minimized rect, clearing: {window_bounds}"
+                                    f"[Overlay] ⚠️ Detected minimized or invalid rect, clearing: {window_bounds}"
                                 )
                                 window_bounds = None
 
@@ -1566,11 +1560,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                             window_bounds = cabal_window.rect
                             target_hwnd = cabal_window.hwnd
 
-                            # Validate rect is not minimized position
-                            if (
-                                window_bounds["left"] < -30000
-                                or window_bounds["top"] < -30000
-                            ):
+                            from lib.features.hunt.config_validator import normalize_window_bounds_value
+                            if not normalize_window_bounds_value(window_bounds):
                                 messagebox.showerror(
                                     "Invalid Window Position",
                                     f"Game window appears to be minimized or invalid.\n\n"
@@ -2961,8 +2952,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             return
         monster = self.monsters[self.monster_selected_index]
 
+        from lib.features.hunt.config_validator import normalize_window_bounds_value
+
         # Apply window_bounds
-        bounds = self._normalize_window_bounds_value(monster.get("window_bounds"))
+        bounds = normalize_window_bounds_value(monster.get("window_bounds"))
         self.current_window_bounds = bounds
         self.hunt_cfg["window_bounds"] = bounds
         self._update_window_bounds_display()

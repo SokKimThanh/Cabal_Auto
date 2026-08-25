@@ -1,24 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-def normalize_window_bounds_value(bounds: Any) -> Optional[List[int]]:
-    """Normalize window bounds into standard list format [x, y, w, h]."""
-    if bounds:
-        if isinstance(bounds, dict):
-            try:
-                return [
-                    int(bounds["left"]),
-                    int(bounds["top"]),
-                    int(bounds["width"]),
-                    int(bounds["height"]),
-                ]
-            except (KeyError, ValueError, TypeError):
-                return None
-        elif isinstance(bounds, list) and len(bounds) == 4:
-            try:
-                return [int(v) for v in bounds]
-            except (ValueError, TypeError):
-                return None
-    return None
+from lib.features.hunt.config_validator import normalize_window_bounds_value
 
 def migrate_hunt_config(data: Any) -> Dict[str, Any]:
     """Migrates and normalizes the hunt config dictionary in-place."""

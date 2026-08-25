@@ -47,8 +47,12 @@ class HuntRunner:
     def _validate_hunt_prerequisites(self) -> str:
         """Validate all required conditions before starting a hunt.
         Returns error message string if validation fails, None otherwise."""
+        from lib.features.hunt.config_validator import get_valid_hunt_area
+
+        safe_area = get_valid_hunt_area(self.hunt_cfg)
+
         # 1. Window checks
-        win_title = self.hunt_cfg.get("hunt_area", {}).get("window_title")
+        win_title = safe_area.get("window_title")
         if not win_title:
             return "Please select a target window in Setup tab first."
 
@@ -69,8 +73,8 @@ class HuntRunner:
             print(f"[Hunt] Warning: Could not bring window to front: {e}")
 
         # 2. Check bounds
-        bounds = self.hunt_cfg.get("hunt_area", {}).get("window_bounds")
-        if not bounds or not isinstance(bounds, list) or len(bounds) != 4:
+        bounds = safe_area.get("window_bounds")
+        if bounds is None:
             return "Invalid hunt area bounds. Please reset them in Setup tab."
 
         # 3. Target (Monster) Selection Checks
@@ -119,11 +123,14 @@ class HuntRunner:
         logger.log_info(f"Hunt started (Mode: {self.ui_mode})")
 
         def worker():
-            win_title = self.hunt_cfg.get("hunt_area", {}).get("window_title")
+            from lib.features.hunt.config_validator import get_valid_hunt_area
             from lib.system.window_manager import find_window_by_title
 
             while self.hunt_running and not self.hunt_stop_event.is_set():
                 try:
+                    safe_area = get_valid_hunt_area(self.hunt_cfg)
+                    win_title = safe_area.get("window_title")
+
                     # Defensive check: Ensure window still exists
                     hwnd = find_window_by_title(win_title)
                     if not hwnd:
@@ -135,7 +142,7 @@ class HuntRunner:
                         time.sleep(2.0)
                         continue
 
-                    bounds = self.hunt_cfg.get("hunt_area", {}).get("window_bounds")
+                    bounds = safe_area.get("window_bounds")
 
                     target_pt, score, name = self._hunt_locate_target()
 
@@ -276,8 +283,11 @@ class HuntRunner:
 
     def _hunt_locate_target(self):
         """Locates a target based on the current configuration."""
+        from lib.features.hunt.config_validator import get_valid_hunt_area
+
         cfg = self.hunt_cfg
-        bounds = cfg.get("hunt_area", {}).get("window_bounds")
+        safe_area = get_valid_hunt_area(cfg)
+        bounds = safe_area.get("window_bounds")
         if not bounds:
             return None, 0, ""
 
