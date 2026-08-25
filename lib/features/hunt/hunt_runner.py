@@ -74,7 +74,7 @@ class HuntRunner:
 
         # 2. Check bounds
         bounds = safe_area.get("window_bounds")
-        if not bounds or not isinstance(bounds, list) or len(bounds) != 4:
+        if bounds is None:
             return "Invalid hunt area bounds. Please reset them in Setup tab."
 
         # 3. Target (Monster) Selection Checks
