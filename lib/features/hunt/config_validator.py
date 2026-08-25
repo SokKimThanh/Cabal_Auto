@@ -3,17 +3,25 @@ from typing import Any, Dict, List, Optional
 def normalize_window_bounds_value(bounds: Any) -> Optional[List[int]]:
     """Normalize window bounds into standard list format [x, y, w, h].
     Returns None if bounds are malformed, minimized (e.g. -32000), or invalid.
+    Accepts dict bounds in either left/top/width/height or left/top/right/bottom format.
     """
     if bounds:
         result = None
         if isinstance(bounds, dict):
             try:
-                result = [
-                    int(bounds["left"]),
-                    int(bounds["top"]),
-                    int(bounds["width"]),
-                    int(bounds["height"]),
-                ]
+                left = int(bounds["left"])
+                top = int(bounds["top"])
+
+                if "width" in bounds and "height" in bounds:
+                    width = int(bounds["width"])
+                    height = int(bounds["height"])
+                elif "right" in bounds and "bottom" in bounds:
+                    width = int(bounds["right"]) - left
+                    height = int(bounds["bottom"]) - top
+                else:
+                    return None
+
+                result = [left, top, width, height]
             except (KeyError, ValueError, TypeError):
                 return None
         elif isinstance(bounds, list) and len(bounds) == 4:
