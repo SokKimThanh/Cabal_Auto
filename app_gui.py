@@ -148,7 +148,6 @@ from lib.system.instance_lock import SingleInstanceLock
 from lib.system.win_input import tap
 from lib.ui_style import UIStyle as UI  # Global UI style constants
 from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
-from ui.controllers.app_window_controller import AppWindowController
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.windows.setup_wizard import show_setup_wizard
 from ui.windows.monster_manager_win import MonsterManagerWin
@@ -210,7 +209,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             show_results=self._show_scan_results,
             icons=Icons,
         )
-        self.window_controller = AppWindowController(self)
 
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
@@ -334,9 +332,11 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         )
 
         # State Bookkeeping Extracted
+        from ui.controllers.app_window_controller import AppWindowController
         from ui.controllers.app_state_controller import AppStateController
 
         self.state_controller = AppStateController(self)
+        self.window_controller = AppWindowController(self)
 
         self.monsters = self._normalize_library_items(load_monster_library())
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
@@ -852,11 +852,9 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self._build_ui()
 
     def on_setup_wizard(self, hide_parent=True):
-        """Backward-compatible wrapper delegating wizard ownership to the window controller."""
-        return self.window_controller.on_setup_wizard(hide_parent=hide_parent)
+        self.window_controller.on_setup_wizard(hide_parent)
 
     def try_close_setup_wizard(self) -> bool:
-        """Backward-compatible wrapper for setup-wizard close behavior."""
         return self.window_controller.try_close_setup_wizard()
 
     def _switch_to_tab(self, tab_index: int):
@@ -1120,7 +1118,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             if response:
                 # User clicked Yes - launch wizard
                 print("[First-time check] Launching wizard...")
-                self.on_setup_wizard()
+                self.window_controller.on_setup_wizard()
             else:
                 # User clicked No - auto-detect Cabal window and save
                 print(
@@ -1537,8 +1535,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
     # Close
     # -----------------
     def _open_vision_wizard(self):
-        """Backward-compatible wrapper: window lifecycle now lives in AppWindowController."""
-        return self.window_controller.open_vision_wizard()
+        self.window_controller.open_vision_wizard()
 
     def _scan_region(self):
         """
@@ -1606,7 +1603,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         Shortcut to Vision Wizard.
         """
         print("[Vision] Manage templates - opening wizard")
-        self._open_vision_wizard()
+        self.window_controller.open_vision_wizard()
 
     def _toggle_overlay(self):
         """
@@ -2171,7 +2168,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             # No existing wizard - open directly without confirmation
             # (User actively pressed hotkey, no need to ask)
             print("[Hotkeys] Opening Setup Wizard directly from hotkey")
-            self.after(0, lambda: self.on_setup_wizard(hide_parent=False))
+            self.after(0, lambda: self.window_controller.on_setup_wizard(hide_parent=False))
 
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
@@ -3861,10 +3858,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             pass
 
     def _open_monster_manager(self):
-        return self.window_controller.open_monster_manager()
+        self.window_controller.open_monster_manager()
 
     def _open_skill_manager(self):
-        return self.window_controller.open_skill_manager()
+        self.window_controller.open_skill_manager()
 
     def on_monster_calculate_timing(self):
         from ui.windows.timing_calc_dialog import TimingCalcDialog

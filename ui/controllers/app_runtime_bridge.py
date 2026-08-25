@@ -11,7 +11,6 @@ from lib.features.monsters.monster_repo import calculate_monster_estimate
 from lib.system.hotkey_manager import HotkeyManager
 from lib.system.win_input import tap
 from lib.vision.template_matcher import locate_template
-from ui.windows.monster_manager_win import MonsterManagerWin
 
 
 class AppRuntimeBridgeMixin:
@@ -91,7 +90,7 @@ class AppRuntimeBridgeMixin:
             self.window_bounds_display_var.set("")
 
     def _list_windows(self, title_contains: Optional[str] = None) -> List[Dict[str, Any]]:
-        return self.window_controller._list_windows(title_contains=title_contains)
+        return self.window_controller._list_windows(title_contains)
 
     def on_hunt_refresh_windows(self, *_args) -> None:
         self.window_controller.on_hunt_refresh_windows(*_args)
@@ -418,17 +417,7 @@ class AppRuntimeBridgeMixin:
         self.after(0, self.window_controller.open_vision_wizard)
 
     def _on_monster_editor_hotkey(self, *_args) -> None:
-        existing = getattr(self, "monster_manager_win", None)
-        if existing is not None:
-            try:
-                if existing.winfo_exists():
-                    existing.deiconify()
-                    existing.lift()
-                    existing.focus_force()
-                    return
-            except Exception:
-                self.monster_manager_win = None
-        self.after(0, lambda: setattr(self, "monster_manager_win", MonsterManagerWin(self)))
+        self.after(0, self.window_controller.open_monster_manager)
 
     def try_close_library_manager(self) -> bool:
         return self.window_controller.try_close_library_manager()

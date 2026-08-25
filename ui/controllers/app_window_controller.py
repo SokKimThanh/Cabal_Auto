@@ -1,27 +1,13 @@
-from __future__ import annotations
-
 from typing import Any, Dict, List, Optional
-
 import tkinter as tk
 from tkinter import messagebox
-
-from lib.features.hunt.hunt_config import save_hunt_config
-
+from lib.features.hunt.hunt_config import _normalize_window_bounds, save_hunt_config, CONFIG_PATH
 
 class AppWindowController:
-    """Owns target-window selection and generic window lifecycle delegation."""
+    """Manages dialog/window ownership tracking and target window selection lifecycle."""
 
-    def __init__(self, root: Any):
+    def __init__(self, root: tk.Tk):
         self.root = root
-
-    def _normalize_hunt_area(self, cfg: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        if not isinstance(cfg, dict):
-            return {}
-        hunt_area = cfg.get("hunt_area")
-        if not isinstance(hunt_area, dict):
-            hunt_area = {}
-            cfg["hunt_area"] = hunt_area
-        return hunt_area
 
     def _normalize_window_bounds_value(self, bounds: Any) -> Optional[List[int]]:
         if isinstance(bounds, dict):
@@ -40,6 +26,15 @@ class AppWindowController:
             except (TypeError, ValueError):
                 return None
         return None
+
+    def _normalize_hunt_area(self, cfg: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if not isinstance(cfg, dict):
+            return {}
+        hunt_area = cfg.get("hunt_area")
+        if not isinstance(hunt_area, dict):
+            hunt_area = {}
+            cfg["hunt_area"] = hunt_area
+        return hunt_area
 
     def _list_windows(self, title_contains: Optional[str] = None) -> List[Dict[str, Any]]:
         from lib.system.window_manager import WindowManager
@@ -75,7 +70,7 @@ class AppWindowController:
         return results
 
     def on_hunt_refresh_windows(self, *_args) -> None:
-        self.root.on_hunt_find_windows()
+        self.on_hunt_find_windows()
 
     def on_hunt_find_windows(self, _evt=None) -> None:
         try:
@@ -98,7 +93,8 @@ class AppWindowController:
             if hasattr(self.root, "win_combo_var"):
                 self.root.win_combo_var.set("")
             self.root.current_window_bounds = None
-            self.root._update_window_bounds_display()
+            if hasattr(self.root, "_update_window_bounds_display"):
+                self.root._update_window_bounds_display()
             if hasattr(self.root, "hunt_status"):
                 self.root.hunt_status.set("No visible windows found")
             return
@@ -130,11 +126,7 @@ class AppWindowController:
         try:
             index = int(self.root.win_combo.current())
         except Exception:
-            selected_title = (
-                self.root.win_combo_var.get().strip()
-                if hasattr(self.root, "win_combo_var")
-                else ""
-            )
+            selected_title = self.root.win_combo_var.get().strip() if hasattr(self.root, "win_combo_var") else ""
             for idx, item in enumerate(self.root.win_items):
                 if item["title"] == selected_title:
                     index = idx
@@ -154,7 +146,8 @@ class AppWindowController:
         hunt_area = self._normalize_hunt_area(self.root.hunt_cfg)
         hunt_area["window_title"] = selected["title"]
         hunt_area["window_bounds"] = bounds
-        self.root._update_window_bounds_display()
+        if hasattr(self.root, "_update_window_bounds_display"):
+            self.root._update_window_bounds_display()
         save_hunt_config(self.root.hunt_cfg)
         if hasattr(self.root, "hunt_status"):
             self.root.hunt_status.set(f"Window selected: {selected['title']}")
@@ -180,7 +173,6 @@ class AppWindowController:
     def _bring_window_to_front_by_hwnd(self, hwnd: int) -> bool:
         try:
             from lib.system.window_manager import WindowManager
-
             return WindowManager().set_foreground(int(hwnd))
         except Exception:
             return False
@@ -204,64 +196,50 @@ class AppWindowController:
             return False
         return False
 
-    def on_setup_wizard(self, hide_parent: bool = True):
-        """Launch setup wizard to guide user through initial configuration."""
-
+    def on_setup_wizard(self, hide_parent=True):
+        from ui.windows.setup_wizard import show_setup_wizard
         def on_wizard_complete(wizard_data):
             if hide_parent:
                 self.root.deiconify()
-            self.root.hunt_cfg = self.root._load_hunt_config()
+            from lib.features.hunt.hunt_config import load_hunt_config
+            self.root.hunt_cfg = load_hunt_config()
             if hasattr(self.root, "_populate_hunt_ui_from_config"):
                 self.root._populate_hunt_ui_from_config()
             lang = wizard_data.get("language", "en")
             if hasattr(self.root, "hunt_status"):
-                self.root.hunt_status.set(
-                    f"✅ Wizard completed! Configuration loaded. Ready to hunt. (Language: {lang})"
-                )
+                self.root.hunt_status.set(f"✅ Wizard completed! Configuration loaded. Ready to hunt. (Language: {lang})")
 
         def on_wizard_cancel():
             if hide_parent:
                 self.root.deiconify()
 
-        if callable(self.root._t):
-            pass
-
-        try:
-            from ui.windows.setup_wizard import show_setup_wizard
-
-            show_setup_wizard(
-                self.root,
-                config_manager=self.root.config_mgr,
-                on_complete=on_wizard_complete,
-                on_cancel=on_wizard_cancel,
-                hide_parent=hide_parent,
-            )
-        except tk.TclError:
-            app_lang = getattr(self.root, "lang", "en")
-
-            class _HeadlessSetupWizardStub:
-                def __init__(self):
-                    self.wizard_data = {"language": app_lang}
-                    self.dialog = self
-                    self._dirty = False
-
-                def has_unsaved_changes(self):
-                    return self._dirty or bool(self.wizard_data)
-
-                def attempt_close_from_external(self):
-                    return True
-
-                def destroy(self):
-                    return None
-
-            self.root._setup_wizard_win = _HeadlessSetupWizardStub()
-        except Exception:
+        if callable(show_setup_wizard):
             try:
-                messagebox.showinfo(
-                    self.root._t("info_title"),
-                    "Setup wizard is not available in this build.",
-                    parent=self.root,
+                show_setup_wizard(
+                    self.root,
+                    config_manager=self.root.config_mgr,
+                    on_complete=on_wizard_complete,
+                    on_cancel=on_wizard_cancel,
+                    hide_parent=hide_parent,
                 )
+            except tk.TclError:
+                app_lang = getattr(self.root, "lang", "en")
+                class _HeadlessSetupWizardStub:
+                    def __init__(self):
+                        self.wizard_data = {"language": app_lang}
+                        self.dialog = self
+                        self._dirty = False
+                    def has_unsaved_changes(self):
+                        return self._dirty or bool(self.wizard_data)
+                    def attempt_close_from_external(self):
+                        return True
+                    def destroy(self):
+                        return None
+                self.root._setup_wizard_win = _HeadlessSetupWizardStub()
+        else:
+            try:
+                _t = getattr(self.root, "_t", lambda x: x)
+                messagebox.showinfo(_t("info_title"), "Setup wizard is not available in this build.", parent=self.root)
             except Exception:
                 pass
 
@@ -288,29 +266,46 @@ class AppWindowController:
     def open_vision_wizard(self):
         try:
             from ui.windows.setup_wizard_vision import create_or_show_vision_wizard
-
             wizard = create_or_show_vision_wizard(
                 self.root,
-                config_path=str(self.root.hunt_cfg.get("config_path", "")),
-                on_close=self.root._on_vision_wizard_closed,
+                config_path=str(CONFIG_PATH),
+                on_close=getattr(self.root, "_on_vision_wizard_closed", lambda: None),
             )
             print(f"[Vision] Wizard opened/focused: {wizard}")
         except Exception as e:
             print(f"[Vision] Error opening wizard: {e}")
             import traceback
-
             traceback.print_exc()
-            messagebox.showerror(self.root._t("error"), f"Cannot open Vision Wizard:\n{e}")
+            _t = getattr(self.root, "_t", lambda x: "Error")
+            messagebox.showerror(_t("error"), f"Cannot open Vision Wizard:\n{e}")
 
     def open_monster_manager(self):
+        existing = getattr(self.root, "monster_manager_win", None)
+        if existing is not None:
+            try:
+                if existing.winfo_exists():
+                    existing.deiconify()
+                    existing.lift()
+                    existing.focus_force()
+                    return
+            except Exception:
+                self.root.monster_manager_win = None
         from ui.windows.monster_manager_win import MonsterManagerWin
-
-        MonsterManagerWin(self.root)
+        self.root.monster_manager_win = MonsterManagerWin(self.root)
 
     def open_skill_manager(self):
+        existing = getattr(self.root, "skill_manager_win", None)
+        if existing is not None:
+            try:
+                if existing.winfo_exists():
+                    existing.deiconify()
+                    existing.lift()
+                    existing.focus_force()
+                    return
+            except Exception:
+                self.root.skill_manager_win = None
         from ui.windows.skill_manager_win import SkillManagerWin
-
-        SkillManagerWin(self.root)
+        self.root.skill_manager_win = SkillManagerWin(self.root)
 
     def open_library_manager(self) -> None:
         existing = getattr(self.root, "library_manager_win", None)
@@ -324,9 +319,9 @@ class AppWindowController:
             except Exception:
                 self.root.library_manager_win = None
 
+        from ui.windows.library_manager import LibraryManagerWindow
         from lib.features.monsters.monster_repo import save_monster_library
         from lib.features.skills.skill_repo import save_skill_library
-        from ui.windows.library_manager import LibraryManagerWindow
 
         def on_close_callback(changes: Dict[str, Any]) -> None:
             try:
@@ -336,15 +331,24 @@ class AppWindowController:
                     save_hunt_config(self.root.hunt_cfg)
                 monsters = changes.get("monsters")
                 if monsters is not None:
-                    self.root.monsters = self.root._normalize_library_items(monsters)
+                    if hasattr(self.root, "_normalize_library_items"):
+                        self.root.monsters = self.root._normalize_library_items(monsters)
+                    else:
+                        self.root.monsters = monsters
                     save_monster_library(self.root.monsters)
-                    self.root._refresh_monster_select_options()
-                    self.root._refresh_monster_rotation_list()
+                    if hasattr(self.root, "_refresh_monster_select_options"):
+                        self.root._refresh_monster_select_options()
+                    if hasattr(self.root, "_refresh_monster_rotation_list"):
+                        self.root._refresh_monster_rotation_list()
                 skills = changes.get("skills")
                 if skills is not None:
-                    self.root.skills = self.root._normalize_library_items(skills)
+                    if hasattr(self.root, "_normalize_library_items"):
+                        self.root.skills = self.root._normalize_library_items(skills)
+                    else:
+                        self.root.skills = skills
                     save_skill_library(self.root.skills)
-                    self.root._refresh_skill_slots_options()
+                    if hasattr(self.root, "_refresh_skill_slots_options"):
+                        self.root._refresh_skill_slots_options()
             finally:
                 self.root.library_manager_win = None
 
@@ -361,22 +365,16 @@ class AppWindowController:
             class _HeadlessLibraryManagerStub:
                 def __init__(self):
                     self._exists = True
-
                 def winfo_exists(self) -> bool:
                     return self._exists
-
                 def deiconify(self) -> None:
                     return None
-
                 def lift(self) -> None:
                     return None
-
                 def focus_force(self) -> None:
                     return None
-
                 def _on_window_close(self) -> None:
                     self._exists = False
-
                 def destroy(self) -> None:
                     self._exists = False
 
