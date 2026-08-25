@@ -148,7 +148,6 @@ from lib.system.instance_lock import SingleInstanceLock
 from lib.system.win_input import tap
 from lib.ui_style import UIStyle as UI  # Global UI style constants
 from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
-from ui.controllers.app_window_controller import AppWindowController
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.windows.setup_wizard import show_setup_wizard
 from ui.windows.monster_manager_win import MonsterManagerWin
@@ -210,7 +209,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             show_results=self._show_scan_results,
             icons=Icons,
         )
-        self.window_controller = AppWindowController(self)
 
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
