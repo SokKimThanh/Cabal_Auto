@@ -147,6 +147,7 @@ from lib.system.instance_lock import SingleInstanceLock
 
 from lib.system.win_input import tap
 from lib.ui_style import UIStyle as UI  # Global UI style constants
+from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.windows.setup_wizard import show_setup_wizard
@@ -525,20 +526,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             if not self._hotkeys_registered_ok:
                 print("[Hotkey] Some hotkeys failed to register:", self._failed_hotkeys)
 
-        # Update hotkeys UI state based on current mode
-        self.after(100, self._update_hotkeys_state)
-
-        # Update hotkey status UI after registration
-        self.after(150, self._update_hotkey_diagnostics_ui)
-
-        # Auto-launch Setup Wizard for new users (after UI is ready)
-        self.after(500, self._check_first_time_setup)
-
-        # Auto bring-to-front saved window (after setup check)
-        self.after(1000, self._auto_bring_to_front_on_startup)
-
-        # Check database connection on startup
-        self.after(150, self._check_db_connection)
+        self.lifecycle_controller = AppLifecycleController(self)
+        self.lifecycle_controller.start_lifecycle()
 
     # -----------------
     def _build_ui(self):
@@ -1061,196 +1050,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 self._hotkey_status_label.config(fg="#FF9800")
             except Exception:
                 pass
-
-    def _check_first_time_setup(self):
-        """Check if this is first-time user and auto-launch wizard if needed."""
-        # Check if user has completed basic setup
-        # Must have ALL THREE to be considered configured
-        has_window = bool(self.hunt_cfg.get("window_title", "").strip())
-
-        # Phase 3 compatibility: Check both legacy and new monster fields
-        has_monster_legacy = bool(
-            self.hunt_cfg.get("monster_selected_name", "").strip()
-        )
-        has_monster_list = (
-            bool(self.hunt_cfg.get("monster_list"))
-            and len(self.hunt_cfg.get("monster_list", [])) > 0
-        )
-        has_monster = has_monster_legacy or has_monster_list
-
-        has_skills = (
-            bool(self.hunt_cfg.get("skill_slots"))
-            and len(self.hunt_cfg.get("skill_slots", [])) > 0
-        )
-
-        is_new_user = not (has_window and has_monster and has_skills)
-
-        # Debug log to understand detection
-        print(
-            f"[First-time check] window={has_window}, monster={has_monster}, skills={has_skills}, is_new={is_new_user}"
-        )
-
-        # Track user response for persistence logic
-        user_skipped_wizard = False
-
-        if is_new_user:
-            print("[First-time check] Showing messagebox to ask user...")
-
-            # Force main window to front before showing messagebox
-            self.lift()
-            self.focus_force()
-            self.attributes("-topmost", True)
-            self.update()
-
-            # Ask user if they want to run setup wizard
-            response = messagebox.askyesno(
-                self._t("wizard_first_time_title"),
-                self._t("wizard_first_time_message"),
-                icon="question",
-                parent=self,  # Ensure messagebox is child of main window
-            )
-
-            # Disable topmost after messagebox
-            self.attributes("-topmost", False)
-
-            print(f"[First-time check] User response: {response}")
-
-            if response:
-                # User clicked Yes - launch wizard
-                print("[First-time check] Launching wizard...")
-                self.window_controller.on_setup_wizard()
-            else:
-                # User clicked No - auto-detect Cabal window and save
-                print(
-                    "[First-time check] User skipped wizard - attempting auto PID detection..."
-                )
-                self._auto_detect_and_save_cabal_window()
-                self.hunt_status.set(self._t("wizard_skipped_hint"))
-                user_skipped_wizard = True
-
-        # Check PIL availability and show one-time warning if missing
-        if not self.pil_available:
-            print("[PIL Check] PIL/Pillow not available - showing install instructions")
-            # Use showinfo (blue icon) instead of showerror (red icon) for less scary UX
-            # Don't force window to front - let user dismiss naturally
-            messagebox.showinfo(
-                self._t("info_title"), self._t("pil_not_installed_message"), parent=self
-            )
-
-        # ✅ Mark first-time check as complete
-        self._first_time_check_complete = True
-        print("[First-time check] Check completed, global hotkeys now fully active")
-
-        # ✅ Sprint 24 Enhancement: Persist wizard completion state
-        # Save to config to avoid re-showing wizard on next launch
-        if user_skipped_wizard:
-            # User skipped wizard - mark as configured to prevent re-prompt
-            try:
-                self.hunt_cfg["is_configured"] = True
-                save_hunt_config(self.hunt_cfg)
-                print(
-                    "[First-time check] Saved is_configured=True to prevent wizard re-prompt"
-                )
-            except Exception as e:
-                print(f"[First-time check] Failed to save is_configured state: {e}")
-
-    def _auto_bring_to_front_on_startup(self):
-        """Auto bring saved Cabal window to front BELOW app on startup."""
-        try:
-            # Check if we have a valid hunt_selected window
-            if not hasattr(self, "hunt_selected") or not self.hunt_selected:
-                print("[Auto Bring] No saved window to bring to front")
-                return
-
-            hwnd = self.hunt_selected.get("hwnd")
-            title = self.hunt_selected.get("title", "")
-            pid = self.hunt_selected.get("pid", "")
-
-            if not hwnd:
-                print(f"[Auto Bring] No HWND for window: {title}")
-                return
-
-            print(
-                f"[Auto Bring] Bringing window to front (below app): {title} [PID:{pid}]"
-            )
-
-            # Bring window to front
-            ok = self._bring_window_to_front_by_hwnd(hwnd)
-
-            if ok:
-                # Keep app on top of game window
-                time.sleep(0.1)
-                self.lift()
-                self.focus_force()
-                self.attributes("-topmost", True)
-                self.update()
-                self.after(100, lambda: self.attributes("-topmost", False))
-
-                print(f"[Auto Bring] ✓ Window ready (below app): {title}")
-                # Update status briefly
-                if hasattr(self, "hunt_status"):
-                    current_status = self.hunt_status.get()
-                    self.hunt_status.set(f"✓ Game window ready: {title}")
-                    # Restore previous status after 3 seconds
-                    self.after(3000, lambda: self.hunt_status.set(current_status))
-            else:
-                print(f"[Auto Bring] ✗ Failed to bring window to front: {title}")
-
-            # Run startup auto scan via controller
-            if hasattr(self, "scan_controller"):
-                self.scan_controller.run_scan(manual=False)
-
-        except Exception as e:
-            print(f"[Auto Bring] Error: {e}")
-
-    def _check_db_connection(self):
-        """Kiểm tra tình trạng CSDL khi khởi động và cập nhật thanh trạng thái."""
-        try:
-            from database import check_db_health, init_database
-
-            # Đảm bảo schema + seed đã được khởi tạo
-            try:
-                init_database()
-            except Exception as init_err:
-                print(f"[DB] init_database error (non-fatal): {init_err}")
-
-            result = check_db_health()
-
-            if result["ok"]:
-                counts = result["counts"]
-                msg = (
-                    f"✅ CSDL sẵn sàng"
-                    f" | Quái: {counts.get('monsters', 0)}"
-                    f" | Phụ bản: {counts.get('dungeons', 0)}"
-                    f" | Loại quái: {counts.get('monster_type', 0)}"
-                )
-                self._set_db_status(msg, ok=True)
-                print(f"[DB] {msg}")
-            else:
-                missing = result["missing_tables"]
-                missing_str = ", ".join(missing)
-                bar_msg = f"⚠️ CSDL chưa hoàn chỉnh: Thiếu bảng {missing_str}"
-                if result.get("error"):
-                    bar_msg = f"❌ {result['error']}"
-                self._set_db_status(bar_msg, ok=False)
-                print(f"[DB] {bar_msg}")
-
-                detail = (
-                    f"CSDL monsters.db chưa hoàn chỉnh!\n\n"
-                    f"Các bảng bị thiếu:\n• " + "\n• ".join(missing)
-                )
-                if result.get("error"):
-                    detail = f"Lỗi kết nối CSDL:\n{result['error']}"
-                messagebox.showwarning("⚠️ Cảnh báo CSDL", detail)
-
-        except ImportError:
-            msg = "⚠️ Không thể import module database"
-            self._set_db_status(msg, ok=False)
-            print(f"[DB] {msg}")
-        except Exception as exc:
-            msg = f"❌ Lỗi kiểm tra CSDL: {exc}"
-            self._set_db_status(msg, ok=False)
-            print(f"[DB] {msg}")
 
     def on_hunt_start(self):
         if self.hunt_running:
@@ -3569,32 +3368,11 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 text=f"✓ {self._t('all_saved')}", fg="#4CAF50"  # Green color
             )
 
+    def on_close(self):
+        self.lifecycle_controller.on_close()
+
     def destroy(self):
-        # Phase 7: Cleanup monster tracking components
-        try:
-            if self._overlay_controller is not None:
-                self._overlay_controller.stop()
-                self._overlay_controller = None
-                print("[MonsterTracking] OverlayController cleaned up")
-
-            if self._bot_manager is not None:
-                self._bot_manager.destroy()
-                self._bot_manager = None
-                print("[MonsterTracking] BotManager cleaned up")
-        except Exception as e:
-            print(f"[MonsterTracking] Error during cleanup: {e}")
-
-        # Unregister global hotkeys on exit
-        if keyboard is not None and hasattr(self, "_registered_hotkey_handlers"):
-            for hk, handler in list(self._registered_hotkey_handlers.items()):
-                try:
-                    # keyboard.remove_hotkey accepts either the hotkey string or the handler id/function
-                    keyboard.remove_hotkey(handler)
-                except Exception:
-                    try:
-                        keyboard.remove_hotkey(hk)
-                    except Exception:
-                        pass
+        self.lifecycle_controller.cleanup_before_destroy()
         super().destroy()
 
     def _icon(
