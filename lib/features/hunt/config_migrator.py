@@ -25,7 +25,7 @@ def migrate_hunt_config(data: Dict[str, Any]) -> Dict[str, Any]:
     if "ui_mode" not in data:
         data["ui_mode"] = "beginner"
 
-    # Migrate old format if needed (list to dict)
+    # Migrate old embedded monsters into monster_rotation as a list of IDs
     if isinstance(data.get("monsters"), list):
         old_list = data["monsters"]
         new_rotation = []
