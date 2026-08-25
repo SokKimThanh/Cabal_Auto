@@ -6,6 +6,11 @@ def test_resolve_bounds_with_current():
     # current bounds take precedence
     assert WindowSelectionService.resolve_bounds(cfg, [5, 5, 50, 50]) == [5, 5, 50, 50]
 
+def test_resolve_bounds_invalid_current_falls_back_to_hunt_area():
+    cfg = {"hunt_area": {"window_bounds": [10, 10, 100, 100]}, "window_bounds": [20, 20, 200, 200]}
+    # invalid/minimized current bounds should fall back to hunt_area
+    assert WindowSelectionService.resolve_bounds(cfg, [-32000, -32000, 100, 100]) == [10, 10, 100, 100]
+
 def test_resolve_bounds_with_hunt_area():
     cfg = {"hunt_area": {"window_bounds": [10, 10, 100, 100]}, "window_bounds": [20, 20, 200, 200]}
     # hunt_area takes precedence if no current
