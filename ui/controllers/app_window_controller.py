@@ -93,9 +93,13 @@ class AppWindowController:
         self.on_window_combo_selected()
 
     def on_window_combo_selected(self, _evt=None) -> None:
+
         if not getattr(self.root, "win_items", None):
             self.root.hunt_selected = None
             return
+
+        from lib.features.hunt.config_validator import normalize_window_bounds_value
+        from lib.features.hunt.window_selection_service import WindowSelectionService
 
         index = 0
         try:
@@ -109,9 +113,6 @@ class AppWindowController:
 
         if index < 0 or index >= len(self.root.win_items):
             index = 0
-
-        from lib.features.hunt.config_validator import normalize_window_bounds_value
-        from lib.features.hunt.window_selection_service import WindowSelectionService
 
         selected = dict(self.root.win_items[index])
         bounds = normalize_window_bounds_value(selected.get("bounds"))

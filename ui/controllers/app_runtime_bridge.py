@@ -50,6 +50,7 @@ class AppRuntimeBridgeMixin:
     def _update_window_bounds_display(self) -> None:
         if not hasattr(self, "window_bounds_display_var"):
             return
+
         from lib.features.hunt.window_selection_service import WindowSelectionService
         bounds = WindowSelectionService.resolve_bounds(
             getattr(self, "hunt_cfg", {}),
@@ -88,6 +89,7 @@ class AppRuntimeBridgeMixin:
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         title = str(self.hunt_cfg.get("window_title", "") or "").strip()
+
         if not title and isinstance(getattr(self, "hunt_selected", None), dict):
             title = str(self.hunt_selected.get("title", "")).strip()
         if not title:
@@ -108,13 +110,14 @@ class AppRuntimeBridgeMixin:
         return None
 
     def _hunt_from_ui(self) -> Dict[str, Any]:
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
         cfg = copy.deepcopy(getattr(self, "hunt_cfg", {}))
         if isinstance(getattr(self, "hunt_selected", None), dict):
             cfg["window_title"] = self.hunt_selected.get("title", "")
             cfg["window_pid"] = self.hunt_selected.get("pid")
             cfg["window_hwnd"] = self.hunt_selected.get("hwnd")
 
-        from lib.features.hunt.window_selection_service import WindowSelectionService
         bounds = WindowSelectionService.resolve_bounds(
             cfg,
             getattr(self, "current_window_bounds", None)
@@ -157,6 +160,7 @@ class AppRuntimeBridgeMixin:
 
     def _hunt_locate_target(self, cfg: Dict[str, Any]):
         from lib.features.hunt.window_selection_service import WindowSelectionService
+
         bounds = WindowSelectionService.resolve_bounds(cfg)
         if not bounds:
             return None, None
@@ -285,11 +289,13 @@ class AppRuntimeBridgeMixin:
     def _apply_monster_to_hunt_quick(self, monster: Optional[Dict[str, Any]]) -> None:
         if not monster:
             return
+
         from lib.features.hunt.config_validator import normalize_window_bounds_value
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
         if bounds:
             self.current_window_bounds = bounds
-            from lib.features.hunt.window_selection_service import WindowSelectionService
             WindowSelectionService.update_bounds(self.hunt_cfg, bounds)
             self._update_window_bounds_display()
 
