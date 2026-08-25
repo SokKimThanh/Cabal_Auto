@@ -507,14 +507,14 @@ class VisionEngine:
             proc_frame = work_frame
             scale_x, scale_y = 1.0, 1.0
 
-        # Get or create cached detector
-        if ftype not in self._detectors:
-            if ftype == 'SIFT' and hasattr(cv2, 'SIFT_create'):
-                self._detectors[ftype] = (cv2.SIFT_create(nfeatures=500), cv2.NORM_L2)
-            else:
-                self._detectors[ftype] = (cv2.ORB_create(nfeatures=500), cv2.NORM_HAMMING)
-
-        detector, norm = self._detectors[ftype]
+        # Create a detector per call to avoid sharing mutable OpenCV state
+        # across concurrent detect_features invocations.
+        if ftype == 'SIFT' and hasattr(cv2, 'SIFT_create'):
+            detector = cv2.SIFT_create(nfeatures=500)
+            norm = cv2.NORM_L2
+        else:
+            detector = cv2.ORB_create(nfeatures=500)
+            norm = cv2.NORM_HAMMING
 
         gray_frame = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2GRAY)
 
