@@ -8,7 +8,6 @@ from tkinter import messagebox
 
 from lib.features.hunt.hunt_config import save_hunt_config
 from lib.features.monsters.monster_repo import calculate_monster_estimate
-from lib.system.hotkey_manager import HotkeyManager
 from lib.system.win_input import tap
 from lib.vision.template_matcher import locate_template
 
@@ -33,14 +32,10 @@ class AppRuntimeBridgeMixin:
     def _register_global_hotkeys(self) -> None:
         if hasattr(self, "hotkey_controller") and self.hotkey_controller:
             self.hotkey_controller.register_all()
-        elif isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):
-            self.hotkey_mgr.register_all()
 
     def _unregister_global_hotkeys(self) -> None:
         if hasattr(self, "hotkey_controller") and self.hotkey_controller:
             self.hotkey_controller.unregister_all()
-        elif isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):
-            self.hotkey_mgr.unregister_all()
 
     def _set_db_status(self, message: str, ok: bool) -> None:
         if hasattr(self, "_db_status_var") and self._db_status_var:
