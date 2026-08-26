@@ -337,7 +337,9 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         from ui.controllers.app_window_controller import AppWindowController
         from ui.controllers.app_state_controller import AppStateController
         from ui.controllers.hotkey_controller import HotkeyController
-        from ui.controllers.overlay_controller import OverlayController as AppOverlayController
+        from ui.controllers.overlay_controller import (
+            OverlayController as AppOverlayController,
+        )
         from ui.controllers.window_tracker_controller import WindowTrackerController
 
         self.state_controller = AppStateController(self)
@@ -486,17 +488,27 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self._build_ui()
         self.hunt_runner = HuntRunner(
             hunt_cfg=self.hunt_cfg,
-            set_status=self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None,
-            set_target_info=self.hunt_target_info.set if hasattr(self, "hunt_target_info") else lambda _: None,
+            set_status=(
+                self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None
+            ),
+            set_target_info=(
+                self.hunt_target_info.set
+                if hasattr(self, "hunt_target_info")
+                else lambda _: None
+            ),
             get_overlay_ctrl=lambda: getattr(self, "overlay_ctrl", None),
             get_notebook=lambda: getattr(self, "notebook", None),
             tab_setup=getattr(self, "tab_setup", None),
             tab_hunt=getattr(self, "tab_hunt", None),
-            schedule_ui_task=lambda fn: self.after(0, fn) if hasattr(self, "after") else fn()
+            schedule_ui_task=lambda fn: (
+                self.after(0, fn) if hasattr(self, "after") else fn()
+            ),
         )
 
         self.hunt_orchestrator = HuntOrchestrator(
-            on_status_update=self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None,
+            on_status_update=(
+                self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None
+            ),
             on_state_change=self._on_orchestrator_state_change,
             locate_target=self._hunt_locate_target,
             prepare_skill_runtime=self._prepare_skill_runtime,
@@ -505,9 +517,13 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             bring_window_to_front_by_hwnd=self._bring_window_to_front_by_hwnd,
             bring_window_to_front_by_pid=self._bring_window_to_front_by_pid,
             iconify_app=self.iconify,
-            update_skill_stats_display=getattr(self, "update_skill_stats_display", lambda _: None),
+            update_skill_stats_display=getattr(
+                self, "update_skill_stats_display", lambda _: None
+            ),
             get_hunt_selected=lambda: getattr(self, "hunt_selected", {}),
-            schedule_ui_task=lambda fn: self.after(0, fn) if hasattr(self, "after") else fn()
+            schedule_ui_task=lambda fn: (
+                self.after(0, fn) if hasattr(self, "after") else fn()
+            ),
         )
 
         # Keyboard shortcuts (Window-focused only)
@@ -528,8 +544,16 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 "ctrl+shift+r": getattr(self, "on_hunt_start", None),
                 "ctrl+shift+e": getattr(self, "on_hunt_stop", None),
                 # Map to wrapper handlers (which perform mode checks / scheduling)
-                "ctrl+shift+l": getattr(self, "_on_library_manager_hotkey", None),
-                "ctrl+shift+n": getattr(self, "_on_setup_wizard_hotkey", None),
+                "ctrl+shift+l": (
+                    self.hotkey_controller.on_library_manager
+                    if hasattr(self, "hotkey_controller")
+                    else None
+                ),
+                "ctrl+shift+n": (
+                    self.hotkey_controller.on_setup_wizard
+                    if hasattr(self, "hotkey_controller")
+                    else None
+                ),
                 # Vision menu hotkeys (Sprint 22 Phase 1B)
                 "ctrl+shift+v": getattr(self, "_open_vision_wizard", None),
                 "ctrl+alt+s": getattr(self, "_scan_region", None),
@@ -1083,15 +1107,25 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
 
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
-            self.hunt_start_btn.config(state="disabled", bg="#A5D6A7", relief="sunken", cursor="arrow")
-            self.hunt_stop_btn.config(state="normal", bg="#C62828", relief="raised", cursor="hand2")
+            self.hunt_start_btn.config(
+                state="disabled", bg="#A5D6A7", relief="sunken", cursor="arrow"
+            )
+            self.hunt_stop_btn.config(
+                state="normal", bg="#C62828", relief="raised", cursor="hand2"
+            )
             if hasattr(self, "hunt_status"):
                 self.hunt_status.set(self._t("hunt_running"))
         elif state in ["idle", "error", "stopped"]:
-            self.hunt_start_btn.config(state="normal", bg="#4CAF50", relief="raised", cursor="hand2")
-            self.hunt_stop_btn.config(state="disabled", bg="#FFCDD2", relief="sunken", cursor="arrow")
+            self.hunt_start_btn.config(
+                state="normal", bg="#4CAF50", relief="raised", cursor="hand2"
+            )
+            self.hunt_stop_btn.config(
+                state="disabled", bg="#FFCDD2", relief="sunken", cursor="arrow"
+            )
             if state == "idle" and hasattr(self, "hunt_status"):
-                self.hunt_status.set(self._t("hunt_idle") if hasattr(self, "_t") else "Idle")
+                self.hunt_status.set(
+                    self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
+                )
 
     def on_hunt_start(self):
         if hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running:
@@ -1267,17 +1301,27 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                                         f"[Overlay] ✅ Window restored to: {window_bounds}"
                                     )
 
-                            from lib.features.hunt.config_validator import normalize_window_bounds_value
-                            if window_bounds and not normalize_window_bounds_value(window_bounds):
+                            from lib.features.hunt.config_validator import (
+                                normalize_window_bounds_value,
+                            )
+
+                            if window_bounds and not normalize_window_bounds_value(
+                                window_bounds
+                            ):
                                 print(
                                     f"[Overlay] ⚠️ Detected minimized or invalid rect, clearing: {window_bounds}"
                                 )
                                 window_bounds = None
 
                             if window_bounds:
-                                from lib.features.hunt.window_selection_service import WindowSelectionService
+                                from lib.features.hunt.window_selection_service import (
+                                    WindowSelectionService,
+                                )
+
                                 # Save LIVE position to config
-                                WindowSelectionService.update_bounds(self.hunt_cfg, window_bounds)
+                                WindowSelectionService.update_bounds(
+                                    self.hunt_cfg, window_bounds
+                                )
                                 save_hunt_config(self.hunt_cfg)
                                 print(
                                     f"[Overlay] ✅ Refreshed LIVE position: {window_bounds}"
@@ -1352,7 +1396,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                             window_bounds = cabal_window.rect
                             target_hwnd = cabal_window.hwnd
 
-                            from lib.features.hunt.config_validator import normalize_window_bounds_value
+                            from lib.features.hunt.config_validator import (
+                                normalize_window_bounds_value,
+                            )
+
                             if not normalize_window_bounds_value(window_bounds):
                                 messagebox.showerror(
                                     "Invalid Window Position",
@@ -1364,9 +1411,14 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                                 self._overlay_enabled = False
                                 return
 
-                            from lib.features.hunt.window_selection_service import WindowSelectionService
+                            from lib.features.hunt.window_selection_service import (
+                                WindowSelectionService,
+                            )
+
                             # Save to config for next time
-                            WindowSelectionService.update_bounds(self.hunt_cfg, window_bounds)
+                            WindowSelectionService.update_bounds(
+                                self.hunt_cfg, window_bounds
+                            )
                             self.hunt_cfg["window_hwnd"] = target_hwnd
                             self.hunt_cfg["window_title"] = cabal_window.title
 
@@ -1629,132 +1681,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 self._t("overlay_toggle_failed").format(error=str(e)),
             )
             self._overlay_enabled = False
-
-    def _on_library_manager_hotkey(self):
-        """Callback for Library Manager hotkey (Ctrl+Shift+L).
-
-        Always available regardless of UI mode.
-        Simple toggle - no mutual exclusion with wizard.
-        """
-        try:
-            print("[Hotkeys] Library Manager hotkey pressed")
-
-            # Toggle behavior: if library manager exists and is visible -> hide it;
-            # if exists but hidden -> show it; otherwise create it.
-            existing = getattr(self, "library_manager_win", None)
-            if (
-                existing is not None
-                and getattr(existing, "winfo_exists", lambda: False)()
-            ):
-                try:
-                    # If currently viewable, hide (withdraw). If hidden, show again.
-                    if existing.winfo_viewable():
-                        try:
-                            existing.withdraw()
-                        except Exception:
-                            try:
-                                existing.iconify()
-                            except Exception:
-                                pass
-                    else:
-                        try:
-                            existing.deiconify()
-                            existing.lift()
-                            existing.focus_force()
-                        except Exception:
-                            try:
-                                existing.lift()
-                                existing.focus_force()
-                            except Exception:
-                                pass
-                    return
-                except Exception:
-                    # fallthrough to open a fresh one
-                    try:
-                        existing.destroy()
-                    except Exception:
-                        pass
-
-            # Create or show new manager
-            self.after(0, self._open_library_manager)
-
-        except Exception as e:
-            print(f"[Hotkeys] Error opening Library Manager: {e}")
-
-    def _on_setup_wizard_hotkey(self):
-        """Callback for Setup Wizard hotkey (Ctrl+Shift+N).
-
-        Only executes if ui_mode == 'beginner'.
-        Shows confirmation if user is new (no config).
-        """
-        try:
-            print("[Hotkeys] Setup Wizard hotkey pressed")
-
-            # Check mode before opening
-            current_mode = self.hunt_cfg.get("ui_mode", "beginner")
-            if current_mode != "beginner":
-                print(f"[Hotkeys] Setup Wizard blocked - current mode: {current_mode}")
-                return
-
-            # Toggle behavior for wizard (only in beginner mode):
-            # If wizard is open and viewable -> hide; if hidden -> show; otherwise open.
-            existing = (
-                getattr(self, "_setup_wizard_win", None)
-                or getattr(self, "setup_wizard_win", None)
-                or getattr(self, "_setup_wizard", None)
-            )
-            try:
-                if (
-                    existing is not None
-                    and getattr(existing, "winfo_exists", lambda: False)()
-                ):
-                    try:
-                        # If the stored object is the SetupWizard instance it may expose .dialog
-                        win = getattr(existing, "dialog", existing)
-                        if win.winfo_viewable():
-                            try:
-                                win.withdraw()
-                            except Exception:
-                                try:
-                                    win.iconify()
-                                except Exception:
-                                    pass
-                        else:
-                            try:
-                                win.deiconify()
-                                win.lift()
-                                win.focus_force()
-                                try:
-                                    win.attributes("-topmost", True)
-                                    win.after(
-                                        120, lambda: win.attributes("-topmost", False)
-                                    )
-                                except Exception:
-                                    pass
-                            except Exception:
-                                try:
-                                    win.lift()
-                                    win.focus_force()
-                                except Exception:
-                                    pass
-                        return
-                    except Exception:
-                        try:
-                            # fallback: destroy stale reference
-                            existing.destroy()
-                        except Exception:
-                            pass
-
-            except Exception:
-                pass
-
-            # No existing wizard - open directly without confirmation
-            # (User actively pressed hotkey, no need to ask)
-            print("[Hotkeys] Opening Setup Wizard directly from hotkey")
-            self.after(0, lambda: self.window_controller.on_setup_wizard(hide_parent=False))
-
-        except Exception as e:
-            print(f"[Hotkeys] Error opening Setup Wizard: {e}")
 
     def on_window_combo_selected(self, _evt=None):
         pass

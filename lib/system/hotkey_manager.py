@@ -1,4 +1,3 @@
-
 try:
     import keyboard
 except ImportError:
@@ -42,15 +41,15 @@ class HotkeyManager:
                     tk_parts = []
                     for p in parts:
                         p = p.strip()
-                        if p in ('ctrl', 'control'):
+                        if p in ("ctrl", "control"):
                             tk_parts.append("Control")
-                        elif p in ('shift',):
+                        elif p in ("shift",):
                             tk_parts.append("Shift")
-                        elif p in ('alt', 'menu'):
+                        elif p in ("alt", "menu"):
                             tk_parts.append("Alt")
                         elif len(p) == 1:
                             tk_parts.append(p.upper())
-                        elif p.startswith('f') and p[1:].isdigit():
+                        elif p.startswith("f") and p[1:].isdigit():
                             tk_parts.append(p.upper())
                         else:
                             tk_parts.append(p)
@@ -78,31 +77,35 @@ class HotkeyManager:
 
                     # Bind to all widgets (works when app is focused)
                     self.app.bind_all(
-                        seq_start, lambda e: self.app.on_hunt_start(), add="+"
+                        seq_start,
+                        lambda e: self.app.hotkey_controller.on_hunt_start(),
+                        add="+",
                     )
                     self._hotkey_fallback_bound.append(seq_start)
                     self.app.bind_all(
-                        seq_stop, lambda e: self.app.on_hunt_stop(), add="+"
+                        seq_stop,
+                        lambda e: self.app.hotkey_controller.on_hunt_stop(),
+                        add="+",
                     )
                     self._hotkey_fallback_bound.append(seq_stop)
                     # Wizard only meaningful in beginner mode
                     if self.hunt_cfg.get("ui_mode", "beginner") == "beginner":
                         self.app.bind_all(
                             seq_wiz,
-                            lambda e: self.app._on_setup_wizard_hotkey(),
+                            lambda e: self.app.hotkey_controller.on_setup_wizard(),
                             add="+",
                         )
                         self._hotkey_fallback_bound.append(seq_wiz)
                     self.app.bind_all(
                         seq_lib,
-                        lambda e: self.app._on_library_manager_hotkey(),
+                        lambda e: self.app.hotkey_controller.on_library_manager(),
                         add="+",
                     )
                     self._hotkey_fallback_bound.append(seq_lib)
                     # Sprint 22: Vision Wizard fallback
                     self.app.bind_all(
                         seq_vision,
-                        lambda e: self.app._on_vision_wizard_hotkey(),
+                        lambda e: self.app.hotkey_controller.on_vision_wizard(),
                         add="+",
                     )
                     self._hotkey_fallback_bound.append(seq_vision)
@@ -144,7 +147,7 @@ class HotkeyManager:
             try:
                 self._global_start_hotkey = keyboard.add_hotkey(
                     start_key,
-                    self.app.on_hunt_start,
+                    self.app.hotkey_controller.on_hunt_start,
                     suppress=False,  # Don't suppress the key event
                 )
             except Exception as e:
@@ -153,7 +156,7 @@ class HotkeyManager:
 
             try:
                 self._global_stop_hotkey = keyboard.add_hotkey(
-                    stop_key, self.app.on_hunt_stop, suppress=False
+                    stop_key, self.app.hotkey_controller.on_hunt_stop, suppress=False
                 )
             except Exception as e:
                 print(f"Failed to register stop hotkey '{stop_key}': {e}")
@@ -164,7 +167,9 @@ class HotkeyManager:
             if current_mode == "beginner":
                 try:
                     self._global_wizard_hotkey = keyboard.add_hotkey(
-                        wizard_key, self.app._on_setup_wizard_hotkey, suppress=False
+                        wizard_key,
+                        self.app.hotkey_controller.on_setup_wizard,
+                        suppress=False,
                     )
                 except Exception as e:
                     print(f"Failed to register wizard hotkey '{wizard_key}': {e}")
@@ -175,7 +180,9 @@ class HotkeyManager:
             # NEW: Register Library Manager hotkey (always active)
             try:
                 self._global_library_hotkey = keyboard.add_hotkey(
-                    library_key, self.app._on_library_manager_hotkey, suppress=False
+                    library_key,
+                    self.app.hotkey_controller.on_library_manager,
+                    suppress=False,
                 )
             except Exception as e:
                 print(f"Failed to register library hotkey '{library_key}': {e}")
@@ -184,7 +191,9 @@ class HotkeyManager:
             # NEW Sprint 22: Register Vision Wizard hotkey (always active)
             try:
                 self._global_vision_hotkey = keyboard.add_hotkey(
-                    vision_key, self.app._on_vision_wizard_hotkey, suppress=False
+                    vision_key,
+                    self.app.hotkey_controller.on_vision_wizard,
+                    suppress=False,
                 )
             except Exception as e:
                 print(f"Failed to register vision hotkey '{vision_key}': {e}")
@@ -193,7 +202,9 @@ class HotkeyManager:
             # NEW: Register Monster Editor hotkey (always active)
             try:
                 self._global_monster_hotkey = keyboard.add_hotkey(
-                    monster_key, self.app._on_monster_editor_hotkey, suppress=False
+                    monster_key,
+                    self.app.hotkey_controller.on_monster_editor,
+                    suppress=False,
                 )
             except Exception as e:
                 print(f"Failed to register monster editor hotkey '{monster_key}': {e}")
@@ -233,7 +244,7 @@ class HotkeyManager:
     def unregister_all(self):
         """Unregister global hotkeys to clean up resources."""
         try:
-            if hasattr(self.app, 'unbind_all'):
+            if hasattr(self.app, "unbind_all"):
                 for seq in list(self._hotkey_fallback_bound):
                     try:
                         self.app.unbind_all(seq)
