@@ -15,16 +15,6 @@ from lib.vision.template_matcher import locate_template
 
 class AppRuntimeBridgeMixin:
     @staticmethod
-    def _normalize_hunt_area(cfg: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        if not isinstance(cfg, dict):
-            return {}
-        hunt_area = cfg.get("hunt_area")
-        if not isinstance(hunt_area, dict):
-            hunt_area = {}
-            cfg["hunt_area"] = hunt_area
-        return hunt_area
-
-    @staticmethod
     def _normalize_library_items(items: Any) -> List[Dict[str, Any]]:
         if isinstance(items, list):
             return [item for item in items if isinstance(item, dict)]
@@ -39,11 +29,6 @@ class AppRuntimeBridgeMixin:
                 normalized.append(item)
             return normalized
         return []
-
-    @staticmethod
-    def _normalize_window_bounds_value(bounds: Any) -> Optional[List[int]]:
-        from lib.features.hunt.config_migrator import normalize_window_bounds_value
-        return normalize_window_bounds_value(bounds)
 
     def _register_global_hotkeys(self) -> None:
         if isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):
@@ -65,7 +50,10 @@ class AppRuntimeBridgeMixin:
     def _update_window_bounds_display(self) -> None:
         if not hasattr(self, "window_bounds_display_var"):
             return
-        bounds = self._normalize_window_bounds_value(
+
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+        bounds = WindowSelectionService.resolve_bounds(
+            getattr(self, "hunt_cfg", {}),
             getattr(self, "current_window_bounds", None)
         )
         if bounds:
@@ -101,16 +89,16 @@ class AppRuntimeBridgeMixin:
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         title = str(self.hunt_cfg.get("window_title", "") or "").strip()
+
         if not title and isinstance(getattr(self, "hunt_selected", None), dict):
             title = str(self.hunt_selected.get("title", "")).strip()
         if not title:
             return "Please select a target window first."
 
-        hunt_area = self._normalize_hunt_area(self.hunt_cfg)
-        bounds = self._normalize_window_bounds_value(
-            hunt_area.get("window_bounds")
-            or self.hunt_cfg.get("window_bounds")
-            or getattr(self, "current_window_bounds", None)
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+        bounds = WindowSelectionService.resolve_bounds(
+            self.hunt_cfg,
+            getattr(self, "current_window_bounds", None)
         )
         if not bounds:
             return "Invalid hunt area bounds. Please refresh or reselect the target window."
@@ -122,21 +110,23 @@ class AppRuntimeBridgeMixin:
         return None
 
     def _hunt_from_ui(self) -> Dict[str, Any]:
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
         cfg = copy.deepcopy(getattr(self, "hunt_cfg", {}))
         if isinstance(getattr(self, "hunt_selected", None), dict):
             cfg["window_title"] = self.hunt_selected.get("title", "")
             cfg["window_pid"] = self.hunt_selected.get("pid")
             cfg["window_hwnd"] = self.hunt_selected.get("hwnd")
 
-        hunt_area = self._normalize_hunt_area(cfg)
-        bounds = self._normalize_window_bounds_value(
+        bounds = WindowSelectionService.resolve_bounds(
+            cfg,
             getattr(self, "current_window_bounds", None)
-            or hunt_area.get("window_bounds")
-            or cfg.get("window_bounds")
         )
-        cfg["window_bounds"] = bounds
-        hunt_area["window_title"] = cfg.get("window_title", "")
-        hunt_area["window_bounds"] = bounds
+        WindowSelectionService.update_bounds(cfg, bounds)
+
+        hunt_area = cfg.get("hunt_area")
+        if isinstance(hunt_area, dict):
+            hunt_area["window_title"] = cfg.get("window_title", "")
 
         simple_vars = {
             "target_key": ("target_key_var", "TAB"),
@@ -169,10 +159,9 @@ class AppRuntimeBridgeMixin:
         return cfg
 
     def _hunt_locate_target(self, cfg: Dict[str, Any]):
-        hunt_area = self._normalize_hunt_area(cfg)
-        bounds = self._normalize_window_bounds_value(
-            hunt_area.get("window_bounds") or cfg.get("window_bounds")
-        )
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
+        bounds = WindowSelectionService.resolve_bounds(cfg)
         if not bounds:
             return None, None
 
@@ -300,12 +289,14 @@ class AppRuntimeBridgeMixin:
     def _apply_monster_to_hunt_quick(self, monster: Optional[Dict[str, Any]]) -> None:
         if not monster:
             return
-        bounds = self._normalize_window_bounds_value(monster.get("window_bounds"))
+
+        from lib.features.hunt.config_validator import normalize_window_bounds_value
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
+        bounds = normalize_window_bounds_value(monster.get("window_bounds"))
         if bounds:
             self.current_window_bounds = bounds
-            self.hunt_cfg["window_bounds"] = bounds
-            hunt_area = self._normalize_hunt_area(self.hunt_cfg)
-            hunt_area["window_bounds"] = bounds
+            WindowSelectionService.update_bounds(self.hunt_cfg, bounds)
             self._update_window_bounds_display()
 
         templates = monster.get("templates") or []
