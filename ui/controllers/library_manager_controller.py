@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+import tkinter as tk
 from lib.features.hunt.hunt_config import save_hunt_config
 
 class LibraryManagerController:
