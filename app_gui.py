@@ -347,6 +347,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
         self.library_manager_controller = LibraryManagerController(self)
+
+        # Backward-compat: HotkeyController still calls window_controller.open_library_manager
+        self.window_controller.open_library_manager = self.library_manager_controller.open_library_manager
+
         self.overlay_controller = AppOverlayController(self)
         self.window_tracker_controller = WindowTrackerController(self)
 
