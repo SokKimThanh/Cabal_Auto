@@ -31,11 +31,15 @@ class AppRuntimeBridgeMixin:
         return []
 
     def _register_global_hotkeys(self) -> None:
-        if isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):
+        if hasattr(self, "hotkey_controller") and self.hotkey_controller:
+            self.hotkey_controller.register_all()
+        elif isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):
             self.hotkey_mgr.register_all()
 
     def _unregister_global_hotkeys(self) -> None:
-        if isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):
+        if hasattr(self, "hotkey_controller") and self.hotkey_controller:
+            self.hotkey_controller.unregister_all()
+        elif isinstance(getattr(self, "hotkey_mgr", None), HotkeyManager):
             self.hotkey_mgr.unregister_all()
 
     def _set_db_status(self, message: str, ok: bool) -> None:
@@ -365,12 +369,22 @@ class AppRuntimeBridgeMixin:
             self._update_unsaved_indicator()
 
     def _start_overlay_window_tracker(self) -> None:
-        self._window_tracker = None
+        if hasattr(self, "window_tracker_controller") and self.window_tracker_controller:
+            self.window_tracker_controller.start()
+        else:
+            self._window_tracker = None
 
     def _stop_overlay_window_tracker(self) -> None:
-        self._window_tracker = None
+        if hasattr(self, "window_tracker_controller") and self.window_tracker_controller:
+            self.window_tracker_controller.stop()
+        else:
+            self._window_tracker = None
 
     def _open_overlay_settings(self, *_args) -> None:
+        if hasattr(self, "overlay_controller") and self.overlay_controller:
+            self.overlay_controller.open_settings(*_args)
+            return
+
         from ui.utils.overlay_settings import OverlaySettingsDialog
 
         overlay_cfg = copy.deepcopy(self.hunt_cfg.get("overlay", {}))
@@ -391,10 +405,16 @@ class AppRuntimeBridgeMixin:
         self.window_controller.open_library_manager()
 
     def _on_vision_wizard_hotkey(self, *_args) -> None:
-        self.after(0, self.window_controller.open_vision_wizard)
+        if hasattr(self, "hotkey_controller") and self.hotkey_controller:
+            self.hotkey_controller.on_vision_wizard(*_args)
+        else:
+            self.after(0, self.window_controller.open_vision_wizard)
 
     def _on_monster_editor_hotkey(self, *_args) -> None:
-        self.after(0, self.window_controller.open_monster_manager)
+        if hasattr(self, "hotkey_controller") and self.hotkey_controller:
+            self.hotkey_controller.on_monster_editor(*_args)
+        else:
+            self.after(0, self.window_controller.open_monster_manager)
 
     def try_close_library_manager(self) -> bool:
         return self.window_controller.try_close_library_manager()
