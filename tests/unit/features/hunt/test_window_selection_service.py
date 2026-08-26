@@ -40,3 +40,13 @@ def test_update_bounds_handles_invalid():
     assert normalized is None
     assert cfg["window_bounds"] is None
     assert cfg["hunt_area"]["window_bounds"] is None
+
+def test_resolve_bounds_missing_or_invalid_minimized_rect():
+    cfg = {"hunt_area": {"window_bounds": [-32000, -32000, 100, 100]}} # Minimized
+    assert WindowSelectionService.resolve_bounds(cfg) is None
+
+    cfg = {"hunt_area": {"window_bounds": None}} # Missing
+    assert WindowSelectionService.resolve_bounds(cfg) is None
+
+    cfg = {"hunt_area": {"window_bounds": [0, 0, 0, 100]}} # Invalid height
+    assert WindowSelectionService.resolve_bounds(cfg) is None
