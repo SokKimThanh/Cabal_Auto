@@ -392,7 +392,8 @@ class OverlayController:
                         )
 
                         # Get window tracker if available
-                        window_tracker = getattr(self, "_window_tracker", None)
+                        self.parent._start_overlay_window_tracker(target_hwnd)
+                        window_tracker = self.parent.get_window_tracker()
 
                         self.parent._overlay_controller = UtilsOverlayController(
                             overlay=self.parent._overlay_window,
@@ -442,9 +443,6 @@ class OverlayController:
                 ]
                 self.parent._overlay_window.update_detections(test_boxes)
                 print(f"[Overlay] Test detection boxes updated")
-
-                # Start window tracker instead of position sync
-                self.parent._start_overlay_window_tracker()
 
                 # Update menu/config
                 self.parent.hunt_cfg.setdefault("overlay", {})["enabled"] = True
