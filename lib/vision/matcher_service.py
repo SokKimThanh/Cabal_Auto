@@ -19,7 +19,11 @@ class MatcherService:
     Implements strict boundary checks and single-channel grayscale matching for ~3x performance boost.
     """
 
-    def __init__(self, default_match_method: int = cv2.TM_CCOEFF_NORMED, nms_iou_threshold: float = 0.3):
+    def __init__(
+        self,
+        default_match_method: int = cv2.TM_CCOEFF_NORMED,
+        nms_iou_threshold: float = 0.3,
+    ):
         self.match_method = default_match_method
         self.nms_iou_threshold = nms_iou_threshold
 
@@ -33,7 +37,7 @@ class MatcherService:
         max_scales: int = 3,
         max_results: int = 10,
         use_grayscale: bool = True,
-        debug_mode: bool = False
+        debug_mode: bool = False,
     ) -> List[Any]:
         """
         Detect templates in frame with multi-scale matching.
@@ -42,9 +46,13 @@ class MatcherService:
         - Validates non-empty frame and search region before processing.
         - Safely converts search region to 1-channel grayscale once per frame.
         """
-        from lib.vision.vision_engine import Detection
 
-        if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+        if (
+            frame is None
+            or frame.size == 0
+            or frame.shape[0] == 0
+            or frame.shape[1] == 0
+        ):
             logger.warning("Empty or invalid frame provided to match_templates")
             return []
 
@@ -69,7 +77,11 @@ class MatcherService:
             offset_x, offset_y = 0, 0
 
         # Boundary Guard: return empty list immediately if search region is empty
-        if search_region.size == 0 or search_region.shape[0] == 0 or search_region.shape[1] == 0:
+        if (
+            search_region.size == 0
+            or search_region.shape[0] == 0
+            or search_region.shape[1] == 0
+        ):
             logger.warning("Search region is empty or out-of-bounds")
             return []
 
@@ -77,7 +89,11 @@ class MatcherService:
         if template_ids is None:
             templates_to_match = [t for t in templates.values() if t.enabled]
         else:
-            templates_to_match = [templates[tid] for tid in template_ids if tid in templates and templates[tid].enabled]
+            templates_to_match = [
+                templates[tid]
+                for tid in template_ids
+                if tid in templates and templates[tid].enabled
+            ]
 
         if not templates_to_match:
             logger.debug("No enabled templates available for matching")
@@ -99,7 +115,9 @@ class MatcherService:
                 logger.warning(f"Template {template.id} has no image loaded; skipping")
                 continue
 
-            template_scales = scales if scales else (template.scales if template.scales else [1.0])
+            template_scales = (
+                scales if scales else (template.scales if template.scales else [1.0])
+            )
 
             for scale in template_scales[:max_scales]:
                 dets = self.match_template_at_scale(
@@ -108,7 +126,7 @@ class MatcherService:
                     scale,
                     offset_x,
                     offset_y,
-                    use_grayscale=use_grayscale
+                    use_grayscale=use_grayscale,
                 )
                 all_detections.extend(dets)
 
@@ -117,7 +135,9 @@ class MatcherService:
         result = filtered[:max_results]
 
         if debug_mode:
-            logger.debug(f"Detected {len(result)} objects after NMS (from {len(all_detections)} candidates)")
+            logger.debug(
+                f"Detected {len(result)} objects after NMS (from {len(all_detections)} candidates)"
+            )
 
         return result
 
@@ -128,17 +148,23 @@ class MatcherService:
         scale: float,
         offset_x: int,
         offset_y: int,
-        use_grayscale: bool = True
+        use_grayscale: bool = True,
     ) -> List[Any]:
         """
         Match single template at specific scale using single-channel grayscale matching (~3x speedup).
         Safe channel normalization handles callers passing 3-channel BGR frames.
         """
-        from lib.vision.vision_engine import Detection
 
         detections = []
+        from lib.vision.vision_engine import Detection
+
         try:
-            if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+            if (
+                frame is None
+                or frame.size == 0
+                or frame.shape[0] == 0
+                or frame.shape[1] == 0
+            ):
                 return []
 
             if use_grayscale:
@@ -149,24 +175,48 @@ class MatcherService:
                     proc_frame = frame
 
                 # Retrieve cached grayscale template
-                if template.image_gray is not None and template.image_gray.size > 0:
-                    template_img = template.image_gray
-                elif template.image is not None and template.image.size > 0:
-                    if len(template.image.shape) == 3 and template.image.shape[2] in (3, 4):
-                        template_img = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
-                    else:
-                        template_img = template.image
+                scale_applied = False
+                scaled_gray = (
+                    template.get_scaled_gray(scale)
+                    if hasattr(template, "get_scaled_gray")
+                    else None
+                )
+                if scaled_gray is not None:
+                    template_img = scaled_gray
+                    scale_applied = True
                 else:
-                    logger.warning(f"Template {template.id} missing image data")
-                    return []
+                    if template.image_gray is not None and template.image_gray.size > 0:
+                        template_img = template.image_gray
+                    elif template.image is not None and template.image.size > 0:
+                        if len(template.image.shape) == 3 and template.image.shape[
+                            2
+                        ] in (3, 4):
+                            template_img = cv2.cvtColor(
+                                template.image, cv2.COLOR_BGR2GRAY
+                            )
+                        else:
+                            template_img = template.image
+                    else:
+                        logger.warning(f"Template {template.id} missing image data")
+                        return []
             else:
                 proc_frame = frame
-                if template.image is None or template.image.size == 0:
-                    logger.warning(f"Template {template.id} missing image data")
-                    return []
-                template_img = template.image
+                scale_applied = False
+                scaled_color = (
+                    template.get_scaled_color(scale)
+                    if hasattr(template, "get_scaled_color")
+                    else None
+                )
+                if scaled_color is not None:
+                    template_img = scaled_color
+                    scale_applied = True
+                else:
+                    if template.image is None or template.image.size == 0:
+                        logger.warning(f"Template {template.id} missing image data")
+                        return []
+                    template_img = template.image
 
-            if scale != 1.0:
+            if scale != 1.0 and not scale_applied:
                 new_w = int(template_img.shape[1] * scale)
                 new_h = int(template_img.shape[0] * scale)
                 if new_w <= 0 or new_h <= 0:
@@ -174,7 +224,10 @@ class MatcherService:
                 template_img = cv2.resize(template_img, (new_w, new_h))
 
             # Boundary Guard: template must fit inside search frame
-            if template_img.shape[0] > proc_frame.shape[0] or template_img.shape[1] > proc_frame.shape[1]:
+            if (
+                template_img.shape[0] > proc_frame.shape[0]
+                or template_img.shape[1] > proc_frame.shape[1]
+            ):
                 return []
 
             result = cv2.matchTemplate(proc_frame, template_img, self.match_method)
@@ -194,12 +247,14 @@ class MatcherService:
                     score=score,
                     template_id=template.id,
                     scale=scale,
-                    timestamp=time.time()
+                    timestamp=time.time(),
                 )
                 detections.append(detection)
 
         except Exception as e:
-            logger.error(f"Error in match_template_at_scale for template {template.id}: {e}")
+            logger.error(
+                f"Error in match_template_at_scale for template {template.id}: {e}"
+            )
 
         return detections
 

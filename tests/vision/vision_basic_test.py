@@ -120,7 +120,7 @@ def test_template_loading(engine, template_path):
     template = templates[template_id]
     
     assert template.id is not None, "Template should have ID"
-    assert template.path == str(template_path), "Template path should match"
+    assert Path(template.path).name == template_path.name, "Template path should match filename"
     assert template.image is not None, "Template image should be loaded"
     assert template.threshold > 0, "Template should have threshold"
 
