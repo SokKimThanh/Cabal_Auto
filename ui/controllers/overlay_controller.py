@@ -392,9 +392,9 @@ class OverlayController:
                         )
 
                         # Get window tracker if available
-                        window_tracker = getattr(self.parent, "_window_tracker", None)
+                        window_tracker = getattr(self, "_window_tracker", None)
 
-                        self.parent._overlay_controller = UtilsOverlayController(
+                        self.parent._overlay_controller = UtilsUtilsOverlayController(
                             overlay=self.parent._overlay_window,
                             detector=self.parent._bot_manager._detector,
                             max_boxes=max_boxes,
