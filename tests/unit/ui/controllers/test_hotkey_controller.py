@@ -1,14 +1,17 @@
 import sys
 from unittest.mock import MagicMock, patch
-import pytest
 
-# We must mock before importing HotkeyController and app components which evaluate at module level
-sys.modules['tkinter'] = MagicMock()
-sys.modules['tkinter.messagebox'] = MagicMock()
-sys.modules['PIL'] = MagicMock()
-sys.modules['PIL.ImageTk'] = MagicMock()
-
-from ui.controllers.hotkey_controller import HotkeyController
+# Isolate headless-only mocks to just the import of the module-under-test
+with patch.dict(
+    sys.modules,
+    {
+        "tkinter": MagicMock(),
+        "tkinter.messagebox": MagicMock(),
+        "PIL": MagicMock(),
+        "PIL.ImageTk": MagicMock(),
+    },
+):
+    from ui.controllers.hotkey_controller import HotkeyController
 
 @patch('ui.controllers.hotkey_controller.keyboard')
 def test_hotkey_controller_register_all(mock_keyboard):
