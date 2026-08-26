@@ -234,7 +234,7 @@ class OverlayController:
                             self.parent.hunt_cfg["window_hwnd"] = target_hwnd
                             self.parent.hunt_cfg["window_title"] = cabal_window.title
 
-                            # save_hunt_config is already defined at module level (line 566)
+# save_hunt_config is imported at module level
                             save_hunt_config(self.parent.hunt_cfg)
 
                             print(
