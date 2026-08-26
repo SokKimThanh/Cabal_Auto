@@ -379,23 +379,12 @@ class AppRuntimeBridgeMixin:
         if hasattr(self, "_update_unsaved_indicator"):
             self._update_unsaved_indicator()
 
-    def _start_overlay_window_tracker(self) -> None:
+    def _start_overlay_window_tracker(self, target_hwnd: int) -> None:
         if (
             hasattr(self, "window_tracker_controller")
             and self.window_tracker_controller
         ):
-            target_hwnd = (
-                getattr(self, "target_hwnd", None)
-                or getattr(self, "selected_hwnd", None)
-                or getattr(self, "active_target_hwnd", None)
-                or getattr(self.window_tracker_controller, "target_hwnd", None)
-            )
-            if target_hwnd is not None:
-                self.window_tracker_controller.start(target_hwnd)
-            else:
-                self._window_tracker = None
-        else:
-            self._window_tracker = None
+            self.window_tracker_controller.start(target_hwnd)
 
     def _stop_overlay_window_tracker(self) -> None:
         if (
@@ -403,9 +392,14 @@ class AppRuntimeBridgeMixin:
             and self.window_tracker_controller
         ):
             self.window_tracker_controller.stop()
-        else:
-            self._window_tracker = None
 
+    def get_window_tracker(self) -> Optional[Any]:
+        if (
+            hasattr(self, "window_tracker_controller")
+            and self.window_tracker_controller
+        ):
+            return self.window_tracker_controller.get_tracker()
+        return None
 
     def _toggle_overlay(self, *_args) -> None:
         if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller", None) is not None:

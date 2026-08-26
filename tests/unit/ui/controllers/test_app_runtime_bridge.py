@@ -34,8 +34,8 @@ def test_bridge_interfaces_defined():
     app._on_monster_editor_hotkey()
     app.hotkey_controller.on_monster_editor.assert_called_once()
 
-    app._start_overlay_window_tracker()
-    app.window_tracker_controller.start.assert_called_once()
+    app._start_overlay_window_tracker(12345)
+    app.window_tracker_controller.start.assert_called_once_with(12345)
 
     app._stop_overlay_window_tracker()
     app.window_tracker_controller.stop.assert_called_once()
