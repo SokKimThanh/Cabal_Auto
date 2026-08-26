@@ -1,6 +1,12 @@
 # Guidelines for AI Code Review
 
-When performing code reviews for the Cabal Auto Hunt project, you must enforce the following architectural rules and coding standards:
+## Scope
+These instructions apply to Copilot-assisted code review for the Cabal Auto Hunt repository. They are intended to help Copilot flag likely issues and suggest changes consistently, but they do **not** replace the team's coding standards, maintainer judgment, or explicit reviewer instructions in a pull request.
+
+## Maintenance
+Repository maintainers are responsible for keeping this file up to date. Contributors who want to change these review instructions should coordinate with the maintainers who own the project's development workflow.
+
+When performing code reviews for the Cabal Auto Hunt project, use the following architectural rules and coding standards as review guidance:
 
 ## 1. UI Decoupling
 - Background threads and services (e.g., `HuntOrchestrator`, `HuntRunner`) must **not** call Tkinter methods directly.
