@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Callable, Dict, Any
-import tkinter as tk
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app_gui import App
