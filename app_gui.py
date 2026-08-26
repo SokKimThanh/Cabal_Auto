@@ -141,8 +141,8 @@ from lib.features.timing.calculator import (
 
 # =====================================================================
 # Single Instance Lock (Prevent multiple app instances)
+from ui.controllers.hotkey_controller import HotkeyController
 # =====================================================================
-from lib.system.hotkey_manager import HotkeyManager
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.instance_lock import SingleInstanceLock
 
@@ -176,7 +176,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         except Exception:
             pass
 
-        self.hotkey_mgr = HotkeyManager(self, self.hunt_cfg)
+        self.hotkey_controller = HotkeyController(self, self.hunt_cfg)
         # Centralized icon helper
         try:
             from ui.helpers.icon_helper import get_icon_helper
@@ -234,13 +234,13 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 if enabled:
                     print("[Hotkeys] User enabled global hotkeys via menu")
                     try:
-                        self.hotkey_mgr.register_all()
+                        self.hotkey_controller.register_all()
                     except Exception as e:
                         print(f"[Hotkeys] Error re-registering hotkeys: {e}")
                 else:
                     print("[Hotkeys] User disabled global hotkeys via menu")
                     try:
-                        self.hotkey_mgr.unregister_all()
+                        self.hotkey_controller.unregister_all()
                     except Exception as e:
                         print(f"[Hotkeys] Error unregistering hotkeys: {e}")
 
@@ -254,7 +254,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             def _retry_hotkeys():
                 print("[Hotkeys] User requested retry registration")
                 try:
-                    self.hotkey_mgr.register_all()
+                    self.hotkey_controller.register_all()
                 except Exception as e:
                     print(f"[Hotkeys] Retry failed: {e}")
 
@@ -344,7 +344,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
 
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
-        self.hotkey_controller = HotkeyController(self)
         self.overlay_controller = AppOverlayController(self)
         self.window_tracker_controller = WindowTrackerController(self)
 
@@ -533,53 +532,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self.bind("<Alt-Key-1>", lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
         self.bind("<Alt-Key-2>", lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
 
-        # Register global hotkeys (Ctrl+Shift+R/E/L/N) using keyboard module
-        self._registered_hotkey_handlers = (
-            {}
-        )  # key -> handler (as returned by keyboard.add_hotkey)
-        self._failed_hotkeys = {}  # key -> exception
-        self._hotkeys_registered_ok = False
-        if keyboard is not None:
-            hotkey_map = {
-                "ctrl+shift+r": getattr(self, "on_hunt_start", None),
-                "ctrl+shift+e": getattr(self, "on_hunt_stop", None),
-                # Map to wrapper handlers (which perform mode checks / scheduling)
-                "ctrl+shift+l": (
-                    self.hotkey_controller.on_library_manager
-                    if hasattr(self, "hotkey_controller")
-                    else None
-                ),
-                "ctrl+shift+n": (
-                    self.hotkey_controller.on_setup_wizard
-                    if hasattr(self, "hotkey_controller")
-                    else None
-                ),
-                # Vision menu hotkeys (Sprint 22 Phase 1B)
-                "ctrl+shift+v": getattr(self, "_open_vision_wizard", None),
-                "ctrl+alt+s": getattr(self, "_scan_region", None),
-                "ctrl+t": getattr(self, "_add_template", None),
-                "ctrl+shift+t": getattr(self, "_manage_templates", None),
-                "ctrl+shift+o": getattr(self, "_toggle_overlay", None),
-            }
-            for hk, callback in hotkey_map.items():
-                if callback is None:
-                    # No callback available; skip registration but record as skipped
-                    self._failed_hotkeys[hk] = "missing-callback"
-                    print(f"[Hotkey] Skipping {hk} - no callback available")
-                    continue
-                try:
-                    handler = keyboard.add_hotkey(hk, callback)
-                    # handler may be a function to remove or an id; store as-is
-                    self._registered_hotkey_handlers[hk] = handler
-                    print(f"[Hotkey] Registered {hk} -> {callback.__name__}")
-                except Exception as ex:
-                    self._failed_hotkeys[hk] = repr(ex)
-                    print(f"[Hotkey] Failed to register {hk}: {ex}")
-            # Determine overall success
-            self._hotkeys_registered_ok = len(self._failed_hotkeys) == 0
-            if not self._hotkeys_registered_ok:
-                print("[Hotkey] Some hotkeys failed to register:", self._failed_hotkeys)
-
+        self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
 
@@ -953,7 +906,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         # Library Manager hotkey always enabled (no change needed)
         # But we re-register hotkeys to update wizard hotkey state
         if hasattr(self, "hunt_cfg"):
-            self._register_global_hotkeys()
+            self.hotkey_controller.register_all()
 
     # --- Helpers to attempt closing other windows while respecting unsaved changes ---
     def _update_hotkey_diagnostics_ui(self):
@@ -970,27 +923,27 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 hasattr(self, "_hotkey_import_diag") and self._hotkey_import_diag
             )
             has_failed_hotkeys = (
-                hasattr(self, "_failed_hotkeys") and self._failed_hotkeys
+                hasattr(self.hotkey_controller, "_failed_hotkeys") and self.hotkey_controller._failed_hotkeys
             )
-            hotkeys_enabled = getattr(self, "_hotkeys_registered_ok", False)
+            hotkeys_enabled = getattr(self.hotkey_controller, "_hotkeys_registered_ok", False)
 
             # Count actual registered hotkeys (not bindings)
             registered_count = 0
             hotkey_details = []
 
-            if getattr(self, "_global_start_hotkey", None):
+            if getattr(self.hotkey_controller, "_global_start_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Start" if self.lang == "en" else "Báº¯t Ä‘áº§u")
-            if getattr(self, "_global_stop_hotkey", None):
+            if getattr(self.hotkey_controller, "_global_stop_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Stop" if self.lang == "en" else "Dừng")
-            if getattr(self, "_global_wizard_hotkey", None):
+            if getattr(self.hotkey_controller, "_global_wizard_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Wizard" if self.lang == "en" else "Trợ lý")
-            if getattr(self, "_global_library_hotkey", None):
+            if getattr(self.hotkey_controller, "_global_library_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Library" if self.lang == "en" else "Thư viện")
-            if getattr(self, "_global_vision_hotkey", None):
+            if getattr(self.hotkey_controller, "_global_vision_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Vision" if self.lang == "en" else "Thị giác")
 
@@ -1024,7 +977,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             # State 2: Partial failure - Some hotkeys failed
             elif has_failed_hotkeys and not has_import_error:
                 # Orange warning state
-                failed_count = len(self._failed_hotkeys)
+                failed_count = len(self.hotkey_controller._failed_hotkeys)
                 warning_text = (
                     f"{failed_count} hotkey(s) failed to register"
                     if self.lang == "en"
@@ -1803,7 +1756,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         # Re-register hotkeys (wizard hotkey only in beginner mode)
         # This will update the count display (4 vs 5 hotkeys)
         try:
-            self._register_global_hotkeys()
+            self.hotkey_controller.register_all()
         except Exception as e:
             print(f"Warning: Could not re-register hotkeys after mode change: {e}")
 
@@ -2982,8 +2935,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
 
                 # Re-register hotkeys with new settings
                 self.hunt_cfg = cfg  # Update instance config first
-                self._unregister_global_hotkeys()
-                self._register_global_hotkeys()
+                self.hotkey_controller.unregister_all()
+                self.hotkey_controller.register_all()
 
             # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
             save_hunt_config(cfg)
