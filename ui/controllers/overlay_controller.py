@@ -1,6 +1,5 @@
 import copy
 import time
-import tkinter as tk
 from tkinter import messagebox
 from typing import Any, Dict
 
