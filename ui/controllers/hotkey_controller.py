@@ -81,16 +81,15 @@ class HotkeyController:
                 pass
 
             print("[Hotkeys] Opening Setup Wizard directly from hotkey")
-            if hasattr(self.parent, "window_controller"):
-                if hasattr(self.parent, "after"):
-                    self.parent.after(
-                        0,
-                        lambda: self.parent.window_controller.on_setup_wizard(
-                            hide_parent=False
-                        ),
-                    )
-                else:
-                    self.parent.window_controller.on_setup_wizard(hide_parent=False)
+            if hasattr(self.parent, "after") and hasattr(
+                self.parent, "window_controller"
+            ):
+                self.parent.after(
+                    0,
+                    lambda: self.parent.window_controller.on_setup_wizard(
+                        hide_parent=False
+                    ),
+                )
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
 
@@ -102,33 +101,26 @@ class HotkeyController:
                 existing is not None
                 and getattr(existing, "winfo_exists", lambda: False)()
             ):
-                try:
-                    if existing.winfo_viewable():
+                if existing.winfo_viewable():
+                    try:
+                        existing.withdraw()
+                    except Exception:
                         try:
-                            existing.withdraw()
+                            existing.iconify()
                         except Exception:
-                            try:
-                                existing.iconify()
-                            except Exception:
-                                pass
-                    else:
+                            pass
+                else:
+                    try:
+                        existing.deiconify()
+                        existing.lift()
+                        existing.focus_force()
+                    except Exception:
                         try:
-                            existing.deiconify()
                             existing.lift()
                             existing.focus_force()
                         except Exception:
-                            try:
-                                existing.lift()
-                                existing.focus_force()
-                            except Exception:
-                                pass
-                    return
-                except Exception:
-                    # fall through to open a fresh manager if this reference is stale
-                    try:
-                        existing.destroy()
-                    except Exception:
-                        pass
+                            pass
+                return
 
             if hasattr(self.parent, "after") and hasattr(
                 self.parent, "window_controller"

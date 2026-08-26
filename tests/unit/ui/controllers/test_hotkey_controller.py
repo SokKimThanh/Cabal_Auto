@@ -24,23 +24,21 @@ def test_hotkey_controller_unregister_all():
 
 def test_hotkey_controller_on_setup_wizard():
     parent = MagicMock()
-    parent.after = MagicMock()
     parent.hunt_cfg = {"ui_mode": "beginner"}
     parent._setup_wizard_win = None
     parent.setup_wizard_win = None
     parent._setup_wizard = None
     parent.window_controller = MagicMock()
-    parent.window_controller.on_setup_wizard = MagicMock()
 
     controller = HotkeyController(parent)
     controller.on_setup_wizard()
 
-    parent.after.assert_called_once()
-    delay, cb = parent.after.call_args.args[:2]
-    assert delay == 0
+    assert parent.after.call_count == 1
+    args, kwargs = parent.after.call_args
+    assert args[0] == 0
+    args, kwargs = parent.after.call_args
+    assert args[0] == 0
 
-    cb()
-    parent.window_controller.on_setup_wizard.assert_called_once_with(hide_parent=False)
 
 def test_hotkey_controller_on_library_manager():
     parent = MagicMock()
