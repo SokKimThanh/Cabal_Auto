@@ -375,6 +375,13 @@ class AppRuntimeBridgeMixin:
         else:
             self._window_tracker = None
 
+
+    def _toggle_overlay(self, *_args) -> None:
+        if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller", None) is not None:
+            self.overlay_controller.toggle_overlay(*_args)
+        else:
+            print("[Warning] overlay_controller not initialized; cannot toggle overlay.")
+
     def _open_overlay_settings(self, *_args) -> None:
         if hasattr(self, "overlay_controller") and self.overlay_controller:
             self.overlay_controller.open_settings(*_args)
