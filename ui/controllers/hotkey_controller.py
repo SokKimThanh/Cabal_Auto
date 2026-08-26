@@ -441,9 +441,9 @@ class HotkeyController:
                 return
 
             if hasattr(self.parent, "after") and hasattr(
-                self.parent, "window_controller"
+                self.parent, "library_manager_controller"
             ):
-                self.parent.after(0, self.parent.window_controller.open_library_manager)
+                self.parent.after(0, self.parent.library_manager_controller.open_library_manager)
         except Exception as e:
             print(f"[Hotkeys] Error opening Library Manager: {e}")
 
