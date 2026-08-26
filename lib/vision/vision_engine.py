@@ -10,7 +10,6 @@ Delegates:
 import cv2
 import numpy as np
 import json
-import os
 import time
 import logging
 import threading
@@ -40,9 +39,11 @@ else:
 # Data Classes (Re-exported for backward compatibility)
 # =====================================================================
 
+
 @dataclass
 class Detection:
     """Single detection result"""
+
     x: int
     y: int
     w: int
@@ -68,6 +69,7 @@ class Detection:
 @dataclass
 class TrackedObject:
     """Tracked object with hybrid tracking"""
+
     tracker_id: str
     bbox: Tuple[int, int, int, int]
     template_id: str
@@ -84,6 +86,7 @@ class TrackedObject:
 # =====================================================================
 # Vision Engine Core
 # =====================================================================
+
 
 class VisionEngine:
     """
@@ -111,25 +114,28 @@ class VisionEngine:
 
         # Parameters
         self.params = {
-            'nms_iou_threshold': 0.3,
-            'verify_interval': 30,
-            'verify_threshold': 0.5,
-            'max_scales': 3,
-            'tracker_type': 'CSRT',
-            'match_method': cv2.TM_CCOEFF_NORMED,
-            'fps_limit': 15,
-            'downscale_factor': 1.0,
-            'use_grayscale': True,
-            'feature_type': 'ORB',
-            'hsv_lower': (0, 120, 120),
-            'hsv_upper': (10, 255, 255),
-            'hsv_min_area': 50,
-            'hsv_max_area': 100000,
-            'target_threat_levels': ["gray", "yellow"],
-            'hsv_ranges': {
-                'yellow': [((20, 100, 100), (35, 255, 255))],
-                'gray': [((0, 0, 150), (180, 30, 230))],
-                'red': [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))],
+            "nms_iou_threshold": 0.3,
+            "verify_interval": 30,
+            "verify_threshold": 0.5,
+            "max_scales": 3,
+            "tracker_type": "CSRT",
+            "match_method": cv2.TM_CCOEFF_NORMED,
+            "fps_limit": 15,
+            "downscale_factor": 1.0,
+            "use_grayscale": True,
+            "feature_type": "ORB",
+            "hsv_lower": (0, 120, 120),
+            "hsv_upper": (10, 255, 255),
+            "hsv_min_area": 50,
+            "hsv_max_area": 100000,
+            "target_threat_levels": ["gray", "yellow"],
+            "hsv_ranges": {
+                "yellow": [((20, 100, 100), (35, 255, 255))],
+                "gray": [((0, 0, 150), (180, 30, 230))],
+                "red": [
+                    ((0, 120, 120), (10, 255, 255)),
+                    ((170, 120, 120), (180, 255, 255)),
+                ],
             },
         }
 
@@ -138,10 +144,10 @@ class VisionEngine:
         self.debug_mode = False
 
         # Screen capture integration
-        self.screen_capture: Optional['ScreenCapture'] = None  # type: ignore
+        self.screen_capture: Optional["ScreenCapture"] = None  # type: ignore
         self.capture_hwnd: Optional[int] = None
         self.capture_enabled = False
-        self.window_manager: Optional['WindowManager'] = None  # type: ignore
+        self.window_manager: Optional["WindowManager"] = None  # type: ignore
 
         if sys.platform == "win32" and WindowManager:
             try:
@@ -173,9 +179,12 @@ class VisionEngine:
     def load_templates(self, path_list: List[str]) -> Dict[str, Template]:
         return self.template_service.load_templates(path_list)
 
-    def add_template(self, path: str, threshold: float = 0.7,
-                     scales: Optional[List[float]] = None) -> Optional[Template]:
-        return self.template_service.add_template(path, threshold, scales, self.params['max_scales'])
+    def add_template(
+        self, path: str, threshold: float = 0.7, scales: Optional[List[float]] = None
+    ) -> Optional[Template]:
+        return self.template_service.add_template(
+            path, threshold, scales, self.params["max_scales"]
+        )
 
     def remove_template(self, template_id: str) -> bool:
         return self.template_service.remove_template(template_id)
@@ -197,21 +206,29 @@ class VisionEngine:
         templates: Optional[List[str]] = None,
         scales: Optional[List[float]] = None,
         max_results: int = 10,
-        use_grayscale: Optional[bool] = None
+        use_grayscale: Optional[bool] = None,
     ) -> List[Detection]:
-        self.matcher_service.match_method = self.params.get('match_method', cv2.TM_CCOEFF_NORMED)
-        self.matcher_service.nms_iou_threshold = self.params.get('nms_iou_threshold', 0.3)
-        use_gray = use_grayscale if use_grayscale is not None else self.params.get('use_grayscale', True)
+        self.matcher_service.match_method = self.params.get(
+            "match_method", cv2.TM_CCOEFF_NORMED
+        )
+        self.matcher_service.nms_iou_threshold = self.params.get(
+            "nms_iou_threshold", 0.3
+        )
+        use_gray = (
+            use_grayscale
+            if use_grayscale is not None
+            else self.params.get("use_grayscale", True)
+        )
         return self.matcher_service.match_templates(
             frame=frame,
             templates=self.templates,
             roi=roi,
             template_ids=templates,
             scales=scales,
-            max_scales=self.params['max_scales'],
+            max_scales=self.params["max_scales"],
             max_results=max_results,
             use_grayscale=use_gray,
-            debug_mode=self.debug_mode
+            debug_mode=self.debug_mode,
         )
 
     def _match_template_at_scale(
@@ -220,12 +237,16 @@ class VisionEngine:
         template: Template,
         scale: float,
         offset_x: int,
-        offset_y: int
+        offset_y: int,
     ) -> List[Detection]:
-        use_gray = self.params.get('use_grayscale', True)
-        return self.matcher_service.match_template_at_scale(frame, template, scale, offset_x, offset_y, use_grayscale=use_gray)
+        use_gray = self.params.get("use_grayscale", True)
+        return self.matcher_service.match_template_at_scale(
+            frame, template, scale, offset_x, offset_y, use_grayscale=use_gray
+        )
 
-    def nms(self, detections: List[Detection], iou_threshold: float = 0.3) -> List[Detection]:
+    def nms(
+        self, detections: List[Detection], iou_threshold: float = 0.3
+    ) -> List[Detection]:
         return self.matcher_service.nms(detections, iou_threshold)
 
     # =====================================================================
@@ -236,23 +257,27 @@ class VisionEngine:
         tracker_id = f"track_{self.next_tracker_id}"
         self.next_tracker_id += 1
 
-        tracker_type = self.params.get('tracker_type', 'CSRT').upper()
+        tracker_type = self.params.get("tracker_type", "CSRT").upper()
 
         try:
-            if tracker_type == 'CSRT':
+            if tracker_type == "CSRT":
                 tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
-            elif tracker_type == 'KCF':
+            elif tracker_type == "KCF":
                 tracker = cv2.legacy.TrackerKCF_create()  # type: ignore
             else:
-                logger.warning(f"Unknown tracker type: {tracker_type}, falling back to CSRT")
+                logger.warning(
+                    f"Unknown tracker type: {tracker_type}, falling back to CSRT"
+                )
                 tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
         except AttributeError:
-            if tracker_type == 'CSRT':
+            if tracker_type == "CSRT":
                 tracker = cv2.TrackerCSRT_create()  # type: ignore
-            elif tracker_type == 'KCF':
+            elif tracker_type == "KCF":
                 tracker = cv2.TrackerKCF_create()  # type: ignore
             else:
-                logger.warning(f"Unknown tracker type: {tracker_type}, falling back to CSRT")
+                logger.warning(
+                    f"Unknown tracker type: {tracker_type}, falling back to CSRT"
+                )
                 tracker = cv2.TrackerCSRT_create()  # type: ignore
 
         bbox = detection.bbox()
@@ -267,13 +292,13 @@ class VisionEngine:
             last_verify_score=detection.score,
             frames_tracked=0,
             last_verify_frame=self.frame_count,
-            detect_time=detection.timestamp
+            detect_time=detection.timestamp,
         )
 
         self.trackers[tracker_id] = {
-            'tracker': tracker,
-            'tracked_obj': tracked_obj,
-            'template': self.get_template(detection.template_id)
+            "tracker": tracker,
+            "tracked_obj": tracked_obj,
+            "template": self.get_template(detection.template_id),
         }
         return tracker_id
 
@@ -282,9 +307,9 @@ class VisionEngine:
         updated_tracks, to_remove = [], []
 
         for tracker_id, track_data in self.trackers.items():
-            tracker = track_data['tracker']
-            tracked_obj = track_data['tracked_obj']
-            template = track_data['template']
+            tracker = track_data["tracker"]
+            tracked_obj = track_data["tracked_obj"]
+            template = track_data["template"]
 
             success, bbox = tracker.update(frame)
             if not success:
@@ -294,12 +319,14 @@ class VisionEngine:
             tracked_obj.bbox = tuple(map(int, bbox))
             tracked_obj.frames_tracked += 1
 
-            if (self.frame_count - tracked_obj.last_verify_frame) >= self.params['verify_interval']:
+            if (self.frame_count - tracked_obj.last_verify_frame) >= self.params[
+                "verify_interval"
+            ]:
                 verify_score = self.reverify_track(frame, tracked_obj, template)
                 tracked_obj.last_verify_score = verify_score
                 tracked_obj.last_verify_frame = self.frame_count
 
-                if verify_score < self.params['verify_threshold']:
+                if verify_score < self.params["verify_threshold"]:
                     to_remove.append(tracker_id)
                     continue
 
@@ -314,7 +341,7 @@ class VisionEngine:
         self,
         frame: np.ndarray,
         tracked_obj: TrackedObject,
-        template: Optional[Template]
+        template: Optional[Template],
     ) -> float:
         if template is None or template.image is None:
             return 0.0
@@ -331,7 +358,9 @@ class VisionEngine:
             if roi.size == 0 or roi.shape[0] == 0 or roi.shape[1] == 0:
                 return 0.0
 
-            detections = self._match_template_at_scale(roi, template, scale=1.0, offset_x=x1, offset_y=y1)
+            detections = self._match_template_at_scale(
+                roi, template, scale=1.0, offset_x=x1, offset_y=y1
+            )
             return max((d.score for d in detections), default=0.0)
         except Exception as e:
             logger.error(f"Error re-verifying track: {e}")
@@ -347,7 +376,7 @@ class VisionEngine:
         self.trackers.clear()
 
     def get_tracked_objects(self) -> List[TrackedObject]:
-        return [track_data['tracked_obj'] for track_data in self.trackers.values()]
+        return [track_data["tracked_obj"] for track_data in self.trackers.values()]
 
     # =====================================================================
     # Advanced HSV Detection & Feature Matching
@@ -362,13 +391,24 @@ class VisionEngine:
         max_area: Optional[float] = None,
         roi: Optional[Tuple[int, int, int, int]] = None,
         downscale_factor: float = 1.0,
-        target_threat_levels: Optional[List[str]] = None
+        target_threat_levels: Optional[List[str]] = None,
     ) -> List[Detection]:
-        if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+        if (
+            frame is None
+            or frame.size == 0
+            or frame.shape[0] == 0
+            or frame.shape[1] == 0
+        ):
             return []
 
-        min_a = min_area if min_area is not None else self.params.get('hsv_min_area', 50)
-        max_a = max_area if max_area is not None else self.params.get('hsv_max_area', 100000)
+        min_a = (
+            min_area if min_area is not None else self.params.get("hsv_min_area", 50)
+        )
+        max_a = (
+            max_area
+            if max_area is not None
+            else self.params.get("hsv_max_area", 100000)
+        )
         frame_h, frame_w = frame.shape[:2]
 
         offset_x, offset_y = 0, 0
@@ -378,7 +418,7 @@ class VisionEngine:
             ry = max(0, min(ry, frame_h - 1))
             rw = max(1, min(rw, frame_w - rx))
             rh = max(1, min(rh, frame_h - ry))
-            work_frame = frame[ry:ry+rh, rx:rx+rw]
+            work_frame = frame[ry : ry + rh, rx : rx + rw]
             offset_x, offset_y = rx, ry
         else:
             work_frame = frame
@@ -397,41 +437,75 @@ class VisionEngine:
             scale_x, scale_y = 1.0, 1.0
 
         hsv = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2HSV)
-        active_levels = target_threat_levels if target_threat_levels is not None else self.params.get('target_threat_levels', ["gray", "yellow"])
-        active_levels_lower = [str(l).lower() for l in active_levels]
+        active_levels = (
+            target_threat_levels
+            if target_threat_levels is not None
+            else self.params.get("target_threat_levels", ["gray", "yellow"])
+        )
+        active_levels_lower = [str(lvl).lower() for lvl in active_levels]
 
-        hsv_ranges = self.params.get('hsv_ranges', {
-            'yellow': [((20, 100, 100), (35, 255, 255))],
-            'gray': [((0, 0, 150), (180, 30, 230))],
-            'red': [((0, 120, 120), (10, 255, 255)), ((170, 120, 120), (180, 255, 255))]
-        })
+        hsv_ranges = self.params.get(
+            "hsv_ranges",
+            {
+                "yellow": [((20, 100, 100), (35, 255, 255))],
+                "gray": [((0, 0, 150), (180, 30, 230))],
+                "red": [
+                    ((0, 120, 120), (10, 255, 255)),
+                    ((170, 120, 120), (180, 255, 255)),
+                ],
+            },
+        )
 
         if lower_hsv is not None and upper_hsv is not None:
-            lower_b, upper_b = np.array(lower_hsv, dtype=np.uint8), np.array(upper_hsv, dtype=np.uint8)
+            lower_b, upper_b = np.array(lower_hsv, dtype=np.uint8), np.array(
+                upper_hsv, dtype=np.uint8
+            )
             if lower_b[0] > upper_b[0]:
-                m1 = cv2.inRange(hsv, np.array([0, lower_b[1], lower_b[2]], dtype=np.uint8), upper_b)
-                m2 = cv2.inRange(hsv, lower_b, np.array([180, upper_b[1], upper_b[2]], dtype=np.uint8))
+                m1 = cv2.inRange(
+                    hsv, np.array([0, lower_b[1], lower_b[2]], dtype=np.uint8), upper_b
+                )
+                m2 = cv2.inRange(
+                    hsv,
+                    lower_b,
+                    np.array([180, upper_b[1], upper_b[2]], dtype=np.uint8),
+                )
                 mask = cv2.bitwise_or(m1, m2)
             else:
                 mask = cv2.inRange(hsv, lower_b, upper_b)
-            apply_red_filter = (target_threat_levels is not None and "red" not in active_levels_lower)
+            apply_red_filter = (
+                target_threat_levels is not None and "red" not in active_levels_lower
+            )
         else:
             combined_mask = None
             for level in active_levels_lower:
                 for r_lower, r_upper in hsv_ranges.get(level, []):
-                    sub_m = cv2.inRange(hsv, np.array(r_lower, dtype=np.uint8), np.array(r_upper, dtype=np.uint8))
-                    combined_mask = sub_m if combined_mask is None else cv2.bitwise_or(combined_mask, sub_m)
+                    sub_m = cv2.inRange(
+                        hsv,
+                        np.array(r_lower, dtype=np.uint8),
+                        np.array(r_upper, dtype=np.uint8),
+                    )
+                    combined_mask = (
+                        sub_m
+                        if combined_mask is None
+                        else cv2.bitwise_or(combined_mask, sub_m)
+                    )
 
             if combined_mask is None:
                 return []
             mask = combined_mask
-            apply_red_filter = ("red" not in active_levels_lower)
+            apply_red_filter = "red" not in active_levels_lower
 
         red_mask = None
         if apply_red_filter:
-            for r_lower, r_upper in hsv_ranges.get('red', []):
-                sub_r = cv2.inRange(hsv, np.array(r_lower, dtype=np.uint8), np.array(r_upper, dtype=np.uint8))
-                red_mask = sub_r if red_mask is None else cv2.bitwise_or(red_mask, sub_r)
+            for r_lower, r_upper in hsv_ranges.get("red", []):
+                sub_r = cv2.inRange(
+                    hsv,
+                    np.array(r_lower, dtype=np.uint8),
+                    np.array(r_upper, dtype=np.uint8),
+                )
+                red_mask = (
+                    sub_r if red_mask is None else cv2.bitwise_or(red_mask, sub_r)
+                )
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
@@ -446,8 +520,10 @@ class VisionEngine:
             if min_a <= area_orig <= max_a:
                 bx, by, bw, bh = cv2.boundingRect(cnt)
                 if apply_red_filter and red_mask is not None:
-                    red_roi = red_mask[by:by+bh, bx:bx+bw]
-                    if red_roi.size > 0 and cv2.countNonZero(red_roi) > 0.25 * (bw * bh):
+                    red_roi = red_mask[by : by + bh, bx : bx + bw]
+                    if red_roi.size > 0 and cv2.countNonZero(red_roi) > 0.25 * (
+                        bw * bh
+                    ):
                         continue
 
                 orig_x = max(0, min(int(offset_x + bx * scale_x), frame_w - 1))
@@ -456,11 +532,19 @@ class VisionEngine:
                 orig_h = max(1, min(int(bh * scale_y), frame_h - orig_y))
 
                 score = min(1.0, float(area_orig / max_a)) if max_a > 0 else 1.0
-                detections.append(Detection(
-                    x=orig_x, y=orig_y, w=orig_w, h=orig_h,
-                    score=score if score > 0 else 0.85,
-                    template_id="hsv_target", scale=1.0, method_used="hsv_mask", timestamp=now
-                ))
+                detections.append(
+                    Detection(
+                        x=orig_x,
+                        y=orig_y,
+                        w=orig_w,
+                        h=orig_h,
+                        score=score if score > 0 else 0.85,
+                        template_id="hsv_target",
+                        scale=1.0,
+                        method_used="hsv_mask",
+                        timestamp=now,
+                    )
+                )
 
         detections.sort(key=lambda d: d.w * d.h, reverse=True)
         return detections
@@ -472,14 +556,19 @@ class VisionEngine:
         feature_type: Optional[str] = None,
         min_matches: int = 4,
         roi: Optional[Tuple[int, int, int, int]] = None,
-        downscale_factor: float = 1.0
+        downscale_factor: float = 1.0,
     ) -> List[Detection]:
-        if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+        if (
+            frame is None
+            or frame.size == 0
+            or frame.shape[0] == 0
+            or frame.shape[1] == 0
+        ):
             return []
         if template is None or template.image is None or template.image.size == 0:
             return []
 
-        ftype = (feature_type or self.params.get('feature_type', 'ORB')).upper()
+        ftype = (feature_type or self.params.get("feature_type", "ORB")).upper()
         frame_h, frame_w = frame.shape[:2]
 
         offset_x, offset_y = 0, 0
@@ -489,7 +578,7 @@ class VisionEngine:
             ry = max(0, min(ry, frame_h - 1))
             rw = max(1, min(rw, frame_w - rx))
             rh = max(1, min(rh, frame_h - ry))
-            work_frame = frame[ry:ry+rh, rx:rx+rw]
+            work_frame = frame[ry : ry + rh, rx : rx + rw]
             offset_x, offset_y = rx, ry
         else:
             work_frame = frame
@@ -509,7 +598,7 @@ class VisionEngine:
 
         # Create a detector per call to avoid sharing mutable OpenCV state
         # across concurrent detect_features invocations.
-        if ftype == 'SIFT' and hasattr(cv2, 'SIFT_create'):
+        if ftype == "SIFT" and hasattr(cv2, "SIFT_create"):
             detector = cv2.SIFT_create(nfeatures=500)
             norm = cv2.NORM_L2
         else:
@@ -520,7 +609,9 @@ class VisionEngine:
 
         # ⚡ Bolt Optimization: Use cached template features if available,
         # but invalidate them when the underlying template image changes.
-        template_source = template.image_gray if template.image_gray is not None else template.image
+        template_source = (
+            template.image_gray if template.image_gray is not None else template.image
+        )
         template_cache_key = (
             id(template_source),
             getattr(template_source, "shape", None),
@@ -534,7 +625,12 @@ class VisionEngine:
         ):
             kp1, des1 = cached_template_features["features"]
         else:
-            gray_template = template.image_gray if template.image_gray is not None else cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+            if template.image_gray is not None:
+                gray_template = template.image_gray
+            elif template.image is not None:
+                gray_template = cv2.cvtColor(template.image, cv2.COLOR_BGR2GRAY)
+            else:
+                return []
             kp1, des1 = detector.detectAndCompute(gray_template, None)
             template.features[ftype] = {
                 "cache_key": template_cache_key,
@@ -553,19 +649,29 @@ class VisionEngine:
             logger.error(f"Error in feature matching: {e}")
             return []
 
-        good_matches = [m[0] for m in matches if len(m) == 2 and m[0].distance < 0.75 * m[1].distance]
+        good_matches = [
+            m[0]
+            for m in matches
+            if len(m) == 2 and m[0].distance < 0.75 * m[1].distance
+        ]
         if len(good_matches) < max(4, min_matches):
             return []
 
-        src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(
+            -1, 1, 2
+        )
+        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(
+            -1, 1, 2
+        )
 
         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
         if M is None:
             return []
 
         th, tw = gray_template.shape
-        pts = np.float32([[0, 0], [0, th - 1], [tw - 1, th - 1], [tw - 1, 0]]).reshape(-1, 1, 2)
+        pts = np.float32([[0, 0], [0, th - 1], [tw - 1, th - 1], [tw - 1, 0]]).reshape(
+            -1, 1, 2
+        )
         try:
             dst = cv2.perspectiveTransform(pts, M)
         except Exception:
@@ -581,11 +687,19 @@ class VisionEngine:
         orig_h = max(1, min(int((max_y - min_y) * scale_y), frame_h - orig_y))
 
         score = min(1.0, float(len(good_matches)) / 50.0)
-        return [Detection(
-            x=orig_x, y=orig_y, w=orig_w, h=orig_h,
-            score=score, template_id=template.id, scale=1.0,
-            method_used=f"{ftype.lower()}_features", timestamp=time.time()
-        )]
+        return [
+            Detection(
+                x=orig_x,
+                y=orig_y,
+                w=orig_w,
+                h=orig_h,
+                score=score,
+                template_id=template.id,
+                scale=1.0,
+                method_used=f"{ftype.lower()}_features",
+                timestamp=time.time(),
+            )
+        ]
 
     def detect_monster_pipeline(
         self,
@@ -594,24 +708,40 @@ class VisionEngine:
         roi: Optional[Tuple[int, int, int, int]] = None,
         downscale_factor: Optional[float] = None,
         confidence_threshold: float = 0.6,
-        use_fast_hsv: bool = True
+        use_fast_hsv: bool = True,
     ) -> List[Detection]:
         if frame is None or frame.size == 0:
             return []
 
-        scale_factor = downscale_factor if downscale_factor is not None else self.params.get('downscale_factor', 1.0)
+        scale_factor = (
+            downscale_factor
+            if downscale_factor is not None
+            else self.params.get("downscale_factor", 1.0)
+        )
         search_roi = roi if roi is not None else self.default_region
 
         if use_fast_hsv:
-            hsv_detections = self.detect_hsv_target(frame, roi=search_roi, downscale_factor=scale_factor)
+            hsv_detections = self.detect_hsv_target(
+                frame, roi=search_roi, downscale_factor=scale_factor
+            )
             if hsv_detections:
                 return hsv_detections
 
-        templates_to_search = [self.templates[tid] for tid in template_ids if tid in self.templates and self.templates[tid].enabled] if template_ids else [t for t in self.templates.values() if t.enabled]
+        templates_to_search = (
+            [
+                self.templates[tid]
+                for tid in template_ids
+                if tid in self.templates and self.templates[tid].enabled
+            ]
+            if template_ids
+            else [t for t in self.templates.values() if t.enabled]
+        )
         secondary_detections = []
 
         for tpl in templates_to_search:
-            feat_dets = self.detect_features(frame, template=tpl, roi=search_roi, downscale_factor=scale_factor)
+            feat_dets = self.detect_features(
+                frame, template=tpl, roi=search_roi, downscale_factor=scale_factor
+            )
             for d in feat_dets:
                 if d.score >= confidence_threshold:
                     secondary_detections.append(d)
@@ -620,14 +750,18 @@ class VisionEngine:
             secondary_detections.sort(key=lambda d: d.score, reverse=True)
             return secondary_detections
 
-        tmpl_dets = self.match_templates(frame, roi=search_roi, templates=template_ids, scales=[0.8, 1.0, 1.2])
+        tmpl_dets = self.match_templates(
+            frame, roi=search_roi, templates=template_ids, scales=[0.8, 1.0, 1.2]
+        )
         return [d for d in tmpl_dets if d.score >= confidence_threshold]
 
     # =====================================================================
     # Async Worker Thread & Screen Capture API
     # =====================================================================
 
-    def start_worker(self, frame_callback: Optional[Callable[[], Optional[np.ndarray]]] = None) -> None:
+    def start_worker(
+        self, frame_callback: Optional[Callable[[], Optional[np.ndarray]]] = None
+    ) -> None:
         if self.worker_running:
             return
         if frame_callback is None and self.is_capture_active():
@@ -665,7 +799,7 @@ class VisionEngine:
             return None
 
     def _worker_loop(self) -> None:
-        fps_limit = self.params.get('fps_limit', 15)
+        fps_limit = self.params.get("fps_limit", 15)
         frame_time = 1.0 / fps_limit
 
         while self.worker_running:
@@ -703,18 +837,50 @@ class VisionEngine:
         if len(self.trackers) == 0:
             detections = self.match_templates(frame, roi=self.default_region)
             for det in detections:
-                cv2.rectangle(rendered_frame, (det.x, det.y), (det.x + det.w, det.y + det.h), (0, 255, 0), 2)
+                cv2.rectangle(
+                    rendered_frame,
+                    (det.x, det.y),
+                    (det.x + det.w, det.y + det.h),
+                    (0, 255, 0),
+                    2,
+                )
                 label = f"{det.template_id} {det.score:.2f}"
-                cv2.putText(rendered_frame, label, (det.x, det.y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            return {'type': 'detections', 'data': [d.to_dict() for d in detections], 'frame': rendered_frame, 'timestamp': time.time()}
+                cv2.putText(
+                    rendered_frame,
+                    label,
+                    (det.x, det.y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    1,
+                )
+            return {
+                "type": "detections",
+                "data": [d.to_dict() for d in detections],
+                "frame": rendered_frame,
+                "timestamp": time.time(),
+            }
         else:
             tracks = self.update_tracks(frame)
             for track in tracks:
                 x, y, w, h = track.bbox
                 cv2.rectangle(rendered_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                 label = f"{track.template_id} {track.confidence:.2f}"
-                cv2.putText(rendered_frame, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
-            return {'type': 'tracks', 'data': [t.to_dict() for t in tracks], 'frame': rendered_frame, 'timestamp': time.time()}
+                cv2.putText(
+                    rendered_frame,
+                    label,
+                    (x, y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 0, 0),
+                    1,
+                )
+            return {
+                "type": "tracks",
+                "data": [t.to_dict() for t in tracks],
+                "frame": rendered_frame,
+                "timestamp": time.time(),
+            }
 
     def reset(self):
         """Reset engine state"""
@@ -732,7 +898,9 @@ class VisionEngine:
             logger.error(f"Error focusing window: {e}")
             return False
 
-    def start_capture(self, window_title: str, target_fps: int = 15, queue_size: int = 5) -> bool:
+    def start_capture(
+        self, window_title: str, target_fps: int = 15, queue_size: int = 5
+    ) -> bool:
         if sys.platform != "win32" or not ScreenCapture or not self.window_manager:
             return False
         hwnd = self.window_manager.find_window(title_contains=window_title)
@@ -740,7 +908,7 @@ class VisionEngine:
             return False
         self.stop_capture()
         try:
-            if hasattr(ScreenCapture, 'start_capture'):
+            if hasattr(ScreenCapture, "start_capture"):
                 cap = ScreenCapture(hwnd, queue_size=queue_size, target_fps=target_fps)
                 cap.start_capture()
             else:
@@ -751,7 +919,7 @@ class VisionEngine:
             self.screen_capture = cap
             self.capture_hwnd = hwnd
             self.capture_enabled = True
-            self.params['fps_limit'] = target_fps
+            self.params["fps_limit"] = target_fps
             return True
         except Exception as e:
             logger.error(f"Failed to start screen capture: {e}")
@@ -763,9 +931,9 @@ class VisionEngine:
     def stop_capture(self) -> None:
         if self.screen_capture:
             try:
-                if hasattr(self.screen_capture, 'stop_capture'):
+                if hasattr(self.screen_capture, "stop_capture"):
                     self.screen_capture.stop_capture()
-                elif hasattr(self.screen_capture, 'stop'):
+                elif hasattr(self.screen_capture, "stop"):
                     self.screen_capture.stop()
             except Exception as e:
                 logger.error(f"Error stopping capture: {e}")
@@ -783,7 +951,11 @@ class VisionEngine:
             return None
 
     def is_capture_active(self) -> bool:
-        return bool(self.capture_enabled and self.screen_capture and self.screen_capture.is_capturing)
+        return bool(
+            self.capture_enabled
+            and self.screen_capture
+            and self.screen_capture.is_capturing
+        )
 
     def set_params(self, params_dict: Dict[str, Any]):
         self.params.update(params_dict)
@@ -802,14 +974,18 @@ class VisionEngine:
         if not self.capture_enabled or not self.screen_capture:
             return None
         try:
-            stats = self.screen_capture.get_stats() if hasattr(self.screen_capture, 'get_stats') else None
+            stats = (
+                self.screen_capture.get_stats()
+                if hasattr(self.screen_capture, "get_stats")
+                else None
+            )
             if stats:
                 return {
-                    'fps': stats.fps,
-                    'frames_captured': stats.frames_captured,
-                    'frames_dropped': stats.frames_dropped,
-                    'queue_size': stats.queue_size,
-                    'last_update': stats.last_update
+                    "fps": stats.fps,
+                    "frames_captured": stats.frames_captured,
+                    "frames_dropped": stats.frames_dropped,
+                    "queue_size": stats.queue_size,
+                    "last_update": stats.last_update,
                 }
             return None
         except Exception as e:
@@ -817,7 +993,7 @@ class VisionEngine:
             return None
 
     def get_threshold_presets(self) -> Dict[str, float]:
-        return {'low': 0.5, 'normal': 0.7, 'strict': 0.85}
+        return {"low": 0.5, "normal": 0.7, "strict": 0.85}
 
     def _save_templates_config(self):
         self.template_service.save_templates_config()
@@ -836,9 +1012,9 @@ class VisionEngine:
         if not self.region_config_path.exists():
             return
         try:
-            with open(self.region_config_path, 'r', encoding='utf-8') as f:
+            with open(self.region_config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            region = data.get('default_region')
+            region = data.get("default_region")
             if region:
                 self.default_region = tuple(region)
         except Exception as e:
@@ -846,8 +1022,12 @@ class VisionEngine:
 
     def _save_region_config(self):
         try:
-            data = {'default_region': list(self.default_region) if self.default_region else None}
-            with open(self.region_config_path, 'w', encoding='utf-8') as f:
+            data = {
+                "default_region": (
+                    list(self.default_region) if self.default_region else None
+                )
+            }
+            with open(self.region_config_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             logger.error(f"Error saving region config: {e}")

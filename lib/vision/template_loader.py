@@ -10,7 +10,7 @@ import logging
 import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Template:
     """Template metadata and image caches"""
+
     id: str
     path: str
     threshold: float = 0.7
@@ -25,10 +26,24 @@ class Template:
     enabled: bool = True
     image: Optional[np.ndarray] = None  # Loaded BGR image
     thumbnail: Optional[np.ndarray] = None  # For UI preview
-    image_gray: Optional[np.ndarray] = None  # Cached 1-channel grayscale image for ~3x matchTemplate speedup
-    features: Optional[Dict[str, Any]] = None  # Cached keypoints and descriptors for feature detection
+    image_gray: Optional[np.ndarray] = (
+        None  # Cached 1-channel grayscale image for ~3x matchTemplate speedup
+    )
+    features: Optional[Dict[str, Any]] = (
+        None  # Cached keypoints and descriptors for feature detection
+    )
+    _scaled_gray_caches: Optional[Dict[float, "np.ndarray"]] = (
+        None  # Cached scaled grayscale images
+    )
+    _scaled_color_caches: Optional[Dict[float, "np.ndarray"]] = (
+        None  # Cached scaled color images
+    )
 
     def __post_init__(self):
+        if self._scaled_gray_caches is None:
+            self._scaled_gray_caches = {}
+        if self._scaled_color_caches is None:
+            self._scaled_color_caches = {}
         if self.features is None:
             self.features = {}
         if self.scales is None:
@@ -39,14 +54,44 @@ class Template:
             else:
                 self.image_gray = self.image
 
+    def get_scaled_gray(self, scale: float) -> Optional["np.ndarray"]:
+        if scale == 1.0:
+            return self.image_gray
+
+        if scale not in self._scaled_gray_caches:
+            if self.image_gray is None:
+                return None
+            new_w = int(self.image_gray.shape[1] * scale)
+            new_h = int(self.image_gray.shape[0] * scale)
+            if new_w <= 0 or new_h <= 0:
+                return None
+            self._scaled_gray_caches[scale] = cv2.resize(
+                self.image_gray, (new_w, new_h)
+            )
+        return self._scaled_gray_caches[scale]
+
+    def get_scaled_color(self, scale: float) -> Optional["np.ndarray"]:
+        if scale == 1.0:
+            return self.image
+
+        if scale not in self._scaled_color_caches:
+            if self.image is None:
+                return None
+            new_w = int(self.image.shape[1] * scale)
+            new_h = int(self.image.shape[0] * scale)
+            if new_w <= 0 or new_h <= 0:
+                return None
+            self._scaled_color_caches[scale] = cv2.resize(self.image, (new_w, new_h))
+        return self._scaled_color_caches[scale]
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize without image data"""
         return {
-            'id': self.id,
-            'path': self.path,
-            'threshold': self.threshold,
-            'scales': self.scales,
-            'enabled': self.enabled
+            "id": self.id,
+            "path": self.path,
+            "threshold": self.threshold,
+            "scales": self.scales,
+            "enabled": self.enabled,
         }
 
 
@@ -77,7 +122,11 @@ class TemplateService:
                     logger.error(f"Failed to load image from path: {path}")
                     continue
 
-                image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
+                image_gray = (
+                    cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                    if len(image.shape) == 3
+                    else image
+                )
                 thumbnail = cv2.resize(image, (100, 100), interpolation=cv2.INTER_AREA)
 
                 if template_id in self.templates:
@@ -85,6 +134,8 @@ class TemplateService:
                     template.image = image
                     template.image_gray = image_gray
                     template.thumbnail = thumbnail
+                    template._scaled_gray_caches = {}
+                    template._scaled_color_caches = {}
                 else:
                     template = Template(
                         id=template_id,
@@ -94,7 +145,7 @@ class TemplateService:
                         enabled=True,
                         image=image,
                         image_gray=image_gray,
-                        thumbnail=thumbnail
+                        thumbnail=thumbnail,
                     )
 
                 loaded[template_id] = template
@@ -106,8 +157,13 @@ class TemplateService:
 
         return loaded
 
-    def add_template(self, path: str, threshold: float = 0.7,
-                     scales: Optional[List[float]] = None, max_scales: int = 3) -> Optional[Template]:
+    def add_template(
+        self,
+        path: str,
+        threshold: float = 0.7,
+        scales: Optional[List[float]] = None,
+        max_scales: int = 3,
+    ) -> Optional[Template]:
         """Add a single template and update persistence"""
         if scales is None:
             scales = [1.0]
@@ -147,19 +203,21 @@ class TemplateService:
             return
 
         try:
-            with open(self.templates_config_path, 'r', encoding='utf-8') as f:
+            with open(self.templates_config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            template_items = data if isinstance(data, list) else data.get('templates', [])
+            template_items = (
+                data if isinstance(data, list) else data.get("templates", [])
+            )
             for template_data in template_items:
                 if not isinstance(template_data, dict):
                     continue
                 template = Template(
-                    id=template_data['id'],
-                    path=template_data['path'],
-                    threshold=float(template_data.get('threshold', 0.7)),
-                    scales=template_data.get('scales'),
-                    enabled=bool(template_data.get('enabled', True)),
+                    id=template_data["id"],
+                    path=template_data["path"],
+                    threshold=float(template_data.get("threshold", 0.7)),
+                    scales=template_data.get("scales"),
+                    enabled=bool(template_data.get("enabled", True)),
                 )
                 self.templates[template.id] = template
 
@@ -170,8 +228,8 @@ class TemplateService:
     def save_templates_config(self):
         """Save template metadata configuration to JSON file"""
         try:
-            data = {'templates': [t.to_dict() for t in self.templates.values()]}
-            with open(self.templates_config_path, 'w', encoding='utf-8') as f:
+            data = {"templates": [t.to_dict() for t in self.templates.values()]}
+            with open(self.templates_config_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
             logger.debug(f"Saved {len(self.templates)} templates to config")
         except Exception as e:
