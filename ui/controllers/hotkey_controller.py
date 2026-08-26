@@ -34,7 +34,7 @@ class HotkeyController:
         hotkey_cfg = self.parent.hunt_cfg.get("global_hotkeys", {})
         if not hotkey_cfg.get("enabled", True):
             print("[Hotkeys] Global hotkeys disabled by user")
-            self._hotkeys_registered_ok = False
+            self.unregister_all()
             return
 
         self._registered_hotkey_handlers = {}
