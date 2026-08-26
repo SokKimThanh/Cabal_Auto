@@ -43,7 +43,7 @@ def test_tracker_duplicate_start():
         controller.start(456)
         assert mock_tracker_instance.stop.call_count == 1 # First one should be stopped
         assert mock_tracker_class.call_count == 2 # New tracker instantiated
-        assert controller._target_hwnd == 456
+        assert mock_tracker_class.call_args_list[1].kwargs == {"target_hwnd": 456, "poll_rate": 60}
 
 def test_tracker_missing_target_hwnd():
     parent = MagicMock()
