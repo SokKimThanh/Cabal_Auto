@@ -1536,7 +1536,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                         )
 
                         # Get window tracker if available
-                        window_tracker = getattr(self, "_window_tracker", None)
+                        self._start_overlay_window_tracker(target_hwnd)
+                        window_tracker = self.get_window_tracker()
 
                         self._overlay_controller = OverlayController(
                             overlay=self._overlay_window,
@@ -1586,9 +1587,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 ]
                 self._overlay_window.update_detections(test_boxes)
                 print(f"[Overlay] Test detection boxes updated")
-
-                # Start window tracker instead of position sync
-                self._start_overlay_window_tracker()
 
                 # Update menu/config
                 self.hunt_cfg.setdefault("overlay", {})["enabled"] = True
