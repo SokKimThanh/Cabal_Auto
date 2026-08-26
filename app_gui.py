@@ -336,9 +336,15 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         # State Bookkeeping Extracted
         from ui.controllers.app_window_controller import AppWindowController
         from ui.controllers.app_state_controller import AppStateController
+        from ui.controllers.hotkey_controller import HotkeyController
+        from ui.controllers.overlay_controller import OverlayController as AppOverlayController
+        from ui.controllers.window_tracker_controller import WindowTrackerController
 
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
+        self.hotkey_controller = HotkeyController(self)
+        self.overlay_controller = AppOverlayController(self)
+        self.window_tracker_controller = WindowTrackerController(self)
 
         self.monsters = self._normalize_library_items(load_monster_library())
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None

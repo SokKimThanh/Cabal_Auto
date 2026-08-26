@@ -12,15 +12,12 @@ class OverlayController:
     def open_settings(self, *_args) -> None:
         from ui.utils.overlay_settings import OverlaySettingsDialog
 
-        hunt_cfg = getattr(self.parent, "hunt_cfg", None)
-        if not isinstance(hunt_cfg, dict):
-            hunt_cfg = {}
-            setattr(self.parent, "hunt_cfg", hunt_cfg)
+        hunt_cfg = getattr(self.parent, "hunt_cfg", {})
         overlay_cfg = copy.deepcopy(hunt_cfg.get("overlay", {}))
 
         def on_apply(new_config: Dict[str, Any]) -> None:
-            hunt_cfg["overlay"] = new_config
-            save_hunt_config(hunt_cfg)
+            self.parent.hunt_cfg["overlay"] = new_config
+            save_hunt_config(self.parent.hunt_cfg)
 
         dialog = OverlaySettingsDialog(
             parent=self.parent,

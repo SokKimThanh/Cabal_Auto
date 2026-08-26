@@ -7,7 +7,9 @@ class WindowTrackerController:
         self.parent = parent
 
     def start(self) -> None:
-        setattr(self.parent, "_window_tracker", None)
+        if hasattr(self.parent, "_window_tracker"):
+            self.parent._window_tracker = None
+
     def stop(self) -> None:
         if hasattr(self.parent, "_window_tracker"):
             self.parent._window_tracker = None
