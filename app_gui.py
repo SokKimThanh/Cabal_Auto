@@ -343,14 +343,20 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             OverlayController as AppOverlayController,
         )
         from ui.controllers.window_tracker_controller import WindowTrackerController
+        from lib.features.monsters.monster_library_service import MonsterLibraryService
+        from ui.controllers.monster_manager_controller import MonsterManagerController
 
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
         self.library_manager_controller = LibraryManagerController(self)
         self.overlay_controller = AppOverlayController(self)
         self.window_tracker_controller = WindowTrackerController(self)
+        self.monster_library_service = MonsterLibraryService()
+        self.monster_manager_controller = MonsterManagerController(self)
 
-        self.monsters = self._normalize_library_items(load_monster_library())
+        self.monsters = self._normalize_library_items(
+            self.monster_library_service.load_monsters()
+        )
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
 
         # Phase 3: Multi-Monster Support
@@ -2852,7 +2858,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             pass
 
     def _open_monster_manager(self):
-        self.window_controller.open_monster_manager()
+        self.monster_manager_controller.open_window()
 
     def _open_skill_manager(self):
         self.window_controller.open_skill_manager()

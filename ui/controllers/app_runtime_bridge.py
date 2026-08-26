@@ -402,10 +402,15 @@ class AppRuntimeBridgeMixin:
         return None
 
     def _toggle_overlay(self, *_args) -> None:
-        if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller", None) is not None:
+        if (
+            hasattr(self, "overlay_controller")
+            and getattr(self, "overlay_controller", None) is not None
+        ):
             self.overlay_controller.toggle_overlay(*_args)
         else:
-            print("[Warning] overlay_controller not initialized; cannot toggle overlay.")
+            print(
+                "[Warning] overlay_controller not initialized; cannot toggle overlay."
+            )
 
     def _open_overlay_settings(self, *_args) -> None:
         if hasattr(self, "overlay_controller") and self.overlay_controller:
@@ -441,7 +446,7 @@ class AppRuntimeBridgeMixin:
         if hasattr(self, "hotkey_controller") and self.hotkey_controller:
             self.hotkey_controller.on_monster_editor(*_args)
         else:
-            self.after(0, self.window_controller.open_monster_manager)
+            self.after(0, self.monster_manager_controller.open_window)
 
     def try_close_library_manager(self) -> bool:
         return self.library_manager_controller.try_close_library_manager()
