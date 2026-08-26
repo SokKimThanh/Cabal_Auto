@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 import tkinter as tk
 from lib.features.hunt.hunt_config import save_hunt_config
 
@@ -62,7 +62,7 @@ class LibraryManagerController:
                 lang=getattr(self.app, "lang", "vi"),
                 on_close_callback=on_close_callback,
             )
-        except Exception:
+        except tk.TclError:
             class _HeadlessLibraryManagerStub:
                 def __init__(self):
                     self._exists = True

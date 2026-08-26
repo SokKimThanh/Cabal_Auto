@@ -89,5 +89,5 @@ def test_hotkey_controller_on_library_manager():
     controller.on_library_manager()
 
     parent.after.assert_called_once_with(
-        0, parent.window_controller.open_library_manager
+        0, parent.library_manager_controller.open_library_manager
     )

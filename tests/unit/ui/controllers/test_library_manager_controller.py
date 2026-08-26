@@ -2,12 +2,14 @@ import sys
 from unittest.mock import MagicMock, patch
 import pytest
 
-sys.modules['tkinter'] = MagicMock()
-sys.modules['tkinter.messagebox'] = MagicMock()
-sys.modules['PIL'] = MagicMock()
-sys.modules['PIL.ImageTk'] = MagicMock()
-
-from ui.controllers.library_manager_controller import LibraryManagerController
+# Mock modules before importing controller
+with patch.dict('sys.modules', {
+    'tkinter': MagicMock(),
+    'tkinter.messagebox': MagicMock(),
+    'PIL': MagicMock(),
+    'PIL.ImageTk': MagicMock()
+}):
+    from ui.controllers.library_manager_controller import LibraryManagerController
 
 @patch('ui.windows.library_manager.LibraryManagerWindow')
 def test_duplicate_window_prevention(mock_window_class):
