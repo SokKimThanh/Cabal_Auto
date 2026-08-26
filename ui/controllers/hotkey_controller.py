@@ -102,26 +102,33 @@ class HotkeyController:
                 existing is not None
                 and getattr(existing, "winfo_exists", lambda: False)()
             ):
-                if existing.winfo_viewable():
-                    try:
-                        existing.withdraw()
-                    except Exception:
+                try:
+                    if existing.winfo_viewable():
                         try:
-                            existing.iconify()
+                            existing.withdraw()
                         except Exception:
-                            pass
-                else:
-                    try:
-                        existing.deiconify()
-                        existing.lift()
-                        existing.focus_force()
-                    except Exception:
+                            try:
+                                existing.iconify()
+                            except Exception:
+                                pass
+                    else:
                         try:
+                            existing.deiconify()
                             existing.lift()
                             existing.focus_force()
                         except Exception:
-                            pass
-                return
+                            try:
+                                existing.lift()
+                                existing.focus_force()
+                            except Exception:
+                                pass
+                    return
+                except Exception:
+                    # fall through to open a fresh manager if this reference is stale
+                    try:
+                        existing.destroy()
+                    except Exception:
+                        pass
 
             if hasattr(self.parent, "after") and hasattr(
                 self.parent, "window_controller"
