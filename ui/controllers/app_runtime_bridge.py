@@ -384,7 +384,16 @@ class AppRuntimeBridgeMixin:
             hasattr(self, "window_tracker_controller")
             and self.window_tracker_controller
         ):
-            self.window_tracker_controller.start()
+            target_hwnd = (
+                getattr(self, "target_hwnd", None)
+                or getattr(self, "selected_hwnd", None)
+                or getattr(self, "active_target_hwnd", None)
+                or getattr(self.window_tracker_controller, "target_hwnd", None)
+            )
+            if target_hwnd is not None:
+                self.window_tracker_controller.start(target_hwnd)
+            else:
+                self._window_tracker = None
         else:
             self._window_tracker = None
 
