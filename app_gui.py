@@ -142,6 +142,7 @@ from lib.features.timing.calculator import (
 # =====================================================================
 # Single Instance Lock (Prevent multiple app instances)
 from ui.controllers.hotkey_controller import HotkeyController
+
 # =====================================================================
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.instance_lock import SingleInstanceLock
@@ -923,9 +924,12 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 hasattr(self, "_hotkey_import_diag") and self._hotkey_import_diag
             )
             has_failed_hotkeys = (
-                hasattr(self.hotkey_controller, "_failed_hotkeys") and self.hotkey_controller._failed_hotkeys
+                hasattr(self.hotkey_controller, "_failed_hotkeys")
+                and self.hotkey_controller._failed_hotkeys
             )
-            hotkeys_enabled = getattr(self.hotkey_controller, "_hotkeys_registered_ok", False)
+            hotkeys_enabled = getattr(
+                self.hotkey_controller, "_hotkeys_registered_ok", False
+            )
 
             # Count actual registered hotkeys (not bindings)
             registered_count = 0
