@@ -81,15 +81,16 @@ class HotkeyController:
                 pass
 
             print("[Hotkeys] Opening Setup Wizard directly from hotkey")
-            if hasattr(self.parent, "after") and hasattr(
-                self.parent, "window_controller"
-            ):
-                self.parent.after(
-                    0,
-                    lambda: self.parent.window_controller.on_setup_wizard(
-                        hide_parent=False
-                    ),
-                )
+            if hasattr(self.parent, "window_controller"):
+                if hasattr(self.parent, "after"):
+                    self.parent.after(
+                        0,
+                        lambda: self.parent.window_controller.on_setup_wizard(
+                            hide_parent=False
+                        ),
+                    )
+                else:
+                    self.parent.window_controller.on_setup_wizard(hide_parent=False)
         except Exception as e:
             print(f"[Hotkeys] Error opening Setup Wizard: {e}")
 
