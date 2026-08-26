@@ -14,9 +14,10 @@ class WindowTrackerController:
         self.tracker: Optional[WindowTracker] = None
         self._target_hwnd: Optional[int] = None
 
-    def start(self, target_hwnd: int) -> None:
+    def start(self, target_hwnd: Optional[int]) -> None:
         """
         Start the window tracker for the given HWND.
+        If ``target_hwnd`` is ``None`` or otherwise invalid/falsy, no tracker is started.
         If already tracking the same HWND, prevents duplicate start.
         """
         if not target_hwnd:
