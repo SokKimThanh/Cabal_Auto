@@ -51,9 +51,9 @@ class AppRuntimeBridgeMixin:
             return
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
+
         bounds = WindowSelectionService.resolve_bounds(
-            getattr(self, "hunt_cfg", {}),
-            getattr(self, "current_window_bounds", None)
+            getattr(self, "hunt_cfg", {}), getattr(self, "current_window_bounds", None)
         )
         if bounds:
             self.window_bounds_display_var.set(
@@ -62,7 +62,9 @@ class AppRuntimeBridgeMixin:
         else:
             self.window_bounds_display_var.set("")
 
-    def _list_windows(self, title_contains: Optional[str] = None) -> List[Dict[str, Any]]:
+    def _list_windows(
+        self, title_contains: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         return self.window_controller._list_windows(title_contains)
 
     def on_hunt_refresh_windows(self, *_args) -> None:
@@ -95,9 +97,9 @@ class AppRuntimeBridgeMixin:
             return "Please select a target window first."
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
+
         bounds = WindowSelectionService.resolve_bounds(
-            self.hunt_cfg,
-            getattr(self, "current_window_bounds", None)
+            self.hunt_cfg, getattr(self, "current_window_bounds", None)
         )
         if not bounds:
             return "Invalid hunt area bounds. Please refresh or reselect the target window."
@@ -118,8 +120,7 @@ class AppRuntimeBridgeMixin:
             cfg["window_hwnd"] = self.hunt_selected.get("hwnd")
 
         bounds = WindowSelectionService.resolve_bounds(
-            cfg,
-            getattr(self, "current_window_bounds", None)
+            cfg, getattr(self, "current_window_bounds", None)
         )
         WindowSelectionService.update_bounds(cfg, bounds)
 
@@ -186,8 +187,12 @@ class AppRuntimeBridgeMixin:
             path = str(template.get("path", "") or "").strip()
             if not path:
                 continue
-            threshold = float(template.get("threshold", cfg.get("template_threshold", 0.8)))
-            box, confidence = locate_template(path, region=tuple(bounds), threshold=threshold)
+            threshold = float(
+                template.get("threshold", cfg.get("template_threshold", 0.8))
+            )
+            box, confidence = locate_template(
+                path, region=tuple(bounds), threshold=threshold
+            )
             if box is None or confidence < best_score:
                 continue
             best_box = box
@@ -197,7 +202,8 @@ class AppRuntimeBridgeMixin:
                 "name": template.get("name") or Path(path).stem,
                 "threshold": threshold,
                 "confidence": confidence,
-                "monster_name": template.get("monster_name") or cfg.get("monster_selected_name", ""),
+                "monster_name": template.get("monster_name")
+                or cfg.get("monster_selected_name", ""),
             }
         return best_box, best_info
 
@@ -217,8 +223,12 @@ class AppRuntimeBridgeMixin:
                     "name": slot.get("name") or base.get("name") or "",
                     "key": slot.get("key") or base.get("key") or "",
                     "type": slot.get("type") or base.get("type") or "attack",
-                    "cooldown": float(slot.get("cooldown") or base.get("cooldown") or 0.0),
-                    "cast_time": float(slot.get("cast_time") or base.get("cast_time") or 0.0),
+                    "cooldown": float(
+                        slot.get("cooldown") or base.get("cooldown") or 0.0
+                    ),
+                    "cast_time": float(
+                        slot.get("cast_time") or base.get("cast_time") or 0.0
+                    ),
                     "_last_cast": 0.0,
                 }
             )
@@ -238,7 +248,9 @@ class AppRuntimeBridgeMixin:
                 continue
             if attack_phase and not target_active:
                 continue
-            if now - float(skill.get("_last_cast", 0.0)) < float(skill.get("cooldown", 0.0)):
+            if now - float(skill.get("_last_cast", 0.0)) < float(
+                skill.get("cooldown", 0.0)
+            ):
                 continue
             key = str(skill.get("key", "") or "").strip()
             if not key:
@@ -247,7 +259,9 @@ class AppRuntimeBridgeMixin:
             skill["_last_cast"] = now
             if skill_stats is not None:
                 try:
-                    skill_stats.record_cast(skill.get("name") or key, success=True, timestamp=now)
+                    skill_stats.record_cast(
+                        skill.get("name") or key, success=True, timestamp=now
+                    )
                 except Exception:
                     pass
             cast_time = float(skill.get("cast_time", 0.0))
@@ -255,7 +269,9 @@ class AppRuntimeBridgeMixin:
                 time.sleep(cast_time)
             return
 
-    def _calculate_monster_estimate(self, monster: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _calculate_monster_estimate(
+        self, monster: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         stats = calculate_monster_estimate(monster) or {}
         kill_time = float(stats.get("estimated_time_sec", 0.0))
         return {
@@ -363,18 +379,27 @@ class AppRuntimeBridgeMixin:
         if hasattr(self, "_update_unsaved_indicator"):
             self._update_unsaved_indicator()
 
-    def _start_overlay_window_tracker(self) -> None:
-        if hasattr(self, "window_tracker_controller") and self.window_tracker_controller:
-            self.window_tracker_controller.start()
-        else:
-            self._window_tracker = None
+    def _start_overlay_window_tracker(self, target_hwnd: int) -> None:
+        if (
+            hasattr(self, "window_tracker_controller")
+            and self.window_tracker_controller
+        ):
+            self.window_tracker_controller.start(target_hwnd)
 
     def _stop_overlay_window_tracker(self) -> None:
-        if hasattr(self, "window_tracker_controller") and self.window_tracker_controller:
+        if (
+            hasattr(self, "window_tracker_controller")
+            and self.window_tracker_controller
+        ):
             self.window_tracker_controller.stop()
-        else:
-            self._window_tracker = None
 
+    def get_window_tracker(self) -> Optional[Any]:
+        if (
+            hasattr(self, "window_tracker_controller")
+            and self.window_tracker_controller
+        ):
+            return self.window_tracker_controller.get_tracker()
+        return None
 
     def _toggle_overlay(self, *_args) -> None:
         if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller", None) is not None:
@@ -428,7 +453,9 @@ class AppRuntimeBridgeMixin:
         if hasattr(self, "hunt_stop_btn"):
             self.hunt_stop_btn.config(state="disabled", relief="sunken", cursor="arrow")
         if hasattr(self, "hunt_status"):
-            self.hunt_status.set(self._t("hunt_idle") if hasattr(self, "_t") else "Idle")
+            self.hunt_status.set(
+                self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
+            )
         if getattr(self, "_bot_manager", None) is not None:
             try:
                 self._bot_manager.on_hunt_stop()
