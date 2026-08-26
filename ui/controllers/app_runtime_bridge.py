@@ -429,7 +429,7 @@ class AppRuntimeBridgeMixin:
         dialog.show()
 
     def _open_library_manager(self) -> None:
-        self.window_controller.open_library_manager()
+        self.library_manager_controller.open_library_manager()
 
     def _on_vision_wizard_hotkey(self, *_args) -> None:
         if hasattr(self, "hotkey_controller") and self.hotkey_controller:
@@ -444,7 +444,7 @@ class AppRuntimeBridgeMixin:
             self.after(0, self.window_controller.open_monster_manager)
 
     def try_close_library_manager(self) -> bool:
-        return self.window_controller.try_close_library_manager()
+        return self.library_manager_controller.try_close_library_manager()
 
     def _after_hunt_stop(self) -> None:
         self.hunt_running = False
