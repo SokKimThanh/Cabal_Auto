@@ -16,5 +16,14 @@
     "tests",
     "-v",
     "--tb=short"
-  ]
+  ],
+  "github.copilot.chat.mcp.servers": {
+    "copilot-instructions": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mako10k/mcp-copilot-instructions"
+      ]
+    }
+  }
 }
