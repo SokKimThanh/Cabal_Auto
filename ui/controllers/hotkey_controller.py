@@ -351,14 +351,20 @@ class HotkeyController:
                 pass
 
     def on_vision_wizard(self, *_args) -> None:
-        if hasattr(self.parent, "window_controller"):
+        if (
+            hasattr(self.parent, "monster_manager_controller")
+            and self.parent.monster_manager_controller
+        ):
             if hasattr(self.parent, "after"):
                 self.parent.after(0, self.parent.window_controller.open_vision_wizard)
             else:
                 self.parent.window_controller.open_vision_wizard()
 
     def on_monster_editor(self, *_args) -> None:
-        if hasattr(self.parent, "window_controller"):
+        if (
+            hasattr(self.parent, "monster_manager_controller")
+            and self.parent.monster_manager_controller
+        ):
             if hasattr(self.parent, "after"):
                 self.parent.after(0, self.parent.monster_manager_controller.open_window)
             else:

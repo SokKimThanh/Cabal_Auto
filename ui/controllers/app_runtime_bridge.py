@@ -446,7 +446,11 @@ class AppRuntimeBridgeMixin:
         if hasattr(self, "hotkey_controller") and self.hotkey_controller:
             self.hotkey_controller.on_monster_editor(*_args)
         else:
-            self.after(0, self.monster_manager_controller.open_window)
+            if (
+                hasattr(self, "monster_manager_controller")
+                and self.monster_manager_controller
+            ):
+                self.after(0, self.monster_manager_controller.open_window)
 
     def try_close_library_manager(self) -> bool:
         return self.library_manager_controller.try_close_library_manager()

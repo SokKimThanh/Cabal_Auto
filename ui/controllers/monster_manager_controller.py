@@ -1,7 +1,9 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Callable, Dict, Any
+import tkinter as tk
 
 if TYPE_CHECKING:
     from app_gui import App
+
 
 class MonsterManagerController:
     """Controls the lifecycle and state of the Monster Manager window."""
@@ -23,4 +25,5 @@ class MonsterManagerController:
                 self.app.monster_manager_win = None
 
         from ui.windows.monster_manager_win import MonsterManagerWin
+
         self.app.monster_manager_win = MonsterManagerWin(self.app)
