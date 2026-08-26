@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 class HotkeyController:
     """Controller for global hotkey management."""
