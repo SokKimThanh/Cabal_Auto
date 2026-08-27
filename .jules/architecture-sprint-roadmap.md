@@ -254,6 +254,60 @@ Do not keep `monster_manager_win` and `library_manager_win` as the only source o
 
 ---
 
+## Sprint 4 follow-up — S4D: Migrate QuickMonsterEditor UI into MonsterManagerWin
+
+### Context
+
+S4B extracted `MonsterManagerController` (lifecycle: open/focus/dedup) and `MonsterLibraryService` (data), but `ui/windows/monster_manager_win.py` was left as an empty placeholder `Toplevel` (`_build_ui()` only creates an unused `Frame`). All real monster-management UI (data table, search/filter, add/edit/delete, template manager, column settings) still lives in the large, separate `ui/windows/quick_monster_editor.py` (`QuickMonsterEditor`, ~2000 lines).
+
+On 2026-08-27 this was discovered as a live regression: the Ctrl+Shift+M hotkey and `_open_monster_manager()` had been wired to `MonsterManagerController.open_window()`, which opened the empty `MonsterManagerWin` shell instead of `QuickMonsterEditor`, so users saw a blank window with no monster-management functionality. A temporary hotfix repointed `MonsterManagerController.open_window()` to construct `QuickMonsterEditor` directly (still going through the controller's existing open/focus/dedup logic), restoring functionality without moving any UI code. This sprint is the follow-up to do the real migration properly.
+
+### Objective
+
+Make `MonsterManagerWin` the real monster-management view (or have `QuickMonsterEditor` become that view class, whichever requires less churn once inspected), so `ui/windows/monster_manager_win.py` is no longer a dead placeholder and the window class name matches what the controller/service architecture expects.
+
+### Files in scope
+
+- `ui/windows/monster_manager_win.py`
+- `ui/windows/quick_monster_editor.py`
+- `ui/controllers/monster_manager_controller.py`
+- `lib/features/monsters/monster_library_service.py`
+- `lib/hotkey/monster_editor_handler.py` (confirm dead vs. still referenced; do not delete without proof)
+- tests under `tests/unit/ui/test_monster_editor_*.py`
+
+### Planned approach
+
+1. Decide the target shape first (do not start moving code before this is settled): either (a) rename/absorb `QuickMonsterEditor`'s implementation into `MonsterManagerWin` and delete the now-redundant `quick_monster_editor.py`, or (b) keep `QuickMonsterEditor` as the real class and delete the empty `MonsterManagerWin` shell, updating the controller and all imports to point at whichever file wins.
+2. Preserve every existing behavior documented in `quick_monster_editor.py`'s module docstring (master table, search/filter, column visibility, add/edit/delete, template manager tab, display settings dialog, dirty-state tracking, database-backed load/save).
+3. Update `MonsterManagerController.open_window()` to construct the final class directly (no more temporary hotfix comment).
+4. Update or remove `tests/unit/ui/test_monster_editor_*.py` imports to match the final module path; do not change test assertions/behavior expectations.
+5. Confirm whether `lib/hotkey/monster_editor_handler.py` (currently unreferenced from `app_gui.py`) is fully dead code before removing it; if it is still wired anywhere, reconcile it with `HotkeyController.on_monster_editor()` instead of leaving two competing hotkey paths.
+
+### Acceptance criteria
+
+- There is exactly one monster-manager window implementation; no empty placeholder window class remains.
+- Ctrl+Shift+M / `_open_monster_manager()` opens the fully-featured monster manager (table, search, add/edit/delete, templates) with no regression versus current `QuickMonsterEditor` behavior.
+- `MonsterManagerController` still owns open/focus/dedup lifecycle; the window class itself does not manage its own singleton state.
+- All existing `test_monster_editor_*` tests pass against the final module path.
+- No leftover dead file (`monster_manager_win.py` or `quick_monster_editor.py`, whichever loses) unless proven unused and explicitly removed.
+
+### Validation checklist
+
+- Open, close, and reopen the monster manager repeatedly via hotkey and via `_open_monster_manager()`; confirm no duplicate windows and no stale `app.monster_manager_win` reference after close.
+- Add, edit, and delete a monster; confirm data persists via `MonsterLibraryService`/database as before.
+- Run `py -m pytest tests/unit/ui -k monster_editor -v`.
+- Run `py .\app_gui.py` and manually confirm the hotkey opens the real UI, not a blank window.
+
+### Risk to avoid
+
+Do not attempt this migration inside the same session as an unrelated fix; `QuickMonsterEditor` is large (~2000 lines) and this must be its own reviewable, revertible change. Do not delete `quick_monster_editor.py` or `monster_manager_win.py` until the chosen target class is fully working and validated end-to-end.
+
+### Sequencing
+
+Run this after Sprint 4's S4C (skill manager decoupling) session has completed, since S4C also touches modal window patterns in the same area and should land first to avoid overlapping edits.
+
+---
+
 ## Sprint 5 — Final consolidation and architectural cleanup
 
 ### Objective

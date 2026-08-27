@@ -24,6 +24,18 @@ class MonsterManagerController:
             except Exception:
                 self.app.monster_manager_win = None
 
-        from ui.windows.monster_manager_win import MonsterManagerWin
+        # NOTE: MonsterManagerWin is an empty placeholder shell left over from the
+        # controller extraction; QuickMonsterEditor is still the real, fully
+        # featured monster manager UI, so open that until the UI migration lands.
+        from ui.windows.quick_monster_editor import QuickMonsterEditor
 
-        self.app.monster_manager_win = MonsterManagerWin(self.app)
+        editor = QuickMonsterEditor(self.app)
+        self.app.monster_manager_win = editor
+
+        def _clear_ref(win=editor):
+            if getattr(self.app, "monster_manager_win", None) is win:
+                self.app.monster_manager_win = None
+            win.destroy()
+
+        editor.protocol("WM_DELETE_WINDOW", _clear_ref)
+
