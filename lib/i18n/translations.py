@@ -199,6 +199,7 @@ GLOBAL_TRANSLATIONS = {
         'training_mode_active': '🎯 Training Mode Active - Practicing skills',
         'training_mode_disabled': 'Training Mode disabled - Normal hunt rotation',
         'skill_stats_title': 'Skill Performance Statistics',
+        'skill_stats_empty': 'No skill casts recorded yet',
         # Training Mode - Button tooltips
         'tooltip_add_monster_normal': 'Add monster to rotation list',
         'tooltip_add_monster_training': 'Add training dummy (practice target with infinite HP)',
@@ -510,6 +511,7 @@ Tips:
         'training_mode_active': '🎯 Đang Luyện Kỹ Năng - Đánh cọc gỗ',
         'training_mode_disabled': 'Tắt chế độ luyện - Săn bình thường',
         'skill_stats_title': 'Thống Kê Hiệu Suất Kỹ Năng',
+        'skill_stats_empty': 'Chưa có dữ liệu sử dụng kỹ năng',
         # Training Mode - Button tooltips
         'tooltip_add_monster_normal': 'Thêm quái vào danh sách săn',
         'tooltip_add_monster_training': 'Thêm mục tiêu luyện tập (training dummy) hoặc quái vật bất tử',

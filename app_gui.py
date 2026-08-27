@@ -1456,6 +1456,10 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         for item in self.skill_stats_tree.get_children():
             self.skill_stats_tree.delete(item)
 
+        if not stats_dict:
+            self._show_skill_stats_placeholder()
+            return
+
         # Populate with current stats
         for skill_name, data in stats_dict.items():
             cast_count = data.get("cast_count", 0)
@@ -1496,6 +1500,17 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 ),
                 tags=(tag,),
             )
+
+    def _show_skill_stats_placeholder(self):
+        """Show a single greyed-out row when no skill casts have been recorded yet."""
+        if not hasattr(self, "skill_stats_tree"):
+            return
+        self.skill_stats_tree.insert(
+            "",
+            "end",
+            values=(self._t("skill_stats_empty"), "", "", "", ""),
+            tags=("placeholder",),
+        )
 
     def _on_monster_toggle(self, event=None):
         """Toggle monster enabled state on double-click.
