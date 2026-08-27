@@ -70,8 +70,9 @@ class HuntTab(ttk.Frame):
         self.grid_columnconfigure(4, weight=1)
 
         # Section 1: Hunt Status Bar (current hunt state + current target)
-        status_frame = tk.Frame(self, relief="groove", bd=1)
+        status_frame = tk.Frame(self, relief="groove", bd=1, height=32)
         status_frame.grid(row=0, column=0, columnspan=8, sticky="we", pady=(0, 12))
+        status_frame.grid_propagate(False)  # Keep consistent height even before labels have text
         tk.Label(
             status_frame,
             textvariable=self.app.hunt_status,
@@ -329,7 +330,10 @@ class HuntTab(ttk.Frame):
         }
         for col, (i18n_key, width) in stats_headings.items():
             self.app.skill_stats_tree.heading(col, text=self.app._t(i18n_key))
-            self.app.skill_stats_tree.column(col, width=width, anchor="center")
+            # Let the skill name column absorb extra width on wider windows; keep the rest fixed.
+            self.app.skill_stats_tree.column(
+                col, width=width, anchor="center", stretch=(col == "skill")
+            )
 
         stats_scroll = tk.Scrollbar(
             self.app.skill_stats_frame,
@@ -343,3 +347,5 @@ class HuntTab(ttk.Frame):
         self.app.skill_stats_tree.tag_configure("excellent", foreground="#2E7D32")
         self.app.skill_stats_tree.tag_configure("good", foreground="#F57F17")
         self.app.skill_stats_tree.tag_configure("poor", foreground="#C62828")
+        self.app.skill_stats_tree.tag_configure("placeholder", foreground="#999")
+        self.app._show_skill_stats_placeholder()
