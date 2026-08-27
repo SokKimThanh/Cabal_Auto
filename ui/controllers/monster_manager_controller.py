@@ -41,8 +41,8 @@ class MonsterManagerController:
             # The window will destroy itself if _on_cancel proceeds. We just clean up the reference.
             # We don't forcefully call destroy() here because the user might have clicked "No" in the prompt.
             if not win.winfo_exists():
-                 if getattr(self.app, "monster_manager_win", None) is win:
-                     self.app.monster_manager_win = None
+                if getattr(self.app, "monster_manager_win", None) is win:
+                    self.app.monster_manager_win = None
 
         editor.protocol("WM_DELETE_WINDOW", _clear_ref)
 
