@@ -72,8 +72,12 @@ class HotkeyController:
                 seq_start = _to_tk_seq(hotkey_cfg.get("start_key", "ctrl+shift+r"))
                 seq_stop = _to_tk_seq(hotkey_cfg.get("stop_key", "ctrl+shift+e"))
                 seq_wiz = _to_tk_seq(hotkey_cfg.get("setup_wizard_key", "ctrl+shift+n"))
-                seq_lib = _to_tk_seq(hotkey_cfg.get("library_manager_key", "ctrl+shift+l"))
-                seq_vision = _to_tk_seq(hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v"))
+                seq_lib = _to_tk_seq(
+                    hotkey_cfg.get("library_manager_key", "ctrl+shift+l")
+                )
+                seq_vision = _to_tk_seq(
+                    hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
+                )
 
                 try:
                     # Unbind any previously-bound fallback sequences to avoid duplicates
@@ -175,7 +179,9 @@ class HotkeyController:
                         self.on_setup_wizard,
                         suppress=False,
                     )
-                    self._registered_hotkey_handlers[wizard_key] = self._global_wizard_hotkey
+                    self._registered_hotkey_handlers[wizard_key] = (
+                        self._global_wizard_hotkey
+                    )
                 except Exception as e:
                     print(f"Failed to register wizard hotkey '{wizard_key}': {e}")
                     self._failed_hotkeys[wizard_key] = repr(e)
@@ -189,7 +195,9 @@ class HotkeyController:
                     self.on_library_manager,
                     suppress=False,
                 )
-                self._registered_hotkey_handlers[library_key] = self._global_library_hotkey
+                self._registered_hotkey_handlers[library_key] = (
+                    self._global_library_hotkey
+                )
             except Exception as e:
                 print(f"Failed to register library hotkey '{library_key}': {e}")
                 self._failed_hotkeys[library_key] = repr(e)
@@ -201,7 +209,9 @@ class HotkeyController:
                     self.on_vision_wizard,
                     suppress=False,
                 )
-                self._registered_hotkey_handlers[vision_key] = self._global_vision_hotkey
+                self._registered_hotkey_handlers[vision_key] = (
+                    self._global_vision_hotkey
+                )
             except Exception as e:
                 print(f"Failed to register vision hotkey '{vision_key}': {e}")
                 self._failed_hotkeys[vision_key] = repr(e)
@@ -213,7 +223,9 @@ class HotkeyController:
                     self.on_monster_editor,
                     suppress=False,
                 )
-                self._registered_hotkey_handlers[monster_key] = self._global_monster_hotkey
+                self._registered_hotkey_handlers[monster_key] = (
+                    self._global_monster_hotkey
+                )
             except Exception as e:
                 print(f"Failed to register monster editor hotkey '{monster_key}': {e}")
                 self._failed_hotkeys[monster_key] = repr(e)
@@ -244,7 +256,9 @@ class HotkeyController:
 
             # Update UI
             try:
-                if hasattr(self.parent, "after") and hasattr(self.parent, "_update_hotkey_diagnostics_ui"):
+                if hasattr(self.parent, "after") and hasattr(
+                    self.parent, "_update_hotkey_diagnostics_ui"
+                ):
                     self.parent.after(150, self.parent._update_hotkey_diagnostics_ui)
                 elif hasattr(self.parent, "_update_hotkey_diagnostics_ui"):
                     self.parent._update_hotkey_diagnostics_ui()
@@ -256,7 +270,9 @@ class HotkeyController:
             self._hotkeys_registered_ok = False
             # Update UI to show error state
             try:
-                if hasattr(self.parent, "after") and hasattr(self.parent, "_update_hotkey_diagnostics_ui"):
+                if hasattr(self.parent, "after") and hasattr(
+                    self.parent, "_update_hotkey_diagnostics_ui"
+                ):
                     self.parent.after(150, self.parent._update_hotkey_diagnostics_ui)
                 elif hasattr(self.parent, "_update_hotkey_diagnostics_ui"):
                     self.parent._update_hotkey_diagnostics_ui()
@@ -335,18 +351,24 @@ class HotkeyController:
                 pass
 
     def on_vision_wizard(self, *_args) -> None:
-        if hasattr(self.parent, "window_controller"):
+        if (
+            hasattr(self.parent, "monster_manager_controller")
+            and self.parent.monster_manager_controller
+        ):
             if hasattr(self.parent, "after"):
                 self.parent.after(0, self.parent.window_controller.open_vision_wizard)
             else:
                 self.parent.window_controller.open_vision_wizard()
 
     def on_monster_editor(self, *_args) -> None:
-        if hasattr(self.parent, "window_controller"):
+        if (
+            hasattr(self.parent, "monster_manager_controller")
+            and self.parent.monster_manager_controller
+        ):
             if hasattr(self.parent, "after"):
-                self.parent.after(0, self.parent.window_controller.open_monster_manager)
+                self.parent.after(0, self.parent.monster_manager_controller.open_window)
             else:
-                self.parent.window_controller.open_monster_manager()
+                self.parent.monster_manager_controller.open_window()
 
     def on_setup_wizard(self, *_args) -> None:
         try:
@@ -443,7 +465,9 @@ class HotkeyController:
             if hasattr(self.parent, "after") and hasattr(
                 self.parent, "library_manager_controller"
             ):
-                self.parent.after(0, self.parent.library_manager_controller.open_library_manager)
+                self.parent.after(
+                    0, self.parent.library_manager_controller.open_library_manager
+                )
         except Exception as e:
             print(f"[Hotkeys] Error opening Library Manager: {e}")
 

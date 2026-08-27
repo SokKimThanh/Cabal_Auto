@@ -3,14 +3,16 @@ import tkinter as tk
 from tkinter import messagebox
 from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
 
+
 class AppWindowController:
     """Manages dialog/window ownership tracking and target window selection lifecycle."""
 
     def __init__(self, root: tk.Tk):
         self.root = root
 
-
-    def _list_windows(self, title_contains: Optional[str] = None) -> List[Dict[str, Any]]:
+    def _list_windows(
+        self, title_contains: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         from lib.system.window_manager import WindowManager
         from lib.features.hunt.config_validator import normalize_window_bounds_value
 
@@ -105,7 +107,11 @@ class AppWindowController:
         try:
             index = int(self.root.win_combo.current())
         except Exception:
-            selected_title = self.root.win_combo_var.get().strip() if hasattr(self.root, "win_combo_var") else ""
+            selected_title = (
+                self.root.win_combo_var.get().strip()
+                if hasattr(self.root, "win_combo_var")
+                else ""
+            )
             for idx, item in enumerate(self.root.win_items):
                 if item["title"] == selected_title:
                     index = idx
@@ -155,6 +161,7 @@ class AppWindowController:
     def _bring_window_to_front_by_hwnd(self, hwnd: int) -> bool:
         try:
             from lib.system.window_manager import WindowManager
+
             return WindowManager().set_foreground(int(hwnd))
         except Exception:
             return False
@@ -180,16 +187,20 @@ class AppWindowController:
 
     def on_setup_wizard(self, hide_parent=True):
         from ui.windows.setup_wizard import show_setup_wizard
+
         def on_wizard_complete(wizard_data):
             if hide_parent:
                 self.root.deiconify()
             from lib.features.hunt.hunt_config import load_hunt_config
+
             self.root.hunt_cfg = load_hunt_config()
             if hasattr(self.root, "_populate_hunt_ui_from_config"):
                 self.root._populate_hunt_ui_from_config()
             lang = wizard_data.get("language", "en")
             if hasattr(self.root, "hunt_status"):
-                self.root.hunt_status.set(f"✅ Wizard completed! Configuration loaded. Ready to hunt. (Language: {lang})")
+                self.root.hunt_status.set(
+                    f"✅ Wizard completed! Configuration loaded. Ready to hunt. (Language: {lang})"
+                )
 
         def on_wizard_cancel():
             if hide_parent:
@@ -206,22 +217,31 @@ class AppWindowController:
                 )
             except tk.TclError:
                 app_lang = getattr(self.root, "lang", "en")
+
                 class _HeadlessSetupWizardStub:
                     def __init__(self):
                         self.wizard_data = {"language": app_lang}
                         self.dialog = self
                         self._dirty = False
+
                     def has_unsaved_changes(self):
                         return self._dirty or bool(self.wizard_data)
+
                     def attempt_close_from_external(self):
                         return True
+
                     def destroy(self):
                         return None
+
                 self.root._setup_wizard_win = _HeadlessSetupWizardStub()
         else:
             try:
                 _t = getattr(self.root, "_t", lambda x: x)
-                messagebox.showinfo(_t("info_title"), "Setup wizard is not available in this build.", parent=self.root)
+                messagebox.showinfo(
+                    _t("info_title"),
+                    "Setup wizard is not available in this build.",
+                    parent=self.root,
+                )
             except Exception:
                 pass
 
@@ -248,6 +268,7 @@ class AppWindowController:
     def open_vision_wizard(self):
         try:
             from ui.windows.setup_wizard_vision import create_or_show_vision_wizard
+
             wizard = create_or_show_vision_wizard(
                 self.root,
                 config_path=str(CONFIG_PATH),
@@ -257,23 +278,10 @@ class AppWindowController:
         except Exception as e:
             print(f"[Vision] Error opening wizard: {e}")
             import traceback
+
             traceback.print_exc()
             _t = getattr(self.root, "_t", lambda x: "Error")
             messagebox.showerror(_t("error"), f"Cannot open Vision Wizard:\n{e}")
-
-    def open_monster_manager(self):
-        existing = getattr(self.root, "monster_manager_win", None)
-        if existing is not None:
-            try:
-                if existing.winfo_exists():
-                    existing.deiconify()
-                    existing.lift()
-                    existing.focus_force()
-                    return
-            except Exception:
-                self.root.monster_manager_win = None
-        from ui.windows.monster_manager_win import MonsterManagerWin
-        self.root.monster_manager_win = MonsterManagerWin(self.root)
 
     def open_skill_manager(self):
         existing = getattr(self.root, "skill_manager_win", None)
@@ -287,5 +295,5 @@ class AppWindowController:
             except Exception:
                 self.root.skill_manager_win = None
         from ui.windows.skill_manager_win import SkillManagerWin
-        self.root.skill_manager_win = SkillManagerWin(self.root)
 
+        self.root.skill_manager_win = SkillManagerWin(self.root)
