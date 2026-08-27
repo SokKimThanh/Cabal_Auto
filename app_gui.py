@@ -1421,26 +1421,15 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
 
     # Phase 3: Multi-Monster Support Handlers
     def _update_setup_visibility(self):
-        """Show/hide Setup tab sections based on current mode."""
-        mode = (
-            self.setup_mode_var.get() if hasattr(self, "setup_mode_var") else "beginner"
-        )
+        """Show/hide Setup tab sections based on current mode.
 
-        # NOTE: Setup Wizard button removed - now accessible via Global Hotkeys
-        # Hotkey state is managed by _update_hotkeys_state() instead
-
-        if mode == "beginner":
-            # Hide advanced sections
-            self.adv_frame.grid_remove()
-            self.window_frame.grid_remove()
-        elif mode == "intermediate":
-            # Show advanced hunt settings, hide window settings
-            self.adv_frame.grid()
-            self.window_frame.grid_remove()
-        elif mode == "advanced":
-            # Show all sections
-            self.adv_frame.grid()
-            self.window_frame.grid()
+        NOTE: adv_frame/window_frame live on SetupTab (self.tab_setup), not on App;
+        delegate there instead of duplicating the stale pre-Sprint-18 logic.
+        """
+        if hasattr(self, "tab_setup") and hasattr(
+            self.tab_setup, "_update_setup_visibility"
+        ):
+            self.tab_setup._update_setup_visibility()
 
         # Update hotkeys state based on mode
         self._update_hotkeys_state()
