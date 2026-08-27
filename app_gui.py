@@ -165,6 +165,12 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             return self.skill_service.get_all_skills()
         return []
 
+    @skills.setter
+    def skills(self, value):
+        """Legacy setter trap to redirect to service."""
+        if hasattr(self, "skill_service"):
+            self.skill_service.save_skills(value)
+
     def _t(self, key: str, **kwargs) -> str:
         return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
 

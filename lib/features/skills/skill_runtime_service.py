@@ -11,34 +11,27 @@ class SkillRuntimeService:
         self.reload_skills()
 
     @staticmethod
-    def _normalize_skill_item(item: Dict[str, Any], default_id: Any) -> Dict[str, Any]:
-        """Return a copy of a skill item with guaranteed id/name fields."""
-        normalized_item = dict(item)
-        resolved_id = normalized_item.get("id") or normalized_item.get("name") or default_id
-        normalized_item.setdefault("id", resolved_id)
-        normalized_item.setdefault("name", str(normalized_item.get("name") or resolved_id))
-        return normalized_item
-
-    @staticmethod
     def _normalize_library_items(items: Any) -> List[Dict[str, Any]]:
         """Convert a dictionary-based library into a normalized list."""
         if isinstance(items, list):
             normalized: List[Dict[str, Any]] = []
-            for index, item in enumerate(items):
-                if not isinstance(item, dict):
-                    continue
-                normalized.append(
-                    SkillRuntimeService._normalize_skill_item(item, default_id=index)
-                )
+            for item in items:
+                if isinstance(item, dict):
+                    # Ensure name is set, fallback to id if missing
+                    item_copy = dict(item)
+                    if "name" not in item_copy and "id" in item_copy:
+                        item_copy["name"] = str(item_copy["id"])
+                    normalized.append(item_copy)
             return normalized
         if isinstance(items, dict):
             normalized: List[Dict[str, Any]] = []
             for key, value in items.items():
                 if not isinstance(value, dict):
                     continue
-                normalized.append(
-                    SkillRuntimeService._normalize_skill_item(value, default_id=key)
-                )
+                item = dict(value)
+                item.setdefault("id", key)
+                item.setdefault("name", str(item.get("name") or key))
+                normalized.append(item)
             return normalized
         return []
 

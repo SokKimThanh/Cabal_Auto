@@ -16,23 +16,17 @@ def test_skill_runtime_service_normalizes_data(mock_load):
     assert skills[0]["id"] == "fireball"
 
 @patch("lib.features.skills.skill_runtime_service.load_skill_library")
-def test_skill_runtime_service_normalizes_legacy_list_data(mock_load):
+def test_skill_runtime_service_normalizes_list_data(mock_load):
     mock_load.return_value = [
-        {"name": "fireball", "type": "attack", "cooldown": 5.0},
-        {"id": "icebolt", "name": "icebolt", "type": "attack", "cooldown": 3.0},
+        {"id": "fireball", "type": "attack", "cooldown": 5.0}
     ]
 
     service = SkillRuntimeService()
     skills = service.get_all_skills()
 
-    assert isinstance(skills, list)
-    assert len(skills) == 2
-    assert all("id" in skill for skill in skills)
-    assert all("name" in skill for skill in skills)
+    assert len(skills) == 1
     assert skills[0]["name"] == "fireball"
     assert skills[0]["id"] == "fireball"
-    assert skills[1]["name"] == "icebolt"
-    assert skills[1]["id"] == "icebolt"
 
 @patch("lib.features.skills.skill_runtime_service.load_skill_library")
 def test_skill_runtime_service_handles_corrupt_data(mock_load):

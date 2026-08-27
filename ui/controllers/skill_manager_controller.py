@@ -14,14 +14,17 @@ class SkillManagerController:
         """Opens or refocuses the skill manager window."""
         existing = getattr(self.root, "skill_manager_win", None) or self._window
         if existing is not None:
+            import tkinter as tk
             try:
                 if existing.winfo_exists():
                     existing.deiconify()
                     existing.lift()
                     existing.focus_force()
                     return
-            except Exception:
-                pass
+            except tk.TclError as e:
+                print(f"[SkillManagerController] Ignored window focus error: {e}")
+            except Exception as e:
+                print(f"[SkillManagerController] Unexpected window focus error: {e}")
 
         from ui.windows.skill_manager_win import SkillManagerWin
 
