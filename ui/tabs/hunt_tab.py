@@ -65,6 +65,28 @@ class HuntTab(ttk.Frame):
             value=bool(self.app.hunt_cfg.get("bring_to_front_each_cycle", False))
         )
 
+        # Layout: monster/skill sections on the left (cols 0-3), stats panel on the right (cols 4-7)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(4, weight=1)
+
+        # Section 1: Hunt Status Bar (current hunt state + current target)
+        status_frame = tk.Frame(self, relief="groove", bd=1)
+        status_frame.grid(row=0, column=0, columnspan=8, sticky="we", pady=(0, 12))
+        tk.Label(
+            status_frame,
+            textvariable=self.app.hunt_status,
+            font=("Arial", 10, "bold"),
+            fg="#2E7D32",
+            anchor="w",
+        ).pack(side="left", padx=8, pady=6)
+        tk.Label(
+            status_frame,
+            textvariable=self.app.hunt_target_info,
+            font=("Arial", 9),
+            fg="#555",
+            anchor="e",
+        ).pack(side="right", padx=8, pady=6)
+
         # Section 2: Monster Selection (Phase 3: Multi-Monster Support)
         # Sprint 22 Patch 2: Dynamic title based on training mode
         self.app.monster_frame = tk.LabelFrame(
@@ -290,3 +312,34 @@ class HuntTab(ttk.Frame):
             padx=(5, 0),
             pady=(0, 10)
         )
+
+        stats_columns = ("skill", "casts", "last_cast", "cooldown", "success")
+        self.app.skill_stats_tree = ttk.Treeview(
+            self.app.skill_stats_frame,
+            columns=stats_columns,
+            show="headings",
+            height=6,
+        )
+        stats_headings = {
+            "skill": ("skill_name_col", 120),
+            "casts": ("cast_count_col", 60),
+            "last_cast": ("last_cast_col", 90),
+            "cooldown": ("cooldown_col", 80),
+            "success": ("success_rate_col", 80),
+        }
+        for col, (i18n_key, width) in stats_headings.items():
+            self.app.skill_stats_tree.heading(col, text=self.app._t(i18n_key))
+            self.app.skill_stats_tree.column(col, width=width, anchor="center")
+
+        stats_scroll = tk.Scrollbar(
+            self.app.skill_stats_frame,
+            orient="vertical",
+            command=self.app.skill_stats_tree.yview,
+        )
+        self.app.skill_stats_tree.config(yscrollcommand=stats_scroll.set)
+        self.app.skill_stats_tree.pack(side="left", fill="both", expand=True)
+        stats_scroll.pack(side="right", fill="y")
+
+        self.app.skill_stats_tree.tag_configure("excellent", foreground="#2E7D32")
+        self.app.skill_stats_tree.tag_configure("good", foreground="#F57F17")
+        self.app.skill_stats_tree.tag_configure("poor", foreground="#C62828")
