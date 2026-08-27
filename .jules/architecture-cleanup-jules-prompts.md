@@ -62,6 +62,7 @@ Wave 0 can run first and is read-only. Wave 1 must run after Wave 0. Later waves
 | 2 | S2A, S2B, S2C, S2D | Partial parallel | Sprint 1 merged/clean |
 | 3 | S3A, S3B, S3C, S3D | Parallel after S3A interface pass | Sprint 1 merged/clean; S2 not required unless touching hunt window selection |
 | 4 | S4A, S4B, S4C | Parallel with care | Sprint 1 merged/clean; avoid touching the same modal registry code simultaneously |
+| 4b | S4D | No | S4C merged/clean; migrates QuickMonsterEditor UI into MonsterManagerWin, touches the same modal window area as S4C so must land after it |
 | 5 | S5A, S5B | Sequential | All prior sprint changes merged/clean |
 
 ## Wave 0 - Baseline Mapping
@@ -529,6 +530,58 @@ Acceptance criteria:
 Validation:
 - Run focused skill repo/runtime tests if present.
 - Add small service tests around runtime mapping if practical.
+```
+
+### S4D - Migrate QuickMonsterEditor UI Into MonsterManagerWin
+
+```text
+Implement the Sprint 4 follow-up (S4D) from .jules/architecture-sprint-roadmap.md.
+
+Context:
+S4B extracted MonsterManagerController (lifecycle) and MonsterLibraryService (data), but
+ui/windows/monster_manager_win.py was left as an empty placeholder Toplevel - its
+_build_ui() only creates an unused Frame. All real monster-management UI (data table,
+search/filter, add/edit/delete, template manager, column settings, ~2000 lines) still
+lives in the separate ui/windows/quick_monster_editor.py (QuickMonsterEditor). This caused
+a live regression on 2026-08-27 where the Ctrl+Shift+M hotkey opened a blank window; a
+temporary hotfix repointed MonsterManagerController.open_window() to construct
+QuickMonsterEditor directly. This session is the real, permanent fix.
+
+Goal:
+Make there be exactly one monster-manager window implementation, wired correctly through
+MonsterManagerController, with no empty placeholder class left behind.
+
+Files in scope:
+- ui/windows/monster_manager_win.py
+- ui/windows/quick_monster_editor.py
+- ui/controllers/monster_manager_controller.py
+- lib/features/monsters/monster_library_service.py
+- lib/hotkey/monster_editor_handler.py (confirm dead vs. still referenced; do not delete without proof)
+- tests/unit/ui/test_monster_editor_*.py
+
+Boundaries:
+- Decide the target shape first, before moving any code: either (a) absorb
+  QuickMonsterEditor's implementation into MonsterManagerWin and delete
+  quick_monster_editor.py, or (b) keep QuickMonsterEditor as the real class and delete the
+  empty MonsterManagerWin shell, updating the controller and all imports accordingly.
+  State which option you are taking and why before editing.
+- Preserve every behavior listed in quick_monster_editor.py's module docstring.
+- MonsterManagerController must keep owning open/focus/dedup lifecycle; the window class
+  itself must not manage its own module-level singleton state.
+- Do not delete quick_monster_editor.py or monster_manager_win.py (whichever loses) until
+  the chosen target class is fully working and validated end-to-end.
+
+Acceptance criteria:
+- Exactly one monster-manager window implementation remains; no empty placeholder window class.
+- Ctrl+Shift+M / _open_monster_manager() opens the fully-featured monster manager with no
+  regression versus current QuickMonsterEditor behavior.
+- All existing test_monster_editor_* tests pass against the final module path.
+
+Validation:
+- Open, close, and reopen the monster manager repeatedly via hotkey and via
+  _open_monster_manager(); confirm no duplicate windows and no stale reference after close.
+- Run `py -m pytest tests/unit/ui -k monster_editor -v`.
+- Run `py .\app_gui.py` and manually confirm the hotkey opens the real UI, not a blank window.
 ```
 
 ## Wave 5 - Final Consolidation
