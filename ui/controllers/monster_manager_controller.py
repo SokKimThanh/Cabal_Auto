@@ -32,10 +32,14 @@ class MonsterManagerController:
         editor = QuickMonsterEditor(self.app)
         self.app.monster_manager_win = editor
 
-        def _clear_ref(win=editor):
-            if getattr(self.app, "monster_manager_win", None) is win:
+        def _on_close(win=editor):
+            win._on_cancel()
+            try:
+                still_open = bool(win.winfo_exists())
+            except Exception:
+                still_open = False
+            if not still_open and getattr(self.app, "monster_manager_win", None) is win:
                 self.app.monster_manager_win = None
-            win.destroy()
 
-        editor.protocol("WM_DELETE_WINDOW", _clear_ref)
+        editor.protocol("WM_DELETE_WINDOW", _on_close)
 
