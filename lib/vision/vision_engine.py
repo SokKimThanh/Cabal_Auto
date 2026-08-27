@@ -97,8 +97,8 @@ class VisionEngine:
         self.config_dir = Path(config_dir)
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        # ⚡ Bolt Optimization: Cache feature detectors using ThreadLocal for thread safety
-        self._detectors_local = threading.local()
+        # ⚡ Bolt Optimization: Cache feature detectors
+        self._detectors = {}
 
         # Services
         self.template_service = TemplateService(self.config_dir)
@@ -596,24 +596,13 @@ class VisionEngine:
             proc_frame = work_frame
             scale_x, scale_y = 1.0, 1.0
 
-        # ⚡ Bolt Optimization: Cache feature detectors per-thread to avoid
-        # sharing mutable OpenCV state across concurrent detect_features invocations.
-        if not hasattr(self, "_detectors_local"):
-            self._detectors_local = threading.local()
-
-        if not hasattr(self._detectors_local, "detectors"):
-            self._detectors_local.detectors = {}
-
-        if ftype not in self._detectors_local.detectors:
-            if ftype == "SIFT" and hasattr(cv2, "SIFT_create"):
-                self._detectors_local.detectors[ftype] = cv2.SIFT_create(nfeatures=500)
-            else:
-                self._detectors_local.detectors[ftype] = cv2.ORB_create(nfeatures=500)
-
-        detector = self._detectors_local.detectors[ftype]
+        # Create a detector per call to avoid sharing mutable OpenCV state
+        # across concurrent detect_features invocations.
         if ftype == "SIFT" and hasattr(cv2, "SIFT_create"):
+            detector = cv2.SIFT_create(nfeatures=500)
             norm = cv2.NORM_L2
         else:
+            detector = cv2.ORB_create(nfeatures=500)
             norm = cv2.NORM_HAMMING
 
         gray_frame = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2GRAY)
