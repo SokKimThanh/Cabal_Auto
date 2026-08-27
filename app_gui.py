@@ -128,9 +128,9 @@ from lib.features.monsters.monster_repo import (
 )
 from lib.features.skills.skill_repo import (
     calculate_attack_speed_from_skills,
-    load_skill_library,
-    save_skill_library,
 )
+from lib.features.skills.skill_runtime_service import SkillRuntimeService
+from ui.controllers.skill_manager_controller import SkillManagerController
 from lib.features.skills.skill_stats import (
     SkillStats,
 )  # Sprint 22 Patch 1: Training Mode
@@ -154,10 +154,22 @@ from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.windows.setup_wizard import show_setup_wizard
-from ui.windows.skill_manager_win import SkillManagerWin
 
 
 class App(AppRuntimeBridgeMixin, tk.Tk):
+
+    @property
+    def skills(self):
+        """Legacy compatibility property for views still expecting self.app.skills."""
+        if hasattr(self, "skill_service"):
+            return self.skill_service.get_all_skills()
+        return []
+
+    @skills.setter
+    def skills(self, value):
+        """Legacy setter trap to redirect to service."""
+        if hasattr(self, "skill_service"):
+            self.skill_service.save_skills(value)
 
     def _t(self, key: str, **kwargs) -> str:
         return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
@@ -231,6 +243,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self.window_tracker_controller = WindowTrackerController(self)
         self.monster_library_service = MonsterLibraryService()
         self.monster_manager_controller = MonsterManagerController(self)
+        self.skill_service = SkillRuntimeService()
+        self.skill_manager_controller = SkillManagerController(self)
 
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
@@ -382,7 +396,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 "[Migration] ✅ Auto-migrated 'Coc go' variants to training_monster_list and saved config."
             )
 
-        self.skills = self._normalize_library_items(load_skill_library())
         # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
         # try to map them to actual attack skills from the skill library for a better UX.
         try:
@@ -535,7 +548,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
 
         # Keyboard shortcuts (Window-focused only)
         self.bind(
-            "<Control-k>", lambda e: SkillManagerWin(self)
+            "<Control-k>", lambda e: self.skill_manager_controller.open_window()
         )  # Ctrl+K: Manage skills
         self.bind("<Alt-Key-1>", lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
         self.bind("<Alt-Key-2>", lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
@@ -2860,7 +2873,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self.monster_manager_controller.open_window()
 
     def _open_skill_manager(self):
-        self.window_controller.open_skill_manager()
+        self.skill_manager_controller.open_window()
 
     def on_monster_calculate_timing(self):
         from ui.windows.timing_calc_dialog import TimingCalcDialog

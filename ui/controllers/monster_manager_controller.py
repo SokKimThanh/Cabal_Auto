@@ -32,10 +32,17 @@ class MonsterManagerController:
         editor = QuickMonsterEditor(self.app)
         self.app.monster_manager_win = editor
 
+        # S4D Hotfix: We must NOT override the window's own WM_DELETE_WINDOW protocol
+        # unless we explicitly call its _on_cancel() method first to trigger unsaved changes confirmation.
         def _clear_ref(win=editor):
-            if getattr(self.app, "monster_manager_win", None) is win:
-                self.app.monster_manager_win = None
-            win.destroy()
+            if hasattr(win, "_on_cancel"):
+                win._on_cancel()
+
+            # The window will destroy itself if _on_cancel proceeds. We just clean up the reference.
+            # We don't forcefully call destroy() here because the user might have clicked "No" in the prompt.
+            if not win.winfo_exists():
+                if getattr(self.app, "monster_manager_win", None) is win:
+                    self.app.monster_manager_win = None
 
         editor.protocol("WM_DELETE_WINDOW", _clear_ref)
 

@@ -283,17 +283,3 @@ class AppWindowController:
             _t = getattr(self.root, "_t", lambda x: "Error")
             messagebox.showerror(_t("error"), f"Cannot open Vision Wizard:\n{e}")
 
-    def open_skill_manager(self):
-        existing = getattr(self.root, "skill_manager_win", None)
-        if existing is not None:
-            try:
-                if existing.winfo_exists():
-                    existing.deiconify()
-                    existing.lift()
-                    existing.focus_force()
-                    return
-            except Exception:
-                self.root.skill_manager_win = None
-        from ui.windows.skill_manager_win import SkillManagerWin
-
-        self.root.skill_manager_win = SkillManagerWin(self.root)

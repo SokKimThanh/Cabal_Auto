@@ -26,7 +26,10 @@ class SkillManagerWin(tk.Toplevel):
         return i18n_t(key, ns=I18N_GLOBAL, lang=getattr(self.app, "lang", "vi"), **kwargs)
 
     def _on_close(self):
-        if getattr(self.app, "skill_manager_win", None) is self:
+        controller = getattr(self.app, "skill_manager_controller", None)
+        if controller:
+            controller.on_window_closed()
+        elif getattr(self.app, "skill_manager_win", None) is self:
             self.app.skill_manager_win = None
         self.destroy()
 
