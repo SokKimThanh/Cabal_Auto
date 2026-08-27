@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 
 @patch("lib.features.skills.skill_runtime_service.load_skill_library")
