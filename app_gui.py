@@ -43,10 +43,11 @@ try:
 except ImportError:
     ScreenCapture = None
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
-from lib.i18n import register_bulk as i18n_register_bulk
 from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import t as i18n_t
-from lib.i18n.translations import GLOBAL_TRANSLATIONS
+
+# Imported for its side effect: self-registers GLOBAL_TRANSLATIONS into the i18n registry.
+from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
 from lib.system.bot_manager import BotManager
 from ui.helpers.tooltip import attach_i18n_tooltip
 from ui.utils.overlay_controller import OverlayController
@@ -213,6 +214,21 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             icons=Icons,
         )
 
+        # State Bookkeeping Extracted
+        from ui.controllers.app_window_controller import AppWindowController
+        from ui.controllers.library_manager_controller import LibraryManagerController
+        from ui.controllers.app_state_controller import AppStateController
+        from ui.controllers.overlay_controller import (
+            OverlayController as AppOverlayController,
+        )
+        from ui.controllers.window_tracker_controller import WindowTrackerController
+
+        self.state_controller = AppStateController(self)
+        self.window_controller = AppWindowController(self)
+        self.library_manager_controller = LibraryManagerController(self)
+        self.overlay_controller = AppOverlayController(self)
+        self.window_tracker_controller = WindowTrackerController(self)
+
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
             menubar = tk.Menu(self)
@@ -333,22 +349,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         self.pil_available = (
             Image is not None and ImageTk is not None and ImageDraw is not None
         )
-
-        # State Bookkeeping Extracted
-        from ui.controllers.app_window_controller import AppWindowController
-        from ui.controllers.library_manager_controller import LibraryManagerController
-        from ui.controllers.app_state_controller import AppStateController
-        from ui.controllers.hotkey_controller import HotkeyController
-        from ui.controllers.overlay_controller import (
-            OverlayController as AppOverlayController,
-        )
-        from ui.controllers.window_tracker_controller import WindowTrackerController
-
-        self.state_controller = AppStateController(self)
-        self.window_controller = AppWindowController(self)
-        self.library_manager_controller = LibraryManagerController(self)
-        self.overlay_controller = AppOverlayController(self)
-        self.window_tracker_controller = WindowTrackerController(self)
 
         self.monsters = self._normalize_library_items(load_monster_library())
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
