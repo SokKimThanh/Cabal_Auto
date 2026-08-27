@@ -708,6 +708,13 @@ Mẹo:
     },
 }
 
+# Self-register on import so GLOBAL_TRANSLATIONS is always available regardless
+# of whether callers remember to invoke register_bulk() themselves.
+from . import GLOBAL_NS as _GLOBAL_NS
+from . import register_bulk as _register_bulk
+
+_register_bulk(_GLOBAL_NS, GLOBAL_TRANSLATIONS)
+
 # Library Manager specific translations
 LIBRARY_MANAGER_TRANSLATIONS = {
     'en': {
