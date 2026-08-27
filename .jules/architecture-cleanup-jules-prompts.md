@@ -63,6 +63,7 @@ Wave 0 can run first and is read-only. Wave 1 must run after Wave 0. Later waves
 | 3 | S3A, S3B, S3C, S3D | Parallel after S3A interface pass | Sprint 1 merged/clean; S2 not required unless touching hunt window selection |
 | 4 | S4A, S4B, S4C | Parallel with care | Sprint 1 merged/clean; avoid touching the same modal registry code simultaneously |
 | 4b | S4D | No | S4C merged/clean; migrates QuickMonsterEditor UI into MonsterManagerWin, touches the same modal window area as S4C so must land after it |
+| 4c | S4E | No | S4D merged/clean; splits real skill editing UI out of LibraryManagerWindow into SkillManagerWin, same modal window area as S4D so must land after it |
 | 5 | S5A, S5B | Sequential | All prior sprint changes merged/clean |
 
 ## Wave 0 - Baseline Mapping
@@ -582,6 +583,67 @@ Validation:
   _open_monster_manager(); confirm no duplicate windows and no stale reference after close.
 - Run `py -m pytest tests/unit/ui -k monster_editor -v`.
 - Run `py .\app_gui.py` and manually confirm the hotkey opens the real UI, not a blank window.
+```
+
+### S4E - Split Real Skill Editing UI Out Of LibraryManagerWindow Into SkillManagerWin
+
+```text
+Implement the Sprint 4 follow-up (S4E) from .jules/architecture-sprint-roadmap.md.
+
+Context:
+S4C extracted SkillManagerController and SkillRuntimeService, but
+ui/windows/skill_manager_win.py was left as the same kind of empty placeholder Toplevel
+that S4B left for monsters - _build_ui() only creates an unused Frame. Ctrl+K and
+_open_skill_manager() route through SkillManagerController.open_window(), which opens
+this empty shell, so users see a blank window. Unlike Monster Manager, there is no
+standalone equivalent to QuickMonsterEditor for skills - the only real skill-editing UI
+is the "Skills" tab (_build_skill_tab) and SkillDialog embedded inside the large, shared
+ui/windows/library_manager.py (LibraryManagerWindow), which also owns Monster and Timing
+Calculator tabs.
+
+Goal:
+Make SkillManagerWin (or a properly extracted standalone skill editor module) the real,
+working skill-management view reachable via Ctrl+K / _open_skill_manager(), without
+duplicating or forking the skill-editing logic.
+
+Files in scope:
+- ui/windows/skill_manager_win.py
+- ui/windows/library_manager.py (Skills tab / SkillDialog only; do not touch Monster tab
+  or Timing Calculator tab logic)
+- ui/controllers/skill_manager_controller.py
+- lib/features/skills/skill_runtime_service.py
+- lib/features/skills/skill_repo.py
+- skill-dialog-focused tests (search first to confirm exact file names)
+
+Boundaries:
+- Decide the target shape first, before editing, and state the choice explicitly:
+  Option A: Extract SkillDialog + the Skills-tab logic out of library_manager.py into
+  skill_manager_win.py as a real, standalone SkillManagerWin, backed by
+  SkillRuntimeService/skill_repo.py directly, then decide whether the Skills tab inside
+  LibraryManagerWindow should be removed or kept as a read-only/simplified view.
+  Option B: Keep skill editing inside LibraryManagerWindow as the single source of truth,
+  and have SkillManagerController.open_window() open LibraryManagerWindow instead of the
+  empty SkillManagerWin, deleting skill_manager_win.py once proven unused.
+- Whichever option is chosen, do not end up with two independent, divergent copies of
+  skill add/edit/delete logic.
+- SkillManagerController must keep owning open/focus/dedup lifecycle.
+- Preserve skill_service.reload_skills() and _refresh_skill_slots_options()
+  refresh-on-close behavior already implemented in SkillManagerController.on_window_closed().
+- Do not delete library_manager.py's Skills tab or skill_manager_win.py until the chosen
+  target is fully working and validated end-to-end.
+
+Acceptance criteria:
+- Exactly one working skill-management UI reachable from Ctrl+K / _open_skill_manager();
+  no empty placeholder window remains.
+- No duplicated/divergent skill CRUD logic exists in two places at once.
+- Existing skill-related tests pass against the final module path.
+
+Validation:
+- Open, close, and reopen the skill manager repeatedly via Ctrl+K and via
+  _open_skill_manager(); confirm no duplicate windows and no stale reference after close.
+- Add, edit, and delete a skill; confirm data persists and skill slot dropdowns elsewhere
+  in the app refresh correctly after close.
+- Run `py .\app_gui.py` and manually confirm Ctrl+K opens the real UI, not a blank window.
 ```
 
 ## Wave 5 - Final Consolidation
