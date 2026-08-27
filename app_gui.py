@@ -154,7 +154,6 @@ from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.windows.setup_wizard import show_setup_wizard
-from ui.windows.skill_manager_win import SkillManagerWin
 
 
 class App(AppRuntimeBridgeMixin, tk.Tk):
