@@ -492,7 +492,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         try:
             self._refresh_monster_table()
         except Exception as e:
-            print(f"[QuickMonsterEditor] Error refreshing table on deiconify: {e}")
+            print(f"[MonsterManagerWin] Error refreshing table on deiconify: {e}")
 
     def _setup_compatibility_widgets(self) -> None:
         """Instantiate compatibility attributes for unit tests off-screen without visible floating artifacts."""
