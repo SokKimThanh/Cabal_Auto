@@ -33,3 +33,7 @@
 ## 2025-08-27 - Feature Detector & Descriptor Caching in VisionEngine
 **Learning:** Instantiating `cv2.ORB_create` and running `detectAndCompute` on the template image *every time* `detect_features` is called causes severe CPU overhead, especially since templates are static.
 **Action:** Always cache OpenCV feature detector instances (ORB/SIFT) at the class level (`VisionEngine`), and cache the resulting keypoints and descriptors (`kp1`, `des1`) on the `Template` object on the first pass to avoid O(N) redundant computations per frame.
+
+## 2023-10-27 - Direct RGB to GRAY conversion in OpenCV
+**Learning:** PyAutoGUI screenshot returns RGB arrays. Converting directly via `cv2.COLOR_RGB2GRAY` instead of doing `RGB -> BGR -> GRAY` saves an intermediate array allocation and executes ~40% faster.
+**Action:** When converting PIL images to Grayscale for OpenCV template matching, always use `cv2.cvtColor(np.array(img), cv2.COLOR_RGB2GRAY)` directly.

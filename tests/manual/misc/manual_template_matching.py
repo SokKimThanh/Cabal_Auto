@@ -86,9 +86,10 @@ for i in range(10):
     try:
         # Capture screen
         screenshot = pyautogui.screenshot()
-        screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
         if grayscale:
-            screenshot = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+            screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
+        else:
+            screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
         
         if screenshot is None:
             print("  ✗ Failed to capture window")
