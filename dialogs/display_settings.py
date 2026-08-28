@@ -8,7 +8,7 @@ from tkinter import ttk
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ui.windows.quick_monster_editor import QuickMonsterEditor
+    from ui.windows.monster_manager_win import MonsterManagerWin
 
 try:
     from lib.i18n import t as i18n_t
@@ -29,7 +29,7 @@ except ImportError:
 class DisplaySettingsDialog(tk.Toplevel):
     """Standalone settings dialog for window modes and column visibility."""
 
-    def __init__(self, parent: QuickMonsterEditor):
+    def __init__(self, parent: MonsterManagerWin):
         super().__init__(parent)
         self.parent = parent
         title = i18n_t(

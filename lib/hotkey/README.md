@@ -93,4 +93,4 @@ handler.on_hotkey_pressed()  # Should schedule open in main thread
 
 - Handler tự động sử dụng `app._on_monster_saved()` callback nếu có
 - Module import lazy để tránh circular dependencies
-- Singleton instance được quản lý bởi `quick_monster_editor.py`
+- Singleton instance được quản lý bởi `monster_manager_win.py`

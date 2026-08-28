@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Callable, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ui.windows.quick_monster_editor import QuickMonsterEditor
+    from ui.windows.monster_manager_win import MonsterManagerWin
 
 try:
     from PIL import Image, ImageTk, ImageGrab
