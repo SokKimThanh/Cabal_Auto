@@ -1,5 +1,7 @@
-
 import pytest
+pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
+
+
 
 pytestmark = pytest.mark.skip(
     reason="Requires integration/e2e test refactor; unit test harness "
@@ -17,7 +19,6 @@ import tkinter as tk
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pytest
 
 
 class TestMonsterEditDialogFlow:

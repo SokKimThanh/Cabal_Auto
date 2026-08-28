@@ -27,6 +27,7 @@ Required data flow:
 - Reuse the existing `normalize_window_bounds_value` and `WindowSelectionService.update_bounds` flow.
 - Do not create an independent UI-owned copy of window bounds.
 - Update the display after the existing select-window and refresh-window paths, including `_update_window_bounds_display` if that is the established hook.
+- Add required bounds-state and recovery keys to `GLOBAL_TRANSLATIONS` in both `en` and `vi`; render them through `self._t(...)` with named placeholders for dynamic window text.
 
 Layout contract at 1920x1080:
 - Work only in Vùng A: Quick Action Bar, `1920 x 80 px`.
@@ -58,4 +59,5 @@ Validation:
 - run the narrowest startup/import smoke check available
 - manually check the three required states and report each as passed, failed, or manual-only
 - report Layout evidence for `1920x1080`, UIStyle tokens used, and confirmation that no hard-coded color or duplicate bounds state was introduced
+- run `py -m pytest tests/unit/test_i18n_global_registration.py -v` when adding global translation keys, then manually verify `vi → en → vi` preserves the selected-window/bounds state while changing every new label
 ```

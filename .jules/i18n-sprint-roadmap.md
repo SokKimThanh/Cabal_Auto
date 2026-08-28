@@ -211,6 +211,7 @@ Lock in the new architecture as the permanent design, matching the "Definition o
 ### Tasks
 
 - Confirm no dead registration code paths remain (search for `register_bulk` usages; every call site should be either inside `lib/i18n/` internals or the migration script).
+- Search UI/consumer modules for active or commented manual-registration references and local no-op registration fallback shims; remove stale code/comments only after proving they are obsolete.
 - Update `docs/guides/I18N_GUIDE.md` to describe the DB-backed flow as current (Sprint 2's doc described the pre-DB interim state).
 - Update repo memory with the final architecture summary and the location of the audit/report tools.
 - Run the full targeted i18n test suite plus a full app smoke start.
@@ -219,6 +220,7 @@ Lock in the new architecture as the permanent design, matching the "Definition o
 
 - A new screen needing translations only needs: (1) add rows via `scripts/i18n_report.py`-compatible data or a future admin UI, (2) call `self._t(key, ns=my_namespace)` — no manual registration step, and the audit test would fail if the namespace's data path is wired incorrectly.
 - Full test suite green; `py .\app_gui.py` starts clean.
+- No stale manual-registration comment, local fallback shim, or dead consumer-side registration code remains in UI modules.
 
 ## 5. Test plan by sprint
 

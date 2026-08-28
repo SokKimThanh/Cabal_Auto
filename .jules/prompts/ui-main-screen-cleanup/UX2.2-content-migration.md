@@ -18,6 +18,7 @@ Tasks:
 - Update `App._build_ui()` to instantiate the Quick Action Bar directly inside the Quick Action Bar zone frame.
 - Update `App._build_ui()` to instantiate the Notebook directly inside the Workspace zone frame.
 - Preserve state/config values, callbacks, event bindings, hotkeys, tab behavior, config persistence, and the window/bounds source of truth.
+- Preserve the existing language selector, `App.lang`, registry default language, and `_t(...)` render path while rebuilding children in new parent containers.
 - Let the established `_build_ui()` teardown destroy old children before constructing replacement children in their target parent containers.
 
 Do not:
@@ -35,6 +36,7 @@ Session boundary gate:
 - No selected window: existing recovery feedback remains reachable.
 - Language rebuild: zone containers and their newly built child controls rebuild without stale references.
 - Repeated tab selection: all tabs remain interactive and stable after rebuilding.
+- Language rebuild: switch `vi → en → vi`; all rebuilt top-level labels and tab titles must be translated with no raw keys and no lost runtime/config state.
 
 Validation:
 - Run the narrowest import/startup smoke test and UI import test if applicable.

@@ -19,6 +19,12 @@ Hard constraints:
 - Add or update focused tests when practical; every sprint must be validated by an automated test that would have caught the original 2026-08-27 regression (translations imported but never registered, silently falling back to raw keys).
 - Run the narrowest useful validation command before finishing.
 
+Execution & Rollback Protocol (Strict 30-Minute Budget):
+- Every implementation session has a maximum 30-minute budget. At minute 25, stop writing new features or expanding scope and run the automated smoke test plus selected boundary checks.
+- Minute 25-30 (Direct Repair Window): if validation fails, use a maximum of 5 minutes only for direct, targeted bug fixes that restore basic functionality.
+- At minute 30 (Hard Abort Threshold): if the smoke test still fails, the i18n registry returns unexpected raw keys, or DB migration/hydration leaves the app unable to start, revert only code changes made by the current session using a deliberate, reviewed patch. Never use `git checkout -- .`, `git reset`, or another broad discard command because it can remove unrelated user changes.
+- After recovery, rerun the failing validation. In the final response, state whether the session `PASSED` or was `ABORTED/REVERTED`, the exact error that triggered rollback, recovered files, validation result, and deferred next slice.
+
 Before editing:
 - Identify the current controlling code path for the namespace/dictionary in scope.
 - State one local hypothesis about the change.
@@ -41,6 +47,7 @@ Before final response:
 - Summarize changed files.
 - List validation commands and results.
 - List boundary/edge cases checked, including any that remain manual-only.
+- Include a `Timebox and recovery` section: minute-25 validation result, whether repair/recovery was required, and the deferred next slice.
 - List any code removed or replaced and why it was safe.
 - Call out any residual risks or follow-up tasks.
 ```

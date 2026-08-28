@@ -38,6 +38,7 @@ Layout contract for this session:
 - Keep Window selector `420 x 36 px`, Refresh `44 x 36 px`, Bounds state at least `260 x 36 px`, and Start/Stop `160 x 44 px`.
 - Start/Stop must not shrink below `140 x 40 px`; the bounds state must remain readable and visible.
 - Use `UIStyle.BTN_PRIMARY_BG` for Start while idle, `UIStyle.BTN_DANGER_BG` for Stop while running, and `UIStyle.BTN_INFO_BG` for Refresh.
+- Render every visible label through `self._t(...)`. Reuse existing global keys where available; defer new bounds-status copy to UX1B.
 
 Boundaries:
 - do not rewrite the whole UI system
@@ -76,4 +77,5 @@ Validation:
 - confirm that the app still opens and the key hunt controls remain usable
 - manually confirm: select a valid game window, refresh it, then verify the visible bounds state updates; verify a missing/minimized window gives a clear recovery action
 - at `1920x1080`, manually confirm the Quick Action Bar remains `80 px` high and no primary control wraps, clips, or moves into a secondary zone
+- manually confirm `vi → en → vi`: Window selector, Refresh, Start and Stop labels/tooltips rebuild correctly without losing selected-window or hunt state
 ```

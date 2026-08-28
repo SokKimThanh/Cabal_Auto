@@ -283,3 +283,12 @@ class AppWindowController:
             _t = getattr(self.root, "_t", lambda x: "Error")
             messagebox.showerror(_t("error"), f"Cannot open Vision Wizard:\n{e}")
 
+
+    def on_monster_calculate_timing(self) -> None:
+        from ui.windows.timing_calc_dialog import TimingCalcDialog
+
+        def _apply_time(t):
+            if hasattr(self.root, "monster_cfg_wait"):
+                self.root.monster_cfg_wait.set(str(t))
+
+        TimingCalcDialog(self.root, self.root, on_apply=_apply_time)

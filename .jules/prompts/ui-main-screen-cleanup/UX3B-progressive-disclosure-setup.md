@@ -27,6 +27,7 @@ Tasks:
 - Keep mode selector and common setup visible.
 - Make advanced hunt/template/hotkey tuning a clearly labeled secondary disclosure state using existing widgets where possible.
 - Keep the route to every hidden section discoverable.
+- Render added/changed disclosure labels through `SetupTab._t(...)` or `app._t(...)`; add both `en` and `vi` keys before exposing new copy.
 - Keep blocking target-window/bounds warnings in Vùng A/B, not inside the disclosure content.
 
 Acceptance criteria:
@@ -45,4 +46,5 @@ Validation:
 - run the narrowest startup/import smoke check available
 - manually check all three modes and report each as passed, failed, or manual-only
 - report UIStyle tokens, Layout evidence at 1920x1080, and rebuild behavior after a language change
+- verify `vi → en → vi` changes mode/disclosure copy without resetting the selected mode or entered config values
 ```
