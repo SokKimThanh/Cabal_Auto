@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Callable, Dict, Any
-import tkinter as tk
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app_gui import App
@@ -43,4 +42,3 @@ class MonsterManagerController:
                     self.app.monster_manager_win = None
 
         editor.protocol("WM_DELETE_WINDOW", _clear_ref)
-

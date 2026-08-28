@@ -20,16 +20,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional, Dict, Any, Callable, List, Union
 from unittest.mock import MagicMock
-from database import get_db
 
 import queue
-import threading
 import json
-import uuid
-import re
-import time
-import os
-import subprocess
 
 from pathlib import Path
 
@@ -44,17 +37,16 @@ except ImportError as e:
 
 # Import monster_service validation logic
 try:
-    from lib.features.monster_service import (
-        check_duplicate_name,
-        generate_unique_name,
-        ensure_unique_monster_id,
-    )
+    from lib.features.monster_service import ensure_unique_monster_id
 except ImportError:
-    from mock.fallbacks import (
-        check_duplicate_name,
-        generate_unique_name,
-        ensure_unique_monster_id,
-    )
+    try:
+        from mock.fallbacks import ensure_unique_monster_id
+    except ImportError:
+        def ensure_unique_monster_id(m):
+            if "id" not in m or not m["id"]:
+                import uuid
+                m["id"] = str(uuid.uuid4())
+            return m
 
 
 # Import lib modules
@@ -266,7 +258,7 @@ except ImportError:
     get_db = None
 
 try:
-    from ui.helpers.icon_helper import IconHelper, get_icon_helper
+    from ui.helpers.icon_helper import get_icon_helper
 
     icon_helper = get_icon_helper()
 except ImportError:
@@ -352,7 +344,6 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
-
 class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
     """
     Main Monster Manager Window (Master View with Table Layout).
@@ -365,14 +356,15 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         on_save: Optional[Callable] = None,
     ):
         if not parent:
-            raise ValueError("Parent widget is required for MonsterManagerWin")
+            raise ValueError("Parent widget is required for QuickMonsterEditor")
         if not isinstance(parent, (tk.Tk, tk.Toplevel, tk.Widget)):
             raise TypeError(f"Parent must be Tk/Toplevel/Widget, got {type(parent)}")
 
         try:
             super().__init__(parent, debug_mode=False)
         except TypeError:
-            super().__init__(parent)
+            tk.Toplevel.__init__(self, parent)
+        ActionNotificationMixin.__init__(self)
 
         # Sắp xếp
         self.sort_column = "name"  # Cột đang được sắp xếp
@@ -1815,7 +1807,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
     def _check_queue(self) -> None:
         try:
             while True:
-                result = self.result_queue.get_nowait()
+                _ = self.result_queue.get_nowait()
         except queue.Empty:
             pass
         finally:
@@ -1964,14 +1956,14 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
             self.destroy()
 
 
-_quick_editor_instance: Optional[QuickMonsterEditor] = None
+_quick_editor_instance: Optional["MonsterManagerWin"] = None
 
 
 def show_monster_manager_win(
     parent: Union[tk.Widget, tk.Tk],
     monster_id: Optional[str] = None,
     on_save: Optional[Callable] = None,
-) -> QuickMonsterEditor:
+) -> "MonsterManagerWin":
     global _quick_editor_instance
     if _quick_editor_instance is not None:
         try:
