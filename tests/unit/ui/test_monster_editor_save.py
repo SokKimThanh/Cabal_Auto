@@ -1,3 +1,6 @@
+import pytest
+pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
+
 """
 Unit tests for Monster Editor Save All Functionality (Batch 9).
 
@@ -11,7 +14,6 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import patch, MagicMock
 
-import pytest
 
 
 import os

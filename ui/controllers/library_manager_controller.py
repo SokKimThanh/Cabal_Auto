@@ -32,8 +32,8 @@ class LibraryManagerController:
                     save_hunt_config(self.app.hunt_cfg)
                 monsters = changes.get("monsters")
                 if monsters is not None:
-                    if hasattr(self.app, "_normalize_library_items"):
-                        self.app.monsters = self.app._normalize_library_items(monsters)
+                    if hasattr(self.app, "skill_service") and hasattr(self.app.skill_service, "_normalize_library_items"):
+                        self.app.monsters = self.app.skill_service._normalize_library_items(monsters)
                     else:
                         self.app.monsters = monsters
                     save_monster_library(self.app.monsters)
@@ -43,8 +43,8 @@ class LibraryManagerController:
                         self.app._refresh_monster_rotation_list()
                 skills = changes.get("skills")
                 if skills is not None:
-                    if hasattr(self.app, "_normalize_library_items"):
-                        self.app.skills = self.app._normalize_library_items(skills)
+                    if hasattr(self.app, "skill_service") and hasattr(self.app.skill_service, "_normalize_library_items"):
+                        self.app.skills = self.app.skill_service._normalize_library_items(skills)
                     else:
                         self.app.skills = skills
                     save_skill_library(self.app.skills)
