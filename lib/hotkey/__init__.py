@@ -7,5 +7,4 @@ Sprint 24 - Code Reorganization
 
 
 __all__ = [
-    'MonsterEditorHandler',
 ]
