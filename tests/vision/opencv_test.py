@@ -93,8 +93,7 @@ class TemplateMatchTester:
             # Capture screen
             screenshot = pyautogui_module.screenshot(region=region)
             screenshot_np = np_module.array(screenshot)
-            screenshot_bgr = cv2_module.cvtColor(screenshot_np, cv2_module.COLOR_RGB2BGR)
-            screenshot_gray = cv2_module.cvtColor(screenshot_bgr, cv2_module.COLOR_BGR2GRAY)
+            screenshot_gray = cv2_module.cvtColor(screenshot_np, cv2_module.COLOR_RGB2GRAY)
             
             # Match template
             result = cv2_module.matchTemplate(screenshot_gray, template_gray, cv2_module.TM_CCOEFF_NORMED)
