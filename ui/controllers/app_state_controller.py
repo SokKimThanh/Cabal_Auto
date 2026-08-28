@@ -242,11 +242,16 @@ class AppStateController:
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
+        app.current_window_bounds = bounds
         if bounds:
-            app.current_window_bounds = bounds
             WindowSelectionService.update_bounds(app.hunt_cfg, bounds)
-            if hasattr(app, "_update_window_bounds_display"):
-                app._update_window_bounds_display()
+        if hasattr(app, "window_bounds_display_var"):
+            if bounds:
+                app.window_bounds_display_var.set(
+                    f"{bounds[0]}, {bounds[1]}, {bounds[2]}, {bounds[3]}"
+                )
+            else:
+                app.window_bounds_display_var.set("")
 
         templates = monster.get("templates") or []
         if isinstance(templates, list):
