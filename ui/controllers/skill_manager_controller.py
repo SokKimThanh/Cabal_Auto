@@ -11,25 +11,23 @@ class SkillManagerController:
         self._window = None
 
     def open_window(self) -> None:
-        """Opens or refocuses the skill manager window."""
-        existing = getattr(self.root, "skill_manager_win", None) or self._window
-        if existing is not None:
-            import tkinter as tk
+        """Opens the library manager window focused on the skills tab."""
+        # Use LibraryManagerController as the single source of truth for skill editing
+        controller = getattr(self.root, "library_manager_controller", None)
+        if not controller:
+            print("[SkillManagerController] Cannot open window: library_manager_controller missing.")
+            return
+
+        # Open or focus the library manager window
+        controller.open_library_manager()
+
+        # Switch to the Skills tab
+        lib_win = getattr(self.root, "library_manager_win", None)
+        if lib_win and hasattr(lib_win, "notebook") and hasattr(lib_win, "skill_tab"):
             try:
-                if existing.winfo_exists():
-                    existing.deiconify()
-                    existing.lift()
-                    existing.focus_force()
-                    return
-            except tk.TclError as e:
-                print(f"[SkillManagerController] Ignored window focus error: {e}")
+                lib_win.notebook.select(lib_win.skill_tab)
             except Exception as e:
-                print(f"[SkillManagerController] Unexpected window focus error: {e}")
-
-        from ui.windows.skill_manager_win import SkillManagerWin
-
-        self._window = SkillManagerWin(self.root)
-        self.root.skill_manager_win = self._window
+                print(f"[SkillManagerController] Failed to select skill tab: {e}")
 
     def on_window_closed(self) -> None:
         """Callback to safely clean up references when the window closes."""
