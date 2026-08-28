@@ -238,7 +238,7 @@ selector = create_game_window_mode_selector(
 
 Component is tested in:
 - `tests/demos/demo_game_window_mode_selector.py` - Interactive demo
-- `ui/windows/quick_monster_editor.py` - Real-world integration
+- `ui/windows/monster_manager_win.py` - Real-world integration
 
 ## Troubleshooting
 

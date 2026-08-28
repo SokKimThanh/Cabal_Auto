@@ -14,29 +14,40 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 
+import os
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests"
+)
 class TestMonsterEditorWindowClose:
     """Test suite for window close handling."""
     
     @pytest.fixture
-    def temp_data_file(self, tmp_path: Path) -> Path:
+    def temp_data_file(self, tmp_path: Path):
         """
-        Create temporary monsters.json file.
-        
-        Args:
-            tmp_path: pytest temporary directory fixture
-            
-        Returns:
-            Path to temporary data file
+        Create temporary monsters.json file safely for Windows.
         """
-        data_file = tmp_path / "monsters.json"
-        return data_file
+        temp_file = tmp_path / "monsters.json"
+        temp_file.write_text('[]', encoding='utf-8')
+        yield temp_file
+
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+        except (PermissionError, OSError):
+            import time
+            time.sleep(0.05)
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
     
     def test_close_with_no_changes_destroys_immediately(self, temp_data_file: Path) -> None:
         """Test that closing with no changes destroys window immediately."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -45,10 +56,10 @@ class TestMonsterEditorWindowClose:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Verify no unsaved changes
                 assert editor.is_dirty is False, "Should have no changes initially"
@@ -83,8 +94,8 @@ class TestMonsterEditorWindowClose:
         """Test that closing with unsaved changes prompts user."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -93,10 +104,10 @@ class TestMonsterEditorWindowClose:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Make a change to set dirty
                 editor.set_dirty(True)
@@ -125,8 +136,8 @@ class TestMonsterEditorWindowClose:
         """Test that closing with changes destroys if user confirms."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -135,10 +146,10 @@ class TestMonsterEditorWindowClose:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Make a change
                 editor.set_dirty(True)
@@ -178,8 +189,8 @@ class TestMonsterEditorWindowClose:
         """Test that WM_DELETE_WINDOW protocol is bound to _on_cancel."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -188,10 +199,10 @@ class TestMonsterEditorWindowClose:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Verify protocol is bound
                 # Note: Can't directly test protocol binding, but we can verify method exists

@@ -49,7 +49,7 @@ def test_imports():
     print("\n4. Testing ui.windows...")
     try:
         from ui.windows.library_manager import LibraryManagerWindow
-        from ui.windows.quick_monster_editor import QuickMonsterEditor
+        from ui.windows.monster_manager_win import MonsterManagerWin
         from ui.windows.setup_wizard import show_setup_wizard
         try:
             from ui.windows.overlay_window import OverlayWindowPyWin32
@@ -118,7 +118,7 @@ def test_entry_points_smoke():
     entry_points = [
         ("ui.windows.auto_hunt", "AutoHunt UI"),
         ("ui.windows.library_manager", "Library Manager"),
-        ("ui.windows.quick_monster_editor", "Quick Monster Editor"),
+        ("ui.windows.monster_manager_win", "Quick Monster Editor"),
         ("ui.windows.setup_wizard", "Setup Wizard"),
         ("ui.windows.setup_wizard_vision", "Setup Wizard Vision"),
         ("ui.components.icon_button", "Icon Button Component"),

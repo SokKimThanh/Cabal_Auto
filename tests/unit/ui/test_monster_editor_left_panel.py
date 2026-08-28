@@ -19,14 +19,33 @@ from unittest.mock import patch, MagicMock
 import json
 
 
+import os
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests"
+)
 class TestMonsterEditorLeftPanel:
     """Test suite for Monster Editor left panel functionality."""
     
     @pytest.fixture
-    def temp_data_file(self, tmp_path: Path) -> Path:
-        """Create temporary monsters.json file."""
-        data_file = tmp_path / "monsters.json"
-        return data_file
+    def temp_data_file(self, tmp_path: Path):
+        """
+        Create temporary monsters.json file safely for Windows.
+        """
+        temp_file = tmp_path / "monsters.json"
+        temp_file.write_text('[]', encoding='utf-8')
+        yield temp_file
+
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+        except (PermissionError, OSError):
+            import time
+            time.sleep(0.05)
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
     
     @pytest.fixture
     def sample_monsters(self) -> list:
@@ -54,17 +73,17 @@ class TestMonsterEditorLeftPanel:
     
     def test_left_panel_creation(self, temp_data_file: Path) -> None:
         """Test that left panel widgets are created correctly."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Verify left panel widgets exist
                 assert editor.monster_listbox is not None
@@ -80,18 +99,18 @@ class TestMonsterEditorLeftPanel:
         """Test that monster list refreshes correctly."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None), \
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None), \
              patch('tkinter.messagebox.askyesno', return_value=True):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.monster_listbox is not None
                 
                 # Verify listbox contains monsters
@@ -115,17 +134,17 @@ class TestMonsterEditorLeftPanel:
         """Test monster selection from listbox."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.monster_listbox is not None
                 
                 # Select first monster
@@ -154,17 +173,17 @@ class TestMonsterEditorLeftPanel:
         """Test adding a new monster."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.monster_listbox is not None
                 
                 # Initially empty
@@ -201,17 +220,17 @@ class TestMonsterEditorLeftPanel:
         """Test deleting a monster with confirmation."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.monster_listbox is not None
                 
                 # Select first monster
@@ -243,17 +262,17 @@ class TestMonsterEditorLeftPanel:
         """Test cancelling monster deletion."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.monster_listbox is not None
                 
                 # Select first monster
@@ -281,17 +300,17 @@ class TestMonsterEditorLeftPanel:
         """Test deleting monster with no selection shows warning."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.monster_listbox is not None
                 
                 # Clear selection
@@ -318,17 +337,17 @@ class TestMonsterEditorLeftPanel:
         """Test adding multiple monsters."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             root = tk.Tk()
             root.withdraw()
             editor = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.monster_listbox is not None
                 
                 # Add 3 monsters

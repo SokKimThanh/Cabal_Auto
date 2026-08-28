@@ -14,22 +14,33 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 
+import os
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests"
+)
 class TestMonsterEditorSaveAll:
     """Test suite for Save All functionality."""
     
     @pytest.fixture
-    def temp_data_file(self, tmp_path: Path) -> Path:
+    def temp_data_file(self, tmp_path: Path):
         """
-        Create temporary monsters.json file.
-        
-        Args:
-            tmp_path: pytest temporary directory fixture
-            
-        Returns:
-            Path to temporary data file
+        Create temporary monsters.json file safely for Windows.
         """
-        data_file = tmp_path / "monsters.json"
-        return data_file
+        temp_file = tmp_path / "monsters.json"
+        temp_file.write_text('[]', encoding='utf-8')
+        yield temp_file
+
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+        except (PermissionError, OSError):
+            import time
+            time.sleep(0.05)
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
     
     @pytest.fixture
     def sample_monsters(self) -> list:
@@ -65,10 +76,10 @@ class TestMonsterEditorSaveAll:
         # Write initial data
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -77,10 +88,10 @@ class TestMonsterEditorSaveAll:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check None before access
                 assert editor.monsters is not None, "Monsters list should be loaded"
@@ -119,10 +130,10 @@ class TestMonsterEditorSaveAll:
         """Test that saving clears dirty state and updates UI."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -131,10 +142,10 @@ class TestMonsterEditorSaveAll:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Make a change to set dirty
                 editor.set_dirty(True)
@@ -184,10 +195,10 @@ class TestMonsterEditorSaveAll:
         ]
         temp_data_file.write_text(json.dumps(invalid_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -196,10 +207,10 @@ class TestMonsterEditorSaveAll:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check button exists
                 assert editor.save_button is not None, "Save button should exist"
@@ -223,10 +234,10 @@ class TestMonsterEditorSaveAll:
         """Test that saving with no monsters shows warning."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -235,10 +246,10 @@ class TestMonsterEditorSaveAll:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Verify no monsters
                 assert len(editor.monsters) == 0, "Should have no monsters"
@@ -263,10 +274,10 @@ class TestMonsterEditorSaveAll:
         """Test that Save button is initially disabled when clean."""
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -275,10 +286,10 @@ class TestMonsterEditorSaveAll:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check button exists
                 assert editor.save_button is not None, "Save button should exist"

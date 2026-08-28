@@ -13,7 +13,7 @@ Library manager dialog for managing monsters and skills libraries.
 ### overlay_window.py
 Overlay window for displaying hunt information on top of the game.
 
-### quick_monster_editor.py
+### monster_manager_win.py
 Quick monster editor dialog (Ctrl+Shift+M) for fast monster editing.
 
 ### setup_wizard.py
@@ -32,11 +32,11 @@ All window modules have been consolidated into `ui/windows/` for better organiza
 **Old imports (Historical / Removed):**
 ```python
 from lib.ui.library_manager import LibraryManagerWindow  # Removed
-from ui.quick_monster_editor import QuickMonsterEditor    # Removed
+from ui.monster_manager_win import MonsterManagerWin    # Removed
 ```
 
 **New imports:**
 ```python
 from ui.windows.library_manager import LibraryManagerWindow
-from ui.windows.quick_monster_editor import QuickMonsterEditor
+from ui.windows.monster_manager_win import MonsterManagerWin
 ```

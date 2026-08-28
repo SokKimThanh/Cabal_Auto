@@ -19,9 +19,9 @@ import tkinter as tk
 
 # Now import from ui
 try:
-    from ui.windows.quick_monster_editor import QuickMonsterEditor
+    from ui.windows.monster_manager_win import MonsterManagerWin
 except ImportError:
-    QuickMonsterEditor = None  # type: ignore
+    MonsterManagerWin = None  # type: ignore
 
 def test_monster_editor():
     """Test Monster Editor window with icons."""
@@ -34,7 +34,7 @@ def test_monster_editor():
         print(f"Save called with data: {data}")
     
     # Create Monster Editor
-    editor = QuickMonsterEditor(
+    editor = MonsterManagerWin(
         parent=root,
         on_save=on_save
     )

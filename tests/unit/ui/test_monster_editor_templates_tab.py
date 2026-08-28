@@ -14,29 +14,40 @@ from unittest.mock import patch
 import pytest
 
 
+import os
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests"
+)
 class TestMonsterEditorTemplatesTab:
     """Test suite for Templates tab UI components."""
     
     @pytest.fixture
-    def temp_data_file(self, tmp_path: Path) -> Path:
+    def temp_data_file(self, tmp_path: Path):
         """
-        Create temporary monsters.json file.
-        
-        Args:
-            tmp_path: pytest temporary directory fixture
-            
-        Returns:
-            Path to temporary data file
+        Create temporary monsters.json file safely for Windows.
         """
-        data_file = tmp_path / "monsters.json"
-        return data_file
+        temp_file = tmp_path / "monsters.json"
+        temp_file.write_text('[]', encoding='utf-8')
+        yield temp_file
+
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+        except (PermissionError, OSError):
+            import time
+            time.sleep(0.05)
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
     
     def test_templates_tab_created(self, temp_data_file: Path) -> None:
         """Test that Templates tab is created in notebook."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -45,10 +56,10 @@ class TestMonsterEditorTemplatesTab:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check None before access
                 assert editor.notebook is not None, "Notebook should be created"
@@ -67,8 +78,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that template listbox is created with scrollbar."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -77,10 +88,10 @@ class TestMonsterEditorTemplatesTab:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check None before accessing attributes
                 assert editor.template_listbox is not None, "Template listbox should be created"
@@ -102,8 +113,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that all control buttons are created."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -112,10 +123,10 @@ class TestMonsterEditorTemplatesTab:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check None before access
                 assert editor.capture_button is not None, "Capture button should be created"
@@ -151,8 +162,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that threshold slider is created with correct range and default."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -161,10 +172,10 @@ class TestMonsterEditorTemplatesTab:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check None before access
                 assert editor.threshold_scale is not None, "Threshold scale should be created"
@@ -193,8 +204,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that threshold slider accepts values in valid range."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -203,10 +214,10 @@ class TestMonsterEditorTemplatesTab:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: Check None before use
                 assert editor.threshold_scale is not None, "Threshold scale should exist"
@@ -235,8 +246,8 @@ class TestMonsterEditorTemplatesTab:
         """Test that all template tab widgets are properly typed as Optional."""
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
             try:
                 root = tk.Tk()
@@ -245,10 +256,10 @@ class TestMonsterEditorTemplatesTab:
                 return
             
             root.withdraw()
-            editor: Optional[QuickMonsterEditor] = None
+            editor: Optional[MonsterManagerWin] = None
             
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 
                 # Rule 2: All widgets should be checkable for None
                 # This test verifies widgets are created (not None after init)
