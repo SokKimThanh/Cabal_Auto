@@ -29,10 +29,24 @@ class TestMonsterEditorInfoTab:
     """Test suite for Monster Editor Info tab functionality."""
     
     @pytest.fixture
-    def temp_data_file(self, tmp_path: Path) -> Path:
-        """Create temporary monsters.json file."""
-        data_file = tmp_path / "monsters.json"
-        return data_file
+    def temp_data_file(self, tmp_path: Path):
+        """
+        Create temporary monsters.json file safely for Windows.
+        """
+        temp_file = tmp_path / "monsters.json"
+        temp_file.write_text('[]', encoding='utf-8')
+        yield temp_file
+
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+        except (PermissionError, OSError):
+            import time
+            time.sleep(0.05)
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
     
     @pytest.fixture
     def sample_monsters(self) -> list:

@@ -24,13 +24,24 @@ class TestMonsterEditDialogFlow:
     """Test suite for MonsterEditDialog and MonsterManagerWin UI refactorings."""
 
     @pytest.fixture
-    def temp_data_file(self, tmp_path: Path) -> Path:
-        data_file = tmp_path / "monsters.json"
-        data_file.write_text(json.dumps([
-            {'id': 'm1', 'name': 'Quái Đen', 'level': 10, 'hp': 100, 'damage_per_hit': 5, 'templates': []},
-            {'id': 'm2', 'name': 'Quái Đỏ', 'level': 20, 'hp': 200, 'damage_per_hit': 10, 'templates': []}
-        ]), encoding='utf-8')
-        return data_file
+    def temp_data_file(self, tmp_path: Path):
+        """
+        Create temporary monsters.json file safely for Windows.
+        """
+        temp_file = tmp_path / "monsters.json"
+        temp_file.write_text('[]', encoding='utf-8')
+        yield temp_file
+
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+        except (PermissionError, OSError):
+            import time
+            time.sleep(0.05)
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
 
     def test_header_settings_button_removed(self, temp_data_file: Path) -> None:
         """Test that header gear settings button is removed (None)."""

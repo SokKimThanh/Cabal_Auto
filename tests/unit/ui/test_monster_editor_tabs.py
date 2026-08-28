@@ -28,11 +28,24 @@ class TestMonsterEditorRightPanel:
     """Test suite for Monster Editor right panel with tabs."""
     
     @pytest.fixture
-    def temp_data_file(self, tmp_path: Path) -> Path:
-        """Create temporary monsters.json file."""
-        data_file = tmp_path / "monsters.json"
-        data_file.write_text('[]', encoding='utf-8')
-        return data_file
+    def temp_data_file(self, tmp_path: Path):
+        """
+        Create temporary monsters.json file safely for Windows.
+        """
+        temp_file = tmp_path / "monsters.json"
+        temp_file.write_text('[]', encoding='utf-8')
+        yield temp_file
+
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+        except (PermissionError, OSError):
+            import time
+            time.sleep(0.05)
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
     
     def test_right_panel_creation(self, temp_data_file: Path) -> None:
         """Test that right panel with notebook is created correctly."""
