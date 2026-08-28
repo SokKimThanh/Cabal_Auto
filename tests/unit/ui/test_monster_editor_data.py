@@ -1,9 +1,5 @@
 import pytest
-
-pytest.importorskip(
-    "tkinter",
-    reason="Skipping UI imports because tkinter is not available in headless environment",
-)
+pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
 
 """
 Unit tests for Monster Editor data operations.
@@ -13,7 +9,6 @@ Tests for Batch 3: Load/Save monsters.json functionality.
 Author: SokKimThanh
 Created: 2025-10-24
 """
-import pytest
 import json
 import tempfile
 from pathlib import Path

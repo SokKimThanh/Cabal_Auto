@@ -1,10 +1,5 @@
 import pytest
-import sys
-from unittest.mock import MagicMock
-try:
-    import tkinter
-except ImportError:
-    pytest.skip("Skipping UI imports because tkinter is not available in headless environment", allow_module_level=True)
+pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
 
 """
 Unit Tests for Monster Editor Left Panel (Batch 4).
@@ -19,7 +14,6 @@ Tests cover:
 Author: SokKimThanh
 Created: 2025-10-24
 """
-import pytest
 import tkinter as tk
 from pathlib import Path
 from typing import Any

@@ -530,9 +530,9 @@ class App(tk.Tk):
                 self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None
             ),
             on_state_change=self._on_orchestrator_state_change,
-            locate_target=self.hunt_runner._hunt_locate_target,
-            prepare_skill_runtime=self.hunt_runner._prepare_skill_runtime,
-            try_cast_skills=self.hunt_runner._try_cast_skills,
+            locate_target=self.state_controller._hunt_locate_target,
+            prepare_skill_runtime=self.state_controller._prepare_skill_runtime,
+            try_cast_skills=self.state_controller._try_cast_skills,
             bring_window_to_front=self.window_controller._bring_window_to_front,
             bring_window_to_front_by_hwnd=self.window_controller._bring_window_to_front_by_hwnd,
             bring_window_to_front_by_pid=self.window_controller._bring_window_to_front_by_pid,
@@ -2203,7 +2203,7 @@ class App(tk.Tk):
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
         self.current_window_bounds = bounds
         WindowSelectionService.update_bounds(self.hunt_cfg, bounds)
-        self._update_window_bounds_display()
+        self.state_controller._update_window_bounds_display()
 
         # Apply templates[] array to config
         templates = _sanitize_templates(monster.get("templates"))

@@ -10,7 +10,6 @@ import pytest
 
 import sys
 from unittest.mock import MagicMock
-import pytest
 pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
 
 # Add project root to path

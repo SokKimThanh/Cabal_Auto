@@ -242,16 +242,11 @@ class AppStateController:
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
-        app.current_window_bounds = bounds
         if bounds:
+            app.current_window_bounds = bounds
             WindowSelectionService.update_bounds(app.hunt_cfg, bounds)
-        if hasattr(app, "window_bounds_display_var"):
-            if bounds:
-                app.window_bounds_display_var.set(
-                    f"{bounds[0]}, {bounds[1]}, {bounds[2]}, {bounds[3]}"
-                )
-            else:
-                app.window_bounds_display_var.set("")
+            if hasattr(app.state_controller, "_update_window_bounds_display"):
+                app.state_controller._update_window_bounds_display()
 
         templates = monster.get("templates") or []
         if isinstance(templates, list):
@@ -320,3 +315,138 @@ class AppStateController:
         app.has_unsaved_changes = False
         if hasattr(app, "_update_unsaved_indicator"):
             app._update_unsaved_indicator()
+
+    def _update_window_bounds_display(self) -> None:
+        app = self.root
+        if not hasattr(app, "window_bounds_display_var"):
+            return
+
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
+        bounds = WindowSelectionService.resolve_bounds(
+            getattr(app, "hunt_cfg", {}), getattr(app, "current_window_bounds", None)
+        )
+        if bounds:
+            app.window_bounds_display_var.set(
+                f"{bounds[0]}, {bounds[1]}, {bounds[2]}, {bounds[3]}"
+            )
+        else:
+            app.window_bounds_display_var.set("")
+
+    def _hunt_locate_target(self, cfg: Dict[str, Any]):
+        app = self.root
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+        from lib.vision.template_matcher import locate_template
+        from pathlib import Path
+
+        bounds = WindowSelectionService.resolve_bounds(cfg)
+        if not bounds:
+            return None, None
+
+        templates = []
+        raw_templates = cfg.get("templates") or []
+        if isinstance(raw_templates, list):
+            templates.extend(t for t in raw_templates if isinstance(t, dict))
+        template_path = str(cfg.get("template_path", "") or "").strip()
+        if template_path and not templates:
+            templates.append(
+                {
+                    "path": template_path,
+                    "name": Path(template_path).stem,
+                    "threshold": float(cfg.get("template_threshold", 0.8)),
+                    "monster_name": cfg.get("monster_selected_name", ""),
+                }
+            )
+
+        best_box = None
+        best_info = None
+        best_score = -1.0
+        for template in templates:
+            path = str(template.get("path", "") or "").strip()
+            if not path:
+                continue
+            threshold = float(
+                template.get("threshold", cfg.get("template_threshold", 0.8))
+            )
+            box, confidence = locate_template(
+                path, region=tuple(bounds), threshold=threshold
+            )
+            if box is None or confidence < best_score:
+                continue
+            best_box = box
+            best_score = confidence
+            best_info = {
+                "path": path,
+                "name": template.get("name") or Path(path).stem,
+                "threshold": threshold,
+                "confidence": confidence,
+                "monster_name": template.get("monster_name")
+                or cfg.get("monster_selected_name", ""),
+            }
+        return best_box, best_info
+
+    def _prepare_skill_runtime(self, cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
+        app = self.root
+        runtime: List[Dict[str, Any]] = []
+        skills_by_name = {
+            skill.get("name"): skill
+            for skill in getattr(app, "skills", [])
+            if isinstance(skill, dict) and skill.get("name")
+        }
+        for slot in cfg.get("skill_slots", []) or []:
+            if not isinstance(slot, dict):
+                continue
+            base = skills_by_name.get(slot.get("name"), {})
+            runtime.append(
+                {
+                    "name": slot.get("name") or base.get("name") or "",
+                    "key": slot.get("key") or base.get("key") or "",
+                    "type": slot.get("type") or base.get("type") or "attack",
+                    "cooldown": float(
+                        slot.get("cooldown") or base.get("cooldown") or 0.0
+                    ),
+                    "cast_time": float(
+                        slot.get("cast_time") or base.get("cast_time") or 0.0
+                    ),
+                    "_last_cast": 0.0,
+                }
+            )
+        return runtime
+
+    def _try_cast_skills(
+        self,
+        skill_runtime: List[Dict[str, Any]],
+        now: float,
+        target_active: bool,
+        attack_phase: bool = False,
+        skill_stats=None,
+    ) -> None:
+        app = self.root
+        from lib.system.win_input import tap
+        import time
+        for skill in skill_runtime:
+            is_buff = skill.get("type", "attack") == "buff"
+            if attack_phase == is_buff:
+                continue
+            if attack_phase and not target_active:
+                continue
+            if now - float(skill.get("_last_cast", 0.0)) < float(
+                skill.get("cooldown", 0.0)
+            ):
+                continue
+            key = str(skill.get("key", "") or "").strip()
+            if not key:
+                continue
+            tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+            skill["_last_cast"] = now
+            if skill_stats is not None:
+                try:
+                    skill_stats.record_cast(
+                        skill.get("name") or key, success=True, timestamp=now
+                    )
+                except Exception:
+                    pass
+            cast_time = float(skill.get("cast_time", 0.0))
+            if cast_time > 0:
+                time.sleep(cast_time)
+            return

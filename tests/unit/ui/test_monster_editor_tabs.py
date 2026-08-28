@@ -1,9 +1,5 @@
 import pytest
-
-pytest.importorskip(
-    "tkinter",
-    reason="Skipping UI imports because tkinter is not available in headless environment",
-)
+pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
 
 """
 Unit Tests for Monster Editor Right Panel Tabs (Batch 5).
@@ -17,7 +13,6 @@ Tests cover:
 Author: SokKimThanh
 Created: 2025-10-24
 """
-import pytest
 import tkinter as tk
 from tkinter import ttk
 from pathlib import Path

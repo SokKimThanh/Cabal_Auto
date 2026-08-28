@@ -344,7 +344,7 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
-class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
+class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
     """
     Main Monster Manager Window (Master View with Table Layout).
     """
