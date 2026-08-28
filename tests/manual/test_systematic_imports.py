@@ -18,15 +18,15 @@ print("SYSTEMATIC IMPORT TEST")
 print("="*70)
 
 # Test 1: Import with ALL components
-print("\n[TEST 1] Import QuickMonsterEditor with ALL components")
+print("\n[TEST 1] Import MonsterManagerWin with ALL components")
 print("Watch taskbar carefully...")
 
 try:
     # Clear any previous imports
-    if 'ui.windows.quick_monster_editor' in sys.modules:
-        del sys.modules['ui.windows.quick_monster_editor']
+    if 'ui.windows.monster_manager_win' in sys.modules:
+        del sys.modules['ui.windows.monster_manager_win']
     
-    from ui.windows.quick_monster_editor import show_quick_monster_editor
+    from ui.windows.monster_manager_win import show_monster_manager_win
     print("✅ Import successful")
     
     # Create test window
@@ -46,7 +46,7 @@ try:
         print("\n[Opening Editor...]")
         print("COUNT WINDOWS IN TASKBAR NOW!")
         try:
-            editor = show_quick_monster_editor(
+            editor = show_monster_manager_win(
                 parent=app,
                 monster_id=None,
                 on_save=lambda mid, mdata: None

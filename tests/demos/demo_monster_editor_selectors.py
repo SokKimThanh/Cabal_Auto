@@ -23,7 +23,7 @@ from tkinter import ttk
 
 # Import Monster Editor
 try:
-    from ui.windows.quick_monster_editor import show_quick_monster_editor
+    from ui.windows.monster_manager_win import show_monster_manager_win
 except ImportError as e:
     print(f"Error importing Monster Editor: {e}")
     sys.exit(1)
@@ -73,7 +73,7 @@ def create_demo_window():
         cursor='hand2',
         padx=30,
         pady=15,
-        command=lambda: show_quick_monster_editor(
+        command=lambda: show_monster_manager_win(
             parent=root,
             on_save=lambda data: print(f"[Demo] Saved: {data}")
         )

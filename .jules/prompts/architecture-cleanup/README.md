@@ -32,8 +32,9 @@ Không nên copy toàn bộ thư mục này vào một session.
 | 13 | `S4B-extract-monster-manager-controller-and-service.md` | Có, nhưng cần review kỹ | Sprint 1 đã merge sạch |
 | 14 | `S4C-extract-skill-manager-controller-and-service.md` | Có, nhưng cần review kỹ | Sprint 1 đã merge sạch |
 | 15 | `S4D-migrate-quick-monster-editor-into-monster-manager-win.md` | Không | S4C xong (tránh đụng chung vùng modal window với S4C) |
-| 16 | `S5A-remove-dead-compatibility-shims.md` | Không | Tất cả sprint trước đã merge sạch |
-| 17 | `S5B-document-boundaries-and-final-smoke.md` | Không | S5A xong |
+| 16 | `S4E-split-skill-editor-into-skill-manager-win.md` | Không | S4D xong (đụng chung vùng modal window Sprint 4, ưu tiên xong S4D để có mẫu tham khảo) |
+| 17 | `S5A-remove-dead-compatibility-shims.md` | Không | Tất cả sprint trước đã merge sạch |
+| 18 | `S5B-document-boundaries-and-final-smoke.md` | Không | S5A xong |
 
 ## Cách Chạy Song Song An Toàn
 

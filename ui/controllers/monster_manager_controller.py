@@ -24,12 +24,10 @@ class MonsterManagerController:
             except Exception:
                 self.app.monster_manager_win = None
 
-        # NOTE: MonsterManagerWin is an empty placeholder shell left over from the
-        # controller extraction; QuickMonsterEditor is still the real, fully
-        # featured monster manager UI, so open that until the UI migration lands.
-        from ui.windows.quick_monster_editor import QuickMonsterEditor
+        # Open the full MonsterManagerWin UI.
+        from ui.windows.monster_manager_win import MonsterManagerWin
 
-        editor = QuickMonsterEditor(self.app)
+        editor = MonsterManagerWin(self.app)
         self.app.monster_manager_win = editor
 
         # S4D Hotfix: We must NOT override the window's own WM_DELETE_WINDOW protocol

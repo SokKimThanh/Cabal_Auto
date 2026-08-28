@@ -12,7 +12,7 @@ import pytest
 
 
 class TestMonsterEditDialogFlow:
-    """Test suite for MonsterEditDialog and QuickMonsterEditor UI refactorings."""
+    """Test suite for MonsterEditDialog and MonsterManagerWin UI refactorings."""
 
     @pytest.fixture
     def temp_data_file(self, tmp_path: Path) -> Path:
@@ -25,8 +25,8 @@ class TestMonsterEditDialogFlow:
 
     def test_header_settings_button_removed(self, temp_data_file: Path) -> None:
         """Test that header gear settings button is removed (None)."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -35,7 +35,7 @@ class TestMonsterEditDialogFlow:
 
             root.withdraw()
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 assert editor.settings_button is None, "Header gear settings button should be removed"
             finally:
                 editor.destroy()
@@ -43,8 +43,8 @@ class TestMonsterEditDialogFlow:
 
     def test_edit_dialog_title_format_and_tab_name(self, temp_data_file: Path) -> None:
         """Test MonsterEditDialog title contains ID and tab 3 is renamed to 'Hiển thị'."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin, MonsterEditDialog
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -53,7 +53,7 @@ class TestMonsterEditDialogFlow:
 
             root.withdraw()
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 dialog = MonsterEditDialog(editor, monster={'id': 'm1', 'name': 'Quái Đen'})
 
                 title = dialog.title()
@@ -70,8 +70,8 @@ class TestMonsterEditDialogFlow:
 
     def test_singleton_edit_dialog_enforcement(self, temp_data_file: Path) -> None:
         """Test that opening MonsterEditDialog twice lifts existing dialog instead of creating new."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -80,7 +80,7 @@ class TestMonsterEditDialogFlow:
 
             root.withdraw()
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
 
                 dialog1 = editor._open_edit_dialog('m1')
                 assert dialog1 is not None
@@ -105,10 +105,10 @@ class TestMonsterEditDialogFlow:
 
     def test_duplicate_name_check_accepted(self, temp_data_file: Path) -> None:
         """Test duplicate name prompt on save: user accepts auto rename."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin, MonsterEditDialog
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -117,7 +117,7 @@ class TestMonsterEditDialogFlow:
 
             root.withdraw()
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 # Create edit dialog for a new monster with name 'Quái Đen' (duplicate of m1)
                 saved_data = []
                 def on_save(data):
@@ -139,10 +139,10 @@ class TestMonsterEditDialogFlow:
 
     def test_duplicate_name_check_rejected(self, temp_data_file: Path) -> None:
         """Test duplicate name prompt on save: user rejects auto rename (dialog stays open)."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file), \
-             patch('ui.windows.quick_monster_editor.get_db', return_value=None), \
-             patch('ui.windows.quick_monster_editor.DataSyncManager', None):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor, MonsterEditDialog
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin, MonsterEditDialog
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -151,7 +151,7 @@ class TestMonsterEditDialogFlow:
 
             root.withdraw()
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 saved_data = []
                 def on_save(data):
                     saved_data.append(data)
@@ -173,8 +173,8 @@ class TestMonsterEditDialogFlow:
 
     def test_search_entry_escape_clears_text(self, temp_data_file: Path) -> None:
         """Test that pressing Escape in search_entry clears search and refreshes table."""
-        with patch('ui.windows.quick_monster_editor.DATA_PATH', temp_data_file):
-            from ui.windows.quick_monster_editor import QuickMonsterEditor
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             try:
                 root = tk.Tk()
             except Exception as e:
@@ -183,7 +183,7 @@ class TestMonsterEditDialogFlow:
 
             root.withdraw()
             try:
-                editor = QuickMonsterEditor(root)
+                editor = MonsterManagerWin(root)
                 editor.search_entry.insert(0, 'Quái Đen')
                 assert editor.search_entry.get() == 'Quái Đen'
 

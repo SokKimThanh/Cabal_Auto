@@ -1,14 +1,14 @@
 """
-Test QuickMonsterEditor with ActionNotificationMixin integration.
+Test MonsterManagerWin with ActionNotificationMixin integration.
 
-This script opens QuickMonsterEditor to verify:
+This script opens MonsterManagerWin to verify:
 1. ActionNotificationMixin is properly integrated
 2. Notification rules are registered
 3. Add/Delete buttons show appropriate notifications
 4. Edit mode validation works
 
 Run:
-    python tests/manual/test_quick_monster_editor_notifications.py
+    python tests/manual/test_monster_manager_win_notifications.py
 """
 
 import pytest
@@ -26,13 +26,13 @@ project_root = Path(__file__).parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from ui.windows.quick_monster_editor import QuickMonsterEditor
+from ui.windows.monster_manager_win import MonsterManagerWin
 
 
 def main():
-    """Test QuickMonsterEditor with notifications."""
+    """Test MonsterManagerWin with notifications."""
     print("="*70)
-    print("🎮 QuickMonsterEditor - ActionNotificationMixin Integration Test")
+    print("🎮 MonsterManagerWin - ActionNotificationMixin Integration Test")
     print("="*70)
     print()
     print("📖 What to Test:")
@@ -61,8 +61,8 @@ def main():
     root = tk.Tk()
     root.withdraw()  # Hide root window
     
-    # Open QuickMonsterEditor
-    editor = QuickMonsterEditor(root)
+    # Open MonsterManagerWin
+    editor = MonsterManagerWin(root)
     
     # Check if mixin is integrated
     has_mixin = hasattr(editor, 'execute_action')

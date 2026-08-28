@@ -81,7 +81,7 @@ def test_empty_window_issue():
     print("Diagnostic Steps:")
     print("1. Press Ctrl+Shift+M")
     print("2. Check log for:")
-    print("   '[QuickMonsterEditor] __init__ called'")
+    print("   '[MonsterManagerWin] __init__ called'")
     print("   '  Parent: App'         ← Should be 'App' (not None or Tk)")
     print("   '  Parent type: App'    ← Should match")
     print()
@@ -162,7 +162,7 @@ def explain_check_logic():
     print("    return  # Don't create new!")
     print()
     print("# If we reach here: create new window")
-    print("show_quick_monster_editor(...)")
+    print("show_monster_manager_win(...)")
     print("```")
     print()
 
