@@ -374,6 +374,8 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         self.on_save_callback = on_save
 
         self.monsters: List[Dict[str, Any]] = []
+        self.pending_changes: Dict[str, Dict[str, Any]] = {}
+        self.pending_changes: Dict[str, Dict[str, Any]] = {}
         self.filtered_monsters: List[Dict[str, Any]] = []
         self.current_monster_id: Optional[str] = monster_id
         self.is_dirty = False
@@ -719,25 +721,56 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
     def _save_monsters(self) -> bool:
         try:
+            pending = getattr(self, "pending_changes", {})
+
             if self.db is not None:
-                for monster in self.monsters:
+                # Save pending changes directly to DB
+                for monster in pending.values():
                     if not self.db.insert_or_update_monster(monster):
                         self._show_status_message("Lưu thất bại: không thể ghi monster vào DB", is_error=True)
                         return False
             elif self.sync_manager is not None:
-                if not self.sync_manager.save_monsters(self.monsters):
+                # Fallback to saving all monsters currently loaded + pending
+                # Note: sync_manager might not handle partial updates well, but we merge pending.
+                all_monsters = list(self.monsters)
+                for monster in pending.values():
+                    m_id = monster.get("id")
+                    found = False
+                    for i, m in enumerate(all_monsters):
+                        if m.get("id") == m_id:
+                            all_monsters[i] = monster
+                            found = True
+                            break
+                    if not found:
+                        all_monsters.append(monster)
+
+                if not self.sync_manager.save_monsters(all_monsters):
                     self._show_status_message("Lưu thất bại: sync_manager", is_error=True)
                     return False
             else:
                 # Fallback JSON
+                all_monsters = list(self.monsters)
+                for monster in pending.values():
+                    m_id = monster.get("id")
+                    found = False
+                    for i, m in enumerate(all_monsters):
+                        if m.get("id") == m_id:
+                            all_monsters[i] = monster
+                            found = True
+                            break
+                    if not found:
+                        all_monsters.append(monster)
+
                 DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
                 with open(DATA_PATH, "w", encoding="utf-8") as f:
-                    json.dump(self.monsters, f, indent=2, ensure_ascii=False)
+                    json.dump(all_monsters, f, indent=2, ensure_ascii=False)
 
+            self.pending_changes.clear()
             self.is_dirty = False
             self.is_monster_dirty = False
             self._update_dirty_state_ui()
             self._show_status_message("Đã lưu tất cả", is_error=False)
+            self._refresh_monster_table()
             return True
         except Exception as e:
             self._show_status_message(f"Lưu thất bại: {e}", is_error=True)
@@ -1448,6 +1481,13 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
                     sort_order="ASC",
                 )
                 self.filtered_monsters = payload.get("items", [])
+
+                # Apply pending changes before assigning to self.monsters
+                for index, monster in enumerate(self.filtered_monsters):
+                    pending = self.pending_changes.get(monster.get("id"))
+                    if pending is not None:
+                        self.filtered_monsters[index] = pending
+
                 self.monsters = self.filtered_monsters
                 # 🔥 Lưu tổng số bản ghi và tổng số trang
                 self.total_records = payload.get("total_records", 0)
@@ -1635,6 +1675,16 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
         def on_dialog_save(updated_data: Dict[str, Any]) -> None:
             m_id = updated_data.get("id")
+
+            # Store the change in pending_changes
+            if m_id:
+                self.pending_changes[m_id] = updated_data
+            else:
+                import uuid
+                m_id = str(uuid.uuid4())
+                updated_data["id"] = m_id
+                self.pending_changes[m_id] = updated_data
+
             updated = False
             for idx, m in enumerate(self.monsters):
                 if m.get("id") == m_id:

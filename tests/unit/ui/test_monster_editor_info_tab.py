@@ -20,12 +20,11 @@ from unittest.mock import patch
 import json
 
 
-pytestmark = pytest.mark.skip(
-    reason="Requires integration/e2e test refactor; unit test harness "
-           "cannot mock tk.Toplevel reliably. See manual validation in "
-           ".jules/S4D-migration-validation.md"
+import os
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests"
 )
-
 class TestMonsterEditorInfoTab:
     """Test suite for Monster Editor Info tab functionality."""
     
