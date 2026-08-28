@@ -52,8 +52,9 @@ class LibraryManagerController:
                         self.app._refresh_skill_slots_options()
 
                 # S4E cleanup: trigger SkillManagerController.on_window_closed to reload skills via service
-                if hasattr(self.app, "skill_manager_controller"):
-                    self.app.skill_manager_controller.on_window_closed()
+                controller = getattr(self.app, "skill_manager_controller", None)
+                if skills is not None and controller and hasattr(controller, "on_window_closed"):
+                    controller.on_window_closed()
 
             finally:
                 self.app.library_manager_win = None
