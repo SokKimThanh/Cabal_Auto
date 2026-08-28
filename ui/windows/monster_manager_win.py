@@ -365,7 +365,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         on_save: Optional[Callable] = None,
     ):
         if not parent:
-            raise ValueError("Parent widget is required for QuickMonsterEditor")
+            raise ValueError("Parent widget is required for MonsterManagerWin")
         if not isinstance(parent, (tk.Tk, tk.Toplevel, tk.Widget)):
             raise TypeError(f"Parent must be Tk/Toplevel/Widget, got {type(parent)}")
 
