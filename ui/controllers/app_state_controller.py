@@ -1,6 +1,7 @@
 import tkinter as tk
 from typing import Any, Dict, List, Optional
 import threading
+import copy
 
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.i18n import t as i18n_t
@@ -124,3 +125,193 @@ class AppStateController:
 
         app.hunt_status = tk.StringVar(master=root, value=idle_text)
         app.hunt_target_info = tk.StringVar(master=root, value="Target: None")
+
+    def _validate_hunt_prerequisites(self) -> Optional[str]:
+        app = self.root
+        title = str(app.hunt_cfg.get("window_title", "") or "").strip()
+
+        if not title and isinstance(getattr(app, "hunt_selected", None), dict):
+            title = str(app.hunt_selected.get("title", "")).strip()
+        if not title:
+            return "Please select a target window first."
+
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
+        bounds = WindowSelectionService.resolve_bounds(
+            app.hunt_cfg, getattr(app, "current_window_bounds", None)
+        )
+        if not bounds:
+            return "Invalid hunt area bounds. Please refresh or reselect the target window."
+
+        templates = app.hunt_cfg.get("templates") or []
+        template_path = str(app.hunt_cfg.get("template_path", "") or "").strip()
+        if not templates and not template_path:
+            return "Please choose at least one monster/template before starting hunt."
+        return None
+
+    def _hunt_from_ui(self) -> Dict[str, Any]:
+        app = self.root
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
+        cfg = copy.deepcopy(getattr(app, "hunt_cfg", {}))
+        if isinstance(getattr(app, "hunt_selected", None), dict):
+            cfg["window_title"] = app.hunt_selected.get("title", "")
+            cfg["window_pid"] = app.hunt_selected.get("pid")
+            cfg["window_hwnd"] = app.hunt_selected.get("hwnd")
+
+        bounds = WindowSelectionService.resolve_bounds(
+            cfg, getattr(app, "current_window_bounds", None)
+        )
+        WindowSelectionService.update_bounds(cfg, bounds)
+
+        hunt_area = cfg.get("hunt_area")
+        if isinstance(hunt_area, dict):
+            hunt_area["window_title"] = cfg.get("window_title", "")
+
+        simple_vars = {
+            "target_key": ("target_key_var", "TAB"),
+            "target_cycle_delay": ("target_cycle_var", 0.2),
+            "search_interval": ("search_interval_var", 0.25),
+            "attack_interval": ("attack_interval_var", 0.15),
+            "lost_timeout_sec": ("lost_timeout_var", 1.2),
+            "attack_min_duration_sec": ("attack_duration_var", 1.5),
+            "attack_press_ms": ("attack_press_var", 60),
+        }
+        for key, (attr_name, default) in simple_vars.items():
+            var = getattr(app, attr_name, None)
+            if var is None:
+                cfg.setdefault(key, default)
+                continue
+            raw_value = var.get()
+            if isinstance(default, int):
+                cfg[key] = int(raw_value or default)
+            elif isinstance(default, float):
+                cfg[key] = float(raw_value or default)
+            else:
+                cfg[key] = raw_value or default
+
+        cfg["bring_to_front_each_cycle"] = bool(
+            getattr(getattr(app, "bring_front_var", None), "get", lambda: False)()
+        )
+        if hasattr(app, "_collect_skill_slots"):
+            cfg["skill_slots"] = app._collect_skill_slots()
+        cfg.setdefault("templates", [])
+        return cfg
+
+    def _calculate_monster_estimate(
+        self, monster: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        from lib.utils.math_utils import calculate_monster_estimate
+
+        stats = calculate_monster_estimate(monster) or {}
+        kill_time = float(stats.get("estimated_time_sec", 0.0))
+        return {
+            "kill_time": round(kill_time, 2),
+            "dps": int(stats.get("required_dps", 0) or 0),
+            "effective_hp": stats.get("effective_hp", 0),
+            "base_hp": stats.get("base_hp", 0),
+            "defense": stats.get("defense", 0),
+            "level": stats.get("level", 0),
+        }
+
+    def _recommend_attack_settings(self, stats: Dict[str, Any]):
+        kill_time = float(stats.get("kill_time", 0.0) or 0.0)
+        attack_min = max(1.0, min(6.0, round(kill_time + 0.4, 2)))
+        lost_timeout = max(0.5, min(3.0, round(max(kill_time * 0.35, 0.8), 2)))
+        return attack_min, lost_timeout
+
+    def _update_monster_estimate_label(self, monster: Optional[Dict[str, Any]]) -> None:
+        app = self.root
+        if not hasattr(app, "monster_estimate_var"):
+            return
+        if not monster:
+            app.monster_estimate_var.set("")
+            return
+        stats = self._calculate_monster_estimate(monster)
+        attack_min, lost_timeout = self._recommend_attack_settings(stats)
+        app.monster_estimate_var.set(
+            f"ETA {stats['kill_time']:.2f}s | DPS {stats['dps']} | atk {attack_min:.2f}s | lost {lost_timeout:.2f}s"
+        )
+
+    def _apply_monster_to_hunt_quick(self, monster: Optional[Dict[str, Any]]) -> None:
+        app = self.root
+        if not monster:
+            return
+
+        from lib.features.hunt.config_validator import normalize_window_bounds_value
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+
+        bounds = normalize_window_bounds_value(monster.get("window_bounds"))
+        if bounds:
+            app.current_window_bounds = bounds
+            WindowSelectionService.update_bounds(app.hunt_cfg, bounds)
+            if hasattr(app, "_update_window_bounds_display"):
+                app._update_window_bounds_display()
+
+        templates = monster.get("templates") or []
+        if isinstance(templates, list):
+            app.hunt_cfg["templates"] = copy.deepcopy(templates)
+            if templates:
+                first_path = str(templates[0].get("path", "") or "").strip()
+                if first_path and hasattr(app, "template_var"):
+                    app.template_var.set(first_path)
+                    app.hunt_cfg["template_path"] = first_path
+
+        stats = self._calculate_monster_estimate(monster)
+        attack_min, lost_timeout = self._recommend_attack_settings(stats)
+        if hasattr(app, "attack_duration_var"):
+            app.attack_duration_var.set(f"{attack_min:.2f}")
+        if hasattr(app, "lost_timeout_var"):
+            app.lost_timeout_var.set(f"{lost_timeout:.2f}")
+        self._update_monster_estimate_label(monster)
+
+    def _refresh_slot_key_labels(self) -> None:
+        app = self.root
+        labels = getattr(app, "skill_slot_key_labels", [])
+        vars_ = getattr(app, "skill_slot_vars", [])
+        skills_by_name = {
+            skill.get("name"): skill
+            for skill in getattr(app, "skills", [])
+            if isinstance(skill, dict) and skill.get("name")
+        }
+        for idx, label in enumerate(labels):
+            skill_name = vars_[idx].get().strip() if idx < len(vars_) else ""
+            key = ""
+            if skill_name:
+                key = str(skills_by_name.get(skill_name, {}).get("key", "") or "")
+            label.config(text=key.upper() if key else "", fg="#333333")
+
+    def _validate_slot_key_duplicates(self) -> None:
+        app = self.root
+        labels = getattr(app, "skill_slot_key_labels", [])
+        vars_ = getattr(app, "skill_slot_vars", [])
+        skills_by_name = {
+            skill.get("name"): skill
+            for skill in getattr(app, "skills", [])
+            if isinstance(skill, dict) and skill.get("name")
+        }
+        seen: Dict[str, int] = {}
+        duplicate_indices = set()
+        for idx, var in enumerate(vars_):
+            skill_name = var.get().strip()
+            if not skill_name:
+                continue
+            key = str(skills_by_name.get(skill_name, {}).get("key", "") or "").lower()
+            if not key:
+                continue
+            if key in seen:
+                duplicate_indices.add(seen[key])
+                duplicate_indices.add(idx)
+            else:
+                seen[key] = idx
+        for idx, label in enumerate(labels):
+            label.config(fg="#C62828" if idx in duplicate_indices else "#333333")
+
+    def _apply_hunt_mode(self) -> None:
+        return
+
+    def _clear_unsaved_changes(self) -> None:
+        app = self.root
+        app.has_unsaved_changes = False
+        if hasattr(app, "_update_unsaved_indicator"):
+            app._update_unsaved_indicator()

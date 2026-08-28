@@ -1,3 +1,11 @@
+import pytest
+import sys
+from unittest.mock import MagicMock
+try:
+    import tkinter
+except ImportError:
+    pytest.skip("Skipping UI imports because tkinter is not available in headless environment", allow_module_level=True)
+
 """
 Unit tests for Monster Editor Window Close Handling (Batch 10).
 

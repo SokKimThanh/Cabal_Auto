@@ -44,11 +44,11 @@ def test_library_manager_try_close_returns_bool():
     a = App()
     try:
         # Open library manager
-        a._open_library_manager()
+        a.library_manager_controller.open_library_manager()
         time.sleep(0.05)
         lib = getattr(a, 'library_manager_win', None)
         assert lib is not None
-        res = a.try_close_library_manager()
+        res = a.library_manager_controller.try_close_library_manager()
         assert isinstance(res, bool)
     finally:
         try:

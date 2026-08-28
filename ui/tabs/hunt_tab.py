@@ -266,7 +266,7 @@ class HuntTab(ttk.Frame):
             cursor="hand2",
         )
         hint_label.pack(pady=(0, 6))
-        hint_label.bind("<Button-1>", lambda e: self.app._open_skill_manager())
+        hint_label.bind("<Button-1>", lambda e: self.app.skill_manager_controller.open_window())
 
         slot_frame = tk.Frame(skill_frame_outer)
         slot_frame.pack(fill="both", expand=True)

@@ -151,12 +151,11 @@ from lib.system.instance_lock import SingleInstanceLock
 from lib.system.win_input import tap
 from lib.ui_style import UIStyle as UI  # Global UI style constants
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
-from ui.controllers.app_runtime_bridge import AppRuntimeBridgeMixin
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.windows.setup_wizard import show_setup_wizard
 
 
-class App(AppRuntimeBridgeMixin, tk.Tk):
+class App(tk.Tk):
 
     @property
     def skills(self):
@@ -340,7 +339,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             vision_menu.add_command(
                 label=self._t("vision_toggle_overlay"),
                 accelerator="Ctrl+Shift+O",
-                command=self._toggle_overlay,
+                command=self.overlay_controller.toggle_overlay,
             )
 
             # Overlay Settings - using translations
@@ -348,7 +347,8 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 "Overlay Settings..." if self.lang == "en" else "Cài Đặt Overlay..."
             )
             vision_menu.add_command(
-                label=overlay_settings_label, command=self._open_overlay_settings
+                label=overlay_settings_label,
+                command=self.overlay_controller.open_settings,
             )
 
             menubar.add_cascade(label="Vision", menu=vision_menu)
@@ -367,7 +367,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             Image is not None and ImageTk is not None and ImageDraw is not None
         )
 
-        self.monsters = self._normalize_library_items(
+        self.monsters = self.skill_service._normalize_library_items(
             self.monster_library_service.load_monsters()
         )
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
@@ -530,12 +530,12 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
                 self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None
             ),
             on_state_change=self._on_orchestrator_state_change,
-            locate_target=self._hunt_locate_target,
-            prepare_skill_runtime=self._prepare_skill_runtime,
-            try_cast_skills=self._try_cast_skills,
-            bring_window_to_front=self._bring_window_to_front,
-            bring_window_to_front_by_hwnd=self._bring_window_to_front_by_hwnd,
-            bring_window_to_front_by_pid=self._bring_window_to_front_by_pid,
+            locate_target=self.hunt_runner._hunt_locate_target,
+            prepare_skill_runtime=self.hunt_runner._prepare_skill_runtime,
+            try_cast_skills=self.hunt_runner._try_cast_skills,
+            bring_window_to_front=self.window_controller._bring_window_to_front,
+            bring_window_to_front_by_hwnd=self.window_controller._bring_window_to_front_by_hwnd,
+            bring_window_to_front_by_pid=self.window_controller._bring_window_to_front_by_pid,
             iconify_app=self.iconify,
             update_skill_stats_display=getattr(
                 self, "update_skill_stats_display", lambda _: None
@@ -592,10 +592,16 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         # Auto-populate windows when dropdown is clicked
         self.win_combo.bind(
             "<Button-1>",
-            lambda e: self.on_hunt_find_windows() if not self.win_items else None,
+            lambda e: (
+                self.window_controller.on_hunt_find_windows()
+                if not self.win_items
+                else None
+            ),
         )
         # Handle window selection
-        self.win_combo.bind("<<ComboboxSelected>>", self.on_window_combo_selected)
+        self.win_combo.bind(
+            "<<ComboboxSelected>>", self.window_controller.on_window_combo_selected
+        )
 
         # Attach tooltip to combobox explaining window selection
         attach_i18n_tooltip(
@@ -622,7 +628,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             icon_fallback="🔄",
             icon_size=16,
             button_size=24,
-            command=self.on_hunt_refresh_windows,
+            command=self.window_controller.on_hunt_refresh_windows,
             button_type="refresh",
             tooltip_text=refresh_tooltip,
             state="normal",
@@ -1108,13 +1114,13 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         if hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running:
             return
 
-        validation_error = self._validate_hunt_prerequisites()
+        validation_error = self.state_controller._validate_hunt_prerequisites()
         if validation_error:
             messagebox.showerror(self._t("error_title"), validation_error, parent=self)
             return
 
         try:
-            cfg = self._hunt_from_ui()
+            cfg = self.state_controller._hunt_from_ui()
         except Exception as e:
             messagebox.showerror(
                 self._t("error_title"), self._t("invalid_hunt").format(e=e)
@@ -1202,12 +1208,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         """
         print("[Vision] Manage templates - opening wizard")
         self.window_controller.open_vision_wizard()
-
-    def on_window_combo_selected(self, _evt=None):
-        pass
-
-    def on_hunt_find_windows(self, _evt=None):
-        pass
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
@@ -1307,7 +1307,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         # Sync Hunt tab mode var if it exists
         if hasattr(self, "hunt_mode_var"):
             self.hunt_mode_var.set(mode)
-            self._apply_hunt_mode()
+            self.state_controller._apply_hunt_mode()
 
         # Update Setup tab visibility
         self._update_setup_visibility()
@@ -1952,11 +1952,11 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
     def on_skill_slot_changed(self, _evt=None):
         self._update_attack_keys_from_slots()
         try:
-            self._refresh_slot_key_labels()
+            self.state_controller._refresh_slot_key_labels()
         except Exception:
             pass
         try:
-            self._validate_slot_key_duplicates()
+            self.state_controller._validate_slot_key_duplicates()
         except Exception:
             pass
 
@@ -2098,9 +2098,9 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
 
         if idx is not None:
             monster = self.monsters[idx]
-            self._update_monster_estimate_label(monster)
+            self.state_controller._update_monster_estimate_label(monster)
             # Auto-apply monster config (templates, window_bounds, timing recommendations)
-            self._apply_monster_to_hunt_quick(monster)
+            self.state_controller._apply_monster_to_hunt_quick(monster)
         elif hasattr(self, "monster_estimate_var"):
             self.monster_estimate_var.set("")
 
@@ -2125,7 +2125,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             return
         self.monster_selected_index = idx
         self.monster_selected_name = name
-        self._update_monster_estimate_label(self.monsters[idx])
+        self.state_controller._update_monster_estimate_label(self.monsters[idx])
         self.on_monster_use_for_hunt()
 
     def _refresh_skill_slots_options(self):
@@ -2143,7 +2143,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             cmb["values"] = values
         # Also refresh key labels next to each slot
         try:
-            self._refresh_slot_key_labels()
+            self.state_controller._refresh_slot_key_labels()
         except Exception:
             pass
 
@@ -2224,14 +2224,16 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             self.hunt_cfg["templates"] = []
 
         try:
-            stats = self._calculate_monster_estimate(monster)
+            stats = self.state_controller._calculate_monster_estimate(monster)
         except Exception as e:
             messagebox.showerror(
                 self._t("monster_section"), self._t("monster_invalid").format(e=e)
             )
             return
         kill_time = stats["kill_time"]
-        attack_min, lost_timeout = self._recommend_attack_settings(stats)
+        attack_min, lost_timeout = self.state_controller._recommend_attack_settings(
+            stats
+        )
         self.attack_duration_var.set(f"{attack_min:.2f}")
         self.lost_timeout_var.set(f"{lost_timeout:.2f}")
         base = self._t("monster_estimate_result").format(
@@ -2462,7 +2464,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             self._apply_setup_settings(save_to_file=False)
 
             # 2. Update hunt config from Hunt tab UI (in-place update)
-            cfg = self._hunt_from_ui()
+            cfg = self.state_controller._hunt_from_ui()
 
             # 2.5. Update global hotkeys from Setup tab UI
             if hasattr(self, "global_hotkey_enabled_var"):
@@ -2515,7 +2517,7 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
             self.hunt_cfg = cfg
 
             # 4. Clear unsaved changes indicator
-            self._clear_unsaved_changes()
+            self.state_controller._clear_unsaved_changes()
 
             # 5. Update status
             self.hunt_status.set(self._t("all_saved"))
@@ -2873,22 +2875,6 @@ class App(AppRuntimeBridgeMixin, tk.Tk):
         except Exception:
             pass
 
-    def _open_monster_manager(self):
-        self.monster_manager_controller.open_window()
-
-    def _open_skill_manager(self):
-        self.skill_manager_controller.open_window()
-
-    def on_monster_calculate_timing(self):
-        from ui.windows.timing_calc_dialog import TimingCalcDialog
-
-        def _apply_time(t):
-            self.monster_cfg_wait.set(str(t))
-
-        TimingCalcDialog(self, self, on_apply=_apply_time)
-
-    def on_monster_estimate(self):
-        pass
 
 
 def main():

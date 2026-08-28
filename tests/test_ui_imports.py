@@ -8,6 +8,11 @@ import sys
 from pathlib import Path
 import pytest
 
+import sys
+from unittest.mock import MagicMock
+import pytest
+pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
+
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
