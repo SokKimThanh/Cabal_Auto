@@ -17,7 +17,6 @@ import tkinter as tk
 from typing import Any
 
 # Mock the imports before importing the module
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 import os
