@@ -721,13 +721,23 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
     def _save_monsters(self) -> bool:
         try:
             pending = getattr(self, "pending_changes", {})
+            failed_keys = []
 
             if self.db is not None:
                 # Save pending changes directly to DB
-                for monster in pending.values():
+                for k, monster in pending.items():
                     if not self.db.insert_or_update_monster(monster):
-                        self._show_status_message("Lưu thất bại: không thể ghi monster vào DB", is_error=True)
-                        return False
+                        failed_keys.append(k)
+
+                if failed_keys:
+                    # Clear only successful ones
+                    for k in list(pending.keys()):
+                        if k not in failed_keys:
+                            del pending[k]
+                    self._show_status_message("Lưu thất bại một phần: không thể ghi một số monster vào DB", is_error=True)
+                    # We still want to refresh UI for the ones that succeeded
+                    self._refresh_monster_table()
+                    return False
             elif self.sync_manager is not None:
                 # Fallback to saving all monsters currently loaded + pending
                 # Note: sync_manager might not handle partial updates well, but we merge pending.
@@ -745,6 +755,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
                 if not self.sync_manager.save_monsters(all_monsters):
                     self._show_status_message("Lưu thất bại: sync_manager", is_error=True)
+                    # Don't clear pending on full failure
                     return False
             else:
                 # Fallback JSON
@@ -760,9 +771,13 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
                     if not found:
                         all_monsters.append(monster)
 
-                DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
-                with open(DATA_PATH, "w", encoding="utf-8") as f:
-                    json.dump(all_monsters, f, indent=2, ensure_ascii=False)
+                try:
+                    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+                    with open(DATA_PATH, "w", encoding="utf-8") as f:
+                        json.dump(all_monsters, f, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    self._show_status_message(f"Lưu thất bại JSON: {e}", is_error=True)
+                    return False
 
             self.pending_changes.clear()
             self.is_dirty = False

@@ -196,6 +196,10 @@ class MonsterEditDialog(tk.Toplevel):
         # and validate type based on metadata.
 
         # Read from UI if we have it
+        # ID is read-only, ensure we always emit it and generate one if missing
+        if "id" not in candidate or not candidate["id"]:
+            candidate["id"] = str(uuid.uuid4())
+
         if hasattr(self, 'name_entry'):
             candidate["name"] = self.name_entry.get().strip()
         if hasattr(self, 'level_spinbox'):
@@ -1284,14 +1288,43 @@ class MonsterEditDialog(tk.Toplevel):
             return
 
         try:
-            int(self.level_spinbox.get())
-            int(self.priority_spinbox.get())
-            int(self.hp_entry.get())
-            int(self.damage_entry.get())
+            level = int(self.level_spinbox.get())
+            priority = int(self.priority_spinbox.get())
+            hp = int(self.hp_entry.get())
+            damage = int(self.damage_entry.get())
+
+            p_min = int(self.primary_atk_min_entry.get())
+            p_max = int(self.primary_atk_max_entry.get())
+            s_min = int(self.sec_atk_min_entry.get())
+            s_max = int(self.sec_atk_max_entry.get())
         except ValueError:
             messagebox.showerror(
                 "Lỗi",
-                "Cấp độ, HP, Độ ưu tiên, Sát thương phải là số nguyên",
+                "Các trường số phải là số nguyên",
+                parent=self,
+            )
+            return
+
+        if hp < 0 or level < 0 or priority < 0 or damage < 0:
+            messagebox.showerror(
+                "Lỗi",
+                i18n_t(
+                    "error_negative",
+                    ns="monster_editor",
+                    default="Không thể nhập số âm cho Cấp độ, HP, Độ ưu tiên, Sát thương",
+                ),
+                parent=self,
+            )
+            return
+
+        if p_min > p_max or s_min > s_max:
+            messagebox.showerror(
+                "Lỗi",
+                i18n_t(
+                    "error_min_max",
+                    ns="monster_editor",
+                    default="Giá trị Tối thiểu (Min) không được lớn hơn Tối đa (Max)",
+                ),
                 parent=self,
             )
             return
