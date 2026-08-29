@@ -70,6 +70,49 @@ class MonsterEditDialog(tk.Toplevel):
     Contains clean tabs for Monster Info, Template Manager, and Column Settings.
     """
 
+
+    # --- Field Metadata Definitions ---
+    DB_COLUMNS = [
+        {"key": "id", "group": "system", "widget": "hidden", "default": "", "nullable": False, "type": "string", "validation": "none", "translation_key": ""},
+        {"key": "name", "group": "info", "widget": "entry", "default": "Quái Mới", "nullable": False, "type": "string", "validation": "required", "translation_key": "monster_name_label"},
+        {"key": "level", "group": "stats", "widget": "spinbox", "default": 1, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_level_label"},
+        {"key": "exp", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_exp_label"},
+        {"key": "hp", "group": "stats", "widget": "entry", "default": 100, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_hp_label"},
+        {"key": "defense", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_def_label"},
+        {"key": "attackRate", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_atk_rate_label"},
+        {"key": "defenseRate", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_def_rate_label"},
+        {"key": "hpRecharge", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_hp_recharge_label"},
+        {"key": "accuracy", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_acc_label"},
+        {"key": "penetration", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_pen_label"},
+        {"key": "damageReduction", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_dmg_red_label"},
+        {"key": "evasion", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_evasion_label"},
+        {"key": "resistCritRate", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_resist_crit_rate_label"},
+        {"key": "primaryAttackMin", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_primary_atk_min_label"},
+        {"key": "primaryAttackMax", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_primary_atk_max_label"},
+        {"key": "secondaryAttackMin", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_sec_atk_min_label"},
+        {"key": "secondaryAttackMax", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_sec_atk_max_label"},
+        {"key": "ignoreAccuracy", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_ignore_acc_label"},
+        {"key": "ignoreDamageReduction", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_ignore_dmg_red_label"},
+        {"key": "ignorePenetration", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_ignore_pen_label"},
+        {"key": "absoluteDamage", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_abs_dmg_label"},
+        {"key": "resistSkillAmp", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_resist_amp_label"},
+        {"key": "resistCritDamage", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_resist_crit_dmg_label"},
+        {"key": "resistSuppress", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_resist_suppress_label"},
+        {"key": "resistSilence", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_resist_silence_label"},
+        {"key": "resistDiffDamage", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_resist_diff_dmg_label"},
+        {"key": "hpProportionDamage", "group": "stats", "widget": "entry", "default": 0, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_hp_prop_dmg_label"},
+        {"key": "serverBossType", "group": "reference", "widget": "combobox", "default": None, "nullable": True, "type": "string", "validation": "none", "translation_key": "monster_boss_type_label"},
+        {"key": "dungeonId", "group": "reference", "widget": "combobox", "default": None, "nullable": True, "type": "string", "validation": "none", "translation_key": "monster_dungeon_label"},
+    ]
+
+    LOCAL_METADATA = [
+        {"key": "priority", "group": "local", "widget": "spinbox", "default": 1, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_priority_label"},
+        {"key": "damage_per_hit", "group": "local", "widget": "entry", "default": 10, "nullable": False, "type": "int", "validation": "numeric", "translation_key": "monster_damage_label"},
+        {"key": "description", "group": "local", "widget": "text", "default": "", "nullable": False, "type": "string", "validation": "none", "translation_key": "monster_desc_label"},
+        {"key": "templates", "group": "local", "widget": "custom", "default": [], "nullable": False, "type": "list", "validation": "none", "translation_key": "monster_templates_label"},
+    ]
+
+
     def __init__(
         self,
         parent: Any,
@@ -85,18 +128,7 @@ class MonsterEditDialog(tk.Toplevel):
         if monster:
             self.monster_data = json.loads(json.dumps(monster))
         else:
-            self.monster_data = {
-                "id": str(uuid.uuid4()),
-                "name": i18n_t(
-                    "default_monster_name", ns="monster_editor", default="Quái Mới"
-                ),
-                "level": 1,
-                "priority": 1,
-                "hp": 100,
-                "damage_per_hit": 10,
-                "description": "",
-                "templates": [],
-            }
+            self.monster_data = self._get_default_monster()
 
         m_id = self.monster_data.get("id", "")
         m_name = self.monster_data.get("name", "")
@@ -126,6 +158,85 @@ class MonsterEditDialog(tk.Toplevel):
         x = (self.winfo_screenwidth() // 2) - (780 // 2)
         y = (self.winfo_screenheight() // 2) - (540 // 2)
         self.geometry(f"+{x}+{y}")
+
+    def _get_default_monster(self) -> Dict[str, Any]:
+        """Create a new monster candidate populated with defaults from metadata."""
+        candidate = {}
+        for meta in self.DB_COLUMNS + self.LOCAL_METADATA:
+            key = meta["key"]
+            if key == "id":
+                candidate[key] = str(uuid.uuid4())
+            elif key == "name":
+                candidate[key] = i18n_t("default_monster_name", ns="monster_editor", default="Quái Mới")
+            else:
+                # Need to use copy for lists to avoid sharing reference
+                default_val = meta["default"]
+                if isinstance(default_val, list):
+                    candidate[key] = list(default_val)
+                else:
+                    candidate[key] = default_val
+        return candidate
+
+    def _collect_form_data(self) -> Dict[str, Any]:
+        """Read form widgets and merge with original data, preserving unknown keys."""
+        # Start with a deep copy of the original data to preserve unknown keys
+        candidate = json.loads(json.dumps(self.monster_data))
+
+        # We only have UI inputs for a subset of fields right now.
+        # So we'll map the UI inputs to the data, and cast properly.
+        # For a full implementation, we'd loop over metadata and map dynamically.
+        # But for this round-trip test, we'll manually collect the visible fields
+        # and validate type based on metadata.
+
+        # Read from UI if we have it
+        if hasattr(self, 'name_entry'):
+            candidate["name"] = self.name_entry.get().strip()
+        if hasattr(self, 'level_spinbox'):
+            try:
+                candidate["level"] = int(self.level_spinbox.get())
+            except ValueError:
+                candidate["level"] = 1
+        if hasattr(self, 'priority_spinbox'):
+            try:
+                candidate["priority"] = int(self.priority_spinbox.get())
+            except ValueError:
+                candidate["priority"] = 1
+        if hasattr(self, 'hp_entry'):
+            try:
+                candidate["hp"] = int(self.hp_entry.get())
+            except ValueError:
+                candidate["hp"] = 100
+        if hasattr(self, 'damage_entry'):
+            try:
+                candidate["damage_per_hit"] = int(self.damage_entry.get())
+            except ValueError:
+                candidate["damage_per_hit"] = 10
+        if hasattr(self, 'desc_text'):
+            candidate["description"] = self.desc_text.get("1.0", tk.END).strip()
+
+        # Ensure metadata defaults and types for all fields, and handle nullable references
+        for meta in self.DB_COLUMNS + self.LOCAL_METADATA:
+            key = meta["key"]
+            if key not in candidate:
+                if isinstance(meta["default"], list):
+                    candidate[key] = list(meta["default"])
+                else:
+                    candidate[key] = meta["default"]
+
+            # Type casting and None handling
+            val = candidate[key]
+            if meta["nullable"] and (val == "None" or val == ""):
+                candidate[key] = None
+            elif val is not None:
+                if meta["type"] == "int":
+                    try:
+                        candidate[key] = int(val)
+                    except (ValueError, TypeError):
+                        candidate[key] = meta["default"]
+                elif meta["type"] == "string":
+                    candidate[key] = str(val)
+
+        return candidate
 
     def _setup_ui(self) -> None:
         main_container = tk.Frame(self, bg=UI.BG_DEFAULT)
@@ -772,10 +883,10 @@ class MonsterEditDialog(tk.Toplevel):
             return
 
         try:
-            level = int(self.level_spinbox.get())
-            priority = int(self.priority_spinbox.get())
-            hp = int(self.hp_entry.get())
-            damage = int(self.damage_entry.get())
+            int(self.level_spinbox.get())
+            int(self.priority_spinbox.get())
+            int(self.hp_entry.get())
+            int(self.damage_entry.get())
         except ValueError:
             messagebox.showerror(
                 "Lỗi",
@@ -809,12 +920,7 @@ class MonsterEditDialog(tk.Toplevel):
             else:
                 return
 
-        self.monster_data["name"] = name
-        self.monster_data["level"] = level
-        self.monster_data["priority"] = priority
-        self.monster_data["hp"] = hp
-        self.monster_data["damage_per_hit"] = damage
-        self.monster_data["description"] = self.desc_text.get("1.0", tk.END).strip()
+        self.monster_data = self._collect_form_data()
 
         if self.on_save_callback:
             self.on_save_callback(self.monster_data)
