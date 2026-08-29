@@ -89,6 +89,19 @@ class MonsterDatabase:
         except ImportError as e:
             print(f"[DB] Could not setup skills schema: {e}")
 
+        # Bảng translations
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS translations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                namespace TEXT NOT NULL,
+                key TEXT NOT NULL,
+                lang TEXT NOT NULL,
+                text TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(namespace, key, lang)
+            )
+        """)
+
         # Bảng dungeons (thay thế cho locations cũ)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS dungeons (
