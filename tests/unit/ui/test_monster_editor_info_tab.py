@@ -1,5 +1,5 @@
 import pytest
-pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
+# pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
 
 """
 Unit Tests for Monster Editor Info Tab (Batch 6).
