@@ -19,6 +19,7 @@ Tasks:
 - Target `1576 x 120 px` at 1920x1080/100% DPI using grid weight/minsize, not fixed coordinates.
 - Make the strip visually secondary to Monster Rotation and Active Target & Status.
 - Preserve every skill StringVar, combobox selection binding, clear action, stats behavior, tooltip, and manager entry point.
+- Use the existing user skill library/runtime data only. Do not read the class/skill SQLite catalogue, infer class ownership, or alter skill key/cooldown/cast_time/image until a later adapter integration session passes.
 
 Do not:
 - Change primary panel layout, hunt runtime, skill persistence, config, Sidebar, Bottom Logs, or create a new Skill Manager.

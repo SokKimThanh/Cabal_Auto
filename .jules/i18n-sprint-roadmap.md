@@ -127,6 +127,8 @@ Make it impossible for a future screen to ship with untranslated raw keys withou
 
 Introduce a persistent, structured store for `(namespace, key, lang) -> text` so translations can scale past 2 languages and be edited without touching Python source, while keeping the existing dict files working as the seed/fallback data source (no big-bang cutover).
 
+Cross-roadmap compatibility: follow [I18N_DATABASE_COMPATIBILITY_CONTRACT.md](../docs/I18N_DATABASE_COMPATIBILITY_CONTRACT.md). `translations` is independent UI-copy data with no FK to gameplay catalogue tables. I3A must run after the database-update schema migration DB1 is merged, or rebase on it and use the same schema-init contract.
+
 ### Files in scope
 
 - new: `lib/db/services/translation_service.py` (200-300 line budget, per repo DB service convention)
@@ -151,6 +153,7 @@ Introduce a persistent, structured store for `(namespace, key, lang) -> text` so
   Implement `TranslationService` (in `lib/db/services/`, following the existing repository connection/`finally: close()` convention) with `get_all(namespace=None)`, `upsert(namespace, key, lang, text)`, `bulk_upsert(namespace, translations)`, wrapped in an explicit transaction for multi-row bulk writes.
   Implement `scripts/migrate_translations_to_db.py`: a one-time, idempotent importer that reads every existing `*_TRANSLATIONS` dict (via the Sprint 2 audit helper) and upserts it into the `translations` table, safe to re-run.
 - I3B: Add a hydration path in `lib/i18n/__init__.py`: on first use (or an explicit `load_from_db()` call during app startup), read all rows from `TranslationService.get_all()` and feed them through the existing `register()` function, so the in-memory registry becomes a cache populated from DB. If the DB is empty or unavailable, fall back to the dict-based self-registration already in place (Sprint 1) — the app must never show raw keys because of a DB hiccup.
+- I3B must hydrate once at startup, before visible UI render; it must not query SQLite on every `t()` call or from a Tkinter widget render callback.
 
 ### Acceptance criteria
 
@@ -180,13 +183,13 @@ Make the DB-backed store the single source of truth, remove now-redundant manual
 ### Planned changes
 
 - I4A: Remove remaining manual `i18n_register_bulk(...)` call sites in consumer modules now that hydration happens centrally at startup (guided by repository search per the "prove callers moved" rule); keep the dict files as the DB seed data (not deleted), so `scripts/migrate_translations_to_db.py` still has a source of truth to import from.
-- I4B: Add `scripts/i18n_report.py`: a CLI that reports, per namespace, which keys are missing a translation for a given language (diffing DB rows against the superset of keys across all languages). Use this tool to add a 3rd language (e.g. `zh` or `ko`, whichever the team plans next) for a small representative namespace (e.g. `GLOBAL_NS`'s top 10 most-visible strings), end-to-end, as proof the architecture scales without code changes — only DB rows and a `set_default_lang()`/language-selector UI option are needed.
+- I4B: Add `scripts/i18n_report.py`: a CLI that reports, per namespace, which keys are missing a translation for a given language (diffing DB rows against the superset of keys across all languages). Use this tool to add a 3rd language (e.g. `zh` or `ko`) for a small representative namespace as a data-scale proof. Do not expose the pilot in the global language selector until every reachable screen key is covered or a separately tested fallback chain is implemented.
 
 ### Acceptance criteria
 
 - No consumer module calls `register_bulk` directly anymore; all registration flows through the DB hydration path (dict files remain solely as seed data for migration).
 - `scripts/i18n_report.py` correctly flags missing keys when a language is incomplete.
-- Adding a 3rd language for the pilot namespace requires zero Python code changes — only data.
+- Adding a 3rd language for an isolated, fully covered pilot namespace requires zero Python code changes. Global language-selector exposure requires full reachable-key coverage or a separately tested fallback chain.
 
 ### Validation checklist
 

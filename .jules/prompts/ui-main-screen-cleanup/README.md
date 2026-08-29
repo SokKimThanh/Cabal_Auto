@@ -2,6 +2,8 @@
 
 Thư mục này chứa bộ prompt nhỏ để Jules làm các task UX cleanup trên màn hình chính, theo hướng ưu tiên thao tác quan trọng, giảm nhiễu chức năng phụ, và làm rõ luồng chính của người dùng.
 
+Khi chạy cùng database-update và i18n-unification, tuân theo [CROSS_STREAM_PROMPT_EXECUTION_ORDER.md](../../CROSS_STREAM_PROMPT_EXECUTION_ORDER.md). UI layout có thể hoàn thành khi DB catalogue chưa seed, nhưng UI copy mới phải đi sau i18n I2B và UI catalogue binding chỉ được lập kế hoạch sau DB7.
+
 ## Mục tiêu tổng thể
 
 - ưu tiên các thao tác thường dùng và không thể thiếu lên vùng dễ nhìn nhất
@@ -22,6 +24,10 @@ Thư mục này chứa bộ prompt nhỏ để Jules làm các task UX cleanup t
 Trước khi chạy một prompt, Jules phải đọc [UI_MANAGEMENT_AND_OWNERSHIP.md](UI_MANAGEMENT_AND_OWNERSHIP.md). Tài liệu này xác định owner cho từng zone, source of truth, lifecycle khi rebuild/close và quy tắc Main Thread cho Tkinter.
 
 Để biết chính xác cần sửa widget nào, đặt ở zone nào, giữ callback nào và không được làm gì trong từng session, Jules phải đọc thêm [UI_ZONE_IMPLEMENTATION_PLAYBOOK.md](UI_ZONE_IMPLEMENTATION_PLAYBOOK.md).
+
+## Tích hợp CSDL
+
+Các UI session hiện tại giữ `lib/data/monsters.json`, `lib/data/skills.json` và `lib/data/hunt_config.json` là runtime source of truth. SQLite class/skill catalogue chỉ là reference data cho tới khi DB7 cung cấp read adapter. Trước khi một UI session đọc catalogue DB, phải tuân theo [UI_DATABASE_INTEGRATION_CONTRACT.md](../../../docs/UI_DATABASE_INTEGRATION_CONTRACT.md); không thay runtime JSON bằng raw SQLite rows hoặc suy diễn class/skill mapping.
 
 ## Layout baseline bắt buộc
 
