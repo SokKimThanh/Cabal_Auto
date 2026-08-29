@@ -1,3 +1,4 @@
+import sys
 import pytest
 pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
 
