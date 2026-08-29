@@ -559,35 +559,53 @@ class App(tk.Tk):
 
     # -----------------
     def _build_ui(self):
+        from lib.ui_style import UIStyle as UI
         # Clear (for language rebuild)
         for w in self.winfo_children():
             w.destroy()
 
-        # Topbar with language selector and compact window selection
-        top = tk.Frame(self, padx=8, pady=6)
-        top.pack(fill="x")
+        # Header Frame (App Title and Language Selector) - 56px height
+        self.header_frame = tk.Frame(self, bg=UI.BG_TITLE, height=56)
+        self.header_frame.pack(fill="x")
+        self.header_frame.pack_propagate(False)
 
-        # Left side: Language selector
-        tk.Label(top, text=self._t("language")).pack(side="left")
+        # Title
+        tk.Label(
+            self.header_frame,
+            text=self._t("app_title"),
+            bg=UI.BG_TITLE,
+            fg=UI.BG_DEFAULT,
+            font=UI.FONT_TITLE
+        ).pack(side="left", padx=16, pady=14)
+
+        # Right side of header: Language selector
+        lang_frame = tk.Frame(self.header_frame, bg=UI.BG_TITLE)
+        lang_frame.pack(side="right", padx=16, pady=14)
+        tk.Label(
+            lang_frame,
+            text=self._t("language"),
+            bg=UI.BG_TITLE,
+            fg=UI.BG_DEFAULT
+        ).pack(side="left")
         self.lang_var = tk.StringVar(value=self.lang)
         lang_cmb = ttk.Combobox(
-            top, textvariable=self.lang_var, state="readonly", width=12
+            lang_frame, textvariable=self.lang_var, state="readonly", width=8
         )
         lang_cmb["values"] = ("en", "vi")
         lang_cmb.pack(side="left", padx=(6, 0))
         lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
 
-        # Separator
-        tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
-            side="left", fill="y", padx=12, pady=2
-        )
 
-        # Right side: Window Selection Combobox - shortened to half width (20)
+        # Vùng A: Quick Action Bar - 80px target height (using padding)
+        self.action_bar_frame = tk.Frame(self, padx=32, pady=18)
+        self.action_bar_frame.pack(fill="x")
+
+        # Window Selection Combobox
         self.win_combo_var = tk.StringVar()
         self.win_combo = ttk.Combobox(
-            top, textvariable=self.win_combo_var, state="readonly", width=20
+            self.action_bar_frame, textvariable=self.win_combo_var, state="readonly", width=55
         )
-        self.win_combo.pack(side="left", padx=(0, 6))
+        self.win_combo.pack(side="left", fill="y", padx=(0, 12))
 
         # Auto-populate windows when dropdown is clicked
         self.win_combo.bind(
@@ -611,11 +629,7 @@ class App(tk.Tk):
             lang_provider=lambda: self.lang,
         )
 
-        # Import button styles for refresh button
-        from ui.helpers.button_styles import get_button_config
-
         # Refresh button - Using icon_button component
-        # Icon 16px, Button 24px (padding auto-calculated)
         refresh_tooltip = (
             "Refresh Window List\n" "Scans for game windows"
             if self.lang == "en"
@@ -623,64 +637,59 @@ class App(tk.Tk):
         )
 
         refresh_btn = _create_icon_btn_component(
-            parent=top,
+            parent=self.action_bar_frame,
             icon_name="refresh",
             icon_fallback="🔄",
             icon_size=16,
-            button_size=24,
+            button_size=36,
             command=self.window_controller.on_hunt_refresh_windows,
             button_type="refresh",
             tooltip_text=refresh_tooltip,
             state="normal",
             auto_hover_disabled=False,
         )
-        refresh_btn.pack(side="left", padx=(0, 6))
+        refresh_btn.pack(side="left", padx=(0, 12))
 
-        # Separator before hunt controls
-        tk.Frame(top, width=2, bg="#ccc", relief="sunken").pack(
-            side="left", fill="y", padx=12, pady=2
-        )
+        # Bounds Readiness State Placeholder (Minimum 260x36)
+        self.bounds_placeholder = tk.Frame(self.action_bar_frame, width=260, height=36)
+        self.bounds_placeholder.pack(side="left", padx=(0, 12))
+        self.bounds_placeholder.pack_propagate(False)
 
-        # Hunt Control Buttons - Using icon_button component with auto hover effect
-        # Start Hunt Button - Icon 20px, Button 32px (green)
-        start_tooltip = self._t("start_hunt")
-        if self.lang == "vi":
-            start_tooltip += "\n(Ctrl+F5)"
-        else:
-            start_tooltip += "\n(Ctrl+F5)"
+        # Start Hunt Button
+        start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5)"
 
         self.hunt_start_btn = _create_icon_btn_component(
-            parent=top,
+            parent=self.action_bar_frame,
             icon_name="start",
             icon_fallback="▶️",
+            text=self._t("start_hunt"),
             icon_size=20,
-            button_size=32,
+            button_size=44,
+            padding={'padx': 20, 'pady': 6},
             command=self.on_hunt_start,
             button_type="green",
             tooltip_text=start_tooltip,
             state="normal",
-            auto_hover_disabled=False,  # Start button doesn't need hover effect
+            auto_hover_disabled=False,
         )
-        self.hunt_start_btn.pack(side="left", padx=(0, 6))
+        self.hunt_start_btn.pack(side="left", padx=(0, 12))
 
-        # Stop Hunt Button - Icon 20px, Button 32px (red, disabled by default)
-        stop_tooltip = self._t("stop_hunt")
-        if self.lang == "vi":
-            stop_tooltip += "\n(Ctrl+F6)"
-        else:
-            stop_tooltip += "\n(Ctrl+F6)"
+        # Stop Hunt Button
+        stop_tooltip = self._t("stop_hunt") + "\n(Ctrl+F6)"
 
         self.hunt_stop_btn = _create_icon_btn_component(
-            parent=top,
+            parent=self.action_bar_frame,
             icon_name="stop",
             icon_fallback="⏹️",
+            text=self._t("stop_hunt"),
             icon_size=20,
-            button_size=32,
+            button_size=44,
+            padding={'padx': 20, 'pady': 6},
             command=self.on_hunt_stop,
             button_type="red",
             tooltip_text=stop_tooltip,
             state="disabled",
-            auto_hover_disabled=True,  # Auto show forbidden icon/cursor on hover
+            auto_hover_disabled=True,
         )
         self.hunt_stop_btn.pack(side="left")
 
