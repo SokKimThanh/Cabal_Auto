@@ -1487,6 +1487,16 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
                     if pending is not None:
                         self.filtered_monsters[index] = pending
 
+                # Ensure pending changes not in the current DB page are added to the list
+                existing_ids = {str(m.get("id")) for m in self.filtered_monsters if m.get("id")}
+                orphaned_pending = []
+                for p_id, p_data in self.pending_changes.items():
+                    if str(p_id) not in existing_ids:
+                        orphaned_pending.append(p_data)
+
+                if orphaned_pending:
+                    self.filtered_monsters = orphaned_pending + self.filtered_monsters
+
                 self.monsters = self.filtered_monsters
                 # 🔥 Lưu tổng số bản ghi và tổng số trang
                 self.total_records = payload.get("total_records", 0)
@@ -1652,6 +1662,29 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
             except Exception:
                 self._active_edit_dialog = None
         self._open_edit_dialog(None)
+
+    def get_all_monsters_for_validation(self) -> List[Dict[str, Any]]:
+        """Returns all monsters (from DB or fallback) including pending changes for duplicate validation."""
+        all_monsters = []
+        if self.db is not None:
+            # Query all monsters with high limit
+            all_monsters = self.db.get_all_monsters(limit=99999)
+        else:
+            all_monsters = list(self.monsters)
+
+        # Overlay pending changes
+        for i, m in enumerate(all_monsters):
+            m_id = m.get("id")
+            if m_id in self.pending_changes:
+                all_monsters[i] = self.pending_changes[m_id]
+
+        # Add any pending changes that aren't in the DB list
+        existing_ids = {str(m.get("id")) for m in all_monsters if m.get("id")}
+        for p_id, p_data in self.pending_changes.items():
+            if str(p_id) not in existing_ids:
+                all_monsters.append(p_data)
+
+        return all_monsters
 
     def _open_edit_dialog(
         self, monster_id: Optional[str] = None

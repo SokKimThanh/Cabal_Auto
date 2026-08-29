@@ -1297,7 +1297,10 @@ class MonsterEditDialog(tk.Toplevel):
             return
 
         # Check duplicate name
-        monsters_list = getattr(self.parent, "monsters", [])
+        if hasattr(self.parent, "get_all_monsters_for_validation"):
+            monsters_list = self.parent.get_all_monsters_for_validation()
+        else:
+            monsters_list = getattr(self.parent, "monsters", [])
         current_id = self.monster_data.get("id")
 
         if check_duplicate_name(monsters_list, name, current_id=current_id):
