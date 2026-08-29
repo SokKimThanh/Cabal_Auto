@@ -25,3 +25,9 @@ Based on the roadmap and file inspection, `app_gui.py` directly handles or deleg
 2. **Create App Window Controller:** Extract window ownership and open/close dialog logic (e.g., `_open_monster_manager`, `try_close_library_manager`) into `ui/controllers/app_window_controller.py`.
 3. **Create App State Controller:** Move bounds state management and config saving into `ui/controllers/app_state_controller.py`.
 4. **Update `app_gui.py`:** Refactor `App` to initialize and delegate to these new controllers. Keep `App.__init__` thin and focused on UI composition and bootstrap.
+
+## Final Status
+Architecture Cleanup Sprint completed.
+- App initialization and dependency wiring are contained in `app_gui.py`.
+- Application orchestration, state handling, window/modal lifecycle, config parsing, background looping (hunt logic), global hotkeys, application overlays, bounds targeting, monster state, and skill management are separated into decoupled controllers and services.
+- Application lifecycle runs correctly decoupled from the view.
