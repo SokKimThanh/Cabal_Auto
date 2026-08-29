@@ -71,6 +71,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         
         # Errors
         'error_name_empty': 'Tên quái không được để trống',
+        'error_negative': 'Không thể nhập số âm cho Cấp độ, HP, Độ ưu tiên, Sát thương',
+        'error_min_max': 'Giá trị Tối thiểu (Min) không được lớn hơn Tối đa (Max)',
         'error_level_invalid': 'Cấp độ phải là số nguyên dương',
         'error_threshold_range': 'Ngưỡng phải từ 0.0 đến 1.0',
         'error_template_not_found': 'Không tìm thấy template',
@@ -260,6 +262,8 @@ MONSTER_EDITOR_TRANSLATIONS = {
         
         # Errors
         'error_name_empty': 'Monster name cannot be empty',
+        'error_negative': 'Level, HP, Priority, and Damage cannot be negative',
+        'error_min_max': 'Minimum value cannot be greater than maximum value',
         'error_level_invalid': 'Level must be a positive integer',
         'error_threshold_range': 'Threshold must be between 0.0 and 1.0',
         'error_template_not_found': 'Template not found',
