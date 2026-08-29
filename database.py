@@ -518,7 +518,16 @@ def close_db() -> None:
 
 
 def init_database() -> None:
-    get_db()
+    db = get_db()
+    cursor = db.conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM monsters")
+    if cursor.fetchone()[0] == 0:
+        try:
+            monsters_data = db.load_monsters_data()
+            db.import_dungeons_from_monsters(monsters_data)
+            db.import_monsters(monsters_data)
+        except Exception as e:
+            print(f"[DB] Lỗi khi seed dữ liệu tự động: {e}")
 
 
 def get_all_monsters_api(limit: int = 100) -> List[Dict[str, Any]]:
