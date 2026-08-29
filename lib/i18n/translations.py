@@ -1030,3 +1030,175 @@ Lưu cấu hình và đóng trợ lý?''',
         'rotation_builder_disabled_hint': '💡 Tính năng này chỉ dành cho người mới. Chọn "Người mới" ở Bước 1 để kích hoạt.',
     }
 }
+VISION_WIZARD_TRANSLATIONS = {
+    "vi": {
+        "vision_wizard_title": "Trình Quản Lý Vision System",
+        "vision_wizard_subtitle": "Cấu hình nhận diện hình ảnh và tracking",
+        # Chế độ tìm kiếm
+        "search_mode_label": "Chế độ tìm kiếm:",
+        "search_mode_position": "Tìm tại vị trí chỉ định",
+        "search_mode_fullscreen": "Tìm toàn màn hình",
+        "search_mode_region": "Tìm trong vùng (ROI)",
+        # Threshold
+        "threshold_label": "Ngưỡng nhận diện (0.0 - 1.0):",
+        "threshold_tooltip": "Độ chính xác cần thiết để nhận diện template (0.7 = 70%)",
+        # Template list
+        "template_list_label": "Danh sách Template:",
+        "template_name_col": "Tên",
+        "template_path_col": "Đường dẫn",
+        "template_threshold_col": "Ngưỡng",
+        # Buttons
+        "btn_add_template": "Thêm Template",
+        "btn_remove_template": "Xóa",
+        "btn_save_threshold": "Lưu Ngưỡng",
+        "btn_test_recognition": "Test Nhận Diện",
+        "btn_close": "Đóng",
+        # Preview
+        "preview_label": "Preview / Overlay:",
+        "preview_placeholder": "Vùng preview sẽ hiển thị ở đây",
+        # Messages
+        "msg_no_template_selected": "Vui lòng chọn một template",
+        "msg_invalid_threshold": "Ngưỡng không hợp lệ (phải từ 0.0 đến 1.0)",
+        "msg_threshold_saved": "Đã lưu ngưỡng thành công",
+        "msg_template_added": "Đã thêm template thành công",
+        "msg_template_removed": "Đã xóa template thành công",
+        # Tooltips
+        "tooltip_add_template": "Thêm file ảnh template mới vào danh sách",
+        "tooltip_remove_template": "Xóa template đang chọn khỏi danh sách",
+        "tooltip_save_threshold": "Lưu ngưỡng nhận diện cho template đang chọn",
+        "tooltip_test_recognition": "Chạy test nhận diện với cấu hình hiện tại",
+        # Tabs
+        "tab_general": "Tổng quan",
+        "tab_hotkeys": "Phím tắt",
+        "tab_overlay": "Overlay",
+        "tab_templates": "Templates",
+        # Hotkey Settings
+        "hotkey_settings_title": "Cấu hình phím tắt",
+        "overlay_hotkey_label": "Phím tắt Overlay:",
+        "overlay_hotkey_tooltip": "Phím tắt để bật/tắt overlay hiển thị nhận diện quái vật",
+        "hotkey_option_default": "Ctrl+Shift+O (Mặc định)",
+        "hotkey_option_f_key": "F{} - Phím chức năng",
+        "hotkey_option_ctrl_f": "Ctrl+F{} - Ctrl + Phím F",
+        "hotkey_option_alt_f": "Alt+F{} - Alt + Phím F",
+        "hotkey_option_ctrl_shift_f": "Ctrl+Shift+F{} - Ctrl+Shift+F",
+        # Overlay Settings
+        "overlay_settings_title": "Cấu hình Overlay",
+        "overlay_enabled_label": "Bật overlay:",
+        "overlay_enabled_tooltip": "Hiển thị overlay theo dõi quái vật khi hunting",
+        "overlay_confidence_label": "Độ tin cậy (Confidence):",
+        "overlay_confidence_tooltip": "Ngưỡng độ tin cậy để nhận diện quái vật (0.0 - 1.0)",
+        "overlay_detection_interval_label": "Tần suất phát hiện (giây):",
+        "overlay_detection_interval_tooltip": "Khoảng thời gian giữa các lần quét phát hiện quái vật",
+        "overlay_stable_frames_label": "Số khung hình ổn định:",
+        "overlay_stable_frames_tooltip": "Số khung hình liên tiếp cần phát hiện để xác nhận quái vật",
+        "overlay_lost_timeout_label": "Timeout mất dấu (giây):",
+        "overlay_lost_timeout_tooltip": "Thời gian chờ trước khi đánh dấu quái vật là đã mất",
+        # Edit Mode
+        "btn_edit": "Sửa",
+        "btn_save_all": "Lưu toàn bộ",
+        "btn_cancel_edit": "Hủy",
+        "tooltip_edit": "Chuyển sang chế độ chỉnh sửa cho tab này",
+        "tooltip_save_all": "Lưu tất cả thay đổi vào file cấu hình",
+        "tooltip_cancel_edit": "Hủy bỏ các thay đổi chưa lưu",
+        "status_unsaved": "⚠️ Chưa lưu",
+        "status_saved": "✓ Đã lưu",
+        # Confirmation Dialog
+        "confirm_unsaved_title": "Có thay đổi chưa lưu",
+        "confirm_unsaved_message": 'Bạn có thay đổi chưa lưu.\n\nChọn "OK" để lưu và đóng.\nChọn "Hủy" để bỏ thay đổi và đóng.',
+        "confirm_save_and_close": "OK (Lưu và đóng)",
+        "confirm_discard_and_close": "Hủy (Bỏ thay đổi)",
+        # Validation Messages
+        "error_hotkey_empty": "Phím tắt không được để trống",
+        "error_hotkey_conflict": "Phím tắt này đã được sử dụng cho: {}",
+        "error_confidence_range": "Độ tin cậy phải từ 0.0 đến 1.0",
+        "error_interval_range": "Tần suất phát hiện phải lớn hơn 0",
+        "info_settings_saved": "Đã lưu cài đặt thành công",
+    },
+    "en": {
+        "vision_wizard_title": "Vision System Manager",
+        "vision_wizard_subtitle": "Configure image recognition and tracking",
+        # Search mode
+        "search_mode_label": "Search Mode:",
+        "search_mode_position": "Search at specified position",
+        "search_mode_fullscreen": "Search full screen",
+        "search_mode_region": "Search in region (ROI)",
+        # Threshold
+        "threshold_label": "Recognition Threshold (0.0 - 1.0):",
+        "threshold_tooltip": "Accuracy required to recognize template (0.7 = 70%)",
+        # Template list
+        "template_list_label": "Template List:",
+        "template_name_col": "Name",
+        "template_path_col": "Path",
+        "template_threshold_col": "Threshold",
+        # Buttons
+        "btn_add_template": "Add Template",
+        "btn_remove_template": "Remove",
+        "btn_save_threshold": "Save Threshold",
+        "btn_test_recognition": "Test Recognition",
+        "btn_close": "Close",
+        # Preview
+        "preview_label": "Preview / Overlay:",
+        "preview_placeholder": "Preview area will be displayed here",
+        # Messages
+        "msg_no_template_selected": "Please select a template",
+        "msg_invalid_threshold": "Invalid threshold (must be between 0.0 and 1.0)",
+        "msg_threshold_saved": "Threshold saved successfully",
+        "msg_template_added": "Template added successfully",
+        "msg_template_removed": "Template removed successfully",
+        # Tooltips
+        "tooltip_add_template": "Add new template image to list",
+        "tooltip_remove_template": "Remove selected template from list",
+        "tooltip_save_threshold": "Save recognition threshold for selected template",
+        "tooltip_test_recognition": "Run recognition test with current configuration",
+        # Tabs
+        "tab_general": "General",
+        "tab_hotkeys": "Hotkeys",
+        "tab_overlay": "Overlay",
+        "tab_templates": "Templates",
+        # Hotkey Settings
+        "hotkey_settings_title": "Hotkey Settings",
+        "overlay_hotkey_label": "Overlay Hotkey:",
+        "overlay_hotkey_tooltip": "Hotkey to toggle monster tracking overlay display",
+        "hotkey_option_default": "Ctrl+Shift+O (Default)",
+        "hotkey_option_f_key": "F{} - Function key",
+        "hotkey_option_ctrl_f": "Ctrl+F{} - Ctrl + F key",
+        "hotkey_option_alt_f": "Alt+F{} - Alt + F key",
+        "hotkey_option_ctrl_shift_f": "Ctrl+Shift+F{} - Ctrl+Shift+F",
+        # Overlay Settings
+        "overlay_settings_title": "Overlay Settings",
+        "overlay_enabled_label": "Enable overlay:",
+        "overlay_enabled_tooltip": "Display monster tracking overlay during hunt",
+        "overlay_confidence_label": "Confidence Threshold:",
+        "overlay_confidence_tooltip": "Confidence threshold for monster detection (0.0 - 1.0)",
+        "overlay_detection_interval_label": "Detection Interval (seconds):",
+        "overlay_detection_interval_tooltip": "Time interval between monster detection scans",
+        "overlay_stable_frames_label": "Stable Frames:",
+        "overlay_stable_frames_tooltip": "Consecutive frames required to confirm monster detection",
+        "overlay_lost_timeout_label": "Lost Timeout (seconds):",
+        "overlay_lost_timeout_tooltip": "Wait time before marking monster as lost",
+        # Edit Mode
+        "btn_edit": "Edit",
+        "btn_save_all": "Save All",
+        "btn_cancel_edit": "Cancel",
+        "tooltip_edit": "Switch to edit mode for this tab",
+        "tooltip_save_all": "Save all changes to configuration file",
+        "tooltip_cancel_edit": "Cancel unsaved changes",
+        "status_unsaved": "⚠️ Unsaved",
+        "status_saved": "✓ Saved",
+        # Confirmation Dialog
+        "confirm_unsaved_title": "Unsaved Changes",
+        "confirm_unsaved_message": 'You have unsaved changes.\n\nClick "OK" to save and close.\nClick "Cancel" to discard changes and close.',
+        "confirm_save_and_close": "OK (Save and close)",
+        "confirm_discard_and_close": "Cancel (Discard changes)",
+        # Validation Messages
+        "error_hotkey_empty": "Hotkey cannot be empty",
+        "error_hotkey_conflict": "This hotkey is already used for: {}",
+        "error_confidence_range": "Confidence must be between 0.0 and 1.0",
+        "error_interval_range": "Detection interval must be greater than 0",
+        "info_settings_saved": "Settings saved successfully",
+    },
+}
+
+_register_bulk('library_manager', LIBRARY_MANAGER_TRANSLATIONS)
+_register_bulk('setup_wizard', SETUP_WIZARD_TRANSLATIONS)
+_register_bulk('vision_wizard', VISION_WIZARD_TRANSLATIONS)

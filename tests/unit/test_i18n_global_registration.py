@@ -30,3 +30,31 @@ def test_global_translations_self_register_on_import():
             "t() returned the raw key instead of a translated string"
         )
         assert resolved == GLOBAL_TRANSLATIONS[lang]["app_title"]
+
+def test_other_translations_self_register_on_import():
+    """Importing other translations must register them into the i18n registry."""
+    from lib.i18n import set_default_lang, t
+
+    # Import the modules that should trigger self-registration
+    from lib.i18n.translations import LIBRARY_MANAGER_TRANSLATIONS, SETUP_WIZARD_TRANSLATIONS, VISION_WIZARD_TRANSLATIONS
+    from lib.i18n.monster_editor_translations import MONSTER_EDITOR_TRANSLATIONS
+
+    test_cases = [
+        ("library_manager", LIBRARY_MANAGER_TRANSLATIONS, "library_manager_title"),
+        ("setup_wizard", SETUP_WIZARD_TRANSLATIONS, "wizard_title"),
+        ("vision_wizard", VISION_WIZARD_TRANSLATIONS, "vision_wizard_title"),
+        ("monster_editor", MONSTER_EDITOR_TRANSLATIONS, "quick_editor_title"),
+    ]
+
+    for ns, translations, key in test_cases:
+        assert key in translations.get("en", {})
+        assert key in translations.get("vi", {})
+
+        for lang in ("en", "vi"):
+            set_default_lang(lang)
+            resolved = t(key, ns=ns)
+            assert resolved != key, (
+                f"{ns} not registered for lang={lang}; "
+                "t() returned the raw key instead of a translated string"
+            )
+            assert resolved == translations[lang][key]

@@ -290,7 +290,6 @@ except ImportError:
 try:
     from lib.i18n.monster_editor_translations import MONSTER_EDITOR_TRANSLATIONS
 
-    i18n_register_bulk("monster_editor", MONSTER_EDITOR_TRANSLATIONS)
 except ImportError:
     pass
 

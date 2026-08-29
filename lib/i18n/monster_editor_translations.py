@@ -323,3 +323,6 @@ MONSTER_EDITOR_TRANSLATIONS = {
         'msg_test_result': 'Matches: {}, Confidence: {:.1%}',
     }
 }
+
+from . import register_bulk as _register_bulk
+_register_bulk('monster_editor', MONSTER_EDITOR_TRANSLATIONS)
