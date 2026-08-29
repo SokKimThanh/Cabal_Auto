@@ -12,10 +12,10 @@ Timebox:
 - Documentation-only session; maximum 20 minutes.
 - Do not edit Python UI files. Use implementation evidence from prior sessions and identify any layout work still deferred.
 
-Files in scope:
+Files in scope (read-only reference):
 - docs/UX_ANALYSIS_AND_INTERFACE_REDESIGN.md
-- app_gui.py
-- ui/tabs/*.py
+- app_gui.py (read-only reference)
+- ui/tabs/*.py (read-only reference)
 - focused documentation and UI planning only
 
 Primary UX objective:

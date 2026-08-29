@@ -289,7 +289,7 @@ Mục tiêu của hai vùng C: giữ chức năng đầy đủ nhưng đưa cấ
 
 ### 8.3 Phân bổ kích thước chuẩn cho Desktop 1920x1080
 
-Phần này là baseline thiết kế bắt buộc cho các session UI, giả định cửa sổ ứng dụng maximize trên Desktop `1920x1080 pixels` với Windows DPI `100%`, không tính viền hệ điều hành. Đây không phải phép kiểm tra pixel tuyệt đối: ở DPI `125%-150%`, kích thước render có thể chênh lệch nhẹ do Tk scaling miễn hierarchy, min size, khả năng đọc, focus, không overlap và fallback responsive vẫn đúng. Layout chuẩn có bốn vùng: App Header, Quick Action Bar, Secondary Configuration Sidebar và vùng trung tâm gồm Active Hunt Workspace + Bottom Status / Secondary Logs.
+Phần này là baseline thiết kế bắt buộc cho các session UI, giả định cửa sổ ứng dụng maximize trên Desktop `1920x1080 pixels` với Windows DPI `100%`, không tính viền hệ điều hành. Đây không phải phép kiểm tra pixel tuyệt đối: ở DPI `125%-150%`, kích thước render có thể chênh lệch nhẹ do Tk scaling trong hierarchy, min size, khả năng đọc, focus, không overlap và fallback responsive vẫn đúng. Layout chuẩn có bốn vùng: App Header, Quick Action Bar, Secondary Configuration Sidebar và vùng trung tâm gồm Active Hunt Workspace + Bottom Status / Secondary Logs.
 
 #### Khung tổng thể
 
