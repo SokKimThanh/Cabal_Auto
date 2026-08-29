@@ -2,6 +2,8 @@
 
 This pack implements [SPRINT25_MONSTER_EDITOR_FULL_FIELDS_REDESIGN.md](../../../docs/sprints/SPRINT25_MONSTER_EDITOR_FULL_FIELDS_REDESIGN.md) as small, sequential Jules sessions. Do not run the original Sprint 25 document as a single implementation session.
 
+Cross-stream order is defined in [CROSS_STREAM_PROMPT_EXECUTION_ORDER.md](../../CROSS_STREAM_PROMPT_EXECUTION_ORDER.md). Start Sprint 25 only after i18n `I1A → I1B → I2A → I2B` pass. Sprint 25 uses the current `monsters`, `dungeons`, and `monster_type` schema; it does not wait for DB2-DB7 class/skill catalogue work and should complete before DB1 shared schema migration.
+
 ## Architecture boundary
 
 - `dialogs/monster_edit.py::MonsterEditDialog` owns the visible Add/Edit form, form metadata, field load/collect/validate behavior, and template UI.
