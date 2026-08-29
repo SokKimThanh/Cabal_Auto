@@ -172,7 +172,7 @@ class MonsterEditDialog(tk.Toplevel):
         for meta in self.DB_COLUMNS + self.LOCAL_METADATA:
             key = meta["key"]
             if key == "id":
-                candidate[key] = str(uuid.uuid4())
+                candidate[key] = str(uuid.uuid4())[:8]
             elif key == "name":
                 candidate[key] = i18n_t("default_monster_name", ns="monster_editor", default="Quái Mới")
             else:
@@ -198,7 +198,7 @@ class MonsterEditDialog(tk.Toplevel):
         # Read from UI if we have it
         # ID is read-only, ensure we always emit it and generate one if missing
         if "id" not in candidate or not candidate["id"]:
-            candidate["id"] = str(uuid.uuid4())
+            candidate["id"] = str(uuid.uuid4())[:8]
 
         if hasattr(self, 'name_entry'):
             candidate["name"] = self.name_entry.get().strip()
@@ -388,8 +388,23 @@ class MonsterEditDialog(tk.Toplevel):
         create_icon_label(
             form_frame, icon_name="id", text=i18n_t("monster_id_label", ns="monster_editor", default="ID:"), icon_fallback="🔑", font=UI.FONT_LABEL
         ).grid(row=0, column=0, sticky="w", pady=4)
-        self.id_val_label = tk.Label(form_frame, text="<New>", font=UI.FONT_TEXT, bg=UI.BG_DEFAULT, fg=UI.COLOR_PRIMARY_TEXT)
-        self.id_val_label.grid(row=0, column=1, sticky="w", pady=4, padx=(12, 0))
+
+        id_frame = tk.Frame(form_frame, bg=UI.BG_DEFAULT)
+        id_frame.grid(row=0, column=1, sticky="w", pady=4, padx=(12, 0))
+
+        self.id_val_label = tk.Label(id_frame, text="", font=UI.FONT_TEXT, bg=UI.BG_DEFAULT, fg=UI.COLOR_PRIMARY_TEXT)
+        self.id_val_label.pack(side="left")
+
+        self.btn_generate_id = create_refresh_button(
+            id_frame,
+            command=self._on_generate_id,
+            text=i18n_t("btn_generate_id", ns="monster_editor", default="Generate ID"),
+            padding={"padx": 5, "pady": 2},
+            tooltip_key="tooltip_generate_id",
+            tooltip_ns="monster_editor",
+        )
+        if self.is_new:
+            self.btn_generate_id.pack(side="left", padx=(5, 0))
 
         # Name
         create_icon_label(
@@ -913,10 +928,14 @@ class MonsterEditDialog(tk.Toplevel):
         data = self.monster_data
 
         m_id = data.get("id", "")
+        self.id_val_label.config(text=f"#{m_id}")
+
         if self.is_new:
-            self.id_val_label.config(text="<Mới / New>")
+            if hasattr(self, 'btn_generate_id') and not self.btn_generate_id.winfo_ismapped():
+                self.btn_generate_id.pack(side="left", padx=(5, 0))
         else:
-            self.id_val_label.config(text=f"#{m_id}")
+            if hasattr(self, 'btn_generate_id') and self.btn_generate_id.winfo_ismapped():
+                self.btn_generate_id.pack_forget()
 
         self.name_entry.delete(0, tk.END)
         self.name_entry.insert(0, data.get("name", ""))
@@ -1022,7 +1041,9 @@ class MonsterEditDialog(tk.Toplevel):
 
     def _on_reset_form(self) -> None:
         """Reset form fields to default values for a new entry."""
-        self.id_val_label.config(text="<Mới / New>")
+        m_id = str(uuid.uuid4())[:8]
+        self.monster_data["id"] = m_id
+        self.id_val_label.config(text=f"#{m_id}")
         self.name_entry.delete(0, tk.END)
         self.name_entry.insert(
             0, i18n_t("default_monster_name", ns="monster_editor", default="Quái Mới")
@@ -1253,6 +1274,11 @@ class MonsterEditDialog(tk.Toplevel):
                 "btn_open_folder", ns="monster_editor", default="Thư mục Template"
             )
             messagebox.showinfo(title, str(assets_dir.resolve()), parent=self)
+
+    def _on_generate_id(self) -> None:
+        new_id = str(uuid.uuid4())[:8]
+        self.monster_data["id"] = new_id
+        self.id_val_label.config(text=f"#{new_id}")
 
     def _on_test_match(self) -> None:
         selection = self.template_listbox.selection()
