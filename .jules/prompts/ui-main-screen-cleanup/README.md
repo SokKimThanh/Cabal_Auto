@@ -27,7 +27,7 @@ Trước khi chạy một prompt, Jules phải đọc [UI_MANAGEMENT_AND_OWNERSH
 
 ## Tích hợp CSDL
 
-Các UI session hiện tại giữ `lib/data/monsters.json`, `lib/data/skills.json` và `hunt_config.json` là runtime source of truth. SQLite class/skill catalogue chỉ là reference data cho tới khi DB7 cung cấp read adapter. Trước khi một UI session đọc catalogue DB, phải tuân theo [UI_DATABASE_INTEGRATION_CONTRACT.md](../../../docs/UI_DATABASE_INTEGRATION_CONTRACT.md); không thay runtime JSON bằng raw SQLite rows hoặc suy diễn class/skill mapping.
+Các UI session hiện tại giữ `lib/data/monsters.json`, `lib/data/skills.json` và `lib/data/hunt_config.json` là runtime source of truth. SQLite class/skill catalogue chỉ là reference data cho tới khi DB7 cung cấp read adapter. Trước khi một UI session đọc catalogue DB, phải tuân theo [UI_DATABASE_INTEGRATION_CONTRACT.md](../../../docs/UI_DATABASE_INTEGRATION_CONTRACT.md); không thay runtime JSON bằng raw SQLite rows hoặc suy diễn class/skill mapping.
 
 ## Layout baseline bắt buộc
 
