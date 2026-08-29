@@ -14,6 +14,8 @@ Usage:
 
 import os
 import sys
+import json
+import logging
 from pathlib import Path
 from tkinter import PhotoImage
 try:
@@ -62,72 +64,88 @@ class IconHelper:
         # Icon cache
         self._cache = {}
         
-        # Default icon mappings (prefer .png, fallback to .ico)
+        # Load icon mappings from JSON or use fallback
+        self.icon_map = {}
+        icons_json_path = Path(__file__).parent / 'icons.json'
+
+        try:
+            if icons_json_path.exists():
+                with open(icons_json_path, 'r', encoding='utf-8') as f:
+                    self.icon_map = json.load(f)
+            else:
+                self._load_fallback_mappings()
+        except Exception as e:
+            logging.warning(f"Failed to load icons.json: {e}. Using fallback mappings.")
+            self._load_fallback_mappings()
+
+    def _load_fallback_mappings(self):
+        """Load default fallback icon mappings if JSON file is unavailable."""
         self.icon_map = {
-            'add': ('add.ico', '➕'),
-            'accept': ('accept.ico', '✔️'),  # Accept icon for training mode
-            'locked': ('locked.ico', '🔒'),  # Locked icon for training mode
-            'edit': ('edit.ico', '✏️'),
-            'delete': ('delete.ico', '🗑️'),
-            'save': ('save.ico', '💾'),
-            'cancel': ('cancel.ico', '✖'),
-            'folder': ('folder.ico', '📁'),
-            'capture': ('capture.png', '📸'),
-            'search': ('search.ico', '🔍'),
-            'refresh': ('refresh.ico', '🔄'),
-            'start': ('start.ico', '▶️'),
-            'stop': ('stop.ico', '⏹️'),
-            'pause': ('pause.ico', '⏸️'),
-            'minimize': ('minimize.ico', '➖'),
-            'support': ('support.ico', '🧙'),
-            'next': ('next.ico', '→'),
-            'previous': ('previous.ico', '←'),
-            'preview': ('preview.ico', '👁️'),
-            'monster': ('monster.png', '👹'),
-            'skill': ('skill.ico', '⚔️'),
-            'template': ('template.png', '🖼️'),
-            'list': ('list.ico', '🗂️'),
-            'info': ('info.ico', '📋'),
-            'time': ('time.ico', '⏱️'),
-            'hp': ('hp.ico', '❤️'),
-            'damage': ('damage.ico', '⚔️'),
-            'priority': ('priority.ico', '🎯'),
-            'question': ('question_mark.ico', '❓'),
-            'up': ('up.ico', '↑'),
-            'id': ('id.png', '🔑'),
-            'speed': ('speed.png', '⚡'),
-            'shield': ('shield.png', '🛡️'),
-            'aim': ('aim.png', '🎯'),
-            'dungeon': ('dungeon.png', '🏰'),
-            'boss': ('boss.png', '👑'),
-            'down': ('down.ico', '↓'),
-            'browse': ('folder.ico', '📂'),
-            'clear': ('delete.ico', '🗑️'),
-            'close': ('cancel.ico', '✖'),
-            'new': ('add.ico', '➕'),
-            'calculate': ('info.ico', '🔢'),
-            'apply': ('save.ico', '✔️'),
-            'test': ('question_mark.ico', '🧪'),
-            'use': ('start.ico', '📌'),
-            'library': ('list.ico', '📚'),
-            'check': ('check.ico', '✓'),  # Check/success icon (dedicated check.ico)
-            'warning': ('warning.ico', '⚠️'),  # Warning icon for unsaved state
-            'settings': ('setting.ico', '⚙️'),  # Settings icon (dedicated setting.ico)
-            'hotkey': ('hotkey.ico', '⌨️'),  # Hotkey icon (dedicated hotkey.ico)
-            'forbidden': ('prohibition.ico', '🚫'),  # Forbidden/disabled icon (red prohibition sign)
+            'add': ['add', '➕'],
+            'accept': ['accept', '✔️'],
+            'locked': ['locked', '🔒'],
+            'edit': ['edit', '✏️'],
+            'delete': ['delete', '🗑️'],
+            'save': ['save', '💾'],
+            'cancel': ['cancel', '✖'],
+            'folder': ['folder', '📁'],
+            'capture': ['capture', '📸'],
+            'search': ['search', '🔍'],
+            'refresh': ['refresh', '🔄'],
+            'start': ['start', '▶️'],
+            'stop': ['stop', '⏹️'],
+            'pause': ['pause', '⏸️'],
+            'minimize': ['minimize', '➖'],
+            'support': ['support', '🧙'],
+            'next': ['next', '→'],
+            'previous': ['previous', '←'],
+            'preview': ['preview', '👁️'],
+            'monster': ['monster', '👹'],
+            'skill': ['skill', '⚔️'],
+            'template': ['template', '🖼️'],
+            'list': ['list', '🗂️'],
+            'info': ['info', '📋'],
+            'time': ['time', '⏱️'],
+            'hp': ['hp', '❤️'],
+            'damage': ['damage', '⚔️'],
+            'priority': ['priority', '🎯'],
+            'question': ['question_mark', '❓'],
+            'up': ['up', '↑'],
+            'id': ['id', '🔑'],
+            'speed': ['speed', '⚡'],
+            'shield': ['shield', '🛡️'],
+            'aim': ['aim', '🎯'],
+            'dungeon': ['dungeon', '🏰'],
+            'boss': ['boss', '👑'],
+            'down': ['down', '↓'],
+            'browse': ['folder', '📂'],
+            'clear': ['delete', '🗑️'],
+            'close': ['cancel', '✖'],
+            'new': ['add', '➕'],
+            'calculate': ['info', '🔢'],
+            'apply': ['save', '✔️'],
+            'test': ['question_mark', '🧪'],
+            'use': ['start', '📌'],
+            'library': ['list', '📚'],
+            'check': ['check', '✓'],
+            'warning': ['warning', '⚠️'],
+            'settings': ['setting', '⚙️'],
+            'hotkey': ['hotkey', '⌨️'],
+            'forbidden': ['prohibition', '🚫']
         }
     
     def _apply_color_tint(self, img: Any, hex_color: str) -> Any:
         """
         Apply color tint to icon while preserving alpha channel.
-        Works best with monochrome icons.
+        Works best with monochrome icons. If the icon has significant color variance,
+        it will skip tinting to preserve full-color icons.
         
         Args:
             img: PIL Image in RGBA mode
             hex_color: Hex color string (e.g., '#FFFFFF')
         
         Returns:
-            Tinted PIL Image
+            Tinted PIL Image (or original if full-color)
         """
         if Image is None:
             return img
@@ -143,9 +161,27 @@ class IconHelper:
         if img.mode != 'RGBA':
             img = img.convert('RGBA')
         
-        data = img.getdata()
-        new_data = []
+        data = list(img.getdata())
         
+        # Check if the icon is full-color by measuring color variance
+        is_full_color = False
+        color_pixels = 0
+        total_opaque_pixels = 0
+
+        for item in data:
+            if item[3] > 10:  # If pixel is somewhat opaque
+                total_opaque_pixels += 1
+                # Check variance between RGB channels (grayscale pixels have R ≈ G ≈ B)
+                r_orig, g_orig, b_orig = item[0], item[1], item[2]
+                variance = max(abs(r_orig - g_orig), abs(g_orig - b_orig), abs(r_orig - b_orig))
+                if variance > 30: # Threshold for considering it a "color" pixel
+                    color_pixels += 1
+
+        # If more than 10% of opaque pixels are colored, consider it a full-color icon
+        if total_opaque_pixels > 0 and (color_pixels / total_opaque_pixels) > 0.1:
+            return img
+
+        new_data = []
         # Recolor each pixel: replace RGB but keep alpha
         for item in data:
             # item = (R, G, B, A)
@@ -214,11 +250,10 @@ class IconHelper:
             # Return fallback or generic emoji
             return fallback or '❓'
         
-        icon_file, emoji = self.icon_map[name]
+        icon_stem, emoji = self.icon_map[name]
         # Resolve first existing icon path across known dirs
         # Priority: .png > .ico > emoji (always try .png first)
         icon_path = None
-        icon_stem = Path(icon_file).stem  # e.g., 'save' from 'save.ico'
         extensions = ['.png', '.ico']  # Always prioritize .png over .ico
         
         for d in self.icon_dirs:
@@ -264,7 +299,7 @@ class IconHelper:
                         self._cache[cache_key] = icon
                         return icon
                     except Exception as e:
-                        print(f"Warning: Could not process icon '{name}' with PIL: {e}")
+                        logging.warning(f"Could not process icon '{name}' with PIL: {e}")
                         # Fallback to tkinter PhotoImage without resizing/coloring
                         icon = PhotoImage(file=str(icon_path))
                         self._cache[cache_key] = icon
@@ -274,7 +309,7 @@ class IconHelper:
                     self._cache[cache_key] = icon
                     return icon
         except Exception as e:
-            print(f"Warning: Could not load icon '{name}': {e}")
+            logging.warning(f"Could not load icon '{name}': {e}")
         
         # Fallback to emoji
         result = fallback or emoji
@@ -301,7 +336,7 @@ class IconHelper:
     
     def has_icon_file(self, name: str) -> bool:
         """
-        Check if icon file exists.
+        Check if icon file exists (.png or .ico).
         
         Args:
             name: Icon name
@@ -312,11 +347,14 @@ class IconHelper:
         if name not in self.icon_map:
             return False
         
-        icon_file = self.icon_map[name][0]
+        icon_stem = self.icon_map[name][0]
+        extensions = ['.png', '.ico']
+
         for d in self.icon_dirs:
-            p = d / icon_file
-            if p.exists():
-                return True
+            for ext in extensions:
+                p = d / f"{icon_stem}{ext}"
+                if p.exists():
+                    return True
         return False
 
 
