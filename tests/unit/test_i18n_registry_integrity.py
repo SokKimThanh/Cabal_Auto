@@ -19,7 +19,7 @@ pytestmark = pytest.mark.fast
 
 def test_i18n_registry_integrity():
     """Dynamically discover all *_TRANSLATIONS and verify they are registered."""
-    from lib.i18n import set_default_lang, t, _REGISTRY
+    from lib.i18n import set_default_lang, t, get_registered_namespaces
 
     # Important: importing all modules in lib/i18n/ triggers their self-registration
     discovered_dicts = []
@@ -59,7 +59,7 @@ def test_i18n_registry_integrity():
                     found_ns = lib.i18n.GLOBAL_NS
                 else:
                     # Try all other registered namespaces
-                    for ns in _REGISTRY.keys():
+                    for ns in get_registered_namespaces():
                         res = t(key, ns=ns)
                         if res != key:
                             resolved = res

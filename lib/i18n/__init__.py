@@ -10,7 +10,7 @@ Exposes:
 - GLOBAL_NS: Special global namespace key.
 """
 from __future__ import annotations
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Set, Iterator
 
 # Structure: _REGISTRY[namespace][lang] = { key: text }
 _REGISTRY: Dict[str, Dict[str, Dict[str, str]]] = {}
@@ -77,3 +77,30 @@ def t(key: str, *, ns: Optional[str] = None, lang: Optional[str] = None, default
 def register_bulk(namespace: str, translations: Dict[str, Dict[str, str]]) -> None:
 	for lang, mapping in translations.items():
 		register(namespace, lang, mapping)
+
+
+def get_registered_namespaces() -> Set[str]:
+	"""Return a set of all currently registered namespaces."""
+	return set(_REGISTRY.keys())
+
+
+def iter_missing_keys(namespace: str, langs: List[str]) -> Iterator[str]:
+	"""Yield keys that exist in the given namespace for at least one language,
+	but are missing in at least one of the specified languages.
+	"""
+	if namespace not in _REGISTRY:
+		return
+
+	ns_dict = _REGISTRY[namespace]
+
+	# Collect all keys across all languages in this namespace
+	all_keys: Set[str] = set()
+	for lang_dict in ns_dict.values():
+		all_keys.update(lang_dict.keys())
+
+	# Check each key against the requested languages
+	for key in all_keys:
+		for lang in langs:
+			if lang not in ns_dict or key not in ns_dict[lang]:
+				yield key
+				break
