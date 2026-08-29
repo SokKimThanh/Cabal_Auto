@@ -13,7 +13,7 @@ Translation lookup phải không chặn hunt/UI startup. Nếu database translat
 | `translations` schema / service | i18n Sprint 3 | `(namespace, key, lang) → text` | Không chứa game stats, config runtime, sprite metadata hoặc user setting |
 | Gameplay catalogue schema | Database update DB1-DB8 | classes, skills, mappings, synergies, monsters | Không tạo/cập nhật UI copy khi seed gameplay |
 | UI language render | `lib.i18n.t()` / `App._t()` | in-memory registry hydrated từ DB hoặc dict fallback | Không query SQLite trực tiếp trong widget render/callback |
-| Runtime config | `skills.json`, `monsters.json`, `hunt_config.json` | user selections/timing/bounds/hotkeys | Không bị translation migration ghi đè |
+| Runtime config | `lib/data/skills.json`, `lib/data/monsters.json`, `lib/data/hunt_config.json` | user selections/timing/bounds/hotkeys | Không bị translation migration ghi đè |
 
 Schema translation tối thiểu:
 
