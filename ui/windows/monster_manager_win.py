@@ -1110,6 +1110,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         self.monster_table = CompatibleTreeview(
             table_frame,
             columns=self.visible_columns,
+            displaycolumns=self.visible_columns,
             show="headings",
             selectmode="browse",
             yscrollcommand=self.table_scroll_y.set,
@@ -1418,6 +1419,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
         if self.monster_table.cget("columns") != tuple(self.visible_columns):
             self.monster_table.configure(columns=self.visible_columns)
+            self.monster_table.configure(displaycolumns=self.visible_columns)
             for column in list(self.monster_table["columns"]):
                 self.monster_table.heading(
                     column,
