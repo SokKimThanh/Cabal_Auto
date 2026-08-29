@@ -5,6 +5,10 @@
 **Priority:** High  
 **Related:** PR #108, Sprint 19 Task #2.5, Sprint 19 Task #2.6
 
+**Execution Pack:** [.jules/prompts/sprint25-monster-editor/README.md](../../.jules/prompts/sprint25-monster-editor/README.md). Sprint 25 must run as the seven micro-sessions defined there; do not implement T1-T7 in a single session.
+
+**Post-implementation hardening:** After M25-6 passes, run the M25-X regression wave for reference/null mapping, hidden advanced fields/unknown-key retention, and pending-pagination persistence. The three M25-X prompts are intentionally separate 20-25 minute sessions and must not be combined.
+
 ## 1. Problem Statement
 
 PR #108 moves the monster manager window into `MonsterManagerWin`, but the Add/Edit dialog still exposes only a small subset of the database model:
