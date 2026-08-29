@@ -30,10 +30,55 @@ Kiểm tra trực tiếp `monsters.db` cho thấy database có 9 bảng và fore
   - `dungeons` (2 cols, 0 FKs): 122 rows. Columns: id, name.
   - `monster_type` (2 cols, 0 FKs): 3 rows. Columns: value, label.
   - PRAGMA foreign_key_check: 0 vi phạm (kết quả rỗng).
-- **Source IDs & Parser Boundaries:**
-  - `class_metadata` (`lib/data/color-skill-character-db-cabal.txt`): Trích xuất các đối tượng có thuộc tính như `slug`, `icon`, `str`, `int`, `dex`. Expected: 9 classes. Forbidden: Không insert nếu bị khuyết thông tin.
-  - `skill_sprite_catalogue` (`lib/data/skill-db-cabal-2.txt`): Trích xuất từ đối tượng `sprites: {...}`. Expected: 460 skills. Forbidden: Không sử dụng file look-alike `image-count-skill-db-cabal.txt`.
-  - `bm3_synergy_catalogue` (`lib/data/bm2-bm3-skill-db-cabal.txt`): Expected: 35 synergies, 120 effects liên kết với 9 classes. Forbidden: Không thay đổi/lược bỏ raw `value_text` hoặc ép kiểu vội.
+- **Source IDs & Parser Boundaries (Chi tiết từ DATABASE_SOURCE_DATA_MANIFEST.md):**
+  - `monster_catalogue`:
+    - **Đường dẫn:** `lib/data/monster-db-cabal.txt`
+    - **Entity:** `monsters`, `dungeons` (từ dungeonId/locationId của quái)
+    - **Boundary:** JSON array bên trong `JSON.parse('...')`
+    - **Forbidden:** classes, skills, synergies
+  - `dungeon_reference`:
+    - **Đường dẫn:** `lib/data/location-db-cabal.txt`
+    - **Entity:** `dungeons.id`, `dungeons.name`
+    - **Boundary:** JS pairs `id: "name"`
+    - **Forbidden:** monster/class/skill mapping
+  - `monster_type_reference`:
+    - **Đường dẫn:** `lib/data/type-monster-db-cabal.txt`
+    - **Entity:** `monster_type.value`, `monster_type.label`
+    - **Boundary:** JS objects `value`, `label`
+    - **Forbidden:** class type hoặc skill type
+  - `class_metadata`:
+    - **Đường dẫn:** `lib/data/color-skill-character-db-cabal.txt`
+    - **Entity:** `classes.class_code`, `name`, `icon_path`, `str_base`, `int_base`, `dex_base`
+    - **Boundary:** class map includes all base attributes; `class_code` normalizes hyphen/underscore consistently
+    - **Forbidden:** full skill catalogue, class-skill assignment, synergy effects
+    - **Expected Count:** 9 classes (blader, warrior, wizard, dark-mage, force-archer, force-shielder, force-blader, gladiator, force-gunner)
+  - `skill_sprite_catalogue`:
+    - **Đường dẫn:** `lib/data/skill-db-cabal-2.txt`
+    - **Entity:** `skills.skill_code`, `icon_x`, `icon_y`, `icon_w`, `icon_h`
+    - **Boundary:** embedded `sprites` JSON with coordinate objects
+    - **Forbidden:** class ownership, skill type, cooldown/cast time, recommendation, file `image-count-skill-db-cabal.txt`
+    - **Expected Count:** 460 skills
+  - `bm3_synergy_catalogue`:
+    - **Đường dẫn:** `lib/data/bm2-bm3-skill-db-cabal.txt`
+    - **Entity:** `synergies`, `synergy_effects`
+    - **Boundary:** map keyed by class slug; `rows` with `synergyName`, `activationSequence`, `recommendation`, `effects`
+    - **Forbidden:** full class-skill mapping, complete game skill catalogue, ép kiểu sớm hoặc lược bỏ nguyên bản (`value_text`)
+    - **Expected Count:** 35 synergies, 120 effects liên kết với 9 classes
+  - `class_skill_evidence`:
+    - **Đường dẫn:** `lib/data/bm2-bm3-detail-skill-db-cabal.txt`
+    - **Entity:** mapping manifest cho DB5
+    - **Boundary:** class-guide objects with `className`, `slug`, `featuredSkillSections`, `skillSlugs`, `comboSection`
+    - **Forbidden:** direct production seed, generic sprite ownership
+  - `user_skill_library`:
+    - **Đường dẫn:** `lib/data/skills.json`
+    - **Entity:** User-configured skill library only
+    - **Boundary:** JSON list: `name`, `key`, `type`, `cooldown`, `cast_time`, `image`
+    - **Forbidden:** canonical `skills` catalogue, class metadata, automatic class-skill mapping
+  - `monster_user_library`:
+    - **Đường dẫn:** `lib/data/monsters.json`
+    - **Entity:** User-created hunt/rotation configuration only
+    - **Boundary:** JSON user state
+    - **Forbidden:** canonical `monsters` source, dungeons, class/skill data
 - **Canonical Mapping Availability:** Hiện **chưa có** một mapping nguồn chính thức nào (canonical source) kết nối trực tiếp toàn bộ 460 skill catalogue với 9 class. Việc gán skill phải chờ DB5 (lập mapping manifest có bằng chứng từ `class_skill_evidence`) trước khi seed vào bảng liên kết `class_skill_assignments`. `skills.json` chỉ là cấu hình của người dùng.
 - **Blockers:** Thiếu bảng quan hệ many-to-many (`class_skill_assignments`), thiếu định danh unique source codes (cần chạy DB1), và không thể dùng dữ liệu UI (như `skills.json`) làm catalogue chính thức.
 
