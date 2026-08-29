@@ -16,7 +16,7 @@ Contract này đối chiếu UI main-screen roadmap với database roadmap. Nó 
 
 ## 3. Quyết định kiến trúc
 
-1. `monsters.json`, `skills.json`, `hunt_config.json` vẫn là source of truth cho runtime/UI user configuration trong tất cả UX sessions hiện tại.
+1. `lib/data/monsters.json`, `lib/data/skills.json`, `lib/data/hunt_config.json` vẫn là source of truth cho runtime/UI user configuration trong tất cả UX sessions hiện tại.
 2. `classes`, `skills`, `class_skill_assignments`, `synergies`, `synergy_effects` trong SQLite là reference catalogue. Chúng chỉ được đọc để enrich, validate hoặc populate a selection UI sau DB7.
 3. Không thay source của `SkillRuntimeService`, `load_skill_library()` hoặc `load_monster_library()` trong UX1-UX5 hay DB1-DB6.
 4. DB7 phải cung cấp adapter/read-model, không trả trực tiếp raw SQLite rows cho UI. Adapter map catalogue fields sang explicit view model và giữ nguyên user-runtime fields.
