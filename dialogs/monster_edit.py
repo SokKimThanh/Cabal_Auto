@@ -265,14 +265,14 @@ class MonsterEditDialog(tk.Toplevel):
 
         if hasattr(self, 'dungeon_combo'):
             val = self.dungeon_combo.get().strip()
-            if val in [empty_lbl, ""]:
+            if val in [empty_lbl, "", "None", "<Không / None>"]:
                 candidate["dungeonId"] = None
             else:
                 candidate["dungeonId"] = self.dungeon_lbl_to_val.get(val, val)
 
         if hasattr(self, 'boss_type_combo'):
             val = self.boss_type_combo.get().strip()
-            if val in [empty_lbl, ""]:
+            if val in [empty_lbl, "", "None", "<Không / None>"]:
                 candidate["serverBossType"] = None
             else:
                 candidate["serverBossType"] = self.boss_type_lbl_to_val.get(val, val)
@@ -992,7 +992,13 @@ class MonsterEditDialog(tk.Toplevel):
             if lbl:
                 self.dungeon_combo.set(lbl)
             else:
-                self.dungeon_combo.set(dungeon_id)
+                legacy_lbl = f"{dungeon_id} (Unknown)"
+                self.dungeon_options.append(legacy_lbl)
+                self.dungeon_val_to_lbl[dungeon_id] = legacy_lbl
+                self.dungeon_lbl_to_val[legacy_lbl] = dungeon_id
+                if hasattr(self, "dungeon_combo"):
+                    self.dungeon_combo.config(values=self.dungeon_options)
+                self.dungeon_combo.set(legacy_lbl)
         else:
             self.dungeon_combo.set(empty_lbl)
 
@@ -1002,7 +1008,13 @@ class MonsterEditDialog(tk.Toplevel):
             if lbl:
                 self.boss_type_combo.set(lbl)
             else:
-                self.boss_type_combo.set(boss_type)
+                legacy_lbl = f"{boss_type} (Unknown)"
+                self.boss_type_options.append(legacy_lbl)
+                self.boss_type_val_to_lbl[boss_type] = legacy_lbl
+                self.boss_type_lbl_to_val[legacy_lbl] = boss_type
+                if hasattr(self, "boss_type_combo"):
+                    self.boss_type_combo.config(values=self.boss_type_options)
+                self.boss_type_combo.set(legacy_lbl)
         else:
             self.boss_type_combo.set(empty_lbl)
 
