@@ -37,3 +37,7 @@
 ## 2023-10-27 - Direct RGB to GRAY conversion in OpenCV
 **Learning:** PyAutoGUI screenshot returns RGB arrays. Converting directly via `cv2.COLOR_RGB2GRAY` instead of doing `RGB -> BGR -> GRAY` saves an intermediate array allocation and executes ~40% faster.
 **Action:** When converting PIL images to Grayscale for OpenCV template matching, always use `cv2.cvtColor(np.array(img), cv2.COLOR_RGB2GRAY)` directly.
+
+## 2023-10-27 - OpenCV Feature Detector Instantiation Overhead
+**Learning:** Instantiating `cv2.ORB_create` or `cv2.SIFT_create` multiple times per frame inside feature detection loops creates significant unnecessary overhead.
+**Action:** Cache the instantiated OpenCV feature detectors (like ORB or SIFT) using a thread-local object (`threading.local()`) to prevent redundant creation overhead per frame while avoiding shared mutable state issues across threads.
