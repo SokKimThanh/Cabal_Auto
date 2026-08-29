@@ -124,6 +124,13 @@ class MonsterEditDialog(tk.Toplevel):
         self.on_save_callback = on_save
         self.is_new = monster is None
 
+        self.dungeon_options = []
+        self.boss_type_options = []
+        self.dungeon_val_to_lbl = {}
+        self.dungeon_lbl_to_val = {}
+        self.boss_type_val_to_lbl = {}
+        self.boss_type_lbl_to_val = {}
+
         # Deep copy monster or create new default
         if monster:
             self.monster_data = json.loads(json.dumps(monster))
@@ -250,13 +257,21 @@ class MonsterEditDialog(tk.Toplevel):
         if hasattr(self, 'exp_entry'): candidate["exp"] = _get_int(self.exp_entry)
         if hasattr(self, 'hp_recharge_entry'): candidate["hpRecharge"] = _get_int(self.hp_recharge_entry)
 
+        empty_lbl = i18n_t("ref_none", ns="monster_editor", default="<Không / None>")
+
         if hasattr(self, 'dungeon_combo'):
             val = self.dungeon_combo.get().strip()
-            candidate["dungeonId"] = val if val else None
+            if val in [empty_lbl, ""]:
+                candidate["dungeonId"] = None
+            else:
+                candidate["dungeonId"] = self.dungeon_lbl_to_val.get(val, val)
 
         if hasattr(self, 'boss_type_combo'):
             val = self.boss_type_combo.get().strip()
-            candidate["serverBossType"] = val if val else None
+            if val in [empty_lbl, ""]:
+                candidate["serverBossType"] = None
+            else:
+                candidate["serverBossType"] = self.boss_type_lbl_to_val.get(val, val)
 
         # Ensure metadata defaults and types for all fields, and handle nullable references
         for meta in self.DB_COLUMNS + self.LOCAL_METADATA:
@@ -853,6 +868,44 @@ class MonsterEditDialog(tk.Toplevel):
         self.desc_text.grid(row=1, column=1, columnspan=3, sticky="ew", pady=4, padx=(12, 0))
 
     def _populate_form(self) -> None:
+        # Load references
+        empty_lbl = i18n_t("ref_none", ns="monster_editor", default="<Không / None>")
+        db = getattr(self.parent, "db", None)
+
+        # Dungeons
+        dungeons = [{"id": "", "name": empty_lbl}]
+        if db and hasattr(db, "get_dungeon_list"):
+            try:
+                db_dungeons = db.get_dungeon_list()
+                if db_dungeons:
+                    dungeons.extend(db_dungeons)
+            except Exception:
+                pass
+
+        self.dungeon_options = [d.get("name", d.get("id")) for d in dungeons]
+        self.dungeon_lbl_to_val = {d.get("name", d.get("id")): d.get("id") for d in dungeons if d.get("id")}
+        self.dungeon_val_to_lbl = {d.get("id"): d.get("name", d.get("id")) for d in dungeons if d.get("id")}
+
+        if hasattr(self, "dungeon_combo"):
+            self.dungeon_combo.config(values=self.dungeon_options)
+
+        # Boss Types
+        boss_types = [{"value": "", "label": empty_lbl}]
+        if db and hasattr(db, "get_monster_type_list"):
+            try:
+                db_boss_types = db.get_monster_type_list()
+                if db_boss_types:
+                    boss_types.extend(db_boss_types)
+            except Exception:
+                pass
+
+        self.boss_type_options = [t.get("label", t.get("value")) for t in boss_types]
+        self.boss_type_lbl_to_val = {t.get("label", t.get("value")): t.get("value") for t in boss_types if t.get("value")}
+        self.boss_type_val_to_lbl = {t.get("value"): t.get("label", t.get("value")) for t in boss_types if t.get("value")}
+
+        if hasattr(self, "boss_type_combo"):
+            self.boss_type_combo.config(values=self.boss_type_options)
+
         data = self.monster_data
 
         m_id = data.get("id", "")
@@ -928,18 +981,26 @@ class MonsterEditDialog(tk.Toplevel):
         if data.get("description"):
             self.desc_text.insert("1.0", data["description"])
 
-        # Reference comboboxes (empty options for now)
+        # Reference comboboxes
         dungeon_id = data.get("dungeonId")
-        if dungeon_id:
-            self.dungeon_combo.set(dungeon_id)
+        if dungeon_id is not None and str(dungeon_id).strip() not in ["", "None"]:
+            lbl = self.dungeon_val_to_lbl.get(dungeon_id)
+            if lbl:
+                self.dungeon_combo.set(lbl)
+            else:
+                self.dungeon_combo.set(dungeon_id)
         else:
-            self.dungeon_combo.set("")
+            self.dungeon_combo.set(empty_lbl)
 
         boss_type = data.get("serverBossType")
-        if boss_type:
-            self.boss_type_combo.set(boss_type)
+        if boss_type is not None and str(boss_type).strip() not in ["", "None"]:
+            lbl = self.boss_type_val_to_lbl.get(boss_type)
+            if lbl:
+                self.boss_type_combo.set(lbl)
+            else:
+                self.boss_type_combo.set(boss_type)
         else:
-            self.boss_type_combo.set("")
+            self.boss_type_combo.set(empty_lbl)
 
         self._refresh_templates()
 
@@ -967,8 +1028,8 @@ class MonsterEditDialog(tk.Toplevel):
             entry.delete(0, tk.END)
             entry.insert(0, "0")
 
-        self.dungeon_combo.set("")
-        self.boss_type_combo.set("")
+        self.dungeon_combo.set(i18n_t("ref_none", ns="monster_editor", default="<Không / None>"))
+        self.boss_type_combo.set(i18n_t("ref_none", ns="monster_editor", default="<Không / None>"))
 
         self.damage_entry.delete(0, tk.END)
         self.damage_entry.insert(0, "10")
@@ -991,8 +1052,8 @@ class MonsterEditDialog(tk.Toplevel):
                       self.hp_prop_dmg_entry, self.exp_entry, self.hp_recharge_entry):
             entry.delete(0, tk.END)
 
-        self.dungeon_combo.set("")
-        self.boss_type_combo.set("")
+        self.dungeon_combo.set(i18n_t("ref_none", ns="monster_editor", default="<Không / None>"))
+        self.boss_type_combo.set(i18n_t("ref_none", ns="monster_editor", default="<Không / None>"))
 
         self.damage_entry.delete(0, tk.END)
         self.desc_text.delete("1.0", tk.END)
