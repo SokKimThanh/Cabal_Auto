@@ -4,6 +4,8 @@ Split one-session prompt files are available in `.jules/prompts/i18n-unification
 
 Use these prompts as separate Jules sessions. Each prompt is intentionally scoped to one reviewable responsibility boundary. Do not combine prompts unless a previous session explicitly finished cleanly and the next prompt says it can start after that result.
 
+Khi chạy cùng database-update và UI cleanup, tuân theo [CROSS_STREAM_PROMPT_EXECUTION_ORDER.md](CROSS_STREAM_PROMPT_EXECUTION_ORDER.md). Đặc biệt: I3A chạy sau DB1; I3B chạy sau DB7; không mở pilot language toàn app khi fallback/coverage chưa pass.
+
 ## Global Rules For Every Jules Session
 
 Paste `.jules/prompts/i18n-unification/00-global-rules.md` at the top of every prompt if Jules does not already have it in context.

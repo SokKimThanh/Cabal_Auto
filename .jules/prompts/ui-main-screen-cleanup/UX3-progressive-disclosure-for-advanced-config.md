@@ -37,6 +37,7 @@ Tasks:
 - keep each entry point wired to its existing callback or tab route
 - keep target-window/bounds feedback in Vùng A/B; Sidebar may link to configuration but cannot own blocking runtime feedback
 - keep Sidebar within `280 px` baseline and `250-300 px` responsive range
+- do not move manager/setup persistence from JSON/config to SQLite catalogue tables
 
 Acceptance criteria:
 - Sidebar is visually subordinate and exposes each existing secondary route

@@ -7,6 +7,7 @@ You are working in the Cabal_Auto repository. Follow the UX cleanup goals descri
 Read .jules/prompts/ui-main-screen-cleanup/UI_MANAGEMENT_AND_OWNERSHIP.md before editing. Its zone ownership, lifecycle, and Main Thread rules are mandatory.
 Read .jules/prompts/ui-main-screen-cleanup/UI_ZONE_IMPLEMENTATION_PLAYBOOK.md before editing. Its widget mapping, zone-specific implementation steps, non-goals, and validation rules are mandatory.
 Read .jules/prompts/ui-main-screen-cleanup/I18N_UI_INTEGRATION.md before editing. Its translation-key, language-rebuild, and bilingual validation rules are mandatory for every user-visible UI string.
+Read docs/UI_DATABASE_INTEGRATION_CONTRACT.md before adding a DB-backed UI read. Existing JSON user libraries and hunt config remain the runtime source of truth until a dedicated adapter is implemented and validated.
 
 Hard constraints:
 - Keep the change small, reversible, and scoped to the files named in this prompt.
@@ -25,6 +26,7 @@ Hard constraints:
 - Do not move a primary hunt action into the Sidebar or Bottom Logs. Do not move deep configuration into the Quick Action Bar.
 - Only the Main Thread may call Tkinter widget methods. Background workers and services pass data through a UI scheduler (`after(0, ...)`) or `queue.Queue`.
 - Do not let a zone directly update another zone's widgets. Use an explicit callback or an existing controller/service state contract.
+- Do not replace `load_monster_library()`, `load_skill_library()`, `SkillRuntimeService`, or hunt config reads with raw SQLite rows in a UI session. Catalogue data can only enrich an explicit view model after DB7 and must have an empty/unseeded-DB fallback.
 - Do not add a hard-coded user-visible string. Use the existing i18n registry and `App._t`/zone `_t` helper; new main-screen copy requires both `en` and `vi` keys.
 
 Execution & Rollback Protocol (Strict 30-Minute Budget):

@@ -1,0 +1,150 @@
+# Roadmap Cập Nhật CSDL Lớp Và Kỹ Năng
+
+## 1. Kết quả kiểm tra hiện tại
+
+Kiểm tra trực tiếp `monsters.db` cho thấy database có 9 bảng và foreign key không có vi phạm, nhưng dữ liệu gameplay chưa được seed đầy đủ.
+
+| Bảng | Cột | Foreign key | Số bản ghi | Trạng thái |
+| --- | ---: | ---: | ---: | --- |
+| `dungeons` | 2 | 0 | 122 | Có reference data |
+| `monster_type` | 2 | 0 | 3 | Có reference data |
+| `monsters` | 30 | 2 | 0 | Schema đủ nhưng chưa import data |
+| `classes` | 7 | 0 | 0 | Đã tạo schema, chưa seed |
+| `skills` | 9 | 1 | 0 | Đã tạo schema, chưa seed |
+| `synergies` | 5 | 1 | 0 | Đã tạo schema, chưa seed |
+| `synergy_effects` | 6 | 1 | 0 | Đã tạo schema, chưa seed |
+| `scans` | 6 | 3 | 0 | Audit/runtime table, chưa có data |
+| `builds` | 5 | 1 | 0 | Future/user data table, chưa có data |
+
+`PRAGMA foreign_key_check` hiện trả về `0` vi phạm. Điều này chỉ xác nhận schema/data hiện hữu nhất quán, không chứng minh dữ liệu class/skill đã đầy đủ.
+
+## 2. Nguồn dữ liệu đã có
+
+Chi tiết source ID, file chính xác, parsing boundary, identity, forbidden look-alike sources và evidence requirements nằm trong [DATABASE_SOURCE_DATA_MANIFEST.md](DATABASE_SOURCE_DATA_MANIFEST.md). Mọi DB session phải dùng manifest này trước khi đọc hoặc seed data.
+
+| Nguồn | Dữ liệu có thể dùng | Mức độ cấu trúc | Quyết định |
+| --- | --- | --- | --- |
+| `lib/data/color-skill-character-db-cabal.txt` | 9 class slug, tên class, icon path, base STR/INT/DEX | JavaScript bundle, cần extractor có kiểm thử | Seed bảng `classes` |
+| `lib/data/skill-db-cabal-2.txt` | 460 skill sprite entries với `icon_x`, `icon_y`, `icon_w`, `icon_h` | JSON embedded trong webpack | Seed catalogue icon, không tự suy diễn class ownership |
+| `lib/data/bm2-bm3-skill-db-cabal.txt` | 9 classes, 35 BM3 synergies, 120 effects | JavaScript object, cần extractor có kiểm thử | Seed `synergies` và `synergy_effects` |
+| `lib/data/bm2-bm3-detail-skill-db-cabal.txt` | Class guide, skill slug list, mô tả/categorization | Bundle lớn, nhiều content prose | Chỉ dùng sau audit parser; không làm source canonical một cách mù quáng |
+| `lib/data/skills.json` | 5 skill do người dùng cấu hình, key/cooldown/cast_time/image | JSON | Giữ là user skill library, không thay catalogue game |
+| `lib/data/monster-db-cabal.txt` | Monster source | Webpack JSON | Import riêng; không gộp vào migration class/skill |
+
+Hiện chưa có nguồn canonical, structured và versioned chứng minh đầy đủ quan hệ `skill ↔ class` cho toàn bộ catalogue. Vì vậy không được đánh dấu “skills theo từng class đã đầy đủ” trước khi có extractor/audit xác nhận.
+
+## 3. Vấn đề thiết kế cần giải quyết
+
+### 3.1 Schema hiện tại không biểu đạt đầy đủ quan hệ skill-class
+
+`skills.class_id` biểu đạt một skill thuộc tối đa một class. Điều này không phù hợp nếu có skill dùng chung hoặc cần lưu một skill catalogue độc lập rồi gán cho nhiều class. Migration phải thêm bảng liên kết, không phá `skills.class_id` trong lần đầu:
+
+```sql
+CREATE TABLE IF NOT EXISTS class_skill_assignments (
+    class_id INTEGER NOT NULL,
+    skill_id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    source_ref TEXT NOT NULL,
+    is_recommended INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (class_id, skill_id),
+    FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE CASCADE,
+    FOREIGN KEY (skill_id) REFERENCES skills(skill_id) ON DELETE CASCADE
+);
+```
+
+`category` ghi ngữ cảnh như `bm1`, `bm2`, `bm3`, `attack`, `buff`, `debuff`, `passive`, `utility`; không suy diễn category nếu source không khẳng định.
+
+### 3.2 Identity chưa ổn định
+
+`classes.name` và `skills.name` chưa có unique key machine-safe. Thêm immutable source key trước khi import:
+
+```sql
+ALTER TABLE classes ADD COLUMN class_code TEXT;
+ALTER TABLE skills ADD COLUMN skill_code TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_classes_class_code
+    ON classes(class_code) WHERE class_code IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_skills_skill_code
+    ON skills(skill_code) WHERE skill_code IS NOT NULL;
+```
+
+Không dùng display name làm khóa import; dùng normalized slug/source code và giữ `name` là display text.
+
+### 3.3 `synergy_effects.value REAL` làm mất dữ liệu source
+
+Nguồn synergy có value như `+30%`, `-3% (scaled)` và `+500`. Một cột `REAL` không đủ để giữ unit, sign và scaling. Migration additive cần ít nhất:
+
+```sql
+ALTER TABLE synergy_effects ADD COLUMN value_text TEXT;
+ALTER TABLE synergy_effects ADD COLUMN value_number REAL;
+ALTER TABLE synergy_effects ADD COLUMN value_unit TEXT;
+ALTER TABLE synergy_effects ADD COLUMN is_scaled INTEGER NOT NULL DEFAULT 0;
+```
+
+Luôn giữ `value_text` nguyên bản. `value_number`, `value_unit`, `is_scaled` là parsed fields có thể null khi parser không chắc chắn.
+
+## 4. Mô hình quan hệ mục tiêu
+
+Relationship contract chi tiết gồm cardinality, khóa, foreign-key action, thứ tự seed và orphan checks nằm trong [DATABASE_RELATIONSHIP_CONTRACT.md](DATABASE_RELATIONSHIP_CONTRACT.md). DB1, DB4, DB6 và DB8 phải dùng contract này khi migration, import và validation.
+
+Database catalogue không thay thế các JSON runtime đang phục vụ UI. Quy tắc UI-to-DB mapping, adapter, fallback và dependency nằm trong [UI_DATABASE_INTEGRATION_CONTRACT.md](UI_DATABASE_INTEGRATION_CONTRACT.md); DB7 chỉ được cung cấp read adapter sau khi catalogue/mapping có evidence đầy đủ.
+
+```mermaid
+erDiagram
+    CLASSES ||--o{ CLASS_SKILL_ASSIGNMENTS : has
+    SKILLS ||--o{ CLASS_SKILL_ASSIGNMENTS : assigned_to
+    CLASSES ||--o{ SYNERGIES : owns
+    SYNERGIES ||--o{ SYNERGY_EFFECTS : contains
+    CLASSES ||--o{ SCANS : selected_for
+    SKILLS ||--o{ SCANS : records
+    MONSTERS ||--o{ SCANS : records
+    DUNGEONS ||--o{ MONSTERS : contains
+    MONSTER_TYPE ||--o{ MONSTERS : classifies
+```
+
+`skills` là catalogue chuẩn của game. `lib/data/skills.json` vẫn là user library/runtime configuration và chỉ có thể tham chiếu catalogue qua `skill_code` trong một session riêng có backward-compatibility plan.
+
+## 5. Kế hoạch thực hiện theo session
+
+Mỗi session tối đa 30 phút; dừng mở rộng scope ở phút 25, chạy validation và chỉ dùng 5 phút cuối để sửa lỗi trực tiếp hoặc hoàn tác diff của session bằng patch review. Không dùng reset/discard worktree rộng.
+
+| Thứ tự | Session | Timebox | Mục tiêu | Dependency |
+| --- | --- | ---: | --- | --- |
+| DB0 | Snapshot & source audit | 20-25 phút | Ghi schema, counts, FK, source counts và parser feasibility | Không |
+| DB1 | Additive schema migration | 25-30 phút | Thêm identity/mapping/effect-value schema, không seed | DB0 |
+| DB2 | Seed classes | 25-30 phút | Extract/seed đúng 9 classes, idempotent | DB1 |
+| DB3 | Seed skill sprite catalogue | 25-30 phút | Extract/seed icon metadata, idempotent; chưa gán class | DB1 |
+| DB4 | Seed BM3 synergies | 25-30 phút | Seed 35 synergies/120 effects cho 9 classes | DB2, DB1 |
+| DB5 | Class-skill mapping audit | 20-25 phút | Xác định coverage có chứng cứ; lập mapping manifest thiếu data | DB2, DB3 |
+| DB6 | Import verified class-skill mapping | 25-30 phút | Chỉ import mapping có source evidence | DB5 |
+| DB7 | Runtime integration | 25-30 phút | Đọc catalogue DB mà không thay user library behavior | DB2-DB6 |
+| DB8 | Integrity tests & docs sync | 20-30 phút | Test FK, counts, idempotency, orphan rows và cập nhật docs | DB1-DB7 |
+
+Không chạy DB6 khi DB5 chưa chứng minh được mapping. Không coi `skills.json` năm entry là bằng chứng catalogue kỹ năng đầy đủ.
+
+## 6. Tiêu chí hoàn thành
+
+- Bảng `classes` có đúng 9 class source codes, unique và có base stats/icon path khi source cung cấp.
+- `skills` có catalogue icon metadata với source key unique; số row phải khớp parser count, không dùng số hard-code trong code.
+- `class_skill_assignments` chỉ chứa mapping đã được source audit xác nhận; không có orphan `class_id`/`skill_id`.
+- `synergies` và `synergy_effects` seed idempotent; lưu nguyên `value_text` để không mất `%` hoặc `(scaled)`.
+- `PRAGMA foreign_key_check` trả về 0; test đầy đủ count, unique key và orphan rows.
+- Monster import được kiểm tra/seed độc lập; không tuyên bố toàn DB complete khi `monsters` còn 0 rows.
+- User skill library giữ nguyên behavior và không bị overwrite bởi catalogue seed.
+
+## 7. Validation bắt buộc
+
+```text
+PRAGMA foreign_key_check;
+SELECT COUNT(*) FROM classes;
+SELECT COUNT(*) FROM skills;
+SELECT COUNT(*) FROM class_skill_assignments;
+SELECT COUNT(*) FROM synergies;
+SELECT COUNT(*) FROM synergy_effects;
+SELECT COUNT(*) FROM skills WHERE skill_code IS NULL;
+SELECT COUNT(*) FROM class_skill_assignments csa
+LEFT JOIN classes c ON c.class_id = csa.class_id
+LEFT JOIN skills s ON s.skill_id = csa.skill_id
+WHERE c.class_id IS NULL OR s.skill_id IS NULL;
+```
+
+Mỗi importer chạy hai lần trong temporary SQLite database và production copy backup: row count và unique key phải không đổi ở lần hai.

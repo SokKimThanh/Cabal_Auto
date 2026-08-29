@@ -42,6 +42,7 @@ Tasks:
 - if multiple statuses exist, expose only the most actionable ones at the top level
 - distinguish no selected window, invalid bounds, minimized window, and invalid target region where existing runtime data permits
 - render status, warning, and recovery copy through existing i18n keys/templates; add both `en` and `vi` keys to `GLOBAL_TRANSLATIONS` before adding a new visible state
+- do not use catalogue DB availability, class mapping, or skill metadata to decide a hunt/bounds warning or block Start Hunt
 
 Acceptance criteria:
 - the user can understand the current state of the hunt in a single glance

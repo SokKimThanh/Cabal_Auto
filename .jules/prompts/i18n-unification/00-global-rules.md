@@ -4,6 +4,7 @@ Paste this block before a session prompt if Jules does not already have these ru
 
 ```text
 You are working in the Cabal_Auto repository. Follow .jules/i18n-sprint-roadmap.md as the source of truth.
+Read docs/I18N_DATABASE_COMPATIBILITY_CONTRACT.md before changing translation schema, hydration, language availability, or DB integration.
 
 Hard constraints:
 - Keep the change small, reversible, and scoped to the files named in this prompt.
@@ -16,6 +17,8 @@ Hard constraints:
 - Do not overwrite or revert user changes outside this session's scope.
 - Prefer moving code intact before simplifying it; behavior-preserving extraction comes before cleanup.
 - Any new registration mechanism must keep `lib.i18n.t()`, `lib.i18n.register_bulk()`, and `lib.i18n.GLOBAL_NS` as the stable public API used by all consumer code.
+- Keep `translations` independent from gameplay catalogue tables: no FK to classes, skills, monsters, dungeons, mappings, synergies, scans, or builds. Do not use numeric gameplay IDs as translation identity.
+- Do not expose a partial pilot language in the global selector unless all reachable UI keys are covered or a tested fallback chain prevents raw keys.
 - Add or update focused tests when practical; every sprint must be validated by an automated test that would have caught the original 2026-08-27 regression (translations imported but never registered, silently falling back to raw keys).
 - Run the narrowest useful validation command before finishing.
 
