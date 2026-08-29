@@ -479,6 +479,12 @@ Mỗi zone phải được chỉnh sửa theo widget nguồn, owner, layout budg
 
 Trình tự áp dụng bắt buộc là: hoàn thiện action bar → hiển thị bounds readiness → dựng outer shell → bố trí Hunt Workspace → xử lý Sidebar → làm rõ runtime status → thêm Bottom Logs. Không bắt đầu Bottom Logs khi chưa có data source thread-safe và lifecycle cleanup rõ ràng.
 
+### 10.4 Ngôn ngữ giao diện và i18n
+
+Main screen phải hỗ trợ `vi` và `en` xuyên suốt mọi zone. Cơ chế hiện có dùng `App._t()` và registry `lib.i18n`; đổi ngôn ngữ lưu lựa chọn, cập nhật default language và rebuild UI. Vì vậy, mọi visible copy mới phải có translation key cho cả `vi`/`en`, render qua `_t(...)`, và không được hard-code trong widget/callback.
+
+Đổi ngôn ngữ không được làm mất selected window, window bounds, hunt state, rotation, mode setup hoặc các giá trị config đã có. Text dài hơn sau dịch phải giữ được hierarchy, `minsize`, keyboard focus và không làm wrap/cắt control P0. Contract, phân bổ namespace, validation song ngữ và timebox tách i18n session nằm trong [I18N_UI_INTEGRATION.md](../.jules/prompts/ui-main-screen-cleanup/I18N_UI_INTEGRATION.md).
+
 ---
 
 ## 11. Định nghĩa “thao tác quan trọng” và “thao tác phụ”

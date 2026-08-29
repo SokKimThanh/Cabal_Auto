@@ -41,6 +41,7 @@ Tasks:
 - keep the status system compatible with existing config and runtime states
 - if multiple statuses exist, expose only the most actionable ones at the top level
 - distinguish no selected window, invalid bounds, minimized window, and invalid target region where existing runtime data permits
+- render status, warning, and recovery copy through existing i18n keys/templates; add both `en` and `vi` keys to `GLOBAL_TRANSLATIONS` before adding a new visible state
 
 Acceptance criteria:
 - the user can understand the current state of the hunt in a single glance
@@ -63,4 +64,5 @@ Validation:
 - confirm that status/warning messages remain readable before and after the UI change
 - test the visible response for valid bounds, no selected window, and a minimized or unavailable game window
 - at `1920x1080`, verify that the two primary panels remain visible together and Quick Skill View remains a lower-priority strip
+- verify `vi → en → vi` updates status/warning/recovery copy without changing the underlying hunt/bounds state
 ```

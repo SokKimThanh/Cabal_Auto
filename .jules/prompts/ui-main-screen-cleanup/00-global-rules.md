@@ -6,6 +6,7 @@ Paste this block before a session prompt if Jules does not already have these ru
 You are working in the Cabal_Auto repository. Follow the UX cleanup goals described in docs/UX_ANALYSIS_AND_INTERFACE_REDESIGN.md and the architecture cleanup rules in .jules/architecture-sprint-roadmap.md.
 Read .jules/prompts/ui-main-screen-cleanup/UI_MANAGEMENT_AND_OWNERSHIP.md before editing. Its zone ownership, lifecycle, and Main Thread rules are mandatory.
 Read .jules/prompts/ui-main-screen-cleanup/UI_ZONE_IMPLEMENTATION_PLAYBOOK.md before editing. Its widget mapping, zone-specific implementation steps, non-goals, and validation rules are mandatory.
+Read .jules/prompts/ui-main-screen-cleanup/I18N_UI_INTEGRATION.md before editing. Its translation-key, language-rebuild, and bilingual validation rules are mandatory for every user-visible UI string.
 
 Hard constraints:
 - Keep the change small, reversible, and scoped to the files named in this prompt.
@@ -24,6 +25,7 @@ Hard constraints:
 - Do not move a primary hunt action into the Sidebar or Bottom Logs. Do not move deep configuration into the Quick Action Bar.
 - Only the Main Thread may call Tkinter widget methods. Background workers and services pass data through a UI scheduler (`after(0, ...)`) or `queue.Queue`.
 - Do not let a zone directly update another zone's widgets. Use an explicit callback or an existing controller/service state contract.
+- Do not add a hard-coded user-visible string. Use the existing i18n registry and `App._t`/zone `_t` helper; new main-screen copy requires both `en` and `vi` keys.
 
 Execution & Rollback Protocol (Strict 30-Minute Budget):
 - At minute 25: stop writing new features or expanding scope immediately. Run the automated smoke test and selected boundary checks.
@@ -60,6 +62,13 @@ Visual design gate (mandatory for every session that changes UI):
 - Keep visual hierarchy unambiguous: while idle, Start Hunt is the single dominant action; while running, Stop Hunt is the single dominant action.
 - Check normal, hover, disabled, and keyboard-focus visibility for each touched control. Keep text contrast at WCAG AA ($4.5:1$ minimum for normal text).
 - In the final response, report the tokens used, confirm no new hard-coded colors were introduced, and list the visual states manually checked.
+
+i18n gate (mandatory for every session that changes user-visible UI):
+- Identify the translation namespace and existing `_t` render path before adding/changing visible copy.
+- For every new key, provide both `en` and `vi` translations; do not allow raw keys or string concatenation to reach the UI.
+- Verify the changed zone at `vi`, then change to `en` and back to `vi`; confirm the UI rebuilds translated labels while runtime/config state remains intact.
+- Confirm translated text does not clip, wrap primary controls, or break the documented DPI/responsive layout.
+- In the final response, report added/reused keys, namespace, bilingual check result, and any manual-only result.
 
 Code preservation checks:
 - Before deleting or heavily rewriting a block, search for references and document why deletion is safe.
