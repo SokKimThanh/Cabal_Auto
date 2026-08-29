@@ -37,5 +37,5 @@ As of the latest architecture cleanup, the responsibilities have been decoupled 
 ### Validation and Smoke Tests
 
 The final architecture can be validated using the following commands:
-*   **Targeted UI Smoke Tests:** `xvfb-run -a python3 -m pytest tests/unit/ui/` (requires `pytest` and `xvfbwrapper`).
+*   **Targeted UI Smoke Tests:** `xvfb-run -a python3 -m pytest tests/unit/ui/` (requires `pytest` and Xvfb; on Debian/Ubuntu install `xvfb`).
 *   **App GUI Run:** `python app_gui.py` starts the Tkinter mainloop, which blocks and requires manual GUI interaction to exit cleanly unless a programmatic close (e.g. `app.destroy()`) is triggered. Wait until the window renders and manually attempt opening modal states (Monster Manager, Skill Manager).
