@@ -30,4 +30,4 @@ Based on the roadmap and file inspection, `app_gui.py` directly handles or deleg
 Architecture Cleanup Sprint completed.
 - App initialization and dependency wiring are contained in `app_gui.py`.
 - Application orchestration, state handling, window/modal lifecycle, config parsing, background looping (hunt logic), global hotkeys, application overlays, bounds targeting, monster state, and skill management are separated into decoupled controllers and services.
-- Application lifecycle runs correctly decoupled from the view.
+- Application lifecycle runs correctly and is decoupled from the view.
