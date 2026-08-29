@@ -359,6 +359,9 @@ Tips:
         'timing_effective_aps': '  • Effective APS: {aps:.2f} hits/sec\n',
         # Template recognition messages
         'monster_template_test_found_noconf': 'Match found at ({x}, {y})',
+        'bounds_state_ready': 'Ready: {title}',
+        'bounds_state_select': 'No window. Select or Refresh.',
+        'bounds_state_invalid': 'Invalid window/bounds. Reselect/Restore.',
     },
     'vi': {
         'app_title': 'Trợ lý săn Cabal',
@@ -381,6 +384,9 @@ Tips:
     'attack_keys': 'Phím đánh (lấy từ ô kỹ năng):',
     'migration_legacy_attack_keys_title': 'Đã di chuyển cài đặt',
     'migration_legacy_attack_keys_message': 'Cấu hình cũ "attack_keys" đã được di chuyển vào ô kỹ năng. Vui lòng kiểm tra lại ô kỹ năng trong Thiết lập → Thư viện kỹ năng.',
+        'bounds_state_ready': 'Sẵn sàng: {title}',
+        'bounds_state_select': 'Chưa chọn cửa sổ. Chọn hoặc Làm mới.',
+        'bounds_state_invalid': 'Cửa sổ/vùng không hợp lệ. Chọn lại/Khôi phục.',
     'migration_legacy_attack_keys_auto_mapped': 'Ô đã được tự động ánh xạ: {mapped}',
     'press_ms': 'Giữ phím (ms):',
         'target_cycle': 'Chu kỳ đổi mục tiêu (s):',

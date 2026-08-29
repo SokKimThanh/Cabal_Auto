@@ -655,6 +655,14 @@ class App(tk.Tk):
         self.bounds_placeholder.pack(side="left", padx=(0, 12))
         self.bounds_placeholder.pack_propagate(False)
 
+        self.bounds_status_var = tk.StringVar()
+        self.bounds_readiness_label = tk.Label(
+            self.bounds_placeholder,
+            textvariable=self.bounds_status_var,
+            font=UI.FONT_LABEL
+        )
+        self.bounds_readiness_label.pack(side="left", fill="y", padx=5)
+
         # Start Hunt Button
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5)"
 
