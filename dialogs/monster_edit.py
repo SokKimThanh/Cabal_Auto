@@ -230,6 +230,26 @@ class MonsterEditDialog(tk.Toplevel):
         if hasattr(self, 'def_rate_entry'): candidate["defenseRate"] = _get_int(self.def_rate_entry)
         if hasattr(self, 'acc_entry'): candidate["accuracy"] = _get_int(self.acc_entry)
 
+        # Advanced groups
+        if hasattr(self, 'pen_entry'): candidate["penetration"] = _get_int(self.pen_entry)
+        if hasattr(self, 'dmg_red_entry'): candidate["damageReduction"] = _get_int(self.dmg_red_entry)
+        if hasattr(self, 'evasion_entry'): candidate["evasion"] = _get_int(self.evasion_entry)
+        if hasattr(self, 'ignore_acc_entry'): candidate["ignoreAccuracy"] = _get_int(self.ignore_acc_entry)
+        if hasattr(self, 'ignore_dmg_red_entry'): candidate["ignoreDamageReduction"] = _get_int(self.ignore_dmg_red_entry)
+        if hasattr(self, 'ignore_pen_entry'): candidate["ignorePenetration"] = _get_int(self.ignore_pen_entry)
+        if hasattr(self, 'abs_dmg_entry'): candidate["absoluteDamage"] = _get_int(self.abs_dmg_entry)
+
+        if hasattr(self, 'resist_crit_rate_entry'): candidate["resistCritRate"] = _get_int(self.resist_crit_rate_entry)
+        if hasattr(self, 'resist_amp_entry'): candidate["resistSkillAmp"] = _get_int(self.resist_amp_entry)
+        if hasattr(self, 'resist_crit_dmg_entry'): candidate["resistCritDamage"] = _get_int(self.resist_crit_dmg_entry)
+        if hasattr(self, 'resist_suppress_entry'): candidate["resistSuppress"] = _get_int(self.resist_suppress_entry)
+        if hasattr(self, 'resist_silence_entry'): candidate["resistSilence"] = _get_int(self.resist_silence_entry)
+        if hasattr(self, 'resist_diff_dmg_entry'): candidate["resistDiffDamage"] = _get_int(self.resist_diff_dmg_entry)
+        if hasattr(self, 'hp_prop_dmg_entry'): candidate["hpProportionDamage"] = _get_int(self.hp_prop_dmg_entry)
+
+        if hasattr(self, 'exp_entry'): candidate["exp"] = _get_int(self.exp_entry)
+        if hasattr(self, 'hp_recharge_entry'): candidate["hpRecharge"] = _get_int(self.hp_recharge_entry)
+
         if hasattr(self, 'dungeon_combo'):
             val = self.dungeon_combo.get().strip()
             candidate["dungeonId"] = val if val else None
@@ -277,8 +297,53 @@ class MonsterEditDialog(tk.Toplevel):
             text=i18n_t("tab_info", ns="monster_editor", default="Thông Tin Quái"),
         )
 
+        # Wrap tab 1 in a scrollable Canvas
+        canvas_frame = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
+        canvas_frame.pack(fill="both", expand=True)
+
+        self.info_canvas = tk.Canvas(canvas_frame, bg=UI.BG_DEFAULT, highlightthickness=0)
+        self.info_canvas.pack(side="left", fill="both", expand=True)
+
+        v_scroll = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.info_canvas.yview)
+        v_scroll.pack(side="right", fill="y")
+        self.info_canvas.configure(yscrollcommand=v_scroll.set)
+
+        self.info_scrollable_frame = tk.Frame(self.info_canvas, bg=UI.BG_DEFAULT)
+
+        # Configure canvas window and scroll region
+        self.info_canvas_window = self.info_canvas.create_window(
+            (0, 0), window=self.info_scrollable_frame, anchor="nw"
+        )
+        self.info_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.info_canvas.configure(scrollregion=self.info_canvas.bbox("all"))
+        )
+        self.info_canvas.bind(
+            "<Configure>",
+            lambda e: self.info_canvas.itemconfig(self.info_canvas_window, width=e.width)
+        )
+
+        # Enable mouse scroll safely on canvas and its children
+        def _on_mousewheel(e):
+            self.info_canvas.yview_scroll(int(-1*(e.delta/120)), "units")
+        def _on_mousewheel_linux_up(e):
+            self.info_canvas.yview_scroll(-1, "units")
+        def _on_mousewheel_linux_down(e):
+            self.info_canvas.yview_scroll(1, "units")
+
+        def _bind_mouse_scroll(widget):
+            widget.bind("<MouseWheel>", _on_mousewheel, add="+")
+            widget.bind("<Button-4>", _on_mousewheel_linux_up, add="+")
+            widget.bind("<Button-5>", _on_mousewheel_linux_down, add="+")
+            for child in widget.winfo_children():
+                _bind_mouse_scroll(child)
+
+        # Bind events after UI is created
+        self.after(100, lambda: _bind_mouse_scroll(self.info_scrollable_frame))
+        _bind_mouse_scroll(self.info_canvas)
+
         # Info Header & Top Action Buttons
-        info_header = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
+        info_header = tk.Frame(self.info_scrollable_frame, bg=UI.BG_DEFAULT)
         info_header.pack(fill="x", padx=15, pady=(15, 10))
 
         info_label = create_icon_label(
@@ -292,8 +357,8 @@ class MonsterEditDialog(tk.Toplevel):
         )
         info_label.pack(side="left")
 
-# Compact Two-Column Clean Form Layout
-        form_frame = tk.Frame(self.info_tab, bg=UI.BG_DEFAULT)
+        # Compact Two-Column Clean Form Layout
+        form_frame = tk.Frame(self.info_scrollable_frame, bg=UI.BG_DEFAULT)
         form_frame.pack(fill="both", expand=True, padx=25, pady=5)
 
         # Configure columns for 2-column layout (Label Widget Label Widget)
@@ -407,12 +472,8 @@ class MonsterEditDialog(tk.Toplevel):
         self.damage_entry = tk.Entry(form_frame, font=UI.FONT_TEXT)
         self.damage_entry.grid(row=7, column=3, sticky="ew", pady=4, padx=(12, 0))
 
-        # Description (Legacy compat)
-        create_icon_label(
-            form_frame, icon_name="info", text=i18n_t("monster_desc_label", ns="monster_editor", default="Mô tả:"), icon_fallback="📋", font=UI.FONT_LABEL
-        ).grid(row=8, column=0, sticky="nw", pady=4)
-        self.desc_text = tk.Text(form_frame, font=UI.FONT_TEXT, height=3, wrap=tk.WORD)
-        self.desc_text.grid(row=8, column=1, columnspan=3, sticky="ew", pady=4, padx=(12, 0))
+        # Advanced Group: Phản Đòn & Xuyên Giáp
+        self._create_advanced_groups(self.info_scrollable_frame)
 
         # --- Tab 2: Templates ---
         self.templates_tab = tk.Frame(self.notebook, bg=UI.BG_PANEL)
@@ -675,6 +736,122 @@ class MonsterEditDialog(tk.Toplevel):
         )
         self.cancel_btn.pack(side="right", padx=5)
 
+    def _create_collapsible_group(self, parent: tk.Widget, title: str, start_expanded: bool = False) -> tk.Frame:
+        container = tk.Frame(parent, bg=UI.BG_DEFAULT)
+        container.pack(fill="x", padx=15, pady=5)
+
+        header = tk.Frame(container, bg=UI.BG_PANEL, cursor="hand2")
+        header.pack(fill="x")
+
+        content = tk.Frame(container, bg=UI.BG_DEFAULT)
+        # 2 columns layout like the main form
+        content.columnconfigure(1, weight=1, minsize=100)
+        content.columnconfigure(3, weight=1, minsize=100)
+
+        lbl = tk.Label(header, text=title, font=UI.FONT_SECTION, bg=UI.BG_PANEL, fg=UI.COLOR_PRIMARY_TEXT)
+        lbl.pack(side="left", padx=10, pady=5)
+
+        arrow = tk.Label(header, text="▼" if start_expanded else "▶", font=UI.FONT_SMALL, bg=UI.BG_PANEL, fg=UI.COLOR_SUBTEXT)
+        arrow.pack(side="right", padx=10, pady=5)
+
+        is_expanded = start_expanded
+        if start_expanded:
+            content.pack(fill="both", expand=True, padx=10, pady=5)
+
+        def _toggle(e=None):
+            nonlocal is_expanded
+            is_expanded = not is_expanded
+            if is_expanded:
+                content.pack(fill="both", expand=True, padx=10, pady=5)
+                arrow.config(text="▼")
+            else:
+                content.pack_forget()
+                arrow.config(text="▶")
+
+        header.bind("<Button-1>", _toggle)
+        lbl.bind("<Button-1>", _toggle)
+        arrow.bind("<Button-1>", _toggle)
+
+        return content
+
+    def _create_advanced_groups(self, parent: tk.Widget):
+        # 1. Defense & Modifiers
+        def_group = self._create_collapsible_group(parent, i18n_t("group_defense", ns="monster_editor", default="Phòng thủ & Xuyên giáp (Nâng cao)"))
+
+        create_icon_label(def_group, icon_name="damage", text=i18n_t("monster_pen_label", ns="monster_editor", default="Xuyên giáp:"), icon_fallback="🗡️", font=UI.FONT_LABEL).grid(row=0, column=0, sticky="w", pady=4)
+        self.pen_entry = tk.Entry(def_group, font=UI.FONT_TEXT)
+        self.pen_entry.grid(row=0, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(def_group, icon_name="shield", text=i18n_t("monster_dmg_red_label", ns="monster_editor", default="Giảm sát thương:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=0, column=2, sticky="w", pady=4, padx=(20, 0))
+        self.dmg_red_entry = tk.Entry(def_group, font=UI.FONT_TEXT)
+        self.dmg_red_entry.grid(row=0, column=3, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(def_group, icon_name="speed", text=i18n_t("monster_evasion_label", ns="monster_editor", default="Né tránh:"), icon_fallback="💨", font=UI.FONT_LABEL).grid(row=1, column=0, sticky="w", pady=4)
+        self.evasion_entry = tk.Entry(def_group, font=UI.FONT_TEXT)
+        self.evasion_entry.grid(row=1, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(def_group, icon_name="aim", text=i18n_t("monster_ignore_acc_label", ns="monster_editor", default="Bỏ qua chính xác:"), icon_fallback="🎯", font=UI.FONT_LABEL).grid(row=1, column=2, sticky="w", pady=4, padx=(20, 0))
+        self.ignore_acc_entry = tk.Entry(def_group, font=UI.FONT_TEXT)
+        self.ignore_acc_entry.grid(row=1, column=3, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(def_group, icon_name="damage", text=i18n_t("monster_ignore_dmg_red_label", ns="monster_editor", default="Bỏ qua giảm ST:"), icon_fallback="⚔️", font=UI.FONT_LABEL).grid(row=2, column=0, sticky="w", pady=4)
+        self.ignore_dmg_red_entry = tk.Entry(def_group, font=UI.FONT_TEXT)
+        self.ignore_dmg_red_entry.grid(row=2, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(def_group, icon_name="damage", text=i18n_t("monster_ignore_pen_label", ns="monster_editor", default="Bỏ qua xuyên giáp:"), icon_fallback="🗡️", font=UI.FONT_LABEL).grid(row=2, column=2, sticky="w", pady=4, padx=(20, 0))
+        self.ignore_pen_entry = tk.Entry(def_group, font=UI.FONT_TEXT)
+        self.ignore_pen_entry.grid(row=2, column=3, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(def_group, icon_name="damage", text=i18n_t("monster_abs_dmg_label", ns="monster_editor", default="Sát thương chuẩn:"), icon_fallback="🔥", font=UI.FONT_LABEL).grid(row=3, column=0, sticky="w", pady=4)
+        self.abs_dmg_entry = tk.Entry(def_group, font=UI.FONT_TEXT)
+        self.abs_dmg_entry.grid(row=3, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        # 2. Resistances
+        res_group = self._create_collapsible_group(parent, i18n_t("group_resistance", ns="monster_editor", default="Kháng (Nâng cao)"))
+
+        create_icon_label(res_group, icon_name="shield", text=i18n_t("monster_resist_crit_rate_label", ns="monster_editor", default="Kháng tỷ lệ bạo:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=0, column=0, sticky="w", pady=4)
+        self.resist_crit_rate_entry = tk.Entry(res_group, font=UI.FONT_TEXT)
+        self.resist_crit_rate_entry.grid(row=0, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(res_group, icon_name="shield", text=i18n_t("monster_resist_amp_label", ns="monster_editor", default="Kháng khuếch đại:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=0, column=2, sticky="w", pady=4, padx=(20, 0))
+        self.resist_amp_entry = tk.Entry(res_group, font=UI.FONT_TEXT)
+        self.resist_amp_entry.grid(row=0, column=3, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(res_group, icon_name="shield", text=i18n_t("monster_resist_crit_dmg_label", ns="monster_editor", default="Kháng ST bạo:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=1, column=0, sticky="w", pady=4)
+        self.resist_crit_dmg_entry = tk.Entry(res_group, font=UI.FONT_TEXT)
+        self.resist_crit_dmg_entry.grid(row=1, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(res_group, icon_name="shield", text=i18n_t("monster_resist_suppress_label", ns="monster_editor", default="Kháng áp chế:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=1, column=2, sticky="w", pady=4, padx=(20, 0))
+        self.resist_suppress_entry = tk.Entry(res_group, font=UI.FONT_TEXT)
+        self.resist_suppress_entry.grid(row=1, column=3, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(res_group, icon_name="shield", text=i18n_t("monster_resist_silence_label", ns="monster_editor", default="Kháng câm lặng:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=2, column=0, sticky="w", pady=4)
+        self.resist_silence_entry = tk.Entry(res_group, font=UI.FONT_TEXT)
+        self.resist_silence_entry.grid(row=2, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(res_group, icon_name="shield", text=i18n_t("monster_resist_diff_dmg_label", ns="monster_editor", default="Kháng chênh lệch ST:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=2, column=2, sticky="w", pady=4, padx=(20, 0))
+        self.resist_diff_dmg_entry = tk.Entry(res_group, font=UI.FONT_TEXT)
+        self.resist_diff_dmg_entry.grid(row=2, column=3, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(res_group, icon_name="shield", text=i18n_t("monster_hp_prop_dmg_label", ns="monster_editor", default="ST theo HP:"), icon_fallback="🛡️", font=UI.FONT_LABEL).grid(row=3, column=0, sticky="w", pady=4)
+        self.hp_prop_dmg_entry = tk.Entry(res_group, font=UI.FONT_TEXT)
+        self.hp_prop_dmg_entry.grid(row=3, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        # 3. Metadata
+        meta_group = self._create_collapsible_group(parent, i18n_t("group_metadata", ns="monster_editor", default="Thông tin thêm (Nâng cao)"))
+
+        create_icon_label(meta_group, icon_name="up", text=i18n_t("monster_exp_label", ns="monster_editor", default="EXP:"), icon_fallback="⭐", font=UI.FONT_LABEL).grid(row=0, column=0, sticky="w", pady=4)
+        self.exp_entry = tk.Entry(meta_group, font=UI.FONT_TEXT)
+        self.exp_entry.grid(row=0, column=1, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(meta_group, icon_name="hp", text=i18n_t("monster_hp_recharge_label", ns="monster_editor", default="Phục hồi HP:"), icon_fallback="❤️", font=UI.FONT_LABEL).grid(row=0, column=2, sticky="w", pady=4, padx=(20, 0))
+        self.hp_recharge_entry = tk.Entry(meta_group, font=UI.FONT_TEXT)
+        self.hp_recharge_entry.grid(row=0, column=3, sticky="ew", pady=4, padx=(12, 0))
+
+        create_icon_label(meta_group, icon_name="info", text=i18n_t("monster_desc_label", ns="monster_editor", default="Mô tả:"), icon_fallback="📋", font=UI.FONT_LABEL).grid(row=1, column=0, sticky="nw", pady=4)
+        self.desc_text = tk.Text(meta_group, font=UI.FONT_TEXT, height=3, wrap=tk.WORD)
+        self.desc_text.grid(row=1, column=1, columnspan=3, sticky="ew", pady=4, padx=(12, 0))
+
     def _populate_form(self) -> None:
         data = self.monster_data
 
@@ -720,6 +897,30 @@ class MonsterEditDialog(tk.Toplevel):
         self.acc_entry.delete(0, tk.END)
         self.acc_entry.insert(0, str(data.get("accuracy", 0)))
 
+        # Advanced groups population
+        advanced_fields = [
+            (self.pen_entry, "penetration"),
+            (self.dmg_red_entry, "damageReduction"),
+            (self.evasion_entry, "evasion"),
+            (self.ignore_acc_entry, "ignoreAccuracy"),
+            (self.ignore_dmg_red_entry, "ignoreDamageReduction"),
+            (self.ignore_pen_entry, "ignorePenetration"),
+            (self.abs_dmg_entry, "absoluteDamage"),
+            (self.resist_crit_rate_entry, "resistCritRate"),
+            (self.resist_amp_entry, "resistSkillAmp"),
+            (self.resist_crit_dmg_entry, "resistCritDamage"),
+            (self.resist_suppress_entry, "resistSuppress"),
+            (self.resist_silence_entry, "resistSilence"),
+            (self.resist_diff_dmg_entry, "resistDiffDamage"),
+            (self.hp_prop_dmg_entry, "hpProportionDamage"),
+            (self.exp_entry, "exp"),
+            (self.hp_recharge_entry, "hpRecharge"),
+        ]
+        for widget, key in advanced_fields:
+            if widget:
+                widget.delete(0, tk.END)
+                widget.insert(0, str(data.get(key, 0)))
+
         self.damage_entry.delete(0, tk.END)
         self.damage_entry.insert(0, str(data.get("damage_per_hit", 10)))
 
@@ -757,7 +958,12 @@ class MonsterEditDialog(tk.Toplevel):
         self.hp_entry.insert(0, "100")
 
         for entry in (self.atk_rate_entry, self.primary_atk_min_entry, self.primary_atk_max_entry,
-                      self.sec_atk_min_entry, self.sec_atk_max_entry, self.def_entry, self.def_rate_entry, self.acc_entry):
+                      self.sec_atk_min_entry, self.sec_atk_max_entry, self.def_entry, self.def_rate_entry, self.acc_entry,
+                      self.pen_entry, self.dmg_red_entry, self.evasion_entry, self.ignore_acc_entry,
+                      self.ignore_dmg_red_entry, self.ignore_pen_entry, self.abs_dmg_entry,
+                      self.resist_crit_rate_entry, self.resist_amp_entry, self.resist_crit_dmg_entry,
+                      self.resist_suppress_entry, self.resist_silence_entry, self.resist_diff_dmg_entry,
+                      self.hp_prop_dmg_entry, self.exp_entry, self.hp_recharge_entry):
             entry.delete(0, tk.END)
             entry.insert(0, "0")
 
@@ -777,7 +983,12 @@ class MonsterEditDialog(tk.Toplevel):
         self.hp_entry.delete(0, tk.END)
 
         for entry in (self.atk_rate_entry, self.primary_atk_min_entry, self.primary_atk_max_entry,
-                      self.sec_atk_min_entry, self.sec_atk_max_entry, self.def_entry, self.def_rate_entry, self.acc_entry):
+                      self.sec_atk_min_entry, self.sec_atk_max_entry, self.def_entry, self.def_rate_entry, self.acc_entry,
+                      self.pen_entry, self.dmg_red_entry, self.evasion_entry, self.ignore_acc_entry,
+                      self.ignore_dmg_red_entry, self.ignore_pen_entry, self.abs_dmg_entry,
+                      self.resist_crit_rate_entry, self.resist_amp_entry, self.resist_crit_dmg_entry,
+                      self.resist_suppress_entry, self.resist_silence_entry, self.resist_diff_dmg_entry,
+                      self.hp_prop_dmg_entry, self.exp_entry, self.hp_recharge_entry):
             entry.delete(0, tk.END)
 
         self.dungeon_combo.set("")
