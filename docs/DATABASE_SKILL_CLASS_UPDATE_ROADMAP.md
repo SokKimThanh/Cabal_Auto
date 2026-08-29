@@ -18,6 +18,25 @@ Kiểm tra trực tiếp `monsters.db` cho thấy database có 9 bảng và fore
 
 `PRAGMA foreign_key_check` hiện trả về `0` vi phạm. Điều này chỉ xác nhận schema/data hiện hữu nhất quán, không chứng minh dữ liệu class/skill đã đầy đủ.
 
+**Báo cáo DB0 - Schema And Source Audit:**
+- **Table Columns, FKs, and Counts:**
+  - `classes` (7 cols, 0 FKs): 0 rows. Columns: class_id, name, description, icon_path, str_base, int_base, dex_base.
+  - `skills` (9 cols, 1 FK): 0 rows. Columns: skill_id, name, alias, icon_x, icon_y, icon_w, icon_h, class_id, type. FK: class_id -> classes(class_id) RESTRICT.
+  - `synergies` (5 cols, 1 FK): 0 rows. Columns: synergy_id, class_id, name, activation_sequence, recommendation. FK: class_id -> classes(class_id) RESTRICT.
+  - `synergy_effects` (6 cols, 1 FK): 0 rows. Columns: effect_id, synergy_id, stat, value, duration, target. FK: synergy_id -> synergies(synergy_id) CASCADE.
+  - `scans` (6 cols, 3 FKs): 0 rows. Columns: scan_id, monster_id, skill_id, class_id, timestamp, status. FKs: monster_id -> monsters(id) CASCADE, skill_id -> skills(skill_id) RESTRICT, class_id -> classes(class_id) RESTRICT.
+  - `builds` (5 cols, 1 FK): 0 rows. Columns: build_id, class_id, author, description, upvote_count. FK: class_id -> classes(class_id) RESTRICT.
+  - `monsters` (30 cols, 2 FKs): 0 rows. Columns: id, name, level, exp, hp, defense, attackRate, defenseRate, hpRecharge, accuracy, penetration, damageReduction, evasion, resistCritRate, primaryAttackMin, primaryAttackMax, secondaryAttackMin, secondaryAttackMax, ignoreAccuracy, ignoreDamageReduction, ignorePenetration, absoluteDamage, resistSkillAmp, resistCritDamage, resistSuppress, resistSilence, resistDiffDamage, hpProportionDamage, serverBossType, dungeonId. FKs: dungeonId -> dungeons(id) SET NULL, serverBossType -> monster_type(value) SET NULL.
+  - `dungeons` (2 cols, 0 FKs): 122 rows. Columns: id, name.
+  - `monster_type` (2 cols, 0 FKs): 3 rows. Columns: value, label.
+  - PRAGMA foreign_key_check: 0 vi phạm (kết quả rỗng).
+- **Source IDs & Parser Boundaries:**
+  - `class_metadata` (`lib/data/color-skill-character-db-cabal.txt`): Trích xuất các đối tượng có thuộc tính như `slug`, `icon`, `str`, `int`, `dex`. Expected: 9 classes. Forbidden: Không insert nếu bị khuyết thông tin.
+  - `skill_sprite_catalogue` (`lib/data/skill-db-cabal-2.txt`): Trích xuất từ đối tượng `sprites: {...}`. Expected: 460 skills. Forbidden: Không sử dụng file look-alike `image-count-skill-db-cabal.txt`.
+  - `bm3_synergy_catalogue` (`lib/data/bm2-bm3-skill-db-cabal.txt`): Expected: 35 synergies, 120 effects liên kết với 9 classes. Forbidden: Không thay đổi/lược bỏ raw `value_text` hoặc ép kiểu vội.
+- **Canonical Mapping Availability:** Hiện **chưa có** một mapping nguồn chính thức nào (canonical source) kết nối trực tiếp toàn bộ 460 skill catalogue với 9 class. Việc gán skill phải chờ DB5 (lập mapping manifest có bằng chứng từ `class_skill_evidence`) trước khi seed vào bảng liên kết `class_skill_assignments`. `skills.json` chỉ là cấu hình của người dùng.
+- **Blockers:** Thiếu bảng quan hệ many-to-many (`class_skill_assignments`), thiếu định danh unique source codes (cần chạy DB1), và không thể dùng dữ liệu UI (như `skills.json`) làm catalogue chính thức.
+
 ## 2. Nguồn dữ liệu đã có
 
 Chi tiết source ID, file chính xác, parsing boundary, identity, forbidden look-alike sources và evidence requirements nằm trong [DATABASE_SOURCE_DATA_MANIFEST.md](DATABASE_SOURCE_DATA_MANIFEST.md). Mọi DB session phải dùng manifest này trước khi đọc hoặc seed data.
