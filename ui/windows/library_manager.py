@@ -1112,7 +1112,6 @@ Track progress at:
         translations = LIBRARY_MANAGER_TRANSLATIONS
         try:
             # Register once; cheap if already registered (dict.update no-op for same keys)
-            i18n_register_bulk('library_manager', translations)
             return i18n_t(key, ns='library_manager', lang=self.lang)
         except Exception:
             return translations.get(self.lang, {}).get(key, key)

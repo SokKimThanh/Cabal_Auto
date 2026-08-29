@@ -157,10 +157,6 @@ class SetupWizard:
                 setattr(self.dialog, "_wizard_ref", self)
             except Exception:
                 pass
-            # i18n title
-            try:
-                i18n_register_bulk("setup_wizard", SETUP_WIZARD_TRANSLATIONS)
-            except Exception:
                 pass
             try:
                 title_text = i18n_t(
@@ -269,8 +265,6 @@ class SetupWizard:
         """Translate a Setup Wizard string using its namespace."""
         try:
             # Register once; safe if already registered
-            if SETUP_WIZARD_TRANSLATIONS:
-                i18n_register_bulk("setup_wizard", SETUP_WIZARD_TRANSLATIONS)
             return i18n_t(key, ns="setup_wizard", lang=self.lang)
         except Exception:
             return key
