@@ -64,3 +64,4 @@ except AttributeError:
 This file is loaded automatically. All 7 rules apply to every code suggestion.
 
 **Reference**: See `docs/PYTHON_CODING_GUIDELINES.md` for details.
+For i18n instructions, refer to `docs/guides/I18N_GUIDE.md` for the mandatory pattern for bilingual screens.
