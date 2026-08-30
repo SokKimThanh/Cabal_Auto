@@ -76,13 +76,13 @@ class SeedBM3SynergiesService:
                     num_val = None
                     num_dur = None
                     try:
-                        v_match = re.search(r'[-+]?\d*\.\d+|\d+', val)
+                        v_match = re.search(r'[-+]?\d*\.\d+|[-+]?\d+', val)
                         if v_match:
                             num_val = float(v_match.group())
                     except: pass
 
                     try:
-                        d_match = re.search(r'[-+]?\d*\.\d+|\d+', dur)
+                        d_match = re.search(r'[-+]?\d*\.\d+|[-+]?\d+', dur)
                         if d_match:
                             num_dur = float(d_match.group())
                     except: pass
