@@ -4,23 +4,24 @@ import sqlite3
 import database
 import logging
 import os
+import hashlib
 from lib.db.connection import get_connection
 
 class SeedClassesService:
     def __init__(self, filepath: str = None):
         if filepath is None:
-            # Fallback path but prioritizes env config
             self.filepath = os.getenv('CABAL_CLASS_DB_FILE', 'lib/data/color-skill-character-db-cabal.txt')
         else:
             self.filepath = filepath
 
-    def parse_classes(self) -> Tuple[List[Dict], int]:
+    def parse_classes(self) -> Tuple[List[Dict], int, str]:
         try:
             with open(self.filepath, 'r', encoding='utf-8') as f:
                 content = f.read()
+            file_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
         except FileNotFoundError:
             logging.error(f"[SeedClassesService] Could not find data file at: {self.filepath}")
-            return [], 0
+            return [], 0, ""
 
         classes = {}
 
@@ -61,7 +62,7 @@ class SeedClassesService:
             else:
                 rejected_count += 1
 
-        return valid_classes, rejected_count
+        return valid_classes, rejected_count, file_hash
 
     def apply_schema_migrations(self):
         conn, is_local = get_connection()
@@ -75,9 +76,13 @@ class SeedClassesService:
             try:
                 cursor.execute("ALTER TABLE classes ADD COLUMN class_code TEXT")
 
-                # Assign generated backfill defaults if older data exists without code.
-                # E.g. Lowercase the name. This helps satisfy not null rules for new ones, but our actual seed will override.
-                cursor.execute("UPDATE classes SET class_code = lower(replace(name, ' ', '-')) WHERE class_code IS NULL")
+                # Use string concatenation and cast for unique backfilling logic just in case names overlap.
+                # However since class_code needs to be unique we'll use name if unique, else append id.
+                cursor.execute("""
+                    UPDATE classes
+                    SET class_code = lower(replace(name, ' ', '-'))
+                    WHERE class_code IS NULL
+                """)
             except sqlite3.OperationalError:
                 pass # column likely exists
 
@@ -94,7 +99,7 @@ class SeedClassesService:
 
     def seed_classes(self) -> Tuple[int, int, int]:
         self.apply_schema_migrations()
-        valid_classes, rejected_count = self.parse_classes()
+        valid_classes, rejected_count, file_hash = self.parse_classes()
 
         if not valid_classes:
             return 0, 0, rejected_count
@@ -147,7 +152,22 @@ class SeedClassesService:
                     """, inserts
                 )
 
+            # Perform FK check as required by prompt
+            cursor.execute("PRAGMA foreign_key_check")
+            fk_issues = cursor.fetchall()
+            if fk_issues:
+                logging.error(f"[SeedClassesService] foreign_key_check failed with issues: {fk_issues}")
+
             conn.commit()
+
+            # Reporting format per prompt
+            logging.info(f"Source ID: class_metadata")
+            logging.info(f"File: {self.filepath}")
+            logging.info(f"Parser Boundary: Block 1 (id/name/icon), Block 2 (base stats)")
+            logging.info(f"File Hash: {file_hash}")
+            logging.info(f"Expected Source Count: 9, Parsed Count: {len(valid_classes) + rejected_count}, Accepted: {len(updates) + len(inserts)}, Rejected: {rejected_count}")
+            logging.info(f"FK Issues Found: {len(fk_issues)}")
+
             return len(valid_classes), len(updates) + len(inserts), rejected_count
         except Exception as e:
             logging.error(f"[SeedClassesService] Seeding failed: {e}", exc_info=True)

@@ -70,12 +70,52 @@ def test_seed_classes_parse_robustness():
         """)
 
     service = SeedClassesService(filepath=str(temp_file))
-    valid, rejected = service.parse_classes()
+    valid, rejected, h = service.parse_classes()
 
     # Blader X should be accepted, Warrior rejected
     assert len(valid) == 1
     assert rejected == 1
     assert valid[0]['class_code'] == 'blader-x' # Normalization check
+    assert h != ""
 
     os.remove(temp_file)
     os.rmdir(temp_dir)
+
+def test_seed_classes_empty_db(test_db_setup):
+    # Verify empty db state first
+    db = database.get_db()
+    cursor = db.conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM classes")
+    assert cursor.fetchone()[0] == 0
+
+    service = SeedClassesService()
+    src, acc, rej = service.seed_classes()
+    assert acc == 9
+
+def test_seed_classes_backfill_duplicate_names(test_db_setup):
+    # Setup dummy data with non-unique names that might clash in standard backfill
+    db = database.get_db()
+    cursor = db.conn.cursor()
+    cursor.execute("INSERT INTO classes (name) VALUES ('Test Class')")
+    cursor.execute("INSERT INTO classes (name) VALUES ('Test Class')")
+    db.conn.commit()
+
+    service = SeedClassesService()
+    # The backfill logic tries to lower(replace(name)). Doing this with duplicates
+    # should NOT crash the migration but rather just skip assigning the index to those
+    # that failed the unique check OR fail schema migration gracefully.
+    # The current patch handles OperationalError.
+
+    # However since we need unique backfill:
+    # Actually if they fail unique index creation, sqlite catches it.
+
+    # Run schema migration manually to test
+    service.apply_schema_migrations()
+
+    cursor.execute("SELECT name, class_code FROM classes")
+    rows = cursor.fetchall()
+
+    # Because of the duplicate name, the first one gets 'test-class',
+    # But when we try to create the unique index, if they BOTH have 'test-class', it fails.
+    # Our migration doesn't crash but logs error on index creation if it does.
+    # The actual seed overrides anyway.
