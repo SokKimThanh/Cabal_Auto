@@ -1185,24 +1185,28 @@ class App(tk.Tk):
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
             self.hunt_start_btn.config(
-                state="disabled", bg="#A5D6A7", relief="sunken", cursor="arrow"
+                state="disabled", bg=UI.BTN_DISABLED_BG, relief="sunken", cursor="arrow"
             )
             self.hunt_stop_btn.config(
-                state="normal", bg="#C62828", relief="raised", cursor="hand2"
+                state="normal", bg=UI.BTN_DANGER_BG, relief="raised", cursor="hand2"
             )
             if hasattr(self, "hunt_status"):
                 self.hunt_status.set(self._t("hunt_running"))
+            if hasattr(self, "tab_hunt") and hasattr(self.tab_hunt, "update_hunt_status_color"):
+                self.tab_hunt.update_hunt_status_color("running")
         elif state in ["idle", "error", "stopped"]:
             self.hunt_start_btn.config(
-                state="normal", bg="#4CAF50", relief="raised", cursor="hand2"
+                state="normal", bg=UI.BTN_ACCENT_BG, relief="raised", cursor="hand2"
             )
             self.hunt_stop_btn.config(
-                state="disabled", bg="#FFCDD2", relief="sunken", cursor="arrow"
+                state="disabled", bg=UI.BTN_DISABLED_BG, relief="sunken", cursor="arrow"
             )
             if state == "idle" and hasattr(self, "hunt_status"):
                 self.hunt_status.set(
                     self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
                 )
+            if hasattr(self, "tab_hunt") and hasattr(self.tab_hunt, "update_hunt_status_color"):
+                self.tab_hunt.update_hunt_status_color(state)
 
     def on_hunt_start(self):
         if hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running:

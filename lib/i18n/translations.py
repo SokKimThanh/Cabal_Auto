@@ -374,6 +374,7 @@ Tips:
         'bounds_state_ready': 'Ready: {title}',
         'bounds_state_select': 'No window. Select or Refresh.',
         'bounds_state_invalid': 'Invalid window/bounds. Reselect/Restore.',
+        'bounds_state_minimized': 'Window minimized. Restore it.',
     },
     'vi': {
         'app_title': 'Trợ lý săn Cabal',
@@ -406,6 +407,7 @@ Tips:
         'bounds_state_ready': 'Sẵn sàng: {title}',
         'bounds_state_select': 'Chưa chọn cửa sổ. Chọn hoặc Làm mới.',
         'bounds_state_invalid': 'Cửa sổ/vùng không hợp lệ. Chọn lại/Khôi phục.',
+        'bounds_state_minimized': 'Cửa sổ bị thu nhỏ. Vui lòng khôi phục.',
     'migration_legacy_attack_keys_auto_mapped': 'Ô đã được tự động ánh xạ: {mapped}',
     'press_ms': 'Giữ phím (ms):',
         'target_cycle': 'Chu kỳ đổi mục tiêu (s):',

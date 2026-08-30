@@ -337,9 +337,23 @@ class AppStateController:
         if hasattr(app, "bounds_status_var") and hasattr(app, "bounds_readiness_label"):
             selected_window = app.win_combo_var.get() if hasattr(app, "win_combo_var") else None
 
+            is_minimized = False
+            if selected_window and hasattr(app, "win_items") and isinstance(app.win_items, list):
+                selected_hwnd = app.hunt_selected.get("hwnd") if hasattr(app, "hunt_selected") and isinstance(app.hunt_selected, dict) else None
+                for item in app.win_items:
+                    if selected_hwnd and item.get("hwnd") == selected_hwnd:
+                        is_minimized = item.get("is_minimized", False)
+                        break
+                    elif item.get("title") == selected_window:
+                        is_minimized = item.get("is_minimized", False)
+                        break
+
             if not selected_window:
                 app.bounds_status_var.set(app._t("bounds_state_select"))
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
+            elif is_minimized:
+                app.bounds_status_var.set(app._t("bounds_state_minimized"))
+                app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
             elif not bounds:
                 app.bounds_status_var.set(app._t("bounds_state_invalid"))
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
