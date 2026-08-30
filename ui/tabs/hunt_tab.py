@@ -78,12 +78,13 @@ class HuntTab(ttk.Frame):
         self.app.active_target_status_frame.grid(
             row=0, column=1, sticky="nsew", padx=(6, 0), pady=(0, 12)
         )
+        self.app.active_target_status_frame.pack_propagate(False)
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Sub-section: Hunt Status Bar (current hunt state + current target)
         status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
         status_frame.pack(fill="x", pady=(0, 12))
-        status_frame.grid_propagate(False)  # Keep consistent height even before labels have text
+        status_frame.pack_propagate(False)  # Keep consistent height even before labels have text
         tk.Label(
             status_frame,
             textvariable=self.app.hunt_status,
@@ -107,6 +108,7 @@ class HuntTab(ttk.Frame):
         self.app.monster_frame.grid(
             row=0, column=0, sticky="nsew", padx=(0, 6), pady=(0, 12)
         )
+        self.app.monster_frame.pack_propagate(False)
         self.app.monster_frame.grid_columnconfigure(0, weight=1)
 
         # Rotation mode selection
