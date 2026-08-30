@@ -202,7 +202,7 @@ except ImportError:
     ConfirmationWidget = None  # type: ignore
     NotificationWidget = None  # type: ignore
 
-    class ActionNotificationMixin(object):
+    class ActionNotificationMixin:
         def __init__(self, *args, debug_mode=False, **kwargs):
             if args:
                 super().__init__(args[0])
