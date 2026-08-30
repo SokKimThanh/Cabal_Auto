@@ -264,8 +264,8 @@ class HuntTab(ttk.Frame):
 
         self.skill_strip_frame = tk.Frame(self)
         self.skill_strip_frame.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=(0, 12))
-        self.skill_strip_frame.grid_columnconfigure(0, weight=1)
-        self.skill_strip_frame.grid_columnconfigure(1, weight=1)
+        self.skill_strip_frame.grid_columnconfigure(0, weight=1, minsize=400)
+        self.skill_strip_frame.grid_columnconfigure(1, weight=2, minsize=600)
 
         # Section 3: Skill slots selection
         skill_frame_outer = tk.LabelFrame(
@@ -281,33 +281,36 @@ class HuntTab(ttk.Frame):
             font=("Arial", 8),
             cursor="hand2",
         )
-        hint_label.pack(pady=(0, 6))
+        hint_label.pack(side="top", anchor="e", pady=(0, 2))
         hint_label.bind("<Button-1>", lambda e: self.app.skill_manager_controller.open_window())
 
         slot_frame = tk.Frame(skill_frame_outer)
         slot_frame.pack(fill="both", expand=True)
-        slot_frame.grid_columnconfigure(1, weight=1)
+        for col in range(2):
+            slot_frame.grid_columnconfigure(col*4 + 1, weight=1)
         self.app.skill_slot_vars = []
         self.app.skill_slot_boxes = []
         self.app.skill_slot_key_labels = []
         for idx in range(self.app.skill_slot_count):
+            row = idx % 3
+            col_base = (idx // 3) * 4
             var = tk.StringVar()
             self.app.skill_slot_vars.append(var)
             label = self.app._t("skill_slot_label").format(i=idx + 1)
-            tk.Label(slot_frame, text=label).grid(row=idx, column=0, sticky="e", pady=2)
-            cmb = ttk.Combobox(slot_frame, textvariable=var, state="readonly", width=24)
-            cmb.grid(row=idx, column=1, sticky="we", padx=(4, 0), pady=2)
+            tk.Label(slot_frame, text=label).grid(row=row, column=col_base, sticky="e", pady=1)
+            cmb = ttk.Combobox(slot_frame, textvariable=var, state="readonly", width=12)
+            cmb.grid(row=row, column=col_base+1, sticky="we", padx=(4, 0), pady=1)
             cmb.bind("<<ComboboxSelected>>", self.app.on_skill_slot_changed)
             # Key label showing which key is assigned to the selected skill
             key_lbl = tk.Label(slot_frame, text="", width=6, anchor="w", fg="#333")
-            key_lbl.grid(row=idx, column=2, padx=(6, 0))
+            key_lbl.grid(row=row, column=col_base+2, padx=(2, 0))
             self.app.skill_slot_key_labels.append(key_lbl)
             # Clear button (moved to column 3)
             tk.Button(
                 slot_frame,
                 text=self.app._t("skill_slot_clear"),
                 command=lambda v=var: self.app._clear_skill_slot(v),
-            ).grid(row=idx, column=3, padx=(6, 0))
+            ).grid(row=row, column=col_base+3, padx=(2, 6))
             self.app.skill_slot_boxes.append(cmb)
 
         self.app._refresh_monster_select_options()
@@ -328,7 +331,7 @@ class HuntTab(ttk.Frame):
             self.app.skill_stats_frame,
             columns=stats_columns,
             show="headings",
-            height=6,
+            height=3,
         )
         stats_headings = {
             "skill": ("skill_name_col", 120),
