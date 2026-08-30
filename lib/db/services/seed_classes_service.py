@@ -60,6 +60,7 @@ class SeedClassesService:
             if all(k in data for k in ['class_code', 'name', 'icon_path', 'str_base', 'int_base', 'dex_base']):
                 valid_classes.append(data)
             else:
+                logging.warning(f"[SeedClassesService] Rejected partial class record for slug '{slug}': {data}")
                 rejected_count += 1
 
         return valid_classes, rejected_count, file_hash
@@ -76,11 +77,11 @@ class SeedClassesService:
             try:
                 cursor.execute("ALTER TABLE classes ADD COLUMN class_code TEXT")
 
-                # Use string concatenation and cast for unique backfilling logic just in case names overlap.
-                # However since class_code needs to be unique we'll use name if unique, else append id.
+                # Assign generated backfill defaults if older data exists without code.
+                # Use class_id appended to name to ensure absolute uniqueness during backfill.
                 cursor.execute("""
                     UPDATE classes
-                    SET class_code = lower(replace(name, ' ', '-'))
+                    SET class_code = lower(replace(name, ' ', '-')) || '-' || class_id
                     WHERE class_code IS NULL
                 """)
             except sqlite3.OperationalError:
@@ -165,7 +166,7 @@ class SeedClassesService:
             logging.info(f"File: {self.filepath}")
             logging.info(f"Parser Boundary: Block 1 (id/name/icon), Block 2 (base stats)")
             logging.info(f"File Hash: {file_hash}")
-            logging.info(f"Expected Source Count: 9, Parsed Count: {len(valid_classes) + rejected_count}, Accepted: {len(updates) + len(inserts)}, Rejected: {rejected_count}")
+            logging.info(f"Expected Source Count: {len(valid_classes) + rejected_count}, Parsed Count: {len(valid_classes) + rejected_count}, Accepted: {len(updates) + len(inserts)}, Rejected: {rejected_count}")
             logging.info(f"FK Issues Found: {len(fk_issues)}")
 
             return len(valid_classes), len(updates) + len(inserts), rejected_count
