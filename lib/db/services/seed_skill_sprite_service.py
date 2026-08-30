@@ -1,13 +1,24 @@
 import json
 import hashlib
+import logging
 from typing import Dict, Any, Tuple
 from lib.db.connection import get_connection
 
+# Set up logging for the service
+logger = logging.getLogger("SeedSkillSpriteService")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
 
 class SeedSkillSpriteService:
-    def __init__(self):
-        self.source_file = "lib/data/skill-db-cabal-2.txt"
+    def __init__(self, source_file: str = "lib/data/skill-db-cabal-2.txt"):
+        self.source_file = source_file
         self.source_id = "skill_sprite_catalogue"
+        self.authorized_file = "lib/data/skill-db-cabal-2.txt"
         self.forbidden_inputs = [
             "image-count-skill-db-cabal.txt",
             "skills.json",
@@ -17,7 +28,18 @@ class SeedSkillSpriteService:
             "hunt_config.json"
         ]
 
+    def _validate_source(self):
+        """Validates that the source file is authorized and not forbidden."""
+        if self.source_file != self.authorized_file:
+            raise ValueError(f"Unauthorized source file: {self.source_file}. Must be {self.authorized_file}")
+
+        for forbidden in self.forbidden_inputs:
+            if forbidden in self.source_file:
+                raise ValueError(f"Forbidden source file used: {self.source_file}")
+
     def _extract_sprites(self) -> Tuple[Dict[str, Any], str]:
+        self._validate_source()
+
         with open(self.source_file, 'r', encoding='utf-8') as f:
             content = f.read()
 
@@ -71,11 +93,17 @@ class SeedSkillSpriteService:
             raise ValueError(f"Failed to decode JSON from source: {e}")
 
     def seed_skill_sprites(self) -> Dict[str, Any]:
-        sprites, file_hash = self._extract_sprites()
+        try:
+            sprites, file_hash = self._extract_sprites()
+        except Exception as e:
+            logger.error(f"Failed to extract sprites: {e}")
+            return {"status": "ABORTED/REVERTED", "message": str(e)}
+
         expected_count = len(sprites)
 
         conn, is_local = get_connection()
         if not conn:
+            logger.error("Could not connect to database")
             return {"status": "error", "message": "Could not connect to database"}
 
         inserted = 0
@@ -86,43 +114,61 @@ class SeedSkillSpriteService:
             conn.execute("BEGIN TRANSACTION")
             cursor = conn.cursor()
 
-            # The schema states that name is the skill code
-            # We will use name as the column that stores the source sprite key (skill_code)
-            # Add the skill_code column if it doesn't exist
+            # Add required columns if they don't exist
             cursor.execute("PRAGMA table_info(skills)")
             columns = [col[1] for col in cursor.fetchall()]
 
             if "skill_code" not in columns:
                 cursor.execute("ALTER TABLE skills ADD COLUMN skill_code TEXT")
+            if "icon_x" not in columns:
+                cursor.execute("ALTER TABLE skills ADD COLUMN icon_x INTEGER DEFAULT 0")
+            if "icon_y" not in columns:
+                cursor.execute("ALTER TABLE skills ADD COLUMN icon_y INTEGER DEFAULT 0")
+            if "icon_w" not in columns:
+                cursor.execute("ALTER TABLE skills ADD COLUMN icon_w INTEGER DEFAULT 0")
+            if "icon_h" not in columns:
+                cursor.execute("ALTER TABLE skills ADD COLUMN icon_h INTEGER DEFAULT 0")
 
+            # Fetch existing skill_codes for idempotency check
+            cursor.execute("SELECT skill_code FROM skills WHERE skill_code IS NOT NULL")
+            existing_codes = {row[0] for row in cursor.fetchall()}
+
+            records_to_insert = []
             for skill_code, coords in sprites.items():
-                # Idempotency check using skill_code
-                cursor.execute("SELECT skill_id FROM skills WHERE skill_code = ?", (skill_code,))
-                if cursor.fetchone():
+                if skill_code in existing_codes:
                     skipped += 1
                     continue
 
+                records_to_insert.append((
+                    skill_code,  # name
+                    skill_code,  # skill_code
+                    coords.get("x", 0),
+                    coords.get("y", 0),
+                    coords.get("width", 0),
+                    coords.get("height", 0)
+                ))
+
+            if records_to_insert:
                 try:
-                    cursor.execute(
+                    cursor.executemany(
                         """
                         INSERT INTO skills (name, skill_code, icon_x, icon_y, icon_w, icon_h)
                         VALUES (?, ?, ?, ?, ?, ?)
                         """,
-                        (
-                            skill_code,  # Use skill_code as name because name is NOT NULL
-                            skill_code,
-                            coords.get("x", 0),
-                            coords.get("y", 0),
-                            coords.get("width", 0),
-                            coords.get("height", 0)
-                        )
+                        records_to_insert
                     )
-                    inserted += 1
+                    inserted += len(records_to_insert)
                 except Exception as e:
-                    print(f"Error inserting {skill_code}: {e}")
+                    logger.error(f"Batch insert error: {e}", exc_info=True)
                     errors += 1
 
-            conn.commit()
+            try:
+                conn.commit()
+            except Exception as e:
+                logger.error(f"Failed to commit transaction: {e}", exc_info=True)
+                conn.rollback()
+                return {"status": "ABORTED/REVERTED", "message": f"Commit failed: {e}"}
+
             status = "PASSED" if errors == 0 else "PARTIAL_SUCCESS"
 
             # Integrity check
@@ -143,6 +189,7 @@ class SeedSkillSpriteService:
             }
 
         except Exception as e:
+            logger.error(f"Unexpected error during seed: {e}", exc_info=True)
             try:
                 conn.rollback()
             except Exception:
@@ -152,8 +199,8 @@ class SeedSkillSpriteService:
             if is_local and conn:
                 try:
                     conn.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error closing connection: {e}")
 
 
 if __name__ == "__main__":
