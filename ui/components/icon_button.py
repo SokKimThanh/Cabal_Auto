@@ -474,6 +474,15 @@ def create_icon_button(
 
     button.bind('<FocusIn>', _on_focus_in, add='+')
     button.bind('<FocusOut>', _on_focus_out, add='+')
+
+    # Add keyboard triggers for Return and space
+    def _on_keypress(event):
+        if str(event.widget['state']) != 'disabled':
+            event.widget.invoke()
+            return "break"
+
+    button.bind('<Return>', _on_keypress, add='+')
+    button.bind('<space>', _on_keypress, add='+')
     
     return button
 
