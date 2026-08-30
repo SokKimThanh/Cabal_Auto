@@ -25,7 +25,7 @@ Do not:
 - Change logging format, persistence, workers, polling, config, hunt runtime, bounds flow, or status warning behavior.
 
 Acceptance criteria:
-- Container does not overlap Sidebar or Workspace.
+- Container does not overlap 444Sidebar or Workspace.
 - Expand/collapse does not reduce primary panels below `360 px`.
 - No log source, worker, or scheduled callback is added.
 

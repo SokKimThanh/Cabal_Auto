@@ -36,3 +36,13 @@ Validation & Test:
 Session Boundary Gate:
 - Verify no dependency on full-screen HSV search.
 - Report PASSED/REVERTED at minute 25.
+
+# Bổ sung vào Implementation Details của CB1:
+- Call `win32gui.GetClientRect(hwnd)` to get exact internal canvas size, ignoring OS window borders.
+- Define normalized ROI relative to client canvas:
+  * Top: 0.048 to 0.065
+  * Left: 0.42 to 0.58
+- Color bounds for Cabal Target Bar:
+  * Lower HSV: np.array([12, 130, 130])
+  * Upper HSV: np.array([32, 255, 255])
+- Ensure DPI Awareness is checked before calculating pixel coordinates.
