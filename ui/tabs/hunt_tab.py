@@ -69,6 +69,7 @@ class HuntTab(ttk.Frame):
         self.grid_columnconfigure(0, weight=1, minsize=776)
         self.grid_columnconfigure(1, weight=1, minsize=776)
         self.grid_rowconfigure(0, weight=1, minsize=552)
+        self.grid_rowconfigure(1, weight=0, minsize=120)
 
         # Section 1: Active Target & Status Panel
         self.app.active_target_status_frame = tk.LabelFrame(
@@ -261,11 +262,16 @@ class HuntTab(ttk.Frame):
         self.app.training_mode_status_var = tk.StringVar()
         # Status label hidden, only used internally
 
+        self.skill_strip_frame = tk.Frame(self)
+        self.skill_strip_frame.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=(0, 12))
+        self.skill_strip_frame.grid_columnconfigure(0, weight=1)
+        self.skill_strip_frame.grid_columnconfigure(1, weight=1)
+
         # Section 3: Skill slots selection
         skill_frame_outer = tk.LabelFrame(
-            self, text=self.app._t("skill_slots"), padx=10, pady=8
+            self.skill_strip_frame, text=self.app._t("skill_slots"), padx=10, pady=8
         )
-        skill_frame_outer.grid(row=1, column=0, columnspan=2, sticky="we", pady=(0, 12))
+        skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
         # Manage skills hint (button hidden, use Ctrl+K shortcut)
         hint_label = tk.Label(
@@ -313,9 +319,9 @@ class HuntTab(ttk.Frame):
         # Section 3.5: Skill Performance Statistics (Sprint 22 Patch 1 - Training Mode)
         # Re-parented into the active target status panel.
         self.app.skill_stats_frame = tk.LabelFrame(
-            self.app.active_target_status_frame, text=self.app._t("skill_stats_title"), padx=10, pady=8
+            self.skill_strip_frame, text=self.app._t("skill_stats_title"), padx=10, pady=8
         )
-        self.app.skill_stats_frame.pack(fill="both", expand=True)
+        self.app.skill_stats_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
 
         stats_columns = ("skill", "casts", "last_cast", "cooldown", "success")
         self.app.skill_stats_tree = ttk.Treeview(
