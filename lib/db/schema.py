@@ -53,6 +53,8 @@ def setup_skills_schema(conn: sqlite3.Connection):
             value REAL,
             duration REAL,
             target TEXT,
+            value_text TEXT,
+            duration_text TEXT,
             FOREIGN KEY (synergy_id) REFERENCES synergies(synergy_id) ON DELETE CASCADE
         )
     """)
