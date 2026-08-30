@@ -158,9 +158,23 @@ class SeedSkillSpriteService:
                         records_to_insert
                     )
                     inserted += len(records_to_insert)
-                except Exception as e:
-                    logger.error(f"Batch insert error: {e}", exc_info=True)
-                    errors += 1
+                except Exception as batch_err:
+                    logger.warning(f"Batch insert error: {batch_err}. Falling back to individual inserts.", exc_info=True)
+                    # Fallback to individual inserts to find out exactly which record failed
+                    for record in records_to_insert:
+                        try:
+                            cursor.execute(
+                                """
+                                INSERT INTO skills (name, skill_code, icon_x, icon_y, icon_w, icon_h)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                                """,
+                                record
+                            )
+                            inserted += 1
+                        except Exception as single_err:
+                            skill_code = record[0]
+                            logger.error(f"Failed to insert record {skill_code}: {single_err}", exc_info=True)
+                            errors += 1
 
             try:
                 conn.commit()
@@ -174,6 +188,9 @@ class SeedSkillSpriteService:
             # Integrity check
             cursor.execute("SELECT COUNT(*), COUNT(DISTINCT skill_code) FROM skills")
             total_rows, distinct_names = cursor.fetchone()
+
+            if expected_count != (inserted + skipped + errors):
+                logger.warning(f"Integrity warning: Expected {expected_count} records but processed {inserted + skipped + errors}")
 
             return {
                 "status": status,

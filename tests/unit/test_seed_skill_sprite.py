@@ -115,3 +115,41 @@ def test_forbidden_file():
     service = SeedSkillSpriteService("lib/data/skills.json")
     with pytest.raises(ValueError, match="Unauthorized source file"):
         service._extract_sprites()
+
+
+def test_stress_test_large_batch(memory_db):
+    """Stress test the seeding mechanism with 5000+ records to ensure batch insert is robust."""
+    with patch('lib.db.services.seed_skill_sprite_service.get_connection', return_value=(memory_db, False)):
+        service = SeedSkillSpriteService()
+
+        # Generate 6000 mock records
+        mock_sprites = {f"stress_skill_{i}": {"x": i, "y": i, "width": 38, "height": 38} for i in range(6000)}
+
+        with patch.object(service, '_extract_sprites', return_value=(mock_sprites, "stress_hash")):
+            result = service.seed_skill_sprites()
+
+            assert result["status"] == "PASSED"
+            assert result["inserted"] == 6000
+            assert result["skipped"] == 0
+            assert result["errors"] == 0
+
+            cursor = memory_db.cursor()
+            cursor.execute("SELECT COUNT(*) FROM skills")
+            assert cursor.fetchone()[0] == 6000
+
+
+def test_file_hash_variation():
+    """Verify that different file contents yield different hashes when extracted."""
+    service = SeedSkillSpriteService()
+
+    content_a = "prefix JSON.parse('{\"sprites\": {\"a\": {\"x\": 1}}}') suffix"
+    content_b = "prefix JSON.parse('{\"sprites\": {\"a\": {\"x\": 2}}}') suffix"
+
+    with patch('builtins.open', mock_open(read_data=content_a)):
+        sprites_a, hash_a = service._extract_sprites()
+
+    with patch('builtins.open', mock_open(read_data=content_b)):
+        sprites_b, hash_b = service._extract_sprites()
+
+    assert hash_a != hash_b
+    assert sprites_a != sprites_b
