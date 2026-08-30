@@ -84,7 +84,7 @@ class SeedClassesService:
             cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_classes_class_code ON classes(class_code) WHERE class_code IS NOT NULL")
             conn.commit()
         except Exception as e:
-            logging.error(f"[SeedClassesService] Schema migration failed: {e}")
+            logging.error(f"[SeedClassesService] Schema migration failed: {e}", exc_info=True)
             try: conn.rollback()
             except: pass
         finally:
@@ -107,14 +107,6 @@ class SeedClassesService:
         try:
             cursor = conn.cursor()
             conn.execute("BEGIN TRANSACTION")
-
-            # Utilizing ON CONFLICT DO UPDATE requires a primary key or unique constraint.
-            # We created a unique index on class_code.
-            # However sqlite ON CONFLICT needs the index to NOT be partial for it to be simple.
-            # Since our index is `WHERE class_code IS NOT NULL`, standard ON CONFLICT(class_code) fails in some SQLite versions.
-            # To optimize without SELECTs, we can fallback to INSERT OR REPLACE if we had the PK, but we don't.
-            # We will use the explicit SELECT check but doing it in batch isn't too heavy for 9 rows.
-            # Since performance was highlighted in PR, I will optimize it using execute many after resolving existing.
 
             cursor.execute("SELECT class_code, class_id FROM classes WHERE class_code IS NOT NULL")
             existing_map = {row[0]: row[1] for row in cursor.fetchall()}
@@ -158,7 +150,7 @@ class SeedClassesService:
             conn.commit()
             return len(valid_classes), len(updates) + len(inserts), rejected_count
         except Exception as e:
-            logging.error(f"[SeedClassesService] Seeding failed: {e}")
+            logging.error(f"[SeedClassesService] Seeding failed: {e}", exc_info=True)
             try: conn.rollback()
             except: pass
             raise e
