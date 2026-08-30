@@ -65,13 +65,23 @@ class HuntTab(ttk.Frame):
             value=bool(self.app.hunt_cfg.get("bring_to_front_each_cycle", False))
         )
 
-        # Layout: monster/skill sections on the left (cols 0-3), stats panel on the right (cols 4-7)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(4, weight=1)
+        # Layout: Split into two primary panels: Monster Rotation and Active Target & Status
+        self.grid_columnconfigure(0, weight=1, minsize=776)
+        self.grid_columnconfigure(1, weight=1, minsize=776)
+        self.grid_rowconfigure(0, weight=1, minsize=552)
 
-        # Section 1: Hunt Status Bar (current hunt state + current target)
-        status_frame = tk.Frame(self, relief="groove", bd=1, height=32)
-        status_frame.grid(row=0, column=0, columnspan=8, sticky="we", pady=(0, 12))
+        # Section 1: Active Target & Status Panel
+        self.app.active_target_status_frame = tk.LabelFrame(
+            self, text=self.app._t("hunt_active_target_status"), padx=10, pady=8
+        )
+        self.app.active_target_status_frame.grid(
+            row=0, column=1, sticky="nsew", padx=(6, 0), pady=(0, 12)
+        )
+        self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
+
+        # Sub-section: Hunt Status Bar (current hunt state + current target)
+        status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
+        status_frame.pack(fill="x", pady=(0, 12))
         status_frame.grid_propagate(False)  # Keep consistent height even before labels have text
         tk.Label(
             status_frame,
@@ -94,7 +104,7 @@ class HuntTab(ttk.Frame):
             self, text=self.app._t("hunt_monsters"), padx=10, pady=8
         )
         self.app.monster_frame.grid(
-            row=1, column=0, columnspan=4, sticky="we", pady=(0, 12)
+            row=0, column=0, sticky="nsew", padx=(0, 6), pady=(0, 12)
         )
         self.app.monster_frame.grid_columnconfigure(0, weight=1)
 
@@ -255,7 +265,7 @@ class HuntTab(ttk.Frame):
         skill_frame_outer = tk.LabelFrame(
             self, text=self.app._t("skill_slots"), padx=10, pady=8
         )
-        skill_frame_outer.grid(row=2, column=0, columnspan=4, sticky="we", pady=(0, 12))
+        skill_frame_outer.grid(row=1, column=0, columnspan=2, sticky="we", pady=(0, 12))
 
         # Manage skills hint (button hidden, use Ctrl+K shortcut)
         hint_label = tk.Label(
@@ -301,18 +311,11 @@ class HuntTab(ttk.Frame):
         self.app._refresh_monster_rotation_list()
 
         # Section 3.5: Skill Performance Statistics (Sprint 22 Patch 1 - Training Mode)
+        # Re-parented into the active target status panel.
         self.app.skill_stats_frame = tk.LabelFrame(
-            self, text=self.app._t("skill_stats_title"), padx=10, pady=8
+            self.app.active_target_status_frame, text=self.app._t("skill_stats_title"), padx=10, pady=8
         )
-        self.app.skill_stats_frame.grid(
-            row=2,
-            column=4,
-            rowspan=1,
-            columnspan=4,
-            sticky='nsew',
-            padx=(5, 0),
-            pady=(0, 10)
-        )
+        self.app.skill_stats_frame.pack(fill="both", expand=True)
 
         stats_columns = ("skill", "casts", "last_cast", "cooldown", "success")
         self.app.skill_stats_tree = ttk.Treeview(
