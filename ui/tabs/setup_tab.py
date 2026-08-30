@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional
 
 from lib.i18n import t as i18n_t, GLOBAL_NS as I18N_GLOBAL
 from lib.ui_style import UIStyle
-from ui.helpers.tooltip import attach_i18n_tooltip
 
 if TYPE_CHECKING:
     from app_gui import App
@@ -109,40 +108,37 @@ class SetupTab(tk.Frame):
                     return False
         return True
 
+
+    def _add_entry_row(self, frame, row, label_key, var_obj, col_offset=0, width=8, validate=False):
+        tk.Label(frame, text=self._t(label_key)).grid(row=row, column=0+col_offset, sticky="e", padx=(16 if col_offset else 0, 4), pady=4)
+        kwargs = {"textvariable": var_obj, "width": width}
+        if validate:
+            kwargs.update({"validate": "key", "validatecommand": (self.register(self._validate_numeric), "%d", "%P")})
+        tk.Entry(frame, **kwargs).grid(row=row, column=1+col_offset, sticky="ew", pady=4)
+
+
     def _build_advanced_content(self, frame):
-
-        tk.Label(frame, text=self._t("target_key")).grid(row=0, column=0, sticky="e", pady=4)
         self.app.setup_target_key_var = tk.StringVar(value=str(self.app.hunt_cfg.get("target_key", "TAB")))
-        tk.Entry(frame, textvariable=self.app.setup_target_key_var, width=8).grid(row=0, column=1, sticky="w", pady=4)
-
-        tk.Label(frame, text=self._t("press_ms")).grid(row=1, column=0, sticky="e", pady=4)
         self.app.setup_press_ms_var = tk.StringVar(value=str(self.app.hunt_cfg.get("attack_press_ms", 60)))
-        tk.Entry(frame, textvariable=self.app.setup_press_ms_var, width=8, validate="key", validatecommand=(self.register(self._validate_numeric), "%d", "%P")).grid(row=1, column=1, sticky="w", pady=4)
-
-        tk.Label(frame, text=self._t("target_cycle")).grid(row=1, column=2, sticky="e", padx=(16, 4), pady=4)
         self.app.setup_target_cycle_var = tk.StringVar(value=str(self.app.hunt_cfg.get("target_cycle_delay", 0.2)))
-        tk.Entry(frame, textvariable=self.app.setup_target_cycle_var, width=8, validate="key", validatecommand=(self.register(self._validate_numeric), "%d", "%P")).grid(row=1, column=3, sticky="w", pady=4)
-
-        tk.Label(frame, text=self._t("search_interval")).grid(row=2, column=0, sticky="e", pady=4)
         self.app.setup_search_interval_var = tk.StringVar(value=str(self.app.hunt_cfg.get("search_interval", 0.25)))
-        tk.Entry(frame, textvariable=self.app.setup_search_interval_var, width=8, validate="key", validatecommand=(self.register(self._validate_numeric), "%d", "%P")).grid(row=2, column=1, sticky="w", pady=4)
-
-        tk.Label(frame, text=self._t("attack_interval")).grid(row=2, column=2, sticky="e", padx=(16, 4), pady=4)
         self.app.setup_attack_interval_var = tk.StringVar(value=str(self.app.hunt_cfg.get("attack_interval", 0.15)))
-        tk.Entry(frame, textvariable=self.app.setup_attack_interval_var, width=8, validate="key", validatecommand=(self.register(self._validate_numeric), "%d", "%P")).grid(row=2, column=3, sticky="w", pady=4)
-
-        tk.Label(frame, text=self._t("lost_timeout")).grid(row=3, column=0, sticky="e", pady=4)
         self.app.setup_lost_timeout_var = tk.StringVar(value=str(self.app.hunt_cfg.get("lost_timeout_sec", 1.2)))
-        tk.Entry(frame, textvariable=self.app.setup_lost_timeout_var, width=8, validate="key", validatecommand=(self.register(self._validate_numeric), "%d", "%P")).grid(row=3, column=1, sticky="w", pady=4)
-
-        tk.Label(frame, text=self._t("attack_duration")).grid(row=3, column=2, sticky="e", padx=(16, 4), pady=4)
         self.app.setup_attack_duration_var = tk.StringVar(value=str(self.app.hunt_cfg.get("attack_min_duration_sec", 1.5)))
-        tk.Entry(frame, textvariable=self.app.setup_attack_duration_var, width=8, validate="key", validatecommand=(self.register(self._validate_numeric), "%d", "%P")).grid(row=3, column=3, sticky="w", pady=4)
+
+        self._add_entry_row(frame, 0, "target_key", self.app.setup_target_key_var)
+
+        self._add_entry_row(frame, 1, "press_ms", self.app.setup_press_ms_var, validate=True)
+        self._add_entry_row(frame, 1, "target_cycle", self.app.setup_target_cycle_var, col_offset=2, validate=True)
+        self._add_entry_row(frame, 2, "search_interval", self.app.setup_search_interval_var, validate=True)
+        self._add_entry_row(frame, 2, "attack_interval", self.app.setup_attack_interval_var, col_offset=2, validate=True)
+        self._add_entry_row(frame, 3, "lost_timeout", self.app.setup_lost_timeout_var, validate=True)
+        self._add_entry_row(frame, 3, "attack_duration", self.app.setup_attack_duration_var, col_offset=2, validate=True)
 
     def _build_window_content(self, frame):
         tk.Label(frame, text=self._t("template")).grid(row=0, column=0, sticky="e", pady=4)
         self.app.setup_template_var = tk.StringVar(value=str(self.app.hunt_cfg.get("template_path", "assets/images/target_frame.png")))
-        tk.Entry(frame, textvariable=self.app.setup_template_var, width=30).grid(row=0, column=1, columnspan=2, sticky="w", pady=4)
+        tk.Entry(frame, textvariable=self.app.setup_template_var, width=30).grid(row=0, column=1, columnspan=2, sticky="ew", pady=4)
         tk.Button(frame, text=self._t("browse"), command=self._browse_template).grid(row=0, column=3, padx=(4, 0), pady=4)
 
     def _build_ui(self):
@@ -156,7 +152,7 @@ class SetupTab(tk.Frame):
         mode_desc = tk.Label(
             mode_frame, text=self._t("setup_mode_desc"), fg=UIStyle.COLOR_MUTED, font=UIStyle.FONT_TEXT
         )
-        mode_desc.grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 8))
+        mode_desc.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 8))
 
         current_mode = self.app.hunt_cfg.get("ui_mode", "beginner")
         self.app.setup_mode_var = tk.StringVar(value=current_mode)
@@ -176,11 +172,11 @@ class SetupTab(tk.Frame):
                 command=self._on_setup_mode_changed,
                 font=UIStyle.FONT_LABEL,
             )
-            rb.grid(row=idx + 1, column=0, sticky="w", pady=2)
+            rb.grid(row=idx + 1, column=0, sticky="ew", pady=2)
             desc_label = tk.Label(
                 mode_frame, text=f"  {mode_desc_text}", fg=UIStyle.COLOR_MUTED, font=UIStyle.FONT_SMALL
             )
-            desc_label.grid(row=idx + 1, column=1, sticky="w", padx=(4, 0), pady=2)
+            desc_label.grid(row=idx + 1, column=1, sticky="ew", padx=(4, 0), pady=2)
 
         # Section 2: Global Hotkeys
         self.hotkey_group, self.hotkey_visible, self.hotkey_toggle = self._build_collapsible_group(
