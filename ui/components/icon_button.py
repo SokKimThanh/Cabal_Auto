@@ -322,6 +322,10 @@ def create_icon_button(
         state_overrides['fg'] = danger_config.get('fg', 'white')
         state_overrides['activeforeground'] = danger_config.get('activeforeground', 'white')
     
+    # Initial setup for accessibility focus indicators
+    base_config['highlightthickness'] = 0
+    base_config['highlightcolor'] = base_config.get('bg', 'white')
+
     # Merge all configs: base -> state -> user kwargs
     final_config = {
         **base_config,
@@ -448,6 +452,17 @@ def create_icon_button(
         button.bind('<Leave>', on_leave, add='+')
     if on_focus:
         button.bind('<FocusIn>', on_focus)
+
+    # Add keyboard accessibility focus indicators
+    def _on_focus_in(event):
+        if isinstance(event.widget, tk.Button):
+            event.widget.config(highlightbackground="#2196F3", highlightcolor="#2196F3", highlightthickness=2)
+    def _on_focus_out(event):
+        if isinstance(event.widget, tk.Button):
+            event.widget.config(highlightbackground=event.widget.cget("bg"), highlightcolor=event.widget.cget("bg"), highlightthickness=0)
+
+    button.bind('<FocusIn>', _on_focus_in, add='+')
+    button.bind('<FocusOut>', _on_focus_out, add='+')
     
     return button
 
