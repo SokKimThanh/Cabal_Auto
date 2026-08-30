@@ -322,6 +322,7 @@ class AppStateController:
             return
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
+        from lib.ui_style import UIStyle
 
         bounds = WindowSelectionService.resolve_bounds(
             getattr(app, "hunt_cfg", {}), getattr(app, "current_window_bounds", None)
@@ -332,6 +333,20 @@ class AppStateController:
             )
         else:
             app.window_bounds_display_var.set("")
+
+        if hasattr(app, "bounds_status_var") and hasattr(app, "bounds_readiness_label"):
+            selected_window = app.win_combo_var.get() if hasattr(app, "win_combo_var") else None
+
+            if not selected_window:
+                app.bounds_status_var.set(app._t("bounds_state_select"))
+                app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
+            elif not bounds:
+                app.bounds_status_var.set(app._t("bounds_state_invalid"))
+                app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
+            else:
+                title = app.hunt_selected.get("title", selected_window) if hasattr(app, "hunt_selected") and isinstance(app.hunt_selected, dict) else selected_window
+                app.bounds_status_var.set(app._t("bounds_state_ready").format(title=title))
+                app.bounds_readiness_label.config(fg=UIStyle.COLOR_ACCENT)
 
     def _hunt_locate_target(self, cfg: Dict[str, Any]):
         app = self.root
