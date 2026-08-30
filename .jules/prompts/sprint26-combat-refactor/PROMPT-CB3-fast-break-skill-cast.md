@@ -25,3 +25,11 @@ Validation:
 Session Boundary Gate:
 - Check that skill rotation index increments cleanly without getting out of sync.
 - Report PASSED/REVERTED at minute 25.
+
+# Bổ sung vào Implementation Details của CB3:
+- In `_try_cast_skills`:
+  * Split `time.sleep(cast_time)` into polling chunks of `0.04s`.
+  * If `target_bar_detector.is_target_alive(latest_frame) == False`:
+    - Target died mid-cast -> immediately trigger `tap('z')` to acquire next target.
+    - Break cast-wait loop immediately to maintain combo streak.
+    - Increment skill rotation index to prepare next skill in chain.

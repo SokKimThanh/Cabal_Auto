@@ -28,3 +28,10 @@ Validation & Test:
 Session Boundary Gate:
 - Ensure no Tkinter UI calls occur outside `schedule_ui_task`.
 - Report PASSED/REVERTED at minute 25.
+
+# Bổ sung vào Implementation Details của CB2:
+- Decouple `locate_target` from legacy `AppStateController._hunt_locate_target` template loop.
+- In `worker()` loop:
+  * Replace `box, match_info = self.locate_target(cfg)` with direct check: `have_target = target_bar_detector.is_target_alive(frame)`.
+  * In `mode == "search"`: Send `tap(cfg.get("target_key", "z"))` with delay `0.08s`.
+  * In `mode == "attack"`: DO NOT send target key. Directly call `try_cast_skills()`.
