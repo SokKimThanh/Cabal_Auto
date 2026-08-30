@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+import queue
 from typing import Any, Dict, List, Optional
 
 # Add parent directory to path for lib imports
@@ -175,6 +176,7 @@ class App(tk.Tk):
 
     def __init__(self):
         super().__init__()
+        self._is_destroyed = False
         # Load config and language
         self.cfg = load_config()
         self.hunt_cfg = load_hunt_config()
@@ -709,10 +711,16 @@ class App(tk.Tk):
         self.logs_toggle_btn.bind("<space>", lambda e: self._toggle_bottom_logs())
 
         # Empty content container for future logs
-        self.logs_content_frame = tk.Frame(self.shell_zone_c2, bg=UI.BG_PANEL)
-        self.logs_content_frame.pack(fill="both", expand=True)
+        self.logs_text = tk.Text(
+            self.shell_zone_c2, bg=UI.BG_PANEL, fg=UI.COLOR_TEXT,
+            font=UI.FONT_SMALL, wrap="word", state="disabled",
+            relief="flat", padx=12, pady=12
+        )
+        self.logs_text.pack(fill="both", expand=True)
+        self.logs_content_frame = self.logs_text  # maintain existing reference for toggle
 
         self.after(100, self._check_initial_logs_state)
+        self.after(500, self._poll_log_queue)
 
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
@@ -859,7 +867,6 @@ class App(tk.Tk):
         )
         self._db_status_bar.pack(fill="x", side="bottom")
 
-
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
@@ -959,6 +966,37 @@ class App(tk.Tk):
         if self.winfo_height() < 900:
             if self.logs_expanded:
                 self._toggle_bottom_logs()
+
+    def _poll_log_queue(self):
+        """Poll log messages from HuntLogger and append to UI (UX4B.2)."""
+        if self._is_destroyed:
+            return
+
+        try:
+            # Fetch all available logs
+            logger = get_hunt_logger()
+            if hasattr(logger, "ui_queue"):
+                while True:
+                    try:
+                        record = logger.ui_queue.get_nowait()
+                        msg = logger.logger.handlers[2].format(record) if len(logger.logger.handlers) > 2 else record.getMessage()
+
+                        self.logs_text.config(state="normal")
+                        self.logs_text.insert(tk.END, msg + "\n")
+
+                        # Keep only the last 1000 lines
+                        lines = int(self.logs_text.index('end-1c').split('.')[0])
+                        if lines > 1000:
+                            self.logs_text.delete("1.0", f"{lines - 1000 + 1}.0")
+
+                        self.logs_text.see(tk.END)
+                        self.logs_text.config(state="disabled")
+                    except queue.Empty:
+                        break
+        except Exception as e:
+            print(f"Error polling logs: {e}")
+
+        self.after(200, self._poll_log_queue)
 
     # Click Tab removed
 
@@ -2778,6 +2816,7 @@ class App(tk.Tk):
         self.lifecycle_controller.on_close()
 
     def destroy(self):
+        self._is_destroyed = True
         self.lifecycle_controller.cleanup_before_destroy()
         super().destroy()
 
