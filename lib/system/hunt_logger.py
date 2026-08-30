@@ -11,9 +11,11 @@ Features:
 
 import logging
 from logging.handlers import RotatingFileHandler
+from logging.handlers import QueueHandler
 from pathlib import Path
 from datetime import datetime
 import json
+import queue
 
 
 class HuntLogger:
@@ -38,6 +40,11 @@ class HuntLogger:
         # Remove existing handlers
         self.logger.handlers.clear()
         
+        # Queue for UI consumption
+        self.ui_queue = queue.Queue()
+        queue_handler = QueueHandler(self.ui_queue)
+        queue_handler.setLevel(logging.INFO)
+
         # Create rotating file handler
         log_file = self.log_dir / 'hunt.log'
         file_handler = RotatingFileHandler(
@@ -59,10 +66,12 @@ class HuntLogger:
         )
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
+        queue_handler.setFormatter(formatter)
         
         # Add handlers
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
+        self.logger.addHandler(queue_handler)
         
         # Session start
         self.session_start = datetime.now()
