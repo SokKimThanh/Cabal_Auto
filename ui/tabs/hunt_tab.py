@@ -14,6 +14,19 @@ class HuntTab(ttk.Frame):
         self.app = app
         self._build_ui()
 
+    def update_hunt_status_color(self, state: str):
+        if not hasattr(self, "hunt_status_label"):
+            return
+
+        if state == "running":
+            self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
+        elif state == "error":
+            self.hunt_status_label.config(fg=UI.COLOR_DANGER)
+        elif state == "idle":
+            self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
+        elif state == "stopped":
+            self.hunt_status_label.config(fg=UI.COLOR_WARNING)
+
     def _build_ui(self):
         """Streamlined Hunt tab with only essential controls.
 
@@ -85,20 +98,23 @@ class HuntTab(ttk.Frame):
         status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
         status_frame.pack(fill="x", pady=(0, 12))
         status_frame.pack_propagate(False)  # Keep consistent height even before labels have text
-        tk.Label(
+        self.hunt_status_label = tk.Label(
             status_frame,
             textvariable=self.app.hunt_status,
-            font=("Arial", 10, "bold"),
-            fg="#2E7D32",
+            font=UI.FONT_SECTION,
+            fg=UI.COLOR_ACCENT,
             anchor="w",
-        ).pack(side="left", padx=8, pady=6)
-        tk.Label(
+        )
+        self.hunt_status_label.pack(side="left", padx=8, pady=6)
+
+        self.hunt_target_info_label = tk.Label(
             status_frame,
             textvariable=self.app.hunt_target_info,
-            font=("Arial", 9),
-            fg="#555",
+            font=UI.FONT_LABEL,
+            fg=UI.COLOR_SUBTEXT,
             anchor="e",
-        ).pack(side="right", padx=8, pady=6)
+        )
+        self.hunt_target_info_label.pack(side="right", padx=8, pady=6)
 
         # Section 2: Monster Selection (Phase 3: Multi-Monster Support)
         # Sprint 22 Patch 2: Dynamic title based on training mode
