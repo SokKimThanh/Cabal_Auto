@@ -56,11 +56,14 @@ class SeedClassesService:
 
         valid_classes = []
         rejected_count = 0
+        required_fields = ['class_code', 'name', 'icon_path', 'str_base', 'int_base', 'dex_base']
+
         for slug, data in classes.items():
-            if all(k in data for k in ['class_code', 'name', 'icon_path', 'str_base', 'int_base', 'dex_base']):
+            missing_fields = [k for k in required_fields if k not in data]
+            if not missing_fields:
                 valid_classes.append(data)
             else:
-                logging.warning(f"[SeedClassesService] Rejected partial class record for slug '{slug}': {data}")
+                logging.warning(f"[SeedClassesService] Rejected partial class record for slug '{slug}'. Missing fields: {missing_fields}. Data found: {data}")
                 rejected_count += 1
 
         return valid_classes, rejected_count, file_hash
