@@ -711,13 +711,13 @@ class App(tk.Tk):
         self.logs_toggle_btn.bind("<space>", lambda e: self._toggle_bottom_logs())
 
         # Empty content container for future logs
-        self.logs_text = tk.Text(
+        self.logs_text_widget = tk.Text(
             self.shell_zone_c2, bg=UI.BG_PANEL, fg=UI.COLOR_TEXT,
             font=UI.FONT_SMALL, wrap="word", state="disabled",
             relief="flat", padx=12, pady=12
         )
-        self.logs_text.pack(fill="both", expand=True)
-        self.logs_content_frame = self.logs_text  # maintain existing reference for toggle
+        self.logs_text_widget.pack(fill="both", expand=True)
+        self.logs_content_frame = self.logs_text_widget  # Maintain existing reference for layout operations
 
         self.after(100, self._check_initial_logs_state)
         self.after(500, self._poll_log_queue)
@@ -979,24 +979,31 @@ class App(tk.Tk):
                 while True:
                     try:
                         record = logger.ui_queue.get_nowait()
-                        msg = logger.logger.handlers[2].format(record) if len(logger.logger.handlers) > 2 else record.getMessage()
+                        msg = record.getMessage()
+                        # Lấy format từ QueueHandler nếu có
+                        import logging.handlers
+                        for handler in logger.logger.handlers:
+                            if isinstance(handler, logging.handlers.QueueHandler):
+                                if handler.formatter:
+                                    msg = handler.format(record)
+                                break
 
-                        self.logs_text.config(state="normal")
-                        self.logs_text.insert(tk.END, msg + "\n")
+                        self.logs_text_widget.config(state="normal")
+                        self.logs_text_widget.insert(tk.END, msg + "\n")
 
                         # Keep only the last 1000 lines
-                        lines = int(self.logs_text.index('end-1c').split('.')[0])
+                        lines = int(self.logs_text_widget.index('end-1c').split('.')[0])
                         if lines > 1000:
-                            self.logs_text.delete("1.0", f"{lines - 1000 + 1}.0")
+                            self.logs_text_widget.delete("1.0", f"{lines - 1000 + 1}.0")
 
-                        self.logs_text.see(tk.END)
-                        self.logs_text.config(state="disabled")
+                        self.logs_text_widget.see(tk.END)
+                        self.logs_text_widget.config(state="disabled")
                     except queue.Empty:
                         break
         except Exception as e:
             print(f"Error polling logs: {e}")
 
-        self.after(200, self._poll_log_queue)
+        self.after(500, self._poll_log_queue)
 
     # Click Tab removed
 
