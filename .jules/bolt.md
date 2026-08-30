@@ -41,3 +41,6 @@
 ## 2023-10-27 - OpenCV Feature Detector Instantiation Overhead
 **Learning:** Instantiating `cv2.ORB_create` or `cv2.SIFT_create` multiple times per frame inside feature detection loops creates significant unnecessary overhead.
 **Action:** Cache the instantiated OpenCV feature detectors (like ORB or SIFT) using a thread-local object (`threading.local()`) to prevent redundant creation overhead per frame while avoiding shared mutable state issues across threads.
+## 2024-03-XX - [Fast downsampling before color conversion]
+**Learning:** Reversing operations so that `cv2.resize` happens *before* `cv2.cvtColor` drastically improves performance in real-time capture loops (e.g., dropping pixel count by 75% for 1080p->540p before color conversion). Also, `cv2.INTER_AREA` is much faster for shrinking images compared to the default interpolation.
+**Action:** Always check the order of OpenCV operations in hot loops. Shrink image arrays early before applying pixel-wise operations to save processing time.
