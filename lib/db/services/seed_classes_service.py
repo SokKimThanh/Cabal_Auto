@@ -2,15 +2,25 @@ import re
 from typing import Tuple, List, Dict
 import sqlite3
 import database
+import logging
+import os
 from lib.db.connection import get_connection
 
 class SeedClassesService:
-    def __init__(self, filepath: str = 'lib/data/color-skill-character-db-cabal.txt'):
-        self.filepath = filepath
+    def __init__(self, filepath: str = None):
+        if filepath is None:
+            # Fallback path but prioritizes env config
+            self.filepath = os.getenv('CABAL_CLASS_DB_FILE', 'lib/data/color-skill-character-db-cabal.txt')
+        else:
+            self.filepath = filepath
 
     def parse_classes(self) -> Tuple[List[Dict], int]:
-        with open(self.filepath, 'r') as f:
-            content = f.read()
+        try:
+            with open(self.filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except FileNotFoundError:
+            logging.error(f"[SeedClassesService] Could not find data file at: {self.filepath}")
+            return [], 0
 
         classes = {}
 
@@ -56,6 +66,7 @@ class SeedClassesService:
     def apply_schema_migrations(self):
         conn, is_local = get_connection()
         if not conn:
+            logging.error("[SeedClassesService] Failed to establish database connection during schema migration.")
             return
 
         try:
@@ -63,11 +74,19 @@ class SeedClassesService:
 
             try:
                 cursor.execute("ALTER TABLE classes ADD COLUMN class_code TEXT")
+
+                # Assign generated backfill defaults if older data exists without code.
+                # E.g. Lowercase the name. This helps satisfy not null rules for new ones, but our actual seed will override.
+                cursor.execute("UPDATE classes SET class_code = lower(replace(name, ' ', '-')) WHERE class_code IS NULL")
             except sqlite3.OperationalError:
                 pass # column likely exists
 
             cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_classes_class_code ON classes(class_code) WHERE class_code IS NOT NULL")
             conn.commit()
+        except Exception as e:
+            logging.error(f"[SeedClassesService] Schema migration failed: {e}")
+            try: conn.rollback()
+            except: pass
         finally:
             if is_local and conn:
                 try: conn.close()
@@ -77,44 +96,69 @@ class SeedClassesService:
         self.apply_schema_migrations()
         valid_classes, rejected_count = self.parse_classes()
 
+        if not valid_classes:
+            return 0, 0, rejected_count
+
         conn, is_local = get_connection()
         if not conn:
+            logging.error("[SeedClassesService] Failed to establish database connection during seeding.")
             return len(valid_classes), 0, rejected_count
 
         try:
             cursor = conn.cursor()
             conn.execute("BEGIN TRANSACTION")
-            accepted_count = 0
+
+            # Utilizing ON CONFLICT DO UPDATE requires a primary key or unique constraint.
+            # We created a unique index on class_code.
+            # However sqlite ON CONFLICT needs the index to NOT be partial for it to be simple.
+            # Since our index is `WHERE class_code IS NOT NULL`, standard ON CONFLICT(class_code) fails in some SQLite versions.
+            # To optimize without SELECTs, we can fallback to INSERT OR REPLACE if we had the PK, but we don't.
+            # We will use the explicit SELECT check but doing it in batch isn't too heavy for 9 rows.
+            # Since performance was highlighted in PR, I will optimize it using execute many after resolving existing.
+
+            cursor.execute("SELECT class_code, class_id FROM classes WHERE class_code IS NOT NULL")
+            existing_map = {row[0]: row[1] for row in cursor.fetchall()}
+
+            updates = []
+            inserts = []
 
             for cls in valid_classes:
-                cursor.execute("SELECT class_id FROM classes WHERE class_code = ?", (cls['class_code'],))
-                row = cursor.fetchone()
-                if row:
-                    cursor.execute(
-                        """
-                        UPDATE classes SET
-                            name=:name,
-                            icon_path=:icon_path,
-                            str_base=:str_base,
-                            int_base=:int_base,
-                            dex_base=:dex_base
-                        WHERE class_code=:class_code
-                        """,
-                        cls
-                    )
+                if cls['class_code'] in existing_map:
+                    updates.append((
+                        cls['name'], cls['icon_path'], cls['str_base'],
+                        cls['int_base'], cls['dex_base'], cls['class_code']
+                    ))
                 else:
-                    cursor.execute(
-                        """
-                        INSERT INTO classes (class_code, name, icon_path, str_base, int_base, dex_base)
-                        VALUES (:class_code, :name, :icon_path, :str_base, :int_base, :dex_base)
-                        """,
-                        cls
-                    )
-                accepted_count += 1
+                    inserts.append((
+                        cls['class_code'], cls['name'], cls['icon_path'],
+                        cls['str_base'], cls['int_base'], cls['dex_base']
+                    ))
+
+            if updates:
+                cursor.executemany(
+                    """
+                    UPDATE classes SET
+                        name=?,
+                        icon_path=?,
+                        str_base=?,
+                        int_base=?,
+                        dex_base=?
+                    WHERE class_code=?
+                    """, updates
+                )
+
+            if inserts:
+                cursor.executemany(
+                    """
+                    INSERT INTO classes (class_code, name, icon_path, str_base, int_base, dex_base)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """, inserts
+                )
 
             conn.commit()
-            return len(valid_classes), accepted_count, rejected_count
+            return len(valid_classes), len(updates) + len(inserts), rejected_count
         except Exception as e:
+            logging.error(f"[SeedClassesService] Seeding failed: {e}")
             try: conn.rollback()
             except: pass
             raise e
@@ -124,6 +168,10 @@ class SeedClassesService:
                 except: pass
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     service = SeedClassesService()
-    src, acc, rej = service.seed_classes()
-    print(f"Source count: {src}, Accepted: {acc}, Rejected: {rej}")
+    try:
+        src, acc, rej = service.seed_classes()
+        print(f"Source count: {src}, Accepted: {acc}, Rejected: {rej}")
+    except Exception as e:
+        print(f"Failed to seed: {e}")
