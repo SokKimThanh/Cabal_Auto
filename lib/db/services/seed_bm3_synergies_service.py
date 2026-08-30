@@ -151,6 +151,7 @@ class SeedBM3SynergiesService:
                 row = cursor.fetchone()
                 if not row:
                     unmatched_classes.append(class_slug)
+                    logging.warning(f"[SeedBM3SynergiesService] Unmatched class slug: {class_slug}")
                     continue
 
                 class_id = row[0]
@@ -199,6 +200,8 @@ class SeedBM3SynergiesService:
             fk_issues = cursor.fetchall()
             if fk_issues:
                 logging.error(f"[SeedBM3SynergiesService] Foreign key violations: {fk_issues}")
+                # Report how many were processed before failing the check
+                logging.error(f"Rolling back after processing {seeded_synergies} synergies and {seeded_effects} effects.")
                 conn.rollback()
                 return False, 0, 0
 
@@ -211,6 +214,7 @@ class SeedBM3SynergiesService:
             orphans = cursor.fetchall()
             if orphans:
                 logging.error(f"[SeedBM3SynergiesService] Orphaned synergy effects found: {len(orphans)}")
+                logging.error(f"Rolling back after processing {seeded_synergies} synergies and {seeded_effects} effects.")
                 conn.rollback()
                 return False, 0, 0
 
