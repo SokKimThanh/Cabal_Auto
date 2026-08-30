@@ -595,9 +595,38 @@ class App(tk.Tk):
         lang_cmb.pack(side="left", padx=(6, 0))
         lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
 
+        # --- UX2.1: Core Grid Construction ---
+        # Isolated main container for the upcoming UI redesign
+        self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
+        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
+        # Grid Configuration for main_shell (1920x1080 baseline)
+        self.main_shell.columnconfigure(0, minsize=250, weight=0)  # Sidebar target 280px, min 250px
+        self.main_shell.columnconfigure(1, weight=1)               # Workspace (flexible)
+
+        self.main_shell.rowconfigure(0, minsize=80, weight=0)      # Quick Action Bar
+        self.main_shell.rowconfigure(1, weight=1)                  # Active Hunt Workspace
+        self.main_shell.rowconfigure(2, minsize=200, weight=0)     # Bottom Logs
+
+        # Vùng A: Quick Action Bar (Spans full width)
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
+        self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
+
+        # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
+        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
+        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
+
+        # Vùng B: Active Hunt Workspace
+        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
+        self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
+
+        # Vùng C2: Bottom Status / Logs
+        self.shell_zone_c2 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
+        self.shell_zone_c2.grid(row=2, column=1, sticky="nsew")
+
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
-        self.action_bar_frame = tk.Frame(self, padx=32, pady=18)
+        self.action_bar_frame = tk.Frame(self.shell_zone_a, padx=32, pady=18, bg=UI.BG_DEFAULT)
         self.action_bar_frame.pack(fill="x")
 
         # Window Selection Combobox
@@ -702,7 +731,7 @@ class App(tk.Tk):
         self.hunt_stop_btn.pack(side="left")
 
         # Store notebook reference for keyboard shortcuts
-        self.notebook = ttk.Notebook(self)
+        self.notebook = ttk.Notebook(self.shell_zone_b)
         self.notebook.pack(fill="both", expand=True, pady=(0, 8))
 
         from ui.tabs.hunt_tab import HuntTab
@@ -740,41 +769,12 @@ class App(tk.Tk):
         )
         self._db_status_bar.pack(fill="x", side="bottom")
 
-        # --- UX2.1: Core Grid Construction ---
-        # Isolated main container for the upcoming UI redesign
-        self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
-        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
-
-        # Grid Configuration for main_shell (1920x1080 baseline)
-        self.main_shell.columnconfigure(0, minsize=250, weight=0)  # Sidebar target 280px, min 250px
-        self.main_shell.columnconfigure(1, weight=1)               # Workspace (flexible)
-
-        self.main_shell.rowconfigure(0, minsize=80, weight=0)      # Quick Action Bar
-        self.main_shell.rowconfigure(1, weight=1)                  # Active Hunt Workspace
-        self.main_shell.rowconfigure(2, minsize=200, weight=0)     # Bottom Logs
-
-        # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
-        self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
-
-        # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
-        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
-        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
-
-        # Vùng B: Active Hunt Workspace
-        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
-        self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
-
-        # Vùng C2: Bottom Status / Logs
-        self.shell_zone_c2 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
-        self.shell_zone_c2.grid(row=2, column=1, sticky="nsew")
-
 
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
         apply_frame = tk.Frame(self, relief="sunken", bd=1, bg="#f0f0f0")
-        apply_frame.pack(fill="x", padx=8, pady=(0, 8))
+        apply_frame.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
 
         # Unsaved changes indicator (left side)
         indicator_frame = tk.Frame(apply_frame, bg="#f0f0f0")
