@@ -740,6 +740,36 @@ class App(tk.Tk):
         )
         self._db_status_bar.pack(fill="x", side="bottom")
 
+        # --- UX2.1: Core Grid Construction ---
+        # Isolated main container for the upcoming UI redesign
+        self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
+        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
+        # Grid Configuration for main_shell (1920x1080 baseline)
+        self.main_shell.columnconfigure(0, minsize=250, weight=0)  # Sidebar target 280px, min 250px
+        self.main_shell.columnconfigure(1, weight=1)               # Workspace (flexible)
+
+        self.main_shell.rowconfigure(0, minsize=80, weight=0)      # Quick Action Bar
+        self.main_shell.rowconfigure(1, weight=1)                  # Active Hunt Workspace
+        self.main_shell.rowconfigure(2, minsize=200, weight=0)     # Bottom Logs
+
+        # Vùng A: Quick Action Bar (Spans full width)
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
+        self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
+
+        # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
+        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
+        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
+
+        # Vùng B: Active Hunt Workspace
+        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
+        self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
+
+        # Vùng C2: Bottom Status / Logs
+        self.shell_zone_c2 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
+        self.shell_zone_c2.grid(row=2, column=1, sticky="nsew")
+
+
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
