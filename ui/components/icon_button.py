@@ -130,6 +130,11 @@ except ImportError:
     def get_lang() -> str:
         return 'vi'
 
+try:
+    from lib.ui_style import UIStyle as UI
+except ImportError:
+    UI = None
+
 
 # Global icon references to prevent garbage collection
 _ICON_REFS: List[Any] = []
@@ -323,8 +328,8 @@ def create_icon_button(
         state_overrides['activeforeground'] = danger_config.get('activeforeground', 'white')
     
     # Initial setup for accessibility focus indicators
-    base_config['highlightthickness'] = 0
-    base_config['highlightcolor'] = base_config.get('bg', 'white')
+    if 'highlightthickness' not in kwargs:
+        base_config['highlightthickness'] = 0
 
     # Merge all configs: base -> state -> user kwargs
     final_config = {
@@ -455,11 +460,17 @@ def create_icon_button(
 
     # Add keyboard accessibility focus indicators
     def _on_focus_in(event):
-        if isinstance(event.widget, tk.Button):
-            event.widget.config(highlightbackground="#2196F3", highlightcolor="#2196F3", highlightthickness=2)
+        try:
+            focus_color = getattr(UI, 'COLOR_ACCENT', "#2196F3") if UI else "#2196F3"
+            event.widget.config(highlightbackground=focus_color, highlightcolor=focus_color, highlightthickness=2)
+        except Exception:
+            pass
+
     def _on_focus_out(event):
-        if isinstance(event.widget, tk.Button):
+        try:
             event.widget.config(highlightbackground=event.widget.cget("bg"), highlightcolor=event.widget.cget("bg"), highlightthickness=0)
+        except Exception:
+            pass
 
     button.bind('<FocusIn>', _on_focus_in, add='+')
     button.bind('<FocusOut>', _on_focus_out, add='+')
