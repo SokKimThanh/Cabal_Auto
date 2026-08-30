@@ -615,6 +615,53 @@ class App(tk.Tk):
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
         self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
         self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
+        self.shell_zone_c1.configure(padx=16, pady=20)
+        self.shell_zone_c1.grid_propagate(False)
+
+        # Build Sidebar Navigation
+        sidebar_items = [
+            ("sidebar_quick_setup", lambda: self._switch_to_tab(1), UI.FONT_SECTION),
+            ("sidebar_managers", None, UI.FONT_SECTION),
+            ("btn_monster_manager", self.monster_manager_controller.open_window, UI.FONT_LABEL),
+            ("btn_skill_manager", self.skill_manager_controller.open_window, UI.FONT_LABEL),
+            ("btn_library_manager", self.library_manager_controller.open_library_manager, UI.FONT_LABEL),
+            ("sidebar_configuration", lambda: self._switch_to_tab(1), UI.FONT_SECTION),
+            ("sidebar_support", lambda: self._switch_to_tab(3), UI.FONT_SECTION),
+        ]
+
+        for item_idx, item in enumerate(sidebar_items):
+            key, command, font = item
+            if command is None:
+                # Section label
+                lbl = tk.Label(
+                    self.shell_zone_c1,
+                    text=self._t(key),
+                    bg=UI.BG_PANEL,
+                    fg=UI.COLOR_TEXT,
+                    font=font,
+                    anchor="w"
+                )
+                lbl.pack(fill="x", pady=(10, 4))
+            else:
+                # Button
+                btn = tk.Button(
+                    self.shell_zone_c1,
+                    text=self._t(key),
+                    command=command,
+                    bg=UI.BG_SECTION,
+                    fg=UI.COLOR_TEXT,
+                    font=font,
+                    anchor="w",
+                    padx=12,
+                    pady=8,
+                    relief="flat",
+                    cursor="hand2"
+                )
+                if font == UI.FONT_LABEL:
+                    # Indent sub-items slightly
+                    btn.pack(fill="x", pady=2, padx=(12, 0))
+                else:
+                    btn.pack(fill="x", pady=2)
 
         # Vùng B: Active Hunt Workspace
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
