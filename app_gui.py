@@ -671,6 +671,49 @@ class App(tk.Tk):
         self.shell_zone_c2 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
         self.shell_zone_c2.grid(row=2, column=1, sticky="nsew")
 
+        # Bottom Logs Setup (UX4B.1)
+        self.shell_zone_c2.grid_propagate(False)
+
+        # Header for Bottom Logs
+        self.logs_header_frame = tk.Frame(self.shell_zone_c2, bg=UI.BG_SECTION, height=36)
+        self.logs_header_frame.pack(fill="x", side="top")
+        self.logs_header_frame.pack_propagate(False)
+
+        self.logs_title_label = tk.Label(
+            self.logs_header_frame,
+            text=self._t("logs_title") if hasattr(self, "_t") else "Logs",
+            bg=UI.BG_SECTION,
+            fg=UI.COLOR_TEXT,
+            font=UI.FONT_SECTION
+        )
+        self.logs_title_label.pack(side="left", padx=12)
+
+        self.logs_expanded = True
+
+        self.logs_toggle_btn = tk.Button(
+            self.logs_header_frame,
+            text=self._t("logs_collapse") if hasattr(self, "_t") else "▼ Collapse",
+            command=self._toggle_bottom_logs,
+            bg=UI.BG_SECTION,
+            fg=UI.COLOR_TEXT,
+            relief="flat",
+            cursor="hand2",
+            font=UI.FONT_LABEL
+        )
+        self.logs_toggle_btn.pack(side="right", padx=12)
+
+        # Accessibility bindings
+        self.logs_toggle_btn.bind("<FocusIn>", lambda e: self.logs_toggle_btn.config(highlightthickness=1, highlightcolor=UI.BTN_PRIMARY_BG))
+        self.logs_toggle_btn.bind("<FocusOut>", lambda e: self.logs_toggle_btn.config(highlightthickness=0))
+        self.logs_toggle_btn.bind("<Return>", lambda e: self._toggle_bottom_logs())
+        self.logs_toggle_btn.bind("<space>", lambda e: self._toggle_bottom_logs())
+
+        # Empty content container for future logs
+        self.logs_content_frame = tk.Frame(self.shell_zone_c2, bg=UI.BG_PANEL)
+        self.logs_content_frame.pack(fill="both", expand=True)
+
+        self.after(100, self._check_initial_logs_state)
+
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
         self.action_bar_frame = tk.Frame(self.shell_zone_a, padx=32, pady=18, bg=UI.BG_DEFAULT)
@@ -891,6 +934,31 @@ class App(tk.Tk):
         # Initialize unsaved state
         self.has_unsaved_changes = False
         self._update_unsaved_indicator()
+
+    def _toggle_bottom_logs(self):
+        """Toggle bottom logs visibility (UX4B.1)."""
+        if self.logs_expanded:
+            self.logs_expanded = False
+            self.logs_content_frame.pack_forget()
+            self.logs_toggle_btn.config(
+                text=self._t("logs_expand") if hasattr(self, "_t") else "▲ Expand"
+            )
+            # Collapse to header height
+            self.main_shell.rowconfigure(2, minsize=36, weight=0)
+        else:
+            self.logs_expanded = True
+            self.logs_content_frame.pack(fill="both", expand=True)
+            self.logs_toggle_btn.config(
+                text=self._t("logs_collapse") if hasattr(self, "_t") else "▼ Collapse"
+            )
+            # Expand to full target size
+            self.main_shell.rowconfigure(2, minsize=200, weight=0)
+
+    def _check_initial_logs_state(self):
+        """Check window height and auto-collapse logs if needed (UX4B.1)."""
+        if self.winfo_height() < 900:
+            if self.logs_expanded:
+                self._toggle_bottom_logs()
 
     # Click Tab removed
 
