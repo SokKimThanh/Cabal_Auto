@@ -45,13 +45,9 @@ except Exception:
     NotificationWidget = None  # type: ignore
 
 try:
-    from lib.i18n import register_bulk as i18n_register_bulk
     from lib.i18n import set_default_lang as i18n_set_lang
     from lib.i18n import t as i18n_t
 except Exception:
-
-    def i18n_register_bulk(namespace, translations):  # type: ignore
-        pass
 
     # Match actual signature to satisfy static analyzers
     def i18n_t(key: str, *, ns: str | None = None, lang: str | None = None, default: str | None = None) -> str:  # type: ignore
