@@ -1,0 +1,1171 @@
+{
+  "metadata": {
+    "source_id": "class_skill_evidence",
+    "file": "lib/data/bm2-bm3-detail-skill-db-cabal.txt",
+    "targets": [
+      "warrior",
+      "blader",
+      "gladiator"
+    ],
+    "partition_hash": "1bc4137a576ec20bc8a5584b1ce2a72b0a8d2ecbd0ed851f330ebe382e1cf8e1",
+    "total_records": 110
+  },
+  "coverage": {
+    "warrior": {
+      "mapped": 34,
+      "rejected": 3,
+      "rejected_reasons": [
+        {
+          "skill": "lancer-attack-2",
+          "reason": "Skill 'lancer_attack_2' not found in skill_sprite_catalogue and has no valid alias"
+        },
+        {
+          "skill": "lancer-attack-3",
+          "reason": "Skill 'lancer_attack_3' not found in skill_sprite_catalogue and has no valid alias"
+        },
+        {
+          "skill": "lancer-attack-4",
+          "reason": "Skill 'lancer_attack_4' not found in skill_sprite_catalogue and has no valid alias"
+        }
+      ]
+    },
+    "blader": {
+      "mapped": 35,
+      "rejected": 3,
+      "rejected_reasons": [
+        {
+          "skill": "grappler-attack-2",
+          "reason": "Skill 'grappler_attack_2' not found in skill_sprite_catalogue and has no valid alias"
+        },
+        {
+          "skill": "grappler-attack-3",
+          "reason": "Skill 'grappler_attack_3' not found in skill_sprite_catalogue and has no valid alias"
+        },
+        {
+          "skill": "grappler-attack-4",
+          "reason": "Skill 'grappler_attack_4' not found in skill_sprite_catalogue and has no valid alias"
+        }
+      ]
+    },
+    "gladiator": {
+      "mapped": 32,
+      "rejected": 3,
+      "rejected_reasons": [
+        {
+          "skill": "scyther-attack-2",
+          "reason": "Skill 'scyther_attack_2' not found in skill_sprite_catalogue and has no valid alias"
+        },
+        {
+          "skill": "scyther-attack-3",
+          "reason": "Skill 'scyther_attack_3' not found in skill_sprite_catalogue and has no valid alias"
+        },
+        {
+          "skill": "scyther-attack-4",
+          "reason": "Skill 'scyther_attack_4' not found in skill_sprite_catalogue and has no valid alias"
+        }
+      ]
+    }
+  },
+  "manifest": [
+    {
+      "class_code": "warrior",
+      "skill_code": "lancer",
+      "resolved_sprite": "lancer",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "HIGH",
+      "original_slug": "lancer",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "lancer_attack_1",
+      "resolved_sprite": "lancer",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "AMBIGUOUS",
+      "original_slug": "lancer-attack-1",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "lancer_attack_2",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "lancer-attack-2",
+      "rejection_reason": "Skill 'lancer_attack_2' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "lancer_attack_3",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "lancer-attack-3",
+      "rejection_reason": "Skill 'lancer_attack_3' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "lancer_attack_4",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "lancer-attack-4",
+      "rejection_reason": "Skill 'lancer_attack_4' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "lance_drive",
+      "resolved_sprite": "lance_drive",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "HIGH",
+      "original_slug": "lance-drive",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "axe_destroyer",
+      "resolved_sprite": "axe_destroyer",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "axe-destroyer",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "axe_attack_a",
+      "resolved_sprite": "axe_attack_a",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "axe-attack-a",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "axe_attack_b",
+      "resolved_sprite": "axe_attack_b",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "axe-attack-b",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "axe_specialty_level_1",
+      "resolved_sprite": "axe_specialty_level_1",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "axe-specialty-level-1",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "axe_specialty_level_2",
+      "resolved_sprite": "axe_specialty_level_2",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "axe-specialty-level-2",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "axe_specialty_level_3",
+      "resolved_sprite": "axe_specialty_level_3",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "axe-specialty-level-3",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "instant_immunity",
+      "resolved_sprite": "instant_immunity",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "instant-immunity",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "morale_shout",
+      "resolved_sprite": "morale_shout",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "morale-shout",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "cats_recovery",
+      "resolved_sprite": "cats_recovery",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "cats-recovery",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "bears_vitality",
+      "resolved_sprite": "bears_vitality",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "bears-vitality",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "bloody_spirit",
+      "resolved_sprite": "bloody_spirit",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "bloody-spirit",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "art_of_shout",
+      "resolved_sprite": "art_of_shout",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "art-of-shout",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "frenzy",
+      "resolved_sprite": "frenzy",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "frenzy",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "rhinos_toughness",
+      "resolved_sprite": "rhinos_toughness",
+      "category": "warrior-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "rhinos-toughness",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "panic_cry",
+      "resolved_sprite": "panic_cry",
+      "category": "warrior-debuffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: warrior-debuffs)",
+      "confidence": "HIGH",
+      "original_slug": "panic-cry",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "force_kick",
+      "resolved_sprite": "force_kick",
+      "category": "combos",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: combos)",
+      "confidence": "HIGH",
+      "original_slug": "force-kick",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "charge",
+      "resolved_sprite": "charge",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "charge",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "impact_stab",
+      "resolved_sprite": "impact_stab",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "impact-stab",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "flash_draw",
+      "resolved_sprite": "flash_draw",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "flash-draw",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "heavy_slash",
+      "resolved_sprite": "heavy_slash",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "heavy-slash",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "press_impact",
+      "resolved_sprite": "press_impact",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "press-impact",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "seismic_wave",
+      "resolved_sprite": "seismic_wave",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "seismic-wave",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "apocalypse_decision",
+      "resolved_sprite": "apocalypse_decision",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "apocalypse-decision",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "overwhelming",
+      "resolved_sprite": "overwhelming",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "overwhelming",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "sword_quake",
+      "resolved_sprite": "sword_quake",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "sword-quake",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "offensive_sense",
+      "resolved_sprite": "offensive_sense",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "offensive-sense",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "impact_control",
+      "resolved_sprite": "impact_control",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "impact-control",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "sharp_eyes",
+      "resolved_sprite": "sharp_eyes",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "sharp-eyes",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "eyes_of_mind",
+      "resolved_sprite": "eyes_of_mind",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "eyes-of-mind",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "mana_mastery",
+      "resolved_sprite": "mana_mastery",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "mana-mastery",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "warrior",
+      "skill_code": "sixth_sense",
+      "resolved_sprite": "sixth_sense",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "sixth-sense",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "grappler",
+      "resolved_sprite": "grappler",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "HIGH",
+      "original_slug": "grappler",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "grappler_attack_1",
+      "resolved_sprite": "grappler",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "AMBIGUOUS",
+      "original_slug": "grappler-attack-1",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "grappler_attack_2",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "grappler-attack-2",
+      "rejection_reason": "Skill 'grappler_attack_2' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "grappler_attack_3",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "grappler-attack-3",
+      "rejection_reason": "Skill 'grappler_attack_3' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "grappler_attack_4",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "grappler-attack-4",
+      "rejection_reason": "Skill 'grappler_attack_4' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "crushing_blow",
+      "resolved_sprite": "crushing_blow",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "HIGH",
+      "original_slug": "crushing-blow",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "knucklet_striker",
+      "resolved_sprite": "knucklet_striker",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "knucklet-striker",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "knucklet_attack_a",
+      "resolved_sprite": "axe_attack_a",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "AMBIGUOUS",
+      "original_slug": "knucklet-attack-a",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "knucklet_attack_b",
+      "resolved_sprite": "axe_attack_b",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "AMBIGUOUS",
+      "original_slug": "knucklet-attack-b",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "knucklet_specialty_level_1",
+      "resolved_sprite": "knucklet_specialty_level_1",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "knucklet-specialty-level-1",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "knucklet_specialty_level_2",
+      "resolved_sprite": "knucklet_specialty_level_2",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "knucklet-specialty-level-2",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "knucklet_specialty_level_3",
+      "resolved_sprite": "knucklet_specialty_level_3",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "knucklet-specialty-level-3",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "intuition",
+      "resolved_sprite": "intuition",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "intuition",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "natural_hiding",
+      "resolved_sprite": "natural_hiding",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "natural-hiding",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "art_of_fierceness",
+      "resolved_sprite": "art_of_fierceness",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "art-of-fierceness",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "intense_blade",
+      "resolved_sprite": "intense_blade",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "intense-blade",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "curse_dodge",
+      "resolved_sprite": "curse_dodge",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "curse-dodge",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "dooms_blade",
+      "resolved_sprite": "dooms_blade",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "dooms-blade",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "vampiric_movement",
+      "resolved_sprite": "vampiric_movement",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "vampiric-movement",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "fatality_increase",
+      "resolved_sprite": "fatality_increase",
+      "category": "blader-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "fatality-increase",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "field_of_fear",
+      "resolved_sprite": "field_of_fear",
+      "category": "blader-debuffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: blader-debuffs)",
+      "confidence": "HIGH",
+      "original_slug": "field-of-fear",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "assault",
+      "resolved_sprite": "assault",
+      "category": "combos",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: combos)",
+      "confidence": "HIGH",
+      "original_slug": "assault",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "vital_interfere",
+      "resolved_sprite": "vital_interfere",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "vital-interfere",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "impact_stab",
+      "resolved_sprite": "impact_stab",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "impact-stab",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "double_slash",
+      "resolved_sprite": "double_slash",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "double-slash",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "flash_draw",
+      "resolved_sprite": "flash_draw",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "flash-draw",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "rising_shot",
+      "resolved_sprite": "rising_shot",
+      "category": "single-target-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: single-target-combo)",
+      "confidence": "HIGH",
+      "original_slug": "rising-shot",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "hawk_hunter",
+      "resolved_sprite": "hawk_hunter",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "hawk-hunter",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "death_tempest",
+      "resolved_sprite": "death_tempest",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "death-tempest",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "lightning_slash",
+      "resolved_sprite": "lightning_slash",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "lightning-slash",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "blade_scud",
+      "resolved_sprite": "blade_scud",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "blade-scud",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "infinity_blaze",
+      "resolved_sprite": "infinity_blaze",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "infinity-blaze",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "offensive_sense",
+      "resolved_sprite": "offensive_sense",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "offensive-sense",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "impact_control",
+      "resolved_sprite": "impact_control",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "impact-control",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "sharp_eyes",
+      "resolved_sprite": "sharp_eyes",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "sharp-eyes",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "eyes_of_mind",
+      "resolved_sprite": "eyes_of_mind",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "eyes-of-mind",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "mana_mastery",
+      "resolved_sprite": "mana_mastery",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "mana-mastery",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "blader",
+      "skill_code": "sixth_sense",
+      "resolved_sprite": "sixth_sense",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "sixth-sense",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "death_scyther",
+      "resolved_sprite": "death_scyther",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "HIGH",
+      "original_slug": "death-scyther",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "scyther_attack_1",
+      "resolved_sprite": "death_scyther",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "AMBIGUOUS",
+      "original_slug": "scyther-attack-1",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "scyther_attack_2",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "scyther-attack-2",
+      "rejection_reason": "Skill 'scyther_attack_2' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "scyther_attack_3",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "scyther-attack-3",
+      "rejection_reason": "Skill 'scyther_attack_3' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "scyther_attack_4",
+      "resolved_sprite": null,
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "LOW",
+      "original_slug": "scyther-attack-4",
+      "rejection_reason": "Skill 'scyther_attack_4' not found in skill_sprite_catalogue and has no valid alias"
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "death_scyther_guillotine",
+      "resolved_sprite": "death_scyther_guillotine",
+      "category": "battle-mode-2",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-2)",
+      "confidence": "HIGH",
+      "original_slug": "death-scyther-guillotine",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "genocider",
+      "resolved_sprite": "genocider",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "genocider",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "genocider_attack_a",
+      "resolved_sprite": "axe_attack_a",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "AMBIGUOUS",
+      "original_slug": "genocider-attack-a",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "genocider_attack_b",
+      "resolved_sprite": "axe_attack_b",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "AMBIGUOUS",
+      "original_slug": "genocider-attack-b",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "genocider_specialty_stage_1",
+      "resolved_sprite": "genocider_specialty_stage_1",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "genocider-specialty-stage-1",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "genocider_specialty_stage_2",
+      "resolved_sprite": "genocider_specialty_stage_2",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "genocider-specialty-stage-2",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "genocider_specialty_stage_3",
+      "resolved_sprite": "genocider_specialty_stage_3",
+      "category": "battle-mode-3",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: battle-mode-3)",
+      "confidence": "HIGH",
+      "original_slug": "genocider-specialty-stage-3",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "bloodyrusk",
+      "resolved_sprite": "bloodyrusk",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "bloodyrusk",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "art_of_rage",
+      "resolved_sprite": "art_of_rage",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "art-of-rage",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "sight_increase",
+      "resolved_sprite": "sight_increase",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "sight-increase",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "rage_resist",
+      "resolved_sprite": "rage_resist",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "rage-resist",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "rage_shield",
+      "resolved_sprite": "rage_shield",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "rage-shield",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "adrenaline_of_rage",
+      "resolved_sprite": "adrenaline_of_rage",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "adrenaline-of-rage",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "furious",
+      "resolved_sprite": "furious",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "furious",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "unbreakable",
+      "resolved_sprite": "unbreakable",
+      "category": "gladiator-buffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-buffs)",
+      "confidence": "HIGH",
+      "original_slug": "unbreakable",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "dread",
+      "resolved_sprite": "dread",
+      "category": "gladiator-debuffs",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: gladiator-debuffs)",
+      "confidence": "HIGH",
+      "original_slug": "dread",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "rapid_dash",
+      "resolved_sprite": "rapid_dash",
+      "category": "combos",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: combos)",
+      "confidence": "HIGH",
+      "original_slug": "rapid-dash",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "fadeaway",
+      "resolved_sprite": "fadeaway",
+      "category": "combos",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: combos)",
+      "confidence": "HIGH",
+      "original_slug": "fadeaway",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "shadow_step",
+      "resolved_sprite": "shadow_step",
+      "category": "combos",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: combos)",
+      "confidence": "HIGH",
+      "original_slug": "shadow-step",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "mystic_dash",
+      "resolved_sprite": "mystic_dash",
+      "category": "combos",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: combos)",
+      "confidence": "HIGH",
+      "original_slug": "mystic-dash",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "illusion_blade",
+      "resolved_sprite": "illusion_blade",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "illusion-blade",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "crimson_blade",
+      "resolved_sprite": "crimson_blade",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "crimson-blade",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "chakram_slam",
+      "resolved_sprite": "chakram_slam",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "chakram-slam",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "momentary_illumination",
+      "resolved_sprite": "momentary_illumination",
+      "category": "aoe-combo",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: aoe-combo)",
+      "confidence": "HIGH",
+      "original_slug": "momentary-illumination",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "offensive_sense",
+      "resolved_sprite": "offensive_sense",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "offensive-sense",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "impact_control",
+      "resolved_sprite": "impact_control",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "impact-control",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "sharp_eyes",
+      "resolved_sprite": "sharp_eyes",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "sharp-eyes",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "eyes_of_mind",
+      "resolved_sprite": "eyes_of_mind",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "eyes-of-mind",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "mana_mastery",
+      "resolved_sprite": "mana_mastery",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "mana-mastery",
+      "rejection_reason": null
+    },
+    {
+      "class_code": "gladiator",
+      "skill_code": "sixth_sense",
+      "resolved_sprite": "sixth_sense",
+      "category": "passive",
+      "source_path": "lib/data/bm2-bm3-detail-skill-db-cabal.txt (section: passive)",
+      "confidence": "HIGH",
+      "original_slug": "sixth-sense",
+      "rejection_reason": null
+    }
+  ]
+}
