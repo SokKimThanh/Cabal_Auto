@@ -55,6 +55,8 @@ class UIStyle:
     BTN_INFO_FG = '#FFFFFF'
     BTN_ACCENT_BG = '#00897B'
     BTN_ACCENT_FG = '#FFFFFF'
+    BTN_START_BG = '#4CAF50'
+    BTN_STOP_BG = '#F44336'
 
     # Icon sizes
     ICON_SMALL = 16
