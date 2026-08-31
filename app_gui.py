@@ -3132,6 +3132,13 @@ def main():
         except Exception as e:
             print(f"[DB Init] Failed to initialize monsters.db: {e}")
 
+        # Hydrate i18n from database
+        try:
+            from lib.i18n import load_from_db
+            load_from_db()
+        except Exception as e:
+            print(f"[i18n Init] Failed to call load_from_db: {e}")
+
         # Start application
         app = App()
         app.protocol("WM_DELETE_WINDOW", app.on_close)

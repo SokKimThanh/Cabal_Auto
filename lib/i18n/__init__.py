@@ -104,3 +104,14 @@ def iter_missing_keys(namespace: str, langs: List[str]) -> Iterator[str]:
 			if lang not in ns_dict or key not in ns_dict[lang]:
 				yield key
 				break
+
+def load_from_db() -> None:
+	"""Load all translations from the database and feed them into the registry."""
+	try:
+		from lib.db.services.translation_service import TranslationService
+		service = TranslationService()
+		rows = service.get_all()
+		for row in rows:
+			register(row['namespace'], row['lang'], {row['key']: row['text']})
+	except Exception as e:
+		print(f"[i18n] Failed to hydrate from database: {e}. Falling back to dictionary-based self-registration.")
