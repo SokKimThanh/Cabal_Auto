@@ -1,0 +1,36 @@
+{
+  "wizard": {
+    "force-control": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "ruling-force": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "twin-gunner": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "twin-gunner-attack": {
+      "category": "bm2",
+      "confidence": "AMBIGUOUS"
+    },
+    "fatal-shot": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "sharpness": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "vital-force": {
+      "category": "buff",
+      "confidence": "AMBIGUOUS"
+    },
+    "force-kick": {
+      "category": "attack",
+      "confidence": "HIGH"
+    }
+  }
+}
