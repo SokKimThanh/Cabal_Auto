@@ -105,6 +105,9 @@ def iter_missing_keys(namespace: str, langs: List[str]) -> Iterator[str]:
 				yield key
 				break
 
+import logging
+logger = logging.getLogger(__name__)
+
 def load_from_db() -> None:
 	"""Load all translations from the database and feed them into the registry."""
 	try:
@@ -113,5 +116,6 @@ def load_from_db() -> None:
 		rows = service.get_all()
 		for row in rows:
 			register(row['namespace'], row['lang'], {row['key']: row['text']})
+		logger.info(f"[i18n] Successfully hydrated {len(rows)} translations from database.")
 	except Exception as e:
-		print(f"[i18n] Failed to hydrate from database: {e}. Falling back to dictionary-based self-registration.")
+		logger.error(f"[i18n] Failed to hydrate from database: {e}. Falling back to dictionary-based self-registration.")

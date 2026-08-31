@@ -3137,7 +3137,8 @@ def main():
             from lib.i18n import load_from_db
             load_from_db()
         except Exception as e:
-            print(f"[i18n Init] Failed to call load_from_db: {e}")
+            import logging
+            logging.getLogger(__name__).error(f"[i18n Init] Failed to call load_from_db: {e}")
 
         # Start application
         app = App()
