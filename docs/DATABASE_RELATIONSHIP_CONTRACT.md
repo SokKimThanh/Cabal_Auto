@@ -54,7 +54,22 @@ Mỗi multi-table import dùng `BEGIN TRANSACTION`; lỗi parser, missing parent
 - Effect identity dùng parent synergy cùng source position/raw fields trong importer; không dedupe theo `stat` đơn lẻ.
 - Mọi importer ghi source ID, exact path, parser hash/version, accepted/rejected/duplicate counts.
 
-## 6. Integrity queries bắt buộc
+## 6. Kết quả Integrity Audit & State (DB8)
+
+Tính đến chu kỳ audit gần nhất, trạng thái dữ liệu (đã import và xác nhận qua script DB8 integrity check):
+
+| Bảng / Báo cáo | Số lượng Row | Trạng thái Integrity |
+| --- | --- | --- |
+| `classes` | 9 | Passed (0 duplicate `class_code`) |
+| `skills` | 460 | Passed (0 duplicate `skill_code`, 0 missing `skill_code`) |
+| `synergies` | 35 | Passed (0 orphans) |
+| `synergy_effects` | 120 | Passed (0 orphans) |
+| `class_skill_assignments` | 32 | Passed (0 orphans, 0 duplicates) |
+| Unresolved / Rejected Mappings | 373 | Rejected từ DB5 manifest do thiếu confidence level "high". Chờ audit thủ công bổ sung. |
+
+Mọi foreign key checks đều trả về `0` violations. Dữ liệu User Library (`skills.json`, `monsters.json`) hoàn toàn được bảo vệ không bị can thiệp bởi seed process.
+
+## 7. Integrity queries bắt buộc
 
 ```sql
 PRAGMA foreign_key_check;

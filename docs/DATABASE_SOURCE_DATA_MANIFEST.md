@@ -35,6 +35,7 @@ Manifest này là nguồn bắt buộc để chọn đúng data file cho từng 
 - Expected output: exactly one record per class slug.
 - Required fields: source slug, display name, icon path, base `str`, `int`, `dex`.
 - Current source coverage: 9 class slugs: `blader`, `warrior`, `wizard`, `dark-mage`, `force-archer`, `force-shielder`, `force-blader`, `gladiator`, `force-gunner`.
+- Source Hash: `7a62cdaee09db0c0b2255f3f8b70f295`
 - Reject record if slug/name/base stat cannot be extracted together; do not insert partial class row.
 
 ### `skill_sprite_catalogue`
@@ -42,6 +43,7 @@ Manifest này là nguồn bắt buộc để chọn đúng data file cho từng 
 - Expected output: one record per `sprites` key.
 - Required fields: key, `x`, `y`, `width`, `height`.
 - Current measured count: 460 sprite entries. Count is an audit expectation, not a hard-coded application constant.
+- Source Hash: `0abe0f4848fe99738a41c1640effc53b`
 - Duplicate/alias sprite keys such as spelling variants must remain separate source records until a dedicated alias audit approves normalization.
 
 ### `bm3_synergy_catalogue`
@@ -50,12 +52,14 @@ Manifest này là nguồn bắt buộc để chọn đúng data file cho từng 
 - Required parent fields: class slug, synergy name, activation sequence, recommendation.
 - Required child fields: stat, raw value text, duration raw text, target.
 - Current measured coverage: 9 classes, 35 synergy rows, 120 effects. These values validate the current source snapshot only.
+- Source Hash: `7b60d69705f315d8fa8a1aaa5e0ec970`
 - Preserve `value_text` and `duration_text` before parsing numeric/unit/scaled derivatives. Never coerce `+30%` or `-3% (scaled)` directly into a lossy number.
 
 ### `class_skill_evidence`
 
 - This is a documentation/detail bundle, not a direct seed file.
 - DB5 must create a reproducible manifest with: class_code, skill_code, category, source section/path, evidence excerpt or stable locator, parser version/hash, and confidence.
+- Source Hash: `e751ba727757fec4c2be784a1b94b513`
 - DB6 imports only records with unambiguous class/skill identity and explicit category evidence. Unresolved aliases remain excluded and are reported.
 
 ## 5. Prohibited cross-source assumptions
