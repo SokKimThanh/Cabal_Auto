@@ -16,7 +16,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "grappler-attack-1"
     ]
@@ -28,7 +28,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "grappler-attack-2"
     ]
@@ -40,7 +40,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "grappler-attack-3"
     ]
@@ -52,31 +52,31 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "grappler-attack-4"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "crushing_blow",
+    "source_skill_code": "crushing-blow",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "crushing-blow"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "knucklet_striker",
+    "source_skill_code": "knucklet-striker",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "knucklet-striker"
     ]
@@ -88,7 +88,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "knucklet-attack-a"
     ]
@@ -100,43 +100,43 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "knucklet-attack-b"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "knucklet_specialty_level_1",
+    "source_skill_code": "knucklet-specialty-level-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "knucklet-specialty-level-1"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "knucklet_specialty_level_2",
+    "source_skill_code": "knucklet-specialty-level-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "knucklet-specialty-level-2"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "knucklet_specialty_level_3",
+    "source_skill_code": "knucklet-specialty-level-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "knucklet-specialty-level-3"
     ]
@@ -153,96 +153,96 @@
   },
   {
     "source_class": "blader",
-    "source_skill_code": "natural_hiding",
+    "source_skill_code": "natural-hiding",
     "category": "buff",
     "evidence_location": "blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "natural-hiding"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "art_of_fierceness",
+    "source_skill_code": "art-of-fierceness",
     "category": "buff",
     "evidence_location": "blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-fierceness"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "intense_blade",
+    "source_skill_code": "intense-blade",
     "category": "buff",
     "evidence_location": "blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "intense-blade"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "curse_dodge",
+    "source_skill_code": "curse-dodge",
     "category": "buff",
     "evidence_location": "blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "curse-dodge"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "dooms_blade",
+    "source_skill_code": "dooms-blade",
     "category": "buff",
     "evidence_location": "blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "dooms-blade"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "vampiric_movement",
+    "source_skill_code": "vampiric-movement",
     "category": "buff",
     "evidence_location": "blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "vampiric-movement"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "fatality_increase",
+    "source_skill_code": "fatality-increase",
     "category": "buff",
     "evidence_location": "blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fatality-increase"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "field_of_fear",
+    "source_skill_code": "field-of-fear",
     "category": "debuff",
     "evidence_location": "blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "field-of-fear"
     ]
@@ -259,120 +259,120 @@
   },
   {
     "source_class": "blader",
-    "source_skill_code": "vital_interfere",
+    "source_skill_code": "vital-interfere",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "vital-interfere"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "impact_stab",
+    "source_skill_code": "impact-stab",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-stab"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "double_slash",
+    "source_skill_code": "double-slash",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "double-slash"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "flash_draw",
+    "source_skill_code": "flash-draw",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "flash-draw"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "rising_shot",
+    "source_skill_code": "rising-shot",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rising-shot"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "hawk_hunter",
+    "source_skill_code": "hawk-hunter",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hawk-hunter"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "death_tempest",
+    "source_skill_code": "death-tempest",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "death-tempest"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "lightning_slash",
+    "source_skill_code": "lightning-slash",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-slash"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "blade_scud",
+    "source_skill_code": "blade-scud",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-scud"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "infinity_blaze",
+    "source_skill_code": "infinity-blaze",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "infinity-blaze"
     ]
@@ -389,72 +389,72 @@
   },
   {
     "source_class": "blader",
-    "source_skill_code": "offensive_sense",
+    "source_skill_code": "offensive-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "offensive-sense"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "impact_control",
+    "source_skill_code": "impact-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-control"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "mana_mastery",
+    "source_skill_code": "mana-mastery",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mana-mastery"
     ]
   },
   {
     "source_class": "blader",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]
@@ -476,31 +476,31 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "grimoire-attack-1"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "demolition_ray",
+    "source_skill_code": "demolition-ray",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "demolition-ray"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "demon_trigger",
+    "source_skill_code": "demon-trigger",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "demon-trigger"
     ]
@@ -512,7 +512,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "demon-trigger-attack-a"
     ]
@@ -524,139 +524,139 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "demon-trigger-attack-b"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "demon_trigger_speciality_stage_1",
+    "source_skill_code": "demon-trigger-speciality-stage-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "demon-trigger-speciality-stage-1"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "demon_trigger_speciality_stage_2",
+    "source_skill_code": "demon-trigger-speciality-stage-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "demon-trigger-speciality-stage-2"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "demon_trigger_speciality_stage_3",
+    "source_skill_code": "demon-trigger-speciality-stage-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "demon-trigger-speciality-stage-3"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "defensive_posture",
+    "source_skill_code": "defensive-posture",
     "category": "buff",
     "evidence_location": "dark-mage-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "defensive-posture"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "bone_shield",
+    "source_skill_code": "bone-shield",
     "category": "buff",
     "evidence_location": "dark-mage-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "bone-shield"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "art_of_blood_thrust",
+    "source_skill_code": "art-of-blood-thrust",
     "category": "buff",
     "evidence_location": "dark-mage-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-blood-thrust"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "calamity_soul",
+    "source_skill_code": "calamity-soul",
     "category": "buff",
     "evidence_location": "dark-mage-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "calamity-soul"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "bloody_bless",
+    "source_skill_code": "bloody-bless",
     "category": "buff",
     "evidence_location": "dark-mage-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "bloody-bless"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "crumble_body",
+    "source_skill_code": "crumble-body",
     "category": "debuff",
     "evidence_location": "dark-mage-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "crumble-body"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "curse_of_bleeding",
+    "source_skill_code": "curse-of-bleeding",
     "category": "debuff",
     "evidence_location": "dark-mage-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "curse-of-bleeding"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "leg_fracture",
+    "source_skill_code": "leg-fracture",
     "category": "debuff",
     "evidence_location": "dark-mage-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "leg-fracture"
     ]
@@ -673,12 +673,12 @@
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "skin_weakness",
+    "source_skill_code": "skin-weakness",
     "category": "debuff",
     "evidence_location": "dark-mage-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "skin-weakness"
     ]
@@ -695,240 +695,240 @@
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "petrified_one",
+    "source_skill_code": "petrified-one",
     "category": "debuff",
     "evidence_location": "dark-mage-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "petrified-one"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "totem_of_venom",
+    "source_skill_code": "totem-of-venom",
     "category": "utility",
     "evidence_location": "dark-mage-totems",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "totem-of-venom"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "totem_of_dystrophy",
+    "source_skill_code": "totem-of-dystrophy",
     "category": "utility",
     "evidence_location": "dark-mage-totems",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "totem-of-dystrophy"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "totem_of_absorption",
+    "source_skill_code": "totem-of-absorption",
     "category": "utility",
     "evidence_location": "dark-mage-totems",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "totem-of-absorption"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "bone_javelin",
+    "source_skill_code": "bone-javelin",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "bone-javelin"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "dark_ray",
+    "source_skill_code": "dark-ray",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "dark-ray"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "death_crasher",
+    "source_skill_code": "death-crasher",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "death-crasher"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "assassinate_bomber",
+    "source_skill_code": "assassinate-bomber",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "assassinate-bomber"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "offering_of_hell",
+    "source_skill_code": "offering-of-hell",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "offering-of-hell"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "darkmatter_fallen",
+    "source_skill_code": "darkmatter-fallen",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "darkmatter-fallen"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "vanquish_of_evil",
+    "source_skill_code": "vanquish-of-evil",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "vanquish-of-evil"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "corps_explosion",
+    "source_skill_code": "corps-explosion",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "corps-explosion"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "bone_javelin",
+    "source_skill_code": "bone-javelin",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "bone-javelin"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "dark_ray",
+    "source_skill_code": "dark-ray",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "dark-ray"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "death_crasher",
+    "source_skill_code": "death-crasher",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "death-crasher"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "assassinate_bomber",
+    "source_skill_code": "assassinate-bomber",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "assassinate-bomber"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "force_control",
+    "source_skill_code": "force-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-control"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "ruling_force",
+    "source_skill_code": "ruling-force",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "ruling-force"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
@@ -945,24 +945,24 @@
   },
   {
     "source_class": "dark-mage",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "twin_gunner",
+    "source_skill_code": "twin-gunner",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "twin-gunner"
     ]
@@ -974,31 +974,31 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "twin-gunner-attack-1"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "fatal_shot",
+    "source_skill_code": "fatal-shot",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fatal-shot"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "launcher_punisher",
+    "source_skill_code": "launcher-punisher",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "launcher-punisher"
     ]
@@ -1010,7 +1010,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "launcher-attack-a"
     ]
@@ -1022,91 +1022,91 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "launcher-attack-b"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "launcher_specialty_level_1",
+    "source_skill_code": "launcher-specialty-level-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "launcher-specialty-level-1"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "launcher_specialty_level_2",
+    "source_skill_code": "launcher-specialty-level-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "launcher-specialty-level-2"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "launcher_specialty_level_3",
+    "source_skill_code": "launcher-specialty-level-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "launcher-specialty-level-3"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "sharp_instinct",
+    "source_skill_code": "sharp-instinct",
     "category": "buff",
     "evidence_location": "force-archer-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-instinct"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "sprit_walk",
+    "source_skill_code": "sprit-walk",
     "category": "buff",
     "evidence_location": "force-archer-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sprit-walk"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "art_of_sniping",
+    "source_skill_code": "art-of-sniping",
     "category": "buff",
     "evidence_location": "force-archer-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-sniping"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "quick_move",
+    "source_skill_code": "quick-move",
     "category": "buff",
     "evidence_location": "force-archer-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "quick-move"
     ]
@@ -1123,24 +1123,24 @@
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "vital_force",
+    "source_skill_code": "vital-force",
     "category": "buff",
     "evidence_location": "force-archer-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "vital-force"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "curse_remove",
+    "source_skill_code": "curse-remove",
     "category": "buff",
     "evidence_location": "force-archer-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "curse-remove"
     ]
@@ -1157,264 +1157,264 @@
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "greater_heal",
+    "source_skill_code": "greater-heal",
     "category": "utility",
     "evidence_location": "force-archer-healing",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "greater-heal"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "mass_heal",
+    "source_skill_code": "mass-heal",
     "category": "utility",
     "evidence_location": "force-archer-healing",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mass-heal"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "vital_recovery",
+    "source_skill_code": "vital-recovery",
     "category": "utility",
     "evidence_location": "force-archer-healing",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "vital-recovery"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "curse_of_wither",
+    "source_skill_code": "curse-of-wither",
     "category": "debuff",
     "evidence_location": "force-archer-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "curse-of-wither"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "shadow_shot",
+    "source_skill_code": "shadow-shot",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shadow-shot"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "critical_shot",
+    "source_skill_code": "critical-shot",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "critical-shot"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "terra_lance",
+    "source_skill_code": "terra-lance-439",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "terra-lance-439"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "aqua_lance",
+    "source_skill_code": "aqua-lance-440",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-lance-440"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "fire_lance",
+    "source_skill_code": "fire-lance-442",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-lance-442"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "arrow_forest",
+    "source_skill_code": "arrow-forest",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "arrow-forest"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "arrow_barrage",
+    "source_skill_code": "arrow-barrage",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "arrow-barrage"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "sonic_shooter",
+    "source_skill_code": "sonic-shooter",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sonic-shooter"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "shooting_star",
+    "source_skill_code": "shooting-star",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shooting-star"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "shadow_shot",
+    "source_skill_code": "shadow-shot",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shadow-shot"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "critical_shot",
+    "source_skill_code": "critical-shot",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "critical-shot"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "terra_lance",
+    "source_skill_code": "terra-lance-439",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "terra-lance-439"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "aqua_lance",
+    "source_skill_code": "aqua-lance-440",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-lance-440"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "fire_lance",
+    "source_skill_code": "fire-lance-442",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-lance-442"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "force_control",
+    "source_skill_code": "force-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-control"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "ruling_force",
+    "source_skill_code": "ruling-force",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "ruling-force"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
@@ -1431,36 +1431,36 @@
   },
   {
     "source_class": "force-archer",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "force_enchanter",
+    "source_skill_code": "force-enchanter",
     "category": "bm1",
     "evidence_location": "battle-mode-1",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-enchanter"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "blade_shooter",
+    "source_skill_code": "blade-shooter",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter"
     ]
@@ -1472,7 +1472,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-1"
     ]
@@ -1484,7 +1484,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-2"
     ]
@@ -1496,7 +1496,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-3"
     ]
@@ -1508,31 +1508,31 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-4"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "prismatic_blade_cannon",
+    "source_skill_code": "prismatic-blade-cannon",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "prismatic-blade-cannon"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "sword_splitter",
+    "source_skill_code": "sword-splitter",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sword-splitter"
     ]
@@ -1544,7 +1544,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "split-attack-a"
     ]
@@ -1556,127 +1556,127 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "split-attack-b"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "split_specialty_level_1",
+    "source_skill_code": "split-specialty-level-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "split-specialty-level-1"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "split_specialty_level_2",
+    "source_skill_code": "split-specialty-level-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "split-specialty-level-2"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "split_specialty_level_3",
+    "source_skill_code": "split-specialty-level-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "split-specialty-level-3"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "elemental_enchant",
+    "source_skill_code": "elemental-enchant",
     "category": "buff",
     "evidence_location": "force-blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-enchant"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "fire_blade",
+    "source_skill_code": "fire-blade",
     "category": "buff",
     "evidence_location": "force-blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-blade"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "lightning_blade",
+    "source_skill_code": "lightning-blade",
     "category": "buff",
     "evidence_location": "force-blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-blade"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "ice_blade",
+    "source_skill_code": "ice-blade",
     "category": "buff",
     "evidence_location": "force-blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "ice-blade"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "force_field",
+    "source_skill_code": "force-field",
     "category": "buff",
     "evidence_location": "force-blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-field"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "elemental_discharge",
+    "source_skill_code": "elemental-discharge",
     "category": "buff",
     "evidence_location": "force-blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-discharge"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "elemental_barrier",
+    "source_skill_code": "elemental-barrier",
     "category": "buff",
     "evidence_location": "force-blader-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-barrier"
     ]
@@ -1688,7 +1688,7 @@
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-1"
     ]
@@ -1700,7 +1700,7 @@
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-2"
     ]
@@ -1712,7 +1712,7 @@
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-3"
     ]
@@ -1724,7 +1724,7 @@
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blade-shooter-attack-no-4"
     ]
@@ -1736,7 +1736,7 @@
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "split-attack-a"
     ]
@@ -1748,19 +1748,19 @@
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "split-attack-b"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "infernal_impact",
+    "source_skill_code": "infernal-impact",
     "category": "buff",
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "infernal-impact"
     ]
@@ -1777,96 +1777,96 @@
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "seal_of_damnation",
+    "source_skill_code": "seal-of-damnation",
     "category": "buff",
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "seal-of-damnation"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "quake_cataclysm",
+    "source_skill_code": "quake-cataclysm",
     "category": "buff",
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "quake-cataclysm"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "lightning_revenge",
+    "source_skill_code": "lightning-revenge",
     "category": "buff",
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-revenge"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "art_of_curse",
+    "source_skill_code": "art-of-curse",
     "category": "buff",
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-curse"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "field_of_enervation",
+    "source_skill_code": "field-of-enervation",
     "category": "buff",
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "field-of-enervation"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "elemental_enchant",
+    "source_skill_code": "elemental-enchant",
     "category": "buff",
     "evidence_location": "force-blader-blade-conditionals",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-enchant"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "curse_of_wither",
+    "source_skill_code": "curse-of-wither",
     "category": "debuff",
     "evidence_location": "force-blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "curse-of-wither"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "guard_break",
+    "source_skill_code": "guard-break",
     "category": "debuff",
     "evidence_location": "force-blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "guard-break"
     ]
@@ -1883,144 +1883,144 @@
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "hard_luck",
+    "source_skill_code": "hard-luck",
     "category": "debuff",
     "evidence_location": "force-blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hard-luck"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "art_of_curse",
+    "source_skill_code": "art-of-curse",
     "category": "debuff",
     "evidence_location": "force-blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-curse"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "curse_of_freeze",
+    "source_skill_code": "curse-of-freeze",
     "category": "debuff",
     "evidence_location": "force-blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "curse-of-freeze"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "field_of_enervation",
+    "source_skill_code": "field-of-enervation",
     "category": "debuff",
     "evidence_location": "force-blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "field-of-enervation"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "field_of_execration",
+    "source_skill_code": "field-of-execration",
     "category": "debuff",
     "evidence_location": "force-blader-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "field-of-execration"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "force_assault",
+    "source_skill_code": "force-assault",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-assault"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "impact_stab",
+    "source_skill_code": "impact-stab",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-stab"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "force_slash",
+    "source_skill_code": "force-slash",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-slash"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "flash_draw",
+    "source_skill_code": "flash-draw",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "flash-draw"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "lightning_revenge",
+    "source_skill_code": "lightning-revenge",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-revenge"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "quake_cataclysm",
+    "source_skill_code": "quake-cataclysm",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "quake-cataclysm"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "seal_of_damnation",
+    "source_skill_code": "seal-of-damnation",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "seal-of-damnation"
     ]
@@ -2037,108 +2037,108 @@
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "infernal_impact",
+    "source_skill_code": "infernal-impact",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "infernal-impact"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "force_assault",
+    "source_skill_code": "force-assault",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-assault"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "impact_stab",
+    "source_skill_code": "impact-stab",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-stab"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "force_slash",
+    "source_skill_code": "force-slash",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-slash"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "flash_draw",
+    "source_skill_code": "flash-draw",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "flash-draw"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "offensive_sense",
+    "source_skill_code": "offensive-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "offensive-sense"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "impact_control",
+    "source_skill_code": "impact-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-control"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
@@ -2155,24 +2155,24 @@
   },
   {
     "source_class": "force-blader",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "heavy_launcher",
+    "source_skill_code": "heavy-launcher",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "heavy-launcher"
     ]
@@ -2184,31 +2184,31 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "gunner-battle-mode-2-attack-1"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "surface_impact",
+    "source_skill_code": "surface-impact",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "surface-impact"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "hit_man",
+    "source_skill_code": "hit-man",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hit-man"
     ]
@@ -2220,7 +2220,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hit-man-attack-a"
     ]
@@ -2232,67 +2232,67 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hit-man-attack-b"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "hit_man_speciality_level_1",
+    "source_skill_code": "hit-man-speciality-level-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hit-man-speciality-level-1"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "hit_man_speciality_level_2",
+    "source_skill_code": "hit-man-speciality-level-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hit-man-speciality-level-2"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "hit_man_speciality_level_3",
+    "source_skill_code": "hit-man-speciality-level-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hit-man-speciality-level-3"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "art_of_desperado",
+    "source_skill_code": "art-of-desperado",
     "category": "buff",
     "evidence_location": "force-gunner-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-desperado"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "reactive_technique",
+    "source_skill_code": "reactive-technique",
     "category": "buff",
     "evidence_location": "force-gunner-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "reactive-technique"
     ]
@@ -2319,156 +2319,156 @@
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "tactical_armor",
+    "source_skill_code": "tactical-armor",
     "category": "buff",
     "evidence_location": "force-gunner-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "tactical-armor"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "adaptive_barrier",
+    "source_skill_code": "adaptive-barrier",
     "category": "buff",
     "evidence_location": "force-gunner-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "adaptive-barrier"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "lock_on",
+    "source_skill_code": "lock-on",
     "category": "debuff",
     "evidence_location": "force-gunner-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lock-on"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "terra_lance",
+    "source_skill_code": "terra-lance-540",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "terra-lance-540"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "freezing_lance",
+    "source_skill_code": "freezing-lance-544",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "freezing-lance-544"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "aqua_lance",
+    "source_skill_code": "aqua-lance-541",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-lance-541"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "fire_lance",
+    "source_skill_code": "fire-lance-543",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-lance-543"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "aqua_cannon",
+    "source_skill_code": "aqua-cannon-548",
     "category": "attack",
     "evidence_location": "single-target-cannon-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-cannon-548"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "fire_cannon",
+    "source_skill_code": "fire-cannon-550",
     "category": "attack",
     "evidence_location": "single-target-cannon-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-cannon-550"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "crystal_cannon",
+    "source_skill_code": "crystal-cannon-551",
     "category": "attack",
     "evidence_location": "single-target-cannon-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "crystal-cannon-551"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "lightning_cannon",
+    "source_skill_code": "lightning-cannon-552",
     "category": "attack",
     "evidence_location": "single-target-cannon-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-cannon-552"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "mechanic_crop",
+    "source_skill_code": "mechanic-crop",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mechanic-crop"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "storm_blitz",
+    "source_skill_code": "storm-blitz",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "storm-blitz"
     ]
@@ -2485,108 +2485,108 @@
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "mouse_mk_2",
+    "source_skill_code": "mouse-mk-2",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mouse-mk-2"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "terra_lance",
+    "source_skill_code": "terra-lance-540",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "terra-lance-540"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "freezing_lance",
+    "source_skill_code": "freezing-lance-544",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "freezing-lance-544"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "aqua_lance",
+    "source_skill_code": "aqua-lance-541",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-lance-541"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "fire_lance",
+    "source_skill_code": "fire-lance-543",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-lance-543"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "force_control",
+    "source_skill_code": "force-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-control"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "ruling_force",
+    "source_skill_code": "ruling-force",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "ruling-force"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
@@ -2603,24 +2603,24 @@
   },
   {
     "source_class": "force-gunner",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "shield_master",
+    "source_skill_code": "shield-master",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-master"
     ]
@@ -2632,7 +2632,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-master-attack-1"
     ]
@@ -2644,7 +2644,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-master-attack-2"
     ]
@@ -2656,31 +2656,31 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-master-attack-3"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "shield_storm",
+    "source_skill_code": "shield-storm",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-storm"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "hammer_crusher",
+    "source_skill_code": "hammer-crusher",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hammer-crusher"
     ]
@@ -2692,7 +2692,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hammer-attack-a"
     ]
@@ -2704,127 +2704,127 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hammer-attack-b"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "hammer_specialty_level_1",
+    "source_skill_code": "hammer-specialty-level-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hammer-specialty-level-1"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "hammer_specialty_level_2",
+    "source_skill_code": "hammer-specialty-level-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hammer-specialty-level-2"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "hammer_specialty_level_3",
+    "source_skill_code": "hammer-specialty-level-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hammer-specialty-level-3"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "art_of_defense",
+    "source_skill_code": "art-of-defense",
     "category": "buff",
     "evidence_location": "force-shielder-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-defense"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "mortal_bane",
+    "source_skill_code": "mortal-bane",
     "category": "buff",
     "evidence_location": "force-shielder-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mortal-bane"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "reflex_shield",
+    "source_skill_code": "reflex-shield",
     "category": "buff",
     "evidence_location": "force-shielder-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "reflex-shield"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "preemptive_defense",
+    "source_skill_code": "preemptive-defense",
     "category": "buff",
     "evidence_location": "force-shielder-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "preemptive-defense"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "shield_castle",
+    "source_skill_code": "shield-castle",
     "category": "buff",
     "evidence_location": "force-shielder-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-castle"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "shadow_shield",
+    "source_skill_code": "shadow-shield",
     "category": "buff",
     "evidence_location": "force-shielder-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shadow-shield"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "resist_intension",
+    "source_skill_code": "resist-intension",
     "category": "buff",
     "evidence_location": "force-shielder-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "resist-intension"
     ]
@@ -2851,288 +2851,288 @@
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "guard_break",
+    "source_skill_code": "guard-break",
     "category": "debuff",
     "evidence_location": "force-shielder-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "guard-break"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "field_of_provocation",
+    "source_skill_code": "field-of-provocation",
     "category": "debuff",
     "evidence_location": "force-shielder-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "field-of-provocation"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "blind_anger",
+    "source_skill_code": "blind-anger",
     "category": "debuff",
     "evidence_location": "force-shielder-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "blind-anger"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "force_kick",
+    "source_skill_code": "force-kick",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-kick"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "impact_stab",
+    "source_skill_code": "impact-stab",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-stab"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "flash_draw",
+    "source_skill_code": "flash-draw",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "flash-draw"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "force_stab",
+    "source_skill_code": "force-stab",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-stab"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "rising_shot",
+    "source_skill_code": "rising-shot",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rising-shot"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "shield_taunt",
+    "source_skill_code": "shield-taunt",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-taunt"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "shield_grenade",
+    "source_skill_code": "shield-grenade",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-grenade"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "hell_crasher",
+    "source_skill_code": "hell-crasher",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hell-crasher"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "shield_splinter",
+    "source_skill_code": "shield-splinter",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shield-splinter"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "force_kick",
+    "source_skill_code": "force-kick",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-kick"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "impact_stab",
+    "source_skill_code": "impact-stab",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-stab"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "flash_draw",
+    "source_skill_code": "flash-draw",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "flash-draw"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "force_stab",
+    "source_skill_code": "force-stab",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-stab"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "rising_shot",
+    "source_skill_code": "rising-shot",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rising-shot"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "offensive_sense",
+    "source_skill_code": "offensive-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "offensive-sense"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "impact_control",
+    "source_skill_code": "impact-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-control"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "damage_absorb",
+    "source_skill_code": "damage-absorb",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "damage-absorb"
     ]
   },
   {
     "source_class": "force-shielder",
-    "source_skill_code": "mana_mastery",
+    "source_skill_code": "mana-mastery",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mana-mastery"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "death_scyther",
+    "source_skill_code": "death-scyther",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "death-scyther"
     ]
@@ -3144,7 +3144,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "scyther-attack-1"
     ]
@@ -3156,7 +3156,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "scyther-attack-2"
     ]
@@ -3168,7 +3168,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "scyther-attack-3"
     ]
@@ -3180,19 +3180,19 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "scyther-attack-4"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "death_scyther_guillotine",
+    "source_skill_code": "death-scyther-guillotine",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "death-scyther-guillotine"
     ]
@@ -3214,7 +3214,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "genocider-attack-a"
     ]
@@ -3226,43 +3226,43 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "genocider-attack-b"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "genocider_specialty_stage_1",
+    "source_skill_code": "genocider-specialty-stage-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "genocider-specialty-stage-1"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "genocider_specialty_stage_2",
+    "source_skill_code": "genocider-specialty-stage-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "genocider-specialty-stage-2"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "genocider_specialty_stage_3",
+    "source_skill_code": "genocider-specialty-stage-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "genocider-specialty-stage-3"
     ]
@@ -3279,60 +3279,60 @@
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "art_of_rage",
+    "source_skill_code": "art-of-rage",
     "category": "buff",
     "evidence_location": "gladiator-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-rage"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "sight_increase",
+    "source_skill_code": "sight-increase",
     "category": "buff",
     "evidence_location": "gladiator-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sight-increase"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "rage_resist",
+    "source_skill_code": "rage-resist",
     "category": "buff",
     "evidence_location": "gladiator-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rage-resist"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "rage_shield",
+    "source_skill_code": "rage-shield",
     "category": "buff",
     "evidence_location": "gladiator-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rage-shield"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "adrenaline_of_rage",
+    "source_skill_code": "adrenaline-of-rage",
     "category": "buff",
     "evidence_location": "gladiator-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "adrenaline-of-rage"
     ]
@@ -3369,12 +3369,12 @@
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "rapid_dash",
+    "source_skill_code": "rapid-dash",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rapid-dash"
     ]
@@ -3391,84 +3391,84 @@
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "shadow_step",
+    "source_skill_code": "shadow-step",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shadow-step"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "mystic_dash",
+    "source_skill_code": "mystic-dash",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mystic-dash"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "illusion_blade",
+    "source_skill_code": "illusion-blade",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "illusion-blade"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "crimson_blade",
+    "source_skill_code": "crimson-blade",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "crimson-blade"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "chakram_slam",
+    "source_skill_code": "chakram-slam",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "chakram-slam"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "momentary_illumination",
+    "source_skill_code": "momentary-illumination",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "momentary-illumination"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "rapid_dash",
+    "source_skill_code": "rapid-dash",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rapid-dash"
     ]
@@ -3485,96 +3485,96 @@
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "shadow_step",
+    "source_skill_code": "shadow-step",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "shadow-step"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "mystic_dash",
+    "source_skill_code": "mystic-dash",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mystic-dash"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "offensive_sense",
+    "source_skill_code": "offensive-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "offensive-sense"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "impact_control",
+    "source_skill_code": "impact-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-control"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "mana_mastery",
+    "source_skill_code": "mana-mastery",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mana-mastery"
     ]
   },
   {
     "source_class": "gladiator",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]
@@ -3596,7 +3596,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lancer-attack-1"
     ]
@@ -3608,7 +3608,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lancer-attack-2"
     ]
@@ -3620,7 +3620,7 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lancer-attack-3"
     ]
@@ -3632,163 +3632,163 @@
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lancer-attack-4"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "lance_drive",
+    "source_skill_code": "lance-drive",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lance-drive"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "axe_destroyer",
+    "source_skill_code": "axe-destroyer",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "axe-destroyer"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "axe_attack_a",
+    "source_skill_code": "axe-attack-a",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "axe-attack-a"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "axe_attack_b",
+    "source_skill_code": "axe-attack-b",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "axe-attack-b"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "axe_specialty_level_1",
+    "source_skill_code": "axe-specialty-level-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "axe-specialty-level-1"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "axe_specialty_level_2",
+    "source_skill_code": "axe-specialty-level-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "axe-specialty-level-2"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "axe_specialty_level_3",
+    "source_skill_code": "axe-specialty-level-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "axe-specialty-level-3"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "instant_immunity",
+    "source_skill_code": "instant-immunity",
     "category": "buff",
     "evidence_location": "warrior-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "instant-immunity"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "morale_shout",
+    "source_skill_code": "morale-shout",
     "category": "buff",
     "evidence_location": "warrior-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "morale-shout"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "cats_recovery",
+    "source_skill_code": "cats-recovery",
     "category": "buff",
     "evidence_location": "warrior-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "cats-recovery"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "bears_vitality",
+    "source_skill_code": "bears-vitality",
     "category": "buff",
     "evidence_location": "warrior-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "bears-vitality"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "bloody_spirit",
+    "source_skill_code": "bloody-spirit",
     "category": "buff",
     "evidence_location": "warrior-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "bloody-spirit"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "art_of_shout",
+    "source_skill_code": "art-of-shout",
     "category": "buff",
     "evidence_location": "warrior-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-shout"
     ]
@@ -3805,36 +3805,36 @@
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "rhinos_toughness",
+    "source_skill_code": "rhinos-toughness",
     "category": "buff",
     "evidence_location": "warrior-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "rhinos-toughness"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "panic_cry",
+    "source_skill_code": "panic-cry",
     "category": "debuff",
     "evidence_location": "warrior-debuffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "panic-cry"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "force_kick",
+    "source_skill_code": "force-kick",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-kick"
     ]
@@ -3851,72 +3851,72 @@
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "impact_stab",
+    "source_skill_code": "impact-stab",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-stab"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "flash_draw",
+    "source_skill_code": "flash-draw",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "flash-draw"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "heavy_slash",
+    "source_skill_code": "heavy-slash",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "heavy-slash"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "press_impact",
+    "source_skill_code": "press-impact",
     "category": "attack",
     "evidence_location": "single-target-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "press-impact"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "seismic_wave",
+    "source_skill_code": "seismic-wave",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "seismic-wave"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "apocalypse_decision",
+    "source_skill_code": "apocalypse-decision",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "apocalypse-decision"
     ]
@@ -3933,180 +3933,180 @@
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "sword_quake",
+    "source_skill_code": "sword-quake",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sword-quake"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "force_kick",
+    "source_skill_code": "force-kick",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-kick"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "offensive_sense",
+    "source_skill_code": "offensive-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "offensive-sense"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "impact_control",
+    "source_skill_code": "impact-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "impact-control"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "mana_mastery",
+    "source_skill_code": "mana-mastery",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "mana-mastery"
     ]
   },
   {
     "source_class": "warrior",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "double_caster",
+    "source_skill_code": "double-caster",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "double-caster"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_festival",
+    "source_skill_code": "elemental-festival",
     "category": "bm2",
     "evidence_location": "battle-mode-2",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-festival"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "multiple_canon",
+    "source_skill_code": "multiple-canon",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "multiple-canon"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "glacial_trap",
+    "source_skill_code": "glacial-trap",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "glacial-trap"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "lightning_cannon",
+    "source_skill_code": "lightning-cannon-127",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-cannon-127"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_festival",
+    "source_skill_code": "elemental-festival",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-festival"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "stone_cannon",
+    "source_skill_code": "stone-cannon-122",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "stone-cannon-122"
     ]
@@ -4123,96 +4123,96 @@
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "fire_cannon",
+    "source_skill_code": "fire-cannon-125",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-cannon-125"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "aqua_cannon",
+    "source_skill_code": "aqua-cannon-123",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-cannon-123"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "lightning_lance",
+    "source_skill_code": "lightning-lance-120",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-amp",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-lance-120"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "multiple_canon",
+    "source_skill_code": "multiple-canon",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "multiple-canon"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "glacial_trap",
+    "source_skill_code": "glacial-trap",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "glacial-trap"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "lightning_cannon",
+    "source_skill_code": "lightning-cannon-127",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-cannon-127"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_festival",
+    "source_skill_code": "elemental-festival",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-festival"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "stone_cannon",
+    "source_skill_code": "stone-cannon-122",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "stone-cannon-122"
     ]
@@ -4229,60 +4229,60 @@
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "space_collapse",
+    "source_skill_code": "space-collapse",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "space-collapse"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "extreme_dual_cannon",
+    "source_skill_code": "extreme-dual-cannon",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "extreme-dual-cannon"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "fire_cannon",
+    "source_skill_code": "fire-cannon-125",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-dps-add-attack",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-cannon-125"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "multiple_canon",
+    "source_skill_code": "multiple-canon",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "multiple-canon"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "glacial_trap",
+    "source_skill_code": "glacial-trap",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "glacial-trap"
     ]
@@ -4299,84 +4299,84 @@
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_festival",
+    "source_skill_code": "elemental-festival",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-festival"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "space_collapse",
+    "source_skill_code": "space-collapse",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "space-collapse"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "arctic_field",
+    "source_skill_code": "arctic-field",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "arctic-field"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "extreme_dual_cannon",
+    "source_skill_code": "extreme-dual-cannon",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "extreme-dual-cannon"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "hail_storm",
+    "source_skill_code": "hail-storm",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "hail-storm"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "lightning_cannon",
+    "source_skill_code": "lightning-cannon-127",
     "category": "attack",
     "evidence_location": "wizard-bm2-combo-high-aoe",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-cannon-127"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_dominator",
+    "source_skill_code": "elemental-dominator",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-dominator"
     ]
@@ -4388,7 +4388,7 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-attack-a"
     ]
@@ -4400,127 +4400,127 @@
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "low",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-attack-b"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_specialty_level_1",
+    "source_skill_code": "elemental-specialty-level-1",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-specialty-level-1"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_specialty_level_2",
+    "source_skill_code": "elemental-specialty-level-2",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-specialty-level-2"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "elemental_specialty_level_3",
+    "source_skill_code": "elemental-specialty-level-3",
     "category": "bm3",
     "evidence_location": "battle-mode-3",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "elemental-specialty-level-3"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "art_of_force_control",
+    "source_skill_code": "art-of-force-control",
     "category": "buff",
     "evidence_location": "wizard-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "art-of-force-control"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "charging_spirit",
+    "source_skill_code": "charging-spirit",
     "category": "buff",
     "evidence_location": "wizard-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "charging-spirit"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "force_hardness",
+    "source_skill_code": "force-hardness",
     "category": "buff",
     "evidence_location": "wizard-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-hardness"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "force_shell",
+    "source_skill_code": "force-shell",
     "category": "buff",
     "evidence_location": "wizard-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-shell"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "force_unleashing",
+    "source_skill_code": "force-unleashing",
     "category": "buff",
     "evidence_location": "wizard-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-unleashing"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "raise_spirit",
+    "source_skill_code": "raise-spirit",
     "category": "buff",
     "evidence_location": "wizard-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "raise-spirit"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "spirit_intension",
+    "source_skill_code": "spirit-intension",
     "category": "buff",
     "evidence_location": "wizard-buffs",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "spirit-intension"
     ]
@@ -4537,168 +4537,168 @@
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "terra_lance",
+    "source_skill_code": "terra-lance-115",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "terra-lance-115"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "fire_lance",
+    "source_skill_code": "fire-lance-118",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-lance-118"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "aqua_lance",
+    "source_skill_code": "aqua-lance-116",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-lance-116"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "freezing_lance",
+    "source_skill_code": "freezing-lance-119",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "freezing-lance-119"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "wind_lance",
+    "source_skill_code": "wind-lance-117",
     "category": "attack",
     "evidence_location": "combos",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "wind-lance-117"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "stone_cannon",
+    "source_skill_code": "stone-cannon-122",
     "category": "attack",
     "evidence_location": "single-target-cannon-lance-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "stone-cannon-122"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "terra_lance",
+    "source_skill_code": "terra-lance-115",
     "category": "attack",
     "evidence_location": "single-target-cannon-lance-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "terra-lance-115"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "fire_cannon",
+    "source_skill_code": "fire-cannon-125",
     "category": "attack",
     "evidence_location": "single-target-cannon-lance-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-cannon-125"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "fire_lance",
+    "source_skill_code": "fire-lance-118",
     "category": "attack",
     "evidence_location": "single-target-cannon-lance-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-lance-118"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "aqua_cannon",
+    "source_skill_code": "aqua-cannon-123",
     "category": "attack",
     "evidence_location": "single-target-cannon-lance-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-cannon-123"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "aqua_lance",
+    "source_skill_code": "aqua-lance-116",
     "category": "attack",
     "evidence_location": "single-target-cannon-lance-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-lance-116"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "lightning_lance",
+    "source_skill_code": "lightning-lance-120",
     "category": "attack",
     "evidence_location": "single-target-cannon-lance-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "lightning-lance-120"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "glacial_trap",
+    "source_skill_code": "glacial-trap",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "glacial-trap"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "multiple_canon",
+    "source_skill_code": "multiple-canon",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "multiple-canon"
     ]
@@ -4715,120 +4715,120 @@
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "extreme_dual_cannon",
+    "source_skill_code": "extreme-dual-cannon",
     "category": "attack",
     "evidence_location": "aoe-combo",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "extreme-dual-cannon"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "terra_lance",
+    "source_skill_code": "terra-lance-115",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "terra-lance-115"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "fire_lance",
+    "source_skill_code": "fire-lance-118",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "fire-lance-118"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "aqua_lance",
+    "source_skill_code": "aqua-lance-116",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "aqua-lance-116"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "freezing_lance",
+    "source_skill_code": "freezing-lance-119",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "freezing-lance-119"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "wind_lance",
+    "source_skill_code": "wind-lance-117",
     "category": "attack",
     "evidence_location": "comboSection",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "wind-lance-117"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "force_control",
+    "source_skill_code": "force-control",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "force-control"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "ruling_force",
+    "source_skill_code": "ruling-force",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "ruling-force"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "sharp_eyes",
+    "source_skill_code": "sharp-eyes",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sharp-eyes"
     ]
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "eyes_of_mind",
+    "source_skill_code": "eyes-of-mind",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "eyes-of-mind"
     ]
@@ -4845,12 +4845,12 @@
   },
   {
     "source_class": "wizard",
-    "source_skill_code": "sixth_sense",
+    "source_skill_code": "sixth-sense",
     "category": "passive",
     "evidence_location": "passiveSkillConfig",
     "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
     "source_hash": "6315ee2ea869d9d76228e287d820372d005bd0f7779cfb4215f983032200d611",
-    "confidence": "high",
+    "confidence": "ambiguous",
     "unresolved_aliases": [
       "sixth-sense"
     ]

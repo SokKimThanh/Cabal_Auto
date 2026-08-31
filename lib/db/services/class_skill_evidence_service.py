@@ -93,31 +93,16 @@ class ClassSkillEvidenceService:
                 db_category = self.map_category(cat['category'])
                 for skill_code in cat['slugs']:
                     original = skill_code
-                    mapped = original
-
-                    if mapped not in sprite_keys:
-                        underscored = mapped.replace("-", "_")
-                        if underscored in sprite_keys:
-                            mapped = underscored
-                        else:
-                            base_match = re.match(r'([a-z-]+)-\d+', mapped)
-                            if base_match:
-                                base = base_match.group(1).replace("-", "_")
-                                if base in sprite_keys:
-                                    mapped = base
-
                     unresolved = []
                     confidence = "high"
 
-                    if mapped not in sprite_keys:
-                        confidence = "low"
-                        unresolved.append(original)
-                    elif mapped != original:
+                    if original not in sprite_keys:
+                        confidence = "ambiguous"
                         unresolved.append(original)
 
                     manifest_rows.append({
                         "source_class": class_code,
-                        "source_skill_code": mapped,
+                        "source_skill_code": original,
                         "category": db_category,
                         "evidence_location": cat['evidence'],
                         "parser_boundary": "class-guide objects with slug and skillSlugs arrays",
@@ -130,7 +115,7 @@ class ClassSkillEvidenceService:
 
     def report(self, manifest):
         total = len(manifest)
-        unresolved = [m for m in manifest if m['confidence'] == 'low']
+        unresolved = [m for m in manifest if m['confidence'] == 'ambiguous']
 
         print("--- DB5 Audit Report ---")
         print(f"Source ID: class_skill_evidence")
@@ -139,7 +124,7 @@ class ClassSkillEvidenceService:
         print(f"Expected source count: 9 classes")
         print(f"Forbidden inputs: skills.json, image-count-skill-db-cabal.txt, color-skill-character-db-cabal.txt")
         print(f"Total mappings found: {total}")
-        print(f"Unresolved skill aliases (confidence=low): {len(unresolved)}")
+        print(f"Unresolved skill aliases (confidence=ambiguous): {len(unresolved)}")
 
         # Save manifest
         with open('db5_mapping_manifest.json', 'w') as f:
