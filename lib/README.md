@@ -334,7 +334,6 @@ Simple i18n registry cho toàn bộ app.
 - `set_default_lang(lang)`: Set default language
 - `t(key, *, ns=None, lang=None, default=None)`: Lấy translation
 - `get_lang()`: Get current language
-- `register_bulk(mapping)`: Đăng ký bulk translations
 
 **Sử dụng:**
 ```python
@@ -476,7 +475,7 @@ Style:
 from lib.vision.template_matcher import locate_template
 from lib.i18n.translations import GLOBAL_TRANSLATIONS
 from ui.helpers.tooltip import attach_i18n_tooltip
-from lib.i18n import (register_bulk, set_default_lang, t, get_lang, ...)
+from lib.i18n import (set_default_lang, t, get_lang, ...)
 from ui.helpers.capture_helper import capture_region_and_save
 from lib.system.win_input import tap
 from lib.system.hunt_logger import get_hunt_logger
@@ -500,8 +499,8 @@ from lib.features.skills.runtime import SkillRuntime
 ```python
 from ui.helpers.tooltip import attach_i18n_tooltip
 from ui.helpers.icon_helper import get_icon_helper
-from lib.i18n import (register_bulk, set_default_lang, t, ...)
-from lib.i18n.translations import SETUP_WIZARD_TRANSLATIONS
+from lib.i18n import (set_default_lang, t, ...)
+import lib.i18n.translations # self-registers
 from ui.windows.library_manager import LibraryManagerWindow
 ```
 
@@ -525,12 +524,10 @@ from ui.windows.library_manager import LibraryManagerWindow
    from system.win_input import tap
    ```
 
-2. **i18n**: Register translations khi module load
+2. **i18n**: Tự động register translations qua module import hoặc DB hydration
    ```python
-   from lib.i18n import register_bulk
-   from lib.i18n.translations import MY_TRANSLATIONS
-   
-   register_bulk(MY_TRANSLATIONS)
+   # Chỉ cần import data dictionary, module sẽ tự đăng ký hoặc được load từ DB
+   import lib.i18n.my_screen_translations
    ```
 
 3. **Error Handling**: Always handle optional dependencies
