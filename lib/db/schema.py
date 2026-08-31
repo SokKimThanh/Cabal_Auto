@@ -59,6 +59,20 @@ def setup_skills_schema(conn: sqlite3.Connection):
         )
     """)
 
+    # Bảng class_skill_assignments
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS class_skill_assignments (
+            class_id INTEGER NOT NULL,
+            skill_id INTEGER NOT NULL,
+            category TEXT NOT NULL,
+            source_ref TEXT NOT NULL,
+            is_recommended INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (class_id, skill_id),
+            FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE CASCADE,
+            FOREIGN KEY (skill_id) REFERENCES skills(skill_id) ON DELETE CASCADE
+        )
+    """)
+
     # Bảng scans
     # monster_id tham chiếu tới bảng monsters(id) hiện có (kiểu TEXT)
     cursor.execute("""
