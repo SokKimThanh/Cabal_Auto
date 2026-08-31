@@ -1,0 +1,566 @@
+{
+  "dark-mage": {
+    "force-control": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "ruling-force": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sharp-eyes": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "eyes-of-mind": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "reflex": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sixth-sense": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "grimoire": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "grimoire-attack": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "demolition-ray": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "demon-trigger": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "demon-trigger-attack-a": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "demon-trigger-attack-b": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "demon-trigger-speciality-stage": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "defensive-posture": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "bone-shield": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "art-of-blood-thrust": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "calamity-soul": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "bloody-bless": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "crumble-body": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "curse-of-bleeding": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "leg-fracture": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "bloodless": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "skin-weakness": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "silence": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "petrified-one": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "totem-of-venom": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "totem-of-dystrophy": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "totem-of-absorption": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "bone-javelin": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "dark-ray": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "death-crasher": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "assassinate-bomber": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "offering-of-hell": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "darkmatter-fallen": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "vanquish-of-evil": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "corps-explosion": {
+      "category": "attack",
+      "confidence": "HIGH"
+    }
+  },
+  "force-archer": {
+    "force-control": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "ruling-force": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sharp-eyes": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "eyes-of-mind": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "reflex": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sixth-sense": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "twin-gunner": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "twin-gunner-attack": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "fatal-shot": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "launcher-punisher": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "launcher-attack-a": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "launcher-attack-b": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "launcher-specialty-level": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "sharp-instinct": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "sprit-walk": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "art-of-sniping": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "quick-move": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "sharpness": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "vital-force": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "curse-remove": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "regeneration": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "greater-heal": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "mass-heal": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "vital-recovery": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "curse-of-wither": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "shadow-shot": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "critical-shot": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "terra-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "aqua-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "fire-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "arrow-forest": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "arrow-barrage": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "sonic-shooter": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "shooting-star": {
+      "category": "attack",
+      "confidence": "HIGH"
+    }
+  },
+  "force-gunner": {
+    "force-control": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "ruling-force": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sharp-eyes": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "eyes-of-mind": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "reflex": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sixth-sense": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "heavy-launcher": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "gunner-battle-mode-2-attack": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "surface-impact": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "hit-man": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "hit-man-attack-a": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "hit-man-attack-b": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "hit-man-speciality-level": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "art-of-desperado": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "reactive-technique": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "inspire": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "overfire": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "tactical-armor": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "adaptive-barrier": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "lock-on": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "terra-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "freezing-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "aqua-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "fire-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "aqua-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "fire-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "crystal-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "lightning-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "mechanic-crop": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "storm-blitz": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "revenger": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "mouse-mk": {
+      "category": "attack",
+      "confidence": "HIGH"
+    }
+  },
+  "wizard": {
+    "force-control": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "ruling-force": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sharp-eyes": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "eyes-of-mind": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "reflex": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "sixth-sense": {
+      "category": "passive",
+      "confidence": "HIGH"
+    },
+    "double-caster": {
+      "category": "bm2",
+      "confidence": "HIGH"
+    },
+    "elemental-festival": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "multiple-canon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "glacial-trap": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "lightning-cannon": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "stone-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "meteorite": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "fire-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "aqua-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "lightning-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "space-collapse": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "extreme-dual-cannon": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "arctic-field": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "hail-storm": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "elemental-dominator": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "elemental-attack-a": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "elemental-attack-b": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "elemental-specialty-level": {
+      "category": "bm3",
+      "confidence": "HIGH"
+    },
+    "art-of-force-control": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "charging-spirit": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "force-hardness": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "force-shell": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "force-unleashing": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "raise-spirit": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "spirit-intension": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "weaken": {
+      "category": "buff",
+      "confidence": "HIGH"
+    },
+    "terra-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "fire-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "aqua-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "freezing-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    },
+    "wind-lance": {
+      "category": "attack",
+      "confidence": "HIGH"
+    }
+  }
+}
