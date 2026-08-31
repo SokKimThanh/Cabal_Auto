@@ -653,7 +653,16 @@ class VisionEngine:
         if des1 is None or des2 is None or len(kp1) < 2 or len(kp2) < 2:
             return []
 
-        matcher = cv2.BFMatcher(norm, crossCheck=False)
+        # ⚡ Bolt Optimization:
+        # 💡 What: Cache the cv2.BFMatcher instance in thread-local storage.
+        # 🎯 Why: Instantiating BFMatcher on every frame causes unnecessary overhead in hot loops.
+        # 📊 Impact: Measurable reduction in per-frame processing time during feature matching.
+        if not hasattr(self._thread_local, "matchers"):
+            self._thread_local.matchers = {}
+        if ftype not in self._thread_local.matchers:
+            self._thread_local.matchers[ftype] = cv2.BFMatcher(norm, crossCheck=False)
+
+        matcher = self._thread_local.matchers[ftype]
         try:
             matches = matcher.knnMatch(des1, des2, k=2)
         except Exception as e:
