@@ -51,7 +51,7 @@ except ImportError:
 
 # Import lib modules
 try:
-    from lib.i18n import t as i18n_t, get_lang, register_bulk as i18n_register_bulk
+    from lib.i18n import t as i18n_t, get_lang
 except ImportError:
 
     def i18n_t(
@@ -65,9 +65,6 @@ except ImportError:
 
     def get_lang() -> str:
         return "vi"
-
-    def i18n_register_bulk(namespace: str, translations: dict) -> None:
-        pass
 
 
 try:

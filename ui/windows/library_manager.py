@@ -12,7 +12,7 @@ Date: October 18, 2025
 """
 
 import tkinter as tk
-from lib.i18n import register_bulk as i18n_register_bulk, t as i18n_t
+from lib.i18n import t as i18n_t
 from lib.ui_style import UIStyle as UI
 from lib.i18n.translations import LIBRARY_MANAGER_TRANSLATIONS
 from tkinter import ttk, messagebox, filedialog

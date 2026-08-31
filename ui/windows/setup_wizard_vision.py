@@ -49,7 +49,6 @@ except ImportError:
 
 try:
     from lib.i18n import get_lang
-    from lib.i18n import register_bulk as i18n_register_bulk
     from lib.i18n import t as i18n_t
 except ImportError:
 
@@ -64,9 +63,6 @@ except ImportError:
 
     def get_lang() -> str:
         return "vi"
-
-    def i18n_register_bulk(namespace: str, translations: dict) -> None:
-        pass
 
 
 try:
