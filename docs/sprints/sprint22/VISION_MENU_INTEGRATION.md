@@ -209,8 +209,9 @@ VISION_MENU_TRANSLATIONS = {
     }
 }
 
-# Đăng ký
-i18n_register_bulk('vision_menu', VISION_MENU_TRANSLATIONS)
+# Đăng ký tự động (đặt ở cuối file dictionary)
+from lib.i18n import register_bulk
+register_bulk('vision_menu', VISION_MENU_TRANSLATIONS)
 ```
 
 ---

@@ -60,3 +60,11 @@ title_text = t("my_screen.title", ns=my_screen_data.MY_SCREEN_NS)
 
 The integrity test at `tests/unit/test_i18n_registry_integrity.py` dynamically scans the `lib/i18n/` directory for any constant ending in `_TRANSLATIONS`.
 If you define a translation dictionary but forget to self-register it, this test will fail loudly during CI, preventing the application from silently showing raw keys to users.
+
+## Database Integration (Current Architecture)
+
+The translation system is now backed by a SQLite database (`translations` table) to support scaling beyond 2 languages and out-of-band editing.
+
+1. **Dictionary Files are Seed Data:** The `*_TRANSLATIONS` dictionaries defined in `lib/i18n/` are now strictly considered seed data and fallback mechanisms.
+2. **Hydration:** At app startup, `lib.i18n.load_from_db()` fetches all keys from the database and populates the in-memory registry. If the DB is missing or empty, it seamlessly falls back to the self-registered dictionary data.
+3. **Migrating New Keys:** When you add a new screen or modify keys in your `*_TRANSLATIONS` dictionary, you must run `scripts/migrate_translations_to_db.py`. This script will upsert all dictionaries into the database.

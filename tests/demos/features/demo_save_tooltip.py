@@ -7,14 +7,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 try:
     from ui.helpers.tooltip import attach_i18n_tooltip
-    from lib.i18n import register_bulk
-    from lib.i18n.translations import LIBRARY_MANAGER_TRANSLATIONS
+    import lib.i18n.translations # Registers globally via self-registration
 except Exception as e:
     print(f"Failed to import: {e}")
     sys.exit(1)
-
-# Register translations
-register_bulk('library_manager', LIBRARY_MANAGER_TRANSLATIONS)
 
 class TooltipDemo:
     def __init__(self):

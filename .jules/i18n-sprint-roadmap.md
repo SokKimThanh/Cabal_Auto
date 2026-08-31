@@ -200,6 +200,8 @@ Make the DB-backed store the single source of truth, remove now-redundant manual
 
 ## Sprint 5 — Final consolidation and guardrails
 
+**Status: Complete**
+
 ### Objective
 
 Lock in the new architecture as the permanent design, matching the "Definition of done" discipline used in `architecture-sprint-roadmap.md`.
@@ -249,12 +251,12 @@ Lock in the new architecture as the permanent design, matching the "Definition o
 
 ## 7. Definition of done for the i18n unification
 
-- Exactly one i18n package exists (`lib/i18n/__init__.py`); no shadowed duplicate module.
-- Every translation dictionary self-registers on import; no consumer module manually calls `register_bulk`.
-- An automated, namespace-agnostic integrity test fails CI if any registered namespace has a raw-key leak in any supported language.
-- A DB-backed store is the source of truth at runtime, hydrated at startup, with dict files retained only as migration seed data.
-- Adding a new language requires zero Python code changes for existing namespaces.
-- `docs/guides/I18N_GUIDE.md` documents the mandatory pattern for new screens.
+- [x] Exactly one i18n package exists (`lib/i18n/__init__.py`); no shadowed duplicate module.
+- [x] Every translation dictionary self-registers on import; no consumer module manually calls `register_bulk`.
+- [x] An automated, namespace-agnostic integrity test fails CI if any registered namespace has a raw-key leak in any supported language.
+- [x] A DB-backed store is the source of truth at runtime, hydrated at startup, with dict files retained only as migration seed data.
+- [x] Adding a new language requires zero Python code changes for existing namespaces.
+- [x] `docs/guides/I18N_GUIDE.md` documents the mandatory pattern for new screens.
 
 ## 8. Recommended next action
 
