@@ -54,6 +54,20 @@ class SeedClassSkillAssignmentsService:
             logger.error(f"Source file {self.source_file} not found. Cannot verify hash.")
             return None
 
+    def _extract_recommendation(self, row: dict, source_ref: str) -> int:
+        """Helper to extract or infer recommendation status."""
+        is_recommended = row.get("recommendation", 0)
+        if not isinstance(is_recommended, int):
+            if str(is_recommended).lower() in ("true", "1", "yes"):
+                is_recommended = 1
+            else:
+                is_recommended = 0
+
+        if source_ref == 'passiveSkillConfig':
+            is_recommended = 1
+
+        return is_recommended
+
     def seed_assignments(self) -> Dict[str, Any]:
         manifest = self.load_manifest()
         if not manifest:
@@ -119,21 +133,7 @@ class SeedClassSkillAssignmentsService:
                 category = row.get("category", "")
                 source_ref = row.get("evidence_location", "")
 
-                # Extract recommendation logic: if the evidence location says "passiveSkillConfig", or if category is "Passive", etc.
-                # Actually, the DB5 script currently doesn't add 'recommendation' to the manifest explicitly other than what might be inferred.
-                # However, the prompt says "Preserve source_ref, category, and recommendation metadata fields."
-                # We should extract `recommendation` from the row if it exists, or infer it from evidence.
-                is_recommended = row.get("recommendation", 0)
-                if not isinstance(is_recommended, int):
-                    # We might get "recommended" or similar strings if DB5 was updated.
-                    if str(is_recommended).lower() in ("true", "1", "yes"):
-                        is_recommended = 1
-                    else:
-                        is_recommended = 0
-
-                # "passiveSkillConfig" explicitly says "recommendedSkillSlugs" in DB5.
-                if source_ref == 'passiveSkillConfig':
-                    is_recommended = 1
+                is_recommended = self._extract_recommendation(row, source_ref)
 
                 records_to_insert.append((class_id, skill_id, category, source_ref, is_recommended))
 

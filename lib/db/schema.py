@@ -59,7 +59,9 @@ def setup_skills_schema(conn: sqlite3.Connection):
         )
     """)
 
-    # Bảng class_skill_assignments
+    # Class Skill Assignments Table
+    # Stores the verified relationships between classes and their valid skills.
+    # Requires a populated manifest (DB5 step) to act as canonical source of truth.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS class_skill_assignments (
             class_id INTEGER NOT NULL,
@@ -72,6 +74,8 @@ def setup_skills_schema(conn: sqlite3.Connection):
             FOREIGN KEY (skill_id) REFERENCES skills(skill_id) ON DELETE CASCADE
         )
     """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_csa_class_id ON class_skill_assignments(class_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_csa_skill_id ON class_skill_assignments(skill_id)")
 
     # Bảng scans
     # monster_id tham chiếu tới bảng monsters(id) hiện có (kiểu TEXT)
