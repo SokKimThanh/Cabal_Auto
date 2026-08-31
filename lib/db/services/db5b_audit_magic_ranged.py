@@ -8,9 +8,10 @@ import hashlib
 SOURCE_FILE = "lib/data/bm2-bm3-detail-skill-db-cabal.txt"
 TARGET_SLUGS = {"wizard", "force-archer", "force-gunner", "dark-mage"}
 
-def run_audit():
-    with open(SOURCE_FILE, "r", encoding="utf-8") as f:
-        content = f.read()
+def run_audit(content=None):
+    if content is None:
+        with open(SOURCE_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
 
     lines = content.split('\n')
     current_slug = None
@@ -42,69 +43,48 @@ def run_audit():
         skills = {}
         rej = []
 
+        # Robust parsing using multi-line JSON-like extraction rather than brittle counting
         # 1. Parse Passive Skills
-        passives_match = re.search(r'recommendedSkillSlugs:\s*\[(.*?)\]', section)
+        passives_match = re.search(r'recommendedSkillSlugs:\s*\[(.*?)\]', section, re.DOTALL)
         if passives_match:
             for skill in re.findall(r'"([^"]+)"', passives_match.group(1)):
                 skills[skill] = {"category": "passive", "confidence": "HIGH"}
 
         # 2. Parse Featured Skills (BM2, BM3, Buffs)
-        # Find the entire featuredSkillSections block
         featured_start = section.find('featuredSkillSections:')
         if featured_start != -1:
-            # Simple balancing to find the end of the array
-            bracket_count = 0
-            in_array = False
-            end_idx = -1
-            for i in range(featured_start, len(section)):
-                if section[i] == '[':
-                    bracket_count += 1
-                    in_array = True
-                elif section[i] == ']':
-                    bracket_count -= 1
-                    if in_array and bracket_count == 0:
-                        end_idx = i + 1
-                        break
+            # We look for the start of the next top-level block to bound our search
+            # Top-level properties in this JS object are indented with 12 spaces.
+            next_block = re.search(r'\n {12}\w+:', section[featured_start+22:])
+            end_idx = featured_start + 22 + next_block.start() if next_block else len(section)
+            featured_content = section[featured_start:end_idx]
 
-            if end_idx != -1:
-                featured_content = section[featured_start:end_idx]
-
-                # Split into individual objects inside the array
-                # A very basic approach is to find all 'id:' and 'skillSlugs:' pairs
-                ids = re.findall(r'id:\s*"([^"]+)"', featured_content)
-                slug_lists = re.findall(r'skillSlugs:\s*\[(.*?)\]', featured_content)
-
-                for i in range(min(len(ids), len(slug_lists))):
-                    cat_id = ids[i]
-                    slugs_str = slug_lists[i]
-                    category = "bm2" if "battle-mode-2" in cat_id else ("bm3" if "battle-mode-3" in cat_id else "buff")
-
-                    for skill in re.findall(r'"([^"]+)"', slugs_str):
-                        normalized = re.sub(r'-\d+$', '', skill)
+            blocks = re.findall(r'id:\s*"([^"]+)"[^{}]*?skillSlugs:\s*\[([^\]]*)\]', featured_content, re.DOTALL)
+            for cat_id, slugs_str in blocks:
+                category = "bm2" if "battle-mode-2" in cat_id else ("bm3" if "battle-mode-3" in cat_id else "buff")
+                for skill in re.findall(r'"([^"]+)"', slugs_str):
+                    normalized = re.sub(r'-\d+$', '', skill)
+                    if normalized != skill:
+                        skills[normalized] = {"category": category, "confidence": "AMBIGUOUS"}
+                        rej.append({"original": skill, "normalized": normalized, "reason": "suffix_stripped"})
+                    else:
                         skills[normalized] = {"category": category, "confidence": "HIGH"}
 
         # 3. Parse Combos (Attacks)
         combo_start = section.find('comboSection:')
         if combo_start != -1:
-            bracket_count = 0
-            in_brace = False
-            end_idx = -1
-            for i in range(combo_start, len(section)):
-                if section[i] == '{':
-                    bracket_count += 1
-                    in_brace = True
-                elif section[i] == '}':
-                    bracket_count -= 1
-                    if in_brace and bracket_count == 0:
-                        end_idx = i + 1
-                        break
+            next_block = re.search(r'\n {12}\w+:', section[combo_start+15:])
+            end_idx = combo_start + 15 + next_block.start() if next_block else len(section)
+            combo_content = section[combo_start:end_idx]
 
-            if end_idx != -1:
-                combo_content = section[combo_start:end_idx]
-                slug_lists = re.findall(r'skillSlugs:\s*\[(.*?)\]', combo_content)
-                for slugs_str in slug_lists:
-                    for skill in re.findall(r'"([^"]+)"', slugs_str):
-                        normalized = re.sub(r'-\d+$', '', skill)
+            slug_lists = re.findall(r'skillSlugs:\s*\[([^\]]*)\]', combo_content, re.DOTALL)
+            for slugs_str in slug_lists:
+                for skill in re.findall(r'"([^"]+)"', slugs_str):
+                    normalized = re.sub(r'-\d+$', '', skill)
+                    if normalized != skill:
+                        skills[normalized] = {"category": "attack", "confidence": "AMBIGUOUS"}
+                        rej.append({"original": skill, "normalized": normalized, "reason": "suffix_stripped"})
+                    else:
                         skills[normalized] = {"category": "attack", "confidence": "HIGH"}
 
         manifest[slug] = skills
