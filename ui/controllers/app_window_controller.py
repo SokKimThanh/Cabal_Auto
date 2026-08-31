@@ -47,6 +47,12 @@ class AppWindowController:
         return results
 
     def on_hunt_refresh_windows(self, *_args) -> None:
+        if getattr(self, '_refresh_locked', False):
+            return
+        self._refresh_locked = True
+        if hasattr(self, 'root') and hasattr(self.root, 'after'):
+            self.root.after(500, lambda: setattr(self, '_refresh_locked', False))
+
         import time
         from lib.system.window_manager import WindowManager
 
@@ -57,8 +63,8 @@ class AppWindowController:
                 wm = WindowManager()
                 info = wm.get_window_info(hwnd)
 
-                # Check if minimized
-                if info and (info.is_minimized or info.rect['left'] <= -32000 or info.rect['top'] <= -32000):
+                # Check if minimized or off-screen
+                if info and (info.is_minimized or info.is_offscreen):
                     import logging
                     logger = logging.getLogger(__name__)
                     logger.info(f"Window {hwnd} is minimized, attempting recovery...")
@@ -76,8 +82,8 @@ class AppWindowController:
 
                         # Re-check bounds
                         new_info = wm.get_window_info(hwnd)
-                        if new_info and not new_info.is_minimized and new_info.rect['left'] > -32000 and new_info.rect['top'] > -32000:
-                            logger.info("Window successfully restored.")
+                        if new_info and not new_info.is_minimized and not new_info.is_offscreen:
+                            logger.info(f"Window successfully restored. New bounds: {new_info.rect}")
                             break
                         logger.warning(f"Restore attempt {attempt+1} failed.")
 

@@ -350,20 +350,20 @@ class AppStateController:
 
             compact = getattr(app, '_bounds_compact_mode', False)
             if not selected_window:
-                text = "[!] Select Window" if compact else app._t("bounds_state_select")
+                text = "[!]" if compact else app._t("bounds_state_select")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             elif is_minimized or (bounds and (bounds[0] <= -32000 or bounds[1] <= -32000)):
-                text = "[!] Cửa sổ bị thu nhỏ" if not compact else "[!]"
+                text = "[!]" if compact else app._t("bounds_state_minimized")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
             elif not bounds:
-                text = "[!] Invalid" if compact else app._t("bounds_state_invalid")
+                text = "[!]" if compact else app._t("bounds_state_invalid")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             else:
                 title = app.hunt_selected.get("title", selected_window) if hasattr(app, "hunt_selected") and isinstance(app.hunt_selected, dict) else selected_window
-                text = f"[✓] Sẵn sàng ({bounds[2]}x{bounds[3]})" if not compact else "[✓]"
+                text = "[✓]" if compact else app._t("bounds_state_ready").format(title=f"{bounds[2]}x{bounds[3]}")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_ACCENT)
 

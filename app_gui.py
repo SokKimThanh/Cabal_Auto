@@ -737,11 +737,7 @@ class App(tk.Tk):
         )
 
         # Refresh button - Using icon_button component
-        refresh_tooltip = (
-            "Refresh Window List\nScans for game windows"
-            if self.lang == "en"
-            else "Làm Mới Danh Sách Cửa Sổ\nQuét lại các cửa sổ game"
-        )
+        refresh_tooltip = self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc") if hasattr(self, "_t") else "Refresh"
 
         self.refresh_btn = _create_icon_btn_component(
             parent=self.action_bar_frame,
@@ -1093,7 +1089,7 @@ class App(tk.Tk):
             self.hunt_stop_btn.set_text(self._t("stop_hunt"))
             self.hunt_stop_btn.set_tooltip(self._t("stop_hunt") + "\n(Ctrl+F6)")
 
-            refresh_tooltip_new = "Refresh Window List\nScans for game windows" if self.lang == "en" else "Làm Mới Danh Sách Cửa Sổ\nQuét lại các cửa sổ game"
+            refresh_tooltip_new = self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
             self.refresh_btn.set_tooltip(refresh_tooltip_new)
         else:
             self.hunt_start_btn.config(text=self._t("start_hunt"))

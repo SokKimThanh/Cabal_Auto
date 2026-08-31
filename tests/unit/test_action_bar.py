@@ -46,6 +46,7 @@ def test_minimize_recovery(app_instance):
 
     class MockInfo:
         is_minimized = True
+        is_offscreen = True
         rect = {'left': -32000, 'top': -32000}
     mock_wm_instance.get_window_info.return_value = MockInfo()
 
@@ -55,6 +56,8 @@ def test_minimize_recovery(app_instance):
         app_instance.window_controller.on_hunt_refresh_windows()
 
     assert mock_wm_instance.restore.call_count == 3
+
+  # Succeeded on first retry
 
 def test_dynamic_i18n(app_instance):
     app_instance.lang_var.set("en")
