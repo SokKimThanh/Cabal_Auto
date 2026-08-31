@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lib.i18n import t as i18n_t, GLOBAL_NS as I18N_GLOBAL
 from lib.ui_style import UIStyle
@@ -52,9 +52,26 @@ class SetupTab(tk.Frame):
                 btn_text_var.set(f"▶ {self._t(title_key)}")
                 content_frame.grid_remove()
 
-        # Make the entire header frame clickable
+        # Make the entire header frame clickable and accessible
         header_frame.bind("<Button-1>", toggle)
-        header_frame.configure(cursor="hand2")
+        header_frame.bind("<Return>", toggle)
+        header_frame.bind("<space>", toggle)
+        header_frame.configure(cursor="hand2", takefocus=1, highlightthickness=1)
+
+        def _on_focus_in(event):
+            try:
+                event.widget.config(highlightbackground=UIStyle.COLOR_PRIMARY, highlightcolor=UIStyle.COLOR_PRIMARY)
+            except Exception:
+                pass
+
+        def _on_focus_out(event):
+            try:
+                event.widget.config(highlightbackground=event.widget.master.cget("bg"), highlightcolor=event.widget.master.cget("bg"))
+            except Exception:
+                pass
+
+        header_frame.bind("<FocusIn>", _on_focus_in)
+        header_frame.bind("<FocusOut>", _on_focus_out)
 
         btn = tk.Label(header_frame, textvariable=btn_text_var, font=UIStyle.FONT_SECTION, fg=UIStyle.COLOR_PRIMARY, cursor="hand2")
         btn.bind("<Button-1>", toggle)
