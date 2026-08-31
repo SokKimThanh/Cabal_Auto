@@ -73,3 +73,37 @@ def test_i18n_registry_integrity():
 
                 # We can also assert it matches what's in the dict, but we just need to ensure it's not the raw key
                 assert resolved != key
+
+
+def test_load_from_db_hydration():
+    """Test that load_from_db correctly hydrates the registry."""
+    import lib.i18n
+    from unittest.mock import patch, MagicMock
+
+    # Create a mock for the TranslationService
+    mock_service = MagicMock()
+    mock_service.get_all.return_value = [
+        {"namespace": "test_ns", "key": "test_key", "lang": "en", "text": "Test English"},
+        {"namespace": "test_ns", "key": "test_key", "lang": "vi", "text": "Test Vietnamese"}
+    ]
+
+    with patch('lib.db.services.translation_service.TranslationService', return_value=mock_service):
+        # Clear registry for this test
+        original_registry = dict(lib.i18n._REGISTRY)
+        lib.i18n._REGISTRY.clear()
+
+        try:
+            lib.i18n.load_from_db()
+
+            # Verify the translations are registered
+            assert "test_ns" in lib.i18n._REGISTRY
+            assert lib.i18n._REGISTRY["test_ns"]["en"]["test_key"] == "Test English"
+            assert lib.i18n._REGISTRY["test_ns"]["vi"]["test_key"] == "Test Vietnamese"
+
+            # Check translation works
+            lib.i18n.set_default_lang('en')
+            assert lib.i18n.t('test_key', ns='test_ns') == "Test English"
+
+        finally:
+            # Restore registry
+            lib.i18n._REGISTRY = original_registry
