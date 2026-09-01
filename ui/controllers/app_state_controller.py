@@ -236,8 +236,32 @@ class AppStateController:
         cfg["bring_to_front_each_cycle"] = bool(
             getattr(getattr(app, "bring_front_var", None), "get", lambda: False)()
         )
+        cfg["skill_slots"] = []
         if hasattr(app, "_collect_skill_slots"):
-            cfg["skill_slots"] = app._collect_skill_slots()
+            collected = app._collect_skill_slots()
+            if isinstance(collected, list):
+                for s in collected:
+                    if isinstance(s, dict):
+                        cfg["skill_slots"].append({
+                            "id": s.get("id", s.get("name", "")),
+                            "key": s.get("key", ""),
+                            "cast_time": float(s.get("cast_time", 0.0)),
+                            "cooldown": float(s.get("cooldown", 0.0)),
+                            "type": s.get("type", "attack"),
+                            "name": s.get("name", "")
+                        })
+
+        cfg["monster_rotation"] = []
+        if hasattr(app, "monster_rotation_list") and isinstance(app.monster_rotation_list, list):
+            for i, m in enumerate(app.monster_rotation_list):
+                if isinstance(m, dict):
+                    cfg["monster_rotation"].append({
+                        "monster_id": m.get("id", m.get("monster_id", 0)),
+                        "name": m.get("name", ""),
+                        "priority": m.get("priority", i + 1),
+                        "dungeon_id": m.get("dungeon_id", None)
+                    })
+
         cfg.setdefault("templates", [])
         return cfg
 
@@ -468,29 +492,18 @@ class AppStateController:
         return best_box, best_info
 
     def _prepare_skill_runtime(self, cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
-        app = self.root
-        _ = app
         runtime: List[Dict[str, Any]] = []
-        skills_by_name = {
-            skill.get("name"): skill
-            for skill in getattr(app, "skills", [])
-            if isinstance(skill, dict) and skill.get("name")
-        }
         for slot in cfg.get("skill_slots", []) or []:
             if not isinstance(slot, dict):
                 continue
-            base = skills_by_name.get(slot.get("name"), {})
             runtime.append(
                 {
-                    "name": slot.get("name") or base.get("name") or "",
-                    "key": slot.get("key") or base.get("key") or "",
-                    "type": slot.get("type") or base.get("type") or "attack",
-                    "cooldown": float(
-                        slot.get("cooldown") or base.get("cooldown") or 0.0
-                    ),
-                    "cast_time": float(
-                        slot.get("cast_time") or base.get("cast_time") or 0.0
-                    ),
+                    "id": slot.get("id", slot.get("name", "")),
+                    "name": slot.get("name", ""),
+                    "key": slot.get("key", ""),
+                    "type": slot.get("type", "attack"),
+                    "cooldown": float(slot.get("cooldown", 0.0)),
+                    "cast_time": float(slot.get("cast_time", 0.0)),
                     "_last_cast": 0.0,
                 }
             )
