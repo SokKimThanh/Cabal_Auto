@@ -20,10 +20,12 @@ def seed_window_translations():
     if conn:
         try:
             conn.commit()
+        except Exception as e:
+            print(f"Failed to commit window validation translations: {e}")
+            raise
+        finally:
             if is_local:
                 conn.close()
-        except:
-            pass
 
     print("Window validation translations seeded successfully.")
 
