@@ -46,6 +46,39 @@ class AppWindowController:
         )
         return results
 
+    def _retry_resolve_bounds(self, hwnd, attempt):
+        from lib.system.window_manager import WindowManager
+        import logging
+        logger = logging.getLogger(__name__)
+
+        wm = WindowManager()
+        wm.restore(hwnd)
+        try:
+            import win32gui
+            win32gui.SetForegroundWindow(hwnd)
+        except Exception:
+            pass
+
+        # Re-check bounds immediately after request (with small implicit delay by execution time)
+        # But properly we should check again on the next tick, however the prompt allows
+        # checking immediately in the callback or scheduling it. Let's just check now.
+        new_info = wm.get_window_info(hwnd)
+        if new_info and not new_info.is_minimized and not new_info.is_offscreen:
+            logger.info(f"Window successfully restored. New bounds: {new_info.rect}")
+            self.root.bounds_recovery_failed = False
+            self.on_hunt_find_windows()
+            return
+
+        logger.warning(f"Restore attempt {attempt+1} failed.")
+
+        if attempt < 2:
+            self.root.after(300, self._retry_resolve_bounds, hwnd, attempt + 1)
+        else:
+            logger.error("All restore attempts failed.")
+            self.root.bounds_recovery_failed = True
+            if hasattr(self.root, "state_controller") and hasattr(self.root.state_controller, "_update_window_bounds_display"):
+                self.root.state_controller._update_window_bounds_display()
+
     def on_hunt_refresh_windows(self, *_args) -> None:
         if getattr(self, '_refresh_locked', False):
             return
@@ -53,7 +86,6 @@ class AppWindowController:
         if hasattr(self, 'root') and hasattr(self.root, 'after'):
             self.root.after(500, lambda: setattr(self, '_refresh_locked', False))
 
-        import time
         from lib.system.window_manager import WindowManager
 
         selected = getattr(self.root, "hunt_selected", None)
@@ -68,26 +100,11 @@ class AppWindowController:
                     import logging
                     logger = logging.getLogger(__name__)
                     logger.info(f"Window {hwnd} is minimized, attempting recovery...")
-
-                    # Try up to 3 times to restore the window
-                    for attempt in range(3):
-                        wm.restore(hwnd)
-                        try:
-                            import win32gui
-                            win32gui.SetForegroundWindow(hwnd)
-                        except Exception:
-                            pass
-
-                        time.sleep(0.3)  # Wait 300ms
-
-                        # Re-check bounds
-                        new_info = wm.get_window_info(hwnd)
-                        if new_info and not new_info.is_minimized and not new_info.is_offscreen:
-                            logger.info(f"Window successfully restored. New bounds: {new_info.rect}")
-                            break
-                        logger.warning(f"Restore attempt {attempt+1} failed.")
+                    self.root.after(300, self._retry_resolve_bounds, hwnd, 0)
+                    return
 
         # Finally re-scan windows to update bounds in UI
+        self.root.bounds_recovery_failed = False
         self.on_hunt_find_windows()
 
     def on_hunt_find_windows(self, _evt=None) -> None:
@@ -102,6 +119,13 @@ class AppWindowController:
             return
 
         self.root.win_items = items
+
+        # Build dictionary mapping hwnd to display names
+        if not hasattr(self.root, "win_items_map"):
+            self.root.win_items_map = {}
+        for item in items:
+            self.root.win_items_map[item.get("hwnd")] = item.get("title")
+
         values = [item["title"] for item in items]
         if hasattr(self.root, "win_combo"):
             self.root.win_combo["values"] = values
