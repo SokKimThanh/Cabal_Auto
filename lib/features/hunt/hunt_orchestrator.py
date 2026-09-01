@@ -7,6 +7,8 @@ from typing import Callable, Dict, Any
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.win_input import tap
 from lib.features.skills.skill_stats import SkillStats
+from lib.vision.target_name_reader import TargetNameReader
+from database import find_monster_by_name_api
 
 
 class HuntOrchestrator:
@@ -23,8 +25,12 @@ class HuntOrchestrator:
         iconify_app: Callable[[], None],
         update_skill_stats_display: Callable[[dict], None],
         get_hunt_selected: Callable[[], Dict[str, Any]],
-        schedule_ui_task: Callable[[Callable], None]
+        schedule_ui_task: Callable[[Callable], None],
+        clear_target_ui: Callable[[], None] = None,
+        set_target_info: Callable[[str], None] = None
     ):
+        self.clear_target_ui = clear_target_ui
+        self.set_target_info = set_target_info
         self.on_status_update = on_status_update
         self.on_state_change = on_state_change
         self.locate_target = locate_target
@@ -52,8 +58,13 @@ class HuntOrchestrator:
         def worker():
 
             target_bar_detector = TargetBarDetector()
+            target_name_reader = TargetNameReader()
             consecutive_false_readings = 0
             logger = get_hunt_logger()
+
+            cached_target_id = None
+            cached_target_name = None
+            last_ocr_time = 0.0
             try:
                 # Focus the target window; minimize GUI only if focus succeeded
                 try:
@@ -147,7 +158,7 @@ class HuntOrchestrator:
 
                             frame = self.bot_manager.screen_capture.get_latest_frame()
                             if frame is not None:
-                                frame = frame.copy() # return a copy to readers
+                                frame = frame.copy()  # return a copy to readers
                     except Exception as e:
                         logger.log_error("vision_capture", f"Failed to capture frame: {e}")
 
@@ -156,6 +167,27 @@ class HuntOrchestrator:
                         is_alive = target_bar_detector.is_target_alive(frame)
 
                         if is_alive:
+                            if not have_target or (now - last_ocr_time) > 2.0:
+                                last_ocr_time = now
+                                name_str = target_name_reader.read_name(frame)
+                                if name_str:
+                                    monster = find_monster_by_name_api(name_str, None)
+                                    if not monster:
+                                        monster = {"id": 0, "name": name_str, "hp": None}
+
+                                    if cached_target_id != monster["id"] or cached_target_name != monster.get("name"):
+                                        cached_target_id = monster["id"]
+                                        cached_target_name = monster.get("name")
+                                        m_id = monster.get("id", 0)
+                                        m_name = monster.get("name", "Unknown")
+                                        m_hp = monster.get("hp", "Unknown")
+                                        fmt = f"[ID: #{m_id}] {m_name} (HP: {m_hp})"
+
+                                        if getattr(self, 'set_target_info', None):
+                                            self.schedule_ui_task(
+                                                lambda text=fmt: self.set_target_info(text)
+                                            )
+
                             have_target = True
                             last_seen = now
                             consecutive_false_readings = 0
@@ -163,10 +195,18 @@ class HuntOrchestrator:
                             consecutive_false_readings += 1
                             if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
                                 have_target = False
+                                cached_target_id = None
+                                cached_target_name = None
+                                if getattr(self, 'clear_target_ui', None):
+                                    self.schedule_ui_task(self.clear_target_ui)
                     else:
                         consecutive_false_readings += 1
                         if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
                             have_target = False
+                            cached_target_id = None
+                            cached_target_name = None
+                            if getattr(self, 'clear_target_ui', None):
+                                self.schedule_ui_task(self.clear_target_ui)
 
                     if (
                         skill_stats

@@ -511,6 +511,46 @@ class MonsterDatabase:
             print(f"[DB] Lỗi xóa monster: {e}")
             return False
 
+    def find_monster_by_name(self, name_str: str, dungeon_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        if not name_str:
+            return None
+
+        cursor = self.conn.cursor()
+
+        # 1. Exact match
+        cursor.execute("SELECT id, name, level, hp, defense FROM monsters WHERE name = ?", (name_str,))
+        rows = cursor.fetchall()
+
+        if rows:
+            if len(rows) > 1:
+                if dungeon_id:
+                    cursor.execute("SELECT id, name, level, hp, defense FROM monsters WHERE name = ? AND dungeonId = ?", (name_str, dungeon_id))
+                    filtered_rows = cursor.fetchall()
+                    if filtered_rows:
+                        rows = filtered_rows
+                if len(rows) > 1:
+                    rows = sorted(rows, key=lambda x: str(x['id']))
+            return dict(rows[0])
+
+        # 2. Fuzzy match fallback
+        escaped_name = name_str.replace('%', '\\%').replace('_', '\\_')
+        like_pattern = f"%{escaped_name}%"
+
+        cursor.execute(
+            "SELECT id, name, level, hp, defense FROM monsters WHERE name LIKE ? ESCAPE '\\'",
+            (like_pattern,)
+        )
+        rows = cursor.fetchall()
+
+        if rows:
+            rows_dicts = [dict(r) for r in rows]
+            if len(rows_dicts) > 1:
+                # Closest-length heuristic
+                rows_dicts.sort(key=lambda x: abs(len(x['name']) - len(name_str)))
+            return rows_dicts[0]
+
+        return None
+
 
 _db_instance: Optional[MonsterDatabase] = None
 
@@ -549,6 +589,10 @@ def get_all_monsters_api(limit: int = 100) -> List[Dict[str, Any]]:
 
 def get_monster_by_id_api(monster_id: str) -> Optional[Dict[str, Any]]:
     return get_db().get_monster_by_id(monster_id)
+
+
+def find_monster_by_name_api(name_str: str, dungeon_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    return get_db().find_monster_by_name(name_str, dungeon_id)
 
 
 def search_monsters_api(keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
