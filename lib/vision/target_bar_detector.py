@@ -88,7 +88,7 @@ class TargetBarDetector:
         # If the frame is smaller or larger than the default/detected client size,
         # it means the frame dimensions should be trusted over the static fallback bounds
         if frame.shape[1] != w or frame.shape[0] != h:
-             h, w = frame.shape[:2]
+            h, w = frame.shape[:2]
 
         top, bottom, left, right = self._get_roi_coords(h, w)
 
