@@ -1,18 +1,18 @@
 {
-    "click": {
-        "x": 707,
-        "y": 990,
-        "interval_sec": 2.0
-    },
-    "hotkeys": {
-        "note": "Legacy hotkeys removed. Use global_hotkeys in hunt_config.json"
-    },
-    "safety": {
-        "failsafe": true,
-        "pause_key": "f7"
-    },
-    "ui": {
-        "topmost": true,
-        "language": "vi"
-    }
+  "click": {
+    "x": 707,
+    "y": 990,
+    "interval_sec": 2.0
+  },
+  "hotkeys": {
+    "note": "Legacy hotkeys removed. Use global_hotkeys in hunt_config.json"
+  },
+  "safety": {
+    "failsafe": true,
+    "pause_key": "f7"
+  },
+  "ui": {
+    "topmost": true,
+    "language": "vi"
+  }
 }
