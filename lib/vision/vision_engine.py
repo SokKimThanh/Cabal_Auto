@@ -466,7 +466,7 @@ class VisionEngine:
         )
 
         if lower_hsv is not None and upper_hsv is not None:
-            # Chế độ dải tùy biến: Tắt bộ lọc loại trừ đỏ mặc định để không can thiệp dải màu caller chỉ định
+            # Custom range mode: Disable the default red exclusion filter so it does not interfere with the caller-specified color range
             apply_red_filter = False
             lower_b, upper_b = np.array(lower_hsv, dtype=np.uint8), np.array(
                 upper_hsv, dtype=np.uint8
