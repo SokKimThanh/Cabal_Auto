@@ -247,11 +247,15 @@ class AppWindowController:
             if hasattr(self.root, "win_combo"):
                 self.root.win_combo["values"] = [item["title"] for item in items]
 
-            # Find the first valid item
-            from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+            # Find the first candidate using already-fetched window metadata.
+            # _list_windows() has already filtered to visible Cabal windows, so avoid
+            # re-validating every item with a helper that re-queries system window info.
             valid_index = -1
             for i, item in enumerate(items):
-                if validate_selected_cabal_window(item, items).is_valid:
+                if (
+                    str(item.get("proc", "")).lower() == "cabal.exe"
+                    and not bool(item.get("is_minimized"))
+                ):
                     valid_index = i
                     break
 
