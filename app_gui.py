@@ -564,6 +564,9 @@ class App(tk.Tk):
         self.bind("<Alt-Key-1>", lambda e: self.switch_view('hunt'))  # Alt+1: Hunt tab
         self.bind("<Alt-Key-2>", lambda e: self.switch_view('setup'))  # Alt+2: Setup tab
 
+        # Responsive layout bindings
+        self.bind("<Configure>", self._on_window_configure)
+
         self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
@@ -1001,7 +1004,14 @@ class App(tk.Tk):
 
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
-        pass  # We will use Configure event for this
+        self.update_idletasks()
+        current_height = self.winfo_height()
+        if current_height < 900:
+            self._last_height_under_900 = True
+            if getattr(self, "logs_expanded", False):
+                self._toggle_bottom_logs()
+        else:
+            self._last_height_under_900 = False
 
     def _update_logs_metrics(self):
         """Update metrics on the bottom logs header."""
