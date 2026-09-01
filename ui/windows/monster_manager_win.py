@@ -540,24 +540,32 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
             icon_name="capture",
             text="Capture",
             padding={"padx": 12, "pady": 6},
+            tooltip_key="tooltip_capture",
+            tooltip_ns="monster_editor",
         )
         self.browse_button = create_icon_button(
             self.templates_tab,
             icon_name="browse",
             text="Browse",
             padding={"padx": 12, "pady": 6},
+            tooltip_key="btn_browse",
+            tooltip_ns="monster_editor",
         )
         self.delete_template_button = create_delete_button(
             self.templates_tab,
             command=lambda: None,
             text="Delete",
             padding={"padx": 12, "pady": 6},
+            tooltip_key="btn_delete_template",
+            tooltip_ns="monster_editor",
         )
         self.test_template_button = create_icon_button(
             self.templates_tab,
             icon_name="test",
             text="Test",
             padding={"padx": 12, "pady": 6},
+            tooltip_key="tooltip_test",
+            tooltip_ns="monster_editor",
         )
         self.threshold_scale = tk.Scale(
             self.templates_tab, from_=0.0, to=1.0, resolution=0.01, orient="horizontal"
