@@ -367,12 +367,19 @@ class ScreenCapture:
     def _reallocate_buffer(self, width: int, height: int):
         """Reallocate GDI bitmap for new dimensions"""
         try:
-            if self._saveBitMap:
-                win32gui.DeleteObject(self._saveBitMap.GetHandle())
+            if self._mfcDC is None or self._saveDC is None:
+                raise RuntimeError("GDI objects not initialized")
 
-            self._saveBitMap = win32ui.CreateBitmap()
-            self._saveBitMap.CreateCompatibleBitmap(self._mfcDC, width, height)
-            self._saveDC.SelectObject(self._saveBitMap)
+            old_bitmap = self._saveBitMap
+
+            new_bitmap = win32ui.CreateBitmap()
+            new_bitmap.CreateCompatibleBitmap(self._mfcDC, width, height)
+            self._saveDC.SelectObject(new_bitmap)
+            self._saveBitMap = new_bitmap
+
+            if old_bitmap:
+                win32gui.DeleteObject(old_bitmap.GetHandle())
+
             logger.debug(f"Reallocated GDI buffer to {width}x{height}")
         except Exception as e:
             logger.error(f"Buffer reallocation failed: {e}")
