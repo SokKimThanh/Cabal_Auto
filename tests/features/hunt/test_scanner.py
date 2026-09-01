@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock
 from lib.features.hunt.scanner import AutoScanner
 
