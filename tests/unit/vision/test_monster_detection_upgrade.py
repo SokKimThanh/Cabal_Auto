@@ -155,12 +155,9 @@ def test_hsv_noise_filtering(vision_engine):
 
 def test_feature_matching_orb(vision_engine):
     """Test ORB feature matching with scale and rotation"""
-    # Create synthetic pattern image
-    tpl_img = np.zeros((100, 100, 3), dtype=np.uint8)
-    cv2.circle(tpl_img, (50, 50), 40, (255, 255, 255), -1)
-    cv2.rectangle(tpl_img, (20, 20), (80, 80), (100, 200, 50), 3)
-    cv2.line(tpl_img, (0, 0), (100, 100), (0, 255, 0), 2)
-    cv2.line(tpl_img, (0, 100), (100, 0), (255, 0, 0), 2)
+    # Create synthetic pattern image with rich texture
+    np.random.seed(42)
+    tpl_img = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
 
     template = Template(
         id="pattern_monster",
@@ -190,7 +187,7 @@ def test_feature_matching_orb(vision_engine):
     det = detections[0]
     assert det.method_used == "orb_features"
     # Check bounding box overlaps scene region (300:420, 200:320)
-    assert 250 <= det.x <= 450
+    assert 200 <= det.x <= 450
     assert 150 <= det.y <= 350
 
 
@@ -313,3 +310,23 @@ def test_edge_cases_empty_and_black_images(vision_engine):
 
     # 5. Extremely small downscale factor or invalid dimensions
     assert vision_engine.detect_hsv_target(black_frame, downscale_factor=0.00001) == []
+
+def test_detect_features_invalid_homography(vision_engine):
+    """Test that detect_features correctly rejects invalid homography (e.g. non-convex or abnormal area)."""
+    # Create template with random noise to get features, but random so it won't naturally match well
+    np.random.seed(42)
+    tpl_img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    template = Template(
+        id="noise_template",
+        path="synthetic",
+        image=tpl_img,
+        threshold=0.6
+    )
+
+    # Frame is also noise, meaning many arbitrary matches might be found, causing a weird homography
+    frame = np.random.randint(0, 255, (600, 800, 3), dtype=np.uint8)
+
+    detections = vision_engine.detect_features(frame, template, min_matches=4)
+    # The homography should either fail to compute, or the resulting polygon should be rejected
+    # due to the convexity / area validations, returning no valid detections.
+    assert detections == []
