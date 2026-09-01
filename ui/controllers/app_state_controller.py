@@ -353,6 +353,10 @@ class AppStateController:
                 text = "[!]" if compact else app._t("bounds_state_select")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
+            elif getattr(app, "bounds_recovery_failed", False):
+                text = "[!]" if compact else app._t("bounds_state_failed")
+                app.bounds_status_var.set(text)
+                app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
             elif is_minimized or (bounds and (bounds[0] <= -32000 or bounds[1] <= -32000)):
                 text = "[!]" if compact else app._t("bounds_state_minimized")
                 app.bounds_status_var.set(text)

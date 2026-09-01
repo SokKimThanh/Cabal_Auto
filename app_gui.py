@@ -775,10 +775,10 @@ class App(tk.Tk):
 
 
 
-        # Start Hunt Button
-        start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5)"
+        # Unified Start/Stop Button (width 140px minimum layout space available, so we use min width via grid and padding)
+        start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
 
-        self.hunt_start_btn = _create_icon_btn_component(
+        self.start_stop_btn = _create_icon_btn_component(
             parent=self.action_bar_frame,
             icon_name="start",
             icon_fallback="▶️",
@@ -786,32 +786,16 @@ class App(tk.Tk):
             icon_size=20,
             button_size=44,
             padding={'padx': 20, 'pady': 6},
-            command=self.on_hunt_start,
+            command=self.on_start_stop_clicked,
             button_type="green",
             tooltip_text=start_tooltip,
             state="normal",
             auto_hover_disabled=False,
+            width=140
         )
-        self.hunt_start_btn.grid(row=0, column=3, sticky="w", padx=(0, 12))
 
-        # Stop Hunt Button
-        stop_tooltip = self._t("stop_hunt") + "\n(Ctrl+F6)"
-
-        self.hunt_stop_btn = _create_icon_btn_component(
-            parent=self.action_bar_frame,
-            icon_name="stop",
-            icon_fallback="⏹️",
-            text=self._t("stop_hunt"),
-            icon_size=20,
-            button_size=44,
-            padding={'padx': 20, 'pady': 6},
-            command=self.on_hunt_stop,
-            button_type="red",
-            tooltip_text=stop_tooltip,
-            state="disabled",
-            auto_hover_disabled=True,
-        )
-        self.hunt_stop_btn.grid(row=0, column=4, sticky="w")
+        # Grid it into columns 3 and 4 merged, or just use 3 since we redefined it
+        self.start_stop_btn.grid(row=0, column=3, sticky="w", padx=(0, 12))
 
         # Language Selector (moved from header)
         self.lang_var = tk.StringVar(value=self.lang)
@@ -1071,6 +1055,11 @@ class App(tk.Tk):
                 )
 
     def on_language_change(self, _evt=None):
+        # Save selection based on hwnd to prevent loss on language change
+        saved_hwnd = None
+        if getattr(self, "hunt_selected", None) and isinstance(self.hunt_selected, dict):
+            saved_hwnd = self.hunt_selected.get("hwnd")
+
         self.lang = self.lang_var.get()
         self.cfg.setdefault("ui", {})
         self.cfg["ui"]["language"] = self.lang
@@ -1086,21 +1075,28 @@ class App(tk.Tk):
         self.title(self._t("app_title"))
         self.refresh_translations()
 
+        # Re-apply window selection robustly by hwnd
+        if saved_hwnd and hasattr(self, "win_items_map"):
+            new_title = self.win_items_map.get(saved_hwnd)
+            if new_title and hasattr(self, "win_items"):
+                for idx, item in enumerate(self.win_items):
+                    if item.get("hwnd") == saved_hwnd:
+                        if hasattr(self, "win_combo"):
+                            self.win_combo.current(idx)
+                        if hasattr(self, "win_combo_var"):
+                            self.win_combo_var.set(new_title)
+                        self.window_controller.on_window_combo_selected()
+                        break
+
     def refresh_translations(self):
         # Dynamically update text on widgets without rebuilding
         # _create_icon_btn_component returns a wrapper with set_text/set_tooltip if it's our custom component
         # But if it returns standard button, we config directly.
-        if hasattr(self.hunt_start_btn, "set_text"):
-            self.hunt_start_btn.set_text(self._t("start_hunt"))
-            self.hunt_start_btn.set_tooltip(self._t("start_hunt") + "\n(Ctrl+F5)")
-            self.hunt_stop_btn.set_text(self._t("stop_hunt"))
-            self.hunt_stop_btn.set_tooltip(self._t("stop_hunt") + "\n(Ctrl+F6)")
+        self._refresh_start_stop_visual()
 
+        if hasattr(self.refresh_btn, "set_tooltip"):
             refresh_tooltip_new = self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
             self.refresh_btn.set_tooltip(refresh_tooltip_new)
-        else:
-            self.hunt_start_btn.config(text=self._t("start_hunt"))
-            self.hunt_stop_btn.config(text=self._t("stop_hunt"))
 
         # Update combo tooltip
         try:
@@ -1347,25 +1343,65 @@ class App(tk.Tk):
             except Exception:
                 pass
 
+    def _refresh_start_stop_visual(self):
+        is_running = hasattr(self, "hunt_orchestrator") and getattr(self.hunt_orchestrator, "hunt_running", False)
+
+        if is_running:
+            text = self._t("stop_hunt")
+            tooltip = self._t("stop_hunt") + "\n(Ctrl+F6)"
+            bg_color = UI.BTN_STOP_BG
+        else:
+            text = self._t("start_hunt")
+            tooltip = self._t("start_hunt") + "\n(Ctrl+F5)"
+            bg_color = UI.BTN_START_BG
+
+        if hasattr(self.start_stop_btn, "set_text"):
+            self.start_stop_btn.set_text(text)
+            self.start_stop_btn.set_tooltip(tooltip)
+            # Custom component coloring would rely on button_type typically,
+            # but we can fallback to config if needed. We assume custom wrapper might support bg configure.
+            try:
+                self.start_stop_btn.config(bg=bg_color)
+            except Exception:
+                pass
+        else:
+            self.start_stop_btn.config(text=text, bg=bg_color)
+
+    def on_start_stop_clicked(self):
+        if getattr(self, "_action_locked", False):
+            return
+
+        self._action_locked = True
+
+        # Debounce: Disable button while state transition resolves
+        if hasattr(self.start_stop_btn, "configure"):
+            self.start_stop_btn.configure(state="disabled")
+        elif hasattr(self.start_stop_btn, "config"):
+            self.start_stop_btn.config(state="disabled")
+
+        is_running = hasattr(self, "hunt_orchestrator") and getattr(self.hunt_orchestrator, "hunt_running", False)
+        if is_running:
+            self._request_stop_hunt()
+        else:
+            self._request_start_hunt()
+
+        self.after(500, self._reenable_start_stop_btn)
+
+    def _reenable_start_stop_btn(self):
+        self._action_locked = False
+        if hasattr(self.start_stop_btn, "configure"):
+            self.start_stop_btn.configure(state="normal")
+        elif hasattr(self.start_stop_btn, "config"):
+            self.start_stop_btn.config(state="normal")
+        self._refresh_start_stop_visual()
+
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
-            self.hunt_start_btn.config(
-                state="disabled", bg=UI.BTN_DISABLED_BG, relief="sunken", cursor="arrow"
-            )
-            self.hunt_stop_btn.config(
-                state="normal", bg=UI.BTN_DANGER_BG, relief="raised", cursor="hand2"
-            )
             if hasattr(self, "hunt_status"):
                 self.hunt_status.set(self._t("hunt_running"))
             if hasattr(self, "tab_hunt") and hasattr(self.tab_hunt, "update_hunt_status_color"):
                 self.tab_hunt.update_hunt_status_color("running")
         elif state in ["idle", "error", "stopped"]:
-            self.hunt_start_btn.config(
-                state="normal", bg=UI.BTN_ACCENT_BG, relief="raised", cursor="hand2"
-            )
-            self.hunt_stop_btn.config(
-                state="disabled", bg=UI.BTN_DISABLED_BG, relief="sunken", cursor="arrow"
-            )
             if state == "idle" and hasattr(self, "hunt_status"):
                 self.hunt_status.set(
                     self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
@@ -1373,16 +1409,10 @@ class App(tk.Tk):
             if hasattr(self, "tab_hunt") and hasattr(self.tab_hunt, "update_hunt_status_color"):
                 self.tab_hunt.update_hunt_status_color(state)
 
-    def on_hunt_start(self):
-        # Debounce lock
-        if getattr(self, "_action_locked", False):
-            return
+        self._refresh_start_stop_visual()
 
-        self._action_locked = True
-        self.hunt_start_btn.configure(state="disabled")
-        self.after(500, lambda: [setattr(self, "_action_locked", False), self.hunt_start_btn.configure(state="normal") if not (hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running) else None])
-
-        if hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running:
+    def _request_start_hunt(self):
+        if hasattr(self, "hunt_orchestrator") and getattr(self.hunt_orchestrator, "hunt_running", False):
             return
 
         validation_error = self.state_controller._validate_hunt_prerequisites()
@@ -1402,14 +1432,7 @@ class App(tk.Tk):
 
         self.hunt_orchestrator.start_hunt(self.hunt_cfg)
 
-    def on_hunt_stop(self):
-        if getattr(self, "_action_locked", False):
-            return
-
-        self._action_locked = True
-        self.hunt_stop_btn.configure(state="disabled")
-        self.after(500, lambda: [setattr(self, "_action_locked", False), self.hunt_stop_btn.configure(state="normal") if (hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running) else None])
-
+    def _request_stop_hunt(self):
         if hasattr(self, "hunt_orchestrator"):
             self.hunt_orchestrator.stop_hunt()
 
