@@ -180,7 +180,7 @@ class HuntOrchestrator:
                                         cached_target_name = monster.get("name")
                                         m_id = monster.get("id", 0)
                                         m_name = monster.get("name", "Unknown")
-                                        m_hp = monster.get("hp", "Unknown")
+                                        m_hp = monster.get("hp") or "Unknown"
                                         fmt = f"[ID: #{m_id}] {m_name} (HP: {m_hp})"
 
                                         if getattr(self, 'set_target_info', None):
