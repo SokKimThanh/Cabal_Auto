@@ -163,6 +163,10 @@ class HuntOrchestrator:
                             consecutive_false_readings += 1
                             if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
                                 have_target = False
+                    else:
+                        consecutive_false_readings += 1
+                        if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
+                            have_target = False
 
                     if (
                         skill_stats
