@@ -80,13 +80,14 @@ class TargetBarDetector:
         if frame is None or not isinstance(frame, np.ndarray) or frame.size == 0 or len(frame.shape) < 2:
             return None
 
-        # Using the actual client size if available to compute ROI
-        # This addresses the edge case where the frame includes OS window borders
-        # and we need strictly the inner client dimensions.
+        # Prefer the detected client size when it matches the captured frame,
+        # but fall back to the actual frame dimensions when they differ.
+        # This does not crop OS window borders or apply client-area offsets;
+        # ROI coordinates are always computed relative to the frame provided.
         w, h = self._get_client_size()
 
-        # If the frame is smaller or larger than the default/detected client size,
-        # it means the frame dimensions should be trusted over the static fallback bounds
+        # If the frame size differs from the detected/fallback client size,
+        # trust the frame dimensions for ROI computation.
         if frame.shape[1] != w or frame.shape[0] != h:
             h, w = frame.shape[:2]
 
