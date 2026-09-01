@@ -104,25 +104,32 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
 
     # Start hunt
     orchestrator.start_hunt(cfg)
-    # Wait for the thread to finish
-    orchestrator.hunt_thread.join(timeout=2.0)
+    try:
+        # Wait for the thread to finish
+        orchestrator.hunt_thread.join(timeout=2.0)
+        assert not orchestrator.hunt_thread.is_alive(), (
+            "Hunt thread should terminate within the join timeout"
+        )
 
-    # Verify mock_tap was called during search mode (before target found)
-    assert mock_tap.called, "Tap should be called during search mode"
+        # Verify mock_tap was called during search mode (before target found)
+        assert mock_tap.called, "Tap should be called during search mode"
 
-    # mock_tap might be called in try_cast_skills in a real run, but try_cast_skills is mocked.
-    # We want to ensure tap was only called with 'z' when in search mode.
-    # In our sequence:
-    # 1. starts in search, taps 'z' until seq_idx=0 (True) triggers attack mode.
-    # 2. Enters attack mode. 'tap' should NOT be called inside the attack loop.
-    # 3. Drops to search mode after 3 Falses (seq_idx=5).
-    # Since we set hunt_running to False after seq_idx=5, the thread exits.
+        # mock_tap might be called in try_cast_skills in a real run, but try_cast_skills is mocked.
+        # We want to ensure tap was only called with 'z' when in search mode.
+        # In our sequence:
+        # 1. starts in search, taps 'z' until seq_idx=0 (True) triggers attack mode.
+        # 2. Enters attack mode. 'tap' should NOT be called inside the attack loop.
+        # 3. Drops to search mode after 3 Falses (seq_idx=5).
+        # Since we set hunt_running to False after seq_idx=5, the thread exits.
 
-    # Count taps
-    tap_calls = mock_tap.call_args_list
-    # All tap calls should be with 'z' (or the configured target key)
-    for call in tap_calls:
-        assert call[0][0] == 'z'
+        # Count taps
+        tap_calls = mock_tap.call_args_list
+        # All tap calls should be with 'z' (or the configured target key)
+        for call in tap_calls:
+            assert call[0][0] == 'z'
 
-    # Ensure try_cast_skills was called during attack phase
-    assert orchestrator.try_cast_skills.called
+        # Ensure try_cast_skills was called during attack phase
+        assert orchestrator.try_cast_skills.called
+    finally:
+        if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
+            orchestrator.stop_hunt()
