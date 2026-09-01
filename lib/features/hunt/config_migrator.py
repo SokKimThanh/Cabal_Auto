@@ -20,7 +20,7 @@ def _safe_int(value: Any, default: int = 0) -> int:
 
 def _migrate_monster_rotation(data: Dict[str, Any]) -> None:
     """Migrate legacy 'monsters' array and normalize 'monster_rotation'."""
-    if "monster_rotation" not in data:
+    if "monster_rotation" not in data or not isinstance(data["monster_rotation"], list):
         data["monster_rotation"] = []
 
     # Check for legacy monster fields
