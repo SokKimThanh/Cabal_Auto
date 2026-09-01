@@ -72,16 +72,20 @@ def test_batch_insert_rate_limit(app):
     for i in range(200):
         logger.logger.info(f"Test log {i}")
 
-    app._poll_log_queue()
-    app.update_idletasks()
-    app.update()
-    # It should have processed exactly 50 lines this tick
-    # 50 lines + 1 empty line
+    # Prevent scheduled polling from running again during the test so that
+    # this assertion only reflects the single manual poll below.
+    original_after = app.after
+    app.after = MagicMock(return_value=None)
+    try:
+        app._poll_log_queue()
+        app.update_idletasks()
+    finally:
+        app.after = original_after
+
+    # One poll tick should process a single batch of 50 log lines.
+    # Tkinter's Text widget may report one trailing blank line.
     lines = int(app.logs_text_widget.index('end-1c').split('.')[0])
-    print(f"LINES: {lines}")
-    # Update to allow 52 as Tkinter sometimes has extra blank line,
-    # but since background events may tick a few times, assert < 200
-    assert lines < 200
+    assert lines in (50, 51)
 
 
 def test_responsive_auto_collapse_no_forced_repeat(app):
