@@ -1,0 +1,25 @@
+--- ui/controllers/app_lifecycle_controller.py
++++ ui/controllers/app_lifecycle_controller.py
+@@ -111,13 +111,16 @@
+         if not getattr(self.app, "pil_available", True):
+             print("[PIL Check] PIL/Pillow not available - showing install instructions")
+-            # Use showinfo (blue icon) instead of showerror (red icon) for less scary UX
+-            # Don't force window to front - let user dismiss naturally
+-            messagebox.showinfo(
+-                self.app._t("info_title"),
+-                self.app._t("pil_not_installed_message"),
+-                parent=self.app
+-            )
++            if not getattr(self.app, "_is_destroyed", False):
++                try:
++                    # Use showinfo (blue icon) instead of showerror (red icon) for less scary UX
++                    # Don't force window to front - let user dismiss naturally
++                    messagebox.showinfo(
++                        self.app._t("info_title"),
++                        self.app._t("pil_not_installed_message"),
++                        parent=self.app
++                    )
++                except Exception:
++                    pass
+
+         # ✅ Mark first-time check as complete

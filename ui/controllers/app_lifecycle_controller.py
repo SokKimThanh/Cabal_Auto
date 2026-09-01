@@ -107,18 +107,25 @@ class AppLifecycleController:
                 user_skipped_wizard = True
 
         # Check PIL availability and show one-time warning if missing
-        if not getattr(self.app, "pil_available", True):
-            print("[PIL Check] PIL/Pillow not available - showing install instructions")
-            # Use showinfo (blue icon) instead of showerror (red icon) for less scary UX
-            # Don't force window to front - let user dismiss naturally
-            messagebox.showinfo(
-                self.app._t("info_title"),
-                self.app._t("pil_not_installed_message"),
-                parent=self.app
-            )
+        if not getattr(self.app, "pil_available", True) and not getattr(self.app, "_is_destroyed", False):
 
-        # ✅ Mark first-time check as complete
-        self.app._first_time_check_complete = True
+            print("[PIL Check] PIL/Pillow not available - showing install instructions")
+
+            try:
+
+                messagebox.showinfo(
+
+                    self.app._t("info_title"),
+
+                    self.app._t("pil_not_installed_message"),
+
+                    parent=self.app
+
+                )
+
+            except Exception:
+
+                pass
         print("[First-time check] Check completed, global hotkeys now fully active")
 
         # ✅ Sprint 24 Enhancement: Persist wizard completion state
@@ -140,6 +147,9 @@ class AppLifecycleController:
             # Check if we have a valid hunt_selected window
             if not hasattr(self.app, "hunt_selected") or not self.app.hunt_selected:
                 print("[Auto Bring] No saved window to bring to front")
+                # Ensure app deiconifies even if there's no window to bring to front
+                if hasattr(self.app, "deiconify"):
+                    self.app.deiconify()
                 return
 
             hwnd = self.app.hunt_selected.get("hwnd")
@@ -148,6 +158,8 @@ class AppLifecycleController:
 
             if not hwnd:
                 print(f"[Auto Bring] No HWND for window: {title}")
+                if hasattr(self.app, "deiconify"):
+                    self.app.deiconify()
                 return
 
             print(

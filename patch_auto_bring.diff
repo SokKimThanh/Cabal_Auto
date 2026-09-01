@@ -1,0 +1,52 @@
+--- ui/controllers/app_lifecycle_controller.py
++++ ui/controllers/app_lifecycle_controller.py
+@@ -140,6 +140,9 @@
+             # Check if we have a valid hunt_selected window
+             if not hasattr(self.app, "hunt_selected") or not self.app.hunt_selected:
+                 print("[Auto Bring] No saved window to bring to front")
++                # Ensure app deiconifies even if there's no window to bring to front
++                if hasattr(self.app, "deiconify"):
++                    self.app.deiconify()
+                 return
+
+             hwnd = self.app.hunt_selected.get("hwnd")
+@@ -147,6 +150,8 @@
+             pid = self.app.hunt_selected.get("pid", "")
+
+             if not hwnd:
+                 print(f"[Auto Bring] No HWND for window: {title}")
++                if hasattr(self.app, "deiconify"):
++                    self.app.deiconify()
+                 return
+
+             print(
+@@ -156,7 +161,9 @@
+
+             # Bring window to front
+             ok = False
+-            if hasattr(self.app, "_bring_window_to_front_by_hwnd"):
++            if hasattr(self.app, "window_controller") and hasattr(self.app.window_controller, "_bring_window_to_front_by_hwnd"):
++                ok = self.app.window_controller._bring_window_to_front_by_hwnd(hwnd)
++            elif hasattr(self.app, "_bring_window_to_front_by_hwnd"):
+                 ok = self.app._bring_window_to_front_by_hwnd(hwnd)
+
+             if ok:
+@@ -167,6 +174,8 @@
+                     self.app.attributes("-topmost", True)
+                     self.app.update_idletasks()
+                     self.app.after(100, lambda: self.app.attributes("-topmost", False))
++                    if hasattr(self.app, "deiconify"):
++                        self.app.deiconify()
+
+                 self.app.after(100, _lift_and_focus)
+
+@@ -179,6 +188,9 @@
+                     self.app.after(3000, lambda: self.app.hunt_status.set(current_status))
+             else:
+                 print(f"[Auto Bring] ✗ Failed to bring window to front: {title}")
++                # Ensure app deiconifies even if bring to front fails
++                if hasattr(self.app, "deiconify"):
++                    self.app.deiconify()
+
+             # Run startup auto scan via controller
+             if hasattr(self.app, "scan_controller"):

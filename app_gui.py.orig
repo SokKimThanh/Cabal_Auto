@@ -206,13 +206,7 @@ class App(tk.Tk):
 
         self.title(self._t("app_title"))
         self.resizable(False, False)
-        screen_w = self.winfo_screenwidth()
-        screen_h = self.winfo_screenheight()
-        w = min(1920, screen_w)
-        h = min(1080, screen_h)
-        x = max((screen_w - w) // 2, 0)
-        y = max((screen_h - h) // 2, 0)
-        self.geometry(f"{w}x{h}+{x}+{y}")
+        self.geometry("1920x1080")
 
         # Initialize ScanController
         from lib.features.hunt.scan_controller import ScanController
@@ -573,6 +567,36 @@ class App(tk.Tk):
         for w in self.winfo_children():
             w.destroy()
 
+        # Header Frame (App Title and Language Selector) - 56px height
+        self.header_frame = tk.Frame(self, bg=UI.BG_TITLE, height=56)
+        self.header_frame.pack(fill="x")
+        self.header_frame.pack_propagate(False)
+
+        # Title
+        tk.Label(
+            self.header_frame,
+            text=self._t("app_title"),
+            bg=UI.BG_TITLE,
+            fg=UI.BG_DEFAULT,
+            font=UI.FONT_TITLE
+        ).pack(side="left", padx=16, pady=14)
+
+        # Right side of header: Language selector
+        lang_frame = tk.Frame(self.header_frame, bg=UI.BG_TITLE)
+        lang_frame.pack(side="right", padx=16, pady=14)
+        tk.Label(
+            lang_frame,
+            text=self._t("language"),
+            bg=UI.BG_TITLE,
+            fg=UI.BG_DEFAULT
+        ).pack(side="left")
+        self.lang_var = tk.StringVar(value=self.lang)
+        lang_cmb = ttk.Combobox(
+            lang_frame, textvariable=self.lang_var, state="readonly", width=8
+        )
+        lang_cmb["values"] = ("en", "vi")
+        lang_cmb.pack(side="left", padx=(6, 0))
+        lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
 
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
@@ -702,24 +726,14 @@ class App(tk.Tk):
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
         self.action_bar_frame = tk.Frame(self.shell_zone_a, padx=32, pady=18, bg=UI.BG_DEFAULT)
-        self.action_bar_frame.grid(row=0, column=0, sticky="nsew")
-        self.shell_zone_a.grid_columnconfigure(0, weight=1)
-        self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
-
-        # Configure columns for action_bar_frame
-        self.action_bar_frame.columnconfigure(0, minsize=380, weight=1)  # Window Selection
-        self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)   # Refresh
-        self.action_bar_frame.columnconfigure(2, minsize=260, weight=0)  # Bounds
-        self.action_bar_frame.columnconfigure(3, minsize=160, weight=0)  # Start
-        self.action_bar_frame.columnconfigure(4, minsize=160, weight=0)  # Stop
-        self.action_bar_frame.columnconfigure(5, minsize=80, weight=0)   # Language
+        self.action_bar_frame.pack(fill="x")
 
         # Window Selection Combobox
         self.win_combo_var = tk.StringVar()
         self.win_combo = ttk.Combobox(
-            self.action_bar_frame, textvariable=self.win_combo_var, state="readonly"
+            self.action_bar_frame, textvariable=self.win_combo_var, state="readonly", width=55
         )
-        self.win_combo.grid(row=0, column=0, sticky="ew", padx=(0, 12))
+        self.win_combo.pack(side="left", fill="y", padx=(0, 12))
 
         # Auto-populate windows when dropdown is clicked
         self.win_combo.bind(
@@ -744,9 +758,13 @@ class App(tk.Tk):
         )
 
         # Refresh button - Using icon_button component
-        refresh_tooltip = self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc") if hasattr(self, "_t") else "Refresh"
+        refresh_tooltip = (
+            "Refresh Window List\n" "Scans for game windows"
+            if self.lang == "en"
+            else "Làm Mới Danh Sách Cửa Sổ\n" "Quét lại các cửa sổ game"
+        )
 
-        self.refresh_btn = _create_icon_btn_component(
+        refresh_btn = _create_icon_btn_component(
             parent=self.action_bar_frame,
             icon_name="refresh",
             icon_fallback="🔄",
@@ -758,11 +776,11 @@ class App(tk.Tk):
             state="normal",
             auto_hover_disabled=False,
         )
-        self.refresh_btn.grid(row=0, column=1, sticky="w", padx=(0, 12))
+        refresh_btn.pack(side="left", padx=(0, 12))
 
         # Bounds Readiness State Placeholder (Minimum 260x36)
         self.bounds_placeholder = tk.Frame(self.action_bar_frame, width=260, height=36)
-        self.bounds_placeholder.grid(row=0, column=2, sticky="w", padx=(0, 12))
+        self.bounds_placeholder.pack(side="left", padx=(0, 12))
         self.bounds_placeholder.pack_propagate(False)
 
         self.bounds_status_var = tk.StringVar()
@@ -772,8 +790,6 @@ class App(tk.Tk):
             font=UI.FONT_LABEL
         )
         self.bounds_readiness_label.pack(side="left", fill="y", padx=5)
-
-
 
         # Start Hunt Button
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5)"
@@ -792,7 +808,7 @@ class App(tk.Tk):
             state="normal",
             auto_hover_disabled=False,
         )
-        self.hunt_start_btn.grid(row=0, column=3, sticky="w", padx=(0, 12))
+        self.hunt_start_btn.pack(side="left", padx=(0, 12))
 
         # Stop Hunt Button
         stop_tooltip = self._t("stop_hunt") + "\n(Ctrl+F6)"
@@ -811,28 +827,7 @@ class App(tk.Tk):
             state="disabled",
             auto_hover_disabled=True,
         )
-        self.hunt_stop_btn.grid(row=0, column=4, sticky="w")
-
-        # Language Selector (moved from header)
-        self.lang_var = tk.StringVar(value=self.lang)
-        self.lang_cmb = ttk.Combobox(
-            self.action_bar_frame, textvariable=self.lang_var, state="readonly", width=4
-        )
-        self.lang_cmb["values"] = ("en", "vi")
-        self.lang_cmb.grid(row=0, column=5, sticky="e")
-        self.lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
-
-        # DPI Scaling Guard using main action bar frame width
-        # 1920 is standard. If the window is compressed significantly (< 1200), we fallback to compact.
-        def on_action_bar_configure(event):
-            if hasattr(self, 'state_controller') and hasattr(self.state_controller, '_update_window_bounds_display'):
-                if event.width < 1200 and not getattr(self, '_bounds_compact_mode', False):
-                    self._bounds_compact_mode = True
-                    self.state_controller._update_window_bounds_display()
-                elif event.width >= 1200 and getattr(self, '_bounds_compact_mode', False):
-                    self._bounds_compact_mode = False
-                    self.state_controller._update_window_bounds_display()
-        self.action_bar_frame.bind("<Configure>", on_action_bar_configure)
+        self.hunt_stop_btn.pack(side="left")
 
         # Store notebook reference for keyboard shortcuts
         self.notebook = ttk.Notebook(self.shell_zone_b)
@@ -1083,61 +1078,15 @@ class App(tk.Tk):
             i18n_set_lang(self.lang)
         except Exception:
             pass
+        # Rebuild UI with new language
         self.title(self._t("app_title"))
-        self.refresh_translations()
-
-    def refresh_translations(self):
-        # Dynamically update text on widgets without rebuilding
-        # _create_icon_btn_component returns a wrapper with set_text/set_tooltip if it's our custom component
-        # But if it returns standard button, we config directly.
-        if hasattr(self.hunt_start_btn, "set_text"):
-            self.hunt_start_btn.set_text(self._t("start_hunt"))
-            self.hunt_start_btn.set_tooltip(self._t("start_hunt") + "\n(Ctrl+F5)")
-            self.hunt_stop_btn.set_text(self._t("stop_hunt"))
-            self.hunt_stop_btn.set_tooltip(self._t("stop_hunt") + "\n(Ctrl+F6)")
-
-            refresh_tooltip_new = self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
-            self.refresh_btn.set_tooltip(refresh_tooltip_new)
-        else:
-            self.hunt_start_btn.config(text=self._t("start_hunt"))
-            self.hunt_stop_btn.config(text=self._t("stop_hunt"))
-
-        # Update combo tooltip
-        try:
-            from ui.helpers.tooltip import attach_i18n_tooltip
-            from lib.i18n import I18N_GLOBAL
-            attach_i18n_tooltip(
-                self.win_combo,
-                key="window_select_tooltip",
-                ns=I18N_GLOBAL,
-                lang_provider=lambda: self.lang,
-            )
-        except ImportError:
-            pass
-
-        # Update bounds readiness label explicitly via state controller
-        if hasattr(self, 'state_controller') and hasattr(self.state_controller, '_update_window_bounds_display'):
-            self.state_controller._update_window_bounds_display()
-
-        # Optionally update tabs here, though the prompt primarily requests
-        # Zone A widgets to change immediately without losing state.
-        if hasattr(self, 'notebook'):
-            try:
-                self.notebook.tab(0, text=self._t("tab_hunt"))
-                self.notebook.tab(1, text=self._t("tab_setup"))
-                self.notebook.tab(2, text=self._t("tab_stats"))
-                self.notebook.tab(3, text=self._t("tab_help"))
-            except Exception:
-                pass
+        self._build_ui()
 
     def on_setup_wizard(self, hide_parent=True):
         self.window_controller.on_setup_wizard(hide_parent)
 
     def try_close_setup_wizard(self) -> bool:
         return self.window_controller.try_close_setup_wizard()
-
-    def try_close_library_manager(self) -> bool:
-        return self.library_manager_controller.try_close_library_manager()
 
     def _switch_to_tab(self, tab_index: int):
         """Switch to specified tab via keyboard shortcut."""
@@ -1374,14 +1323,6 @@ class App(tk.Tk):
                 self.tab_hunt.update_hunt_status_color(state)
 
     def on_hunt_start(self):
-        # Debounce lock
-        if getattr(self, "_action_locked", False):
-            return
-
-        self._action_locked = True
-        self.hunt_start_btn.configure(state="disabled")
-        self.after(500, lambda: [setattr(self, "_action_locked", False), self.hunt_start_btn.configure(state="normal") if not (hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running) else None])
-
         if hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running:
             return
 
@@ -1403,13 +1344,6 @@ class App(tk.Tk):
         self.hunt_orchestrator.start_hunt(self.hunt_cfg)
 
     def on_hunt_stop(self):
-        if getattr(self, "_action_locked", False):
-            return
-
-        self._action_locked = True
-        self.hunt_stop_btn.configure(state="disabled")
-        self.after(500, lambda: [setattr(self, "_action_locked", False), self.hunt_stop_btn.configure(state="normal") if (hasattr(self, "hunt_orchestrator") and self.hunt_orchestrator.hunt_running) else None])
-
         if hasattr(self, "hunt_orchestrator"):
             self.hunt_orchestrator.stop_hunt()
 

@@ -1,0 +1,10 @@
+--- app_gui.py
++++ app_gui.py
+@@ -206,6 +206,7 @@ class App(tk.Tk):
+
+         self.title(self._t("app_title"))
+         self.resizable(False, False)
++        self.geometry("1920x1080")
+
+         # Initialize ScanController
+         from lib.features.hunt.scan_controller import ScanController
