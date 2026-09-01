@@ -1,18 +1,19 @@
 import time
 import threading
 from pathlib import Path
-from typing import Callable, Optional, Dict, Any
+from typing import Callable, Dict, Any
 
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.win_input import tap
 from lib.features.skills.skill_stats import SkillStats
 
+
 class HuntOrchestrator:
     def __init__(
         self,
         on_status_update: Callable[[str], None],
-        on_state_change: Callable[[str], None], # "running", "idle", "error"
-        locate_target: Callable[[Dict[str, Any]], tuple], # (box, match_info)
+        on_state_change: Callable[[str], None],  # "running", "idle", "error"
+        locate_target: Callable[[Dict[str, Any]], tuple],  # (box, match_info)
         prepare_skill_runtime: Callable[[Dict[str, Any]], list],
         try_cast_skills: Callable,
         bring_window_to_front: Callable[[str], bool],
@@ -97,6 +98,18 @@ class HuntOrchestrator:
 
                 while self.hunt_running:
                     now = time.time()
+
+                    # Periodic window validation
+                    from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+
+                    hunt_selected = self.get_hunt_selected()
+                    if hunt_selected:
+                        validation = validate_selected_cabal_window(hunt_selected, [])
+                        if not validation.is_valid:
+                            logger.log_error("window_validation_failed", f"Validation failed: {validation.code}")
+                            self.hunt_running = False
+                            self.schedule_ui_task(lambda: self.on_state_change("error"))
+                            break
                     if cfg.get("bring_to_front_each_cycle"):
                         ok = False
                         try:
@@ -105,16 +118,16 @@ class HuntOrchestrator:
                                 ok = self.bring_window_to_front_by_hwnd(
                                     int(hunt_selected["hwnd"])
                                 )
+                            elif cfg.get("window_hwnd"):
+                                ok = self.bring_window_to_front_by_hwnd(
+                                    int(cfg.get("window_hwnd"))
+                                )
                             elif cfg.get("window_pid"):
                                 ok = self.bring_window_to_front_by_pid(
                                     int(cfg.get("window_pid"))
                                 )
                         except Exception:
                             ok = False
-                        if not ok:
-                            self.bring_window_to_front(
-                                cfg.get("window_title", "Cabal")
-                            )
 
                     # periodic detection with multi-template support
                     if now - last_search >= float(cfg.get("search_interval", 0.5)):

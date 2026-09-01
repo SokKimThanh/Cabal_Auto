@@ -24,10 +24,17 @@ class AppWindowController:
             own_title = self.root.title()
         except Exception:
             own_title = ""
+
+        allowed_processes = ["cabal.exe"]
+
         for info in windows:
             title = (info.title or "").strip()
             if not title or title == own_title:
                 continue
+
+            if info.process_name.lower() not in allowed_processes:
+                continue
+
             results.append(
                 {
                     "hwnd": int(info.hwnd),
@@ -35,6 +42,7 @@ class AppWindowController:
                     "title": title,
                     "proc": info.process_name,
                     "bounds": normalize_window_bounds_value(info.rect),
+                    "is_minimized": info.is_minimized
                 }
             )
         results.sort(
@@ -69,7 +77,7 @@ class AppWindowController:
             self.on_hunt_find_windows()
             return
 
-        logger.warning(f"Restore attempt {attempt+1} failed.")
+        logger.warning(f"Restore attempt {attempt + 1} failed.")
 
         if attempt < 2:
             self.root.after(300, self._retry_resolve_bounds, hwnd, attempt + 1)
@@ -126,16 +134,36 @@ class AppWindowController:
         if hasattr(self.root, "win_combo"):
             self.root.win_combo["values"] = values
 
-        if not items:
+        from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+        selected = getattr(self.root, "hunt_selected", None)
+
+        # If we have a selection but no items, or the selection is now invalid
+        is_selection_valid = False
+        if selected and items:
+            validation = validate_selected_cabal_window(selected, items)
+            is_selection_valid = validation.is_valid
+
+        if not items or (selected and not is_selection_valid):
             self.root.hunt_selected = None
             if hasattr(self.root, "win_combo_var"):
                 self.root.win_combo_var.set("")
+            if hasattr(self.root, "win_combo"):
+                self.root.win_combo.set("")
             self.root.current_window_bounds = None
             if hasattr(self.root, "_update_window_bounds_display"):
                 self.root._update_window_bounds_display()
             if hasattr(self.root, "hunt_status"):
-                self.root.hunt_status.set("No visible windows found")
-            return
+                if not items:
+                    self.root.hunt_status.set("No visible windows found")
+                else:
+                    self.root.hunt_status.set("Selected window invalid, cleared selection.")
+
+            # Since selection is cleared, ensure we lock UI if needed
+            if hasattr(self.root, "start_stop_btn"):
+                self.root.start_stop_btn.config(state="disabled")
+
+            if not items:
+                return
 
         target_index = 0
         selected = getattr(self.root, "hunt_selected", None) or {}
@@ -182,6 +210,15 @@ class AppWindowController:
             index = 0
 
         selected = dict(self.root.win_items[index])
+
+        from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+        validation = validate_selected_cabal_window(selected, self.root.win_items)
+        if not validation.is_valid:
+            if hasattr(self.root, "hunt_status"):
+                self.root.hunt_status.set(f"Selected window is invalid: {validation.code}")
+            return
+
+        selected = validation.window
         bounds = normalize_window_bounds_value(selected.get("bounds"))
         self.root.hunt_selected = selected
         self.root.current_window_bounds = bounds
@@ -203,19 +240,27 @@ class AppWindowController:
 
     def _auto_detect_and_save_cabal_window(self) -> None:
         try:
-            items = self._list_windows(title_contains="Cabal")
-            if not items:
-                items = self._list_windows()
+            items = self._list_windows()
             if not items:
                 return
             self.root.win_items = items
             if hasattr(self.root, "win_combo"):
                 self.root.win_combo["values"] = [item["title"] for item in items]
-            if hasattr(self.root, "win_combo"):
-                self.root.win_combo.current(0)
-            if hasattr(self.root, "win_combo_var"):
-                self.root.win_combo_var.set(items[0]["title"])
-            self.on_window_combo_selected()
+
+            # Find the first valid item
+            from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+            valid_index = -1
+            for i, item in enumerate(items):
+                if validate_selected_cabal_window(item, items).is_valid:
+                    valid_index = i
+                    break
+
+            if valid_index >= 0:
+                if hasattr(self.root, "win_combo"):
+                    self.root.win_combo.current(valid_index)
+                if hasattr(self.root, "win_combo_var"):
+                    self.root.win_combo_var.set(items[valid_index]["title"])
+                self.on_window_combo_selected()
         except Exception:
             return
 
@@ -343,7 +388,6 @@ class AppWindowController:
             traceback.print_exc()
             _t = getattr(self.root, "_t", lambda x: "Error")
             messagebox.showerror(_t("error"), f"Cannot open Vision Wizard:\n{e}")
-
 
     def on_monster_calculate_timing(self) -> None:
         from ui.windows.timing_calc_dialog import TimingCalcDialog

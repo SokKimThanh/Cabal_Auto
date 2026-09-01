@@ -1,5 +1,52 @@
 from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
 from lib.features.hunt.config_validator import normalize_window_bounds_value
+from lib.system.window_manager import WindowManager
+
+
+@dataclass
+class WindowValidationResult:
+    is_valid: bool
+    code: str
+    window: Optional[Dict[str, Any]] = None
+
+
+def validate_selected_cabal_window(selected: Any, known_items: List[Dict[str, Any]], allowed_processes: List[str] = ["cabal.exe"]) -> WindowValidationResult:
+    if not isinstance(selected, dict) or not isinstance(selected.get("hwnd"), int):
+        return WindowValidationResult(False, "no_window_selected")
+
+    hwnd = selected["hwnd"]
+    wm = WindowManager()
+    info = wm.get_window_info(hwnd)
+
+    if info is None or not wm.is_window_valid(hwnd):
+        return WindowValidationResult(False, "window_unavailable")
+
+    if info.pid != selected.get("pid"):
+        return WindowValidationResult(False, "window_changed")
+
+    if info.process_name.lower() not in allowed_processes:
+        return WindowValidationResult(False, "no_cabal_window")
+
+    if not info.is_visible or not info.is_enabled or info.is_minimized or info.is_offscreen:
+        return WindowValidationResult(False, "window_unavailable")
+
+    # Valid known items check (make sure it's in the currently scanned list if known_items is provided)
+    if known_items:
+        if hwnd not in {item["hwnd"] for item in known_items}:
+            return WindowValidationResult(False, "window_changed")
+
+    # Need to output dict format matching UI's expected 'hunt_selected' format
+    win_dict = {
+        "hwnd": int(info.hwnd),
+        "pid": int(info.pid),
+        "title": (info.title or "").strip(),
+        "proc": info.process_name,
+        "bounds": normalize_window_bounds_value(info.rect),
+        "is_minimized": info.is_minimized
+    }
+    return WindowValidationResult(True, "ok", win_dict)
+
 
 class WindowSelectionService:
     """Service for target window and bounds validation logic used by hunt setup/runtime."""
