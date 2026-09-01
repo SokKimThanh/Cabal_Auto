@@ -1,3 +1,52 @@
+from ui.windows.setup_wizard import show_setup_wizard
+from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
+from ui.controllers.app_lifecycle_controller import AppLifecycleController
+from lib.ui_style import UIStyle as UI  # Global UI style constants
+from lib.system.win_input import tap
+from lib.system.instance_lock import SingleInstanceLock
+from lib.system.hunt_logger import get_hunt_logger
+from ui.controllers.hotkey_controller import HotkeyController
+from lib.features.timing.calculator import (
+    calculate_timing,
+    format_timing_recommendation,
+    get_timing_presets,
+)
+from lib.features.skills.skill_stats import (
+    SkillStats,
+)  # Sprint 22 Patch 1: Training Mode
+from ui.controllers.skill_manager_controller import SkillManagerController
+from lib.features.skills.skill_runtime_service import SkillRuntimeService
+from lib.features.skills.skill_repo import (
+    calculate_attack_speed_from_skills,
+)
+from lib.features.monsters.monster_repo import (
+    calculate_monster_estimate,
+    load_monster_library,
+    save_monster_library,
+)
+from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
+from lib.features.hunt.hunt_runner import HuntRunner
+from lib.features.hunt.hunt_config import (
+    ConfigManager,
+    _sanitize_templates,
+    load_config,
+    load_hunt_config,
+    save_config,
+    save_hunt_config,
+)
+from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
+from ui.utils.overlay_controller import OverlayController
+from ui.helpers.tooltip import attach_i18n_tooltip
+from lib.system.bot_manager import BotManager
+from lib.i18n import t as i18n_t
+from lib.i18n import set_default_lang as i18n_set_lang
+from lib.i18n import GLOBAL_NS as I18N_GLOBAL
+from lib.features.hunt.config_validator import get_valid_hunt_area
+from lib.vision.vision_engine import VisionEngine
+from lib.vision.template_matcher import locate_template
+from ctypes import wintypes
+from tkinter import filedialog, messagebox, ttk
+import tkinter as tk
 import copy
 import ctypes
 import json
@@ -14,8 +63,6 @@ from typing import Any, Dict, List, Optional
 # Add parent directory to path for lib imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
 
 try:
     import pyautogui  # type: ignore
@@ -34,25 +81,14 @@ try:
 except Exception:
     keyboard = None  # type: ignore
 
-from ctypes import wintypes
-
-from lib.vision.template_matcher import locate_template
-from lib.vision.vision_engine import VisionEngine
-from lib.features.hunt.config_validator import get_valid_hunt_area
 
 try:
     from lib.system.screen_capture import ScreenCapture
 except ImportError:
     ScreenCapture = None
-from lib.i18n import GLOBAL_NS as I18N_GLOBAL
-from lib.i18n import set_default_lang as i18n_set_lang
-from lib.i18n import t as i18n_t
 
 # Imported for its side effect: self-registers GLOBAL_TRANSLATIONS into the i18n registry.
 from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
-from lib.system.bot_manager import BotManager
-from ui.helpers.tooltip import attach_i18n_tooltip
-from ui.utils.overlay_controller import OverlayController
 
 # Import icon button component
 try:
@@ -112,49 +148,11 @@ try:
 except Exception:
     capture_region_and_save = None  # type: ignore
 
-from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
-from lib.features.hunt.hunt_config import (
-    ConfigManager,
-    _sanitize_templates,
-    load_config,
-    load_hunt_config,
-    save_config,
-    save_hunt_config,
-)
-from lib.features.hunt.hunt_runner import HuntRunner
-from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
-from lib.features.monsters.monster_repo import (
-    calculate_monster_estimate,
-    load_monster_library,
-    save_monster_library,
-)
-from lib.features.skills.skill_repo import (
-    calculate_attack_speed_from_skills,
-)
-from lib.features.skills.skill_runtime_service import SkillRuntimeService
-from ui.controllers.skill_manager_controller import SkillManagerController
-from lib.features.skills.skill_stats import (
-    SkillStats,
-)  # Sprint 22 Patch 1: Training Mode
-from lib.features.timing.calculator import (
-    calculate_timing,
-    format_timing_recommendation,
-    get_timing_presets,
-)
 
 # =====================================================================
 # Single Instance Lock (Prevent multiple app instances)
-from ui.controllers.hotkey_controller import HotkeyController
 
 # =====================================================================
-from lib.system.hunt_logger import get_hunt_logger
-from lib.system.instance_lock import SingleInstanceLock
-
-from lib.system.win_input import tap
-from lib.ui_style import UIStyle as UI  # Global UI style constants
-from ui.controllers.app_lifecycle_controller import AppLifecycleController
-from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
-from ui.windows.setup_wizard import show_setup_wizard
 
 
 class App(tk.Tk):
@@ -555,6 +553,8 @@ class App(tk.Tk):
             schedule_ui_task=lambda fn: (
                 self.after(0, fn) if hasattr(self, "after") else fn()
             ),
+            clear_target_ui=self.clear_target_listbox,
+            set_target_info=lambda txt: getattr(self, "hunt_target_info", tk.StringVar()).set(txt)
         )
 
         # Keyboard shortcuts (Window-focused only)
@@ -574,7 +574,6 @@ class App(tk.Tk):
         # Clear (for language rebuild)
         for w in self.winfo_children():
             w.destroy()
-
 
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
@@ -713,8 +712,6 @@ class App(tk.Tk):
         self.after(100, self._poll_log_queue)
         self.after(1000, self._update_logs_metrics)
 
-
-
         # Vùng A: Quick Action Bar - 80px target height (using padding)
         self.action_bar_frame = tk.Frame(self.shell_zone_a, padx=32, pady=18, bg=UI.BG_DEFAULT)
         self.action_bar_frame.grid(row=0, column=0, sticky="nsew")
@@ -787,8 +784,6 @@ class App(tk.Tk):
             font=UI.FONT_LABEL
         )
         self.bounds_readiness_label.pack(side="left", fill="y", padx=5)
-
-
 
         # Unified Start/Stop Button (width 140px minimum layout space available, so we use min width via grid and padding)
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
@@ -2472,7 +2467,7 @@ class App(tk.Tk):
                 if current_idx < len(enabled):
                     current = enabled[current_idx]
                     self.monster_status_var.set(
-                        f"Current: {current['name']} | Sequence: {current_idx+1}/{len(enabled)}"
+                        f"Current: {current['name']} | Sequence: {current_idx + 1}/{len(enabled)}"
                     )
                 else:
                     self.monster_status_var.set(f"Sequence: {len(enabled)} monsters")
@@ -3032,6 +3027,15 @@ class App(tk.Tk):
                 text=f"✓ {self._t('all_saved')}", fg="#4CAF50"  # Green color
             )
 
+    def clear_target_listbox(self):
+        if hasattr(self, "hunt_target_info"):
+            self.hunt_target_info.set("Target: None")
+        if hasattr(self, "monster_rotation_listbox"):
+            try:
+                self.monster_rotation_listbox.selection_clear(0, tk.END)
+            except Exception:
+                pass
+
     def on_close(self):
         self.lifecycle_controller.on_close()
 
@@ -3221,7 +3225,7 @@ class App(tk.Tk):
         def on_enter(event):
             tooltip = tk.Toplevel()
             tooltip.wm_overrideredirect(True)
-            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
             label = tk.Label(
                 tooltip,
                 text=text,
@@ -3299,7 +3303,6 @@ class App(tk.Tk):
                     pass
         except Exception:
             pass
-
 
 
 def main():
