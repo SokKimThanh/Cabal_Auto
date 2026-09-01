@@ -61,7 +61,7 @@ def test_init_db_creates_database_and_updates_status(monkeypatch, tmp_path: Path
     with sqlite3.connect(db_path) as conn:
         count = conn.execute("SELECT COUNT(*) FROM monsters").fetchone()[0]
 
-    assert count >= 0
+    assert count > 0
 
 
 def test_init_db_reuses_existing_database_without_overwriting(monkeypatch, tmp_path: Path) -> None:
