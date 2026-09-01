@@ -1,4 +1,3 @@
-import tkinter as tk
 from tkinter import ttk
 from ui.tabs.hunt_tab import HuntTab
 
