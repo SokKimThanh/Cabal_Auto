@@ -125,7 +125,6 @@ class VisionEngine:
             "use_grayscale": True,
             "feature_type": "ORB",
             "feature_min_poly_area": 20,
-            "feature_max_poly_area": 1920 * 1080 * 0.9,
             "hsv_lower": (0, 120, 120),
             "hsv_upper": (10, 255, 255),
             "hsv_min_area": 50,
