@@ -206,7 +206,13 @@ class App(tk.Tk):
 
         self.title(self._t("app_title"))
         self.resizable(False, False)
-        self.geometry("1920x1080")
+        screen_w = self.winfo_screenwidth()
+        screen_h = self.winfo_screenheight()
+        w = min(1920, screen_w)
+        h = min(1080, screen_h)
+        x = max((screen_w - w) // 2, 0)
+        y = max((screen_h - h) // 2, 0)
+        self.geometry(f"{w}x{h}+{x}+{y}")
 
         # Initialize ScanController
         from lib.features.hunt.scan_controller import ScanController
