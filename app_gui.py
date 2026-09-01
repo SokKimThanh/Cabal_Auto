@@ -553,12 +553,8 @@ class App(tk.Tk):
             schedule_ui_task=lambda fn: (
                 self.after(0, fn) if hasattr(self, "after") else fn()
             ),
-            clear_target_ui=self.clear_target_listbox,
-            set_target_info=(
-                self.hunt_target_info.set
-                if hasattr(self, "hunt_target_info")
-                else lambda _: None
-            ),
+            clear_target_ui=self.clear_target_ui,
+            set_target_info=lambda txt: getattr(self, "hunt_target_info", tk.StringVar()).set(txt)
         )
 
         # Keyboard shortcuts (Window-focused only)
@@ -3031,14 +3027,15 @@ class App(tk.Tk):
                 text=f"✓ {self._t('all_saved')}", fg="#4CAF50"  # Green color
             )
 
-    def clear_target_listbox(self):
+    def clear_target_ui(self):
         if hasattr(self, "hunt_target_info"):
             self.hunt_target_info.set("Target: None")
         if hasattr(self, "monster_rotation_listbox"):
             try:
                 self.monster_rotation_listbox.selection_clear(0, tk.END)
-            except Exception:
-                pass
+            except Exception as e:
+                import logging
+                logging.debug(f"Failed to clear monster rotation listbox: {e}")
 
     def on_close(self):
         self.lifecycle_controller.on_close()
