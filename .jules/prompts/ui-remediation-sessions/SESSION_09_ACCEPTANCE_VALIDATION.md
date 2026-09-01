@@ -7,7 +7,7 @@
 - **Ưu tiên:** P0-P2
 - **Phụ thuộc:** Session 01 đến Session 08 — đây là session nghiệm thu tổng, chỉ chạy sau khi toàn bộ thay đổi layout/style/log của các session trước đã merge.
 - **Tham chiếu tài liệu gốc:** Đề Xuất Khắc Phục Giao Diện Hunt Hiện Tại (v2), mục 4.6 và toàn bộ mục 7 (tiêu chí nghiệm thu), mục 6 (bước "bổ sung kiểm thử GUI và kiểm tra thủ công trên nhiều DPI")
-- **AC liên quan:** AC-1 đến AC-17
+- **AC liên quan:** AC-1 đến AC-19
 
 ## Mục tiêu duy nhất
 
@@ -22,11 +22,11 @@ Chạy nghiệm thu tổng, bổ sung các test tích hợp UI còn thiếu và 
 ## Các bước thực hiện
 
 1. Chạy toàn bộ test Bottom Logs và toàn bộ test UI có marker `ui` (không lọc `-k`) để không bỏ sót test của Session 05 (khởi tạo cửa sổ) hay Session 08 (selected state, đặt tên có thể không chứa `hunt`/`bottom_logs`).
-2. Xác nhận geometry 1366x768: widget chính được map và có kích thước lớn hơn 0.
+2. Xác nhận geometry 1366x768: ngoài việc widget được map và có kích thước lớn hơn 0, đo biên thực tế để chứng minh đáy Skill/Hunt không vượt đỉnh Logs hoặc đáy vùng client.
 3. Kiểm tra thủ công ở 100%, 125% và 150% DPI nếu môi trường cho phép, cho cả hai ngôn ngữ.
 4. Kiểm tra cả tiếng Anh và tiếng Việt ở từng mức DPI đã kiểm tra, không chỉ ở 100%.
 5. Chạy Black và Flake8 trên các file Python đã thay đổi trong chuỗi session, kể cả `lib/ui_style.py` nếu Session 08 đã sửa file này.
-6. Lập bảng kết quả AC-1 đến AC-17.
+6. Lập bảng kết quả AC-1 đến AC-19.
 
 ## Lệnh kiểm thử
 
@@ -61,10 +61,11 @@ Nếu timebox không đủ để chạy hết cả sáu dòng, ưu tiên chạy 
 
 ## Điều kiện hoàn tất
 
-- Có kết quả rõ ràng cho AC-1 đến AC-17.
+- Có kết quả rõ ràng cho AC-1 đến AC-19.
 - AC-9 chỉ được coi là đạt khi cả ba dòng DPI (100%, 125%, 150%) trong ma trận đều Pass, không chỉ dòng 100%.
 - Test tự động mục tiêu pass hoặc blocker được ghi kèm output cần thiết.
 - Không còn lỗi cắt/chồng widget ở cấu hình bắt buộc 1366x768 / 100%.
+- Trạng thái Logs thu gọn chỉ đạt khi toàn bộ Skill/Hunt nằm phía trên Logs; ảnh chỉ còn header Logs nhưng mất hàng Skill là Fail.
 
 ## Điểm dừng bắt buộc
 

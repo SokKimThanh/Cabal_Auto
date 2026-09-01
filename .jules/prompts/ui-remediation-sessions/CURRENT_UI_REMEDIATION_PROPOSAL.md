@@ -50,6 +50,7 @@ Tài liệu không đề xuất thay đổi nghiệp vụ hunt, vision engine, d
 Trên cửa sổ 1366x768:
 
 - Skill slots và Skill Performance Statistics bị cắt ngay dưới tiêu đề.
+- Khi Logs đã thu gọn, phần nội dung log biến mất nhưng Hunt workspace không co về chiều cao được cấp. Phần Skill vẫn nằm ngoài vùng nhìn thấy; biên Logs cắt ngang nội dung Hunt và phần overflow tiếp tục đẩy/che nội dung phía trên thay vì trả lại không gian cho form.
 - Logs đang mở chiếm phần lớn nửa dưới cửa sổ dù chỉ có vài dòng nội dung.
 - Active Target & Status có một vùng trống rất lớn.
 - Các thành phần điều khiển và chữ bị ép nhỏ.
@@ -78,6 +79,8 @@ Bố cục hiện tại đặt nhiều kích thước tối thiểu tuyệt đ�
 - Logs khi mở: khoảng 200px
 
 Tổng kích thước yêu cầu lớn hơn vùng client trên màn hình 1366x768. Tkinter buộc phải ép hoặc cắt widget, dẫn đến hàng skill không còn diện tích hiển thị.
+
+Việc chỉ `pack_forget()` nội dung Logs và giảm `minsize` của row Logs không giải quyết xung đột này. Hunt tab vẫn yêu cầu chiều cao lớn hơn row workspace được cấp, nên child widget bị clip/overflow phía sau biên Logs ngay cả khi Logs đang ở trạng thái thu gọn.
 
 ### 4.3 Cửa sổ bị khóa kích thước
 
@@ -190,6 +193,7 @@ Mỗi bước cần được kiểm thử độc lập; không nên đổi toàn
 - AC-3: Monster Rotation, Hunt status và Start/Stop không bị cắt.
 - AC-4: Không có widget chồng lên Logs hoặc bị Logs che.
 - AC-5: Không có thành phần yêu cầu chiều rộng lớn hơn vùng workspace.
+- AC-18: Khi Logs đã thu gọn ở 1366x768, đáy nội dung Hunt (bao gồm Skill slots và Skill Performance Statistics) không vượt qua đỉnh Logs và không vượt đáy vùng client của cửa sổ; không có child widget bị clip hoặc overflow ngoài row workspace.
 
 ### 7.2 Responsive
 
@@ -211,6 +215,7 @@ Mỗi bước cần được kiểm thử độc lập; không nên đổi toàn
 - AC-15: Test trạng thái Logs ở cả dưới và trên ngưỡng responsive.
 - AC-16: Test một record qua queue chỉ tạo một timestamp trên Text widget.
 - AC-17: Chạy test UI bằng `xvfb-run -a pytest <test_paths>` trên Linux headless hoặc dùng mock Tkinter phù hợp.
+- AC-19: Test geometry phải so sánh biên thực tế (`winfo_rooty()` + `winfo_height()`) của Hunt/Skill với đỉnh Logs và đáy cửa sổ; chỉ kiểm tra `winfo_ismapped()` hoặc kích thước lớn hơn 0 là chưa đủ.
 
 ## 8. Rủi ro và nguyên tắc thực hiện
 
