@@ -133,8 +133,8 @@ class AppStateController:
 
         if isinstance(getattr(app, "hunt_selected", None), dict):
             if not title:
-                title = str(app.hunt_selected.get("title", "")).strip()
-            proc_name = str(app.hunt_selected.get("proc", "")).strip()
+                title = str(app.hunt_selected.get("title") or "").strip()
+            proc_name = str(app.hunt_selected.get("proc") or "").strip()
 
         if not title:
             return "Please select a target window first."
