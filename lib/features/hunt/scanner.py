@@ -52,7 +52,7 @@ class AutoScanner:
 
         info = self.window_manager.get_window_info(hwnd)
 
-        if info.get('style', 0) & 0x20000000:
+        if info.is_minimized:
             pass
 
         rect = self.window_manager.get_window_rect(hwnd)

@@ -84,7 +84,8 @@ class ScreenCapture:
         self,
         queue_size: int = 5,
         target_fps: int = 15,
-        downsample: Optional[Tuple[int, int]] = None
+        downsample: Optional[Tuple[int, int]] = None,
+        on_capture_lost: Optional[callable] = None
     ):
         """
         Initialize screen capture
@@ -93,11 +94,14 @@ class ScreenCapture:
             queue_size: Max frames in queue (higher = more latency)
             target_fps: Target capture rate (15-30 recommended)
             downsample: Resize to (width, height) for performance
+            on_capture_lost: Callback when capture target is lost
         """
         self.queue_size = queue_size
         self.target_fps = target_fps
         self.downsample = downsample
         self.frame_interval = 1.0 / target_fps
+        self.on_capture_lost = on_capture_lost
+        self.capture_lost_event = threading.Event()
 
         # Capture state
         self.hwnd = None
@@ -105,6 +109,8 @@ class ScreenCapture:
         self.running = False
         self.thread = None
         self.frame_queue = queue.Queue(maxsize=queue_size)
+        self._latest_frame = None
+        self._frame_lock = threading.Lock()
 
         # Performance tracking
         self.stats = CaptureStats()
@@ -232,6 +238,18 @@ class ScreenCapture:
         except queue.Empty:
             return None
 
+    def get_latest_frame(self) -> Optional[np.ndarray]:
+        """
+        Get latest frame safely with thread lock.
+
+        Returns:
+            Copy of latest frame as numpy array (BGR) or None
+        """
+        with self._frame_lock:
+            if self._latest_frame is not None:
+                return self._latest_frame.copy()
+            return None
+
     def get_stats(self) -> CaptureStats:
         """Get current capture statistics"""
         with self._stats_lock:
@@ -252,11 +270,47 @@ class ScreenCapture:
             last_stats_update = time.time()
 
             while self.running:
+                # Check window validity
+                if not win32gui.IsWindow(self.hwnd):
+                    logger.warning("Capture target lost (window closed).")
+                    self.running = False
+                    self.capture_lost_event.set()
+                    if self.on_capture_lost:
+                        self.on_capture_lost()
+                    break
+
                 current_time = time.time()
 
                 # Capture at target FPS
                 if current_time >= next_capture_time:
-                    frame = self._capture_frame()
+                    # Refresh rect and check if minimized
+                    try:
+                        win_rect = win32gui.GetWindowRect(self.hwnd)
+                        width = max(0, win_rect[2] - win_rect[0])
+                        height = max(0, win_rect[3] - win_rect[1])
+                        is_minimized = win32gui.IsIconic(self.hwnd) or width == 0 or height == 0
+                    except Exception as e:
+                        logger.error(f"Failed to get window rect: {e}")
+                        is_minimized = True
+
+                    if is_minimized:
+                        with self._frame_lock:
+                            frame = None if self._latest_frame is None else self._latest_frame.copy()
+                    else:
+                        if self.window_rect is not None and (
+                            width != self.window_rect['width'] or height != self.window_rect['height']
+                        ):
+                            self.window_rect = {
+                                'left': win_rect[0],
+                                'top': win_rect[1],
+                                'right': win_rect[2],
+                                'bottom': win_rect[3],
+                                'width': width,
+                                'height': height,
+                            }
+                            self._reallocate_buffer(width, height)
+
+                        frame = self._capture_frame()
 
                     if frame is not None:
                         # Try to put in queue (non-blocking)
@@ -309,6 +363,26 @@ class ScreenCapture:
         except Exception as e:
             logger.error(f"GDI setup failed: {e}")
             raise
+
+    def _reallocate_buffer(self, width: int, height: int):
+        """Reallocate GDI bitmap for new dimensions"""
+        try:
+            if self._mfcDC is None or self._saveDC is None:
+                raise RuntimeError("GDI objects not initialized")
+
+            old_bitmap = self._saveBitMap
+
+            new_bitmap = win32ui.CreateBitmap()
+            new_bitmap.CreateCompatibleBitmap(self._mfcDC, width, height)
+            self._saveDC.SelectObject(new_bitmap)
+            self._saveBitMap = new_bitmap
+
+            if old_bitmap:
+                win32gui.DeleteObject(old_bitmap.GetHandle())
+
+            logger.debug(f"Reallocated GDI buffer to {width}x{height}")
+        except Exception as e:
+            logger.error(f"Buffer reallocation failed: {e}")
 
     def _cleanup_gdi(self):
         """Cleanup Windows GDI objects"""
@@ -385,6 +459,9 @@ class ScreenCapture:
 
             # Convert BGRA to BGR
             frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+
+            with self._frame_lock:
+                self._latest_frame = frame.copy()
 
             # Track capture time
             capture_time = (time.time() - capture_start) * 1000
