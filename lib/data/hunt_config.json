@@ -64,7 +64,7 @@
   "window_pid": 1972,
   "templates": [],
   "training_mode_enabled": true,
-  "ui_mode": "beginner",
+  "ui_mode": "advanced",
   "template_threshold": 0.55,
   "global_hotkeys": {
     "enabled": true,
