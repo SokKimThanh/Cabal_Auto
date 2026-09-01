@@ -2,6 +2,23 @@
 # Global app translations (formerly LANG in app_gui.py)
 
 GLOBAL_TRANSLATIONS = {
+    "logs_title": {
+        "vi": "Nhật Ký Hoạt Động",
+        "en": "Activity Logs"
+    },
+    "logs_collapse": {
+        "vi": "▼ Thu Gọn",
+        "en": "▼ Collapse"
+    },
+    "logs_expand": {
+        "vi": "▲ Mở Rộng",
+        "en": "▲ Expand"
+    },
+    "logs_clear": {
+        "vi": "Xóa Log Màn Hình",
+        "en": "Clear UI Log"
+    },
+
     'en': {
         'app_title': 'Cabal Auto Manager',
         'language': 'Language',
