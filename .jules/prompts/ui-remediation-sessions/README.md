@@ -82,6 +82,7 @@ Ghi chú:
 | AC-10, AC-12, AC-16 | 02 | 09 |
 | AC-11 | 06 | 09 |
 | AC-14, AC-17 | 09 | 09 |
+| AC-18, AC-19 | 04 | 09 |
 
 ## Cập nhật trạng thái
 
@@ -101,4 +102,4 @@ Các mục sau nằm trong tài liệu đề xuất gốc nhưng chưa được 
 
 ## Tài liệu nguồn
 
-Các nguyên nhân, phạm vi và toàn bộ AC được định nghĩa trong [Đề xuất khắc phục giao diện](../CURRENT_UI_REMEDIATION_PROPOSAL.md). Tài liệu nguồn dùng để tra cứu và không được giao như một session triển khai.
+Các nguyên nhân, phạm vi và toàn bộ AC được định nghĩa trong [Đề xuất khắc phục giao diện](CURRENT_UI_REMEDIATION_PROPOSAL.md). Tài liệu nguồn dùng để tra cứu và không được giao như một session triển khai.

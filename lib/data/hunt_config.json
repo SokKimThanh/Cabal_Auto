@@ -1,109 +1,109 @@
 {
-  "window_title": "Cabal_Auto - Visual Studio Code [Administrator]",
-  "target_key": "z",
-  "attack_press_ms": 60,
-  "target_cycle_delay": 0.2,
-  "search_interval": 0.25,
-  "attack_interval": 0.15,
-  "template_path": "assets/images/monsters/slime_green.png",
-  "region": null,
-  "confidence": 0.5,
-  "grayscale": true,
-  "lost_timeout_sec": 0.5,
-  "attack_min_duration_sec": 5.0,
-  "bring_to_front_each_cycle": false,
-  "skill_slots": [
-    {
-      "name": "Dark Explosion",
-      "key": "1",
-      "type": "attack",
-      "cooldown": 1.9,
-      "cast_time": 1.7,
-      "image": "assets/images/monsters/coc_go__capture_1760738385336.png"
-    },
-    {
-      "name": "Bone Javelin",
-      "key": "2",
-      "type": "attack",
-      "cooldown": 2.4,
-      "cast_time": 1.5,
-      "image": "F:/Cabal_Auto/assets/images/monsters/coc_go__capture_1760736536758.png"
-    },
-    {
-      "name": "Skull Shooter",
-      "key": "3",
-      "type": "attack",
-      "cooldown": 2.2,
-      "cast_time": 1.5,
-      "image": "assets/images/skills/skull_shooter_1760739255501.png"
-    },
-    {
-      "name": "Regeneration",
-      "key": "4",
-      "type": "buff",
-      "cooldown": 2.2,
-      "cast_time": 1.0,
-      "image": "assets/images/skills/regeneration_1760739255499.png"
-    }
-  ],
-  "window_bounds": [
-    -8,
-    -8,
-    2576,
-    1408
-  ],
-  "monster_list": [
-    {
-      "name": "Slime Xanh",
-      "priority": 1,
-      "enabled": true
-    }
-  ],
-  "rotation_mode": "sequence",
-  "current_monster_index": 0,
-  "window_pid": 1972,
-  "templates": [],
-  "training_mode_enabled": true,
-  "ui_mode": "advanced",
-  "template_threshold": 0.55,
-  "global_hotkeys": {
-    "enabled": true,
-    "start_key": "ctrl+shift+r",
-    "stop_key": "ctrl+shift+e",
-    "setup_wizard_key": "ctrl+alt+n",
-    "library_manager_key": "ctrl+shift+l",
-    "vision_wizard_key": "ctrl+shift+v",
-    "monster_editor_key": "ctrl+shift+m"
-  },
-  "training_monster_list": [],
-  "window_hwnd": 51971974,
-  "overlay": {
-    "enabled": false
-  },
-  "monster_tracking": {
-    "enabled": true,
-    "detection_interval": 0.1,
-    "confidence_threshold": 0.7,
-    "stable_frames": 3,
-    "lost_timeout": 3.0,
-    "max_detections_display": 20,
-    "show_stats": true,
-    "stats_update_interval": 0.5,
-    "auto_start_with_hunt": false
-  },
-  "game_window_mode": "above",
-  "app_window_mode": "topmost",
-  "is_configured": true,
-  "monster_selected_name": "Slime Xanh",
-  "monster_rotation": [],
-  "skills": {},
-  "hunt_area": {
     "window_title": "Cabal_Auto - Visual Studio Code [Administrator]",
+    "target_key": "z",
+    "attack_press_ms": 60,
+    "target_cycle_delay": 0.2,
+    "search_interval": 0.25,
+    "attack_interval": 0.15,
+    "template_path": "assets/images/monsters/slime_green.png",
+    "region": null,
+    "confidence": 0.5,
+    "grayscale": true,
+    "lost_timeout_sec": 0.5,
+    "attack_min_duration_sec": 5.0,
+    "bring_to_front_each_cycle": false,
+    "skill_slots": [
+        {
+            "name": "Dark Explosion",
+            "key": "1",
+            "type": "attack",
+            "cooldown": 1.9,
+            "cast_time": 1.7,
+            "image": "assets/images/monsters/coc_go__capture_1760738385336.png"
+        },
+        {
+            "name": "Bone Javelin",
+            "key": "2",
+            "type": "attack",
+            "cooldown": 2.4,
+            "cast_time": 1.5,
+            "image": "F:/Cabal_Auto/assets/images/monsters/coc_go__capture_1760736536758.png"
+        },
+        {
+            "name": "Skull Shooter",
+            "key": "3",
+            "type": "attack",
+            "cooldown": 2.2,
+            "cast_time": 1.5,
+            "image": "assets/images/skills/skull_shooter_1760739255501.png"
+        },
+        {
+            "name": "Regeneration",
+            "key": "4",
+            "type": "buff",
+            "cooldown": 2.2,
+            "cast_time": 1.0,
+            "image": "assets/images/skills/regeneration_1760739255499.png"
+        }
+    ],
     "window_bounds": [
-      -8,
-      -8,
-      2576,
-      1408
-    ]
-  }
+        -8,
+        -8,
+        2576,
+        1408
+    ],
+    "monster_list": [
+        {
+            "name": "Slime Xanh",
+            "priority": 1,
+            "enabled": true
+        }
+    ],
+    "rotation_mode": "sequence",
+    "current_monster_index": 0,
+    "window_pid": 1972,
+    "templates": [],
+    "training_mode_enabled": true,
+    "ui_mode": "advanced",
+    "template_threshold": 0.55,
+    "global_hotkeys": {
+        "enabled": true,
+        "start_key": "ctrl+shift+r",
+        "stop_key": "ctrl+shift+e",
+        "setup_wizard_key": "ctrl+alt+n",
+        "library_manager_key": "ctrl+shift+l",
+        "vision_wizard_key": "ctrl+shift+v",
+        "monster_editor_key": "ctrl+shift+m"
+    },
+    "training_monster_list": [],
+    "window_hwnd": 51971974,
+    "overlay": {
+        "enabled": false
+    },
+    "monster_tracking": {
+        "enabled": true,
+        "detection_interval": 0.1,
+        "confidence_threshold": 0.7,
+        "stable_frames": 3,
+        "lost_timeout": 3.0,
+        "max_detections_display": 20,
+        "show_stats": true,
+        "stats_update_interval": 0.5,
+        "auto_start_with_hunt": false
+    },
+    "game_window_mode": "above",
+    "app_window_mode": "topmost",
+    "is_configured": true,
+    "monster_selected_name": "Slime Xanh",
+    "monster_rotation": [],
+    "hunt_area": {
+        "window_title": "Cabal_Auto - Visual Studio Code [Administrator]",
+        "window_bounds": [
+            -8,
+            -8,
+            2576,
+            1408
+        ]
+    },
+    "schema_version": 2
 }

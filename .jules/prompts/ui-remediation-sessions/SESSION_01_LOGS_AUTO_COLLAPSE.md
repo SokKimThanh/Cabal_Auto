@@ -46,8 +46,10 @@ Nếu test mới ở bước 1 không có tên khớp `responsive` hoặc `rapid
 Kiểm tra thủ công nhanh:
 
 1. Chạy `py .\app_gui.py` ở màn hình 1366x768.
-2. Xác nhận Logs tự thu và hàng Skill có thêm không gian.
+2. Xác nhận phần Text của Logs biến mất và chỉ còn header Logs.
 3. Mở Logs thủ công, thay đổi nhẹ kích thước cửa sổ và xác nhận Logs không đóng lại ngay.
+
+Lưu ý: Session này **không** được coi việc hàng Skill hiện lại là điều kiện thành công. Nếu Hunt workspace vẫn vượt chiều cao, Skill vẫn bị cắt hoặc biên Logs cắt ngang Hunt như ảnh lỗi, ghi rõ đó là blocker đã biết chuyển sang Session 04; không tuyên bố auto-collapse đã sửa được layout.
 
 ## Điều kiện hoàn tất
 

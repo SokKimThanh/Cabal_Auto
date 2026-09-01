@@ -53,4 +53,4 @@ Không sửa auto-collapse, layout hoặc style trong session này.
 - Nơi cuối cùng chịu trách nhiệm format record.
 - Diff hoặc commit liên quan (nếu có).
 - Lệnh test cùng kết quả.
-- Trạng thái AC-10, AC-12 và AC-16. 
+- Trạng thái AC-10, AC-12 và AC-16.
