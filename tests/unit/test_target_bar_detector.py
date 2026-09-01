@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-import cv2
 from lib.vision.target_bar_detector import TargetBarDetector
 
 @pytest.fixture
