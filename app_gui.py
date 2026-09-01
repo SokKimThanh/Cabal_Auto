@@ -554,7 +554,11 @@ class App(tk.Tk):
                 self.after(0, fn) if hasattr(self, "after") else fn()
             ),
             clear_target_ui=self.clear_target_listbox,
-            set_target_info=lambda txt: getattr(self, "hunt_target_info", tk.StringVar()).set(txt)
+            set_target_info=(
+                self.hunt_target_info.set
+                if hasattr(self, "hunt_target_info")
+                else lambda _: None
+            ),
         )
 
         # Keyboard shortcuts (Window-focused only)
