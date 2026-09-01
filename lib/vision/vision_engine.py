@@ -124,6 +124,8 @@ class VisionEngine:
             "downscale_factor": 1.0,
             "use_grayscale": True,
             "feature_type": "ORB",
+            "feature_min_poly_area": 20,
+            "feature_max_poly_area": 1920 * 1080 * 0.9,
             "hsv_lower": (0, 120, 120),
             "hsv_upper": (10, 255, 255),
             "hsv_min_area": 50,
@@ -137,6 +139,10 @@ class VisionEngine:
                     ((170, 120, 120), (180, 255, 255)),
                 ],
             },
+            "render_inplace": True,
+            "worker_pipeline": "template",
+            "auto_track": False,
+            "target_selection_strategy": "highest_confidence",
         }
 
         # State
@@ -266,19 +272,22 @@ class VisionEngine:
             logger.warning(f"Unknown tracker type: {tracker_type}, falling back to CSRT")
             tracker_type = "CSRT"
 
-        for creator in [
-            getattr(getattr(cv2, "legacy", None), f"Tracker{tracker_type}_create", None),
-            getattr(cv2, f"Tracker{tracker_type}_create", None),
-        ]:
+        candidates = [
+            ("legacy", getattr(getattr(cv2, "legacy", None), f"Tracker{tracker_type}_create", None)),
+            ("main", getattr(cv2, f"Tracker{tracker_type}_create", None)),
+        ]
+
+        for source, creator in candidates:
             if callable(creator):
                 try:
                     tracker = creator()
+                    logger.debug(f"Tracker {tracker_type} created successfully from {source} module.")
                     break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Tracker candidate {source}.Tracker{tracker_type}_create failed: {e}")
 
         if tracker is None:
-            logger.error(f"Tracker {tracker_type} is not available in this OpenCV build")
+            logger.error(f"Tracker {tracker_type} is not supported or failed to initialize in current OpenCV build.")
             return ""
 
         bbox = detection.bbox()
@@ -458,6 +467,8 @@ class VisionEngine:
         )
 
         if lower_hsv is not None and upper_hsv is not None:
+            # Chế độ dải tùy biến: Tắt bộ lọc loại trừ đỏ mặc định để không can thiệp dải màu caller chỉ định
+            apply_red_filter = False
             lower_b, upper_b = np.array(lower_hsv, dtype=np.uint8), np.array(
                 upper_hsv, dtype=np.uint8
             )
@@ -473,9 +484,6 @@ class VisionEngine:
                 mask = cv2.bitwise_or(m1, m2)
             else:
                 mask = cv2.inRange(hsv, lower_b, upper_b)
-            apply_red_filter = (
-                target_threat_levels is not None and "red" not in active_levels_lower
-            )
         else:
             combined_mask = None
             for level in active_levels_lower:
@@ -700,10 +708,15 @@ class VisionEngine:
 
         pts_int = dst.astype(np.int32)
         if not cv2.isContourConvex(pts_int):
+            logger.debug("Feature matching rejected: Transformed polygon is non-convex or self-intersecting.")
             return []
 
-        poly_area = cv2.contourArea(dst.astype(np.float32))
-        if poly_area < 20 or poly_area > (frame_w * frame_h * 0.9):
+        poly_area = cv2.contourArea(pts_int)
+        min_poly_area = self.params.get("feature_min_poly_area", 20)
+        max_poly_area = self.params.get("feature_max_poly_area", frame_w * frame_h * 0.9)
+
+        if poly_area < min_poly_area or poly_area > max_poly_area:
+            logger.debug(f"Feature matching rejected: Polygon area {poly_area:.1f} out of bounds ({min_poly_area}-{max_poly_area}).")
             return []
 
         x_coords, y_coords = dst[:, 0, 0], dst[:, 0, 1]
@@ -869,10 +882,26 @@ class VisionEngine:
         # Note: This means `frame` is mutated in-place with bounding boxes/labels.
         # Ensure the frame source returns a fresh array (or one you won't reuse elsewhere),
         # otherwise copy before calling into the engine.
-        rendered_frame = frame
+        render_inplace = self.params.get("render_inplace", True)
+        rendered_frame = frame if render_inplace else frame.copy()
 
         if len(self.trackers) == 0:
-            detections = self.match_templates(frame, roi=self.default_region)
+            pipeline_mode = self.params.get("worker_pipeline", "template")
+            if pipeline_mode == "monster":
+                detections = self.detect_monster_pipeline(frame, roi=self.default_region)
+            else:
+                detections = self.match_templates(frame, roi=self.default_region)
+
+            if self.params.get("auto_track", False) and detections:
+                strategy = self.params.get("target_selection_strategy", "highest_confidence")
+                if strategy == "center_screen":
+                    fh, fw = frame.shape[:2]
+                    cx, cy = fw // 2, fh // 2
+                    best_det = min(detections, key=lambda d: (d.center()[0] - cx)**2 + (d.center()[1] - cy)**2)
+                else:  # "highest_confidence"
+                    best_det = max(detections, key=lambda d: d.score)
+                self.start_track(frame, best_det)
+
             for det in detections:
                 cv2.rectangle(
                     rendered_frame,
