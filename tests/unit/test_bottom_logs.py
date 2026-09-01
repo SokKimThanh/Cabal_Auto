@@ -87,20 +87,28 @@ def test_batch_insert_rate_limit(app):
     assert lines < 200
 
 
+def test_responsive_initial_logs_state(app):
+    # Test _check_initial_logs_state logic
+    app.logs_expanded = True
+    app.winfo_height = MagicMock(return_value=850)
+    app._check_initial_logs_state()
+    assert app.logs_expanded is False
+
+
 def test_responsive_auto_collapse_no_forced_repeat(app):
-    # Simulating configure event
+    # Simulating configure event using actual tkinter event generation
 
     # Initially over 900
-    event_high = MagicMock()
-    event_high.widget = app
     app.winfo_height = MagicMock(return_value=1000)
-    app._on_window_configure(event_high)
+    app.event_generate('<Configure>', height=1000)
+    app.update()
     assert app._last_height_under_900 is False
     assert app.logs_expanded is True
 
     # Resize down to 850 -> triggers auto collapse
     app.winfo_height = MagicMock(return_value=850)
-    app._on_window_configure(event_high)
+    app.event_generate('<Configure>', height=850)
+    app.update()
     assert app._last_height_under_900 is True
     assert app.logs_expanded is False
 
@@ -110,18 +118,21 @@ def test_responsive_auto_collapse_no_forced_repeat(app):
 
     # Another resize event still under 900
     app.winfo_height = MagicMock(return_value=840)
-    app._on_window_configure(event_high)
+    app.event_generate('<Configure>', height=840)
+    app.update()
     # Should NOT auto-collapse
     assert app.logs_expanded is True
 
     # Resize up to 900+
     app.winfo_height = MagicMock(return_value=950)
-    app._on_window_configure(event_high)
+    app.event_generate('<Configure>', height=950)
+    app.update()
     assert app._last_height_under_900 is False
 
     # Resize down to 850 again -> triggers auto collapse
     app.winfo_height = MagicMock(return_value=850)
-    app._on_window_configure(event_high)
+    app.event_generate('<Configure>', height=850)
+    app.update()
     assert app._last_height_under_900 is True
     assert app.logs_expanded is False
 
