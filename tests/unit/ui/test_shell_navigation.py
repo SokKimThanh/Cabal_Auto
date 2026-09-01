@@ -42,8 +42,13 @@ def test_hunt_continues_while_hidden(monkeypatch):
     try:
         app.hunt_orchestrator = Mock()
         app.hunt_orchestrator.hunt_running = True
+        app.hunt_orchestrator.stop = Mock()
+        app.hunt_orchestrator.pause = Mock()
+
         app.switch_view('setup')
-        assert app.hunt_orchestrator.hunt_running is True
+
+        app.hunt_orchestrator.stop.assert_not_called()
+        app.hunt_orchestrator.pause.assert_not_called()
     finally:
         app.destroy()
 
