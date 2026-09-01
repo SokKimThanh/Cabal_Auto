@@ -1006,19 +1006,7 @@ class App(tk.Tk):
 
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
-        if getattr(self, "_window_configure_bound", False):
-            return
-
-        self.bind("<Configure>", self._on_window_configure)
-        self._window_configure_bound = True
-
-        def _apply_initial_logs_state():
-            if self._is_destroyed:
-                return
-            event = type("ConfigureEvent", (), {"widget": self})()
-            self._on_window_configure(event)
-
-        self.after_idle(_apply_initial_logs_state)
+        pass  # We will use Configure event for this
 
     def _update_logs_metrics(self):
         """Update metrics on the bottom logs header."""
