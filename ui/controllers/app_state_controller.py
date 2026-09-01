@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import tkinter as tk
 from typing import Any, Dict, List, Optional
 import threading
@@ -128,37 +130,66 @@ class AppStateController:
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         app = self.root
-        title = str(app.hunt_cfg.get("window_title", "") or "").strip()
-        proc_name = ""
+        import logging
+        logger = logging.getLogger(__name__)
 
-        if isinstance(getattr(app, "hunt_selected", None), dict):
-            if not title:
-                title = str(app.hunt_selected.get("title") or "").strip()
-            proc_name = str(app.hunt_selected.get("proc") or "").strip()
+        from lib.features.hunt.window_selection_service import WindowSelectionService, validate_selected_cabal_window
 
-        if not title:
-            return "Please select a target window first."
+        selected = getattr(app, "hunt_selected", None)
+        if not isinstance(selected, dict):
+            logger.warning("Validation failed: no_window_selected")
+            return app._t("error_no_window_selected")
 
-        # Allow either process name or title to indicate a Cabal window
-        has_cabal = False
-        if "cabal" in proc_name.lower() or "cabal" in title.lower():
-            has_cabal = True
+        known_items = getattr(app, "win_items", [])
 
-        if not has_cabal:
-            return app._t("error_no_cabal_window")
-
-        from lib.features.hunt.window_selection_service import WindowSelectionService
+        validation = validate_selected_cabal_window(selected, known_items)
+        if not validation.is_valid:
+            if validation.code == "no_window_selected":
+                logger.warning("Validation failed: no_window_selected")
+            return app._t("error_no_window_selected")
+            elif validation.code == "window_unavailable":
+                logger.warning("Validation failed: window_unavailable")
+                return app._t("error_window_unavailable")
+            elif validation.code == "window_changed":
+                logger.warning("Validation failed: window_changed")
+                return app._t("error_window_changed")
+            elif validation.code == "no_cabal_window":
+                logger.warning("Validation failed: no_cabal_window")
+                return app._t("error_no_cabal_window")
+            else:
+                logger.warning("Validation failed: no_cabal_window")
+                return app._t("error_no_cabal_window")  # Fallback
 
         bounds = WindowSelectionService.resolve_bounds(
             app.hunt_cfg, getattr(app, "current_window_bounds", None)
         )
         if not bounds:
-            return "Invalid hunt area bounds. Please refresh or reselect the target window."
+            logger.warning("Validation failed: window_unavailable")
+                return app._t("error_window_unavailable")
 
         templates = app.hunt_cfg.get("templates") or []
         template_path = str(app.hunt_cfg.get("template_path", "") or "").strip()
         if not templates and not template_path:
+            logger.warning("Validation failed: no_templates")
             return app._t("error_no_templates")
+
+        # Validate that templates exist on disk
+        import os
+        has_valid_template = False
+        if templates:
+            for t in templates:
+                if isinstance(t, dict):
+                    path = t.get("path")
+                    if path and os.path.exists(path):
+                        has_valid_template = True
+                        break
+        if not has_valid_template and template_path and os.path.exists(template_path):
+            has_valid_template = True
+
+        if not has_valid_template:
+            logger.warning("Validation failed: invalid_template")
+            return app._t("error_invalid_template")
+
         return None
 
     def _hunt_from_ui(self) -> Dict[str, Any]:
@@ -378,13 +409,14 @@ class AppStateController:
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             else:
-                title = app.hunt_selected.get("title", selected_window) if hasattr(app, "hunt_selected") and isinstance(app.hunt_selected, dict) else selected_window
+                # title handled natively
                 text = "[✓]" if compact else app._t("bounds_state_ready").format(title=f"{bounds[2]}x{bounds[3]}")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_ACCENT)
 
     def _hunt_locate_target(self, cfg: Dict[str, Any]):
         app = self.root
+        _ = app
         from lib.features.hunt.window_selection_service import WindowSelectionService
         from lib.vision.template_matcher import locate_template
         from pathlib import Path
@@ -437,6 +469,7 @@ class AppStateController:
 
     def _prepare_skill_runtime(self, cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
         app = self.root
+        _ = app
         runtime: List[Dict[str, Any]] = []
         skills_by_name = {
             skill.get("name"): skill
