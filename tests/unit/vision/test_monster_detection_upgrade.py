@@ -156,8 +156,8 @@ def test_hsv_noise_filtering(vision_engine):
 def test_feature_matching_orb(vision_engine):
     """Test ORB feature matching with scale and rotation"""
     # Create synthetic pattern image with rich texture
-    np.random.seed(42)
-    tpl_img = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
+    rng = np.random.default_rng(42)
+    tpl_img = rng.integers(0, 256, (100, 100, 3), dtype=np.uint8)
 
     template = Template(
         id="pattern_monster",
