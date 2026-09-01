@@ -18,3 +18,7 @@ Action: Always instantiate buttons via `ui.components.create_icon_button` or its
    - Độ đệm (Padding): Luôn có horizontal padding (`padx`) tối thiểu 10px - 15px để văn bản và icon không bị xén viền.
 
 Lưu ý: Từ nay về sau, mỗi khi chỉnh sửa hoặc tạo mới bất kỳ thành phần UI nào, bạn MUST đọc và tuân thủ các quy tắc trong `palette.md`.
+
+2025-10-26 - Tkinter Button Accessibility
+Learning: In a Tkinter Python application, standard HTML ARIA attributes like `aria-label` do not apply and setting them raises a `TclError`. To implement accessibility and clarity for icon buttons that may lack clear context, we must utilize the existing i18n tooltip system by providing `tooltip_key` and `tooltip_ns` arguments to button creation helper functions like `create_icon_button`.
+Action: Always attach a tooltip using `tooltip_key` to all icon buttons to ensure functionality is accessible and discoverable.
