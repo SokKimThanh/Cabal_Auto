@@ -25,6 +25,16 @@ def save_config(cfg):
         json.dump(cfg, f, indent=4)
 
 
+def save_hunt_config(cfg):
+    try:
+        with open(HUNT_CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error saving hunt config: {e}")
+        return False
+
+import shutil
 from lib.features.hunt.config_migrator import migrate_hunt_config
 
 def load_hunt_config():
@@ -33,23 +43,39 @@ def load_hunt_config():
             with open(HUNT_CONFIG_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-                data = migrate_hunt_config(data)
+            original_version = data.get("schema_version")
+
+            data = migrate_hunt_config(data)
+
+            new_version = data.get("schema_version")
+
+            # If migration changed the schema version to 2 or we migrated something
+            if original_version != new_version and new_version == 2:
+                # Backup before overwrite
+                backup_path = HUNT_CONFIG_PATH.with_suffix(".json.bak")
+                shutil.copy2(HUNT_CONFIG_PATH, backup_path)
 
                 # Normalize fields immediately after loading
                 _sanitize_templates(data)
 
-                return data
+                # Write migrated file back
+                save_hunt_config(data)
+            else:
+                _sanitize_templates(data)
+
+            return data
         except json.JSONDecodeError as e:
             print(f"Error decoding hunt_config.json: {e}")
         except Exception as e:
             print(f"Error loading hunt config: {e}")
 
-    # Default hunt configuration (Sprint 21 Phase 3 structure)
+    # Default hunt configuration (schema_version 2)
     return {
+        "schema_version": 2,
         "ui_mode": "beginner",
         "hunt_area": {"window_bounds": None},
-        "monster_rotation": [],  # List of monster IDs
-        "skills": {},  # Dictionary mapping slot ID (e.g. "1") to skill data
+        "monster_rotation": [],
+        "skill_slots": [],
         "options": {
             "auto_heal": True,
             "heal_threshold": 40,
@@ -60,20 +86,10 @@ def load_hunt_config():
             "enabled": True,
             "start_key": "ctrl+shift+r",
             "stop_key": "ctrl+shift+e",
-            "setup_wizard_key": "ctrl+shift+n",  # NEW
-            "library_manager_key": "ctrl+shift+l",  # NEW
+            "setup_wizard_key": "ctrl+shift+n",
+            "library_manager_key": "ctrl+shift+l",
         },
     }
-
-
-def save_hunt_config(cfg):
-    try:
-        with open(HUNT_CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, indent=4, ensure_ascii=False)
-        return True
-    except Exception as e:
-        print(f"Error saving hunt config: {e}")
-        return False
 
 
 def _sanitize_templates(cfg):
