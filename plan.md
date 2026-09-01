@@ -1,9 +1,18 @@
-1. **Update ID generation in `_get_default_monster`:** Modify `str(uuid.uuid4())` to `str(uuid.uuid4())[:8]` in `dialogs/monster_edit.py` to generate short IDs.
-2. **Change ID Label Display in `dialogs/monster_edit.py`:** Update `_populate_form` so it always formats the ID label using `f"#{m_id}"`, even for new monsters (since they auto-generate a UUID), instead of showing "<Mới / New>". Update `_on_reset_form` and `_on_clear_form` to set the ID label text to the newly generated ID or "" instead of "<Mới / New>".
-3. **Add "Generate ID" Button in `dialogs/monster_edit.py`:**
-   - Modify `_setup_ui` (around line 387) to create a `tk.Frame` for the ID field, holding the label and a new "Generate ID" button.
-   - The button should only be added or displayed for new monsters.
-   - Add a method `_on_generate_id` to generate a short ID, update `self.monster_data["id"]`, and update the UI label.
-4. **Run Tests:** Explicitly run the test suite (e.g., `xvfb-run -a pytest tests/focused/test_monster_editor_id.py`) to verify the changes.
-5. **Complete pre-commit steps:** Complete pre commit steps to ensure proper testing, verification, review, and reflection are done.
-6. **Submit the changes:** Submit the git branch.
+1. **Refactor `lib/features/hunt/hunt_orchestrator.py` worker loop**:
+   - Add `target_bar_detector` initialization before the loop: `target_bar_detector = TargetBarDetector()`.
+   - Update `have_target` evaluation:
+     - Remove `box, match_info = self.locate_target(cfg)`.
+     - Instead, inside the loop, capture a single `frame` per tick.
+     - Evaluate `is_alive = target_bar_detector.is_target_alive(frame)`.
+     - Implement debounce logic: keep track of `consecutive_false_readings`. If `is_alive` is True, `have_target = True` and reset `consecutive_false_readings = 0`. If `is_alive` is False, increment counter. If `consecutive_false_readings >= cfg.get("target_lost_debounce_frames", 3)`, then `have_target = False`.
+     - Update `last_seen = now` if `is_alive` is True.
+   - Adjust `target_active` check inside `mode == 'attack'`:
+     - Remove `(now - attack_started) <= attack_min_duration` from target active condition.
+     - Remove `tap(cfg.get("target_key", "z"))` in attack mode to stop spamming the target key.
+   - In `mode == 'search'`:
+     - Update target key tap to use configurable delay: `time.sleep(float(cfg.get("search_tap_delay_sec", 0.08)))`.
+2. **Refactor `lib/features/hunt/hunt_runner.py` (not strictly needed since `try_cast_skills` loop logic is mainly in orchestrator, but verify its signature if needed)**.
+3. **Write/update `tests/integration/test_orchestrator_loop.py`**:
+   - Write integration tests to mock `is_target_alive` and verify state transitions and target key tapping logic according to the new requirements (debounce logic, no target key spam in attack mode).
+4. **Pre-commit tasks**: run `pre_commit_instructions` and follow them to ensure tests, verification, and code review pass.
+5. **Submit changes**.
