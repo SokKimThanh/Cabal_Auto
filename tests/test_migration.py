@@ -2,7 +2,6 @@ import json
 import pytest
 import os
 import tempfile
-from pathlib import Path
 from unittest.mock import patch
 from lib.features.hunt.config_migrator import migrate_hunt_config
 from lib.features.hunt.hunt_config import load_hunt_config, HUNT_CONFIG_PATH
