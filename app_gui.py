@@ -559,8 +559,8 @@ class App(tk.Tk):
         self.bind(
             "<Control-k>", lambda e: self.skill_manager_controller.open_window()
         )  # Ctrl+K: Manage skills
-        self.bind("<Alt-Key-1>", lambda e: self._switch_to_tab(0))  # Alt+1: Hunt tab
-        self.bind("<Alt-Key-2>", lambda e: self._switch_to_tab(1))  # Alt+2: Setup tab
+        self.bind("<Alt-Key-1>", lambda e: self.switch_view('hunt'))  # Alt+1: Hunt tab
+        self.bind("<Alt-Key-2>", lambda e: self.switch_view('setup'))  # Alt+2: Setup tab
 
         self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
@@ -579,13 +579,20 @@ class App(tk.Tk):
         self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
         self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
 
-        # Grid Configuration for main_shell (1920x1080 baseline)
-        self.main_shell.columnconfigure(0, minsize=250, weight=0)  # Sidebar target 280px, min 250px
-        self.main_shell.columnconfigure(1, weight=1)               # Workspace (flexible)
+        # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
+        try:
+            dpi_percent = self.tk.call('tk', 'scaling') * 72
+            scale_factor = dpi_percent / 100.0
+        except Exception:
+            scale_factor = 1.0
 
-        self.main_shell.rowconfigure(0, minsize=80, weight=0)      # Quick Action Bar
-        self.main_shell.rowconfigure(1, weight=1)                  # Active Hunt Workspace
-        self.main_shell.rowconfigure(2, minsize=200, weight=0)     # Bottom Logs
+        # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
+        self.main_shell.columnconfigure(0, minsize=int(260 * scale_factor), weight=0)  # Vùng C1 - Sidebar
+        self.main_shell.columnconfigure(1, minsize=int(960 * scale_factor), weight=1)  # Vùng B - Workspace
+
+        self.main_shell.rowconfigure(0, minsize=int(80 * scale_factor), weight=0)      # Vùng A - Action Bar
+        self.main_shell.rowconfigure(1, minsize=int(540 * scale_factor), weight=1)     # Vùng B - Nội dung chính
+        self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)      # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
         self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
@@ -599,14 +606,16 @@ class App(tk.Tk):
 
         # Build Sidebar Navigation
         sidebar_items = [
-            ("sidebar_quick_setup", lambda: self._switch_to_tab(1), UI.FONT_SECTION),
+            ("sidebar_quick_setup", lambda: self.switch_view('setup'), UI.FONT_SECTION),
             ("sidebar_managers", None, UI.FONT_SECTION),
             ("btn_monster_manager", self.monster_manager_controller.open_window, UI.FONT_LABEL),
             ("btn_skill_manager", self.skill_manager_controller.open_window, UI.FONT_LABEL),
             ("btn_library_manager", self.library_manager_controller.open_library_manager, UI.FONT_LABEL),
-            ("sidebar_configuration", lambda: self._switch_to_tab(1), UI.FONT_SECTION),
-            ("sidebar_support", lambda: self._switch_to_tab(3), UI.FONT_SECTION),
+            ("sidebar_configuration", lambda: self.switch_view('setup'), UI.FONT_SECTION),
+            ("sidebar_support", lambda: self.switch_view('help'), UI.FONT_SECTION),
+            ("tab_hunt", lambda: self.switch_view('hunt'), UI.FONT_SECTION),
         ]
+        self._sidebar_widgets = []
 
         for item_idx, item in enumerate(sidebar_items):
             key, command, font = item
@@ -621,6 +630,7 @@ class App(tk.Tk):
                     anchor="w"
                 )
                 lbl.pack(fill="x", pady=(10, 4))
+                self._sidebar_widgets.append((lbl, key))
             else:
                 # Button
                 btn = tk.Button(
@@ -641,6 +651,7 @@ class App(tk.Tk):
                     btn.pack(fill="x", pady=2, padx=(12, 0))
                 else:
                     btn.pack(fill="x", pady=2)
+                self._sidebar_widgets.append((btn, key))
 
         # Vùng B: Active Hunt Workspace
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
@@ -818,26 +829,29 @@ class App(tk.Tk):
                     self.state_controller._update_window_bounds_display()
         self.action_bar_frame.bind("<Configure>", on_action_bar_configure)
 
-        # Store notebook reference for keyboard shortcuts
-        self.notebook = ttk.Notebook(self.shell_zone_b)
-        self.notebook.pack(fill="both", expand=True, pady=(0, 8))
+        # UX2: View Manager for Zone B
+        self._current_view = None
+        self._views = {}
 
-        from ui.tabs.hunt_tab import HuntTab
+        from ui.views.hunt_workspace_frame import HuntWorkspaceFrame
+        from ui.views.setup_content_frame import SetupContentFrame
+        from ui.views.help_support_frame import HelpSupportFrame
+        from ui.views.stats_content_frame import StatsContentFrame
 
-        self.tab_hunt = HuntTab(self.notebook, self)
-        from ui.tabs.setup_tab import SetupTab
+        self._views['hunt'] = HuntWorkspaceFrame(self.shell_zone_b, self)
+        self._views['setup'] = SetupContentFrame(self.shell_zone_b, self)
+        self._views['help'] = HelpSupportFrame(self.shell_zone_b, self)
+        self._views['stats'] = StatsContentFrame(self.shell_zone_b, self)
 
-        self.tab_setup = SetupTab(self.notebook, self)
-        from ui.tabs.stats_tab import StatsTab
+        # Retain tab references for backward compatibility with orchestrators/runners
+        self.tab_hunt = self._views['hunt'].hunt_tab if hasattr(self._views['hunt'], 'hunt_tab') else None
+        self.tab_setup = self._views['setup'].setup_tab if hasattr(self._views['setup'], 'setup_tab') else None
+        self.tab_stats = self._views['stats'].stats_tab if hasattr(self._views['stats'], 'stats_tab') else None
+        self.tab_help = self._views['help'].help_tab if hasattr(self._views['help'], 'help_tab') else None
+        self.notebook = None
 
-        self.tab_stats = StatsTab(self.notebook, self)
-        from ui.tabs.help_tab import HelpTab
-
-        self.tab_help = HelpTab(self.notebook, self)
-        self.notebook.add(self.tab_hunt, text=self._t("tab_hunt"))
-        self.notebook.add(self.tab_setup, text=self._t("tab_setup"))
-        self.notebook.add(self.tab_stats, text=self._t("tab_stats"))
-        self.notebook.add(self.tab_help, text=self._t("tab_help"))
+        # Display default view
+        self.switch_view('hunt')
 
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
@@ -995,6 +1009,30 @@ class App(tk.Tk):
 
         self.after(500, self._poll_log_queue)
 
+    def switch_view(self, view_key: str):
+        if not hasattr(self, '_views') or view_key not in self._views:
+            return
+
+        # Hide current view
+        if hasattr(self, '_current_view') and self._current_view:
+            self._current_view.grid_remove()
+            if hasattr(self._current_view, "on_view_hidden"):
+                self._current_view.on_view_hidden()
+
+        # Show new view
+        target_view = self._views[view_key]
+        target_view.grid(row=0, column=0, sticky="nsew")
+
+        # Zone B needs grid row/col configs
+        self.shell_zone_b.columnconfigure(0, weight=1)
+        self.shell_zone_b.rowconfigure(0, weight=1)
+
+        self._current_view = target_view
+        self.current_view_key = view_key
+
+        if hasattr(target_view, "on_view_shown"):
+            target_view.on_view_shown()
+
     # Click Tab removed
 
     # Hunt Tab (Refactored - Sprint 18 Phase 4 Task #2 + UX Enhancement)
@@ -1117,14 +1155,19 @@ class App(tk.Tk):
 
         # Optionally update tabs here, though the prompt primarily requests
         # Zone A widgets to change immediately without losing state.
-        if hasattr(self, 'notebook'):
-            try:
-                self.notebook.tab(0, text=self._t("tab_hunt"))
-                self.notebook.tab(1, text=self._t("tab_setup"))
-                self.notebook.tab(2, text=self._t("tab_stats"))
-                self.notebook.tab(3, text=self._t("tab_help"))
-            except Exception:
-                pass
+        # Now handled by views instead of notebook
+        if hasattr(self, 'update_shell_translations'):
+            self.update_shell_translations()
+
+    def update_shell_translations(self):
+        """Update i18n text for shell elements like sidebar."""
+        if hasattr(self, '_sidebar_widgets'):
+            for widget, key in self._sidebar_widgets:
+                try:
+                    if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
+                        widget.config(text=self._t(key))
+                except Exception:
+                    pass
 
     def on_setup_wizard(self, hide_parent=True):
         self.window_controller.on_setup_wizard(hide_parent)
@@ -1138,19 +1181,16 @@ class App(tk.Tk):
     def _switch_to_tab(self, tab_index: int):
         """Switch to specified tab via keyboard shortcut."""
         try:
-            if not hasattr(self, "notebook"):
-                return
-
-            # Switch to tab
-            self.notebook.select(tab_index)
-
-            # Update status with shortcut indicator
-            tab_names = ["Hunt", "Setup", "Stats", "Help"]
-            if 0 <= tab_index < len(tab_names):
-                tab_name = tab_names[tab_index]
-                shortcut = f"Alt+{tab_index + 1}"
-                if hasattr(self, "hunt_status"):
-                    self.hunt_status.set(f"{shortcut}: Switched to {tab_name} tab")
+            tab_map = {0: 'hunt', 1: 'setup', 2: 'stats', 3: 'help'}
+            if tab_index in tab_map:
+                self.switch_view(tab_map[tab_index])
+                # Update status with shortcut indicator
+                tab_names = ["Hunt", "Setup", "Stats", "Help"]
+                if 0 <= tab_index < len(tab_names):
+                    tab_name = tab_names[tab_index]
+                    shortcut = f"Alt+{tab_index + 1}"
+                    if hasattr(self, "hunt_status"):
+                        self.hunt_status.set(f"{shortcut}: Switched to {tab_name} tab")
         except Exception as e:
             print(f"Tab switch error: {e}")
 

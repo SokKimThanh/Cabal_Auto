@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
-from ui.tabs.help_tab import HelpTab
+from ui.tabs.stats_tab import StatsTab
 
-class HelpSupportFrame(ttk.Frame):
+class StatsContentFrame(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
-        self.help_tab = HelpTab(self, app)
-        self.help_tab.pack(fill="both", expand=True)
+        self.stats_tab = StatsTab(self, app)
+        self.stats_tab.pack(fill="both", expand=True)
 
     def on_view_shown(self):
         pass
