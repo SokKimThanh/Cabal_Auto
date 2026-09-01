@@ -125,6 +125,7 @@ class VisionEngine:
             "use_grayscale": True,
             "feature_type": "ORB",
             "feature_min_poly_area": 20,
+            "feature_max_poly_area": 1920 * 1080 * 0.9,
             "hsv_lower": (0, 120, 120),
             "hsv_upper": (10, 255, 255),
             "hsv_min_area": 50,
@@ -466,7 +467,7 @@ class VisionEngine:
         )
 
         if lower_hsv is not None and upper_hsv is not None:
-            # Custom range mode: Disable the default red exclusion filter so it does not interfere with the caller-specified color range
+            # Chế độ dải tùy biến: Tắt bộ lọc loại trừ đỏ mặc định để không can thiệp dải màu caller chỉ định
             apply_red_filter = False
             lower_b, upper_b = np.array(lower_hsv, dtype=np.uint8), np.array(
                 upper_hsv, dtype=np.uint8
