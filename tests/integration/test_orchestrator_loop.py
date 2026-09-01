@@ -1,7 +1,6 @@
 import sys
 import pytest
-import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # Mock out window_manager and other windows specifics before import
 sys.modules['lib.system.window_manager'] = MagicMock()
