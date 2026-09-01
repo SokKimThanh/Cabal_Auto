@@ -48,3 +48,10 @@
 ## 2025-08-28 - Unnecessary array copying in real-time vision pipelines
 **Learning:** Calling `.copy()` on large numpy arrays (e.g., 1080p frames) in a high-frequency loop (like `VisionEngine._process_frame`) causes a ~0.8-1.0ms penalty per frame. If the frame array is generated fresh per iteration (e.g., from `ScreenCapture` or PyAutoGUI) and not reused by the caller, it can be mutated safely in-place for bounding boxes/labels, saving significant memory bandwidth and processing time.
 **Action:** Remove unnecessary `frame.copy()` calls in vision pipelines where the array is disposable.
+## 2026-09-02 - Responsive Tkinter Layout scaling
+**Learning:** Hardcoding absolute `minsize` values in `rowconfigure` and `columnconfigure` that collectively exceed lower resolutions (e.g., 1366x768) causes Tkinter to clip critical UI components.
+**Action:** Always test layouts on lower resolutions and ensure grid minsizes are minimal or proportional, allowing widgets to expand normally without enforcing impossible geometric bounds.
+
+## 2026-09-02 - Pre-formatted QueueHandler Messages
+**Learning:** When retrieving log records from a `QueueHandler` (specifically one initialized with a formatter), the formatted message is already populated in `record.message`. Attempting to manually iterate over handlers and call `handler.format(record)` on the UI thread causes double-formatting, resulting in duplicate timestamps and log levels.
+**Action:** When pulling from a log queue linked to a `QueueHandler`, simply use `record.message`.
