@@ -6,6 +6,7 @@ import os
 import sys
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 import queue
 from typing import Any, Dict, List, Optional
@@ -177,6 +178,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self._is_destroyed = False
+        self._last_height_under_900 = False
         # Load config and language
         self.cfg = load_config()
         self.hunt_cfg = load_hunt_config()
@@ -682,7 +684,7 @@ class App(tk.Tk):
 
         self.logs_toggle_btn = tk.Button(
             self.logs_header_frame,
-            text=self._t("logs_collapse") if hasattr(self, "_t") else "▼ Collapse",
+            text=self._t("logs_collapse"),
             command=self._toggle_bottom_logs,
             bg=UI.BG_SECTION,
             fg=UI.COLOR_TEXT,
@@ -708,7 +710,9 @@ class App(tk.Tk):
         self.logs_content_frame = self.logs_text_widget  # Maintain existing reference for layout operations
 
         self.after(100, self._check_initial_logs_state)
-        self.after(500, self._poll_log_queue)
+        self.after(100, self._poll_log_queue)
+        self.after(1000, self._update_logs_metrics)
+
 
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
@@ -946,30 +950,96 @@ class App(tk.Tk):
         self.has_unsaved_changes = False
         self._update_unsaved_indicator()
 
+    def _on_window_configure(self, event):
+        if event.widget == self:
+            current_height = self.winfo_height()
+            if current_height < 900:
+                if not self._last_height_under_900:
+                    self._last_height_under_900 = True
+                    if getattr(self, "logs_expanded", False):
+                        self._toggle_bottom_logs()
+            else:
+                self._last_height_under_900 = False
+
+    def _clear_bottom_logs(self):
+        """Clear log text widget."""
+        if not self._is_destroyed:
+            self.logs_text_widget.config(state="normal")
+            self.logs_text_widget.delete("1.0", tk.END)
+            self.logs_text_widget.config(state="disabled")
+
     def _toggle_bottom_logs(self):
         """Toggle bottom logs visibility (UX4B.1)."""
-        if self.logs_expanded:
-            self.logs_expanded = False
-            self.logs_content_frame.pack_forget()
-            self.logs_toggle_btn.config(
-                text=self._t("logs_expand") if hasattr(self, "_t") else "▲ Expand"
-            )
-            # Collapse to header height
-            self.main_shell.rowconfigure(2, minsize=36, weight=0)
-        else:
+        try:
+            # Recompute scale_factor dynamically just in case
+            dpi_percent = self.cfg.get("ui", {}).get("dpi_scale", 100)
+            try:
+                base_scale = self.tk.call('tk', 'scaling') * 72
+            except tk.TclError:
+                base_scale = 1.0
+            scale_factor = (dpi_percent / 100.0) * (base_scale / 1.0 if base_scale > 0.5 else 1.0)
+
+            if self.logs_expanded:
+                self.logs_expanded = False
+                self.logs_content_frame.pack_forget()
+                self.logs_toggle_btn.config(
+                    text=self._t("logs_expand")
+                )
+                # Collapse to header height
+                self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)
+            else:
+                self.logs_expanded = True
+                self.logs_content_frame.pack(fill="both", expand=True)
+                self.logs_toggle_btn.config(
+                    text=self._t("logs_collapse")
+                )
+                # Expand to full target size
+                self.main_shell.rowconfigure(2, minsize=int(200 * scale_factor), weight=0)
+        except Exception as e:
+            # Fallback to expanded state
             self.logs_expanded = True
-            self.logs_content_frame.pack(fill="both", expand=True)
-            self.logs_toggle_btn.config(
-                text=self._t("logs_collapse") if hasattr(self, "_t") else "▼ Collapse"
-            )
-            # Expand to full target size
-            self.main_shell.rowconfigure(2, minsize=200, weight=0)
+            try:
+                self.logs_content_frame.pack(fill="both", expand=True)
+                self.main_shell.rowconfigure(2, minsize=200, weight=0)
+            except Exception:
+                pass
 
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
-        if self.winfo_height() < 900:
-            if self.logs_expanded:
-                self._toggle_bottom_logs()
+        pass  # We will use Configure event for this
+
+    def _update_logs_metrics(self):
+        """Update metrics on the bottom logs header."""
+        if self._is_destroyed:
+            return
+
+        try:
+            fps = 0.0
+            scans = 0
+            running_time = "00:00:00"
+
+            # Here we might fetch actual metrics from app components
+            # We would need to read this from HuntLogger or VisionEngine
+            # But let's check HuntLogger session start
+            logger = get_hunt_logger()
+            if hasattr(logger, "session_start"):
+                duration = (datetime.now() - logger.session_start).total_seconds()
+                h = int(duration // 3600)
+                m = int((duration % 3600) // 60)
+                s = int(duration % 60)
+                running_time = f"{h:02d}:{m:02d}:{s:02d}"
+
+            # Basic dummy stats if actual stats not easily available
+            # In real system, we hook into VisionEngine or main orchestrator stats
+            from lib.system.hunt_logger import get_hunt_logger
+
+            # Since VisionEngine stats are inside its instance, let's just make it generic or try to extract from global
+            self.logs_metrics_label.config(text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}")
+
+        except Exception:
+            pass
+
+        self.after(1000, self._update_logs_metrics)
 
     def _poll_log_queue(self):
         """Poll log messages from HuntLogger and append to UI (UX4B.2)."""
@@ -977,14 +1047,22 @@ class App(tk.Tk):
             return
 
         try:
-            # Fetch all available logs
             logger = get_hunt_logger()
             if hasattr(logger, "ui_queue"):
-                while True:
+                if getattr(logger, "dropped_log_count", 0) > 0:
+                    dropped = logger.dropped_log_count
+                    logger.dropped_log_count = 0
+                    warn_msg = f"[!] Đã bỏ qua {dropped} dòng log do quá tải"
+                    self.logs_text_widget.config(state="normal")
+                    self.logs_text_widget.insert(tk.END, warn_msg + "\n")
+                    self.logs_text_widget.config(state="disabled")
+
+                lines_processed = 0
+                while lines_processed < 50:
                     try:
                         record = logger.ui_queue.get_nowait()
                         msg = record.getMessage()
-                        # Lấy format từ QueueHandler nếu có
+
                         import logging.handlers
                         for handler in logger.logger.handlers:
                             if isinstance(handler, logging.handlers.QueueHandler):
@@ -994,20 +1072,25 @@ class App(tk.Tk):
 
                         self.logs_text_widget.config(state="normal")
                         self.logs_text_widget.insert(tk.END, msg + "\n")
-
-                        # Keep only the last 1000 lines
-                        lines = int(self.logs_text_widget.index('end-1c').split('.')[0])
-                        if lines > 1000:
-                            self.logs_text_widget.delete("1.0", f"{lines - 1000 + 1}.0")
-
-                        self.logs_text_widget.see(tk.END)
-                        self.logs_text_widget.config(state="disabled")
+                        lines_processed += 1
                     except queue.Empty:
                         break
+
+                if lines_processed > 0:
+                    # Chống rò rỉ RAM dài hạn ở tầng hiển thị
+                    lines = int(self.logs_text_widget.index('end-1c').split('.')[0])
+                    if lines > 1000:
+                        self.logs_text_widget.config(state="normal")
+                        self.logs_text_widget.delete("1.0", f"{lines - 1000 + 1}.0")
+
+                    self.logs_text_widget.see(tk.END)
+                    self.logs_text_widget.config(state="disabled")
+
         except Exception as e:
             print(f"Error polling logs: {e}")
 
-        self.after(500, self._poll_log_queue)
+        # Flush frequently
+        self.after(100, self._poll_log_queue)
 
     def switch_view(self, view_key: str):
         if not hasattr(self, '_views') or view_key not in self._views:

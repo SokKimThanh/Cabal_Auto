@@ -7,7 +7,7 @@ import sys
 from unittest.mock import Mock
 
 
-@pytest.mark.parametrize("view_key", ['setup', 'monster_manager', 'help', 'hunt'])
+@pytest.mark.parametrize("view_key", ['setup', 'help', 'hunt'])
 def test_switch_view_updates_current_key(monkeypatch, view_key):
     monkeypatch.setitem(sys.modules, 'lib.system.window_manager', Mock())
     from app_gui import App

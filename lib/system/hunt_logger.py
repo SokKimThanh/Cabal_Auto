@@ -18,6 +18,19 @@ import json
 import queue
 
 
+
+class DropNewestQueueHandler(QueueHandler):
+    def __init__(self, queue, logger_instance):
+        super().__init__(queue)
+        self.logger_instance = logger_instance
+
+    def enqueue(self, record):
+        try:
+            self.queue.put_nowait(record)
+        except queue.Full:
+            self.logger_instance.dropped_log_count += 1
+
+
 class HuntLogger:
     """Enhanced logger for Hunt operations."""
     
@@ -41,8 +54,9 @@ class HuntLogger:
         self.logger.handlers.clear()
         
         # Queue for UI consumption
-        self.ui_queue = queue.Queue()
-        queue_handler = QueueHandler(self.ui_queue)
+        self.ui_queue = queue.Queue(maxsize=5000)
+        self.dropped_log_count = 0
+        queue_handler = DropNewestQueueHandler(self.ui_queue, self)
         queue_handler.setLevel(logging.INFO)
 
         # Create rotating file handler
