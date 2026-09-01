@@ -146,7 +146,7 @@ class AppStateController:
         if not validation.is_valid:
             if validation.code == "no_window_selected":
                 logger.warning("Validation failed: no_window_selected")
-            return app._t("error_no_window_selected")
+                return app._t("error_no_window_selected")
             elif validation.code == "window_unavailable":
                 logger.warning("Validation failed: window_unavailable")
                 return app._t("error_window_unavailable")
@@ -165,7 +165,7 @@ class AppStateController:
         )
         if not bounds:
             logger.warning("Validation failed: window_unavailable")
-                return app._t("error_window_unavailable")
+            return app._t("error_window_unavailable")
 
         templates = app.hunt_cfg.get("templates") or []
         template_path = str(app.hunt_cfg.get("template_path", "") or "").strip()
