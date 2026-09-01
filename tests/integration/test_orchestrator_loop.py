@@ -48,6 +48,7 @@ def orchestrator():
     )
     orch.bot_manager = MagicMock()
     orch.bot_manager.screen_capture = MagicMock()
+    orch.bot_manager.screen_capture.hwnd = 123
     orch.bot_manager.screen_capture.get_latest_frame = MagicMock(return_value="mock_frame")
     orch.try_cast_skills = MagicMock()
     return orch
