@@ -702,7 +702,7 @@ class VisionEngine:
         if not cv2.isContourConvex(pts_int):
             return []
 
-        poly_area = cv2.contourArea(pts_int)
+        poly_area = cv2.contourArea(dst.astype(np.float32))
         if poly_area < 20 or poly_area > (frame_w * frame_h * 0.9):
             return []
 
