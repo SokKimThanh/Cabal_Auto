@@ -135,6 +135,9 @@ class AppStateController:
         if not title:
             return "Please select a target window first."
 
+        if "cabal" not in title.lower():
+            return app._t("error_no_cabal_window")
+
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
         bounds = WindowSelectionService.resolve_bounds(
@@ -146,7 +149,7 @@ class AppStateController:
         templates = app.hunt_cfg.get("templates") or []
         template_path = str(app.hunt_cfg.get("template_path", "") or "").strip()
         if not templates and not template_path:
-            return "Please choose at least one monster/template before starting hunt."
+            return app._t("error_no_templates")
         return None
 
     def _hunt_from_ui(self) -> Dict[str, Any]:
