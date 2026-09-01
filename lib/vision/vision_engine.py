@@ -857,8 +857,9 @@ class VisionEngine:
         # 🎯 Why: Copying a 1080p numpy array in a high-frequency loop adds ~1ms overhead.
         # 📊 Impact: Saves ~1ms processing time per frame and reduces memory bandwidth.
         # 🔬 Measurement: See tests/vision/vision_perf_test.py or run a local benchmark.
-        # Note: This means `frame` is mutated in-place with bounding boxes, which is safe
-        # since callers (like the capture queue) do not reuse pristine frames after processing.
+        # Note: This means `frame` is mutated in-place with bounding boxes/labels.
+        # Ensure the frame source returns a fresh array (or one you won't reuse elsewhere),
+        # otherwise copy before calling into the engine.
         rendered_frame = frame
 
         if len(self.trackers) == 0:
