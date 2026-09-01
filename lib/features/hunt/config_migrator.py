@@ -1,25 +1,25 @@
-from typing import Any, Dict, List, Optional
-
-from lib.features.hunt.config_validator import normalize_window_bounds_value
-
 import logging
+from typing import Any, Dict, List, Optional
+from lib.features.hunt.config_validator import normalize_window_bounds_value
 
 logger = logging.getLogger(__name__)
 
-def migrate_hunt_config(data: Any) -> Dict[str, Any]:
-    """Migrates and normalizes the hunt config dictionary in-place."""
-    if not isinstance(data, dict):
-        data = {}
+CURRENT_SCHEMA_VERSION = 2
 
-    # Check for schema version
-    schema_version = data.get("schema_version")
-    if schema_version and isinstance(schema_version, int) and schema_version >= 2:
-        return data
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
 
-    if "ui_mode" not in data:
-        data["ui_mode"] = "beginner"
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
-    # Migrate monster rotation
+def _migrate_monster_rotation(data: Dict[str, Any]) -> None:
+    """Migrate legacy 'monsters' array and normalize 'monster_rotation'."""
     if "monster_rotation" not in data:
         data["monster_rotation"] = []
 
@@ -31,8 +31,7 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
         for m in old_list:
             if isinstance(m, dict):
                 m_id = m.get("id", m.get("monster_id", 0))
-                if isinstance(m_id, str) and m_id.isdigit():
-                    m_id = int(m_id)
+                m_id = _safe_int(m_id)
                 new_rotation.append({
                     "monster_id": m_id,
                     "name": m.get("name", str(m_id)),
@@ -64,15 +63,15 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
             if isinstance(m, dict):
                 m_id = m.get("monster_id", m.get("id", 0))
                 new_rotation.append({
-                    "monster_id": int(m_id) if str(m_id).isdigit() else 0,
+                    "monster_id": _safe_int(m_id),
                     "name": m.get("name", str(m_id)),
-                    "priority": m.get("priority", priority),
+                    "priority": _safe_int(m.get("priority", priority), priority),
                     "dungeon_id": m.get("dungeon_id", None)
                 })
                 priority += 1
             elif isinstance(m, (str, int)):
                 new_rotation.append({
-                    "monster_id": int(m) if str(m).isdigit() else 0,
+                    "monster_id": _safe_int(m),
                     "name": str(m),
                     "priority": priority,
                     "dungeon_id": None
@@ -83,7 +82,8 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
         for i, entry in enumerate(data["monster_rotation"]):
             entry["priority"] = i + 1
 
-    # Check for legacy skills field
+def _migrate_skills(data: Dict[str, Any]) -> None:
+    """Migrate legacy 'skills' and 'attack_keys' into 'skill_slots'."""
     legacy_skills = data.pop("skills", {})
     legacy_attack_keys = data.pop("attack_keys", [])
 
@@ -104,8 +104,8 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
                 merged_skills[k["key"]] = {
                     "id": str(k_id),
                     "key": str(k["key"]),
-                    "cast_time": float(k.get("cast_time", 0.0)),
-                    "cooldown": float(k.get("cooldown", 0.0)),
+                    "cast_time": _safe_float(k.get("cast_time")),
+                    "cooldown": _safe_float(k.get("cooldown")),
                     "type": str(k.get("type", "attack"))
                 }
 
@@ -120,8 +120,8 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
                 merged_skills[k_key] = {
                     "id": str(slot_id),
                     "key": str(k_key),
-                    "cast_time": float(k.get("cast_time", 0.0)),
-                    "cooldown": float(k.get("cooldown", 0.0)),
+                    "cast_time": _safe_float(k.get("cast_time")),
+                    "cooldown": _safe_float(k.get("cooldown")),
                     "type": str(k.get("type", "attack"))
                 }
 
@@ -133,7 +133,23 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
 
     data["skill_slots"] = skill_slots
 
-    data["schema_version"] = 2
+def migrate_hunt_config(data: Any) -> Dict[str, Any]:
+    """Migrates and normalizes the hunt config dictionary in-place."""
+    if not isinstance(data, dict):
+        data = {}
+
+    # Check for schema version
+    schema_version = data.get("schema_version")
+    if schema_version and isinstance(schema_version, int) and schema_version >= CURRENT_SCHEMA_VERSION:
+        return data
+
+    if "ui_mode" not in data:
+        data["ui_mode"] = "beginner"
+
+    _migrate_monster_rotation(data)
+    _migrate_skills(data)
+
+    data["schema_version"] = CURRENT_SCHEMA_VERSION
 
     # Ensure global hotkeys exist
     if not isinstance(data.get("global_hotkeys"), dict):
