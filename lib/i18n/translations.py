@@ -433,6 +433,8 @@ Tips:
         'save_hunt': 'Lưu cấu hình săn',
         'start_hunt': 'Bắt đầu săn',
         'stop_hunt': 'Dừng săn',
+        'refresh_tooltip': 'Làm Mới Danh Sách Cửa Sổ',
+        'refresh_tooltip_desc': 'Quét lại các cửa sổ game',
         'setup_wizard': 'Trợ lý thiết lập',
         'wizard_first_time_title': 'Chào mừng đến Cabal Auto Hunt!',
         'wizard_first_time_message': (

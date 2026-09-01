@@ -66,6 +66,11 @@ class WindowInfo:
     is_enabled: bool
     is_minimized: bool
     is_maximized: bool
+
+    @property
+    def is_offscreen(self) -> bool:
+        """Check if window is off-screen (e.g. minimized state bounds <= -32000)"""
+        return self.rect.get('left', 0) <= -32000 or self.rect.get('top', 0) <= -32000
     is_foreground: bool
     
     def __post_init__(self):

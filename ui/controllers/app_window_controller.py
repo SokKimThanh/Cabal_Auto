@@ -47,6 +47,47 @@ class AppWindowController:
         return results
 
     def on_hunt_refresh_windows(self, *_args) -> None:
+        if getattr(self, '_refresh_locked', False):
+            return
+        self._refresh_locked = True
+        if hasattr(self, 'root') and hasattr(self.root, 'after'):
+            self.root.after(500, lambda: setattr(self, '_refresh_locked', False))
+
+        import time
+        from lib.system.window_manager import WindowManager
+
+        selected = getattr(self.root, "hunt_selected", None)
+        if selected and isinstance(selected, dict):
+            hwnd = selected.get("hwnd")
+            if hwnd:
+                wm = WindowManager()
+                info = wm.get_window_info(hwnd)
+
+                # Check if minimized or off-screen
+                if info and (info.is_minimized or info.is_offscreen):
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(f"Window {hwnd} is minimized, attempting recovery...")
+
+                    # Try up to 3 times to restore the window
+                    for attempt in range(3):
+                        wm.restore(hwnd)
+                        try:
+                            import win32gui
+                            win32gui.SetForegroundWindow(hwnd)
+                        except Exception:
+                            pass
+
+                        time.sleep(0.3)  # Wait 300ms
+
+                        # Re-check bounds
+                        new_info = wm.get_window_info(hwnd)
+                        if new_info and not new_info.is_minimized and not new_info.is_offscreen:
+                            logger.info(f"Window successfully restored. New bounds: {new_info.rect}")
+                            break
+                        logger.warning(f"Restore attempt {attempt+1} failed.")
+
+        # Finally re-scan windows to update bounds in UI
         self.on_hunt_find_windows()
 
     def on_hunt_find_windows(self, _evt=None) -> None:
