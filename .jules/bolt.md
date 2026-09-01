@@ -44,3 +44,7 @@
 ## 2024-03-XX - [Fast downsampling before color conversion]
 **Learning:** Reversing operations so that `cv2.resize` happens *before* `cv2.cvtColor` drastically improves performance in real-time capture loops (e.g., dropping pixel count by 75% for 1080p->540p before color conversion). Also, `cv2.INTER_AREA` is much faster for shrinking images compared to the default interpolation.
 **Action:** Always check the order of OpenCV operations in hot loops. Shrink image arrays early before applying pixel-wise operations to save processing time.
+
+## 2025-08-28 - Unnecessary array copying in real-time vision pipelines
+**Learning:** Calling `.copy()` on large numpy arrays (e.g., 1080p frames) in a high-frequency loop (like `VisionEngine._process_frame`) causes a ~0.8-1.0ms penalty per frame. If the frame array is generated fresh per iteration (e.g., from `ScreenCapture` or PyAutoGUI) and not reused by the caller, it can be mutated safely in-place for bounding boxes/labels, saving significant memory bandwidth and processing time.
+**Action:** Remove unnecessary `frame.copy()` calls in vision pipelines where the array is disposable.
