@@ -129,13 +129,22 @@ class AppStateController:
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         app = self.root
         title = str(app.hunt_cfg.get("window_title", "") or "").strip()
+        proc_name = ""
 
-        if not title and isinstance(getattr(app, "hunt_selected", None), dict):
-            title = str(app.hunt_selected.get("title", "")).strip()
+        if isinstance(getattr(app, "hunt_selected", None), dict):
+            if not title:
+                title = str(app.hunt_selected.get("title", "")).strip()
+            proc_name = str(app.hunt_selected.get("proc", "")).strip()
+
         if not title:
             return "Please select a target window first."
 
-        if "cabal" not in title.lower():
+        # Allow either process name or title to indicate a Cabal window
+        has_cabal = False
+        if "cabal" in proc_name.lower() or "cabal" in title.lower():
+            has_cabal = True
+
+        if not has_cabal:
             return app._t("error_no_cabal_window")
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
