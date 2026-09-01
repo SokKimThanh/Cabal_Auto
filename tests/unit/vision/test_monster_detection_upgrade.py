@@ -311,22 +311,47 @@ def test_edge_cases_empty_and_black_images(vision_engine):
     # 5. Extremely small downscale factor or invalid dimensions
     assert vision_engine.detect_hsv_target(black_frame, downscale_factor=0.00001) == []
 
-def test_detect_features_invalid_homography(vision_engine):
+def test_detect_features_invalid_homography(vision_engine, monkeypatch):
     """Test that detect_features correctly rejects invalid homography (e.g. non-convex or abnormal area)."""
-    # Create template with random noise to get features, but random so it won't naturally match well
-    np.random.seed(42)
-    tpl_img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    # Build a deterministic, feature-rich template and embed it into a frame so feature matching
+    # is not reliant on random noise behavior across OpenCV versions/builds.
+    tpl_img = np.zeros((100, 100, 3), dtype=np.uint8)
+    cv2.rectangle(tpl_img, (10, 10), (90, 90), (255, 255, 255), 2)
+    cv2.line(tpl_img, (10, 10), (90, 90), (255, 255, 255), 2)
+    cv2.line(tpl_img, (90, 10), (10, 90), (255, 255, 255), 2)
+    cv2.circle(tpl_img, (50, 50), 18, (255, 255, 255), 2)
+    cv2.putText(tpl_img, "X", (35, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+
     template = Template(
-        id="noise_template",
+        id="synthetic_template",
         path="synthetic",
         image=tpl_img,
         threshold=0.6
     )
 
-    # Frame is also noise, meaning many arbitrary matches might be found, causing a weird homography
-    frame = np.random.randint(0, 255, (600, 800, 3), dtype=np.uint8)
+    frame = np.zeros((600, 800, 3), dtype=np.uint8)
+    frame[200:300, 300:400] = tpl_img
+
+    original_find_homography = cv2.findHomography
+
+    def fake_find_homography(src_pts, dst_pts, method=0, ransacReprojThreshold=None, mask=None, maxIters=None, confidence=None):
+        # Only force a known-bad homography when detect_features has enough correspondences to try
+        # computing one; otherwise preserve OpenCV behavior.
+        if src_pts is not None and dst_pts is not None and len(src_pts) >= 4 and len(dst_pts) >= 4:
+            bad_homography = np.array(
+                [
+                    [1000.0, 0.0, 0.0],
+                    [0.0, 1000.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ],
+                dtype=np.float32,
+            )
+            return bad_homography, np.ones((len(src_pts), 1), dtype=np.uint8)
+        return original_find_homography(src_pts, dst_pts, method, ransacReprojThreshold)
+
+    monkeypatch.setattr(cv2, "findHomography", fake_find_homography)
 
     detections = vision_engine.detect_features(frame, template, min_matches=4)
-    # The homography should either fail to compute, or the resulting polygon should be rejected
-    # due to the convexity / area validations, returning no valid detections.
+    # The monkeypatched homography produces an invalid/extreme projected polygon that should be
+    # rejected by the convexity / area validations, returning no valid detections.
     assert detections == []
