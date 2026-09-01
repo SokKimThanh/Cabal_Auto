@@ -6,7 +6,7 @@ wm_mock = mock.MagicMock()
 sys.modules["lib.system.window_manager"] = wm_mock
 
 import pytest
-from lib.features.hunt.window_selection_service import WindowValidationResult, validate_selected_cabal_window
+from lib.features.hunt.window_selection_service import validate_selected_cabal_window
 
 class MockWindowInfo:
     def __init__(self, hwnd=123, title="Cabal", pid=456, process_name="cabal.exe", is_visible=True, is_enabled=True, is_minimized=False, is_offscreen=False):
