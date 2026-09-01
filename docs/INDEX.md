@@ -113,6 +113,7 @@ docs/
 
 ### For Designers
 
+- [Current UI Remediation Proposal](CURRENT_UI_REMEDIATION_PROPOSAL.md) - Prioritized Hunt layout fixes and acceptance criteria
 - [Icon/Button Style Guide](guides/ui-design) - Icon button design rules
 - [Icon System Verification](features/ICON_SYSTEM_VERIFICATION.md) - Icon system notes
 - [Icon Placement Rules](sprints/sprint21/ICON_PLACEMENT_RULES.md) - Placement conventions
