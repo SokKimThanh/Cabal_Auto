@@ -1,0 +1,10 @@
+--- app_gui.py
++++ app_gui.py
+@@ -3143,6 +3144,7 @@ def main():
+         # Start application
+         app = App()
+         app.protocol("WM_DELETE_WINDOW", app.on_close)
++        print("[Main] Tkinter window initialized and mainloop starting...")
+         app.mainloop()
+     finally:
+         # Always release lock on exit

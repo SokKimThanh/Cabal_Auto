@@ -1,0 +1,12 @@
+--- app_gui.py
++++ app_gui.py
+@@ -1087,6 +1087,9 @@
+     def try_close_setup_wizard(self) -> bool:
+         return self.window_controller.try_close_setup_wizard()
+
++    def try_close_library_manager(self) -> bool:
++        return self.library_manager_controller.try_close_library_manager()
++
+     def _switch_to_tab(self, tab_index: int):
+         """Switch to specified tab via keyboard shortcut."""
+         try:
