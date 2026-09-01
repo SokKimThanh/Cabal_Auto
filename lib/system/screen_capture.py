@@ -285,28 +285,30 @@ class ScreenCapture:
                 if current_time >= next_capture_time:
                     # Refresh rect and check if minimized
                     try:
-                        rect = win32gui.GetClientRect(self.hwnd)
-                        is_minimized = win32gui.IsIconic(self.hwnd) or rect[2] == 0 or rect[3] == 0
+                        win_rect = win32gui.GetWindowRect(self.hwnd)
+                        width = max(0, win_rect[2] - win_rect[0])
+                        height = max(0, win_rect[3] - win_rect[1])
+                        is_minimized = win32gui.IsIconic(self.hwnd) or width == 0 or height == 0
                     except Exception as e:
-                        logger.error(f"Failed to get client rect: {e}")
+                        logger.error(f"Failed to get window rect: {e}")
                         is_minimized = True
 
                     if is_minimized:
-                        frame = self._latest_frame
-                    else:
                         with self._frame_lock:
-                            if self.window_rect is not None and (rect[2] != self.window_rect['width'] or rect[3] != self.window_rect['height']):
-                                # Update rect dimensions correctly with absolute coords based on previous setup
-                                pt = win32gui.ClientToScreen(self.hwnd, (0, 0))
-                                self.window_rect = {
-                                    'left': pt[0],
-                                    'top': pt[1],
-                                    'right': pt[0] + rect[2],
-                                    'bottom': pt[1] + rect[3],
-                                    'width': rect[2],
-                                    'height': rect[3]
-                                }
-                                self._reallocate_buffer(rect[2], rect[3])
+                            frame = None if self._latest_frame is None else self._latest_frame.copy()
+                    else:
+                        if self.window_rect is not None and (
+                            width != self.window_rect['width'] or height != self.window_rect['height']
+                        ):
+                            self.window_rect = {
+                                'left': win_rect[0],
+                                'top': win_rect[1],
+                                'right': win_rect[2],
+                                'bottom': win_rect[3],
+                                'width': width,
+                                'height': height,
+                            }
+                            self._reallocate_buffer(width, height)
 
                         frame = self._capture_frame()
 
