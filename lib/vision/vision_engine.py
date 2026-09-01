@@ -259,26 +259,27 @@ class VisionEngine:
 
         tracker_type = self.params.get("tracker_type", "CSRT").upper()
 
-        try:
-            if tracker_type == "CSRT":
-                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
-            elif tracker_type == "KCF":
-                tracker = cv2.legacy.TrackerKCF_create()  # type: ignore
-            else:
-                logger.warning(
-                    f"Unknown tracker type: {tracker_type}, falling back to CSRT"
-                )
-                tracker = cv2.legacy.TrackerCSRT_create()  # type: ignore
-        except AttributeError:
-            if tracker_type == "CSRT":
-                tracker = cv2.TrackerCSRT_create()  # type: ignore
-            elif tracker_type == "KCF":
-                tracker = cv2.TrackerKCF_create()  # type: ignore
-            else:
-                logger.warning(
-                    f"Unknown tracker type: {tracker_type}, falling back to CSRT"
-                )
-                tracker = cv2.TrackerCSRT_create()  # type: ignore
+        tracker = None
+
+        # Fallback to CSRT if tracker type is unknown
+        if tracker_type not in ["CSRT", "KCF"]:
+            logger.warning(f"Unknown tracker type: {tracker_type}, falling back to CSRT")
+            tracker_type = "CSRT"
+
+        for creator in [
+            getattr(getattr(cv2, "legacy", None), f"Tracker{tracker_type}_create", None),
+            getattr(cv2, f"Tracker{tracker_type}_create", None),
+        ]:
+            if callable(creator):
+                try:
+                    tracker = creator()
+                    break
+                except Exception:
+                    pass
+
+        if tracker is None:
+            logger.error(f"Tracker {tracker_type} is not available in this OpenCV build")
+            return ""
 
         bbox = detection.bbox()
         if not tracker.init(frame, bbox):
@@ -695,6 +696,14 @@ class VisionEngine:
         try:
             dst = cv2.perspectiveTransform(pts, M)
         except Exception:
+            return []
+
+        pts_int = dst.astype(np.int32)
+        if not cv2.isContourConvex(pts_int):
+            return []
+
+        poly_area = cv2.contourArea(dst.astype(np.float32))
+        if poly_area < 20 or poly_area > (frame_w * frame_h * 0.9):
             return []
 
         x_coords, y_coords = dst[:, 0, 0], dst[:, 0, 1]

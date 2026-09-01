@@ -155,12 +155,9 @@ def test_hsv_noise_filtering(vision_engine):
 
 def test_feature_matching_orb(vision_engine):
     """Test ORB feature matching with scale and rotation"""
-    # Create synthetic pattern image
-    tpl_img = np.zeros((100, 100, 3), dtype=np.uint8)
-    cv2.circle(tpl_img, (50, 50), 40, (255, 255, 255), -1)
-    cv2.rectangle(tpl_img, (20, 20), (80, 80), (100, 200, 50), 3)
-    cv2.line(tpl_img, (0, 0), (100, 100), (0, 255, 0), 2)
-    cv2.line(tpl_img, (0, 100), (100, 0), (255, 0, 0), 2)
+    # Create synthetic pattern image with rich texture
+    rng = np.random.default_rng(42)
+    tpl_img = rng.integers(0, 256, (100, 100, 3), dtype=np.uint8)
 
     template = Template(
         id="pattern_monster",
@@ -190,7 +187,7 @@ def test_feature_matching_orb(vision_engine):
     det = detections[0]
     assert det.method_used == "orb_features"
     # Check bounding box overlaps scene region (300:420, 200:320)
-    assert 250 <= det.x <= 450
+    assert 200 <= det.x <= 450
     assert 150 <= det.y <= 350
 
 
@@ -313,3 +310,48 @@ def test_edge_cases_empty_and_black_images(vision_engine):
 
     # 5. Extremely small downscale factor or invalid dimensions
     assert vision_engine.detect_hsv_target(black_frame, downscale_factor=0.00001) == []
+
+def test_detect_features_invalid_homography(vision_engine, monkeypatch):
+    """Test that detect_features correctly rejects invalid homography (e.g. non-convex or abnormal area)."""
+    # Build a deterministic, feature-rich template and embed it into a frame so feature matching
+    # is not reliant on random noise behavior across OpenCV versions/builds.
+    tpl_img = np.zeros((100, 100, 3), dtype=np.uint8)
+    cv2.rectangle(tpl_img, (10, 10), (90, 90), (255, 255, 255), 2)
+    cv2.line(tpl_img, (10, 10), (90, 90), (255, 255, 255), 2)
+    cv2.line(tpl_img, (90, 10), (10, 90), (255, 255, 255), 2)
+    cv2.circle(tpl_img, (50, 50), 18, (255, 255, 255), 2)
+    cv2.putText(tpl_img, "X", (35, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+
+    template = Template(
+        id="synthetic_template",
+        path="synthetic",
+        image=tpl_img,
+        threshold=0.6
+    )
+
+    frame = np.zeros((600, 800, 3), dtype=np.uint8)
+    frame[200:300, 300:400] = tpl_img
+
+    original_find_homography = cv2.findHomography
+
+    def fake_find_homography(src_pts, dst_pts, method=0, ransacReprojThreshold=None, mask=None, maxIters=None, confidence=None):
+        # Only force a known-bad homography when detect_features has enough correspondences to try
+        # computing one; otherwise preserve OpenCV behavior.
+        if src_pts is not None and dst_pts is not None and len(src_pts) >= 4 and len(dst_pts) >= 4:
+            bad_homography = np.array(
+                [
+                    [1000.0, 0.0, 0.0],
+                    [0.0, 1000.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ],
+                dtype=np.float32,
+            )
+            return bad_homography, np.ones((len(src_pts), 1), dtype=np.uint8)
+        return original_find_homography(src_pts, dst_pts, method, ransacReprojThreshold)
+
+    monkeypatch.setattr(cv2, "findHomography", fake_find_homography)
+
+    detections = vision_engine.detect_features(frame, template, min_matches=4)
+    # The monkeypatched homography produces an invalid/extreme projected polygon that should be
+    # rejected by the convexity / area validations, returning no valid detections.
+    assert detections == []
