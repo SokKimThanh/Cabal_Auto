@@ -4,7 +4,12 @@ from tkinter import messagebox
 from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class AppWindowController:
+    ALLOWED_PROCESSES = ["cabal.exe"]
+
     """Manages dialog/window ownership tracking and target window selection lifecycle."""
 
     def __init__(self, root: tk.Tk):
@@ -22,7 +27,8 @@ class AppWindowController:
         own_title = ""
         try:
             own_title = self.root.title()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to get own title: {e}")
             own_title = ""
 
         allowed_processes = ["cabal.exe"]
@@ -220,6 +226,10 @@ class AppWindowController:
 
         selected = validation.window
         bounds = normalize_window_bounds_value(selected.get("bounds"))
+
+        # Re-enable UI if it was locked
+        if hasattr(self.root, "start_stop_btn"):
+            self.root.start_stop_btn.config(state="normal")
         self.root.hunt_selected = selected
         self.root.current_window_bounds = bounds
 
@@ -247,15 +257,11 @@ class AppWindowController:
             if hasattr(self.root, "win_combo"):
                 self.root.win_combo["values"] = [item["title"] for item in items]
 
-            # Find the first candidate using already-fetched window metadata.
-            # _list_windows() has already filtered to visible Cabal windows, so avoid
-            # re-validating every item with a helper that re-queries system window info.
+            # Find the first valid item
+            from lib.features.hunt.window_selection_service import validate_selected_cabal_window
             valid_index = -1
             for i, item in enumerate(items):
-                if (
-                    str(item.get("proc", "")).lower() == "cabal.exe"
-                    and not bool(item.get("is_minimized"))
-                ):
+                if validate_selected_cabal_window(item, items).is_valid:
                     valid_index = i
                     break
 
@@ -265,7 +271,8 @@ class AppWindowController:
                 if hasattr(self.root, "win_combo_var"):
                     self.root.win_combo_var.set(items[valid_index]["title"])
                 self.on_window_combo_selected()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Exception during operation: {e}")
             return
 
     def _bring_window_to_front_by_hwnd(self, hwnd: int) -> bool:
@@ -273,7 +280,8 @@ class AppWindowController:
             from lib.system.window_manager import WindowManager
 
             return WindowManager().set_foreground(int(hwnd))
-        except Exception:
+        except Exception as e:
+            logger.error(f"Exception during operation: {e}")
             return False
 
     def _bring_window_to_front_by_pid(self, pid: int) -> bool:
@@ -281,7 +289,8 @@ class AppWindowController:
             for item in self._list_windows():
                 if int(item["pid"]) == int(pid):
                     return self._bring_window_to_front_by_hwnd(int(item["hwnd"]))
-        except Exception:
+        except Exception as e:
+            logger.error(f"Exception during operation: {e}")
             return False
         return False
 
@@ -291,7 +300,8 @@ class AppWindowController:
         try:
             for item in self._list_windows(title_contains=title):
                 return self._bring_window_to_front_by_hwnd(int(item["hwnd"]))
-        except Exception:
+        except Exception as e:
+            logger.error(f"Exception during operation: {e}")
             return False
         return False
 
@@ -372,7 +382,8 @@ class AppWindowController:
                 except Exception:
                     return False
             return False
-        except Exception:
+        except Exception as e:
+            logger.error(f"Exception during operation: {e}")
             return False
 
     def open_vision_wizard(self):

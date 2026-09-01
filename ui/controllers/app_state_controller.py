@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import tkinter as tk
 from typing import Any, Dict, List, Optional
 import threading
@@ -128,11 +130,14 @@ class AppStateController:
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         app = self.root
+        import logging
+        logger = logging.getLogger(__name__)
 
         from lib.features.hunt.window_selection_service import WindowSelectionService, validate_selected_cabal_window
 
         selected = getattr(app, "hunt_selected", None)
         if not isinstance(selected, dict):
+            logger.warning("Validation failed: no_window_selected")
             return app._t("error_no_window_selected")
 
         known_items = getattr(app, "win_items", [])
@@ -140,25 +145,32 @@ class AppStateController:
         validation = validate_selected_cabal_window(selected, known_items)
         if not validation.is_valid:
             if validation.code == "no_window_selected":
-                return app._t("error_no_window_selected")
+                logger.warning("Validation failed: no_window_selected")
+            return app._t("error_no_window_selected")
             elif validation.code == "window_unavailable":
+                logger.warning("Validation failed: window_unavailable")
                 return app._t("error_window_unavailable")
             elif validation.code == "window_changed":
+                logger.warning("Validation failed: window_changed")
                 return app._t("error_window_changed")
             elif validation.code == "no_cabal_window":
+                logger.warning("Validation failed: no_cabal_window")
                 return app._t("error_no_cabal_window")
             else:
+                logger.warning("Validation failed: no_cabal_window")
                 return app._t("error_no_cabal_window")  # Fallback
 
         bounds = WindowSelectionService.resolve_bounds(
             app.hunt_cfg, getattr(app, "current_window_bounds", None)
         )
         if not bounds:
-            return app._t("error_window_unavailable")
+            logger.warning("Validation failed: window_unavailable")
+                return app._t("error_window_unavailable")
 
         templates = app.hunt_cfg.get("templates") or []
         template_path = str(app.hunt_cfg.get("template_path", "") or "").strip()
         if not templates and not template_path:
+            logger.warning("Validation failed: no_templates")
             return app._t("error_no_templates")
 
         # Validate that templates exist on disk
@@ -175,6 +187,7 @@ class AppStateController:
             has_valid_template = True
 
         if not has_valid_template:
+            logger.warning("Validation failed: invalid_template")
             return app._t("error_invalid_template")
 
         return None
