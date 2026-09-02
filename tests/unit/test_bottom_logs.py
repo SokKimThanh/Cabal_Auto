@@ -312,3 +312,35 @@ def test_footer_geometry_always_in_bounds(app):
     app._toggle_bottom_logs()
     app.update_idletasks()
     verify_bounds()
+
+
+def test_footer_geometry_always_in_bounds_small_window(app):
+    """Verify footer bounds at a smaller window size (e.g. 1024x768)."""
+    app.geometry('1024x768')
+    app.update_idletasks()
+
+    root_y = app.winfo_rooty()
+    root_h = app.winfo_height()
+    root_bottom = root_y + root_h
+
+    def verify_bounds():
+        apply_f = app.global_apply_frame
+        db_bar = app._db_status_bar
+
+        assert apply_f.winfo_ismapped()
+        assert db_bar.winfo_ismapped()
+
+        apply_y = apply_f.winfo_rooty()
+        apply_h = apply_f.winfo_height()
+        assert apply_y >= root_y
+        assert apply_y + apply_h <= root_bottom
+
+        db_y = db_bar.winfo_rooty()
+        db_h = db_bar.winfo_height()
+        assert db_y >= root_y
+        assert db_y + db_h <= root_bottom
+
+    verify_bounds()
+    app._toggle_bottom_logs()
+    app.update_idletasks()
+    verify_bounds()

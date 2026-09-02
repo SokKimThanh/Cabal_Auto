@@ -587,6 +587,9 @@ class App(tk.Tk):
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
 
+        # Pack main_shell last so it doesn't push bottom frames out of the window
+        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
     # -----------------
     def _build_ui(self):
         from lib.ui_style import UIStyle as UI
