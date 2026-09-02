@@ -41,7 +41,7 @@ def test_hunt_tab_geometry_with_collapsed_logs():
     # 1. Find Hunt Tab
     hunt_tab = None
     def find_hunt_tab(widget):
-        if "hunt" in str(type(widget)).lower() and hasattr(widget, 'skill_strip_frame'):
+        if hasattr(widget, 'skill_strip_frame'):
             return widget
         for child in widget.winfo_children():
             res = find_hunt_tab(child)
