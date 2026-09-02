@@ -12,7 +12,75 @@ class HuntTab(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, padding=12)
         self.app = app
+        self._current_layout = None
+        self._resize_timer = None
         self._build_ui()
+
+    def _run_resize_layout(self, width):
+        """Run the deferred layout update and clear the active timer id."""
+        self._resize_timer = None
+        self._apply_layout(width)
+
+    def _on_resize(self, event):
+        """Debounce resize events to prevent layout thrashing."""
+        if self._resize_timer is not None:
+            try:
+                self.after_cancel(self._resize_timer)
+            except tk.TclError:
+                pass
+            finally:
+                self._resize_timer = None
+        self._resize_timer = self.after(100, lambda: self._run_resize_layout(event.width))
+
+    def _apply_layout(self, width):
+        """Apply wide or narrow layout based on width breakpoint."""
+        breakpoint_width = 850
+        target_layout = "wide" if width >= breakpoint_width else "narrow"
+
+        if target_layout == self._current_layout:
+            return
+
+        self._current_layout = target_layout
+
+        if target_layout == "wide":
+            # Main Grid Wide: Monster (L) | Target (R)
+            self.grid_columnconfigure(0, weight=1, uniform="panel")
+            self.grid_columnconfigure(1, weight=1, uniform="panel")
+            self.grid_rowconfigure(0, weight=1)
+            self.grid_rowconfigure(1, weight=0)
+            self.grid_rowconfigure(2, weight=0)
+
+            self.app.monster_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 6), pady=(0, 12), columnspan=1)
+            self.app.active_target_status_frame.grid(row=0, column=1, sticky="new", padx=(6, 0), pady=(0, 12), columnspan=1)
+
+            self.skill_strip_frame.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=(0, 12))
+
+            # Skill Strip Wide: Skill Slots (L) | Skill Stats (R)
+            self.skill_strip_frame.grid_columnconfigure(0, weight=1)
+            self.skill_strip_frame.grid_columnconfigure(1, weight=2)
+
+            self.skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6), pady=0, columnspan=1)
+            self.app.skill_stats_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0), pady=0, columnspan=1)
+
+        else:
+            # Main Grid Narrow: Target (Top) \n Monster (Bottom) \n Skill Strip (Bottom)
+            self.grid_columnconfigure(0, weight=1, uniform="")
+            self.grid_columnconfigure(1, weight=0, uniform="")
+            self.grid_rowconfigure(0, weight=0)
+            self.grid_rowconfigure(1, weight=1)
+            self.grid_rowconfigure(2, weight=0)
+
+            self.app.active_target_status_frame.grid(row=0, column=0, sticky="new", padx=0, pady=(0, 12), columnspan=2)
+            self.app.monster_frame.grid(row=1, column=0, sticky="nsew", padx=0, pady=(0, 12), columnspan=2)
+
+            self.skill_strip_frame.grid(row=2, column=0, columnspan=2, sticky='nsew', pady=(0, 12))
+
+            # Skill Strip Narrow: Skill Slots (Top) \n Skill Stats (Bottom)
+            self.skill_strip_frame.grid_columnconfigure(0, weight=1)
+            self.skill_strip_frame.grid_columnconfigure(1, weight=0)
+
+            self.skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=0, pady=(0, 12), columnspan=2)
+            self.app.skill_stats_frame.grid(row=1, column=0, sticky="nsew", padx=0, pady=0, columnspan=2)
 
     def update_hunt_status_color(self, state: str):
         if not hasattr(self, "hunt_status_label"):
@@ -83,6 +151,11 @@ class HuntTab(ttk.Frame):
         self.grid_columnconfigure(1, weight=1, uniform="panel")
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=0)
+
+        # Defer resize binding until widget construction and initial geometry setup finish.
+        # This avoids _on_resize/_apply_layout running while _build_ui is still creating
+        # layout-dependent widgets.
+        self.after_idle(lambda: self.bind("<Configure>", self._on_resize))
 
         # Section 1: Active Target & Status Panel
         self.app.active_target_status_frame = tk.LabelFrame(
@@ -280,18 +353,18 @@ class HuntTab(ttk.Frame):
 
         self.skill_strip_frame = tk.Frame(self)
         self.skill_strip_frame.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=(0, 12))
-        self.skill_strip_frame.grid_columnconfigure(0, weight=1, uniform='skill_col')
-        self.skill_strip_frame.grid_columnconfigure(1, weight=2, uniform='skill_col')
+        self.skill_strip_frame.grid_columnconfigure(0, weight=1)
+        self.skill_strip_frame.grid_columnconfigure(1, weight=2)
 
         # Section 3: Skill slots selection
-        skill_frame_outer = tk.LabelFrame(
+        self.skill_frame_outer = tk.LabelFrame(
             self.skill_strip_frame, text=self.app._t("skill_slots"), padx=10, pady=8
         )
-        skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        self.skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
         # Manage skills hint (button hidden, use Ctrl+K shortcut)
         hint_label = tk.Label(
-            skill_frame_outer,
+            self.skill_frame_outer,
             text=f"ℹ️ {self.app._t('skill_manage_hint')}",
             fg="#666",
             font=("Arial", 8),
@@ -300,10 +373,10 @@ class HuntTab(ttk.Frame):
         hint_label.pack(side="top", anchor="e", pady=(0, 2))
         hint_label.bind("<Button-1>", lambda e: self.app.skill_manager_controller.open_window())
 
-        slot_frame = tk.Frame(skill_frame_outer)
+        slot_frame = tk.Frame(self.skill_frame_outer)
         slot_frame.pack(fill="both", expand=True)
         for col in range(2):
-            slot_frame.grid_columnconfigure(col*4 + 1, weight=1)
+            slot_frame.grid_columnconfigure(col * 4 + 1, weight=1)
         self.app.skill_slot_vars = []
         self.app.skill_slot_boxes = []
         self.app.skill_slot_key_labels = []
@@ -315,18 +388,18 @@ class HuntTab(ttk.Frame):
             label = self.app._t("skill_slot_label").format(i=idx + 1)
             tk.Label(slot_frame, text=label).grid(row=row, column=col_base, sticky="e", pady=1)
             cmb = ttk.Combobox(slot_frame, textvariable=var, state="readonly", width=12)
-            cmb.grid(row=row, column=col_base+1, sticky="we", padx=(4, 0), pady=1)
+            cmb.grid(row=row, column=col_base + 1, sticky="we", padx=(4, 0), pady=1)
             cmb.bind("<<ComboboxSelected>>", self.app.on_skill_slot_changed)
             # Key label showing which key is assigned to the selected skill
             key_lbl = tk.Label(slot_frame, text="", width=6, anchor="w", fg="#333")
-            key_lbl.grid(row=row, column=col_base+2, padx=(2, 0))
+            key_lbl.grid(row=row, column=col_base + 2, padx=(2, 0))
             self.app.skill_slot_key_labels.append(key_lbl)
             # Clear button (moved to column 3)
             tk.Button(
                 slot_frame,
                 text=self.app._t("skill_slot_clear"),
                 command=lambda v=var: self.app._clear_skill_slot(v),
-            ).grid(row=row, column=col_base+3, padx=(2, 6))
+            ).grid(row=row, column=col_base + 3, padx=(2, 6))
             self.app.skill_slot_boxes.append(cmb)
 
         self.app._refresh_monster_select_options()
