@@ -163,10 +163,11 @@ Yêu cầu:
 - API nhận full canonical snapshot hoặc mutation callback có contract rõ; không
    trộn hai kiểu tùy tiện.
 - Có revision/generation trong RAM để phát hiện stale write nếu hai thao tác cập
-   nhật từ snapshot khác nhau.
+   nhật từ snapshot khác nhau trong cùng một process và cùng vòng đời chạy hiện
+   tại; cơ chế này không bảo vệ qua app restart hoặc giữa nhiều process.
 - Không giữ lock trong lúc gọi Tkinter, messagebox hoặc callback bên ngoài.
-- Nếu cần hỗ trợ nhiều process ghi cùng file, báo follow-up riêng cho file lock;
-   `RLock` chỉ bảo vệ trong một process.
+- Nếu cần hỗ trợ nhiều process ghi cùng file, báo follow-up riêng cho persisted
+   revision trong JSON và/hoặc OS file lock; `RLock` chỉ bảo vệ trong một process.
 
 ### 4. Durability Và Atomic Save Failure
 
