@@ -244,7 +244,7 @@ class DataSyncManager:
                 original_count = len(config['monster_rotation'])
                 config['monster_rotation'] = [
                     m for m in config['monster_rotation']
-                    if m.get('monster_id') != monster_id
+                    if isinstance(m, dict) and m.get('monster_id') != monster_id
                 ]
                 removed = original_count - len(config['monster_rotation'])
                 if removed > 0:
@@ -336,7 +336,7 @@ class DataSyncManager:
             # Filter monster_rotation to keep only valid IDs
             if 'monster_rotation' in config and isinstance(config['monster_rotation'], list):
                 original_list = config['monster_rotation']
-                config['monster_rotation'] = [m for m in original_list if m.get('monster_id') in valid_ids]
+                config['monster_rotation'] = [m for m in original_list if isinstance(m, dict) and m.get('monster_id') in valid_ids]
                 print(f"[DataSyncManager] Monster list: {len(original_list)} -> {len(config['monster_rotation'])} IDs")
             
             # Filter training_monster_list to keep only valid IDs
@@ -439,7 +439,7 @@ class DataSyncManager:
             # Filter monster_rotation
             if 'monster_rotation' in config and isinstance(config['monster_rotation'], list):
                 original_count = len(config['monster_rotation'])
-                config['monster_rotation'] = [m for m in config['monster_rotation'] if m.get('monster_id') in valid_ids]
+                config['monster_rotation'] = [m for m in config['monster_rotation'] if isinstance(m, dict) and m.get('monster_id') in valid_ids]
                 removed = original_count - len(config['monster_rotation'])
                 if removed > 0:
                     print(f"[DataSyncManager] Removed {removed} orphaned IDs from monster_rotation")
