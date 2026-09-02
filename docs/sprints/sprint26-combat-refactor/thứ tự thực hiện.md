@@ -18,6 +18,9 @@
 10. `DESIGN-SYSTEM-TKINTER-ADAPTER.md` là nguồn chuyển đổi bắt buộc; không truyền
    token CSS như `rgba`, gradient, shadow hoặc CSS font string vào Tkinter.
 11. Nạp `00-global-rules.md` kèm mỗi session.
+12. `PROMPT-R1-core-gate-remediation.md` là recovery gate độc lập: có thể chạy
+   ngay, không đổi thứ tự 26 feature session, và phải đóng các blocker đã biết
+   trước khi CB1/CB2/CB2B/CB4/CB2D được báo `PASSED`.
 
 ## Ba Chế Độ Săn
 
@@ -57,6 +60,7 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 
 | # | Prompt | Phase | Kết quả chính | Phụ thuộc |
 | :---: | --- | --- | --- | --- |
+| R1 | `PROMPT-R1` | Recovery | Khép blocker CB1/CB2/CB2B/CB4/CB2D đã xác minh. | Không có; chạy ngay |
 | 01 | `PROMPT-UX1` | UX | Quick Action Bar và Start/Stop debounce. | Window service |
 | 02 | `PROMPT-UX2` | UX | Core shell và view swapping. | UX1 |
 | 03 | `PROMPT-UX6` | UX | Activity logging theo kiến trúc UI hiện hành. | UX2, HuntLogger |
