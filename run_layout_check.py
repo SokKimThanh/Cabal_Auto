@@ -16,9 +16,18 @@ def dump_tree(widget, indent=0):
     except tk.TclError as e:
         print(f"dump_tree: failed for {widget!r}: {e}", file=sys.stderr)
 
-root = App()
-root.geometry('1366x768')
-root.update_idletasks()
+def main():
+    root = None
+    try:
+        root = App()
+        root.geometry('1366x768')
+        root.update_idletasks()
 
-print("\n--- TREE DUMP ---")
-dump_tree(root.main_shell)
+        print("\n--- TREE DUMP ---")
+        dump_tree(root.main_shell)
+    finally:
+        if root is not None:
+            root.destroy()
+
+if __name__ == '__main__':
+    main()
