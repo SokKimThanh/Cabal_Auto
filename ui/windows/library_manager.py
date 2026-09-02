@@ -27,9 +27,6 @@ import os
 import ctypes
 from ctypes import wintypes
 
-# Add parent directory to path for imports (project root)
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # Optional PIL imports for capture and previews
 try:
     from PIL import ImageGrab, Image, ImageTk  # type: ignore
@@ -1119,21 +1116,23 @@ Track progress at:
     def _center_window(self):
         """Center window on parent."""
         self.update_idletasks()
-        
+
         # Get parent position and size
         parent_x = self.parent.winfo_x()
         parent_y = self.parent.winfo_y()
         parent_width = self.parent.winfo_width()
         parent_height = self.parent.winfo_height()
-        
-        # Get window size
-        window_width = self.winfo_width()
-        window_height = self.winfo_height()
-        
+
+        # An unmapped Toplevel can still report 1x1 despite its requested geometry.
+        window_width = max(self.winfo_width(), self.winfo_reqwidth())
+        window_height = max(self.winfo_height(), self.winfo_reqheight())
+
         # Calculate center position
         x = parent_x + (parent_width - window_width) // 2
         y = parent_y + (parent_height - window_height) // 2
-        
+        x = max(0, min(x, self.winfo_screenwidth() - window_width))
+        y = max(0, min(y, self.winfo_screenheight() - window_height))
+
         self.geometry(f"+{x}+{y}")
     
     def _build_ui(self):

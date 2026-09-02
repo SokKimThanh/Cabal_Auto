@@ -466,7 +466,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         self.title(title)
         self.geometry("850x520")
         self.resizable(True, True)
-        self.attributes("-topmost", True)
+        self.transient(parent)
 
         self.update_idletasks()
         x = (self.winfo_screenwidth() // 2) - (850 // 2)

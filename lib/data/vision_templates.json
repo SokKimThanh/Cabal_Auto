@@ -9,7 +9,9 @@
         1.0,
         1.1
       ],
-      "enabled": true
+      "enabled": true,
+      "monster_id": null,
+      "dungeon_id": null
     },
     {
       "id": "skill_icon_1",
@@ -18,7 +20,9 @@
       "scales": [
         1.0
       ],
-      "enabled": true
+      "enabled": true,
+      "monster_id": null,
+      "dungeon_id": null
     },
     {
       "id": "test_template",
@@ -27,7 +31,9 @@
       "scales": [
         1.0
       ],
-      "enabled": true
+      "enabled": true,
+      "monster_id": null,
+      "dungeon_id": null
     },
     {
       "id": "coc_go__new_template_1761047821696",
