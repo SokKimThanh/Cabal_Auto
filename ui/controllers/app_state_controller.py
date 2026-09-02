@@ -196,6 +196,12 @@ class AppStateController:
         app = self.root
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
+        # Ensure canonical schema for monster rotation
+        if hasattr(app, "hunt_cfg") and hasattr(app, "monster_rotation_list"):
+            app.hunt_cfg["monster_rotation"] = app.monster_rotation_list
+        if hasattr(app, "hunt_cfg"):
+            app.hunt_cfg["skill_slots"] = app.hunt_cfg.get("skill_slots", [])
+
         cfg = copy.deepcopy(getattr(app, "hunt_cfg", {}))
         if isinstance(getattr(app, "hunt_selected", None), dict):
             cfg["window_title"] = app.hunt_selected.get("title", "")

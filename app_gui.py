@@ -177,7 +177,6 @@ class App(tk.Tk):
         super().__init__()
         self._is_destroyed = False
         self._last_height_under_900 = False
-        self._save_timer = None
         # Load config and language
         self.cfg = load_config()
         self.hunt_cfg = load_hunt_config()
@@ -1961,16 +1960,6 @@ class App(tk.Tk):
             # Release the grab
             self.monster_context_menu.grab_release()
 
-    def _schedule_save(self):
-        if self._save_timer is not None:
-            self.after_cancel(self._save_timer)
-        self._save_timer = self.after(300, self._perform_save)
-
-    def _perform_save(self):
-        self.hunt_cfg["monster_rotation"] = self.monster_rotation_list
-        save_hunt_config(self.hunt_cfg)
-        self._save_timer = None
-
     def _on_monster_delete_from_list(self, event=None):
         """Delete selected monster from rotation list."""
         selection = self.monster_rotation_listbox.curselection()
@@ -1986,7 +1975,6 @@ class App(tk.Tk):
             for i, m in enumerate(self.monster_rotation_list):
                 m["priority"] = i + 1
 
-        self._schedule_save()
         self._refresh_monster_rotation_list()
 
         # Select next item if available
@@ -2012,7 +2000,6 @@ class App(tk.Tk):
         for i, m in enumerate(self.monster_rotation_list):
             m["priority"] = i + 1
 
-        self._schedule_save()
         self._refresh_monster_rotation_list()
         self.monster_rotation_listbox.selection_set(idx - 1)
 
@@ -2033,7 +2020,6 @@ class App(tk.Tk):
         for i, m in enumerate(self.monster_rotation_list):
             m["priority"] = i + 1
 
-        self._schedule_save()
         self._refresh_monster_rotation_list()
         self.monster_rotation_listbox.selection_set(idx + 1)
 
@@ -2723,6 +2709,9 @@ class App(tk.Tk):
         NOTE: Save file only ONCE to avoid duplicate writes and preserve field order.
         """
         try:
+            # Ensure canonical schemas
+            self.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation_list", [])
+            self.hunt_cfg["skill_slots"] = self.hunt_cfg.get("skill_slots", [])
             # 1. Apply Setup tab settings (updates hunt_cfg in-place, but don't save yet)
             self._apply_setup_settings(save_to_file=False)
 

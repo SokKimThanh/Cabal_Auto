@@ -309,8 +309,8 @@ class SetupWizard:
             has_window = bool(hunt_cfg.get("window_title", "").strip())
             has_monster_legacy = bool(hunt_cfg.get("monster_selected_name", "").strip())
             has_monster_list = (
-                bool(hunt_cfg.get("monster_list"))
-                and len(hunt_cfg.get("monster_list", [])) > 0
+                bool(hunt_cfg.get("monster_rotation"))
+                and len(hunt_cfg.get("monster_rotation", [])) > 0
             )
             has_monster = has_monster_legacy or has_monster_list
             has_skills = (
