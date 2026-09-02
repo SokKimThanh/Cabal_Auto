@@ -620,7 +620,7 @@ class App(tk.Tk):
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
         self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
-        self.shell_zone_c1.grid(row=1, column=0, sticky="nsew")
+        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
         self.shell_zone_c1.configure(padx=16, pady=20)
         self.shell_zone_c1.grid_propagate(False)
 
