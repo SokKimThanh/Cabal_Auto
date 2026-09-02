@@ -186,11 +186,20 @@ def test_log_format_duplication(app):
     # Check content of text widget
     content = app.logs_text_widget.get("1.0", "end-1c").strip()
 
-    # Count occurrences of the separator '|' or check if timestamp matches pattern multiple times
+    # Validate only the specific rendered log line for this message.
     # In the current formatter: '%(asctime)s | %(levelname)s | %(message)s'
     # If duplicated, it would look like '... | INFO | ... | INFO | Duplicate check msg'
+    matching_lines = [line for line in content.splitlines() if test_msg in line]
+    assert len(matching_lines) == 1, (
+        f"Expected exactly 1 log line containing {test_msg!r}, "
+        f"but found {len(matching_lines)}. Content: {content}"
+    )
 
-    info_count = content.count("INFO")
+    target_line = matching_lines[0]
+    info_token_count = target_line.count(" | INFO | ")
 
-    # We expect 'INFO' to appear only once for this single log line
-    assert info_count == 1, f"Expected 1 'INFO', but got {info_count}. Content: {content}"
+    # We expect the formatted INFO token to appear only once on this single log line
+    assert info_token_count == 1, (
+        f"Expected 1 ' | INFO | ' token on log line, but got {info_token_count}. "
+        f"Line: {target_line}"
+    )
