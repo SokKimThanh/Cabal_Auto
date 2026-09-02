@@ -13,8 +13,8 @@ def dump_tree(widget, indent=0):
         print("  " * indent + f"{name} ({cname}) req={req_h} act={h}")
         for child in widget.winfo_children():
             dump_tree(child, indent + 1)
-    except Exception as e:
-        pass
+    except tk.TclError as e:
+        print(f"dump_tree: failed for {widget!r}: {e}", file=sys.stderr)
 
 root = App()
 root.geometry('1366x768')
