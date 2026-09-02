@@ -91,9 +91,7 @@ class SynergyService:
             for e in cursor.fetchall():
                 effect_dict = dict(e)
                 syn_id = effect_dict['synergy_id']
-                if syn_id not in effects_by_synergy:
-                    effects_by_synergy[syn_id] = []
-                effects_by_synergy[syn_id].append(effect_dict)
+                effects_by_synergy.setdefault(syn_id, []).append(effect_dict)
 
             for syn in synergies:
                 syn['effects'] = effects_by_synergy.get(syn['synergy_id'], [])
