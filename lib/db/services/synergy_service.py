@@ -77,9 +77,26 @@ class SynergyService:
             cursor.execute("SELECT * FROM synergies WHERE class_id = ?", (class_id,))
             synergies = [dict(row) for row in cursor.fetchall()]
 
+            if not synergies:
+                return []
+
+            cursor.execute("""
+                SELECT e.*
+                FROM synergy_effects e
+                JOIN synergies s ON e.synergy_id = s.synergy_id
+                WHERE s.class_id = ?
+            """, (class_id,))
+
+            effects_by_synergy = {}
+            for e in cursor.fetchall():
+                effect_dict = dict(e)
+                syn_id = effect_dict['synergy_id']
+                if syn_id not in effects_by_synergy:
+                    effects_by_synergy[syn_id] = []
+                effects_by_synergy[syn_id].append(effect_dict)
+
             for syn in synergies:
-                cursor.execute("SELECT * FROM synergy_effects WHERE synergy_id = ?", (syn['synergy_id'],))
-                syn['effects'] = [dict(e) for e in cursor.fetchall()]
+                syn['effects'] = effects_by_synergy.get(syn['synergy_id'], [])
 
             return synergies
         except Exception as e:
