@@ -4,6 +4,11 @@
 
 Mỗi lần chỉ giao cho Jules **một** tài liệu `SESSION_XX_*.md`. Không yêu cầu Jules xử lý toàn bộ tài liệu đề xuất gốc trong một lần.
 
+> **DỪNG CHUỖI HIỆN TẠI:** Session 04 đã được merge nhưng PR chỉ thêm
+> `run_layout_check.py`, không sửa `app_gui.py` hoặc `ui/tabs/hunt_tab.py`.
+> `minsize=552` và `minsize=120` vẫn còn, nên lỗi clip/overflow dọc chưa được sửa.
+> Phải chạy lại Session 04 và xác nhận AC-18/AC-19 trước khi tiếp tục Session 07 hoặc Session 09.
+
 Quy tắc chung:
 
 1. Timebox cứng tối đa 30 phút cho mỗi session.
@@ -17,15 +22,17 @@ Quy tắc chung:
 
 | Session | Timebox | Ưu tiên | Phụ thuộc | Trạng thái |
 | --- | --- | --- | --- | --- |
-| [01 - Logs auto-collapse](SESSION_01_LOGS_AUTO_COLLAPSE.md) | 20-25 phút | P0 | Không | Chưa làm |
-| [02 - Log formatting](SESSION_02_LOG_FORMATTING.md) | 15-20 phút | P0 | Không | Chưa làm |
-| [03 - Horizontal minsize](SESSION_03_HORIZONTAL_MINSIZE.md) | 20-25 phút | P0 | 01 nên hoàn tất (khác file, không chặn cứng) | Chưa làm |
-| [04 - Vertical allocation](SESSION_04_VERTICAL_ALLOCATION.md) | 25-30 phút | P0 | 01, 03 (trùng file) | Chưa làm |
-| [05 - Safe window resize](SESSION_05_SAFE_WINDOW_RESIZE.md) | 20-25 phút | P1 | 01, 04 | Chưa làm |
-| [06 - Reduce empty space](SESSION_06_REDUCE_EMPTY_SPACE.md) | 20-25 phút | P1 | 04, 05 | Chưa làm |
-| [07 - Narrow layout](SESSION_07_NARROW_LAYOUT.md) | 25-30 phút | P1 | 03-06 | Chưa làm |
+| [01 - Logs auto-collapse](SESSION_01_LOGS_AUTO_COLLAPSE.md) | 20-25 phút | P0 | Không | Hoàn tất |
+| [02 - Log formatting](SESSION_02_LOG_FORMATTING.md) | 15-20 phút | P0 | Không | Hoàn tất |
+| [03 - Horizontal minsize](SESSION_03_HORIZONTAL_MINSIZE.md) | 20-25 phút | P0 | 01 nên hoàn tất (khác file, không chặn cứng) | Hoàn tất |
+| [04 - Vertical allocation](SESSION_04_VERTICAL_ALLOCATION.md) | 25-30 phút | P0 | 01, 03 (trùng file) | Đã chạy lại; cần xác nhận Gate 09 |
+| [05 - Safe window resize](SESSION_05_SAFE_WINDOW_RESIZE.md) | 20-25 phút | P1 | 01, 04 | Hoàn tất nhưng chạy khi 04 chưa đạt |
+| [06 - Reduce empty space](SESSION_06_REDUCE_EMPTY_SPACE.md) | 20-25 phút | P1 | 04, 05 | Hoàn tất một phần; không sửa overflow |
+| [07 - Narrow layout](SESSION_07_NARROW_LAYOUT.md) | 25-30 phút | P1 | 03-06 | Đã merge PR #214; còn lỗi footer |
 | [08 - Visual cleanup](SESSION_08_VISUAL_CLEANUP.md) | 20-25 phút | P2 | 07 | Chưa làm |
 | [09 - Acceptance validation](SESSION_09_ACCEPTANCE_VALIDATION.md) | 25-30 phút | Gate | 01-08 | Chưa làm |
+| [10 - Action bar và Scan](SESSION_10_ACTION_BAR_SCAN.md) | 25-30 phút | P1 | 04, 07 | Chưa làm |
+| [11 - Footer visibility](SESSION_11_FOOTER_VISIBILITY.md) | 20-25 phút | P0 | 04, 07 | Chưa làm |
 
 ## Luồng phụ thuộc
 
@@ -58,14 +65,24 @@ Giao từng tài liệu cho Jules theo đúng thứ tự sau (một session/mộ
 6. `SESSION_06_REDUCE_EMPTY_SPACE.md`
 7. `SESSION_07_NARROW_LAYOUT.md`
 8. `SESSION_08_VISUAL_CLEANUP.md`
-9. `SESSION_09_ACCEPTANCE_VALIDATION.md`
+9. `SESSION_10_ACTION_BAR_SCAN.md`
+10. `SESSION_11_FOOTER_VISIBILITY.md`
+11. `SESSION_09_ACCEPTANCE_VALIDATION.md`
 
 Ghi chú:
 
 - Bước 2 (Session 02) không phụ thuộc gì và có thể đổi chỗ với bước 1 hoặc chạy xen giữa bước 1-3 nếu cần chia việc cho nhiều lượt; thứ tự 1→9 ở trên là thứ tự an toàn nhất, không cần suy nghĩ thêm.
 - Không giao Session N+1 nếu Session N chưa ở trạng thái `Hoàn tất` (trừ cặp 01/02 có thể đảo cho nhau).
 - Nếu một session bị `Bị chặn`, dừng chuỗi, xử lý blocker trước khi giao session kế tiếp — không nhảy cóc.
-- Session 09 luôn là prompt cuối cùng, chỉ giao sau khi cả 01-08 đã `Hoàn tất`.
+- Session 09 luôn là prompt cuối cùng, chỉ giao sau khi Session 01-08, Session 10 và Session 11 đã `Hoàn tất`.
+
+### Bằng chứng trạng thái hiện tại
+
+- PR #209/Session 03 đã bỏ `minsize=776` theo chiều ngang.
+- PR #211/Session 04 chỉ thêm script đo `run_layout_check.py`; diff toàn PR không có thay đổi production code.
+- PR #212/Session 05 đã bật resize và đặt kích thước tối thiểu cửa sổ.
+- PR #213/Session 06 chỉ giảm chiều cao Logs mở và thu gọn status panel; vẫn giữ row Hunt `552/120`.
+- PR #214/Session 07 đã merge; layout Hunt hẹp hiển thị lại Skill nhưng ảnh thực tế cho thấy footer có thể bị cắt khỏi vùng client khi toggle Logs.
 
 ## Truy vết tiêu chí nghiệm thu
 
@@ -83,6 +100,7 @@ Ghi chú:
 | AC-11 | 06 | 09 |
 | AC-14, AC-17 | 09 | 09 |
 | AC-18, AC-19 | 04 | 09 |
+| AC-F1, AC-F2, AC-F3 | 11 | 09 |
 
 ## Cập nhật trạng thái
 

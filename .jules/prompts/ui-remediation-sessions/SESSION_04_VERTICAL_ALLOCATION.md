@@ -1,9 +1,13 @@
 # Session 04 - Sửa Phân Bổ Chiều Cao Hunt
 
+> **YÊU CẦU CHẠY LẠI:** Lần thực hiện trước chỉ thêm
+> `run_layout_check.py` và không sửa production code. Session này không được hoàn tất
+> nếu `ui/tabs/hunt_tab.py` vẫn giữ đồng thời `minsize=552` cho row chính và
+> `minsize=120` cho row Skill, hoặc nếu diff chỉ chứa script/test.
+
 ## Thông tin session
 
-- **Người xử lý:** Jules
-- **Timebox:** 25-30 phút
+- **Người xử lý:** Jules 
 - **Ưu tiên:** P0
 - **Phụ thuộc:** Session 01 (trùng file `app_gui.py`), Session 03 (trùng file `ui/tabs/hunt_tab.py`) — cần hoàn tất trước để tránh xung đột khi sửa cùng file.
 - **Tham chiếu tài liệu gốc:** Đề Xuất Khắc Phục Giao Diện Hunt Hiện Tại (v2), mục 5.2 (phần chiều cao còn lại sau Session 03: `minsize=552`, hàng skill 120px, Treeview) và mục 5.6 (chỉ phần giảm không gian trống của Active Target & Status), mục 6 bước 3 (phần còn lại)
