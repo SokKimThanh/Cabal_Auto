@@ -5,7 +5,7 @@
 - **Người xử lý:** Jules
 - **Timebox:** 25-30 phút
 - **Ưu tiên:** P0-P2
-- **Phụ thuộc:** Session 01 đến Session 08, Session 10 và Session 11 — chỉ chạy sau khi toàn bộ thay đổi layout/style/log/action bar/footer đã merge.
+- **Phụ thuộc:** Session 01 đến Session 08 và Session 10 đến Session 12 — chỉ chạy sau khi toàn bộ thay đổi layout/style/log view/action bar/footer đã merge.
 - **Tham chiếu tài liệu gốc:** Đề Xuất Khắc Phục Giao Diện Hunt Hiện Tại (v2), mục 4.6 và toàn bộ mục 7 (tiêu chí nghiệm thu), mục 6 (bước "bổ sung kiểm thử GUI và kiểm tra thủ công trên nhiều DPI")
 - **AC liên quan:** AC-1 đến AC-19 và AC-F1 đến AC-F3
 
