@@ -17,10 +17,12 @@ _file_exists_cache = {}
 def _check_template_exists(path_str):
     if not path_str:
         return False
-    exists = _file_exists_cache.get(path_str)
-    if exists is None:
-        exists = Path(path_str).exists()
-        _file_exists_cache[path_str] = exists
+    if path_str in _file_exists_cache:
+        return True
+
+    exists = Path(path_str).exists()
+    if exists:
+        _file_exists_cache[path_str] = True
     return exists
 
 
