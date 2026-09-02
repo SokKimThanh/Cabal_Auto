@@ -59,6 +59,41 @@ def test_different_resolutions(detector):
     frame_4k = create_synthetic_frame(width=3840, height=2160)
     assert detector.is_target_alive(frame_4k) is True
 
+def test_get_client_size_hwnd():
+    import sys
+    from unittest.mock import MagicMock, patch
+
+    # Mock win32gui to return a valid rect
+    mock_win32gui = MagicMock()
+    mock_win32gui.GetClientRect.return_value = (0, 0, 800, 600)
+
+    with patch.dict('sys.modules', {'win32gui': mock_win32gui}):
+        # Re-import to pickup mock
+        import lib.vision.target_bar_detector
+        from importlib import reload
+        reload(lib.vision.target_bar_detector)
+        TargetBarDetector = lib.vision.target_bar_detector.TargetBarDetector
+
+        detector = TargetBarDetector(hwnd=123)
+
+        # Should get the client size from the mock
+        w, h = detector._get_client_size()
+        assert w == 800
+        assert h == 600
+        assert mock_win32gui.GetClientRect.called
+
+        # Test fallback to frame size when mismatched
+        frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+        roi = detector._get_roi(frame)
+    # The ROI is computed on 1280x720, not 800x600 because it falls back to frame shape
+    # Let's check ROI dimensions
+    top = int(720 * detector.roi_top_frac)
+    bottom = int(720 * detector.roi_bottom_frac)
+    left = int(1280 * detector.roi_left_frac)
+    right = int(1280 * detector.roi_right_frac)
+
+    assert roi.shape == (bottom - top, right - left, 3)
+
 def test_dark_colored_non_empty_bar(detector):
     # Dark yellow/brown: e.g. BGR (0, 150, 150)
     # HSV would be ~ [30, 255, 150] which is in bounds (V >= 130)
