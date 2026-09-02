@@ -33,6 +33,7 @@ Quy tắc chung:
 | [09 - Acceptance validation](SESSION_09_ACCEPTANCE_VALIDATION.md) | 25-30 phút | Gate | 01-08 | Chưa làm |
 | [10 - Action bar và Scan](SESSION_10_ACTION_BAR_SCAN.md) | 25-30 phút | P1 | 04, 07 | Chưa làm |
 | [11 - Footer visibility](SESSION_11_FOOTER_VISIBILITY.md) | 20-25 phút | P0 | 04, 07 | Chưa làm |
+| [12 - Activity Logs view](SESSION_12_ACTIVITY_LOGS_VIEW.md) | 25-30 phút | P1 | 07 | Chưa làm |
 
 ## Luồng phụ thuộc
 
@@ -66,15 +67,16 @@ Giao từng tài liệu cho Jules theo đúng thứ tự sau (một session/mộ
 7. `SESSION_07_NARROW_LAYOUT.md`
 8. `SESSION_08_VISUAL_CLEANUP.md`
 9. `SESSION_10_ACTION_BAR_SCAN.md`
-10. `SESSION_11_FOOTER_VISIBILITY.md`
-11. `SESSION_09_ACCEPTANCE_VALIDATION.md`
+10. `SESSION_12_ACTIVITY_LOGS_VIEW.md`
+11. `SESSION_11_FOOTER_VISIBILITY.md`
+12. `SESSION_09_ACCEPTANCE_VALIDATION.md`
 
 Ghi chú:
 
 - Bước 2 (Session 02) không phụ thuộc gì và có thể đổi chỗ với bước 1 hoặc chạy xen giữa bước 1-3 nếu cần chia việc cho nhiều lượt; thứ tự 1→9 ở trên là thứ tự an toàn nhất, không cần suy nghĩ thêm.
 - Không giao Session N+1 nếu Session N chưa ở trạng thái `Hoàn tất` (trừ cặp 01/02 có thể đảo cho nhau).
 - Nếu một session bị `Bị chặn`, dừng chuỗi, xử lý blocker trước khi giao session kế tiếp — không nhảy cóc.
-- Session 09 luôn là prompt cuối cùng, chỉ giao sau khi Session 01-08, Session 10 và Session 11 đã `Hoàn tất`.
+- Session 09 luôn là prompt cuối cùng, chỉ giao sau khi Session 01-08 và Session 10-12 đã `Hoàn tất`.
 
 ### Bằng chứng trạng thái hiện tại
 
