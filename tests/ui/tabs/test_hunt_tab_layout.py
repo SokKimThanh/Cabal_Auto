@@ -2,9 +2,6 @@ import pytest
 import tkinter as tk
 from unittest.mock import MagicMock
 from ui.tabs.hunt_tab import HuntTab
-from lib.ui_style import UIStyle as UI
-import sys
-import unittest.mock as mock
 
 class MockApp:
     def __getattr__(self, name):
