@@ -587,8 +587,7 @@ class App(tk.Tk):
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
 
-        # Pack main_shell last so it doesn't push bottom frames out of the window
-        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
 
     # -----------------
     def _build_ui(self):
@@ -891,6 +890,9 @@ class App(tk.Tk):
             relief="sunken",
         )
         self._db_status_bar.pack(fill="x", side="bottom")
+
+        # Pack main_shell last so it doesn't push bottom frames out of the window
+        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
 
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
