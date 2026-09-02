@@ -33,7 +33,14 @@ def test_logger_queue_cap():
 
 @pytest.fixture
 def app():
-    with patch("app_gui.pyautogui", MagicMock()), patch("app_gui.keyboard", MagicMock()), patch("sys.modules", {"lib.system.window_manager": MagicMock(), "lib.vision.vision_engine": MagicMock(), **sys.modules}):
+    with patch("app_gui.pyautogui", MagicMock()), patch("app_gui.keyboard", MagicMock()), patch.dict(
+        sys.modules,
+        {
+            "lib.system.window_manager": MagicMock(),
+            "lib.vision.vision_engine": MagicMock(),
+        },
+        clear=False,
+    ):
 
         app = Application()
         yield app
