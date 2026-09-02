@@ -1,4 +1,5 @@
 from ui.windows.setup_wizard import show_setup_wizard
+from dialogs.monster_picker import MonsterPickerDialog
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from lib.ui_style import UIStyle as UI  # Global UI style constants
@@ -398,7 +399,7 @@ class App(tk.Tk):
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
 
         # Phase 3: Multi-Monster Support
-        self.monster_rotation_list = []
+        self.monster_rotation = []
         self._load_monster_rotation_list()
 
         # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
@@ -1057,10 +1058,10 @@ class App(tk.Tk):
 
     def _load_monster_rotation_list(self):
         saved_list = self.hunt_cfg.get("monster_rotation", [])
-        self.monster_rotation_list = []
+        self.monster_rotation = []
         for item in saved_list:
             if isinstance(item, dict):
-                self.monster_rotation_list.append(
+                self.monster_rotation.append(
                     {
                         "monster_id": item.get("monster_id", 0),
                         "name": item.get("name", ""),
@@ -1535,631 +1536,140 @@ class App(tk.Tk):
         self.hunt_status.set(f"Rotation mode: {mode}")
 
     def _refresh_monster_rotation_list(self):
-        """Refresh the monster rotation listbox display."""
+        """Refresh the configured monster rotation UI queue."""
         if not hasattr(self, "monster_rotation_listbox"):
             return
 
         self.monster_rotation_listbox.delete(0, tk.END)
 
-        display_list = self.monster_rotation_list
-
         from database import get_monster_by_id_api, find_monster_by_name_api
 
-        for item in display_list:
-            monster_id = item.get("monster_id", 0)
-            name = item.get("name", "")
-            dungeon_id = item.get("dungeon_id", None)
-            priority = item.get("priority", 1)
+        # In-memory cache for DB queries during this panel's lifetime
+        if not hasattr(self, "_monster_metadata_cache"):
+            self._monster_metadata_cache = {}
 
-            # Resolve metadata DB
-            db_monster = None
-            if monster_id > 0:
-                db_monster = get_monster_by_id_api(str(monster_id))
-            if not db_monster and name:
-                db_monster = find_monster_by_name_api(name, dungeon_id)
+        # Re-sort list just to be safe
+        self.monster_rotation.sort(key=lambda x: x.get("priority", 999))
 
-            if db_monster:
-                db_id = db_monster.get("id", "")
-                db_name = db_monster.get("name", name)
-                db_level = db_monster.get("level", "--")
-                db_hp = db_monster.get("hp", "--")
-                display = f"[#{db_id}] {db_name} - Lv.{db_level} | HP: {db_hp}"
+        for idx, entry in enumerate(self.monster_rotation):
+            monster_id = entry.get("monster_id")
+            name = entry.get("name")
+            dungeon_id = entry.get("dungeon_id")
+
+            cache_key = f"{monster_id}_{name}_{dungeon_id}"
+
+            if cache_key not in self._monster_metadata_cache:
+                # 1. Try by ID
+                db_record = get_monster_by_id_api(str(monster_id)) if monster_id else None
+                # 2. Try by Name fallback
+                if not db_record and name:
+                    db_record = find_monster_by_name_api(name, dungeon_id)
+                self._monster_metadata_cache[cache_key] = db_record
             else:
-                display = f"[Chưa rõ] {name} - Lv.-- | HP: --"
+                db_record = self._monster_metadata_cache[cache_key]
 
-            self.monster_rotation_listbox.insert(tk.END, display)
-
-        self._update_monster_status()
-        self._update_rotation_mode_description()
-
-        # Update button states if in training mode
-        if hasattr(self, "training_mode_var"):
-            self._update_training_mode_buttons()
-
-    def _load_skill_slots_from_cfg(self):
-        saved = (
-            self.hunt_cfg.get("skill_slots", []) if hasattr(self, "hunt_cfg") else []
-        )
-
-        # Handle both formats: list of strings (old) and list of dicts (new)
-        normalized_slots = []
-        for slot in saved:
-            if isinstance(slot, dict):
-                # New format: {"name": "skill_name"}
-                normalized_slots.append(slot.get("name", ""))
-            elif isinstance(slot, str):
-                # Old format: "skill_name"
-                normalized_slots.append(slot)
+            if db_record:
+                # Resolved metadata
+                level = db_record.get("level", "--")
+                hp = db_record.get("hp", "--")
+                display_str = f"[#{monster_id}] {name} - Lv.{level} | HP: {hp}"
             else:
-                normalized_slots.append("")
+                # Missing metadata
+                display_str = f"[{self._t('monster_rotation.unknown_badge')}] {name} - Lv.-- | HP: --"
 
-        # Extract non-empty names for saved skills
-        self.skill_slot_saved_names = [name for name in normalized_slots if name]
-
-        self._refresh_skill_slots_options()
-
-        # Load saved slots into UI
-        for idx, var in enumerate(self.skill_slot_vars):
-            name = ""
-            if idx < len(normalized_slots):
-                name = normalized_slots[idx]
-            var.set(name)
-
-        self._update_attack_keys_from_slots()
-
-    def _on_setup_mode_changed(self):
-        """Handle mode change in Setup tab and sync with Hunt tab."""
-        mode = self.setup_mode_var.get()
-
-        # Save mode preference
-        self.hunt_cfg["ui_mode"] = mode
-        try:
-            with open(HUNT_CONFIG_PATH, "w", encoding="utf-8") as f:
-                json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Warning: Could not save ui_mode: {e}")
-
-        # Sync Hunt tab mode var if it exists
-        if hasattr(self, "hunt_mode_var"):
-            self.hunt_mode_var.set(mode)
-            self.state_controller._apply_hunt_mode()
-
-        # Update Setup tab visibility
-        self._update_setup_visibility()
-
-        # Update status if exists
-        if hasattr(self, "hunt_status"):
-            mode_labels = {
-                "beginner": self._t("mode_beginner"),
-                "intermediate": self._t("mode_intermediate"),
-                "advanced": self._t("mode_advanced"),
-            }
-            self.hunt_status.set(f"Mode: {mode_labels.get(mode, mode)}")
-
-        # Re-register hotkeys (wizard hotkey only in beginner mode)
-        # This will update the count display (4 vs 5 hotkeys)
-        try:
-            self.hotkey_controller.register_all()
-        except Exception as e:
-            print(f"Warning: Could not re-register hotkeys after mode change: {e}")
-
-    def _apply_setup_settings(self, save_to_file=True):
-        """Apply all settings from Setup tab to hunt_config and sync to Hunt tab.
-
-        Args:
-            save_to_file: If True, save to hunt_config.json immediately.
-                         If False, only update self.hunt_cfg (used by on_global_apply to avoid duplicate writes).
-        """
-        try:
-            # Update hunt_cfg with values from Setup tab
-            self.hunt_cfg["target_key"] = self.setup_target_key_var.get()
-            # attack_keys removed: attack keys are derived from skill_slots (per-skill key assignments)
-            self.hunt_cfg["attack_press_ms"] = int(self.setup_press_ms_var.get())
-            self.hunt_cfg["target_cycle_delay"] = float(
-                self.setup_target_cycle_var.get()
-            )
-            self.hunt_cfg["search_interval"] = float(
-                self.setup_search_interval_var.get()
-            )
-            self.hunt_cfg["attack_interval"] = float(
-                self.setup_attack_interval_var.get()
-            )
-            self.hunt_cfg["lost_timeout_sec"] = float(self.setup_lost_timeout_var.get())
-            self.hunt_cfg["attack_min_duration_sec"] = float(
-                self.setup_attack_duration_var.get()
-            )
-            self.hunt_cfg["template_threshold"] = float(self.setup_threshold_var.get())
-            self.hunt_cfg["template_path"] = self.setup_template_var.get()
-
-            # Region
-            try:
-                l = int(self.setup_reg_l.get()) if self.setup_reg_l.get() else ""
-                t = int(self.setup_reg_t.get()) if self.setup_reg_t.get() else ""
-                w = int(self.setup_reg_w.get()) if self.setup_reg_w.get() else ""
-                h = int(self.setup_reg_h.get()) if self.setup_reg_h.get() else ""
-                self.hunt_cfg["region"] = [l, t, w, h]
-            except ValueError:
-                self.hunt_cfg["region"] = ["", "", "", ""]
-
-            # Save to file only if requested
-            if save_to_file:
-                with open(HUNT_CONFIG_PATH, "w", encoding="utf-8") as f:
-                    json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
-
-            # Sync to Hunt tab vars if they exist
-            if hasattr(self, "target_key_var"):
-                self.target_key_var.set(self.hunt_cfg["target_key"])
-            # attack_keys removed: UI reads keys from skill_slots directly
-            if hasattr(self, "attack_press_var"):
-                self.attack_press_var.set(str(self.hunt_cfg["attack_press_ms"]))
-            if hasattr(self, "target_cycle_var"):
-                self.target_cycle_var.set(str(self.hunt_cfg["target_cycle_delay"]))
-            if hasattr(self, "search_interval_var"):
-                self.search_interval_var.set(str(self.hunt_cfg["search_interval"]))
-            if hasattr(self, "attack_interval_var"):
-                self.attack_interval_var.set(str(self.hunt_cfg["attack_interval"]))
-            if hasattr(self, "lost_timeout_var"):
-                self.lost_timeout_var.set(str(self.hunt_cfg["lost_timeout_sec"]))
-            if hasattr(self, "attack_duration_var"):
-                self.attack_duration_var.set(
-                    str(self.hunt_cfg["attack_min_duration_sec"])
-                )
-            if hasattr(self, "template_var"):
-                self.template_var.set(self.hunt_cfg["template_path"])
-            if hasattr(self, "reg_l"):
-                region = self.hunt_cfg["region"]
-                self.reg_l.set(str(region[0]) if region[0] != "" else "")
-                self.reg_t.set(str(region[1]) if region[1] != "" else "")
-                self.reg_w.set(str(region[2]) if region[2] != "" else "")
-                self.reg_h.set(str(region[3]) if region[3] != "" else "")
-
-            # Show success feedback only when saving directly (not called from on_global_apply)
-            if save_to_file:
-                # Update status
-                if hasattr(self, "hunt_status"):
-                    self.hunt_status.set(self._t("settings_applied_success"))
-
-                # Show success message
-                messagebox.showinfo(
-                    self._t("success_title"), self._t("settings_applied_message")
-                )
-
-        except ValueError as e:
-            messagebox.showerror(
-                self._t("error_title"),
-                self._t("error_invalid_number").format(field=str(e)),
-            )
-        except Exception as e:
-            messagebox.showerror(
-                self._t("error_title"), f"Failed to apply settings: {e}"
-            )
-
-    # Phase 3: Multi-Monster Support Handlers
-    def _update_setup_visibility(self):
-        """Show/hide Setup tab sections based on current mode.
-
-        NOTE: adv_frame/window_frame live on SetupTab (self.tab_setup), not on App;
-        delegate there instead of duplicating the stale pre-Sprint-18 logic.
-        """
-        if hasattr(self, "tab_setup") and hasattr(
-            self.tab_setup, "_update_setup_visibility"
-        ):
-            self.tab_setup._update_setup_visibility()
-
-        # Update hotkeys state based on mode
-        self._update_hotkeys_state()
-
-    def update_skill_stats_display(self, stats_dict):
-        """Update skill performance statistics display (Sprint 22 Patch 1).
-
-        Args:
-            stats_dict: Dictionary from SkillStats.get_all_stats() containing:
-                {
-                    'Skill Name': {
-                        'cast_count': int,
-                        'last_cast': float (timestamp) or None,
-                        'time_since_last_cast': float (seconds) or None,
-                        'success_rate': float (percentage)
-                    },
-                    ...
-                }
-        """
-        if not hasattr(self, "skill_stats_tree"):
-            return
-
-        # Clear existing rows
-        for item in self.skill_stats_tree.get_children():
-            self.skill_stats_tree.delete(item)
-
-        if not stats_dict:
-            self._show_skill_stats_placeholder()
-            return
-
-        # Populate with current stats
-        for skill_name, data in stats_dict.items():
-            cast_count = data.get("cast_count", 0)
-            time_since = data.get("time_since_last_cast")
-            success_rate = data.get("success_rate", 0.0)
-
-            # Format last cast time
-            if time_since is None:
-                last_cast_str = "Never"
-            else:
-                last_cast_str = self._t("time_ago_format").format(time=time_since)
-
-            # Format cooldown status (simplified - just show "Ready" for now)
-            # TODO: Integrate with actual skill cooldown data from skills.json
-            cooldown_str = self._t("cooldown_ready")
-
-            # Format success rate
-            success_str = f"{success_rate:.1f}%"
-
-            # Determine color tag based on success rate
-            if success_rate >= 90:
-                tag = "excellent"
-            elif success_rate >= 70:
-                tag = "good"
-            else:
-                tag = "poor"
-
-            # Insert row
-            self.skill_stats_tree.insert(
-                "",
-                "end",
-                values=(
-                    skill_name,
-                    cast_count,
-                    last_cast_str,
-                    cooldown_str,
-                    success_str,
-                ),
-                tags=(tag,),
-            )
-
-    def _show_skill_stats_placeholder(self):
-        """Show a single greyed-out row when no skill casts have been recorded yet."""
-        if not hasattr(self, "skill_stats_tree"):
-            return
-        self.skill_stats_tree.insert(
-            "",
-            "end",
-            values=(self._t("skill_stats_empty"), "", "", "", ""),
-            tags=("placeholder",),
-        )
-
-    def _on_monster_list_select(self, event=None):
-        """Handle monster list selection for preview."""
-        selection = self.monster_rotation_listbox.curselection()
-        if not selection:
-            return
-
-        idx = selection[0]
-        if idx < len(self.monster_rotation_list):
-            monster = self.monster_rotation_list[idx]
-            # Optional: Show monster template preview or stats
-            pass
-
-    def _show_monster_context_menu(self, event):
-        """Sprint 22 Patch 2: Show context menu on right-click.
-
-        Displays menu at mouse position only if an item is selected.
-        """
-        # Check if there's a selection at the click position
-        try:
-            self.monster_rotation_listbox.selection_clear(0, tk.END)
-            index = self.monster_rotation_listbox.nearest(event.y)
-            self.monster_rotation_listbox.selection_set(index)
-            self.monster_rotation_listbox.activate(index)
-
-            # Show context menu at mouse position
-            self.monster_context_menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            # Release the grab
-            self.monster_context_menu.grab_release()
-
-    def _on_monster_delete_from_list(self, event=None):
-        """Delete selected monster from rotation list."""
-        selection = self.monster_rotation_listbox.curselection()
-        if not selection:
-            return
-
-        idx = selection[0]
-
-        if idx < len(self.monster_rotation_list):
-            del self.monster_rotation_list[idx]
-
-            # Reassign priorities
-            for i, m in enumerate(self.monster_rotation_list):
-                m["priority"] = i + 1
-
-        self._refresh_monster_rotation_list()
-
-        # Select next item if available
-        if idx < self.monster_rotation_listbox.size():
-            self.monster_rotation_listbox.selection_set(idx)
-        elif self.monster_rotation_listbox.size() > 0:
-            self.monster_rotation_listbox.selection_set(idx - 1)
+            self.monster_rotation_listbox.insert(tk.END, display_str)
 
     def _on_monster_move_up(self):
-        """Move selected monster up in rotation order."""
         selection = self.monster_rotation_listbox.curselection()
         if not selection or selection[0] == 0:
             return
 
         idx = selection[0]
-        # Swap with previous
-        self.monster_rotation_list[idx], self.monster_rotation_list[idx - 1] = (
-            self.monster_rotation_list[idx - 1],
-            self.monster_rotation_list[idx],
+        # Swap in RAM
+        self.monster_rotation[idx], self.monster_rotation[idx - 1] = (
+            self.monster_rotation[idx - 1],
+            self.monster_rotation[idx],
         )
 
-        # Reassign priorities
-        for i, m in enumerate(self.monster_rotation_list):
-            m["priority"] = i + 1
+        # Re-assign priority to be continuous 1..N
+        for i, entry in enumerate(self.monster_rotation):
+            entry["priority"] = i + 1
 
+        self._mark_unsaved()
         self._refresh_monster_rotation_list()
         self.monster_rotation_listbox.selection_set(idx - 1)
 
     def _on_monster_move_down(self):
-        """Move selected monster down in rotation order."""
         selection = self.monster_rotation_listbox.curselection()
-        if not selection or selection[0] >= len(self.monster_rotation_list) - 1:
+        if not selection or selection[0] == len(self.monster_rotation) - 1:
             return
 
         idx = selection[0]
-        # Swap with next
-        self.monster_rotation_list[idx], self.monster_rotation_list[idx + 1] = (
-            self.monster_rotation_list[idx + 1],
-            self.monster_rotation_list[idx],
+        # Swap in RAM
+        self.monster_rotation[idx], self.monster_rotation[idx + 1] = (
+            self.monster_rotation[idx + 1],
+            self.monster_rotation[idx],
         )
 
-        # Reassign priorities
-        for i, m in enumerate(self.monster_rotation_list):
-            m["priority"] = i + 1
+        # Re-assign priority to be continuous 1..N
+        for i, entry in enumerate(self.monster_rotation):
+            entry["priority"] = i + 1
 
+        self._mark_unsaved()
         self._refresh_monster_rotation_list()
         self.monster_rotation_listbox.selection_set(idx + 1)
 
+    def _on_monster_delete_from_list(self, _evt=None):
+        selection = self.monster_rotation_listbox.curselection()
+        if not selection:
+            return
+
+        idx = selection[0]
+        del self.monster_rotation[idx]
+
+        # Re-assign priority to be continuous 1..N
+        for i, entry in enumerate(self.monster_rotation):
+            entry["priority"] = i + 1
+
+        self._mark_unsaved()
+        self._refresh_monster_rotation_list()
+
+        if len(self.monster_rotation) > 0:
+            new_sel = min(idx, len(self.monster_rotation) - 1)
+            self.monster_rotation_listbox.selection_set(new_sel)
+
     def _on_monster_add_smart(self):
-        """Smart add monster with autocomplete and fuzzy matching hints."""
-        dialog = tk.Toplevel(self)
-        dialog.title(self._t("monster_add_title"))
-        dialog.geometry("500x400")
-        dialog.resizable(False, False)
-        dialog.transient(self)
-        dialog.grab_set()
+        def on_monster_selected(record):
+            # Check for duplicate
+            monster_id = record["monster_id"]
+            dungeon_id = record.get("dungeon_id")
 
-        # Center dialog
-        dialog.update_idletasks()
-        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
-        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
-        dialog.geometry(f"+{x}+{y}")
-
-        container = tk.Frame(dialog, padx=16, pady=16)
-        container.pack(fill="both", expand=True)
-
-        # Title + hint
-        title_label = tk.Label(
-            container,
-            text=self._t("monster_add_instruction"),
-            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
-        )
-        title_label.pack(anchor="w", pady=(0, 8))
-
-        hint_text = self._t("monster_add_hint")
-        hint_label = tk.Label(
-            container,
-            text=hint_text,
-            fg="#666",
-            font=UI.FONT_TEXT,
-            wraplength=450,
-            justify="left",
-        )
-        hint_label.pack(anchor="w", pady=(0, 12))
-
-        # Search entry with real-time suggestions
-        search_frame = tk.Frame(container)
-        search_frame.pack(fill="x", pady=(0, 8))
-
-        tk.Label(search_frame, text=self._t("monster_name")).pack(side="left")
-        search_var = tk.StringVar()
-        search_entry = tk.Entry(search_frame, textvariable=search_var, width=30)
-        search_entry.pack(side="left", padx=(8, 0), fill="x", expand=True)
-        search_entry.focus_set()
-
-        # Suggestion listbox
-        suggest_frame = tk.LabelFrame(
-            container, text=self._t("monster_suggestions"), padx=8, pady=8
-        )
-        suggest_frame.pack(fill="both", expand=True, pady=(0, 8))
-
-        suggest_listbox = tk.Listbox(suggest_frame, height=10, exportselection=False)
-        suggest_listbox.pack(side="left", fill="both", expand=True)
-
-        suggest_scroll = tk.Scrollbar(
-            suggest_frame, orient="vertical", command=suggest_listbox.yview
-        )
-        suggest_scroll.pack(side="right", fill="y")
-        suggest_listbox.config(yscrollcommand=suggest_scroll.set)
-
-        # Match info label
-        match_info_var = tk.StringVar(value="")
-        match_info_label = tk.Label(
-            container,
-            textvariable=match_info_var,
-            fg="#2196F3",
-            font=UI.FONT_TEXT,
-            wraplength=450,
-            justify="left",
-        )
-        match_info_label.pack(fill="x", pady=(0, 8))
-
-        # Populate initial suggestions (filtered by training mode if active)
-        def update_suggestions(*args):
-            """Update suggestions based on search text with fuzzy matching."""
-            import re
-
-            search_text = search_var.get().strip()
-
-            suggest_listbox.delete(0, tk.END)
-            match_info_var.set("")
-
-            # Sprint 22 Patch 2: Auto-detect training mode based on training_monster_list
-            # Check if training_monster_list exists and has items
-            has_training_list = (
-                hasattr(self, "training_monster_list")
-                and len(self.training_monster_list) > 0
-            )
-            is_training_mode = (
-                has_training_list  # Auto-enable if training list has items
-            )
-
-            available_monsters = self.monsters
-
-            if is_training_mode:
-                # Training mode: Only show training dummies
-                available_monsters = [
-                    m for m in self.monsters if m.get("training_mode", False)
-                ]
-                if not available_monsters:
-                    # Sprint 22 Patch 2: Only show warning if training_monster_list is EMPTY
-                    # If user already added training dummies to training_monster_list, don't show warning
-                    if not has_training_list:
-                        debug_msg = f"⚠️ {self._t('no_training_dummies')}"
-                        if self.monsters:
-                            debug_msg += (
-                                f"\n📚 Library has {len(self.monsters)} monsters total"
-                            )
-                            training_count = sum(
-                                1
-                                for m in self.monsters
-                                if m.get("training_mode", False)
-                            )
-                            debug_msg += f"\n🎯 Training dummies: {training_count}"
-                        match_info_var.set(debug_msg)
+            # Deduplicate by (monster_id, dungeon_id)
+            for entry in self.monster_rotation:
+                if entry.get("monster_id") == monster_id and entry.get("dungeon_id") == dungeon_id:
+                    messagebox.showinfo(
+                        self._t("info_title", ns="ui"),
+                        self._t("monster_already_in_list").format(name=record["name"]),
+                        parent=self
+                    )
                     return
 
-            if not search_text:
-                # Show all available monsters (filtered or not)
-                for monster in available_monsters:
-                    suggest_listbox.insert(tk.END, monster["name"])
-                if is_training_mode:
-                    match_info_var.set(
-                        f"🎯 {self._t('training_dummy_filter')} | {len(available_monsters)} dummy"
-                    )
-                else:
-                    match_info_var.set(
-                        f"💡 {self._t('monster_showing_all').format(count=len(available_monsters))}"
-                    )
-                return
+            # Add with new priority
+            new_priority = len(self.monster_rotation) + 1
+            new_entry = {
+                "monster_id": monster_id,
+                "name": record["name"],
+                "priority": new_priority,
+                "dungeon_id": dungeon_id
+            }
 
-            # Fuzzy search (on filtered list)
-            search_clean = re.sub(r"[^a-z0-9\s]", "", search_text.lower()).strip()
-            matches = []
-
-            for monster in available_monsters:
-                name = monster["name"]
-                name_clean = re.sub(r"[^a-z0-9\s]", "", name.lower()).strip()
-
-                # Score matches: exact > starts with > contains
-                if search_clean == name_clean:
-                    matches.append((name, 100))  # Exact match
-                elif name_clean.startswith(search_clean):
-                    matches.append((name, 80))  # Starts with
-                elif search_clean in name_clean:
-                    matches.append((name, 60))  # Contains
-                elif any(word.startswith(search_clean) for word in name_clean.split()):
-                    matches.append((name, 40))  # Word starts with
-
-            # Sort by score (descending)
-            matches.sort(key=lambda x: x[1], reverse=True)
-
-            # Display matches
-            for name, score in matches:
-                suggest_listbox.insert(tk.END, name)
-
-            # Update match info
-            if matches:
-                match_info_var.set(
-                    f"✓ {self._t('monster_found_matches').format(count=len(matches))} | "
-                    + self._t("monster_fuzzy_hint")
-                )
-            else:
-                match_info_var.set(
-                    f"⚠ {self._t('monster_no_matches')} | "
-                    + self._t("monster_try_hint")
-                )
-
-        search_var.trace_add("write", update_suggestions)
-        update_suggestions()  # Initial population
-
-        # Double-click or Enter to select
-        def on_select(event=None):
-            selection = suggest_listbox.curselection()
-            if not selection:
-                return
-
-            monster_name = suggest_listbox.get(selection[0])
-
-            monster_data = next(
-                (m for m in self.monsters if m["name"] == monster_name), None
-            )
-            monster_id = int(monster_data.get("id", 0)) if monster_data else 0
-            dungeon_id = monster_data.get("dungeon_id") if monster_data else None
-
-            if any(m["name"] == monster_name for m in self.monster_rotation_list):
-                messagebox.showinfo(
-                    self._t("info_title"),
-                    self._t("monster_already_in_list").format(name=monster_name),
-                    parent=dialog,
-                )
-                return
-
-            # Add to appropriate list
-            new_priority = len(check_list) + 1
-
-            if target_list == "training":
-                self.training_monster_list.append(
-                    {
-                        "name": monster_name,
-                        "priority": new_priority,
-                        "enabled": True,
-                        "training_mode": True,
-                    }
-                )
-                # Auto-enable training mode
-                if hasattr(self, "training_mode_var"):
-                    self.training_mode_var.set(True)
-            else:
-                self.monster_rotation_list.append(
-                    {
-                        "name": monster_name,
-                        "priority": new_priority,
-                        "enabled": True,
-                        "training_mode": False,
-                    }
-                )
+            self.monster_rotation.append(new_entry)
+            if hasattr(self, "_mark_unsaved"):
+                self._mark_unsaved()
 
             self._refresh_monster_rotation_list()
-            dialog.destroy()
 
-        suggest_listbox.bind("<Double-Button-1>", on_select)
-        search_entry.bind("<Return>", on_select)
-
-        # Buttons
-        btn_frame = tk.Frame(container)
-        btn_frame.pack(fill="x")
-
-        tk.Button(
-            btn_frame,
-            text=self._t("add_button"),
-            command=on_select,
-            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
-            fg="#4CAF50",
-        ).pack(side="left")
-        tk.Button(
-            btn_frame, text=self._t("cancel_button"), command=dialog.destroy
-        ).pack(side="left", padx=(8, 0))
+        MonsterPickerDialog(self, self.current_lang, on_monster_selected, self._t)
 
     def on_skill_slot_changed(self, _evt=None):
         self._update_attack_keys_from_slots()
@@ -2190,19 +1700,19 @@ class App(tk.Tk):
         if not hasattr(self, "monster_status_var"):
             return
 
-        if not self.monster_rotation_list:
+        if not self.monster_rotation:
             self.monster_status_var.set(self._t("monster_none_selected"))
             return
 
         mode = self.hunt_cfg.get("rotation_mode", "sequence")
 
         if mode == "sequence":
-            self.monster_status_var.set(f"Sequence: {len(self.monster_rotation_list)} monsters")
+            self.monster_status_var.set(f"Sequence: {len(self.monster_rotation)} monsters")
         else:
-            sorted_monsters = sorted(self.monster_rotation_list, key=lambda m: m.get("priority", 1))
+            sorted_monsters = sorted(self.monster_rotation, key=lambda m: m.get("priority", 1))
             current = sorted_monsters[0]
             self.monster_status_var.set(
-                f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation_list)} total"
+                f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation)} total"
             )
 
     def _refresh_monster_select_options(self, select_name: Optional[str] = None):
@@ -2423,7 +1933,7 @@ class App(tk.Tk):
 
         is_training = self.training_mode_var.get()
         has_training_dummy = any(
-            m.get("training_mode", False) for m in self.monster_rotation_list
+            m.get("training_mode", False) for m in self.monster_rotation
         )
 
         if is_training:
@@ -2607,7 +2117,7 @@ class App(tk.Tk):
         """
         try:
             # Ensure canonical schemas
-            self.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation_list", [])
+            self.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation", [])
             self.hunt_cfg["skill_slots"] = self.hunt_cfg.get("skill_slots", [])
             # 1. Apply Setup tab settings (updates hunt_cfg in-place, but don't save yet)
             self._apply_setup_settings(save_to_file=False)

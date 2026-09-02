@@ -1,26 +1,10 @@
 --- app_gui.py
 +++ app_gui.py
-@@ -979,7 +979,15 @@
-                 while True:
-                     try:
-                         record = logger.ui_queue.get_nowait()
--                        msg = logger.logger.handlers[2].format(record) if len(logger.logger.handlers) > 2 else record.getMessage()
-+                        msg = record.getMessage()
-+                        # format gracefully
-+                        import logging.handlers
-+                        for handler in logger.logger.handlers:
-+                            if isinstance(handler, logging.handlers.QueueHandler):
-+                                if handler.formatter:
-+                                    msg = handler.format(record)
-+                                break
+@@ -37,6 +37,7 @@
+ from database import get_filtered_monsters_api
+ from dialogs.image_viewer import ImageViewerDialog
+ from dialogs.about_dialog import AboutDialog
++from dialogs.monster_picker import MonsterPickerDialog
+ from views.image_debug_view import ImageDebugView
 
-                         self.logs_text.config(state="normal")
-                         self.logs_text.insert(tk.END, msg + "\n")
-@@ -996,7 +1004,7 @@
-         except Exception as e:
-             print(f"Error polling logs: {e}")
-
--        self.after(200, self._poll_log_queue)
-+        self.after(500, self._poll_log_queue)
-
-     # Click Tab removed
+ from mock.mock_orchestrator import MockHuntOrchestrator

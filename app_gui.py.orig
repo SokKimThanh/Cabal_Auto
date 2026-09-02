@@ -398,28 +398,8 @@ class App(tk.Tk):
         self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
 
         # Phase 3: Multi-Monster Support
-        self.monster_rotation_list = (
-            []
-        )  # [{"name": "Coc Go 2", "priority": 1, "enabled": True}, ...]
+        self.monster_rotation_list = []
         self._load_monster_rotation_list()
-
-        # Sprint 22 Patch 2: Separate training dummy list
-        self.training_monster_list = (
-            []
-        )  # [{"name": "Coc go~", "priority": 1, "enabled": True, "training_mode": True}]
-        self._config_migrated = False  # Track if migration happened
-        self._load_training_monster_list()
-
-        # Sprint 22 Patch 2: Auto-save if "Coc go" was migrated from monster_list to training_monster_list
-        if self._config_migrated:
-            # Update hunt_cfg with both lists before saving
-            self.hunt_cfg["monster_list"] = self.monster_rotation_list
-            self.hunt_cfg["training_monster_list"] = self.training_monster_list
-            save_hunt_config(self.hunt_cfg)
-            self._config_migrated = False
-            print(
-                "[Migration] ✅ Auto-migrated 'Coc go' variants to training_monster_list and saved config."
-            )
 
         # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
         # try to map them to actual attack skills from the skill library for a better UX.
@@ -597,7 +577,6 @@ class App(tk.Tk):
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
         self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
-        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         try:
@@ -634,6 +613,8 @@ class App(tk.Tk):
             ("sidebar_configuration", lambda: self.switch_view('setup'), UI.FONT_SECTION, 'setup'),
             ("sidebar_support", lambda: self.switch_view('help'), UI.FONT_SECTION, 'help'),
             ("tab_hunt", lambda: self.switch_view('hunt'), UI.FONT_SECTION, 'hunt'),
+            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs"),
+
         ]
         self._sidebar_widgets = []
 
@@ -677,57 +658,7 @@ class App(tk.Tk):
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
         self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
 
-        # Vùng C2: Bottom Status / Logs
-        self.shell_zone_c2 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
-        self.shell_zone_c2.grid(row=2, column=1, sticky="nsew")
 
-        # Bottom Logs Setup (UX4B.1)
-        self.shell_zone_c2.grid_propagate(False)
-
-        # Header for Bottom Logs
-        self.logs_header_frame = tk.Frame(self.shell_zone_c2, bg=UI.BG_SECTION, height=36)
-        self.logs_header_frame.pack(fill="x", side="top")
-        self.logs_header_frame.pack_propagate(False)
-
-        self.logs_title_label = tk.Label(
-            self.logs_header_frame,
-            text=self._t("logs_title") if hasattr(self, "_t") else "Logs",
-            bg=UI.BG_SECTION,
-            fg=UI.COLOR_TEXT,
-            font=UI.FONT_SECTION
-        )
-        self.logs_title_label.pack(side="left", padx=12)
-
-        self.logs_expanded = True
-
-        self.logs_toggle_btn = tk.Button(
-            self.logs_header_frame,
-            text=self._t("logs_collapse"),
-            command=self._toggle_bottom_logs,
-            bg=UI.BG_SECTION,
-            fg=UI.COLOR_TEXT,
-            relief="flat",
-            cursor="hand2",
-            font=UI.FONT_LABEL
-        )
-        self.logs_toggle_btn.pack(side="right", padx=12)
-
-        # Accessibility bindings
-        self.logs_toggle_btn.bind("<FocusIn>", lambda e: self.logs_toggle_btn.config(highlightthickness=1, highlightcolor=UI.BTN_PRIMARY_BG))
-        self.logs_toggle_btn.bind("<FocusOut>", lambda e: self.logs_toggle_btn.config(highlightthickness=0))
-        self.logs_toggle_btn.bind("<Return>", lambda e: self._toggle_bottom_logs())
-        self.logs_toggle_btn.bind("<space>", lambda e: self._toggle_bottom_logs())
-
-        # Empty content container for future logs
-        self.logs_text_widget = tk.Text(
-            self.shell_zone_c2, bg=UI.BG_PANEL, fg=UI.COLOR_TEXT,
-            font=UI.FONT_SMALL, wrap="word", state="disabled",
-            relief="flat", padx=12, pady=12
-        )
-        self.logs_text_widget.pack(fill="both", expand=True)
-        self.logs_content_frame = self.logs_text_widget  # Maintain existing reference for layout operations
-
-        self.after(100, self._check_initial_logs_state)
         self.after(100, self._poll_log_queue)
         self.after(1000, self._update_logs_metrics)
 
@@ -877,11 +808,16 @@ class App(tk.Tk):
         from ui.views.setup_content_frame import SetupContentFrame
         from ui.views.help_support_frame import HelpSupportFrame
         from ui.views.stats_content_frame import StatsContentFrame
+        from ui.views.activity_logs_frame import ActivityLogsFrame
 
-        self._views['hunt'] = HuntWorkspaceFrame(self.shell_zone_b, self)
-        self._views['setup'] = SetupContentFrame(self.shell_zone_b, self)
-        self._views['help'] = HelpSupportFrame(self.shell_zone_b, self)
-        self._views['stats'] = StatsContentFrame(self.shell_zone_b, self)
+        self._views["hunt"] = HuntWorkspaceFrame(self.shell_zone_b, self)
+        self._views["setup"] = SetupContentFrame(self.shell_zone_b, self)
+        self._views["help"] = HelpSupportFrame(self.shell_zone_b, self)
+        self._views["stats"] = StatsContentFrame(self.shell_zone_b, self)
+        self._views["logs"] = ActivityLogsFrame(self.shell_zone_b, self)
+
+        self.logs_text_widget = self._views["logs"].text_widget
+
 
         # Retain tab references for backward compatibility with orchestrators/runners
         self.tab_hunt = self._views['hunt'].hunt_tab if hasattr(self._views['hunt'], 'hunt_tab') else None
@@ -911,10 +847,13 @@ class App(tk.Tk):
         )
         self._db_status_bar.pack(fill="x", side="bottom")
 
+        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
-        apply_frame = tk.Frame(self, relief="sunken", bd=1, bg="#f0f0f0")
+        self.global_apply_frame = tk.Frame(self, relief="sunken", bd=1, bg="#f0f0f0")
+        apply_frame = self.global_apply_frame
         apply_frame.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
 
         # Unsaved changes indicator (left side)
@@ -950,74 +889,22 @@ class App(tk.Tk):
             pady=10,
             **apply_kwargs,
         )
-        self.global_apply_btn.pack(
-            side="right", padx=10, pady=6
-        )  # Increased external margins
+        self.global_apply_btn.pack(side="right", padx=10, pady=6)
 
-        # Keep reference to prevent garbage collection
         if not isinstance(save_icon, str):
             try:
                 self._image_refs.append(save_icon)
             except Exception:
                 pass
 
-        # Initialize unsaved state
         self.has_unsaved_changes = False
         self._update_unsaved_indicator()
 
     def _on_window_configure(self, event):
-        if event.widget == self:
-            current_height = self.winfo_height()
-            if current_height < 900:
-                if not self._last_height_under_900:
-                    self._last_height_under_900 = True
-                    if getattr(self, "logs_expanded", False):
-                        self._toggle_bottom_logs()
-            else:
-                self._last_height_under_900 = False
+        pass
 
-    def _clear_bottom_logs(self):
-        """Clear log text widget."""
-        if not self._is_destroyed:
-            self.logs_text_widget.config(state="normal")
-            self.logs_text_widget.delete("1.0", tk.END)
-            self.logs_text_widget.config(state="disabled")
 
-    def _toggle_bottom_logs(self):
-        """Toggle bottom logs visibility (UX4B.1)."""
-        try:
-            # Recompute scale_factor dynamically just in case
-            dpi_percent = self.cfg.get("ui", {}).get("dpi_scale", 100)
-            try:
-                base_scale = self.tk.call('tk', 'scaling') * 72
-            except tk.TclError:
-                base_scale = 1.0
-            scale_factor = (dpi_percent / 100.0) * (base_scale / 1.0 if base_scale > 0.5 else 1.0)
 
-            if self.logs_expanded:
-                self.logs_expanded = False
-                self.logs_content_frame.pack_forget()
-                self.logs_toggle_btn.config(
-                    text=self._t("logs_expand")
-                )
-                # Collapse to header height
-                self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)
-            else:
-                self.logs_expanded = True
-                self.logs_content_frame.pack(fill="both", expand=True)
-                self.logs_toggle_btn.config(
-                    text=self._t("logs_collapse")
-                )
-                # Expand to full target size
-                self.main_shell.rowconfigure(2, minsize=int(120 * scale_factor), weight=0)
-        except Exception as e:
-            # Fallback to expanded state
-            self.logs_expanded = True
-            try:
-                self.logs_content_frame.pack(fill="both", expand=True)
-                self.main_shell.rowconfigure(2, minsize=120, weight=0)
-            except Exception:
-                pass
 
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
@@ -1075,9 +962,8 @@ class App(tk.Tk):
                     dropped = logger.dropped_log_count
                     logger.dropped_log_count = 0
                     warn_msg = f"[!] Đã bỏ qua {dropped} dòng log do quá tải"
-                    self.logs_text_widget.config(state="normal")
-                    self.logs_text_widget.insert(tk.END, warn_msg + "\n")
-                    self.logs_text_widget.config(state="disabled")
+                    if 'logs' in getattr(self, '_views', {}):
+                        self._views['logs'].append_message(warn_msg)
 
                 lines_processed = 0
                 while lines_processed < 50:
@@ -1089,21 +975,14 @@ class App(tk.Tk):
                         else:
                             msg = record.getMessage()
 
-                        self.logs_text_widget.config(state="normal")
-                        self.logs_text_widget.insert(tk.END, msg + "\n")
+                        if 'logs' in getattr(self, '_views', {}):
+                            self._views['logs'].append_message(msg)
                         lines_processed += 1
                     except queue.Empty:
                         break
 
-                if lines_processed > 0:
-                    # Chống rò rỉ RAM dài hạn ở tầng hiển thị
-                    lines = int(self.logs_text_widget.index('end-1c').split('.')[0])
-                    if lines > 1000:
-                        self.logs_text_widget.config(state="normal")
-                        self.logs_text_widget.delete("1.0", f"{lines - 1000 + 1}.0")
-
-                    self.logs_text_widget.see(tk.END)
-                    self.logs_text_widget.config(state="disabled")
+                if lines_processed > 0 and 'logs' in getattr(self, '_views', {}):
+                    self._views['logs'].trim_to_limit(1000)
 
         except Exception as e:
             print(f"Error polling logs: {e}")
@@ -1177,29 +1056,16 @@ class App(tk.Tk):
         pass  # Optional mock since it's just messagebox in real app or we can add it
 
     def _load_monster_rotation_list(self):
-        saved_list = self.hunt_cfg.get("monster_list", [])
+        saved_list = self.hunt_cfg.get("monster_rotation", [])
         self.monster_rotation_list = []
         for item in saved_list:
             if isinstance(item, dict):
                 self.monster_rotation_list.append(
                     {
+                        "monster_id": item.get("monster_id", 0),
                         "name": item.get("name", ""),
                         "priority": item.get("priority", 1),
-                        "enabled": item.get("enabled", True),
-                    }
-                )
-
-    def _load_training_monster_list(self):
-        saved_list = self.hunt_cfg.get("training_monster_list", [])
-        self.training_monster_list = []
-        for item in saved_list:
-            if isinstance(item, dict):
-                self.training_monster_list.append(
-                    {
-                        "name": item.get("name", ""),
-                        "priority": item.get("priority", 1),
-                        "enabled": item.get("enabled", True),
-                        "training_mode": True,
+                        "dungeon_id": item.get("dungeon_id", None),
                     }
                 )
 
@@ -1669,41 +1535,38 @@ class App(tk.Tk):
         self.hunt_status.set(f"Rotation mode: {mode}")
 
     def _refresh_monster_rotation_list(self):
-        """Refresh the monster rotation listbox display.
-
-        Sprint 22 Patch 2: Show training_monster_list when training mode active,
-        otherwise show monster_rotation_list (normal monsters).
-        """
+        """Refresh the monster rotation listbox display."""
         if not hasattr(self, "monster_rotation_listbox"):
             return
 
         self.monster_rotation_listbox.delete(0, tk.END)
 
-        # Sprint 22 Patch 2: Auto-detect training mode from training_monster_list
-        has_training_list = (
-            hasattr(self, "training_monster_list")
-            and len(self.training_monster_list) > 0
-        )
+        display_list = self.monster_rotation_list
 
-        # Update frame title to show current mode
-        self._update_monster_frame_title(has_training_list)
-
-        # Choose which list to display
-        if has_training_list:
-            # Training mode: Show training_monster_list
-            display_list = self.training_monster_list
-        else:
-            # Normal mode: Show monster_rotation_list
-            display_list = self.monster_rotation_list
+        from database import get_monster_by_id_api, find_monster_by_name_api
 
         for item in display_list:
-            check = "☑" if item["enabled"] else "☐"
-            display = f"{check} {item['name']}"
-            if self.hunt_cfg.get("rotation_mode") == "priority":
-                display += f" (P{item['priority']})"
-            # Add training dummy indicator
-            if item.get("training_mode", False):
-                display += " 🎯"
+            monster_id = item.get("monster_id", 0)
+            name = item.get("name", "")
+            dungeon_id = item.get("dungeon_id", None)
+            priority = item.get("priority", 1)
+
+            # Resolve metadata DB
+            db_monster = None
+            if monster_id > 0:
+                db_monster = get_monster_by_id_api(str(monster_id))
+            if not db_monster and name:
+                db_monster = find_monster_by_name_api(name, dungeon_id)
+
+            if db_monster:
+                db_id = db_monster.get("id", "")
+                db_name = db_monster.get("name", name)
+                db_level = db_monster.get("level", "--")
+                db_hp = db_monster.get("hp", "--")
+                display = f"[#{db_id}] {db_name} - Lv.{db_level} | HP: {db_hp}"
+            else:
+                display = f"[Chưa rõ] {name} - Lv.-- | HP: --"
+
             self.monster_rotation_listbox.insert(tk.END, display)
 
         self._update_monster_status()
@@ -1964,39 +1827,6 @@ class App(tk.Tk):
             tags=("placeholder",),
         )
 
-    def _on_monster_toggle(self, event=None):
-        """Toggle monster enabled state on double-click.
-
-        Sprint 22 Patch 2: Support both normal and training lists.
-        """
-        selection = self.monster_rotation_listbox.curselection()
-        if not selection:
-            return
-
-        idx = selection[0]
-
-        # Determine which list we're working with
-        has_training_list = (
-            hasattr(self, "training_monster_list")
-            and len(self.training_monster_list) > 0
-        )
-
-        if has_training_list:
-            # Toggle in training_monster_list
-            if idx < len(self.training_monster_list):
-                self.training_monster_list[idx]["enabled"] = (
-                    not self.training_monster_list[idx]["enabled"]
-                )
-        else:
-            # Toggle in monster_rotation_list
-            if idx < len(self.monster_rotation_list):
-                self.monster_rotation_list[idx]["enabled"] = (
-                    not self.monster_rotation_list[idx]["enabled"]
-                )
-
-        self._refresh_monster_rotation_list()
-        self.monster_rotation_listbox.selection_set(idx)
-
     def _on_monster_list_select(self, event=None):
         """Handle monster list selection for preview."""
         selection = self.monster_rotation_listbox.curselection()
@@ -2028,58 +1858,19 @@ class App(tk.Tk):
             self.monster_context_menu.grab_release()
 
     def _on_monster_delete_from_list(self, event=None):
-        """Sprint 22 Patch 2: Delete selected monster from rotation list.
-
-        Delete key removes item from current list (normal or training).
-        If training_monster_list becomes empty, auto-switch to normal mode.
-        """
+        """Delete selected monster from rotation list."""
         selection = self.monster_rotation_listbox.curselection()
         if not selection:
             return
 
         idx = selection[0]
 
-        # Determine which list we're working with
-        has_training_list = (
-            hasattr(self, "training_monster_list")
-            and len(self.training_monster_list) > 0
-        )
+        if idx < len(self.monster_rotation_list):
+            del self.monster_rotation_list[idx]
 
-        if has_training_list:
-            # Delete from training_monster_list
-            if idx < len(self.training_monster_list):
-                monster_name = self.training_monster_list[idx]["name"]
-
-                # Confirm deletion
-                confirm_en = f"Remove '{monster_name}' from training list?"
-                confirm_vi = f"Xóa '{monster_name}' khỏi danh sách luyện tập?"
-                confirm_msg = confirm_vi if self.lang == "vi" else confirm_en
-
-                if not messagebox.askyesno(self._t("confirm_title"), confirm_msg):
-                    return
-
-                del self.training_monster_list[idx]
-
-                # If training list is now empty, auto-switch to normal mode
-                if len(self.training_monster_list) == 0:
-                    hint_en = "💡 Training list cleared. Switched back to normal monster list."
-                    hint_vi = "💡 Đã xóa hết cọc gỗ. Chuyển về danh sách quái thường."
-                    messagebox.showinfo(
-                        self._t("info_title"), hint_vi if self.lang == "vi" else hint_en
-                    )
-        else:
-            # Delete from monster_rotation_list
-            if idx < len(self.monster_rotation_list):
-                monster_name = self.monster_rotation_list[idx]["name"]
-
-                confirm_en = f"Remove '{monster_name}' from rotation list?"
-                confirm_vi = f"Xóa '{monster_name}' khỏi danh sách săn?"
-                confirm_msg = confirm_vi if self.lang == "vi" else confirm_en
-
-                if not messagebox.askyesno(self._t("confirm_title"), confirm_msg):
-                    return
-
-                del self.monster_rotation_list[idx]
+            # Reassign priorities
+            for i, m in enumerate(self.monster_rotation_list):
+                m["priority"] = i + 1
 
         self._refresh_monster_rotation_list()
 
@@ -2102,15 +1893,9 @@ class App(tk.Tk):
             self.monster_rotation_list[idx],
         )
 
-        # Update priorities if in priority mode
-        if self.hunt_cfg.get("rotation_mode") == "priority":
-            (
-                self.monster_rotation_list[idx]["priority"],
-                self.monster_rotation_list[idx - 1]["priority"],
-            ) = (
-                self.monster_rotation_list[idx - 1]["priority"],
-                self.monster_rotation_list[idx]["priority"],
-            )
+        # Reassign priorities
+        for i, m in enumerate(self.monster_rotation_list):
+            m["priority"] = i + 1
 
         self._refresh_monster_rotation_list()
         self.monster_rotation_listbox.selection_set(idx - 1)
@@ -2128,15 +1913,9 @@ class App(tk.Tk):
             self.monster_rotation_list[idx],
         )
 
-        # Update priorities if in priority mode
-        if self.hunt_cfg.get("rotation_mode") == "priority":
-            (
-                self.monster_rotation_list[idx]["priority"],
-                self.monster_rotation_list[idx + 1]["priority"],
-            ) = (
-                self.monster_rotation_list[idx + 1]["priority"],
-                self.monster_rotation_list[idx]["priority"],
-            )
+        # Reassign priorities
+        for i, m in enumerate(self.monster_rotation_list):
+            m["priority"] = i + 1
 
         self._refresh_monster_rotation_list()
         self.monster_rotation_listbox.selection_set(idx + 1)
@@ -2322,32 +2101,13 @@ class App(tk.Tk):
 
             monster_name = suggest_listbox.get(selection[0])
 
-            # Sprint 22 Patch 2: Check duplicate based on auto-detected training mode
-            has_training_list = (
-                hasattr(self, "training_monster_list")
-                and len(self.training_monster_list) > 0
-            )
-            is_training_mode = has_training_list
-
-            # Find monster in library to get training_mode flag
             monster_data = next(
                 (m for m in self.monsters if m["name"] == monster_name), None
             )
-            training_flag = (
-                monster_data.get("training_mode", False) if monster_data else False
-            )
+            monster_id = int(monster_data.get("id", 0)) if monster_data else 0
+            dungeon_id = monster_data.get("dungeon_id") if monster_data else None
 
-            # Determine which list to check and add to
-            if training_flag:
-                # Training dummy: add to training_monster_list
-                check_list = self.training_monster_list
-                target_list = "training"
-            else:
-                # Normal monster: add to monster_rotation_list
-                check_list = self.monster_rotation_list
-                target_list = "normal"
-
-            if any(m["name"] == monster_name for m in check_list):
+            if any(m["name"] == monster_name for m in self.monster_rotation_list):
                 messagebox.showinfo(
                     self._t("info_title"),
                     self._t("monster_already_in_list").format(name=monster_name),
@@ -2412,104 +2172,38 @@ class App(tk.Tk):
         except Exception:
             pass
 
-    def _update_monster_frame_title(self, is_training_mode: bool):
-        """Sprint 22 Patch 2: Update frame title to indicate current mode.
-
-        Args:
-            is_training_mode: True if showing training_monster_list
-        """
+    def _update_monster_frame_title(self):
+        """Update frame title to indicate current mode."""
         if not hasattr(self, "monster_frame"):
             return
 
-        if is_training_mode:
-            # Training mode: Show with special indicator
-            title_en = "🎯 Training Dummies (Practice Mode)"
-            title_vi = "🎯 Cọc Gỗ Luyện Tập (Chế độ luyện skill)"
-            title = title_vi if self.lang == "vi" else title_en
+        title = self._t("hunt_monsters")
 
-            # Change listbox background to indicate training mode
-            if hasattr(self, "monster_rotation_listbox"):
-                self.monster_rotation_listbox.config(bg="#FFF8E1")  # Light amber/yellow
-
-            # Show hint for switching back to normal mode
-            if hasattr(self, "training_mode_hint_var"):
-                hint_en = "💡 To switch back to normal monsters: Delete all training dummies (select + Del key)"
-                hint_vi = "💡 Để chuyển về danh sách quái thường: Xóa hết cọc gỗ (chọn + phím Del)"
-                self.training_mode_hint_var.set(
-                    hint_vi if self.lang == "vi" else hint_en
-                )
-        else:
-            # Normal mode: Regular monsters
-            title = self._t("hunt_monsters")
-
-            # Reset listbox background to default
-            if hasattr(self, "monster_rotation_listbox"):
-                self.monster_rotation_listbox.config(bg="white")
-
-            # Clear hint
-            if hasattr(self, "training_mode_hint_var"):
-                self.training_mode_hint_var.set("")
+        # Reset listbox background to default
+        if hasattr(self, "monster_rotation_listbox"):
+            self.monster_rotation_listbox.config(bg="white")
 
         self.monster_frame.config(text=title)
 
     def _update_monster_status(self):
-        """Update current monster hunting status display.
-
-        Sprint 22 Patch 2: Show different status for training mode.
-        """
+        """Update current monster hunting status display."""
         if not hasattr(self, "monster_status_var"):
             return
 
-        # Check which mode we're in
-        has_training_list = (
-            hasattr(self, "training_monster_list")
-            and len(self.training_monster_list) > 0
-        )
+        if not self.monster_rotation_list:
+            self.monster_status_var.set(self._t("monster_none_selected"))
+            return
 
-        if has_training_list:
-            # Training mode: Show training list status
-            enabled = [m for m in self.training_monster_list if m["enabled"]]
-            if not enabled:
-                status_en = "🎯 No training dummy selected"
-                status_vi = "🎯 Chưa chọn cọc gỗ nào"
-                self.monster_status_var.set(
-                    status_vi if self.lang == "vi" else status_en
-                )
-                return
+        mode = self.hunt_cfg.get("rotation_mode", "sequence")
 
-            # Show training mode status
-            count = len(enabled)
-            status_en = (
-                f"🎯 Training Mode: {count} dummy"
-                if count == 1
-                else f"🎯 Training Mode: {count} dummies"
-            )
-            status_vi = f"🎯 Chế độ luyện tập: {count} cọc gỗ"
-            self.monster_status_var.set(status_vi if self.lang == "vi" else status_en)
+        if mode == "sequence":
+            self.monster_status_var.set(f"Sequence: {len(self.monster_rotation_list)} monsters")
         else:
-            # Normal mode: Show normal monster status
-            enabled = [m for m in self.monster_rotation_list if m["enabled"]]
-            if not enabled:
-                self.monster_status_var.set(self._t("monster_none_selected"))
-                return
-
-            mode = self.hunt_cfg.get("rotation_mode", "sequence")
-            current_idx = self.hunt_cfg.get("current_monster_index", 0)
-
-            if mode == "sequence":
-                if current_idx < len(enabled):
-                    current = enabled[current_idx]
-                    self.monster_status_var.set(
-                        f"Current: {current['name']} | Sequence: {current_idx + 1}/{len(enabled)}"
-                    )
-                else:
-                    self.monster_status_var.set(f"Sequence: {len(enabled)} monsters")
-            else:  # priority
-                sorted_monsters = sorted(enabled, key=lambda m: m["priority"])
-                current = sorted_monsters[0]
-                self.monster_status_var.set(
-                    f"Priority: {current['name']} (P{current['priority']}) | {len(enabled)} total"
-                )
+            sorted_monsters = sorted(self.monster_rotation_list, key=lambda m: m.get("priority", 1))
+            current = sorted_monsters[0]
+            self.monster_status_var.set(
+                f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation_list)} total"
+            )
 
     def _refresh_monster_select_options(self, select_name: Optional[str] = None):
         if select_name is not None:
@@ -2912,6 +2606,9 @@ class App(tk.Tk):
         NOTE: Save file only ONCE to avoid duplicate writes and preserve field order.
         """
         try:
+            # Ensure canonical schemas
+            self.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation_list", [])
+            self.hunt_cfg["skill_slots"] = self.hunt_cfg.get("skill_slots", [])
             # 1. Apply Setup tab settings (updates hunt_cfg in-place, but don't save yet)
             self._apply_setup_settings(save_to_file=False)
 
