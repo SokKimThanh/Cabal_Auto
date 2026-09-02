@@ -626,19 +626,19 @@ class App(tk.Tk):
 
         # Build Sidebar Navigation
         sidebar_items = [
-            ("sidebar_quick_setup", lambda: self.switch_view('setup'), UI.FONT_SECTION),
-            ("sidebar_managers", None, UI.FONT_SECTION),
-            ("btn_monster_manager", self.monster_manager_controller.open_window, UI.FONT_LABEL),
-            ("btn_skill_manager", self.skill_manager_controller.open_window, UI.FONT_LABEL),
-            ("btn_library_manager", self.library_manager_controller.open_library_manager, UI.FONT_LABEL),
-            ("sidebar_configuration", lambda: self.switch_view('setup'), UI.FONT_SECTION),
-            ("sidebar_support", lambda: self.switch_view('help'), UI.FONT_SECTION),
-            ("tab_hunt", lambda: self.switch_view('hunt'), UI.FONT_SECTION),
+            ("sidebar_quick_setup", lambda: self.switch_view('setup'), UI.FONT_SECTION, 'setup'),
+            ("sidebar_managers", None, UI.FONT_SECTION, None),
+            ("btn_monster_manager", self.monster_manager_controller.open_window, UI.FONT_LABEL, None),
+            ("btn_skill_manager", self.skill_manager_controller.open_window, UI.FONT_LABEL, None),
+            ("btn_library_manager", self.library_manager_controller.open_library_manager, UI.FONT_LABEL, None),
+            ("sidebar_configuration", lambda: self.switch_view('setup'), UI.FONT_SECTION, 'setup'),
+            ("sidebar_support", lambda: self.switch_view('help'), UI.FONT_SECTION, 'help'),
+            ("tab_hunt", lambda: self.switch_view('hunt'), UI.FONT_SECTION, 'hunt'),
         ]
         self._sidebar_widgets = []
 
         for item_idx, item in enumerate(sidebar_items):
-            key, command, font = item
+            key, command, font, view_target = item
             if command is None:
                 # Section label
                 lbl = tk.Label(
@@ -650,7 +650,7 @@ class App(tk.Tk):
                     anchor="w"
                 )
                 lbl.pack(fill="x", pady=(10, 4))
-                self._sidebar_widgets.append((lbl, key))
+                self._sidebar_widgets.append((lbl, key, view_target))
             else:
                 # Button
                 btn = tk.Button(
@@ -671,7 +671,7 @@ class App(tk.Tk):
                     btn.pack(fill="x", pady=2, padx=(12, 0))
                 else:
                     btn.pack(fill="x", pady=2)
-                self._sidebar_widgets.append((btn, key))
+                self._sidebar_widgets.append((btn, key, view_target))
 
         # Vùng B: Active Hunt Workspace
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
@@ -882,7 +882,7 @@ class App(tk.Tk):
             anchor="w",
             padx=8,
             pady=3,
-            font=("Arial", 9),
+            font=UI.FONT_TEXT,
             bg="#e8e8e8",
             fg="#555555",
             relief="sunken",
@@ -900,7 +900,7 @@ class App(tk.Tk):
         indicator_frame.pack(side="left", padx=8, pady=6)
 
         self.unsaved_indicator_label = tk.Label(
-            indicator_frame, text="", fg="#666", font=("Arial", 9), bg="#f0f0f0"
+            indicator_frame, text="", fg="#666", font=UI.FONT_TEXT, bg="#f0f0f0"
         )
         self.unsaved_indicator_label.pack(side="left")
 
@@ -1131,6 +1131,15 @@ class App(tk.Tk):
         self._current_view = target_view
         self.current_view_key = view_key
 
+        # Update sidebar selected state
+        if hasattr(self, '_sidebar_widgets'):
+            for widget, _, view_target in self._sidebar_widgets:
+                if isinstance(widget, tk.Button):
+                    if view_target == view_key:
+                        widget.config(bg=UI.COLOR_INFO, fg=UI.BG_DEFAULT)
+                    else:
+                        widget.config(bg=UI.BG_SECTION, fg=UI.COLOR_TEXT)
+
         if hasattr(target_view, "on_view_shown"):
             target_view.on_view_shown()
 
@@ -1263,7 +1272,7 @@ class App(tk.Tk):
     def update_shell_translations(self):
         """Update i18n text for shell elements like sidebar."""
         if hasattr(self, '_sidebar_widgets'):
-            for widget, key in self._sidebar_widgets:
+            for widget, key, _ in self._sidebar_widgets:
                 try:
                     if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
                         widget.config(text=self._t(key))
@@ -2153,7 +2162,7 @@ class App(tk.Tk):
         title_label = tk.Label(
             container,
             text=self._t("monster_add_instruction"),
-            font=("Arial", 10, "bold"),
+            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
         )
         title_label.pack(anchor="w", pady=(0, 8))
 
@@ -2162,7 +2171,7 @@ class App(tk.Tk):
             container,
             text=hint_text,
             fg="#666",
-            font=("Arial", 8),
+            font=UI.FONT_TEXT,
             wraplength=450,
             justify="left",
         )
@@ -2199,7 +2208,7 @@ class App(tk.Tk):
             container,
             textvariable=match_info_var,
             fg="#2196F3",
-            font=("Arial", 8),
+            font=UI.FONT_TEXT,
             wraplength=450,
             justify="left",
         )
@@ -2384,7 +2393,7 @@ class App(tk.Tk):
             btn_frame,
             text=self._t("add_button"),
             command=on_select,
-            font=("Arial", 9, "bold"),
+            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
             fg="#4CAF50",
         ).pack(side="left")
         tk.Button(
