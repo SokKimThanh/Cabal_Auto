@@ -152,7 +152,10 @@ class HuntTab(ttk.Frame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=0)
 
-        self.bind("<Configure>", self._on_resize)
+        # Defer resize binding until widget construction and initial geometry setup finish.
+        # This avoids _on_resize/_apply_layout running while _build_ui is still creating
+        # layout-dependent widgets.
+        self.after_idle(lambda: self.bind("<Configure>", self._on_resize))
 
         # Section 1: Active Target & Status Panel
         self.app.active_target_status_frame = tk.LabelFrame(
