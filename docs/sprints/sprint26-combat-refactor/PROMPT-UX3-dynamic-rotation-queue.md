@@ -1,84 +1,191 @@
-# Session Prompt UX3: Implement Dynamic Monster Rotation Queue Panel (Zone B Left)
+# Session Prompt UX3: Configured Monster Rotation Queue
 
-Timebox: 25–30 minutes.
-Priority: High – Modernizes monster list into an interactive, high-performance priority queue.
+**Timebox:** 25-30 phút  
+**Priority:** High  
+**Dependency:** CB4 và CB2B phải đạt gate trước khi bắt đầu
 
----
+## Trạng thái đối chiếu mã nguồn
+
+Tại thời điểm review, session này **chưa sẵn sàng để chạy**:
+
+- UI trong `app_gui.py` đang load và thao tác `monster_list` qua `monster_rotation_list`.
+- `AppStateController._hunt_from_ui()` lại serialize sang `monster_rotation` với schema `{monster_id, name, priority, dungeon_id}`.
+- `ui/windows/auto_hunt.py` vẫn đọc `monster_list`.
+- `HuntRunner._hunt_locate_target()` đọc `monster_rotation` nhưng đang lặp từng phần tử như một ID, trong khi schema v2 quy định phần tử là dict.
+- `save_hunt_config()` đang ghi trực tiếp, chưa dùng temp file + `os.replace()`.
+- Hai nhóm test migrator hiện còn kỳ vọng shape `monster_rotation` khác nhau.
+- Không tồn tại `get_target_monster_info()` hoặc `is_placeholder` trong source.
+- Không có nguồn khoảng cách quái và không có callback queue cho sự kiện quái mới/quái chết từ `HuntOrchestrator`.
+
+Không được đánh dấu UX3 `PASSED` trước khi CB4 giải quyết các điểm schema/runtime ở trên. UX3 không tự triển khai lại migration hoặc atomic persistence của CB4.
 
 ## Objective
-Tái cấu trúc Panel 1 bên trái của Vùng B (kích thước 776 x 552 px) thành bảng danh sách Luân Chuyển Quái dạng Hàng đợi động (Dynamic Queue). Tích hợp cơ chế phân biệt trực quan quái thật/fallback, hiển thị khoảng cách thời gian thực (rate-limited), đồng bộ an toàn luồng với `hunt_config.json`, hỗ trợ DPI 100% – 200% và song ngữ i18n đầy đủ.
+
+Sau khi CB4 đạt, tái cấu trúc panel Monster Rotation thành danh sách cấu hình rõ ràng, responsive và giàu thông tin DB. Người dùng có thể thêm, xóa và đổi thứ tự trong RAM; thay đổi chỉ được ghi khi nhấn **Áp dụng Tất cả Cài đặt**, phù hợp mô hình lưu hiện tại.
+
+Đây là **configured rotation queue**, không phải danh sách target runtime. Panel không tự điều khiển mục tiêu và không nhận/xóa record theo trạng thái quái sống.
+
+## Preflight Gate Bắt Buộc
+
+Trước khi sửa UX3, xác nhận bằng code và test:
+
+1. `monster_rotation` là nguồn canonical duy nhất; runtime không còn đọc `monster_list`.
+2. UI load `monster_rotation` và giữ đủ `monster_id`, `name`, `priority`, `dungeon_id` qua một vòng load -> Apply All -> reload.
+3. `HuntRunner`/runtime đọc từng rotation entry theo schema dict, không dùng dict làm key của monster library.
+4. `save_hunt_config()` đã atomic ở tầng dùng chung nếu CB4 yêu cầu atomic write.
+5. Test migrator thống nhất một shape duy nhất và pass.
+
+Nếu bất kỳ mục nào fail: báo `BLOCKED_BY_CB4`, dừng UX3 và không thêm adapter song song để che lỗi schema.
 
 ## Target Files
-- Modify: `ui/tabs/hunt_tab.py` (Panel Monster Rotation)
-- Modify: `lib/features/monsters/monster_repo.py`
-- Modify: `lib/features/hunt/hunt_config.py`
-- Reference: `lib/ui_style.py`, `lib/system/i18n.py`
 
----
+- Modify: `ui/tabs/hunt_tab.py`
+- Modify: `app_gui.py` cho các callback rotation hiện đang được sở hữu tại đây
+- Modify: `ui/controllers/app_state_controller.py` chỉ để giữ round-trip schema canonical nếu CB4 chưa để lại serializer hoàn chỉnh
+- Modify: `lib/i18n/translations.py`
+- Reference only: `lib/features/hunt/hunt_config.py`
+- Reference only: `database.py` public APIs
+- Reference: `lib/ui_style.py`
 
-## Implementation Details
+Không dùng `lib/system/i18n.py`; translation hiện nằm trong `lib/i18n/translations.py`.
 
-### 0. Phạm vi dữ liệu: persist vs runtime (đối chiếu schema CB4)
-- Schema `monster_rotation` đã chốt ở CB4 chỉ gồm `{monster_id, name, priority, dungeon_id}` — đây là phần **duy nhất** được ghi xuống `hunt_config.json`.
-- `level`, `HP`, và khoảng cách (`d: <Range>m`) hiển thị trên mỗi dòng là **dữ liệu tra cứu/tính toán thời gian thực**, lấy qua `get_target_monster_info()` (CB4A) và module ước lượng khoảng cách — **không** được ghi vào `hunt_config.json`. Debounced save (mục 3) chỉ serialize danh sách theo đúng schema CB4 (id/tên/priority/dungeon_id theo thứ tự hiện tại trên UI), không kèm các trường runtime này.
-- Nguồn dữ liệu khoảng cách `d: <Range>m` **phải được xác định cụ thể trước khi code**: nếu chưa có module ước lượng khoảng cách thực (từ minimap hoặc toạ độ world), phiên này chỉ nên hiển thị khoảng cách ở dạng **placeholder rõ ràng** (ví dụ ẩn cột này hoặc hiển thị `d: --`) cho tới khi có nguồn dữ liệu thật, thay vì bịa số liệu trông như thật. Nếu đã có nguồn (từ một session khác chưa liệt kê ở đây), ghi rõ tên hàm/module cung cấp giá trị này trong Target Files.
+Không sửa `lib/features/monsters/monster_repo.py` để giả lập DB resolver. File này hiện chỉ quản lý fallback `monsters.json` và không có API CB4A.
 
-### 1. Bố Cục Panel & DPI Scaling Guard (776 x 552 px)
-- Container: `tk.Frame` nằm ở cột 0 của Vùng B với `sticky="nsew"`, `minwidth=360px`.
-- Header Bar:
-  * Dropdown chọn chế độ: `Sequence` (Tuần tự — theo đúng field `priority` tĩnh đã lưu) / `Priority (Khoảng cách)` (sắp xếp lại **chỉ trên hiển thị** theo khoảng cách gần nhất tại thời điểm hiện tại, không ghi đè field `priority` tĩnh trong config trừ khi người dùng chủ động kéo-thả sắp xếp lại thủ công).
-  * Bộ công cụ thao tác: Nút thêm quái `[+]`, Nút đẩy lên `[▲]`, Nút đẩy xuống `[▼]`, Nút gỡ `[Xóa]`.
-- Bảng danh sách cuộn độc lập:
-  * Tùy biến Listbox/Canvas phẳng với viền 1px `UIStyle.BORDER_COLOR`.
-  * Hỗ trợ tự động scale padding và font chữ khi Windows DPI đạt 150%, 175%, 200%.
+## Phạm Vi Session
 
-### 2. Định Dạng Dòng Hiển Thị & Phân Biệt Record
-- **Dữ liệu chuẩn từ DB:**
-  * Format: `☑ [#<id>] <Tên Quái> - Lv.<Level> | HP: <Max_HP> [d: <Range>m hoặc "--" nếu chưa có nguồn]`
-  * Màu sắc: Text chính `UIStyle.TEXT_MAIN`, Badge ID màu xanh dương/cyan.
-- **Dữ liệu Fallback / Chưa nhận diện:**
-  * Format: `⚠ [#0 - Chưa rõ] <Tên Gốc> - Lv.N/A | HP: 10000`
-  * Dùng lại cờ `is_placeholder` từ `get_target_monster_info()` (CB4A) để xác định một record có phải fallback hay không — không tự viết logic phát hiện fallback riêng (VD: kiểm tra `id == 0`) ở đây, tránh hai nơi có hai cách định nghĩa "fallback" khác nhau.
-  * Màu sắc: Badge màu cam `UIStyle.STATE_WARN`, Text phụ màu xám mờ `UIStyle.TEXT_MUTED`.
+### 1. Layout Responsive
 
-### 3. State Management & Thread-Safe Config Sync
-- Tạo lớp `MonsterQueueController`:
-  * Lưu trữ danh sách mục tiêu hiện tại trong RAM.
-  * Khi người dùng thêm/xóa/đổi thứ tự trên UI: cập nhật ngay danh sách hiển thị và lên lịch ghi đè xuống `hunt_config.json` bằng **trailing debounce 300ms** — mỗi thao tác mới sẽ reset lại bộ đếm thời gian, chỉ thực sự ghi file 300ms sau thao tác **cuối cùng** trong chuỗi thao tác liên tiếp (không phải ghi theo chu kỳ cố định).
-  * Ghi file an toàn với luồng đọc song song: viết vào file tạm (VD: `hunt_config.json.tmp`) rồi `os.replace()` sang `hunt_config.json` (atomic rename), để Hunt Thread (đang đọc config đồng thời) không bao giờ đọc phải file đang ghi dở.
-- Cập nhật từ luồng Săn (Hunt Thread):
-  * Khi quét thấy quái mới: tự động chèn vào hàng đợi hiển thị (không phải hàng đợi persist — xem mục 0) và tính khoảng cách nếu có nguồn (Cập nhật UI tối đa 5 FPS / mỗi 200ms). Việc cập nhật hiển thị 200ms này **không** kích hoạt debounced save 300ms ở trên, vì đây là dữ liệu runtime, không phải thay đổi cấu hình của người dùng.
-  * Khi quái chết: xóa ngay lập tức khỏi UI qua `schedule_ui_task()`. Panel chỉ **phản ánh** mục tiêu tiếp theo mà `HuntOrchestrator` đã tự quyết định chọn (theo CB2/CB3) — panel không tự gửi lệnh đổi mục tiêu hay điều khiển hành vi săn; đây là điểm quan trọng để tránh lặp lại vấn đề "hai nguồn sự thật cùng điều khiển một hành vi" đã gặp ở CB3C.
+- Giữ panel trong layout responsive hiện tại của `HuntTab`; không ép kích thước `776 x 552`.
+- Không thêm `minsize` khiến layout 1366x768 hoặc breakpoint hẹp bị tràn.
+- Header gồm mode selector và các icon button: Thêm, Lên, Xuống, Xóa.
+- Dùng widget cuộn hiện có hoặc `ttk.Treeview` nếu cần nhiều cột. Không tự viết Canvas list trong session này.
+- Dùng token thực tế của `UIStyle`: `COLOR_TEXT`, `COLOR_SUBTEXT`, `COLOR_WARNING` và các token button hiện có.
+- Không tham chiếu `TEXT_MAIN`, `TEXT_MUTED`, `STATE_WARN`, `BORDER_COLOR` vì chúng chưa tồn tại.
 
-### 4. Đa Ngôn Ngữ (i18n)
-- Đăng ký đầy đủ key dịch song ngữ (`vi`/`en`) trong namespace `monster_rotation`:
-  * `monster_rotation.title`, `monster_rotation.mode_sequence`, `monster_rotation.mode_priority`, `monster_rotation.add_btn`, `monster_rotation.remove_btn`, `monster_rotation.unknown_badge`.
+### 2. Contract Dữ Liệu
 
----
+Persist duy nhất:
+
+```python
+{
+    "monster_id": int,
+    "name": str,
+    "priority": int,
+    "dungeon_id": str | None,
+}
+```
+
+- `level` và `hp` chỉ là metadata hiển thị, không persist.
+- Schema canonical không có `enabled`; bỏ checkbox/double-click toggle legacy thay vì giữ trạng thái không thể round-trip.
+- Sau thêm/xóa/di chuyển, đánh lại `priority` liên tiếp từ 1 theo thứ tự UI.
+- `rotation_mode` tiếp tục dùng các giá trị hiện có `sequence` và `priority`.
+- Không đổi nghĩa `priority` thành khoảng cách.
+
+### 3. Metadata DB Và Fallback
+
+Dùng public API hiện có trong `database.py`:
+
+- `get_monster_by_id_api(str(monster_id))` khi ID hợp lệ;
+- fallback `find_monster_by_name_api(name, dungeon_id)` khi cần tương thích dữ liệu cũ đã được CB4 migrate.
+
+Format record đã resolve:
+
+```text
+[#<id>] <Tên quái> - Lv.<level> | HP: <hp>
+```
+
+Format chưa resolve:
+
+```text
+[Chưa rõ] <Tên gốc> - Lv.-- | HP: --
+```
+
+Không hiển thị HP giả `10000`. Không claim `is_placeholder` dùng chung với CB4A vì API đó chưa tồn tại. Metadata thiếu chỉ ảnh hưởng presentation, không làm mất rotation entry đã persist.
+
+Cache metadata theo `(monster_id, name, dungeon_id)` trong vòng đời panel. Không truy vấn SQLite mỗi lần repaint hoặc select.
+
+### 4. State Và Persistence
+
+- Tiếp tục dùng một danh sách cấu hình trong RAM làm nguồn của panel.
+- Thao tác thêm/xóa/di chuyển cập nhật RAM, refresh UI và mark `has_unsaved_changes=True` qua một helper thống nhất.
+- Chỉ `on_global_apply()` gọi serializer và `save_hunt_config()`.
+- Không thêm trailing debounce 300ms hoặc đường ghi file thứ hai.
+- Không ghi file trực tiếp từ `HuntTab` hoặc controller của panel.
+- Không ghi metadata `level`, `hp`, trạng thái resolve hoặc cache xuống config.
+
+### 5. Ranh Giới Runtime Và Thread
+
+Ngoài phạm vi UX3:
+
+- tự chèn quái do OCR/detection;
+- tự xóa quái khi target chết;
+- sắp xếp theo khoảng cách;
+- cập nhật danh sách 5 FPS;
+- điều khiển target tiếp theo.
+
+`HuntOrchestrator` hiện chỉ có callback status/target text/clear UI, chưa có event contract cho các hành vi trên. Việc đồng bộ desired target trong UX3 với target thực tế được xử lý ở session kế tiếp: `PROMPT-CB2C-target-rotation-acquisition.md`.
+
+## I18n
+
+Thêm key song ngữ vào `GLOBAL_TRANSLATIONS` theo pattern hiện có:
+
+- `monster_rotation_title`
+- `monster_rotation_mode_sequence`
+- `monster_rotation_mode_priority`
+- `monster_rotation_add`
+- `monster_rotation_remove`
+- `monster_rotation_unknown`
+
+Nếu hệ thống i18n đã hỗ trợ key có dấu chấm tại thời điểm triển khai, có thể dùng namespace `monster_rotation.*`, nhưng phải có test lookup trước.
 
 ## Validation & Testing
 
-### 1. Automated Tests (`tests/unit/test_monster_rotation_queue.py`)
-- **Test Debounced JSON Sync:** Thực hiện liên tiếp 5 thao tác đổi vị trí và xóa quái trong 100ms → Assert file `hunt_config.json` chỉ được ghi đúng 1 lần, 300ms sau thao tác cuối cùng (không phải 300ms sau thao tác đầu tiên), và lưu đúng mảng `monster_rotation` theo schema CB4 (không kèm `level`/`hp`/`distance`).
-- **Test Dynamic Death Queue:** Khởi tạo hàng đợi gồm 3 quái → Giả lập tín hiệu báo quái chết liên tiếp → Assert UI gỡ bỏ chính xác từng dòng mà không bị lỗi `IndexError` hay vỡ Listbox.
-- **Test Fallback Record Display:** Nạp record khuyết thiếu `{"name": "Unknown Mob"}` → Assert danh sách hiển thị đúng badge `[#0 - Chưa rõ]` và cấp độ `Lv.N/A`, dựa trên cờ `is_placeholder` trả về từ `get_target_monster_info()`.
-- (Added) **Test Priority Mode Không Ghi Đè Config:** Chọn chế độ `Priority (Khoảng cách)`, để hàng đợi tự sắp xếp lại theo khoảng cách runtime mà người dùng không thao tác thủ công → Assert `hunt_config.json` **không** bị ghi lại với thứ tự mới (field `priority` tĩnh giữ nguyên), vì đây chỉ là sắp xếp hiển thị.
-- (Added) **Test Concurrent Read/Write Safety:** Giả lập Hunt Thread liên tục đọc `hunt_config.json` trong khi UI thread đang trigger debounced save nhiều lần → Assert không có lần đọc nào nhận về JSON không hợp lệ/nội dung dở dang (verify qua atomic rename).
+### Automated Tests
 
-### 2. Visual & DPI Check
-- Kiểm tra danh sách hiển thị sắc nét, không bị mất icon/chữ ở các mức DPI: 100%, 125%, 150%, 175%, 200%.
-- Kiểm tra chuyển đổi ngôn ngữ `vi` <-> `en` làm mới text toàn bộ panel ngay lập tức.
+Thêm `tests/unit/test_monster_rotation_queue.py`:
 
----
+1. **Canonical round-trip:** load 3 dict -> reorder -> Global Apply serializer -> reload; giữ đúng ID/name/dungeon và priority 1..N.
+2. **Không persist metadata:** dữ liệu hiển thị có level/hp nhưng config chỉ có bốn field canonical.
+3. **Unknown display:** DB trả `None`; hiển thị `Lv.-- | HP: --`, không crash và không sửa entry persist.
+4. **DB lookup cache:** refresh panel nhiều lần chỉ gọi resolver một lần cho mỗi cache key.
+5. **Dirty state:** add/remove/move mark unsaved nhưng không gọi `save_hunt_config()` trước Global Apply.
+6. **Priority normalization:** sau xóa/di chuyển, priority là 1..N theo thứ tự UI.
+7. **Responsive regression:** panel không thêm minsize cố định làm hỏng layout rộng/hẹp hiện có.
+
+Chạy thêm gate CB4:
+
+```powershell
+py -m pytest tests/test_migration.py tests/unit/features/hunt/test_config_migrator.py -q
+py -m pytest tests/unit/test_monster_rotation_queue.py -q
+py -m pytest tests/ui/tabs/test_hunt_tab_layout.py -q
+```
+
+### Manual Check
+
+- 1366x768 ở layout rộng và hẹp hiện có.
+- Chuyển `vi`/`en` không mất selection hoặc dữ liệu RAM.
+- Add, Move Up/Down, Remove cập nhật dirty indicator.
+- Đóng/mở hoặc reload trước Apply không được giả vờ đã persist.
+- Apply All rồi reload giữ nguyên rotation canonical.
 
 ## Session Boundary Gate
-- **PASSED nếu:**
-  * Panel hiển thị chuẩn kích thước, thanh cuộn hoạt động mượt mà, danh sách cập nhật động theo thời gian thực.
-  * Phân biệt rõ ràng quái thật và quái fallback (dùng chung cờ `is_placeholder` với CB4A).
-  * `hunt_config.json` chỉ lưu đúng phần dữ liệu tĩnh theo schema CB4, không lẫn dữ liệu runtime.
-  * Ghi file dùng atomic rename, không có race với Hunt Thread.
-  * Vượt qua toàn bộ automated tests đồng bộ file JSON.
-- **REVERTED nếu:**
-  * Lỗi văng `IndexError` khi quái chết nhanh hoặc làm hỏng cấu trúc `hunt_config.json`.
-  * Chế độ "Priority (Khoảng cách)" vô tình ghi đè field `priority` tĩnh khi không có thao tác thủ công.
-  * Báo cáo kết quả PASSED/REVERTED ở phút thứ 25.
+
+**PASSED khi:**
+
+- Preflight CB4 đạt toàn bộ.
+- Panel responsive, thao tác add/remove/reorder ổn định.
+- Chỉ `monster_rotation` canonical được round-trip.
+- Không persist metadata runtime.
+- Không có auto-save ngoài Global Apply.
+- Không có Tkinter update từ background thread.
+- Toàn bộ test mục tiêu pass.
+
+**BLOCKED/REVERTED khi:**
+
+- `monster_list` và `monster_rotation` vẫn cùng điều khiển runtime.
+- Runtime vẫn đọc rotation dict như ID.
+- Session phải tự xây migration, atomic save hoặc event bridge để panel hoạt động.
+- Có hai nguồn sự thật hoặc hai đường ghi config.
+- Layout làm hồi quy breakpoint Hunt hiện tại.
+
+Báo cáo `PASSED`, `BLOCKED_BY_CB4` hoặc `REVERTED` ở phút 25; phút 25-30 chỉ dành cho targeted repair và chạy lại test.
