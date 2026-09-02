@@ -62,6 +62,19 @@ class HuntOrchestrator:
             consecutive_false_readings = 0
             logger = get_hunt_logger()
 
+            # Setup scene monster detection logic
+            from lib.features.hunt.runtime_monster_queue import RuntimeMonsterQueue
+            from lib.features.hunt.scene_monster_detector import SceneMonsterDetector
+
+            # We need vision_engine. It's stored in self.bot_manager if available.
+            # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
+            runtime_queue = RuntimeMonsterQueue(publish_callback=None) # We don't have UX3B publish callback here
+            scene_detector = None
+            if hasattr(self, 'bot_manager') and self.bot_manager and hasattr(self.bot_manager, 'vision_engine'):
+                scene_detector = SceneMonsterDetector(self.bot_manager.vision_engine, runtime_queue)
+
+            self.runtime_queue = runtime_queue # expose for tests
+
             cached_target_id = None
             cached_target_name = None
             last_ocr_time = 0.0
@@ -161,6 +174,22 @@ class HuntOrchestrator:
                                 frame = frame.copy()  # return a copy to readers
                     except Exception as e:
                         logger.log_error("vision_capture", f"Failed to capture frame: {e}")
+
+                    # Process scene monsters
+                    if frame is not None and scene_detector is not None:
+                        scene_detector.process_frame(frame)
+
+                    # Expose attack queue for other services (CB2C)
+                    # Use 'configured_only' as default, pulling configured IDs from cfg
+                    configured_ids = []
+                    for m_entry in cfg.get("monster_rotation", []):
+                        if isinstance(m_entry, dict) and "monster_id" in m_entry:
+                            configured_ids.append(m_entry["monster_id"])
+                        elif isinstance(m_entry, int):
+                            configured_ids.append(m_entry)
+
+                    target_policy = cfg.get("target_policy", "configured_only")
+                    self.runtime_attack_queue = runtime_queue.get_attack_queue(target_policy, configured_ids)
 
                     # Target detection logic using TargetBarDetector
                     if frame is not None:

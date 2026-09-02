@@ -24,6 +24,8 @@ class Template:
     threshold: float = 0.7
     scales: Optional[List[float]] = None
     enabled: bool = True
+    monster_id: Optional[int] = None
+    dungeon_id: Optional[str] = None
     image: Optional[np.ndarray] = None  # Loaded BGR image
     thumbnail: Optional[np.ndarray] = None  # For UI preview
     image_gray: Optional[np.ndarray] = (
@@ -92,6 +94,8 @@ class Template:
             "threshold": self.threshold,
             "scales": self.scales,
             "enabled": self.enabled,
+            "monster_id": self.monster_id,
+            "dungeon_id": self.dungeon_id,
         }
 
 
@@ -218,6 +222,8 @@ class TemplateService:
                     threshold=float(template_data.get("threshold", 0.7)),
                     scales=template_data.get("scales"),
                     enabled=bool(template_data.get("enabled", True)),
+                    monster_id=template_data.get("monster_id"),
+                    dungeon_id=template_data.get("dungeon_id"),
                 )
                 self.templates[template.id] = template
 
