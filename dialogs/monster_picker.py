@@ -16,6 +16,8 @@ class MonsterPickerDialog(tk.Toplevel):
 
         # Don't hardcode minsize, make it responsive
         self.geometry("600x450")
+        self.minsize(400, 300)
+        self.resizable(True, True)
 
         self.transient(parent)
         self.grab_set()
@@ -32,6 +34,7 @@ class MonsterPickerDialog(tk.Toplevel):
         self._setup_ui()
         self._cache = {}
         self._search_timer = None
+        self._item_map = {}
 
         self._load_initial_data()
 
@@ -83,21 +86,20 @@ class MonsterPickerDialog(tk.Toplevel):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("display",),
+            columns=("id", "name", "level", "hp"),
             show="headings",
             selectmode="browse"
         )
 
-        self.tree.heading("display", text="Monster")
-        self.tree.pack(side="left", fill="both", expand=True)
+        self.tree.heading("id", text="ID", anchor="w")
+        self.tree.heading("name", text=self._t("monster_name") if self._t else "Name", anchor="w")
+        self.tree.heading("level", text="Lv", anchor="center")
+        self.tree.heading("hp", text="HP", anchor="e")
 
-        # Style treeview to look like a simple list
-        style = ttk.Style(self)
-        style.configure("Treeview", font=UI.FONT_TEXT, rowheight=24)
-        style.configure("Treeview.Heading", font=UI.FONT_LABEL)
-
-        # We don't really want to show column headers if there's only one display column
-        self.tree.configure(show="tree")
+        self.tree.column("id", width=50, stretch=False)
+        self.tree.column("name", width=250, stretch=True)
+        self.tree.column("level", width=50, stretch=False, anchor="center")
+        self.tree.column("hp", width=80, stretch=False, anchor="e")
 
         scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
         scrollbar.pack(side="right", fill="y")
@@ -148,6 +150,8 @@ class MonsterPickerDialog(tk.Toplevel):
             self._cache[""] = results
             self._render_results(results)
         except Exception as e:
+            import logging
+            logging.error(f"[MonsterPicker] Error loading data: {e}", exc_info=True)
             self._render_error()
 
     def _on_search_change(self, *args):
@@ -171,6 +175,8 @@ class MonsterPickerDialog(tk.Toplevel):
             self._cache[query] = results
             self._render_results(results)
         except Exception as e:
+            import logging
+            logging.error(f"[MonsterPicker] Error loading data: {e}", exc_info=True)
             self._render_error()
 
     def _render_results(self, records):
@@ -189,22 +195,14 @@ class MonsterPickerDialog(tk.Toplevel):
             hp_val = r.get("hp", "--")
             dungeon_id = r.get("dungeonId")
 
-            # [#<id>] <name> - Lv.<level> | HP: <hp>
-            display_text = f"[#{id_val}] {name_val} - Lv.{lvl_val} | HP: {hp_val}"
-
-            # Store raw data in tree item tags or values
-            # Using iid to store the ID is a bad idea because it must be string, and we need canonical mapping.
-            # Treeview stores values as tuple.
-            item_id = self.tree.insert("", "end", text=display_text)
+            item_id = self.tree.insert("", "end", values=(f"#{id_val}", name_val, lvl_val, hp_val))
             # Attach canonical record to the item for retrieval later
             canonical_record = {
                 "monster_id": int(id_val) if id_val else 0,
                 "name": str(name_val).strip(),
                 "dungeon_id": str(dungeon_id) if dungeon_id else None
             }
-            # We can't attach arbitrarily to treeview, so we keep a local map of iid -> dict
-            if not hasattr(self, '_item_map'):
-                self._item_map = {}
+            # Store canonical mapping
             self._item_map[item_id] = canonical_record
 
     def _render_error(self):

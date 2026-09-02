@@ -39,11 +39,11 @@ def test_picker_initial_load(tk_root, mock_db_responses):
         assert len(items) == 2
 
         # Verify text format
-        text0 = dialog.tree.item(items[0], "text")
-        assert text0 == "[#1] Slime Xanh - Lv.10 | HP: 100"
+        text0 = dialog.tree.item(items[0], "values")
+        assert list(text0) == ['#1', 'Slime Xanh', '10', '100']
 
-        text1 = dialog.tree.item(items[1], "text")
-        assert text1 == "[#2] Slime Đo - Lv.12 | HP: 150"
+        text1 = dialog.tree.item(items[1], "values")
+        assert list(text1) == ['#2', 'Slime Đo', '12', '150']
 
 def test_picker_search(tk_root, mock_db_responses):
     all_monsters, search_monsters = mock_db_responses
@@ -63,7 +63,7 @@ def test_picker_search(tk_root, mock_db_responses):
 
             items = dialog.tree.get_children()
             assert len(items) == 1
-            assert dialog.tree.item(items[0], "text") == "[#1] Slime Xanh - Lv.10 | HP: 100"
+            assert list(dialog.tree.item(items[0], 'values')) == ['#1', 'Slime Xanh', '10', '100']
 
 def test_picker_confirm_callback(tk_root, mock_db_responses):
     all_monsters, _ = mock_db_responses
