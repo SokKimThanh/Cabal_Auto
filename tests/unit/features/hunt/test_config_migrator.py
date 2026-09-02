@@ -37,27 +37,35 @@ def test_migrate_hunt_config_adds_ui_mode():
 def test_migrate_hunt_config_legacy_monsters_list_of_dicts():
     cfg = {
         "monsters": [
-            {"id": "m1", "name": "Monster 1"},
-            {"id": "m2", "name": "Monster 2"},
+            {"id": 100, "name": "Monster 1"},
+            {"id": 200, "name": "Monster 2"},
         ]
     }
     migrate_hunt_config(cfg)
-    assert cfg["monster_rotation"] == ["m1", "m2"]
-    assert cfg["monsters"] == []
+    assert len(cfg["monster_rotation"]) == 2
+    assert cfg["monster_rotation"][0]["monster_id"] == 100
+    assert cfg["monster_rotation"][0]["priority"] == 1
+    assert cfg["monster_rotation"][1]["monster_id"] == 200
+    assert cfg["monster_rotation"][1]["priority"] == 2
+    assert "monsters" not in cfg
 
 def test_migrate_hunt_config_legacy_monsters_list_of_strings():
     cfg = {
-        "monsters": ["m1", "m2"]
+        "monsters": ["100", "200"]
     }
     migrate_hunt_config(cfg)
-    assert cfg["monster_rotation"] == ["m1", "m2"]
-    assert cfg["monsters"] == []
+    assert len(cfg["monster_rotation"]) == 2
+    assert cfg["monster_rotation"][0]["monster_id"] == 100
+    assert cfg["monster_rotation"][0]["priority"] == 1
+    assert cfg["monster_rotation"][1]["monster_id"] == 200
+    assert cfg["monster_rotation"][1]["priority"] == 2
+    assert "monsters" not in cfg
 
 def test_migrate_hunt_config_adds_defaults():
     cfg = {}
     migrate_hunt_config(cfg)
     assert cfg["monster_rotation"] == []
-    assert cfg["skills"] == {}
+    assert cfg["skill_slots"] == []
     assert cfg["global_hotkeys"]["enabled"] is True
     assert cfg["hunt_area"] == {"window_bounds": None}
 
@@ -100,13 +108,16 @@ def test_migrate_hunt_config_malformed_top_level():
 def test_migrate_hunt_config_keeps_existing_fields():
     cfg = {
         "ui_mode": "advanced",
-        "monster_rotation": ["m3"],
-        "skills": {"slot1": "skill1"},
+        "monster_rotation": [300],
+        "skills": {"1": {"key": "1", "cast_time": 1.0}},
         "global_hotkeys": {"enabled": False, "start_key": "x"},
     }
     migrate_hunt_config(cfg)
     assert cfg["ui_mode"] == "advanced"
-    assert cfg["monster_rotation"] == ["m3"]
-    assert cfg["skills"] == {"slot1": "skill1"}
+    assert len(cfg["monster_rotation"]) == 1
+    assert cfg["monster_rotation"][0]["monster_id"] == 300
+    assert cfg["monster_rotation"][0]["priority"] == 1
+    assert len(cfg["skill_slots"]) == 1
+    assert cfg["skill_slots"][0]["key"] == "1"
     assert cfg["global_hotkeys"]["enabled"] is False
     assert cfg["global_hotkeys"]["start_key"] == "x"

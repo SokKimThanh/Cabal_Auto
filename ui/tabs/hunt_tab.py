@@ -121,9 +121,8 @@ class HuntTab(ttk.Frame):
             self, text=self.app._t("hunt_monsters"), padx=10, pady=8
         )
         self.app.monster_frame.grid(
-            row=0, column=0, sticky="nsew", padx=(0, 6), pady=(0, 12)
+            row=0, column=0, sticky="new", padx=(0, 6), pady=(0, 12)
         )
-        self.app.monster_frame.pack_propagate(False)
         self.app.monster_frame.grid_columnconfigure(0, weight=1)
 
         # Rotation mode selection
@@ -230,8 +229,6 @@ class HuntTab(ttk.Frame):
             font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
         ).pack(fill="x", pady=(8, 0))
 
-        # Bind click to toggle checkbox
-        self.app.monster_rotation_listbox.bind("<Double-Button-1>", self.app._on_monster_toggle)
         self.app.monster_rotation_listbox.bind(
             "<<ListboxSelect>>", self.app._on_monster_list_select
         )
