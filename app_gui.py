@@ -205,11 +205,27 @@ class App(tk.Tk):
         self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
 
         self.title(self._t("app_title"))
-        self.resizable(False, False)
+        self.resizable(True, True)
+
+        # Calculate scale factor for layout limits
+        try:
+            dpi_percent = self.tk.call('tk', 'scaling') * 72
+            scale_factor = dpi_percent / 100.0
+        except Exception:
+            scale_factor = 1.0
+
+        self.minsize(int(1220 * scale_factor), int(656 * scale_factor))
+
         screen_w = self.winfo_screenwidth()
         screen_h = self.winfo_screenheight()
-        w = min(1920, screen_w)
-        h = min(1080, screen_h)
+
+        # Limit initial geometry to not cover taskbar/titlebar
+        max_init_w = screen_w - 20
+        max_init_h = screen_h - 80
+
+        w = min(1920, max_init_w)
+        h = min(1080, max_init_h)
+
         x = max((screen_w - w) // 2, 0)
         y = max((screen_h - h) // 2, 0)
         self.geometry(f"{w}x{h}+{x}+{y}")
