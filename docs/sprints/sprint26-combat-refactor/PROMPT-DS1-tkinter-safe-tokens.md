@@ -2,7 +2,7 @@
 
 **Timebox:** 25-30 phút  
 **Priority:** High  
-**Dependencies:** Session 01-20 đã đạt; đọc `DESIGN-SYSTEM-TKINTER-ADAPTER.md`
+**Dependencies:** Session 01-21 đã đạt; đọc `DESIGN-SYSTEM-TKINTER-ADAPTER.md`
 
 ## Objective
 

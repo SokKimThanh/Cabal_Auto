@@ -2,7 +2,7 @@
 
 **Timebox:** 25-30 phút  
 **Priority:** Critical  
-**Dependencies:** CB5, CB2B, CB4 và UX3 đã đạt gate
+**Dependencies:** CB5, CB2B và CB4 đã đạt gate
 
 ## Objective
 
@@ -154,7 +154,7 @@ nếu có detection source hợp lệ.
 
 ## Quan Hệ Với UX3, UX3B Và CB2C
 
-- UX3 cung cấp configured `monster_rotation` snapshot và policy.
+- CB4 cung cấp canonical `monster_rotation` và `target_policy` snapshot cho runtime. UX3 chỉ là UI editor của configured list, không là prerequisite của detector.
 - UX3B hiển thị detection snapshot, ba mode và thao tác promote sang configured
   list; UX3B không tự quyết định attack.
 - CB2D cung cấp detection snapshot cho UX3B và attack queue cho CB2C.
