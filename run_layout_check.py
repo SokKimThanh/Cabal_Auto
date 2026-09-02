@@ -1,4 +1,5 @@
-import sys, unittest.mock
+import sys
+import unittest.mock
 sys.modules['lib.system.window_manager'] = unittest.mock.MagicMock()
 
 import tkinter as tk
