@@ -12,6 +12,19 @@ from lib.features.skills.runtime import SkillRuntime
 # CONFIG_PATH points to lib/data/ for centralized data management
 CONFIG_PATH = Path(__file__).parent.parent / 'lib' / 'data' / 'hunt_config.json'
 
+_file_exists_cache = {}
+
+def _check_template_exists(path_str):
+    if not path_str:
+        return False
+    if path_str in _file_exists_cache:
+        return True
+
+    exists = Path(path_str).exists()
+    if exists:
+        _file_exists_cache[path_str] = True
+    return exists
+
 
 def load_cfg():
     """Load hunt config with Phase 3 migration support.
@@ -109,7 +122,7 @@ def locate_target(cfg):
         window_bounds = cfg.get('window_bounds')  # fallback region from monster
         for tmpl in templates:
             path = tmpl.get('path', '')
-            if not path or not Path(path).exists():
+            if not path or not _check_template_exists(path):
                 continue
             
             threshold = tmpl.get('threshold', 0.85)
@@ -146,7 +159,7 @@ def locate_target(cfg):
     template = cfg.get('template_path')
     threshold = cfg.get('confidence', 0.8)
 
-    if not template or not Path(template).exists():
+    if not template or not _check_template_exists(template):
         return None, None
 
     # Use template_matcher for accurate confidence tracking
@@ -171,7 +184,7 @@ def locate_monster_target(monster_targets, window_bounds=None):
         
         for tmpl in templates:
             path = tmpl.get('path', '')
-            if not path or not Path(path).exists():
+            if not path or not _check_template_exists(path):
                 continue
             
             threshold = tmpl.get('threshold', 0.85)
