@@ -740,9 +740,9 @@ class App(tk.Tk):
         # Configure columns for action_bar_frame
         self.action_bar_frame.columnconfigure(0, minsize=380, weight=1)  # Window Selection
         self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)   # Refresh
-        self.action_bar_frame.columnconfigure(2, minsize=260, weight=0)  # Bounds
-        self.action_bar_frame.columnconfigure(3, minsize=160, weight=0)  # Start
-        self.action_bar_frame.columnconfigure(4, minsize=160, weight=0)  # Stop
+        self.action_bar_frame.columnconfigure(2, minsize=44, weight=0)   # Scan
+        self.action_bar_frame.columnconfigure(3, minsize=260, weight=0)  # Bounds
+        self.action_bar_frame.columnconfigure(4, minsize=160, weight=0)  # Start/Stop
         self.action_bar_frame.columnconfigure(5, minsize=80, weight=0)   # Language
 
         # Window Selection Combobox
@@ -791,9 +791,31 @@ class App(tk.Tk):
         )
         self.refresh_btn.grid(row=0, column=1, sticky="w", padx=(0, 12))
 
+        # Scan Manual Button
+        from ui.icon_library import Icons
+        self.scan_btn_icon_name = Icons.SCAN_SCREEN
+
+        def on_scan_clicked():
+            if hasattr(self, "scan_controller"):
+                self.scan_controller.run_scan(manual=True)
+
+        self.btn_manual_scan = _create_icon_btn_component(
+            parent=self.action_bar_frame,
+            icon_name=self.scan_btn_icon_name,
+            icon_fallback="🔍",
+            icon_size=16,
+            button_size=36,
+            command=on_scan_clicked,
+            button_type="green_light",
+            tooltip_text=self._t("scan_tooltip") if hasattr(self, "_t") else "Scan",
+            state="normal",
+            auto_hover_disabled=False,
+        )
+        self.btn_manual_scan.grid(row=0, column=2, sticky="w", padx=(0, 12))
+
         # Bounds Readiness State Placeholder (Minimum 260x36)
         self.bounds_placeholder = tk.Frame(self.action_bar_frame, width=260, height=36)
-        self.bounds_placeholder.grid(row=0, column=2, sticky="w", padx=(0, 12))
+        self.bounds_placeholder.grid(row=0, column=3, sticky="w", padx=(0, 12))
         self.bounds_placeholder.pack_propagate(False)
 
         self.bounds_status_var = tk.StringVar()
@@ -824,7 +846,7 @@ class App(tk.Tk):
         )
 
         # Grid it into columns 3 and 4 merged, or just use 3 since we redefined it
-        self.start_stop_btn.grid(row=0, column=3, sticky="w", padx=(0, 12))
+        self.start_stop_btn.grid(row=0, column=4, sticky="w", padx=(0, 12))
 
         # Language Selector (moved from header)
         self.lang_var = tk.StringVar(value=self.lang)
@@ -931,27 +953,6 @@ class App(tk.Tk):
         self.global_apply_btn.pack(
             side="right", padx=10, pady=6
         )  # Increased external margins
-
-        # Scan Manual Button
-        from ui.components import create_icon_button
-        from ui.icon_library import Icons
-
-        self.scan_btn_icon_name = Icons.SCAN_SCREEN
-
-        def on_scan_clicked():
-            if hasattr(self, "scan_controller"):
-                self.scan_controller.run_scan(manual=True)
-
-        self.btn_manual_scan = create_icon_button(
-            apply_frame,
-            icon_name=self.scan_btn_icon_name,
-            text="",
-            command=on_scan_clicked,
-            icon_fallback="🔍",
-            icon_size=22,
-            padding={"padx": 10, "pady": 10},
-        )
-        self.btn_manual_scan.pack(side="right", padx=8, pady=6)
 
         # Keep reference to prevent garbage collection
         if not isinstance(save_icon, str):

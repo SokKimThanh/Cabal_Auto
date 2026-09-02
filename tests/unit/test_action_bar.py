@@ -2,6 +2,20 @@ import pytest
 import tkinter as tk
 from unittest.mock import patch, MagicMock
 
+import sys
+from unittest.mock import MagicMock
+
+sys.modules['cv2'] = MagicMock()
+sys.modules['numpy'] = MagicMock()
+sys.modules['win32gui'] = MagicMock()
+sys.modules['win32con'] = MagicMock()
+sys.modules['win32process'] = MagicMock()
+sys.modules['win32api'] = MagicMock()
+sys.modules['pywintypes'] = MagicMock()
+mock_wm = MagicMock()
+sys.modules['lib.system.window_manager'] = mock_wm
+
+
 @pytest.fixture
 def app_instance():
     from app_gui import App
@@ -158,3 +172,26 @@ def test_dynamic_i18n(app_instance):
     if hasattr(app_instance.start_stop_btn, "cget"):
         text = app_instance.start_stop_btn.cget("text")
         assert "Bắt Đầu" in text or "Bắt đầu" in text or "Start" not in text  # Checking it changed
+
+
+def test_action_bar_layout(app_instance):
+    """Verify that btn_manual_scan is placed in the action bar properly."""
+    assert app_instance.btn_manual_scan.master == app_instance.action_bar_frame
+
+    # Verify column layout for widgets in the action bar
+    assert app_instance.win_combo.grid_info()['column'] == 0
+    assert app_instance.refresh_btn.grid_info()['column'] == 1
+    assert app_instance.btn_manual_scan.grid_info()['column'] == 2
+    assert app_instance.bounds_placeholder.grid_info()['column'] == 3
+    assert app_instance.start_stop_btn.grid_info()['column'] == 4
+    assert app_instance.lang_cmb.grid_info()['column'] == 5
+
+def test_scan_button_click(app_instance):
+    """Verify that clicking the scan button triggers run_scan."""
+    app_instance.scan_controller = MagicMock()
+
+    # Trigger the click
+    app_instance.btn_manual_scan.invoke()
+
+    # Assert run_scan was called with manual=True
+    app_instance.scan_controller.run_scan.assert_called_once_with(manual=True)
