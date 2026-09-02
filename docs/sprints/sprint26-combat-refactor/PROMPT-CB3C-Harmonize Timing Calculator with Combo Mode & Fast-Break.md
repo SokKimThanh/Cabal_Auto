@@ -2,6 +2,7 @@
 
 Timebox: 25-30 minutes.
 Priority: High – Resolves timing conflicts between standard rotation and combo engine.
+Dependency: CB3D Skill Command Delivery Verification đã đạt gate hoặc có trạng thái acknowledgment được phê duyệt rõ ràng.
 
 ---
 
@@ -20,17 +21,17 @@ Refactor `timing_calculator.py` and `lib/features/skills/runtime.py` to support 
 
 ### 0. Single Source of Truth for Rotation Position (resolves conflict with CB3)
 - CB3 established that the skill rotation index increments in exactly one place, at the end of `_try_cast_skills()`, once per cast call (completed or fast-broken).
-- When Combo Mode is enabled, `SkillRuntime` becomes the authoritative owner of rotation position instead: `get_next_combo_skill()` exposes the next skill without advancing, and only `mark_cast()` (called once per confirmed cast attempt, completed or fast-broken) advances the internal pointer.
-- `_try_cast_skills()` must NOT separately increment its own rotation index while Combo Mode is active — it must call `mark_cast()` and let `SkillRuntime` own the position, to avoid double-advancing or desyncing the two counters.
-- In Standard Mode (`combo.enabled == False`), the CB3 behavior is unchanged: `_try_cast_skills()` owns the index directly via `get_attack_to_cast()`, and `SkillRuntime`'s combo pointer is not used.
+- When Combo Mode is enabled, `SkillRuntime` becomes the authoritative owner of rotation position instead: `get_next_combo_skill()` exposes the next skill without advancing. Theo CB3D, chỉ `commit_cast()` sau outcome `ACCEPTED` mới advance pointer/cooldown; transport `SENT`, `UNVERIFIED`, `REJECTED` hoặc `CANCELLED` không được advance.
+- `_try_cast_skills()` must NOT separately increment its own rotation index while Combo Mode is active — nó dùng reservation token và `commit_cast()` của CB3D để tránh double-advance hoặc desync.
+- In Standard Mode (`combo.enabled == False`), cũng phải dùng reservation/ack contract của CB3D; không giữ hành vi `get_attack_to_cast()` advance trước khi xác nhận.
 - Toggling `combo.enabled` mid-run: on transition, sync the two positions once (e.g. set `SkillRuntime`'s combo pointer to match the current standard-mode index, or vice versa) so switching modes does not skip or repeat a skill in the chain. Define and test this handoff explicitly rather than leaving the two counters to drift independently.
 
 ### 1. Dual-Mode Support in `SkillRuntime` (`lib/features/skills/runtime.py`)
 - Add method `get_next_combo_skill(current_time: float) -> Optional[SkillInfo]`:
-  - Returns the strictly sequential skill in the designated Combo Lane without advancing the pointer until confirmation of cast (`mark_cast`).
+  - Returns/reserves the strictly sequential skill in the designated Combo Lane without advancing the pointer until outcome `ACCEPTED` được commit.
   - Ensures cooldowns (`skill.is_ready(current_time)`) are respected before returning the key.
   - If the next skill in sequence is not ready (on cooldown), return `None` rather than skipping ahead in the sequence — the caller decides whether to wait or fall back (see §2).
-- Maintain `get_attack_to_cast()` unchanged for legacy/standard round-robin mode.
+- Nếu cần giữ `get_attack_to_cast()` cho compatibility, biến nó thành wrapper không advance hoặc deprecate nó; standard mode phải dùng reservation/commit contract của CB3D giống Combo mode.
 
 ### 2. Conditional Timing in `HuntOrchestrator`
 - In `worker()` loop:
@@ -51,10 +52,10 @@ Refactor `timing_calculator.py` and `lib/features/skills/runtime.py` to support 
 ## Validation & Testing
 - Unit Test (`tests/unit/test_combo_timing_integration.py`):
   1. Standard Mode: Verify skill rotation advances using static timing intervals and APS recommendations, unaffected by combo-mode code paths.
-  2. Combo Mode: Verify skill keys are fetched sequentially without skipping slots when polled rapidly, and that `mark_cast()` is the only thing advancing the pointer.
+  2. Combo Mode: Verify skill keys are reserved sequentially without skipping slots, and only CB3D `commit_cast(ACCEPTED)` advances the pointer.
   3. (Added) Mode-switch handoff: start in Standard Mode, advance a few slots, toggle `combo.enabled = True` mid-run, and assert the combo pointer picks up from the correct next skill (no skip, no repeat). Repeat toggling back to Standard Mode.
   4. (Added) `wait_for_hit_zone()` timeout: mock a hit zone that never appears, assert the worker loop falls back (static cast or re-evaluation) within the configured timeout instead of blocking.
-  5. (Added) Combo Mode + fast-break interaction (from CB3): mock target death mid-cast while Combo Mode is enabled, assert `mark_cast()` is called exactly once for that cast (no double-advance between the combo pointer and any leftover fast-break increment logic).
+  5. (Added) Combo Mode + fast-break interaction: target chết trong pending cast tạo `CANCELLED` hoặc outcome đã được xác nhận theo evidence; không tự mark success và không double-advance.
   6. (Added) Cooldown bottleneck warning: construct a combo chain where total cast time < max cooldown, assert the warning is emitted and correctly identifies the longest-cooldown skill.
 - Ensure zero breakage to existing `SkillStats` tracking in training mode.
 

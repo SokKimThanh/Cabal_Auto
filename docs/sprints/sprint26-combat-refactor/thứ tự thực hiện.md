@@ -1,4 +1,4 @@
-# LỘ TRÌNH CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 19 PHIÊN)
+# LỘ TRÌNH CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 20 PHIÊN)
 
 **Kiến trúc:** Four-Zone Command Center & Data-Driven Combat Engine  
 **Timebox:** 20-30 phút/session; phút 20/25 validation, phút 25-30 chỉ targeted repair hoặc revert.
@@ -6,13 +6,14 @@
 ## Ghi Chú Bắt Buộc
 
 1. CB4 chạy trước UX3 để thống nhất schema; không tạo migration song song.
-2. CB3 gốc phải được xác nhận hoàn tất trước CB3C.
-3. DB chỉ cung cấp metadata, không tự nhận diện hình ảnh. CB2D chỉ nhận quái có visual template map DB hợp lệ.
-4. UX3 quản lý configured list; CB2D tạo detection snapshot; UX3B hiển thị ba mode/hai list và promotion.
-5. CB2E chỉ dùng Windows user-mode APIs. Game không nhận background message thì báo `UNSUPPORTED`, không injection/hook/driver và không fallback âm thầm sang global input.
-6. CB2C là owner duy nhất của active desired source/pointer và gate cho phép attack.
+2. DB chỉ cung cấp metadata, không tự nhận diện hình ảnh. CB2D chỉ nhận quái có visual template map DB hợp lệ.
+3. UX3 quản lý configured list; CB2D tạo detection snapshot; UX3B hiển thị ba mode/hai list và promotion.
+4. CB2E chỉ dùng Windows user-mode APIs. Game không nhận background message thì báo `UNSUPPORTED`, không injection/hook/driver và không fallback âm thầm sang global input.
+5. CB2C là owner duy nhất của active desired source/pointer và gate cho phép attack.
+6. CB3D phân biệt transport `SENT` với game acknowledgment `ACCEPTED`; chỉ accepted mới commit skill cooldown/pointer/stats.
 7. `monster_rotation` là persist; detection snapshot và attack queue là transient.
-8. Nạp `00-global-rules.md` kèm mỗi session.
+8. CB3 gốc phải được xác nhận hoàn tất trước CB3C.
+9. Nạp `00-global-rules.md` kèm mỗi session.
 
 ## Ba Chế Độ Săn
 
@@ -24,6 +25,18 @@
 
 Unknown vẫn xuất hiện trong danh sách phát hiện nhưng không được promote hoặc đánh trong hai mode kiểm tra danh tính. `any_target` là opt-in và phải cảnh báo rằng danh tính không được kiểm tra.
 
+## Trạng Thái Gửi Và Nhận Skill
+
+```text
+READY -> RESERVED -> SENT -> WAITING_ACK
+                              |-> ACCEPTED: commit cooldown/pointer/success
+                              |-> REJECTED: failure policy
+                              |-> UNVERIFIED: không ghi success, quarantine/pause
+                              |-> CANCELLED: target chết hoặc Stop
+```
+
+Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh game đã cast. Không dùng riêng Target Bar alive, hết cast time hoặc không có exception làm acknowledgment.
+
 ## Nguyên Tắc Chung
 
 1. Worker/service không gọi Tkinter trực tiếp; dùng `schedule_ui_task()`/`after()`.
@@ -31,8 +44,10 @@ Unknown vẫn xuất hiện trong danh sách phát hiện nhưng không được
 3. Runtime detection không tự ghi vào `monster_rotation`.
 4. Promote detected -> configured chỉ nhận DB-match, chống trùng và mark unsaved.
 5. Mode được snapshot khi Start và không đổi giữa combat.
-6. Hỗ trợ tối thiểu 1366x768 và DPI 100%-200%.
-7. Nếu dependency gate fail, báo `BLOCKED`; không mở rộng session để vá dependency.
+6. Skill pending không được gửi lặp mỗi worker tick.
+7. Không fallback background -> foreground hoặc input API khác nếu người dùng chưa chọn.
+8. Hỗ trợ tối thiểu 1366x768 và DPI 100%-200%.
+9. Nếu dependency gate fail, báo `BLOCKED`; không mở rộng session để vá dependency.
 
 ## Thứ Tự Thực Thi
 
@@ -45,7 +60,7 @@ Unknown vẫn xuất hiện trong danh sách phát hiện nhưng không được
 | 05 | `PROMPT-CB1` | Combat | Target Bar alive/dead và HP%. | CB5 |
 | 06 | `PROMPT-CB2` | Combat | Hunt loop không spam target key trong attack. | CB1 |
 | 07 | `PROMPT-CB2B` | Combat | OCR target name và resolve DB ID/HP. | CB2, database.py |
-| 08 | `PROMPT-CB4` | Data | Canonical config, `target_policy`, migration và atomic save. | CB2B |
+| 08 | `PROMPT-CB4` | Data | Canonical config, `target_policy`, skill ack metadata, migration và atomic save. | CB2B |
 | 09 | `PROMPT-UX3` | UX | Configured rotation: add/remove/reorder, DB metadata, Apply All. | CB4, CB2B |
 | 10 | `PROMPT-CB2D` | Vision | Detection snapshot và resolved runtime attack queue. | CB5, CB2B, CB4, UX3 |
 | 11 | `PROMPT-UX3B` | UX | Segmented three-mode UI, two lists và detected-to-configured promotion. | CB4, UX3, CB2D |
@@ -53,24 +68,21 @@ Unknown vẫn xuất hiện trong danh sách phát hiện nhưng không được
 | 13 | `PROMPT-CB2C` | Combat | Thực thi ba policy; chỉ attack khi active policy cho phép. | CB1, CB2, CB2B, CB2D, CB2E, CB4, UX3, UX3B |
 | 14 | `PROMPT-UX4.1` | UX | Dual-Lane Skill Strip. | UX2, CB4 |
 | 15 | `PROMPT-UX4.2` | UX | Smart routing và conflict migration. | UX4.1, CB4 |
-| 16 | `PROMPT-CB6` | Combat | Combo Bar timing detector. | CB5, Orchestrator |
-| 17 | `PROMPT-CB3C` | Combat | Fast-Break và timing harmonization. | CB6, CB2C, CB3 gốc |
-| 18 | `PROMPT-UX5.1` | UX | Active Target Card và image lifecycle. | UX2, CB2B |
-| 19 | `PROMPT-UX5.2` | UX | Dynamic HP Canvas và window recovery. | UX5.1, CB1 |
+| 16 | `PROMPT-CB6` | Combat | Combo Bar timing trigger, không tự commit cast success. | CB5, Orchestrator |
+| 17 | `PROMPT-CB3D` | Combat | Skill delivery acknowledgment, reservation/commit và truthful stats. | CB1, CB2E, CB4, UX4.2, CB6 |
+| 18 | `PROMPT-CB3C` | Combat | Fast-Break và timing harmonization trên cast transaction đã xác minh. | CB6, CB3D, CB2C, CB3 gốc |
+| 19 | `PROMPT-UX5.1` | UX | Active Target Card và image lifecycle. | UX2, CB2B |
+| 20 | `PROMPT-UX5.2` | UX | Dynamic HP Canvas và window recovery. | UX5.1, CB1 |
 
-## Luồng Chức Năng Trọng Tâm
+## Luồng Target Và Scene Detection
 
 ```text
 UX3 configured monster_rotation
              |
-             v
 CB2D frame -> visual detection -> DB mapping
              |
              +-> runtime_detection_snapshot -> UX3B detected list
-             |                                  |
-             |                                  +-> drag/+ /double-click/Enter
-             |                                  +-> configured list (pending Apply)
-             |
+             |                                  +-> promote DB-match
              +-> runtime_attack_queue ----------+
                                                 v
 CB2B target OCR/DB ID -----------------------> CB2C policy coordinator
@@ -85,27 +97,24 @@ CB2E targeted input backend <-------------------+
                                          allow/deny attack
 ```
 
-## Chuyển Mode Và Danh Sách
+## Luồng Gửi Và Xác Minh Skill
 
 ```text
-Quái đã chọn
--> chỉ configured list
--> người dùng thêm từ DB
--> Apply All mới persist
-
-Tự nhận diện
--> detected list + configured list
--> DB-match tự vào runtime queue
--> unknown vẫn hiển thị nhưng không attack/promote
--> kéo DB-match sang configured list để dùng về sau
-
-Mọi mục tiêu
--> không cần configured/runtime identity match
--> CB1 xác nhận Target Bar sống thì được đánh
--> không tạo ID giả, không ghi DB/config
+CB2C cho phép attack
+-> SkillRuntime reserve skill (chưa advance)
+-> CB6 chọn hit-zone nếu Combo mode
+-> CB2E gửi skill key tới backend
+-> TransportStatus SENT/FAILED
+-> CB3D quan sát frame hậu kiểm
+   -> hotbar cooldown delta hoặc combo progression
+   -> ACCEPTED: commit cooldown + pointer + accepted stats
+   -> UNVERIFIED: không success, pause/quarantine theo policy
+   -> REJECTED: bounded retry/stop theo policy
+   -> CANCELLED: target chết/Stop
+-> CB3C xử lý timing/fast-break mà không double-advance
 ```
 
-Mode được khóa khi Hunt chạy. Stop mới cho phép đổi mode. Chuyển mode không xóa configured list hoặc detection snapshot.
+Không được coi các tín hiệu sau là cast success: `PostMessage=True`, `SendInput` không lỗi, Target Bar còn sống, hết `cast_time`, hoặc HP giảm không gắn được với skill cụ thể.
 
 ## Background Input
 
@@ -123,7 +132,7 @@ CB2E UNVERIFIED/UNSUPPORTED
 
 ## Quy Trình Mỗi Session
 
-1. Nạp `00-global-rules.md` và đúng một prompt theo thứ tự 01-19.
+1. Nạp `00-global-rules.md` và đúng một prompt theo thứ tự 01-20.
 2. Kiểm tra dependency/preflight trước khi sửa.
 3. Phút 00-20/25: production code và focused tests.
 4. Phút 20/25-30: test, smoke và targeted repair.
