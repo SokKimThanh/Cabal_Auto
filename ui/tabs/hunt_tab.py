@@ -151,7 +151,7 @@ class HuntTab(ttk.Frame):
             mode_bar, textvariable=self.app.rotation_desc_var, fg=UI.COLOR_SUBTEXT, font=UI.FONT_TEXT
         ).pack(side="left", padx=(8, 0))
 
-        # Monster list with checkboxes (repurposed to treeview)
+        # Monster list for rotation selection
         list_container = tk.Frame(self.app.monster_frame)
         list_container.pack(fill="both", expand=True)
 
