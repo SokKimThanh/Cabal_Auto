@@ -1,4 +1,4 @@
-# LỘ TRÌNH CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 20 PHIÊN)
+# LỘ TRÌNH CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 25 PHIÊN)
 
 **Kiến trúc:** Four-Zone Command Center & Data-Driven Combat Engine  
 **Timebox:** 20-30 phút/session; phút 20/25 validation, phút 25-30 chỉ targeted repair hoặc revert.
@@ -13,7 +13,11 @@
 6. CB3D phân biệt transport `SENT` với game acknowledgment `ACCEPTED`; chỉ accepted mới commit skill cooldown/pointer/stats.
 7. `monster_rotation` là persist; detection snapshot và attack queue là transient.
 8. CB3 gốc phải được xác nhận hoàn tất trước CB3C.
-9. Nạp `00-global-rules.md` kèm mỗi session.
+9. DS1-DS5 là phase visual migration riêng, chỉ chạy sau UX5.2 để không restyle
+   widget đang tiếp tục bị tái cấu trúc.
+10. `DESIGN-SYSTEM-TKINTER-ADAPTER.md` là nguồn chuyển đổi bắt buộc; không truyền
+   token CSS như `rgba`, gradient, shadow hoặc CSS font string vào Tkinter.
+11. Nạp `00-global-rules.md` kèm mỗi session.
 
 ## Ba Chế Độ Săn
 
@@ -73,6 +77,11 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 | 18 | `PROMPT-CB3C` | Combat | Fast-Break và timing harmonization trên cast transaction đã xác minh. | CB6, CB3D, CB2C, CB3 gốc |
 | 19 | `PROMPT-UX5.1` | UX | Active Target Card và image lifecycle. | UX2, CB2B |
 | 20 | `PROMPT-UX5.2` | UX | Dynamic HP Canvas và window recovery. | UX5.1, CB1 |
+| 21 | `PROMPT-DS1` | Design | Tkinter-safe tokens, font resolver và compatibility aliases. | Session 01-20 |
+| 22 | `PROMPT-DS2` | Design | Central ttk theme và semantic component primitives. | DS1 |
+| 23 | `PROMPT-DS3` | Design | Dark shell, sidebar, action bar và bottom chrome. | DS1, DS2 |
+| 24 | `PROMPT-DS4` | Design | Hunt workspace, three-mode lists, skills và target card theme. | DS3, UX3B, UX4.2, UX5.2 |
+| 25 | `PROMPT-DS5` | Design | Secondary views, dialogs và visual/accessibility acceptance. | DS4 |
 
 ## Luồng Target Và Scene Detection
 
@@ -130,9 +139,30 @@ CB2E UNVERIFIED/UNSUPPORTED
 -> không fallback âm thầm
 ```
 
+## Luồng Thay Đổi Giao Diện
+
+```text
+20 UX5.2 hoàn tất cấu trúc chức năng
+-> 21 DS1 chuyển design tokens sang Tkinter-safe values
+-> 22 DS2 cấu hình ttk + button/component semantic roles
+-> 23 DS3 áp theme cho shell/sidebar/action bar/footer
+-> 24 DS4 áp theme cho Hunt workspace và mọi runtime state
+-> 25 DS5 áp secondary views + chạy visual/accessibility gate
+```
+
+Design direction:
+
+- dark neutral command-center, không dark-blue một màu;
+- green chỉ cho active/hunting/primary, blue cho selected/info, yellow cho ready,
+   red cho stop/danger;
+- solid colors thay CSS gradient/shadow trên widget native;
+- font resolver có fallback, không bắt buộc Rajdhani/Inter phải được cài;
+- không đổi business logic, callback, queue hoặc geometry ownership trong session
+   style.
+
 ## Quy Trình Mỗi Session
 
-1. Nạp `00-global-rules.md` và đúng một prompt theo thứ tự 01-20.
+1. Nạp `00-global-rules.md` và đúng một prompt theo thứ tự 01-25.
 2. Kiểm tra dependency/preflight trước khi sửa.
 3. Phút 00-20/25: production code và focused tests.
 4. Phút 20/25-30: test, smoke và targeted repair.
