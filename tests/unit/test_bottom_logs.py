@@ -262,3 +262,53 @@ def test_responsive_configure_no_loop(app):
         app.update()
         mock_toggle.assert_not_called()
         assert app._last_height_under_900 is False
+
+def test_footer_geometry_always_in_bounds(app):
+    """AC-F1, AC-F2, AC-F3: Verify that Global Apply and DB Status stay within root bounds when logs are toggled."""
+    # App height starts at 768
+    app.geometry('1366x768')
+    app.update_idletasks()
+
+    root_y = app.winfo_rooty()
+    root_h = app.winfo_height()
+    root_bottom = root_y + root_h
+
+    def verify_bounds():
+        apply_f = app.global_apply_frame
+        db_bar = app._db_status_bar
+
+        assert apply_f.winfo_ismapped(), "Apply frame should be mapped"
+        assert db_bar.winfo_ismapped(), "DB status bar should be mapped"
+
+        # Apply frame bounds
+        apply_y = apply_f.winfo_rooty()
+        apply_h = apply_f.winfo_height()
+        assert apply_y >= root_y
+        assert apply_y + apply_h <= root_bottom
+
+        # DB status bar bounds
+        db_y = db_bar.winfo_rooty()
+        db_h = db_bar.winfo_height()
+        assert db_y >= root_y
+        assert db_y + db_h <= root_bottom
+
+        # main_shell bounds
+        shell_y = app.main_shell.winfo_rooty()
+        shell_h = app.main_shell.winfo_height()
+
+        # Make sure main shell bottom is above bottom chrome (meaning db_bar and apply frame)
+        # Apply frame is above db_bar because it's packed first with side="bottom"
+        assert shell_y + shell_h <= apply_y
+
+    # Check bounds when logs are collapsed (default)
+    verify_bounds()
+
+    # Expand logs and check bounds again
+    app._toggle_bottom_logs()
+    app.update_idletasks()
+    verify_bounds()
+
+    # Collapse logs and check bounds again
+    app._toggle_bottom_logs()
+    app.update_idletasks()
+    verify_bounds()
