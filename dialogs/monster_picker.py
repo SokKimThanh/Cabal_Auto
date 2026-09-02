@@ -101,6 +101,8 @@ class MonsterPickerDialog(tk.Toplevel):
         self.tree.column("level", width=50, stretch=False, anchor="center")
         self.tree.column("hp", width=80, stretch=False, anchor="e")
 
+        self.tree.pack(side="left", fill="both", expand=True)
+
         scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
         scrollbar.pack(side="right", fill="y")
         self.tree.configure(yscrollcommand=scrollbar.set)
