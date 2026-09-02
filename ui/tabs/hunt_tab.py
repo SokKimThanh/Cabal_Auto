@@ -16,11 +16,21 @@ class HuntTab(ttk.Frame):
         self._resize_timer = None
         self._build_ui()
 
+    def _run_resize_layout(self, width):
+        """Run the deferred layout update and clear the active timer id."""
+        self._resize_timer = None
+        self._apply_layout(width)
+
     def _on_resize(self, event):
         """Debounce resize events to prevent layout thrashing."""
         if self._resize_timer is not None:
-            self.after_cancel(self._resize_timer)
-        self._resize_timer = self.after(100, lambda: self._apply_layout(event.width))
+            try:
+                self.after_cancel(self._resize_timer)
+            except tk.TclError:
+                pass
+            finally:
+                self._resize_timer = None
+        self._resize_timer = self.after(100, lambda: self._run_resize_layout(event.width))
 
     def _apply_layout(self, width):
         """Apply wide or narrow layout based on width breakpoint."""
