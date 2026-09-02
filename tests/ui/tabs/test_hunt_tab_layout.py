@@ -84,15 +84,14 @@ def test_hunt_tab_horizontal_layout(hunt_tab):
     col_0_config = hunt_tab.columnconfigure(0)
     col_1_config = hunt_tab.columnconfigure(1)
 
-    print(f"Col 0 config: {col_0_config}")
-    print(f"Col 1 config: {col_1_config}")
-
     # ensure minsize constraint is removed or reasonably small
     # For a 1366px screen, two cols of 776px = 1552px which is too large
     # The requirement is to eliminate the minsize=776.
-    assert int(col_0_config.get('minsize', 0)) < 776
-    assert int(col_1_config.get('minsize', 0)) < 776
+    assert int(col_0_config.get('minsize', 0)) < 776, f"Unexpected column 0 config: {col_0_config}"
+    assert int(col_1_config.get('minsize', 0)) < 776, f"Unexpected column 1 config: {col_1_config}"
 
     # ensure they are weighted evenly
-    assert int(col_0_config.get('weight', 0)) > 0
-    assert col_0_config.get('weight') == col_1_config.get('weight')
+    assert int(col_0_config.get('weight', 0)) > 0, f"Unexpected column 0 config: {col_0_config}"
+    assert col_0_config.get('weight') == col_1_config.get('weight'), (
+        f"Column weights differ: col_0={col_0_config}, col_1={col_1_config}"
+    )
