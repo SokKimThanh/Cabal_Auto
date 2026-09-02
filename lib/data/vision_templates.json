@@ -36,7 +36,9 @@
       "scales": [
         1.0
       ],
-      "enabled": true
+      "enabled": true,
+      "monster_id": 2,
+      "dungeon_id": null
     }
   ]
 }
