@@ -189,7 +189,15 @@ class HuntOrchestrator:
                             configured_ids.append(m_entry)
 
                     target_policy = cfg.get("target_policy", "configured_only")
-                    self.runtime_attack_queue = runtime_queue.get_attack_queue(target_policy, configured_ids)
+                    runtime_attack_queue = list(
+                        runtime_queue.get_attack_queue(target_policy, configured_ids)
+                    )
+                    runtime_state_lock = getattr(self, "_runtime_state_lock", None)
+                    if runtime_state_lock is None:
+                        runtime_state_lock = threading.Lock()
+                        self._runtime_state_lock = runtime_state_lock
+                    with runtime_state_lock:
+                        self.runtime_attack_queue = runtime_attack_queue
 
                     # Target detection logic using TargetBarDetector
                     if frame is not None:
