@@ -1,5 +1,4 @@
 import threading
-import time
 from typing import Dict, Any, Optional
 
 from lib.vision.vision_engine import VisionEngine
