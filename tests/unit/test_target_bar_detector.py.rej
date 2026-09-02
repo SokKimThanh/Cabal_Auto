@@ -1,0 +1,15 @@
+--- test_target_bar_detector.py
++++ test_target_bar_detector.py
+@@ -95,6 +95,12 @@
+
+     assert roi.shape == (bottom - top, right - left, 3)
+
++def test_target_bar_detector_hwnd_zero_or_none():
++    detector = TargetBarDetector(hwnd=0)
++    w, h = detector._get_client_size()
++    # Should fallback to window_bounds default (1920x1080)
++    assert w == 1920
++    assert h == 1080
+
+ def test_dark_colored_non_empty_bar(detector):
+     # Dark yellow/brown: e.g. BGR (0, 150, 150)

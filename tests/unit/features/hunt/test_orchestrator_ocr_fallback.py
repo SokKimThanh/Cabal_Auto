@@ -2,12 +2,13 @@ import pytest
 import sys
 from unittest.mock import MagicMock, patch
 
-def test_ocr_fallback_contract(monkeypatch):
-    monkeypatch.setitem(sys.modules, 'lib.system.window_manager', MagicMock())
-    monkeypatch.setitem(sys.modules, 'lib.features.hunt.window_selection_service', MagicMock())
+# Mock out window_manager and other windows specifics before import
+sys.modules['lib.system.window_manager'] = MagicMock()
+sys.modules['lib.features.hunt.window_selection_service'] = MagicMock()
 
-    from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
+from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 
+def test_ocr_fallback_contract():
     # Setup mocks
     mock_on_status = MagicMock()
     mock_on_state = MagicMock()

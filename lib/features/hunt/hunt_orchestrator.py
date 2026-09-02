@@ -60,7 +60,7 @@ class HuntOrchestrator:
         def worker():
 
             hunt_selected = self.get_hunt_selected()
-            hwnd = int(hunt_selected["hwnd"]) if hunt_selected and hunt_selected.get("hwnd") else None
+            hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else None
 
             target_bar_detector = TargetBarDetector(hwnd=hwnd)
             target_name_reader = TargetNameReader(hwnd=hwnd)
