@@ -6,6 +6,7 @@ Objective:
 Resolve data mismatch between `config_migrator.py`, `hunt_config.json`, `app_gui.py`, and `HuntOrchestrator`. Standardize on `skill_slots` and unified `monster_rotation`.
 
 Target Files:
+
 - Modify: `lib/features/hunt/config_migrator.py`
 - Modify: `lib/features/hunt/hunt_config.py`
 - Modify: `lib/features/hunt/hunt_orchestrator.py`
@@ -16,6 +17,7 @@ Target Files:
 1. Standardize schema fields:
    - Use `skill_slots: List[Dict[str, Any]]` as canonical source for active attack keys, cast times, and cooldowns. Each entry: `{"id": str, "key": str, "cast_time": float, "cooldown": float, "type": "attack"|"buff", ...}` (extend as needed by CB3B's dual-lane fields, e.g. `duration_sec` for buffs).
    - Use `monster_rotation: List[Dict[str, Any]]` as the canonical unified structure for the hunt's target/monster priority list. Each entry: `{"monster_id": int, "name": str, "priority": int, "dungeon_id": Optional[str]}`, ordered by ascending `priority` (lower number = higher priority). This replaces any prior ad-hoc or per-feature monster-list representations scattered across `hunt_config.json` — confirm and enumerate exactly which legacy fields/keys currently hold this data (e.g. an old `target_list` or `monster_ids` array) before writing the migration mapping in step 2, since this schema was previously undefined and needs a concrete source-to-target field mapping.
+   - Add top-level `target_policy: "configured_only" | "all_resolved" | "any_target"`, default `configured_only`. This field selects hunt behavior; it does not change the `monster_rotation` schema. Invalid or missing values normalize to `configured_only`.
    - Add a top-level `schema_version: int` field to `hunt_config.json` (start at `2` for this migration; treat absence of the field as `schema_version == 1` / legacy). This lets `config_migrator.py` and any loader determine whether migration is needed without re-inspecting field shapes, and makes the migration idempotent (see step 2).
    - Remove legacy fallback lookups for `attack_keys` and raw `skills` dict **only after** confirming migration runs unconditionally on load (see step 2) — do not remove the fallback and the auto-migration-on-load behavior in the same step without verifying order; a config that somehow bypasses migration and hits code with no fallback will crash.
 2. In `config_migrator.py`:
@@ -37,6 +39,7 @@ Target Files:
 - (Added) Conflict precedence test: construct a legacy config with both `skills` and `attack_keys` defining different `cast_time`/`key` for the same skill; assert the `skills`-derived value wins.
 - (Added) Malformed entry test: construct a legacy config with one skill entry missing `cast_time`; assert migration completes, that entry is skipped with a logged warning, and all other entries migrate correctly.
 - (Added) `monster_rotation` migration test: construct a legacy config using the old monster-list field(s) identified in step 1; assert it migrates into the new `monster_rotation` schema with correct `priority` ordering.
+- (Added) `target_policy` validation test: missing/invalid values normalize to `configured_only`; all three supported values round-trip unchanged.
 
 ## Session Boundary Gate
 
@@ -44,4 +47,5 @@ Target Files:
 - Confirm migration is idempotent and runs unconditionally before any other config read.
 - Confirm a `.bak` backup is written before any overwrite of the config file.
 - Confirm `monster_rotation`'s schema and its legacy-field source mapping were concretely defined (not left as a placeholder) before implementation.
+- Confirm `target_policy` has one of exactly three supported values and defaults fail-safe to `configured_only`.
 - Report PASSED/REVERTED at minute 25.

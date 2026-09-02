@@ -1,99 +1,131 @@
-# LỘ TRÌNH THỰC HIỆN DỰ ÁN CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 16 PHIÊN)
+# LỘ TRÌNH CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 19 PHIÊN)
 
-**Tiêu chuẩn kiến trúc:** Four-Zone Command Center Architecture & Data-Driven Combat Engine  
-**Quy chuẩn thời gian:** 20-30 phút/micro-session; phút 20/25 dừng để validation, phút 25-30 chỉ targeted repair hoặc revert.
+**Kiến trúc:** Four-Zone Command Center & Data-Driven Combat Engine  
+**Timebox:** 20-30 phút/session; phút 20/25 validation, phút 25-30 chỉ targeted repair hoặc revert.
 
----
+## Ghi Chú Bắt Buộc
 
-## Ghi Chú Trước Khi Bắt Đầu
+1. CB4 chạy trước UX3 để thống nhất schema; không tạo migration song song.
+2. CB3 gốc phải được xác nhận hoàn tất trước CB3C.
+3. DB chỉ cung cấp metadata, không tự nhận diện hình ảnh. CB2D chỉ nhận quái có visual template map DB hợp lệ.
+4. UX3 quản lý configured list; CB2D tạo detection snapshot; UX3B hiển thị ba mode/hai list và promotion.
+5. CB2E chỉ dùng Windows user-mode APIs. Game không nhận background message thì báo `UNSUPPORTED`, không injection/hook/driver và không fallback âm thầm sang global input.
+6. CB2C là owner duy nhất của active desired source/pointer và gate cho phép attack.
+7. `monster_rotation` là persist; detection snapshot và attack queue là transient.
+8. Nạp `00-global-rules.md` kèm mỗi session.
 
-1. `PROMPT-CB4` phải chạy ở vị trí 08, trước UX3/UX4.2, vì các prompt UI này phụ thuộc schema canonical và không được tạo migration song song.
-2. `PROMPT-CB3` và `PROMPT-CB3B` không nằm trong 16 phiên. CB3B được thay thế bởi UX4.1/UX4.2; CB3 gốc phải được xác nhận đã hoàn tất trước CB3C.
-3. CB4A không nằm trong chuỗi chuẩn hóa và được thay thế bởi UX5.1/UX5.2. Prompt trước UX5 không được giả định `get_target_monster_info()` hoặc `is_placeholder` đã tồn tại.
-4. `PROMPT-CB2C` nối danh sách `monster_rotation` của UX3 với target OCR/DB của CB2B. Đây là gate bảo đảm Orchestrator chỉ đánh đúng quái đang được yêu cầu.
-5. `00-global-rules.md` vẫn phải được nạp kèm mỗi session; các nguyên tắc dưới đây không thay thế quy tắc combat/vision/thread-safety chi tiết.
+## Ba Chế Độ Săn
 
----
+| UI | `target_policy` | Nguồn được phép đánh | Identity gate |
+| --- | --- | --- | --- |
+| Quái đã chọn | `configured_only` | `monster_rotation` | OCR/DB ID phải khớp configured ID |
+| Tự nhận diện | `all_resolved` | Runtime candidate đã DB-match | OCR/DB ID phải khớp candidate còn TTL |
+| Mọi mục tiêu | `any_target` | Target có Target Bar hợp lệ | CB1 alive gate, không yêu cầu ID |
 
-## I. Nguyên Tắc Bắt Buộc
+Unknown vẫn xuất hiện trong danh sách phát hiện nhưng không được promote hoặc đánh trong hai mode kiểm tra danh tính. `any_target` là opt-in và phải cảnh báo rằng danh tính không được kiểm tra.
 
-1. **Rollback:** Nếu test thất bại ở phút 30, hoàn tác bằng patch có rà soát; không dùng reset/checkout hủy diện rộng.
-2. **Main Thread Safety:** Worker/service không gọi Tkinter trực tiếp; mọi UI update đi qua `schedule_ui_task()` hoặc `after(0, ...)`.
-3. **UIStyle:** Dùng token thực tế trong `UIStyle`; không thêm mã màu tùy tiện hoặc tham chiếu token chưa tồn tại.
-4. **Responsive:** Hỗ trợ tối thiểu 1366x768 và DPI 100%-200%; không ép kích thước panel cố định lớn hơn workspace.
-5. **Dữ liệu:** SQLite `monsters.db` là nguồn metadata chính; fallback JSON chỉ dùng khi contract session quy định rõ.
-6. **I18n:** Nhãn/nút/thông báo có key `vi`/`en` trong `GLOBAL_TRANSLATIONS` và tuân thủ yêu cầu đồng bộ DB trong global rules.
-7. **Một nguồn sự thật:** Không duy trì đồng thời hai schema, hai pointer runtime hoặc hai đường ghi config cho cùng hành vi.
+## Nguyên Tắc Chung
 
----
+1. Worker/service không gọi Tkinter trực tiếp; dùng `schedule_ui_task()`/`after()`.
+2. Không duy trì hai schema, hai runtime pointer hoặc hai đường ghi config.
+3. Runtime detection không tự ghi vào `monster_rotation`.
+4. Promote detected -> configured chỉ nhận DB-match, chống trùng và mark unsaved.
+5. Mode được snapshot khi Start và không đổi giữa combat.
+6. Hỗ trợ tối thiểu 1366x768 và DPI 100%-200%.
+7. Nếu dependency gate fail, báo `BLOCKED`; không mở rộng session để vá dependency.
 
-## II. Thứ Tự Thực Thi 16 Phiên
+## Thứ Tự Thực Thi
 
-| Thứ tự | Mã Prompt | Phase | Mục tiêu | Timebox | Phụ thuộc |
-| :---: | --- | --- | --- | :---: | --- |
-| **01** | `PROMPT-UX1` | UX | Quick Action Bar: Window Selector, Refresh, Bounds readiness, Start/Stop debounce và i18n. | 20-25 | Window selection service |
-| **02** | `PROMPT-UX2` | UX | Core Grid Shell và view swapping không mất state. | 25-30 | UX1 |
-| **03** | `PROMPT-UX6` | UX | Activity log buffer/batch/file logging theo kiến trúc UI hiện hành. | 20-25 | UX2, HuntLogger |
-| **04** | `PROMPT-CB5` | Combat | Window Scanner và ScreenCapture buffer an toàn. | 20-25 | Scanner, ScreenCapture |
-| **05** | `PROMPT-CB1` | Combat | Target Bar alive/dead detector và HP percentage. | 25-30 | ScreenCapture |
-| **06** | `PROMPT-CB2` | Combat | Sửa HuntOrchestrator loop, không spam target key trong attack mode. | 25-30 | CB1 |
-| **07** | `PROMPT-CB2B` | Combat | OCR tên target, resolve ID/HP qua SQLite và cache kết quả. | 25-30 | CB2, database.py |
-| **08** | `PROMPT-CB4` | Combat | Chuẩn hóa `skill_slots`, `buff_slots`, `monster_rotation`, migration và atomic save. | 20-25 | CB2B, hunt_config.py |
-| **09** | `PROMPT-UX3` | UX | Configured Monster Rotation Queue: add/remove/reorder, metadata DB và Apply All. | 25-30 | CB4, CB2B |
-| **10** | `PROMPT-CB2C` | Combat | So khớp desired monster ID với target OCR/DB; chỉ attack khi match và advance rotation sau completion gate. | 25-30 | CB1, CB2, CB2B, CB4, UX3 |
-| **11** | `PROMPT-UX4.1` | UX | Dual-Lane Skill Strip cho combo và buff. | 20-25 | UX2, CB4 |
-| **12** | `PROMPT-UX4.2` | UX | Smart routing, conflict warning và migration bổ sung. | 25-30 | UX4.1, CB4, SkillRuntime |
-| **13** | `PROMPT-CB6` | Combat | Combo Bar timing detector và cooldown guard. | 25-30 | CB5, HuntOrchestrator |
-| **14** | `PROMPT-CB3C` | Combat | Fast-Break và timing harmonization; SkillRuntime sở hữu skill pointer. | 25-30 | CB6, CB2C, CB3 gốc |
-| **15** | `PROMPT-UX5.1` | UX | Active Target Card shell, fallback schema và image lifecycle. | 20-25 | UX2, CB2B |
-| **16** | `PROMPT-UX5.2` | UX | Dynamic HP Canvas, throttling và window recovery. | 20-25 | UX5.1, CB1 |
+| # | Prompt | Phase | Kết quả chính | Phụ thuộc |
+| :---: | --- | --- | --- | --- |
+| 01 | `PROMPT-UX1` | UX | Quick Action Bar và Start/Stop debounce. | Window service |
+| 02 | `PROMPT-UX2` | UX | Core shell và view swapping. | UX1 |
+| 03 | `PROMPT-UX6` | UX | Activity logging theo kiến trúc UI hiện hành. | UX2, HuntLogger |
+| 04 | `PROMPT-CB5` | Combat | Window scanner và ScreenCapture buffer. | ScreenCapture |
+| 05 | `PROMPT-CB1` | Combat | Target Bar alive/dead và HP%. | CB5 |
+| 06 | `PROMPT-CB2` | Combat | Hunt loop không spam target key trong attack. | CB1 |
+| 07 | `PROMPT-CB2B` | Combat | OCR target name và resolve DB ID/HP. | CB2, database.py |
+| 08 | `PROMPT-CB4` | Data | Canonical config, `target_policy`, migration và atomic save. | CB2B |
+| 09 | `PROMPT-UX3` | UX | Configured rotation: add/remove/reorder, DB metadata, Apply All. | CB4, CB2B |
+| 10 | `PROMPT-CB2D` | Vision | Detection snapshot và resolved runtime attack queue. | CB5, CB2B, CB4, UX3 |
+| 11 | `PROMPT-UX3B` | UX | Segmented three-mode UI, two lists và detected-to-configured promotion. | CB4, UX3, CB2D |
+| 12 | `PROMPT-CB2E` | System | Background HWND input capability và fail-closed backend. | CB5, CB2 |
+| 13 | `PROMPT-CB2C` | Combat | Thực thi ba policy; chỉ attack khi active policy cho phép. | CB1, CB2, CB2B, CB2D, CB2E, CB4, UX3, UX3B |
+| 14 | `PROMPT-UX4.1` | UX | Dual-Lane Skill Strip. | UX2, CB4 |
+| 15 | `PROMPT-UX4.2` | UX | Smart routing và conflict migration. | UX4.1, CB4 |
+| 16 | `PROMPT-CB6` | Combat | Combo Bar timing detector. | CB5, Orchestrator |
+| 17 | `PROMPT-CB3C` | Combat | Fast-Break và timing harmonization. | CB6, CB2C, CB3 gốc |
+| 18 | `PROMPT-UX5.1` | UX | Active Target Card và image lifecycle. | UX2, CB2B |
+| 19 | `PROMPT-UX5.2` | UX | Dynamic HP Canvas và window recovery. | UX5.1, CB1 |
 
----
-
-## III. Luồng Phụ Thuộc
-
-```text
-[BƯỚC 1: SHELL VÀ UI NỀN]
-01 UX1 -> 02 UX2 -> 03 UX6
-
-[BƯỚC 2: CAPTURE, NHẬN DIỆN VÀ SCHEMA]
-04 CB5 -> 05 CB1 -> 06 CB2 -> 07 CB2B -> 08 CB4
-
-[BƯỚC 3: DANH SÁCH QUÁI VÀ ĐIỀU PHỐI ĐÁNH ĐÚNG TARGET]
-08 CB4 -> 09 UX3 -> 10 CB2C
-                  \-> configured monster_rotation
-07 CB2B ----------> OCR/DB resolved target
-05 CB1 -----------> alive/death confirmation
-10 CB2C ----------> gate search -> attack
-
-[BƯỚC 4: SKILL, COMBO VÀ TARGET CARD]
-11 UX4.1 -> 12 UX4.2
-13 CB6 -> 14 CB3C
-15 UX5.1 -> 16 UX5.2
-```
-
-Luồng chức năng trọng tâm sau Session 10:
+## Luồng Chức Năng Trọng Tâm
 
 ```text
-UX3 monster_rotation
--> CB2C chọn desired monster
--> CB2 tap target_key trong search mode
--> CB1 xác nhận target bar alive
--> CB2B OCR tên + resolve monster_id qua DB
--> CB2C MATCHED: cho phép attack
--> CB2C MISMATCH/UNKNOWN: không attack, tiếp tục cycle
--> completion gate: advance desired pointer
+UX3 configured monster_rotation
+             |
+             v
+CB2D frame -> visual detection -> DB mapping
+             |
+             +-> runtime_detection_snapshot -> UX3B detected list
+             |                                  |
+             |                                  +-> drag/+ /double-click/Enter
+             |                                  +-> configured list (pending Apply)
+             |
+             +-> runtime_attack_queue ----------+
+                                                v
+CB2B target OCR/DB ID -----------------------> CB2C policy coordinator
+                                                |
+CB2E targeted input backend <-------------------+
+                                                |
+                     configured_only: match configured ID
+                     all_resolved: match runtime DB candidate
+                     any_target: CB1 alive gate, no identity gate
+                                                |
+                                                v
+                                         allow/deny attack
 ```
 
----
+## Chuyển Mode Và Danh Sách
 
-## IV. Quy Trình Mỗi Session
+```text
+Quái đã chọn
+-> chỉ configured list
+-> người dùng thêm từ DB
+-> Apply All mới persist
 
-1. Mở AI Assistant trong workspace hiện tại.
-2. Nạp `00-global-rules.md`.
-3. Nạp đúng một `PROMPT-xxx` theo thứ tự 01-16.
-4. Kiểm tra dependency gate trước khi sửa; nếu fail, báo `BLOCKED` và dừng.
-5. Triển khai production code và focused tests trong phút 00-20/25.
-6. Chạy test/smoke/DPI check trong phút 20/25-30.
-7. Chỉ chuyển session tiếp theo khi Session Boundary Gate đạt.
-8. Báo `PASSED`, `BLOCKED` hoặc `REVERTED` kèm lệnh test và kết quả.
+Tự nhận diện
+-> detected list + configured list
+-> DB-match tự vào runtime queue
+-> unknown vẫn hiển thị nhưng không attack/promote
+-> kéo DB-match sang configured list để dùng về sau
+
+Mọi mục tiêu
+-> không cần configured/runtime identity match
+-> CB1 xác nhận Target Bar sống thì được đánh
+-> không tạo ID giả, không ghi DB/config
+```
+
+Mode được khóa khi Hunt chạy. Stop mới cho phép đổi mode. Chuyển mode không xóa configured list hoặc detection snapshot.
+
+## Background Input
+
+```text
+CB2E SUPPORTED
+-> không focus game
+-> gửi target/skill key tới selected HWND
+-> chuột/bàn phím vật lý vẫn dùng được
+
+CB2E UNVERIFIED/UNSUPPORTED
+-> background mode không Start
+-> người dùng chủ động chọn foreground mode nếu chấp nhận
+-> không fallback âm thầm
+```
+
+## Quy Trình Mỗi Session
+
+1. Nạp `00-global-rules.md` và đúng một prompt theo thứ tự 01-19.
+2. Kiểm tra dependency/preflight trước khi sửa.
+3. Phút 00-20/25: production code và focused tests.
+4. Phút 20/25-30: test, smoke và targeted repair.
+5. Chỉ chạy session kế tiếp khi gate đạt.
+6. Báo `PASSED`, `BLOCKED`, `UNVERIFIED`, `UNSUPPORTED` hoặc `REVERTED` kèm bằng chứng.
