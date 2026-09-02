@@ -203,3 +203,62 @@ def test_log_format_duplication(app):
         f"Expected 1 ' | INFO | ' token on log line, but got {info_token_count}. "
         f"Line: {target_line}"
     )
+
+def test_responsive_window_resizable_and_minsize(app):
+    """Test that the app is resizable and minsize is set appropriately (Session 05 AC-6)."""
+    resizable = app.resizable()
+    # It returns a tuple of integers like (1, 1) or (True, True) in Tkinter
+    assert resizable == (1, 1) or resizable == (True, True)
+
+    # Check minimum size matches expected Session 03-04 values (with possible DPI scaling)
+    min_w, min_h = app.minsize()
+
+    # Calculate expected scale factor as the app does
+    try:
+        dpi_percent = app.tk.call('tk', 'scaling') * 72
+        scale_factor = dpi_percent / 100.0
+    except Exception:
+        scale_factor = 1.0
+
+    expected_w = int(1220 * scale_factor)
+    expected_h = int(656 * scale_factor)
+
+    # Allow 1 pixel tolerance for float rounding
+    assert min_w >= expected_w - 1
+    assert min_h >= expected_h - 1
+
+
+def test_responsive_configure_no_loop(app):
+    """Test that <Configure> events do not trigger infinite loops."""
+    app._last_height_under_900 = False
+    app.logs_expanded = True
+
+    # Initial setup
+    app.winfo_height = MagicMock(return_value=1000)
+    app.event_generate('<Configure>', height=1000)
+    app.update()
+
+    assert app._last_height_under_900 is False
+
+    # Trigger state change < 900
+    app.winfo_height = MagicMock(return_value=850)
+    app.event_generate('<Configure>', height=850)
+    app.update()
+
+    assert app._last_height_under_900 is True
+    assert app.logs_expanded is False # should have toggled to False
+
+    # Trigger another <Configure> with height still < 900
+    # It should not try to toggle logs again
+    with patch.object(app, '_toggle_bottom_logs') as mock_toggle:
+        app.event_generate('<Configure>', height=850)
+        app.update()
+        mock_toggle.assert_not_called()
+
+    # Trigger >= 900, it should update flag but not expand logs
+    with patch.object(app, '_toggle_bottom_logs') as mock_toggle:
+        app.winfo_height = MagicMock(return_value=950)
+        app.event_generate('<Configure>', height=950)
+        app.update()
+        mock_toggle.assert_not_called()
+        assert app._last_height_under_900 is False
