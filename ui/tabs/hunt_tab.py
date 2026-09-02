@@ -79,8 +79,8 @@ class HuntTab(ttk.Frame):
         )
 
         # Layout: Split into two primary panels: Monster Rotation and Active Target & Status
-        self.grid_columnconfigure(0, weight=1, minsize=776)
-        self.grid_columnconfigure(1, weight=1, minsize=776)
+        self.grid_columnconfigure(0, weight=1, uniform="panel")
+        self.grid_columnconfigure(1, weight=1, uniform="panel")
         self.grid_rowconfigure(0, weight=1, minsize=552)
         self.grid_rowconfigure(1, weight=0, minsize=120)
 
