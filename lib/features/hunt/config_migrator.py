@@ -41,7 +41,7 @@ def _migrate_monster_rotation(data: Dict[str, Any]) -> None:
                 priority += 1
             elif isinstance(m, str):
                 new_rotation.append({
-                    "monster_id": 0,
+                    "monster_id": _safe_int(m),
                     "name": m,
                     "priority": priority,
                     "dungeon_id": None

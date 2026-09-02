@@ -25,10 +25,15 @@ def save_config(cfg):
         json.dump(cfg, f, indent=4)
 
 
+import os
+import tempfile
+
 def save_hunt_config(cfg):
     try:
-        with open(HUNT_CONFIG_PATH, "w", encoding="utf-8") as f:
+        fd, temp_path = tempfile.mkstemp(dir=HUNT_CONFIG_PATH.parent, prefix=HUNT_CONFIG_PATH.name + ".")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=4, ensure_ascii=False)
+        os.replace(temp_path, HUNT_CONFIG_PATH)
         return True
     except Exception as e:
         print(f"Error saving hunt config: {e}")

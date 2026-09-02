@@ -82,13 +82,14 @@ class HuntRunner:
             print(f"Fast pipeline error: {e}")
 
         # Fallback to template matching
-        rotation_ids = cfg.get("monster_rotation", [])
+        rotation = cfg.get("monster_rotation", [])
         from lib.features.monsters.monster_repo import load_monster_library
 
         monster_lib = load_monster_library()
 
-        for m_id in rotation_ids:
-            monster = monster_lib.get(m_id)
+        for m_entry in rotation:
+            m_id = m_entry.get("monster_id") if isinstance(m_entry, dict) else m_entry
+            monster = monster_lib.get(str(m_id))
             if not monster:
                 continue
 

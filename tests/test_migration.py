@@ -95,7 +95,7 @@ def test_monster_rotation_migration():
     assert rotation[0]["priority"] == 1
     assert rotation[0]["name"] == "Goblin"
 
-    assert rotation[1]["monster_id"] == 0
+    assert rotation[1]["monster_id"] == 200
     assert rotation[1]["priority"] == 2
     assert rotation[1]["name"] == "200"
 
