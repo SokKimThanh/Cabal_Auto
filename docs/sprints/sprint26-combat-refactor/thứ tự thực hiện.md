@@ -21,6 +21,9 @@
 12. `PROMPT-R1-core-gate-remediation.md` là recovery gate độc lập: có thể chạy
    ngay, không đổi thứ tự 26 feature session, và phải đóng các blocker đã biết
    trước khi CB1/CB2/CB2B/CB4/CB2D được báo `PASSED`.
+13. `PROMPT-R2-project-wide-cleanup.md` là maintenance gate độc lập: có thể
+   chạy bất kỳ lúc nào, nhưng chỉ được xóa mục `DELETE_SAFE` sau khi lập
+   manifest dry-run; không dùng cleanup để che lỗi hoặc thay đổi logic.
 
 ## Ba Chế Độ Săn
 
@@ -61,6 +64,7 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 | # | Prompt | Phase | Kết quả chính | Phụ thuộc |
 | :---: | --- | --- | --- | --- |
 | R1 | `PROMPT-R1` | Recovery | Khép blocker CB1/CB2/CB2B/CB4/CB2D đã xác minh. | Không có; chạy ngay |
+| R2 | `PROMPT-R2` | Maintenance | Inventory và cleanup file/thư mục toàn project theo evidence và manifest. | Không có; chạy độc lập |
 | 01 | `PROMPT-UX1` | UX | Quick Action Bar và Start/Stop debounce. | Window service |
 | 02 | `PROMPT-UX2` | UX | Core shell và view swapping. | UX1 |
 | 03 | `PROMPT-UX6` | UX | Activity logging theo kiến trúc UI hiện hành. | UX2, HuntLogger |
