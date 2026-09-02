@@ -1,11 +1,11 @@
-# LỘ TRÌNH CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 25 PHIÊN)
+# LỘ TRÌNH CABAL AUTO HUNT ASSISTANT (CHUẨN HÓA 26 PHIÊN)
 
 **Kiến trúc:** Four-Zone Command Center & Data-Driven Combat Engine  
 **Timebox:** 20-30 phút/session; phút 20/25 validation, phút 25-30 chỉ targeted repair hoặc revert.
 
 ## Ghi Chú Bắt Buộc
 
-1. CB4 chạy trước UX3A/UX3 để thống nhất schema; không tạo migration song song.
+1. CB4 chạy trước CB2D/UX3A/UX3 để thống nhất schema; không tạo migration song song.
 2. DB chỉ cung cấp metadata, không tự nhận diện hình ảnh. CB2D chỉ nhận quái có visual template map DB hợp lệ.
 3. UX3A sở hữu DB picker; UX3 quản lý configured list; CB2D tạo detection snapshot; UX3B hiển thị ba mode/hai list và promotion.
 4. CB2E chỉ dùng Windows user-mode APIs. Game không nhận background message thì báo `UNSUPPORTED`, không injection/hook/driver và không fallback âm thầm sang global input.
@@ -65,9 +65,9 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 | 06 | `PROMPT-CB2` | Combat | Hunt loop không spam target key trong attack. | CB1 |
 | 07 | `PROMPT-CB2B` | Combat | OCR target name và resolve DB ID/HP. | CB2, database.py |
 | 08 | `PROMPT-CB4` | Data | Canonical config, `target_policy`, skill ack metadata, migration và atomic save. | CB2B |
-| 09 | `PROMPT-UX3A` | UX | DB Monster Picker dialog, chỉ trả canonical selection. | CB4, CB2B |
-| 10 | `PROMPT-UX3` | UX | Configured rotation: picker integration, add/remove/reorder, DB metadata, Apply All. | CB4, CB2B, UX3A |
-| 11 | `PROMPT-CB2D` | Vision | Detection snapshot và resolved runtime attack queue. | CB5, CB2B, CB4, UX3 |
+| 09 | `PROMPT-CB2D` | Vision | Detection snapshot và resolved runtime attack queue. | CB5, CB2B, CB4 |
+| 10 | `PROMPT-UX3A` | UX | DB Monster Picker dialog, chỉ trả canonical selection. | CB4, CB2B |
+| 11 | `PROMPT-UX3` | UX | Configured rotation: picker integration, add/remove/reorder, DB metadata, Apply All. | CB4, CB2B, UX3A |
 | 12 | `PROMPT-UX3B` | UX | Segmented three-mode UI, two lists và detected-to-configured promotion. | CB4, UX3A, UX3, CB2D |
 | 13 | `PROMPT-CB2E` | System | Background HWND input capability và fail-closed backend. | CB5, CB2 |
 | 14 | `PROMPT-CB2C` | Combat | Thực thi ba policy; chỉ attack khi active policy cho phép. | CB1, CB2, CB2B, CB2D, CB2E, CB4, UX3, UX3B |
