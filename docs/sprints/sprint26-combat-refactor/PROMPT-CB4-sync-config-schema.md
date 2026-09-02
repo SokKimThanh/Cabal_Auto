@@ -177,10 +177,13 @@ Quy trình ghi bắt buộc:
 2. Serialize UTF-8 với `ensure_ascii=False`.
 3. `flush()` và `os.fsync()` temp file trước khi đóng.
 4. `os.replace()` temp sang file đích.
-5. Trong `finally`, đóng descriptor và xóa temp còn sót nếu replace chưa thành
-    công.
+5. `fsync()` thư mục cha của file đích sau `os.replace()` để rename bền vững
+   sau crash trên filesystem/OS có yêu cầu bước này; nếu platform không hỗ trợ
+   directory `fsync`, phải xử lý best-effort và ghi chú rõ giới hạn durability.
+6. Trong `finally`, đóng descriptor và xóa temp còn sót nếu replace chưa thành
+   công.
 
-Nếu serialize, fsync hoặc replace thất bại:
+Nếu serialize, fsync temp file, fsync thư mục cha hoặc replace thất bại:
 
 - file canonical cũ vẫn phải đọc được;
 - trả kết quả failure có error detail cho caller;
