@@ -193,10 +193,19 @@ Nếu serialize, fsync temp file, fsync thư mục cha hoặc replace thất b�
 
 ### 5. Backup Semantics
 
-- `.bak` phải là byte snapshot của file canonical ngay trước migration đầu tiên
-   trong lần load đó.
-- Chỉ tạo/ghi đè backup sau khi file nguồn đã đọc và parse thành công.
-- Không thay backup tốt bằng file malformed hoặc file đã migrate.
+- Ở đây, "một lần load" nghĩa là **một lần gọi `load_config()` cho một file
+   config cụ thể** (một invocation độc lập), không phải suốt vòng đời process hay
+   mỗi lần UI reopen cùng dữ liệu đã load sẵn.
+- `.bak` phải là byte snapshot của file canonical **ngay trước khi áp dụng bất kỳ
+   bước migration nào**, và trigger chính xác là: trong một lần `load_config()`,
+   sau khi file canonical đã đọc + parse thành công, migrator lần đầu tiên phát
+   hiện schema/version cũ hơn schema hiện tại cho document đó.
+- Trong một lần `load_config()`, chỉ được tạo hoặc ghi đè `.bak` **tối đa một
+   lần** tại thời điểm trigger ở trên; các bước migration tiếp theo trong cùng
+   invocation không được tạo backup mới.
+- Không được tạo/ghi đè backup nếu file nguồn đọc lỗi, parse lỗi, malformed, hoặc
+   document đã ở schema hiện tại và không cần migration.
+- Không thay backup tốt bằng file malformed hoặc bằng nội dung đã migrate.
 - Migration failure phải giữ cả canonical cũ và backup đọc được.
 - Normal Apply All không ghi đè migration backup; nếu cần backup cho save thường,
    dùng policy/tên file khác.
