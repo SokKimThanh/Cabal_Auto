@@ -20,6 +20,7 @@ class MockApp:
         self.active_target_frame = MagicMock()
         self.monster_tree = MagicMock()
         self.monsters = []
+        self.skill_slot_count = 0
 
         # TK variables required by hunt_tab
         self.hunt_status = tk.StringVar(value="idle")
