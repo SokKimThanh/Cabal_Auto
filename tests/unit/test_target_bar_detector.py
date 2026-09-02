@@ -60,18 +60,14 @@ def test_different_resolutions(detector):
     assert detector.is_target_alive(frame_4k) is True
 
 def test_get_client_size_hwnd():
-    import sys
     from unittest.mock import MagicMock, patch
+    import lib.vision.target_bar_detector
 
     # Mock win32gui to return a valid rect
     mock_win32gui = MagicMock()
     mock_win32gui.GetClientRect.return_value = (0, 0, 800, 600)
 
-    with patch.dict('sys.modules', {'win32gui': mock_win32gui}):
-        # Re-import to pickup mock
-        import lib.vision.target_bar_detector
-        from importlib import reload
-        reload(lib.vision.target_bar_detector)
+    with patch.object(lib.vision.target_bar_detector, 'win32gui', mock_win32gui):
         TargetBarDetector = lib.vision.target_bar_detector.TargetBarDetector
 
         detector = TargetBarDetector(hwnd=123)
