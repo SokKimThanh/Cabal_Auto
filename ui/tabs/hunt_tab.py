@@ -81,22 +81,21 @@ class HuntTab(ttk.Frame):
         # Layout: Split into two primary panels: Monster Rotation and Active Target & Status
         self.grid_columnconfigure(0, weight=1, uniform="panel")
         self.grid_columnconfigure(1, weight=1, uniform="panel")
-        self.grid_rowconfigure(0, weight=1, minsize=552)
-        self.grid_rowconfigure(1, weight=0, minsize=120)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=0)
 
         # Section 1: Active Target & Status Panel
         self.app.active_target_status_frame = tk.LabelFrame(
-            self, text=self.app._t("hunt_active_target_status"), padx=10, pady=8
+            self, text=self.app._t("hunt_active_target_status"), padx=4, pady=4
         )
         self.app.active_target_status_frame.grid(
-            row=0, column=1, sticky="new", padx=(6, 0), pady=(0, 12)
+            row=0, column=1, sticky="new", padx=(6, 0), pady=(0, 4)
         )
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Sub-section: Hunt Status Bar (current hunt state + current target)
         status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
-        status_frame.pack(fill="x", pady=(0, 12))
-        status_frame.pack_propagate(False)  # Keep consistent height even before labels have text
+        status_frame.pack(fill="x", pady=(0, 4))
         self.hunt_status_label = tk.Label(
             status_frame,
             textvariable=self.app.hunt_status,
@@ -281,8 +280,8 @@ class HuntTab(ttk.Frame):
 
         self.skill_strip_frame = tk.Frame(self)
         self.skill_strip_frame.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=(0, 12))
-        self.skill_strip_frame.grid_columnconfigure(0, weight=1, minsize=400)
-        self.skill_strip_frame.grid_columnconfigure(1, weight=2, minsize=600)
+        self.skill_strip_frame.grid_columnconfigure(0, weight=1, uniform='skill_col')
+        self.skill_strip_frame.grid_columnconfigure(1, weight=2, uniform='skill_col')
 
         # Section 3: Skill slots selection
         skill_frame_outer = tk.LabelFrame(
