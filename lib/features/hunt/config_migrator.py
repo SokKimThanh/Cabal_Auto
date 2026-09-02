@@ -221,7 +221,7 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
         data = {}
 
     # Check for schema version
-    schema_version = data.get("schema_version", 1)
+    schema_version = _safe_int(data.get("schema_version", 1), 1)
 
     if schema_version < CURRENT_SCHEMA_VERSION:
         if "ui_mode" not in data:
