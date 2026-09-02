@@ -152,7 +152,7 @@ class SeedBM3SynergiesService:
 
                 # Resolve class_id using in-memory dictionary
                 class_id = class_mappings.get(class_code)
-                if not class_id:
+                if class_id is None:
                     unmatched_classes.append(class_slug)
                     logging.warning(f"[SeedBM3SynergiesService] Unmatched class slug: {class_slug}")
                     continue
