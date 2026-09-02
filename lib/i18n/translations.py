@@ -115,6 +115,7 @@ GLOBAL_TRANSLATIONS = {
         # Vision Menu translations (Sprint 22 Phase 1B)
         'vision_open_wizard': 'Open Vision Wizard',
         'vision_scan_region': 'Scan Region',
+        'scan_tooltip': 'Scan/check selected window',
         'vision_add_template': 'Add Template',
         'vision_manage_templates': 'Manage Templates',
         'vision_toggle_overlay': 'Toggle Overlay',
@@ -735,6 +736,7 @@ Mẹo:
         # Vision Menu translations (Sprint 22 Phase 1B)
         'vision_open_wizard': 'Mở Vision Wizard',
         'vision_scan_region': 'Quét Vùng',
+        'scan_tooltip': 'Quét/kiểm tra cửa sổ đã chọn',
         'vision_add_template': 'Thêm Template',
         'vision_manage_templates': 'Quản Lý Template',
         'vision_toggle_overlay': 'Bật/Tắt Overlay',
@@ -910,6 +912,7 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         # Vision Menu translations (Sprint 22 Phase 1B)
         'vision_open_wizard': 'Mở Vision Wizard',
         'vision_scan_region': 'Quét Vùng',
+        'scan_tooltip': 'Quét/kiểm tra cửa sổ đã chọn',
         'vision_add_template': 'Thêm Template',
         'vision_manage_templates': 'Quản Lý Template',
         'vision_toggle_overlay': 'Bật/Tắt Overlay',
