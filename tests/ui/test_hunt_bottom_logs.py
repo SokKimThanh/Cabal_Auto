@@ -12,23 +12,22 @@ sys.modules['lib.vision.vision_engine'] = unittest.mock.MagicMock()
 from app_gui import App
 
 @pytest.fixture
-def tk_root():
+def app():
     try:
-        root = tk.Tk()
+        instance = App()
     except tk.TclError as exc:
         pytest.skip(f"Tk cannot initialize in this environment: {exc}")
-    yield root
-    root.destroy()
+    yield instance
+    instance.destroy()
 
 @pytest.mark.ui
-def test_hunt_tab_geometry_with_collapsed_logs():
+def test_hunt_tab_geometry_with_collapsed_logs(app):
     # Requirements:
     # 1. 1366x768 geometry
     # 2. Logs collapsed
     # 3. bottom of skill_strip_frame <= bottom of hunt_tab
     # 4. bottom of hunt_tab <= top of logs_header_frame
 
-    app = App()
     app.geometry("1366x768")
 
     # Simulate logs collapsed state - this forces row 2 to exactly 36px
