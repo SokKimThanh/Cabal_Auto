@@ -5,7 +5,6 @@ import sys
 from unittest.mock import patch, MagicMock
 
 # Needs to run headless Tkinter
-import os
 sys.modules['lib.system.window_manager'] = MagicMock()
 
 
@@ -163,3 +162,44 @@ def test_rapid_expand_collapse_toggle(app):
 
     assert getattr(app, "logs_expanded", True) in [True, False]
     # It should not raise any TclError or exceptions during rapid toggling
+
+
+def test_log_format_duplication(app):
+    logger = get_hunt_logger()
+
+    # Clean the queue
+    while not logger.ui_queue.empty():
+        logger.ui_queue.get()
+
+    app.logs_text_widget.config(state="normal")
+    app.logs_text_widget.delete("1.0", "end")
+    app.logs_text_widget.config(state="disabled")
+
+    # Log a message
+    test_msg = "Duplicate check msg"
+    logger.logger.info(test_msg)
+
+    # Process queue
+    app._poll_log_queue()
+    app.update()
+
+    # Check content of text widget
+    content = app.logs_text_widget.get("1.0", "end-1c").strip()
+
+    # Validate only the specific rendered log line for this message.
+    # In the current formatter: '%(asctime)s | %(levelname)s | %(message)s'
+    # If duplicated, it would look like '... | INFO | ... | INFO | Duplicate check msg'
+    matching_lines = [line for line in content.splitlines() if test_msg in line]
+    assert len(matching_lines) == 1, (
+        f"Expected exactly 1 log line containing {test_msg!r}, "
+        f"but found {len(matching_lines)}. Content: {content}"
+    )
+
+    target_line = matching_lines[0]
+    info_token_count = target_line.count(" | INFO | ")
+
+    # We expect the formatted INFO token to appear only once on this single log line
+    assert info_token_count == 1, (
+        f"Expected 1 ' | INFO | ' token on log line, but got {info_token_count}. "
+        f"Line: {target_line}"
+    )
