@@ -1,12 +1,7 @@
 import pytest
 import numpy as np
-import cv2
 from unittest.mock import MagicMock, patch
 from lib.vision.target_name_reader import TargetNameReader
-
-@pytest.fixture
-def reader():
-    return TargetNameReader(window_bounds=[0, 0, 1920, 1080])
 
 def test_target_name_reader_fast_fail_pytesseract():
     with patch("lib.vision.target_name_reader.pytesseract", None):
