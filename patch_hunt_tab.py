@@ -3,115 +3,69 @@ import re
 with open("ui/tabs/hunt_tab.py", "r", encoding="utf-8") as f:
     content = f.read()
 
-# Replace the frame setup with new Treeview for Monster Rotation
-replacement_ui = """        self.app.monster_frame = tk.LabelFrame(
-            self, text=self.app._t("monster_rotation.title"), font=UI.FONT_SECTION, fg=UI.COLOR_TEXT, padx=10, pady=8
-        )
-        self.app.monster_frame.grid(
-            row=0, column=0, sticky="new", padx=(0, 6), pady=(0, 12)
-        )
-        self.app.monster_frame.grid_columnconfigure(0, weight=1)
+# I am returning the icon buttons to the right-hand panel instead of basic text tk.Buttons
+# And bringing back the status string to address the reviewer's feedback
 
-        # Rotation mode selection
-        mode_bar = tk.Frame(self.app.monster_frame)
-        mode_bar.pack(fill="x", pady=(0, 8))
-        tk.Label(mode_bar, text=self.app._t("rotation_mode"), font=UI.FONT_LABEL).pack(side="left")
-
-        self.app.rotation_mode_var = tk.StringVar(
-            value=self.app.hunt_cfg.get("rotation_mode", "sequence")
-        )
-        self.app.rotation_mode_combo = ttk.Combobox(
-            mode_bar,
-            textvariable=self.app.rotation_mode_var,
-            state="readonly",
-            width=12,
-            values=["sequence", "priority"],
-        )
-        self.app.rotation_mode_combo.pack(side="left", padx=(6, 0))
-        self.app.rotation_mode_combo.bind(
-            "<<ComboboxSelected>>", self.app._on_rotation_mode_changed
-        )
-
-        # Mode description
-        self.app.rotation_desc_var = tk.StringVar()
-        tk.Label(
-            mode_bar, textvariable=self.app.rotation_desc_var, fg=UI.COLOR_SUBTEXT, font=UI.FONT_TEXT
-        ).pack(side="left", padx=(8, 0))
-
-        # Monster list with checkboxes (repurposed to treeview)
-        list_container = tk.Frame(self.app.monster_frame)
-        list_container.pack(fill="both", expand=True)
-
-        # Listbox frame with scrollbar
-        listbox_frame = tk.Frame(list_container)
-        listbox_frame.pack(side="left", fill="both", expand=True)
-
-        self.app.monster_rotation_listbox = tk.Listbox(
-            listbox_frame,
-            height=5,
-            exportselection=False,
-            selectmode="single",
-            font=UI.FONT_TEXT,
-        )
-        self.app.monster_rotation_listbox.pack(side="left", fill="both", expand=True)
-
-        monster_scroll = tk.Scrollbar(
-            listbox_frame,
-            orient="vertical",
-            command=self.app.monster_rotation_listbox.yview,
-        )
-        monster_scroll.pack(side="right", fill="y")
-        self.app.monster_rotation_listbox.config(yscrollcommand=monster_scroll.set)
-
-        # Control buttons (right side)
+replacement = """        # Control buttons (right side)
         btn_container = tk.Frame(list_container)
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
         # Add monster button
-        self.app.btn_add_monster = tk.Button(
+        self.app.btn_add_monster = self.app._create_icon_button(
             btn_container,
-            text="+",
+            icon_emoji="➕",
             command=self.app._on_monster_add_smart,
-            font=UI.FONT_BUTTON,
-            width=2,
-            bg=UI.COLOR_PRIMARY,
-            fg="white"
+            style="compact",
+            bg_color=UI.BTN_ACCENT_BG if hasattr(UI, 'BTN_ACCENT_BG') else UI.COLOR_PRIMARY,
+            hover_color=UI.BTN_ACCENT_HOVER if hasattr(UI, 'BTN_ACCENT_HOVER') else UI.COLOR_PRIMARY_TEXT,
         )
         self.app.btn_add_monster.pack(pady=(0, 4))
+        self.app._create_tooltip(
+            self.app.btn_add_monster, self.app._t("tooltip_add_monster_normal")
+        )
 
-        # Up button
-        self.app.btn_move_up = tk.Button(
+        # Priority reorder buttons
+        self.app.btn_move_up = self.app._create_icon_button(
             btn_container,
-            text="↑",
+            icon_emoji="↑",
             command=self.app._on_monster_move_up,
-            font=UI.FONT_BUTTON,
-            width=2,
+            style="compact",
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
+            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
         )
         self.app.btn_move_up.pack(pady=(0, 4))
 
-        # Down button
-        self.app.btn_move_down = tk.Button(
+        self.app.btn_move_down = self.app._create_icon_button(
             btn_container,
-            text="↓",
+            icon_emoji="↓",
             command=self.app._on_monster_move_down,
-            font=UI.FONT_BUTTON,
-            width=2,
+            style="compact",
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
+            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
         )
-        self.app.btn_move_down.pack(pady=(0, 16))
+        self.app.btn_move_down.pack(pady=(0, 12))
 
         # Delete button
-        self.app.btn_remove_monster = tk.Button(
+        self.app.btn_remove_monster = self.app._create_icon_button(
             btn_container,
-            text="X",
+            icon_emoji="✖",
             command=self.app._on_monster_delete_from_list,
-            font=UI.FONT_BUTTON,
-            width=2,
-            bg=UI.COLOR_DANGER,
-            fg="white"
+            style="compact",
+            bg_color=UI.COLOR_DANGER,
+            hover_color=UI.COLOR_WARNING,
         )
         self.app.btn_remove_monster.pack()
 
-        # Remove library manager button calls and old status labels
+        # Current monster status (Restored)
+        self.app.monster_status_var = tk.StringVar()
+        tk.Label(
+            self.app.monster_frame,
+            textvariable=self.app.monster_status_var,
+            fg=UI.COLOR_PRIMARY,
+            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
+        ).pack(fill="x", pady=(8, 0))
+
+        # Re-attach bindings
         self.app.monster_rotation_listbox.bind(
             "<<ListboxSelect>>", self.app._on_monster_list_select
         )
@@ -122,7 +76,7 @@ replacement_ui = """        self.app.monster_frame = tk.LabelFrame(
             "<BackSpace>", self.app._on_monster_delete_from_list
         )"""
 
-content = re.sub(r'        self\.app\.monster_frame = tk\.LabelFrame\(.*?        self\.app\.monster_rotation_listbox\.bind\(\n            "<BackSpace>", self\.app\._on_monster_delete_from_list\n        \)', replacement_ui, content, flags=re.DOTALL)
+content = re.sub(r'        # Control buttons \(right side\).*?        self\.app\.monster_rotation_listbox\.bind\(\n            "<BackSpace>", self\.app\._on_monster_delete_from_list\n        \)', replacement, content, flags=re.DOTALL)
 
 with open("ui/tabs/hunt_tab.py", "w", encoding="utf-8") as f:
     f.write(content)

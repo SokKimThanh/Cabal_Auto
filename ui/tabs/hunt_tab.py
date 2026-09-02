@@ -181,50 +181,61 @@ class HuntTab(ttk.Frame):
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
         # Add monster button
-        self.app.btn_add_monster = tk.Button(
+        self.app.btn_add_monster = self.app._create_icon_button(
             btn_container,
-            text="+",
+            icon_emoji="➕",
             command=self.app._on_monster_add_smart,
-            font=UI.FONT_BUTTON,
-            width=2,
-            bg=UI.COLOR_PRIMARY,
-            fg="white"
+            style="compact",
+            bg_color=UI.BTN_ACCENT_BG if hasattr(UI, 'BTN_ACCENT_BG') else UI.COLOR_PRIMARY,
+            hover_color=UI.BTN_ACCENT_HOVER if hasattr(UI, 'BTN_ACCENT_HOVER') else UI.COLOR_PRIMARY_TEXT,
         )
         self.app.btn_add_monster.pack(pady=(0, 4))
+        self.app._create_tooltip(
+            self.app.btn_add_monster, self.app._t("tooltip_add_monster_normal")
+        )
 
-        # Up button
-        self.app.btn_move_up = tk.Button(
+        # Priority reorder buttons
+        self.app.btn_move_up = self.app._create_icon_button(
             btn_container,
-            text="↑",
+            icon_emoji="↑",
             command=self.app._on_monster_move_up,
-            font=UI.FONT_BUTTON,
-            width=2,
+            style="compact",
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
+            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
         )
         self.app.btn_move_up.pack(pady=(0, 4))
 
-        # Down button
-        self.app.btn_move_down = tk.Button(
+        self.app.btn_move_down = self.app._create_icon_button(
             btn_container,
-            text="↓",
+            icon_emoji="↓",
             command=self.app._on_monster_move_down,
-            font=UI.FONT_BUTTON,
-            width=2,
+            style="compact",
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
+            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
         )
-        self.app.btn_move_down.pack(pady=(0, 16))
+        self.app.btn_move_down.pack(pady=(0, 12))
 
         # Delete button
-        self.app.btn_remove_monster = tk.Button(
+        self.app.btn_remove_monster = self.app._create_icon_button(
             btn_container,
-            text="X",
+            icon_emoji="✖",
             command=self.app._on_monster_delete_from_list,
-            font=UI.FONT_BUTTON,
-            width=2,
-            bg=UI.COLOR_DANGER,
-            fg="white"
+            style="compact",
+            bg_color=UI.COLOR_DANGER,
+            hover_color=UI.COLOR_WARNING,
         )
         self.app.btn_remove_monster.pack()
 
-        # Remove library manager button calls and old status labels
+        # Current monster status (Restored)
+        self.app.monster_status_var = tk.StringVar()
+        tk.Label(
+            self.app.monster_frame,
+            textvariable=self.app.monster_status_var,
+            fg=UI.COLOR_PRIMARY,
+            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
+        ).pack(fill="x", pady=(8, 0))
+
+        # Re-attach bindings
         self.app.monster_rotation_listbox.bind(
             "<<ListboxSelect>>", self.app._on_monster_list_select
         )
