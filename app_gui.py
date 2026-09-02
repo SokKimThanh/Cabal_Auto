@@ -1067,7 +1067,10 @@ class App(tk.Tk):
                     try:
                         record = logger.ui_queue.get_nowait()
                         # QueueHandler.prepare() automatically formats the message into record.message in Python 3.2+
-                        msg = getattr(record, "message", record.getMessage())
+                        if hasattr(record, "message"):
+                            msg = record.message
+                        else:
+                            msg = record.getMessage()
 
                         self.logs_text_widget.config(state="normal")
                         self.logs_text_widget.insert(tk.END, msg + "\n")
