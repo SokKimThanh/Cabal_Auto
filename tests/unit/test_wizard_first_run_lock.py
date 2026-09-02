@@ -1,3 +1,5 @@
+import pytest
+pytest.importorskip('tkinter')
 """
 Test Setup Wizard First-Run Lock Feature
 -----------------------------------------

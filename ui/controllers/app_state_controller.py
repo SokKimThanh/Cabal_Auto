@@ -197,6 +197,9 @@ class AppStateController:
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
         cfg = copy.deepcopy(getattr(app, "hunt_cfg", {}))
+        if not isinstance(cfg.get("skill_slots"), list):
+            cfg["skill_slots"] = []
+
         if isinstance(getattr(app, "hunt_selected", None), dict):
             cfg["window_title"] = app.hunt_selected.get("title", "")
             cfg["window_pid"] = app.hunt_selected.get("pid")

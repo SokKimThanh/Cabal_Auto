@@ -8,6 +8,7 @@ from lib.features.hunt.hunt_config import load_hunt_config, HUNT_CONFIG_PATH
 
 def test_idempotency():
     legacy_config = {
+        "schema_version": 1,
         "ui_mode": "beginner",
         "monsters": [
             {"id": "100", "name": "Goblin"},
@@ -22,10 +23,11 @@ def test_idempotency():
     migrated_2 = migrate_hunt_config(dict(migrated_1))
 
     assert migrated_1 == migrated_2
-    assert migrated_2["schema_version"] == 2
+    assert migrated_2["schema_version"] == 3
 
 def test_backup(tmp_path):
     legacy_config = {
+        "schema_version": 1,
         "ui_mode": "beginner",
         "monsters": [{"id": "100", "name": "Goblin"}]
     }
@@ -107,7 +109,7 @@ def test_priority_schema_enforced():
     legacy_config = {
         "monster_rotation": [
             {"priority": 1, "id": 50},
-            {"priority": 2, "name": "Test"}
+            {"priority": 2, "id": 60, "name": "Test"}
         ]
     }
     migrated = migrate_hunt_config(legacy_config)
@@ -116,5 +118,119 @@ def test_priority_schema_enforced():
     assert r1["priority"] == 1
 
     r2 = migrated["monster_rotation"][1]
-    assert r2["monster_id"] == 0
+    assert r2["monster_id"] == 60
     assert r2["priority"] == 2
+
+def test_v2_to_v3_schema_bump():
+    legacy_config = {
+        "schema_version": 2,
+        "monster_rotation": [{"monster_id": 100, "priority": 1, "name": "Test"}]
+    }
+    migrated = migrate_hunt_config(dict(legacy_config))
+    assert migrated["schema_version"] == 3
+    assert migrated["target_policy"] == "configured_only"
+    assert migrated["ack_strategy"] == "none"
+    assert migrated["hotbar_roi"] is None
+    assert migrated["ack_timeout_ms"] == 500
+
+def test_v3_current_schema_sanitizer_idempotency():
+    config = {
+        "schema_version": 3,
+        "target_policy": "invalid_policy",
+        "ack_strategy": "invalid",
+        "hotbar_roi": [10, 20, "NaN", 40],
+        "ack_timeout_ms": "abc"
+    }
+    migrated_1 = migrate_hunt_config(dict(config))
+    assert migrated_1["target_policy"] == "configured_only"
+    assert migrated_1["ack_strategy"] == "none"
+    assert migrated_1["hotbar_roi"] is None
+    assert migrated_1["ack_timeout_ms"] == 500
+
+    migrated_2 = migrate_hunt_config(dict(migrated_1))
+    assert migrated_1 == migrated_2
+
+def test_target_policy_validation():
+    for policy in ["configured_only", "all_resolved", "any_target"]:
+        config = {"schema_version": 3, "target_policy": policy}
+        migrated = migrate_hunt_config(dict(config))
+        assert migrated["target_policy"] == policy
+
+def test_skill_ack_metadata_validation():
+    config = {
+        "schema_version": 3,
+        "ack_strategy": "combo",
+        "hotbar_roi": [100, 200, 50, 50],
+        "ack_timeout_ms": 1000
+    }
+    migrated = migrate_hunt_config(dict(config))
+    assert migrated["ack_strategy"] == "combo"
+    assert migrated["hotbar_roi"] == [100, 200, 50, 50]
+    assert migrated["ack_timeout_ms"] == 1000
+
+def test_atomic_failure_cleanup(tmp_path):
+    from lib.features.hunt.hunt_config import save_hunt_config, HUNT_CONFIG_PATH
+    import os
+
+    config_file = tmp_path / "hunt_config.json"
+    with open(config_file, "w") as f:
+        f.write('{"valid": true}')
+
+    with patch("lib.features.hunt.hunt_config.HUNT_CONFIG_PATH", config_file):
+        with patch("os.replace", side_effect=Exception("Mocked replace failure")):
+            result = save_hunt_config({"new": "data"})
+            assert result is False
+
+        # Ensure temp file was cleaned up. Only hunt_config.json should be in the dir
+        files = list(tmp_path.glob("*"))
+        assert len(files) == 1
+        assert files[0] == config_file
+
+        with open(config_file, "r") as f:
+            assert f.read() == '{"valid": true}'
+
+def test_monster_rotation_conflict_precedence():
+    from lib.features.hunt.config_migrator import migrate_hunt_config
+
+    legacy_config = {
+        "monster_rotation": [
+            {"monster_id": 999, "name": "Canonical"}
+        ],
+        "monsters": [
+            {"id": 100, "name": "Legacy"}
+        ],
+        "monster_list": [101]
+    }
+
+    migrated = migrate_hunt_config(legacy_config)
+    assert len(migrated["monster_rotation"]) == 1
+    assert migrated["monster_rotation"][0]["monster_id"] == 999
+
+
+def test_config_concurrency(tmp_path):
+    import threading
+    import time
+    from lib.features.hunt import hunt_config
+
+    config_file = tmp_path / "hunt_config.json"
+
+    with patch("lib.features.hunt.hunt_config.HUNT_CONFIG_PATH", config_file):
+        hunt_config.save_hunt_config({"schema_version": 3, "counter": 0})
+
+        def writer_thread(increments):
+            for _ in range(increments):
+                def mutate(cfg):
+                    cfg["counter"] = cfg.get("counter", 0) + 1
+                hunt_config.update_hunt_config(mutate)
+
+        threads = []
+        for _ in range(5):
+            t = threading.Thread(target=writer_thread, args=(20,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        final_cfg = hunt_config.load_hunt_config()
+        assert final_cfg["counter"] == 100

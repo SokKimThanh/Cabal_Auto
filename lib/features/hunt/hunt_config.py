@@ -25,76 +25,76 @@ def save_config(cfg):
         json.dump(cfg, f, indent=4)
 
 
+
 import os
 import tempfile
+import threading
+
+_CONFIG_LOCK = threading.RLock()
+
 
 def save_hunt_config(cfg):
-    try:
-        fd, temp_path = tempfile.mkstemp(dir=HUNT_CONFIG_PATH.parent, prefix=HUNT_CONFIG_PATH.name + ".")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, indent=4, ensure_ascii=False)
-        os.replace(temp_path, HUNT_CONFIG_PATH)
-        return True
-    except Exception as e:
-        print(f"Error saving hunt config: {e}")
-        return False
+    with _CONFIG_LOCK:
+        temp_path = None
+        try:
+            # Ensure parent directory exists
+            HUNT_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            fd, temp_path = tempfile.mkstemp(dir=HUNT_CONFIG_PATH.parent, prefix=HUNT_CONFIG_PATH.name + ".")
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, indent=4, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(temp_path, HUNT_CONFIG_PATH)
+            temp_path = None
+            return True
+        except Exception as e:
+            print(f"Error saving hunt config: {e}")
+            return False
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
 
 import shutil
 from lib.features.hunt.config_migrator import migrate_hunt_config
 
 def load_hunt_config():
-    if HUNT_CONFIG_PATH.exists():
-        try:
-            with open(HUNT_CONFIG_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
+    with _CONFIG_LOCK:
+        data = {}
+        success_load = False
+        if HUNT_CONFIG_PATH.exists():
+            try:
+                with open(HUNT_CONFIG_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                success_load = True
+            except json.JSONDecodeError as e:
+                print(f"Error decoding hunt_config.json: {e}")
+            except Exception as e:
+                print(f"Error loading hunt config: {e}")
 
-            original_version = data.get("schema_version")
+        original_version = data.get("schema_version", 1) if success_load else 0
 
-            data = migrate_hunt_config(data)
 
-            new_version = data.get("schema_version")
+        # Always migrate (it will skip version changes if already current, but always runs _sanitize_v3)
+        data = migrate_hunt_config(data)
 
-            # If migration changed the schema version to 2 or we migrated something
-            if original_version != new_version and new_version == 2:
-                # Backup before overwrite
+        new_version = data.get("schema_version")
+
+        if original_version != new_version and original_version < 3:
+            if HUNT_CONFIG_PATH.exists():
                 backup_path = HUNT_CONFIG_PATH.with_suffix(".json.bak")
                 shutil.copy2(HUNT_CONFIG_PATH, backup_path)
 
-                # Normalize fields immediately after loading
-                _sanitize_templates(data)
+            _sanitize_templates(data)
+            save_hunt_config(data)
+        else:
+            _sanitize_templates(data)
 
-                # Write migrated file back
-                save_hunt_config(data)
-            else:
-                _sanitize_templates(data)
+        return data
 
-            return data
-        except json.JSONDecodeError as e:
-            print(f"Error decoding hunt_config.json: {e}")
-        except Exception as e:
-            print(f"Error loading hunt config: {e}")
-
-    # Default hunt configuration (schema_version 2)
-    return {
-        "schema_version": 2,
-        "ui_mode": "beginner",
-        "hunt_area": {"window_bounds": None},
-        "monster_rotation": [],
-        "skill_slots": [],
-        "options": {
-            "auto_heal": True,
-            "heal_threshold": 40,
-            "auto_loot": True,
-            "loot_key": "space",
-        },
-        "global_hotkeys": {
-            "enabled": True,
-            "start_key": "ctrl+shift+r",
-            "stop_key": "ctrl+shift+e",
-            "setup_wizard_key": "ctrl+shift+n",
-            "library_manager_key": "ctrl+shift+l",
-        },
-    }
+        # Default hunt configuration fallback omitted as migrate_hunt_config will build a valid dict
 
 
 def _sanitize_templates(cfg):
@@ -136,3 +136,11 @@ class ConfigManager:
         """Reload configs from disk."""
         self.cfg.update(load_config())
         self.hunt_cfg.update(load_hunt_config())
+
+def update_hunt_config(mutator_func):
+    """Thread-safe read-modify-write operation using a mutation callback."""
+    with _CONFIG_LOCK:
+        cfg = load_hunt_config()
+        if mutator_func(cfg) is not False:
+            return save_hunt_config(cfg)
+        return False
