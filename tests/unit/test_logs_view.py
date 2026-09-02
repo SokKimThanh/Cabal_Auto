@@ -4,10 +4,6 @@ from lib.system.hunt_logger import get_hunt_logger, reset_hunt_logger, HuntLogge
 from app_gui import App as Application
 import sys
 
-from unittest.mock import MagicMock, patch
-
-import tkinter as tk
-
 @pytest.fixture(autouse=True)
 def setup_teardown():
     reset_hunt_logger()
