@@ -62,7 +62,11 @@ class MockApp:
 
 @pytest.fixture
 def tk_root():
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk cannot initialize in this environment: {exc}")
+    root.withdraw()
     yield root
     root.destroy()
 
