@@ -142,19 +142,20 @@ class SeedBM3SynergiesService:
             cursor = conn.cursor()
             conn.execute("BEGIN TRANSACTION")
 
+            # Pre-fetch all class mappings to avoid N+1 queries
+            cursor.execute("SELECT class_code, class_id FROM classes")
+            class_mappings = {row[0]: row[1] for row in cursor.fetchall()}
+
             for cls_data in parsed_classes:
                 class_slug = cls_data["class_slug"]
                 class_code = class_slug.replace('_', '-')
 
-                # Resolve class_id
-                cursor.execute("SELECT class_id FROM classes WHERE class_code = ?", (class_code,))
-                row = cursor.fetchone()
-                if not row:
+                # Resolve class_id using in-memory dictionary
+                class_id = class_mappings.get(class_code)
+                if class_id is None:
                     unmatched_classes.append(class_slug)
                     logging.warning(f"[SeedBM3SynergiesService] Unmatched class slug: {class_slug}")
                     continue
-
-                class_id = row[0]
 
                 for syn in cls_data["synergies"]:
                     # Check idempotency: synergy identity is (class_id, name, activation_sequence)
