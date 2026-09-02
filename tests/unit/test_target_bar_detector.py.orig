@@ -85,22 +85,14 @@ def test_get_client_size_hwnd():
         # Test fallback to frame size when mismatched
         frame = np.zeros((720, 1280, 3), dtype=np.uint8)
         roi = detector._get_roi(frame)
-        # The ROI is computed on 1280x720, not 800x600 because it falls back to frame shape
-        # Let's check ROI dimensions
-        top = int(720 * detector.roi_top_frac)
-        bottom = int(720 * detector.roi_bottom_frac)
-        left = int(1280 * detector.roi_left_frac)
-        right = int(1280 * detector.roi_right_frac)
+    # The ROI is computed on 1280x720, not 800x600 because it falls back to frame shape
+    # Let's check ROI dimensions
+    top = int(720 * detector.roi_top_frac)
+    bottom = int(720 * detector.roi_bottom_frac)
+    left = int(1280 * detector.roi_left_frac)
+    right = int(1280 * detector.roi_right_frac)
 
-        assert roi.shape == (bottom - top, right - left, 3)
-
-def test_target_bar_detector_hwnd_zero_or_none():
-    from lib.vision.target_bar_detector import TargetBarDetector
-    detector = TargetBarDetector(hwnd=0)
-    w, h = detector._get_client_size()
-    # Should fallback to window_bounds default (1920x1080)
-    assert w == 1920
-    assert h == 1080
+    assert roi.shape == (bottom - top, right - left, 3)
 
 def test_dark_colored_non_empty_bar(detector):
     # Dark yellow/brown: e.g. BGR (0, 150, 150)

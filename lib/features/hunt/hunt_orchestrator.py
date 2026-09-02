@@ -27,9 +27,11 @@ class HuntOrchestrator:
         get_hunt_selected: Callable[[], Dict[str, Any]],
         schedule_ui_task: Callable[[Callable], None],
         clear_target_ui: Callable[[], None] = None,
-        set_target_info: Callable[[str], None] = None
+        set_target_info: Callable[[str], None] = None,
+        on_scene_monsters_detected: Callable[[tuple], None] = None
     ):
         self.clear_target_ui = clear_target_ui
+        self.on_scene_monsters_detected = on_scene_monsters_detected
         self.set_target_info = set_target_info
         self.on_status_update = on_status_update
         self.on_state_change = on_state_change
@@ -57,8 +59,11 @@ class HuntOrchestrator:
 
         def worker():
 
-            target_bar_detector = TargetBarDetector()
-            target_name_reader = TargetNameReader()
+            hunt_selected = self.get_hunt_selected()
+            hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else None
+
+            target_bar_detector = TargetBarDetector(hwnd=hwnd)
+            target_name_reader = TargetNameReader(hwnd=hwnd)
             consecutive_false_readings = 0
             logger = get_hunt_logger()
 
@@ -68,7 +73,7 @@ class HuntOrchestrator:
 
             # We need vision_engine. It's stored in self.bot_manager if available.
             # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
-            runtime_queue = RuntimeMonsterQueue(publish_callback=None) # We don't have UX3B publish callback here
+            runtime_queue = RuntimeMonsterQueue(publish_callback=getattr(self, 'on_scene_monsters_detected', None))
             scene_detector = None
             if hasattr(self, 'bot_manager') and self.bot_manager and hasattr(self.bot_manager, 'vision_engine'):
                 scene_detector = SceneMonsterDetector(self.bot_manager.vision_engine, runtime_queue)
@@ -82,7 +87,6 @@ class HuntOrchestrator:
                 # Focus the target window; minimize GUI only if focus succeeded
                 try:
                     focused = False
-                    hunt_selected = self.get_hunt_selected()
                     if hunt_selected and hunt_selected.get("hwnd"):
                         focused = self.bring_window_to_front_by_hwnd(
                             int(hunt_selected["hwnd"])
@@ -178,6 +182,7 @@ class HuntOrchestrator:
                     # Process scene monsters
                     if frame is not None and scene_detector is not None:
                         scene_detector.process_frame(frame)
+                        runtime_queue.maybe_publish(self.schedule_ui_task)
 
                     # Expose attack queue for other services (CB2C)
                     # Use 'configured_only' as default, pulling configured IDs from cfg
@@ -210,7 +215,7 @@ class HuntOrchestrator:
                                 if name_str:
                                     monster = find_monster_by_name_api(name_str, None)
                                     if not monster:
-                                        monster = {"id": 0, "name": name_str, "hp": None}
+                                        monster = {"id": 0, "name": name_str, "hp": None, "defense": None}
 
                                     if cached_target_id != monster["id"] or cached_target_name != monster.get("name"):
                                         cached_target_id = monster["id"]

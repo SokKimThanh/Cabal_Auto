@@ -70,16 +70,20 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
     sys.modules["lib.features.hunt.window_selection_service"].validate_selected_cabal_window = lambda x, y: mock_validation
 
     # We will simulate a sequence of `is_target_alive` responses.
-    # 0: True -> finds target, goes to attack mode
-    # 1: False -> transient false, should stay in attack mode
-    # 2: True -> resets counter
-    # 3, 4, 5: False -> 3 consecutive false reads, triggers lost
-    # 6: orchestrator.hunt_running = False -> loop ends
+    # 0: False -> starts in search mode, taps z
+    # 1: True -> finds target, goes to attack mode
+    # 2: False -> transient false, should stay in attack mode
+    # 3: True -> resets counter
+    # 4, 5, 6: False -> 3 consecutive false reads, triggers lost
+    # 7: orchestrator.hunt_running = False -> loop ends
 
-    target_alive_seq = [True, False, True, False, False, False]
+    target_alive_seq = [False, True, False, True, False, False, False]
     seq_idx = 0
 
     class MockTargetBarDetector:
+        def __init__(self, hwnd=None):
+            self.hwnd = hwnd
+
         def is_target_alive(self, frame):
             nonlocal seq_idx
             if seq_idx < len(target_alive_seq):
