@@ -149,7 +149,7 @@ class HuntTab(ttk.Frame):
         # Mode description
         self.app.rotation_desc_var = tk.StringVar()
         tk.Label(
-            mode_bar, textvariable=self.app.rotation_desc_var, fg="#666", font=("Arial", 8)
+            mode_bar, textvariable=self.app.rotation_desc_var, fg="#666", font=UI.FONT_TEXT
         ).pack(side="left", padx=(8, 0))
 
         # Monster list with checkboxes
@@ -165,7 +165,7 @@ class HuntTab(ttk.Frame):
             height=5,
             exportselection=False,
             selectmode="single",
-            font=("Arial", 9),
+            font=UI.FONT_TEXT,
         )
         self.app.monster_rotation_listbox.pack(side="left", fill="both", expand=True)
 
@@ -227,7 +227,7 @@ class HuntTab(ttk.Frame):
             self.app.monster_frame,
             textvariable=self.app.monster_status_var,
             fg="#2196F3",
-            font=("Arial", 8, "bold"),
+            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
         ).pack(fill="x", pady=(8, 0))
 
         # Bind click to toggle checkbox
@@ -258,7 +258,7 @@ class HuntTab(ttk.Frame):
             self.app.monster_frame,
             textvariable=self.app.training_mode_hint_var,
             fg="#FF6F00",  # Orange
-            font=("Arial", 8, "italic"),
+            font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "italic"),
             wraplength=400,
             justify="left",
         )
@@ -295,7 +295,7 @@ class HuntTab(ttk.Frame):
             skill_frame_outer,
             text=f"ℹ️ {self.app._t('skill_manage_hint')}",
             fg="#666",
-            font=("Arial", 8),
+            font=UI.FONT_TEXT,
             cursor="hand2",
         )
         hint_label.pack(side="top", anchor="e", pady=(0, 2))
