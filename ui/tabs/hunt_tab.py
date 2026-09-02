@@ -89,9 +89,8 @@ class HuntTab(ttk.Frame):
             self, text=self.app._t("hunt_active_target_status"), padx=10, pady=8
         )
         self.app.active_target_status_frame.grid(
-            row=0, column=1, sticky="nsew", padx=(6, 0), pady=(0, 12)
+            row=0, column=1, sticky="new", padx=(6, 0), pady=(0, 12)
         )
-        self.app.active_target_status_frame.pack_propagate(False)
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Sub-section: Hunt Status Bar (current hunt state + current target)
