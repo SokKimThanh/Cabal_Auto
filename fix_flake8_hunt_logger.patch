@@ -1,0 +1,255 @@
+--- lib/system/hunt_logger.py
++++ lib/system/hunt_logger.py
+@@ -19,4 +19,2 @@
+
+-
+-
+ class DropNewestQueueHandler(QueueHandler):
+@@ -34,103 +32,102 @@
+
+-
+-    def __init__(self, log_dir='logs', max_bytes=10*1024*1024, backup_count=5):
++    def __init__(self, log_dir='logs', max_bytes=10 * 1024 * 1024, backup_count=5):
+         """
+         Initialize Hunt Logger.
+-
++
+         Args:
+             log_dir: Directory to store log files
+             max_bytes: Max size per log file (default 10MB)
+             backup_count: Number of backup files to keep
+         """
+         self.log_dir = Path(log_dir)
+         self.log_dir.mkdir(parents=True, exist_ok=True)
+-
++
+         self.logger = logging.getLogger('HuntLogger')
+         self.logger.setLevel(logging.INFO)
+-
++
+         # Prevent duplicate handlers if initialized multiple times
+         if self.logger.hasHandlers():
+             self.logger.handlers.clear()
+-
++
+         # Formatter for all handlers
+         self.formatter = logging.Formatter(
+             '%(asctime)s | %(levelname)s | %(message)s',
+             datefmt='%Y-%m-%d %H:%M:%S'
+         )
+-
++
+         # 1. File Handler (Rotating)
+         log_file = self.log_dir / 'hunt.log'
+         file_handler = logging.handlers.RotatingFileHandler(
+             log_file,
+             maxBytes=max_bytes,
+             backupCount=backup_count,
+             encoding='utf-8'
+         )
+         file_handler.setFormatter(self.formatter)
+         self.logger.addHandler(file_handler)
+-
++
+         # 2. Console Handler
+         console_handler = logging.StreamHandler(sys.stdout)
+         console_handler.setFormatter(self.formatter)
+         self.logger.addHandler(console_handler)
+-
++
+         # 3. UI Queue Handler (Memory capped, non-blocking)
+         # Using 5000 maxsize (~500KB of string data max)
+         self.ui_queue = queue.Queue(maxsize=5000)
+         queue_handler = DropNewestQueueHandler(self.ui_queue)
+         queue_handler.setFormatter(self.formatter)
+         self.logger.addHandler(queue_handler)
+-
++
+         # State tracking
+         self.dropped_log_count = 0
+         self.session_id = datetime.now().strftime("%Y%md_%H%M%S")
+-
+-        self.logger.info('='*80)
+-        self.logger.info(f"Hunt Session Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+-        self.logger.info('='*80)
+-
++
++        self.logger.info('=' * 80)
++        self.logger.info(
++            f"Hunt Session Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
++        )
++        self.logger.info('=' * 80)
++
+     def log_match(self, template_name: str, box: tuple, threshold: float,
+                   confidence: float = None, monster_name: str = None):
+         """
+         Log template match event.
+-
++
+         Args:
+             template_name: Name of matched template
+             box: Match box (left, top, width, height)
+             threshold: Threshold used
+             confidence: Match confidence (if available)
+             monster_name: Monster name (if available)
+         """
+         target = monster_name if monster_name else template_name
+         conf_str = f"({confidence:.2f})" if confidence else f"(>{threshold:.2f})"
+-
++
+         msg = f"[MATCH] {target} found at {box} {conf_str}"
+         self.logger.info(msg)
+-
++
+         # Also log detailed stats if confidence is near threshold
+         if confidence and (confidence - threshold) < 0.05:
+             self.logger.debug(
+                 f"Marginal match: {template_name} "
+                 f"conf={confidence:.3f} thresh={threshold:.3f}"
+             )
+-
+-    def log_target_lost(self, template_name: str, monster_name: str = None,
++
++    def log_target_lost(self, template_name: str, monster_name: str = None,
+                         duration: float = None):
+         """
+         Log target lost event.
+-
++
+         Args:
+             template_name: Template being searched
+             monster_name: Monster name
+             duration: How long target was tracked before lost
+         """
+         target = monster_name if monster_name else template_name
+-
+-        msg = f"[LOST] Target lost"
++
++        msg = "[LOST] Target lost"
+         if target:
+             msg += f": {target}"
+         if duration:
+             msg += f" after {duration:.1f}s"
+-
++
+         self.logger.info(msg)
+-
++
+     def log_state_change(self, old_state: str, new_state: str, reason: str = None):
+         """
+         Log hunt state change (search <-> attack).
+-
++
+         Args:
+             old_state: Previous state
+             new_state: New state
+             reason: Reason for state change
+         """
+         msg = f"[STATE] {old_state} -> {new_state}"
+         if reason:
+             msg += f" ({reason})"
+-
++
+         self.logger.info(msg)
+-
+-    def log_session_start(self, config: dict):
++
++    def log_session_start(self, config: dict):  # noqa: E501
+         """
+         Log hunt session start with configuration.
+-
++
+         Args:
+             config: Hunt configuration dict
+         """
+@@ -139,134 +136,133 @@
+             json.dumps(config, ensure_ascii=False)
+         except Exception:
+             cfg_str = str(config)
+-
++
+         self.logger.info(f"[SESSION START] Configuration: {cfg_str}")
+-
++
+     def log_session_stop(self, reason: str = "manual"):
+         """
+         Log hunt session stop.
+-
++
+         Args:
+             reason: Reason for stopping (manual, error, etc.)
+         """
+         duration = "unknown"
+         self.logger.info(f"[SESSION STOP] Reason: {reason}, Duration: {duration}")
+-
+-        self.logger.info('='*80)
+-
++
++        self.logger.info('=' * 80)
++
+     def log_error(self, error_type: str, message: str, exception: Exception = None):
+         """
+         Log error event.
+-
++
+         Args:
+             error_type: Type of error
+             message: Error message
+             exception: Exception object (if available)
+         """
+         msg = f"[ERROR] [{error_type}] {message}"
+         if exception:
+             self.logger.error(msg, exc_info=exception)
+         else:
+             self.logger.error(msg)
+-
+-    def log_system_perf(self, fps: float, cpu_percent: float = None):
+-        msg = f"[PERF] Vision FPS: {fps:.1f}"
+-        if cpu_percent is not None:
+-            msg += f" | CPU: {cpu_percent:.1f}%"
+-        self.logger.debug(msg)
+-
+-    def log_structured(self, data: dict):
++
++    def log_system_perf(self, fps: float, cpu_percent: float = None):
++        msg = f"[PERF] Vision FPS: {fps:.1f}"
++        if cpu_percent is not None:
++            msg += f" | CPU: {cpu_percent:.1f}%"
++        self.logger.debug(msg)
++
++    def log_structured(self, data: dict):
+         """
+         Log structured data as JSON for parsing.
+-
++
+         Args:
+             data: Dict of structured data
+         """
+         try:
+             # Ensure dict is JSON serializable
+             log_str = json.dumps(data, ensure_ascii=False)
+             self.logger.info(f"[DATA] {log_str}")
+         except Exception as e:
+             self.logger.warning(f"Failed to log structured data: {e}")
+
+ # Global instance
+ _hunt_logger = None
+
+ def get_hunt_logger() -> HuntLogger:
+     global _hunt_logger
+     if _hunt_logger is None:
+         _hunt_logger = HuntLogger()
+     return _hunt_logger
+-
++
+ def reset_hunt_logger():
+     """For testing purposes, clear the global logger."""
+     global _hunt_logger
+     if _hunt_logger:
+         # Remove handlers to release file locks
+         for handler in _hunt_logger.logger.handlers[:]:
+             handler.close()
+             _hunt_logger.logger.removeHandler(handler)
+         _hunt_logger = None
+-
+-
