@@ -620,7 +620,7 @@ class App(tk.Tk):
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
         self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
-        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
+        self.shell_zone_c1.grid(row=1, column=0, sticky="nsew")
         self.shell_zone_c1.configure(padx=16, pady=20)
         self.shell_zone_c1.grid_propagate(False)
 
@@ -634,6 +634,8 @@ class App(tk.Tk):
             ("sidebar_configuration", lambda: self.switch_view('setup'), UI.FONT_SECTION, 'setup'),
             ("sidebar_support", lambda: self.switch_view('help'), UI.FONT_SECTION, 'help'),
             ("tab_hunt", lambda: self.switch_view('hunt'), UI.FONT_SECTION, 'hunt'),
+            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs"),
+
         ]
         self._sidebar_widgets = []
 
@@ -677,57 +679,7 @@ class App(tk.Tk):
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
         self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
 
-        # Vùng C2: Bottom Status / Logs
-        self.shell_zone_c2 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
-        self.shell_zone_c2.grid(row=2, column=1, sticky="nsew")
 
-        # Bottom Logs Setup (UX4B.1)
-        self.shell_zone_c2.grid_propagate(False)
-
-        # Header for Bottom Logs
-        self.logs_header_frame = tk.Frame(self.shell_zone_c2, bg=UI.BG_SECTION, height=36)
-        self.logs_header_frame.pack(fill="x", side="top")
-        self.logs_header_frame.pack_propagate(False)
-
-        self.logs_title_label = tk.Label(
-            self.logs_header_frame,
-            text=self._t("logs_title") if hasattr(self, "_t") else "Logs",
-            bg=UI.BG_SECTION,
-            fg=UI.COLOR_TEXT,
-            font=UI.FONT_SECTION
-        )
-        self.logs_title_label.pack(side="left", padx=12)
-
-        self.logs_expanded = True
-
-        self.logs_toggle_btn = tk.Button(
-            self.logs_header_frame,
-            text=self._t("logs_collapse"),
-            command=self._toggle_bottom_logs,
-            bg=UI.BG_SECTION,
-            fg=UI.COLOR_TEXT,
-            relief="flat",
-            cursor="hand2",
-            font=UI.FONT_LABEL
-        )
-        self.logs_toggle_btn.pack(side="right", padx=12)
-
-        # Accessibility bindings
-        self.logs_toggle_btn.bind("<FocusIn>", lambda e: self.logs_toggle_btn.config(highlightthickness=1, highlightcolor=UI.BTN_PRIMARY_BG))
-        self.logs_toggle_btn.bind("<FocusOut>", lambda e: self.logs_toggle_btn.config(highlightthickness=0))
-        self.logs_toggle_btn.bind("<Return>", lambda e: self._toggle_bottom_logs())
-        self.logs_toggle_btn.bind("<space>", lambda e: self._toggle_bottom_logs())
-
-        # Empty content container for future logs
-        self.logs_text_widget = tk.Text(
-            self.shell_zone_c2, bg=UI.BG_PANEL, fg=UI.COLOR_TEXT,
-            font=UI.FONT_SMALL, wrap="word", state="disabled",
-            relief="flat", padx=12, pady=12
-        )
-        self.logs_text_widget.pack(fill="both", expand=True)
-        self.logs_content_frame = self.logs_text_widget  # Maintain existing reference for layout operations
-
-        self.after(100, self._check_initial_logs_state)
         self.after(100, self._poll_log_queue)
         self.after(1000, self._update_logs_metrics)
 
@@ -877,11 +829,16 @@ class App(tk.Tk):
         from ui.views.setup_content_frame import SetupContentFrame
         from ui.views.help_support_frame import HelpSupportFrame
         from ui.views.stats_content_frame import StatsContentFrame
+        from ui.views.activity_logs_frame import ActivityLogsFrame
 
-        self._views['hunt'] = HuntWorkspaceFrame(self.shell_zone_b, self)
-        self._views['setup'] = SetupContentFrame(self.shell_zone_b, self)
-        self._views['help'] = HelpSupportFrame(self.shell_zone_b, self)
-        self._views['stats'] = StatsContentFrame(self.shell_zone_b, self)
+        self._views["hunt"] = HuntWorkspaceFrame(self.shell_zone_b, self)
+        self._views["setup"] = SetupContentFrame(self.shell_zone_b, self)
+        self._views["help"] = HelpSupportFrame(self.shell_zone_b, self)
+        self._views["stats"] = StatsContentFrame(self.shell_zone_b, self)
+        self._views["logs"] = ActivityLogsFrame(self.shell_zone_b, self)
+
+        self.logs_text_widget = self._views["logs"].text_widget
+
 
         # Retain tab references for backward compatibility with orchestrators/runners
         self.tab_hunt = self._views['hunt'].hunt_tab if hasattr(self._views['hunt'], 'hunt_tab') else None
@@ -951,74 +908,22 @@ class App(tk.Tk):
             pady=10,
             **apply_kwargs,
         )
-        self.global_apply_btn.pack(
-            side="right", padx=10, pady=6
-        )  # Increased external margins
+        self.global_apply_btn.pack(side="right", padx=10, pady=6)
 
-        # Keep reference to prevent garbage collection
         if not isinstance(save_icon, str):
             try:
                 self._image_refs.append(save_icon)
             except Exception:
                 pass
 
-        # Initialize unsaved state
         self.has_unsaved_changes = False
         self._update_unsaved_indicator()
 
     def _on_window_configure(self, event):
-        if event.widget == self:
-            current_height = self.winfo_height()
-            if current_height < 900:
-                if not self._last_height_under_900:
-                    self._last_height_under_900 = True
-                    if getattr(self, "logs_expanded", False):
-                        self._toggle_bottom_logs()
-            else:
-                self._last_height_under_900 = False
+        pass
 
-    def _clear_bottom_logs(self):
-        """Clear log text widget."""
-        if not self._is_destroyed:
-            self.logs_text_widget.config(state="normal")
-            self.logs_text_widget.delete("1.0", tk.END)
-            self.logs_text_widget.config(state="disabled")
 
-    def _toggle_bottom_logs(self):
-        """Toggle bottom logs visibility (UX4B.1)."""
-        try:
-            # Recompute scale_factor dynamically just in case
-            dpi_percent = self.cfg.get("ui", {}).get("dpi_scale", 100)
-            try:
-                base_scale = self.tk.call('tk', 'scaling') * 72
-            except tk.TclError:
-                base_scale = 1.0
-            scale_factor = (dpi_percent / 100.0) * (base_scale / 1.0 if base_scale > 0.5 else 1.0)
 
-            if self.logs_expanded:
-                self.logs_expanded = False
-                self.logs_content_frame.pack_forget()
-                self.logs_toggle_btn.config(
-                    text=self._t("logs_expand")
-                )
-                # Collapse to header height
-                self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)
-            else:
-                self.logs_expanded = True
-                self.logs_content_frame.pack(fill="both", expand=True)
-                self.logs_toggle_btn.config(
-                    text=self._t("logs_collapse")
-                )
-                # Expand to full target size
-                self.main_shell.rowconfigure(2, minsize=int(120 * scale_factor), weight=0)
-        except Exception as e:
-            # Fallback to expanded state
-            self.logs_expanded = True
-            try:
-                self.logs_content_frame.pack(fill="both", expand=True)
-                self.main_shell.rowconfigure(2, minsize=120, weight=0)
-            except Exception:
-                pass
 
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
@@ -1076,9 +981,8 @@ class App(tk.Tk):
                     dropped = logger.dropped_log_count
                     logger.dropped_log_count = 0
                     warn_msg = f"[!] Đã bỏ qua {dropped} dòng log do quá tải"
-                    self.logs_text_widget.config(state="normal")
-                    self.logs_text_widget.insert(tk.END, warn_msg + "\n")
-                    self.logs_text_widget.config(state="disabled")
+                    if 'logs' in getattr(self, '_views', {}):
+                        self._views['logs'].append_message(warn_msg)
 
                 lines_processed = 0
                 while lines_processed < 50:
@@ -1090,21 +994,14 @@ class App(tk.Tk):
                         else:
                             msg = record.getMessage()
 
-                        self.logs_text_widget.config(state="normal")
-                        self.logs_text_widget.insert(tk.END, msg + "\n")
+                        if 'logs' in getattr(self, '_views', {}):
+                            self._views['logs'].append_message(msg)
                         lines_processed += 1
                     except queue.Empty:
                         break
 
-                if lines_processed > 0:
-                    # Chống rò rỉ RAM dài hạn ở tầng hiển thị
-                    lines = int(self.logs_text_widget.index('end-1c').split('.')[0])
-                    if lines > 1000:
-                        self.logs_text_widget.config(state="normal")
-                        self.logs_text_widget.delete("1.0", f"{lines - 1000 + 1}.0")
-
-                    self.logs_text_widget.see(tk.END)
-                    self.logs_text_widget.config(state="disabled")
+                if lines_processed > 0 and 'logs' in getattr(self, '_views', {}):
+                    self._views['logs'].trim_to_limit(1000)
 
         except Exception as e:
             print(f"Error polling logs: {e}")
