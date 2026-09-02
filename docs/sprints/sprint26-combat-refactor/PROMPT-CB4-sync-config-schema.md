@@ -117,6 +117,11 @@ Target Files:
 
 ## Hardening Bổ Sung Sau CB4
 
+**Note phạm vi:** Đây là yêu cầu **bổ sung sau khi** targeted CB4 rerun ở trên
+đã pass. Mục này **không thay đổi** acceptance criteria/gate của CB4 trong phần
+`Session Boundary Gate`; đây là hardening follow-up bắt buộc sau CB4, không phải
+tiêu chí pass/fail mới để diễn giải lại kết quả rerun CB4.
+
 Phần này là phần tiếp nối bắt buộc của targeted rerun. Không tạo schema hoặc
 service song song; mọi thay đổi phải củng cố nguồn cấu hình canonical đã định
 nghĩa ở trên.
