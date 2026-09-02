@@ -597,7 +597,7 @@ class App(tk.Tk):
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
         self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
-        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         try:
@@ -914,7 +914,8 @@ class App(tk.Tk):
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
-        apply_frame = tk.Frame(self, relief="sunken", bd=1, bg="#f0f0f0")
+        self.global_apply_frame = tk.Frame(self, relief="sunken", bd=1, bg="#f0f0f0")
+        apply_frame = self.global_apply_frame
         apply_frame.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
 
         # Unsaved changes indicator (left side)
