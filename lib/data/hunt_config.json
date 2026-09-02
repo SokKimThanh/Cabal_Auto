@@ -52,13 +52,6 @@
         2576,
         1408
     ],
-    "monster_list": [
-        {
-            "name": "Slime Xanh",
-            "priority": 1,
-            "enabled": true
-        }
-    ],
     "rotation_mode": "sequence",
     "current_monster_index": 0,
     "window_pid": 1972,
@@ -124,5 +117,9 @@
             1408
         ]
     },
-    "schema_version": 2
+    "schema_version": 3,
+    "target_policy": "configured_only",
+    "ack_strategy": "none",
+    "hotbar_roi": null,
+    "ack_timeout_ms": 500
 }

@@ -2,7 +2,7 @@
 
 **Timebox:** 25-30 phút  
 **Priority:** High  
-**Dependency:** CB4 (bao gồm CB4B hardening nếu được tách) và CB2B phải đạt gate trước khi bắt đầu
+**Dependency:** CB4 (bao gồm CB4B hardening nếu được tách), CB2B và UX3A phải đạt gate trước khi bắt đầu
 
 ## Trạng thái Sẵn sàng
 
@@ -36,6 +36,7 @@ Nếu bất kỳ mục nào fail: báo `BLOCKED_BY_CB4`, dừng UX3 và không t
 - Modify: `app_gui.py` cho các callback rotation hiện đang được sở hữu tại đây
 - Modify: `ui/controllers/app_state_controller.py` chỉ để giữ round-trip schema canonical nếu CB4 chưa để lại serializer hoàn chỉnh
 - Modify: `lib/i18n/translations.py`
+- Reference: `dialogs/monster_picker.py` do UX3A tạo; UX3 chỉ mở picker và nhận callback/result.
 - Reference only: `lib/features/hunt/hunt_config.py`
 - Reference only: `database.py` public APIs
 - Reference: `lib/ui_style.py`
@@ -51,6 +52,7 @@ Không sửa `lib/features/monsters/monster_repo.py` để giả lập DB resolv
 - Giữ panel trong layout responsive hiện tại của `HuntTab`; không ép kích thước `776 x 552`.
 - Không thêm `minsize` khiến layout 1366x768 hoặc breakpoint hẹp bị tràn.
 - Header gồm selector cho `rotation_mode` và các icon button: Thêm, Lên, Xuống, Xóa. Đây chỉ là thứ tự xử lý rotation (`sequence`/`priority`), không phải selector `target_policy` ba mode của UX3B.
+- Nút Thêm mở `MonsterPickerDialog` của UX3A. UX3 nhận `{monster_id, name, dungeon_id}`, kiểm tra duplicate `(monster_id, dungeon_id)`, thêm `priority` rồi refresh panel; không giữ dialog legacy tự đọc `self.monsters`/`monsters.json`.
 - Dùng widget cuộn hiện có hoặc `ttk.Treeview` nếu cần nhiều cột. Không tự viết Canvas list trong session này.
 - Dùng token thực tế của `UIStyle`: `COLOR_TEXT`, `COLOR_SUBTEXT`, `COLOR_WARNING` và các token button hiện có.
 - Không tham chiếu `TEXT_MAIN`, `TEXT_MUTED`, `STATE_WARN`, `BORDER_COLOR` vì chúng chưa tồn tại.
@@ -144,7 +146,8 @@ Thêm `tests/unit/test_monster_rotation_queue.py`:
 5. **Dirty state:** add/remove/move mark unsaved nhưng không gọi writer trước Global Apply; save failure giữ dirty state và không báo success.
 6. **Priority normalization:** sau xóa/di chuyển, priority là 1..N theo thứ tự UI.
 7. **Rotation-mode boundary:** selector chỉ round-trip `sequence`/`priority`, không mutation `target_policy` hoặc state UX3B.
-8. **Responsive regression:** panel không thêm minsize cố định làm hỏng layout rộng/hẹp hiện có.
+8. **Picker integration:** nhận result UX3A, thêm đủ bốn field canonical và không leak metadata DB/picker state.
+9. **Responsive regression:** panel không thêm minsize cố định làm hỏng layout rộng/hẹp hiện có.
 
 Chạy thêm gate CB4:
 

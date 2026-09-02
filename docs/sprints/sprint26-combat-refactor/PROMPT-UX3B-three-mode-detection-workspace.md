@@ -2,7 +2,7 @@
 
 **Timebox:** 25-30 phút  
 **Priority:** High  
-**Dependencies:** CB4, UX3 và CB2D đã đạt gate
+**Dependencies:** CB4, UX3A, UX3 và CB2D đã đạt gate
 
 ## Objective
 

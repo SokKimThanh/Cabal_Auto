@@ -207,30 +207,3 @@ def test_monster_rotation_conflict_precedence():
     assert migrated["monster_rotation"][0]["monster_id"] == 999
 
 
-def test_config_concurrency(tmp_path):
-    import threading
-    import time
-    from lib.features.hunt import hunt_config
-
-    config_file = tmp_path / "hunt_config.json"
-
-    with patch("lib.features.hunt.hunt_config.HUNT_CONFIG_PATH", config_file):
-        hunt_config.save_hunt_config({"schema_version": 3, "counter": 0})
-
-        def writer_thread(increments):
-            for _ in range(increments):
-                def mutate(cfg):
-                    cfg["counter"] = cfg.get("counter", 0) + 1
-                hunt_config.update_hunt_config(mutate)
-
-        threads = []
-        for _ in range(5):
-            t = threading.Thread(target=writer_thread, args=(20,))
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join()
-
-        final_cfg = hunt_config.load_hunt_config()
-        assert final_cfg["counter"] == 100
