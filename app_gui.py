@@ -1008,13 +1008,13 @@ class App(tk.Tk):
                     text=self._t("logs_collapse")
                 )
                 # Expand to full target size
-                self.main_shell.rowconfigure(2, minsize=int(200 * scale_factor), weight=0)
+                self.main_shell.rowconfigure(2, minsize=int(120 * scale_factor), weight=0)
         except Exception as e:
             # Fallback to expanded state
             self.logs_expanded = True
             try:
                 self.logs_content_frame.pack(fill="both", expand=True)
-                self.main_shell.rowconfigure(2, minsize=200, weight=0)
+                self.main_shell.rowconfigure(2, minsize=120, weight=0)
             except Exception:
                 pass
 
