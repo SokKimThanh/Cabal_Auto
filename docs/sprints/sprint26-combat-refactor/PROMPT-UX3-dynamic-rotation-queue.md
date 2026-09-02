@@ -123,7 +123,7 @@ Ngoài phạm vi UX3:
 - cập nhật danh sách 5 FPS;
 - điều khiển target tiếp theo.
 
-`HuntOrchestrator` hiện chỉ có callback status/target text/clear UI, chưa có event contract cho các hành vi trên. Việc đồng bộ desired target trong UX3 với target thực tế được xử lý ở session kế tiếp: `PROMPT-CB2C-target-rotation-acquisition.md`.
+`HuntOrchestrator` hiện chỉ có callback status/target text/clear UI, chưa có event contract cho các hành vi trên. UX3B bổ sung giao diện ba mode/hai danh sách sau khi CB2D có detection snapshot; CB2C thực thi policy và đồng bộ desired target với target thực tế.
 
 ## I18n
 
