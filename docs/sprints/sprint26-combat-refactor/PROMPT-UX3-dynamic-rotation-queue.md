@@ -123,7 +123,7 @@ Ngoài phạm vi UX3:
 - cập nhật danh sách 5 FPS;
 - điều khiển target tiếp theo.
 
-`HuntOrchestrator` hiện chỉ có callback status/target text/clear UI, chưa có event contract cho các hành vi trên. Nếu cần dynamic runtime queue, tạo session riêng định nghĩa immutable event snapshot và chuyển về main thread qua `schedule_ui_task()`.
+`HuntOrchestrator` hiện chỉ có callback status/target text/clear UI, chưa có event contract cho các hành vi trên. Việc đồng bộ desired target trong UX3 với target thực tế được xử lý ở session kế tiếp: `PROMPT-CB2C-target-rotation-acquisition.md`.
 
 ## I18n
 
