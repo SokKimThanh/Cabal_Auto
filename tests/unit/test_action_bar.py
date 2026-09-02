@@ -185,3 +185,13 @@ def test_action_bar_layout(app_instance):
     assert app_instance.bounds_placeholder.grid_info()['column'] == 3
     assert app_instance.start_stop_btn.grid_info()['column'] == 4
     assert app_instance.lang_cmb.grid_info()['column'] == 5
+
+def test_scan_button_click(app_instance):
+    """Verify that clicking the scan button triggers run_scan."""
+    app_instance.scan_controller = MagicMock()
+
+    # Trigger the click
+    app_instance.btn_manual_scan.invoke()
+
+    # Assert run_scan was called with manual=True
+    app_instance.scan_controller.run_scan.assert_called_once_with(manual=True)
