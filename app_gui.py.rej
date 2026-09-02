@@ -1,10 +1,10 @@
 --- app_gui.py
 +++ app_gui.py
-@@ -599,7 +599,6 @@
-         # UX4B.1: Added window resizing event to handle collapse logs automatically
-         self.bind("<Configure>", self._on_window_resize)
+@@ -37,6 +37,7 @@
+ from database import get_filtered_monsters_api
+ from dialogs.image_viewer import ImageViewerDialog
+ from dialogs.about_dialog import AboutDialog
++from dialogs.monster_picker import MonsterPickerDialog
+ from views.image_debug_view import ImageDebugView
 
-         # --- UX2.1: Core Grid Construction ---
-         # Isolated main container for the upcoming UI redesign
-         self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
--        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+ from mock.mock_orchestrator import MockHuntOrchestrator

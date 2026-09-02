@@ -118,7 +118,7 @@ class HuntTab(ttk.Frame):
         # Section 2: Monster Selection (Phase 3: Multi-Monster Support)
         # Sprint 22 Patch 2: Dynamic title based on training mode
         self.app.monster_frame = tk.LabelFrame(
-            self, text=self.app._t("hunt_monsters"), padx=10, pady=8
+            self, text=self.app._t("monster_rotation.title"), font=UI.FONT_SECTION, fg=UI.COLOR_TEXT, padx=10, pady=8
         )
         self.app.monster_frame.grid(
             row=0, column=0, sticky="new", padx=(0, 6), pady=(0, 12)
@@ -128,7 +128,7 @@ class HuntTab(ttk.Frame):
         # Rotation mode selection
         mode_bar = tk.Frame(self.app.monster_frame)
         mode_bar.pack(fill="x", pady=(0, 8))
-        tk.Label(mode_bar, text=self.app._t("rotation_mode")).pack(side="left")
+        tk.Label(mode_bar, text=self.app._t("rotation_mode"), font=UI.FONT_LABEL).pack(side="left")
 
         self.app.rotation_mode_var = tk.StringVar(
             value=self.app.hunt_cfg.get("rotation_mode", "sequence")
@@ -148,10 +148,10 @@ class HuntTab(ttk.Frame):
         # Mode description
         self.app.rotation_desc_var = tk.StringVar()
         tk.Label(
-            mode_bar, textvariable=self.app.rotation_desc_var, fg="#666", font=UI.FONT_TEXT
+            mode_bar, textvariable=self.app.rotation_desc_var, fg=UI.COLOR_SUBTEXT, font=UI.FONT_TEXT
         ).pack(side="left", padx=(8, 0))
 
-        # Monster list with checkboxes
+        # Monster list for rotation selection
         list_container = tk.Frame(self.app.monster_frame)
         list_container.pack(fill="both", expand=True)
 
@@ -176,65 +176,72 @@ class HuntTab(ttk.Frame):
         monster_scroll.pack(side="right", fill="y")
         self.app.monster_rotation_listbox.config(yscrollcommand=monster_scroll.set)
 
-        # Control buttons (right side) - Using compact icon buttons (all 20px for consistency)
+        # Control buttons (right side)
         btn_container = tk.Frame(list_container)
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
-        # Add monster button - Compact style (20px: 16px icon + 2×2px padding)
+        # Add monster button
         self.app.btn_add_monster = self.app._create_icon_button(
             btn_container,
             icon_emoji="➕",
             command=self.app._on_monster_add_smart,
             style="compact",
-            bg_color=UI.BTN_ACCENT_BG,
-            hover_color=UI.BTN_ACCENT_HOVER,
+            bg_color=UI.BTN_ACCENT_BG if hasattr(UI, 'BTN_ACCENT_BG') else UI.COLOR_PRIMARY,
+            hover_color=UI.BTN_ACCENT_HOVER if hasattr(UI, 'BTN_ACCENT_HOVER') else UI.COLOR_PRIMARY_TEXT,
         )
-        self.app.btn_add_monster.pack(pady=(0, UI.BTN_SPACING))
+        self.app.btn_add_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
             self.app.btn_add_monster, self.app._t("tooltip_add_monster_normal")
         )
 
-        # Priority reorder buttons - Compact style (20px: 16px icon + 2×2px padding)
-        # Both buttons use blue color for consistency
+        # Priority reorder buttons
         self.app.btn_move_up = self.app._create_icon_button(
             btn_container,
             icon_emoji="↑",
             command=self.app._on_monster_move_up,
             style="compact",
-            bg_color=UI.BTN_INFO_BG,  # Blue for UP
-            hover_color=UI.BTN_INFO_HOVER,
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
+            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
         )
-        self.app.btn_move_up.pack(pady=(0, UI.BTN_SPACING // 2))
-        self.app._create_tooltip(self.app.btn_move_up, self.app._t("tooltip_move_up"))
+        self.app.btn_move_up.pack(pady=(0, 4))
 
         self.app.btn_move_down = self.app._create_icon_button(
             btn_container,
             icon_emoji="↓",
             command=self.app._on_monster_move_down,
             style="compact",
-            bg_color=UI.BTN_INFO_BG,  # Blue for DOWN
-            hover_color=UI.BTN_INFO_HOVER,
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
+            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
         )
-        self.app.btn_move_down.pack(pady=(0, UI.BTN_SPACING * 1.5))
-        self.app._create_tooltip(self.app.btn_move_down, self.app._t("tooltip_move_down"))
+        self.app.btn_move_down.pack(pady=(0, 12))
 
-        # Library Manager buttons removed per request
+        # Delete button
+        self.app.btn_remove_monster = self.app._create_icon_button(
+            btn_container,
+            icon_emoji="✖",
+            command=self.app._on_monster_delete_from_list,
+            style="compact",
+            bg_color=UI.COLOR_DANGER,
+            hover_color=UI.COLOR_WARNING,
+        )
+        self.app.btn_remove_monster.pack()
 
-        # Current monster status
+        # Current monster status (Restored)
         self.app.monster_status_var = tk.StringVar()
         tk.Label(
             self.app.monster_frame,
             textvariable=self.app.monster_status_var,
-            fg="#2196F3",
+            fg=UI.COLOR_PRIMARY,
             font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
         ).pack(fill="x", pady=(8, 0))
 
+        # Re-attach bindings
         self.app.monster_rotation_listbox.bind(
             "<<ListboxSelect>>", self.app._on_monster_list_select
         )
         self.app.monster_rotation_listbox.bind(
             "<Delete>", self.app._on_monster_delete_from_list
-        )  # Sprint 22 Patch 2: Delete key
+        )
         self.app.monster_rotation_listbox.bind(
             "<BackSpace>", self.app._on_monster_delete_from_list
         )  # Also backspace

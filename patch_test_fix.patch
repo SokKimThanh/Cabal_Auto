@@ -1,0 +1,22 @@
+--- tests/unit/dialogs/test_monster_picker.py
++++ tests/unit/dialogs/test_monster_picker.py
+@@ -10,7 +10,13 @@
+     except tk.TclError as exc:
+         pytest.skip(f"Tk cannot initialize in this environment: {exc}")
+     root.withdraw()
+-    yield root
++
++    # Create a proper Dummy wrapper for the Toplevel if we're in headless
++    class MockRoot:
++        def __init__(self, tk_root):
++            self.master = None
++            self.tk = getattr(tk_root, 'tk', None)
++
++        def winfo_x(self): return 0
++        def winfo_y(self): return 0
++        def winfo_width(self): return 800
++        def winfo_height(self): return 600
++
++    # Just return tk_root because `DummyWidget` doesn't have `master` when created directly
++    yield root
+     root.destroy()
