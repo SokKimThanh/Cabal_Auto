@@ -597,7 +597,6 @@ class App(tk.Tk):
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
         self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
-        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         try:
@@ -910,6 +909,8 @@ class App(tk.Tk):
             relief="sunken",
         )
         self._db_status_bar.pack(fill="x", side="bottom")
+
+        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
 
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""

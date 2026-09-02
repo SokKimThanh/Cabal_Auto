@@ -1,0 +1,21 @@
+--- app_gui.py
++++ app_gui.py
+@@ -599,7 +599,6 @@
+         # UX4B.1: Added window resizing event to handle collapse logs automatically
+         self.bind("<Configure>", self._on_window_resize)
+
+         # --- UX2.1: Core Grid Construction ---
+         # Isolated main container for the upcoming UI redesign
+         self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
+-        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
+         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
+@@ -1019,6 +1018,8 @@
+                 self._image_refs.append(save_icon)
+             except Exception:
+                 pass
++
++        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+
+     def on_global_apply(self):
+         """Handle global apply action across all tabs."""

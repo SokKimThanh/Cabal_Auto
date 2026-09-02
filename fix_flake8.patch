@@ -1,0 +1,76 @@
+--- app_gui.py
++++ app_gui.py
+@@ -44,17 +44,10 @@
+     locate_template,
+ )
+-from ctypes import wintypes
+ import ctypes
+-import copy
+ import math
+ import os
+ import threading
+ import time
+
+-from typing import Any, Dict, List, Optional
+-
+-from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
+-
+
+@@ -88,6 +81,8 @@
+ from ui.tabs.training_tab import TrainingTab
+ from ui.tabs.hunt_tab import HuntTab
+ from ui.tabs.settings_tab import SettingsTab
++
++from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
+
+
+@@ -1010,7 +1005,7 @@
+         except Exception as e:
+-            pass
++            self.logger.error(f"Failed to reset UI: {e}")
+
+     def _create_image_refs(self):
+@@ -1053,7 +1048,6 @@
+         if hasattr(self, "logs_text_widget"):
+-            from lib.system.hunt_logger import get_hunt_logger
+             self.logs_text_widget.config(state="normal")
+             self.logs_text_widget.insert("end", "\n")
+             self.logs_text_widget.config(state="disabled")
+
+@@ -1810,9 +1804,9 @@
+             try:
+                 t = int(self.setup_reg_t.get()) if self.setup_reg_t.get() else ""
+-                l = int(self.setup_reg_l.get()) if self.setup_reg_l.get() else ""
++                left = int(self.setup_reg_l.get()) if self.setup_reg_l.get() else ""
+                 w = int(self.setup_reg_w.get()) if self.setup_reg_w.get() else ""
+                 h = int(self.setup_reg_h.get()) if self.setup_reg_h.get() else ""
+
+                 self.bot_manager.config["screen_region"] = {
+                     "top": t,
+-                    "left": l,
++                    "left": left,
+                     "width": w,
+@@ -2005,7 +1999,6 @@
+         if len(self.monster_rotation_list) > idx:
+-            monster = self.monster_rotation_list[idx]
+
+             self.bot_manager.move_rotation_up(idx)
+             self._sync_rotation_list()
+@@ -2327,7 +2320,6 @@
+         if "dungeon_id" in hunt_target and hunt_target["dungeon_id"]:
+             has_training_list = True
+-            is_training_mode = has_training_list
+
+             for monster in self.bot_manager.hunt_config.get("monster_rotation", []):
+@@ -3028,7 +3020,6 @@
+         try:
+-            template_path = self.hunt_cfg.get("template_path", "").strip()
+             self.setup_win.grab_set()
+
+             initial_dir = ""
+@@ -3343,7 +3334,6 @@
+     try:
+-        import win32gui  # Test pywin32 availability
+         has_gui = True
+     except ImportError:
+         has_gui = False

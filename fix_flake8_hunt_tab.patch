@@ -1,0 +1,38 @@
+--- ui/tabs/hunt_tab.py
++++ ui/tabs/hunt_tab.py
+@@ -306,7 +306,7 @@
+         for col in range(num_slots):
+             # Cột chứa label slot (Skill 1)
+-            slot_frame.grid_columnconfigure(col*4, weight=0, minsize=60)
++            slot_frame.grid_columnconfigure(col * 4, weight=0, minsize=60)
+             # Cột chứa Combobox - cho phép mở rộng
+-            slot_frame.grid_columnconfigure(col*4 + 1, weight=1)
++            slot_frame.grid_columnconfigure(col * 4 + 1, weight=1)
+             # Cột chứa Key label
+-            slot_frame.grid_columnconfigure(col*4 + 2, weight=0)
++            slot_frame.grid_columnconfigure(col * 4 + 2, weight=0)
+             # Cột chứa Entry phím
+-            slot_frame.grid_columnconfigure(col*4 + 3, weight=0, minsize=50)
++            slot_frame.grid_columnconfigure(col * 4 + 3, weight=0, minsize=50)
+
+@@ -317,14 +317,14 @@
+             lbl.grid(row=row, column=col_base, sticky="e", padx=(4, 2))
+
+             cmb = ttk.Combobox(
+                 slot_frame, values=[], state="readonly", width=12
+             )
+-            cmb.grid(row=row, column=col_base+1, sticky="we", padx=(4, 0), pady=1)
++            cmb.grid(row=row, column=col_base + 1, sticky="we", padx=(4, 0), pady=1)
+             self._skill_slot_combos.append(cmb)
+
+             key_lbl = tk.Label(
+                 slot_frame, text=self._t("hotkey"), bg=UI.BG_PANEL, font=UI.FONT_DEFAULT
+             )
+-            key_lbl.grid(row=row, column=col_base+2, padx=(2, 0))
++            key_lbl.grid(row=row, column=col_base + 2, padx=(2, 0))
+
+             key_entry = tk.Entry(
+                 slot_frame, width=3, font=UI.FONT_BOLD, justify="center"
+             )
+-            key_entry.grid(row=row, column=col_base+3, padx=(2, 6))
++            key_entry.grid(row=row, column=col_base + 3, padx=(2, 6))
