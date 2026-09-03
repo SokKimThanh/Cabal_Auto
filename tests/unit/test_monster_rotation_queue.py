@@ -177,7 +177,8 @@ def test_metadata_not_persisted(mock_app):
 def test_rotation_mode_boundary(mock_app):
     # Verify we only toggle UI mode and don't mutate UX3B runtime policy
     mock_app.rotation_mode_var = MagicMock()
-    mock_app.rotation_mode_var.get.return_value = "priority"
+    mock_app.rotation_mode_var.get.return_value = "Priority"
+    mock_app.rotation_mode_map = {"Priority": "priority"}
     mock_app.hunt_cfg = {}
     mock_app.hunt_status = MagicMock()
 
