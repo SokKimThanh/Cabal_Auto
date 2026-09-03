@@ -1,5 +1,11 @@
 # Project Cleanup Manifest
 
+## Metadata
+- Generated at: 2026-09-02T00:00:00Z
+- Generator: manual manifest draft / version unknown
+- Repository revision: unknown
+- Constraints: Review before execution; archive targets only; preserve listed data files and primary documentation; update referenced links where noted
+
 ## KEEP
 - script_checker.py (Reason: Config/tooling, Evidence: Standard tooling)
 - runner.py (Reason: Runtime source or main entrypoint/tests, Evidence: Imported or main app)
