@@ -440,10 +440,11 @@ class AppStateController:
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             else:
-                # title handled natively
-                text = "[✓]" if compact else app._t("bounds_state_ready").format(title=f"{bounds[2]}x{bounds[3]}")
+                # show dynamic width/height ready message
+                ready_text = app._t("bounds_state_ready") if hasattr(app, "_t") and app._t("bounds_state_ready") != "bounds_state_ready" else "Ready"
+                text = f"[✓] {ready_text} ({bounds[2]}x{bounds[3]})"
                 app.bounds_status_var.set(text)
-                app.bounds_readiness_label.config(fg=UIStyle.COLOR_ACCENT)
+                app.bounds_readiness_label.config(fg=UIStyle.COLOR_SUCCESS)
 
     def _hunt_locate_target(self, cfg: Dict[str, Any]):
         app = self.root
