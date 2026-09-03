@@ -1,7 +1,15 @@
-import re
+"""Deprecated developer-only patch script.
 
-with open("app_gui.py", "r") as f:
-    content = f.read()
+This repository must not ship one-off source-rewriting helpers alongside
+product code. The original implementation of this file modified `app_gui.py`
+in place; it has been disabled to prevent accidental or intentional mutation
+of repository sources during normal execution, CI, or packaging.
+"""
+
+raise SystemExit(
+    "patch_app_gui_final.py is disabled. Remove this patch helper or move it "
+    "to a separate developer-only tooling area excluded from distribution and CI."
+)
 
 # Add promote method to App
 search = """    def _refresh_monster_rotation_list(self):"""
