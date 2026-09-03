@@ -2,7 +2,7 @@
 
 ## Summary
 - Delete candidates: 4 entries (3 files + 1 directory; safe artifacts)
-- Files archived: 53 (One-off scripts, patches, old reports)
+- Files archived: 57 (One-off scripts, patches, old reports)
 - Files deleted: 4 (1 cache directory, 3 root artifacts)
 - Status: APPLIED (R2 conservative cleanup batch)
 
@@ -42,6 +42,10 @@
 * `patch_try_close.diff` -> `docs/archive/scripts/` (Patch file)
 * `patch_handlers.patch` -> `docs/archive/scripts/patch_handlers.patch` (Patch file)
 * `patch_test_fix.patch` -> `docs/archive/scripts/patch_test_fix.patch` (Patch file)
+* `patch_app_gui_final.py` -> `docs/archive/scripts/patch_app_gui_final.py` (One-off script)
+* `patch_app_gui_lifecycle.py` -> `docs/archive/scripts/patch_app_gui_lifecycle.py` (One-off script)
+* `patch_hunt_tab_dnd.py` -> `docs/archive/scripts/patch_hunt_tab_dnd.py` (One-off script)
+* `patch_state_controller_final.py` -> `docs/archive/scripts/patch_state_controller_final.py` (One-off script)
 * `fix_app.patch` -> `docs/archive/scripts/` (Patch file)
 * `fix_flake8.patch` -> `docs/archive/scripts/` (Patch file)
 * `fix_flake8_hunt_logger.patch` -> `docs/archive/scripts/` (Patch file)
