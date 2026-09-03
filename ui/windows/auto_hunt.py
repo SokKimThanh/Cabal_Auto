@@ -36,11 +36,11 @@ def load_cfg():
     
     # Phase 3: Backward compatibility migration
     if 'monster_selected_name' in cfg and cfg['monster_selected_name']:
-        if not cfg.get('monster_list'):
-            cfg['monster_list'] = [{"name": cfg['monster_selected_name'], "priority": 1, "enabled": True}]
+        if not cfg.get('monster_rotation'):
+            cfg['monster_rotation'] = [{"name": cfg['monster_selected_name'], "priority": 1, "enabled": True}]
     
     # Ensure Phase 3 fields exist
-    cfg.setdefault('monster_list', [])
+    cfg.setdefault('monster_rotation', [])
     cfg.setdefault('rotation_mode', 'sequence')
     cfg.setdefault('current_monster_index', 0)
     
@@ -56,14 +56,14 @@ def get_monster_rotation_targets(cfg):
     
     Returns:
         list of monster dicts sorted by rotation order:
-        - sequence mode: order as they appear in monster_list
+        - sequence mode: order as they appear in monster_rotation
         - priority mode: sorted by priority (ascending)
         
     Each monster dict contains:
         {'name': str, 'priority': int, 'templates': [template_dict, ...]}
     """
-    monster_list = cfg.get('monster_list', [])
-    enabled_monsters = [m for m in monster_list if m.get('enabled', True)]
+    monster_rotation = cfg.get('monster_rotation', [])
+    enabled_monsters = [m for m in monster_rotation if m.get('enabled', True)]
     
     if not enabled_monsters:
         return []
