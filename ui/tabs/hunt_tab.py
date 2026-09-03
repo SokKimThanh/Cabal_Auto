@@ -255,7 +255,11 @@ class HuntTab(ttk.Frame):
             label=self.app._t("monster_delete"),  # "Delete" / "Xóa"
             command=self.app._on_monster_delete_from_list,
         )
-        # Remove right-click binding, App no longer has _show_monster_context_menu  # Right-click
+        show_monster_context_menu = getattr(self.app, "_show_monster_context_menu", None)
+        if callable(show_monster_context_menu):
+            self.app.monster_rotation_listbox.bind(
+                "<Button-3>", show_monster_context_menu
+            )  # Right-click
 
         # Sprint 22 Patch 2: Hint for switching back to normal mode
         self.app.training_mode_hint_var = tk.StringVar()
