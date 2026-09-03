@@ -16,7 +16,6 @@ class MonsterPickerDialog(tk.Toplevel):
 
         # Don't hardcode minsize, make it responsive
         self.geometry("600x450")
-        self.minsize(400, 300)
         self.resizable(True, True)
 
         self.transient(parent)
@@ -185,6 +184,7 @@ class MonsterPickerDialog(tk.Toplevel):
         self.tree.delete(*self.tree.get_children())
         self.status_var.set("")
         self.btn_confirm.config(state="disabled")
+        self._item_map.clear()
 
         if not records:
             self.status_var.set(self._t("monster_picker_empty"))
@@ -197,10 +197,15 @@ class MonsterPickerDialog(tk.Toplevel):
             hp_val = r.get("hp", "--")
             dungeon_id = r.get("dungeonId")
 
+            try:
+                monster_id = int(id_val) if id_val is not None else 0
+            except (ValueError, TypeError):
+                monster_id = 0
+
             item_id = self.tree.insert("", "end", values=(f"#{id_val}", name_val, lvl_val, hp_val))
             # Attach canonical record to the item for retrieval later
             canonical_record = {
-                "monster_id": int(id_val) if id_val else 0,
+                "monster_id": monster_id,
                 "name": str(name_val).strip(),
                 "dungeon_id": str(dungeon_id) if dungeon_id else None
             }

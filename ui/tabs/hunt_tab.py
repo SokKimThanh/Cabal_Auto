@@ -236,9 +236,8 @@ class HuntTab(ttk.Frame):
         ).pack(fill="x", pady=(8, 0))
 
         # Re-attach bindings
-        self.app.monster_rotation_listbox.bind(
-            "<<ListboxSelect>>", self.app._on_monster_list_select
-        )
+        # We removed self.app._on_monster_list_select because it was deleted during refactoring.
+        # It's an empty method anyway, so we just remove the binding.
         self.app.monster_rotation_listbox.bind(
             "<Delete>", self.app._on_monster_delete_from_list
         )
@@ -252,9 +251,7 @@ class HuntTab(ttk.Frame):
             label=self.app._t("monster_delete"),  # "Delete" / "Xóa"
             command=self.app._on_monster_delete_from_list,
         )
-        self.app.monster_rotation_listbox.bind(
-            "<Button-3>", self.app._show_monster_context_menu
-        )  # Right-click
+        # Remove right-click binding, App no longer has _show_monster_context_menu  # Right-click
 
         # Sprint 22 Patch 2: Hint for switching back to normal mode
         self.app.training_mode_hint_var = tk.StringVar()
@@ -335,7 +332,34 @@ class HuntTab(ttk.Frame):
             self.app.skill_slot_boxes.append(cmb)
 
         self.app._refresh_monster_select_options()
-        self.app._load_skill_slots_from_cfg()
+        # Replaced _load_skill_slots_from_cfg with equivalent logic inline
+        saved = (
+            self.app.hunt_cfg.get("skill_slots", []) if hasattr(self.app, "hunt_cfg") else []
+        )
+
+        normalized_slots = []
+        for slot in saved:
+            if isinstance(slot, dict):
+                normalized_slots.append(slot.get("name", ""))
+            elif isinstance(slot, str):
+                normalized_slots.append(slot)
+            else:
+                normalized_slots.append("")
+
+        self.app.skill_slot_saved_names = [name for name in normalized_slots if name]
+
+        if hasattr(self.app, "_refresh_skill_slots_options"):
+            self.app._refresh_skill_slots_options()
+
+        if hasattr(self.app, "skill_slot_vars"):
+            for idx, var in enumerate(self.app.skill_slot_vars):
+                name = ""
+                if idx < len(normalized_slots):
+                    name = normalized_slots[idx]
+                var.set(name)
+
+        if hasattr(self.app, "_update_attack_keys_from_slots"):
+            self.app._update_attack_keys_from_slots()
 
         # Phase 3: Populate monster rotation list
         self.app._refresh_monster_rotation_list()
@@ -381,4 +405,10 @@ class HuntTab(ttk.Frame):
         self.app.skill_stats_tree.tag_configure("good", foreground="#F57F17")
         self.app.skill_stats_tree.tag_configure("poor", foreground="#C62828")
         self.app.skill_stats_tree.tag_configure("placeholder", foreground="#999")
-        self.app._show_skill_stats_placeholder()
+        if hasattr(self.app, "skill_stats_tree"):
+            self.app.skill_stats_tree.insert(
+                "",
+                "end",
+                values=(self.app._t("skill_stats_empty"), "", "", "", ""),
+                tags=("placeholder",),
+            )
