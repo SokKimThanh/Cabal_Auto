@@ -24,11 +24,6 @@
 13. `PROMPT-R2-project-wide-cleanup.md` là maintenance gate độc lập: có thể
    chạy bất kỳ lúc nào, nhưng chỉ được xóa mục `DELETE_SAFE` sau khi lập
    manifest dry-run; không dùng cleanup để che lỗi hoặc thay đổi logic.
-14. `PROMPT-R3-daily-execution-gate.md` là process gate chạy hằng ngày từ sau
-   UX3B: một prompt chức năng chính mỗi ngày, thời gian còn lại dành cho
-   validation, targeted repair, báo cáo và chuẩn bị dependency kế tiếp.
-15. `PROMPT-CB2-FIX-runtime-wiring.md` là recovery session độc lập để sửa
-   blocker runtime của CB2; có thể chạy ngay mà không chờ prompt feature kế tiếp.
 
 ## Ba Chế Độ Săn
 
@@ -70,8 +65,6 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 | :---: | --- | --- | --- | --- |
 | R1 | `PROMPT-R1` | Recovery | Khép blocker CB1/CB2/CB2B/CB4/CB2D đã xác minh. | Không có; chạy ngay |
 | R2 | `PROMPT-R2` | Maintenance | Inventory và cleanup file/thư mục toàn project theo evidence và manifest. | Không có; chạy độc lập |
-| R3 | `PROMPT-R3` | Process | Daily execution, validation và dependency gate; một feature prompt chính/ngày. | Áp dụng mỗi ngày sau UX3B |
-| CB2-FIX | `PROMPT-CB2-FIX` | Recovery | Sửa runtime wiring của HuntOrchestrator và khóa lại CB2 tests. | Không có; chạy ngay |
 | 01 | `PROMPT-UX1` | UX | Quick Action Bar và Start/Stop debounce. | Window service |
 | 02 | `PROMPT-UX2` | UX | Core shell và view swapping. | UX1 |
 | 03 | `PROMPT-UX6` | UX | Activity logging theo kiến trúc UI hiện hành. | UX2, HuntLogger |
