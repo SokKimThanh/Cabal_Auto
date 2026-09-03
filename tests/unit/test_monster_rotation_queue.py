@@ -22,6 +22,9 @@ def mock_app():
     app._on_monster_move_up = RealApp._on_monster_move_up.__get__(app)
     app._on_monster_move_down = RealApp._on_monster_move_down.__get__(app)
     app._on_monster_delete_from_list = RealApp._on_monster_delete_from_list.__get__(app)
+    app._on_monster_add_smart = RealApp._on_monster_add_smart.__get__(app)
+    app.current_lang = 'en'
+
 
     return app
 
@@ -69,7 +72,7 @@ def test_refresh_handles_unknown_monsters(mock_app):
         mock_app._refresh_monster_rotation_list()
 
         mock_app.monster_rotation_listbox.insert.assert_called_with(
-            "end", "[monster_rotation.unknown_badge] Missing - Lv.-- | HP: --"
+            "end", "[monster_rotation_unknown] Missing - Lv.-- | HP: --"
         )
 
 
@@ -119,3 +122,71 @@ def test_delete_normalizes_priority(mock_app):
     assert mock_app.monster_rotation[1]["priority"] == 2
 
     mock_app._mark_unsaved.assert_called_once()
+
+def test_picker_integration(mock_app):
+    mock_app.monster_rotation = []
+
+    with patch('app_gui.MonsterPickerDialog') as mock_dialog:
+        mock_app._on_monster_add_smart()
+
+        # The callback is passed as the third argument to MonsterPickerDialog
+        on_monster_selected = mock_dialog.call_args[0][2]
+
+        # Simulate selecting a monster
+        on_monster_selected({"monster_id": 99, "name": "PickerMonster", "dungeon_id": "D99"})
+
+        assert len(mock_app.monster_rotation) == 1
+        assert mock_app.monster_rotation[0]["monster_id"] == 99
+        assert mock_app.monster_rotation[0]["name"] == "PickerMonster"
+        assert mock_app.monster_rotation[0]["priority"] == 1
+        assert mock_app.monster_rotation[0]["dungeon_id"] == "D99"
+
+        mock_app._mark_unsaved.assert_called_once()
+        # method bound so no assert_called
+        pass
+
+
+def test_dirty_state_preservation(mock_app):
+    mock_app.monster_rotation = []
+
+    with patch('app_gui.MonsterPickerDialog') as mock_dialog:
+        mock_app._on_monster_add_smart()
+        on_monster_selected = mock_dialog.call_args[0][2]
+        on_monster_selected({"monster_id": 1, "name": "M1", "dungeon_id": None})
+
+    # Assert _mark_unsaved was called indicating dirty state
+    mock_app._mark_unsaved.assert_called_once()
+
+
+def test_metadata_not_persisted(mock_app):
+    # Setup state
+    mock_app.monster_rotation = [
+        {"monster_id": 1, "name": "M1", "priority": 1, "dungeon_id": None}
+    ]
+
+    # Simulate DB lookup fetching extra metadata (hp, level)
+    with patch('database.get_monster_by_id_api', return_value={"id": 1, "level": 10, "hp": 500}):
+        mock_app._refresh_monster_rotation_list()
+
+        # Ensure that the extra metadata was not injected into the persistent dict
+        entry = mock_app.monster_rotation[0]
+        assert "level" not in entry
+        assert "hp" not in entry
+        assert list(entry.keys()) == ["monster_id", "name", "priority", "dungeon_id"]
+
+def test_rotation_mode_boundary(mock_app):
+    # Verify we only toggle UI mode and don't mutate UX3B runtime policy
+    mock_app.rotation_mode_var = MagicMock()
+    mock_app.rotation_mode_var.get.return_value = "Priority"
+    mock_app.rotation_mode_map = {"Priority": "priority"}
+    mock_app.hunt_cfg = {}
+    mock_app.hunt_status = MagicMock()
+
+    # Needs a mock for _on_rotation_mode_changed
+    from app_gui import App as RealApp
+    mock_app._on_rotation_mode_changed = RealApp._on_rotation_mode_changed.__get__(mock_app)
+
+    mock_app._on_rotation_mode_changed()
+
+    assert mock_app.hunt_cfg["rotation_mode"] == "priority"
+    assert "target_policy" not in mock_app.hunt_cfg

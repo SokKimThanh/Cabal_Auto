@@ -118,7 +118,7 @@ class HuntTab(ttk.Frame):
         # Section 2: Monster Selection (Phase 3: Multi-Monster Support)
         # Sprint 22 Patch 2: Dynamic title based on training mode
         self.app.monster_frame = tk.LabelFrame(
-            self, text=self.app._t("monster_rotation.title"), font=UI.FONT_SECTION, fg=UI.COLOR_TEXT, padx=10, pady=8
+            self, text=self.app._t("monster_rotation_title"), font=UI.FONT_SECTION, fg=UI.COLOR_TEXT, padx=10, pady=8
         )
         self.app.monster_frame.grid(
             row=0, column=0, sticky="new", padx=(0, 6), pady=(0, 12)
@@ -130,15 +130,23 @@ class HuntTab(ttk.Frame):
         mode_bar.pack(fill="x", pady=(0, 8))
         tk.Label(mode_bar, text=self.app._t("rotation_mode"), font=UI.FONT_LABEL).pack(side="left")
 
+        # Setup display text mappings
+        self.app.rotation_mode_map = {
+            self.app._t("monster_rotation_mode_sequence"): "sequence",
+            self.app._t("monster_rotation_mode_priority"): "priority"
+        }
+        self.app.rotation_mode_rev_map = {v: k for k, v in self.app.rotation_mode_map.items()}
+
+        current_val = self.app.hunt_cfg.get("rotation_mode", "sequence")
         self.app.rotation_mode_var = tk.StringVar(
-            value=self.app.hunt_cfg.get("rotation_mode", "sequence")
+            value=self.app.rotation_mode_rev_map.get(current_val, current_val)
         )
         self.app.rotation_mode_combo = ttk.Combobox(
             mode_bar,
             textvariable=self.app.rotation_mode_var,
             state="readonly",
             width=12,
-            values=["sequence", "priority"],
+            values=list(self.app.rotation_mode_map.keys()),
         )
         self.app.rotation_mode_combo.pack(side="left", padx=(6, 0))
         self.app.rotation_mode_combo.bind(
@@ -191,7 +199,7 @@ class HuntTab(ttk.Frame):
         )
         self.app.btn_add_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
-            self.app.btn_add_monster, self.app._t("tooltip_add_monster_normal")
+            self.app.btn_add_monster, self.app._t("monster_rotation_add")
         )
 
         # Priority reorder buttons
@@ -225,6 +233,9 @@ class HuntTab(ttk.Frame):
             hover_color=UI.COLOR_WARNING,
         )
         self.app.btn_remove_monster.pack()
+        self.app._create_tooltip(
+            self.app.btn_remove_monster, self.app._t("monster_rotation_remove")
+        )
 
         # Current monster status (Restored)
         self.app.monster_status_var = tk.StringVar()

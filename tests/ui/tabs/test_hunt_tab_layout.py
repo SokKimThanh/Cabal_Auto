@@ -49,6 +49,8 @@ class MockApp:
         self.root = root
 
     def _t(self, key, *args, **kwargs):
+        if key == "monster_rotation_add": return "Add Monster"
+        if key == "monster_rotation_remove": return "Remove"
         return key
 
     def _create_icon_button(self, *args, **kwargs):

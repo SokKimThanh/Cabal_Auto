@@ -1530,7 +1530,15 @@ class App(tk.Tk):
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
-        mode = self.rotation_mode_var.get()
+        display_mode = self.rotation_mode_var.get()
+        if hasattr(self, "rotation_mode_map"):
+            mode = self.rotation_mode_map.get(display_mode, display_mode)
+        else:
+            mode = display_mode
+
+        if mode not in {"sequence", "priority"}:
+            mode = "sequence"
+
         self.hunt_cfg["rotation_mode"] = mode
         self._refresh_monster_rotation_list()
         self.hunt_status.set(f"Rotation mode: {mode}")
@@ -1575,7 +1583,7 @@ class App(tk.Tk):
                 display_str = f"[#{monster_id}] {name} - Lv.{level} | HP: {hp}"
             else:
                 # Missing metadata
-                display_str = f"[{self._t('monster_rotation.unknown_badge')}] {name} - Lv.-- | HP: --"
+                display_str = f"[{self._t('monster_rotation_unknown')}] {name} - Lv.-- | HP: --"
 
             self.monster_rotation_listbox.insert(tk.END, display_str)
 
@@ -1664,8 +1672,7 @@ class App(tk.Tk):
             }
 
             self.monster_rotation.append(new_entry)
-            if hasattr(self, "_mark_unsaved"):
-                self._mark_unsaved()
+            self._mark_unsaved()
 
             self._refresh_monster_rotation_list()
 
@@ -2252,6 +2259,11 @@ class App(tk.Tk):
         # 4. Update any other UI elements that depend on config
         # (Add more as needed based on your UI structure)
         pass
+
+
+    def _mark_unsaved(self):
+        self.has_unsaved_changes = True
+        self._update_unsaved_indicator()
 
     def _update_unsaved_indicator(self):
         """Update unsaved changes indicator UI."""
