@@ -30,7 +30,13 @@ def test_ocr_fallback_contract():
 
     mock_set_target_info = MagicMock()
 
+    mock_bot_manager = MagicMock()
+    mock_bot_manager.screen_capture = MagicMock()
+    mock_bot_manager.screen_capture.hwnd = 123
+    mock_bot_manager.screen_capture.get_latest_frame.return_value = "mock_frame"
+
     orchestrator = HuntOrchestrator(
+        bot_manager=mock_bot_manager,
         on_status_update=mock_on_status,
         on_state_change=mock_on_state,
         locate_target=mock_locate,
@@ -62,11 +68,7 @@ def test_ocr_fallback_contract():
 
                 with patch("lib.features.hunt.hunt_orchestrator.get_hunt_logger", MagicMock()):
 
-                    orchestrator.bot_manager = MagicMock()
-                    orchestrator.bot_manager.screen_capture = MagicMock()
-                    orchestrator.bot_manager.screen_capture.hwnd = 123
                     # Return a valid frame that bypasses 'frame is not None' check
-                    orchestrator.bot_manager.screen_capture.get_latest_frame.return_value = "mock_frame"
 
                     # Run the loop just once, then exit
                     def mock_is_alive_side_effect(*args):
