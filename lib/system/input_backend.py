@@ -120,13 +120,13 @@ class BackgroundWindowMessageBackend(InputBackend):
         if not WIN32_AVAILABLE or not self.hwnd:
             return False
 
+        if not self.key_down(key):
+            return False
+
         try:
-            self.key_down(key)
             time.sleep(max(press_ms, 1) / 1000.0)
         finally:
-            self.key_up(key)
-
-        return True
+            return self.key_up(key)
 
     def close(self) -> None:
         if not WIN32_AVAILABLE or not self.hwnd:
