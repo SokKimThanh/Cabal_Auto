@@ -67,7 +67,7 @@
 - read_comments.py (Type: temporary, Risk: Low, Decision: Need review to delete test script in root)
 
 ## UNKNOWN
-
+- None
 
 ## SUMMARY
 - Total files scanned: 52 (Total bytes: ~500KB)
