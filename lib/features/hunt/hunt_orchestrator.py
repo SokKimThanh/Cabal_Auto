@@ -5,8 +5,10 @@ from pathlib import Path
 from typing import Callable, Dict, Any
 
 from lib.system.hunt_logger import get_hunt_logger
-from lib.system.win_input import tap
+from lib.system.win_input import tap as global_tap
 from lib.features.skills.skill_stats import SkillStats
+from lib.system.input_backend import InputBackend, ForegroundSendInputBackend, BackgroundWindowMessageBackend
+from lib.system.input_capability import InputCapabilityManager, InputCapabilityState
 from lib.vision.target_name_reader import TargetNameReader
 from database import find_monster_by_name_api
 
@@ -49,10 +51,54 @@ class HuntOrchestrator:
 
         self.hunt_running = False
         self.hunt_thread = None
+        self.input_backend = None
+        self.input_capability_manager = None
+        self.input_mode = "foreground"
+        self.background_input_fallback = False
 
     def start_hunt(self, cfg: Dict[str, Any]):
         if self.hunt_running:
             return
+
+        self.input_mode = cfg.get("input_mode", "foreground")
+        fb = cfg.get("background_input_fallback", "stop")
+        # Handle both boolean True/False and string values
+        self.background_input_fallback = True if fb in (True, "foreground", "true") else False
+
+        logger = get_hunt_logger()
+        hunt_selected = self.get_hunt_selected()
+        hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else 0
+
+        self.input_backend = None
+        self.input_capability_manager = None
+
+        if self.input_mode == "background":
+            if not hwnd:
+                if not self.background_input_fallback:
+                    logger.log_error("input_capability", "Background mode requested but no HWND found. Stopped.")
+                    self.schedule_ui_task(lambda: self.on_status_update("Error: Background input unsupported (no HWND). Stopped."))
+                    self.schedule_ui_task(lambda: self.on_state_change("error"))
+                    return
+                else:
+                    logger.log_error("input_capability", "No HWND found. Falling back to foreground input.")
+                    self.input_backend = ForegroundSendInputBackend()
+            else:
+                self.input_capability_manager = InputCapabilityManager(hwnd, self.input_mode, logger)
+                state, is_ready = self.input_capability_manager.check_and_verify_capability()
+
+                if not is_ready:
+                    if not self.background_input_fallback:
+                        logger.log_error("input_capability", f"Background input capability is {state.value}. Fallback disabled. Hunt aborted.")
+                        self.schedule_ui_task(lambda: self.on_status_update(f"Error: Background input {state.value}. Stopped."))
+                        self.schedule_ui_task(lambda: self.on_state_change("error"))
+                        return
+                    else:
+                        logger.log_error("input_capability", f"Background input {state.value}. Falling back to foreground.")
+                        self.input_backend = ForegroundSendInputBackend()
+                else:
+                    self.input_backend = BackgroundWindowMessageBackend(hwnd)
+        else:
+            self.input_backend = ForegroundSendInputBackend()
 
         self.hunt_running = True
         self.schedule_ui_task(lambda: self.on_state_change("running"))
@@ -85,28 +131,29 @@ class HuntOrchestrator:
             last_ocr_time = 0.0
             try:
                 # Focus the target window; minimize GUI only if focus succeeded
-                try:
-                    focused = False
-                    if hunt_selected and hunt_selected.get("hwnd"):
-                        focused = self.bring_window_to_front_by_hwnd(
-                            int(hunt_selected["hwnd"])
-                        )
-                    elif cfg.get("window_pid"):
-                        focused = self.bring_window_to_front_by_pid(
-                            int(cfg["window_pid"])
-                        )
-                    if not focused:
-                        focused = self.bring_window_to_front(
-                            cfg.get("window_title", "Cabal")
-                        )
-                    if focused:
-                        try:
-                            self.iconify_app()
-                        except Exception:
-                            pass
-                    time.sleep(0.15)
-                except Exception:
-                    pass
+                if getattr(self.input_backend, "mode", "foreground") != "background":
+                    try:
+                        focused = False
+                        if hunt_selected and hunt_selected.get("hwnd"):
+                            focused = self.bring_window_to_front_by_hwnd(
+                                int(hunt_selected["hwnd"])
+                            )
+                        elif cfg.get("window_pid"):
+                            focused = self.bring_window_to_front_by_pid(
+                                int(cfg["window_pid"])
+                            )
+                        if not focused:
+                            focused = self.bring_window_to_front(
+                                cfg.get("window_title", "Cabal")
+                            )
+                        if focused:
+                            try:
+                                self.iconify_app()
+                            except Exception:
+                                pass
+                        time.sleep(0.15)
+                    except Exception:
+                        pass
 
                 logger.log_hunt_start(cfg)
 
@@ -142,7 +189,7 @@ class HuntOrchestrator:
                             self.hunt_running = False
                             self.schedule_ui_task(lambda: self.on_state_change("error"))
                             break
-                    if cfg.get("bring_to_front_each_cycle"):
+                    if cfg.get("bring_to_front_each_cycle") and getattr(self.input_backend, "mode", "foreground") != "background":
                         ok = False
                         try:
                             hunt_selected = self.get_hunt_selected()
@@ -268,6 +315,7 @@ class HuntOrchestrator:
                             have_target,
                             attack_phase=False,
                             skill_stats=skill_stats,
+                            backend=self.input_backend,
                         )
 
                     if mode == "search":
@@ -278,7 +326,10 @@ class HuntOrchestrator:
                             continue
 
                         if not training_mode_active:
-                            tap(cfg.get("target_key", "z"))
+                            if self.input_backend:
+                                self.input_backend.tap(cfg.get("target_key", "z"))
+                            else:
+                                global_tap(cfg.get("target_key", "z"))
                             time.sleep(float(cfg.get("search_tap_delay_sec", 0.08)))
                         else:
                             time.sleep(0.1)
@@ -302,6 +353,7 @@ class HuntOrchestrator:
                                 target_active,
                                 attack_phase=True,
                                 skill_stats=skill_stats,
+                                backend=self.input_backend,
                             )
                             if not target_active:
                                 logger.log_state_change(
@@ -324,7 +376,10 @@ class HuntOrchestrator:
                             if not self.hunt_running:
                                 break
                             try:
-                                tap(k, int(cfg.get("attack_press_ms", 100)))
+                                if self.input_backend:
+                                    self.input_backend.tap(k, int(cfg.get("attack_press_ms", 100)))
+                                else:
+                                    global_tap(k, int(cfg.get("attack_press_ms", 100)))
                             except Exception:
                                 pass
                             time.sleep(float(cfg.get("attack_interval", 0.2)))
@@ -338,6 +393,12 @@ class HuntOrchestrator:
                 logger.log_hunt_stop("error")
                 self.schedule_ui_task(lambda: self.on_state_change("error"))
             finally:
+                if getattr(self, "input_backend", None):
+                    try:
+                        self.input_backend.close()
+                    except Exception:
+                        pass
+
                 try:
                     already_logged = bool(getattr(logger, "_stop_logged", False))
                 except Exception:
