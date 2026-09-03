@@ -236,8 +236,12 @@ class HuntTab(ttk.Frame):
         ).pack(fill="x", pady=(8, 0))
 
         # Re-attach bindings
-        # We removed self.app._on_monster_list_select because it was deleted during refactoring.
-        # It's an empty method anyway, so we just remove the binding.
+        # Preserve selection behavior when the handler exists, while avoiding
+        # startup errors in app states where the method is not available.
+        if hasattr(self.app, "_on_monster_list_select"):
+            self.app.monster_rotation_listbox.bind(
+                "<<ListboxSelect>>", self.app._on_monster_list_select
+            )
         self.app.monster_rotation_listbox.bind(
             "<Delete>", self.app._on_monster_delete_from_list
         )
