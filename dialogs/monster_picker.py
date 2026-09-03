@@ -17,6 +17,7 @@ class MonsterPickerDialog(tk.Toplevel):
         # Don't hardcode minsize, make it responsive
         self.geometry("600x450")
         self.resizable(True, True)
+        self.resizable(True, True)
 
         self.transient(parent)
         self.grab_set()
@@ -33,6 +34,7 @@ class MonsterPickerDialog(tk.Toplevel):
         self._setup_ui()
         self._cache = {}
         self._search_timer = None
+        self._item_map = {}
         self._item_map = {}
 
         self._load_initial_data()
@@ -92,8 +94,8 @@ class MonsterPickerDialog(tk.Toplevel):
 
         self.tree.heading("id", text="ID", anchor="w")
         self.tree.heading("name", text=self._t("monster_name") if self._t else "Name", anchor="w")
-        self.tree.heading("level", text="Lv", anchor="center")
-        self.tree.heading("hp", text="HP", anchor="e")
+        self.tree.heading("level", text=self._t("monster_level") if self._t else "Lv", anchor="center")
+        self.tree.heading("hp", text=self._t("monster_hp") if self._t else "HP", anchor="e")
 
         self.tree.column("id", width=50, stretch=False)
         self.tree.column("name", width=250, stretch=True)
@@ -184,6 +186,7 @@ class MonsterPickerDialog(tk.Toplevel):
         self.tree.delete(*self.tree.get_children())
         self.status_var.set("")
         self.btn_confirm.config(state="disabled")
+        self._item_map.clear()
         self._item_map.clear()
 
         if not records:
