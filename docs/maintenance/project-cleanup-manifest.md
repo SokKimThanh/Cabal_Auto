@@ -1,8 +1,8 @@
 # Cleanup Manifest
 
 ## Summary
-- Files to delete: 4 (Safe artifacts)
-- Files to archive: 47 (One-off scripts, patches, old reports)
+- Delete candidates: 4 entries (3 files + 1 directory; safe artifacts)
+- Files to archive: 51 (One-off scripts, patches, old reports)
 - Expected bytes reclaimed: TBD
 - Status: BLOCKED_REVIEW_REQUIRED (>20 candidates)
 
