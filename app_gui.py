@@ -1532,9 +1532,13 @@ class App(tk.Tk):
         """Handle rotation mode change."""
         display_mode = self.rotation_mode_var.get()
         if hasattr(self, "rotation_mode_map"):
-            mode = self.rotation_mode_map.get(display_mode, "sequence")
+            mode = self.rotation_mode_map.get(display_mode, display_mode)
         else:
             mode = display_mode
+
+        if mode not in {"sequence", "priority"}:
+            mode = "sequence"
+
         self.hunt_cfg["rotation_mode"] = mode
         self._refresh_monster_rotation_list()
         self.hunt_status.set(f"Rotation mode: {mode}")
