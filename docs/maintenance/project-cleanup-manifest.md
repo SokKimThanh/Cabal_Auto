@@ -1,78 +1,86 @@
-# Project Cleanup Manifest
+# Cleanup Manifest
 
-## Metadata
-- Generated at: 2026-09-02T00:00:00Z
-- Generator: manual manifest draft / version unknown
-- Repository revision: unknown
-- Constraints: Review before execution; archive targets only; preserve listed data files and primary documentation; update referenced links where noted
-
-## KEEP
-- ./script_checker.py (Reason: Config/tooling, Evidence: Standard tooling)
-- ./runner.py (Reason: Runtime source or main entrypoint/tests, Evidence: Imported or main app)
-- ./conftest.py (Reason: Runtime source or main entrypoint/tests, Evidence: Imported or main app)
-- ./database.py (Reason: Runtime source or main entrypoint/tests, Evidence: Imported or main app)
-- ./inventory_script.py (Reason: Config/tooling, Evidence: Standard tooling)
-- ./app_gui.py (Reason: Runtime source or main entrypoint/tests, Evidence: Imported or main app)
-- ./run_app_smoke.py (Reason: Runtime source or main entrypoint/tests, Evidence: Imported or main app)
-- ./CHANGELOG.md (Reason: Main documentation, Evidence: Referenced in rules/README)
-- ./CODING_RULES_QUICK_REFERENCE.md (Reason: Main documentation, Evidence: Referenced in rules/README)
-- ./PROJECT_STRUCTURE.md (Reason: Main documentation, Evidence: Referenced in rules/README)
-- ./README.md (Reason: Main documentation, Evidence: Referenced in rules/README)
-- ./db5_consolidated_manifest_v1.0.0.json (Reason: Data files, Evidence: Do not delete data json in session)
-- ./db5_mapping_manifest.json (Reason: Data files, Evidence: Do not delete data json in session)
-- ./db5a_audit_report.json (Reason: Data files, Evidence: Do not delete data json in session)
-
-## ARCHIVE
-- ./patch_indent.py -> ./docs/archive/patch_indent.py (Links: None)
-- ./patch_hunt_config_mutation.py -> ./docs/archive/patch_hunt_config_mutation.py (Links: None)
-- ./test_script.py -> ./docs/archive/test_script.py (Links: None)
-- ./test_parse_bug.py -> ./docs/archive/test_parse_bug.py (Links: None)
-- ./test_concurrent_lock.py -> ./docs/archive/test_concurrent_lock.py (Links: None)
-- ./patch_migrator4.py -> ./docs/archive/patch_migrator4.py (Links: None)
-- ./patch_test_priority.py -> ./docs/archive/patch_test_priority.py (Links: None)
-- ./patch_concurrency_test.py -> ./docs/archive/patch_concurrency_test.py (Links: None)
-- ./test_target_bar.py -> ./docs/archive/test_target_bar.py (Links: None)
-- ./test_log_queue.py -> ./docs/archive/test_log_queue.py (Links: None)
-- ./test_dpi_matrix.py -> ./docs/archive/test_dpi_matrix.py (Links: None)
-- ./patch_concurrency_test2.py -> ./docs/archive/patch_concurrency_test2.py (Links: None)
-- ./OVERLAY_FIX.md -> ./docs/archive/OVERLAY_FIX.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- ./DATABASE_README.md -> ./docs/archive/DATABASE_README.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- ./DATABASE_IMPLEMENTATION_SUMMARY.md -> ./docs/archive/DATABASE_IMPLEMENTATION_SUMMARY.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- ./plan.md -> ./docs/archive/plan_archive.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- report.md -> docs/archive/report.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- palette.md -> docs/archive/palette.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- REORGANIZATION_SUMMARY.md -> docs/archive/REORGANIZATION_SUMMARY_root.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- plan_review.md -> docs/archive/plan_review.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- db5a_audit_report.md -> docs/archive/db5a_audit_report.md (Links: Update PROJECT_STRUCTURE or other links if any)
-- fix_flake8_hunt_logger.patch -> docs/archive/fix_flake8_hunt_logger.patch (Links: None)
-- fix_app.patch -> docs/archive/fix_app.patch (Links: None)
-- patch_handlers.patch -> docs/archive/patch_handlers.patch (Links: None)
-- fix_flake8.patch -> docs/archive/fix_flake8.patch (Links: None)
-- fix_flake8_hunt_tab.patch -> docs/archive/fix_flake8_hunt_tab.patch (Links: None)
-- fix_win32gui_mock.patch -> docs/archive/fix_win32gui_mock.patch (Links: None)
-- fix_flake8_ui_style.patch -> docs/archive/fix_flake8_ui_style.patch (Links: None)
-- fix_tests.patch -> docs/archive/fix_tests.patch (Links: None)
-- patch_auto_bring.diff -> docs/archive/patch_auto_bring.diff (Links: None)
-- patch_main.diff -> docs/archive/patch_main.diff (Links: None)
-- patch_first_time.diff -> docs/archive/patch_first_time.diff (Links: None)
-- patch_geometry.diff -> docs/archive/patch_geometry.diff (Links: None)
-- patch_try_close.diff -> docs/archive/patch_try_close.diff (Links: None)
-- app_gui.py.orig -> docs/archive/app_gui.py.orig (Links: None)
-- app_gui.py.rej -> docs/archive/app_gui.py.rej (Links: None)
+## Summary
+- Delete candidates: 4 entries (3 files + 1 directory; safe artifacts)
+- Files to archive: 51 (One-off scripts, patches, old reports)
+- Expected bytes reclaimed: TBD
+- Status: BLOCKED_REVIEW_REQUIRED (>20 candidates)
 
 ## DELETE_SAFE
-- out.txt (Type: temporary, Reason: Command output log)
+* `__pycache__/` - Python cache directory (Safe)
+* `app_gui.py.orig` - Git/patch artifact (Safe)
+* `app_gui.py.rej` - Git/patch artifact (Safe)
+* `out.txt` - Random output log (Safe)
 
-## DELETE_REVIEW
-- read_comments.py (Type: temporary, Risk: Low, Decision: Need review to delete test script in root)
+## ARCHIVE
+* `patch_app_gui_metadata.py` -> `docs/archive/scripts/patch_app_gui_metadata.py` (One-off script)
+* `patch_app_gui_reorder.py` -> `docs/archive/scripts/patch_app_gui_reorder.py` (One-off script)
+* `patch_auto_bring.diff` -> `docs/archive/scripts/patch_auto_bring.diff` (Patch file)
+* `patch_concurrency_test.py` -> `docs/archive/scripts/patch_concurrency_test.py` (One-off test)
+* `patch_concurrency_test2.py` -> `docs/archive/scripts/patch_concurrency_test2.py` (One-off test)
+* `patch_first_time.diff` -> `docs/archive/scripts/patch_first_time.diff` (Patch file)
+* `patch_geometry.diff` -> `docs/archive/scripts/patch_geometry.diff` (Patch file)
+* `patch_hunt_config_mutation.py` -> `docs/archive/scripts/patch_hunt_config_mutation.py` (One-off script)
+* `patch_hunt_tab_fix.py` -> `docs/archive/scripts/patch_hunt_tab_fix.py` (One-off script)
+* `patch_hunt_tab_fix_2.py` -> `docs/archive/scripts/patch_hunt_tab_fix_2.py` (One-off script)
+* `patch_hunt_tab_fix_3.py` -> `docs/archive/scripts/patch_hunt_tab_fix_3.py` (One-off script)
+* `patch_hunt_tab_fix_4.py` -> `docs/archive/scripts/patch_hunt_tab_fix_4.py` (One-off script)
+* `patch_main.diff` -> `docs/archive/scripts/patch_main.diff` (Patch file)
+* `patch_migrator4.py` -> `docs/archive/scripts/patch_migrator4.py` (One-off script)
+* `patch_monster_picker_headings.py` -> `docs/archive/scripts/patch_monster_picker_headings.py` (One-off script)
+* `patch_monster_picker_int.py` -> `docs/archive/scripts/patch_monster_picker_int.py` (One-off script)
+* `patch_monster_picker_map.py` -> `docs/archive/scripts/patch_monster_picker_map.py` (One-off script)
+* `patch_monster_picker_minsize.py` -> `docs/archive/scripts/patch_monster_picker_minsize.py` (One-off script)
+* `patch_rename_rotation.py` -> `docs/archive/scripts/patch_rename_rotation.py` (One-off script)
+* `patch_rename_rotation2.py` -> `docs/archive/scripts/patch_rename_rotation2.py` (One-off script)
+* `patch_test_fix.py` -> `docs/archive/scripts/patch_test_fix.py` (One-off script)
+* `patch_test_priority.py` -> `docs/archive/scripts/patch_test_priority.py` (One-off script)
+* `patch_test_queue.py` -> `docs/archive/scripts/patch_test_queue.py` (One-off script)
+* `patch_tests.py` -> `docs/archive/scripts/patch_tests.py` (One-off script)
+* `patch_tests_2.py` -> `docs/archive/scripts/patch_tests_2.py` (One-off script)
+* `patch_tests_picker.py` -> `docs/archive/scripts/patch_tests_picker.py` (One-off script)
+* `patch_try_close.diff` -> `docs/archive/scripts/` (Patch file)
+* `fix_app.patch` -> `docs/archive/scripts/` (Patch file)
+* `fix_flake8.patch` -> `docs/archive/scripts/` (Patch file)
+* `fix_flake8_hunt_logger.patch` -> `docs/archive/scripts/` (Patch file)
+* `fix_flake8_hunt_tab.patch` -> `docs/archive/scripts/` (Patch file)
+* `fix_flake8_ui_style.patch` -> `docs/archive/scripts/` (Patch file)
+* `fix_tests.patch` -> `docs/archive/scripts/` (Patch file)
+* `fix_win32gui_mock.patch` -> `docs/archive/scripts/` (Patch file)
+* `test_concurrent_lock.py` -> `docs/archive/scripts/` (One-off script)
+* `test_dpi_matrix.py` -> `docs/archive/scripts/` (One-off script)
+* `test_log_queue.py` -> `docs/archive/scripts/` (One-off script)
+* `test_parse_bug.py` -> `docs/archive/scripts/` (One-off script)
+* `test_script.py` -> `docs/archive/scripts/` (One-off script)
+* `test_target_bar.py` -> `docs/archive/scripts/` (One-off script)
+* `run_app_smoke.py` -> `docs/archive/scripts/` (One-off script)
+* `runner.py` -> `docs/archive/scripts/` (One-off script)
+* `read_comments.py` -> `docs/archive/scripts/` (One-off script)
+* `DATABASE_IMPLEMENTATION_SUMMARY.md` -> `docs/archive/docs/` (Completed doc, link to update: NONE)
+* `OVERLAY_FIX.md` -> `docs/archive/docs/` (Completed doc, link to update: NONE)
+* `REORGANIZATION_SUMMARY.md` -> `docs/archive/docs/` (Completed doc, link to update: NONE)
+* `palette.md` -> `docs/archive/docs/` (Random info, link to update: NONE)
+* `plan.md` -> `docs/archive/docs/` (Task info, link to update: NONE)
+* `plan_review.md` -> `docs/archive/docs/` (Task info, link to update: NONE)
+* `report.md` -> `docs/archive/docs/` (Task info, link to update: NONE)
+* `db5a_audit_report.md` -> `docs/archive/db_audit/` (Audit report)
 
-## UNKNOWN
-- None
+## KEEP
+* `CHANGELOG.md` - Core project doc, 10 refs
+* `CODING_RULES_QUICK_REFERENCE.md` - Core project doc, 9 refs
+* `PROJECT_STRUCTURE.md` - Core project doc, 12 refs
+* `README.md` - Core project doc, 189 refs
+* `DATABASE_README.md` - Core documentation (keeping based on name and 3 refs)
+* `app_gui.py` - Main app entrypoint
+* `conftest.py` - Core test file
+* `database.py` - Core app file
+* `install_dependencies.bat` - Utility script
+* `monsters.db` - SQLite DB
+* `monsters.db.sql` - DB backup
+* `pytest.ini` - Core configuration
+* `requirements.txt` - Core configuration
+* `run.bat` - App runner
+* `db5_consolidated_manifest_v1.0.0.json` - Data file (Keeping per rules)
+* `db5_mapping_manifest.json` - Data file (Keeping per rules)
+* `db5a_audit_report.json` - Data file (Keeping per rules)
 
-## SUMMARY
-- Total files scanned: 52 (Total bytes: ~500KB)
-- Files to KEEP: 14
-- Files to ARCHIVE: 36
-- Files to DELETE_SAFE: 1
-- Files to DELETE_REVIEW: 1
-- Expected state after cleanup: 14 files kept in place, 36 moved to docs/archive/, 1 deleted, ~100KB freed/moved.
