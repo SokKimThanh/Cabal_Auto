@@ -56,12 +56,9 @@ class HuntOrchestrator:
         if self.hunt_running:
             return
 
-        if not self.bot_manager:
+        if not hasattr(self, 'bot_manager') or not self.bot_manager:
             logger = get_hunt_logger()
             logger.log_error("dependency_missing", "bot_manager is missing from HuntOrchestrator")
-            self.schedule_ui_task(lambda: self.on_status_update("bot_manager is missing from HuntOrchestrator"))
-            self.schedule_ui_task(lambda: self.on_state_change("error"))
-            self.schedule_ui_task(lambda: self.on_state_change("idle"))
             return
 
         self.hunt_running = True

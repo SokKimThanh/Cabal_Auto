@@ -34,9 +34,7 @@ def orchestrator():
     mock_bot_manager = MagicMock()
     mock_bot_manager.screen_capture = MagicMock()
     mock_bot_manager.screen_capture.hwnd = 123
-    mock_frame = MagicMock()
-    mock_frame.copy.return_value = mock_frame
-    mock_bot_manager.screen_capture.get_latest_frame = MagicMock(return_value=mock_frame)
+    mock_bot_manager.screen_capture.get_latest_frame = MagicMock(return_value="mock_frame")
 
     orch = HuntOrchestrator(
         bot_manager=mock_bot_manager,

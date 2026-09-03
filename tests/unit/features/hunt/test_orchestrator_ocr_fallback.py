@@ -33,9 +33,7 @@ def test_ocr_fallback_contract():
     mock_bot_manager = MagicMock()
     mock_bot_manager.screen_capture = MagicMock()
     mock_bot_manager.screen_capture.hwnd = 123
-    mock_frame = MagicMock()
-    mock_frame.copy.return_value = mock_frame
-    mock_bot_manager.screen_capture.get_latest_frame.return_value = mock_frame
+    mock_bot_manager.screen_capture.get_latest_frame.return_value = "mock_frame"
 
     orchestrator = HuntOrchestrator(
         bot_manager=mock_bot_manager,
