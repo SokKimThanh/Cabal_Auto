@@ -27,6 +27,22 @@ class HuntTab(ttk.Frame):
         elif state == "stopped":
             self.hunt_status_label.config(fg=UI.COLOR_WARNING)
 
+    def _update_target_policy_layout(self):
+        policy = self.app.target_policy_var.get()
+
+        # Hide all containers
+        self.configured_container.pack_forget()
+        self.detected_container.pack_forget()
+        self.any_target_container.pack_forget()
+
+        if policy == "configured_only":
+            self.configured_container.pack(fill="both", expand=True)
+        elif policy == "all_resolved":
+            self.detected_container.pack(fill="both", expand=True, pady=(0, 10))
+            self.configured_container.pack(fill="both", expand=True)
+        elif policy == "any_target":
+            self.any_target_container.pack(fill="both", expand=True)
+
     def _build_ui(self):
         """Streamlined Hunt tab with only essential controls.
 
@@ -125,42 +141,144 @@ class HuntTab(ttk.Frame):
         )
         self.app.monster_frame.grid_columnconfigure(0, weight=1)
 
-        # Rotation mode selection
+        # Segmented control for target policy
         mode_bar = tk.Frame(self.app.monster_frame)
         mode_bar.pack(fill="x", pady=(0, 8))
-        tk.Label(mode_bar, text=self.app._t("rotation_mode"), font=UI.FONT_LABEL).pack(side="left")
 
-        # Setup display text mappings
-        self.app.rotation_mode_map = {
-            self.app._t("monster_rotation_mode_sequence"): "sequence",
-            self.app._t("monster_rotation_mode_priority"): "priority"
-        }
-        self.app.rotation_mode_rev_map = {v: k for k, v in self.app.rotation_mode_map.items()}
-
-        current_val = self.app.hunt_cfg.get("rotation_mode", "sequence")
-        self.app.rotation_mode_var = tk.StringVar(
-            value=self.app.rotation_mode_rev_map.get(current_val, current_val)
-        )
-        self.app.rotation_mode_combo = ttk.Combobox(
-            mode_bar,
-            textvariable=self.app.rotation_mode_var,
-            state="readonly",
-            width=12,
-            values=list(self.app.rotation_mode_map.keys()),
-        )
-        self.app.rotation_mode_combo.pack(side="left", padx=(6, 0))
-        self.app.rotation_mode_combo.bind(
-            "<<ComboboxSelected>>", self.app._on_rotation_mode_changed
+        self.app.target_policy_var = tk.StringVar(
+            value=self.app.hunt_cfg.get("target_policy", "configured_only")
         )
 
-        # Mode description
-        self.app.rotation_desc_var = tk.StringVar()
-        tk.Label(
-            mode_bar, textvariable=self.app.rotation_desc_var, fg=UI.COLOR_SUBTEXT, font=UI.FONT_TEXT
-        ).pack(side="left", padx=(8, 0))
+        def _on_policy_change(*args):
+            # Only change if hunt is not running
+            if self.app.click_running:
+                # Revert to current hunt config policy
+                self.app.target_policy_var.set(self.app.hunt_cfg.get("target_policy", "configured_only"))
+                return
+
+            new_policy = self.app.target_policy_var.get()
+            if new_policy not in ["configured_only", "all_resolved", "any_target"]:
+                new_policy = "configured_only"
+                self.app.target_policy_var.set(new_policy)
+
+            self.app.hunt_cfg["target_policy"] = new_policy
+            self.app.has_unsaved_changes = True
+            if hasattr(self.app, "_update_unsaved_indicator"):
+                self.app._update_unsaved_indicator()
+            self._update_target_policy_layout()
+
+        self.app.target_policy_var.trace_add("write", _on_policy_change)
+
+        policies = [
+            ("configured_only", self.app._t("hunt_policy_configured")),
+            ("all_resolved", self.app._t("hunt_policy_auto_detect")),
+            ("any_target", self.app._t("hunt_policy_any_target"))
+        ]
+
+        self.policy_radios = []
+        for val, text in policies:
+            rb = ttk.Radiobutton(
+                mode_bar,
+                text=text,
+                value=val,
+                variable=self.app.target_policy_var,
+                style="Toolbutton"
+            )
+            rb.pack(side="left", padx=2)
+            self.policy_radios.append(rb)
+
+        # Container for policy-specific views
+        self.policy_content_frame = tk.Frame(self.app.monster_frame)
+        self.policy_content_frame.pack(fill="both", expand=True)
+
+        # 1. Configured Only view (and Configured part of All Resolved)
+        # Note: We need a reusable container for configured list
+        self.configured_container = tk.Frame(self.policy_content_frame)
+
+        # 2. All Resolved view
+        self.detected_container = tk.Frame(self.policy_content_frame)
+
+        # 3. Any Target view
+        self.any_target_container = tk.Frame(self.policy_content_frame)
+        any_target_label = tk.Label(
+            self.any_target_container,
+            text=self.app._t("any_target_warning"),
+            fg=UI.COLOR_WARNING,
+            font=UI.FONT_TEXT
+        )
+        any_target_label.pack(pady=20)
+
+        # Build detected list view
+        tk.Label(self.detected_container, text=self.app._t("detected_monsters_title"), font=UI.FONT_LABEL).pack(anchor="w")
+        detected_listbox_frame = tk.Frame(self.detected_container)
+        detected_listbox_frame.pack(fill="both", expand=True)
+        self.app.detected_monsters_listbox = tk.Listbox(
+            detected_listbox_frame,
+            height=5,
+            exportselection=False,
+            selectmode="single",
+            font=UI.FONT_TEXT,
+        )
+        self.app.detected_monsters_listbox.pack(side="left", fill="both", expand=True)
+        detected_scroll = tk.Scrollbar(detected_listbox_frame, command=self.app.detected_monsters_listbox.yview)
+        detected_scroll.pack(side="right", fill="y")
+        self.app.detected_monsters_listbox.config(yscrollcommand=detected_scroll.set)
+
+        detected_btn_container = tk.Frame(self.detected_container)
+        detected_btn_container.pack(side="right", fill="y", padx=(8, 0))
+        self.app.btn_promote_monster = self.app._create_icon_button(
+            detected_btn_container,
+            icon_emoji="➕",
+            command=lambda: getattr(self.app, 'promote_detected_monster', lambda x: None)(self.app.detected_monsters_listbox.curselection()),
+            style="compact",
+            bg_color=UI.BTN_ACCENT_BG if hasattr(UI, 'BTN_ACCENT_BG') else UI.COLOR_PRIMARY,
+            hover_color=UI.BTN_ACCENT_HOVER if hasattr(UI, 'BTN_ACCENT_HOVER') else UI.COLOR_PRIMARY_TEXT,
+        )
+        self.app.btn_promote_monster.pack(pady=(0, 4))
+        self.app._create_tooltip(
+            self.app.btn_promote_monster, self.app._t("monster_promote")
+        )
+
+        # Bindings for promotion
+        self.app.detected_monsters_listbox.bind("<Double-1>", lambda e: getattr(self.app, 'promote_detected_monster', lambda x: None)(self.app.detected_monsters_listbox.curselection()))
+        self.app.detected_monsters_listbox.bind("<Return>", lambda e: getattr(self.app, 'promote_detected_monster', lambda x: None)(self.app.detected_monsters_listbox.curselection()))
+
+        # Basic Drag-and-Drop setup
+        def on_drag_start(event):
+            listbox = event.widget
+            if listbox.size() == 0:
+                return
+            idx = listbox.nearest(event.y)
+            if idx < 0 or idx >= listbox.size():
+                return
+            listbox.selection_clear(0, tk.END)
+            listbox.selection_set(idx)
+            listbox.activate(idx)
+            # Payload is the idx (to look up the snapshot item)
+            listbox._dnd_data = idx
+            listbox.config(cursor="hand2")
+
+        def on_drag_motion(event):
+            event.widget.config(cursor="hand2")
+
+        def on_drag_release(event):
+            event.widget.config(cursor="")
+            # Check if released over configured listbox
+            x, y = event.widget.winfo_pointerxy()
+            target = event.widget.winfo_containing(x, y)
+            if target == getattr(self.app, 'monster_rotation_listbox', None):
+                if hasattr(event.widget, '_dnd_data'):
+                    idx = event.widget._dnd_data
+                    getattr(self.app, 'promote_detected_monster', lambda x: None)((idx,))
+
+        self.app.detected_monsters_listbox.bind("<ButtonPress-1>", on_drag_start)
+        self.app.detected_monsters_listbox.bind("<B1-Motion>", on_drag_motion)
+        self.app.detected_monsters_listbox.bind("<ButtonRelease-1>", on_drag_release)
+
+        tk.Label(self.configured_container, text=self.app._t("configured_monsters_title"), font=UI.FONT_LABEL).pack(anchor="w")
 
         # Monster list for rotation selection
-        list_container = tk.Frame(self.app.monster_frame)
+        list_container = tk.Frame(self.configured_container)
         list_container.pack(fill="both", expand=True)
 
         # Listbox frame with scrollbar

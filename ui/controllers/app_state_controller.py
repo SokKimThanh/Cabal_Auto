@@ -214,6 +214,9 @@ class AppStateController:
         if isinstance(hunt_area, dict):
             hunt_area["window_title"] = cfg.get("window_title", "")
 
+        if hasattr(app, "target_policy_var"):
+            cfg["target_policy"] = app.target_policy_var.get()
+
         simple_vars = {
             "target_key": ("target_key_var", "TAB"),
             "target_cycle_delay": ("target_cycle_var", 0.2),
