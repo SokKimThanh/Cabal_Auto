@@ -155,12 +155,17 @@ def test_picker_invalid_id(tk_root):
     bad_monsters = [{"id": "bad", "name": "Bug", "level": 1, "hp": 1, "dungeonId": None}]
     with patch("dialogs.monster_picker.get_all_monsters_api", return_value=bad_monsters):
         on_select_mock = MagicMock()
-        dialog = MonsterPickerDialog(tk_root, "vi", on_select_mock, lambda key: key)
+        dialog = None
+        try:
+            dialog = MonsterPickerDialog(tk_root, "vi", on_select_mock, lambda key: key)
 
-        items = dialog.tree.get_children()
-        dialog.tree.selection_set(items[0])
+            items = dialog.tree.get_children()
+            dialog.tree.selection_set(items[0])
 
-        dialog._on_confirm()
+            dialog._on_confirm()
 
-        # ID is invalid so it parses to 0, which gets filtered out in confirm (monster_id > 0)
-        on_select_mock.assert_not_called()
+            # ID is invalid so it parses to 0, which gets filtered out in confirm (monster_id > 0)
+            on_select_mock.assert_not_called()
+        finally:
+            if dialog is not None and dialog.winfo_exists():
+                dialog.destroy()
