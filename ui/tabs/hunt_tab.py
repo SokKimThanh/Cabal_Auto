@@ -27,6 +27,25 @@ class HuntTab(ttk.Frame):
         elif state == "stopped":
             self.hunt_status_label.config(fg=UI.COLOR_WARNING)
 
+    def _show_monster_context_menu(self, event):
+        """Show rotation actions while preserving an existing multi-selection."""
+        listbox = event.widget
+        index = listbox.nearest(event.y)
+        if index < 0 or index >= listbox.size():
+            return
+        if index not in listbox.curselection():
+            listbox.selection_clear(0, tk.END)
+            listbox.selection_set(index)
+            listbox.activate(index)
+        self.app.monster_context_menu.tk_popup(event.x_root, event.y_root)
+        return "break"
+
+    def _select_all_monsters(self, _event=None):
+        """Select every configured rotation row for bulk deletion."""
+        if self.app.monster_rotation_listbox.size():
+            self.app.monster_rotation_listbox.selection_set(0, tk.END)
+        return "break"
+
     def _update_target_policy_layout(self):
         policy = self.app.target_policy_var.get()
 
@@ -289,7 +308,7 @@ class HuntTab(ttk.Frame):
             listbox_frame,
             height=5,
             exportselection=False,
-            selectmode="single",
+            selectmode="extended",
             font=UI.FONT_TEXT,
         )
         self.app.monster_rotation_listbox.pack(side="left", fill="both", expand=True)
@@ -384,11 +403,26 @@ class HuntTab(ttk.Frame):
             label=self.app._t("monster_delete"),  # "Delete" / "Xóa"
             command=self.app._on_monster_delete_from_list,
         )
-        show_monster_context_menu = getattr(self.app, "_show_monster_context_menu", None)
-        if callable(show_monster_context_menu):
-            self.app.monster_rotation_listbox.bind(
-                "<Button-3>", show_monster_context_menu
-            )  # Right-click
+        self.app._create_tooltip(
+            self.app.monster_context_menu,
+            self.app._t("monster_rotation_delete_hint"),
+        )
+        self.app.monster_rotation_listbox.bind(
+            "<Button-3>", self._show_monster_context_menu
+        )  # Right-click
+        self.app.monster_rotation_listbox.bind(
+            "<Control-a>", self._select_all_monsters
+        )
+        self.app.monster_rotation_listbox.bind(
+            "<Control-A>", self._select_all_monsters
+        )
+        tk.Label(
+            self.configured_container,
+            text=self.app._t("monster_rotation_delete_hint"),
+            fg=UI.COLOR_SUBTEXT,
+            font=UI.FONT_TEXT,
+            anchor="w",
+        ).pack(fill="x", pady=(4, 0))
 
         # Sprint 22 Patch 2: Hint for switching back to normal mode
         self.app.training_mode_hint_var = tk.StringVar()
@@ -549,3 +583,6 @@ class HuntTab(ttk.Frame):
                 values=(self.app._t("skill_stats_empty"), "", "", "", ""),
                 tags=("placeholder",),
             )
+
+        # Render the default configured-only view after all policy containers exist.
+        self._update_target_policy_layout()

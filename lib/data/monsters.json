@@ -1,10 +1,23 @@
 [
-  {
-    "name": "a",
-    "hp": 1,
-    "damage_per_hit": 1,
-    "priority": 1,
-    "description": "1",
-    "templates": []
-  }
+    {
+        "name": "a",
+        "hp": 1,
+        "damage_per_hit": 1,
+        "priority": 1,
+        "description": "1",
+        "templates": [
+            {
+                "name": "a__a_capture_1788413285_1788413287064",
+                "path": "F:\\Cabal_Auto\\tmp\\captures\\a__a_capture_1788413285_1788413287064.png",
+                "threshold": 0.85,
+                "region_strategy": "custom",
+                "region": {
+                    "left": 919,
+                    "top": 469,
+                    "width": 518,
+                    "height": 516
+                }
+            }
+        ]
+    }
 ]

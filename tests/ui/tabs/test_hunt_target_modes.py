@@ -41,6 +41,9 @@ def test_target_policy_vars(root, mock_app):
     hunt_tab = HuntTab(root, mock_app)
     assert hasattr(mock_app, "target_policy_var")
     assert mock_app.target_policy_var.get() == "configured_only"
+    assert hunt_tab.configured_container.winfo_manager() == "pack"
+    assert hunt_tab.detected_container.winfo_manager() == ""
+    assert hunt_tab.any_target_container.winfo_manager() == ""
 
 def test_target_policy_changes(root, mock_app):
     hunt_tab = HuntTab(root, mock_app)

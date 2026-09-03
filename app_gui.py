@@ -1735,8 +1735,15 @@ class App(tk.Tk):
         if not selection:
             return
 
-        idx = selection[0]
-        del self.monster_rotation[idx]
+        selected_indices = sorted(
+            (idx for idx in selection if 0 <= idx < len(self.monster_rotation)),
+            reverse=True,
+        )
+        if not selected_indices:
+            return
+        first_deleted_index = min(selected_indices)
+        for idx in selected_indices:
+            del self.monster_rotation[idx]
 
         # Re-assign priority to be continuous 1..N
         for i, entry in enumerate(self.monster_rotation):
@@ -1746,7 +1753,7 @@ class App(tk.Tk):
         self._refresh_monster_rotation_list()
 
         if len(self.monster_rotation) > 0:
-            new_sel = min(idx, len(self.monster_rotation) - 1)
+            new_sel = min(first_deleted_index, len(self.monster_rotation) - 1)
             self.monster_rotation_listbox.selection_set(new_sel)
 
     def _on_monster_add_smart(self):
@@ -2229,8 +2236,10 @@ class App(tk.Tk):
             # Ensure canonical schemas
             self.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation", [])
             self.hunt_cfg["skill_slots"] = self.hunt_cfg.get("skill_slots", [])
-            # 1. Apply Setup tab settings (updates hunt_cfg in-place, but don't save yet)
-            self._apply_setup_settings(save_to_file=False)
+            # 1. Apply legacy setup settings when the compatibility method exists.
+            apply_setup_settings = getattr(self, "_apply_setup_settings", None)
+            if callable(apply_setup_settings):
+                apply_setup_settings(save_to_file=False)
 
             # 2. Update hunt config from Hunt tab UI (in-place update)
             cfg = self.state_controller._hunt_from_ui()
@@ -2238,14 +2247,20 @@ class App(tk.Tk):
             # 2.5. Update global hotkeys from Setup tab UI
             if hasattr(self, "global_hotkey_enabled_var"):
                 enabled = self.global_hotkey_enabled_var.get()
-                start_key = self.global_hotkey_start_var.get()
-                stop_key = self.global_hotkey_stop_var.get()
-                wizard_key = self.global_hotkey_wizard_var.get()  # NEW
-                library_key = self.global_hotkey_library_var.get()  # NEW
+                hotkeys = cfg.get("global_hotkeys", {})
+
+                def _hotkey_value(attr_name, config_name, default):
+                    variable = getattr(self, attr_name, None)
+                    return variable.get() if variable is not None else hotkeys.get(config_name, default)
+
+                start_key = _hotkey_value("global_hotkey_start_var", "start_key", "ctrl+shift+r")
+                stop_key = _hotkey_value("global_hotkey_stop_var", "stop_key", "ctrl+shift+e")
+                wizard_key = _hotkey_value("global_hotkey_wizard_var", "setup_wizard_key", "ctrl+alt+n")
+                library_key = _hotkey_value("global_hotkey_library_var", "library_manager_key", "ctrl+shift+l")
 
                 # Validate: all hotkeys must be unique
-                vision_key = self.global_hotkey_vision_var.get()
-                monster_key = self.global_hotkey_monster_var.get()
+                vision_key = _hotkey_value("global_hotkey_vision_var", "vision_wizard_key", "ctrl+shift+v")
+                monster_key = _hotkey_value("global_hotkey_monster_var", "monster_editor_key", "ctrl+shift+m")
                 all_keys = [
                     start_key,
                     stop_key,
@@ -2282,7 +2297,8 @@ class App(tk.Tk):
                 self.hotkey_controller.register_all()
 
             # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
-            save_hunt_config(cfg)
+            if not save_hunt_config(cfg):
+                raise RuntimeError("Could not save hunt configuration")
             self.hunt_cfg = cfg
 
             # 4. Clear unsaved changes indicator
