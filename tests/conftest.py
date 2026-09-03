@@ -60,6 +60,34 @@ def pytest_collection_modifyitems(config, items):
 
 
 # ============================================================================
+# Fixtures - Platform Mocks
+# ============================================================================
+
+@pytest.fixture(autouse=True, scope='session')
+def setup_platform_mocks():
+    """Centralized platform compatibility mocks for cross-platform testing."""
+    import sys
+    from unittest.mock import MagicMock
+    if platform.system() != 'Windows':
+        mocks_dict = {
+            'win32gui': MagicMock(),
+            'cv2': MagicMock(),
+            'numpy': MagicMock(),
+            'win32con': MagicMock(),
+            'win32process': MagicMock(),
+            'win32api': MagicMock(),
+            'pywintypes': MagicMock(),
+        }
+        for module_name, mock_module in mocks_dict.items():
+            if module_name not in sys.modules:
+                sys.modules[module_name] = mock_module
+        yield
+        # We generally leave sys.modules mocked for the session
+    else:
+        yield
+
+
+# ============================================================================
 # Fixtures - Platform Detection
 # ============================================================================
 
@@ -198,6 +226,101 @@ def mock_screen_capture():
         return np.zeros((100, 100, 3), dtype=np.uint8)
     
     return _capture
+
+
+# ============================================================================
+# Core Domain Mocks
+# ============================================================================
+
+@pytest.fixture
+def mock_bot_manager():
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    mgr = MagicMock()
+    mgr.screen_capture = MagicMock()
+    mgr.screen_capture.get_latest_frame.return_value = np.zeros((1080, 1920, 3), dtype=np.uint8)
+    return mgr
+
+
+@pytest.fixture
+def mock_orchestrator(mock_bot_manager):
+    from unittest.mock import MagicMock
+    from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
+
+    def sync_schedule(task):
+        task()
+
+    orch = HuntOrchestrator(
+        on_status_update=MagicMock(),
+        on_state_change=MagicMock(),
+        locate_target=MagicMock(),
+        prepare_skill_runtime=MagicMock(),
+        try_cast_skills=MagicMock(),
+        bring_window_to_front=MagicMock(),
+        bring_window_to_front_by_hwnd=MagicMock(),
+        bring_window_to_front_by_pid=MagicMock(),
+        iconify_app=MagicMock(),
+        update_skill_stats_display=MagicMock(),
+        get_hunt_selected=MagicMock(return_value={"hwnd": 123}),
+        schedule_ui_task=sync_schedule,
+        clear_target_ui=MagicMock(),
+        set_target_info=MagicMock(),
+        on_scene_monsters_detected=MagicMock()
+    )
+    orch.bot_manager = mock_bot_manager
+    orch.hunt_running = False
+    orch.start_hunt = MagicMock(side_effect=orch.start_hunt)
+    orch.stop_hunt = MagicMock(side_effect=orch.stop_hunt)
+    return orch
+
+
+@pytest.fixture
+def mock_hunt_app(mock_orchestrator):
+    from unittest.mock import MagicMock
+    app = MagicMock()
+    app.hunt_orchestrator = mock_orchestrator
+    return app
+
+
+@pytest.fixture
+def mock_vision_engine():
+    from unittest.mock import MagicMock
+    engine = MagicMock()
+    engine.detect_templates = MagicMock(return_value=[])
+    engine.detect_monsters = MagicMock(return_value=[])
+    return engine
+
+
+# ============================================================================
+# DB Mocks
+# ============================================================================
+
+@pytest.fixture
+def mock_db():
+    from unittest.mock import MagicMock
+    db = MagicMock()
+    # Provide multiple pages of monsters
+    def get_filtered_monsters(keyword, monster_type, dungeon_id, page, page_size, sort_column, sort_order):
+        return {
+            "items": [{"id": f"m{i}", "name": f"Monster {i}"} for i in range((page-1)*page_size, page*page_size)],
+            "total": 100,
+            "page": page,
+            "page_size": page_size
+        }
+    db.get_filtered_monsters = get_filtered_monsters
+    return db
+
+@pytest.fixture
+def mock_db_responses():
+    all_monsters = [
+        {"id": 1, "name": "Slime Xanh", "level": 10, "hp": 100, "dungeonId": "d1"},
+        {"id": 2, "name": "Slime Đo", "level": 12, "hp": 150, "dungeonId": None}
+    ]
+    search_monsters = [
+        {"id": 1, "name": "Slime Xanh", "level": 10, "hp": 100, "dungeonId": "d1"}
+    ]
+    return all_monsters, search_monsters
 
 
 # ============================================================================
