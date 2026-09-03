@@ -6,6 +6,20 @@ import json
 from ui.windows.monster_manager_win import MonsterManagerWin
 
 @pytest.fixture
+def mock_db():
+    db = MagicMock()
+    # Provide multiple pages of monsters
+    def get_filtered_monsters(keyword, monster_type, dungeon_id, page, page_size, sort_column, sort_order):
+        return {
+            "items": [{"id": f"m{i}", "name": f"Monster {i}"} for i in range((page-1)*page_size, page*page_size)],
+            "total": 100,
+            "page": page,
+            "page_size": page_size
+        }
+    db.get_filtered_monsters = get_filtered_monsters
+    return db
+
+@pytest.fixture
 def root():
     root = tk.Tk()
     root.withdraw()

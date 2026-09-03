@@ -8,8 +8,19 @@ sys.modules['lib.features.hunt.window_selection_service'] = MagicMock()
 
 from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 
-def test_ocr_fallback_contract(mock_orchestrator):
-    orchestrator = mock_orchestrator
+def test_ocr_fallback_contract():
+    # Setup mocks
+    mock_on_status = MagicMock()
+    mock_on_state = MagicMock()
+    mock_locate = MagicMock()
+    mock_prepare = MagicMock()
+    mock_try_cast = MagicMock()
+    mock_bring_window = MagicMock()
+    mock_bring_hwnd = MagicMock()
+    mock_bring_pid = MagicMock()
+    mock_iconify = MagicMock()
+    mock_update_stats = MagicMock()
+    mock_get_selected = MagicMock(return_value={"hwnd": 123})
 
     # We will capture tasks scheduled for the UI
     ui_tasks = []
@@ -17,9 +28,23 @@ def test_ocr_fallback_contract(mock_orchestrator):
         ui_tasks.append(task)
         task() # execute it synchronously
 
-    orchestrator.schedule_ui_task = mock_schedule
     mock_set_target_info = MagicMock()
-    orchestrator.set_target_info = mock_set_target_info
+
+    orchestrator = HuntOrchestrator(
+        on_status_update=mock_on_status,
+        on_state_change=mock_on_state,
+        locate_target=mock_locate,
+        prepare_skill_runtime=mock_prepare,
+        try_cast_skills=mock_try_cast,
+        bring_window_to_front=mock_bring_window,
+        bring_window_to_front_by_hwnd=mock_bring_hwnd,
+        bring_window_to_front_by_pid=mock_bring_pid,
+        iconify_app=mock_iconify,
+        update_skill_stats_display=mock_update_stats,
+        get_hunt_selected=mock_get_selected,
+        schedule_ui_task=mock_schedule,
+        set_target_info=mock_set_target_info
+    )
 
     with patch("lib.features.hunt.hunt_orchestrator.find_monster_by_name_api") as mock_find:
         # Simulate unknown monster from DB (returns None)

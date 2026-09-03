@@ -14,6 +14,17 @@ def tk_root():
     yield root
     root.destroy()
 
+@pytest.fixture
+def mock_db_responses():
+    all_monsters = [
+        {"id": 1, "name": "Slime Xanh", "level": 10, "hp": 100, "dungeonId": "d1"},
+        {"id": 2, "name": "Slime Đo", "level": 12, "hp": 150, "dungeonId": None}
+    ]
+    search_monsters = [
+        {"id": 1, "name": "Slime Xanh", "level": 10, "hp": 100, "dungeonId": "d1"}
+    ]
+    return all_monsters, search_monsters
+
 def test_picker_initial_load(tk_root, mock_db_responses):
     all_monsters, _ = mock_db_responses
     with patch("dialogs.monster_picker.get_all_monsters_api", return_value=all_monsters) as mock_get_all:
