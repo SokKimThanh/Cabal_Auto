@@ -175,15 +175,24 @@ class ScreenCapture:
 
         # Get window rect
         try:
-            rect = win32gui.GetWindowRect(self.hwnd)
+            # Use GetClientRect to exclude window borders
+            client_rect = win32gui.GetClientRect(self.hwnd)
+            width = client_rect[2] - client_rect[0]
+            height = client_rect[3] - client_rect[1]
+
+            # Map client coordinates to screen coordinates
+            left, top = win32gui.ClientToScreen(self.hwnd, (0, 0))
+            right, bottom = left + width, top + height
+
             self.window_rect = {
-                'left': rect[0],
-                'top': rect[1],
-                'right': rect[2],
-                'bottom': rect[3],
-                'width': rect[2] - rect[0],
-                'height': rect[3] - rect[1]
+                'left': left,
+                'top': top,
+                'right': right,
+                'bottom': bottom,
+                'width': width,
+                'height': height
             }
+
             logger.info(
                 f"Window rect: {self.window_rect['width']}x"
                 f"{self.window_rect['height']}"
@@ -285,7 +294,23 @@ class ScreenCapture:
                 if current_time >= next_capture_time:
                     # Refresh rect and check if minimized
                     try:
-                        win_rect = win32gui.GetWindowRect(self.hwnd)
+                        win_# Use GetClientRect to exclude window borders
+            client_rect = win32gui.GetClientRect(self.hwnd)
+            width = client_rect[2] - client_rect[0]
+            height = client_rect[3] - client_rect[1]
+
+            # Map client coordinates to screen coordinates
+            left, top = win32gui.ClientToScreen(self.hwnd, (0, 0))
+            right, bottom = left + width, top + height
+
+            self.window_rect = {
+                'left': left,
+                'top': top,
+                'right': right,
+                'bottom': bottom,
+                'width': width,
+                'height': height
+            }
                         width = max(0, win_rect[2] - win_rect[0])
                         height = max(0, win_rect[3] - win_rect[1])
                         is_minimized = win32gui.IsIconic(self.hwnd) or width == 0 or height == 0

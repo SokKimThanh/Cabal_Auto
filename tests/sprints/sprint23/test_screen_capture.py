@@ -61,7 +61,7 @@ def mock_win32():
     with patch('lib.system.screen_capture.win32gui') as win32gui_mock, \
          patch('lib.system.screen_capture.win32ui') as win32ui_mock, \
          patch('lib.system.screen_capture.win32con') as win32con_mock, \
-         patch('lib.system.screen_capture.win32api') as win32api_mock:
+         patch('lib.system.screen_capture.windll') as windll_mock:
         
         # Mock window enumeration
         def enum_windows(callback, param):
@@ -72,13 +72,16 @@ def mock_win32():
         win32gui_mock.EnumWindows.side_effect = enum_windows
         win32gui_mock.IsWindowVisible.return_value = True
         win32gui_mock.GetWindowText.return_value = "Cabal Online"
-        win32gui_mock.GetWindowRect.return_value = (0, 0, 1024, 768)
+        win32gui_mock.GetClientRect.return_value = (0, 0, 1024, 768)
+        win32gui_mock.ClientToScreen.return_value = (10, 20)
+        win32gui_mock.IsWindow.return_value = True
+        win32gui_mock.IsIconic.return_value = False
         
         yield {
             'win32gui': win32gui_mock,
             'win32ui': win32ui_mock,
             'win32con': win32con_mock,
-            'win32api': win32api_mock
+            'windll': windll_mock
         }
 
 
@@ -286,7 +289,8 @@ def test_get_stats():
 
 def test_window_rect_calculation(mock_win32):
     """Test window rect is calculated correctly from win32 API"""
-    mock_win32['win32gui'].GetWindowRect.return_value = (100, 200, 1124, 968)
+    mock_win32['win32gui'].GetClientRect.return_value = (0, 0, 1024, 768)
+    mock_win32['win32gui'].ClientToScreen.return_value = (100, 200)
     
     capture = ScreenCapture()
     result = capture.start("Cabal")
@@ -298,8 +302,8 @@ def test_window_rect_calculation(mock_win32):
     assert rect['top'] == 200, "Top should be 200"
     assert rect['right'] == 1124, "Right should be 1124"
     assert rect['bottom'] == 968, "Bottom should be 968"
-    assert rect['width'] == 1024, "Width should be 1024 (1124-100)"
-    assert rect['height'] == 768, "Height should be 768 (968-200)"
+    assert rect['width'] == 1024, "Width should be 1024"
+    assert rect['height'] == 768, "Height should be 768"
     
     capture.stop()
 
@@ -510,3 +514,137 @@ def test_capture_frame_error_handling(mock_win32):
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
+
+# ============================================================================
+# STEP 8: ADVANCED BOUNDARY TESTS (Sprint 26 CB5)
+# ============================================================================
+
+def test_resize_during_capture(mock_win32):
+    """Test capture reallocation when window is resized"""
+    capture = ScreenCapture(target_fps=15)
+
+    # Mock window resize
+    mock_win32['win32gui'].GetClientRect.side_effect = [
+        (0, 0, 1024, 768),  # Initial start()
+        (0, 0, 1024, 768),  # First frame
+        (0, 0, 800, 600),   # Resize happens
+        (0, 0, 800, 600)
+    ]
+
+    with patch.object(capture, '_reallocate_buffer') as mock_realloc, \
+         patch.object(capture, '_capture_frame', return_value=np.zeros((768, 1024, 3), dtype=np.uint8)):
+
+        capture.start("Cabal")
+
+        # Give thread time to process resize
+        time.sleep(0.5)
+
+        capture.stop()
+
+        # Verify reallocation was called with new dimensions
+        mock_realloc.assert_called_with(800, 600)
+        assert capture.window_rect['width'] == 800
+        assert capture.window_rect['height'] == 600
+
+
+def test_minimize_during_capture(mock_win32):
+    """Test getting last known frame when window is minimized"""
+    capture = ScreenCapture(target_fps=15)
+
+    with patch.object(capture, '_capture_frame') as mock_capture:
+        # Create a real array for last known frame
+        last_frame = np.ones((768, 1024, 3), dtype=np.uint8) * 255
+        mock_capture.return_value = last_frame
+
+        capture.start("Cabal")
+        time.sleep(0.2)
+
+        # Get frame normally
+        frame1 = capture.get_latest_frame()
+        assert frame1 is not None
+        assert np.array_equal(frame1, last_frame)
+
+        # Simulate minimize
+        mock_win32['win32gui'].IsIconic.return_value = True
+        time.sleep(0.2)
+
+        # Should return last known frame
+        frame2 = capture.get_latest_frame()
+        assert frame2 is not None
+        assert np.array_equal(frame2, last_frame)
+
+        capture.stop()
+
+
+def test_window_closed_during_capture(mock_win32):
+    """Test loop terminates and signal sent when window closes"""
+    capture = ScreenCapture(target_fps=15)
+
+    lost_event_called = False
+    def on_lost():
+        nonlocal lost_event_called
+        lost_event_called = True
+
+    capture.on_capture_lost = on_lost
+
+    # Start normally
+    mock_win32['win32gui'].IsWindow.return_value = True
+
+    with patch.object(capture, '_capture_frame', return_value=np.zeros((768, 1024, 3), dtype=np.uint8)):
+        capture.start("Cabal")
+        time.sleep(0.1)
+        assert capture.running is True
+
+        # Simulate window close in capture thread
+        mock_win32['win32gui'].IsWindow.return_value = False
+
+        # Give thread time to process the lost window
+        time.sleep(0.5)
+
+        # Thread should have self-terminated
+        assert capture.running is False
+        assert capture.capture_lost_event.is_set()
+        assert lost_event_called is True
+
+        # Cleanup
+        capture.stop()
+
+
+def test_concurrent_access_during_reallocation(mock_win32):
+    """Test buffer reads are safe during reallocation"""
+    import threading
+    capture = ScreenCapture(target_fps=15)
+
+    with patch.object(capture, '_capture_frame', return_value=np.zeros((768, 1024, 3), dtype=np.uint8)):
+        capture.start("Cabal")
+        time.sleep(0.1)
+
+        exceptions = []
+
+        def reallocator():
+            try:
+                for _ in range(50):
+                    capture._reallocate_buffer(800, 600)
+                    time.sleep(0.001)
+            except Exception as e:
+                exceptions.append(e)
+
+        def reader():
+            try:
+                for _ in range(50):
+                    frame = capture.get_latest_frame()
+                    time.sleep(0.001)
+            except Exception as e:
+                exceptions.append(e)
+
+        t1 = threading.Thread(target=reallocator)
+        t2 = threading.Thread(target=reader)
+
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        capture.stop()
+
+        assert len(exceptions) == 0, f"Concurrent access raised exceptions: {exceptions}"
