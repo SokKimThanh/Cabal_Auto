@@ -1,7 +1,3 @@
-import re
-
-with open("app_gui.py", "r") as f:
-    content = f.read()
 """Deprecated developer-only patch script.
 
 This repository must not ship one-off source-rewriting helpers alongside

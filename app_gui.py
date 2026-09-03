@@ -532,7 +532,6 @@ class App(tk.Tk):
         )
 
         self.hunt_orchestrator = HuntOrchestrator(
-            bot_manager=self.hunt_runner.bot_manager,
             on_status_update=(
                 self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None
             ),
@@ -1106,11 +1105,6 @@ class App(tk.Tk):
                         break
 
     def refresh_translations(self):
-        # Save selection based on hwnd to prevent loss on language change
-        saved_hwnd = None
-        if getattr(self, "hunt_selected", None) and isinstance(self.hunt_selected, dict):
-            saved_hwnd = self.hunt_selected.get("hwnd")
-
         # Dynamically update text on widgets without rebuilding
         # _create_icon_btn_component returns a wrapper with set_text/set_tooltip if it's our custom component
         # But if it returns standard button, we config directly.

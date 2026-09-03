@@ -2,7 +2,7 @@ from lib.vision.target_bar_detector import TargetBarDetector
 import time
 import threading
 from pathlib import Path
-from typing import Callable, Dict, Any, Optional
+from typing import Callable, Dict, Any
 
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.win_input import tap
@@ -14,7 +14,6 @@ from database import find_monster_by_name_api
 class HuntOrchestrator:
     def __init__(
         self,
-        bot_manager: Any,
         on_status_update: Callable[[str], None],
         on_state_change: Callable[[str], None],  # "running", "idle", "error"
         locate_target: Callable[[Dict[str, Any]], tuple],  # (box, match_info)
@@ -31,7 +30,6 @@ class HuntOrchestrator:
         set_target_info: Callable[[str], None] = None,
         on_scene_monsters_detected: Callable[[tuple], None] = None
     ):
-        self.bot_manager = bot_manager
         self.clear_target_ui = clear_target_ui
         self.on_scene_monsters_detected = on_scene_monsters_detected
         self.set_target_info = set_target_info
@@ -56,11 +54,6 @@ class HuntOrchestrator:
         if self.hunt_running:
             return
 
-        if not hasattr(self, 'bot_manager') or not self.bot_manager:
-            logger = get_hunt_logger()
-            logger.log_error("dependency_missing", "bot_manager is missing from HuntOrchestrator")
-            return
-
         self.hunt_running = True
         self.schedule_ui_task(lambda: self.on_state_change("running"))
 
@@ -82,7 +75,7 @@ class HuntOrchestrator:
             # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
             runtime_queue = RuntimeMonsterQueue(publish_callback=getattr(self, 'on_scene_monsters_detected', None))
             scene_detector = None
-            if self.bot_manager and hasattr(self.bot_manager, 'vision_engine'):
+            if hasattr(self, 'bot_manager') and self.bot_manager and hasattr(self.bot_manager, 'vision_engine'):
                 scene_detector = SceneMonsterDetector(self.bot_manager.vision_engine, runtime_queue)
 
             self.runtime_queue = runtime_queue # expose for tests
@@ -121,7 +114,9 @@ class HuntOrchestrator:
                 have_target = False
                 mode = "search"
                 last_seen = 0.0
+                attack_started = 0.0
                 lost_timeout = float(cfg.get("lost_timeout_sec", 0.8))
+                attack_min_duration = float(cfg.get("attack_min_duration_sec", 1.5))
                 skill_runtime = self.prepare_skill_runtime(cfg)
                 has_attack_skills = any(
                     skill.get("type", "attack") != "buff" for skill in skill_runtime
@@ -169,7 +164,7 @@ class HuntOrchestrator:
                     # Screen capture for this tick
                     frame = None
                     try:
-                        if self.bot_manager and hasattr(self.bot_manager, 'screen_capture') and self.bot_manager.screen_capture:
+                        if self.bot_manager and self.bot_manager.screen_capture:
                             if getattr(self.bot_manager.screen_capture, 'hwnd', None) != hunt_selected.get("hwnd"):
                                 # Ensure we are capturing the right window
                                 import win32gui
@@ -279,6 +274,7 @@ class HuntOrchestrator:
                         if have_target:
                             logger.log_state_change("search", "attack", "target_found")
                             mode = "attack"
+                            attack_started = now
                             continue
 
                         if not training_mode_active:

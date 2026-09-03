@@ -31,13 +31,7 @@ def orchestrator():
     get_selected = MagicMock(return_value={"hwnd": 123})
     schedule = lambda f: f()  # Execute synchronously in test
 
-    mock_bot_manager = MagicMock()
-    mock_bot_manager.screen_capture = MagicMock()
-    mock_bot_manager.screen_capture.hwnd = 123
-    mock_bot_manager.screen_capture.get_latest_frame = MagicMock(return_value="mock_frame")
-
     orch = HuntOrchestrator(
-        bot_manager=mock_bot_manager,
         on_status_update=on_status,
         on_state_change=on_state,
         locate_target=locate_target,
@@ -51,6 +45,10 @@ def orchestrator():
         prepare_skill_runtime=MagicMock(),
         try_cast_skills=MagicMock()
     )
+    orch.bot_manager = MagicMock()
+    orch.bot_manager.screen_capture = MagicMock()
+    orch.bot_manager.screen_capture.hwnd = 123
+    orch.bot_manager.screen_capture.get_latest_frame = MagicMock(return_value="mock_frame")
     orch.try_cast_skills = MagicMock()
     return orch
 
