@@ -245,12 +245,18 @@ class HuntTab(ttk.Frame):
 
         # Basic Drag-and-Drop setup
         def on_drag_start(event):
-            if not self.app.detected_monsters_listbox.curselection():
+            listbox = event.widget
+            if listbox.size() == 0:
                 return
-            idx = self.app.detected_monsters_listbox.curselection()[0]
+            idx = listbox.nearest(event.y)
+            if idx < 0 or idx >= listbox.size():
+                return
+            listbox.selection_clear(0, tk.END)
+            listbox.selection_set(idx)
+            listbox.activate(idx)
             # Payload is the idx (to look up the snapshot item)
-            event.widget._dnd_data = idx
-            event.widget.config(cursor="hand2")
+            listbox._dnd_data = idx
+            listbox.config(cursor="hand2")
 
         def on_drag_motion(event):
             event.widget.config(cursor="hand2")
