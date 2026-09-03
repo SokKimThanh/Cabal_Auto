@@ -6,9 +6,7 @@ from unittest.mock import MagicMock
 sys.modules['lib.system.window_manager'] = MagicMock()
 sys.modules['lib.features.hunt.window_selection_service'] = MagicMock()
 
-
 from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
-
 
 class MockHuntLogger:
     def log_state_change(self, *args, **kwargs): pass
@@ -25,8 +23,16 @@ def test_target_lost_debounce_and_no_spam_attack(mock_orchestrator, monkeypatch)
     2. N consecutive false reads trigger search mode.
     3. During attack mode, 'tap' is NOT called (spam removed).
     """
+    mock_backend_tap = MagicMock()
+    class MockForegroundBackend:
+        mode = "foreground"
+        def __init__(self): pass
+        def tap(self, *args, **kwargs): mock_backend_tap(*args, **kwargs)
+        def close(self): pass
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend", MockForegroundBackend)
+
     mock_tap = MagicMock()
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.tap", mock_tap)
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.global_tap", mock_tap)
 
     monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger())
     # Mock window validation
@@ -79,23 +85,14 @@ def test_target_lost_debounce_and_no_spam_attack(mock_orchestrator, monkeypatch)
             "Hunt thread should terminate within the join timeout"
         )
 
-        # Verify mock_tap was called during search mode (before target found)
-        assert mock_tap.called, "Tap should be called during search mode"
+        # Verify mock_backend_tap was called during search mode (before target found)
+        assert mock_backend_tap.called, "Tap should be called during search mode"
 
-        # mock_tap might be called in try_cast_skills in a real run, but try_cast_skills is mocked.
-        # We want to ensure tap was only called with 'z' when in search mode.
-        # In our sequence:
-        # 1. starts in search, taps 'z' until seq_idx=0 (True) triggers attack mode.
-        # 2. Enters attack mode. 'tap' should NOT be called inside the attack loop.
-        # 3. Drops to search mode after 3 Falses (seq_idx=5).
-        # Since we set hunt_running to False after seq_idx=5, the thread exits.
-
-        # Count taps
-        tap_calls = mock_tap.call_args_list
+        # Count taps on ForegroundBackend
+        tap_calls = mock_backend_tap.call_args_list
         # All tap calls should be with 'z' (or the configured target key)
         for call in tap_calls:
             assert call[0][0] == 'z'
-
         # Ensure try_cast_skills was called during attack phase
         assert orchestrator.try_cast_skills.called
     finally:
