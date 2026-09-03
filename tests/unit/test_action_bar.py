@@ -9,17 +9,16 @@ sys.modules['lib.system.window_manager'] = mock_wm
 
 
 @pytest.fixture
-def app_instance():
+def app_instance(mock_orchestrator):
     from app_gui import App
     app = App()
+    app.hunt_orchestrator = mock_orchestrator
     app.update()
     yield app
     app.destroy()
 
 def test_debounce_click(app_instance):
-    # Mock orchestrator and validation
-    app_instance.hunt_orchestrator = MagicMock()
-    app_instance.hunt_orchestrator.hunt_running = False
+    # Mock validation
     app_instance.state_controller._validate_hunt_prerequisites = MagicMock(return_value=None)
     app_instance.state_controller._hunt_from_ui = MagicMock(return_value={})
     app_instance.hunt_cfg = {}
@@ -34,8 +33,6 @@ def test_debounce_click(app_instance):
         assert getattr(app_instance, "_action_locked", False) is True
 
 def test_start_stop_state_correctness(app_instance):
-    app_instance.hunt_orchestrator = MagicMock()
-    app_instance.hunt_orchestrator.hunt_running = False
     app_instance.state_controller._validate_hunt_prerequisites = MagicMock(return_value=None)
     app_instance.state_controller._hunt_from_ui = MagicMock(return_value={})
     app_instance.hunt_cfg = {}
