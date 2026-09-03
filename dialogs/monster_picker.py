@@ -187,7 +187,6 @@ class MonsterPickerDialog(tk.Toplevel):
         self.status_var.set("")
         self.btn_confirm.config(state="disabled")
         self._item_map.clear()
-        self._item_map.clear()
 
         if not records:
             self.status_var.set(self._t("monster_picker_empty"))
