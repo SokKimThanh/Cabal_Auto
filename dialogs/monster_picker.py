@@ -17,7 +17,6 @@ class MonsterPickerDialog(tk.Toplevel):
         # Don't hardcode minsize, make it responsive
         self.geometry("600x450")
         self.resizable(True, True)
-        self.resizable(True, True)
 
         self.transient(parent)
         self.grab_set()
