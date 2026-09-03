@@ -309,11 +309,17 @@ class ScreenCapture:
                         if self.window_rect is not None and (
                             width != self.window_rect['width'] or height != self.window_rect['height']
                         ):
+                            # Ensure we update window_rect correctly from the fresh client_rect variables above
+                            try:
+                                win_rect_updated = win32gui.GetWindowRect(self.hwnd)
+                            except Exception:
+                                win_rect_updated = [0, 0, width, height]
+
                             self.window_rect = {
-                                'left': win_rect[0],
-                                'top': win_rect[1],
-                                'right': win_rect[2],
-                                'bottom': win_rect[3],
+                                'left': win_rect_updated[0],
+                                'top': win_rect_updated[1],
+                                'right': win_rect_updated[2],
+                                'bottom': win_rect_updated[3],
                                 'width': width,
                                 'height': height,
                             }
