@@ -88,26 +88,7 @@
     "app_window_mode": "topmost",
     "is_configured": true,
     "monster_selected_name": "Slime Xanh",
-    "monster_rotation": [
-        {
-            "monster_id": 2,
-            "name": "Monster 2",
-            "priority": 1,
-            "dungeon_id": null
-        },
-        {
-            "monster_id": 1,
-            "name": "Monster 1",
-            "priority": 2,
-            "dungeon_id": null
-        },
-        {
-            "monster_id": 3,
-            "name": "Monster 3",
-            "priority": 3,
-            "dungeon_id": null
-        }
-    ],
+    "monster_rotation": [],
     "hunt_area": {
         "window_title": "Cabal_Auto - Visual Studio Code [Administrator]",
         "window_bounds": [

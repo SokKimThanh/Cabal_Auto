@@ -255,11 +255,12 @@ class AppStateController:
                         })
 
         cfg["monster_rotation"] = []
-        if hasattr(app, "monster_rotation_list") and isinstance(app.monster_rotation_list, list):
-            for i, m in enumerate(app.monster_rotation_list):
+        rotation = getattr(app, "monster_rotation", [])
+        if isinstance(rotation, list):
+            for i, m in enumerate(rotation):
                 if isinstance(m, dict):
                     cfg["monster_rotation"].append({
-                        "monster_id": m.get("id", m.get("monster_id", 0)),
+                        "monster_id": m.get("monster_id", m.get("id", 0)),
                         "name": m.get("name", ""),
                         "priority": m.get("priority", i + 1),
                         "dungeon_id": m.get("dungeon_id", None)

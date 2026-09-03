@@ -2,9 +2,9 @@
 
 ## Summary
 - Delete candidates: 4 entries (3 files + 1 directory; safe artifacts)
-- Files to archive: 51 (One-off scripts, patches, old reports)
-- Expected bytes reclaimed: TBD
-- Status: BLOCKED_REVIEW_REQUIRED (>20 candidates)
+- Files archived: 53 (One-off scripts, patches, old reports)
+- Files deleted: 4 (1 cache directory, 3 root artifacts)
+- Status: APPLIED (R2 conservative cleanup batch)
 
 ## DELETE_SAFE
 * `__pycache__/` - Python cache directory (Safe)
@@ -40,6 +40,8 @@
 * `patch_tests_2.py` -> `docs/archive/scripts/patch_tests_2.py` (One-off script)
 * `patch_tests_picker.py` -> `docs/archive/scripts/patch_tests_picker.py` (One-off script)
 * `patch_try_close.diff` -> `docs/archive/scripts/` (Patch file)
+* `patch_handlers.patch` -> `docs/archive/scripts/patch_handlers.patch` (Patch file)
+* `patch_test_fix.patch` -> `docs/archive/scripts/patch_test_fix.patch` (Patch file)
 * `fix_app.patch` -> `docs/archive/scripts/` (Patch file)
 * `fix_flake8.patch` -> `docs/archive/scripts/` (Patch file)
 * `fix_flake8_hunt_logger.patch` -> `docs/archive/scripts/` (Patch file)

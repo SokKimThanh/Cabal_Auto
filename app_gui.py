@@ -1676,7 +1676,7 @@ class App(tk.Tk):
 
             self._refresh_monster_rotation_list()
 
-        MonsterPickerDialog(self, self.current_lang, on_monster_selected, self._t)
+        MonsterPickerDialog(self, getattr(self, "lang", "vi"), on_monster_selected, self._t)
 
     def on_skill_slot_changed(self, _evt=None):
         self._update_attack_keys_from_slots()
