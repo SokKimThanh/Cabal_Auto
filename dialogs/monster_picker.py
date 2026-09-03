@@ -34,7 +34,6 @@ class MonsterPickerDialog(tk.Toplevel):
         self._cache = {}
         self._search_timer = None
         self._item_map = {}
-        self._item_map = {}
 
         self._load_initial_data()
 
