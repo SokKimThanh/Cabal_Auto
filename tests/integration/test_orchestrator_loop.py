@@ -17,43 +17,8 @@ class MockHuntLogger:
     def log_error(self, *args, **kwargs): pass
 
 
-@pytest.fixture
-def orchestrator():
-    # Provide simple mock callbacks
-    on_status = MagicMock()
-    on_state = MagicMock()
-    locate_target = MagicMock()
-    bring_window = MagicMock()
-    bring_hwnd = MagicMock()
-    bring_pid = MagicMock()
-    iconify = MagicMock()
-    update_stats = MagicMock()
-    get_selected = MagicMock(return_value={"hwnd": 123})
-    schedule = lambda f: f()  # Execute synchronously in test
-
-    orch = HuntOrchestrator(
-        on_status_update=on_status,
-        on_state_change=on_state,
-        locate_target=locate_target,
-        bring_window_to_front=bring_window,
-        bring_window_to_front_by_hwnd=bring_hwnd,
-        bring_window_to_front_by_pid=bring_pid,
-        iconify_app=iconify,
-        update_skill_stats_display=update_stats,
-        get_hunt_selected=get_selected,
-        schedule_ui_task=schedule,
-        prepare_skill_runtime=MagicMock(),
-        try_cast_skills=MagicMock()
-    )
-    orch.bot_manager = MagicMock()
-    orch.bot_manager.screen_capture = MagicMock()
-    orch.bot_manager.screen_capture.hwnd = 123
-    orch.bot_manager.screen_capture.get_latest_frame = MagicMock(return_value="mock_frame")
-    orch.try_cast_skills = MagicMock()
-    return orch
-
-
-def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
+def test_target_lost_debounce_and_no_spam_attack(mock_orchestrator, monkeypatch):
+    orchestrator = mock_orchestrator
     """
     Simulates the orchestrator loop with specific conditions:
     1. Single transient false read does NOT trigger search mode.
