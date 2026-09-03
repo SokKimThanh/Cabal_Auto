@@ -440,9 +440,20 @@ class AppStateController:
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             else:
-                # show dynamic width/height ready message
-                ready_text = app._t("bounds_state_ready") if hasattr(app, "_t") and app._t("bounds_state_ready") != "bounds_state_ready" else "Ready"
-                text = f"[✓] {ready_text} ({bounds[2]}x{bounds[3]})"
+                if compact:
+                    text = "[✓]"
+                else:
+                    try:
+                        text = i18n_t(
+                            "bounds_state_ready_with_size",
+                            ns=I18N_GLOBAL,
+                            width=bounds[2],
+                            height=bounds[3],
+                        )
+                        if text == "bounds_state_ready_with_size":
+                            text = f"Ready ({bounds[2]}x{bounds[3]})"
+                    except Exception:
+                        text = f"Ready ({bounds[2]}x{bounds[3]})"
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_SUCCESS)
 
