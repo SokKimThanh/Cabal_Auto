@@ -5,6 +5,7 @@ import threading
 
 def test_orchestrator_init():
     orchestrator = HuntOrchestrator(
+        bot_manager=MagicMock(),
         on_status_update=MagicMock(),
         on_state_change=MagicMock(),
         locate_target=MagicMock(),
@@ -25,6 +26,7 @@ def test_orchestrator_init():
 def test_start_hunt(mock_thread):
     mock_schedule = MagicMock()
     orchestrator = HuntOrchestrator(
+        bot_manager=MagicMock(),
         on_status_update=MagicMock(),
         on_state_change=MagicMock(),
         locate_target=MagicMock(),
@@ -51,6 +53,7 @@ def test_start_hunt(mock_thread):
 
 def test_stop_hunt():
     orchestrator = HuntOrchestrator(
+        bot_manager=MagicMock(),
         on_status_update=MagicMock(),
         on_state_change=MagicMock(),
         locate_target=MagicMock(),

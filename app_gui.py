@@ -532,6 +532,7 @@ class App(tk.Tk):
         )
 
         self.hunt_orchestrator = HuntOrchestrator(
+            bot_manager=self.hunt_runner.bot_manager,
             on_status_update=(
                 self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None
             ),
