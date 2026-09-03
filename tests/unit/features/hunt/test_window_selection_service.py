@@ -3,10 +3,6 @@ import unittest.mock as mock
 if sys.platform != "win32":
     wm_mock = mock.MagicMock()
     sys.modules["lib.system.window_manager"] = wm_mock
-    sys.modules["win32gui"] = mock.MagicMock()
-    sys.modules["win32con"] = mock.MagicMock()
-    sys.modules["win32api"] = mock.MagicMock()
-    sys.modules["win32process"] = mock.MagicMock()
 
 import pytest
 from lib.features.hunt.window_selection_service import WindowSelectionService

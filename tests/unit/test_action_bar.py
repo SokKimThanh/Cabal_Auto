@@ -3,15 +3,7 @@ import tkinter as tk
 from unittest.mock import patch, MagicMock
 
 import sys
-from unittest.mock import MagicMock
 
-sys.modules['cv2'] = MagicMock()
-sys.modules['numpy'] = MagicMock()
-sys.modules['win32gui'] = MagicMock()
-sys.modules['win32con'] = MagicMock()
-sys.modules['win32process'] = MagicMock()
-sys.modules['win32api'] = MagicMock()
-sys.modules['pywintypes'] = MagicMock()
 mock_wm = MagicMock()
 sys.modules['lib.system.window_manager'] = mock_wm
 
