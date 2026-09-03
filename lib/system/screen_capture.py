@@ -294,28 +294,12 @@ class ScreenCapture:
                 if current_time >= next_capture_time:
                     # Refresh rect and check if minimized
                     try:
-                        win_# Use GetClientRect to exclude window borders
-            client_rect = win32gui.GetClientRect(self.hwnd)
-            width = client_rect[2] - client_rect[0]
-            height = client_rect[3] - client_rect[1]
-
-            # Map client coordinates to screen coordinates
-            left, top = win32gui.ClientToScreen(self.hwnd, (0, 0))
-            right, bottom = left + width, top + height
-
-            self.window_rect = {
-                'left': left,
-                'top': top,
-                'right': right,
-                'bottom': bottom,
-                'width': width,
-                'height': height
-            }
-                        width = max(0, win_rect[2] - win_rect[0])
-                        height = max(0, win_rect[3] - win_rect[1])
+                        client_rect = win32gui.GetClientRect(self.hwnd)
+                        width = max(0, client_rect[2] - client_rect[0])
+                        height = max(0, client_rect[3] - client_rect[1])
                         is_minimized = win32gui.IsIconic(self.hwnd) or width == 0 or height == 0
                     except Exception as e:
-                        logger.error(f"Failed to get window rect: {e}")
+                        logger.error(f"Failed to get client rect: {e}")
                         is_minimized = True
 
                     if is_minimized:
