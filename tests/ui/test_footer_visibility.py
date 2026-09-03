@@ -4,7 +4,6 @@ import unittest.mock
 import sys
 import time
 
-sys.modules['win32gui'] = unittest.mock.MagicMock()
 sys.modules['lib.system.window_manager'] = unittest.mock.MagicMock()
 sys.modules['lib.features.hunt.window_selection_service'] = unittest.mock.MagicMock()
 sys.modules['lib.vision.vision_engine'] = unittest.mock.MagicMock()

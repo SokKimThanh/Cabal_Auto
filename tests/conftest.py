@@ -60,6 +60,34 @@ def pytest_collection_modifyitems(config, items):
 
 
 # ============================================================================
+# Fixtures - Platform Mocks
+# ============================================================================
+
+@pytest.fixture(autouse=True, scope='session')
+def setup_platform_mocks():
+    """Centralized platform compatibility mocks for cross-platform testing."""
+    import sys
+    from unittest.mock import MagicMock
+    if platform.system() != 'Windows':
+        mocks_dict = {
+            'win32gui': MagicMock(),
+            'cv2': MagicMock(),
+            'numpy': MagicMock(),
+            'win32con': MagicMock(),
+            'win32process': MagicMock(),
+            'win32api': MagicMock(),
+            'pywintypes': MagicMock(),
+        }
+        for module_name, mock_module in mocks_dict.items():
+            if module_name not in sys.modules:
+                sys.modules[module_name] = mock_module
+        yield
+        # We generally leave sys.modules mocked for the session
+    else:
+        yield
+
+
+# ============================================================================
 # Fixtures - Platform Detection
 # ============================================================================
 
