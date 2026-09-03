@@ -135,7 +135,7 @@ class AppWindowController:
         self.root.win_items = items
 
         # Build dictionary mapping hwnd to display names
-        self.root.win_items_map = {item.get("hwnd"): item.get("title") for item in items}
+        self.root.win_items_map = {item.get("hwnd"): item for item in items}
         values = [item["title"] for item in items]
         if hasattr(self.root, "win_combo"):
             self.root.win_combo["values"] = values
