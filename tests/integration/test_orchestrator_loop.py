@@ -100,7 +100,11 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
     mock_capability_mgr = MagicMock()
     # State SUPPORTED, is_ready=True
     mock_capability_mgr_instance = MagicMock()
-    mock_capability_mgr_instance.check_and_verify_capability.return_value = (MagicMock(value="SUPPORTED"), True)
+    hunt_orchestrator_module = sys.modules[HuntOrchestrator.__module__]
+    mock_capability_mgr_instance.check_and_verify_capability.return_value = (
+        hunt_orchestrator_module.InputCapabilityState.SUPPORTED,
+        True,
+    )
     monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.InputCapabilityManager", lambda *args: mock_capability_mgr_instance)
 
     # Use a dummy cfg with background input_mode
