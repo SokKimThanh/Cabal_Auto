@@ -362,11 +362,12 @@ class HuntOrchestrator:
                                 if combo_cfg.get("enabled", False) and combo_detector and hasattr(self.handler, "app") and hasattr(self.handler.app, "state_controller") and getattr(self.handler.app.state_controller, "_combo_mode_active", False):
                                     combo_start_key = combo_cfg.get("combo_start_key", "alt+3")
                                     if combo_start_key:
+                                        press_ms = int(cfg.get("attack_press_ms", 100))
                                         if self.input_backend:
-                                            self.input_backend.tap(combo_start_key)
+                                            self.input_backend.tap(combo_start_key, press_ms)
                                         else:
                                             from lib.system.win_input import tap as global_tap
-                                            global_tap(combo_start_key)
+                                            global_tap(combo_start_key, press_ms)
                                 continue
                             elif eval_result in (TargetRotationCoordinator.MISMATCH, TargetRotationCoordinator.UNKNOWN):
                                 # CYCLE_TARGET
