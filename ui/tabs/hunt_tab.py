@@ -129,8 +129,7 @@ class HuntTab(ttk.Frame):
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Sub-section: Hunt Status Bar (current hunt state + current target)
-        status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
-        status_frame.pack_propagate(False)
+status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
         status_frame.pack(fill="x", pady=(0, 4))
         self.hunt_status_label = tk.Label(
             status_frame,
@@ -456,51 +455,155 @@ class HuntTab(ttk.Frame):
         self.skill_strip_frame.grid_columnconfigure(0, weight=1, uniform='skill_col')
         self.skill_strip_frame.grid_columnconfigure(1, weight=2, uniform='skill_col')
 
-        # Section 3: Skill slots selection
-        skill_frame_outer = tk.LabelFrame(
-            self.skill_strip_frame, text=self.app._t("skill_slots"), padx=10, pady=8
+        # Option (a): Đây là bản thiết kế lại/thay thế cho panel đã làm ở CB3B.
+        # Panel cũ từ CB3B (nếu có ở nơi khác) sẽ được loại bỏ, tránh tồn tại 2 bản UI cho cùng chức năng.
+        # Section 3: Dual-Lane Skill Strip (Combo & Buffs)
+
+        border_color = getattr(UI, "BORDER_COLOR", "#E0E0E0")
+        skill_frame_outer = tk.Frame(
+            self.skill_strip_frame,
+            highlightbackground=border_color,
+            highlightthickness=1,
+            highlightcolor=border_color,
+            bg=UI.BG_PANEL
         )
         skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
-        # Manage skills hint (button hidden, use Ctrl+K shortcut)
-        hint_label = tk.Label(
-            skill_frame_outer,
-            text=f"ℹ️ {self.app._t('skill_manage_hint')}",
-            fg="#666",
-            font=UI.FONT_TEXT,
-            cursor="hand2",
-        )
-        hint_label.pack(side="top", anchor="e", pady=(0, 2))
-        hint_label.bind("<Button-1>", lambda e: self.app.skill_manager_controller.open_window())
+        # Setup Auto Combo Control Frame
+        ctrl_frame = tk.Frame(skill_frame_outer, bg=UI.BG_PANEL)
+        ctrl_frame.pack(side="top", fill="x", padx=4, pady=(4, 0))
 
-        slot_frame = tk.Frame(skill_frame_outer)
-        slot_frame.pack(fill="both", expand=True)
-        for col in range(2):
-            slot_frame.grid_columnconfigure(col*4 + 1, weight=1)
+        # Ensure combo config exists
+        if "combo" not in self.app.hunt_cfg:
+            self.app.hunt_cfg["combo"] = {"enabled": False, "combo_start_key": "Alt+3"}
+
+        self.app.auto_combo_var = tk.BooleanVar(value=self.app.hunt_cfg["combo"].get("enabled", False))
+
+        def on_auto_combo_toggle():
+            is_enabled = self.app.auto_combo_var.get()
+            self.app.hunt_cfg["combo"]["enabled"] = is_enabled
+            if is_enabled:
+                self.app.combo_start_key_cmb.config(state="readonly")
+            else:
+                self.app.combo_start_key_cmb.config(state="disabled")
+
+        auto_combo_cb = tk.Checkbutton(
+            ctrl_frame,
+            text=self.app._t("skill_strip.auto_combo") if self.app._t("skill_strip.auto_combo") != "skill_strip.auto_combo" else "Bật Auto Combo",
+            variable=self.app.auto_combo_var,
+            command=on_auto_combo_toggle,
+            bg=UI.BG_PANEL,
+            font=UI.FONT_TEXT
+        )
+        auto_combo_cb.pack(side="left", padx=(4, 8))
+
+        tk.Label(
+            ctrl_frame,
+            text=self.app._t("skill_strip.combo_start_key") if self.app._t("skill_strip.combo_start_key") != "skill_strip.combo_start_key" else "Phím Mở Combo",
+            bg=UI.BG_PANEL,
+            font=UI.FONT_TEXT
+        ).pack(side="left")
+
+        self.app.combo_start_key_cmb = ttk.Combobox(
+            ctrl_frame,
+            values=["Alt+1", "Alt+2", "Alt+3", "Alt+4", "Alt+5"],
+            state="normal" if self.app.auto_combo_var.get() else "disabled",
+            width=8
+        )
+        self.app.combo_start_key_cmb.set(self.app.hunt_cfg["combo"].get("combo_start_key", "Alt+3"))
+        self.app.combo_start_key_cmb.pack(side="left", padx=4)
+
+        def on_combo_key_change(event):
+            self.app.hunt_cfg["combo"]["combo_start_key"] = self.app.combo_start_key_cmb.get()
+
+        self.app.combo_start_key_cmb.bind("<<ComboboxSelected>>", on_combo_key_change)
+        # self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
+
+        # Lanes container
+        lanes_frame = tk.Frame(skill_frame_outer, bg=UI.BG_PANEL)
+        lanes_frame.pack(fill="both", expand=True, padx=4, pady=4)
+
         self.app.skill_slot_vars = []
         self.app.skill_slot_boxes = []
         self.app.skill_slot_key_labels = []
+        self.app.skill_slot_stats_labels = []
+        for i in range(4):
+            lanes_frame.grid_columnconfigure(i, weight=1, uniform='card_col')
+
+        # To support high DPI
+        try:
+            scale_factor = getattr(self, "tk", None) and getattr(self, "tk", None).call('tk', 'scaling') * 72 / 100.0
+            if scale_factor is None:
+                scale_factor = 1.0
+        except Exception:
+            scale_factor = 1.0
+
+        card_font = (UI.FONT_FAMILY, int(max(8, 9 * scale_factor)))
+        badge_pad = int(max(2, 4 * scale_factor))
+
+        def update_card_stats(lbl, skill_name):
+            skills_by_name = {
+                s.get("name"): s
+                for s in getattr(self.app, "skills", [])
+                if isinstance(s, dict) and s.get("name")
+            }
+            skill = skills_by_name.get(skill_name, {})
+            cast_time = skill.get("cast_time")
+            cd = skill.get("cooldown")
+
+            cast_str = f"{cast_time}s" if cast_time is not None else "--s"
+            cd_str = f"{cd}s" if cd is not None else "--s"
+            lbl.config(text=f"⚡ {cast_str} | ⏳ {cd_str}")
+
+        self.update_card_stats = update_card_stats
+
+        # Build cards
         for idx in range(self.app.skill_slot_count):
-            row = idx % 3
-            col_base = (idx // 3) * 4
+            is_combo_lane = idx < 4
+            row = 0 if is_combo_lane else 1
+            col = idx if is_combo_lane else (idx - 4)
+
+            card = tk.Frame(lanes_frame, bg=UI.BG_DEFAULT, highlightbackground="#D0D0D0", highlightthickness=1)
+            card.grid(row=row, column=col, sticky="ew", padx=2, pady=2)
+
             var = tk.StringVar()
             self.app.skill_slot_vars.append(var)
-            label = self.app._t("skill_slot_label").format(i=idx + 1)
-            tk.Label(slot_frame, text=label).grid(row=row, column=col_base, sticky="e", pady=1)
-            cmb = ttk.Combobox(slot_frame, textvariable=var, state="readonly", width=12)
-            cmb.grid(row=row, column=col_base+1, sticky="we", padx=(4, 0), pady=1)
-            cmb.bind("<<ComboboxSelected>>", self.app.on_skill_slot_changed)
-            # Key label showing which key is assigned to the selected skill
-            key_lbl = tk.Label(slot_frame, text="", width=6, anchor="w", fg="#333")
-            key_lbl.grid(row=row, column=col_base+2, padx=(2, 0))
-            self.app.skill_slot_key_labels.append(key_lbl)
-            # Clear button (moved to column 3)
-            tk.Button(
-                slot_frame,
-                text=self.app._t("skill_slot_clear"),
-                command=lambda v=var: self.app._clear_skill_slot(v),
-            ).grid(row=row, column=col_base+3, padx=(2, 6))
+
+            # Title
+            t_combo = self.app._t('skill_strip.combo_lane')
+            t_buff = self.app._t('skill_strip.buff_lane')
+            title_text = f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col+1}" if is_combo_lane else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col+1}"
+
+            tk.Label(card, text=title_text, bg=UI.BG_DEFAULT, fg=UI.COLOR_SUBTEXT, font=(UI.FONT_FAMILY, int(8*scale_factor))).pack(anchor="w", padx=2, pady=(2, 0))
+
+            # Combobox
+            cmb = ttk.Combobox(card, textvariable=var, state="readonly")
+            cmb.pack(fill="x", padx=badge_pad, pady=badge_pad)
+
+            stats_lbl = tk.Label(card, text="⚡ --s | ⏳ --s", fg=UI.COLOR_SUBTEXT, bg=UI.BG_DEFAULT, font=card_font)
+
+            def _on_cmb_selected(event, v=var, lbl=stats_lbl):
+                if hasattr(self.app, "on_skill_slot_changed"):
+                    self.app.on_skill_slot_changed(event)
+                update_card_stats(lbl, v.get().strip())
+
+            cmb.bind("<<ComboboxSelected>>", _on_cmb_selected)
             self.app.skill_slot_boxes.append(cmb)
+
+            # Badges area
+            badge_frame = tk.Frame(card, bg=UI.BG_DEFAULT)
+            badge_frame.pack(fill="x", padx=2, pady=(0, 2))
+
+            key_lbl = tk.Label(badge_frame, text="", width=6, anchor="w", fg="#333", bg=UI.BG_DEFAULT, font=card_font)
+            key_lbl.pack(side="left")
+            self.app.skill_slot_key_labels.append(key_lbl)
+
+            stats_lbl.pack(side="right")
+            self.app.skill_slot_stats_labels.append(stats_lbl)
+
+            # Tooltip
+            if hasattr(self.app, "_create_tooltip"):
+                self.app._create_tooltip(card, self.app._t("skill_strip.tooltip_placeholder"))
 
         self.app._refresh_monster_select_options()
         # Replaced _load_skill_slots_from_cfg with equivalent logic inline
