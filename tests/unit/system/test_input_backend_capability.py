@@ -4,6 +4,9 @@ from unittest.mock import patch
 from lib.system.input_backend import BackgroundWindowMessageBackend, WIN32_AVAILABLE, ForegroundSendInputBackend
 from lib.system.input_capability import InputCapabilityManager, InputCapabilityState
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.fixture
 def mock_win32gui():
     with patch("lib.system.input_backend.win32gui") as mock:

@@ -1,0 +1,163 @@
+import pytest
+from unittest.mock import MagicMock, patch
+from lib.system.hunt_logger import get_hunt_logger, reset_hunt_logger, HuntLogger
+from app_gui import App as Application
+import sys
+
+pytestmark = pytest.mark.unit
+
+
+@pytest.fixture(autouse=True)
+def setup_teardown():
+    reset_hunt_logger()
+    yield
+    reset_hunt_logger()
+
+
+def test_logger_queue_cap():
+    logger = get_hunt_logger()
+    assert logger.ui_queue.maxsize == 5000
+    # Clear anything in the queue
+    while not logger.ui_queue.empty():
+        logger.ui_queue.get()
+    logger.dropped_log_count = 0
+
+    # Fill the queue to test drop handling
+    for i in range(5005):
+        logger.logger.info(f"Test log {i}")
+
+    assert logger.ui_queue.qsize() == 5000
+    assert logger.dropped_log_count == 5
+
+
+@pytest.fixture
+def app():
+    with patch("app_gui.pyautogui", MagicMock()), patch("app_gui.keyboard", MagicMock()), patch.dict(
+        sys.modules,
+        {
+            "lib.system.window_manager": MagicMock(),
+            "lib.vision.vision_engine": MagicMock(),
+        },
+        clear=False,
+    ):
+
+        app = Application()
+        yield app
+        app.destroy()
+
+
+def test_circular_buffer_and_memory_cap(app):
+    logger = get_hunt_logger()
+
+    # Bắn liên tục 5.000 dòng log
+    for i in range(5000):
+        logger.logger.info(f"Test log {i}")
+
+    # App _poll_log_queue is running, but let's call it manually to flush all
+    # Since batch limit is 50, we need to call it 100 times to flush 5000 lines
+    import math
+    flush_count = math.ceil(5000 / 50) + 5
+    for _ in range(flush_count):
+        app._poll_log_queue()
+
+    # Retrieve number of lines in text widget
+    # We inserted 5000 lines. The text widget cap is 1000.
+    lines = int(app.logs_text_widget.index('end-1c').split('.')[0])
+
+    # We might have an extra blank line at the end, so lines could be 1001 or 1000
+    assert lines <= 1005
+
+
+def test_batch_insert_rate_limit(app):
+    logger = get_hunt_logger()
+    while not logger.ui_queue.empty():
+        logger.ui_queue.get()
+
+    app.logs_text_widget.config(state="normal")
+    app.logs_text_widget.delete("1.0", "end")
+    app.logs_text_widget.config(state="disabled")
+
+    for i in range(200):
+        logger.logger.info(f"Test log {i}")
+
+    app._poll_log_queue()
+    app.update_idletasks()
+    app.update()
+    # It should have processed exactly 50 lines this tick
+    # 50 lines + 1 empty line
+    lines = int(app.logs_text_widget.index('end-1c').split('.')[0])
+
+    # The critical check is that it didn't block and process all 200 at once (hence < 200).
+    assert lines < 200
+
+
+def test_log_file_persistence(tmp_path):
+    reset_hunt_logger()
+    logger = HuntLogger(log_dir=str(tmp_path))
+
+    for i in range(10):
+        logger.logger.info(f"Persistence log {i}")
+
+    log_file = tmp_path / 'hunt.log'
+    assert log_file.exists()
+
+    with open(log_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    for i in range(10):
+        assert f"Persistence log {i}" in content
+
+
+def test_log_format_duplication(app):
+    logger = get_hunt_logger()
+
+    # Clean the queue
+    while not logger.ui_queue.empty():
+        logger.ui_queue.get()
+
+    app.logs_text_widget.config(state="normal")
+    app.logs_text_widget.delete("1.0", "end")
+    app.logs_text_widget.config(state="disabled")
+
+    # Log a message
+    test_msg = "Duplicate check msg"
+    logger.logger.info(test_msg)
+
+    # Process queue
+    app._poll_log_queue()
+    app.update()
+
+    # Check content of text widget
+    content = app.logs_text_widget.get("1.0", "end-1c").strip()
+
+    matching_lines = [line for line in content.splitlines() if test_msg in line]
+    assert len(matching_lines) == 1, (
+        f"Expected exactly 1 log line containing {test_msg!r}, "
+        f"but found {len(matching_lines)}. Content: {content}"
+    )
+
+    target_line = matching_lines[0]
+    info_token_count = target_line.count(" | INFO | ")
+
+    # We expect the formatted INFO token to appear only once on this single log line
+    assert info_token_count == 1, (
+        f"Expected 1 ' | INFO | ' token on log line, but got {info_token_count}. "
+        f"Line: {target_line}"
+    )
+
+def test_view_navigation(app):
+    # Test app.switch_view("logs") and clear behavior
+    app.switch_view("logs")
+    app.update_idletasks()
+
+    assert app.current_view_key == "logs"
+
+    # Test append_message via UI view directly
+    app._views["logs"].append_message("Test navigation append")
+    content = app.logs_text_widget.get("1.0", "end-1c").strip()
+    assert "Test navigation append" in content
+
+    # Test clear
+    app._views["logs"].clear()
+    content = app.logs_text_widget.get("1.0", "end-1c").strip()
+    assert content == ""

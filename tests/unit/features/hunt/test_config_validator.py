@@ -1,6 +1,9 @@
 import pytest
 from lib.features.hunt.config_validator import validate_hunt_area, get_valid_hunt_area, normalize_window_bounds_value
 
+pytestmark = pytest.mark.unit
+
+
 def test_validate_hunt_area_empty():
     assert validate_hunt_area({}) == {"window_title": None, "window_bounds": None}
     assert validate_hunt_area(None) == {"window_title": None, "window_bounds": None}

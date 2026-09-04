@@ -6,6 +6,9 @@ import pytest
 import sys
 from unittest.mock import Mock
 
+pytestmark = pytest.mark.unit
+
+
 
 @pytest.mark.parametrize("view_key", ['setup', 'help', 'hunt'])
 def test_switch_view_updates_current_key(monkeypatch, view_key):

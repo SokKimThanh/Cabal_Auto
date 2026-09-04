@@ -5,6 +5,9 @@ import hashlib
 from unittest.mock import patch
 from lib.db.services.db5c_audit_hybrid_and_consolidate import run_audit
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.fixture
 def mock_files(tmp_path):
     source_file = tmp_path / "bm2-bm3-detail-skill-db-cabal.txt"

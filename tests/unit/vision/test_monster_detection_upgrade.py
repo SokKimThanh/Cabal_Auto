@@ -8,6 +8,9 @@ import cv2
 import time
 from lib.vision.vision_engine import VisionEngine, Template, Detection
 
+pytestmark = pytest.mark.unit
+
+
 
 @pytest.fixture
 def vision_engine(tmp_path):

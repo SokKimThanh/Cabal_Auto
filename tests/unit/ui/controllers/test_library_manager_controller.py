@@ -2,6 +2,9 @@ import sys
 from unittest.mock import MagicMock, patch
 import pytest
 
+pytestmark = pytest.mark.unit
+
+
 # Mock modules before importing controller
 with patch.dict('sys.modules', {
     'tkinter': MagicMock(),

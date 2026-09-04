@@ -2,6 +2,9 @@ import pytest
 from lib.db.services.class_skill_evidence_service import ClassSkillEvidenceService
 import json
 
+pytestmark = pytest.mark.unit
+
+
 def test_map_category():
     service = ClassSkillEvidenceService()
     assert service.map_category("Battle Mode 2") == "bm2"

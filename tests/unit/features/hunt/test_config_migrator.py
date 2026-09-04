@@ -2,6 +2,9 @@ import pytest
 from lib.features.hunt.config_validator import normalize_window_bounds_value
 from lib.features.hunt.config_migrator import migrate_hunt_config
 
+pytestmark = pytest.mark.unit
+
+
 def test_normalize_window_bounds_value_dict():
     bounds = {"left": 10, "top": 20, "width": 100, "height": 200}
     assert normalize_window_bounds_value(bounds) == [10, 20, 100, 200]

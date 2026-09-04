@@ -6,6 +6,9 @@ from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 from lib.vision.target_name_reader import TargetNameReader
 import lib.vision.target_name_reader
 
+pytestmark = pytest.mark.unit
+
+
 class TestOCRDBFallbackContract:
     def test_ocr_db_fallback_contract(self):
         """Verify that OCR fallback dictates id=0, hp=None, defense=None."""

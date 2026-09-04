@@ -11,6 +11,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from lib.db.services.seed_classes_service import SeedClassesService
 import database
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.fixture
 def test_db_setup():
     temp_dir = tempfile.mkdtemp()

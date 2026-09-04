@@ -4,6 +4,9 @@ from lib.features.hunt.scene_monster_detector import SceneMonsterDetector
 from lib.features.hunt.runtime_monster_queue import RuntimeMonsterQueue
 from lib.vision.vision_engine import Detection
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.fixture
 def mock_vision_engine():
     engine = MagicMock()
