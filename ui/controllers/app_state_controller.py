@@ -415,12 +415,10 @@ class AppStateController:
                     )
 
         # Step 5: Apply visual warnings to UI
-        if hasattr(root, 'skill_slot_boxes') and hasattr(root, 'skill_slot_key_labels'):
-            for idx, (card, key_label) in enumerate(
-                zip(root.skill_slot_boxes, root.skill_slot_key_labels)
-            ):
+        if hasattr(root, "skill_slot_boxes") and hasattr(root, "skill_slot_key_labels"):
+            for idx, (card, _) in enumerate(zip(root.skill_slot_boxes, root.skill_slot_key_labels)):
                 if idx in conflicts:
-                    conflict_type, tooltip_text = conflicts[idx]
+                    _, tooltip_text = conflicts[idx]
 
                     # Update border (warning state)
                     try:
