@@ -1,6 +1,5 @@
 from lib.orchestrator.hunt_status_handler import HuntStatusHandler
 from typing import Dict, Tuple, Callable
-import tkinter as tk
 
 class AppHuntHandler(HuntStatusHandler):
     """Adapts App UI callbacks to HuntStatusHandler interface."""
