@@ -27,17 +27,18 @@ class HuntTab(ttk.Frame):
                 fg="white",
                 font=(UI.FONT_FAMILY, 10),
                 relief="flat",
-                anchor="center"
+                anchor="center",
+                wraplength=300
             )
 
         self.toast_label.config(
             text=message,
             bg=UI.COLOR_WARNING if level == "warn" else (UI.COLOR_DANGER if level == "error" else UI.COLOR_INFO)
         )
-        self.toast_label.place(relx=0.5, rely=0.9, anchor="center")
+        self.toast_label.pack(side="bottom", fill="x", padx=4, pady=4)
 
         def _hide():
-            self.toast_label.place_forget()
+            self.toast_label.pack_forget()
             self.toast_timer = None
 
         self.toast_timer = self.after(duration_ms, _hide)
@@ -646,9 +647,7 @@ class HuntTab(ttk.Frame):
 
                         if empty_idx != -1:
                             # Move to empty buff slot
-                            dest_var = buff_vars[empty_idx]
-                            dest_var.set(selected_name)
-                            dest_var._previous_value = selected_name
+                            buff_vars[empty_idx].set(selected_name)
                             v.set("")
                             cmb.set("")
                             self.show_toast(f"Đã tự động chuyển '{selected_name}' sang Làn Buff", duration_ms=2000, level="info")
@@ -670,9 +669,7 @@ class HuntTab(ttk.Frame):
                                 break
 
                         if empty_idx != -1:
-                            dest_var = combo_vars[empty_idx]
-                            dest_var.set(selected_name)
-                            dest_var._previous_value = selected_name
+                            combo_vars[empty_idx].set(selected_name)
                             v.set("")
                             cmb.set("")
                             self.show_toast(f"Đã tự động chuyển '{selected_name}' sang Làn Combo", duration_ms=2000, level="info")
