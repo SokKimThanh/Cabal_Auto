@@ -18,7 +18,7 @@ from database import find_monster_by_name_api
 class HuntOrchestrator:
     def __init__(
         self,
-        handler: HuntStatusHandler,
+        handler,
         bot_manager: BotManager = None,
         vision_engine: VisionEngine = None,
         skill_runtime: SkillRuntimeService = None
