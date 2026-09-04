@@ -372,7 +372,7 @@ class AppStateController:
         root = self.root  # self.root should be the App instance
 
         # Step 1: Get combo_start_key from hunt_cfg
-        combo_key = root.hunt_cfg.get("combo", {}).get("combo_start_key", "")
+        combo_key = str(root.hunt_cfg.get("combo", {}).get("combo_start_key", "") or "").strip().lower()
 
         # Step 2: Build conflict map
         conflicts = {}  # idx -> (conflict_type, tooltip_message)
