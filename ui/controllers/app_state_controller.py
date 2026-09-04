@@ -605,7 +605,9 @@ class AppStateController:
         orchestrator = getattr(app, "hunt_orchestrator", None)
         runtime_manager = orchestrator.skill_runtime.get_runtime() if orchestrator and orchestrator.skill_runtime else None
 
-        lane = 'attack' if attack_phase else 'buff'
+        lane = "attack" if attack_phase else "buff"
+        if lane == "attack" and not target_active:
+            return
 
         # We need skill_runtime to support reservation
         if runtime_manager:
