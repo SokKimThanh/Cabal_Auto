@@ -69,8 +69,8 @@ class TestSkillStripLogic(unittest.TestCase):
     def test_key_conflict_soft_warning_skill_vs_skill(self):
         try:
             root = tk.Tk()
-        except:
-            return
+        except tk.TclError as exc:
+            self.skipTest(f"Tk cannot initialize in this environment: {exc}")
 
         class MockApp:
             def __init__(self):
