@@ -1,6 +1,6 @@
 import time
-
-from lib.features.skills.cast_delivery import CastOutcome
+import logging
+from lib.features.skills.cast_delivery import CastOutcome, CastDeliveryManager, CastReservation
 
 from lib.i18n import t as i18n_t
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
@@ -605,9 +605,7 @@ class AppStateController:
         orchestrator = getattr(app, "hunt_orchestrator", None)
         runtime_manager = orchestrator.skill_runtime.get_runtime() if orchestrator and orchestrator.skill_runtime else None
 
-        lane = "attack" if attack_phase else "buff"
-        if lane == "attack" and not target_active:
-            return
+        lane = 'attack' if attack_phase else 'buff'
 
         # We need skill_runtime to support reservation
         if runtime_manager:
@@ -668,7 +666,7 @@ class AppStateController:
                             time.sleep(0.02)
                     else:
                         send_key()
-                        outcome = CastOutcome.UNVERIFIED
+                        outcome = CastOutcome.REJECTED
                 else:
                     send_key()
             else:
