@@ -426,13 +426,16 @@ class HuntOrchestrator:
                                 skill_runtime,
                                 now,
                                 target_active,
-                                attack_phase=True,
-                                skill_stats=skill_stats,
-                                backend=self.input_backend,
-                                combo_detector=combo_detector,
-                                frame=self.bot_manager.screen_capture.get_latest_frame() if hasattr(self.bot_manager, "screen_capture") and self.bot_manager.screen_capture else None,
-                                target_bar_detector=target_bar_detector
-                            )
+                                self.handler.try_cast_skills(
+                                    skill_runtime,
+                                    now,
+                                    target_active,
+                                    attack_phase=True,
+                                    skill_stats=skill_stats,
+                                    backend=self.input_backend,
+                                    combo_detector=combo_detector,
+                                    target_bar_detector=target_bar_detector
+                                )
                             time.sleep(float(cfg.get("attack_interval", 0.2)))
                             continue
 
