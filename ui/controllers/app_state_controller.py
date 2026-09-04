@@ -637,12 +637,13 @@ class AppStateController:
 
                     combo_cfg = app.hunt_cfg.get("combo", {})
                     combo_detector.key_press_callback = send_key
-                    combo_detector.wait_for_hit_zone(
+                    hit = combo_detector.wait_for_hit_zone(
                         screen_capture=screen_capture,
                         timeout_sec=combo_cfg.get("hit_zone_timeout_sec", 2.0),
-                        is_target_alive_check=is_target_alive
+                        is_target_alive_check=is_target_alive,
                     )
-                else:
+                    if not hit:
+                        return
                     send_key()
             else:
                 send_key()
