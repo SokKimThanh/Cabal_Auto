@@ -366,7 +366,6 @@ class AppStateController:
 
         Does NOT block save (soft warning only).
         """
-        import tkinter as tk
         from lib.ui_style import UIStyle as UI
 
         root = self.root  # self.root should be the App instance
