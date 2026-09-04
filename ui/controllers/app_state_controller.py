@@ -590,6 +590,10 @@ class AppStateController:
         target_active: bool,
         attack_phase: bool = False,
         skill_stats=None,
+        backend=None,
+        combo_detector=None,
+        frame=None,
+        target_bar_detector=None,
     ) -> None:
         app = self.root
         from lib.system.win_input import tap
@@ -607,7 +611,42 @@ class AppStateController:
             key = str(skill.get("key", "") or "").strip()
             if not key:
                 continue
-            tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+
+            def send_key():
+                if backend:
+                    backend.tap(key)
+                else:
+                    tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+
+            # Check combo mode active
+            is_combo_mode = getattr(self, "_combo_mode_active", False)
+            if combo_detector and is_combo_mode and not is_buff:
+
+                orchestrator = getattr(app, "hunt_orchestrator", None)
+                bot_manager = getattr(orchestrator, "bot_manager", None) if orchestrator else None
+                screen_capture = getattr(bot_manager, "screen_capture", None) if bot_manager else None
+
+                if screen_capture:
+                    # Setup target check for fast-breaking the wait
+                    def is_target_alive():
+                        if target_bar_detector:
+                            f = screen_capture.get_latest_frame()
+                            if f is not None:
+                                return target_bar_detector.is_target_alive(f)
+                        return True
+
+                    combo_cfg = app.hunt_cfg.get("combo", {})
+                    combo_detector.key_press_callback = send_key
+                    combo_detector.wait_for_hit_zone(
+                        screen_capture=screen_capture,
+                        timeout_sec=combo_cfg.get("hit_zone_timeout_sec", 2.0),
+                        is_target_alive_check=is_target_alive
+                    )
+                else:
+                    send_key()
+            else:
+                send_key()
+
             skill["_last_cast"] = now
             if skill_stats is not None:
                 try:
