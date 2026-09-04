@@ -518,7 +518,7 @@ class HuntTab(ttk.Frame):
             self.app.hunt_cfg["combo"]["combo_start_key"] = self.app.combo_start_key_cmb.get()
 
         self.app.combo_start_key_cmb.bind("<<ComboboxSelected>>", on_combo_key_change)
-        self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
+        # self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
 
         # Lanes container
         lanes_frame = tk.Frame(skill_frame_outer, bg=UI.BG_PANEL)
