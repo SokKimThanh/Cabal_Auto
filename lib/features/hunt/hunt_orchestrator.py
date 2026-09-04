@@ -113,7 +113,7 @@ class HuntOrchestrator:
 
             self.runtime_queue = runtime_queue # expose for tests
 
-            def process_skill_lane(lane: str, target_alive_check: callable) -> None:
+            def process_skill_lane(lane: str, target_alive_check) -> None:
                 if not self.skill_runtime:
                     return
                 runtime_manager = self.skill_runtime.get_runtime()
