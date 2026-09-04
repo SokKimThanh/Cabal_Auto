@@ -91,6 +91,43 @@ except ImportError:
 
 
 try:
+    from ui.mixins.action_notification_mixin import ActionNotificationMixin
+except ImportError:
+    class ActionNotificationMixin:
+        def __init__(self, *args, debug_mode=False, **kwargs):
+            # Properly cooperative multiple inheritance
+            if hasattr(super(), '__init__'):
+                try:
+                    super().__init__(*args, **kwargs)
+                except TypeError:
+                    # Try without debug_mode kwarg
+                    try:
+                        super().__init__(*args)
+                    except TypeError:
+                        # Last resort: just pass parent
+                        if args:
+                            try:
+                                super().__init__(args[0])
+                            except TypeError:
+                                pass
+
+        def show_notification(self, *args, **kwargs):
+            pass
+
+        def set_notification_widget(self, *args, **kwargs):
+            pass
+
+        def register_action_rules(self, *args, **kwargs):
+            pass
+
+        def execute_action(self, *args, **kwargs):
+            if len(args) > 1 and callable(args[1]):
+                args[1]()
+
+        def has_action_rule(self, *args, **kwargs):
+            return False
+
+try:
     from ui.components import create_icon_button, create_icon_label
     from ui.components.icon_button import (
         create_add_button,
@@ -102,7 +139,6 @@ try:
     )
     from ui.components.confirmation_widget import ConfirmationWidget
     from ui.components.notification_widget import NotificationWidget
-    from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
 
     def create_icon_button(
@@ -198,27 +234,6 @@ except ImportError:
 
     ConfirmationWidget = None  # type: ignore
     NotificationWidget = None  # type: ignore
-
-    class ActionNotificationMixin:
-        def __init__(self, *args, debug_mode=False, **kwargs):
-            if args:
-                super().__init__(args[0])
-
-        def show_notification(self, *args, **kwargs):
-            pass
-
-        def set_notification_widget(self, *args, **kwargs):
-            pass
-
-        def register_action_rules(self, *args, **kwargs):
-            pass
-
-        def execute_action(self, *args, **kwargs):
-            if len(args) > 1 and callable(args[1]):
-                args[1]()
-
-        def has_action_rule(self, *args, **kwargs):
-            return False
 
     def set_button_enabled(
         button, enabled: bool, tooltip: Optional[str] = None
