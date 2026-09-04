@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import time
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock
 from lib.features.combo import CabalComboDetector
 
 
