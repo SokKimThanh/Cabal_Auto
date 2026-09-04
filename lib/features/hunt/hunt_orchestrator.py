@@ -199,7 +199,7 @@ class HuntOrchestrator:
                                 time.sleep(0.05)
 
                 if outcome == CastOutcome.ACCEPTED:
-                    runtime_manager.commit_cast(reservation.token, time.time())
+                    runtime_manager.commit_cast(reservation.token, reservation, time.time())
                 else:
                     runtime_manager.release_cast(reservation.token, outcome)
                     if outcome == CastOutcome.REJECTED:
