@@ -1,3 +1,79 @@
+from lib.orchestrator.hunt_status_handler import HuntStatusHandler
+from typing import Dict, Tuple, Callable
+import tkinter as tk
+
+class AppHuntHandler(HuntStatusHandler):
+    """Adapts App UI callbacks to HuntStatusHandler interface."""
+
+    def __init__(self, app):
+        self.app = app
+
+    def on_status_update(self, message: str) -> None:
+        if hasattr(self.app, "hunt_status"):
+            self.app.after(0, lambda: self.app.hunt_status.set(message))
+
+    def on_state_change(self, state: str) -> None:
+        if hasattr(self.app, "_on_orchestrator_state_change"):
+            self.app.after(0, lambda: self.app._on_orchestrator_state_change(state))
+
+    def update_skill_stats_display(self, stats: dict) -> None:
+        if hasattr(self.app, "update_skill_stats_display"):
+            self.app.after(0, lambda: self.app.update_skill_stats_display(stats))
+
+    def set_target_info(self, info: str) -> None:
+        if hasattr(self.app, "hunt_target_info"):
+            self.app.after(0, lambda: self.app.hunt_target_info.set(info))
+
+    def clear_target_ui(self) -> None:
+        if hasattr(self.app, "clear_target_ui"):
+            self.app.after(0, lambda: self.app.clear_target_ui())
+
+    def bring_window_to_front(self, window_name: str) -> bool:
+        if hasattr(self.app, "window_controller"):
+            return self.app.window_controller._bring_window_to_front(window_name)
+        return False
+
+    def bring_window_to_front_by_hwnd(self, hwnd: int) -> bool:
+        if hasattr(self.app, "window_controller"):
+            return self.app.window_controller._bring_window_to_front_by_hwnd(hwnd)
+        return False
+
+    def bring_window_to_front_by_pid(self, pid: int) -> bool:
+        if hasattr(self.app, "window_controller"):
+            return self.app.window_controller._bring_window_to_front_by_pid(pid)
+        return False
+
+    def iconify_app(self) -> None:
+        if hasattr(self.app, "iconify"):
+            self.app.after(0, lambda: self.app.iconify())
+
+    def locate_target(self, params: Dict) -> Tuple[int, int]:
+        if hasattr(self.app, "state_controller"):
+            return self.app.state_controller._hunt_locate_target(params)
+        return None, None
+
+    def prepare_skill_runtime(self, skill_def: Dict) -> list:
+        if hasattr(self.app, "state_controller"):
+            return self.app.state_controller._prepare_skill_runtime(skill_def)
+        return []
+
+    def try_cast_skills(self, *args, **kwargs) -> None:
+        if hasattr(self.app, "state_controller"):
+            self.app.state_controller._try_cast_skills(*args, **kwargs)
+
+    def on_scene_monsters_detected(self, monsters: Tuple) -> None:
+        if hasattr(self.app, "on_scene_monsters_detected"):
+            self.app.on_scene_monsters_detected(monsters)
+
+    def get_hunt_selected(self) -> Dict:
+        return getattr(self.app, "hunt_selected", {})
+
+    def schedule_ui_task(self, task: Callable[[], None]) -> None:
+        if hasattr(self.app, "after"):
+            self.app.after(0, task)
+        else:
+            task()
+
 from ui.windows.setup_wizard import show_setup_wizard
 from dialogs.monster_picker import MonsterPickerDialog
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
@@ -531,27 +607,12 @@ class App(tk.Tk):
             ),
         )
 
+        handler = AppHuntHandler(self)
         self.hunt_orchestrator = HuntOrchestrator(
-            on_status_update=(
-                self.hunt_status.set if hasattr(self, "hunt_status") else lambda _: None
-            ),
-            on_state_change=self._on_orchestrator_state_change,
-            locate_target=self.state_controller._hunt_locate_target,
-            prepare_skill_runtime=self.state_controller._prepare_skill_runtime,
-            try_cast_skills=self.state_controller._try_cast_skills,
-            bring_window_to_front=self.window_controller._bring_window_to_front,
-            bring_window_to_front_by_hwnd=self.window_controller._bring_window_to_front_by_hwnd,
-            bring_window_to_front_by_pid=self.window_controller._bring_window_to_front_by_pid,
-            iconify_app=self.iconify,
-            update_skill_stats_display=getattr(
-                self, "update_skill_stats_display", lambda _: None
-            ),
-            get_hunt_selected=lambda: getattr(self, "hunt_selected", {}),
-            schedule_ui_task=lambda fn: (
-                self.after(0, fn) if hasattr(self, "after") else fn()
-            ),
-            clear_target_ui=self.clear_target_ui,
-            set_target_info=lambda txt: getattr(self, "hunt_target_info", tk.StringVar()).set(txt)
+            handler=handler,
+            bot_manager=self.bot_manager,
+            vision_engine=self.vision_engine,
+            skill_runtime=self.skill_runtime
         )
 
         # Keyboard shortcuts (Window-focused only)
