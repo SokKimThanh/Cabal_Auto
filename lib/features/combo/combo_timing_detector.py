@@ -190,3 +190,4 @@ class CabalComboDetector:
         except Exception as e:
             logger.error(f"Error in _check_hit_zone: {e}", exc_info=True)
             return False
+
