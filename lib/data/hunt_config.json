@@ -104,7 +104,7 @@
     "hotbar_roi": null,
     "ack_timeout_ms": 500,
     "combo": {
-        "enabled": true,
+        "enabled": false,
         "combo_start_key": "alt+3",
         "hit_zone_x_ratio": 0.78,
         "hit_zone_timeout_sec": 2.0,
