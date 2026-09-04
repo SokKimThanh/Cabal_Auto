@@ -51,11 +51,7 @@ class HuntStatusHandler(ABC):
         """Minimize application."""
         pass
 
-    # Game Logic callbacks
-    @abstractmethod
-    def locate_target(self, params: Dict) -> Tuple[int, int]:
-        """Locate target position."""
-        pass
+def locate_target(self, params: Dict) -> Tuple[Optional[Tuple[int, int, int, int]], Optional[dict]]:
 
     @abstractmethod
     def prepare_skill_runtime(self, skill_def: Dict) -> list:
