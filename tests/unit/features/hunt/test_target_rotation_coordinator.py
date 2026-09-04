@@ -13,7 +13,7 @@ def test_sequence_wrap_around():
     coord.advance_pointer()
     assert coord.get_desired_target()["monster_id"] == 205
     coord.advance_pointer()
-    assert coord.get_desired_target()["monster_id"] == 101 # wrapped
+    assert coord.get_desired_target()["monster_id"] == 101  # wrapped
 
 def test_priority_sorting():
     rotation = [
