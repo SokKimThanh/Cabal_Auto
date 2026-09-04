@@ -168,25 +168,9 @@ class TestSkillStripLogic(unittest.TestCase):
         root.destroy()
 
     def test_migration_uses_cb4_atomic_write(self):
-        from unittest.mock import patch
-
-        with patch('lib.features.hunt.config_migrator._migrate_skills') as mock_migrate:
-            mock_migrate.return_value = {
-                "skill_slots": [{"name": "Fireball", "type": "attack"}],
-                "buff_slots": [{"name": "Shield", "type": "buff"}]
-            }
-
-            try:
-                from lib.features.hunt.config_migrator import _migrate_skills
-                test_data = {
-                    "skill_slots": [{"name": "Test", "key": "1"}],
-                    "buff_slots": []
-                }
-                result = _migrate_skills(test_data)
-                self.assertIn("skill_slots", result)
-                self.assertIn("buff_slots", result)
-            except Exception:
-                pass
+        self.skipTest(
+            "Placeholder test: config_migrator._migrate_skills mutates input and currently has no cb4 atomic write behavior to assert."
+        )
 
 if __name__ == '__main__':
     unittest.main()
