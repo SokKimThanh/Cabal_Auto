@@ -110,7 +110,8 @@ class TestSkillStripLogic(unittest.TestCase):
         validator._validate_slot_key_duplicates()
 
         # Assert: All 3 boxes should have warning border
-        self.assertTrue(True)
+        for i in range(3):
+            self.assertEqual(int(app.skill_slot_boxes[i].master.cget("highlightthickness")), 2)
 
         root.destroy()
 
