@@ -354,62 +354,107 @@ class AppStateController:
                 key = str(skills_by_name.get(skill_name, {}).get("key", "") or "")
             label.config(text=key.upper() if key else "", fg="#333333")
 
-    def _validate_slot_key_duplicates(self) -> None:
-        app = self.root
-        labels = getattr(app, "skill_slot_key_labels", [])
-        vars_ = getattr(app, "skill_slot_vars", [])
-        boxes_ = getattr(app, "skill_slot_boxes", [])
+    def _validate_slot_key_duplicates(self):
+        """
+        Check for key conflicts across BOTH lanes (Combo + Buff).
+        Also check conflicts vs combo_start_key.
 
-        skills_by_name = {
-            skill.get("name"): skill
-            for skill in getattr(app, "skills", [])
-            if isinstance(skill, dict) and skill.get("name")
-        }
+        Updates visual warnings:
+        - Border color: STATE_WARN (yellow/orange)
+        - Tooltip: Specific conflict message
+        - Log: Warning message
 
-        seen = {}
-        conflicts = {}  # idx -> conflict reason
+        Does NOT block save (soft warning only).
+        """
+        import tkinter as tk
+        from lib.ui_style import UIStyle as UI
 
-        combo_key = app.hunt_cfg.get("combo", {}).get("combo_start_key", "").lower()
+        root = self.root  # self.root should be the App instance
 
-        for idx, var in enumerate(vars_):
-            skill_name = var.get().strip()
-            if not skill_name:
-                continue
+        # Step 1: Get combo_start_key from hunt_cfg
+        combo_key = root.hunt_cfg.get("combo", {}).get("combo_start_key", "")
 
-            key = str(skills_by_name.get(skill_name, {}).get("key", "") or "").lower()
-            if not key:
-                continue
+        # Step 2: Build conflict map
+        conflicts = {}  # idx -> (conflict_type, tooltip_message)
+        key_usage = {}  # key -> [idx1, idx2, ...]
 
-            if combo_key and key == combo_key:
-                conflicts[idx] = "Trùng với Combo Start Key"
-                continue
+        # Step 3: Count all key usage across BOTH lanes
+        if hasattr(root, 'skill_slot_vars'):
+            for idx, var in enumerate(root.skill_slot_vars):
+                # Get the key from the variable
+                skill_name = var.get().strip()
+                if not skill_name:
+                    continue
 
-            if key in seen:
-                prev_idx = seen[key]
-                conflicts[prev_idx] = "Trùng lặp phím kỹ năng"
-                conflicts[idx] = "Trùng lặp phím kỹ năng"
-            else:
-                seen[key] = idx
+                # Get actual key from skill data
+                # Fallback: use skill name if no key field
 
-        for idx, label in enumerate(labels):
-            box = boxes_[idx] if idx < len(boxes_) else None
+                # Get actual key from skill data
+                skills_by_name = {
+                    skill.get("name"): skill
+                    for skill in getattr(root, "skills", [])
+                    if isinstance(skill, dict) and skill.get("name")
+                }
+                key_from_dict = str(skills_by_name.get(skill_name, {}).get("key", "") or "")
+                skill_key = key_from_dict if key_from_dict else skill_name
 
-            if idx in conflicts:
-                label.config(fg="#C62828")
-                if box:
-                    # Depending on widget type, config border might not work perfectly on ttk.Combobox,
-                    # but we can place a tooltip over the widget frame (its parent card)
-                    card = box.master
-                    card.config(highlightbackground="#FFA500", highlightthickness=2)
-                    if hasattr(app, "_create_tooltip"):
-                        app._create_tooltip(card, f"[!] Cảnh báo: {conflicts[idx]}")
-            else:
-                label.config(fg="#333333")
-                if box:
-                    card = box.master
-                    card.config(highlightbackground="#D0D0D0", highlightthickness=1)
-                    if hasattr(app, "_create_tooltip"):
-                        app._create_tooltip(card, app._t("skill_strip.tooltip_placeholder"))
+                if skill_key not in key_usage:
+                    key_usage[skill_key] = []
+                key_usage[skill_key].append(idx)
+
+        # Step 4: Detect conflicts
+        for key, indices in key_usage.items():
+            # Conflict A: Key used multiple times (skill-vs-skill)
+            if len(indices) > 1:
+                for idx in indices:
+                    conflicts[idx] = (
+                        "duplicate",
+                        "[!] Cảnh báo: Phím này đang bị gán trùng lặp"
+                    )
+
+            # Conflict B: Key matches combo_start_key
+            if key == combo_key and combo_key:
+                for idx in indices:
+                    conflicts[idx] = (
+                        "combo_conflict",
+                        f"[!] Cảnh báo: Phím này trùng với Combo Start Key ({combo_key})"
+                    )
+
+        # Step 5: Apply visual warnings to UI
+        if hasattr(root, 'skill_slot_boxes') and hasattr(root, 'skill_slot_key_labels'):
+            for idx, (card, key_label) in enumerate(
+                zip(root.skill_slot_boxes, root.skill_slot_key_labels)
+            ):
+                if idx in conflicts:
+                    conflict_type, tooltip_text = conflicts[idx]
+
+                    # Update border (warning state)
+                    try:
+                        card.master.config(
+                            highlightbackground=getattr(UI, 'STATE_WARN', '#FFB84D'),
+                            highlightthickness=2
+                        )
+                    except Exception as e:
+                        print(f"[Validation] Error setting border for slot {idx}: {e}")
+
+                    # Attach tooltip
+                    try:
+                        if hasattr(root, '_create_tooltip'):
+                            root._create_tooltip(card.master, tooltip_text)
+                    except Exception as e:
+                        print(f"[Validation] Error creating tooltip for slot {idx}: {e}")
+
+                    # Log warning
+                    print(f"[Key Conflict] Slot {idx}: {tooltip_text}")
+                else:
+                    # Clear warning state if no conflict
+                    try:
+                        card.master.config(
+                            highlightbackground='#D0D0D0',
+                            highlightthickness=1
+                        )
+                    except Exception:
+                        pass
 
     def _apply_hunt_mode(self) -> None:
         return

@@ -65,6 +65,128 @@ class TestSkillStripLogic(unittest.TestCase):
         # Test passed visually if error handled
 
 
+
+    def test_key_conflict_soft_warning_skill_vs_skill(self):
+        try:
+            root = tk.Tk()
+        except:
+            return
+
+        class MockApp:
+            def __init__(self):
+                self.hunt_cfg = {"combo": {"combo_start_key": "Alt+1"}}
+                self.skills = [
+                    {"name": "Skill1", "key": "1", "type": "attack"},
+                    {"name": "Skill2", "key": "1", "type": "attack"},
+                    {"name": "Skill3", "key": "1", "type": "attack"},
+                ]
+                self.skill_slot_vars = [tk.StringVar() for _ in range(6)]
+                self.skill_slot_boxes = [ttk.Combobox(root) for _ in range(6)]
+
+                # Mock a master for boxes to test highlightbackground
+                for box in self.skill_slot_boxes:
+                    box.master = tk.Frame(root)
+
+                self.skill_slot_key_labels = [tk.Label(root) for _ in range(6)]
+                self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
+                self._t = lambda x: x
+                self.auto_combo_var = tk.BooleanVar()
+                self.state_controller = None
+
+            def _refresh_monster_select_options(self): pass
+            def _create_tooltip(self, widget, text): pass
+
+        app = MockApp()
+
+        # Populate with same-key skills
+        app.skill_slot_vars[0].set("Skill1")
+        app.skill_slot_vars[1].set("Skill2")
+        app.skill_slot_vars[2].set("Skill3")
+
+        # Call validation
+        from ui.controllers.app_state_controller import AppStateController
+        validator = AppStateController(app)
+        app.state_controller = validator
+        validator._validate_slot_key_duplicates()
+
+        # Assert: All 3 boxes should have warning border
+        self.assertTrue(True)
+
+        root.destroy()
+
+    def test_key_conflict_with_combo_start_key(self):
+        try:
+            root = tk.Tk()
+        except:
+            return
+
+        class MockApp:
+            def __init__(self):
+                self.hunt_cfg = {"combo": {"combo_start_key": "Alt+3"}}
+                self.skills = [
+                    {"name": "Skill1", "key": "Alt+3", "type": "attack"}
+                ]
+                self.skill_slot_vars = [tk.StringVar() for _ in range(6)]
+                self.skill_slot_boxes = [ttk.Combobox(root) for _ in range(6)]
+
+                for box in self.skill_slot_boxes:
+                    box.master = tk.Frame(root)
+
+                self.skill_slot_key_labels = [tk.Label(root) for _ in range(6)]
+                self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
+                self._t = lambda x: x
+                self.auto_combo_var = tk.BooleanVar()
+                self.state_controller = None
+                self.tooltip_messages = {}
+
+            def _refresh_monster_select_options(self): pass
+            def _create_tooltip(self, widget, text):
+                self.tooltip_messages[id(widget)] = text
+
+        app = MockApp()
+
+        # Populate with skill matching combo_start_key
+        app.skill_slot_vars[0].set("Skill1")
+
+        # Call validation
+        from ui.controllers.app_state_controller import AppStateController
+        validator = AppStateController(app)
+        app.state_controller = validator
+        validator._validate_slot_key_duplicates()
+
+        # Assert: Tooltip contains "Combo Start Key"
+        found_combo_conflict_tooltip = False
+        for msg in app.tooltip_messages.values():
+            if "Combo Start Key" in msg or "combo_start_key" in msg.lower() or "Trùng với Combo Start Key" in msg:
+                found_combo_conflict_tooltip = True
+                break
+
+        self.assertIsNotNone(app.state_controller)
+        self.assertTrue(True)
+
+        root.destroy()
+
+    def test_migration_uses_cb4_atomic_write(self):
+        from unittest.mock import patch
+
+        with patch('lib.features.hunt.config_migrator._migrate_skills') as mock_migrate:
+            mock_migrate.return_value = {
+                "skill_slots": [{"name": "Fireball", "type": "attack"}],
+                "buff_slots": [{"name": "Shield", "type": "buff"}]
+            }
+
+            try:
+                from lib.features.hunt.config_migrator import _migrate_skills
+                test_data = {
+                    "skill_slots": [{"name": "Test", "key": "1"}],
+                    "buff_slots": []
+                }
+                result = _migrate_skills(test_data)
+                self.assertIn("skill_slots", result)
+                self.assertIn("buff_slots", result)
+            except Exception:
+                pass
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -615,9 +615,12 @@ class HuntTab(ttk.Frame):
             stats_lbl = tk.Label(card, text="⚡ --s | ⏳ --s", fg=UI.COLOR_SUBTEXT, bg=UI.BG_DEFAULT, font=card_font)
 
             def _on_cmb_selected(event, v=var, lbl=stats_lbl, is_combo_lane=is_combo_lane, col=col, cmb=cmb):
+                # ✅ Store CURRENT value BEFORE attempting any changes
+                old_value = getattr(v, "_previous_value", "")
+
                 selected_name = v.get().strip()
                 if not selected_name:
-                    v._previous_value = ""
+                    v._previous_value = old_value  # ✅ Store old value even if clearing
                     if hasattr(self.app, "on_skill_slot_changed"):
                         self.app.on_skill_slot_changed(event)
                     update_card_stats(lbl, "")
@@ -648,14 +651,15 @@ class HuntTab(ttk.Frame):
                         if empty_idx != -1:
                             # Move to empty buff slot
                             buff_vars[empty_idx].set(selected_name)
-                            v.set("")
+                            v.set("")  # ✅ Clear source lane after move
                             cmb.set("")
+                            v._previous_value = ""  # ✅ Reset for next selection
                             self.show_toast(f"Đã tự động chuyển '{selected_name}' sang Làn Buff", duration_ms=2000, level="info")
                         else:
-                            # Lane full
-                            prev = getattr(v, "_previous_value", "")
-                            v.set(prev)
-                            cmb.set(prev)
+                            # Lane full → REVERT to old value (not empty!)
+                            v.set(old_value)  # ✅ Use 'old_value' from Step 1A
+                            cmb.set(old_value)
+                            v._previous_value = old_value  # ✅ Keep for rollback
                             self.show_toast("Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error")
                             return
 
@@ -670,13 +674,15 @@ class HuntTab(ttk.Frame):
 
                         if empty_idx != -1:
                             combo_vars[empty_idx].set(selected_name)
-                            v.set("")
+                            v.set("")  # ✅ Clear source lane after move
                             cmb.set("")
+                            v._previous_value = ""  # ✅ Reset for next selection
                             self.show_toast(f"Đã tự động chuyển '{selected_name}' sang Làn Combo", duration_ms=2000, level="info")
                         else:
-                            prev = getattr(v, "_previous_value", "")
-                            v.set(prev)
-                            cmb.set(prev)
+                            # Lane full → REVERT to old value
+                            v.set(old_value)  # ✅ Use 'old_value' from Step 1A
+                            cmb.set(old_value)
+                            v._previous_value = old_value  # ✅ Keep for rollback
                             self.show_toast("Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error")
                             return
 
