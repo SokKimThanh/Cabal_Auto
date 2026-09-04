@@ -51,9 +51,12 @@ class SkillInfo:
     
     # Runtime tracking
     last_cast_time: float = 0.0  # Last time this skill was cast
+    quarantine_until: float = 0.0 # Time until skill is quarantined
     
     def is_ready(self, current_time: float) -> bool:
         """Check if skill is off cooldown and ready to cast."""
+        if current_time < self.quarantine_until:
+            return False
         return (current_time - self.last_cast_time) >= self.cooldown
     
     def needs_refresh(self, current_time: float) -> bool:
@@ -269,7 +272,15 @@ class SkillRuntime:
         """Reset all skill cooldowns and timings."""
         for skill in self.attack_skills + self.buff_skills:
             skill.last_cast_time = 0.0
+            skill.quarantine_until = 0.0
         self.attack_rotation_index = 0
+
+    def quarantine_skill(self, key: str, current_time: float, duration: float):
+        """Quarantine a skill to prevent casting for a duration."""
+        for skill in self.attack_skills + self.buff_skills:
+            if skill.key == key:
+                skill.quarantine_until = current_time + duration
+                return
     
     def get_status(self, current_time: float) -> Dict:
         """
