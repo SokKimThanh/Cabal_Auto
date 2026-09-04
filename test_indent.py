@@ -1,7 +1,7 @@
-                    card = box.master
-                    card.config(highlightbackground="#D0D0D0", highlightthickness=1)
-                    if hasattr(app, "_create_tooltip"):
-                        app._create_tooltip(card, app._t("skill_strip.tooltip_placeholder"))
+"""No-op placeholder.
 
-    def _apply_hunt_mode(self) -> None:
-        return
+TODO: Remove this file from the repository (accidental commit).
+"""
+
+if __name__ == "__main__":
+    pass
