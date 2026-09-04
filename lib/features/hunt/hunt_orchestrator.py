@@ -92,6 +92,13 @@ class HuntOrchestrator:
             consecutive_false_readings = 0
             logger = get_hunt_logger()
 
+            from lib.features.skills.cast_delivery import CastDeliveryManager, CastOutcome
+            cast_delivery = CastDeliveryManager()
+
+            from lib.vision.skill_cooldown_detector import SkillCooldownDetector
+            hotbar_roi = cfg.get("hotbar_roi", (0.0, 1.0, 0.0, 1.0))
+            cooldown_detector = SkillCooldownDetector(roi=hotbar_roi, threshold=10.0)
+
             # Setup scene monster detection logic
             from lib.features.hunt.runtime_monster_queue import RuntimeMonsterQueue
             from lib.features.hunt.scene_monster_detector import SceneMonsterDetector
@@ -105,6 +112,119 @@ class HuntOrchestrator:
                 scene_detector = SceneMonsterDetector(self.bot_manager.vision_engine, runtime_queue)
 
             self.runtime_queue = runtime_queue # expose for tests
+
+            def process_skill_lane(lane: str, target_alive_check: callable) -> None:
+                if not self.skill_runtime:
+                    return
+                runtime_manager = self.skill_runtime.get_runtime()
+                if not runtime_manager:
+                    return
+
+                now = time.time()
+                reservation = runtime_manager.reserve_next_skill(lane, now)
+                if not reservation:
+                    return
+
+                cast_delivery.add_reservation(reservation)
+
+                from lib.features.skills.cast_delivery import TransportStatus
+
+                def send_key() -> TransportStatus:
+                    if self.input_backend:
+                        success = self.input_backend.tap(reservation.key)
+                        return TransportStatus.SENT if success else TransportStatus.FAILED
+                    return TransportStatus.FAILED
+
+                outcome = CastOutcome.UNVERIFIED
+                is_combo_mode = cfg.get("combo", {}).get("enabled", False)
+
+                bot_manager = getattr(self, "bot_manager", None)
+                screen_capture = getattr(bot_manager, "screen_capture", None) if bot_manager else None
+                skill_stats = getattr(self.handler, "app", None) and getattr(self.handler.app, "skill_stats", None)
+
+                # Send Key Wrapper with Retry
+                def attempt_send() -> bool:
+                    max_transport_retries = cfg.get("skill_delivery", {}).get("max_transport_retries", 1)
+                    retry_backoff_ms = cfg.get("skill_delivery", {}).get("retry_backoff_ms", 300)
+                    for attempt in range(max_transport_retries + 1):
+                        if send_key() == TransportStatus.SENT:
+                            return True
+                        if attempt < max_transport_retries:
+                            time.sleep(retry_backoff_ms / 1000.0)
+                    return False
+
+                if combo_detector and is_combo_mode and lane == "attack" and screen_capture:
+                    combo_cfg = cfg.get("combo", {})
+                    combo_detector.key_press_callback = lambda: None if attempt_send() else None # Attempt send will handle tap
+                    did_trigger = combo_detector.wait_for_hit_zone(
+                        screen_capture=screen_capture,
+                        timeout_sec=combo_cfg.get("hit_zone_timeout_sec", 2.0),
+                        is_target_alive_check=target_alive_check,
+                    )
+
+                    if did_trigger:
+                        post_wait_start = time.time()
+                        outcome = CastOutcome.UNVERIFIED
+                        while time.time() - post_wait_start < 0.3:
+                            if not target_alive_check():
+                                outcome = CastOutcome.CANCELLED
+                                break
+                            current_frame = screen_capture.get_latest_frame()
+                            if current_frame is not None and not combo_detector._check_hit_zone(current_frame):
+                                outcome = CastOutcome.ACCEPTED
+                                break
+                            time.sleep(0.02)
+                    else:
+                        outcome = CastOutcome.UNVERIFIED
+                else:
+                    if screen_capture:
+                        baseline_frame = screen_capture.get_latest_frame()
+                        if baseline_frame is not None:
+                            cooldown_detector.set_baseline(baseline_frame)
+
+                    if not attempt_send():
+                        outcome = CastOutcome.REJECTED
+                    else:
+                        if screen_capture:
+                            post_wait_start = time.time()
+                            outcome = CastOutcome.UNVERIFIED
+                            while time.time() - post_wait_start < 0.5:
+                                if not target_alive_check():
+                                    outcome = CastOutcome.CANCELLED
+                                    break
+                                current_frame = screen_capture.get_latest_frame()
+                                if current_frame is not None and cooldown_detector.check_cooldown(current_frame):
+                                    outcome = CastOutcome.ACCEPTED
+                                    break
+                                time.sleep(0.05)
+
+                if outcome == CastOutcome.ACCEPTED:
+                    runtime_manager.commit_cast(reservation.token, time.time())
+                else:
+                    runtime_manager.release_cast(reservation.token, outcome)
+                    if outcome == CastOutcome.REJECTED:
+                        self.stop_hunt()
+                    elif outcome == CastOutcome.UNVERIFIED:
+                        # Quarantine skill for a short duration to prevent immediate resend spam
+                        runtime_manager.quarantine_skill(reservation.key, time.time(), 2.0)
+
+                if skill_stats is not None:
+                    try:
+                        skill_stats.record_cast(reservation.skill_name, outcome=outcome, timestamp=time.time())
+                        if outcome == CastOutcome.UNVERIFIED:
+                            degraded_threshold = cfg.get("skill_delivery", {}).get("degraded_threshold", 3)
+                            if skill_stats.get_unverified_count(reservation.skill_name) >= degraded_threshold:
+                                unverified_policy = cfg.get("skill_delivery", {}).get("unverified_policy", "pause_skill")
+                                if unverified_policy == "pause_skill":
+                                    logger.log_error("hunt_loop", f"Skill '{reservation.skill_name}' reached degraded threshold. Pausing skill permanently.")
+                                    # Mark degraded state
+                                    self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Degraded: {reservation.skill_name} unverified."))
+                                    # Quarantine for a long time to effectively pause
+                                    runtime_manager.quarantine_skill(reservation.key, time.time(), 999999.0)
+                    except Exception:
+                        pass
+
+                cast_delivery.remove_reservation(reservation.token)
 
             target_policy = cfg.get("target_policy", "configured_only")
             target_coordinator = TargetRotationCoordinator(target_policy, cfg.get("monster_rotation", []))
@@ -327,14 +447,7 @@ class HuntOrchestrator:
                             pass
 
                     if skill_runtime:
-                        self.handler.try_cast_skills(
-                            skill_runtime,
-                            now,
-                            have_target,
-                            attack_phase=False,
-                            skill_stats=skill_stats,
-                            backend=self.input_backend,
-                        )
+                        process_skill_lane("buff", lambda: True)
 
                     if mode == "search":
                         if (now - search_started) > target_acquire_timeout_sec:
@@ -421,17 +534,17 @@ class HuntOrchestrator:
                     if target_active:
                         if skill_runtime and has_attack_skills:
                             # DO NOT send target key in attack mode
-                            # just call try_cast_skills
-                            self.handler.try_cast_skills(
-                                skill_runtime,
-                                now,
-                                target_active,
-                                attack_phase=True,
-                                skill_stats=skill_stats,
-                                backend=self.input_backend,
-                                combo_detector=combo_detector,
-                                target_bar_detector=target_bar_detector
-                            )
+                            # just use process_skill_lane
+                            def is_target_alive():
+                                bot_mgr = getattr(self, "bot_manager", None)
+                                cap = getattr(bot_mgr, "screen_capture", None) if bot_mgr else None
+                                if target_bar_detector and cap:
+                                    f = cap.get_latest_frame()
+                                    if f is not None:
+                                        return target_bar_detector.is_target_alive(f)
+                                return True
+
+                            process_skill_lane("attack", is_target_alive)
                             time.sleep(float(cfg.get("attack_interval", 0.2)))
                             continue
 
