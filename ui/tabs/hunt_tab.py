@@ -484,7 +484,7 @@ class HuntTab(ttk.Frame):
             is_enabled = self.app.auto_combo_var.get()
             self.app.hunt_cfg["combo"]["enabled"] = is_enabled
             if is_enabled:
-                self.app.combo_start_key_cmb.config(state="normal")
+                self.app.combo_start_key_cmb.config(state="readonly")
             else:
                 self.app.combo_start_key_cmb.config(state="disabled")
 
