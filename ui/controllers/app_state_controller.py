@@ -613,11 +613,11 @@ class AppStateController:
                 continue
 
             def send_key():
+                press_ms = int(app.hunt_cfg.get("attack_press_ms", 60))
                 if backend:
-                    backend.tap(key)
+                    backend.tap(key, press_ms)
                 else:
-                    tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-
+                    tap(key, press_ms)
             # Check combo mode active
             is_combo_mode = getattr(self, "_combo_mode_active", False)
             if combo_detector and is_combo_mode and not is_buff:
