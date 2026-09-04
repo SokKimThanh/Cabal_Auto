@@ -379,25 +379,20 @@ class AppStateController:
         key_usage = {}  # key -> [idx1, idx2, ...]
 
         # Step 3: Count all key usage across BOTH lanes
-        if hasattr(root, 'skill_slot_vars'):
+        skills_by_name = {
+            skill.get("name"): skill
+            for skill in getattr(root, "skills", [])
+            if isinstance(skill, dict) and skill.get("name")
+        }
+        if hasattr(root, "skill_slot_vars"):
             for idx, var in enumerate(root.skill_slot_vars):
-                # Get the key from the variable
                 skill_name = var.get().strip()
                 if not skill_name:
                     continue
 
-                # Get actual key from skill data
-                # Fallback: use skill name if no key field
-
-                # Get actual key from skill data
-                skills_by_name = {
-                    skill.get("name"): skill
-                    for skill in getattr(root, "skills", [])
-                    if isinstance(skill, dict) and skill.get("name")
-                }
-                key_from_dict = str(skills_by_name.get(skill_name, {}).get("key", "") or "")
-                skill_key = key_from_dict if key_from_dict else skill_name
-
+                skill_key = str(skills_by_name.get(skill_name, {}).get("key", "") or "").strip().lower()
+                if not skill_key:
+                    continue
                 if skill_key not in key_usage:
                     key_usage[skill_key] = []
                 key_usage[skill_key].append(idx)
