@@ -1,6 +1,7 @@
-import pytest
 import time
-from lib.features.skills.cast_delivery import CastDeliveryManager, CastReservation, CastOutcome
+
+from lib.features.skills.cast_delivery import CastDeliveryManager, CastReservation
+
 
 def test_cast_delivery_manager_add_remove():
     manager = CastDeliveryManager()
