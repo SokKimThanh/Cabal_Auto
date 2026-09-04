@@ -356,8 +356,7 @@ def print_test_environment(test_session_info):
 @pytest.fixture
 def patched_monster_editor(tmp_path):
     """Shared fixture for monster editor tests - patches common mocks."""
-    from unittest.mock import patch, MagicMock
-    from pathlib import Path
+    from unittest.mock import patch
 
     # Create temp data file
     temp_data_file = tmp_path / "monsters.json"
@@ -366,7 +365,7 @@ def patched_monster_editor(tmp_path):
     # Create list of patches
     patches_list = [
         patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file),
-        patch('ui.windows.monster_manager_win.get_db', return_value=MagicMock()),
+        patch('ui.windows.monster_manager_win.get_db', return_value=None),
         patch('ui.windows.monster_manager_win.DataSyncManager', autospec=True),
     ]
 
