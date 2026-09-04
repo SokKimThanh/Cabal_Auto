@@ -604,8 +604,7 @@ class HuntTab(ttk.Frame):
 
             # Tooltip
             if hasattr(self.app, "_create_tooltip"):
-                t_ph = self.app._t("skill_strip.tooltip_placeholder")
-                self.app._create_tooltip(card, t_ph if t_ph != "skill_strip.tooltip_placeholder" else "Chi tiết sẽ cập nhật ở bản tiếp theo")
+                self.app._create_tooltip(card, self.app._t("skill_strip.tooltip_placeholder"))
 
         self.app._refresh_monster_select_options()
         # Replaced _load_skill_slots_from_cfg with equivalent logic inline
