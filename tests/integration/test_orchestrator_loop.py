@@ -110,8 +110,9 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
     # Use a dummy cfg with background input_mode
     cfg = {
         "input_mode": "background",
-        "target_key": "z",
-        "lost_timeout_sec": 0,
+            "target_key": "z",
+            "target_policy": "any_target",
+            "lost_timeout_sec": 0,
         "target_lost_debounce_frames": 3,
         "search_tap_delay_sec": 0.0,
         "attack_interval": 0.0,
@@ -199,7 +200,8 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
     # Use a dummy cfg
     cfg = {
         "target_key": "z",
-        "lost_timeout_sec": 0, # Strict timeout for testing
+            "target_policy": "any_target",
+            "lost_timeout_sec": 0, # Strict timeout for testing
         "target_lost_debounce_frames": 3,
         "search_tap_delay_sec": 0.0,
         "attack_interval": 0.0,
@@ -224,6 +226,147 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
             assert call[0][0] == 'z'
         # Ensure try_cast_skills was called during attack phase
         assert orchestrator.try_cast_skills.called
+    finally:
+        if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
+            orchestrator.stop_hunt()
+
+
+def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
+    """Test that a wrong target transitions to cycle, but no cast skills."""
+    mock_backend_tap = MagicMock()
+    class MockForegroundBackend:
+        mode = "foreground"
+        def __init__(self): pass
+        def tap(self, *args, **kwargs): mock_backend_tap(*args, **kwargs)
+        def close(self): pass
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend", MockForegroundBackend)
+
+    mock_tap = MagicMock()
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.global_tap", mock_tap)
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger())
+
+    # Mock window validation
+    mock_validation = MagicMock()
+    mock_validation.is_valid = True
+    sys.modules["lib.features.hunt.window_selection_service"].validate_selected_cabal_window = lambda x, y: mock_validation
+
+    target_alive_seq = [False, True, True]
+    seq_idx = 0
+
+    class MockTargetBarDetector:
+        def __init__(self, hwnd=None): self.hwnd = hwnd
+        def is_target_alive(self, frame):
+            nonlocal seq_idx
+            if seq_idx < len(target_alive_seq):
+                res = target_alive_seq[seq_idx]
+                seq_idx += 1
+                return res
+            orchestrator.hunt_running = False
+            return False
+
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector)
+
+    # Mock name resolution to return WRONG target
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.find_monster_by_name_api", lambda *args: {"id": 205, "name": "Orc"})
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetNameReader.read_name", lambda *args: "Orc")
+
+    cfg = {
+        "target_key": "z",
+        "lost_timeout_sec": 0,
+        "target_lost_debounce_frames": 3,
+        "search_tap_delay_sec": 0.0,
+        "attack_interval": 0.0,
+        "target_policy": "configured_only",
+        "monster_rotation": [{"monster_id": 101, "priority": 1}]
+    }
+
+    orchestrator.start_hunt(cfg)
+    try:
+        orchestrator.hunt_thread.join(timeout=2.0)
+        assert not orchestrator.hunt_thread.is_alive()
+
+        # The orchestrator should NOT have called try_cast_skills in attack_phase
+        calls = orchestrator.try_cast_skills.call_args_list
+        for call in calls:
+            args, kwargs = call
+            attack_phase = kwargs.get('attack_phase', False)
+            if len(args) > 3: attack_phase = attack_phase or args[3]
+            assert not attack_phase, "try_cast_skills should not be called with attack_phase=True for wrong target"
+
+        assert mock_backend_tap.called
+    finally:
+        if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
+            orchestrator.stop_hunt()
+
+
+
+def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
+    """Test that a correct target transitions to attack and casts skills."""
+    mock_backend_tap = MagicMock()
+    class MockForegroundBackend:
+        mode = "foreground"
+        def __init__(self): pass
+        def tap(self, *args, **kwargs): mock_backend_tap(*args, **kwargs)
+        def close(self): pass
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend", MockForegroundBackend)
+
+    mock_tap = MagicMock()
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.global_tap", mock_tap)
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger())
+
+    # Mock window validation
+    mock_validation = MagicMock()
+    mock_validation.is_valid = True
+    sys.modules["lib.features.hunt.window_selection_service"].validate_selected_cabal_window = lambda x, y: mock_validation
+
+    target_alive_seq = [False, True, True]
+    seq_idx = 0
+
+    class MockTargetBarDetector:
+        def __init__(self, hwnd=None): self.hwnd = hwnd
+        def is_target_alive(self, frame):
+            nonlocal seq_idx
+            if seq_idx < len(target_alive_seq):
+                res = target_alive_seq[seq_idx]
+                seq_idx += 1
+                return res
+            orchestrator.hunt_running = False
+            return False
+
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector)
+
+    # Mock name resolution to return CORRECT target
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.find_monster_by_name_api", lambda *args: {"id": 101, "name": "Slime Xanh"})
+    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetNameReader.read_name", lambda *args: "Slime Xanh")
+
+    cfg = {
+        "target_key": "z",
+        "lost_timeout_sec": 0,
+        "target_lost_debounce_frames": 3,
+        "search_tap_delay_sec": 0.0,
+        "attack_interval": 0.0,
+        "target_policy": "configured_only",
+        "monster_rotation": [{"monster_id": 101, "priority": 1}]
+    }
+
+    def mock_prepare(*args, **kwargs): return [{"type": "attack", "key": "1"}]
+    monkeypatch.setattr(orchestrator, "prepare_skill_runtime", mock_prepare)
+
+    orchestrator.start_hunt(cfg)
+    try:
+        orchestrator.hunt_thread.join(timeout=2.0)
+        assert not orchestrator.hunt_thread.is_alive()
+
+        calls = orchestrator.try_cast_skills.call_args_list
+        attack_calls = []
+        for call in calls:
+            args, kwargs = call
+            if kwargs.get('attack_phase', False):
+                attack_calls.append(call)
+            elif len(args) > 3 and args[3] is True:
+                attack_calls.append(call)
+
+        assert len(attack_calls) > 0, "try_cast_skills should be called with attack_phase=True for correct target"
     finally:
         if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
             orchestrator.stop_hunt()
