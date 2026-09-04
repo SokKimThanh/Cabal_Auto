@@ -37,7 +37,7 @@ class CabalComboDetector:
         hit_zone_x_ratio: float = 0.78,
         poll_interval_ms: int = 4,
         cooldown_guard_ms: int = 120,
-        key_press_callback: Optional[Callable[[str], None]] = None
+        key_press_callback: Optional[Callable[[], None]] = None
     ):
         """
         Initialize the combo detector.
