@@ -3,7 +3,7 @@ from lib.features.hunt.target_rotation_coordinator import TargetRotationCoordina
 
 def test_empty_rotation_no_attack():
     coord = TargetRotationCoordinator("configured_only", [])
-    assert coord.is_rotation_valid() == False
+    assert not coord.is_rotation_valid()
     assert coord.evaluate_target(101, True) == TargetRotationCoordinator.UNKNOWN
 
 def test_sequence_wrap_around():
