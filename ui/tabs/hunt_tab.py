@@ -129,8 +129,7 @@ class HuntTab(ttk.Frame):
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Sub-section: Hunt Status Bar (current hunt state + current target)
-        status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, )
-        status_frame.pack_propagate(False)
+status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
         status_frame.pack(fill="x", pady=(0, 4))
         self.hunt_status_label = tk.Label(
             status_frame,
