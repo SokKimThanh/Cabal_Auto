@@ -14,6 +14,34 @@ class HuntTab(ttk.Frame):
         self.app = app
         self._build_ui()
 
+    def show_toast(self, message: str, duration_ms: int = 2000, level: str = "warn"):
+        if getattr(self, "toast_timer", None):
+            self.after_cancel(self.toast_timer)
+            self.toast_timer = None
+
+        if not hasattr(self, "toast_label"):
+            self.toast_label = tk.Label(
+                self,
+                text="",
+                bg=UI.COLOR_WARNING if level == "warn" else (UI.COLOR_DANGER if level == "error" else UI.COLOR_INFO),
+                fg="white",
+                font=(UI.FONT_FAMILY, 10),
+                relief="flat",
+                anchor="center"
+            )
+
+        self.toast_label.config(
+            text=message,
+            bg=UI.COLOR_WARNING if level == "warn" else (UI.COLOR_DANGER if level == "error" else UI.COLOR_INFO)
+        )
+        self.toast_label.place(relx=0.5, rely=0.9, anchor="center")
+
+        def _hide():
+            self.toast_label.place_forget()
+            self.toast_timer = None
+
+        self.toast_timer = self.after(duration_ms, _hide)
+
     def update_hunt_status_color(self, state: str):
         if not hasattr(self, "hunt_status_label"):
             return
@@ -129,7 +157,7 @@ class HuntTab(ttk.Frame):
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Sub-section: Hunt Status Bar (current hunt state + current target)
-status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
+        status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
         status_frame.pack(fill="x", pady=(0, 4))
         self.hunt_status_label = tk.Label(
             status_frame,
@@ -515,6 +543,8 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
 
         def on_combo_key_change(event):
             self.app.hunt_cfg["combo"]["combo_start_key"] = self.app.combo_start_key_cmb.get()
+            if hasattr(self.app, "state_controller") and hasattr(self.app.state_controller, "_validate_slot_key_duplicates"):
+                self.app.state_controller._validate_slot_key_duplicates()
 
         self.app.combo_start_key_cmb.bind("<<ComboboxSelected>>", on_combo_key_change)
         # self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
@@ -567,14 +597,15 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
             card.grid(row=row, column=col, sticky="ew", padx=2, pady=2)
 
             var = tk.StringVar()
+            var._previous_value = ""
             self.app.skill_slot_vars.append(var)
 
             # Title
             t_combo = self.app._t('skill_strip.combo_lane')
             t_buff = self.app._t('skill_strip.buff_lane')
-            title_text = f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col+1}" if is_combo_lane else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col+1}"
+            title_text = f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col + 1}" if is_combo_lane else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col + 1}"
 
-            tk.Label(card, text=title_text, bg=UI.BG_DEFAULT, fg=UI.COLOR_SUBTEXT, font=(UI.FONT_FAMILY, int(8*scale_factor))).pack(anchor="w", padx=2, pady=(2, 0))
+            tk.Label(card, text=title_text, bg=UI.BG_DEFAULT, fg=UI.COLOR_SUBTEXT, font=(UI.FONT_FAMILY, int(8 * scale_factor))).pack(anchor="w", padx=2, pady=(2, 0))
 
             # Combobox
             cmb = ttk.Combobox(card, textvariable=var, state="readonly")
@@ -582,10 +613,83 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
 
             stats_lbl = tk.Label(card, text="⚡ --s | ⏳ --s", fg=UI.COLOR_SUBTEXT, bg=UI.BG_DEFAULT, font=card_font)
 
-            def _on_cmb_selected(event, v=var, lbl=stats_lbl):
+            def _on_cmb_selected(event, v=var, lbl=stats_lbl, is_combo_lane=is_combo_lane, col=col, cmb=cmb):
+                selected_name = v.get().strip()
+                if not selected_name:
+                    v._previous_value = ""
+                    if hasattr(self.app, "on_skill_slot_changed"):
+                        self.app.on_skill_slot_changed(event)
+                    update_card_stats(lbl, "")
+                    return
+
+                # Check skill type
+                skills_by_name = {s.get("name"): s for s in getattr(self.app, "skills", []) if isinstance(s, dict) and s.get("name")}
+                skill = skills_by_name.get(selected_name)
+
+                if skill:
+                    skill_type = skill.get("type", "attack")
+                    expected_lane = "combo" if is_combo_lane else "buff"
+
+                    # Ensure skill slots exist and are properly sized
+                    skill_slot_vars = self.app.skill_slot_vars
+                    combo_vars = skill_slot_vars[:4]
+                    buff_vars = skill_slot_vars[4:]
+
+                    if skill_type != "attack" and expected_lane == "combo":
+                        # Buff selected in combo lane
+                        # Find empty in buff lane
+                        empty_idx = -1
+                        for i, bv in enumerate(buff_vars):
+                            if not bv.get().strip():
+                                empty_idx = i
+                                break
+
+                        if empty_idx != -1:
+                            # Move to empty buff slot
+                            buff_vars[empty_idx].set(selected_name)
+                            v.set("")
+                            cmb.set("")
+                            self.show_toast(f"Đã tự động chuyển '{selected_name}' sang Làn Buff", duration_ms=2000, level="info")
+                        else:
+                            # Lane full
+                            prev = getattr(v, "_previous_value", "")
+                            v.set(prev)
+                            cmb.set(prev)
+                            self.show_toast("Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error")
+                            return
+
+                    elif skill_type == "attack" and expected_lane == "buff":
+                        # Attack selected in buff lane
+                        # Find empty in combo lane
+                        empty_idx = -1
+                        for i, cv in enumerate(combo_vars):
+                            if not cv.get().strip():
+                                empty_idx = i
+                                break
+
+                        if empty_idx != -1:
+                            combo_vars[empty_idx].set(selected_name)
+                            v.set("")
+                            cmb.set("")
+                            self.show_toast(f"Đã tự động chuyển '{selected_name}' sang Làn Combo", duration_ms=2000, level="info")
+                        else:
+                            prev = getattr(v, "_previous_value", "")
+                            v.set(prev)
+                            cmb.set(prev)
+                            self.show_toast("Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error")
+                            return
+
+                # Update previous value for rollback on next conflict
+                v._previous_value = v.get().strip()
+
                 if hasattr(self.app, "on_skill_slot_changed"):
                     self.app.on_skill_slot_changed(event)
                 update_card_stats(lbl, v.get().strip())
+
+                # If we moved it, also need to update the card stats of the destination
+                for idx, slot_var in enumerate(self.app.skill_slot_vars):
+                    if hasattr(self.app, "skill_slot_stats_labels") and idx < len(self.app.skill_slot_stats_labels):
+                        update_card_stats(self.app.skill_slot_stats_labels[idx], slot_var.get().strip())
 
             cmb.bind("<<ComboboxSelected>>", _on_cmb_selected)
             self.app.skill_slot_boxes.append(cmb)
@@ -631,6 +735,7 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
                 if idx < len(normalized_slots):
                     name = normalized_slots[idx]
                 var.set(name)
+                var._previous_value = name
 
         if hasattr(self.app, "_update_attack_keys_from_slots"):
             self.app._update_attack_keys_from_slots()
