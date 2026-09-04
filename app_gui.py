@@ -603,6 +603,23 @@ class App(tk.Tk):
             ),
         )
 
+        # Initialize hunt orchestrator dependencies
+        try:
+            from lib.vision.vision_engine import get_vision_engine
+            self.vision_engine = get_vision_engine()
+        except Exception as e:
+            print(f"[App] Warning: Failed to initialize vision_engine: {e}")
+            self.vision_engine = None
+        
+        try:
+            self.bot_manager = BotManager()
+        except Exception as e:
+            print(f"[App] Warning: Failed to initialize bot_manager: {e}")
+            self.bot_manager = None
+        
+        # skill_runtime is already initialized as self.skill_service
+        self.skill_runtime = self.skill_service if hasattr(self, 'skill_service') else None
+
         handler = AppHuntHandler(self)
         self.hunt_orchestrator = HuntOrchestrator(
             handler=handler,
