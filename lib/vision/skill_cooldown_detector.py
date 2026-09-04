@@ -5,10 +5,11 @@ import logging
 
 logger = logging.getLogger("hunt_loop")
 
+
 class SkillCooldownDetector:
     """
     Detects if a skill on the hotbar went on cooldown.
-    Uses structural similarity or visual change detection on a predefined ROI.
+    Uses mean absolute pixel difference on a predefined ROI.
     """
     def __init__(self, roi: Tuple[float, float, float, float], threshold: float = 30.0):
         """
