@@ -257,3 +257,46 @@ def print_test_environment(test_session_info):
             value = value.split('\n')[0]
         print(f"{key:20s}: {value}")
     print("="*60 + "\n")
+
+@pytest.fixture
+def patched_monster_editor(tmp_path):
+    """Shared fixture for monster editor tests - patches common mocks."""
+    from unittest.mock import patch
+
+    # Create temp data file
+    temp_data_file = tmp_path / "monsters.json"
+    temp_data_file.write_text('[]', encoding='utf-8')
+
+    # Create list of patches
+    patches_list = [
+        patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file),
+        patch('ui.windows.monster_manager_win.get_db', return_value=None),
+        patch('ui.windows.monster_manager_win.DataSyncManager', autospec=True),
+    ]
+
+    # Apply all patches
+    mocks = [p.start() for p in patches_list]
+
+    yield {
+        'temp_data_file': temp_data_file,
+        'DATA_PATH_mock': mocks[0],
+        'get_db_mock': mocks[1],
+        'DataSyncManager_mock': mocks[2],
+        'patches': patches_list
+    }
+
+    # Stop all patches
+    for p in patches_list:
+        p.stop()
+
+    # Cleanup
+    try:
+        if temp_data_file.exists():
+            temp_data_file.unlink()
+    except (PermissionError, OSError):
+        import time
+        time.sleep(0.05)
+        try:
+            temp_data_file.unlink()
+        except Exception:
+            pass
