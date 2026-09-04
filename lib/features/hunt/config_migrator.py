@@ -206,8 +206,10 @@ def _migrate_skills(data: Dict[str, Any]) -> None:
                     break
             if not found:
                 logger.warning(f"Skill '{s_name}' (key {s_key}) missing type or invalid '{s_type}'. Fallback to 'attack', cast_time 1.0, cd 1.0.")
-                s["cast_time"] = _safe_float(s.get("cast_time", 1.0)) if s.get("cast_time") else 1.0
-                s["cooldown"] = _safe_float(s.get("cooldown", 1.0)) if s.get("cooldown") else 1.0
+                cast_time_raw = s.get("cast_time", 1.0)
+                cooldown_raw = s.get("cooldown", 1.0)
+                s["cast_time"] = _safe_float(cast_time_raw, default=1.0)
+                s["cooldown"] = _safe_float(cooldown_raw, default=1.0)
             s_type = resolved_type
 
         s["type"] = s_type
