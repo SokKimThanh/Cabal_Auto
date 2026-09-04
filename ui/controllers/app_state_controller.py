@@ -426,18 +426,18 @@ class AppStateController:
                             highlightbackground=getattr(UI, 'STATE_WARN', '#FFB84D'),
                             highlightthickness=2
                         )
-                    except Exception as e:
-                        print(f"[Validation] Error setting border for slot {idx}: {e}")
+                    except Exception:
+                        logger.exception("Error setting border for slot %s", idx)
 
                     # Attach tooltip
                     try:
-                        if hasattr(root, '_create_tooltip'):
+                        if hasattr(root, "_create_tooltip"):
                             root._create_tooltip(card.master, tooltip_text)
-                    except Exception as e:
-                        print(f"[Validation] Error creating tooltip for slot {idx}: {e}")
+                    except Exception:
+                        logger.exception("Error creating tooltip for slot %s", idx)
 
                     # Log warning
-                    print(f"[Key Conflict] Slot {idx}: {tooltip_text}")
+                    logger.warning("[Key Conflict] Slot %s: %s", idx, tooltip_text)
                 else:
                     # Clear warning state if no conflict
                     try:
