@@ -1,16 +1,8 @@
 import os
-import sys
 import sqlite3
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
-
-# Mock tkinter modules to prevent import errors in test collection
-if "tkinter" not in sys.modules:
-    sys.modules["tkinter"] = MagicMock()
-    sys.modules["tkinter.ttk"] = MagicMock()
-    sys.modules["tkinter.messagebox"] = MagicMock()
 
 
 @pytest.fixture(scope="session")

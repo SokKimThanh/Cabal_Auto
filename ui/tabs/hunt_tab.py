@@ -129,7 +129,8 @@ class HuntTab(ttk.Frame):
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Sub-section: Hunt Status Bar (current hunt state + current target)
-status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
+        status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, )
+        status_frame.pack_propagate(False)
         status_frame.pack(fill="x", pady=(0, 4))
         self.hunt_status_label = tk.Label(
             status_frame,
@@ -483,7 +484,7 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
             is_enabled = self.app.auto_combo_var.get()
             self.app.hunt_cfg["combo"]["enabled"] = is_enabled
             if is_enabled:
-                self.app.combo_start_key_cmb.config(state="readonly")
+                self.app.combo_start_key_cmb.config(state="normal")
             else:
                 self.app.combo_start_key_cmb.config(state="disabled")
 
@@ -517,7 +518,7 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
             self.app.hunt_cfg["combo"]["combo_start_key"] = self.app.combo_start_key_cmb.get()
 
         self.app.combo_start_key_cmb.bind("<<ComboboxSelected>>", on_combo_key_change)
-        # self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
+        self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
 
         # Lanes container
         lanes_frame = tk.Frame(skill_frame_outer, bg=UI.BG_PANEL)
@@ -526,7 +527,9 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
         self.app.skill_slot_vars = []
         self.app.skill_slot_boxes = []
         self.app.skill_slot_key_labels = []
-        self.app.skill_slot_stats_labels = []
+        if not hasattr(self.app, "skill_slot_stats_labels"):
+            self.app.skill_slot_stats_labels = []
+
         for i in range(4):
             lanes_frame.grid_columnconfigure(i, weight=1, uniform='card_col')
 
@@ -603,7 +606,8 @@ status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd
 
             # Tooltip
             if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(card, self.app._t("skill_strip.tooltip_placeholder"))
+                t_ph = self.app._t("skill_strip.tooltip_placeholder")
+                self.app._create_tooltip(card, t_ph if t_ph != "skill_strip.tooltip_placeholder" else "Chi tiết sẽ cập nhật ở bản tiếp theo")
 
         self.app._refresh_monster_select_options()
         # Replaced _load_skill_slots_from_cfg with equivalent logic inline

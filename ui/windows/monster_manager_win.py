@@ -340,7 +340,7 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
-class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
+class MonsterManagerWin(tk.Toplevel):
     """
     Main Monster Manager Window (Master View with Table Layout).
     """
@@ -356,10 +356,12 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         if not isinstance(parent, (tk.Tk, tk.Toplevel, tk.Widget)):
             raise TypeError(f"Parent must be Tk/Toplevel/Widget, got {type(parent)}")
 
-        try:
-            super().__init__(parent, debug_mode=False)
-        except TypeError:
-            super().__init__(parent)
+        super().__init__(parent)
+        self._action_rules = {}
+        self._notification_widget = None
+        self._debug_mode = False
+        import logging
+        self._logger = logging.getLogger(__name__)
 
         # Sắp xếp
         self.sort_column = "name"  # Cột đang được sắp xếp

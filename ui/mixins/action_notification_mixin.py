@@ -89,7 +89,7 @@ NotificationType = Literal['info', 'success', 'warning', 'error']
 ActionResult = tuple[bool, Optional[str]]  # (success, error_message)
 
 
-class ActionNotificationMixin(object):
+class ActionNotificationMixin:
     """
     Mixin for integrating button actions with notification feedback.
     

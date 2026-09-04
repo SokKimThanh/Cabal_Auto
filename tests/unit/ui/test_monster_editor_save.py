@@ -73,116 +73,115 @@ class TestMonsterEditorSaveAll:
             }
         ]
     
-    def test_save_button_saves_all_monsters(self, sample_monsters: list, patched_monster_editor) -> None:
+    def test_save_button_saves_all_monsters(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test that clicking Save button saves all monsters to JSON."""
         # Write initial data
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        try:
-            root = tk.Tk()
-        except Exception as e:
-            pytest.skip(f"Tkinter not available: {e}")
-            return
-
-        root.withdraw()
-        editor: Optional[MonsterManagerWin] = None
-
-        try:
-            editor = MonsterManagerWin(root)
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            # Rule 2: Check None before access
-            assert editor.monsters is not None, "Monsters list should be loaded"
-            assert len(editor.monsters) == 2, "Should load 2 monsters"
+            try:
+                root = tk.Tk()
+            except Exception as e:
+                pytest.skip(f"Tkinter not available: {e}")
+                return
             
-            # Modify a monster
-            if editor.name_entry is not None:
-                editor.name_entry.delete(0, tk.END)
-                editor.name_entry.insert(0, 'Modified Goblin')
-                editor._on_info_change()
+            root.withdraw()
+            editor: Optional[MonsterManagerWin] = None
             
-            # Rule 2: Check button exists
-            assert editor.save_button is not None, "Save button should exist"
+            try:
+                editor = MonsterManagerWin(root)
 
-            # Click save button
-            editor.save_button.invoke()
-            root.update_idletasks()
+                # Rule 2: Check None before access
+                assert editor.monsters is not None, "Monsters list should be loaded"
+                assert len(editor.monsters) == 2, "Should load 2 monsters"
 
-            # Verify file was saved
-            assert temp_data_file.exists(), "Data file should exist after save"
+                # Modify a monster
+                if editor.name_entry is not None:
+                    editor.name_entry.delete(0, tk.END)
+                    editor.name_entry.insert(0, 'Modified Goblin')
+                    editor._on_info_change()
 
-            # Read and verify saved data
-            with open(temp_data_file, 'r', encoding='utf-8') as f:
-                saved_data = json.load(f)
+                # Rule 2: Check button exists
+                assert editor.save_button is not None, "Save button should exist"
 
-            # Rule 1: Type check saved data
-            assert isinstance(saved_data, list), "Saved data should be a list"
-            assert len(saved_data) == 2, "Should save 2 monsters"
+                # Click save button
+                editor.save_button.invoke()
+                root.update_idletasks()
 
-        finally:
-            if editor is not None:
-                editor.destroy()
-            root.destroy()
+                # Verify file was saved
+                assert temp_data_file.exists(), "Data file should exist after save"
+
+                # Read and verify saved data
+                with open(temp_data_file, 'r', encoding='utf-8') as f:
+                    saved_data = json.load(f)
+
+                # Rule 1: Type check saved data
+                assert isinstance(saved_data, list), "Saved data should be a list"
+                assert len(saved_data) == 2, "Should save 2 monsters"
+
+            finally:
+                if editor is not None:
+                    editor.destroy()
+                root.destroy()
     
-    @patch('tkinter.messagebox.showinfo')
-    def test_save_clears_dirty_state(self, mock_info, sample_monsters: list, patched_monster_editor) -> None:
+    def test_save_clears_dirty_state(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test that saving clears dirty state and updates UI."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        try:
-            root = tk.Tk()
-        except Exception as e:
-            pytest.skip(f"Tkinter not available: {e}")
-            return
-
-        root.withdraw()
-        editor: Optional[MonsterManagerWin] = None
-
-        try:
-            editor = MonsterManagerWin(root)
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            # Make a change to set dirty
-            editor.set_dirty(True)
-            root.update_idletasks()
+            try:
+                root = tk.Tk()
+            except Exception as e:
+                pytest.skip(f"Tkinter not available: {e}")
+                return
             
-            # Verify dirty before save
-            assert editor.is_dirty is True, "Should be dirty after change"
+            root.withdraw()
+            editor: Optional[MonsterManagerWin] = None
             
-            # Rule 2: Check widgets exist
-            assert editor.save_button is not None, "Save button should exist"
-            assert editor.status_label is not None, "Status label should exist"
+            try:
+                editor = MonsterManagerWin(root)
 
-            # Save
-            editor.save_button.invoke()
-            root.update_idletasks()
+                # Make a change to set dirty
+                editor.set_dirty(True)
+                root.update_idletasks()
 
-            # Verify clean state
-            assert editor.is_dirty is False, "Should be clean after save"
-            assert editor.is_monster_dirty is False, "Monster should be clean after save"
+                # Verify dirty before save
+                assert editor.is_dirty is True, "Should be dirty after change"
 
-            # Verify UI updated
-            status_text = editor.status_label.cget('text')
-            assert 'All saved' in status_text or 'Đã lưu tất cả' in status_text, "Status should show saved"
+                # Rule 2: Check widgets exist
+                assert editor.save_button is not None, "Save button should exist"
+                assert editor.status_label is not None, "Status label should exist"
 
-            # Verify save button disabled
-            assert editor.save_button['state'] == 'disabled', "Save button should be disabled when clean"
+                # Save
+                with patch('tkinter.messagebox.showinfo'):  # Suppress messagebox
+                    editor.save_button.invoke()
+                    root.update_idletasks()
 
-        finally:
-            if editor is not None:
-                editor.destroy()
-            root.destroy()
+                # Verify clean state
+                assert editor.is_dirty is False, "Should be clean after save"
+                assert editor.is_monster_dirty is False, "Monster should be clean after save"
+
+                # Verify UI updated
+                status_text = editor.status_label.cget('text')
+                assert 'All saved' in status_text or 'Đã lưu tất cả' in status_text, "Status should show saved"
+
+                # Verify save button disabled
+                assert editor.save_button['state'] == 'disabled', "Save button should be disabled when clean"
+
+            finally:
+                if editor is not None:
+                    editor.destroy()
+                root.destroy()
     
-    @patch('tkinter.messagebox.showerror')
-    def test_save_validates_monster_names(self, mock_error, patched_monster_editor) -> None:
+    def test_save_validates_monster_names(self, temp_data_file: Path) -> None:
         """Test that save validates monster names (no empty names)."""
         # Create monster with empty name
         invalid_monsters = [
@@ -196,111 +195,112 @@ class TestMonsterEditorSaveAll:
                 'description': ''
             }
         ]
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         temp_data_file.write_text(json.dumps(invalid_monsters), encoding='utf-8')
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        try:
-            root = tk.Tk()
-        except Exception as e:
-            pytest.skip(f"Tkinter not available: {e}")
-            return
-
-        root.withdraw()
-        editor: Optional[MonsterManagerWin] = None
-
-        try:
-            editor = MonsterManagerWin(root)
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            # Rule 2: Check button exists
-            assert editor.save_button is not None, "Save button should exist"
+            try:
+                root = tk.Tk()
+            except Exception as e:
+                pytest.skip(f"Tkinter not available: {e}")
+                return
             
-            # Mock messagebox to capture error
-            editor.save_button.invoke()
-            root.update_idletasks()
+            root.withdraw()
+            editor: Optional[MonsterManagerWin] = None
             
-            # Verify error shown
-            assert mock_error.called, "Should show error for empty name"
-            call_args = mock_error.call_args[0]
-            assert 'no name' in call_args[1].lower(), "Error should mention missing name"
+            try:
+                editor = MonsterManagerWin(root)
 
-        finally:
-            if editor is not None:
-                editor.destroy()
-            root.destroy()
+                # Rule 2: Check button exists
+                assert editor.save_button is not None, "Save button should exist"
+
+                # Mock messagebox to capture error
+                with patch('tkinter.messagebox.showerror') as mock_error:
+                    editor.save_button.invoke()
+                    root.update_idletasks()
+
+                    # Verify error shown
+                    assert mock_error.called, "Should show error for empty name"
+                    call_args = mock_error.call_args[0]
+                    assert 'no name' in call_args[1].lower(), "Error should mention missing name"
+
+            finally:
+                if editor is not None:
+                    editor.destroy()
+                root.destroy()
     
-    @patch('tkinter.messagebox.showwarning')
-    def test_save_with_no_monsters_shows_warning(self, mock_warning, patched_monster_editor) -> None:
+    def test_save_with_no_monsters_shows_warning(self, temp_data_file: Path) -> None:
         """Test that saving with no monsters shows warning."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        try:
-            root = tk.Tk()
-        except Exception as e:
-            pytest.skip(f"Tkinter not available: {e}")
-            return
-
-        root.withdraw()
-        editor: Optional[MonsterManagerWin] = None
-
-        try:
-            editor = MonsterManagerWin(root)
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            # Verify no monsters
-            assert len(editor.monsters) == 0, "Should have no monsters"
+            try:
+                root = tk.Tk()
+            except Exception as e:
+                pytest.skip(f"Tkinter not available: {e}")
+                return
             
-            # Rule 2: Check button exists
-            assert editor.save_button is not None, "Save button should exist"
+            root.withdraw()
+            editor: Optional[MonsterManagerWin] = None
             
-            # Mock messagebox
-            editor.save_button.invoke()
-            root.update_idletasks()
+            try:
+                editor = MonsterManagerWin(root)
 
-            # Verify warning shown
-            assert mock_warning.called, "Should show warning when no data"
+                # Verify no monsters
+                assert len(editor.monsters) == 0, "Should have no monsters"
 
-        finally:
-            if editor is not None:
-                editor.destroy()
-            root.destroy()
+                # Rule 2: Check button exists
+                assert editor.save_button is not None, "Save button should exist"
+
+                # Mock messagebox
+                with patch('tkinter.messagebox.showwarning') as mock_warning:
+                    editor.save_button.invoke()
+                    root.update_idletasks()
+
+                    # Verify warning shown
+                    assert mock_warning.called, "Should show warning when no data"
+
+            finally:
+                if editor is not None:
+                    editor.destroy()
+                root.destroy()
     
-    def test_save_button_initially_disabled(self, sample_monsters: list, patched_monster_editor) -> None:
+    def test_save_button_initially_disabled(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test that Save button is initially disabled when clean."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        try:
-            root = tk.Tk()
-        except Exception as e:
-            pytest.skip(f"Tkinter not available: {e}")
-            return
-
-        root.withdraw()
-        editor: Optional[MonsterManagerWin] = None
-
-        try:
-            editor = MonsterManagerWin(root)
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            # Rule 2: Check button exists
-            assert editor.save_button is not None, "Save button should exist"
+            try:
+                root = tk.Tk()
+            except Exception as e:
+                pytest.skip(f"Tkinter not available: {e}")
+                return
             
-            # Verify initially disabled (clean state)
-            assert editor.is_dirty is False, "Should be clean initially"
-            assert editor.save_button['state'] == 'disabled', "Save button should be disabled when clean"
+            root.withdraw()
+            editor: Optional[MonsterManagerWin] = None
             
-        finally:
-            if editor is not None:
-                editor.destroy()
-            root.destroy()
+            try:
+                editor = MonsterManagerWin(root)
+
+                # Rule 2: Check button exists
+                assert editor.save_button is not None, "Save button should exist"
+
+                # Verify initially disabled (clean state)
+                assert editor.is_dirty is False, "Should be clean initially"
+                assert editor.save_button['state'] == 'disabled', "Save button should be disabled when clean"
+
+            finally:
+                if editor is not None:
+                    editor.destroy()
+                root.destroy()

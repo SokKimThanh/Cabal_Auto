@@ -63,64 +63,62 @@ class TestMonsterEditorData:
             }
         ]
     
-    def test_load_monsters_empty_file(self, patched_monster_editor) -> None:
+    def test_load_monsters_empty_file(self, temp_data_file: Path) -> None:
         """Test loading from empty file."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         # Create empty file
         temp_data_file.write_text('[]', encoding='utf-8')
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        root = tk.Tk()
-        root.withdraw()
-        editor = None
-
-        try:
-            editor = MonsterManagerWin(root)
-            editor._load_monsters()
+        # Mock DATA_PATH, get_db, and DataSyncManager
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            assert editor.monsters == []
-        finally:
-            if editor:
-                editor.destroy()
-            root.destroy()
+            root = tk.Tk()
+            root.withdraw()
+            editor = None
+
+            try:
+                editor = MonsterManagerWin(root)
+                editor._load_monsters()
+
+                assert editor.monsters == []
+            finally:
+                if editor:
+                    editor.destroy()
+                root.destroy()
     
-    def test_load_monsters_valid_data(self, sample_monsters: list, patched_monster_editor) -> None:
+    def test_load_monsters_valid_data(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test loading valid monster data."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         # Write sample data
         temp_data_file.write_text(
             json.dumps(sample_monsters, indent=2, ensure_ascii=False),
             encoding='utf-8'
         )
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        root = tk.Tk()
-        root.withdraw()
-        editor = None
-
-        try:
-            editor = MonsterManagerWin(root)
-            editor._load_monsters()
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            assert len(editor.monsters) == 2
-            assert editor.monsters[0]['name'] == 'Test Monster'
-            assert editor.monsters[1]['name'] == 'Another Monster'
-        finally:
-            if editor:
-                editor.destroy()
-            root.destroy()
+            root = tk.Tk()
+            root.withdraw()
+            editor = None
+
+            try:
+                editor = MonsterManagerWin(root)
+                editor._load_monsters()
+
+                assert len(editor.monsters) == 2
+                assert editor.monsters[0]['name'] == 'Test Monster'
+                assert editor.monsters[1]['name'] == 'Another Monster'
+            finally:
+                if editor:
+                    editor.destroy()
+                root.destroy()
     
-    def test_load_monsters_auto_generate_ids(self, patched_monster_editor) -> None:
+    def test_load_monsters_auto_generate_ids(self, temp_data_file: Path) -> None:
         """Test auto-generating IDs for monsters without IDs."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
         # Monsters without IDs
         monsters_without_ids = [
             {
@@ -135,95 +133,90 @@ class TestMonsterEditorData:
             encoding='utf-8'
         )
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        root = tk.Tk()
-        root.withdraw()
-        editor = None
-
-        try:
-            editor = MonsterManagerWin(root)
-            editor._load_monsters()
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            assert len(editor.monsters) == 1
-            assert 'id' in editor.monsters[0]
-            assert len(editor.monsters[0]['id']) > 0
-        finally:
-            if editor:
-                editor.destroy()
-            root.destroy()
-    
-    def test_load_monsters_file_not_found(self, patched_monster_editor) -> None:
-        """Test handling missing file."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
+            root = tk.Tk()
+            root.withdraw()
+            editor = None
 
+            try:
+                editor = MonsterManagerWin(root)
+                editor._load_monsters()
+
+                assert len(editor.monsters) == 1
+                assert 'id' in editor.monsters[0]
+                assert len(editor.monsters[0]['id']) > 0
+            finally:
+                if editor:
+                    editor.destroy()
+                root.destroy()
+    
+    def test_load_monsters_file_not_found(self, temp_data_file: Path) -> None:
+        """Test handling missing file."""
         # Use non-existent path
         non_existent = temp_data_file.parent / 'non_existent.json'
         
-        from ui.windows.monster_manager_win import MonsterManagerWin
-        import ui.windows.monster_manager_win as mmw
-        mmw.DATA_PATH = non_existent
-
-        root = tk.Tk()
-        root.withdraw()
-        editor = None
-
-        try:
-            editor = MonsterManagerWin(root)
-            editor._load_monsters()
+        with patch('ui.windows.monster_manager_win.DATA_PATH', non_existent), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            # Should create empty list and file
-            assert editor.monsters == []
-            assert non_existent.exists()
+            root = tk.Tk()
+            root.withdraw()
+            editor = None
             
-            # Clean up
-            non_existent.unlink()
-        finally:
-            if editor:
-                editor.destroy()
-            root.destroy()
+            try:
+                editor = MonsterManagerWin(root)
+                editor._load_monsters()
+
+                # Should create empty list and file
+                assert editor.monsters == []
+                assert non_existent.exists()
+
+                # Clean up
+                non_existent.unlink()
+            finally:
+                if editor:
+                    editor.destroy()
+                root.destroy()
     
-    def test_save_monsters(self, sample_monsters: list, patched_monster_editor) -> None:
+    def test_save_monsters(self, temp_data_file: Path, sample_monsters: list) -> None:
         """Test saving monsters to file."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
-
-        from ui.windows.monster_manager_win import MonsterManagerWin
-
-        root = tk.Tk()
-        root.withdraw()
-        editor = None
-
-        try:
-            editor = MonsterManagerWin(root)
-            editor.monsters = sample_monsters
-            editor.is_dirty = True
-
-            result = editor._save_monsters()
+        with patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file), \
+             patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+             patch('ui.windows.monster_manager_win.DataSyncManager', None):
+            from ui.windows.monster_manager_win import MonsterManagerWin
             
-            assert result is True
-            assert editor.is_dirty is False
-
-            # Verify file content
-            with open(temp_data_file, 'r', encoding='utf-8') as f:
-                saved_data = json.load(f)
+            root = tk.Tk()
+            root.withdraw()
+            editor = None
             
-            assert len(saved_data) == 2
-            assert saved_data[0]['name'] == 'Test Monster'
-        finally:
-            if editor:
-                editor.destroy()
-            root.destroy()
+            try:
+                editor = MonsterManagerWin(root)
+                editor.monsters = sample_monsters
+                editor.is_dirty = True
+
+                result = editor._save_monsters()
+
+                assert result is True
+                assert editor.is_dirty is False
+
+                # Verify file content
+                with open(temp_data_file, 'r', encoding='utf-8') as f:
+                    saved_data = json.load(f)
+
+                assert len(saved_data) == 2
+                assert saved_data[0]['name'] == 'Test Monster'
+            finally:
+                if editor:
+                    editor.destroy()
+                root.destroy()
     
-    @patch('builtins.open', side_effect=IOError('Mock error'))
-    def test_save_monsters_error_handling(self, mock_open, patched_monster_editor) -> None:
+    def test_save_monsters_error_handling(self) -> None:
         """Test error handling when save fails."""
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
-
         from ui.windows.monster_manager_win import MonsterManagerWin
         
         root = tk.Tk()
@@ -231,12 +224,16 @@ class TestMonsterEditorData:
         editor = None
         
         try:
-            editor = MonsterManagerWin(root)
-            editor.monsters = [{'id': '1', 'name': 'Test'}]
+            with patch('ui.windows.monster_manager_win.get_db', return_value=None), \
+                 patch('ui.windows.monster_manager_win.DataSyncManager', None):
+                editor = MonsterManagerWin(root)
+                editor.monsters = [{'id': '1', 'name': 'Test'}]
 
-            result = editor._save_monsters()
+                # Mock open to raise error
+                with patch('builtins.open', side_effect=IOError('Mock error')):
+                    result = editor._save_monsters()
 
-            assert result is False
+                    assert result is False
         finally:
             if editor:
                 editor.destroy()
