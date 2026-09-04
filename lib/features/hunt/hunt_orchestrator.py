@@ -362,12 +362,11 @@ class HuntOrchestrator:
                                 if combo_cfg.get("enabled", False) and combo_detector and hasattr(self.handler, "app") and hasattr(self.handler.app, "state_controller") and getattr(self.handler.app.state_controller, "_combo_mode_active", False):
                                     combo_start_key = combo_cfg.get("combo_start_key", "alt+3")
                                     if combo_start_key:
-                                        press_ms = int(cfg.get("attack_press_ms", 100))
                                         if self.input_backend:
-                                            self.input_backend.tap(combo_start_key, press_ms)
+                                            self.input_backend.tap(combo_start_key)
                                         else:
                                             from lib.system.win_input import tap as global_tap
-                                            global_tap(combo_start_key, press_ms)
+                                            global_tap(combo_start_key)
                                 continue
                             elif eval_result in (TargetRotationCoordinator.MISMATCH, TargetRotationCoordinator.UNKNOWN):
                                 # CYCLE_TARGET
@@ -427,16 +426,13 @@ class HuntOrchestrator:
                                 skill_runtime,
                                 now,
                                 target_active,
-                                self.handler.try_cast_skills(
-                                    skill_runtime,
-                                    now,
-                                    target_active,
-                                    attack_phase=True,
-                                    skill_stats=skill_stats,
-                                    backend=self.input_backend,
-                                    combo_detector=combo_detector,
-                                    target_bar_detector=target_bar_detector
-                                )
+                                attack_phase=True,
+                                skill_stats=skill_stats,
+                                backend=self.input_backend,
+                                combo_detector=combo_detector,
+                                frame=self.bot_manager.screen_capture.get_latest_frame() if hasattr(self.bot_manager, "screen_capture") and self.bot_manager.screen_capture else None,
+                                target_bar_detector=target_bar_detector
+                            )
                             time.sleep(float(cfg.get("attack_interval", 0.2)))
                             continue
 
