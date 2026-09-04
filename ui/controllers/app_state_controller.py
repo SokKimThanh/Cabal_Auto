@@ -590,6 +590,10 @@ class AppStateController:
         target_active: bool,
         attack_phase: bool = False,
         skill_stats=None,
+        combo_detector=None,
+        screen_capture=None,
+        target_bar_detector=None,
+        backend=None,
     ) -> None:
         app = self.root
         from lib.system.win_input import tap
@@ -607,7 +611,38 @@ class AppStateController:
             key = str(skill.get("key", "") or "").strip()
             if not key:
                 continue
-            tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+            
+            # If combo detector available, use it for timing
+            if combo_detector and screen_capture and attack_phase:
+                try:
+                    press_ms = int(app.hunt_cfg.get("attack_press_ms", 60))
+                    # Create callback to press skill key
+                    def press_key(k=key, press_duration=press_ms):
+                        if backend:
+                            backend.tap(k, press_duration)
+                        else:
+                            tap(k, press_duration)
+                    
+                    combo_detector.key_press_callback = press_key
+                    
+                    # Wait for hit-zone and press skill at optimal timing
+                    is_target_alive_check = None
+                    if target_bar_detector:
+                        is_target_alive_check = lambda: target_bar_detector.is_target_alive(screen_capture.get_latest_frame())
+                    
+                    combo_detector.wait_for_hit_zone(
+                        screen_capture,
+                        is_target_alive_check=is_target_alive_check
+                    )
+                except Exception as e:
+                    # Fallback to immediate tap if combo detection fails
+                    import logging
+                    logging.error(f"Combo detector error: {e}, falling back to immediate tap")
+                    tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+            else:
+                # Normal attack: press immediately
+                tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+            
             skill["_last_cast"] = now
             if skill_stats is not None:
                 try:
