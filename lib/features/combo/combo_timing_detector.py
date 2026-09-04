@@ -84,7 +84,7 @@ class CabalComboDetector:
                                    exits early to allow fast-break targeting.
         
         Returns:
-            True if sweet spot was detected (trigger evidence)
+            True if sweet spot was detected (and key_press_callback was invoked if configured)
             False if timeout reached without detection
         """
         # Load timeout from config if not provided
