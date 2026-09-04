@@ -140,7 +140,7 @@ class HuntOrchestrator:
 
                 bot_manager = getattr(self, "bot_manager", None)
                 screen_capture = getattr(bot_manager, "screen_capture", None) if bot_manager else None
-                skill_stats = getattr(self.handler, "app", None) and getattr(self.handler.app, "skill_stats", None)
+                # skill_stats sử dụng instance SkillStats trong scope của worker (training mode); tránh shadowing tại đây.
 
                 # Send Key Wrapper with Retry
                 def attempt_send() -> bool:
