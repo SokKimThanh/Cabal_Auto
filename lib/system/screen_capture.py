@@ -247,17 +247,19 @@ class ScreenCapture:
         except queue.Empty:
             return None
 
-    def get_latest_frame(self) -> Optional[np.ndarray]:
+    def get_latest_frame(self, copy: bool = True) -> Optional[np.ndarray]:
         """
         Get latest frame safely with thread lock.
 
+        Args:
+            copy: Whether to return a copy to prevent torn reads. False saves memory allocations.
+
         Returns:
-            Copy of latest frame as numpy array (BGR) or None
+            Latest frame as numpy array (BGR) or None
         """
         with self._frame_lock:
             if self._latest_frame is not None:
-                # Return an independent copy to prevent torn reads
-                return self._latest_frame.copy()
+                return self._latest_frame.copy() if copy else self._latest_frame
             return None
 
     def get_stats(self) -> CaptureStats:

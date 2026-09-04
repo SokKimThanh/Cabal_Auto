@@ -1,7 +1,7 @@
 import time
 import cv2
 import numpy as np
-from typing import Optional, Callable
+from typing import Callable
 import logging
 
 logger = logging.getLogger("combo_detector")
@@ -49,15 +49,15 @@ class CabalComboDetector:
         if timeout_sec is None:
             timeout_sec = 2.0
 
-        start_time = time.time()
+        start_time = time.monotonic()
 
-        while (time.time() - start_time) < timeout_sec:
+        while (time.monotonic() - start_time) < timeout_sec:
             # Check if target is still alive (fast break)
             if is_target_alive_check and not is_target_alive_check():
                 logger.debug("Target dead during wait_for_hit_zone")
                 return False
 
-            frame = screen_capture.get_latest_frame()
+            frame = screen_capture.get_latest_frame(copy=False)
             if frame is None:
                 time.sleep(self.poll_interval_ms / 1000.0)
                 continue
@@ -94,25 +94,27 @@ class CabalComboDetector:
 
             # If we find a bright pixel (Value > 210), trigger
             if np.any(v_values > 210):
-                if self.key_press_callback:
-                    # Execute callback (sends skill key)
-                    self.key_press_callback()
+                if not self.key_press_callback:
+                    logger.warning("key_press_callback is not set for CabalComboDetector")
+                    return False
+                # Execute callback (sends skill key)
+                self.key_press_callback()
 
-                    # Cooldown guard to prevent double presses
-                    # Split into smaller chunks to allow fast break if target dies
-                    chunk_ms = 25
-                    chunks = self.cooldown_guard_ms // chunk_ms
-                    remainder = self.cooldown_guard_ms % chunk_ms
+                # Cooldown guard to prevent double presses
+                # Split into smaller chunks to allow fast break if target dies
+                chunk_ms = 25
+                chunks = self.cooldown_guard_ms // chunk_ms
+                remainder = self.cooldown_guard_ms % chunk_ms
 
-                    for _ in range(chunks):
-                        if is_target_alive_check and not is_target_alive_check():
-                            # Target died during cooldown, exit early
-                            return True
-                        time.sleep(chunk_ms / 1000.0)
+                for _ in range(chunks):
+                    if is_target_alive_check and not is_target_alive_check():
+                        # Target died during cooldown, exit early
+                        return True
+                    time.sleep(chunk_ms / 1000.0)
 
-                    if remainder > 0:
-                        if not (is_target_alive_check and not is_target_alive_check()):
-                            time.sleep(remainder / 1000.0)
+                if remainder > 0:
+                    if not (is_target_alive_check and not is_target_alive_check()):
+                        time.sleep(remainder / 1000.0)
 
                 return True
 

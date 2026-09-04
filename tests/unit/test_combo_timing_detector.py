@@ -1,7 +1,6 @@
 import unittest
 import time
 import numpy as np
-import cv2
 import sys
 from unittest.mock import MagicMock
 from lib.features.combo.combo_timing_detector import CabalComboDetector
@@ -113,7 +112,6 @@ class TestCabalComboDetector(unittest.TestCase):
     @unittest.skipIf(sys.platform != "win32", "Requires Windows for ScreenCapture")
     def test_get_latest_frame_returns_independent_copy(self):
         from lib.system.screen_capture import ScreenCapture
-        import numpy as np
         capture = ScreenCapture(target_fps=15)
         original_frame = np.zeros((10, 10, 3), dtype=np.uint8)
         original_frame[0, 0] = [255, 0, 0]
@@ -124,12 +122,6 @@ class TestCabalComboDetector(unittest.TestCase):
         self.assertTrue((frame_copy[0, 0] == [0, 255, 0]).all())
 
     def test_combo_start_key_only_triggered_once_per_target(self):
-        from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
-        from unittest.mock import MagicMock
-
-        # Test just that the method exists to be implemented,
-        # Actual integration tests for HuntOrchestrator handle the key_press.
-        # Here we mock the behavior of orchestrator
         mock_backend = MagicMock()
         mock_handler = MagicMock()
         mock_handler.app.state_controller._combo_mode_active = True
@@ -141,7 +133,6 @@ class TestCabalComboDetector(unittest.TestCase):
             }
         }
 
-        # Triggering the logic once
         combo_cfg = cfg.get("combo", {})
         if combo_cfg.get("enabled", False):
             combo_start_key = combo_cfg.get("combo_start_key", "alt+3")

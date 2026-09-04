@@ -119,7 +119,7 @@ class HuntOrchestrator:
                     hit_zone_x_ratio=combo_cfg.get("hit_zone_x_ratio", 0.78),
                     poll_interval_ms=combo_cfg.get("poll_interval_ms", 4),
                     cooldown_guard_ms=combo_cfg.get("cooldown_guard_ms", 120),
-                    key_press_callback=None # we don't tap here, let try_cast_skills handle it
+                    key_press_callback=None  # we don't tap here, let try_cast_skills handle it
                 )
 
             # Check if start is valid
@@ -430,7 +430,6 @@ class HuntOrchestrator:
                                 skill_stats=skill_stats,
                                 backend=self.input_backend,
                                 combo_detector=combo_detector,
-                                frame=self.bot_manager.screen_capture.get_latest_frame() if hasattr(self.bot_manager, "screen_capture") and self.bot_manager.screen_capture else None,
                                 target_bar_detector=target_bar_detector
                             )
                             time.sleep(float(cfg.get("attack_interval", 0.2)))

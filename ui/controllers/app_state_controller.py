@@ -592,7 +592,6 @@ class AppStateController:
         skill_stats=None,
         backend=None,
         combo_detector=None,
-        frame=None,
         target_bar_detector=None,
     ) -> None:
         app = self.root
@@ -612,11 +611,12 @@ class AppStateController:
             if not key:
                 continue
 
+            press_ms = int(app.hunt_cfg.get("attack_press_ms", 60))
             def send_key():
                 if backend:
-                    backend.tap(key)
+                    backend.tap(key, press_ms)
                 else:
-                    tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+                    tap(key, press_ms)
 
             # Check combo mode active
             is_combo_mode = getattr(self, "_combo_mode_active", False)
@@ -637,11 +637,14 @@ class AppStateController:
 
                     combo_cfg = app.hunt_cfg.get("combo", {})
                     combo_detector.key_press_callback = send_key
-                    combo_detector.wait_for_hit_zone(
+                    triggered = combo_detector.wait_for_hit_zone(
                         screen_capture=screen_capture,
                         timeout_sec=combo_cfg.get("hit_zone_timeout_sec", 2.0),
                         is_target_alive_check=is_target_alive
                     )
+                    if not triggered:
+                        # Timeout or failed, we skip update stats/cast
+                        return
                 else:
                     send_key()
             else:
