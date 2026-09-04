@@ -46,10 +46,7 @@ class AppHuntHandler(HuntStatusHandler):
         if hasattr(self.app, "iconify"):
             self.app.after(0, lambda: self.app.iconify())
 
-    def locate_target(self, params: Dict) -> Tuple[int, int]:
-        if hasattr(self.app, "state_controller"):
-            return self.app.state_controller._hunt_locate_target(params)
-        return None, None
+def locate_target(self, params: Dict) -> Tuple[object, object]:
 
     def prepare_skill_runtime(self, skill_def: Dict) -> list:
         if hasattr(self.app, "state_controller"):
