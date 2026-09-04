@@ -42,7 +42,6 @@ def test_monster_editor():
     print("Monster Editor created successfully!")
     print(f"Buttons created:")
     print(f"  - Save button: {editor.save_button is not None}")
-    print(f"  - Cancel button: {editor.cancel_button is not None}")
     print(f"  - Add button: {editor.add_monster_button is not None}")
     print(f"  - Delete button: {editor.delete_monster_button is not None}")
     print(f"  - Capture button: {editor.capture_button is not None}")
@@ -50,7 +49,7 @@ def test_monster_editor():
     print(f"  - Delete template button: {editor.delete_template_button is not None}")
     print(f"  - Test button: {editor.test_template_button is not None}")
     
-    root.mainloop()
+    root.update()
 
 if __name__ == '__main__':
     test_monster_editor()

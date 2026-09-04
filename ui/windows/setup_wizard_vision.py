@@ -100,8 +100,6 @@ except ImportError:
     Detection = None
 
 
-
-
 # ==================== SINGLETON INSTANCE ====================
 _vision_wizard_instance: Optional["VisionWizard"] = None
 
@@ -1416,7 +1414,7 @@ class VisionWizard(tk.Toplevel):
                 print(f"[VisionWizard] Error loading config: {e}")
                 self.local_data = defaults.copy()
         else:
-            print(f"[VisionWizard] Config not found, using defaults")
+            print("[VisionWizard] Config not found, using defaults")
             self.local_data = defaults.copy()
 
         # Populate widgets with loaded values

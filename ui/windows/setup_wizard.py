@@ -17,12 +17,12 @@ import ctypes
 import importlib
 import importlib.util
 import json
-import os
+
 import tkinter as tk
 from ctypes import wintypes
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Optional
+
 
 # i18n and tooltip helpers
 try:
@@ -237,15 +237,15 @@ class SetupWizard:
                 pass
 
             print("[Wizard] Wizard ready! (non-blocking init)")
-        except Exception as e:
-            print(f"[Wizard ERROR] Failed to create wizard: {e}")
+        except Exception:
+            print("[Wizard ERROR] Failed to create wizard: Error")
             import traceback
 
             traceback.print_exc()
             # Restore parent if error
             try:
                 parent.deiconify()
-            except:
+            except Exception:
                 pass
             raise
 
@@ -327,8 +327,8 @@ class SetupWizard:
 
             return is_first
 
-        except Exception as e:
-            print(f"[Wizard] Error detecting first run: {e}")
+        except Exception:
+            print("[Wizard] Error detecting first run: Error")
             return True  # Default to first run on error
 
     def _build_ui(self):
@@ -948,11 +948,11 @@ It takes about 2 minutes. Let's begin!"""
         try:
             with open(monsters_path, "r", encoding="utf-8") as f:
                 self.monsters_data = json.load(f)
-        except Exception as e:
+        except Exception:
             self.monsters_data = []
             tk.Label(
                 self.content_frame,
-                text=self._t("err_load_monsters").format(e=e),
+                text=self._t("err_load_monsters").format(e='Error'),
                 fg="red",
                 bg="white",
             ).pack(pady=20)
@@ -1071,11 +1071,11 @@ It takes about 2 minutes. Let's begin!"""
         try:
             with open(skills_path, "r", encoding="utf-8") as f:
                 self.skills_data = json.load(f)
-        except Exception as e:
+        except Exception:
             self.skills_data = []
             tk.Label(
                 self.content_frame,
-                text=self._t("err_load_skills").format(e=e),
+                text=self._t("err_load_skills").format(e='Error'),
                 fg="red",
                 bg="white",
             ).pack(pady=20)
@@ -1267,7 +1267,7 @@ It takes about 2 minutes. Let's begin!"""
         window_pid = self.wizard_data.get("window_pid", "N/A")
         tk.Label(
             review_frame,
-            text=f"🪟 Game Window:",
+            text="🪟 Game Window:",
             font=("Arial", 10, "bold"),
             bg="white",
             anchor="w",
@@ -1286,7 +1286,7 @@ It takes about 2 minutes. Let's begin!"""
         monster_templates = self.wizard_data.get("monster_templates", [])
         tk.Label(
             review_frame,
-            text=f"👾 Monster:",
+            text="👾 Monster:",
             font=("Arial", 10, "bold"),
             bg="white",
             anchor="w",
@@ -1305,7 +1305,7 @@ It takes about 2 minutes. Let's begin!"""
         assigned_skills = [s for s in skill_slots if s and s != "(Empty)"]
         tk.Label(
             review_frame,
-            text=f"⚔️ Skills:",
+            text="⚔️ Skills:",
             font=("Arial", 10, "bold"),
             bg="white",
             anchor="w",
@@ -1337,7 +1337,7 @@ It takes about 2 minutes. Let's begin!"""
         timing = self.wizard_data.get("timing", {})
         tk.Label(
             review_frame,
-            text=f"⏱️ Timing:",
+            text="⏱️ Timing:",
             font=("Arial", 10, "bold"),
             bg="white",
             anchor="w",
@@ -1499,7 +1499,7 @@ It takes about 2 minutes. Let's begin!"""
                 text=f"✓ Selected: {selected['title']} (PID: {selected['pid']})",
                 fg="green",
             )
-        except Exception as e:
+        except Exception:
             pass
 
     def _on_monster_select(self, event=None):
@@ -1619,12 +1619,12 @@ It takes about 2 minutes. Let's begin!"""
                             ]
                             for combo in self.skill_slot_combos:
                                 combo["values"] = skill_names
-                        except Exception as e:
-                            print(f"Error reloading skills: {e}")
+                        except Exception:
+                            print("Error reloading skills: Error")
 
             # Create library manager window
             # Pass parent as the dialog (not the root) to keep wizard modal behavior
-            lib_manager = LibraryManagerWindow(
+            LibraryManagerWindow(
                 parent=self.dialog,  # type: ignore[arg-type]
                 hunt_cfg=hunt_cfg,
                 monsters=monsters,
@@ -1636,10 +1636,10 @@ It takes about 2 minutes. Let's begin!"""
             # Note: LibraryManagerWindow handles its own modal state
             # It will automatically open to the Rotation tab if that's the default
 
-        except Exception as e:
+        except Exception:
             messagebox.showerror(
                 "Error",
-                f"Failed to open Rotation Builder:\n{str(e)}",
+                "Failed to open Rotation Builder:\nError",
                 parent=self.dialog,
             )
 
@@ -1921,9 +1921,9 @@ It takes about 2 minutes. Let's begin!"""
             # Save to file
             self.config_manager.save()
 
-        except Exception as e:
+        except Exception:
             messagebox.showerror(
-                "Save Error", f"Failed to save configuration: {e}", parent=self.dialog
+                "Save Error", "Failed to save configuration: Error", parent=self.dialog
             )
 
     def _on_cancel(self):

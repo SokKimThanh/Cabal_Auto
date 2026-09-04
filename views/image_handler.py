@@ -18,6 +18,7 @@ except ImportError:
     ImageDraw = None
     PIL_AVAILABLE = False
 
+
 class ImageHandler:
     """Handles image loading, thumbnail generation, and PhotoImage caching with memory controls."""
 

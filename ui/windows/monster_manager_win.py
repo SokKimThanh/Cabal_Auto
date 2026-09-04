@@ -283,12 +283,6 @@ try:
 except ImportError:
     locate_template = None
 
-# Register translations
-try:
-    from lib.i18n.monster_editor_translations import MONSTER_EDITOR_TRANSLATIONS
-
-except ImportError:
-    pass
 
 DATA_PATH = Path("lib/data/monsters.json")
 
@@ -340,7 +334,7 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
-class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
+class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
     """
     Main Monster Manager Window (Master View with Table Layout).
     """
@@ -357,7 +351,8 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
             raise TypeError(f"Parent must be Tk/Toplevel/Widget, got {type(parent)}")
 
         try:
-            super().__init__(parent, debug_mode=False)
+            tk.Toplevel.__init__(self, parent)
+            ActionNotificationMixin.__init__(self, debug_mode=False)
         except TypeError:
             super().__init__(parent)
 
@@ -469,9 +464,12 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
         self.transient(parent)
 
         self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (850 // 2)
-        y = (self.winfo_screenheight() // 2) - (520 // 2)
-        self.geometry(f"+{x}+{y}")
+        try:
+            x = (self.winfo_screenwidth() // 2) - (850 // 2)
+            y = (self.winfo_screenheight() // 2) - (600 // 2)
+            self.geometry(f"850x600+{x}+{y}")
+        except Exception:
+            pass
 
         self._setup_compatibility_widgets()
         self._load_monsters()

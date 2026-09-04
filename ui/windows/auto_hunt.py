@@ -28,82 +28,82 @@ def _check_template_exists(path_str):
 
 def load_cfg():
     """Load hunt config with Phase 3 migration support.
-    
+
     Sprint 22 Patch 1: Added training_mode_enabled field support.
     """
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         cfg = json.load(f)
-    
+
     # Phase 3: Backward compatibility migration
     if 'monster_selected_name' in cfg and cfg['monster_selected_name']:
         if not cfg.get('monster_rotation'):
             cfg['monster_rotation'] = [{"name": cfg['monster_selected_name'], "priority": 1, "enabled": True}]
-    
+
     # Ensure Phase 3 fields exist
     cfg.setdefault('monster_rotation', [])
     cfg.setdefault('rotation_mode', 'sequence')
     cfg.setdefault('current_monster_index', 0)
-    
+
     # Sprint 22 Patch 1: Training mode support
     cfg.setdefault('training_mode_enabled', False)
-    
+
     return cfg
 
 
 def get_monster_rotation_targets(cfg):
     """
     Phase 3: Get list of monsters to hunt based on rotation_mode.
-    
+
     Returns:
         list of monster dicts sorted by rotation order:
         - sequence mode: order as they appear in monster_rotation
         - priority mode: sorted by priority (ascending)
-        
+
     Each monster dict contains:
         {'name': str, 'priority': int, 'templates': [template_dict, ...]}
     """
     monster_rotation = cfg.get('monster_rotation', [])
     enabled_monsters = [m for m in monster_rotation if m.get('enabled', True)]
-    
+
     if not enabled_monsters:
         return []
-    
+
     rotation_mode = cfg.get('rotation_mode', 'sequence')
-    
+
     # Build monster objects with their templates
     all_templates = cfg.get('templates', [])
     result = []
-    
+
     for monster in enabled_monsters:
         name = monster.get('name', '')
         priority = monster.get('priority', 1)
-        
+
         # Find templates for this monster (fuzzy case-insensitive matching)
         # Remove special chars for better matching: "Coc go~" → "coc go"
         import re
         name_clean = re.sub(r'[^a-z0-9\s]', '', name.lower()).strip()
-        
+
         monster_templates = []
         for t in all_templates:
             tmpl_name = t.get('name', '')
             tmpl_clean = re.sub(r'[^a-z0-9\s]', '', tmpl_name.lower()).strip()
-            
+
             # Match if cleaned names overlap significantly
             if name_clean in tmpl_clean or tmpl_clean in name_clean or \
                tmpl_clean.startswith(name_clean) or name_clean.startswith(tmpl_clean):
                 monster_templates.append(t)
-        
+
         if monster_templates:
             result.append({
                 'name': name,
                 'priority': priority,
                 'templates': monster_templates
             })
-    
+
     # Sort based on rotation mode
     if rotation_mode == 'priority':
         result.sort(key=lambda m: m['priority'])
-    
+
     return result
 
 
@@ -111,7 +111,7 @@ def locate_target(cfg):
     """
     Try to locate the target frame on screen using templates[] or fallback to template_path.
     Uses template_matcher.locate_template() for accurate confidence tracking with OpenCV.
-    
+
     Returns a tuple (box, template_info) or (None, None).
     box: (left, top, width, height) or None
     template_info: {'name': ..., 'path': ..., 'threshold': ..., 'confidence': ...} or None
@@ -124,35 +124,35 @@ def locate_target(cfg):
             path = tmpl.get('path', '')
             if not path or not _check_template_exists(path):
                 continue
-            
+
             threshold = tmpl.get('threshold', 0.85)
-            
+
             # Determine region: use template's region if custom, else window_bounds
             region_strategy = tmpl.get('region_strategy', 'window')
             if region_strategy == 'custom' and tmpl.get('region'):
                 reg_dict = tmpl['region']
-                region = (reg_dict.get('left', 0), reg_dict.get('top', 0), 
+                region = (reg_dict.get('left', 0), reg_dict.get('top', 0),
                          reg_dict.get('width', 0), reg_dict.get('height', 0))
             elif window_bounds:
                 wb = window_bounds
-                region = (wb.get('left', 0), wb.get('top', 0), 
+                region = (wb.get('left', 0), wb.get('top', 0),
                          wb.get('width', 0), wb.get('height', 0))
             else:
                 region = None
-            
+
             # Use template_matcher for accurate confidence tracking
             box, confidence = locate_template(path, region, threshold, method='auto')
             if box:
                 return box, {
-                    'name': tmpl.get('name', ''), 
-                    'path': path, 
+                    'name': tmpl.get('name', ''),
+                    'path': path,
                     'threshold': threshold,
                     'confidence': confidence
                 }
-        
+
         # No match found in templates
         return None, None
-    
+
     # Fallback to legacy template_path
     region_list = cfg.get('region')  # [left, top, width, height] or None
     region = tuple(region_list) if region_list else None
@@ -170,37 +170,37 @@ def locate_target(cfg):
 def locate_monster_target(monster_targets, window_bounds=None):
     """
     Phase 3: Try to locate any monster from the rotation list.
-    
+
     Args:
         monster_targets: list of monster dicts from get_monster_rotation_targets()
         window_bounds: optional window bounds dict for region
-        
+
     Returns:
         (box, template_info, monster_name) or (None, None, None)
     """
     for monster in monster_targets:
         monster_name = monster['name']
         templates = monster['templates']
-        
+
         for tmpl in templates:
             path = tmpl.get('path', '')
             if not path or not _check_template_exists(path):
                 continue
-            
+
             threshold = tmpl.get('threshold', 0.85)
-            
+
             # Determine region
             region_strategy = tmpl.get('region_strategy', 'window')
             if region_strategy == 'custom' and tmpl.get('region'):
                 reg_dict = tmpl['region']
-                region = (reg_dict.get('left', 0), reg_dict.get('top', 0), 
+                region = (reg_dict.get('left', 0), reg_dict.get('top', 0),
                          reg_dict.get('width', 0), reg_dict.get('height', 0))
             elif window_bounds:
-                region = (window_bounds.get('left', 0), window_bounds.get('top', 0), 
+                region = (window_bounds.get('left', 0), window_bounds.get('top', 0),
                          window_bounds.get('width', 0), window_bounds.get('height', 0))
             else:
                 region = None
-            
+
             # Try to locate
             box, confidence = locate_template(path, region, threshold, method='auto')
             if box:
@@ -211,7 +211,7 @@ def locate_monster_target(monster_targets, window_bounds=None):
                     'confidence': confidence,
                     'monster_name': monster_name
                 }, monster_name
-    
+
     return None, None, None
 
 
@@ -245,7 +245,7 @@ def main():
     template_path = cfg.get('template_path')
     bring_front = bool(cfg.get('bring_to_front_each_cycle', True))
     window_title = cfg.get('window_title', 'Cabal')
-    
+
     # Sprint 22 Patch 1: Training mode support
     training_mode_enabled = bool(cfg.get('training_mode_enabled', False))
 
@@ -269,13 +269,13 @@ def main():
     rotation_mode = cfg.get('rotation_mode', 'sequence')
     current_monster_index = cfg.get('current_monster_index', 0)
     window_bounds = cfg.get('window_bounds')
-    
+
     # Sprint 22 Patch 1: Check if current monster is training dummy
     is_training_dummy = False
     if training_mode_enabled and len(monster_targets) > 0:
         current_monster = monster_targets[current_monster_index % len(monster_targets)]
         is_training_dummy = current_monster.get('training_mode', False)
-    
+
     use_rotation = len(monster_targets) > 0
     if use_rotation:
         training_info = " [TRAINING MODE]" if training_mode_enabled and is_training_dummy else ""
@@ -319,9 +319,9 @@ def main():
                     else:  # priority mode
                         # Try all monsters in priority order
                         search_order = monster_targets
-                    
+
                     box, match_info, monster_name = locate_monster_target(search_order, window_bounds)
-                    
+
                     # If found, update current monster index for sequence mode
                     if box and rotation_mode == 'sequence':
                         # Check if this is a different monster than expected
@@ -335,29 +335,29 @@ def main():
                     # Legacy mode: use locate_target
                     box, match_info = locate_target(cfg)
                     monster_name = None
-                
+
                 have_target = box is not None
                 last_search = now
-                
+
                 # Log template match details
                 if have_target and match_info:
                     # Target found - clear lost timer
                     time_target_lost = None
-                    
+
                     if last_match_info != match_info:
                         # State transition: search -> attack
                         if state == 'search':
                             logger.log_state_change('search', 'attack', 'target_found')
                             state = 'attack'
                             attack_start_time = now
-                        
+
                         # Log the match with accurate confidence from template_matcher
                         template_name = match_info.get('name') or match_info.get('path', 'unknown')
                         threshold = match_info.get('threshold', 0.8)
                         confidence = match_info.get('confidence', 0.0)
                         log_monster_name = match_info.get('monster_name', monster_name or '')
                         logger.log_match(template_name, box, threshold, confidence, log_monster_name)
-                        
+
                         rotation_info = f" [{rotation_mode}]" if use_rotation else ""
                         monster_info = f" Monster: {log_monster_name}" if log_monster_name else ""
                         print(f"[Match{rotation_info}]{monster_info} Template: {template_name}, " +
@@ -368,13 +368,13 @@ def main():
                     # Target lost
                     if last_match_info and time_target_lost is None:
                         time_target_lost = now
-                    
+
                     # Check if we should give up on this target
                     if time_target_lost and (now - time_target_lost >= lost_timeout_sec):
                         # State transition: attack -> search
                         if state == 'attack':
                             duration = now - attack_start_time if attack_start_time else 0
-                            
+
                             # Only transition if we've been attacking long enough
                             if duration >= attack_min_duration_sec:
                                 if last_match_info and isinstance(last_match_info, dict):
@@ -387,33 +387,33 @@ def main():
                                 logger.log_state_change('attack', 'search', 'target_lost')
                                 state = 'search'
                                 attack_start_time = None
-                                
+
                                 rotation_info = f" [{rotation_mode}]" if use_rotation else ""
                                 monster_info = f" Monster: {log_monster_name}" if log_monster_name else ""
                                 print(f"[Lost{rotation_info}]{monster_info} Target lost after {duration:.1f}s")
-                                
+
                                 # Sprint 22 Patch 1: Skip rotation if in training mode with training dummy
                                 should_rotate = use_rotation and rotation_mode == 'sequence'
                                 if training_mode_enabled and is_training_dummy:
                                     should_rotate = False
                                     print(f"[Training Mode] Staying on training dummy - no target rotation")
-                                
+
                                 # Phase 3: Rotate to next monster in sequence mode (unless training mode)
                                 if should_rotate:
                                     current_monster_index = (current_monster_index + 1) % len(monster_targets)
                                     next_monster = monster_targets[current_monster_index]['name']
-                                    
+
                                     # Update training dummy status for new monster
                                     is_training_dummy = next_monster.get('training_mode', False) if isinstance(next_monster, dict) else \
                                                        monster_targets[current_monster_index].get('training_mode', False)
-                                    
+
                                     print(f"[Rotation] Switching to: {next_monster} ({current_monster_index+1}/{len(monster_targets)})")
-                                    
+
                                     # Save rotation state
                                     cfg['current_monster_index'] = current_monster_index
                                     with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
                                         json.dump(cfg, f, ensure_ascii=False, indent=2)
-                            
+
                         last_match_info = None
                         last_monster_name = None
                         time_target_lost = None

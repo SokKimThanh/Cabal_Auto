@@ -179,7 +179,7 @@ class LibraryManagerWindow(tk.Toplevel):
     # ============================================================================
     # Setup Wizard Vision - Modern replacement for legacy vision tools
     # ============================================================================
-    
+
     def _open_setup_wizard_vision(self):
         """Open Setup Wizard Vision dialog - shows upcoming feature upgrades."""
         dialog = tk.Toplevel(self)
@@ -187,34 +187,34 @@ class LibraryManagerWindow(tk.Toplevel):
         dialog.geometry('700x600')
         dialog.transient(self)
         dialog.grab_set()
-        
+
         # Center dialog
         dialog.update_idletasks()
         x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
         y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
         dialog.geometry(f'+{x}+{y}')
-        
+
         # Header
         header_frame = tk.Frame(dialog, bg='#66BB6A', height=60)
         header_frame.pack(fill='x')
         header_frame.pack_propagate(False)
-        
-        tk.Label(header_frame, 
+
+        tk.Label(header_frame,
             text='🔮 Setup Wizard Vision - Coming Soon!',
-            bg='#66BB6A', fg='white', 
+            bg='#66BB6A', fg='white',
             font=('Arial', 14, 'bold')).pack(pady=15)
-        
+
         # Content frame
         content_frame = tk.Frame(dialog, bg='white')
         content_frame.pack(fill='both', expand=True, padx=20, pady=20)
-        
+
         # Title
         if self.lang == 'vi':
             title_text = '📋 Các Tính Năng Sắp Được Nâng Cấp'
             content_text = """
 🎯 TỔNG QUAN
 
-Chúng tôi đang phát triển hệ thống Setup Wizard Vision hoàn toàn mới để thay thế 
+Chúng tôi đang phát triển hệ thống Setup Wizard Vision hoàn toàn mới để thay thế
 các công cụ cũ (Chọn vùng, Kiểm tra nhận diện, Tự động dò vùng).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -269,7 +269,7 @@ After (Mới):
 
 Week 1-2: UI/UX improvements
   • Semi-transparent overlay
-  • Live dimension display  
+  • Live dimension display
   • Auto-numbering
 
 Week 3-4: Tracking system
@@ -309,7 +309,7 @@ Theo dõi tiến độ tại:
             content_text = """
 🎯 OVERVIEW
 
-We are developing a completely new Setup Wizard Vision system to replace the 
+We are developing a completely new Setup Wizard Vision system to replace the
 old tools (Pick Region, Test Recognition, Auto-Detect Region).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -364,7 +364,7 @@ After (New):
 
 Week 1-2: UI/UX improvements
   • Semi-transparent overlay
-  • Live dimension display  
+  • Live dimension display
   • Auto-numbering
 
 Week 3-4: Tracking system
@@ -399,19 +399,19 @@ Track progress at:
 • GitHub Issues: #vision-wizard
 • Sprint Board: Sprint 20
 """
-        
+
         tk.Label(content_frame,
             text=title_text,
             bg='white', fg='#424242',
             font=('Arial', 12, 'bold')).pack(anchor='w', pady=(0, 10))
-        
+
         # Scrollable text area
         text_frame = tk.Frame(content_frame, bg='white')
         text_frame.pack(fill='both', expand=True)
-        
+
         scrollbar = tk.Scrollbar(text_frame)
         scrollbar.pack(side='right', fill='y')
-        
+
         text_widget = tk.Text(text_frame,
             wrap='word',
             bg='#F5F5F5',
@@ -422,17 +422,17 @@ Track progress at:
             relief='flat',
             borderwidth=1)
         text_widget.pack(side='left', fill='both', expand=True)
-        
+
         scrollbar.config(command=text_widget.yview)
-        
+
         # Insert content
         text_widget.insert('1.0', content_text)
         text_widget.config(state='disabled')  # Read-only
-        
+
         # Bottom button frame
         btn_frame = tk.Frame(dialog, bg='white')
         btn_frame.pack(fill='x', padx=20, pady=(0, 20))
-        
+
         close_btn = tk.Button(btn_frame,
             text='Close' if self.lang == 'en' else 'Đóng',
             command=dialog.destroy,
@@ -442,7 +442,7 @@ Track progress at:
             relief='flat',
             cursor='hand2')
         close_btn.pack(side='right')
-    
+
     # ============================================================================
     # LEGACY VISION METHODS - Preserved for backward compatibility
     # These will be migrated to new Setup Wizard Vision system
@@ -639,21 +639,21 @@ Track progress at:
         self._on_template_region_change()
     """
     Centralized library management window with 3 tabs.
-    
+
     This window provides a unified interface for:
     1. Monster Library Management (CRUD monsters, templates)
     2. Skill Library Management (CRUD skills, types, cooldowns)
     3. Timing Calculator (Auto-calculate recommendations)
-    
+
     Usage:
-        manager = LibraryManagerWindow(
+        LibraryManagerWindow(
             parent=main_app,
             hunt_cfg=hunt_config_dict,
             lang='vi',
             on_close_callback=lambda changes: handle_changes(changes)
         )
     """
-    
+
     def __init__(
         self,
         parent: tk.Tk,
@@ -665,7 +665,7 @@ Track progress at:
     ):
         """
         Initialize Library Manager Window.
-        
+
         Args:
             parent: Main application window
             hunt_cfg: Current hunt configuration dictionary
@@ -682,7 +682,7 @@ Track progress at:
                               }
         """
         super().__init__(parent)
-        
+
         # Store parameters
         self.parent = parent
         self.hunt_cfg = hunt_cfg.copy()  # Work on copy, apply on close
@@ -715,14 +715,14 @@ Track progress at:
         self.ui_font_button = ('Segoe UI', 10)
         self.ui_btn_padx = 12
         self.ui_btn_pady = 4
-        
+
         # Track changes
         self.changes_made = {
             'monsters_changed': False,
             'skills_changed': False,
             'timing_applied': False
         }
-        
+
         # Configure window - Normal window (no forced full screen)
         self.title(self._t('library_manager_title'))
         # Use a comfortable default size; keep resizable
@@ -732,14 +732,14 @@ Track progress at:
             pass
         self.resizable(True, True)
         self.minsize(1200, 700)  # Minimum size constraint
-        
+
         # Make modal - parent window is blocked until this closes
         self.transient(parent)
         self.grab_set()
-        
+
         # Center window
         self._center_window()
-        
+
         # Initialize common attributes to avoid unknown-attribute issues
         self.unsaved_badge = None  # Global badge in top bar (for all tabs)
         self.template_badge = None  # Template-specific badge in monster tab
@@ -769,7 +769,7 @@ Track progress at:
 
         # Build UI
         self._build_ui()
-        
+
         # Handle window close
         self.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
@@ -824,21 +824,21 @@ Track progress at:
                 else:
                     self.unsaved_badge.config(text='')
                     self.unsaved_badge.pack_forget()
-            
+
             # Update save button tooltip to reflect state
             self._update_save_button_tooltip(state)
         except Exception:
             pass
-    
+
     def _update_save_button_tooltip(self, has_unsaved: bool):
         """Update save button tooltip based on unsaved state."""
         try:
             if not hasattr(self, 'save_btn') or not self.save_btn:
                 return
-            
+
             # Determine tooltip key based on state
             tooltip_key = 'tip_apply_all_unsaved' if has_unsaved else 'tip_apply_all_saved'
-            
+
             # Remove old tooltip if exists
             if hasattr(self.save_btn, '_i18n_tooltip'):
                 old_tooltip = getattr(self.save_btn, '_i18n_tooltip')
@@ -849,12 +849,12 @@ Track progress at:
                     self.save_btn.unbind('<ButtonPress>')
                 except Exception:
                     pass
-            
+
             # Attach new tooltip with updated key
             attach_i18n_tooltip(
-                self.save_btn, 
-                key=tooltip_key, 
-                ns='library_manager', 
+                self.save_btn,
+                key=tooltip_key,
+                ns='library_manager',
                 lang_provider=lambda: self.lang
             )
         except Exception:
@@ -1103,7 +1103,7 @@ Track progress at:
         def _cancel(self):
             self._bbox = None
             self.destroy()
-    
+
     def _t(self, key: str) -> str:
         """Translate using central i18n with local fallback."""
         translations = LIBRARY_MANAGER_TRANSLATIONS
@@ -1112,7 +1112,7 @@ Track progress at:
             return i18n_t(key, ns='library_manager', lang=self.lang)
         except Exception:
             return translations.get(self.lang, {}).get(key, key)
-    
+
     def _center_window(self):
         """Center window on parent."""
         self.update_idletasks()
@@ -1134,7 +1134,7 @@ Track progress at:
         y = max(0, min(y, self.winfo_screenheight() - window_height))
 
         self.geometry(f"+{x}+{y}")
-    
+
     def _build_ui(self):
         """Build the main UI with tabs and buttons."""
         # Main container
@@ -1149,37 +1149,37 @@ Track progress at:
         tk.Label(top_bar, text=self._t('library_manager_title'), bg=UI.BG_PANEL, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=8)
         # Right-aligned actions
         self._make_icon_button(top_bar, 'cancel', '✖', 'tip_close_manager', command=self._on_window_close, bg=UI.BTN_NEUTRAL_BG, fg=UI.BTN_NEUTRAL_FG, relief='flat', padx=12, pady=6).pack(side='right', padx=(6, 10), pady=6)
-        
+
         # Global unsaved badge (for all tabs) - right of Save button
         self.unsaved_badge = tk.Label(top_bar, text='', bg=UI.COLOR_WARNING, fg='#FFFFFF', font=(UI.FONT_FAMILY, 9, 'bold'), padx=8, pady=4)
         self.unsaved_badge.pack(side='right', padx=(0, 6), pady=6)
         self.unsaved_badge.pack_forget()  # Initially hidden
-        
+
         # Save button with dynamic tooltip based on unsaved state
         self.save_btn = self._make_icon_button(top_bar, 'save', '💾', 'tip_apply_all', command=self._apply_all_changes, bg=UI.BTN_PRIMARY_BG, fg=UI.BTN_PRIMARY_FG, relief='flat', padx=12, pady=6)
         self.save_btn.pack(side='right', padx=6, pady=6)
-        
+
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill='both', expand=True, pady=(0, 10))
-        
+
         # Tab 1: Monster Library
         self.monster_tab = tk.Frame(self.notebook)
         self.notebook.add(self.monster_tab, text=self._t('tab_monsters'))
         self._build_monster_tab(self.monster_tab)
-        
+
         # Tab 2: Skill Library
         self.skill_tab = tk.Frame(self.notebook)
         self.notebook.add(self.skill_tab, text=self._t('tab_skills'))
         self._build_skill_tab(self.skill_tab)
-        
+
         # Tab 3: Skill Rotation Builder (formerly Tab 4)
         self.rotation_tab = tk.Frame(self.notebook)
         self.notebook.add(self.rotation_tab, text="🎮 " + ("Skill Rotation" if self.lang == 'en' else "Chu Kỳ Chiêu"))
         self._build_rotation_tab(self.rotation_tab)
-        
+
         # Bottom buttons removed per new UX (actions moved to form title bar)
-    
+
     def _build_monster_tab(self, parent: tk.Frame):
         """
         Build Monster Library tab with left list, inline edit form, and template manager.
@@ -1296,23 +1296,23 @@ Track progress at:
             # Fallback to empty state
             self._show_monster_details(None)
             self._show_template_editor(None)
-    
+
     def _filter_monster_list(self):
         """Filter monster list based on search text."""
         search_text = self.monster_search_var.get().lower()
-        
+
         # Clear tree
         if not self.monster_tree:
             return
         for item in self.monster_tree.get_children():
             self.monster_tree.delete(item)
-        
+
         # Re-add filtered monsters
         for monster in self.monsters:
             name = monster.get('name', '')
             if search_text in name.lower():
                 self._add_monster_to_tree(monster)
-    
+
     def _refresh_monster_tree(self):
         """Refresh the monster tree with current data."""
         # Clear tree
@@ -1320,11 +1320,11 @@ Track progress at:
             return
         for item in self.monster_tree.get_children():
             self.monster_tree.delete(item)
-        
+
         # Add all monsters
         for monster in self.monsters:
             self._add_monster_to_tree(monster)
-    
+
     def _add_monster_to_tree(self, monster: dict):
         """Add a single monster to the tree."""
         name = monster.get('name', 'Unknown')
@@ -1336,7 +1336,7 @@ Track progress at:
             text=f"  {name}",
             tags=('monster',)
         )
-    
+
     def _on_monster_select(self, event):
         """Handle monster selection in tree."""
         if not self.monster_tree:
@@ -1345,16 +1345,16 @@ Track progress at:
         if not selection:
             self._show_monster_details(None)
             return
-        
+
         # Get selected item index
         item = selection[0]
         item_index = self.monster_tree.index(item)
-        
+
         # Always show edit form for selected monster
         if 0 <= item_index < len(self.monsters):
             self._monster_edit_open = True
             self._show_monster_details(self.monsters[item_index])
-    
+
     def _show_monster_details(self, monster: Optional[dict]):
         """
         Show monster information in a clean label/value grid (no card).
@@ -1431,43 +1431,43 @@ Track progress at:
         body.grid_columnconfigure(3, weight=0)
 
         # No inline buttons here; use header actions (Apply/Delete/Cancel/Apply All)
-    
+
     def _estimate_kill_time(self, monster: dict) -> str:
         """Estimate time to kill monster based on HP and damage."""
         hp = monster.get('hp', 0)
         damage = monster.get('damage_per_hit', 500)  # Assume player damage
-        
+
         if hp <= 0 or damage <= 0:
             return 'N/A'
-        
+
         hits = hp / damage
         seconds = hits * 1.5  # Assume 1.5s per hit
-        
+
         if seconds < 60:
             return f"{seconds:.0f}s"
         else:
             minutes = seconds / 60
             return f"{minutes:.1f}m"
-    
+
     def _add_monster(self):
         """Open dialog to add new monster."""
         dialog = MonsterDialog(self, self.lang, mode='add', icon_helper=icon_helper, i18n_registry=i18n_t)
-        
+
         if dialog.result:
             # Add new monster
             self.monsters.append(dialog.result)
             self.changes_made['monsters_changed'] = True
-            
+
             # Refresh tree
             self._refresh_monster_tree()
-            
+
             # Status message
             messagebox.showinfo(
                 'Added' if self.lang == 'en' else 'Đã Thêm',
                 f"Monster '{dialog.result.get('name', 'Unknown')}' has been added." if self.lang == 'en'
                 else f"Quái '{dialog.result.get('name', 'Unknown')}' đã được thêm."
             )
-    
+
     def _edit_monster(self):
         """Open dialog to edit selected monster."""
         if not self.monster_tree:
@@ -1479,28 +1479,28 @@ Track progress at:
                 'Please select a monster to edit.' if self.lang == 'en' else 'Vui lòng chọn quái để sửa.'
             )
             return
-        
+
         item_index = self.monster_tree.index(selection[0])
         monster = self.monsters[item_index]
-        
+
         # Open edit dialog
         dialog = MonsterDialog(self, self.lang, mode='edit', monster=monster, icon_helper=icon_helper, i18n_registry=i18n_t)
-        
+
         if dialog.result:
             # Update monster
             self.monsters[item_index] = dialog.result
             self.changes_made['monsters_changed'] = True
-            
+
             # Refresh tree
             self._refresh_monster_tree()
-            
+
             # Status message
             messagebox.showinfo(
                 'Updated' if self.lang == 'en' else 'Đã Cập Nhật',
                 f"Monster '{dialog.result.get('name', 'Unknown')}' has been updated." if self.lang == 'en'
                 else f"Quái '{dialog.result.get('name', 'Unknown')}' đã được cập nhật."
             )
-    
+
     def _edit_monster_inline(self):
         """Edit selected monster inline (no popup dialog)."""
         if not self.monster_tree:
@@ -1518,21 +1518,21 @@ Track progress at:
             self.current_monster = self.monsters[item_index]
         # Show inline form
         self._show_monster_edit_inline()
-    
+
     def _lighten_color(self, hex_color: str, factor: float = 0.1) -> str:
         """Lighten a hex color by a factor (0-1)."""
         # Convert hex to RGB
         hex_color = hex_color.lstrip('#')
         r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-        
+
         # Lighten
         r = int(r + (255 - r) * factor)
         g = int(g + (255 - g) * factor)
         b = int(b + (255 - b) * factor)
-        
+
         # Convert back to hex
         return f'#{r:02x}{g:02x}{b:02x}'
-    
+
     def _delete_monster(self):
         """Delete selected monster."""
         if not self.monster_tree:
@@ -1544,35 +1544,35 @@ Track progress at:
                 'Please select a monster to delete.' if self.lang == 'en' else 'Vui lòng chọn quái để xóa.'
             )
             return
-        
+
         item_index = self.monster_tree.index(selection[0])
         monster = self.monsters[item_index]
-        
+
         # Confirm deletion
         response = messagebox.askyesno(
             'Confirm Delete' if self.lang == 'en' else 'Xác Nhận Xóa',
-            f"Delete monster '{monster.get('name', 'Unknown')}'?\n\nThis cannot be undone." if self.lang == 'en' 
+            f"Delete monster '{monster.get('name', 'Unknown')}'?\n\nThis cannot be undone." if self.lang == 'en'
             else f"Xóa quái '{monster.get('name', 'Unknown')}'?\n\nHành động này không thể hoàn tác."
         )
-        
+
         if response:
             # Delete monster
             del self.monsters[item_index]
             self.changes_made['monsters_changed'] = True
-            
+
             # Refresh tree
             name_var = tk.StringVar(value=self.current_monster.get('name', ''))
             hp_var = tk.StringVar(value=str(self.current_monster.get('hp', 0)))
             dmg_var = tk.StringVar(value=str(self.current_monster.get('damage_per_hit', 0)))
             prio_var = tk.StringVar(value=str(self.current_monster.get('priority', 1)))
-            
+
             # Status message
             messagebox.showinfo(
                 'Deleted' if self.lang == 'en' else 'Đã Xóa',
                 f"Monster '{monster.get('name', 'Unknown')}' has been deleted." if self.lang == 'en'
                 else f"Quái '{monster.get('name', 'Unknown')}' đã được xóa."
             )
-    
+
     def _duplicate_monster(self):
         """Duplicate selected monster."""
         if not self.monster_tree:
@@ -1584,31 +1584,31 @@ Track progress at:
                 'Please select a monster to duplicate.' if self.lang == 'en' else 'Vui lòng chọn quái để nhân bản.'
             )
             return
-        
+
         item_index = self.monster_tree.index(selection[0])
         original = self.monsters[item_index]
-        
+
         # Create copy
         import copy
         duplicate = copy.deepcopy(original)
         duplicate['name'] = f"{original.get('name', 'Unknown')} (Copy)"
-        
+
         # Add to list
         self.monsters.append(duplicate)
         self.changes_made['monsters_changed'] = True
-        
+
         # Refresh tree
         self._refresh_monster_tree()
-        
+
         # Status message
         messagebox.showinfo(
             'Duplicated' if self.lang == 'en' else 'Đã Nhân Bản',
             f"Monster '{original.get('name', 'Unknown')}' has been duplicated." if self.lang == 'en'
             else f"Quái '{original.get('name', 'Unknown')}' đã được nhân bản."
         )
-    
+
     # ==================== Template Management Methods ====================
-    
+
     def _show_template_editor(self, monster: Optional[dict]):
         """
         Row 2 layout:
@@ -1776,7 +1776,7 @@ Track progress at:
         self.template_threshold_entry.pack(side='left', ipady=6)
         tk.Label(th_input, text='  (0.0 - 1.0)', bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL).pack(side='left', padx=5)
         tk.Label(th_col, text=(
-            'Gợi ý: 0.80 - 0.90. Cao hơn -> ít nhận nhầm, nhưng khó khớp.' if self.lang=='vi' else 
+            'Gợi ý: 0.80 - 0.90. Cao hơn -> ít nhận nhầm, nhưng khó khớp.' if self.lang=='vi' else
             'Tip: 0.80 - 0.90. Higher = less false positives, but harder to match.'
         ), bg=UI.BG_SECTION, fg=UI.COLOR_HINT, font=UI.FONT_SMALL, anchor='w').pack(fill='x', pady=(4,0))
 
@@ -1789,12 +1789,12 @@ Track progress at:
         # TODO: Will be replaced by new Setup Wizard Vision feature
         # Keeping code structure for future reference and migration
         # ============================================================================
-        
+
         # HIDDEN: Region override section - preserved for future upgrade
         # region_frame = tk.Frame(form_body, bg='#E3F2FD'); region_frame.pack(fill='x', pady=(0,12))
         # tk.Label(region_frame, text=('Region Override (L,T,W,H)' if self.lang=='en' else 'Vùng ghi đè (L,T,R,D)'), bg='#E3F2FD', font=('Arial', 9, 'bold'), fg='#424242', anchor='w').pack(fill='x', pady=(0,4))
         # region_inputs = tk.Frame(region_frame, bg='#E3F2FD'); region_inputs.pack(fill='x')
-        
+
         # Initialize region vars even when hidden (for backward compatibility)
         self.template_region_vars = {
             'left': tk.StringVar(),
@@ -1803,45 +1803,45 @@ Track progress at:
             'height': tk.StringVar(),
         }
         self.template_region_entries = {}
-        
+
         # HIDDEN: Region input fields - preserved structure
         # for key, lbl in [('left','L'),('top','T'),('width','W'),('height','H')]:
         #     tk.Label(region_inputs, text=f"{lbl}:", bg='#E3F2FD').pack(side='left')
         #     entry = tk.Entry(region_inputs, textvariable=self.template_region_vars[key], width=6, font=('Arial', 10), relief='solid', borderwidth=1, state='readonly')
         #     entry.pack(side='left', padx=(2,8), ipady=4)
         #     self.template_region_entries[key] = entry
-        
+
         # HIDDEN: Helper text - preserved
         # tk.Label(region_frame, text=(
         #     'Để trống để dùng biên cửa sổ game.' if self.lang=='vi' else 'Leave blank to use game window bounds.'
         # ), bg='#E3F2FD', fg='#757575', font=('Arial', 8), anchor='w').pack(fill='x', pady=(4,6))
-        
+
         # HIDDEN: Legacy action buttons - preserved for migration
         # region_btns = tk.Frame(region_frame, bg='#E3F2FD'); region_btns.pack(fill='x')
         # self._make_icon_button(region_btns, 'template', '🖼️', 'tip_pick_region', command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left')
         # self._make_icon_button(region_btns, 'search', '🔍', 'tip_test_recognition', command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
         # self._make_icon_button(region_btns, 'info', '📋', 'tip_auto_detect', command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=('Arial', 9, 'bold')).pack(side='left', padx=(8,0))
-        
+
         # ============================================================================
         # NEW: Setup Wizard Vision - Modern replacement for legacy region tools
         # ============================================================================
-        
+
         wizard_frame = tk.Frame(form_body, bg='#E8F5E9', relief='solid', borderwidth=1)
         wizard_frame.pack(fill='x', pady=(0,12), padx=2)
-        
+
         # Hint text above button
         hint_text = (
             'Xem thêm về các chức năng sắp được nâng cấp bằng cách nhấp vào nút bên dưới'
             if self.lang == 'vi' else
             'Click the button below to learn about upcoming feature upgrades'
         )
-        tk.Label(wizard_frame, text=hint_text, bg='#E8F5E9', fg='#558B2F', 
+        tk.Label(wizard_frame, text=hint_text, bg='#E8F5E9', fg='#558B2F',
                 font=('Arial', 8, 'italic'), anchor='w', wraplength=400).pack(fill='x', padx=10, pady=(8,4))
-        
+
         # Setup Wizard Vision button
         wizard_btn_frame = tk.Frame(wizard_frame, bg='#E8F5E9')
         wizard_btn_frame.pack(fill='x', padx=10, pady=(0,8))
-        
+
         wizard_btn_text = '🔮 Setup Wizard Vision' if self.lang == 'en' else '🔮 Thiết Lập Vision Nâng Cao'
         wizard_btn = tk.Button(
             wizard_btn_frame,
@@ -1880,7 +1880,7 @@ Track progress at:
                 self._on_template_tree_select(None)
         except Exception:
             pass
-    
+
     def _on_template_tree_select(self, event):
         """Handle template selection: show preview and open inline edit immediately."""
         if not self.template_tree:
@@ -1942,7 +1942,7 @@ Track progress at:
                 entry.config(state='readonly')
         except Exception:
             pass
-    
+
     def _unlock_template_fields(self):
         """Unlock all template edit fields for editing."""
         self.template_locked = False
@@ -1954,12 +1954,12 @@ Track progress at:
                 self.template_threshold_entry.config(state='normal')
             for entry in self.template_region_entries.values():
                 entry.config(state='normal')
-            
+
             # Show "Đang chỉnh sửa" badge (orange)
             self._show_editing_badge()
         except Exception:
             pass
-    
+
     def _toggle_template_edit(self):
         """Toggle between locked (view) and unlocked (edit) mode."""
         if self.template_locked:
@@ -1970,7 +1970,7 @@ Track progress at:
         else:
             # Save mode - save immediately
             self._save_template_immediately()
-    
+
     def _update_toggle_button_icon(self, icon_name: str, fallback: str, tooltip_key: str):
         """Update toggle button icon and tooltip."""
         if not self.template_toggle_btn:
@@ -1987,7 +1987,7 @@ Track progress at:
             else:
                 # Fallback to text
                 self.template_toggle_btn.config(text=fallback)
-            
+
             # Update tooltip
             try:
                 from ui.helpers.tooltip import attach_i18n_tooltip
@@ -2011,7 +2011,7 @@ Track progress at:
                 pass
         except Exception:
             pass
-    
+
     def _save_template_immediately(self):
         """Save current template data immediately to lib/data/monsters.json and copy images to assets."""
         try:
@@ -2019,7 +2019,7 @@ Track progress at:
             tmpl = self._get_current_template_ref()
             if not tmpl:
                 return
-            
+
             # Copy image from tmp to assets if needed
             img_path = tmpl.get('path', '')
             if img_path and 'tmp' in img_path.lower():
@@ -2029,11 +2029,11 @@ Track progress at:
                     # Create destination directory
                     dest_dir = self.assets_mon_dir
                     dest_dir.mkdir(parents=True, exist_ok=True)
-                    
+
                     # Generate destination filename
                     dest_filename = src_path.name
                     dest_path = dest_dir / dest_filename
-                    
+
                     # Copy file
                     try:
                         shutil.copy2(src_path, dest_path)
@@ -2042,55 +2042,55 @@ Track progress at:
                         tmpl['path'] = rel_path
                     except Exception as e:
                         print(f"Failed to copy image: {e}")
-            
+
             # Save monsters to lib/data/monsters.json
             data_dir = self.project_root / 'lib' / 'data'
             data_dir.mkdir(parents=True, exist_ok=True)
             monsters_path = data_dir / 'monsters.json'
-            
+
             with open(monsters_path, 'w', encoding='utf-8') as f:
                 json.dump(self.monsters, f, indent=2, ensure_ascii=False)
-            
+
             # Lock fields again and switch back to edit icon
             self._lock_template_fields()
             self._update_toggle_button_icon('edit', '✏️', 'tip_template_edit')
-            
+
             # Show "Đã lưu" badge (green) - will auto-hide after 3s
             self._show_saved_badge()
-            
+
             # Mark as saved (no more changes)
             self.template_temp_saved = True
-            
+
         except Exception as e:
             messagebox.showerror(
                 'Save Error' if self.lang == 'en' else 'Lỗi Lưu',
                 f"Failed to save template: {e}" if self.lang == 'en'
                 else f"Không thể lưu template: {e}"
             )
-    
+
     def _show_editing_badge(self):
         """Show 'Đang chỉnh sửa' badge (orange background) for template editing."""
         try:
             if not self.template_badge:
                 return
-            
+
             badge_text = 'Editing' if self.lang == 'en' else 'Đang chỉnh sửa'
             self.template_badge.config(text=f'  {badge_text}  ', bg='#FF9800')  # Orange
             self.template_badge.place(relx=1.0, x=-15, y=12, anchor='e')
-            
+
         except Exception:
             pass
-    
+
     def _show_saved_badge(self):
         """Show 'Đã lưu' badge (green background) for template save."""
         try:
             if not self.template_badge:
                 return
-            
+
             badge_text = 'Saved' if self.lang == 'en' else 'Đã lưu'
             self.template_badge.config(text=f'  {badge_text}  ', bg='#4CAF50')  # Green
             self.template_badge.place(relx=1.0, x=-15, y=12, anchor='e')
-            
+
             # Hide after 3 seconds
             def hide_badge():
                 try:
@@ -2098,12 +2098,12 @@ Track progress at:
                         self.template_badge.place_forget()
                 except Exception:
                     pass
-            
+
             self.after(3000, hide_badge)
-            
+
         except Exception:
             pass
-    
+
     def _hide_template_badge(self):
         """Hide template badge (used when viewing locked template)."""
         try:
@@ -2446,11 +2446,11 @@ Track progress at:
             return
         self._monster_edit_open = True
         self._show_monster_details(self.current_monster)
-    
+
     # Removed obsolete _on_template_select (listbox-based). Using treeview selection instead.
-    
+
     # === INLINE Template Editing Methods (NO POPUPS!) ===
-    
+
     def _add_template_inline(self):
         """Show inline form to add new template."""
         if not hasattr(self, 'current_monster'):
@@ -2478,12 +2478,12 @@ Track progress at:
                 self._on_template_tree_select(None)
         except Exception:
             pass
-    
+
     def _edit_template_inline(self):
         """Show inline form to edit selected template."""
         if not hasattr(self, 'current_monster'):
             return
-        
+
         # Get selection from treeview
         if not self.template_tree:
             return
@@ -2495,26 +2495,26 @@ Track progress at:
                 else 'Vui lòng chọn template để sửa.'
             )
             return
-        
+
         # Get index
         item = selection[0]
         idx = self.template_tree.index(item)
         templates = self.current_monster.get('templates', [])
-        
+
         if idx >= len(templates):
             return
-        
+
         template = templates[idx]
-        
+
         # Show form (if not visible) and let selection handler populate; traces will auto-apply changes
         self.template_form_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
         self.form_title_label.config(text='✏️ ' + ('Edit Template' if self.lang == 'en' else 'Sửa Template'))
-    
+
     def _delete_template_inline(self):
         """Delete selected template (with confirmation)."""
         if not hasattr(self, 'current_monster'):
             return
-        
+
         # Get selection
         if not self.template_tree:
             return
@@ -2526,24 +2526,24 @@ Track progress at:
                 else 'Vui lòng chọn template để xóa.'
             )
             return
-        
+
         # Get index
         item = selection[0]
         idx = self.template_tree.index(item)
         templates = self.current_monster.get('templates', [])
-        
+
         if idx >= len(templates):
             return
-        
+
         template = templates[idx]
-        
+
         # Confirm
         response = messagebox.askyesno(
             'Confirm Delete' if self.lang == 'en' else 'Xác Nhận Xóa',
             f"Delete template '{template.get('name', 'Unknown')}'?" if self.lang == 'en'
             else f"Xóa template '{template.get('name', 'Unknown')}'?"
         )
-        
+
         if response:
             # Remove from list
             img_path = template.get('path') or ''
@@ -2578,22 +2578,22 @@ Track progress at:
                             pass
             except Exception:
                 pass
-            
+
             # Refresh display
             self._show_template_editor(self.current_monster)
             self._refresh_monster_tree()
-            
+
             # Success message
             messagebox.showinfo(
                 'Deleted' if self.lang == 'en' else 'Đã Xóa',
                 'Template deleted successfully.' if self.lang == 'en'
                 else 'Đã xóa template.'
             )
-    
+
     def _browse_template_image(self):
         """Browse for template image file."""
         from tkinter import filedialog
-        
+
         file_path = filedialog.askopenfilename(
             title='Select Template Image' if self.lang == 'en' else 'Chọn Ảnh Template',
             filetypes=[
@@ -2601,23 +2601,23 @@ Track progress at:
                 ('All files', '*.*')
             ]
         )
-        
+
         if file_path:
             self.template_path_var.set(file_path)
             # Auto-fill name if empty
             if not self.template_name_var.get():
                 self.template_name_var.set(os.path.basename(file_path))
-    
+
     def _save_template_form(self):
         """Save template form (add or edit mode)."""
         if not hasattr(self, 'current_monster'):
             return
-        
+
         # Validate fields
         name = self.template_name_var.get().strip()
         path = self.template_path_var.get().strip()
         threshold_str = self.template_threshold_var.get().strip()
-        
+
         if not name:
             messagebox.showwarning(
                 'Missing Name' if self.lang == 'en' else 'Thiếu Tên',
@@ -2625,7 +2625,7 @@ Track progress at:
                 else 'Vui lòng nhập tên template.'
             )
             return
-        
+
         if not path:
             messagebox.showwarning(
                 'Missing Path' if self.lang == 'en' else 'Thiếu Đường Dẫn',
@@ -2633,7 +2633,7 @@ Track progress at:
                 else 'Vui lòng chọn file ảnh.'
             )
             return
-        
+
         # Validate threshold
         try:
             threshold = float(threshold_str)
@@ -2646,67 +2646,67 @@ Track progress at:
                 else 'Ngưỡng phải từ 0.0 đến 1.0'
             )
             return
-        
+
         # Create/update template
         template_data = {
             'name': name,
             'path': path,
             'threshold': threshold
         }
-        
+
         if self.template_form_mode == 'add':
             # Add new template
             if 'templates' not in self.current_monster:
                 self.current_monster['templates'] = []
             self.current_monster['templates'].append(template_data)
-            
+
             messagebox.showinfo(
                 'Added' if self.lang == 'en' else 'Đã Thêm',
                 f"Template '{name}' added successfully." if self.lang == 'en'
                 else f"Đã thêm template '{name}'."
             )
-        
+
         elif self.template_form_mode == 'edit':
             # Update existing template
             templates = self.current_monster.get('templates', [])
             if self.template_form_edit_index is not None and self.template_form_edit_index < len(templates):
                 templates[self.template_form_edit_index] = template_data
-            
+
             messagebox.showinfo(
                 'Updated' if self.lang == 'en' else 'Đã Cập Nhật',
                 f"Template '{name}' updated successfully." if self.lang == 'en'
                 else f"Đã cập nhật template '{name}'."
             )
-        
+
         # Mark changes
         self.changes_made['monsters_changed'] = True
-        
+
         # Hide form and refresh
         self._cancel_template_form()
         self._show_template_editor(self.current_monster)
         self._show_monster_details(self.current_monster)  # Refresh monster info
         self._refresh_monster_tree()
-    
+
     def _cancel_template_form(self):
         """Cancel template form editing."""
         self.template_form_frame.pack_forget()
         self.template_form_mode = None
         self.template_form_edit_index = None
-    
+
     # === OLD Methods (keep for compatibility) ===
-    
+
     def _add_template(self):
         """DEPRECATED: Use _add_template_inline instead."""
         self._add_template_inline()
-    
+
     def _edit_template(self):
         """DEPRECATED: Use _edit_template_inline instead."""
         self._edit_template_inline()
-    
+
     def _delete_template(self):
         """DEPRECATED: Use _delete_template_inline instead."""
         self._delete_template_inline()
-    
+
     def _capture_template(self):
         """Capture template image from a selected screen region and attach to current monster."""
         if not hasattr(self, 'current_monster') or self.current_monster is None:
@@ -2905,9 +2905,9 @@ Track progress at:
             'Captured' if self.lang == 'en' else 'Đã Chụp',
             'Template captured and saved.' if self.lang == 'en' else 'Đã chụp và lưu template.'
         )
-    
+
     # ==================== End Template Management ====================
-    
+
     def _build_skill_tab(self, parent: tk.Frame):
         """
         Build Skill Library tab with left list, inline edit form, and image preview.
@@ -2961,7 +2961,7 @@ Track progress at:
         filter_frame.pack(fill='x')
         tk.Label(filter_frame, text='Type:' if self.lang=='en' else 'Loại:', bg='#FFFFFF', font=UI.FONT_LABEL).pack(side='left', padx=(0,6))
         self.skill_type_filter_var = tk.StringVar(value='all')
-        type_combo = ttk.Combobox(filter_frame, textvariable=self.skill_type_filter_var, state='readonly', width=12, 
+        type_combo = ttk.Combobox(filter_frame, textvariable=self.skill_type_filter_var, state='readonly', width=12,
                                    values=['all', 'attack', 'buff'])
         type_combo.pack(side='left')
         type_combo.bind('<<ComboboxSelected>>', lambda e: self._filter_skill_list())
@@ -2971,21 +2971,21 @@ Track progress at:
         list_frame.pack(fill='both', expand=True, padx=15, pady=(0, 12))
         vsb = tk.Scrollbar(list_frame, orient='vertical')
         hsb = tk.Scrollbar(list_frame, orient='horizontal')
-        
+
         # Columns: Name, Key, Type
-        self.skill_tree = ttk.Treeview(list_frame, columns=('key', 'type'), show='tree headings', 
+        self.skill_tree = ttk.Treeview(list_frame, columns=('key', 'type'), show='tree headings',
                                        yscrollcommand=vsb.set, xscrollcommand=hsb.set, selectmode='browse')
         vsb.config(command=self.skill_tree.yview)
         hsb.config(command=self.skill_tree.xview)
-        
+
         self.skill_tree.heading('#0', text='Name' if self.lang == 'en' else 'Tên')
         self.skill_tree.heading('key', text='Key' if self.lang == 'en' else 'Phím')
         self.skill_tree.heading('type', text='Type' if self.lang == 'en' else 'Loại')
-        
+
         self.skill_tree.column('#0', width=160, minwidth=100)
         self.skill_tree.column('key', width=50, minwidth=40, anchor='center')
         self.skill_tree.column('type', width=70, minwidth=60, anchor='center')
-        
+
         self.skill_tree.grid(row=0, column=0, sticky='nsew')
         vsb.grid(row=0, column=1, sticky='ns')
         hsb.grid(row=1, column=0, sticky='ew')
@@ -3005,14 +3005,14 @@ Track progress at:
         form_container.grid(row=0, column=0, sticky='nsew')
         form_container.grid_columnconfigure(0, weight=1)
         form_container.grid_rowconfigure(1, weight=1)
-        
+
         # Title bar
         action_bar = tk.Frame(form_container, bg='#E3F2FD', height=44)
         action_bar.grid(row=0, column=0, sticky='ew')
         action_bar.grid_propagate(False)
-        tk.Label(action_bar, text=('Skill Editor' if self.lang=='en' else 'Chỉnh Sửa Kỹ Năng'), 
+        tk.Label(action_bar, text=('Skill Editor' if self.lang=='en' else 'Chỉnh Sửa Kỹ Năng'),
                 bg=UI.BG_SECTION, fg=UI.COLOR_PRIMARY_TEXT, font=UI.FONT_TITLE).pack(side='left', padx=12)
-        
+
         # Details panel
         self.skill_details_panel = tk.Frame(form_container, bg='#FFFFFF')
         self.skill_details_panel.grid(row=1, column=0, sticky='nsew', padx=0)
@@ -3022,19 +3022,19 @@ Track progress at:
         preview_container.grid(row=1, column=0, sticky='nsew', pady=(10, 0))
         preview_container.grid_columnconfigure(0, weight=1)
         preview_container.grid_rowconfigure(1, weight=1)
-        
+
         preview_bar = tk.Frame(preview_container, bg='#FFF3E0', height=36)
         preview_bar.grid(row=0, column=0, sticky='ew')
         preview_bar.grid_propagate(False)
-        tk.Label(preview_bar, text=('Skill Image' if self.lang=='en' else 'Hình Ảnh Kỹ Năng'), 
+        tk.Label(preview_bar, text=('Skill Image' if self.lang=='en' else 'Hình Ảnh Kỹ Năng'),
                 bg='#FFF3E0', fg='#E65100', font=UI.FONT_SECTION).pack(side='left', padx=12, pady=6)
-        
+
         self.skill_preview_panel = tk.Frame(preview_container, bg='#FAFAFA')
         self.skill_preview_panel.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
 
         # Initial population
         self._refresh_skill_tree()
-        
+
         # Auto-select first skill if available
         try:
             first = self.skill_tree.get_children()
@@ -3046,35 +3046,35 @@ Track progress at:
                 self._show_skill_details(None)
         except Exception:
             self._show_skill_details(None)
-    
+
     # -----------------
     # Skill Tab Handlers
     # -----------------
-    
+
     def _filter_skill_list(self):
         """Filter skill list based on search text and type filter."""
         search_text = self.skill_search_var.get().lower()
         skill_type = self.skill_type_filter_var.get()
-        
+
         # Clear tree
         if not self.skill_tree:
             return
         for item in self.skill_tree.get_children():
             self.skill_tree.delete(item)
-        
+
         # Re-add filtered skills
         for skill in self.skills:
             name = skill.get('name', '')
             stype = skill.get('type', 'attack')
-            
+
             # Apply filters
             if search_text and search_text not in name.lower():
                 continue
             if skill_type != 'all' and stype != skill_type:
                 continue
-                
+
             self._add_skill_to_tree(skill)
-    
+
     def _refresh_skill_tree(self):
         """Refresh the skill tree with current data."""
         # Clear tree
@@ -3082,23 +3082,23 @@ Track progress at:
             return
         for item in self.skill_tree.get_children():
             self.skill_tree.delete(item)
-        
+
         # Add all skills (respect current filters)
         self._filter_skill_list()
-    
+
     def _add_skill_to_tree(self, skill: dict):
         """Add a single skill to the tree."""
         name = skill.get('name', 'Unknown')
         key = skill.get('key', '')
         skill_type = skill.get('type', 'attack')
-        
+
         # Type display
         type_display = '⚔️' if skill_type == 'attack' else '🛡️'
         if self.lang == 'en':
             type_text = skill_type.capitalize()
         else:
             type_text = 'Tấn công' if skill_type == 'attack' else 'Buff'
-        
+
         if not self.skill_tree:
             return
         self.skill_tree.insert(
@@ -3108,7 +3108,7 @@ Track progress at:
             values=(key, f"{type_display} {type_text}"),
             tags=('skill',)
         )
-    
+
     def _on_skill_select(self, event):
         """Handle skill selection in tree."""
         if not self.skill_tree:
@@ -3117,11 +3117,11 @@ Track progress at:
         if not selection:
             self._show_skill_details(None)
             return
-        
+
         # Get selected item index
         item = selection[0]
         item_index = self.skill_tree.index(item)
-        
+
         # Get filtered skills list (matching tree order)
         search_text = self.skill_search_var.get().lower()
         skill_type = self.skill_type_filter_var.get()
@@ -3134,12 +3134,12 @@ Track progress at:
             if skill_type != 'all' and stype != skill_type:
                 continue
             filtered_skills.append(skill)
-        
+
         # Show details for selected skill
         if 0 <= item_index < len(filtered_skills):
             self._skill_edit_open = True
             self._show_skill_details(filtered_skills[item_index])
-    
+
     def _show_skill_details(self, skill: Optional[dict]):
         """Show skill information in edit form and image preview."""
         # Clear current content
@@ -3165,12 +3165,12 @@ Track progress at:
             self._render_skill_edit_form(self.skill_details_panel)
         # Show image preview
         self._show_skill_image_preview(skill)
-    
+
     def _render_skill_edit_form(self, parent: tk.Frame):
         """Render the inline skill edit form."""
         if not hasattr(self, 'current_skill') or self.current_skill is None:
             return
-            
+
         form = tk.Frame(parent, bg='#E3F2FD', highlightbackground='#2196F3', highlightthickness=2)
         form.pack(fill='both', expand=False, pady=(12, 0))
 
@@ -3217,7 +3217,7 @@ Track progress at:
 
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=0)
-    
+
     def _show_skill_image_preview(self, skill: Optional[dict]):
         """Show skill image preview in bottom panel."""
         # Clear preview panel
@@ -3227,16 +3227,16 @@ Track progress at:
                     w.destroy()
             except Exception:
                 pass
-        
+
         if skill is None or not self.skill_preview_panel:
             return
-        
+
         image_path = skill.get('image', '')
         if not image_path or not Path(image_path).exists():
-            tk.Label(self.skill_preview_panel, 
+            tk.Label(self.skill_preview_panel,
                     text='📷 ' + ('No image captured' if self.lang=='en' else 'Chưa có hình ảnh'),
                     bg='#FAFAFA', fg='#9E9E9E', font=self.ui_font_label).pack(expand=True)
-            
+
             # Add capture button
             btn_frame = tk.Frame(self.skill_preview_panel, bg='#FAFAFA')
             btn_frame.pack(side='bottom', pady=10)
@@ -3247,7 +3247,7 @@ Track progress at:
                 font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady
             ).pack()
             return
-        
+
         # Show image
         try:
             if Image:
@@ -3256,7 +3256,7 @@ Track progress at:
                 max_w, max_h = 400, 300
                 img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
                 photo = ImageTk.PhotoImage(img)
-                
+
                 label = tk.Label(self.skill_preview_panel, image=photo, bg='#FAFAFA')
                 try:
                     if not hasattr(self, '_image_refs'):
@@ -3265,18 +3265,18 @@ Track progress at:
                 except Exception:
                     pass
                 label.pack(expand=True, pady=10)
-                
+
                 # Action buttons
                 btn_frame = tk.Frame(self.skill_preview_panel, bg='#FAFAFA')
                 btn_frame.pack(side='bottom', pady=10)
-                
+
                 self._make_icon_button(
                     btn_frame, 'capture', '📸', 'tip_recapture_skill_image',
                     command=self._capture_skill_image,
                     bg='#2196F3', fg='white', relief='flat',
                     font=UI.FONT_BUTTON, padx=self.ui_btn_padx, pady=self.ui_btn_pady
                 ).pack(side='left', padx=4)
-                
+
                 self._make_icon_button(
                     btn_frame, 'delete', '🗑️', 'tip_delete_skill_image',
                     command=self._delete_skill_image,
@@ -3289,27 +3289,27 @@ Track progress at:
         except Exception as e:
             tk.Label(self.skill_preview_panel, text=f"Error loading image: {e}",
                     bg='#FAFAFA', fg='#f44336', font=self.ui_font_label).pack(expand=True)
-    
+
     def _add_skill(self):
         """Open dialog to add new skill."""
         dialog = SkillDialog(self, self.lang, mode='add', icon_helper=icon_helper, i18n_registry=i18n_t)
-        
+
         if dialog.result:
             # Add new skill
             self.skills.append(dialog.result)
             self.changes_made['skills_changed'] = True
             self._mark_unsaved(True)
-            
+
             # Refresh tree
             self._refresh_skill_tree()
-            
+
             # Status message
             messagebox.showinfo(
                 'Added' if self.lang == 'en' else 'Đã Thêm',
                 f"Skill '{dialog.result.get('name', 'Unknown')}' has been added." if self.lang == 'en'
                 else f"Kỹ năng '{dialog.result.get('name', 'Unknown')}' đã được thêm."
             )
-    
+
     def _capture_skill_image(self):
         """Capture skill image from screen."""
         if not hasattr(self, 'current_skill') or self.current_skill is None:
@@ -3318,7 +3318,7 @@ Track progress at:
                 'Please select a skill first.' if self.lang=='en' else 'Vui lòng chọn một kỹ năng trước.'
             )
             return
-        
+
         # Bring game window to front
         try:
             pid = self.hunt_cfg.get('window_pid') if isinstance(self.hunt_cfg, dict) else None
@@ -3329,7 +3329,7 @@ Track progress at:
                 self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
         except Exception:
             pass
-        
+
         # Use capture helper
         if capture_region_and_save:
             try:
@@ -3344,16 +3344,16 @@ Track progress at:
                             self._bring_window_to_front_by_hwnd(int(hwnd_cfg))
                     except Exception:
                         pass
-                
+
                 result = capture_region_and_save(
-                    self, 
-                    self.pil_available, 
-                    self.current_skill.get('name', ''), 
-                    self.lang, 
+                    self,
+                    self.pil_available,
+                    self.current_skill.get('name', ''),
+                    self.lang,
                     pre_wait_hook=_pre_wait_bring,
                     capture_type='skill'  # Save to assets/images/skills/
                 )
-                
+
                 if result:
                     # result is (path, bbox) tuple
                     image_path, bbox = result
@@ -3361,7 +3361,7 @@ Track progress at:
                     self.current_skill['image'] = image_path
                     self.changes_made['skills_changed'] = True
                     self._mark_unsaved(True)
-                    
+
                     # Refresh preview
                     self._show_skill_image_preview(self.current_skill)
             except Exception as e:
@@ -3369,32 +3369,32 @@ Track progress at:
                     'Capture Error' if self.lang == 'en' else 'Lỗi Chụp Ảnh',
                     f"Failed to capture image: {e}"
                 )
-    
+
     def _delete_skill_image(self):
         """Delete skill image."""
         if not hasattr(self, 'current_skill') or self.current_skill is None:
             return
-        
+
         # Confirm
         if not messagebox.askyesno(
             'Confirm' if self.lang == 'en' else 'Xác Nhận',
             'Delete this skill image?' if self.lang == 'en' else 'Xóa hình ảnh kỹ năng này?'
         ):
             return
-        
+
         # Remove image
         self.current_skill['image'] = ''
         self.changes_made['skills_changed'] = True
         self._mark_unsaved(True)
-        
+
         # Refresh preview
         self._show_skill_image_preview(self.current_skill)
-    
+
     def _save_current_skill_inline(self):
         """Save current skill changes from inline form."""
         if not hasattr(self, 'current_skill') or self.current_skill is None:
             return
-        
+
         try:
             # Validate and update current_skill
             self.current_skill['name'] = self.skill_name_var.get().strip()
@@ -3402,7 +3402,7 @@ Track progress at:
             self.current_skill['type'] = self.skill_type_var.get()
             self.current_skill['cooldown'] = float(self.skill_cooldown_var.get())
             self.current_skill['cast_time'] = float(self.skill_cast_time_var.get())
-            
+
             # Validate values
             if not self.current_skill['name']:
                 raise ValueError('Name cannot be empty' if self.lang=='en' else 'Tên không được để trống')
@@ -3412,47 +3412,47 @@ Track progress at:
                 raise ValueError('Cooldown must be non-negative' if self.lang=='en' else 'Thời gian hồi chiêu phải không âm')
             if self.current_skill['cast_time'] < 0:
                 raise ValueError('Cast time must be non-negative' if self.lang=='en' else 'Thời gian thi triển phải không âm')
-                
+
         except ValueError as e:
             messagebox.showerror('Invalid Input' if self.lang=='en' else 'Dữ Liệu Không Hợp Lệ', str(e))
             return
         except Exception as e:
             messagebox.showerror('Error' if self.lang=='en' else 'Lỗi', str(e))
             return
-        
+
         self.changes_made['skills_changed'] = True
         self._mark_unsaved(True)
         self._refresh_skill_tree()
-        
+
         # Keep focus on same skill
         self._show_skill_details(self.current_skill)
-    
+
     def _delete_current_skill_inline(self):
         """Delete current skill."""
         if not hasattr(self, 'current_skill') or self.current_skill is None:
             return
-        
+
         name = self.current_skill.get('name', 'Unknown')
         title = 'Confirm Delete' if self.lang=='en' else 'Xác Nhận Xóa'
         msg = f"Delete skill '{name}'?" if self.lang=='en' else f"Xóa kỹ năng '{name}'?"
-        
+
         if messagebox.askyesno(title, msg, parent=self):
             try:
                 idx = self.skills.index(self.current_skill)
             except ValueError:
                 idx = -1
-            
+
             if idx >= 0:
                 del self.skills[idx]
                 self.changes_made['skills_changed'] = True
                 self._mark_unsaved(True)
                 self._refresh_skill_tree()
                 self._show_skill_details(None)
-    
+
     def _build_rotation_tab(self, parent: tk.Frame):
         """
         Build Skill Rotation Builder tab
-        
+
         Sprint 19 Task #5: Skill Rotation Builder with precise timing
         - Select skills from hunt_config
         - Arrange in specific order
@@ -3461,15 +3461,15 @@ Track progress at:
         """
         try:
             from lib.features.skill_rotation.ui_integration import SkillRotationUI
-            
+
             # Create rotation UI
             self.rotation_ui = SkillRotationUI(parent, self)
-            
+
         except ImportError as e:
             # Fallback if module not available
             error_frame = tk.Frame(parent, bg='white')
             error_frame.pack(fill='both', expand=True)
-            
+
             tk.Label(
                 error_frame,
                 text=f"⚠️ Skill Rotation module not available\n\n{str(e)}",
@@ -3478,7 +3478,7 @@ Track progress at:
                 bg='white',
                 justify='center'
             ).pack(expand=True)
-    
+
     def _apply_all_changes(self):
         """Refresh monster dropdown in timing tab"""
         try:
@@ -3490,7 +3490,7 @@ Track progress at:
                 self._on_timing_monster_select(None)
         except Exception as e:
             print(f"Error loading monsters for timing tab: {e}")
-    
+
     def _refresh_timing_skills(self):
         """Refresh skill dropdown in timing tab"""
         try:
@@ -3504,29 +3504,29 @@ Track progress at:
                 self._on_timing_skill_select(None)
         except Exception as e:
             print(f"Error loading skills for timing tab: {e}")
-    
+
     def _update_text_widget(self, widget, text):
         """Helper to update read-only text widget"""
         widget.config(state='normal')
         widget.delete('1.0', 'end')
         widget.insert('1.0', text)
         widget.config(state='disabled')
-    
+
     def _on_timing_monster_select(self, event):
         """Handle monster selection in timing tab"""
         name = self.timing_monster_var.get()
         if not name:
             return
-        
+
         try:
             # Use self.monsters instead of data_manager
             monster = next((m for m in self.monsters if m['name'] == name), None)
-            
+
             if monster:
                 hp = monster.get('hp', 'N/A')
                 damage = monster.get('damage_per_hit', 'N/A')
                 desc = monster.get('description', 'N/A')
-                
+
                 info = (
                     f"HP: {hp:,}\n" if isinstance(hp, (int, float)) else f"HP: {hp}\n"
                     f"{'Damage per hit' if self.lang == 'en' else 'Sát thương/đòn'}: {damage:,}\n" if isinstance(damage, (int, float)) else f"Damage: {damage}\n"
@@ -3536,22 +3536,22 @@ Track progress at:
                 self.selected_timing_monster = monster
         except Exception as e:
             print(f"Error displaying monster info: {e}")
-    
+
     def _on_timing_skill_select(self, event):
         """Handle skill selection in timing tab"""
         name = self.timing_skill_var.get()
         if not name:
             return
-        
+
         try:
             # Use self.skills instead of data_manager
             skill = next((s for s in self.skills if s['name'] == name), None)
-            
+
             if skill:
                 cooldown = skill.get('cooldown', 'N/A')
                 cast_time = skill.get('cast_time', 'N/A')
                 skill_type = skill.get('type', 'N/A')
-                
+
                 info = (
                     f"{'Cooldown' if self.lang == 'en' else 'Hồi chiêu'}: {cooldown}s\n"
                     f"{'Cast time' if self.lang == 'en' else 'Thời gian thi triển'}: {cast_time}s\n"
@@ -3561,21 +3561,21 @@ Track progress at:
                 self.selected_timing_skill = skill
         except Exception as e:
             print(f"Error displaying skill info: {e}")
-    
+
     def _on_timing_preset_change(self):
         """Handle attack speed preset change"""
         preset = self.timing_preset_var.get()
-        
+
         preset_values = {
             'slow': 1.0,
             'normal': 2.0,
             'fast': 3.0,
             'very_fast': 4.0
         }
-        
+
         if preset in preset_values:
             self.timing_aps_var.set(str(preset_values[preset]))
-    
+
     def _calculate_timing(self):
         """Calculate optimal timing based on selections"""
         # Validate selections
@@ -3585,14 +3585,14 @@ Track progress at:
                 self._t('timing_no_monster')
             )
             return
-        
+
         if not hasattr(self, 'selected_timing_skill'):
             messagebox.showwarning(
                 self._t('error_title'),
                 self._t('timing_no_skill')
             )
             return
-        
+
         # Get attack speed
         try:
             aps = float(self.timing_aps_var.get())
@@ -3601,20 +3601,20 @@ Track progress at:
         except ValueError:
             messagebox.showerror(
                 self._t('error_title'),
-                "Invalid attack speed value" if self.lang == 'en' 
+                "Invalid attack speed value" if self.lang == 'en'
                 else "Giá trị tốc độ đánh không hợp lệ"
             )
             return
-        
+
         # Calculate
         try:
             from lib.features.timing.calculator import calculate_timing_from_monster
-            
+
             # Get skill rotation from hunt_cfg (attack skills only)
             skill_rotation = []
             if hasattr(self, 'hunt_cfg') and 'skill_slots' in self.hunt_cfg:
                 skill_rotation = [s for s in self.hunt_cfg['skill_slots'] if s.get('type') == 'attack']
-            
+
             # Calculate with skill rotation if available
             if skill_rotation:
                 result = calculate_timing_from_monster(
@@ -3628,30 +3628,30 @@ Track progress at:
                     self.selected_timing_monster,
                     attacks_per_second=aps
                 )
-            
+
             if result is None:
                 messagebox.showerror(
                     self._t('error_title'),
                     self._t('timing_no_data')
                 )
                 return
-            
+
             # Format and display results
             self._display_timing_results(result)
             self.timing_calculation_result = result
             self.timing_apply_btn.config(state='normal')
-            
+
             messagebox.showinfo(
                 self._t('success_title'),
                 self._t('timing_calc_success')
             )
-            
+
         except Exception as e:
             messagebox.showerror(
                 self._t('error_title'),
                 f"{'Calculation error' if self.lang == 'en' else 'Lỗi tính toán'}: {str(e)}"
             )
-    
+
     def _display_timing_results(self, result):
         """Display calculation results in text widget"""
         if self.lang == 'vi':
@@ -3690,22 +3690,22 @@ Track progress at:
                 f"{'='*50}\n"
                 f"🎯 {self._t('timing_confidence')}: "
             )
-        
+
         # Add confidence
         confidence = self._get_timing_confidence(result)
         text += self._t(f'timing_confidence_{confidence}')
         text += f"\n{'='*50}\n"
-        
+
         self._update_text_widget(self.timing_results, text)
-        
+
         # Update preview
         self._update_timing_preview(result)
-    
+
     def _update_timing_preview(self, result):
         """Update preview section with settings to be applied"""
         # Calculate base values for formula display
         time_per_hit = 1.0 / result.attacks_per_second
-        
+
         if self.lang == 'vi':
             preview_text = (
                 f"📋 CÁC CON SỐ SẼ ĐƯỢC LƯU VÀO MÁY:\n"
@@ -3822,10 +3822,10 @@ Track progress at:
                 f"{'─'*60}\n"
                 f"💡 Click 'Apply' to save to Hunt Config"
             )
-        
+
         self._update_text_widget(self.timing_preview, preview_text)
 
-    
+
     def _get_timing_confidence(self, result) -> str:
         """Determine confidence level of calculation"""
         if result.monster_hp > 0 and result.damage_per_hit > 0 and result.attacks_per_second > 0:
@@ -3834,7 +3834,7 @@ Track progress at:
             return 'medium'
         else:
             return 'low'
-    
+
     def _apply_timing_to_config(self):
         """Apply calculated timing to hunt config"""
         if not hasattr(self, 'timing_calculation_result') or self.timing_calculation_result is None:
@@ -3843,9 +3843,9 @@ Track progress at:
                 'Please calculate timing first' if self.lang == 'en' else 'Vui lòng tính toán timing trước'
             )
             return
-        
+
         result = self.timing_calculation_result
-        
+
         # Confirm before applying
         confirm_msg = (
             f"Apply ALL timing settings to Hunt Config?\n\n"
@@ -3868,10 +3868,10 @@ Track progress at:
             f"• lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
             f"• attack_min_duration_sec: {result.attack_min_duration_sec:.2f}s"
         )
-        
+
         if not messagebox.askyesno(self._t('confirm_title'), confirm_msg):
             return
-        
+
         # Store old values for comparison
         old_values = {
             'attack_press_ms': self.hunt_cfg.get('attack_press_ms', 0),
@@ -3881,7 +3881,7 @@ Track progress at:
             'lost_timeout_sec': self.hunt_cfg.get('lost_timeout_sec', 0),
             'attack_min_duration_sec': self.hunt_cfg.get('attack_min_duration_sec', 0)
         }
-        
+
         # Update hunt config with ALL timing values
         self.hunt_cfg['attack_press_ms'] = result.attack_press_ms
         self.hunt_cfg['target_cycle_delay'] = result.target_cycle_delay
@@ -3889,11 +3889,11 @@ Track progress at:
         self.hunt_cfg['attack_interval'] = result.attack_interval
         self.hunt_cfg['lost_timeout_sec'] = result.lost_timeout_sec
         self.hunt_cfg['attack_min_duration_sec'] = result.attack_min_duration_sec
-        
+
         # Mark as changed
         self.changes_made['timing_applied'] = True
         self._mark_unsaved(True)
-        
+
         # Show success with what changed
         success_msg = (
             f"✅ All timing settings applied successfully!\n\n"
@@ -3918,29 +3918,29 @@ Track progress at:
             f"• attack_min_duration_sec: {old_values['attack_min_duration_sec']:.2f}s → {result.attack_min_duration_sec:.2f}s\n\n"
             f"💾 Nhớ lưu thay đổi!"
         )
-        
+
         messagebox.showinfo(self._t('success_title'), success_msg)
-        
+
         # === SAVE TO HUNT CONFIG AND SHOW INLINE CONFIRMATION ===
         try:
             # Save hunt_cfg to file immediately (local save)
             hunt_config_path = self.project_root / 'lib' / 'data' / 'hunt_config.json'
             with open(hunt_config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.hunt_cfg, f, indent=2, ensure_ascii=False)
-            
+
             # Show inline confirmation (not popup)
             self._show_timing_execution_inline()
-            
+
         except Exception as e:
             messagebox.showerror(
                 self._t('error_title'),
                 f"Failed to save hunt config: {str(e)}"
             )
-    
+
     def _show_timing_execution_inline(self):
         """Show inline preview of how auto will execute with saved settings"""
         result = self.timing_calculation_result
-        
+
         if self.lang == 'vi':
             preview_msg = (
                 f"{'='*60}\n"
@@ -4045,17 +4045,17 @@ Track progress at:
                 f"✅ CONFIRMED: AUTO WILL PRESS REAL KEYS!\n"
                 f"{'='*60}\n"
             )
-        
+
         # Display inline in confirmation frame
         self._update_text_widget(self.timing_confirmation_text, preview_msg)
-        
+
         # Show the confirmation frame inline
         self.timing_confirmation_frame.pack(fill='both', expand=True, padx=10, pady=(10, 15))
-    
+
     def _apply_all_changes(self):
         """
         Apply all pending changes to configuration files.
-        
+
         This will:
         1. Save monsters to monsters.json (if changed)
         2. Save skills to skills.json (if changed)
@@ -4091,30 +4091,30 @@ Track progress at:
             # Clear unsaved state after successful save
             self.changes_made = {'monsters_changed': False, 'skills_changed': False, 'timing_applied': False}
             self._mark_unsaved(False)
-            
+
             # Report and close
             messagebox.showinfo(self._t('success_title'), self._t('changes_applied'))
             self._on_window_close(force_apply=True)
         except Exception as e:
             messagebox.showerror('Error' if self.lang == 'en' else 'Lỗi', f"Failed to apply changes: {e}")
-    
+
     def _on_window_close(self, force_apply: bool = False):
         """
         Handle window close event.
-        
+
         Args:
             force_apply: If True, apply changes without asking
         """
         # Check if there are unsaved changes
         has_changes = any(self.changes_made.values())
-        
+
         if has_changes and not force_apply:
             # Ask user if they want to apply changes
             response = messagebox.askyesnocancel(
                 self._t('confirm_title'),
                 self._t('changes_pending')
             )
-            
+
             if response is None:  # Cancel
                 return
             elif response:  # Yes - Apply changes
@@ -4126,7 +4126,7 @@ Track progress at:
                     self._cleanup_temp_captures()
                 except Exception:
                     pass
-        
+
         # Call callback if provided
         if self.on_close_callback and has_changes:
             self.on_close_callback({
@@ -4135,7 +4135,7 @@ Track progress at:
                 'monsters': self.monsters,
                 'skills': self.skills
             })
-        
+
     # Destroy window
         self.grab_release()
         self.destroy()
@@ -4144,7 +4144,7 @@ Track progress at:
 class MonsterDialog:
     """
     Dialog for adding or editing a monster.
-    
+
     Provides form fields for:
     - Name (required)
     - HP (integer, required)
@@ -4152,17 +4152,17 @@ class MonsterDialog:
     - Description (optional)
     - Priority (integer, optional, default=1)
     - Templates (readonly list for now)
-    
+
     Args:
         parent: Parent window
         lang: Language ('en' or 'vi')
         mode: 'add' or 'edit'
         monster: Monster dict (for edit mode)
-    
+
     Returns:
         result: New/updated monster dict, or None if cancelled
     """
-    
+
     def __init__(self, parent: tk.Toplevel, lang: str = 'en', mode: str = 'add', monster: Optional[dict] = None, icon_helper=None, i18n_registry=None):
         self.parent = parent
         self.lang = lang
@@ -4171,7 +4171,7 @@ class MonsterDialog:
         self.result = None
         self.icon_helper = icon_helper
         self.i18n_registry = i18n_registry
-        
+
         # Create dialog
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(
@@ -4183,25 +4183,25 @@ class MonsterDialog:
         self.dialog.geometry("500x450")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         # Center dialog
         self.dialog.update_idletasks()
         x = parent.winfo_x() + (parent.winfo_width() // 2) - (self.dialog.winfo_width() // 2)
         y = parent.winfo_y() + (parent.winfo_height() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-        
+
         # Build form
         self._build_form()
-        
+
         # Wait for dialog to close
         self.dialog.wait_window()
-    
+
     def _build_form(self):
         """Build form fields."""
         # Main container with padding
         container = tk.Frame(self.dialog, padx=20, pady=20)
         container.pack(fill='both', expand=True)
-        
+
         # Title
         title = tk.Label(
             container,
@@ -4209,81 +4209,81 @@ class MonsterDialog:
             font=('Arial', 12, 'bold')
         )
         title.pack(pady=(0, 15))
-        
+
         # Form fields
         form_frame = tk.Frame(container)
         form_frame.pack(fill='both', expand=True)
-        
+
         # Name field (required)
         tk.Label(
             form_frame,
             text='Name:' if self.lang == 'en' else 'Tên:',
             font=('Arial', 9, 'bold')
         ).grid(row=0, column=0, sticky='w', pady=5)
-        
+
         self.name_var = tk.StringVar(value=self.monster.get('name', ''))
         name_entry = tk.Entry(form_frame, textvariable=self.name_var, width=40, font=('Arial', 9))
         name_entry.grid(row=0, column=1, pady=5, sticky='ew')
         name_entry.focus()
-        
+
         # HP field (required)
         tk.Label(
             form_frame,
             text='HP:',
             font=('Arial', 9, 'bold')
         ).grid(row=1, column=0, sticky='w', pady=5)
-        
+
         self.hp_var = tk.StringVar(value=str(self.monster.get('hp', '')))
         hp_entry = tk.Entry(form_frame, textvariable=self.hp_var, width=40, font=('Arial', 9))
         hp_entry.grid(row=1, column=1, pady=5, sticky='ew')
-        
+
         # Damage field (required)
         tk.Label(
             form_frame,
             text='Damage per hit:' if self.lang == 'en' else 'Sát thương mỗi đòn:',
             font=('Arial', 9, 'bold')
         ).grid(row=2, column=0, sticky='w', pady=5)
-        
+
         self.damage_var = tk.StringVar(value=str(self.monster.get('damage_per_hit', '')))
         damage_entry = tk.Entry(form_frame, textvariable=self.damage_var, width=40, font=('Arial', 9))
         damage_entry.grid(row=2, column=1, pady=5, sticky='ew')
-        
+
         # Priority field (optional)
         tk.Label(
             form_frame,
             text='Priority:' if self.lang == 'en' else 'Độ ưu tiên:',
             font=('Arial', 9)
         ).grid(row=3, column=0, sticky='w', pady=5)
-        
+
         self.priority_var = tk.StringVar(value=str(self.monster.get('priority', '1')))
         priority_entry = tk.Entry(form_frame, textvariable=self.priority_var, width=40, font=('Arial', 9))
         priority_entry.grid(row=3, column=1, pady=5, sticky='ew')
-        
+
         # Description field (optional)
         tk.Label(
             form_frame,
             text='Description:' if self.lang == 'en' else 'Mô tả:',
             font=('Arial', 9)
         ).grid(row=4, column=0, sticky='nw', pady=5)
-        
+
         desc_frame = tk.Frame(form_frame)
         desc_frame.grid(row=4, column=1, pady=5, sticky='ew')
-        
+
         self.desc_text = tk.Text(desc_frame, width=40, height=4, font=('Arial', 9))
         self.desc_text.pack(side='left', fill='both', expand=True)
         self.desc_text.insert('1.0', self.monster.get('description', ''))
-        
+
         desc_scroll = tk.Scrollbar(desc_frame, command=self.desc_text.yview)
         desc_scroll.pack(side='right', fill='y')
         self.desc_text.config(yscrollcommand=desc_scroll.set)
-        
+
         # Templates info (readonly)
         tk.Label(
             form_frame,
             text='Templates:' if self.lang == 'en' else 'Templates:',
             font=('Arial', 9)
         ).grid(row=5, column=0, sticky='w', pady=5)
-        
+
         template_count = len(self.monster.get('templates', []))
         tk.Label(
             form_frame,
@@ -4291,14 +4291,14 @@ class MonsterDialog:
             font=('Arial', 9),
             fg='gray'
         ).grid(row=5, column=1, sticky='w', pady=5)
-        
+
         # Configure column weights
         form_frame.columnconfigure(1, weight=1)
-        
+
         # Buttons
         button_frame = tk.Frame(container)
         button_frame.pack(pady=(15, 0))
-        
+
         # Save button - Use icon if icon_helper available
         if self.icon_helper:
             save_icon = self.icon_helper.get_icon('save', fallback='💾')
@@ -4333,13 +4333,13 @@ class MonsterDialog:
                     self._image_refs.append(save_icon)
                 except Exception:
                     pass
-            
+
             # Add i18n tooltip if registry available
             if self.i18n_registry:
                 from ui.helpers.tooltip import attach_i18n_tooltip
                 attach_i18n_tooltip(
-                    save_btn, 
-                    'tip_save_monster', 
+                    save_btn,
+                    'tip_save_monster',
                     'library_manager',
                     lambda: self.lang
                 )
@@ -4357,7 +4357,7 @@ class MonsterDialog:
                 cursor='hand2'
             )
         save_btn.pack(side='left', padx=5)
-        
+
         # Cancel button
         cancel_btn = tk.Button(
             button_frame,
@@ -4371,11 +4371,11 @@ class MonsterDialog:
             cursor='hand2'
         )
         cancel_btn.pack(side='left', padx=5)
-        
+
         # Bind Enter key to save
         self.dialog.bind('<Return>', lambda e: self._save())
         self.dialog.bind('<Escape>', lambda e: self._cancel())
-    
+
     def _validate(self) -> bool:
         """Validate form fields."""
         # Check name
@@ -4387,7 +4387,7 @@ class MonsterDialog:
                 parent=self.dialog
             )
             return False
-        
+
         # Check HP
         try:
             hp = int(self.hp_var.get().strip())
@@ -4396,12 +4396,12 @@ class MonsterDialog:
         except ValueError:
             messagebox.showerror(
                 'Validation Error' if self.lang == 'en' else 'Lỗi Xác Thực',
-                'Please enter valid HP (positive integer).' if self.lang == 'en' 
+                'Please enter valid HP (positive integer).' if self.lang == 'en'
                 else 'Vui lòng nhập HP hợp lệ (số nguyên dương).',
                 parent=self.dialog
             )
             return False
-        
+
         # Check damage
         try:
             damage = int(self.damage_var.get().strip())
@@ -4415,7 +4415,7 @@ class MonsterDialog:
                 parent=self.dialog
             )
             return False
-        
+
         # Check priority
         try:
             priority = int(self.priority_var.get().strip())
@@ -4427,14 +4427,14 @@ class MonsterDialog:
                 parent=self.dialog
             )
             return False
-        
+
         return True
-    
+
     def _save(self):
         """Save and close dialog."""
         if not self._validate():
             return
-        
+
         # Build result dict
         self.result = {
             'name': self.name_var.get().strip(),
@@ -4444,10 +4444,10 @@ class MonsterDialog:
             'description': self.desc_text.get('1.0', 'end-1c').strip(),
             'templates': self.monster.get('templates', [])  # Preserve existing templates
         }
-        
+
         self.dialog.grab_release()
         self.dialog.destroy()
-    
+
     def _cancel(self):
         """Cancel and close dialog."""
         self.result = None
@@ -4458,7 +4458,7 @@ class MonsterDialog:
 class SkillDialog:
     """
     Dialog for adding or editing a skill.
-    
+
     Provides form fields for:
     - Name (required)
     - Key (required)
@@ -4466,17 +4466,17 @@ class SkillDialog:
     - Cooldown (float, required)
     - Cast Time (float, required)
     - Image path (optional, readonly for now)
-    
+
     Args:
         parent: Parent window
         lang: Language ('en' or 'vi')
         mode: 'add' or 'edit'
         skill: Skill dict (for edit mode)
-    
+
     Returns:
         result: New/updated skill dict, or None if cancelled
     """
-    
+
     def __init__(self, parent: tk.Toplevel, lang: str = 'en', mode: str = 'add', skill: Optional[dict] = None, icon_helper=None, i18n_registry=None):
         self.parent = parent
         self.lang = lang
@@ -4485,7 +4485,7 @@ class SkillDialog:
         self.result = None
         self.icon_helper = icon_helper
         self.i18n_registry = i18n_registry
-        
+
         # Create dialog
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(
@@ -4497,25 +4497,25 @@ class SkillDialog:
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         # Center dialog
         self.dialog.update_idletasks()
         x = parent.winfo_x() + (parent.winfo_width() // 2) - (self.dialog.winfo_width() // 2)
         y = parent.winfo_y() + (parent.winfo_height() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-        
+
         # Build form
         self._build_form()
-        
+
         # Wait for dialog to close
         self.dialog.wait_window()
-    
+
     def _build_form(self):
         """Build form fields."""
         # Main container with padding
         container = tk.Frame(self.dialog, padx=20, pady=20)
         container.pack(fill='both', expand=True)
-        
+
         # Title
         title = tk.Label(
             container,
@@ -4523,80 +4523,80 @@ class SkillDialog:
             font=('Arial', 12, 'bold')
         )
         title.pack(pady=(0, 15))
-        
+
         # Form fields
         form_frame = tk.Frame(container)
         form_frame.pack(fill='both', expand=True)
-        
+
         # Name field (required)
         tk.Label(
             form_frame,
             text='Name:' if self.lang == 'en' else 'Tên:',
             font=('Arial', 9, 'bold')
         ).grid(row=0, column=0, sticky='w', pady=5)
-        
+
         self.name_var = tk.StringVar(value=self.skill.get('name', ''))
         name_entry = tk.Entry(form_frame, textvariable=self.name_var, width=40, font=('Arial', 9))
         name_entry.grid(row=0, column=1, pady=5, sticky='ew')
         name_entry.focus()
-        
+
         # Key field (required)
         tk.Label(
             form_frame,
             text='Key:' if self.lang == 'en' else 'Phím:',
             font=('Arial', 9, 'bold')
         ).grid(row=1, column=0, sticky='w', pady=5)
-        
+
         self.key_var = tk.StringVar(value=self.skill.get('key', ''))
         key_entry = tk.Entry(form_frame, textvariable=self.key_var, width=40, font=('Arial', 9))
         key_entry.grid(row=1, column=1, pady=5, sticky='ew')
-        
+
         # Type field (required)
         tk.Label(
             form_frame,
             text='Type:' if self.lang == 'en' else 'Loại:',
             font=('Arial', 9, 'bold')
         ).grid(row=2, column=0, sticky='w', pady=5)
-        
+
         self.type_var = tk.StringVar(value=self.skill.get('type', 'attack'))
         type_combo = ttk.Combobox(
-            form_frame, 
-            textvariable=self.type_var, 
+            form_frame,
+            textvariable=self.type_var,
             state='readonly',
             width=37,
             values=['attack', 'buff'],
             font=('Arial', 9)
         )
         type_combo.grid(row=2, column=1, pady=5, sticky='ew')
-        
+
         # Cooldown field (required)
         tk.Label(
             form_frame,
             text='Cooldown (s):' if self.lang == 'en' else 'Hồi chiêu (s):',
             font=('Arial', 9, 'bold')
         ).grid(row=3, column=0, sticky='w', pady=5)
-        
+
         self.cooldown_var = tk.StringVar(value=str(self.skill.get('cooldown', '0.0')))
         cooldown_entry = tk.Entry(form_frame, textvariable=self.cooldown_var, width=40, font=('Arial', 9))
         cooldown_entry.grid(row=3, column=1, pady=5, sticky='ew')
-        
+
         # Cast time field (required)
         tk.Label(
             form_frame,
             text='Cast Time (s):' if self.lang == 'en' else 'Thời gian thi (s):',
             font=('Arial', 9, 'bold')
         ).grid(row=4, column=0, sticky='w', pady=5)
-        
+
         self.cast_time_var = tk.StringVar(value=str(self.skill.get('cast_time', '0.0')))
         cast_time_entry = tk.Entry(form_frame, textvariable=self.cast_time_var, width=40, font=('Arial', 9))
         cast_time_entry.grid(row=4, column=1, pady=5, sticky='ew')
-        
+
         form_frame.grid_columnconfigure(1, weight=1)
-        
+
         # Button frame at bottom
         button_frame = tk.Frame(container)
         button_frame.pack(side='bottom', pady=(20, 0))
-        
+
         # Save button - Use icon if icon_helper available
         if self.icon_helper:
             save_icon = self.icon_helper.get_icon('save', fallback='💾')
@@ -4631,13 +4631,13 @@ class SkillDialog:
                     self._image_refs.append(save_icon)
                 except Exception:
                     pass
-            
+
             # Add i18n tooltip if registry available
             if self.i18n_registry:
                 from ui.helpers.tooltip import attach_i18n_tooltip
                 attach_i18n_tooltip(
-                    save_btn, 
-                    'tip_save_skill', 
+                    save_btn,
+                    'tip_save_skill',
                     'library_manager',
                     lambda: self.lang
                 )
@@ -4655,7 +4655,7 @@ class SkillDialog:
                 cursor='hand2'
             )
         save_btn.pack(side='left', padx=5)
-        
+
         # Cancel button
         cancel_btn = tk.Button(
             button_frame,
@@ -4669,11 +4669,11 @@ class SkillDialog:
             cursor='hand2'
         )
         cancel_btn.pack(side='left', padx=5)
-        
+
         # Bind Enter key to save
         self.dialog.bind('<Return>', lambda e: self._save())
         self.dialog.bind('<Escape>', lambda e: self._cancel())
-    
+
     def _validate(self) -> bool:
         """Validate form fields."""
         # Check name
@@ -4685,7 +4685,7 @@ class SkillDialog:
                 parent=self.dialog
             )
             return False
-        
+
         # Check key
         key = self.key_var.get().strip()
         if not key:
@@ -4695,7 +4695,7 @@ class SkillDialog:
                 parent=self.dialog
             )
             return False
-        
+
         # Check cooldown
         try:
             cooldown = float(self.cooldown_var.get().strip())
@@ -4704,12 +4704,12 @@ class SkillDialog:
         except ValueError:
             messagebox.showerror(
                 'Validation Error' if self.lang == 'en' else 'Lỗi Xác Thực',
-                'Please enter valid cooldown (non-negative number).' if self.lang == 'en' 
+                'Please enter valid cooldown (non-negative number).' if self.lang == 'en'
                 else 'Vui lòng nhập thời gian hồi chiêu hợp lệ (số không âm).',
                 parent=self.dialog
             )
             return False
-        
+
         # Check cast time
         try:
             cast_time = float(self.cast_time_var.get().strip())
@@ -4723,14 +4723,14 @@ class SkillDialog:
                 parent=self.dialog
             )
             return False
-        
+
         return True
-    
+
     def _save(self):
         """Save and close dialog."""
         if not self._validate():
             return
-        
+
         # Build result dict
         self.result = {
             'name': self.name_var.get().strip(),
@@ -4740,10 +4740,10 @@ class SkillDialog:
             'cast_time': float(self.cast_time_var.get().strip()),
             'image': self.skill.get('image', '')  # Preserve existing image
         }
-        
+
         self.dialog.grab_release()
         self.dialog.destroy()
-    
+
     def _cancel(self):
         """Cancel and close dialog."""
         self.result = None
@@ -4757,7 +4757,7 @@ if __name__ == '__main__':
     root = tk.Tk()
     root.title("Test Main App")
     root.geometry("600x400")
-    
+
     # Sample data
     test_hunt_cfg = {
         'skill_slots': [
@@ -4769,25 +4769,25 @@ if __name__ == '__main__':
         'attack_interval': 0.15,
         'lost_timeout_sec': 0.5
     }
-    
+
     test_monsters = [
         {'name': 'Coc Go', 'hp': 10000, 'damage_per_hit': 500, 'priority': 1}
     ]
-    
+
     test_skills = [
         {'name': 'Dark Explosion', 'key': '1', 'type': 'attack', 'cooldown': 1.9},
         {'name': 'Bone Javelin', 'key': '2', 'type': 'attack', 'cooldown': 2.4}
     ]
-    
+
     def on_changes(changes):
         print("Changes received from Library Manager:")
         print(f"  Monsters changed: {changes['monsters_changed']}")
         print(f"  Skills changed: {changes['skills_changed']}")
         print(f"  Timing applied: {changes['timing_applied']}")
-    
+
     # Button to open Library Manager
     def open_library_manager():
-        manager = LibraryManagerWindow(
+        LibraryManagerWindow(
             parent=root,
             hunt_cfg=test_hunt_cfg,
             monsters=test_monsters,
@@ -4795,7 +4795,7 @@ if __name__ == '__main__':
             lang='vi',
             on_close_callback=on_changes
         )
-    
+
     tk.Button(
         root,
         text="📚 Open Library Manager",
@@ -4806,6 +4806,6 @@ if __name__ == '__main__':
         padx=20,
         pady=10
     ).pack(expand=True)
-    
+
     root.mainloop()
 

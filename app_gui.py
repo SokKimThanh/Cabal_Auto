@@ -1,30 +1,11 @@
-from ui.windows.setup_wizard import show_setup_wizard
 from dialogs.monster_picker import MonsterPickerDialog
-from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from lib.ui_style import UIStyle as UI  # Global UI style constants
-from lib.system.win_input import tap
 from lib.system.instance_lock import SingleInstanceLock
 from lib.system.hunt_logger import get_hunt_logger
 from ui.controllers.hotkey_controller import HotkeyController
-from lib.features.timing.calculator import (
-    calculate_timing,
-    format_timing_recommendation,
-    get_timing_presets,
-)
-from lib.features.skills.skill_stats import (
-    SkillStats,
-)  # Sprint 22 Patch 1: Training Mode
 from ui.controllers.skill_manager_controller import SkillManagerController
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
-from lib.features.skills.skill_repo import (
-    calculate_attack_speed_from_skills,
-)
-from lib.features.monsters.monster_repo import (
-    calculate_monster_estimate,
-    load_monster_library,
-    save_monster_library,
-)
 from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 from lib.features.hunt.hunt_runner import HuntRunner
 from lib.features.hunt.hunt_config import (
@@ -35,31 +16,17 @@ from lib.features.hunt.hunt_config import (
     save_config,
     save_hunt_config,
 )
-from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
-from ui.utils.overlay_controller import OverlayController
 from ui.helpers.tooltip import attach_i18n_tooltip
-from lib.system.bot_manager import BotManager
 from lib.i18n import t as i18n_t
 from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
-from lib.vision.vision_engine import VisionEngine
-from lib.vision.template_matcher import locate_template
-from ctypes import wintypes
 from tkinter import filedialog, messagebox, ttk
 import tkinter as tk
-import copy
-import ctypes
-import json
-import math
-import os
 import sys
-import threading
-import time
 from datetime import datetime
 from pathlib import Path
 import queue
-from typing import Any, Dict, List, Optional
 
 # Add parent directory to path for lib imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -941,7 +908,6 @@ class App(tk.Tk):
 
             # Basic dummy stats if actual stats not easily available
             # In real system, we hook into VisionEngine or main orchestrator stats
-            from lib.system.hunt_logger import get_hunt_logger
 
             # Since VisionEngine stats are inside its instance, let's just make it generic or try to extract from global
             self.logs_metrics_label.config(text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}")
@@ -1054,7 +1020,7 @@ class App(tk.Tk):
                 print(f"[UI] Error updating scan status icon: {e}")
 
     def _show_scan_results(self, results):
-        pass  # Optional mock since it's just messagebox in real app or we can add it
+        pass  # str mock since it's just messagebox in real app or we can add it
 
     def _load_monster_rotation_list(self):
         saved_list = self.hunt_cfg.get("monster_rotation", [])
@@ -1131,7 +1097,7 @@ class App(tk.Tk):
         if hasattr(self, 'state_controller') and hasattr(self.state_controller, '_update_window_bounds_display'):
             self.state_controller._update_window_bounds_display()
 
-        # Optionally update tabs here, though the prompt primarily requests
+        # strly update tabs here, though the prompt primarily requests
         # Zone A widgets to change immediately without losing state.
         # Now handled by views instead of notebook
         if hasattr(self, 'update_shell_translations'):
@@ -1832,7 +1798,7 @@ class App(tk.Tk):
                 f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation)} total"
             )
 
-    def _refresh_monster_select_options(self, select_name: Optional[str] = None):
+    def _refresh_monster_select_options(self, select_name: str[str] = None):
         if select_name is not None:
             self.monster_selected_name = select_name
         names = [monster["name"] for monster in self.monsters]
@@ -2417,7 +2383,7 @@ class App(tk.Tk):
         super().destroy()
 
     def _icon(
-        self, name: str, fallback: str, size: int = 16, color: Optional[str] = None
+        self, name: str, fallback: str, size: int = 16, color: str[str] = None
     ):
         """Fetch an icon image from icon_helper with caching.
 
@@ -2681,7 +2647,7 @@ def main():
     """Main entry point with single instance lock."""
     # Check critical dependencies (pywin32 for overlay)
     try:
-        import win32gui  # Test pywin32 availability
+        pass # import win32gui
     except ImportError:
         # Show warning but don't block - overlay will show error when toggled
         print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
