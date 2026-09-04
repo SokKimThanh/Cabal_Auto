@@ -146,10 +146,11 @@ class HuntOrchestrator:
             target_acquire_timeout_sec = float(cfg.get("target_acquire_timeout_sec", 8.0))
             death_confirm_started = 0.0
             death_confirm_mode = False
-last_ocr_time = 0.0
-search_started = time.time()
-cached_target_id = None
-cached_target_name = None
+            last_ocr_time = 0.0
+            search_started = time.time()
+            cached_target_id = None
+            cached_target_name = None
+
             try:
                 # Focus the target window; minimize GUI only if focus succeeded
                 if getattr(self.input_backend, "mode", "foreground") != "background":
