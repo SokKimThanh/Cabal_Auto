@@ -49,10 +49,9 @@ class CabalComboDetector:
         if timeout_sec is None:
             timeout_sec = 2.0
 
-        start_time = time.time()
+        start_time = time.monotonic()
 
-        while (time.time() - start_time) < timeout_sec:
-            # Check if target is still alive (fast break)
+        while (time.monotonic() - start_time) < timeout_sec:
             if is_target_alive_check and not is_target_alive_check():
                 logger.debug("Target dead during wait_for_hit_zone")
                 return False
