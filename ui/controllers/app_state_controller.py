@@ -668,7 +668,7 @@ class AppStateController:
                             time.sleep(0.02)
                     else:
                         send_key()
-                        outcome = CastOutcome.REJECTED
+                        outcome = CastOutcome.UNVERIFIED
                 else:
                     send_key()
             else:
