@@ -59,8 +59,7 @@ class TestSkillStripLogic(unittest.TestCase):
 
         controller = AppStateController(root)
         controller._validate_slot_key_duplicates()
-
-        pass
+        self.assertEqual(lbl.cget("fg"), "#C62828")
 
         # Test no conflict
         root.hunt_cfg["combo"]["combo_start_key"] = "Alt+4"
