@@ -175,7 +175,7 @@ class HuntOrchestrator:
                                 break
                             time.sleep(0.02)
                     else:
-                        outcome = CastOutcome.UNVERIFIED
+                        outcome = CastOutcome.UNVERIFIED if attempt_send() else CastOutcome.REJECTED
                 else:
                     if screen_capture:
                         baseline_frame = screen_capture.get_latest_frame()
