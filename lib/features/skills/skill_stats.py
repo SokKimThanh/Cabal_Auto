@@ -84,6 +84,7 @@ class SkillStats:
             self._data[skill_name]['unverified_count'] += 1
         elif outcome == CastOutcome.CANCELLED:
             self._data[skill_name]['cancelled_count'] += 1
+
     def get_cast_count(self, skill_name: str) -> int:
         """Get total number of casts for a skill.
         
