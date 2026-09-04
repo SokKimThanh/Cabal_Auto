@@ -1,6 +1,7 @@
-import pytest
 import numpy as np
+
 from lib.vision.skill_cooldown_detector import SkillCooldownDetector
+
 
 def test_cooldown_detection_success():
     detector = SkillCooldownDetector(roi=(0.0, 1.0, 0.0, 1.0), threshold=10.0)
