@@ -2,6 +2,9 @@ import pytest
 from unittest.mock import MagicMock, patch
 from ui.controllers.window_tracker_controller import WindowTrackerController
 
+pytestmark = pytest.mark.unit
+
+
 def test_tracker_lifecycle_start_stop():
     parent = MagicMock()
     controller = WindowTrackerController(parent)

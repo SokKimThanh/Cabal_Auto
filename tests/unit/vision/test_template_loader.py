@@ -9,6 +9,9 @@ import numpy as np
 from pathlib import Path
 from lib.vision.template_loader import Template, TemplateService
 
+pytestmark = pytest.mark.unit
+
+
 
 @pytest.fixture
 def template_service(tmp_path):

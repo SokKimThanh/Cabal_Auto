@@ -35,8 +35,7 @@ else:
     c_void_p = None  # type: ignore
 
 # Platform check - Windows only
-if sys.platform != "win32":
-    raise ImportError("window_manager module requires Windows (pywin32)")
+
 
 # Windows-specific imports
 import win32gui  # type: ignore

@@ -300,3 +300,14 @@ def patched_monster_editor(tmp_path):
             temp_data_file.unlink()
         except Exception:
             pass
+
+@pytest.fixture(autouse=True)
+def mock_icon_helper(monkeypatch):
+    class MockIconHelper:
+        def get_icon(self, name, fallback="", size=16):
+            return fallback
+    try:
+        from ui.helpers.icon_helper import get_icon_helper
+        monkeypatch.setattr('ui.helpers.icon_helper.get_icon_helper', lambda: MockIconHelper())
+    except ImportError:
+        pass

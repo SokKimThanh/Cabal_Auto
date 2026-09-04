@@ -2,6 +2,9 @@ import pytest
 from unittest.mock import MagicMock, patch
 from lib.features.hunt.runtime_monster_queue import RuntimeMonsterQueue
 
+pytestmark = pytest.mark.unit
+
+
 class TestPublishCallback:
     def test_publish_callback_scheduled(self):
         """Verify publish callback is scheduled via maybe_publish correctly."""

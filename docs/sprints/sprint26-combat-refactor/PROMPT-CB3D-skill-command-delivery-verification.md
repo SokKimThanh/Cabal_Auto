@@ -2,7 +2,7 @@
 
 **Timebox:** 25-30 phút  
 **Priority:** Critical  
-**Dependencies:** CB1, CB2E, CB4, UX4.2 và ✅ CB6 (hoàn tất - merged PR #274)
+**Dependencies:** CB1, CB2E, CB4, UX4.2 và CB6 đã đạt gate
 
 ## Objective
 
@@ -11,105 +11,37 @@ skill. Chỉ commit cooldown, rotation pointer và thống kê thành công sau 
 acknowledgment phù hợp; không đánh dấu `success=True` chỉ vì hàm input không ném
 exception.
 
-**CB6 Status (✅ COMPLETE - PR #274 merged):**
-- `CabalComboDetector` có sẵn trong `lib/features/combo/combo_timing_detector.py`
-- CB6 detect hit-zone trước khi gửi phím (TRIGGER_READY)
-- CB6 có callback để gửi phím từ app_state_controller
-- CB6 không tự commit success - chỉ phát hiện trigger và gọi callback
-- CB3D sẽ dùng CB6 làm pre-cast signal detection, không phải acknowledgment
-
-**CB3D Scope (NEW - này là session này):**
-- Tạo framework để phân biệt `SENT` (phím được gửi) vs `ACCEPTED` (game thực thi)
-- Tạo `skill_cooldown_detector.py` để verify hotbar cooldown visual
-- Tạo `cast_delivery.py` để manage CastOutcome state machine
-- Cập nhật skill runtime để sử dụng reservation/commit pattern
-- Test + manual validation với Combo mode (sử dụng CB6 trigger + post-send verification)
-
 Session này tạo framework verification và ít nhất một acknowledgment strategy có
-bằng chứng thực tế (combo bar hoặc hotbar cooldown). Không được tuyên bố mọi skill đã được xác minh nếu chưa có ROI
+bằng chứng thực tế. Không được tuyên bố mọi skill đã được xác minh nếu chưa có ROI
 hoặc tín hiệu quan sát tương ứng.
-
----
-
-## ✅ REVIEW SUMMARY: CB3D Architecture Complete, Orchestrator Integration Pending
-
-**TL;DR:** 
-CB3D framework (85-90% complete) provides the contract, state machine, and verification detectors. The unit tests all pass (16/16). **Immediate next step:** Integrate CastDeliveryManager into hunt_orchestrator worker loop so it actually uses the framework instead of calling _try_cast_skills() directly.
-
-### Architecture Strengths:
-1. **Clear separation of concerns:**
-   - CastDeliveryManager: Handles reservation/commit/release state
-   - SkillCooldownDetector: Analyzes ROI pixels, no input sending
-   - SkillRuntime: Exposes reserve/commit/release transaction methods
-   - app_state_controller: Calls send_key(), maps outcomes to stats
-   - hunt_orchestrator: (TODO) Coordinate the full flow
-
-2. **Outcome-based stats instead of boolean:**
-   - SkillStats now tracks: attempt_count, transport_sent_count, accepted_count, rejected_count, unverified_count, cancelled_count
-   - Success rate = accepted_count / attempt_count (meaningful)
-   - Legacy `success=True` flag supported but deprecated
-
-3. **CB6 ready for post-send verification:**
-   - wait_for_hit_zone() returns bool (did_trigger)
-   - Callback fires key press
-   - app_state_controller handles outcome mapping
-   - Ready for orchestrator to wait for post-send combo bar state
-
-### Known Gaps:
-1. **hunt_orchestrator not integrated:** Still calls _try_cast_skills() directly instead of using reserve → send → wait_ack → commit flow
-2. **Acknowledgment detection:** Framework exists but orchestrator doesn't loop/poll for acknowledgment
-3. **Policy enforcement:** CastOutcome enums defined but no pause_skill/stop_hunt/degraded_state actions in orchestrator yet
-4. **Testing:** Unit tests mock; manual game validation needed for both hotbar_cooldown and combo strategies
-
-### Next Session Action (To Hit PASSED Gate):
-1. Modify hunt_orchestrator to use CastDeliveryManager (20-25 min)
-2. Implement acknowledgment polling loop with timeout (5-10 min)
-3. Manual testing with live game for 1 skill (5-10 min)
-4. Report PASSED with orchestrator + 1 ack strategy validated
-
----
 
 ## Hiện Trạng Mã Nguồn
 
-**✅ CB3D IMPLEMENTATION STATUS: 85-90% COMPLETE**
+- `AppStateController._try_cast_skills()` gọi `tap()`, cập nhật `_last_cast` và
+  `SkillStats.record_cast(success=True)` ngay lập tức.
+- `HuntRunner._try_cast_skills()` cũng coi `tap()` hoặc
+  `keyboard.press_and_release()` không lỗi là cast thành công.
+- `SkillRuntime.get_attack_to_cast()` tăng rotation index trước khi biết input có
+  được game nhận hay không.
+- `SkillRuntime.mark_cast()` chỉ ghi timestamp, không có pending/ack state.
+- `SkillStats.record_cast()` mặc định `success=True` nên success rate hiện phản
+  ánh command attempt, không phản ánh game acceptance.
+- CB2E chỉ xác minh transport/capability của input backend; API gửi thành công
+  không chứng minh một skill cụ thể đã cast.
+- CB6 phát hiện hit-zone Combo nhưng hit-zone trước khi gửi phím chưa phải
+  acknowledgment sau khi gửi.
 
-### Completed Files & Components:
-- ✅ `lib/features/skills/cast_delivery.py` - CastDeliveryManager, TransportStatus, CastOutcome enums, CastReservation dataclass (2 tests passing)
-- ✅ `lib/vision/skill_cooldown_detector.py` - Baseline capture + pixel diff detection (2 tests passing)
-- ✅ `lib/features/skills/runtime.py` - reserve_next_skill(), commit_cast(), release_cast() methods (1 test passing)
-- ✅ `lib/features/skills/skill_stats.py` - outcome-based counters (attempt_count, accepted_count, rejected_count, unverified_count, cancelled_count)
-- ✅ `ui/controllers/app_state_controller.py` - Using CastOutcome enum, outcome-based recording via record_cast(outcome=...)
-- ✅ `lib/features/combo/combo_timing_detector.py` - CB6 (PR #274 merged, 11 tests passing)
-- ✅ `hunt_config.json` - Combo section added (enabled: false)
-- ✅ **All 16 tests passing:** cast_delivery (2), skill_runtime_reservation (1), skill_cooldown_detector (2), combo_timing_detector (11)
+## Target Files
 
-### Remaining Integration Gaps:
-- ❌ `lib/features/hunt/hunt_orchestrator.py` - Chưa fully tích hợp CastDeliveryManager vào worker loop
-  - Cần: reserve_next_skill() → send key → wait_for_acknowledgment() → commit_cast()/release_cast()
-  - Hiện tại: Vẫn gọi _try_cast_skills() trực tiếp mà chưa integrate reservation flow
-- ❓ **Acknowledgment strategies** - Framework đã có nhưng chưa fully hooked vào worker:
-  - `hotbar_cooldown` strategy: skill_cooldown_detector sẵn có, cần callback từ orchestrator
-  - `combo` strategy: CB6 sẵn có, cần post-send verification logic trong orchestrator
-- ⚠️ **Policy enforcement** - CastOutcome constants có nhưng chưa áp dụng failure policy (pause_skill, stop_hunt, degraded_state)
-
-## Remaining Work
-
-**Priority 1: Orchestrator Integration** (Needed for PASSED gate)
+- Create: `lib/features/skills/cast_delivery.py`
+- Create: `lib/vision/skill_cooldown_detector.py`
+- Modify: `lib/features/skills/runtime.py`
+- Modify: `lib/features/skills/skill_stats.py`
+- Modify: `ui/controllers/app_state_controller.py`
 - Modify: `lib/features/hunt/hunt_orchestrator.py`
-  - Integrate CastDeliveryManager into worker loop
-  - Implement: `reserve_next_skill()` → `send_key()` → `wait_for_acknowledgment()` loop
-  - Handle: `CANCELLED` outcome when target dies mid-acknowledgment (fast-break)
-  - Failure policy: REJECTED (transport fail) → stop_hunt; UNVERIFIED (timeout) → pause_skill
-  - Status: Orchestrator must NOT commit success unless outcome is ACCEPTED
-
-**Priority 2: Acknowledgment Verification** (Validation testing)
-- hotbar_cooldown: Script phải calibrate hotbar_roi + test skill_cooldown_detector với real frame samples
-- combo: CB6 trigger (TRIGGER_READY) + post-send combo bar state detection (state machine validation)
-- Test: Manual validation with 3+ skill rotations in actual game
-
-**Priority 3: Policy Enforcement** (If time permits)
-- Add degraded_state tracking and stop_hunt triggers
-- Add UI notifications for UNVERIFIED/REJECTED skills
+- Modify: `lib/features/combo/combo_timing_detector.py` để trả transport/trigger
+  evidence thay vì tự commit success
+- Add tests dưới `tests/unit/features/skills/` và `tests/unit/vision/`
 
 Không thêm fallback `keyboard.press_and_release()` ngoài CB2E backend. Không gọi
 Tkinter từ worker.
@@ -200,15 +132,14 @@ Dùng cho skill thường/buff khi cấu hình có normalized `hotbar_roi`:
 
 ### 2. `combo`
 
-Dùng CB6 (✅ hoàn tất) làm trigger timing và hậu kiểm trạng thái Combo Bar sau khi gửi:
+Dùng CB6 làm trigger timing và hậu kiểm trạng thái Combo Bar sau khi gửi:
 
-- Hit-zone trước key press chỉ là `TRIGGER_READY` (do CB6 phát hiện).
+- Hit-zone trước key press chỉ là `TRIGGER_READY`.
 - CB2E trả `SENT` chỉ là transport evidence.
-- **THAY ĐỔI:** CB6 `wait_for_hit_zone()` không tự commit success; thay vào đó nó gọi callback và trả `bool did_trigger`.
-  - Nếu `did_trigger=True`: frame đó cho tín hiệu hit-zone, nhưng chưa là game acknowledgment.
-  - `ACCEPTED` cần frame sau-send cho thấy Combo Bar tiến/reset sang trạng thái kế tiếp theo contract đã calibrate.
-  - Nếu không có hậu kiểm đáng tin cậy, outcome là `UNVERIFIED`; không gọi `mark_cast()` như success.
-- CB6 callback và app_state_controller sẽ gửi phím, sau đó cast_delivery framework chờ acknowledgment từ vision
+- `ACCEPTED` cần frame sau-send cho thấy Combo Bar tiến/reset sang trạng thái kế
+  tiếp theo contract đã calibrate.
+- Nếu không có hậu kiểm đáng tin cậy, outcome là `UNVERIFIED`; không gọi
+  `mark_cast()` như success.
 
 ### 3. `none`
 
@@ -282,17 +213,14 @@ Nếu cần giữ API cũ, adapter legacy phải map rõ là `UNVERIFIED`, khôn
 
 1. CB2C phải cho phép attack target trước khi reserve attack skill.
 2. Reserve skill từ runtime; lấy frame baseline theo acknowledgment strategy.
-3. **CB6 integration (✅ sẵn có):**
-   - Khi combo mode bật: `combo_detector.wait_for_hit_zone()` được gọi từ `app_state_controller._try_cast_skills()` với callback để gửi phím
-   - CB6 đã có orchestrator hierarchy navigation (`getattr(app, "hunt_orchestrator", None)` → `bot_manager` → `screen_capture`)
-   - Combo Bar acknowledgment sẽ được xử lý bởi CB3D framework trong `cast_delivery.py`
-4. Gửi skill qua cùng CB2E InputBackend của hunt session.
-5. Transport fail -> release `REJECTED`, áp failure policy.
-6. Transport sent -> chờ acknowledgment có timeout nhưng vẫn kiểm tra Stop/target death theo lát nhỏ, không block worker bằng sleep nguyên khối.
-7. Accepted -> commit runtime, stats accepted và tiếp tục timing.
-8. Unverified -> không commit success; áp policy và không spam lại skill.
-9. Target chết trong pending -> `CANCELLED`; CB3C xử lý fast-break sau đó.
-10. Mọi UI update đi qua `schedule_ui_task()`.
+3. Gửi skill qua cùng CB2E InputBackend của hunt session.
+4. Transport fail -> release `REJECTED`, áp failure policy.
+5. Transport sent -> chờ acknowledgment có timeout nhưng vẫn kiểm tra Stop/target
+   death theo lát nhỏ, không block worker bằng sleep nguyên khối.
+6. Accepted -> commit runtime, stats accepted và tiếp tục timing.
+7. Unverified -> không commit success; áp policy và không spam lại skill.
+8. Target chết trong pending -> `CANCELLED`; CB3C xử lý fast-break sau đó.
+9. Mọi UI update đi qua `schedule_ui_task()`.
 
 ## Automated Tests
 
@@ -329,20 +257,14 @@ Nếu cần giữ API cũ, adapter legacy phải map rõ là `UNVERIFIED`, khôn
 2. Success rate chỉ tính accepted/attempt.
 3. API legacy không tự ghi accepted.
 
-**Current Test Status (✅ 16/16 PASSING):**
+Chạy:
 
 ```powershell
-# Run all CB3D-related tests
-py -m pytest tests/unit/features/skills/test_cast_delivery.py tests/unit/features/skills/test_skill_runtime_reservation.py tests/unit/vision/test_skill_cooldown_detector.py tests/unit/test_combo_timing_detector.py -v
-
-# Results:
-# ✅ test_cast_delivery_manager_add_remove (1/2)
-# ✅ test_cast_delivery_manager_lane_limit (2/2)
-# ✅ test_reserve_commit_release (1/1)
-# ✅ test_cooldown_detection_success (1/2)
-# ✅ test_cooldown_detection_no_baseline (2/2)
-# ✅ CB6: 11 combo timing detector tests PASSING
-# Total: 16/16 ✅
+py -m pytest tests/unit/features/skills/test_cast_delivery.py -q
+py -m pytest tests/unit/features/skills/test_skill_runtime_reservation.py -q
+py -m pytest tests/unit/vision/test_skill_cooldown_detector.py -q
+py -m pytest tests/integration/test_orchestrator_loop.py -q
+py -m pytest tests/unit/test_combo_timing_detector.py -q
 ```
 
 ## Manual Calibration Và Validation
@@ -361,36 +283,18 @@ py -m pytest tests/unit/features/skills/test_cast_delivery.py tests/unit/feature
 
 **PASSED khi:**
 
-✅ **All framework pieces implemented & unit tested:**
-- CastDeliveryManager with lane-based reservation ✓
-- SkillCooldownDetector with baseline ROI comparison ✓
-- SkillRuntime.reserve/commit/release methods ✓
-- SkillStats outcome counters ✓
-- CastOutcome enum in place ✓
-- CB6 trigger detection (PR #274 merged) ✓
+- Transport sent và cast accepted là hai trạng thái riêng.
+- Ít nhất một strategy có frame/evidence thực tế và test deterministic.
+- Cooldown/pointer/stats chỉ commit sau accepted.
+- Timeout mơ hồ là unverified, không spam retry.
+- Không fallback input âm thầm và Stop luôn phản hồi.
+- CB6/CB3C không còn mark success ngay khi gửi phím.
+- Test mục tiêu pass.
 
-✅ **Orchestrator integration complete:**
-- hunt_orchestrator uses reservation flow for attack & buff skills
-- Transport failed → outcome=REJECTED, skill not committed
-- Acknowledgment timeout → outcome=UNVERIFIED, skill not committed  
-- Target died mid-ack → outcome=CANCELLED, fast-break to CB3C
-- Cooldown/pointer only advance after outcome=ACCEPTED
+**UNVERIFIED khi:**
 
-✅ **Acknowledgment verification working:**
-- At least ONE strategy fully validated:
-  - `hotbar_cooldown`: Real hotbar ROI + sample frames tested
-  - OR `combo`: CB6 trigger + post-send combo bar state verified in game
-- Manual testing confirms: Send skill → wait ack → commit only if ACCEPTED
-- Non-ACCEPTED skills do NOT advance rotation or update cooldown
-
-✅ **All 16 unit tests pass** + manual validation complete
-
-**UNVERIFIED / BLOCKED_NO_ACK_SIGNAL khi:**
-
-- Framework đúng nhưng orchestrator chưa tích hợp (hunt_orchestrator vẫn bypass)
-- Chỉ mock frame tests pass; chưa có real game evidence
-- hotbar_cooldown chưa calibrate hoặc combo bar verification chưa implement
-- CB6 vẫn bypass thay vì fully integrate vào cast delivery flow
+- Framework đúng nhưng chưa có ROI/frame mẫu hoặc game evidence để xác nhận.
+- Không được đổi nhãn thành PASSED chỉ vì unit mock pass.
 
 **REVERTED khi:**
 

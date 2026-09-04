@@ -3,10 +3,11 @@ import pytest
 from unittest.mock import MagicMock
 
 # Mock out window_manager and other windows specifics before import
-sys.modules['lib.system.window_manager'] = MagicMock()
-sys.modules['lib.features.hunt.window_selection_service'] = MagicMock()
 
 from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
+
+pytestmark = pytest.mark.integration
+
 
 class MockHuntLogger:
     def log_state_change(self, *args, **kwargs): pass
@@ -29,10 +30,18 @@ def orchestrator():
     schedule = lambda f: f()  # Execute synchronously in test
 
     orch = HuntOrchestrator(
-        handler=MagicMock(),
-        bot_manager=MagicMock(),
-        vision_engine=MagicMock(),
-        skill_runtime=MagicMock()
+        on_status_update=on_status,
+        on_state_change=on_state,
+        locate_target=locate_target,
+        bring_window_to_front=bring_window,
+        bring_window_to_front_by_hwnd=bring_hwnd,
+        bring_window_to_front_by_pid=bring_pid,
+        iconify_app=iconify,
+        update_skill_stats_display=update_stats,
+        get_hunt_selected=get_selected,
+        schedule_ui_task=schedule,
+        prepare_skill_runtime=MagicMock(),
+        try_cast_skills=MagicMock()
     )
     orch.bot_manager = MagicMock()
     orch.bot_manager.screen_capture = MagicMock()
@@ -66,7 +75,6 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
     # Mock window validation
     mock_validation = MagicMock()
     mock_validation.is_valid = True
-    sys.modules["lib.features.hunt.window_selection_service"].validate_selected_cabal_window = lambda x, y: mock_validation
 
     # We will simulate a sequence of `is_target_alive` responses.
     target_alive_seq = [False, False]
@@ -92,7 +100,6 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
     mock_capability_mgr = MagicMock()
     # State SUPPORTED, is_ready=True
     mock_capability_mgr_instance = MagicMock()
-    hunt_orchestrator_module = sys.modules[HuntOrchestrator.__module__]
     mock_capability_mgr_instance.check_and_verify_capability.return_value = (
         hunt_orchestrator_module.InputCapabilityState.SUPPORTED,
         True,
@@ -160,7 +167,6 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
     # Mock window validation
     mock_validation = MagicMock()
     mock_validation.is_valid = True
-    sys.modules["lib.features.hunt.window_selection_service"].validate_selected_cabal_window = lambda x, y: mock_validation
 
     # We will simulate a sequence of `is_target_alive` responses.
     # 0: False -> starts in search mode, taps z
@@ -217,7 +223,7 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
         for call in tap_calls:
             assert call[0][0] == 'z'
         # Ensure try_cast_skills was called during attack phase
-        assert orchestrator.handler.try_cast_skills.called
+        assert orchestrator.try_cast_skills.called
     finally:
         if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
             orchestrator.stop_hunt()
@@ -240,7 +246,6 @@ def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
     # Mock window validation
     mock_validation = MagicMock()
     mock_validation.is_valid = True
-    sys.modules["lib.features.hunt.window_selection_service"].validate_selected_cabal_window = lambda x, y: mock_validation
 
     target_alive_seq = [False, True, True]
     seq_idx = 0
@@ -278,7 +283,7 @@ def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
         assert not orchestrator.hunt_thread.is_alive()
 
         # The orchestrator should NOT have called try_cast_skills in attack_phase
-        calls = orchestrator.handler.try_cast_skills.call_args_list
+        calls = orchestrator.try_cast_skills.call_args_list
         for call in calls:
             args, kwargs = call
             attack_phase = kwargs.get('attack_phase', False)
@@ -309,7 +314,6 @@ def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
     # Mock window validation
     mock_validation = MagicMock()
     mock_validation.is_valid = True
-    sys.modules["lib.features.hunt.window_selection_service"].validate_selected_cabal_window = lambda x, y: mock_validation
 
     target_alive_seq = [False, True, True]
     seq_idx = 0
@@ -342,14 +346,14 @@ def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
     }
 
     def mock_prepare(*args, **kwargs): return [{"type": "attack", "key": "1"}]
-    monkeypatch.setattr(orchestrator.handler, "prepare_skill_runtime", mock_prepare)
+    monkeypatch.setattr(orchestrator, "prepare_skill_runtime", mock_prepare)
 
     orchestrator.start_hunt(cfg)
     try:
         orchestrator.hunt_thread.join(timeout=2.0)
         assert not orchestrator.hunt_thread.is_alive()
 
-        calls = orchestrator.handler.try_cast_skills.call_args_list
+        calls = orchestrator.try_cast_skills.call_args_list
         attack_calls = []
         for call in calls:
             args, kwargs = call

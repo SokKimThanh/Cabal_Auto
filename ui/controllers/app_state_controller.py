@@ -1,15 +1,12 @@
-import time
-
-from lib.features.skills.cast_delivery import CastOutcome
-
-from lib.i18n import t as i18n_t
-from lib.i18n import GLOBAL_NS as I18N_GLOBAL
-import copy
-import threading
-from typing import Any, Dict, List, Optional
-import tkinter as tk
 import logging
 logger = logging.getLogger(__name__)
+import tkinter as tk
+from typing import Any, Dict, List, Optional
+import threading
+import copy
+
+from lib.i18n import GLOBAL_NS as I18N_GLOBAL
+from lib.i18n import t as i18n_t
 
 
 class AppStateController:
@@ -358,99 +355,31 @@ class AppStateController:
                 key = str(skills_by_name.get(skill_name, {}).get("key", "") or "")
             label.config(text=key.upper() if key else "", fg="#333333")
 
-    def _validate_slot_key_duplicates(self):
-        """
-        Check for key conflicts across BOTH lanes (Combo + Buff).
-        Also check conflicts vs combo_start_key.
-
-        Updates visual warnings:
-        - Border color: STATE_WARN (yellow/orange)
-        - Tooltip: Specific conflict message
-        - Log: Warning message
-
-        Does NOT block save (soft warning only).
-        """
-        from lib.ui_style import UIStyle as UI
-
-        root = self.root  # self.root should be the App instance
-
-        # Step 1: Get combo_start_key from hunt_cfg
-        combo_key = str(root.hunt_cfg.get("combo", {}).get("combo_start_key", "") or "").strip().lower()
-
-        # Step 2: Build conflict map
-        conflicts = {}  # idx -> (conflict_type, tooltip_message)
-        key_usage = {}  # key -> [idx1, idx2, ...]
-
-        # Step 3: Count all key usage across BOTH lanes
+    def _validate_slot_key_duplicates(self) -> None:
+        app = self.root
+        labels = getattr(app, "skill_slot_key_labels", [])
+        vars_ = getattr(app, "skill_slot_vars", [])
         skills_by_name = {
             skill.get("name"): skill
-            for skill in getattr(root, "skills", [])
+            for skill in getattr(app, "skills", [])
             if isinstance(skill, dict) and skill.get("name")
         }
-        if hasattr(root, "skill_slot_vars"):
-            for idx, var in enumerate(root.skill_slot_vars):
-                skill_name = var.get().strip()
-                if not skill_name:
-                    continue
-
-                skill_key = str(skills_by_name.get(skill_name, {}).get("key", "") or "").strip().lower()
-                if not skill_key:
-                    continue
-                if skill_key not in key_usage:
-                    key_usage[skill_key] = []
-                key_usage[skill_key].append(idx)
-
-        # Step 4: Detect conflicts
-        for key, indices in key_usage.items():
-            # Conflict A: Key used multiple times (skill-vs-skill)
-            if len(indices) > 1:
-                for idx in indices:
-                    conflicts[idx] = (
-                        "duplicate",
-                        "[!] Cảnh báo: Phím này đang bị gán trùng lặp"
-                    )
-
-            # Conflict B: Key matches combo_start_key
-            if key == combo_key and combo_key:
-                for idx in indices:
-                    conflicts[idx] = (
-                        "combo_conflict",
-                        f"[!] Cảnh báo: Phím này trùng với Combo Start Key ({combo_key})"
-                    )
-
-        # Step 5: Apply visual warnings to UI
-        if hasattr(root, "skill_slot_boxes") and hasattr(root, "skill_slot_key_labels"):
-            for idx, (card, _) in enumerate(zip(root.skill_slot_boxes, root.skill_slot_key_labels)):
-                if idx in conflicts:
-                    _, tooltip_text = conflicts[idx]
-
-                    # Update border (warning state)
-                    try:
-                        card.master.config(
-                            highlightbackground=getattr(UI, 'STATE_WARN', '#FFB84D'),
-                            highlightthickness=2
-                        )
-                    except Exception:
-                        logger.exception("Error setting border for slot %s", idx)
-
-                    # Attach tooltip
-                    try:
-                        if hasattr(root, "_create_tooltip"):
-                            root._create_tooltip(card.master, tooltip_text)
-                    except Exception:
-                        logger.exception("Error creating tooltip for slot %s", idx)
-
-                    # Log warning
-                    logger.warning("[Key Conflict] Slot %s: %s", idx, tooltip_text)
-                else:
-                    # Clear warning state if no conflict
-                    try:
-                        card.master.config(
-                            highlightbackground='#D0D0D0',
-                            highlightthickness=1
-                        )
-                    except Exception:
-                        pass
+        seen: Dict[str, int] = {}
+        duplicate_indices = set()
+        for idx, var in enumerate(vars_):
+            skill_name = var.get().strip()
+            if not skill_name:
+                continue
+            key = str(skills_by_name.get(skill_name, {}).get("key", "") or "").lower()
+            if not key:
+                continue
+            if key in seen:
+                duplicate_indices.add(seen[key])
+                duplicate_indices.add(idx)
+            else:
+                seen[key] = idx
+        for idx, label in enumerate(labels):
+            label.config(fg="#C62828" if idx in duplicate_indices else "#333333")
 
     def _apply_hunt_mode(self) -> None:
         return
@@ -594,155 +523,33 @@ class AppStateController:
         target_active: bool,
         attack_phase: bool = False,
         skill_stats=None,
-        backend=None,
-        combo_detector=None,
-        frame=None,
-        target_bar_detector=None,
     ) -> None:
         app = self.root
         from lib.system.win_input import tap
-
-        orchestrator = getattr(app, "hunt_orchestrator", None)
-        runtime_manager = orchestrator.skill_runtime.get_runtime() if orchestrator and orchestrator.skill_runtime else None
-
-        lane = "attack" if attack_phase else "buff"
-        if lane == "attack" and not target_active:
-            return
-
-        # We need skill_runtime to support reservation
-        if runtime_manager:
-            reservation = runtime_manager.reserve_next_skill(lane, now)
-            if not reservation:
-                return
-
-            key = reservation.key
-            skill_name = reservation.skill_name
-
-            def send_key():
-                if backend:
-                    backend.tap(key)
-                else:
-                    tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-
-            outcome = CastOutcome.UNVERIFIED
-
-            # Check combo mode active
-            is_combo_mode = getattr(self, "_combo_mode_active", False)
-            if combo_detector and is_combo_mode and lane == 'attack':
-                bot_manager = getattr(orchestrator, "bot_manager", None) if orchestrator else None
-                screen_capture = getattr(bot_manager, "screen_capture", None) if bot_manager else None
-
-                if screen_capture:
-                    def is_target_alive():
-                        if target_bar_detector:
-                            f = screen_capture.get_latest_frame()
-                            if f is not None:
-                                return target_bar_detector.is_target_alive(f)
-                        return True
-
-                    combo_cfg = app.hunt_cfg.get("combo", {})
-                    combo_detector.key_press_callback = send_key
-                    did_trigger = combo_detector.wait_for_hit_zone(
-                        screen_capture=screen_capture,
-                        timeout_sec=combo_cfg.get("hit_zone_timeout_sec", 2.0),
-                        is_target_alive_check=is_target_alive,
+        import time
+        for skill in skill_runtime:
+            is_buff = skill.get("type", "attack") == "buff"
+            if attack_phase == is_buff:
+                continue
+            if attack_phase and not target_active:
+                continue
+            if now - float(skill.get("_last_cast", 0.0)) < float(
+                skill.get("cooldown", 0.0)
+            ):
+                continue
+            key = str(skill.get("key", "") or "").strip()
+            if not key:
+                continue
+            tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+            skill["_last_cast"] = now
+            if skill_stats is not None:
+                try:
+                    skill_stats.record_cast(
+                        skill.get("name") or key, success=True, timestamp=now
                     )
-
-                    if did_trigger:
-                        outcome = CastOutcome.UNVERIFIED
-
-                        # Simulated Post-send verification:
-                        # To truly verify combo bar progression, we would re-check the combo UI (e.g. using combo detector's visual state)
-                        # For now, we will wait and require the trigger pixel to reset/move, confirming the bar actually updated.
-                        post_wait_start = time.time()
-                        outcome = CastOutcome.UNVERIFIED
-                        while time.time() - post_wait_start < 0.3:
-                            if not is_target_alive():
-                                outcome = CastOutcome.CANCELLED
-                                break
-                            current_frame = screen_capture.get_latest_frame()
-                            # If the bright pixel has moved/disappeared from the hit zone, it means the bar progressed
-                            if current_frame is not None and not combo_detector._check_hit_zone(current_frame):
-                                outcome = CastOutcome.ACCEPTED
-                                break
-                            time.sleep(0.02)
-                    else:
-                        send_key()
-                        outcome = CastOutcome.UNVERIFIED
-                else:
-                    send_key()
-            else:
-                send_key()
-                # Real visual verification using SkillCooldownDetector
-                from lib.vision.skill_cooldown_detector import SkillCooldownDetector
-                # We expect the app config to have hotbar_roi
-                hotbar_roi = app.hunt_cfg.get("hotbar_roi", (0.0, 1.0, 0.0, 1.0))
-                cooldown_detector = SkillCooldownDetector(roi=hotbar_roi, threshold=10.0)
-
-                if screen_capture := (getattr(orchestrator, "bot_manager", None).screen_capture if getattr(orchestrator, "bot_manager", None) else None):
-                    baseline_frame = screen_capture.get_latest_frame()
-                    if baseline_frame is not None:
-                        cooldown_detector.set_baseline(baseline_frame)
-
-                        # Wait for a short time to see the cooldown effect
-                        post_wait_start = time.time()
-                        outcome = CastOutcome.UNVERIFIED
-                        while time.time() - post_wait_start < 0.5:
-                            current_frame = screen_capture.get_latest_frame()
-                            if current_frame is not None and cooldown_detector.check_cooldown(current_frame):
-                                outcome = CastOutcome.ACCEPTED
-                                break
-                            time.sleep(0.05)
-                else:
-                    # If we can't verify, it remains unverified.
-                    outcome = CastOutcome.UNVERIFIED
-
-
-            if outcome == CastOutcome.ACCEPTED:
-                runtime_manager.commit_cast(reservation.token, reservation, time.time())
-                if skill_stats is not None:
-                    try:
-                        skill_stats.record_cast(skill_name, outcome=outcome, timestamp=time.time())
-                    except Exception:
-                        pass
-            else:
-                runtime_manager.release_cast(reservation.token, outcome)
-                if skill_stats is not None:
-                    try:
-                        skill_stats.record_cast(skill_name, outcome=outcome, timestamp=time.time())
-                    except Exception:
-                        pass
-
-        else:
-            # Fallback legacy logic
-            for skill in skill_runtime:
-                is_buff = skill.get("type", "attack") == "buff"
-                if attack_phase == is_buff:
-                    continue
-                if attack_phase and not target_active:
-                    continue
-                if now - float(skill.get("_last_cast", 0.0)) < float(skill.get("cooldown", 0.0)):
-                    continue
-                key = str(skill.get("key", "") or "").strip()
-                if not key:
-                    continue
-
-                def send_key():
-                    if backend:
-                        backend.tap(key)
-                    else:
-                        tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-
-                send_key()
-                skill["_last_cast"] = now
-                if skill_stats is not None:
-                    try:
-                        skill_stats.record_cast(
-                            skill.get("name") or key, success=True, timestamp=now
-                        )
-                    except Exception:
-                        pass
-                cast_time = float(skill.get("cast_time", 0.0))
-                if cast_time > 0:
-                    time.sleep(cast_time)
-                return
+                except Exception:
+                    pass
+            cast_time = float(skill.get("cast_time", 0.0))
+            if cast_time > 0:
+                time.sleep(cast_time)
+            return

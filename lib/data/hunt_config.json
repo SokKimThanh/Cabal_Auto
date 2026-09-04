@@ -102,13 +102,5 @@
     "target_policy": "configured_only",
     "ack_strategy": "none",
     "hotbar_roi": null,
-    "ack_timeout_ms": 500,
-    "combo": {
-        "enabled": false,
-        "combo_start_key": "alt+3",
-        "hit_zone_x_ratio": 0.78,
-        "hit_zone_timeout_sec": 2.0,
-        "poll_interval_ms": 4,
-        "cooldown_guard_ms": 120
-    }
+    "ack_timeout_ms": 500
 }

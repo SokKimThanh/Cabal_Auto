@@ -10,7 +10,6 @@ Date: October 21, 2025
 
 import time
 from typing import Dict, Optional, List
-from lib.features.skills.cast_delivery import CastOutcome
 
 
 class SkillStats:
@@ -38,59 +37,30 @@ class SkillStats:
         # Structure: {skill_name: {'casts': [], 'successes': [], 'last_cast': timestamp}}
         self._data: Dict[str, Dict] = {}
     
-
-    def record_cast(self, skill_name: str, outcome: CastOutcome = CastOutcome.UNVERIFIED, timestamp: Optional[float] = None, success: bool = None):
-        """Record a skill cast event with an outcome.
+    def record_cast(self, skill_name: str, success: bool = True, timestamp: Optional[float] = None):
+        """Record a skill cast event.
         
         Args:
             skill_name: Name of the skill being cast
-            outcome: CastOutcome enum
+            success: Whether the cast was successful (default: True)
             timestamp: Unix timestamp of cast (default: current time)
-            success: Legacy flag (if provided, True -> ACCEPTED, False -> REJECTED)
         """
         if timestamp is None:
             timestamp = time.time()
-
-        if success is not None:
-            outcome = CastOutcome.ACCEPTED if success else CastOutcome.REJECTED
         
         if skill_name not in self._data:
             self._data[skill_name] = {
                 'casts': [],
                 'successes': [],
-                'attempt_count': 0,
-                'transport_sent_count': 0,
-                'accepted_count': 0,
-                'rejected_count': 0,
-                'unverified_count': 0,
-                'cancelled_count': 0,
-                'last_outcome': None,
                 'last_cast': 0.0
             }
-
-        self._data[skill_name]['attempt_count'] += 1
-        self._data[skill_name]['last_outcome'] = outcome
         
-        # Legacy support
+        # Record cast
         self._data[skill_name]['casts'].append(timestamp)
-
-        if outcome == CastOutcome.ACCEPTED:
-            self._data[skill_name]['accepted_count'] += 1
+        if success:
             self._data[skill_name]['successes'].append(timestamp)
-            self._data[skill_name]['last_cast'] = timestamp
-        elif outcome == CastOutcome.REJECTED:
-            self._data[skill_name]['rejected_count'] += 1
-        elif outcome == CastOutcome.UNVERIFIED:
-            self._data[skill_name]['unverified_count'] += 1
-        elif outcome == CastOutcome.CANCELLED:
-            self._data[skill_name]['cancelled_count'] += 1
-
-    def get_unverified_count(self, skill_name: str) -> int:
-        """Get unverified count for a skill."""
-        if skill_name not in self._data:
-            return 0
-        return self._data[skill_name].get('unverified_count', 0)
-
+        self._data[skill_name]['last_cast'] = timestamp
+    
     def get_cast_count(self, skill_name: str) -> int:
         """Get total number of casts for a skill.
         

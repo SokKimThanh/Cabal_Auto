@@ -2,6 +2,27 @@
 # Global app translations (formerly LANG in app_gui.py)
 
 GLOBAL_TRANSLATIONS = {
+    "skill_strip.auto_combo": {
+        "vi": "Bật Auto Combo",
+        "en": "Enable Auto Combo"
+    },
+    "skill_strip.combo_start_key": {
+        "vi": "Phím Mở Combo",
+        "en": "Combo Start Key"
+    },
+    "skill_strip.combo_lane": {
+        "vi": "Combo Chain",
+        "en": "Combo Chain"
+    },
+    "skill_strip.buff_lane": {
+        "vi": "Buff Lane",
+        "en": "Buff Lane"
+    },
+    "skill_strip.tooltip_placeholder": {
+        "vi": "Chi tiết sẽ cập nhật ở bản tiếp theo",
+        "en": "Details will be updated in the next version"
+    },
+
     "logs_title": {
         "vi": "Nhật Ký Hoạt Động",
         "en": "Activity Logs"

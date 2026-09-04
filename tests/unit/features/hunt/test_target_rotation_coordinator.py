@@ -1,6 +1,9 @@
 import pytest
 from lib.features.hunt.target_rotation_coordinator import TargetRotationCoordinator
 
+pytestmark = pytest.mark.unit
+
+
 def test_empty_rotation_no_attack():
     coord = TargetRotationCoordinator("configured_only", [])
     assert not coord.is_rotation_valid()

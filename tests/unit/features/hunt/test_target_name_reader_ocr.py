@@ -4,6 +4,9 @@ import cv2
 from unittest.mock import MagicMock, patch
 from lib.vision.target_name_reader import TargetNameReader
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.fixture
 def reader():
     return TargetNameReader(window_bounds=[0, 0, 1920, 1080])

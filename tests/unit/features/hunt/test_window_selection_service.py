@@ -7,6 +7,9 @@ if sys.platform != "win32":
 import pytest
 from lib.features.hunt.window_selection_service import WindowSelectionService
 
+pytestmark = pytest.mark.unit
+
+
 def test_resolve_bounds_with_current():
     cfg = {"hunt_area": {"window_bounds": [10, 10, 100, 100]}, "window_bounds": [20, 20, 200, 200]}
     # current bounds take precedence

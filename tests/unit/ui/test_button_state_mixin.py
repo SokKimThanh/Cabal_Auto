@@ -17,6 +17,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from ui.mixins import ButtonStateMixin
+import pytest
+
+pytestmark = pytest.mark.unit
+
 
 
 class TestButtonStateMixin(unittest.TestCase):

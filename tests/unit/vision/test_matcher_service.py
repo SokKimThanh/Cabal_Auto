@@ -8,6 +8,9 @@ import numpy as np
 from lib.vision.template_loader import Template
 from lib.vision.matcher_service import MatcherService
 
+pytestmark = pytest.mark.unit
+
+
 
 @pytest.fixture
 def matcher_service():

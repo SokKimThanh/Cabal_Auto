@@ -256,7 +256,6 @@ class ScreenCapture:
         """
         with self._frame_lock:
             if self._latest_frame is not None:
-                # Return an independent copy to prevent torn reads
                 return self._latest_frame.copy()
             return None
 

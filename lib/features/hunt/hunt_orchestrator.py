@@ -1,10 +1,8 @@
 from lib.vision.target_bar_detector import TargetBarDetector
 import time
 import threading
-from typing import Dict, Any
-from lib.system.bot_manager import BotManager
-from lib.vision.vision_engine import VisionEngine
-from lib.features.skills.skill_runtime_service import SkillRuntimeService
+from pathlib import Path
+from typing import Callable, Dict, Any
 
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.win_input import tap as global_tap
@@ -18,15 +16,38 @@ from database import find_monster_by_name_api
 class HuntOrchestrator:
     def __init__(
         self,
-        handler,
-        bot_manager: BotManager = None,
-        vision_engine: VisionEngine = None,
-        skill_runtime: SkillRuntimeService = None
+        on_status_update: Callable[[str], None],
+        on_state_change: Callable[[str], None],  # "running", "idle", "error"
+        locate_target: Callable[[Dict[str, Any]], tuple],  # (box, match_info)
+        prepare_skill_runtime: Callable[[Dict[str, Any]], list],
+        try_cast_skills: Callable,
+        bring_window_to_front: Callable[[str], bool],
+        bring_window_to_front_by_hwnd: Callable[[int], bool],
+        bring_window_to_front_by_pid: Callable[[int], bool],
+        iconify_app: Callable[[], None],
+        update_skill_stats_display: Callable[[dict], None],
+        get_hunt_selected: Callable[[], Dict[str, Any]],
+        schedule_ui_task: Callable[[Callable], None],
+        clear_target_ui: Callable[[], None] = None,
+        set_target_info: Callable[[str], None] = None,
+        on_scene_monsters_detected: Callable[[tuple], None] = None
     ):
-        self.handler = handler
-        self.bot_manager = bot_manager
-        self.vision_engine = vision_engine
-        self.skill_runtime = skill_runtime
+        self.clear_target_ui = clear_target_ui
+        self.on_scene_monsters_detected = on_scene_monsters_detected
+        self.set_target_info = set_target_info
+        self.on_status_update = on_status_update
+        self.on_state_change = on_state_change
+        self.locate_target = locate_target
+        self.prepare_skill_runtime = prepare_skill_runtime
+        self.try_cast_skills = try_cast_skills
+
+        self.bring_window_to_front = bring_window_to_front
+        self.bring_window_to_front_by_hwnd = bring_window_to_front_by_hwnd
+        self.bring_window_to_front_by_pid = bring_window_to_front_by_pid
+        self.iconify_app = iconify_app
+        self.update_skill_stats_display = update_skill_stats_display
+        self.get_hunt_selected = get_hunt_selected
+        self.schedule_ui_task = schedule_ui_task
 
         self.hunt_running = False
         self.hunt_thread = None
@@ -45,7 +66,7 @@ class HuntOrchestrator:
         self.background_input_fallback = True if fb in (True, "foreground", "true") else False
 
         logger = get_hunt_logger()
-        hunt_selected = self.handler.get_hunt_selected()
+        hunt_selected = self.get_hunt_selected()
         hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else 0
 
         self.input_backend = None
@@ -55,8 +76,8 @@ class HuntOrchestrator:
             if not hwnd:
                 if not self.background_input_fallback:
                     logger.log_error("input_capability", "Background mode requested but no HWND found. Stopped.")
-                    self.handler.schedule_ui_task(lambda: self.handler.on_status_update("Error: Background input unsupported (no HWND). Stopped."))
-                    self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
+                    self.schedule_ui_task(lambda: self.on_status_update("Error: Background input unsupported (no HWND). Stopped."))
+                    self.schedule_ui_task(lambda: self.on_state_change("error"))
                     return
                 else:
                     logger.log_error("input_capability", "No HWND found. Falling back to foreground input.")
@@ -68,8 +89,8 @@ class HuntOrchestrator:
                 if not is_ready:
                     if not self.background_input_fallback:
                         logger.log_error("input_capability", f"Background input capability is {state.value}. Fallback disabled. Hunt aborted.")
-                        self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Error: Background input {state.value}. Stopped."))
-                        self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
+                        self.schedule_ui_task(lambda: self.on_status_update(f"Error: Background input {state.value}. Stopped."))
+                        self.schedule_ui_task(lambda: self.on_state_change("error"))
                         return
                     else:
                         logger.log_error("input_capability", f"Background input {state.value}. Falling back to foreground.")
@@ -80,24 +101,17 @@ class HuntOrchestrator:
             self.input_backend = ForegroundSendInputBackend()
 
         self.hunt_running = True
-        self.handler.schedule_ui_task(lambda: self.handler.on_state_change("running"))
+        self.schedule_ui_task(lambda: self.on_state_change("running"))
 
         def worker():
 
-            hunt_selected = self.handler.get_hunt_selected()
+            hunt_selected = self.get_hunt_selected()
             hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else None
 
             target_bar_detector = TargetBarDetector(hwnd=hwnd)
             target_name_reader = TargetNameReader(hwnd=hwnd)
             consecutive_false_readings = 0
             logger = get_hunt_logger()
-
-            from lib.features.skills.cast_delivery import CastDeliveryManager, CastOutcome
-            cast_delivery = CastDeliveryManager()
-
-            from lib.vision.skill_cooldown_detector import SkillCooldownDetector
-            hotbar_roi = cfg.get("hotbar_roi", (0.0, 1.0, 0.0, 1.0))
-            cooldown_detector = SkillCooldownDetector(roi=hotbar_roi, threshold=10.0)
 
             # Setup scene monster detection logic
             from lib.features.hunt.runtime_monster_queue import RuntimeMonsterQueue
@@ -106,148 +120,22 @@ class HuntOrchestrator:
 
             # We need vision_engine. It's stored in self.bot_manager if available.
             # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
-            runtime_queue = RuntimeMonsterQueue(publish_callback=self.handler.on_scene_monsters_detected if hasattr(self.handler, 'on_scene_monsters_detected') else None)
+            runtime_queue = RuntimeMonsterQueue(publish_callback=getattr(self, 'on_scene_monsters_detected', None))
             scene_detector = None
             if hasattr(self, 'bot_manager') and self.bot_manager and hasattr(self.bot_manager, 'vision_engine'):
                 scene_detector = SceneMonsterDetector(self.bot_manager.vision_engine, runtime_queue)
 
             self.runtime_queue = runtime_queue # expose for tests
 
-            def process_skill_lane(lane: str, target_alive_check) -> None:
-                if not self.skill_runtime:
-                    return
-                runtime_manager = self.skill_runtime.get_runtime()
-                if not runtime_manager:
-                    return
-
-                now = time.time()
-                reservation = runtime_manager.reserve_next_skill(lane, now)
-                if not reservation:
-                    return
-
-                cast_delivery.add_reservation(reservation)
-
-                from lib.features.skills.cast_delivery import TransportStatus
-
-                def send_key() -> TransportStatus:
-                    if self.input_backend:
-                        success = self.input_backend.tap(reservation.key)
-                        return TransportStatus.SENT if success else TransportStatus.FAILED
-                    return TransportStatus.FAILED
-
-                outcome = CastOutcome.UNVERIFIED
-                is_combo_mode = cfg.get("combo", {}).get("enabled", False)
-
-                bot_manager = getattr(self, "bot_manager", None)
-                screen_capture = getattr(bot_manager, "screen_capture", None) if bot_manager else None
-                # skill_stats sử dụng instance SkillStats trong scope của worker (training mode); tránh shadowing tại đây.
-
-                # Send Key Wrapper with Retry
-                def attempt_send() -> bool:
-                    max_transport_retries = cfg.get("skill_delivery", {}).get("max_transport_retries", 1)
-                    retry_backoff_ms = cfg.get("skill_delivery", {}).get("retry_backoff_ms", 300)
-                    for attempt in range(max_transport_retries + 1):
-                        if send_key() == TransportStatus.SENT:
-                            return True
-                        if attempt < max_transport_retries:
-                            time.sleep(retry_backoff_ms / 1000.0)
-                    return False
-
-                if combo_detector and is_combo_mode and lane == "attack" and screen_capture:
-                    combo_cfg = cfg.get("combo", {})
-                    combo_detector.key_press_callback = lambda: None if attempt_send() else None # Attempt send will handle tap
-                    did_trigger = combo_detector.wait_for_hit_zone(
-                        screen_capture=screen_capture,
-                        timeout_sec=combo_cfg.get("hit_zone_timeout_sec", 2.0),
-                        is_target_alive_check=target_alive_check,
-                    )
-
-                    if did_trigger:
-                        post_wait_start = time.time()
-                        outcome = CastOutcome.UNVERIFIED
-                        while time.time() - post_wait_start < 0.3:
-                            if not target_alive_check():
-                                outcome = CastOutcome.CANCELLED
-                                break
-                            current_frame = screen_capture.get_latest_frame()
-                            if current_frame is not None and not combo_detector._check_hit_zone(current_frame):
-                                outcome = CastOutcome.ACCEPTED
-                                break
-                            time.sleep(0.02)
-                    else:
-                        outcome = CastOutcome.UNVERIFIED if attempt_send() else CastOutcome.REJECTED
-                else:
-                    if screen_capture:
-                        baseline_frame = screen_capture.get_latest_frame()
-                        if baseline_frame is not None:
-                            cooldown_detector.set_baseline(baseline_frame)
-
-                    if not attempt_send():
-                        outcome = CastOutcome.REJECTED
-                    else:
-                        if screen_capture:
-                            post_wait_start = time.time()
-                            outcome = CastOutcome.UNVERIFIED
-                            while time.time() - post_wait_start < 0.5:
-                                if not target_alive_check():
-                                    outcome = CastOutcome.CANCELLED
-                                    break
-                                current_frame = screen_capture.get_latest_frame()
-                                if current_frame is not None and cooldown_detector.check_cooldown(current_frame):
-                                    outcome = CastOutcome.ACCEPTED
-                                    break
-                                time.sleep(0.05)
-
-                if outcome == CastOutcome.ACCEPTED:
-                    runtime_manager.commit_cast(reservation.token, reservation, time.time())
-                else:
-                    runtime_manager.release_cast(reservation.token, outcome)
-                    if outcome == CastOutcome.REJECTED:
-                        self.stop_hunt()
-                    elif outcome == CastOutcome.UNVERIFIED:
-                        # Quarantine skill for a short duration to prevent immediate resend spam
-                        runtime_manager.quarantine_skill(reservation.key, time.time(), 2.0)
-
-                if skill_stats is not None:
-                    try:
-                        skill_stats.record_cast(reservation.skill_name, outcome=outcome, timestamp=time.time())
-                        if outcome == CastOutcome.UNVERIFIED:
-                            degraded_threshold = cfg.get("skill_delivery", {}).get("degraded_threshold", 3)
-                            if skill_stats.get_unverified_count(reservation.skill_name) >= degraded_threshold:
-                                unverified_policy = cfg.get("skill_delivery", {}).get("unverified_policy", "pause_skill")
-                                if unverified_policy == "pause_skill":
-                                    logger.log_error("hunt_loop", f"Skill '{reservation.skill_name}' reached degraded threshold. Pausing skill permanently.")
-                                    # Mark degraded state
-                                    self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Degraded: {reservation.skill_name} unverified."))
-                                    # Quarantine for a long time to effectively pause
-                                    runtime_manager.quarantine_skill(reservation.key, time.time(), 999999.0)
-                    except Exception:
-                        pass
-
-                cast_delivery.remove_reservation(reservation.token)
-
             target_policy = cfg.get("target_policy", "configured_only")
             target_coordinator = TargetRotationCoordinator(target_policy, cfg.get("monster_rotation", []))
-
-            # Setup combo detector once
-            combo_detector = None
-            combo_cfg = cfg.get("combo", {})
-            if combo_cfg.get("enabled", False) and hasattr(self.bot_manager, "screen_capture") and self.bot_manager.screen_capture:
-                from lib.features.combo.combo_timing_detector import CabalComboDetector
-                combo_detector = CabalComboDetector(
-                    hwnd=hwnd,
-                    hit_zone_x_ratio=combo_cfg.get("hit_zone_x_ratio", 0.78),
-                    poll_interval_ms=combo_cfg.get("poll_interval_ms", 4),
-                    cooldown_guard_ms=combo_cfg.get("cooldown_guard_ms", 120),
-                    key_press_callback=None # we don't tap here, let try_cast_skills handle it
-                )
 
             # Check if start is valid
             if not target_coordinator.is_rotation_valid():
                 logger.log_error("hunt_loop", "Invalid rotation or empty rotation for policy.")
-                self.handler.schedule_ui_task(lambda: self.handler.on_status_update("Error: Invalid rotation or empty rotation for policy."))
+                self.schedule_ui_task(lambda: self.on_status_update("Error: Invalid rotation or empty rotation for policy."))
                 self.hunt_running = False
-                self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
+                self.schedule_ui_task(lambda: self.on_state_change("error"))
                 return
 
             cycle_attempts = 0
@@ -269,20 +157,20 @@ class HuntOrchestrator:
                     try:
                         focused = False
                         if hunt_selected and hunt_selected.get("hwnd"):
-                            focused = self.handler.bring_window_to_front_by_hwnd(
+                            focused = self.bring_window_to_front_by_hwnd(
                                 int(hunt_selected["hwnd"])
                             )
                         elif cfg.get("window_pid"):
-                            focused = self.handler.bring_window_to_front_by_pid(
+                            focused = self.bring_window_to_front_by_pid(
                                 int(cfg["window_pid"])
                             )
                         if not focused:
-                            focused = self.handler.bring_window_to_front(
+                            focused = self.bring_window_to_front(
                                 cfg.get("window_title", "Cabal")
                             )
                         if focused:
                             try:
-                                self.handler.iconify_app()
+                                self.iconify_app()
                             except Exception:
                                 pass
                         time.sleep(0.15)
@@ -298,7 +186,7 @@ class HuntOrchestrator:
                 attack_started = 0.0
                 lost_timeout = float(cfg.get("lost_timeout_sec", 0.8))
                 attack_min_duration = float(cfg.get("attack_min_duration_sec", 1.5))
-                skill_runtime = self.handler.prepare_skill_runtime(cfg)
+                skill_runtime = self.prepare_skill_runtime(cfg)
                 has_attack_skills = any(
                     skill.get("type", "attack") != "buff" for skill in skill_runtime
                 )
@@ -315,28 +203,28 @@ class HuntOrchestrator:
                     # Periodic window validation
                     from lib.features.hunt.window_selection_service import validate_selected_cabal_window
 
-                    hunt_selected = self.handler.get_hunt_selected()
+                    hunt_selected = self.get_hunt_selected()
                     if hunt_selected:
                         validation = validate_selected_cabal_window(hunt_selected, [])
                         if not validation.is_valid:
                             logger.log_error("window_validation_failed", f"Validation failed: {validation.code}")
                             self.hunt_running = False
-                            self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
+                            self.schedule_ui_task(lambda: self.on_state_change("error"))
                             break
                     if cfg.get("bring_to_front_each_cycle") and getattr(self.input_backend, "mode", "foreground") != "background":
                         ok = False
                         try:
-                            hunt_selected = self.handler.get_hunt_selected()
+                            hunt_selected = self.get_hunt_selected()
                             if hunt_selected and hunt_selected.get("hwnd"):
-                                ok = self.handler.bring_window_to_front_by_hwnd(
+                                ok = self.bring_window_to_front_by_hwnd(
                                     int(hunt_selected["hwnd"])
                                 )
                             elif cfg.get("window_hwnd"):
-                                ok = self.handler.bring_window_to_front_by_hwnd(
+                                ok = self.bring_window_to_front_by_hwnd(
                                     int(cfg.get("window_hwnd"))
                                 )
                             elif cfg.get("window_pid"):
-                                ok = self.handler.bring_window_to_front_by_pid(
+                                ok = self.bring_window_to_front_by_pid(
                                     int(cfg.get("window_pid"))
                                 )
                         except Exception:
@@ -363,7 +251,7 @@ class HuntOrchestrator:
                     # Process scene monsters
                     if frame is not None and scene_detector is not None:
                         scene_detector.process_frame(frame)
-                        runtime_queue.maybe_publish(self.handler.schedule_ui_task)
+                        runtime_queue.maybe_publish(self.schedule_ui_task)
 
                     # Expose attack queue for other services (CB2C)
                     # Use 'configured_only' as default, pulling configured IDs from cfg
@@ -408,9 +296,9 @@ class HuntOrchestrator:
                                         m_hp = monster.get("hp", "Unknown")
                                         fmt = f"[ID: #{m_id}] {m_name} (HP: {m_hp})"
 
-                                        if hasattr(self.handler, 'set_target_info'):
-                                            self.handler.schedule_ui_task(
-                                                lambda text=fmt: self.handler.set_target_info(text)
+                                        if getattr(self, 'set_target_info', None):
+                                            self.schedule_ui_task(
+                                                lambda text=fmt: self.set_target_info(text)
                                             )
 
                             have_target = True
@@ -422,16 +310,16 @@ class HuntOrchestrator:
                                 have_target = False
                                 cached_target_id = None
                                 cached_target_name = None
-                                if hasattr(self.handler, 'clear_target_ui'):
-                                    self.handler.schedule_ui_task(self.handler.clear_target_ui)
+                                if getattr(self, 'clear_target_ui', None):
+                                    self.schedule_ui_task(self.clear_target_ui)
                     else:
                         consecutive_false_readings += 1
                         if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
                             have_target = False
                             cached_target_id = None
                             cached_target_name = None
-                            if hasattr(self.handler, 'clear_target_ui'):
-                                self.handler.schedule_ui_task(self.handler.clear_target_ui)
+                            if getattr(self, 'clear_target_ui', None):
+                                self.schedule_ui_task(self.clear_target_ui)
 
                     if hasattr(self, 'runtime_attack_queue'):
                         target_coordinator.update_runtime_queue(self.runtime_attack_queue)
@@ -441,18 +329,25 @@ class HuntOrchestrator:
                     ):
                         try:
                             all_stats = skill_stats.get_all_stats()
-                            self.handler.schedule_ui_task(lambda stats=all_stats: self.handler.update_skill_stats_display(stats))
+                            self.schedule_ui_task(lambda stats=all_stats: self.update_skill_stats_display(stats))
                             last_stats_update = now
                         except Exception:
                             pass
 
                     if skill_runtime:
-                        process_skill_lane("buff", lambda: True)
+                        self.try_cast_skills(
+                            skill_runtime,
+                            now,
+                            have_target,
+                            attack_phase=False,
+                            skill_stats=skill_stats,
+                            backend=self.input_backend,
+                        )
 
                     if mode == "search":
                         if (now - search_started) > target_acquire_timeout_sec:
                             logger.log_error("hunt_loop", f"Target acquire timeout ({target_acquire_timeout_sec}s). Backing off.")
-                            self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Target acquire timeout. Retrying..."))
+                            self.schedule_ui_task(lambda: self.on_status_update(f"Target acquire timeout. Retrying..."))
                             search_started = now
                             backoff_wait = 1.0
                             while backoff_wait > 0 and self.hunt_running:
@@ -469,17 +364,6 @@ class HuntOrchestrator:
                                 cycle_attempts = 0
                                 search_started = now
                                 death_confirm_mode = False
-
-                                # Send combo start key exactly once when switching to attack mode
-                                combo_cfg = cfg.get("combo", {})
-                                if combo_cfg.get("enabled", False) and combo_detector and hasattr(self.handler, "app") and hasattr(self.handler.app, "state_controller") and getattr(self.handler.app.state_controller, "_combo_mode_active", False):
-                                    combo_start_key = combo_cfg.get("combo_start_key", "alt+3")
-                                    if combo_start_key:
-                                        if self.input_backend:
-                                            self.input_backend.tap(combo_start_key)
-                                        else:
-                                            from lib.system.win_input import tap as global_tap
-                                            global_tap(combo_start_key)
                                 continue
                             elif eval_result in (TargetRotationCoordinator.MISMATCH, TargetRotationCoordinator.UNKNOWN):
                                 # CYCLE_TARGET
@@ -487,7 +371,7 @@ class HuntOrchestrator:
                                     logger.log_info(f"Target decision: {eval_result} for ID {cached_target_id}")
                                     if cycle_attempts >= target_cycle_max_attempts:
                                         logger.log_error("hunt_loop", f"Max cycle attempts reached ({target_cycle_max_attempts}). Backing off.")
-                                        self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Max cycle attempts ({target_cycle_max_attempts}). Retrying..."))
+                                        self.schedule_ui_task(lambda: self.on_status_update(f"Max cycle attempts ({target_cycle_max_attempts}). Retrying..."))
                                         backoff_wait = 1.0
                                         while backoff_wait > 0 and self.hunt_running:
                                             time.sleep(0.1)
@@ -534,17 +418,15 @@ class HuntOrchestrator:
                     if target_active:
                         if skill_runtime and has_attack_skills:
                             # DO NOT send target key in attack mode
-                            # just use process_skill_lane
-                            def is_target_alive():
-                                bot_mgr = getattr(self, "bot_manager", None)
-                                cap = getattr(bot_mgr, "screen_capture", None) if bot_mgr else None
-                                if target_bar_detector and cap:
-                                    f = cap.get_latest_frame()
-                                    if f is not None:
-                                        return target_bar_detector.is_target_alive(f)
-                                return True
-
-                            process_skill_lane("attack", is_target_alive)
+                            # just call try_cast_skills
+                            self.try_cast_skills(
+                                skill_runtime,
+                                now,
+                                target_active,
+                                attack_phase=True,
+                                skill_stats=skill_stats,
+                                backend=self.input_backend,
+                            )
                             time.sleep(float(cfg.get("attack_interval", 0.2)))
                             continue
 
@@ -577,15 +459,15 @@ class HuntOrchestrator:
                         # Clear UI cache on advance
                         cached_target_id = None
                         cached_target_name = None
-                        if hasattr(self.handler, 'clear_target_ui'):
-                            self.handler.schedule_ui_task(self.handler.clear_target_ui)
+                        if getattr(self, 'clear_target_ui', None):
+                            self.schedule_ui_task(self.clear_target_ui)
 
                         time.sleep(0.05)
                     time.sleep(0.02)
             except Exception as e:
                 logger.log_error("hunt_loop", f"Hunt error: {str(e)}", e)
                 logger.log_hunt_stop("error")
-                self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
+                self.schedule_ui_task(lambda: self.on_state_change("error"))
             finally:
                 if getattr(self, "input_backend", None):
                     try:
@@ -604,7 +486,7 @@ class HuntOrchestrator:
                     except Exception:
                         pass
                 self.hunt_running = False
-                self.handler.schedule_ui_task(lambda: self.handler.on_state_change("idle"))
+                self.schedule_ui_task(lambda: self.on_state_change("idle"))
 
         self.hunt_thread = threading.Thread(target=worker, daemon=True)
         self.hunt_thread.start()

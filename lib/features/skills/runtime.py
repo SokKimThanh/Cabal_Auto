@@ -31,10 +31,8 @@ Usage:
 """
 
 import time
-import uuid
 from typing import List, Dict, Optional
 from dataclasses import dataclass
-from lib.features.skills.cast_delivery import CastReservation, CastOutcome
 
 
 @dataclass
@@ -51,12 +49,9 @@ class SkillInfo:
     
     # Runtime tracking
     last_cast_time: float = 0.0  # Last time this skill was cast
-    quarantine_until: float = 0.0 # Time until skill is quarantined
     
     def is_ready(self, current_time: float) -> bool:
         """Check if skill is off cooldown and ready to cast."""
-        if current_time < self.quarantine_until:
-            return False
         return (current_time - self.last_cast_time) >= self.cooldown
     
     def needs_refresh(self, current_time: float) -> bool:
@@ -121,70 +116,6 @@ class SkillRuntime:
             else:
                 self.attack_skills.append(skill)
     
-
-    def reserve_next_skill(self, lane: str, current_time: float) -> Optional[CastReservation]:
-        """
-        Reserve the next skill for a given lane without advancing the pointer or committing cooldown.
-        """
-        skill = None
-
-        if lane == 'attack':
-            if not self.attack_skills:
-                return None
-
-            # Try each attack skill in rotation order (from current index)
-            check_index = self.attack_rotation_index
-            for _ in range(len(self.attack_skills)):
-                candidate = self.attack_skills[check_index]
-                if candidate.is_ready(current_time):
-                    skill = candidate
-                    break
-                check_index = (check_index + 1) % len(self.attack_skills)
-
-        elif lane == 'buff':
-            if not self.buff_skills:
-                return None
-
-            for candidate in self.buff_skills:
-                if candidate.needs_refresh(current_time) and candidate.is_ready(current_time):
-                    skill = candidate
-                    break
-        else:
-            return None
-
-        if skill is None:
-            return None
-
-        return CastReservation(
-            token=str(uuid.uuid4()),
-            key=skill.key,
-            skill_name=skill.name,
-            lane=lane,
-            created_at=current_time,
-            expected_strategy="combo" if lane == "attack" else "hotbar_cooldown"
-        )
-
-    def commit_cast(self, token: str, reservation: CastReservation, accepted_at: float):
-        """
-        Commit a reservation. This updates the cooldown and advances the rotation pointer.
-        """
-        # Mark as cast (cooldown update)
-        self.mark_cast(reservation.key, accepted_at)
-
-        # Advance pointer if it was an attack
-        if reservation.lane == 'attack':
-            for i, skill in enumerate(self.attack_skills):
-                if skill.key == reservation.key:
-                    # We casted this skill, now we set rotation index to the NEXT one
-                    self.attack_rotation_index = (i + 1) % len(self.attack_skills)
-                    break
-
-    def release_cast(self, token: str, outcome: CastOutcome):
-        """
-        Release a cast reservation when it failed/rejected/unverified without updating pointer or cooldown.
-        """
-        pass # Simply releasing means we don't modify internal rotation or cooldowns
-
     def get_attack_to_cast(self, current_time: float) -> Optional[str]:
         """
         Get next attack skill key to cast (round-robin rotation).
@@ -272,15 +203,7 @@ class SkillRuntime:
         """Reset all skill cooldowns and timings."""
         for skill in self.attack_skills + self.buff_skills:
             skill.last_cast_time = 0.0
-            skill.quarantine_until = 0.0
         self.attack_rotation_index = 0
-
-    def quarantine_skill(self, key: str, current_time: float, duration: float):
-        """Quarantine a skill to prevent casting for a duration."""
-        for skill in self.attack_skills + self.buff_skills:
-            if skill.key == key:
-                skill.quarantine_until = current_time + duration
-                return
     
     def get_status(self, current_time: float) -> Dict:
         """
