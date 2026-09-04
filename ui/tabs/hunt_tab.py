@@ -527,9 +527,7 @@ class HuntTab(ttk.Frame):
         self.app.skill_slot_vars = []
         self.app.skill_slot_boxes = []
         self.app.skill_slot_key_labels = []
-        if not hasattr(self.app, "skill_slot_stats_labels"):
-            self.app.skill_slot_stats_labels = []
-
+        self.app.skill_slot_stats_labels = []
         for i in range(4):
             lanes_frame.grid_columnconfigure(i, weight=1, uniform='card_col')
 
