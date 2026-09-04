@@ -84,7 +84,7 @@ class CabalComboDetector:
                                    exits early to allow fast-break targeting.
         
         Returns:
-            True if sweet spot was detected and key pressed
+            True if sweet spot was detected (and key_press_callback was invoked if configured)
             False if timeout reached without detection
         """
         # Load timeout from config if not provided
@@ -128,17 +128,16 @@ class CabalComboDetector:
                     
                     # Sleep for a chunk
                     remaining = guard_end_time - time.time()
-                    sleep_time = min(chunk_sec, remaining)
-                    if sleep_time > 0:
-                        time.sleep(sleep_time)
+                    time.sleep(min(chunk_sec, remaining))
                 
                 return True
             
+            # Still waiting for hit zone
             time.sleep(poll_interval_sec)
-        
-        logger.debug(f"Hit-zone timeout after {timeout_sec}s")
+
+        # Timeout reached
+        logger.debug(f"Combo timeout reached ({timeout_sec}s) without hit-zone detection")
         return False
-    
     def _check_hit_zone(self, frame: np.ndarray) -> bool:
         """
         Check if the bright pixel is at the hit-zone position.

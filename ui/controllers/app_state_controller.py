@@ -1,3 +1,7 @@
+import time
+
+from lib.features.skills.cast_delivery import CastOutcome
+
 from lib.i18n import t as i18n_t
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 import copy
@@ -597,20 +601,22 @@ class AppStateController:
     ) -> None:
         app = self.root
         from lib.system.win_input import tap
-        import time
-        for skill in skill_runtime:
-            is_buff = skill.get("type", "attack") == "buff"
-            if attack_phase == is_buff:
-                continue
-            if attack_phase and not target_active:
-                continue
-            if now - float(skill.get("_last_cast", 0.0)) < float(
-                skill.get("cooldown", 0.0)
-            ):
-                continue
-            key = str(skill.get("key", "") or "").strip()
-            if not key:
-                continue
+
+        orchestrator = getattr(app, "hunt_orchestrator", None)
+        runtime_manager = orchestrator.skill_runtime.get_runtime() if orchestrator and orchestrator.skill_runtime else None
+
+        lane = "attack" if attack_phase else "buff"
+        if lane == "attack" and not target_active:
+            return
+
+        # We need skill_runtime to support reservation
+        if runtime_manager:
+            reservation = runtime_manager.reserve_next_skill(lane, now)
+            if not reservation:
+                return
+
+            key = reservation.key
+            skill_name = reservation.skill_name
 
             def send_key():
                 if backend:
@@ -618,16 +624,15 @@ class AppStateController:
                 else:
                     tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
 
+            outcome = CastOutcome.UNVERIFIED
+
             # Check combo mode active
             is_combo_mode = getattr(self, "_combo_mode_active", False)
-            if combo_detector and is_combo_mode and not is_buff:
-
-                orchestrator = getattr(app, "hunt_orchestrator", None)
+            if combo_detector and is_combo_mode and lane == 'attack':
                 bot_manager = getattr(orchestrator, "bot_manager", None) if orchestrator else None
                 screen_capture = getattr(bot_manager, "screen_capture", None) if bot_manager else None
 
                 if screen_capture:
-                    # Setup target check for fast-breaking the wait
                     def is_target_alive():
                         if target_bar_detector:
                             f = screen_capture.get_latest_frame()
@@ -642,21 +647,102 @@ class AppStateController:
                         timeout_sec=combo_cfg.get("hit_zone_timeout_sec", 2.0),
                         is_target_alive_check=is_target_alive,
                     )
-                    if not did_trigger:
+
+                    if did_trigger:
+                        outcome = CastOutcome.UNVERIFIED
+
+                        # Simulated Post-send verification:
+                        # To truly verify combo bar progression, we would re-check the combo UI (e.g. using combo detector's visual state)
+                        # For now, we will wait and require the trigger pixel to reset/move, confirming the bar actually updated.
+                        post_wait_start = time.time()
+                        outcome = CastOutcome.UNVERIFIED
+                        while time.time() - post_wait_start < 0.3:
+                            if not is_target_alive():
+                                outcome = CastOutcome.CANCELLED
+                                break
+                            current_frame = screen_capture.get_latest_frame()
+                            # If the bright pixel has moved/disappeared from the hit zone, it means the bar progressed
+                            if current_frame is not None and not combo_detector._check_hit_zone(current_frame):
+                                outcome = CastOutcome.ACCEPTED
+                                break
+                            time.sleep(0.02)
+                    else:
                         send_key()
+                        outcome = CastOutcome.UNVERIFIED
                 else:
                     send_key()
             else:
                 send_key()
-            skill["_last_cast"] = now
-            if skill_stats is not None:
-                try:
-                    skill_stats.record_cast(
-                        skill.get("name") or key, success=True, timestamp=now
-                    )
-                except Exception:
-                    pass
-            cast_time = float(skill.get("cast_time", 0.0))
-            if cast_time > 0:
-                time.sleep(cast_time)
-            return
+                # Real visual verification using SkillCooldownDetector
+                from lib.vision.skill_cooldown_detector import SkillCooldownDetector
+                # We expect the app config to have hotbar_roi
+                hotbar_roi = app.hunt_cfg.get("hotbar_roi", (0.0, 1.0, 0.0, 1.0))
+                cooldown_detector = SkillCooldownDetector(roi=hotbar_roi, threshold=10.0)
+
+                if screen_capture := (getattr(orchestrator, "bot_manager", None).screen_capture if getattr(orchestrator, "bot_manager", None) else None):
+                    baseline_frame = screen_capture.get_latest_frame()
+                    if baseline_frame is not None:
+                        cooldown_detector.set_baseline(baseline_frame)
+
+                        # Wait for a short time to see the cooldown effect
+                        post_wait_start = time.time()
+                        outcome = CastOutcome.UNVERIFIED
+                        while time.time() - post_wait_start < 0.5:
+                            current_frame = screen_capture.get_latest_frame()
+                            if current_frame is not None and cooldown_detector.check_cooldown(current_frame):
+                                outcome = CastOutcome.ACCEPTED
+                                break
+                            time.sleep(0.05)
+                else:
+                    # If we can't verify, it remains unverified.
+                    outcome = CastOutcome.UNVERIFIED
+
+
+            if outcome == CastOutcome.ACCEPTED:
+                runtime_manager.commit_cast(reservation.token, reservation, time.time())
+                if skill_stats is not None:
+                    try:
+                        skill_stats.record_cast(skill_name, outcome=outcome, timestamp=time.time())
+                    except Exception:
+                        pass
+            else:
+                runtime_manager.release_cast(reservation.token, outcome)
+                if skill_stats is not None:
+                    try:
+                        skill_stats.record_cast(skill_name, outcome=outcome, timestamp=time.time())
+                    except Exception:
+                        pass
+
+        else:
+            # Fallback legacy logic
+            for skill in skill_runtime:
+                is_buff = skill.get("type", "attack") == "buff"
+                if attack_phase == is_buff:
+                    continue
+                if attack_phase and not target_active:
+                    continue
+                if now - float(skill.get("_last_cast", 0.0)) < float(skill.get("cooldown", 0.0)):
+                    continue
+                key = str(skill.get("key", "") or "").strip()
+                if not key:
+                    continue
+
+                def send_key():
+                    if backend:
+                        backend.tap(key)
+                    else:
+                        tap(key, int(app.hunt_cfg.get("attack_press_ms", 60)))
+
+                send_key()
+                skill["_last_cast"] = now
+                if skill_stats is not None:
+                    try:
+                        skill_stats.record_cast(
+                            skill.get("name") or key, success=True, timestamp=now
+                        )
+                    except Exception:
+                        pass
+                cast_time = float(skill.get("cast_time", 0.0))
+                if cast_time > 0:
+                    time.sleep(cast_time)
+                return
