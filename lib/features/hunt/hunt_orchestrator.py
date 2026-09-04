@@ -1,8 +1,10 @@
 from lib.vision.target_bar_detector import TargetBarDetector
 import time
 import threading
-from pathlib import Path
-from typing import Callable, Dict, Any
+from typing import Dict, Any
+from lib.system.bot_manager import BotManager
+from lib.vision.vision_engine import VisionEngine
+from lib.features.skills.skill_runtime_service import SkillRuntimeService
 
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.win_input import tap as global_tap
@@ -16,38 +18,15 @@ from database import find_monster_by_name_api
 class HuntOrchestrator:
     def __init__(
         self,
-        on_status_update: Callable[[str], None],
-        on_state_change: Callable[[str], None],  # "running", "idle", "error"
-        locate_target: Callable[[Dict[str, Any]], tuple],  # (box, match_info)
-        prepare_skill_runtime: Callable[[Dict[str, Any]], list],
-        try_cast_skills: Callable,
-        bring_window_to_front: Callable[[str], bool],
-        bring_window_to_front_by_hwnd: Callable[[int], bool],
-        bring_window_to_front_by_pid: Callable[[int], bool],
-        iconify_app: Callable[[], None],
-        update_skill_stats_display: Callable[[dict], None],
-        get_hunt_selected: Callable[[], Dict[str, Any]],
-        schedule_ui_task: Callable[[Callable], None],
-        clear_target_ui: Callable[[], None] = None,
-        set_target_info: Callable[[str], None] = None,
-        on_scene_monsters_detected: Callable[[tuple], None] = None
+        handler: HuntStatusHandler,
+        bot_manager: BotManager = None,
+        vision_engine: VisionEngine = None,
+        skill_runtime: SkillRuntimeService = None
     ):
-        self.clear_target_ui = clear_target_ui
-        self.on_scene_monsters_detected = on_scene_monsters_detected
-        self.set_target_info = set_target_info
-        self.on_status_update = on_status_update
-        self.on_state_change = on_state_change
-        self.locate_target = locate_target
-        self.prepare_skill_runtime = prepare_skill_runtime
-        self.try_cast_skills = try_cast_skills
-
-        self.bring_window_to_front = bring_window_to_front
-        self.bring_window_to_front_by_hwnd = bring_window_to_front_by_hwnd
-        self.bring_window_to_front_by_pid = bring_window_to_front_by_pid
-        self.iconify_app = iconify_app
-        self.update_skill_stats_display = update_skill_stats_display
-        self.get_hunt_selected = get_hunt_selected
-        self.schedule_ui_task = schedule_ui_task
+        self.handler = handler
+        self.bot_manager = bot_manager
+        self.vision_engine = vision_engine
+        self.skill_runtime = skill_runtime
 
         self.hunt_running = False
         self.hunt_thread = None
@@ -66,7 +45,7 @@ class HuntOrchestrator:
         self.background_input_fallback = True if fb in (True, "foreground", "true") else False
 
         logger = get_hunt_logger()
-        hunt_selected = self.get_hunt_selected()
+        hunt_selected = self.handler.get_hunt_selected()
         hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else 0
 
         self.input_backend = None
@@ -76,8 +55,8 @@ class HuntOrchestrator:
             if not hwnd:
                 if not self.background_input_fallback:
                     logger.log_error("input_capability", "Background mode requested but no HWND found. Stopped.")
-                    self.schedule_ui_task(lambda: self.on_status_update("Error: Background input unsupported (no HWND). Stopped."))
-                    self.schedule_ui_task(lambda: self.on_state_change("error"))
+                    self.handler.schedule_ui_task(lambda: self.handler.on_status_update("Error: Background input unsupported (no HWND). Stopped."))
+                    self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
                     return
                 else:
                     logger.log_error("input_capability", "No HWND found. Falling back to foreground input.")
@@ -89,8 +68,8 @@ class HuntOrchestrator:
                 if not is_ready:
                     if not self.background_input_fallback:
                         logger.log_error("input_capability", f"Background input capability is {state.value}. Fallback disabled. Hunt aborted.")
-                        self.schedule_ui_task(lambda: self.on_status_update(f"Error: Background input {state.value}. Stopped."))
-                        self.schedule_ui_task(lambda: self.on_state_change("error"))
+                        self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Error: Background input {state.value}. Stopped."))
+                        self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
                         return
                     else:
                         logger.log_error("input_capability", f"Background input {state.value}. Falling back to foreground.")
@@ -101,11 +80,11 @@ class HuntOrchestrator:
             self.input_backend = ForegroundSendInputBackend()
 
         self.hunt_running = True
-        self.schedule_ui_task(lambda: self.on_state_change("running"))
+        self.handler.schedule_ui_task(lambda: self.handler.on_state_change("running"))
 
         def worker():
 
-            hunt_selected = self.get_hunt_selected()
+            hunt_selected = self.handler.get_hunt_selected()
             hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else None
 
             target_bar_detector = TargetBarDetector(hwnd=hwnd)
@@ -120,7 +99,7 @@ class HuntOrchestrator:
 
             # We need vision_engine. It's stored in self.bot_manager if available.
             # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
-            runtime_queue = RuntimeMonsterQueue(publish_callback=getattr(self, 'on_scene_monsters_detected', None))
+            runtime_queue = RuntimeMonsterQueue(publish_callback=self.handler.on_scene_monsters_detected if hasattr(self.handler, 'on_scene_monsters_detected') else None)
             scene_detector = None
             if hasattr(self, 'bot_manager') and self.bot_manager and hasattr(self.bot_manager, 'vision_engine'):
                 scene_detector = SceneMonsterDetector(self.bot_manager.vision_engine, runtime_queue)
@@ -133,9 +112,9 @@ class HuntOrchestrator:
             # Check if start is valid
             if not target_coordinator.is_rotation_valid():
                 logger.log_error("hunt_loop", "Invalid rotation or empty rotation for policy.")
-                self.schedule_ui_task(lambda: self.on_status_update("Error: Invalid rotation or empty rotation for policy."))
+                self.handler.schedule_ui_task(lambda: self.handler.on_status_update("Error: Invalid rotation or empty rotation for policy."))
                 self.hunt_running = False
-                self.schedule_ui_task(lambda: self.on_state_change("error"))
+                self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
                 return
 
             cycle_attempts = 0
@@ -157,20 +136,20 @@ class HuntOrchestrator:
                     try:
                         focused = False
                         if hunt_selected and hunt_selected.get("hwnd"):
-                            focused = self.bring_window_to_front_by_hwnd(
+                            focused = self.handler.bring_window_to_front_by_hwnd(
                                 int(hunt_selected["hwnd"])
                             )
                         elif cfg.get("window_pid"):
-                            focused = self.bring_window_to_front_by_pid(
+                            focused = self.handler.bring_window_to_front_by_pid(
                                 int(cfg["window_pid"])
                             )
                         if not focused:
-                            focused = self.bring_window_to_front(
+                            focused = self.handler.bring_window_to_front(
                                 cfg.get("window_title", "Cabal")
                             )
                         if focused:
                             try:
-                                self.iconify_app()
+                                self.handler.iconify_app()
                             except Exception:
                                 pass
                         time.sleep(0.15)
@@ -186,7 +165,7 @@ class HuntOrchestrator:
                 attack_started = 0.0
                 lost_timeout = float(cfg.get("lost_timeout_sec", 0.8))
                 attack_min_duration = float(cfg.get("attack_min_duration_sec", 1.5))
-                skill_runtime = self.prepare_skill_runtime(cfg)
+                skill_runtime = self.handler.prepare_skill_runtime(cfg)
                 has_attack_skills = any(
                     skill.get("type", "attack") != "buff" for skill in skill_runtime
                 )
@@ -203,28 +182,28 @@ class HuntOrchestrator:
                     # Periodic window validation
                     from lib.features.hunt.window_selection_service import validate_selected_cabal_window
 
-                    hunt_selected = self.get_hunt_selected()
+                    hunt_selected = self.handler.get_hunt_selected()
                     if hunt_selected:
                         validation = validate_selected_cabal_window(hunt_selected, [])
                         if not validation.is_valid:
                             logger.log_error("window_validation_failed", f"Validation failed: {validation.code}")
                             self.hunt_running = False
-                            self.schedule_ui_task(lambda: self.on_state_change("error"))
+                            self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
                             break
                     if cfg.get("bring_to_front_each_cycle") and getattr(self.input_backend, "mode", "foreground") != "background":
                         ok = False
                         try:
-                            hunt_selected = self.get_hunt_selected()
+                            hunt_selected = self.handler.get_hunt_selected()
                             if hunt_selected and hunt_selected.get("hwnd"):
-                                ok = self.bring_window_to_front_by_hwnd(
+                                ok = self.handler.bring_window_to_front_by_hwnd(
                                     int(hunt_selected["hwnd"])
                                 )
                             elif cfg.get("window_hwnd"):
-                                ok = self.bring_window_to_front_by_hwnd(
+                                ok = self.handler.bring_window_to_front_by_hwnd(
                                     int(cfg.get("window_hwnd"))
                                 )
                             elif cfg.get("window_pid"):
-                                ok = self.bring_window_to_front_by_pid(
+                                ok = self.handler.bring_window_to_front_by_pid(
                                     int(cfg.get("window_pid"))
                                 )
                         except Exception:
@@ -251,7 +230,7 @@ class HuntOrchestrator:
                     # Process scene monsters
                     if frame is not None and scene_detector is not None:
                         scene_detector.process_frame(frame)
-                        runtime_queue.maybe_publish(self.schedule_ui_task)
+                        runtime_queue.maybe_publish(self.handler.schedule_ui_task)
 
                     # Expose attack queue for other services (CB2C)
                     # Use 'configured_only' as default, pulling configured IDs from cfg
@@ -296,9 +275,9 @@ class HuntOrchestrator:
                                         m_hp = monster.get("hp", "Unknown")
                                         fmt = f"[ID: #{m_id}] {m_name} (HP: {m_hp})"
 
-                                        if getattr(self, 'set_target_info', None):
-                                            self.schedule_ui_task(
-                                                lambda text=fmt: self.set_target_info(text)
+                                        if hasattr(self.handler, 'set_target_info'):
+                                            self.handler.schedule_ui_task(
+                                                lambda text=fmt: self.handler.set_target_info(text)
                                             )
 
                             have_target = True
@@ -310,16 +289,16 @@ class HuntOrchestrator:
                                 have_target = False
                                 cached_target_id = None
                                 cached_target_name = None
-                                if getattr(self, 'clear_target_ui', None):
-                                    self.schedule_ui_task(self.clear_target_ui)
+                                if hasattr(self.handler, 'clear_target_ui'):
+                                    self.handler.schedule_ui_task(self.handler.clear_target_ui)
                     else:
                         consecutive_false_readings += 1
                         if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
                             have_target = False
                             cached_target_id = None
                             cached_target_name = None
-                            if getattr(self, 'clear_target_ui', None):
-                                self.schedule_ui_task(self.clear_target_ui)
+                            if hasattr(self.handler, 'clear_target_ui'):
+                                self.handler.schedule_ui_task(self.handler.clear_target_ui)
 
                     if hasattr(self, 'runtime_attack_queue'):
                         target_coordinator.update_runtime_queue(self.runtime_attack_queue)
@@ -329,13 +308,13 @@ class HuntOrchestrator:
                     ):
                         try:
                             all_stats = skill_stats.get_all_stats()
-                            self.schedule_ui_task(lambda stats=all_stats: self.update_skill_stats_display(stats))
+                            self.handler.schedule_ui_task(lambda stats=all_stats: self.handler.update_skill_stats_display(stats))
                             last_stats_update = now
                         except Exception:
                             pass
 
                     if skill_runtime:
-                        self.try_cast_skills(
+                        self.handler.try_cast_skills(
                             skill_runtime,
                             now,
                             have_target,
@@ -347,7 +326,7 @@ class HuntOrchestrator:
                     if mode == "search":
                         if (now - search_started) > target_acquire_timeout_sec:
                             logger.log_error("hunt_loop", f"Target acquire timeout ({target_acquire_timeout_sec}s). Backing off.")
-                            self.schedule_ui_task(lambda: self.on_status_update(f"Target acquire timeout. Retrying..."))
+                            self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Target acquire timeout. Retrying..."))
                             search_started = now
                             backoff_wait = 1.0
                             while backoff_wait > 0 and self.hunt_running:
@@ -371,7 +350,7 @@ class HuntOrchestrator:
                                     logger.log_info(f"Target decision: {eval_result} for ID {cached_target_id}")
                                     if cycle_attempts >= target_cycle_max_attempts:
                                         logger.log_error("hunt_loop", f"Max cycle attempts reached ({target_cycle_max_attempts}). Backing off.")
-                                        self.schedule_ui_task(lambda: self.on_status_update(f"Max cycle attempts ({target_cycle_max_attempts}). Retrying..."))
+                                        self.handler.schedule_ui_task(lambda: self.handler.on_status_update(f"Max cycle attempts ({target_cycle_max_attempts}). Retrying..."))
                                         backoff_wait = 1.0
                                         while backoff_wait > 0 and self.hunt_running:
                                             time.sleep(0.1)
@@ -419,7 +398,7 @@ class HuntOrchestrator:
                         if skill_runtime and has_attack_skills:
                             # DO NOT send target key in attack mode
                             # just call try_cast_skills
-                            self.try_cast_skills(
+                            self.handler.try_cast_skills(
                                 skill_runtime,
                                 now,
                                 target_active,
@@ -459,15 +438,15 @@ class HuntOrchestrator:
                         # Clear UI cache on advance
                         cached_target_id = None
                         cached_target_name = None
-                        if getattr(self, 'clear_target_ui', None):
-                            self.schedule_ui_task(self.clear_target_ui)
+                        if hasattr(self.handler, 'clear_target_ui'):
+                            self.handler.schedule_ui_task(self.handler.clear_target_ui)
 
                         time.sleep(0.05)
                     time.sleep(0.02)
             except Exception as e:
                 logger.log_error("hunt_loop", f"Hunt error: {str(e)}", e)
                 logger.log_hunt_stop("error")
-                self.schedule_ui_task(lambda: self.on_state_change("error"))
+                self.handler.schedule_ui_task(lambda: self.handler.on_state_change("error"))
             finally:
                 if getattr(self, "input_backend", None):
                     try:
@@ -486,7 +465,7 @@ class HuntOrchestrator:
                     except Exception:
                         pass
                 self.hunt_running = False
-                self.schedule_ui_task(lambda: self.on_state_change("idle"))
+                self.handler.schedule_ui_task(lambda: self.handler.on_state_change("idle"))
 
         self.hunt_thread = threading.Thread(target=worker, daemon=True)
         self.hunt_thread.start()
