@@ -2,9 +2,6 @@ import pytest
 from unittest.mock import patch
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 
-pytestmark = pytest.mark.unit
-
-
 @patch("lib.features.skills.skill_runtime_service.load_skill_library")
 def test_skill_runtime_service_normalizes_data(mock_load):
     mock_load.return_value = {
