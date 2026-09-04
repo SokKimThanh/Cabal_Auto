@@ -646,7 +646,9 @@ class HuntTab(ttk.Frame):
 
                         if empty_idx != -1:
                             # Move to empty buff slot
-                            buff_vars[empty_idx].set(selected_name)
+                            dest_var = buff_vars[empty_idx]
+                            dest_var.set(selected_name)
+                            dest_var._previous_value = selected_name
                             v.set("")
                             cmb.set("")
                             self.show_toast(f"Đã tự động chuyển '{selected_name}' sang Làn Buff", duration_ms=2000, level="info")
