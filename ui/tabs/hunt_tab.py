@@ -61,6 +61,10 @@ class HuntTab(ttk.Frame):
                 self.app._create_tooltip(self.hunt_status_label, self.app._t("target_card.unknown_mob"))
         else:
             self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
+            if hasattr(self.app, "_destroy_widget_tooltip"):
+                self.app._destroy_widget_tooltip(self.hunt_status_label)
+            self.hunt_status_label.unbind("<Enter>")
+            self.hunt_status_label.unbind("<Leave>")
 
         try:
             scale_factor = getattr(self, "tk", None) and getattr(self, "tk", None).call('tk', 'scaling') * 72 / 100.0
