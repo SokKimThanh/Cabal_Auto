@@ -116,19 +116,24 @@ class TestTargetCardShell(unittest.TestCase):
         self.assertEqual(info["image_path"], "path/to/img.png")
         self.assertFalse(info["is_placeholder"])
 
-    def test_zero_asset_fallback(self):
+    @patch.object(HuntTab, '_build_ui', return_value=None)
+    def test_zero_asset_fallback(self, mock_build):
         tab = HuntTab(self.root, self.app)
+
+        # mock missing UI components
+        tab.target_image_label = MagicMock()
 
         # Test zero-asset
         tab.set_target_photo(None)
 
         # Verify it falls back to text mode
-        self.assertEqual(tab.target_image_label.cget("text"), "[ NO IMAGE ]")
-        self.assertEqual(tab.target_image_label.cget("image"), "")
+        tab.target_image_label.configure.assert_called_with(image="", text="[ NO IMAGE ]", bg=unittest.mock.ANY)
         self.assertIsNone(getattr(tab, "_current_target_photo", None))
 
-    def test_clear_before_set_ordering(self):
+    @patch.object(HuntTab, '_build_ui', return_value=None)
+    def test_clear_before_set_ordering(self, mock_build):
         tab = HuntTab(self.root, self.app)
+        tab.target_image_label = MagicMock()
 
         # Spy on clear_target_photo
         tab.clear_target_photo = MagicMock(side_effect=tab.clear_target_photo)
@@ -145,8 +150,10 @@ class TestTargetCardShell(unittest.TestCase):
         self.assertEqual(tab.clear_target_photo.call_count, 2)
         self.assertEqual(tab._current_target_photo, photo2)
 
-    def test_high_load_memory_stability(self):
+    @patch.object(HuntTab, '_build_ui', return_value=None)
+    def test_high_load_memory_stability(self, mock_build):
         tab = HuntTab(self.root, self.app)
+        tab.target_image_label = MagicMock()
 
         process = psutil.Process(os.getpid())
 
