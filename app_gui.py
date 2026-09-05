@@ -2613,21 +2613,23 @@ class App(tk.Tk):
         """Create a simple tooltip for a widget."""
 
         def on_enter(event):
-            tooltip = tk.Toplevel()
-            tooltip.wm_overrideredirect(True)
-            tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
-            label = tk.Label(
-                tooltip,
-                text=text,
-                background="#ffffe0",
-                relief="solid",
-                borderwidth=1,
-                padx=5,
-                pady=3,
-            )
-            label.pack()
-            # Store tooltip in a central map to avoid setting dynamic attributes on widgets
             try:
+                # Destroy existing if any
+                on_leave(event, force=True)
+                tooltip = tk.Toplevel()
+                tooltip.wm_overrideredirect(True)
+                tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
+                label = tk.Label(
+                    tooltip,
+                    text=text,
+                    background="#ffffe0",
+                    relief="solid",
+                    borderwidth=1,
+                    padx=5,
+                    pady=3,
+                )
+                label.pack()
+                # Store tooltip in a central map to avoid setting dynamic attributes on widgets
                 if not hasattr(self, "_tooltips"):
                     self._tooltips = {}
                 self._tooltips[id(widget)] = tooltip
@@ -2638,8 +2640,19 @@ class App(tk.Tk):
                 except Exception:
                     pass
 
-        def on_leave(event):
+        def on_leave(event, force=False):
             try:
+                if not force:
+                    # Check if pointer is still within the widget's bounding box
+                    x, y = widget.winfo_pointerxy()
+                    wx = widget.winfo_rootx()
+                    wy = widget.winfo_rooty()
+                    ww = widget.winfo_width()
+                    wh = widget.winfo_height()
+                    if wx <= x <= wx + ww and wy <= y <= wy + wh:
+                        # Pointer is still inside the widget (e.g. over a child widget like Combobox)
+                        return
+
                 # Prefer centralized map
                 if hasattr(self, "_tooltips") and id(widget) in self._tooltips:
                     try:
