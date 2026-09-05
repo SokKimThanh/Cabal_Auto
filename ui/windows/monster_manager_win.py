@@ -91,6 +91,35 @@ except ImportError:
 
 
 try:
+    from ui.mixins.action_notification_mixin import ActionNotificationMixin
+except ImportError:
+    class ActionNotificationMixin(tk.Widget):
+        def __init__(self, *args, debug_mode=False, **kwargs):
+            try:
+                super().__init__(*args, **kwargs)
+            except TypeError:
+                super().__init__(*args)
+                for key, value in kwargs.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
+
+        def show_notification(self, *args, **kwargs):
+            pass
+
+        def set_notification_widget(self, *args, **kwargs):
+            pass
+
+        def register_action_rules(self, *args, **kwargs):
+            pass
+
+        def execute_action(self, *args, **kwargs):
+            if len(args) > 1 and callable(args[1]):
+                args[1]()
+
+        def has_action_rule(self, *args, **kwargs):
+            return False
+
+try:
     from ui.components import create_icon_button, create_icon_label
     from ui.components.icon_button import (
         create_add_button,
@@ -102,7 +131,6 @@ try:
     )
     from ui.components.confirmation_widget import ConfirmationWidget
     from ui.components.notification_widget import NotificationWidget
-    from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
 
     def create_icon_button(
@@ -198,27 +226,6 @@ except ImportError:
 
     ConfirmationWidget = None  # type: ignore
     NotificationWidget = None  # type: ignore
-
-    class ActionNotificationMixin:
-        def __init__(self, *args, debug_mode=False, **kwargs):
-            if args:
-                super().__init__(args[0])
-
-        def show_notification(self, *args, **kwargs):
-            pass
-
-        def set_notification_widget(self, *args, **kwargs):
-            pass
-
-        def register_action_rules(self, *args, **kwargs):
-            pass
-
-        def execute_action(self, *args, **kwargs):
-            if len(args) > 1 and callable(args[1]):
-                args[1]()
-
-        def has_action_rule(self, *args, **kwargs):
-            return False
 
     def set_button_enabled(
         button, enabled: bool, tooltip: Optional[str] = None
@@ -340,7 +347,7 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
-class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
+class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
     """
     Main Monster Manager Window (Master View with Table Layout).
     """
@@ -358,7 +365,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
         try:
             super().__init__(parent, debug_mode=False)
-        except TypeError:
+        except (_tkinter.TclError, TypeError):
             super().__init__(parent)
 
         # Sắp xếp
