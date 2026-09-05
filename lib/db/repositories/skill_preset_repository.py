@@ -3,15 +3,15 @@ from typing import Optional, List, Dict, Any
 from lib.db.connection import get_connection
 
 class SkillPresetRepository:
-    def create_preset(self, class_name: str, name: str, is_default: int = 0) -> int:
+    def create_preset(self, class_id: int, name: str, is_default: int = 0) -> int:
         conn, is_local = get_connection()
         if not conn:
             return -1
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO skill_presets (class_name, name, is_default) VALUES (?, ?, ?)",
-                (class_name, name, is_default),
+                "INSERT INTO skill_presets (class_id, name, is_default) VALUES (?, ?, ?)",
+                (class_id, name, is_default),
             )
             conn.commit()
             return cursor.lastrowid
@@ -29,14 +29,14 @@ class SkillPresetRepository:
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT lane, skill_id FROM preset_skills WHERE preset_id = ? ORDER BY lane, position",
+                "SELECT lane_type, skill_id FROM preset_skills WHERE preset_id = ? ORDER BY lane_type, position",
                 (preset_id,)
             )
             rows = cursor.fetchall()
 
             result = {}
             for row in rows:
-                lane = row['lane']
+                lane = row['lane_type']
                 skill_id = row['skill_id']
                 if lane not in result:
                     result[lane] = []
@@ -62,7 +62,7 @@ class SkillPresetRepository:
             for lane, skill_ids in skills_by_lane.items():
                 for position, skill_id in enumerate(skill_ids):
                     cursor.execute(
-                        "INSERT INTO preset_skills (preset_id, skill_id, lane, position) VALUES (?, ?, ?, ?)",
+                        "INSERT INTO preset_skills (preset_id, skill_id, lane_type, position) VALUES (?, ?, ?, ?)",
                         (preset_id, skill_id, lane, position)
                     )
 
@@ -94,13 +94,13 @@ class SkillPresetRepository:
                 except Exception:
                     pass
 
-    def get_presets_by_class(self, class_name: str) -> List[Dict[str, Any]]:
+    def get_presets_by_class(self, class_id: int) -> List[Dict[str, Any]]:
         conn, is_local = get_connection()
         if not conn:
             return []
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM skill_presets WHERE class_name = ?", (class_name,))
+            cursor.execute("SELECT * FROM skill_presets WHERE class_id = ?", (class_id,))
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         finally:
