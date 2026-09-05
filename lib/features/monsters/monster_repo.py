@@ -157,20 +157,32 @@ def get_target_monster_info(name_or_id: str):
     # Tier 2: Fallback to JSON library
     try:
         json_data = load_monster_library()
+
         if isinstance(json_data, dict):
-            # JSON format is a dict of ID -> monster data or list
-            # We'll try to find it simply
-            for m_id, m_data in json_data.items():
-                if str(m_id) == str(name_or_id) or m_data.get("name") == name_or_id:
-                    return {
-                        "id": str(m_data.get("id", "0")),
-                        "name": m_data.get("name") or name_or_id,
-                        "level": m_data.get("level", "N/A"),
-                        "hp": m_data.get("hp") or 10000,
-                        "defense": m_data.get("defense") or 0,
-                        "image_path": m_data.get("image_path"),
-                        "is_placeholder": False,
-                    }
+            items = list(json_data.items())
+        elif isinstance(json_data, list):
+            items = [(None, m) for m in json_data]
+        else:
+            items = []
+
+        for m_id, m_data in items:
+            if not isinstance(m_data, dict):
+                continue
+
+            if (
+                (m_id is not None and str(m_id) == str(name_or_id))
+                or str(m_data.get("id", "")) == str(name_or_id)
+                or m_data.get("name") == name_or_id
+            ):
+                return {
+                    "id": str(m_data.get("id", m_id or "0")),
+                    "name": m_data.get("name") or name_or_id,
+                    "level": m_data.get("level", "N/A"),
+                    "hp": m_data.get("hp") if m_data.get("hp") is not None else 10000,
+                    "defense": m_data.get("defense") if m_data.get("defense") is not None else 0,
+                    "image_path": m_data.get("image_path"),
+                    "is_placeholder": False,
+                }
     except Exception as e:
         print(f"Error resolving monster from JSON fallback: {e}")
 
