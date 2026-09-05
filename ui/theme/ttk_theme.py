@@ -184,4 +184,5 @@ def configure_ttk_styles(root=None):
     try:
         style.theme_use('cabal_dark')
     except tk.TclError:
-        pass
+        import logging
+        logging.getLogger(__name__).exception("Failed to activate ttk theme 'cabal_dark'")
