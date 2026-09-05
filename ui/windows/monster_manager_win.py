@@ -747,6 +747,10 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
 
                 if failed_keys:
                     self._show_status_message("Lưu thất bại một phần: không thể ghi một số monster vào DB", is_error=True)
+                    # Remove successful changes from pending_changes, keep only failed ones
+                    for k in list(pending.keys()):
+                        if k not in failed_keys:
+                            del self.pending_changes[k]
                     self._refresh_monster_table()
                     return False
             elif self.sync_manager is not None:
