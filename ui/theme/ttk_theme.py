@@ -174,8 +174,12 @@ def configure_ttk_styles(root=None):
                 }
             }
         })
-    except tk.TclError:
-        pass # Theme might already exist, safe to ignore
+    except tk.TclError as e:
+        # Ignore only the "already exists" case; log anything else to avoid silent theme failures.
+        if "already exists" not in str(e):
+            import logging
+            logging.getLogger(__name__).exception("Failed to create ttk theme 'cabal_dark'")
+            return
 
     try:
         style.theme_use('cabal_dark')
