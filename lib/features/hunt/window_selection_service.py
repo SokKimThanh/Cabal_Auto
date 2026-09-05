@@ -67,8 +67,8 @@ class WindowRecoveryController:
             cls._instance = cls()
         return cls._instance
 
-    def start_async_recovery(self, hwnd: int, on_progress=None, on_failure=None):
-        """Start 3-step recovery (500ms spacing via self.after)."""
+    def start_async_recovery(self, hwnd: int, schedule_after_ms=None, on_progress=None, on_failure=None, delay_ms: int = 500):
+        """Start recovery retries without blocking the UI thread (caller provides scheduler)."""
         if self._retry_in_progress:
             return  # Lock: already retrying
 
@@ -77,9 +77,10 @@ class WindowRecoveryController:
         self._hwnd = hwnd
         self._on_progress = on_progress
         self._on_failure = on_failure
+        self._schedule_after_ms = schedule_after_ms
+        self._delay_ms = delay_ms
 
         self._execute_retry_step()
-
     def _execute_retry_step(self):
         """Execute one retry step."""
         self._retry_step += 1
