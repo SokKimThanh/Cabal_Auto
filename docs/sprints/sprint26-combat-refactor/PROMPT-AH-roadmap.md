@@ -70,7 +70,7 @@
 ### Subtask 2.1: Create AutoHuntOrchestrator Class (8 min)
 - **File**: `lib/features/hunt/auto_hunt_orchestrator.py` (NEW)
 - **Action**:
-  1. Copy code from IMPROVED-PROMPT-AUTO-HUNT-FLOW.md
+  1. Copy code from PROMPT-AH-auto-hunt-v2-improved.md
   2. Implement 9 methods: `_send_z_key()`, `_capture_and_extract()`, etc.
   3. Implement `start_hunt()` and `stop_hunt()`
   4. Add session tracking (HuntSessionStats dataclass)
@@ -233,7 +233,7 @@
 ## 🔧 Execution Checklist
 
 ### Before Starting
-- [ ] All prompts reviewed (IMPROVED-PROMPT-UX6.md + IMPROVED-PROMPT-AUTO-HUNT-FLOW.md)
+- [ ] All prompts reviewed (PROMPT-UX6-v2-improved.md + PROMPT-AH-auto-hunt-v2-improved.md)
 - [ ] Code snippets copied and ready
 - [ ] Test cases planned
 

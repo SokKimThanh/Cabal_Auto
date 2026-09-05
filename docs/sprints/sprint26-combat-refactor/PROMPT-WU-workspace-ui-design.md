@@ -1219,14 +1219,14 @@ For comprehensive specification of the three main screens (Combo Panel, Build Sk
   - Hotkey assignment UI
   - Combo mode status indicator & Start/Stop button
   - Cooldown tracking and skill status display
-  - See: WORKSPACE-REDESIGN-LOGIC-DESIGN.md § 11.2
+  - See: PROMPT-WL-workspace-logic-design.md § 11.2
 
 - **SCREEN 2: Skill Build Tab** (Separate tab)
   - Create/edit skill presets per class
   - Configure attack_combo and buff_lane slots
   - Skill picker with search/filter
   - Save/load presets from database
-  - See: WORKSPACE-REDESIGN-LOGIC-DESIGN.md § 11.3
+  - See: PROMPT-WL-workspace-logic-design.md § 11.3
 
 - **SCREEN 3: CRUD Skill Tab** (Separate tab)
   - Manage individual skill definitions
@@ -1234,19 +1234,19 @@ For comprehensive specification of the three main screens (Combo Panel, Build Sk
   - Create new skills
   - Edit skill properties
   - Delete skills (with warnings for active presets)
-  - See: WORKSPACE-REDESIGN-LOGIC-DESIGN.md § 11.4
+  - See: PROMPT-WL-workspace-logic-design.md § 11.4
 
 **Cross-Screen Integration**:
 - Data flows from CRUD Tab (skill creation) → Build Tab (preset definition) → Combo Panel (execution)
 - State synchronized across screens via database and AppStateController
 - Error handling for skill modifications affecting active presets
-- See: WORKSPACE-REDESIGN-LOGIC-DESIGN.md § 11.5
+- See: PROMPT-WL-workspace-logic-design.md § 11.5
 
 ---
 
 ## Appendix A: Related Documents
 
-- **WORKSPACE-REDESIGN-LOGIC-DESIGN.md** - Data model, state management, preset system, 3-screen specification
+- **PROMPT-WL-workspace-logic-design.md** - Data model, state management, preset system, 3-screen specification
 - **UX4.2-AUTO-FIX-PROMPT.md** - Technical fixes for current implementation
 - **UX4.2-CORRECTED-GUIDELINE.md** - Original UX4.2 specification
 
