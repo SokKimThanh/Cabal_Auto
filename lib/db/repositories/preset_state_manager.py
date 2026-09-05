@@ -26,7 +26,7 @@ class PresetStateManager:
                     pass
 
     def set_active_preset(self, class_name: str, preset_id: int, mode: str = 'default') -> bool:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return False
         try:
@@ -44,10 +44,14 @@ class PresetStateManager:
             conn.commit()
             return True
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def get_preset_mode(self, class_name: str) -> str:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return 'default'
         try:
@@ -58,7 +62,11 @@ class PresetStateManager:
                 return row['preset_mode']
             return 'default'
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def reset_to_default(self, class_name: str) -> Optional[int]:
         """Resets to default preset, updates state, and returns the default preset_id"""
