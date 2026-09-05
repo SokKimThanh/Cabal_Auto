@@ -299,7 +299,8 @@ class HuntTab(ttk.Frame):
                 self.app._update_unsaved_indicator()
             self._update_target_policy_layout()
 
-        self.app.target_policy_var.trace_add("write", _on_policy_change)
+        if hasattr(self.app.target_policy_var, "trace_add"):
+            self.app.target_policy_var.trace_add("write", _on_policy_change)
 
         policies = [
             ("configured_only", self.app._t("hunt_policy_configured")),

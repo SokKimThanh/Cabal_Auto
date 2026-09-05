@@ -25,9 +25,10 @@ class DummyApp:
         if name.startswith('_on_') or name.startswith('_refresh_') or name.startswith('_create_') or name.startswith('_update_'):
             return lambda *args, **kwargs: tk.Label() if name.startswith('_create_') else None
         if name.endswith('_var'):
-            class DummyVar:
-                def __init__(self):
+            class DummyVar(tk.Variable):
+                def __init__(self, name=""):
                     self.val = ""
+                    self._name = name
 
                 def set(self, val):
                     self.val = val
@@ -37,7 +38,12 @@ class DummyApp:
 
                 def trace_add(self, *args, **kwargs):
                     pass
-            var = DummyVar()
+
+            var = DummyVar(name=name)
+            try:
+                var._name = name
+            except AttributeError:
+                pass
             setattr(self, name, var)
             return var
         if name == "skill_slot_count":
