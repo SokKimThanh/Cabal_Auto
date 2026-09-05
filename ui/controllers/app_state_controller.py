@@ -589,7 +589,7 @@ class AppStateController:
             from lib.features.combo.combo_timing_detector import CabalComboDetector
             # Create or reuse detector
             if not hasattr(self, 'combo_detector'):
-                hunt_selected = app.window_controller.get_hunt_selected()
+                hunt_selected = getattr(app, "hunt_selected", {})
                 hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else 0
                 self.combo_detector = CabalComboDetector(hwnd=hwnd)
 
