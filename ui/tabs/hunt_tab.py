@@ -73,6 +73,8 @@ class HuntTab(ttk.Frame):
         except Exception:
             scale_factor = 1.0
 
+        self.set_target_photo(None)
+
         if Image and ImageTk:
             def _load_and_set_photo():
                 photo = None
