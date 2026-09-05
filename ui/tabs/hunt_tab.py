@@ -67,8 +67,12 @@ class HuntTab(ttk.Frame):
 
     def clear_target_card(self, delay_ms: int = 0):
         if delay_ms > 0:
-            if hasattr(self, "_pending_clear_id") and self._pending_clear_id:
-                self.after_cancel(self._pending_clear_id)
+            clear_id = getattr(self, "_pending_clear_id", None)
+            if clear_id:
+                try:
+                    self.after_cancel(clear_id)
+                except tk.TclError:
+                    pass
             self._pending_clear_id = self.after(delay_ms, lambda: self.clear_target_card(0))
             return
 
