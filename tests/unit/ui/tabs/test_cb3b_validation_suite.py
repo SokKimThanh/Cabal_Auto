@@ -9,11 +9,15 @@ from ui.tabs.hunt_tab import HuntTab
 class TestCB3BValidationSuite(unittest.TestCase):
 
     def setUp(self):
-        self.root = tk.Tk()
+        try:
+            self.root = tk.Tk()
+        except tk.TclError as exc:
+            self.skipTest(f"Requires active display or xvfb to run Tkinter tests: {exc}")
         self.root.withdraw()
 
     def tearDown(self):
-        self.root.destroy()
+        if getattr(self, "root", None) is not None:
+            self.root.destroy()
 
     def test_hotkey_conflict(self):
         """Verify conflict validation blocks incompatible combos"""
