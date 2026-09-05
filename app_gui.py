@@ -595,6 +595,10 @@ class App(tk.Tk):
         for w in self.winfo_children():
             w.destroy()
 
+        # Configure root grid weights
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
         self.main_shell = tk.Frame(self, bg=UI.THEME_BG_APP)
@@ -619,7 +623,14 @@ class App(tk.Tk):
         )  # Vùng A - Action Bar
         self.main_shell.rowconfigure(
             1, minsize=int(540 * scale_factor), weight=1
-        )  # Vùng B - Nội dung chính
+        )  # Vùng B - Workspace
+
+        # Ensure main_shell fills root window
+        self.main_shell.grid_rowconfigure(0, weight=1)
+        self.main_shell.grid_rowconfigure(1, weight=1)
+        self.main_shell.grid_columnconfigure(0, weight=1)
+        self.main_shell.grid_columnconfigure(1, weight=1)
+
         self.main_shell.rowconfigure(
             2, minsize=int(36 * scale_factor), weight=0
         )  # Vùng C2 - Logs, footer full-width
@@ -933,9 +944,9 @@ class App(tk.Tk):
             fg=UI.THEME_TEXT_SECONDARY,
             relief="sunken",
         )
-        self._db_status_bar.pack(fill="x", side="bottom")
+        self._db_status_bar.grid(row=1, column=0, columnspan=7, sticky="ew")
 
-        self.main_shell.pack(fill="both", expand=True, pady=(10, 0))
+        self.main_shell.grid(row=0, column=0, columnspan=7, sticky="nsew", pady=(10, 0))
 
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""

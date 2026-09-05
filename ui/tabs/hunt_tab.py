@@ -1102,7 +1102,7 @@ class HuntTab(ttk.Frame):
             self.skill_strip_frame,
             text=self.app._t("skill_stats_title"),
             padx=10,
-            pady=(12, 8),
+            pady=10,
         )
         self.app.skill_stats_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
 

@@ -1,0 +1,82 @@
+Migrate hardcoded colors and backgrounds in ui/tabs/hunt_tab.py using replace_with_git_merge_diff
+
+Lines ~100-150: Update hp_canvas.itemconfig hardcoded hex strings to use explicit color tokens. Replace #52525B with UI.THEME_BORDER_DEFAULT, #00E86D with UI.THEME_STATE_HUNTING, #FFB800 with UI.THEME_STATE_READY, and #FF3D3D with UI.THEME_STATE_DANGER. Change #2196F3 to UI.COLOR_ACCENT and #9E9E9E to UI.COLOR_MUTED in status_label.config fallbacks.
+
+Lines ~430-432: Update the hp_bg, hp_fill, hp_text default creation hardcoded strings similarly (e.g. replace #27272A with UI.THEME_BORDER_PANEL, #00E86D with UI.THEME_STATE_HUNTING).
+Lines ~50-80: Ensure recovery_frame uses UI.THEME_STATE_READY and UI.THEME_STATE_DANGER instead of fallback hexes #FFC107 and #F44336.
+Lines ~380-450: Change legacy UI.BG_MUTED to UI.THEME_BG_PANEL across Tk containers like target_image_label, card_container, stats_frame, target_name_label, status_label, hp_canvas, hp_percent_label, and generic stat row elements.
+Lines ~380-390: In target_image_label, remove width=20 and height=10 hardcoded constraints.
+
+Update UI Element Styling for Skill Lanes and Components in ui/tabs/hunt_tab.py using replace_with_git_merge_diff
+
+Lines ~770-890: Replace UI.BG_PANEL and UI.BG_DEFAULT with UI.THEME_BG_PANEL and UI.THEME_BG_APP for skill_frame_outer, ctrl_frame, and lanes_frame. Change UI.BG_DEFAULT to UI.THEME_BG_APP in card, stats_lbl, badge_frame, and key_lbl.
+
+Line ~879: Remove the hardcoded highlightbackground="#D0D0D0" and replace it with UI.THEME_BORDER_DEFAULT for the card = tk.Frame(...) element.
+Lines ~900-910: Update the text colors in key_lbl and stats_lbl inside the card frame from #333 to UI.COLOR_TEXT.
+Lines ~975-985: Update self.app.skill_stats_tree.tag_configure tags to use theme-compliant tags: #2E7D32 to UI.THEME_STATE_HUNTING, #F57F17 to UI.THEME_STATE_READY, #C62828 to UI.THEME_STATE_DANGER, and #999 to UI.COLOR_MUTED.
+
+Run Validation Commands via run_in_bash_session
+
+Run the specified UI verification commands (xvfb-run -a python3 -m pytest tests/unit/ui/tabs/test_hunt_tab_layout.py tests/unit/ui/tabs/test_hunt_target_modes.py -q).
+
+Run rotation queue checks (xvfb-run -a python3 -m pytest tests/integration/features/hunt/test_monster_rotation_queue.py -q).
+
+Complete Pre-commit check
+
+Complete pre-commit steps to ensure proper testing, verification, review, and reflection are done.
+
+
+Submit changes
+
+Call submit to push the changes.
+
+Hide
+Plan approved 🎉
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Today 20:44
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Updated
+ui/tabs/hunt_tab.py
+Migrated hardcoded hex colors to UI tokens from lib/ui_style.py and updated all instances of UI.BG_MUTED and UI.BG_DEFAULT in hunt_tab.py components to UI.THEME_BG_PANEL and UI.THEME_BG_APP in alignment with standard guidelines. Removed hardcoded dimensions.
+
+Updated
+ui/tabs/hunt_tab.py
+Successfully migrated hardcoded colors for skill lanes, widgets, and treeview configurations to standard design system tokens.
+
+Validation commands passed properly without any UI errors.
+
+
+Running code review ...
+Analysis and Reasoning:
+
+User's Goal: The user wants to apply the DS4 design system (colors and styling) to the Hunt workspace UI components (Target Card, Skill Lanes, HP bars) by replacing hard-coded colors/fonts with appropriate theme roles without breaking layout behaviors or adding rigid size constraints.
+
+Evaluation of the Solution:
+
+Core Functionality: The patch accurately tracks down and modifies hardcoded hex colors and legacy background attributes (UI.BG_MUTED, UI.BG_DEFAULT) across the target components in ui/tabs/hunt_tab.py, replacing them with design system roles like UI.THEME_BG_PANEL, UI.THEME_BG_APP, and UI.THEME_STATE_HUNTING.
+Safety & Side Effects: The use of getattr(UI, 'VAR_NAME', 'fallback') ensures the code won't crash if the new theme variables aren't strictly initialized on the UI object. The removal of hardcoded size limits (like width=20, height=10 on the target image) aligns perfectly with the rule "Không ép panel width/height... thành minsize gây overflow" (Do not force minimum widths/heights that cause overflow). No behavioral regressions or layout breakages are introduced.
+Completeness: The changes cover the Target Card, HP Canvas bar, status labels, warning messages, auto-combo controls, skill lanes, and treeview stats effectively.
+Merge Assessment:
+
+Blocking: None.
+Nitpicks: There are a couple of redundant getattr expressions introduced in update_active_target (e.g., getattr(UI, 'COLOR_ACCENT', getattr(UI, 'COLOR_ACCENT', '#2196F3'))). This is functionally harmless but slightly messy and can be cleaned up in a future PR or prior to merge.
+Today 20:55
+I have migrated the hardcoded colors and generic backgrounds in ui/tabs/hunt_tab.py to use appropriate design system roles (e.g. UI.THEME_BG_PANEL, UI.THEME_BG_APP, UI.THEME_STATE_READY, UI.THEME_STATE_HUNTING). I also removed the hardcoded width=20, height=10 constraints for the target image label. The visual verification suite passed successfully. Do you want me to proceed with submitting the code, or are there any other adjustments you'd like to make first?
