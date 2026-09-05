@@ -96,13 +96,15 @@ def test_mode_switch_handoff(skills_data):
 
 def test_cooldown_bottleneck_warning(caplog, skills_data):
     """Construct a chain where total cast time < max cooldown, assert warning."""
+    import logging
+
+    caplog.set_level(logging.WARNING, logger="lib.features.timing.calculator")
+
     # max cooldown is 4.0, total cast time is 1.0+1.0+1.0 = 3.0. Bottleneck should happen!
     calculate_timing(
         monster_hp=1000,
         damage_per_hit=500,
-        skill_rotation=skills_data
+        skill_rotation=skills_data,
     )
 
-    # Check if warning was logged
-    warning_found = any("Bottleneck detected" in record.message for record in caplog.records)
-    assert warning_found, "Expected a bottleneck warning"
+    assert "Bottleneck detected" in caplog.text
