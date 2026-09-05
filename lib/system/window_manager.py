@@ -38,10 +38,16 @@ else:
 
 
 # Windows-specific imports
-import win32gui  # type: ignore
-import win32con  # type: ignore
-import win32api  # type: ignore
-import win32process  # type: ignore
+try:
+    import win32gui  # type: ignore
+    import win32con  # type: ignore
+    import win32api  # type: ignore
+    import win32process  # type: ignore
+except ImportError:
+    win32gui = None
+    win32con = None
+    win32api = None
+    win32process = None
 
 # Optional: psutil (recommended for process info)
 try:
