@@ -79,7 +79,7 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 | 12 | `PROMPT-UX3B` | UX | Segmented three-mode UI, two lists và detected-to-configured promotion. | CB4, UX3A, UX3, CB2D |
 | 13 | `PROMPT-CB2E` | System | Background HWND input capability và fail-closed backend. | CB5, CB2 |
 | 14 | `PROMPT-CB2C` | Combat | Thực thi ba policy; chỉ attack khi active policy cho phép. | CB1, CB2, CB2B, CB2D, CB2E, CB4, UX3, UX3B |
-| 15 | `PROMPT-UX4.1` | UX | Dual-Lane Skill Strip. | UX2, CB4 |
+| 15 | `PROMPT-UX4.1` / `CB3B` | UX | Dual-Lane Skill Strip (Combo Chain + Buff Lane). | UX2, CB4 |
 | 16 | `PROMPT-UX4.2` | UX | Smart routing và conflict migration. | UX4.1, CB4 |
 | 17 | `PROMPT-CB6` | Combat | Combo Bar timing trigger, không tự commit cast success. | CB5, Orchestrator |
 | 18 | `PROMPT-CB3D` | Combat | Skill delivery acknowledgment, reservation/commit và truthful stats. | CB1, CB2E, CB4, UX4.2, CB6 |
@@ -177,3 +177,92 @@ Design direction:
 4. Phút 20/25-30: test, smoke và targeted repair.
 5. Chỉ chạy session kế tiếp khi gate đạt.
 6. Báo `PASSED`, `BLOCKED`, `UNVERIFIED`, `UNSUPPORTED` hoặc `REVERTED` kèm bằng chứng.
+
+---
+
+## 📊 Trạng Thái Tiến Độ Prompt
+
+| Session | Prompt | Status | File | Ghi Chú |
+| :---: | --- | --- | --- | --- |
+| UX6 | `PROMPT-UX6` | 🟡 20% UI | [PROMPT-UX6.md](PROMPT-UX6.md) | Backend 90% xong; UI wiring incomplete |
+| Auto Hunt | `PROMPT-AUTO-HUNT-FLOW` | 🟡 20% Integration | [PROMPT-AUTO-HUNT-FLOW.md](PROMPT-AUTO-HUNT-FLOW.md) | Backend 80% xong; HuntOrchestrator integration pending |
+| CB3B | `PROMPT-CB3B` | � ~95% | [PROMPT-CB3B.md](PROMPT-CB3B.md) | All 5 phases done; pending test verification + pre-commit |
+| UX4.2 | `PROMPT-UX4.2` | 🟡 Ready (after CB3B PASSED) | — | Depends: CB3B Phase 2 (buff_slots) ✅ DONE |
+| CB3D | `PROMPT-CB3D` | 🟡 Ready (after UX4.2 PASSED) | — | Depends: UX4.2 (ready after CB3B) |
+| CB3C | `PROMPT-CB3C` | 🟡 Ready (after CB3D PASSED) | — | Depends: CB3D |
+| DS1-5 | `PROMPT-DS1` thru `DS5` | ⏳ BLOCKED | — | Depends: UX5.2 complete (phút 21) |
+
+### UX6 — Activity Logging
+
+**File**: [PROMPT-UX6.md](PROMPT-UX6.md)  
+**Status**: 🟡 Backend 90%, UI 20%  
+**Phụ thuộc**: UX2, HuntLogger
+
+**Hoàn Thành**:
+- ✅ Backend logging service
+- ✅ Session tracking structure
+- ✅ Config persistence
+
+**Chưa làm**:
+- ❌ UI wiring to HuntTab (Start/Stop events)
+- ❌ Log viewing panel integration
+
+### AUTO-HUNT-FLOW — Hunt Loop Orchestration
+
+**File**: [PROMPT-AUTO-HUNT-FLOW.md](PROMPT-AUTO-HUNT-FLOW.md)  
+**Status**: 🟡 Backend 80%, Integration 20%  
+**Phụ thuộc**: CB1, CB2, CB4, CB2D, HuntOrchestrator
+
+**Hoàn Thành**:
+- ✅ AutoHuntOrchestrator class (500+ lines)
+- ✅ Hunt state machine
+- ✅ Session stats tracking
+
+**Chưa làm**:
+- ❌ HuntOrchestrator integration
+- ❌ Z-key sending for auto-hunt
+- ❌ Screenshot cleanup
+- ❌ Session logging
+
+### CB3B — Dual-Lane Skill Strip
+
+**File**: [PROMPT-CB3B.md](PROMPT-CB3B.md)  
+**Status**: � ~95% (Ready for PASSED Gate)  
+**Phụ thuộc**: UX2 ✅, CB4 ✅  
+**Unblocks**: UX4.2, CB3D, CB3C
+
+**Hoàn Thành (95%)**:
+- ✅ Dual-Lane Layout (combo + buff lanes)
+- ✅ Combo Mode Controls (checkbox + key selector)
+- ✅ Skill Card Display (dropdown, stats badges)
+- ✅ **Hotkey Conflict Validation** — Implemented in `lib/features/hotkey/hotkey_validator.py`, wired to UI
+- ✅ **buff_slots Config Separation** — Migrator + UI + controller refactored, strictly separated
+- ✅ **Auto-Refresh Interval (duration_sec)** — Spinbox added to Buff Lane cards, persists to config
+- ✅ **Test Suite** — Created `tests/unit/ui/tabs/test_cb3b_validation_suite.py` (hotkey, migration, round-trip, i18n, DPI)
+- ✅ i18n + DPI scaling
+
+**Pending PASSED Gate**:
+- ⏳ Run full test suite (`pytest tests/unit/ui/tabs/test_cb3b_validation_suite.py`)
+- ⏳ Smoke test in-app (hotkey conflict, buff_slots persistence, Auto-Refresh)
+- ⏳ Pre-commit checks (tests, linting, no debug prints)
+
+**Immediate Action**: Jules → Run tests & pre-commit → Submit when all PASS
+
+### DS1-DS5 — Design System Phases
+
+**Status**: ⏳ Blocked until UX5.2 complete  
+**Timeline**: After session 21 (UX5.2)
+
+| Phase | Prompt | Kết quả chính | Phụ thuộc |
+| --- | --- | --- | --- |
+| DS1 | `PROMPT-DS1` | Tkinter-safe tokens, font resolver | 01-21 complete |
+| DS2 | `PROMPT-DS2` | ttk theme + semantic primitives | DS1 |
+| DS3 | `PROMPT-DS3` | Dark shell, sidebar, action bar | DS1, DS2 |
+| DS4 | `PROMPT-DS4` | Hunt workspace theme | DS3, UX3B, UX4.2, UX5.2 |
+| DS5 | `PROMPT-DS5` | Secondary views + visual acceptance | DS4 |
+
+**Design Direction**:
+- Dark neutral command-center (no solid dark-blue)
+- Green = active/hunting, Blue = selected/info, Yellow = ready, Red = stop/danger
+- Solid colors only (no gradients/shadows on native widgets)
+- Font fallback required (Rajdhani/Inter optional)
