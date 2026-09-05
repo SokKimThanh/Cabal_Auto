@@ -40,6 +40,7 @@ class UIStyle:
 
     # Backgrounds
     BG_DEFAULT = '#FFFFFF'
+    BG_MUTED = '#F5F5F5'
     BG_PANEL = '#F5F5F5'
     BG_SECTION = '#E3F2FD'
     BG_TITLE = '#2196F3'
