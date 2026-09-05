@@ -23,8 +23,9 @@ def test_new_monster_generates_id():
         assert "id" in data
         assert len(data["id"]) > 0
         assert data["id"] != ""
-        # The ID should also be displayed; verify it starts with '#' (exact value varies due to Tkinter randomization)
+        # The ID should also be displayed
         assert dialog.id_val_label.cget("text").startswith("#")
+        assert len(dialog.id_val_label.cget("text")) > 1
     finally:
         root.destroy()
 
@@ -113,7 +114,7 @@ def test_persistence_success_failure_retention(tmp_path):
                 "m2": {"id": "m2", "name": "Failed Monster"}
             }
 
-            with patch('ui.windows.monster_manager_win.MonsterManagerWin._show_status_message'):
+            with patch.object(editor, '_show_status_message'):
                 result = editor._save_monsters()
 
             assert result is False

@@ -151,8 +151,8 @@ def test_pending_changes_retained_on_failure(root, mock_db):
 
     win._save_monsters()
 
-    # Both should remain since it acts atomically per requirement
-    assert "m1" in win.pending_changes
+    # The requirement is that successful ones are cleared, and failed ones are retained.
+    assert "m1" not in win.pending_changes
     assert "m2" in win.pending_changes
     assert win.pending_changes["m2"]["name"] == "Failed Edit"
 
