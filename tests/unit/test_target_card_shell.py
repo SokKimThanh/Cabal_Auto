@@ -1,9 +1,19 @@
+import os
+import pytest
+
+pytest.importorskip("tkinter", reason="Skipping UI tests because tkinter is not available")
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests"
+)
+
 import unittest
 import tkinter as tk
 from unittest.mock import MagicMock, patch
-import psutil
-import os
 
+psutil = pytest.importorskip(
+    "psutil", reason="psutil is optional; skip memory stability test when unavailable"
+)
 from lib.features.monsters.monster_repo import get_target_monster_info
 from ui.tabs.hunt_tab import HuntTab
 
