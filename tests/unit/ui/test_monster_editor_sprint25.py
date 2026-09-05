@@ -24,7 +24,8 @@ def test_new_monster_generates_id():
         assert len(data["id"]) > 0
         assert data["id"] != ""
         # The ID should also be displayed
-        assert dialog.id_val_label.cget("text") == "<Mới / New>"
+        assert dialog.id_val_label.cget("text").startswith("#")
+        assert len(dialog.id_val_label.cget("text")) > 1
     finally:
         root.destroy()
 
@@ -113,7 +114,7 @@ def test_persistence_success_failure_retention(tmp_path):
                 "m2": {"id": "m2", "name": "Failed Monster"}
             }
 
-            with patch('tkinter.messagebox.showerror'):
+            with patch.object(editor, '_show_status_message'):
                 result = editor._save_monsters()
 
             assert result is False
