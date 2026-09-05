@@ -91,9 +91,9 @@ class HuntTab(ttk.Frame):
                     default_path = os.path.join("assets", "images", "default_monster.png")
                     if os.path.exists(default_path):
                         try:
-                            img = Image.open(default_path).resize((img_size, img_size))
-                            photo = ImageTk.PhotoImage(img)
-                        except Exception:
+                            with Image.open(default_path) as img:
+                                img = img.resize((img_size, img_size))
+                                photo = ImageTk.PhotoImage(img)
                             pass
 
                 self.set_target_photo(photo)
