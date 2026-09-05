@@ -18,7 +18,7 @@ Tích hợp thanh máu Canvas tự co giãn với hiệu năng vẽ tối ưu (S
 - Modify: `ui/tabs/hunt_tab.py`
 - Modify: `lib/features/hunt/hunt_orchestrator.py`
 - Modify: `lib/features/hunt/window_selection_service.py` (hàm retry dùng chung với UX1)
-- Modify: `lib/system/i18n.py`
+- Modify: `lib/i18n/translations.py`
 - Reference: `lib/system/window_manager.py`, `lib/ui_style.py`
 
 ---
@@ -33,6 +33,11 @@ Tích hợp thanh máu Canvas tự co giãn với hiệu năng vẽ tối ưu (S
   * Nhãn text HP: Vẽ tại tâm `(width / 2, 12)` với `anchor="center"`, tự động cập nhật chuỗi `f"{current_hp:,} / {max_hp:,} ({percent:.1f}%)"`.
 - **Bộ Điều Tiết Tần Suất (HP Throttling) — công thức chính xác (thay thế cách diễn đạt "hoặc" mơ hồ):**
   * Giới hạn cứng: không bao giờ vẽ lại UI nhanh hơn mỗi **100ms** (10 FPS là trần tuyệt đối, không có ngoại lệ vượt trần dù HP thay đổi đột ngột).
+  * Điều kiện rõ ràng cho phép vẽ lại:
+    ```python
+    if (current_time - last_draw_time >= 100) and (abs(new_percent - last_drawn_percent) >= 0.5):
+        # Draw to canvas and update last_draw_time
+    ```
   * Trong mỗi chu kỳ đã đủ 100ms kể từ lần vẽ trước: chỉ thực sự vẽ lại nếu `abs(new_percent - last_drawn_percent) >= 0.5`; nếu thay đổi nhỏ hơn ngưỡng này, bỏ qua lần vẽ đó (giữ nguyên canvas) để giảm vẽ thừa khi HP gần như không đổi.
   * Đây là điều kiện **AND** giữa "đã đủ 100ms" và "delta ≥ 0.5%", không phải OR — không cho phép vẽ sớm hơn 100ms dù delta lớn tới đâu, vì điều đó sẽ phá vỡ trần 10 FPS.
 - **Graceful Death Reset (kế thừa race-condition guard từ CB4A):**
