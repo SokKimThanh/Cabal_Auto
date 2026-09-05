@@ -3,6 +3,7 @@ from tkinter import ttk
 from lib.ui_style import UIStyle as UI
 
 from lib.features.monsters.monster_repo import get_target_monster_info
+from ui.panels.skill_panel import SkillPanel
 import os
 
 try:
@@ -367,19 +368,120 @@ class HuntTab(ttk.Frame):
             value=bool(self.app.hunt_cfg.get("bring_to_front_each_cycle", False))
         )
 
-        # Layout: Split into two primary panels: Monster Rotation and Active Target & Status
-        self.grid_columnconfigure(0, weight=1, uniform="panel")
-        self.grid_columnconfigure(1, weight=1, uniform="panel")
-        self.grid_rowconfigure(0, weight=0)
-        self.grid_rowconfigure(1, weight=1)
+        # Layout: 4-Panel Workspace Redesign
 
-        # Section 1: Active Target Card Panel (UX5.1)
+
+        self.workspace = tk.Frame(self, bg=UI.THEME_BG_APP)
+
+
+        self.workspace.grid(row=0, column=0, sticky="nsew")
+
+
+        self.grid_rowconfigure(0, weight=1)
+
+
+        self.grid_columnconfigure(0, weight=1)
+
+
+
+        # Split workspace into 60/40 columns
+
+
+        self.workspace.grid_columnconfigure(0, weight=6)
+
+
+        self.workspace.grid_columnconfigure(1, weight=4)
+
+
+        self.workspace.grid_rowconfigure(0, weight=1)
+
+
+
+        # Left Column (60%): Interaction
+
+
+        self.col_interaction = tk.Frame(self.workspace, bg=UI.THEME_BG_APP)
+
+
+        self.col_interaction.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+
+
+        self.col_interaction.grid_rowconfigure(0, weight=35)
+
+
+        self.col_interaction.grid_rowconfigure(1, weight=65)
+
+
+        self.col_interaction.grid_columnconfigure(0, weight=1)
+
+
+
+        # Right Column (40%): Monitoring
+
+
+        self.col_monitoring = tk.Frame(self.workspace, bg=UI.THEME_BG_APP)
+
+
+        self.col_monitoring.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+
+
+        self.col_monitoring.grid_rowconfigure(0, weight=50)
+
+
+        self.col_monitoring.grid_rowconfigure(1, weight=50)
+
+
+        self.col_monitoring.grid_columnconfigure(0, weight=1)
+
+
+
+        # Containers for panels
+
+
+        self.container_monster_target = tk.Frame(self.col_interaction, bg=UI.THEME_BG_APP)
+
+
+        self.container_monster_target.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
+
+
+
+        self.container_skill_panel = tk.Frame(self.col_interaction, bg=UI.THEME_BG_APP)
+
+
+        self.container_skill_panel.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
+
+
+        self.skill_panel_controller = SkillPanel(self.container_skill_panel, self.app)
+
+
+
+        self.container_target_status = tk.Frame(self.col_monitoring, bg=UI.THEME_BG_APP)
+
+
+        self.container_target_status.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
+
+
+
+        self.container_skill_stats = tk.Frame(self.col_monitoring, bg=UI.THEME_BG_APP)
+
+
+        self.container_skill_stats.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
+
+
+
+        # Section 1: Active Target Card Panel (Monitoring -> Right Top)
+
+
         self.app.active_target_status_frame = tk.LabelFrame(
-            self, text=self.app._t("hunt_active_target_status"), padx=4, pady=4
+
+
+            self.container_target_status, text=self.app._t("hunt_active_target_status"), padx=4, pady=4
+
+
         )
-        self.app.active_target_status_frame.grid(
-            row=0, column=1, sticky="new", padx=(6, 0), pady=(0, 4)
-        )
+
+
+        self.app.active_target_status_frame.pack(fill="both", expand=True)
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Header Bar
@@ -524,19 +626,37 @@ class HuntTab(ttk.Frame):
         self.target_hp_label = create_stat_row(stats_frame, "target_card.max_hp")
         self.target_def_label = create_stat_row(stats_frame, "target_card.defense")
 
-        # Section 2: Monster Selection (Phase 3: Multi-Monster Support)
+        # Section 2: Monster Selection (Interaction -> Left Top)
+
+
         # Sprint 22 Patch 2: Dynamic title based on training mode
+
+
         self.app.monster_frame = tk.LabelFrame(
-            self,
+
+
+            self.container_monster_target,
+
+
             text=self.app._t("monster_rotation_title"),
+
+
             font=UI.FONT_SECTION,
+
+
             fg=UI.THEME_TEXT_PRIMARY,
+
+
             padx=10,
+
+
             pady=8,
+
+
         )
-        self.app.monster_frame.grid(
-            row=0, column=0, sticky="new", padx=(0, 6), pady=(0, 12)
-        )
+
+
+        self.app.monster_frame.pack(fill="both", expand=True)
         self.app.monster_frame.grid_columnconfigure(0, weight=1)
 
         # Segmented control for target policy
@@ -855,243 +975,6 @@ class HuntTab(ttk.Frame):
         self.app.training_mode_status_var = tk.StringVar()
         # Status label hidden, only used internally
 
-        self.skill_strip_frame = tk.Frame(self)
-        self.skill_strip_frame.grid(
-            row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 12)
-        )
-        self.skill_strip_frame.grid_columnconfigure(0, weight=1, uniform="skill_col")
-        self.skill_strip_frame.grid_columnconfigure(1, weight=2, uniform="skill_col")
-
-        # Option (a): Đây là bản thiết kế lại/thay thế cho panel đã làm ở CB3B.
-        # Panel cũ từ CB3B (nếu có ở nơi khác) sẽ được loại bỏ, tránh tồn tại 2 bản UI cho cùng chức năng.
-        # Section 3: Dual-Lane Skill Strip (Combo & Buffs)
-
-        border_color = getattr(UI, "BORDER_COLOR", "#E0E0E0")
-        skill_frame_outer = tk.Frame(
-            self.skill_strip_frame,
-            highlightbackground=border_color,
-            highlightthickness=1,
-            highlightcolor=border_color,
-            bg=UI.THEME_BG_PANEL,
-        )
-        skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
-
-        # Setup Auto Combo Control Frame
-        ctrl_frame = tk.Frame(skill_frame_outer, bg=UI.THEME_BG_PANEL)
-        ctrl_frame.pack(side="top", fill="x", padx=4, pady=(4, 0))
-
-        # Ensure combo config exists
-        if "combo" not in self.app.hunt_cfg:
-            self.app.hunt_cfg["combo"] = {"enabled": False, "combo_start_key": "Alt+3"}
-
-        self.app.auto_combo_var = tk.BooleanVar(
-            value=self.app.hunt_cfg["combo"].get("enabled", False)
-        )
-
-        def on_auto_combo_toggle():
-            is_enabled = self.app.auto_combo_var.get()
-            self.app.hunt_cfg["combo"]["enabled"] = is_enabled
-            if is_enabled:
-                self.app.combo_start_key_cmb.config(state="readonly")
-            else:
-                self.app.combo_start_key_cmb.config(state="disabled")
-
-        auto_combo_cb = tk.Checkbutton(
-            ctrl_frame,
-            text=(
-                self.app._t("skill_strip.auto_combo")
-                if self.app._t("skill_strip.auto_combo") != "skill_strip.auto_combo"
-                else "Bật Auto Combo"
-            ),
-            variable=self.app.auto_combo_var,
-            command=on_auto_combo_toggle,
-            bg=UI.THEME_BG_PANEL,
-            font=UI.FONT_TEXT,
-        )
-        auto_combo_cb.pack(side="left", padx=(4, 8))
-
-        tk.Label(
-            ctrl_frame,
-            text=(
-                self.app._t("skill_strip.combo_start_key")
-                if self.app._t("skill_strip.combo_start_key")
-                != "skill_strip.combo_start_key"
-                else "Phím Mở Combo"
-            ),
-            bg=UI.THEME_BG_PANEL,
-            font=UI.FONT_TEXT,
-        ).pack(side="left")
-
-        self.app.combo_start_key_cmb = ttk.Combobox(
-            ctrl_frame,
-            values=["Alt+1", "Alt+2", "Alt+3", "Alt+4", "Alt+5"],
-            state="normal" if self.app.auto_combo_var.get() else "disabled",
-            width=8,
-        )
-        self.app.combo_start_key_cmb.set(
-            self.app.hunt_cfg["combo"].get("combo_start_key", "Alt+3")
-        )
-        self.app.combo_start_key_cmb.pack(side="left", padx=4)
-
-        def on_combo_key_change(event):
-            self.app.hunt_cfg["combo"][
-                "combo_start_key"
-            ] = self.app.combo_start_key_cmb.get()
-
-        self.app.combo_start_key_cmb.bind("<<ComboboxSelected>>", on_combo_key_change)
-        # self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
-
-        # Lanes container
-        lanes_frame = tk.Frame(skill_frame_outer, bg=UI.THEME_BG_PANEL)
-        lanes_frame.pack(fill="both", expand=True, padx=4, pady=4)
-
-        self.app.skill_slot_vars = []
-        self.app.skill_slot_boxes = []
-        self.app.skill_slot_key_labels = []
-        self.app.skill_slot_stats_labels = []
-        for i in range(4):
-            lanes_frame.grid_columnconfigure(i, weight=1, uniform="card_col")
-
-        # To support high DPI
-        try:
-            scale_factor = (
-                getattr(self, "tk", None)
-                and getattr(self, "tk", None).call("tk", "scaling") * 72 / 100.0
-            )
-            if scale_factor is None:
-                scale_factor = 1.0
-        except Exception:
-            scale_factor = 1.0
-
-        card_font = (UI.FONT_FAMILY, int(max(8, 9 * scale_factor)))
-        badge_pad = int(max(2, 4 * scale_factor))
-
-        def update_card_stats(lbl, skill_name):
-            skills_by_name = {
-                s.get("name"): s
-                for s in getattr(self.app, "skills", [])
-                if isinstance(s, dict) and s.get("name")
-            }
-            skill = skills_by_name.get(skill_name, {})
-            cast_time = skill.get("cast_time")
-            cd = skill.get("cooldown")
-
-            cast_str = f"{cast_time}s" if cast_time is not None else "--s"
-            cd_str = f"{cd}s" if cd is not None else "--s"
-            lbl.config(text=f"C: {cast_str} | CD: {cd_str}")
-
-        self.update_card_stats = update_card_stats
-
-        # Build cards
-        for idx in range(self.app.skill_slot_count):
-            is_combo_lane = idx < 4
-            row = 0 if is_combo_lane else 1
-            col = idx if is_combo_lane else (idx - 4)
-
-            card = tk.Frame(
-                lanes_frame,
-                bg=UI.THEME_BG_APP,
-                highlightbackground="#D0D0D0",
-                highlightthickness=1,
-            )
-            card.grid(row=row, column=col, sticky="ew", padx=2, pady=2)
-
-            var = tk.StringVar()
-            self.app.skill_slot_vars.append(var)
-
-            # Title
-            t_combo = self.app._t("skill_strip.combo_lane")
-            t_buff = self.app._t("skill_strip.buff_lane")
-            title_text = (
-                f"{t_combo} {col + 1}"
-                if is_combo_lane
-                else f"{t_buff} {col + 1}"
-            )
-
-            tk.Label(
-                card,
-                text=title_text,
-                bg=UI.THEME_BG_APP,
-                fg=UI.THEME_TEXT_SECONDARY,
-                font=(UI.FONT_FAMILY, int(8 * scale_factor)),
-            ).pack(anchor="w", padx=2, pady=(2, 0))
-
-            # Combobox
-            cmb = ttk.Combobox(card, textvariable=var, state="readonly")
-            cmb.pack(fill="x", padx=badge_pad, pady=badge_pad)
-
-            stats_lbl = tk.Label(
-                card,
-                text="C: --s | CD: --s",
-                fg=UI.THEME_TEXT_SECONDARY,
-                bg=UI.THEME_BG_APP,
-                font=card_font,
-            )
-
-            def _on_cmb_selected(event, v=var, lbl=stats_lbl):
-                if hasattr(self.app, "on_skill_slot_changed"):
-                    self.app.on_skill_slot_changed(event)
-                update_card_stats(lbl, v.get().strip())
-
-            cmb.bind("<<ComboboxSelected>>", _on_cmb_selected)
-            self.app.skill_slot_boxes.append(cmb)
-
-            # Badges area
-            badge_frame = tk.Frame(card, bg=UI.THEME_BG_APP)
-            badge_frame.pack(fill="x", padx=2, pady=(0, 2))
-
-            key_lbl = tk.Label(
-                badge_frame,
-                text="",
-                width=6,
-                anchor="w",
-                fg=UI.THEME_TEXT_PRIMARY,
-                bg=UI.THEME_BG_APP,
-                font=card_font,
-            )
-            key_lbl.pack(side="left")
-            self.app.skill_slot_key_labels.append(key_lbl)
-
-            stats_lbl.pack(side="right")
-            self.app.skill_slot_stats_labels.append(stats_lbl)
-
-            # Tooltip
-            if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(
-                    card, self.app._t("skill_strip.tooltip_placeholder")
-                )
-
-        self.app._refresh_monster_select_options()
-        # Replaced _load_skill_slots_from_cfg with equivalent logic inline
-        saved = (
-            self.app.hunt_cfg.get("skill_slots", [])
-            if hasattr(self.app, "hunt_cfg")
-            else []
-        )
-
-        normalized_slots = []
-        for slot in saved:
-            if isinstance(slot, dict):
-                normalized_slots.append(slot.get("name", ""))
-            elif isinstance(slot, str):
-                normalized_slots.append(slot)
-            else:
-                normalized_slots.append("")
-
-        self.app.skill_slot_saved_names = [name for name in normalized_slots if name]
-
-        if hasattr(self.app, "_refresh_skill_slots_options"):
-            self.app._refresh_skill_slots_options()
-
-        if hasattr(self.app, "skill_slot_vars"):
-            for idx, var in enumerate(self.app.skill_slot_vars):
-                name = ""
-                if idx < len(normalized_slots):
-                    name = normalized_slots[idx]
-                var.set(name)
-
-        if hasattr(self.app, "_update_attack_keys_from_slots"):
-            self.app._update_attack_keys_from_slots()
 
         # Phase 3: Populate monster rotation list
         self.app._refresh_monster_rotation_list()
@@ -1099,12 +982,12 @@ class HuntTab(ttk.Frame):
         # Section 3.5: Skill Performance Statistics (Sprint 22 Patch 1 - Training Mode)
         # Re-parented into the active target status panel.
         self.app.skill_stats_frame = tk.LabelFrame(
-            self.skill_strip_frame,
+            self.container_skill_stats,
             text=self.app._t("skill_stats_title"),
             padx=10,
             pady=10,
         )
-        self.app.skill_stats_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        self.app.skill_stats_frame.pack(fill="both", expand=True)
 
         stats_columns = ("skill", "casts", "last_cast", "cooldown", "success")
         self.app.skill_stats_tree = ttk.Treeview(

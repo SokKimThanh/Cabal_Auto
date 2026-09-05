@@ -1,0 +1,108 @@
+import sqlite3
+from typing import Optional, List, Dict, Any
+from lib.db.connection import get_connection
+
+class SkillPresetRepository:
+    def create_preset(self, class_name: str, name: str, is_default: int = 0) -> int:
+        conn, is_local = get_connection()
+        if not conn:
+            return -1
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO skill_presets (class_name, name, is_default) VALUES (?, ?, ?)",
+                (class_name, name, is_default),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        finally:
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+    def get_preset_skills(self, preset_id: int) -> Dict[str, List[int]]:
+        conn, _ = get_connection()
+        if not conn:
+            return {}
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT lane, skill_id FROM preset_skills WHERE preset_id = ? ORDER BY lane, position",
+                (preset_id,)
+            )
+            rows = cursor.fetchall()
+
+            result = {}
+            for row in rows:
+                lane = row['lane']
+                skill_id = row['skill_id']
+                if lane not in result:
+                    result[lane] = []
+                result[lane].append(skill_id)
+
+            return result
+        finally:
+            conn.close()
+
+    def set_preset_skills(self, preset_id: int, skills_by_lane: Dict[str, List[int]]) -> bool:
+        conn, _ = get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM preset_skills WHERE preset_id = ?", (preset_id,))
+
+            for lane, skill_ids in skills_by_lane.items():
+                for position, skill_id in enumerate(skill_ids):
+                    cursor.execute(
+                        "INSERT INTO preset_skills (preset_id, skill_id, lane, position) VALUES (?, ?, ?, ?)",
+                        (preset_id, skill_id, lane, position)
+                    )
+
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def delete_preset(self, preset_id: int) -> bool:
+        conn, _ = get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM skill_presets WHERE preset_id = ?", (preset_id,))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    def get_presets_by_class(self, class_name: str) -> List[Dict[str, Any]]:
+        conn, _ = get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM skill_presets WHERE class_name = ?", (class_name,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
+
+    def get_preset(self, preset_id: int) -> Optional[Dict[str, Any]]:
+        conn, _ = get_connection()
+        if not conn:
+            return None
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM skill_presets WHERE preset_id = ?", (preset_id,))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+        finally:
+            conn.close()
