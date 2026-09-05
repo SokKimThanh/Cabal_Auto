@@ -175,7 +175,7 @@ def test_file_structure():
         'lib/i18n/translations.py',
         'lib/data/monsters.json',
         'app_gui.py',
-        'ui/auto_hunt.py',
+        'ui/windows/auto_hunt.py',
     ]
     
     missing_files = []

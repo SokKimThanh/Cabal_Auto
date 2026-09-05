@@ -536,7 +536,10 @@ class AppStateController:
 
         combo_enabled = app.hunt_cfg.get("combo", {}).get("enabled", False)
 
-        # NOTE: CastDeliveryManager integration is handled by SkillRuntime reservations; remove unused manager.
+        # Instantiate CastDeliveryManager locally if not exists
+        if not hasattr(self, 'cast_delivery_mgr'):
+            from lib.features.skills.cast_delivery import CastDeliveryManager
+            self.cast_delivery_mgr = CastDeliveryManager()
 
         # Get next skill from SkillRuntime object
         if not hasattr(self, 'skill_runtime_obj') or self.skill_runtime_obj is None:
@@ -586,7 +589,7 @@ class AppStateController:
             from lib.features.combo.combo_timing_detector import CabalComboDetector
             # Create or reuse detector
             if not hasattr(self, 'combo_detector'):
-                hunt_selected = getattr(app, "hunt_selected", {})
+                hunt_selected = app.window_controller.get_hunt_selected()
                 hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else 0
                 self.combo_detector = CabalComboDetector(hwnd=hwnd)
 
@@ -614,22 +617,20 @@ class AppStateController:
             else:
                 tap(res.key, int(app.hunt_cfg.get("attack_press_ms", 60)))
 
-        cast_ts = time.time()
-
         # Commit cast
-        self.skill_runtime_obj.commit_cast(res.token, outcome, cast_ts)
+        self.skill_runtime_obj.commit_cast(res.token, outcome, time.time())
 
         # Record stats
         if skill_stats:
             try:
-                skill_stats.record_cast(res.skill_name or res.key, success=True, timestamp=cast_ts)
+                skill_stats.record_cast(res.skill_name or res.key, success=True, timestamp=time.time())
             except Exception:
                 pass
 
         # Also update old dict
         for s in skill_runtime:
             if s.get("key") == res.key:
-                s["_last_cast"] = cast_ts
+                s["_last_cast"] = time.time()
                 cast_time = float(s.get("cast_time", 0.0))
                 if cast_time > 0 and not combo_enabled:
                     time.sleep(cast_time)

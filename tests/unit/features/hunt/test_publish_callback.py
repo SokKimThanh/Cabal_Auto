@@ -11,7 +11,7 @@ class TestPublishCallback:
         callback = MagicMock()
         ui_scheduler = MagicMock()
 
-        queue = RuntimeMonsterQueue(on_publish=callback)
+        queue = RuntimeMonsterQueue(publish_callback=callback)
 
         queue.add_or_update(
             monster_id=10,
