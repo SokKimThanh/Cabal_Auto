@@ -94,22 +94,16 @@ try:
     from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
     class ActionNotificationMixin:
-        def __init__(self, *args, debug_mode=False, **kwargs):
-            # Properly cooperative multiple inheritance
-            if hasattr(super(), '__init__'):
-                try:
-                    super().__init__(*args, **kwargs)
-                except TypeError:
-                    # Try without debug_mode kwarg
-                    try:
-                        super().__init__(*args)
-                    except TypeError:
-                        # Last resort: just pass parent
-                        if args:
-                            try:
-                                super().__init__(args[0])
-                            except TypeError:
-                                pass
+        def __init__(self, *args, debug_mode: bool = False, **kwargs):
+            # Cooperative multiple inheritance: forward remaining args/kwargs.
+            try:
+                super().__init__(*args, **kwargs)
+            except TypeError:
+                # Some bases (e.g. tkinter widgets) don't accept keyword args.
+                if kwargs:
+                    super().__init__(*args)
+                else:
+                    raise
 
         def show_notification(self, *args, **kwargs):
             pass
