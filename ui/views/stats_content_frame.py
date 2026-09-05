@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from ui.tabs.stats_tab import StatsTab
 
+
 class StatsContentFrame(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)

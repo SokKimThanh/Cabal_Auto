@@ -13,8 +13,8 @@ from .icon_helper import IconHelper, get_icon_helper
 from .tooltip import attach_i18n_tooltip
 
 __all__ = [
-    'get_button_config',
-    'IconHelper',
-    'get_icon_helper',
-    'attach_i18n_tooltip',
+    "get_button_config",
+    "IconHelper",
+    "get_icon_helper",
+    "attach_i18n_tooltip",
 ]

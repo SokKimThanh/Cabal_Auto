@@ -5,7 +5,9 @@ from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
 
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class AppWindowController:
     ALLOWED_PROCESSES = ["cabal.exe"]
@@ -48,7 +50,7 @@ class AppWindowController:
                     "title": title,
                     "proc": info.process_name,
                     "bounds": normalize_window_bounds_value(info.rect),
-                    "is_minimized": info.is_minimized
+                    "is_minimized": info.is_minimized,
                 }
             )
         results.sort(
@@ -63,12 +65,14 @@ class AppWindowController:
     def _retry_resolve_bounds(self, hwnd, attempt):
         from lib.system.window_manager import WindowManager
         import logging
+
         logger = logging.getLogger(__name__)
 
         wm = WindowManager()
         wm.restore(hwnd)
         try:
             import win32gui
+
             win32gui.SetForegroundWindow(hwnd)
         except Exception:
             pass
@@ -90,15 +94,17 @@ class AppWindowController:
         else:
             logger.error("All restore attempts failed.")
             self.root.bounds_recovery_failed = True
-            if hasattr(self.root, "state_controller") and hasattr(self.root.state_controller, "_update_window_bounds_display"):
+            if hasattr(self.root, "state_controller") and hasattr(
+                self.root.state_controller, "_update_window_bounds_display"
+            ):
                 self.root.state_controller._update_window_bounds_display()
 
     def on_hunt_refresh_windows(self, *_args) -> None:
-        if getattr(self, '_refresh_locked', False):
+        if getattr(self, "_refresh_locked", False):
             return
         self._refresh_locked = True
-        if hasattr(self, 'root') and hasattr(self.root, 'after'):
-            self.root.after(500, lambda: setattr(self, '_refresh_locked', False))
+        if hasattr(self, "root") and hasattr(self.root, "after"):
+            self.root.after(500, lambda: setattr(self, "_refresh_locked", False))
 
         from lib.system.window_manager import WindowManager
 
@@ -112,6 +118,7 @@ class AppWindowController:
                 # Check if minimized or off-screen
                 if info and (info.is_minimized or info.is_offscreen):
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.info(f"Window {hwnd} is minimized, attempting recovery...")
                     self.root.after(300, self._retry_resolve_bounds, hwnd, 0)
@@ -135,12 +142,17 @@ class AppWindowController:
         self.root.win_items = items
 
         # Build dictionary mapping hwnd to display names
-        self.root.win_items_map = {item.get("hwnd"): item.get("title") for item in items}
+        self.root.win_items_map = {
+            item.get("hwnd"): item.get("title") for item in items
+        }
         values = [item["title"] for item in items]
         if hasattr(self.root, "win_combo"):
             self.root.win_combo["values"] = values
 
-        from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+        from lib.features.hunt.window_selection_service import (
+            validate_selected_cabal_window,
+        )
+
         selected = getattr(self.root, "hunt_selected", None)
 
         # If we have a selection but no items, or the selection is now invalid
@@ -162,7 +174,9 @@ class AppWindowController:
                 if not items:
                     self.root.hunt_status.set("No visible windows found")
                 else:
-                    self.root.hunt_status.set("Selected window invalid, cleared selection.")
+                    self.root.hunt_status.set(
+                        "Selected window invalid, cleared selection."
+                    )
 
             # Since selection is cleared, ensure we lock UI if needed
             if hasattr(self.root, "start_stop_btn"):
@@ -217,11 +231,16 @@ class AppWindowController:
 
         selected = dict(self.root.win_items[index])
 
-        from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+        from lib.features.hunt.window_selection_service import (
+            validate_selected_cabal_window,
+        )
+
         validation = validate_selected_cabal_window(selected, self.root.win_items)
         if not validation.is_valid:
             if hasattr(self.root, "hunt_status"):
-                self.root.hunt_status.set(f"Selected window is invalid: {validation.code}")
+                self.root.hunt_status.set(
+                    f"Selected window is invalid: {validation.code}"
+                )
             return
 
         selected = validation.window
@@ -258,7 +277,10 @@ class AppWindowController:
                 self.root.win_combo["values"] = [item["title"] for item in items]
 
             # Find the first valid item
-            from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+            from lib.features.hunt.window_selection_service import (
+                validate_selected_cabal_window,
+            )
+
             valid_index = -1
             for i, item in enumerate(items):
                 if validate_selected_cabal_window(item, items).is_valid:
