@@ -6,17 +6,20 @@ logger = logging.getLogger(__name__)
 
 CURRENT_SCHEMA_VERSION = 3
 
+
 def _safe_float(value: Any, default: float = 0.0) -> float:
     try:
         return float(value)
     except (ValueError, TypeError):
         return default
 
+
 def _safe_int(value: Any, default: int = 0) -> int:
     try:
         return int(value)
     except (ValueError, TypeError):
         return default
+
 
 def _migrate_monster_rotation(data: Dict[str, Any]) -> None:
     """Migrate legacy 'monsters' array and normalize 'monster_rotation'."""
@@ -44,23 +47,29 @@ def _migrate_monster_rotation(data: Dict[str, Any]) -> None:
     for m in data["monster_rotation"]:
         if isinstance(m, dict):
             m_id = m.get("monster_id", m.get("id", 0))
-            new_rotation.append({
-                "monster_id": _safe_int(m_id),
-                "name": str(m.get("name", m_id)),
-                "priority": _safe_int(m.get("priority", priority), priority),
-                "dungeon_id": m.get("dungeon_id", None)
-            })
+            new_rotation.append(
+                {
+                    "monster_id": _safe_int(m_id),
+                    "name": str(m.get("name", m_id)),
+                    "priority": _safe_int(m.get("priority", priority), priority),
+                    "dungeon_id": m.get("dungeon_id", None),
+                }
+            )
             priority += 1
         elif isinstance(m, (str, int)):
-            new_rotation.append({
-                "monster_id": _safe_int(m),
-                "name": str(m),
-                "priority": priority,
-                "dungeon_id": None
-            })
+            new_rotation.append(
+                {
+                    "monster_id": _safe_int(m),
+                    "name": str(m),
+                    "priority": priority,
+                    "dungeon_id": None,
+                }
+            )
             priority += 1
 
-    data["monster_rotation"] = sorted(new_rotation, key=lambda x: x.get("priority", 999))
+    data["monster_rotation"] = sorted(
+        new_rotation, key=lambda x: x.get("priority", 999)
+    )
 
     # Deduplicate on (monster_id, dungeon_id)
     seen = set()
@@ -107,6 +116,77 @@ def _migrate_monster_rotation(data: Dict[str, Any]) -> None:
     for i, entry in enumerate(data["monster_rotation"]):
         entry["priority"] = i + 1
 
+
+def _migrate_buff_slots(data: Dict[str, Any]) -> None:
+    """
+    Extract buff-type skills from legacy skill_slots into separate buff_slots
+
+    Precedence:
+    1. Use explicit "type" field if present
+    2. If missing, lookup in skill catalog by name/id
+    3. If still unresolved, default to attack lane + log warning
+    """
+    skill_slots = data.get("skill_slots", [])
+    if not isinstance(skill_slots, list):
+        skill_slots = []
+
+    buff_slots = data.get("buff_slots", [])
+    if not isinstance(buff_slots, list):
+        buff_slots = []
+
+    remaining_attack_slots = []
+
+    from lib.features.skills.skill_repo import load_skill_library
+
+    skill_db = load_skill_library()
+
+    for slot in skill_slots:
+        if not isinstance(slot, dict):
+            continue
+
+        skill_type = slot.get("type")
+
+        # Step 1: Has explicit type?
+        if skill_type in ("buff", "attack"):
+            if skill_type == "buff":
+                slot.setdefault("duration_sec", 300)  # Default duration
+                if slot not in buff_slots:
+                    buff_slots.append(slot)
+            else:
+                if slot not in remaining_attack_slots:
+                    remaining_attack_slots.append(slot)
+        else:
+            # Step 2: Lookup in skill catalog
+            skill_name = slot.get("name", "")
+            catalog_type = None
+
+            for skill_entry in skill_db.values():
+                if skill_entry.get("name") == skill_name:
+                    catalog_type = skill_entry.get("type")
+                    break
+
+            if catalog_type == "buff":
+                slot["type"] = "buff"
+                slot.setdefault("duration_sec", 300)
+                if slot not in buff_slots:
+                    buff_slots.append(slot)
+            elif catalog_type == "attack":
+                slot["type"] = "attack"
+                if slot not in remaining_attack_slots:
+                    remaining_attack_slots.append(slot)
+            else:
+                # Step 3: Unresolved -> default to attack + log
+                logger.warning(
+                    f"Unclassified skill '{skill_name}' -> defaulted to attack lane"
+                )
+                slot["type"] = "attack"
+                if slot not in remaining_attack_slots:
+                    remaining_attack_slots.append(slot)
+
+    data["skill_slots"] = remaining_attack_slots
+    data["buff_slots"] = buff_slots
+
+
 def _migrate_skills(data: Dict[str, Any]) -> None:
     """Migrate legacy 'skills' and 'attack_keys' into 'skill_slots'."""
     legacy_skills = data.pop("skills", {})
@@ -123,7 +203,9 @@ def _migrate_skills(data: Dict[str, Any]) -> None:
         for k in legacy_attack_keys:
             if isinstance(k, dict) and "key" in k:
                 if "cast_time" not in k:
-                    logger.warning(f"Skipping malformed attack_key entry (missing cast_time): {k}")
+                    logger.warning(
+                        f"Skipping malformed attack_key entry (missing cast_time): {k}"
+                    )
                     continue
                 k_id = k.get("id", k["key"])
                 merged_skills[k["key"]] = {
@@ -131,7 +213,7 @@ def _migrate_skills(data: Dict[str, Any]) -> None:
                     "key": str(k["key"]),
                     "cast_time": _safe_float(k.get("cast_time")),
                     "cooldown": _safe_float(k.get("cooldown")),
-                    "type": str(k.get("type", "attack"))
+                    "type": str(k.get("type", "attack")),
                 }
 
     # Process legacy skills (higher precedence)
@@ -139,7 +221,9 @@ def _migrate_skills(data: Dict[str, Any]) -> None:
         for slot_id, k in legacy_skills.items():
             if isinstance(k, dict) and "key" in k:
                 if "cast_time" not in k:
-                    logger.warning(f"Skipping malformed skill entry (missing cast_time): {k}")
+                    logger.warning(
+                        f"Skipping malformed skill entry (missing cast_time): {k}"
+                    )
                     continue
                 k_key = k["key"]
                 merged_skills[k_key] = {
@@ -147,7 +231,7 @@ def _migrate_skills(data: Dict[str, Any]) -> None:
                     "key": str(k_key),
                     "cast_time": _safe_float(k.get("cast_time")),
                     "cooldown": _safe_float(k.get("cooldown")),
-                    "type": str(k.get("type", "attack"))
+                    "type": str(k.get("type", "attack")),
                 }
 
     # Add new ones if they don't already exist in skill_slots
@@ -164,19 +248,22 @@ def _migrate_skills(data: Dict[str, Any]) -> None:
             logger.warning(f"Skipping malformed skill entry (missing key): {s}")
             continue
 
-        s_type = s.get("type", "attack")
+        s_type = s.get("type")
         if s_type not in ("attack", "buff"):
-            logger.warning(f"Invalid skill type '{s_type}' for key {s_key}, defaulting to 'attack'")
-            s_type = "attack"
-
-        s["type"] = s_type
+            if s_type is not None:
+                logger.warning(
+                    f"Invalid skill type '{s_type}' for key {s_key}, defaulting to 'attack'"
+                )
+                s["type"] = "attack"
 
         c_time = _safe_float(s.get("cast_time", 0.0))
-        if c_time < 0: c_time = 0.0
+        if c_time < 0:
+            c_time = 0.0
         s["cast_time"] = c_time
 
         cooldown = _safe_float(s.get("cooldown", 0.0))
-        if cooldown < 0: cooldown = 0.0
+        if cooldown < 0:
+            cooldown = 0.0
         s["cooldown"] = cooldown
 
         valid_skills.append(s)
@@ -215,6 +302,7 @@ def _sanitize_v3(data: Dict[str, Any]) -> None:
         except (ValueError, TypeError):
             data["ack_timeout_ms"] = 500
 
+
 def migrate_hunt_config(data: Any) -> Dict[str, Any]:
     """Migrates and normalizes the hunt config dictionary in-place."""
     if not isinstance(data, dict):
@@ -231,6 +319,8 @@ def migrate_hunt_config(data: Any) -> Dict[str, Any]:
         _migrate_skills(data)
 
         data["schema_version"] = CURRENT_SCHEMA_VERSION
+
+    _migrate_buff_slots(data)
 
     _sanitize_v3(data)
 

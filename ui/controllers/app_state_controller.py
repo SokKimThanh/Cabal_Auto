@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 import tkinter as tk
 from typing import Any, Dict, List, Optional
@@ -131,9 +132,13 @@ class AppStateController:
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         app = self.root
         import logging
+
         logger = logging.getLogger(__name__)
 
-        from lib.features.hunt.window_selection_service import WindowSelectionService, validate_selected_cabal_window
+        from lib.features.hunt.window_selection_service import (
+            WindowSelectionService,
+            validate_selected_cabal_window,
+        )
 
         selected = getattr(app, "hunt_selected", None)
         if not isinstance(selected, dict):
@@ -175,6 +180,7 @@ class AppStateController:
 
         # Validate that templates exist on disk
         import os
+
         has_valid_template = False
         if templates:
             for t in templates:
@@ -248,26 +254,30 @@ class AppStateController:
             if isinstance(collected, list):
                 for s in collected:
                     if isinstance(s, dict):
-                        cfg["skill_slots"].append({
-                            "id": s.get("id", s.get("name", "")),
-                            "key": s.get("key", ""),
-                            "cast_time": float(s.get("cast_time", 0.0)),
-                            "cooldown": float(s.get("cooldown", 0.0)),
-                            "type": s.get("type", "attack"),
-                            "name": s.get("name", "")
-                        })
+                        cfg["skill_slots"].append(
+                            {
+                                "id": s.get("id", s.get("name", "")),
+                                "key": s.get("key", ""),
+                                "cast_time": float(s.get("cast_time", 0.0)),
+                                "cooldown": float(s.get("cooldown", 0.0)),
+                                "type": s.get("type", "attack"),
+                                "name": s.get("name", ""),
+                            }
+                        )
 
         cfg["monster_rotation"] = []
         rotation = getattr(app, "monster_rotation", [])
         if isinstance(rotation, list):
             for i, m in enumerate(rotation):
                 if isinstance(m, dict):
-                    cfg["monster_rotation"].append({
-                        "monster_id": m.get("monster_id", m.get("id", 0)),
-                        "name": m.get("name", ""),
-                        "priority": m.get("priority", i + 1),
-                        "dungeon_id": m.get("dungeon_id", None)
-                    })
+                    cfg["monster_rotation"].append(
+                        {
+                            "monster_id": m.get("monster_id", m.get("id", 0)),
+                            "name": m.get("name", ""),
+                            "priority": m.get("priority", i + 1),
+                            "dungeon_id": m.get("dungeon_id", None),
+                        }
+                    )
 
         cfg.setdefault("templates", [])
         return cfg
@@ -409,11 +419,22 @@ class AppStateController:
             app.window_bounds_display_var.set("")
 
         if hasattr(app, "bounds_status_var") and hasattr(app, "bounds_readiness_label"):
-            selected_window = app.win_combo_var.get() if hasattr(app, "win_combo_var") else None
+            selected_window = (
+                app.win_combo_var.get() if hasattr(app, "win_combo_var") else None
+            )
 
             is_minimized = False
-            if selected_window and hasattr(app, "win_items") and isinstance(app.win_items, list):
-                selected_hwnd = app.hunt_selected.get("hwnd") if hasattr(app, "hunt_selected") and isinstance(app.hunt_selected, dict) else None
+            if (
+                selected_window
+                and hasattr(app, "win_items")
+                and isinstance(app.win_items, list)
+            ):
+                selected_hwnd = (
+                    app.hunt_selected.get("hwnd")
+                    if hasattr(app, "hunt_selected")
+                    and isinstance(app.hunt_selected, dict)
+                    else None
+                )
                 for item in app.win_items:
                     if selected_hwnd and item.get("hwnd") == selected_hwnd:
                         is_minimized = item.get("is_minimized", False)
@@ -422,7 +443,7 @@ class AppStateController:
                         is_minimized = item.get("is_minimized", False)
                         break
 
-            compact = getattr(app, '_bounds_compact_mode', False)
+            compact = getattr(app, "_bounds_compact_mode", False)
             if not selected_window:
                 text = "[!]" if compact else app._t("bounds_state_select")
                 app.bounds_status_var.set(text)
@@ -431,7 +452,9 @@ class AppStateController:
                 text = "[!]" if compact else app._t("bounds_state_failed")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
-            elif is_minimized or (bounds and (bounds[0] <= -32000 or bounds[1] <= -32000)):
+            elif is_minimized or (
+                bounds and (bounds[0] <= -32000 or bounds[1] <= -32000)
+            ):
                 text = "[!]" if compact else app._t("bounds_state_minimized")
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
@@ -441,7 +464,13 @@ class AppStateController:
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             else:
                 # title handled natively
-                text = "[✓]" if compact else app._t("bounds_state_ready").format(title=f"{bounds[2]}x{bounds[3]}")
+                text = (
+                    "[✓]"
+                    if compact
+                    else app._t("bounds_state_ready").format(
+                        title=f"{bounds[2]}x{bounds[3]}"
+                    )
+                )
                 app.bounds_status_var.set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_ACCENT)
 
@@ -500,6 +529,7 @@ class AppStateController:
 
     def _get_skill_runtime_object(self, cfg):
         from lib.features.skills.runtime import SkillRuntime
+
         return SkillRuntime(cfg.get("skill_slots", []))
 
     def _prepare_skill_runtime(self, cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -539,11 +569,11 @@ class AppStateController:
         # NOTE: CastDeliveryManager integration is handled by SkillRuntime reservations; remove unused manager.
 
         # Get next skill from SkillRuntime object
-        if not hasattr(self, 'skill_runtime_obj') or self.skill_runtime_obj is None:
+        if not hasattr(self, "skill_runtime_obj") or self.skill_runtime_obj is None:
             self.skill_runtime_obj = self._get_skill_runtime_object(app.hunt_cfg)
 
         # Sync pointer if mode changed
-        last_combo_mode = getattr(self, '_last_combo_mode', combo_enabled)
+        last_combo_mode = getattr(self, "_last_combo_mode", combo_enabled)
         if combo_enabled != last_combo_mode:
             self.skill_runtime_obj.sync_combo_pointer(to_combo=combo_enabled)
             self._last_combo_mode = combo_enabled
@@ -569,14 +599,19 @@ class AppStateController:
         if not target_active:
             return
 
-        next_skill = self.skill_runtime_obj.get_attack_to_cast(now) if not combo_enabled else \
-                     self.skill_runtime_obj.get_next_combo_skill(now)
+        next_skill = (
+            self.skill_runtime_obj.get_attack_to_cast(now)
+            if not combo_enabled
+            else self.skill_runtime_obj.get_next_combo_skill(now)
+        )
 
         if not next_skill:
             return
 
         # Reserve the skill
-        res = self.skill_runtime_obj.reserve_next_skill('attack', now, is_combo=combo_enabled)
+        res = self.skill_runtime_obj.reserve_next_skill(
+            "attack", now, is_combo=combo_enabled
+        )
         if not res:
             return
 
@@ -584,8 +619,9 @@ class AppStateController:
 
         if combo_enabled:
             from lib.features.combo.combo_timing_detector import CabalComboDetector
+
             # Create or reuse detector
-            if not hasattr(self, 'combo_detector'):
+            if not hasattr(self, "combo_detector"):
                 hunt_selected = getattr(app, "hunt_selected", {})
                 hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else 0
                 self.combo_detector = CabalComboDetector(hwnd=hwnd)
@@ -598,13 +634,20 @@ class AppStateController:
 
             self.combo_detector.key_press_callback = do_press
 
-            bot_mgr = getattr(app, 'bot_manager', None)
-            if bot_mgr and getattr(bot_mgr, 'screen_capture', None):
-                timeout_sec = float(app.hunt_cfg.get("combo", {}).get("hit_zone_timeout_sec", 2.0))
-                detected = self.combo_detector.wait_for_hit_zone(bot_mgr.screen_capture, timeout_sec=timeout_sec)
+            bot_mgr = getattr(app, "bot_manager", None)
+            if bot_mgr and getattr(bot_mgr, "screen_capture", None):
+                timeout_sec = float(
+                    app.hunt_cfg.get("combo", {}).get("hit_zone_timeout_sec", 2.0)
+                )
+                detected = self.combo_detector.wait_for_hit_zone(
+                    bot_mgr.screen_capture, timeout_sec=timeout_sec
+                )
                 if not detected:
                     import logging
-                    logging.getLogger(__name__).warning("Combo timeout reached. Falling back to static cast.")
+
+                    logging.getLogger(__name__).warning(
+                        "Combo timeout reached. Falling back to static cast."
+                    )
                     do_press()
             else:
                 do_press()
@@ -622,7 +665,9 @@ class AppStateController:
         # Record stats
         if skill_stats:
             try:
-                skill_stats.record_cast(res.skill_name or res.key, success=True, timestamp=cast_ts)
+                skill_stats.record_cast(
+                    res.skill_name or res.key, success=True, timestamp=cast_ts
+                )
             except Exception:
                 pass
 
