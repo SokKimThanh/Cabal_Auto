@@ -67,6 +67,7 @@ class DummyApp:
 class TestTargetCardCB4A(unittest.TestCase):
     def setUp(self):
         self.root = tk.Tk()
+        self.root.withdraw()
         self.app = DummyApp()
         self.tab = HuntTab(self.root, self.app)
 
