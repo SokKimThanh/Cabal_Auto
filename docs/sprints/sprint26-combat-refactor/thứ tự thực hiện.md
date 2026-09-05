@@ -259,7 +259,7 @@ Design direction:
 | DS2 | `PROMPT-DS2` | ttk theme + semantic primitives | DS1 |
 | DS3 | `PROMPT-DS3` | Dark shell, sidebar, action bar | DS1, DS2 |
 | DS4 | `PROMPT-DS4` | Hunt workspace theme | DS3, UX3B, UX4.2, UX5.2 |
-| DS5 | `PROMPT-DS5` | Secondary views + visual acceptance | DS4 |
+| DS5 | `PROMPT-DS5` | ✅ PASSED | DS4 |
 
 **Design Direction**:
 - Dark neutral command-center (no solid dark-blue)

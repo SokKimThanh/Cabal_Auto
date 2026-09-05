@@ -15,7 +15,7 @@ Migration Notes:
 - Use new import paths for better organization
 """
 
-__version__ = '2.0.0'
+__version__ = "2.0.0"
 
 # Component exports
 from .components import create_icon_button, create_icon_label
@@ -30,12 +30,11 @@ from .helpers import (
 
 __all__ = [
     # Components
-    'create_icon_button',
-    'create_icon_label',
+    "create_icon_button",
+    "create_icon_label",
     # Helpers
-    'get_button_config',
-    'IconHelper',
-    'get_icon_helper',
-    'attach_i18n_tooltip',
+    "get_button_config",
+    "IconHelper",
+    "get_icon_helper",
+    "attach_i18n_tooltip",
 ]
-

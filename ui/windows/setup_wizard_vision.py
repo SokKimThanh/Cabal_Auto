@@ -100,8 +100,6 @@ except ImportError:
     Detection = None
 
 
-
-
 # ==================== SINGLETON INSTANCE ====================
 _vision_wizard_instance: Optional["VisionWizard"] = None
 

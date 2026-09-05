@@ -12,11 +12,11 @@ Main window and dialog classes:
 """
 
 __all__ = [
-    'auto_hunt',
-    'library_manager',
-    'overlay_window',
-    'monster_manager_win',
-    'setup_wizard',
-    'setup_wizard_vision',
-    'template_matcher',
+    "auto_hunt",
+    "library_manager",
+    "overlay_window",
+    "monster_manager_win",
+    "setup_wizard",
+    "setup_wizard_vision",
+    "template_matcher",
 ]

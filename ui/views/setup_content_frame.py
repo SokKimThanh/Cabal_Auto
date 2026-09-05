@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from ui.tabs.setup_tab import SetupTab
 
+
 class SetupContentFrame(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)

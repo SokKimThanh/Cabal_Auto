@@ -1,0 +1,1482 @@
+app_gui.py:1:1: F401 'ui.windows.setup_wizard.show_setup_wizard' imported but unused
+from ui.windows.setup_wizard import show_setup_wizard
+^
+app_gui.py:3:1: F401 'ui.windows.hotkey_diag_dialog.show_hotkey_diagnostics_modal' imported but unused
+from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
+^
+app_gui.py:6:1: F401 'lib.system.win_input.tap' imported but unused
+from lib.system.win_input import tap
+^
+app_gui.py:10:1: F401 'lib.features.timing.calculator.calculate_timing' imported but unused
+from lib.features.timing.calculator import (
+^
+app_gui.py:10:1: F401 'lib.features.timing.calculator.format_timing_recommendation' imported but unused
+from lib.features.timing.calculator import (
+^
+app_gui.py:10:1: F401 'lib.features.timing.calculator.get_timing_presets' imported but unused
+from lib.features.timing.calculator import (
+^
+app_gui.py:15:1: F401 'lib.features.skills.skill_stats.SkillStats' imported but unused
+from lib.features.skills.skill_stats import (
+^
+app_gui.py:20:1: F401 'lib.features.skills.skill_repo.calculate_attack_speed_from_skills' imported but unused
+from lib.features.skills.skill_repo import (
+^
+app_gui.py:23:1: F401 'lib.features.monsters.monster_repo.calculate_monster_estimate' imported but unused
+from lib.features.monsters.monster_repo import (
+^
+app_gui.py:23:1: F401 'lib.features.monsters.monster_repo.load_monster_library' imported but unused
+from lib.features.monsters.monster_repo import (
+^
+app_gui.py:23:1: F401 'lib.features.monsters.monster_repo.save_monster_library' imported but unused
+from lib.features.monsters.monster_repo import (
+^
+app_gui.py:38:1: F401 'lib.features.hunt.hunt_config.CONFIG_PATH' imported but unused
+from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
+^
+app_gui.py:38:1: F401 'lib.features.hunt.hunt_config.HUNT_CONFIG_PATH' imported but unused
+from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
+^
+app_gui.py:39:1: F401 'ui.utils.overlay_controller.OverlayController' imported but unused
+from ui.utils.overlay_controller import OverlayController
+^
+app_gui.py:41:1: F401 'lib.system.bot_manager.BotManager' imported but unused
+from lib.system.bot_manager import BotManager
+^
+app_gui.py:46:1: F401 'lib.vision.vision_engine.VisionEngine' imported but unused
+from lib.vision.vision_engine import VisionEngine
+^
+app_gui.py:47:1: F401 'lib.vision.template_matcher.locate_template' imported but unused
+from lib.vision.template_matcher import locate_template
+^
+app_gui.py:48:1: F401 'ctypes.wintypes' imported but unused
+from ctypes import wintypes
+^
+app_gui.py:51:1: F401 'copy' imported but unused
+import copy
+^
+app_gui.py:52:1: F401 'ctypes' imported but unused
+import ctypes
+^
+app_gui.py:53:1: F401 'json' imported but unused
+import json
+^
+app_gui.py:54:1: F401 'math' imported but unused
+import math
+^
+app_gui.py:55:1: F401 'os' imported but unused
+import os
+^
+app_gui.py:57:1: F401 'threading' imported but unused
+import threading
+^
+app_gui.py:58:1: F401 'time' imported but unused
+import time
+^
+app_gui.py:62:1: F401 'typing.Any' imported but unused
+from typing import Any, Dict, List, Optional
+^
+app_gui.py:62:1: F401 'typing.Dict' imported but unused
+from typing import Any, Dict, List, Optional
+^
+app_gui.py:62:1: F401 'typing.List' imported but unused
+from typing import Any, Dict, List, Optional
+^
+app_gui.py:92:1: E402 module level import not at top of file
+from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
+^
+app_gui.py:1045:13: F401 'lib.system.hunt_logger.get_hunt_logger' imported but unused
+            from lib.system.hunt_logger import get_hunt_logger
+            ^
+app_gui.py:2561:9: F841 local variable 'template_path' is assigned to but never used
+        template_path = self.hunt_cfg.get("template_path", "").strip()
+        ^
+app_gui.py:2896:9: F401 'win32gui' imported but unused
+        import win32gui  # Test pywin32 availability
+        ^
+ui/components/demo_icon_button.py:22:1: F401 'tkinter' imported but unused
+import tkinter
+^
+ui/components/demo_icon_button.py:22:1: E402 module level import not at top of file
+import tkinter
+^
+ui/components/demo_icon_button.py:23:1: E402 module level import not at top of file
+from lib.ui_style import UIStyle
+^
+ui/components/demo_icon_button.py:24:1: F401 'tkinter.ttk' imported but unused
+from tkinter import ttk
+^
+ui/components/demo_icon_button.py:24:1: E402 module level import not at top of file
+from tkinter import ttk
+^
+ui/components/demo_icon_button.py:25:1: E402 module level import not at top of file
+from icon_button import (
+^
+ui/components/demo_icon_button.py:37:12: F821 undefined name 'tk'
+    root = tk.Tk()
+           ^
+ui/components/demo_icon_button.py:59:13: F821 undefined name 'tk'
+    title = tk.Label(
+            ^
+ui/components/demo_icon_button.py:69:20: F821 undefined name 'tk'
+    status_label = tk.Label(
+                   ^
+ui/components/demo_icon_button.py:77:19: F821 undefined name 'tk'
+    hover_label = tk.Label(
+                  ^
+ui/components/demo_icon_button.py:85:19: F821 undefined name 'tk'
+    focus_label = tk.Label(
+                  ^
+ui/components/demo_icon_button.py:94:17: F821 undefined name 'tk'
+    container = tk.Frame(root, bg="#f0f0f0")
+                ^
+ui/components/demo_icon_button.py:98:16: F821 undefined name 'tk'
+    section1 = tk.LabelFrame(
+               ^
+ui/components/demo_icon_button.py:108:19: F821 undefined name 'tk'
+    types_frame = tk.Frame(section1, bg="#f0f0f0")
+                  ^
+ui/components/demo_icon_button.py:157:16: F821 undefined name 'tk'
+    section2 = tk.LabelFrame(
+               ^
+ui/components/demo_icon_button.py:167:22: F821 undefined name 'tk'
+    variants_frame = tk.Frame(section2, bg="#f0f0f0")
+                     ^
+ui/components/demo_icon_button.py:221:16: F821 undefined name 'tk'
+    section3 = tk.LabelFrame(
+               ^
+ui/components/demo_icon_button.py:231:20: F821 undefined name 'tk'
+    states_frame = tk.Frame(section3, bg="#f0f0f0")
+                   ^
+ui/components/demo_icon_button.py:275:16: F821 undefined name 'tk'
+    section4 = tk.LabelFrame(
+               ^
+ui/components/demo_icon_button.py:285:19: F821 undefined name 'tk'
+    icons_frame = tk.Frame(section4, bg="#f0f0f0")
+                  ^
+ui/components/demo_icon_button.py:343:16: F821 undefined name 'tk'
+    section5 = tk.LabelFrame(
+               ^
+ui/components/demo_icon_button.py:353:23: F821 undefined name 'tk'
+    callbacks_frame = tk.Frame(section5, bg="#f0f0f0")
+                      ^
+ui/components/demo_icon_button.py:378:16: F821 undefined name 'tk'
+    section6 = tk.LabelFrame(
+               ^
+ui/components/demo_icon_button.py:388:25: F821 undefined name 'tk'
+    convenience_frame = tk.Frame(section6, bg="#f0f0f0")
+                        ^
+ui/components/demo_icon_button.py:427:16: F821 undefined name 'tk'
+    section7 = tk.LabelFrame(
+               ^
+ui/components/demo_icon_button.py:437:20: F821 undefined name 'tk'
+    custom_frame = tk.Frame(section7, bg="#f0f0f0")
+                   ^
+ui/components/game_window_mode_selector.py:138:9: E722 do not use bare 'except'
+        except:
+        ^
+ui/components/game_window_mode_selector.py:168:23: F541 f-string is missing placeholders
+                print(f"[GameWindowMode] Config not found, using default 'none'")
+                      ^
+ui/components/game_window_mode_selector.py:235:49: E226 missing whitespace around arithmetic operator
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+                                                ^
+ui/components/game_window_mode_selector.py:235:67: E226 missing whitespace around arithmetic operator
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+                                                                  ^
+ui/components/game_window_mode_selector.py:258:17: E722 do not use bare 'except'
+                except:
+                ^
+ui/components/icon_button.py:15:1: W293 blank line contains whitespace
+"""
+Icon Button & Label Component
+
+Reusable icon button and label components with:
+- Global icon integration (ui.helpers.icon_helper)
+- Global button styles (ui.helpers.button_styles)
+- Tooltip support (ui.helpers.tooltip)
+- State management (enabled/disabled/highlight/danger)
+- Flexible sizing and variants
+- Hover/focus callbacks
+- Automatic reference management (prevent garbage collection)
+
+Usage:
+    from ui.components import create_icon_button, create_icon_label
+
+    # Icon button
+    btn = create_icon_button(
+        parent=frame,
+        icon_name='add',
+        text='Add Item',
+        command=on_add,
+        button_type='green_light',
+        tooltip_key='btn_add',
+        state='normal'
+    )
+
+    # Icon label
+    label = create_icon_label(
+        parent=frame,
+        icon_name='monster',
+        text='Monster Name:',
+        tooltip_text='Enter the monster name'
+    )
+"""
+^
+ui/components/icon_button.py:26:1: W293 blank line contains whitespace
+"""
+Icon Button & Label Component
+
+Reusable icon button and label components with:
+- Global icon integration (ui.helpers.icon_helper)
+- Global button styles (ui.helpers.button_styles)
+- Tooltip support (ui.helpers.tooltip)
+- State management (enabled/disabled/highlight/danger)
+- Flexible sizing and variants
+- Hover/focus callbacks
+- Automatic reference management (prevent garbage collection)
+
+Usage:
+    from ui.components import create_icon_button, create_icon_label
+
+    # Icon button
+    btn = create_icon_button(
+        parent=frame,
+        icon_name='add',
+        text='Add Item',
+        command=on_add,
+        button_type='green_light',
+        tooltip_key='btn_add',
+        state='normal'
+    )
+
+    # Icon label
+    label = create_icon_label(
+        parent=frame,
+        icon_name='monster',
+        text='Monster Name:',
+        tooltip_text='Enter the monster name'
+    )
+"""
+^
+ui/components/icon_button.py:54:5: E301 expected 1 blank line, found 0
+    class MockIconHelper:
+    ^
+ui/components/icon_button.py:63:5: E301 expected 1 blank line, found 0
+    def get_button_config(button_type: str) -> dict:
+    ^
+ui/components/icon_button.py:130:5: E301 expected 1 blank line, found 0
+    def get_lang() -> str:
+    ^
+ui/components/icon_button.py:142:1: E302 expected 2 blank lines, found 1
+def _clean_stale_icon_refs():
+^
+ui/components/icon_button.py:185:1: W293 blank line contains whitespace
+    """
+    Create a standardized icon button with global styles.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name from icon_helper (e.g., 'add', 'delete', 'save')
+        command: Button command callback
+        text: Optional button text (icon will be prepended)
+        button_type: Button style type ('green_light', 'red', 'blue', 'orange', 'refresh')
+        icon_size: Icon size in pixels (default: 16) - controls the icon image size
+        button_size: Total button size in pixels (optional) - auto-calculates padding if provided
+        icon_fallback: Fallback emoji if icon not found
+        tooltip_key: i18n key for tooltip
+        tooltip_ns: i18n namespace for tooltip
+        tooltip_text: Direct tooltip text (overrides tooltip_key)
+        state: Button state ('normal', 'disabled', 'highlight', 'danger')
+        variant: Button variant ('compact', 'small', 'medium', 'large', 'text')
+        width: Custom button width (overrides variant width)
+        padding: Custom padding dict {'padx': int, 'pady': int} (overrides button_size)
+        on_hover: Callback when mouse enters button (event)
+        on_leave: Callback when mouse leaves button (event)
+        on_focus: Callback when button receives focus (event)
+        auto_hover_disabled: Auto change icon/cursor to forbidden when hovering over disabled button (default: True)
+        **kwargs: Additional button configuration (overrides defaults)
+
+    Returns:
+        tk.Button: Configured button with icon and styles
+
+    Example:
+        # Simple icon button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='add',
+            command=on_add,
+            button_type='green_light',
+            tooltip_key='btn_add',
+            tooltip_ns='monster_editor'
+        )
+
+        # Icon button with text
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='save',
+            text='Save All',
+            command=on_save,
+            button_type='green_light',
+            variant='medium',
+            tooltip_text='Save all changes'
+        )
+
+        # Danger state button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='delete',
+            command=on_delete,
+            state='danger',
+            tooltip_key='btn_delete'
+        )
+    """
+^
+ui/components/icon_button.py:207:1: W293 blank line contains whitespace
+    """
+    Create a standardized icon button with global styles.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name from icon_helper (e.g., 'add', 'delete', 'save')
+        command: Button command callback
+        text: Optional button text (icon will be prepended)
+        button_type: Button style type ('green_light', 'red', 'blue', 'orange', 'refresh')
+        icon_size: Icon size in pixels (default: 16) - controls the icon image size
+        button_size: Total button size in pixels (optional) - auto-calculates padding if provided
+        icon_fallback: Fallback emoji if icon not found
+        tooltip_key: i18n key for tooltip
+        tooltip_ns: i18n namespace for tooltip
+        tooltip_text: Direct tooltip text (overrides tooltip_key)
+        state: Button state ('normal', 'disabled', 'highlight', 'danger')
+        variant: Button variant ('compact', 'small', 'medium', 'large', 'text')
+        width: Custom button width (overrides variant width)
+        padding: Custom padding dict {'padx': int, 'pady': int} (overrides button_size)
+        on_hover: Callback when mouse enters button (event)
+        on_leave: Callback when mouse leaves button (event)
+        on_focus: Callback when button receives focus (event)
+        auto_hover_disabled: Auto change icon/cursor to forbidden when hovering over disabled button (default: True)
+        **kwargs: Additional button configuration (overrides defaults)
+
+    Returns:
+        tk.Button: Configured button with icon and styles
+
+    Example:
+        # Simple icon button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='add',
+            command=on_add,
+            button_type='green_light',
+            tooltip_key='btn_add',
+            tooltip_ns='monster_editor'
+        )
+
+        # Icon button with text
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='save',
+            text='Save All',
+            command=on_save,
+            button_type='green_light',
+            variant='medium',
+            tooltip_text='Save all changes'
+        )
+
+        # Danger state button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='delete',
+            command=on_delete,
+            state='danger',
+            tooltip_key='btn_delete'
+        )
+    """
+^
+ui/components/icon_button.py:210:1: W293 blank line contains whitespace
+    """
+    Create a standardized icon button with global styles.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name from icon_helper (e.g., 'add', 'delete', 'save')
+        command: Button command callback
+        text: Optional button text (icon will be prepended)
+        button_type: Button style type ('green_light', 'red', 'blue', 'orange', 'refresh')
+        icon_size: Icon size in pixels (default: 16) - controls the icon image size
+        button_size: Total button size in pixels (optional) - auto-calculates padding if provided
+        icon_fallback: Fallback emoji if icon not found
+        tooltip_key: i18n key for tooltip
+        tooltip_ns: i18n namespace for tooltip
+        tooltip_text: Direct tooltip text (overrides tooltip_key)
+        state: Button state ('normal', 'disabled', 'highlight', 'danger')
+        variant: Button variant ('compact', 'small', 'medium', 'large', 'text')
+        width: Custom button width (overrides variant width)
+        padding: Custom padding dict {'padx': int, 'pady': int} (overrides button_size)
+        on_hover: Callback when mouse enters button (event)
+        on_leave: Callback when mouse leaves button (event)
+        on_focus: Callback when button receives focus (event)
+        auto_hover_disabled: Auto change icon/cursor to forbidden when hovering over disabled button (default: True)
+        **kwargs: Additional button configuration (overrides defaults)
+
+    Returns:
+        tk.Button: Configured button with icon and styles
+
+    Example:
+        # Simple icon button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='add',
+            command=on_add,
+            button_type='green_light',
+            tooltip_key='btn_add',
+            tooltip_ns='monster_editor'
+        )
+
+        # Icon button with text
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='save',
+            text='Save All',
+            command=on_save,
+            button_type='green_light',
+            variant='medium',
+            tooltip_text='Save all changes'
+        )
+
+        # Danger state button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='delete',
+            command=on_delete,
+            state='danger',
+            tooltip_key='btn_delete'
+        )
+    """
+^
+ui/components/icon_button.py:221:1: W293 blank line contains whitespace
+    """
+    Create a standardized icon button with global styles.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name from icon_helper (e.g., 'add', 'delete', 'save')
+        command: Button command callback
+        text: Optional button text (icon will be prepended)
+        button_type: Button style type ('green_light', 'red', 'blue', 'orange', 'refresh')
+        icon_size: Icon size in pixels (default: 16) - controls the icon image size
+        button_size: Total button size in pixels (optional) - auto-calculates padding if provided
+        icon_fallback: Fallback emoji if icon not found
+        tooltip_key: i18n key for tooltip
+        tooltip_ns: i18n namespace for tooltip
+        tooltip_text: Direct tooltip text (overrides tooltip_key)
+        state: Button state ('normal', 'disabled', 'highlight', 'danger')
+        variant: Button variant ('compact', 'small', 'medium', 'large', 'text')
+        width: Custom button width (overrides variant width)
+        padding: Custom padding dict {'padx': int, 'pady': int} (overrides button_size)
+        on_hover: Callback when mouse enters button (event)
+        on_leave: Callback when mouse leaves button (event)
+        on_focus: Callback when button receives focus (event)
+        auto_hover_disabled: Auto change icon/cursor to forbidden when hovering over disabled button (default: True)
+        **kwargs: Additional button configuration (overrides defaults)
+
+    Returns:
+        tk.Button: Configured button with icon and styles
+
+    Example:
+        # Simple icon button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='add',
+            command=on_add,
+            button_type='green_light',
+            tooltip_key='btn_add',
+            tooltip_ns='monster_editor'
+        )
+
+        # Icon button with text
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='save',
+            text='Save All',
+            command=on_save,
+            button_type='green_light',
+            variant='medium',
+            tooltip_text='Save all changes'
+        )
+
+        # Danger state button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='delete',
+            command=on_delete,
+            state='danger',
+            tooltip_key='btn_delete'
+        )
+    """
+^
+ui/components/icon_button.py:232:1: W293 blank line contains whitespace
+    """
+    Create a standardized icon button with global styles.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name from icon_helper (e.g., 'add', 'delete', 'save')
+        command: Button command callback
+        text: Optional button text (icon will be prepended)
+        button_type: Button style type ('green_light', 'red', 'blue', 'orange', 'refresh')
+        icon_size: Icon size in pixels (default: 16) - controls the icon image size
+        button_size: Total button size in pixels (optional) - auto-calculates padding if provided
+        icon_fallback: Fallback emoji if icon not found
+        tooltip_key: i18n key for tooltip
+        tooltip_ns: i18n namespace for tooltip
+        tooltip_text: Direct tooltip text (overrides tooltip_key)
+        state: Button state ('normal', 'disabled', 'highlight', 'danger')
+        variant: Button variant ('compact', 'small', 'medium', 'large', 'text')
+        width: Custom button width (overrides variant width)
+        padding: Custom padding dict {'padx': int, 'pady': int} (overrides button_size)
+        on_hover: Callback when mouse enters button (event)
+        on_leave: Callback when mouse leaves button (event)
+        on_focus: Callback when button receives focus (event)
+        auto_hover_disabled: Auto change icon/cursor to forbidden when hovering over disabled button (default: True)
+        **kwargs: Additional button configuration (overrides defaults)
+
+    Returns:
+        tk.Button: Configured button with icon and styles
+
+    Example:
+        # Simple icon button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='add',
+            command=on_add,
+            button_type='green_light',
+            tooltip_key='btn_add',
+            tooltip_ns='monster_editor'
+        )
+
+        # Icon button with text
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='save',
+            text='Save All',
+            command=on_save,
+            button_type='green_light',
+            variant='medium',
+            tooltip_text='Save all changes'
+        )
+
+        # Danger state button
+        btn = create_icon_button(
+            parent=frame,
+            icon_name='delete',
+            command=on_delete,
+            state='danger',
+            tooltip_key='btn_delete'
+        )
+    """
+^
+ui/components/icon_button.py:245:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:248:9: F841 local variable 'actual_state' is assigned to but never used
+        actual_state = 'disabled'
+        ^
+ui/components/icon_button.py:260:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:263:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:266:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:273:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:276:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:311:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:329:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:404:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:408:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:413:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:419:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:424:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:433:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:442:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:446:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:459:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:463:9: E301 expected 1 blank line, found 0
+        def _custom_invoke():
+        ^
+ui/components/icon_button.py:502:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:509:1: W293 blank line contains whitespace
+    """
+    Brighten a hex color by a factor.
+
+    Args:
+        hex_color: Hex color string (e.g., '#2E7D32')
+        factor: Brightness factor (0.0-1.0, default: 0.1)
+
+    Returns:
+        str: Brightened hex color
+    """
+^
+ui/components/icon_button.py:513:1: W293 blank line contains whitespace
+    """
+    Brighten a hex color by a factor.
+
+    Args:
+        hex_color: Hex color string (e.g., '#2E7D32')
+        factor: Brightness factor (0.0-1.0, default: 0.1)
+
+    Returns:
+        str: Brightened hex color
+    """
+^
+ui/components/icon_button.py:520:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:525:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:530:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:540:1: W293 blank line contains whitespace
+    """
+    Attach a simple tooltip to a widget.
+
+    Args:
+        widget: Widget to attach tooltip to
+        text: Tooltip text
+        delay: Delay before showing tooltip (ms)
+    """
+^
+ui/components/icon_button.py:548:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:551:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:556:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:560:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:573:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:576:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:579:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:584:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:589:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:674:1: W293 blank line contains whitespace
+    """
+    Create a label with icon and text.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name (e.g., 'monster', 'list', 'info')
+        text: Label text (optional)
+        icon_fallback: Fallback emoji if icon not found
+        icon_size: Icon size in pixels (default: 16)
+        tooltip_text: Direct tooltip text (optional)
+        tooltip_key: i18n tooltip key (optional)
+        tooltip_ns: i18n namespace for tooltip (optional)
+        font: Font tuple (family, size, weight), uses UI.FONT_LABEL if None
+        fg: Foreground color, uses UI.COLOR_TEXT if None
+        bg: Background color, uses UI.BG_DEFAULT if None
+        **kwargs: Additional Label configuration
+
+    Returns:
+        tk.Label: Configured label with icon and text
+
+    Example:
+        # Simple icon label
+        label = create_icon_label(
+            parent=frame,
+            icon_name='monster',
+            text='Monster Name:',
+            tooltip_text='Enter the monster name'
+        )
+
+        # Title with icon
+        title = create_icon_label(
+            parent=frame,
+            icon_name='list',
+            text='Monster List',
+            font=('Segoe UI', 11, 'bold'),
+            fg='#0D47A1'
+        )
+    """
+^
+ui/components/icon_button.py:688:1: W293 blank line contains whitespace
+    """
+    Create a label with icon and text.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name (e.g., 'monster', 'list', 'info')
+        text: Label text (optional)
+        icon_fallback: Fallback emoji if icon not found
+        icon_size: Icon size in pixels (default: 16)
+        tooltip_text: Direct tooltip text (optional)
+        tooltip_key: i18n tooltip key (optional)
+        tooltip_ns: i18n namespace for tooltip (optional)
+        font: Font tuple (family, size, weight), uses UI.FONT_LABEL if None
+        fg: Foreground color, uses UI.COLOR_TEXT if None
+        bg: Background color, uses UI.BG_DEFAULT if None
+        **kwargs: Additional Label configuration
+
+    Returns:
+        tk.Label: Configured label with icon and text
+
+    Example:
+        # Simple icon label
+        label = create_icon_label(
+            parent=frame,
+            icon_name='monster',
+            text='Monster Name:',
+            tooltip_text='Enter the monster name'
+        )
+
+        # Title with icon
+        title = create_icon_label(
+            parent=frame,
+            icon_name='list',
+            text='Monster List',
+            font=('Segoe UI', 11, 'bold'),
+            fg='#0D47A1'
+        )
+    """
+^
+ui/components/icon_button.py:691:1: W293 blank line contains whitespace
+    """
+    Create a label with icon and text.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name (e.g., 'monster', 'list', 'info')
+        text: Label text (optional)
+        icon_fallback: Fallback emoji if icon not found
+        icon_size: Icon size in pixels (default: 16)
+        tooltip_text: Direct tooltip text (optional)
+        tooltip_key: i18n tooltip key (optional)
+        tooltip_ns: i18n namespace for tooltip (optional)
+        font: Font tuple (family, size, weight), uses UI.FONT_LABEL if None
+        fg: Foreground color, uses UI.COLOR_TEXT if None
+        bg: Background color, uses UI.BG_DEFAULT if None
+        **kwargs: Additional Label configuration
+
+    Returns:
+        tk.Label: Configured label with icon and text
+
+    Example:
+        # Simple icon label
+        label = create_icon_label(
+            parent=frame,
+            icon_name='monster',
+            text='Monster Name:',
+            tooltip_text='Enter the monster name'
+        )
+
+        # Title with icon
+        title = create_icon_label(
+            parent=frame,
+            icon_name='list',
+            text='Monster List',
+            font=('Segoe UI', 11, 'bold'),
+            fg='#0D47A1'
+        )
+    """
+^
+ui/components/icon_button.py:700:1: W293 blank line contains whitespace
+    """
+    Create a label with icon and text.
+
+    Args:
+        parent: Parent widget
+        icon_name: Icon name (e.g., 'monster', 'list', 'info')
+        text: Label text (optional)
+        icon_fallback: Fallback emoji if icon not found
+        icon_size: Icon size in pixels (default: 16)
+        tooltip_text: Direct tooltip text (optional)
+        tooltip_key: i18n tooltip key (optional)
+        tooltip_ns: i18n namespace for tooltip (optional)
+        font: Font tuple (family, size, weight), uses UI.FONT_LABEL if None
+        fg: Foreground color, uses UI.COLOR_TEXT if None
+        bg: Background color, uses UI.BG_DEFAULT if None
+        **kwargs: Additional Label configuration
+
+    Returns:
+        tk.Label: Configured label with icon and text
+
+    Example:
+        # Simple icon label
+        label = create_icon_label(
+            parent=frame,
+            icon_name='monster',
+            text='Monster Name:',
+            tooltip_text='Enter the monster name'
+        )
+
+        # Title with icon
+        title = create_icon_label(
+            parent=frame,
+            icon_name='list',
+            text='Monster List',
+            font=('Segoe UI', 11, 'bold'),
+            fg='#0D47A1'
+        )
+    """
+^
+ui/components/icon_button.py:720:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:723:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:726:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:730:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:737:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:740:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:772:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:785:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:800:1: W293 blank line contains whitespace
+    """
+    Update button state and icon dynamically.
+
+    When disabled, automatically changes icon to forbidden symbol.
+
+    Args:
+        button: Button widget to update
+        enabled: Whether button should be enabled
+        icon_name: New icon name (optional, keeps current if None)
+        icon_fallback: Fallback emoji for new icon
+        icon_size: Icon size in pixels
+        tooltip_text: New tooltip text (optional)
+
+    Example:
+        # Disable button and change icon to forbidden
+        update_button_state(save_btn, enabled=False, tooltip_text='No changes to save')
+
+        # Enable button and restore icon
+        update_button_state(save_btn, enabled=True, icon_name='save', tooltip_text='Save changes')
+
+        # Just disable without changing icon
+        update_button_state(stop_btn, enabled=False)
+    """
+^
+ui/components/icon_button.py:802:1: W293 blank line contains whitespace
+    """
+    Update button state and icon dynamically.
+
+    When disabled, automatically changes icon to forbidden symbol.
+
+    Args:
+        button: Button widget to update
+        enabled: Whether button should be enabled
+        icon_name: New icon name (optional, keeps current if None)
+        icon_fallback: Fallback emoji for new icon
+        icon_size: Icon size in pixels
+        tooltip_text: New tooltip text (optional)
+
+    Example:
+        # Disable button and change icon to forbidden
+        update_button_state(save_btn, enabled=False, tooltip_text='No changes to save')
+
+        # Enable button and restore icon
+        update_button_state(save_btn, enabled=True, icon_name='save', tooltip_text='Save changes')
+
+        # Just disable without changing icon
+        update_button_state(stop_btn, enabled=False)
+    """
+^
+ui/components/icon_button.py:810:1: W293 blank line contains whitespace
+    """
+    Update button state and icon dynamically.
+
+    When disabled, automatically changes icon to forbidden symbol.
+
+    Args:
+        button: Button widget to update
+        enabled: Whether button should be enabled
+        icon_name: New icon name (optional, keeps current if None)
+        icon_fallback: Fallback emoji for new icon
+        icon_size: Icon size in pixels
+        tooltip_text: New tooltip text (optional)
+
+    Example:
+        # Disable button and change icon to forbidden
+        update_button_state(save_btn, enabled=False, tooltip_text='No changes to save')
+
+        # Enable button and restore icon
+        update_button_state(save_btn, enabled=True, icon_name='save', tooltip_text='Save changes')
+
+        # Just disable without changing icon
+        update_button_state(stop_btn, enabled=False)
+    """
+^
+ui/components/icon_button.py:814:1: W293 blank line contains whitespace
+    """
+    Update button state and icon dynamically.
+
+    When disabled, automatically changes icon to forbidden symbol.
+
+    Args:
+        button: Button widget to update
+        enabled: Whether button should be enabled
+        icon_name: New icon name (optional, keeps current if None)
+        icon_fallback: Fallback emoji for new icon
+        icon_size: Icon size in pixels
+        tooltip_text: New tooltip text (optional)
+
+    Example:
+        # Disable button and change icon to forbidden
+        update_button_state(save_btn, enabled=False, tooltip_text='No changes to save')
+
+        # Enable button and restore icon
+        update_button_state(save_btn, enabled=True, icon_name='save', tooltip_text='Save changes')
+
+        # Just disable without changing icon
+        update_button_state(stop_btn, enabled=False)
+    """
+^
+ui/components/icon_button.py:817:1: W293 blank line contains whitespace
+    """
+    Update button state and icon dynamically.
+
+    When disabled, automatically changes icon to forbidden symbol.
+
+    Args:
+        button: Button widget to update
+        enabled: Whether button should be enabled
+        icon_name: New icon name (optional, keeps current if None)
+        icon_fallback: Fallback emoji for new icon
+        icon_size: Icon size in pixels
+        tooltip_text: New tooltip text (optional)
+
+    Example:
+        # Disable button and change icon to forbidden
+        update_button_state(save_btn, enabled=False, tooltip_text='No changes to save')
+
+        # Enable button and restore icon
+        update_button_state(save_btn, enabled=True, icon_name='save', tooltip_text='Save changes')
+
+        # Just disable without changing icon
+        update_button_state(stop_btn, enabled=False)
+    """
+^
+ui/components/icon_button.py:840:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:843:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:852:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:866:1: W293 blank line contains whitespace
+    """
+    Simple helper to enable/disable button with automatic icon change.
+
+    Args:
+        button: Button to update
+        enabled: True to enable, False to disable (shows forbidden icon)
+        tooltip: Optional tooltip text
+
+    Example:
+        # Disable save button
+        set_button_enabled(save_btn, False, 'No changes to save')
+
+        # Enable save button
+        set_button_enabled(save_btn, True, 'Save changes')
+    """
+^
+ui/components/icon_button.py:871:1: W293 blank line contains whitespace
+    """
+    Simple helper to enable/disable button with automatic icon change.
+
+    Args:
+        button: Button to update
+        enabled: True to enable, False to disable (shows forbidden icon)
+        tooltip: Optional tooltip text
+
+    Example:
+        # Disable save button
+        set_button_enabled(save_btn, False, 'No changes to save')
+
+        # Enable save button
+        set_button_enabled(save_btn, True, 'Save changes')
+    """
+^
+ui/components/icon_button.py:875:1: W293 blank line contains whitespace
+    """
+    Simple helper to enable/disable button with automatic icon change.
+
+    Args:
+        button: Button to update
+        enabled: True to enable, False to disable (shows forbidden icon)
+        tooltip: Optional tooltip text
+
+    Example:
+        # Disable save button
+        set_button_enabled(save_btn, False, 'No changes to save')
+
+        # Enable save button
+        set_button_enabled(save_btn, True, 'Save changes')
+    """
+^
+ui/components/icon_button.py:885:1: W293 blank line contains whitespace
+    """
+    Change button icon without affecting state.
+
+    Args:
+        button: Button to update
+        icon_name: New icon name
+        fallback: Fallback emoji
+        size: Icon size
+
+    Example:
+        # Change to save icon
+        set_button_icon(btn, 'save', '💾')
+
+        # Change to loading icon
+        set_button_icon(btn, 'loading', '⏳')
+    """
+^
+ui/components/icon_button.py:891:1: W293 blank line contains whitespace
+    """
+    Change button icon without affecting state.
+
+    Args:
+        button: Button to update
+        icon_name: New icon name
+        fallback: Fallback emoji
+        size: Icon size
+
+    Example:
+        # Change to save icon
+        set_button_icon(btn, 'save', '💾')
+
+        # Change to loading icon
+        set_button_icon(btn, 'loading', '⏳')
+    """
+^
+ui/components/icon_button.py:895:1: W293 blank line contains whitespace
+    """
+    Change button icon without affecting state.
+
+    Args:
+        button: Button to update
+        icon_name: New icon name
+        fallback: Fallback emoji
+        size: Icon size
+
+    Example:
+        # Change to save icon
+        set_button_icon(btn, 'save', '💾')
+
+        # Change to loading icon
+        set_button_icon(btn, 'loading', '⏳')
+    """
+^
+ui/components/icon_button.py:901:1: W293 blank line contains whitespace
+
+^
+ui/components/icon_button.py:908:1: W391 blank line at end of file
+
+^
+ui/components/window_position_selector.py:47:1: F401 'typing.Dict' imported but unused
+from typing import Optional, Callable, Any, List, Dict
+^
+ui/components/window_position_selector.py:169:9: E722 do not use bare 'except'
+        except:
+        ^
+ui/components/window_position_selector.py:257:49: E226 missing whitespace around arithmetic operator
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+                                                ^
+ui/components/window_position_selector.py:257:67: E226 missing whitespace around arithmetic operator
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+                                                                  ^
+ui/components/window_position_selector.py:277:17: E722 do not use bare 'except'
+                except:
+                ^
+ui/controllers/app_lifecycle_controller.py:1:1: F401 'time' imported but unused
+import time
+^
+ui/controllers/app_lifecycle_controller.py:243:21: F541 f-string is missing placeholders
+                    f"CSDL monsters.db chưa hoàn chỉnh!\n\n"
+                    ^
+ui/controllers/app_state_controller.py:4:1: E402 module level import not at top of file
+import tkinter as tk
+^
+ui/controllers/app_state_controller.py:5:1: E402 module level import not at top of file
+from typing import Any, Dict, List, Optional
+^
+ui/controllers/app_state_controller.py:6:1: E402 module level import not at top of file
+import threading
+^
+ui/controllers/app_state_controller.py:7:1: E402 module level import not at top of file
+import copy
+^
+ui/controllers/app_state_controller.py:9:1: E402 module level import not at top of file
+from lib.i18n import GLOBAL_NS as I18N_GLOBAL
+^
+ui/controllers/app_state_controller.py:10:1: E402 module level import not at top of file
+from lib.i18n import t as i18n_t
+^
+ui/controllers/hotkey_controller.py:1:1: F401 'typing.Optional' imported but unused
+from typing import Any, Optional
+^
+ui/controllers/overlay_controller.py:3:1: F401 'tkinter as tk' imported but unused
+import tkinter as tk
+^
+ui/controllers/overlay_controller.py:105:39: F541 f-string is missing placeholders
+                                print(f"[Overlay] ⚠️ Game is minimized, restoring...")
+                                      ^
+ui/controllers/overlay_controller.py:179:43: F541 f-string is missing placeholders
+                                    print(f"[Overlay] Game is minimized, restoring...")
+                                          ^
+ui/controllers/overlay_controller.py:194:45: F541 f-string is missing placeholders
+                                            f"[Overlay] ⚠️ Could not get window info after restore"
+                                            ^
+ui/controllers/overlay_controller.py:199:41: F541 f-string is missing placeholders
+                                        f"[Overlay] Bringing game window to foreground..."
+                                        ^
+ui/controllers/overlay_controller.py:202:43: F541 f-string is missing placeholders
+                                    print(f"[Overlay] ✅ Game window focused")
+                                          ^
+ui/controllers/overlay_controller.py:445:23: F541 f-string is missing placeholders
+                print(f"[Overlay] Test detection boxes updated")
+                      ^
+ui/controllers/skill_manager_controller.py:1:1: F401 'typing.Optional' imported but unused
+from typing import TYPE_CHECKING, Optional
+^
+ui/helpers/capture_helper.py:1:1: F401 'os' imported but unused
+import os
+^
+ui/helpers/icon_helper.py:15:1: F401 'os' imported but unused
+import os
+^
+ui/helpers/icon_helper.py:172:9: F841 local variable 'is_full_color' is assigned to but never used
+        is_full_color = False
+        ^
+ui/helpers/tooltip.py:82:33: E226 missing whitespace around arithmetic operator
+            tw.wm_geometry(f"+{x+12}+{y+12}")
+                                ^
+ui/helpers/tooltip.py:82:40: E226 missing whitespace around arithmetic operator
+            tw.wm_geometry(f"+{x+12}+{y+12}")
+                                       ^
+ui/mixins/action_notification_mixin.py:85:1: F401 'inspect' imported but unused
+import inspect
+^
+ui/mixins/button_state_mixin.py:29:1: F401 'typing.Callable' imported but unused
+from typing import Dict, List, Optional, Union, Callable, Any
+^
+ui/mixins/button_state_mixin.py:797:62: F541 f-string is missing placeholders
+            self.parent_tree.insert("", "end", item_id, text=f"New Parent")
+                                                             ^
+ui/utils/detection_converter.py:79:24: E226 missing whitespace around arithmetic operator
+        label = f"#{idx+1} {detection.template_id} ({detection.score:.0%})"
+                       ^
+ui/utils/overlay_controller.py:27:1: F401 'typing.Dict' imported but unused
+from typing import List, Dict, Optional
+^
+ui/utils/overlay_controller.py:33:1: F401 'lib.vision.monster_detector.DetectionStats' imported but unused
+from lib.vision.monster_detector import MonsterDetector, DetectionState, DetectionStats
+^
+ui/utils/overlay_settings.py:33:1: F401 'lib.ui_style.UIStyle as UI' imported but unused
+from lib.ui_style import UIStyle as UI
+^
+ui/utils/window_tracker.py:27:1: F401 'typing.Any' imported but unused
+from typing import Dict, Any, Callable, Optional
+^
+ui/views/help_support_frame.py:1:1: F401 'tkinter as tk' imported but unused
+import tkinter as tk
+^
+ui/views/hunt_workspace_frame.py:1:1: F401 'tkinter as tk' imported but unused
+import tkinter as tk
+^
+ui/views/monster_manager_frame.py:4:1: F811 redefinition of unused 'ttk' from line 2
+from tkinter import ttk
+^
+ui/views/setup_content_frame.py:1:1: F401 'tkinter as tk' imported but unused
+import tkinter as tk
+^
+ui/views/stats_content_frame.py:1:1: F401 'tkinter as tk' imported but unused
+import tkinter as tk
+^
+ui/windows/auto_hunt.py:329:35: E226 missing whitespace around arithmetic operator
+                f'  {prefix} [{idx+1}] {monster["name"]} (P{monster["priority"]}) - {len(monster["templates"])} templates{dummy_mark}'
+                                  ^
+ui/windows/auto_hunt.py:484:41: F541 f-string is missing placeholders
+                                        f"[Training Mode] Staying on training dummy - no target rotation"
+                                        ^
+ui/windows/auto_hunt.py:506:106: E226 missing whitespace around arithmetic operator
+                                        f"[Rotation] Switching to: {next_monster} ({current_monster_index+1}/{len(monster_targets)})"
+                                                                                                         ^
+ui/windows/library_manager.py:19:1: F401 'tkinter.filedialog' imported but unused
+from tkinter import ttk, messagebox, filedialog
+^
+ui/windows/library_manager.py:26:1: F401 'sys' imported but unused
+import sys
+^
+ui/windows/library_manager.py:988:17: F841 local variable 'old_tooltip' is assigned to but never used
+                old_tooltip = getattr(self.save_btn, "_i18n_tooltip")
+                ^
+ui/windows/library_manager.py:1034:13: F841 local variable 'kernel32' is assigned to but never used
+            kernel32 = ctypes.windll.kernel32
+            ^
+ui/windows/library_manager.py:1878:13: F841 local variable 'name_var' is assigned to but never used
+            name_var = tk.StringVar(value=self.current_monster.get("name", ""))
+            ^
+ui/windows/library_manager.py:1879:13: F841 local variable 'hp_var' is assigned to but never used
+            hp_var = tk.StringVar(value=str(self.current_monster.get("hp", 0)))
+            ^
+ui/windows/library_manager.py:1880:13: F841 local variable 'dmg_var' is assigned to but never used
+            dmg_var = tk.StringVar(
+            ^
+ui/windows/library_manager.py:1883:13: F841 local variable 'prio_var' is assigned to but never used
+            prio_var = tk.StringVar(value=str(self.current_monster.get("priority", 1)))
+            ^
+ui/windows/library_manager.py:2035:56: E226 missing whitespace around arithmetic operator
+            name = template.get("name", f"Template {idx+1}")
+                                                       ^
+ui/windows/library_manager.py:2468:17: E741 ambiguous variable name 'l'
+                l = (
+                ^
+ui/windows/library_manager.py:2493:17: E741 ambiguous variable name 'l'
+                l = t = w = h = ""
+                ^
+ui/windows/library_manager.py:2575:21: F841 local variable 'old_tooltip' is assigned to but never used
+                    old_tooltip = getattr(self.template_toggle_btn, "_i18n_tooltip")
+                    ^
+ui/windows/library_manager.py:3134:9: F841 local variable 'template' is assigned to but never used
+        template = templates[idx]
+        ^
+ui/windows/library_manager.py:3235:9: F811 redefinition of unused 'filedialog' from line 19
+        from tkinter import filedialog
+        ^
+ui/windows/library_manager.py:3402:9: F841 local variable 'e' is assigned to but never used
+        except Exception as e:
+        ^
+ui/windows/library_manager.py:4555:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n"
+                      ^
+ui/windows/library_manager.py:4557:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n\n"
+                      ^
+ui/windows/library_manager.py:4559:59: E226 missing whitespace around arithmetic operator
+                f"• {self._t('timing_time_per_hit')}: {1.0/result.attacks_per_second:.2f}s\n"
+                                                          ^
+ui/windows/library_manager.py:4561:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n"
+                      ^
+ui/windows/library_manager.py:4563:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n\n"
+                      ^
+ui/windows/library_manager.py:4565:78: E226 missing whitespace around arithmetic operator
+                f"  (Thời gian chờ giữa các đòn + {result.lost_timeout_margin*100:.0f}% an toàn)\n\n"
+                                                                             ^
+ui/windows/library_manager.py:4567:71: E226 missing whitespace around arithmetic operator
+                f"  (Thời gian hạ gục + {result.attack_duration_margin*100:.0f}% an toàn)\n\n"
+                                                                      ^
+ui/windows/library_manager.py:4568:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n"
+                      ^
+ui/windows/library_manager.py:4573:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n"
+                      ^
+ui/windows/library_manager.py:4575:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n\n"
+                      ^
+ui/windows/library_manager.py:4577:59: E226 missing whitespace around arithmetic operator
+                f"• {self._t('timing_time_per_hit')}: {1.0/result.attacks_per_second:.2f}s\n"
+                                                          ^
+ui/windows/library_manager.py:4579:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n"
+                      ^
+ui/windows/library_manager.py:4581:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n\n"
+                      ^
+ui/windows/library_manager.py:4583:69: E226 missing whitespace around arithmetic operator
+                f"  (Time between hits + {result.lost_timeout_margin*100:.0f}% safety margin)\n\n"
+                                                                    ^
+ui/windows/library_manager.py:4585:64: E226 missing whitespace around arithmetic operator
+                f"  (Kill time + {result.attack_duration_margin*100:.0f}% safety margin)\n\n"
+                                                               ^
+ui/windows/library_manager.py:4586:23: E226 missing whitespace around arithmetic operator
+                f"{'='*50}\n"
+                      ^
+ui/windows/library_manager.py:4593:25: E226 missing whitespace around arithmetic operator
+        text += f"\n{'='*50}\n"
+                        ^
+ui/windows/library_manager.py:4608:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4635:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4637:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4659:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4665:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4693:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4695:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4718:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4859:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n"
+                      ^
+ui/windows/library_manager.py:4861:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n\n"
+                      ^
+ui/windows/library_manager.py:4870:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4872:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n\n"
+                      ^
+ui/windows/library_manager.py:4894:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4896:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n\n"
+                      ^
+ui/windows/library_manager.py:4903:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n"
+                      ^
+ui/windows/library_manager.py:4906:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n"
+                      ^
+ui/windows/library_manager.py:4910:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n"
+                      ^
+ui/windows/library_manager.py:4912:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n\n"
+                      ^
+ui/windows/library_manager.py:4914:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n\n"
+                      ^
+ui/windows/library_manager.py:4923:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4925:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n\n"
+                      ^
+ui/windows/library_manager.py:4946:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n"
+                      ^
+ui/windows/library_manager.py:4948:23: E226 missing whitespace around arithmetic operator
+                f"{'─'*60}\n\n"
+                      ^
+ui/windows/library_manager.py:4957:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n"
+                      ^
+ui/windows/library_manager.py:4959:23: E226 missing whitespace around arithmetic operator
+                f"{'='*60}\n"
+                      ^
+ui/windows/library_manager.py:4970:5: F811 redefinition of unused '_apply_all_changes' from line 4383
+    def _apply_all_changes(self):
+    ^
+ui/windows/library_manager.py:5412:13: F841 local variable 'priority' is assigned to but never used
+            priority = int(self.priority_var.get().strip())
+            ^
+ui/windows/library_manager.py:5839:9: F841 local variable 'manager' is assigned to but never used
+        manager = LibraryManagerWindow(
+        ^
+ui/windows/overlay_window.py:41:1: F401 'typing.Any' imported but unused
+from typing import List, Dict, Any, Optional, Tuple
+^
+ui/windows/overlay_window.py:53:9: F401 'win32ui' imported but unused
+        import win32ui
+        ^
+ui/windows/setup_wizard.py:21:1: F401 'os' imported but unused
+import os
+^
+ui/windows/setup_wizard.py:27:1: F401 'typing.Optional' imported but unused
+from typing import Optional
+^
+ui/windows/setup_wizard.py:250:13: E722 do not use bare 'except'
+            except:
+            ^
+ui/windows/setup_wizard.py:1275:18: F541 f-string is missing placeholders
+            text=f"🪟 Game Window:",
+                 ^
+ui/windows/setup_wizard.py:1294:18: F541 f-string is missing placeholders
+            text=f"👾 Monster:",
+                 ^
+ui/windows/setup_wizard.py:1313:18: F541 f-string is missing placeholders
+            text=f"⚔️ Skills:",
+                 ^
+ui/windows/setup_wizard.py:1345:18: F541 f-string is missing placeholders
+            text=f"⏱️ Timing:",
+                 ^
+ui/windows/setup_wizard.py:1507:9: F841 local variable 'e' is assigned to but never used
+        except Exception as e:
+        ^
+ui/windows/setup_wizard.py:1632:13: F841 local variable 'lib_manager' is assigned to but never used
+            lib_manager = LibraryManagerWindow(
+            ^
+ui/windows/setup_wizard_vision.py:1417:19: F541 f-string is missing placeholders
+            print(f"[VisionWizard] Config not found, using defaults")
+                  ^
