@@ -71,8 +71,6 @@ def setup_platform_mocks():
     if platform.system() != 'Windows':
         mocks_dict = {
             'win32gui': MagicMock(),
-            'cv2': MagicMock(),
-            'numpy': MagicMock(),
             'win32con': MagicMock(),
             'win32process': MagicMock(),
             'win32api': MagicMock(),
