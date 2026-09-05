@@ -647,12 +647,15 @@ class App(tk.Tk):
 
         # Build Sidebar Navigation
         sidebar_items = [
+            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt"),
+            ("tab_setup", lambda: self.switch_view("setup"), UI.FONT_SECTION, "setup"),
             (
                 "sidebar_quick_setup",
                 lambda: self.on_setup_wizard(hide_parent=False),
                 UI.FONT_SECTION,
                 None,
             ),
+            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs"),
             ("sidebar_managers", None, UI.FONT_SECTION, None),
             (
                 "btn_monster_manager",
