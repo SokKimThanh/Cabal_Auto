@@ -34,7 +34,7 @@ class HuntTab(ttk.Frame):
     def clear_target_photo(self):
         if hasattr(self, "target_image_label") and self.target_image_label:
             self.target_image_label.configure(
-                image="", text="[ NO IMAGE ]", bg=UI.BG_MUTED
+                image="", text="[ NO IMAGE ]", bg=UI.THEME_BG_PANEL
             )
         if hasattr(self, "_current_target_photo") and self._current_target_photo:
             del self._current_target_photo
@@ -401,13 +401,13 @@ class HuntTab(ttk.Frame):
             status_frame,
             textvariable=self.app.hunt_target_info,
             font=UI.FONT_LABEL,
-            fg=UI.COLOR_SUBTEXT,
+            fg=UI.THEME_TEXT_SECONDARY,
             anchor="e",
         )
         self.hunt_target_info_label.pack(side="right", padx=8, pady=6)
 
         # Target Card Container
-        card_container = tk.Frame(self.app.active_target_status_frame, bg=UI.BG_MUTED)
+        card_container = tk.Frame(self.app.active_target_status_frame, bg=UI.THEME_BG_PANEL)
         card_container.pack(fill="both", expand=True, padx=4, pady=4)
 
         try:
@@ -424,21 +424,21 @@ class HuntTab(ttk.Frame):
         self.target_image_label = tk.Label(
             card_container,
             text="[ NO IMAGE ]",
-            bg=UI.BG_MUTED,
+            bg=UI.THEME_BG_PANEL,
             width=20,  # rough width for text mode
             height=10,
         )
         self.target_image_label.pack(side="left", padx=8, pady=8)
 
         # Right Column (Stats)
-        stats_frame = tk.Frame(card_container, bg=UI.BG_MUTED)
+        stats_frame = tk.Frame(card_container, bg=UI.THEME_BG_PANEL)
         stats_frame.pack(side="left", fill="both", expand=True, padx=8, pady=8)
 
         self.target_name_label = tk.Label(
             stats_frame,
             text="Unknown Target",
             font=(UI.FONT_FAMILY, int(14 * scale_factor), "bold"),
-            bg=UI.BG_MUTED,
+            bg=UI.THEME_BG_PANEL,
             anchor="w",
             wraplength=int(250 * scale_factor),
             justify="left",
@@ -449,7 +449,7 @@ class HuntTab(ttk.Frame):
             stats_frame,
             text="IDLE",
             font=(UI.FONT_FAMILY, int(12 * scale_factor), "bold"),
-            bg=UI.BG_MUTED,
+            bg=UI.THEME_BG_PANEL,
             fg=UI.COLOR_ACCENT,
             anchor="w",
         )
@@ -457,7 +457,7 @@ class HuntTab(ttk.Frame):
 
         # ProgressBar (Replaced with Canvas for UX5.2)
         self.hp_canvas = tk.Canvas(
-            stats_frame, height=24, bg=UI.BG_MUTED, highlightthickness=0
+            stats_frame, height=24, bg=UI.THEME_BG_PANEL, highlightthickness=0
         )
         self.hp_canvas.pack(fill="x", pady=(0, 2))
 
@@ -483,7 +483,7 @@ class HuntTab(ttk.Frame):
         )
 
         self.hp_percent_label = tk.Label(
-            stats_frame, text="-", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, anchor="w"
+            stats_frame, text="-", bg=UI.THEME_BG_PANEL, fg=UI.THEME_TEXT_SECONDARY, anchor="w"
         )
         self.hp_percent_label.pack(fill="x", anchor="w", pady=(0, 4))
 
@@ -506,17 +506,17 @@ class HuntTab(ttk.Frame):
         self.recovery_btn.pack(fill="x", padx=4, pady=4)
 
         def create_stat_row(parent, label_key):
-            row = tk.Frame(parent, bg=UI.BG_MUTED)
+            row = tk.Frame(parent, bg=UI.THEME_BG_PANEL)
             row.pack(fill="x", pady=2)
             tk.Label(
                 row,
                 text=self.app._t(label_key) + ":",
-                bg=UI.BG_MUTED,
-                fg=UI.COLOR_SUBTEXT,
+                bg=UI.THEME_BG_PANEL,
+                fg=UI.THEME_TEXT_SECONDARY,
                 width=12,
                 anchor="w",
             ).pack(side="left")
-            val_lbl = tk.Label(row, text="-", bg=UI.BG_MUTED, anchor="w")
+            val_lbl = tk.Label(row, text="-", bg=UI.THEME_BG_PANEL, anchor="w")
             val_lbl.pack(side="left", fill="x", expand=True)
             return val_lbl
 
@@ -530,7 +530,7 @@ class HuntTab(ttk.Frame):
             self,
             text=self.app._t("monster_rotation_title"),
             font=UI.FONT_SECTION,
-            fg=UI.COLOR_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             padx=10,
             pady=8,
         )
@@ -839,7 +839,7 @@ class HuntTab(ttk.Frame):
         tk.Label(
             self.configured_container,
             text=self.app._t("monster_rotation_delete_hint"),
-            fg=UI.COLOR_SUBTEXT,
+            fg=UI.THEME_TEXT_SECONDARY,
             font=UI.FONT_TEXT,
             anchor="w",
         ).pack(fill="x", pady=(4, 0))
@@ -888,12 +888,12 @@ class HuntTab(ttk.Frame):
             highlightbackground=border_color,
             highlightthickness=1,
             highlightcolor=border_color,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
         )
         skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
         # Setup Auto Combo Control Frame
-        ctrl_frame = tk.Frame(skill_frame_outer, bg=UI.BG_PANEL)
+        ctrl_frame = tk.Frame(skill_frame_outer, bg=UI.THEME_BG_PANEL)
         ctrl_frame.pack(side="top", fill="x", padx=4, pady=(4, 0))
 
         # Ensure combo config exists
@@ -921,7 +921,7 @@ class HuntTab(ttk.Frame):
             ),
             variable=self.app.auto_combo_var,
             command=on_auto_combo_toggle,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             font=UI.FONT_TEXT,
         )
         auto_combo_cb.pack(side="left", padx=(4, 8))
@@ -934,7 +934,7 @@ class HuntTab(ttk.Frame):
                 != "skill_strip.combo_start_key"
                 else "Phím Mở Combo"
             ),
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             font=UI.FONT_TEXT,
         ).pack(side="left")
 
@@ -958,7 +958,7 @@ class HuntTab(ttk.Frame):
         # self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
 
         # Lanes container
-        lanes_frame = tk.Frame(skill_frame_outer, bg=UI.BG_PANEL)
+        lanes_frame = tk.Frame(skill_frame_outer, bg=UI.THEME_BG_PANEL)
         lanes_frame.pack(fill="both", expand=True, padx=4, pady=4)
 
         self.app.skill_slot_vars = []
@@ -1006,7 +1006,7 @@ class HuntTab(ttk.Frame):
 
             card = tk.Frame(
                 lanes_frame,
-                bg=UI.BG_DEFAULT,
+                bg=UI.THEME_BG_APP,
                 highlightbackground="#D0D0D0",
                 highlightthickness=1,
             )
@@ -1027,8 +1027,8 @@ class HuntTab(ttk.Frame):
             tk.Label(
                 card,
                 text=title_text,
-                bg=UI.BG_DEFAULT,
-                fg=UI.COLOR_SUBTEXT,
+                bg=UI.THEME_BG_APP,
+                fg=UI.THEME_TEXT_SECONDARY,
                 font=(UI.FONT_FAMILY, int(8 * scale_factor)),
             ).pack(anchor="w", padx=2, pady=(2, 0))
 
@@ -1039,8 +1039,8 @@ class HuntTab(ttk.Frame):
             stats_lbl = tk.Label(
                 card,
                 text="⚡ --s | ⏳ --s",
-                fg=UI.COLOR_SUBTEXT,
-                bg=UI.BG_DEFAULT,
+                fg=UI.THEME_TEXT_SECONDARY,
+                bg=UI.THEME_BG_APP,
                 font=card_font,
             )
 
@@ -1053,7 +1053,7 @@ class HuntTab(ttk.Frame):
             self.app.skill_slot_boxes.append(cmb)
 
             # Badges area
-            badge_frame = tk.Frame(card, bg=UI.BG_DEFAULT)
+            badge_frame = tk.Frame(card, bg=UI.THEME_BG_APP)
             badge_frame.pack(fill="x", padx=2, pady=(0, 2))
 
             key_lbl = tk.Label(
@@ -1061,8 +1061,8 @@ class HuntTab(ttk.Frame):
                 text="",
                 width=6,
                 anchor="w",
-                fg="#333",
-                bg=UI.BG_DEFAULT,
+                fg=UI.THEME_TEXT_PRIMARY,
+                bg=UI.THEME_BG_APP,
                 font=card_font,
             )
             key_lbl.pack(side="left")
