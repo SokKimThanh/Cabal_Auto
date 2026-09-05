@@ -58,10 +58,54 @@ class HuntTab(ttk.Frame):
         else:
             self.status_label.config(fg=getattr(UI, 'COLOR_ACCENT', '#2196F3'))
 
-    def update_hp_display(self, hp_percent: float):
-        if not hasattr(self, "hp_progressbar"):
+    def update_hp_display(self, hp_percent: float, current_hp: int = 0, max_hp: int = 10000):
+        """Update Canvas HP bar with color and text."""
+        if not hasattr(self, "hp_canvas"):
             return
-        self.hp_progressbar.config(value=hp_percent)
+
+        # Death case
+        if hp_percent == 0.0:
+            self.hp_canvas.itemconfig(self.hp_fill, fill="#52525B", outline="#52525B")
+            self.hp_canvas.itemconfig(self.hp_text, text=self.app._t("target_card.target_dead") if hasattr(self.app, "_t") else "[ Đã Tiêu Diệt ]")
+            # Cancel any pending clear (race guard)
+            if hasattr(self, "_pending_clear_id") and self._pending_clear_id:
+                try:
+                    self.after_cancel(self._pending_clear_id)
+                except tk.TclError:
+                    pass
+            # Schedule new clear
+            self._pending_clear_id = self.after(200, self.clear_target_card)
+
+            if hasattr(self, "hp_percent_label"):
+                self.hp_percent_label.config(text="0.0%")
+            return
+
+        # Normal rendering
+        width = self.hp_canvas.winfo_width()
+        if width < 2:
+            width = 200  # Default if not rendered yet
+
+        fill_width = int(width * hp_percent / 100)
+
+        # Update bar position
+        self.hp_canvas.coords(self.hp_fill, 0, 0, fill_width, 24)
+
+        # Color by percent
+        if hp_percent > 60:
+            color = "#00E86D"  # Green
+        elif hp_percent >= 30:
+            color = "#FFB800"  # Orange
+        else:
+            color = "#FF3D3D"  # Red
+
+        self.hp_canvas.itemconfig(self.hp_fill, fill=color, outline=color)
+
+        # Update text
+        text = f"{current_hp:,} / {max_hp:,} ({hp_percent:.1f}%)"
+        self.hp_canvas.coords(self.hp_text, width/2, 12)
+        self.hp_canvas.itemconfig(self.hp_text, text=text)
+
+        # Update label for compatibility
         if hasattr(self, "hp_percent_label"):
             self.hp_percent_label.config(text=f"{hp_percent:.1f}%")
 
@@ -85,6 +129,9 @@ class HuntTab(ttk.Frame):
             self.target_hp_label.config(text="-")
         if hasattr(self, "target_def_label"):
             self.target_def_label.config(text="-")
+        if hasattr(self, "hp_canvas"):
+            self.hp_canvas.coords(self.hp_fill, 0, 0, 0, 24)
+            self.hp_canvas.itemconfig(self.hp_text, text="")
         if hasattr(self, "hp_progressbar"):
             self.hp_progressbar.config(value=0)
         self.update_status("IDLE")
@@ -320,11 +367,25 @@ class HuntTab(ttk.Frame):
         )
         self.status_label.pack(fill="x", anchor="w", pady=(0, 4))
 
-        # ProgressBar
-        self.hp_progressbar = ttk.Progressbar(stats_frame, orient="horizontal", mode="determinate", maximum=100)
-        self.hp_progressbar.pack(fill="x", pady=(0, 2))
+        # ProgressBar (Replaced with Canvas for UX5.2)
+        self.hp_canvas = tk.Canvas(stats_frame, height=24, bg=UI.BG_MUTED, highlightthickness=0)
+        self.hp_canvas.pack(fill="x", pady=(0, 2))
+
+        def _on_hp_canvas_resize(event):
+            """Canvas resize handler for responsive width."""
+            width = event.width
+            self.hp_canvas.coords(self.hp_bg, 0, 0, width, 24)
+
+        self.hp_canvas.bind('<Configure>', _on_hp_canvas_resize)
+
+        # Pre-init Canvas objects
+        self.hp_bg = self.hp_canvas.create_rectangle(0, 0, 1, 24, fill="#27272A", outline="#27272A")
+        self.hp_fill = self.hp_canvas.create_rectangle(0, 0, 0, 24, fill="#00E86D", outline="#00E86D")
+        self.hp_text = self.hp_canvas.create_text(0, 12, text="", fill="white", anchor="center")
+
         self.hp_percent_label = tk.Label(stats_frame, text="-", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, anchor="w")
         self.hp_percent_label.pack(fill="x", anchor="w", pady=(0, 4))
+
         def create_stat_row(parent, label_key):
             row = tk.Frame(parent, bg=UI.BG_MUTED)
             row.pack(fill="x", pady=2)

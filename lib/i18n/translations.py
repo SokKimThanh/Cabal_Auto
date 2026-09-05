@@ -52,6 +52,22 @@ GLOBAL_TRANSLATIONS = {
         "vi": "Mục Tiêu Không Xác Định",
         "en": "Unknown Target"
     },
+    "target_card.target_dead": {
+        "vi": "[ Đã Tiêu Diệt ]",
+        "en": "[ Defeated ]"
+    },
+    "target_card.recovery_btn": {
+        "vi": "Khôi Phục Cửa Sổ Game",
+        "en": "Restore Game Window"
+    },
+    "target_card.recovery_retry": {
+        "vi": "⏳ Đang thử lại ({step}/3)...",
+        "en": "⏳ Retrying ({step}/3)..."
+    },
+    "target_card.recovery_failed": {
+        "vi": "Không thể khôi phục game. Vui lòng mở lại game bằng tay.",
+        "en": "Cannot restore game. Please reopen game manually."
+    },
 
     "logs_title": {
         "vi": "Nhật Ký Hoạt Động",

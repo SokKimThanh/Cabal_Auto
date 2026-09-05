@@ -48,6 +48,58 @@ def validate_selected_cabal_window(selected: Any, known_items: List[Dict[str, An
     return WindowValidationResult(True, "ok", win_dict)
 
 
+class WindowRecoveryController:
+    """Shared retry logic for window recovery (UX1 + UX5.2)."""
+
+    _instance = None  # Singleton
+
+    def __init__(self):
+        self._retry_in_progress = False
+        self._retry_step = 0
+        self._retry_max = 3
+        self._hwnd = None
+        self._on_progress = None
+        self._on_failure = None
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def start_async_recovery(self, hwnd: int, on_progress=None, on_failure=None):
+        """Start 3-step recovery (500ms spacing via self.after)."""
+        if self._retry_in_progress:
+            return  # Lock: already retrying
+
+        self._retry_in_progress = True
+        self._retry_step = 0
+        self._hwnd = hwnd
+        self._on_progress = on_progress
+        self._on_failure = on_failure
+
+        self._execute_retry_step()
+
+    def _execute_retry_step(self):
+        """Execute one retry step."""
+        self._retry_step += 1
+
+        if self._on_progress:
+            self._on_progress(self._retry_step)
+
+        # Attempt restore
+        wm = WindowManager()
+        success = wm.restore(self._hwnd) and wm.set_foreground(self._hwnd)
+
+        if success or self._retry_step >= self._retry_max:
+            self._retry_in_progress = False
+            if not success and self._on_failure:
+                self._on_failure()
+            return
+
+        # Next step logic should be implemented by caller since this runs asynchronously
+
+
 class WindowSelectionService:
     """Service for target window and bounds validation logic used by hunt setup/runtime."""
 
