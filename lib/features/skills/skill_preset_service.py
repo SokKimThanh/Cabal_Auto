@@ -19,7 +19,8 @@ class SkillPresetService:
             return {"success": False, "error": f"Preset {preset_id} not found", "skill_slots": {}}
 
         # Update user state
-        self.state_manager.set_active_preset(class_name, preset_id, 'default')
+        mode = 'default' if preset.get('is_default') else 'custom'
+        self.state_manager.set_active_preset(class_name, preset_id, mode)
 
         skills = self.preset_repo.get_preset_skills(preset_id)
         return {"success": True, "skill_slots": skills, "preset": preset}
@@ -37,12 +38,11 @@ class SkillPresetService:
                 self.preset_repo.delete_preset(preset_id)
                 return {"success": False, "error": "Failed to add skills to preset"}
 
-            self.state_manager.set_active_preset(class_name, preset_id, 'default')
+            self.state_manager.set_active_preset(class_name, preset_id, 'custom')
             return {"success": True, "preset_id": preset_id}
         except Exception as e:
             logger.error(f"Error creating custom preset: {e}")
             return {"success": False, "error": str(e)}
-
     def update_custom_preset(self, preset_id: int, skill_slots: Dict[str, List[int]]) -> bool:
         """Updates an existing custom preset (fails if trying to update default)"""
         preset = self.preset_repo.get_preset(preset_id)
