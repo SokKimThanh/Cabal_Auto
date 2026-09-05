@@ -650,37 +650,36 @@ class App(tk.Tk):
             ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt"),
             ("tab_setup", lambda: self.switch_view("setup"), UI.FONT_SECTION, "setup"),
             (
-                "sidebar_quick_setup",
-                lambda: self.on_setup_wizard(hide_parent=False),
+                "btn_skill_manager",
+                self.skill_manager_controller.open_window,
                 UI.FONT_SECTION,
                 None,
             ),
-            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs"),
-            ("sidebar_managers", None, UI.FONT_SECTION, None),
             (
                 "btn_monster_manager",
                 self.monster_manager_controller.open_window,
-                UI.FONT_LABEL,
-                None,
-            ),
-            (
-                "btn_skill_manager",
-                self.skill_manager_controller.open_window,
-                UI.FONT_LABEL,
+                UI.FONT_SECTION,
                 None,
             ),
             (
                 "btn_library_manager",
                 self.library_manager_controller.open_library_manager,
-                UI.FONT_LABEL,
+                UI.FONT_SECTION,
                 None,
             ),
+            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs"),
             ("tab_stats", lambda: self.switch_view("stats"), UI.FONT_SECTION, "stats"),
             (
                 "sidebar_support",
                 lambda: self.switch_view("help"),
                 UI.FONT_SECTION,
                 "help",
+            ),
+            (
+                "sidebar_quick_setup",
+                lambda: self.on_setup_wizard(hide_parent=False),
+                UI.FONT_SECTION,
+                None,
             ),
         ]
         self._sidebar_widgets = []
