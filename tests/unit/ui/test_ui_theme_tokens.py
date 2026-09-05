@@ -1,4 +1,7 @@
 import pytest
+
+pytest.importorskip("tkinter", reason="Skipping UI theme token tests because tkinter is not available")
+
 from lib.ui_style import UIStyle
 
 def test_hex_tokens():
