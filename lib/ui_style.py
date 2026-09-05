@@ -86,15 +86,18 @@ class UIStyle:
     @classmethod
     def resolve_font_family(cls, role: str) -> str:
         """Resolve font family based on availability in Tkinter."""
-        import tkinter.font
-
-        # Ensure we can check fonts even if root doesn't exist yet by trying to get families
-        # but if we can't get families, fallback to standard
         try:
-            available_fonts = tkinter.font.families()
+            import tkinter.font as tkfont
         except Exception:
-            available_fonts = []
+            tkfont = None
 
+        # Ensure we can check fonts even if root doesn't exist yet; if not possible, fallback
+        available_fonts = []
+        if tkfont is not None:
+            try:
+                available_fonts = tkfont.families()
+            except Exception:
+                available_fonts = []
         if role == 'display':
             fallbacks = ['Rajdhani', 'Segoe UI Semibold', 'Segoe UI']
         elif role == 'body':
