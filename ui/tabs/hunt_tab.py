@@ -374,7 +374,10 @@ class HuntTab(ttk.Frame):
         def _on_hp_canvas_resize(event):
             """Canvas resize handler for responsive width."""
             width = event.width
-            self.hp_canvas.coords(self.hp_bg, 0, 0, width, 24)
+            if hasattr(self, "hp_bg"):
+                self.hp_canvas.coords(self.hp_bg, 0, 0, width, 24)
+            if hasattr(self, "hp_text"):
+                self.hp_canvas.coords(self.hp_text, width / 2, 12)
 
         self.hp_canvas.bind('<Configure>', _on_hp_canvas_resize)
 
