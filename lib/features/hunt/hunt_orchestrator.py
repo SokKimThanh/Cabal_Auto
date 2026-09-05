@@ -28,7 +28,7 @@ class HuntOrchestrator:
         update_skill_stats_display: Callable[[dict], None],
         get_hunt_selected: Callable[[], Dict[str, Any]],
         schedule_ui_task: Callable[[Callable], None],
-        clear_target_ui: Callable[[], None] = None,
+        clear_target_ui: Callable[..., None] = None,
         set_target_info: Callable[[str], None] = None,
         on_scene_monsters_detected: Callable[[tuple], None] = None,
         update_target_status: Callable[[str], None] = None,
