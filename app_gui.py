@@ -210,7 +210,7 @@ class App(tk.Tk):
 
         # Calculate scale factor for layout limits
         try:
-            dpi_percent = self.tk.call('tk', 'scaling') * 72
+            dpi_percent = self.tk.call("tk", "scaling") * 72
             scale_factor = dpi_percent / 100.0
         except Exception:
             scale_factor = 1.0
@@ -551,17 +551,30 @@ class App(tk.Tk):
                 self.after(0, fn) if hasattr(self, "after") else fn()
             ),
             clear_target_ui=self.clear_target_ui,
-            set_target_info=lambda txt: getattr(self, "hunt_target_info", tk.StringVar()).set(txt),
-            update_target_status=lambda txt: self.hunt_tab.update_status(txt) if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "update_status") else None,
-            update_target_hp=lambda hp: self.hunt_tab.update_hp_display(hp) if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "update_hp_display") else None
+            set_target_info=lambda txt: getattr(
+                self, "hunt_target_info", tk.StringVar()
+            ).set(txt),
+            update_target_status=lambda txt: (
+                self.hunt_tab.update_status(txt)
+                if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "update_status")
+                else None
+            ),
+            update_target_hp=lambda hp: (
+                self.hunt_tab.update_hp_display(hp)
+                if hasattr(self, "hunt_tab")
+                and hasattr(self.hunt_tab, "update_hp_display")
+                else None
+            ),
         )
 
         # Keyboard shortcuts (Window-focused only)
         self.bind(
             "<Control-k>", lambda e: self.skill_manager_controller.open_window()
         )  # Ctrl+K: Manage skills
-        self.bind("<Alt-Key-1>", lambda e: self.switch_view('hunt'))  # Alt+1: Hunt tab
-        self.bind("<Alt-Key-2>", lambda e: self.switch_view('setup'))  # Alt+2: Setup tab
+        self.bind("<Alt-Key-1>", lambda e: self.switch_view("hunt"))  # Alt+1: Hunt tab
+        self.bind(
+            "<Alt-Key-2>", lambda e: self.switch_view("setup")
+        )  # Alt+2: Setup tab
 
         # Responsive layout bindings
         self.bind("<Configure>", self._on_window_configure)
@@ -576,6 +589,7 @@ class App(tk.Tk):
     # -----------------
     def _build_ui(self):
         from lib.ui_style import UIStyle as UI
+
         # Clear (for language rebuild)
         for w in self.winfo_children():
             w.destroy()
@@ -586,18 +600,28 @@ class App(tk.Tk):
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         try:
-            dpi_percent = self.tk.call('tk', 'scaling') * 72
+            dpi_percent = self.tk.call("tk", "scaling") * 72
             scale_factor = dpi_percent / 100.0
         except Exception:
             scale_factor = 1.0
 
         # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
-        self.main_shell.columnconfigure(0, minsize=int(260 * scale_factor), weight=0)  # Vùng C1 - Sidebar
-        self.main_shell.columnconfigure(1, minsize=int(960 * scale_factor), weight=1)  # Vùng B - Workspace
+        self.main_shell.columnconfigure(
+            0, minsize=int(260 * scale_factor), weight=0
+        )  # Vùng C1 - Sidebar
+        self.main_shell.columnconfigure(
+            1, minsize=int(960 * scale_factor), weight=1
+        )  # Vùng B - Workspace
 
-        self.main_shell.rowconfigure(0, minsize=int(80 * scale_factor), weight=0)      # Vùng A - Action Bar
-        self.main_shell.rowconfigure(1, minsize=int(540 * scale_factor), weight=1)     # Vùng B - Nội dung chính
-        self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)      # Vùng C2 - Logs, footer full-width
+        self.main_shell.rowconfigure(
+            0, minsize=int(80 * scale_factor), weight=0
+        )  # Vùng A - Action Bar
+        self.main_shell.rowconfigure(
+            1, minsize=int(540 * scale_factor), weight=1
+        )  # Vùng B - Nội dung chính
+        self.main_shell.rowconfigure(
+            2, minsize=int(36 * scale_factor), weight=0
+        )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
         self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.THEME_BG_APP)
@@ -613,14 +637,43 @@ class App(tk.Tk):
         sidebar_items = [
             ("sidebar_quick_setup", lambda: self.on_setup_wizard(hide_parent=False), UI.FONT_SECTION, None),
             ("sidebar_managers", None, UI.FONT_SECTION, None),
-            ("btn_monster_manager", self.monster_manager_controller.open_window, UI.FONT_LABEL, None),
-            ("btn_skill_manager", self.skill_manager_controller.open_window, UI.FONT_LABEL, None),
-            ("btn_library_manager", self.library_manager_controller.open_library_manager, UI.FONT_LABEL, None),
-            ("sidebar_configuration", lambda: self.switch_view('setup'), UI.FONT_SECTION, 'setup'),
-            ("sidebar_support", lambda: self.switch_view('help'), UI.FONT_SECTION, 'help'),
-            ("tab_hunt", lambda: self.switch_view('hunt'), UI.FONT_SECTION, 'hunt'),
-            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs"),
-
+            (
+                "btn_monster_manager",
+                self.monster_manager_controller.open_window,
+                UI.FONT_LABEL,
+                None,
+            ),
+            (
+                "btn_skill_manager",
+                self.skill_manager_controller.open_window,
+                UI.FONT_LABEL,
+                None,
+            ),
+            (
+                "btn_library_manager",
+                self.library_manager_controller.open_library_manager,
+                UI.FONT_LABEL,
+                None,
+            ),
+            (
+                "sidebar_configuration",
+                lambda: self.switch_view("setup"),
+                UI.FONT_SECTION,
+                "setup",
+            ),
+            (
+                "sidebar_support",
+                lambda: self.switch_view("help"),
+                UI.FONT_SECTION,
+                "help",
+            ),
+            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt"),
+            (
+                "sidebar_activity_logs",
+                lambda: self.switch_view("logs"),
+                UI.FONT_SECTION,
+                "logs",
+            ),
         ]
         self._sidebar_widgets = []
 
@@ -634,7 +687,7 @@ class App(tk.Tk):
                     bg=UI.THEME_BG_SIDEBAR,
                     fg=UI.THEME_TEXT_PRIMARY,
                     font=font,
-                    anchor="w"
+                    anchor="w",
                 )
                 lbl.pack(fill="x", pady=(10, 4))
                 self._sidebar_widgets.append((lbl, key, view_target))
@@ -651,7 +704,7 @@ class App(tk.Tk):
                     padx=12,
                     pady=8,
                     relief="flat",
-                    cursor="hand2"
+                    cursor="hand2",
                 )
                 if font == UI.FONT_LABEL:
                     # Indent sub-items slightly
@@ -664,7 +717,6 @@ class App(tk.Tk):
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.THEME_BG_APP)
         self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
 
-
         self.after(100, self._poll_log_queue)
         self.after(1000, self._update_logs_metrics)
 
@@ -675,12 +727,14 @@ class App(tk.Tk):
         self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
 
         # Configure columns for action_bar_frame
-        self.action_bar_frame.columnconfigure(0, minsize=380, weight=1)  # Window Selection
-        self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)   # Refresh
-        self.action_bar_frame.columnconfigure(2, minsize=44, weight=0)   # Scan
+        self.action_bar_frame.columnconfigure(
+            0, minsize=380, weight=1
+        )  # Window Selection
+        self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)  # Refresh
+        self.action_bar_frame.columnconfigure(2, minsize=44, weight=0)  # Scan
         self.action_bar_frame.columnconfigure(3, minsize=260, weight=0)  # Bounds
         self.action_bar_frame.columnconfigure(4, minsize=160, weight=0)  # Start/Stop
-        self.action_bar_frame.columnconfigure(5, minsize=80, weight=0)   # Language
+        self.action_bar_frame.columnconfigure(5, minsize=80, weight=0)  # Language
 
         # Window Selection Combobox
         self.win_combo_var = tk.StringVar()
@@ -712,7 +766,11 @@ class App(tk.Tk):
         )
 
         # Refresh button - Using icon_button component
-        refresh_tooltip = self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc") if hasattr(self, "_t") else "Refresh"
+        refresh_tooltip = (
+            self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
+            if hasattr(self, "_t")
+            else "Refresh"
+        )
 
         self.refresh_btn = _create_icon_btn_component(
             parent=self.action_bar_frame,
@@ -730,6 +788,7 @@ class App(tk.Tk):
 
         # Scan Manual Button
         from ui.icon_library import Icons
+
         self.scan_btn_icon_name = Icons.SCAN_SCREEN
 
         def on_scan_clicked():
@@ -775,13 +834,13 @@ class App(tk.Tk):
             text=self._t("start_hunt"),
             icon_size=20,
             button_size=44,
-            padding={'padx': 20, 'pady': 6},
+            padding={"padx": 20, "pady": 6},
             command=self.on_start_stop_clicked,
             button_type="green",
             tooltip_text=start_tooltip,
             state="normal",
             auto_hover_disabled=False,
-            width=140
+            width=140,
         )
 
         # Grid it into columns 3 and 4 merged, or just use 3 since we redefined it
@@ -799,13 +858,20 @@ class App(tk.Tk):
         # DPI Scaling Guard using main action bar frame width
         # 1920 is standard. If the window is compressed significantly (< 1200), we fallback to compact.
         def on_action_bar_configure(event):
-            if hasattr(self, 'state_controller') and hasattr(self.state_controller, '_update_window_bounds_display'):
-                if event.width < 1200 and not getattr(self, '_bounds_compact_mode', False):
+            if hasattr(self, "state_controller") and hasattr(
+                self.state_controller, "_update_window_bounds_display"
+            ):
+                if event.width < 1200 and not getattr(
+                    self, "_bounds_compact_mode", False
+                ):
                     self._bounds_compact_mode = True
                     self.state_controller._update_window_bounds_display()
-                elif event.width >= 1200 and getattr(self, '_bounds_compact_mode', False):
+                elif event.width >= 1200 and getattr(
+                    self, "_bounds_compact_mode", False
+                ):
                     self._bounds_compact_mode = False
                     self.state_controller._update_window_bounds_display()
+
         self.action_bar_frame.bind("<Configure>", on_action_bar_configure)
 
         # UX2: View Manager for Zone B
@@ -826,16 +892,31 @@ class App(tk.Tk):
 
         self.logs_text_widget = self._views["logs"].text_widget
 
-
         # Retain tab references for backward compatibility with orchestrators/runners
-        self.tab_hunt = self._views['hunt'].hunt_tab if hasattr(self._views['hunt'], 'hunt_tab') else None
-        self.tab_setup = self._views['setup'].setup_tab if hasattr(self._views['setup'], 'setup_tab') else None
-        self.tab_stats = self._views['stats'].stats_tab if hasattr(self._views['stats'], 'stats_tab') else None
-        self.tab_help = self._views['help'].help_tab if hasattr(self._views['help'], 'help_tab') else None
+        self.tab_hunt = (
+            self._views["hunt"].hunt_tab
+            if hasattr(self._views["hunt"], "hunt_tab")
+            else None
+        )
+        self.tab_setup = (
+            self._views["setup"].setup_tab
+            if hasattr(self._views["setup"], "setup_tab")
+            else None
+        )
+        self.tab_stats = (
+            self._views["stats"].stats_tab
+            if hasattr(self._views["stats"], "stats_tab")
+            else None
+        )
+        self.tab_help = (
+            self._views["help"].help_tab
+            if hasattr(self._views["help"], "help_tab")
+            else None
+        )
         self.notebook = None
 
         # Display default view
-        self.switch_view('hunt')
+        self.switch_view("hunt")
 
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
@@ -911,9 +992,6 @@ class App(tk.Tk):
     def _on_window_configure(self, event):
         pass
 
-
-
-
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
         self.update_idletasks()
@@ -951,7 +1029,9 @@ class App(tk.Tk):
             from lib.system.hunt_logger import get_hunt_logger
 
             # Since VisionEngine stats are inside its instance, let's just make it generic or try to extract from global
-            self.logs_metrics_label.config(text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}")
+            self.logs_metrics_label.config(
+                text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}"
+            )
 
         except Exception:
             pass
@@ -970,8 +1050,8 @@ class App(tk.Tk):
                     dropped = logger.dropped_log_count
                     logger.dropped_log_count = 0
                     warn_msg = f"[!] Đã bỏ qua {dropped} dòng log do quá tải"
-                    if 'logs' in getattr(self, '_views', {}):
-                        self._views['logs'].append_message(warn_msg)
+                    if "logs" in getattr(self, "_views", {}):
+                        self._views["logs"].append_message(warn_msg)
 
                 lines_processed = 0
                 while lines_processed < 50:
@@ -983,14 +1063,14 @@ class App(tk.Tk):
                         else:
                             msg = record.getMessage()
 
-                        if 'logs' in getattr(self, '_views', {}):
-                            self._views['logs'].append_message(msg)
+                        if "logs" in getattr(self, "_views", {}):
+                            self._views["logs"].append_message(msg)
                         lines_processed += 1
                     except queue.Empty:
                         break
 
-                if lines_processed > 0 and 'logs' in getattr(self, '_views', {}):
-                    self._views['logs'].trim_to_limit(1000)
+                if lines_processed > 0 and "logs" in getattr(self, "_views", {}):
+                    self._views["logs"].trim_to_limit(1000)
 
         except Exception as e:
             print(f"Error polling logs: {e}")
@@ -999,11 +1079,11 @@ class App(tk.Tk):
         self.after(100, self._poll_log_queue)
 
     def switch_view(self, view_key: str):
-        if not hasattr(self, '_views') or view_key not in self._views:
+        if not hasattr(self, "_views") or view_key not in self._views:
             return
 
         # Hide current view
-        if hasattr(self, '_current_view') and self._current_view:
+        if hasattr(self, "_current_view") and self._current_view:
             self._current_view.grid_remove()
             if hasattr(self._current_view, "on_view_hidden"):
                 self._current_view.on_view_hidden()
@@ -1089,7 +1169,9 @@ class App(tk.Tk):
     def on_language_change(self, _evt=None):
         # Save selection based on hwnd to prevent loss on language change
         saved_hwnd = None
-        if getattr(self, "hunt_selected", None) and isinstance(self.hunt_selected, dict):
+        if getattr(self, "hunt_selected", None) and isinstance(
+            self.hunt_selected, dict
+        ):
             saved_hwnd = self.hunt_selected.get("hwnd")
 
         self.lang = self.lang_var.get()
@@ -1127,13 +1209,16 @@ class App(tk.Tk):
         self._refresh_start_stop_visual()
 
         if hasattr(self.refresh_btn, "set_tooltip"):
-            refresh_tooltip_new = self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
+            refresh_tooltip_new = (
+                self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
+            )
             self.refresh_btn.set_tooltip(refresh_tooltip_new)
 
         # Update combo tooltip
         try:
             from ui.helpers.tooltip import attach_i18n_tooltip
             from lib.i18n import I18N_GLOBAL
+
             attach_i18n_tooltip(
                 self.win_combo,
                 key="window_select_tooltip",
@@ -1144,18 +1229,20 @@ class App(tk.Tk):
             pass
 
         # Update bounds readiness label explicitly via state controller
-        if hasattr(self, 'state_controller') and hasattr(self.state_controller, '_update_window_bounds_display'):
+        if hasattr(self, "state_controller") and hasattr(
+            self.state_controller, "_update_window_bounds_display"
+        ):
             self.state_controller._update_window_bounds_display()
 
         # Optionally update tabs here, though the prompt primarily requests
         # Zone A widgets to change immediately without losing state.
         # Now handled by views instead of notebook
-        if hasattr(self, 'update_shell_translations'):
+        if hasattr(self, "update_shell_translations"):
             self.update_shell_translations()
 
     def update_shell_translations(self):
         """Update i18n text for shell elements like sidebar."""
-        if hasattr(self, '_sidebar_widgets'):
+        if hasattr(self, "_sidebar_widgets"):
             for widget, key, _ in self._sidebar_widgets:
                 try:
                     if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
@@ -1175,7 +1262,7 @@ class App(tk.Tk):
     def _switch_to_tab(self, tab_index: int):
         """Switch to specified tab via keyboard shortcut."""
         try:
-            tab_map = {0: 'hunt', 1: 'setup', 2: 'stats', 3: 'help'}
+            tab_map = {0: "hunt", 1: "setup", 2: "stats", 3: "help"}
             if tab_index in tab_map:
                 self.switch_view(tab_map[tab_index])
                 # Update status with shortcut indicator
@@ -1378,7 +1465,9 @@ class App(tk.Tk):
                 pass
 
     def _refresh_start_stop_visual(self):
-        is_running = hasattr(self, "hunt_orchestrator") and getattr(self.hunt_orchestrator, "hunt_running", False)
+        is_running = hasattr(self, "hunt_orchestrator") and getattr(
+            self.hunt_orchestrator, "hunt_running", False
+        )
 
         if is_running:
             text = self._t("stop_hunt")
@@ -1413,7 +1502,9 @@ class App(tk.Tk):
         elif hasattr(self.start_stop_btn, "config"):
             self.start_stop_btn.config(state="disabled")
 
-        is_running = hasattr(self, "hunt_orchestrator") and getattr(self.hunt_orchestrator, "hunt_running", False)
+        is_running = hasattr(self, "hunt_orchestrator") and getattr(
+            self.hunt_orchestrator, "hunt_running", False
+        )
         if is_running:
             self._request_stop_hunt()
         else:
@@ -1433,20 +1524,26 @@ class App(tk.Tk):
         if state == "running":
             if hasattr(self, "hunt_status"):
                 self.hunt_status.set(self._t("hunt_running"))
-            if hasattr(self, "tab_hunt") and hasattr(self.tab_hunt, "update_hunt_status_color"):
+            if hasattr(self, "tab_hunt") and hasattr(
+                self.tab_hunt, "update_hunt_status_color"
+            ):
                 self.tab_hunt.update_hunt_status_color("running")
         elif state in ["idle", "error", "stopped"]:
             if state == "idle" and hasattr(self, "hunt_status"):
                 self.hunt_status.set(
                     self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
                 )
-            if hasattr(self, "tab_hunt") and hasattr(self.tab_hunt, "update_hunt_status_color"):
+            if hasattr(self, "tab_hunt") and hasattr(
+                self.tab_hunt, "update_hunt_status_color"
+            ):
                 self.tab_hunt.update_hunt_status_color(state)
 
         self._refresh_start_stop_visual()
 
     def _request_start_hunt(self):
-        if hasattr(self, "hunt_orchestrator") and getattr(self.hunt_orchestrator, "hunt_running", False):
+        if hasattr(self, "hunt_orchestrator") and getattr(
+            self.hunt_orchestrator, "hunt_running", False
+        ):
             return
 
         validation_error = self.state_controller._validate_hunt_prerequisites()
@@ -1564,13 +1661,17 @@ class App(tk.Tk):
             return
 
         idx = selection[0]
-        if not hasattr(self, '_detected_snapshot_items') or idx >= len(self._detected_snapshot_items):
+        if not hasattr(self, "_detected_snapshot_items") or idx >= len(
+            self._detected_snapshot_items
+        ):
             return
 
         runtime_item = self._detected_snapshot_items[idx]
 
         # Only db_match items with valid monster_id can be promoted
-        if runtime_item.get("resolution_state") != "db_match" or not runtime_item.get("monster_id"):
+        if runtime_item.get("resolution_state") != "db_match" or not runtime_item.get(
+            "monster_id"
+        ):
             return
 
         monster_id = runtime_item["monster_id"]
@@ -1578,7 +1679,10 @@ class App(tk.Tk):
 
         # Check for duplicates
         for existing in self.monster_rotation:
-            if existing.get("monster_id") == monster_id and existing.get("dungeon_id") == dungeon_id:
+            if (
+                existing.get("monster_id") == monster_id
+                and existing.get("dungeon_id") == dungeon_id
+            ):
                 # Already exists
                 return
 
@@ -1595,7 +1699,7 @@ class App(tk.Tk):
             "monster_id": monster_id,
             "name": runtime_item.get("name", "Unknown"),
             "priority": new_priority,
-            "dungeon_id": dungeon_id
+            "dungeon_id": dungeon_id,
         }
         self.monster_rotation.append(new_entry)
 
@@ -1611,7 +1715,7 @@ class App(tk.Tk):
         self._refresh_monster_rotation_list()
 
         # We also need to refresh the detected list to show the 'Added' status
-        if hasattr(self, '_last_snapshot'):
+        if hasattr(self, "_last_snapshot"):
             self._update_detected_monsters_list(self._last_snapshot)
 
     def on_scene_monsters_detected(self, snapshot):
@@ -1633,7 +1737,11 @@ class App(tk.Tk):
         self.detected_monsters_listbox.delete(0, tk.END)
         self._detected_snapshot_items = []
 
-        configured_keys = {(m.get("monster_id"), m.get("dungeon_id")) for m in getattr(self, 'monster_rotation', []) if m.get("monster_id")}
+        configured_keys = {
+            (m.get("monster_id"), m.get("dungeon_id"))
+            for m in getattr(self, "monster_rotation", [])
+            if m.get("monster_id")
+        }
 
         for idx, item in enumerate(snapshot):
             self._detected_snapshot_items.append(item)
@@ -1648,7 +1756,9 @@ class App(tk.Tk):
                     status += f"[{self._t('monster_promoted')}] "
                 elif item.get("confidence", 0) > 0:
                     status += f"({item['confidence']:.2f}) "
-                display_text = f"{status}{name} #{monster_id} - {self._t('monster_db_match')}"
+                display_text = (
+                    f"{status}{name} #{monster_id} - {self._t('monster_db_match')}"
+                )
             elif resolution_state == "db_miss":
                 display_text = f"⚠ {name} - {self._t('monster_db_missing')}"
             else:
@@ -1656,11 +1766,12 @@ class App(tk.Tk):
 
             self.detected_monsters_listbox.insert(tk.END, display_text)
 
-        if selected_idx is not None and selected_idx < len(self._detected_snapshot_items):
+        if selected_idx is not None and selected_idx < len(
+            self._detected_snapshot_items
+        ):
             self.detected_monsters_listbox.selection_set(selected_idx)
 
         self.detected_monsters_listbox.yview_moveto(yview[0])
-
 
     def _refresh_monster_rotation_list(self):
         """Refresh the configured monster rotation UI queue."""
@@ -1687,7 +1798,9 @@ class App(tk.Tk):
 
             if cache_key not in self._monster_metadata_cache:
                 # 1. Try by ID
-                db_record = get_monster_by_id_api(str(monster_id)) if monster_id else None
+                db_record = (
+                    get_monster_by_id_api(str(monster_id)) if monster_id else None
+                )
                 # 2. Try by Name fallback
                 if not db_record and name:
                     db_record = find_monster_by_name_api(name, dungeon_id)
@@ -1702,7 +1815,9 @@ class App(tk.Tk):
                 display_str = f"[#{monster_id}] {name} - Lv.{level} | HP: {hp}"
             else:
                 # Missing metadata
-                display_str = f"[{self._t('monster_rotation_unknown')}] {name} - Lv.-- | HP: --"
+                display_str = (
+                    f"[{self._t('monster_rotation_unknown')}] {name} - Lv.-- | HP: --"
+                )
 
             self.monster_rotation_listbox.insert(tk.END, display_str)
 
@@ -1780,11 +1895,14 @@ class App(tk.Tk):
 
             # Deduplicate by (monster_id, dungeon_id)
             for entry in self.monster_rotation:
-                if entry.get("monster_id") == monster_id and entry.get("dungeon_id") == dungeon_id:
+                if (
+                    entry.get("monster_id") == monster_id
+                    and entry.get("dungeon_id") == dungeon_id
+                ):
                     messagebox.showinfo(
                         self._t("info_title", ns="ui"),
                         self._t("monster_already_in_list").format(name=record["name"]),
-                        parent=self
+                        parent=self,
                     )
                     return
 
@@ -1794,7 +1912,7 @@ class App(tk.Tk):
                 "monster_id": monster_id,
                 "name": record["name"],
                 "priority": new_priority,
-                "dungeon_id": dungeon_id
+                "dungeon_id": dungeon_id,
             }
 
             self.monster_rotation.append(new_entry)
@@ -1802,7 +1920,9 @@ class App(tk.Tk):
 
             self._refresh_monster_rotation_list()
 
-        MonsterPickerDialog(self, getattr(self, "lang", "vi"), on_monster_selected, self._t)
+        MonsterPickerDialog(
+            self, getattr(self, "lang", "vi"), on_monster_selected, self._t
+        )
 
     def on_skill_slot_changed(self, _evt=None):
         self._update_attack_keys_from_slots()
@@ -1840,9 +1960,13 @@ class App(tk.Tk):
         mode = self.hunt_cfg.get("rotation_mode", "sequence")
 
         if mode == "sequence":
-            self.monster_status_var.set(f"Sequence: {len(self.monster_rotation)} monsters")
+            self.monster_status_var.set(
+                f"Sequence: {len(self.monster_rotation)} monsters"
+            )
         else:
-            sorted_monsters = sorted(self.monster_rotation, key=lambda m: m.get("priority", 1))
+            sorted_monsters = sorted(
+                self.monster_rotation, key=lambda m: m.get("priority", 1)
+            )
             current = sorted_monsters[0]
             self.monster_status_var.set(
                 f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation)} total"
@@ -1948,13 +2072,14 @@ class App(tk.Tk):
         self._refresh_skill_slots_options()
 
     def _collect_skill_slots(self):
-        if not self.skill_slot_vars:
+        if not hasattr(self, "skill_slot_vars") or not self.skill_slot_vars:
             self.skill_slot_saved_names = []
-            return []
-        mapping = {skill["name"]: skill for skill in self.skills}
-        slots = []
+            return [], []
+        mapping = {skill["name"]: skill for skill in getattr(self, "skills", [])}
+        skill_slots = []
+        buff_slots = []
         saved_names = []
-        for var in self.skill_slot_vars:
+        for i, var in enumerate(self.skill_slot_vars):
             name = var.get().strip()
             if not name:
                 continue
@@ -1962,18 +2087,42 @@ class App(tk.Tk):
             if not skill:
                 continue
             saved_names.append(name)
-            slots.append(
-                {
-                    "name": skill["name"],
-                    "key": skill["key"],
-                    "type": skill.get("type", "attack"),
-                    "cooldown": float(skill.get("cooldown", 0.0)),
-                    "cast_time": float(skill.get("cast_time", 0.0)),
-                    "image": skill.get("image", ""),
-                }
-            )
+
+            # The first 4 slots are attack (combo chain), next 4 are buff
+            is_combo_lane = i < 4
+
+            # Check what lane we are in to assign type properly, or rely on skill type
+            skill_type = skill.get("type", "attack")
+            if is_combo_lane:
+                skill_type = "attack"
+            else:
+                skill_type = "buff"
+
+            slot_data = {
+                "name": skill["name"],
+                "key": skill["key"],
+                "type": skill_type,
+                "cooldown": float(skill.get("cooldown", 0.0)),
+                "cast_time": float(skill.get("cast_time", 0.0)),
+                "image": skill.get("image", ""),
+            }
+
+            if skill_type == "buff":
+                duration = 300
+                if hasattr(self, "skill_slot_duration_vars") and i < len(
+                    self.skill_slot_duration_vars
+                ):
+                    try:
+                        duration = int(self.skill_slot_duration_vars[i].get())
+                    except ValueError:
+                        pass
+                slot_data["duration_sec"] = duration
+                buff_slots.append(slot_data)
+            else:
+                skill_slots.append(slot_data)
+
         self.skill_slot_saved_names = saved_names
-        return slots
+        return skill_slots, buff_slots
 
     def on_monster_use_for_hunt(self):
         if self.monster_selected_index is None or self.monster_selected_index >= len(
@@ -2267,16 +2416,32 @@ class App(tk.Tk):
 
                 def _hotkey_value(attr_name, config_name, default):
                     variable = getattr(self, attr_name, None)
-                    return variable.get() if variable is not None else hotkeys.get(config_name, default)
+                    return (
+                        variable.get()
+                        if variable is not None
+                        else hotkeys.get(config_name, default)
+                    )
 
-                start_key = _hotkey_value("global_hotkey_start_var", "start_key", "ctrl+shift+r")
-                stop_key = _hotkey_value("global_hotkey_stop_var", "stop_key", "ctrl+shift+e")
-                wizard_key = _hotkey_value("global_hotkey_wizard_var", "setup_wizard_key", "ctrl+alt+n")
-                library_key = _hotkey_value("global_hotkey_library_var", "library_manager_key", "ctrl+shift+l")
+                start_key = _hotkey_value(
+                    "global_hotkey_start_var", "start_key", "ctrl+shift+r"
+                )
+                stop_key = _hotkey_value(
+                    "global_hotkey_stop_var", "stop_key", "ctrl+shift+e"
+                )
+                wizard_key = _hotkey_value(
+                    "global_hotkey_wizard_var", "setup_wizard_key", "ctrl+alt+n"
+                )
+                library_key = _hotkey_value(
+                    "global_hotkey_library_var", "library_manager_key", "ctrl+shift+l"
+                )
 
                 # Validate: all hotkeys must be unique
-                vision_key = _hotkey_value("global_hotkey_vision_var", "vision_wizard_key", "ctrl+shift+v")
-                monster_key = _hotkey_value("global_hotkey_monster_var", "monster_editor_key", "ctrl+shift+m")
+                vision_key = _hotkey_value(
+                    "global_hotkey_vision_var", "vision_wizard_key", "ctrl+shift+v"
+                )
+                monster_key = _hotkey_value(
+                    "global_hotkey_monster_var", "monster_editor_key", "ctrl+shift+m"
+                )
                 all_keys = [
                     start_key,
                     stop_key,
@@ -2395,7 +2560,6 @@ class App(tk.Tk):
         # (Add more as needed based on your UI structure)
         pass
 
-
     def _mark_unsaved(self):
         self.has_unsaved_changes = True
         self._update_unsaved_indicator()
@@ -2424,6 +2588,7 @@ class App(tk.Tk):
                 self.monster_rotation_listbox.selection_clear(0, tk.END)
             except Exception as e:
                 import logging
+
                 logging.debug(f"Failed to clear monster rotation listbox: {e}")
 
     def on_close(self):
@@ -2754,10 +2919,14 @@ def main():
         # Hydrate i18n from database
         try:
             from lib.i18n import load_from_db
+
             load_from_db()
         except Exception as e:
             import logging
-            logging.getLogger(__name__).error(f"[i18n Init] Failed to call load_from_db: {e}")
+
+            logging.getLogger(__name__).error(
+                f"[i18n Init] Failed to call load_from_db: {e}"
+            )
 
         # Start application
         app = App()

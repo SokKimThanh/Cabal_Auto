@@ -32,9 +32,11 @@ class HuntTab(ttk.Frame):
             self.hunt_status_label.config(fg=UI.COLOR_WARNING)
 
     def clear_target_photo(self):
-        if hasattr(self, 'target_image_label') and self.target_image_label:
-            self.target_image_label.configure(image="", text="[ NO IMAGE ]", bg=UI.BG_MUTED)
-        if hasattr(self, '_current_target_photo') and self._current_target_photo:
+        if hasattr(self, "target_image_label") and self.target_image_label:
+            self.target_image_label.configure(
+                image="", text="[ NO IMAGE ]", bg=UI.BG_MUTED
+            )
+        if hasattr(self, "_current_target_photo") and self._current_target_photo:
             del self._current_target_photo
             self._current_target_photo = None
 
@@ -46,10 +48,14 @@ class HuntTab(ttk.Frame):
 
     def show_recovery(self):
         if hasattr(self, "recovery_frame"):
-            self.recovery_frame.config(bg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+            self.recovery_frame.config(
+                bg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
+            )
             self.recovery_frame.pack(fill="x", pady=(4, 4), after=self.hp_percent_label)
             if hasattr(self, "recovery_btn"):
-                self.recovery_btn.config(state="normal", text=self.app._t("target_card.recovery_btn"))
+                self.recovery_btn.config(
+                    state="normal", text=self.app._t("target_card.recovery_btn")
+                )
 
     def hide_recovery(self):
         if hasattr(self, "recovery_frame"):
@@ -57,6 +63,7 @@ class HuntTab(ttk.Frame):
 
     def _on_recovery_click(self):
         from lib.features.hunt.window_selection_service import WindowRecoveryController
+
         if not hasattr(self, "app") or not hasattr(self.app, "hunt_cfg"):
             return
 
@@ -74,7 +81,11 @@ class HuntTab(ttk.Frame):
 
         def _on_failure():
             if hasattr(self, "recovery_frame"):
-                self.recovery_frame.config(bg=getattr(UI, 'STATE_ERROR', getattr(UI, 'COLOR_DANGER', '#F44336')))
+                self.recovery_frame.config(
+                    bg=getattr(
+                        UI, "STATE_ERROR", getattr(UI, "COLOR_DANGER", "#F44336")
+                    )
+                )
             if hasattr(self, "recovery_btn"):
                 self.recovery_btn.config(state="normal")
             if hasattr(self.app, "show_toast"):
@@ -85,7 +96,7 @@ class HuntTab(ttk.Frame):
             schedule_after_ms=self.after,
             on_progress=_on_progress,
             on_failure=_on_failure,
-            delay_ms=500
+            delay_ms=500,
         )
 
     def update_status(self, status_string: str):
@@ -93,15 +104,23 @@ class HuntTab(ttk.Frame):
             return
         self.status_label.config(text=status_string)
         if status_string == "APPROACHING":
-            self.status_label.config(fg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+            self.status_label.config(
+                fg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
+            )
         elif status_string == "ATTACKING":
-            self.status_label.config(fg=getattr(UI, 'STATE_ERROR', getattr(UI, 'COLOR_DANGER', '#F44336')))
+            self.status_label.config(
+                fg=getattr(UI, "STATE_ERROR", getattr(UI, "COLOR_DANGER", "#F44336"))
+            )
         elif status_string == "TARGET_DEAD":
-            self.status_label.config(fg=getattr(UI, 'STATE_MUTED', getattr(UI, 'COLOR_MUTED', '#9E9E9E')))
+            self.status_label.config(
+                fg=getattr(UI, "STATE_MUTED", getattr(UI, "COLOR_MUTED", "#9E9E9E"))
+            )
         else:
-            self.status_label.config(fg=getattr(UI, 'COLOR_ACCENT', '#2196F3'))
+            self.status_label.config(fg=getattr(UI, "COLOR_ACCENT", "#2196F3"))
 
-    def update_hp_display(self, hp_percent: float, current_hp: int = 0, max_hp: int = 10000):
+    def update_hp_display(
+        self, hp_percent: float, current_hp: int = 0, max_hp: int = 10000
+    ):
         """Update Canvas HP bar with color and text."""
         if not hasattr(self, "hp_canvas"):
             return
@@ -109,7 +128,14 @@ class HuntTab(ttk.Frame):
         # Death case
         if hp_percent == 0.0:
             self.hp_canvas.itemconfig(self.hp_fill, fill="#52525B", outline="#52525B")
-            self.hp_canvas.itemconfig(self.hp_text, text=self.app._t("target_card.target_dead") if hasattr(self.app, "_t") else "[ Đã Tiêu Diệt ]")
+            self.hp_canvas.itemconfig(
+                self.hp_text,
+                text=(
+                    self.app._t("target_card.target_dead")
+                    if hasattr(self.app, "_t")
+                    else "[ Đã Tiêu Diệt ]"
+                ),
+            )
             # Cancel any pending clear (race guard)
             if hasattr(self, "_pending_clear_id") and self._pending_clear_id:
                 try:
@@ -147,7 +173,7 @@ class HuntTab(ttk.Frame):
 
         # Update text
         text = f"{current_hp:,} / {max_hp:,} ({hp_percent:.1f}%)"
-        self.hp_canvas.coords(self.hp_text, width/2, 12)
+        self.hp_canvas.coords(self.hp_text, width / 2, 12)
         self.hp_canvas.itemconfig(self.hp_text, text=text)
 
         # Update label for compatibility
@@ -162,7 +188,9 @@ class HuntTab(ttk.Frame):
                     self.after_cancel(clear_id)
                 except tk.TclError:
                     pass
-            self._pending_clear_id = self.after(delay_ms, lambda: self.clear_target_card(0))
+            self._pending_clear_id = self.after(
+                delay_ms, lambda: self.clear_target_card(0)
+            )
             return
 
         self.clear_target_photo()
@@ -198,9 +226,13 @@ class HuntTab(ttk.Frame):
             self.app.hunt_target_info.set(f"Target: #{info['id']}")
 
         if info.get("is_placeholder"):
-            self.hunt_status_label.config(fg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+            self.hunt_status_label.config(
+                fg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
+            )
             if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(self.hunt_status_label, self.app._t("target_card.unknown_mob"))
+                self.app._create_tooltip(
+                    self.hunt_status_label, self.app._t("target_card.unknown_mob")
+                )
         else:
             self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
             if hasattr(self.app, "_destroy_widget_tooltip"):
@@ -209,7 +241,10 @@ class HuntTab(ttk.Frame):
             self.hunt_status_label.unbind("<Leave>")
 
         try:
-            scale_factor = getattr(self, "tk", None) and getattr(self, "tk", None).call('tk', 'scaling') * 72 / 100.0
+            scale_factor = (
+                getattr(self, "tk", None)
+                and getattr(self, "tk", None).call("tk", "scaling") * 72 / 100.0
+            )
             if scale_factor is None:
                 scale_factor = 1.0
         except Exception:
@@ -218,6 +253,7 @@ class HuntTab(ttk.Frame):
         self.set_target_photo(None)
 
         if Image and ImageTk:
+
             def _load_and_set_photo():
                 photo = None
                 img_size = int(120 * scale_factor)
@@ -230,7 +266,9 @@ class HuntTab(ttk.Frame):
                         pass
 
                 if not photo:
-                    default_path = os.path.join("assets", "images", "default_monster.png")
+                    default_path = os.path.join(
+                        "assets", "images", "default_monster.png"
+                    )
                     if os.path.exists(default_path):
                         try:
                             with Image.open(default_path) as img:
@@ -345,7 +383,9 @@ class HuntTab(ttk.Frame):
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
         # Header Bar
-        status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
+        status_frame = tk.Frame(
+            self.app.active_target_status_frame, relief="groove", bd=1, height=32
+        )
         status_frame.pack(fill="x", pady=(0, 4))
 
         self.hunt_status_label = tk.Label(
@@ -371,7 +411,10 @@ class HuntTab(ttk.Frame):
         card_container.pack(fill="both", expand=True, padx=4, pady=4)
 
         try:
-            scale_factor = getattr(self, "tk", None) and getattr(self, "tk", None).call('tk', 'scaling') * 72 / 100.0
+            scale_factor = (
+                getattr(self, "tk", None)
+                and getattr(self, "tk", None).call("tk", "scaling") * 72 / 100.0
+            )
             if scale_factor is None:
                 scale_factor = 1.0
         except Exception:
@@ -383,7 +426,7 @@ class HuntTab(ttk.Frame):
             text="[ NO IMAGE ]",
             bg=UI.BG_MUTED,
             width=20,  # rough width for text mode
-            height=10
+            height=10,
         )
         self.target_image_label.pack(side="left", padx=8, pady=8)
 
@@ -398,7 +441,7 @@ class HuntTab(ttk.Frame):
             bg=UI.BG_MUTED,
             anchor="w",
             wraplength=int(250 * scale_factor),
-            justify="left"
+            justify="left",
         )
         self.target_name_label.pack(fill="x", anchor="w", pady=(0, 8))
 
@@ -408,12 +451,14 @@ class HuntTab(ttk.Frame):
             font=(UI.FONT_FAMILY, int(12 * scale_factor), "bold"),
             bg=UI.BG_MUTED,
             fg=UI.COLOR_ACCENT,
-            anchor="w"
+            anchor="w",
         )
         self.status_label.pack(fill="x", anchor="w", pady=(0, 4))
 
         # ProgressBar (Replaced with Canvas for UX5.2)
-        self.hp_canvas = tk.Canvas(stats_frame, height=24, bg=UI.BG_MUTED, highlightthickness=0)
+        self.hp_canvas = tk.Canvas(
+            stats_frame, height=24, bg=UI.BG_MUTED, highlightthickness=0
+        )
         self.hp_canvas.pack(fill="x", pady=(0, 2))
 
         def _on_hp_canvas_resize(event):
@@ -424,18 +469,29 @@ class HuntTab(ttk.Frame):
             if hasattr(self, "hp_text"):
                 self.hp_canvas.coords(self.hp_text, width / 2, 12)
 
-        self.hp_canvas.bind('<Configure>', _on_hp_canvas_resize)
+        self.hp_canvas.bind("<Configure>", _on_hp_canvas_resize)
 
         # Pre-init Canvas objects
-        self.hp_bg = self.hp_canvas.create_rectangle(0, 0, 1, 24, fill="#27272A", outline="#27272A")
-        self.hp_fill = self.hp_canvas.create_rectangle(0, 0, 0, 24, fill="#00E86D", outline="#00E86D")
-        self.hp_text = self.hp_canvas.create_text(0, 12, text="", fill="white", anchor="center")
+        self.hp_bg = self.hp_canvas.create_rectangle(
+            0, 0, 1, 24, fill="#27272A", outline="#27272A"
+        )
+        self.hp_fill = self.hp_canvas.create_rectangle(
+            0, 0, 0, 24, fill="#00E86D", outline="#00E86D"
+        )
+        self.hp_text = self.hp_canvas.create_text(
+            0, 12, text="", fill="white", anchor="center"
+        )
 
-        self.hp_percent_label = tk.Label(stats_frame, text="-", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, anchor="w")
+        self.hp_percent_label = tk.Label(
+            stats_frame, text="-", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, anchor="w"
+        )
         self.hp_percent_label.pack(fill="x", anchor="w", pady=(0, 4))
 
         # Recovery Frame (Hidden by default)
-        self.recovery_frame = tk.Frame(stats_frame, bg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+        self.recovery_frame = tk.Frame(
+            stats_frame,
+            bg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107")),
+        )
         self.recovery_frame.pack_forget()
 
         self.recovery_btn = tk.Button(
@@ -445,14 +501,21 @@ class HuntTab(ttk.Frame):
             bg=UI.BTN_NEUTRAL_BG,
             fg=UI.BTN_NEUTRAL_FG,
             relief=UI.BTN_RELIEF_NORMAL,
-            command=self._on_recovery_click
+            command=self._on_recovery_click,
         )
         self.recovery_btn.pack(fill="x", padx=4, pady=4)
 
         def create_stat_row(parent, label_key):
             row = tk.Frame(parent, bg=UI.BG_MUTED)
             row.pack(fill="x", pady=2)
-            tk.Label(row, text=self.app._t(label_key) + ":", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, width=12, anchor="w").pack(side="left")
+            tk.Label(
+                row,
+                text=self.app._t(label_key) + ":",
+                bg=UI.BG_MUTED,
+                fg=UI.COLOR_SUBTEXT,
+                width=12,
+                anchor="w",
+            ).pack(side="left")
             val_lbl = tk.Label(row, text="-", bg=UI.BG_MUTED, anchor="w")
             val_lbl.pack(side="left", fill="x", expand=True)
             return val_lbl
@@ -464,7 +527,12 @@ class HuntTab(ttk.Frame):
         # Section 2: Monster Selection (Phase 3: Multi-Monster Support)
         # Sprint 22 Patch 2: Dynamic title based on training mode
         self.app.monster_frame = tk.LabelFrame(
-            self, text=self.app._t("monster_rotation_title"), font=UI.FONT_SECTION, fg=UI.COLOR_TEXT, padx=10, pady=8
+            self,
+            text=self.app._t("monster_rotation_title"),
+            font=UI.FONT_SECTION,
+            fg=UI.COLOR_TEXT,
+            padx=10,
+            pady=8,
         )
         self.app.monster_frame.grid(
             row=0, column=0, sticky="new", padx=(0, 6), pady=(0, 12)
@@ -483,7 +551,9 @@ class HuntTab(ttk.Frame):
             # Only change if hunt is not running
             if self.app.click_running:
                 # Revert to current hunt config policy
-                self.app.target_policy_var.set(self.app.hunt_cfg.get("target_policy", "configured_only"))
+                self.app.target_policy_var.set(
+                    self.app.hunt_cfg.get("target_policy", "configured_only")
+                )
                 return
 
             new_policy = self.app.target_policy_var.get()
@@ -503,7 +573,7 @@ class HuntTab(ttk.Frame):
         policies = [
             ("configured_only", self.app._t("hunt_policy_configured")),
             ("all_resolved", self.app._t("hunt_policy_auto_detect")),
-            ("any_target", self.app._t("hunt_policy_any_target"))
+            ("any_target", self.app._t("hunt_policy_any_target")),
         ]
 
         self.policy_radios = []
@@ -513,7 +583,7 @@ class HuntTab(ttk.Frame):
                 text=text,
                 value=val,
                 variable=self.app.target_policy_var,
-                style="Toolbutton"
+                style="Toolbutton",
             )
             rb.pack(side="left", padx=2)
             self.policy_radios.append(rb)
@@ -535,12 +605,16 @@ class HuntTab(ttk.Frame):
             self.any_target_container,
             text=self.app._t("any_target_warning"),
             fg=UI.COLOR_WARNING,
-            font=UI.FONT_TEXT
+            font=UI.FONT_TEXT,
         )
         any_target_label.pack(pady=20)
 
         # Build detected list view
-        tk.Label(self.detected_container, text=self.app._t("detected_monsters_title"), font=UI.FONT_LABEL).pack(anchor="w")
+        tk.Label(
+            self.detected_container,
+            text=self.app._t("detected_monsters_title"),
+            font=UI.FONT_LABEL,
+        ).pack(anchor="w")
         detected_listbox_frame = tk.Frame(self.detected_container)
         detected_listbox_frame.pack(fill="both", expand=True)
         self.app.detected_monsters_listbox = tk.Listbox(
@@ -551,7 +625,9 @@ class HuntTab(ttk.Frame):
             font=UI.FONT_TEXT,
         )
         self.app.detected_monsters_listbox.pack(side="left", fill="both", expand=True)
-        detected_scroll = tk.Scrollbar(detected_listbox_frame, command=self.app.detected_monsters_listbox.yview)
+        detected_scroll = tk.Scrollbar(
+            detected_listbox_frame, command=self.app.detected_monsters_listbox.yview
+        )
         detected_scroll.pack(side="right", fill="y")
         self.app.detected_monsters_listbox.config(yscrollcommand=detected_scroll.set)
 
@@ -560,10 +636,18 @@ class HuntTab(ttk.Frame):
         self.app.btn_promote_monster = self.app._create_icon_button(
             detected_btn_container,
             icon_emoji="➕",
-            command=lambda: getattr(self.app, 'promote_detected_monster', lambda x: None)(self.app.detected_monsters_listbox.curselection()),
+            command=lambda: getattr(
+                self.app, "promote_detected_monster", lambda x: None
+            )(self.app.detected_monsters_listbox.curselection()),
             style="compact",
-            bg_color=UI.BTN_ACCENT_BG if hasattr(UI, 'BTN_ACCENT_BG') else UI.COLOR_PRIMARY,
-            hover_color=UI.BTN_ACCENT_HOVER if hasattr(UI, 'BTN_ACCENT_HOVER') else UI.COLOR_PRIMARY_TEXT,
+            bg_color=(
+                UI.BTN_ACCENT_BG if hasattr(UI, "BTN_ACCENT_BG") else UI.COLOR_PRIMARY
+            ),
+            hover_color=(
+                UI.BTN_ACCENT_HOVER
+                if hasattr(UI, "BTN_ACCENT_HOVER")
+                else UI.COLOR_PRIMARY_TEXT
+            ),
         )
         self.app.btn_promote_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
@@ -571,8 +655,18 @@ class HuntTab(ttk.Frame):
         )
 
         # Bindings for promotion
-        self.app.detected_monsters_listbox.bind("<Double-1>", lambda e: getattr(self.app, 'promote_detected_monster', lambda x: None)(self.app.detected_monsters_listbox.curselection()))
-        self.app.detected_monsters_listbox.bind("<Return>", lambda e: getattr(self.app, 'promote_detected_monster', lambda x: None)(self.app.detected_monsters_listbox.curselection()))
+        self.app.detected_monsters_listbox.bind(
+            "<Double-1>",
+            lambda e: getattr(self.app, "promote_detected_monster", lambda x: None)(
+                self.app.detected_monsters_listbox.curselection()
+            ),
+        )
+        self.app.detected_monsters_listbox.bind(
+            "<Return>",
+            lambda e: getattr(self.app, "promote_detected_monster", lambda x: None)(
+                self.app.detected_monsters_listbox.curselection()
+            ),
+        )
 
         # Basic Drag-and-Drop setup
         def on_drag_start(event):
@@ -597,16 +691,22 @@ class HuntTab(ttk.Frame):
             # Check if released over configured listbox
             x, y = event.widget.winfo_pointerxy()
             target = event.widget.winfo_containing(x, y)
-            if target == getattr(self.app, 'monster_rotation_listbox', None):
-                if hasattr(event.widget, '_dnd_data'):
+            if target == getattr(self.app, "monster_rotation_listbox", None):
+                if hasattr(event.widget, "_dnd_data"):
                     idx = event.widget._dnd_data
-                    getattr(self.app, 'promote_detected_monster', lambda x: None)((idx,))
+                    getattr(self.app, "promote_detected_monster", lambda x: None)(
+                        (idx,)
+                    )
 
         self.app.detected_monsters_listbox.bind("<ButtonPress-1>", on_drag_start)
         self.app.detected_monsters_listbox.bind("<B1-Motion>", on_drag_motion)
         self.app.detected_monsters_listbox.bind("<ButtonRelease-1>", on_drag_release)
 
-        tk.Label(self.configured_container, text=self.app._t("configured_monsters_title"), font=UI.FONT_LABEL).pack(anchor="w")
+        tk.Label(
+            self.configured_container,
+            text=self.app._t("configured_monsters_title"),
+            font=UI.FONT_LABEL,
+        ).pack(anchor="w")
 
         # Monster list for rotation selection
         list_container = tk.Frame(self.configured_container)
@@ -643,8 +743,14 @@ class HuntTab(ttk.Frame):
             icon_emoji="➕",
             command=self.app._on_monster_add_smart,
             style="compact",
-            bg_color=UI.BTN_ACCENT_BG if hasattr(UI, 'BTN_ACCENT_BG') else UI.COLOR_PRIMARY,
-            hover_color=UI.BTN_ACCENT_HOVER if hasattr(UI, 'BTN_ACCENT_HOVER') else UI.COLOR_PRIMARY_TEXT,
+            bg_color=(
+                UI.BTN_ACCENT_BG if hasattr(UI, "BTN_ACCENT_BG") else UI.COLOR_PRIMARY
+            ),
+            hover_color=(
+                UI.BTN_ACCENT_HOVER
+                if hasattr(UI, "BTN_ACCENT_HOVER")
+                else UI.COLOR_PRIMARY_TEXT
+            ),
         )
         self.app.btn_add_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
@@ -657,8 +763,10 @@ class HuntTab(ttk.Frame):
             icon_emoji="↑",
             command=self.app._on_monster_move_up,
             style="compact",
-            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
-            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, "BTN_INFO_BG") else UI.COLOR_INFO,
+            hover_color=(
+                UI.BTN_INFO_HOVER if hasattr(UI, "BTN_INFO_HOVER") else UI.COLOR_PRIMARY
+            ),
         )
         self.app.btn_move_up.pack(pady=(0, 4))
 
@@ -667,8 +775,10 @@ class HuntTab(ttk.Frame):
             icon_emoji="↓",
             command=self.app._on_monster_move_down,
             style="compact",
-            bg_color=UI.BTN_INFO_BG if hasattr(UI, 'BTN_INFO_BG') else UI.COLOR_INFO,
-            hover_color=UI.BTN_INFO_HOVER if hasattr(UI, 'BTN_INFO_HOVER') else UI.COLOR_PRIMARY,
+            bg_color=UI.BTN_INFO_BG if hasattr(UI, "BTN_INFO_BG") else UI.COLOR_INFO,
+            hover_color=(
+                UI.BTN_INFO_HOVER if hasattr(UI, "BTN_INFO_HOVER") else UI.COLOR_PRIMARY
+            ),
         )
         self.app.btn_move_down.pack(pady=(0, 12))
 
@@ -710,7 +820,9 @@ class HuntTab(ttk.Frame):
         )  # Also backspace
 
         # Sprint 22 Patch 2: Context menu for right-click delete
-        self.app.monster_context_menu = tk.Menu(self.app.monster_rotation_listbox, tearoff=0)
+        self.app.monster_context_menu = tk.Menu(
+            self.app.monster_rotation_listbox, tearoff=0
+        )
         self.app.monster_context_menu.add_command(
             label=self.app._t("monster_delete"),  # "Delete" / "Xóa"
             command=self.app._on_monster_delete_from_list,
@@ -722,12 +834,8 @@ class HuntTab(ttk.Frame):
         self.app.monster_rotation_listbox.bind(
             "<Button-3>", self._show_monster_context_menu
         )  # Right-click
-        self.app.monster_rotation_listbox.bind(
-            "<Control-a>", self._select_all_monsters
-        )
-        self.app.monster_rotation_listbox.bind(
-            "<Control-A>", self._select_all_monsters
-        )
+        self.app.monster_rotation_listbox.bind("<Control-a>", self._select_all_monsters)
+        self.app.monster_rotation_listbox.bind("<Control-A>", self._select_all_monsters)
         tk.Label(
             self.configured_container,
             text=self.app._t("monster_rotation_delete_hint"),
@@ -764,9 +872,11 @@ class HuntTab(ttk.Frame):
         # Status label hidden, only used internally
 
         self.skill_strip_frame = tk.Frame(self)
-        self.skill_strip_frame.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=(0, 12))
-        self.skill_strip_frame.grid_columnconfigure(0, weight=1, uniform='skill_col')
-        self.skill_strip_frame.grid_columnconfigure(1, weight=2, uniform='skill_col')
+        self.skill_strip_frame.grid(
+            row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 12)
+        )
+        self.skill_strip_frame.grid_columnconfigure(0, weight=1, uniform="skill_col")
+        self.skill_strip_frame.grid_columnconfigure(1, weight=2, uniform="skill_col")
 
         # Option (a): Đây là bản thiết kế lại/thay thế cho panel đã làm ở CB3B.
         # Panel cũ từ CB3B (nếu có ở nơi khác) sẽ được loại bỏ, tránh tồn tại 2 bản UI cho cùng chức năng.
@@ -778,7 +888,7 @@ class HuntTab(ttk.Frame):
             highlightbackground=border_color,
             highlightthickness=1,
             highlightcolor=border_color,
-            bg=UI.BG_PANEL
+            bg=UI.BG_PANEL,
         )
         skill_frame_outer.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
@@ -790,7 +900,9 @@ class HuntTab(ttk.Frame):
         if "combo" not in self.app.hunt_cfg:
             self.app.hunt_cfg["combo"] = {"enabled": False, "combo_start_key": "Alt+3"}
 
-        self.app.auto_combo_var = tk.BooleanVar(value=self.app.hunt_cfg["combo"].get("enabled", False))
+        self.app.auto_combo_var = tk.BooleanVar(
+            value=self.app.hunt_cfg["combo"].get("enabled", False)
+        )
 
         def on_auto_combo_toggle():
             is_enabled = self.app.auto_combo_var.get()
@@ -802,32 +914,45 @@ class HuntTab(ttk.Frame):
 
         auto_combo_cb = tk.Checkbutton(
             ctrl_frame,
-            text=self.app._t("skill_strip.auto_combo") if self.app._t("skill_strip.auto_combo") != "skill_strip.auto_combo" else "Bật Auto Combo",
+            text=(
+                self.app._t("skill_strip.auto_combo")
+                if self.app._t("skill_strip.auto_combo") != "skill_strip.auto_combo"
+                else "Bật Auto Combo"
+            ),
             variable=self.app.auto_combo_var,
             command=on_auto_combo_toggle,
             bg=UI.BG_PANEL,
-            font=UI.FONT_TEXT
+            font=UI.FONT_TEXT,
         )
         auto_combo_cb.pack(side="left", padx=(4, 8))
 
         tk.Label(
             ctrl_frame,
-            text=self.app._t("skill_strip.combo_start_key") if self.app._t("skill_strip.combo_start_key") != "skill_strip.combo_start_key" else "Phím Mở Combo",
+            text=(
+                self.app._t("skill_strip.combo_start_key")
+                if self.app._t("skill_strip.combo_start_key")
+                != "skill_strip.combo_start_key"
+                else "Phím Mở Combo"
+            ),
             bg=UI.BG_PANEL,
-            font=UI.FONT_TEXT
+            font=UI.FONT_TEXT,
         ).pack(side="left")
 
         self.app.combo_start_key_cmb = ttk.Combobox(
             ctrl_frame,
             values=["Alt+1", "Alt+2", "Alt+3", "Alt+4", "Alt+5"],
             state="normal" if self.app.auto_combo_var.get() else "disabled",
-            width=8
+            width=8,
         )
-        self.app.combo_start_key_cmb.set(self.app.hunt_cfg["combo"].get("combo_start_key", "Alt+3"))
+        self.app.combo_start_key_cmb.set(
+            self.app.hunt_cfg["combo"].get("combo_start_key", "Alt+3")
+        )
         self.app.combo_start_key_cmb.pack(side="left", padx=4)
 
         def on_combo_key_change(event):
-            self.app.hunt_cfg["combo"]["combo_start_key"] = self.app.combo_start_key_cmb.get()
+            self.app.hunt_cfg["combo"][
+                "combo_start_key"
+            ] = self.app.combo_start_key_cmb.get()
 
         self.app.combo_start_key_cmb.bind("<<ComboboxSelected>>", on_combo_key_change)
         # self.app.combo_start_key_cmb.bind("<KeyRelease>", on_combo_key_change)
@@ -841,11 +966,14 @@ class HuntTab(ttk.Frame):
         self.app.skill_slot_key_labels = []
         self.app.skill_slot_stats_labels = []
         for i in range(4):
-            lanes_frame.grid_columnconfigure(i, weight=1, uniform='card_col')
+            lanes_frame.grid_columnconfigure(i, weight=1, uniform="card_col")
 
         # To support high DPI
         try:
-            scale_factor = getattr(self, "tk", None) and getattr(self, "tk", None).call('tk', 'scaling') * 72 / 100.0
+            scale_factor = (
+                getattr(self, "tk", None)
+                and getattr(self, "tk", None).call("tk", "scaling") * 72 / 100.0
+            )
             if scale_factor is None:
                 scale_factor = 1.0
         except Exception:
@@ -876,24 +1004,45 @@ class HuntTab(ttk.Frame):
             row = 0 if is_combo_lane else 1
             col = idx if is_combo_lane else (idx - 4)
 
-            card = tk.Frame(lanes_frame, bg=UI.BG_DEFAULT, highlightbackground="#D0D0D0", highlightthickness=1)
+            card = tk.Frame(
+                lanes_frame,
+                bg=UI.BG_DEFAULT,
+                highlightbackground="#D0D0D0",
+                highlightthickness=1,
+            )
             card.grid(row=row, column=col, sticky="ew", padx=2, pady=2)
 
             var = tk.StringVar()
             self.app.skill_slot_vars.append(var)
 
             # Title
-            t_combo = self.app._t('skill_strip.combo_lane')
-            t_buff = self.app._t('skill_strip.buff_lane')
-            title_text = f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col + 1}" if is_combo_lane else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col + 1}"
+            t_combo = self.app._t("skill_strip.combo_lane")
+            t_buff = self.app._t("skill_strip.buff_lane")
+            title_text = (
+                f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col + 1}"
+                if is_combo_lane
+                else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col + 1}"
+            )
 
-            tk.Label(card, text=title_text, bg=UI.BG_DEFAULT, fg=UI.COLOR_SUBTEXT, font=(UI.FONT_FAMILY, int(8 * scale_factor))).pack(anchor="w", padx=2, pady=(2, 0))
+            tk.Label(
+                card,
+                text=title_text,
+                bg=UI.BG_DEFAULT,
+                fg=UI.COLOR_SUBTEXT,
+                font=(UI.FONT_FAMILY, int(8 * scale_factor)),
+            ).pack(anchor="w", padx=2, pady=(2, 0))
 
             # Combobox
             cmb = ttk.Combobox(card, textvariable=var, state="readonly")
             cmb.pack(fill="x", padx=badge_pad, pady=badge_pad)
 
-            stats_lbl = tk.Label(card, text="⚡ --s | ⏳ --s", fg=UI.COLOR_SUBTEXT, bg=UI.BG_DEFAULT, font=card_font)
+            stats_lbl = tk.Label(
+                card,
+                text="⚡ --s | ⏳ --s",
+                fg=UI.COLOR_SUBTEXT,
+                bg=UI.BG_DEFAULT,
+                font=card_font,
+            )
 
             def _on_cmb_selected(event, v=var, lbl=stats_lbl):
                 if hasattr(self.app, "on_skill_slot_changed"):
@@ -907,7 +1056,15 @@ class HuntTab(ttk.Frame):
             badge_frame = tk.Frame(card, bg=UI.BG_DEFAULT)
             badge_frame.pack(fill="x", padx=2, pady=(0, 2))
 
-            key_lbl = tk.Label(badge_frame, text="", width=6, anchor="w", fg="#333", bg=UI.BG_DEFAULT, font=card_font)
+            key_lbl = tk.Label(
+                badge_frame,
+                text="",
+                width=6,
+                anchor="w",
+                fg="#333",
+                bg=UI.BG_DEFAULT,
+                font=card_font,
+            )
             key_lbl.pack(side="left")
             self.app.skill_slot_key_labels.append(key_lbl)
 
@@ -916,12 +1073,16 @@ class HuntTab(ttk.Frame):
 
             # Tooltip
             if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(card, self.app._t("skill_strip.tooltip_placeholder"))
+                self.app._create_tooltip(
+                    card, self.app._t("skill_strip.tooltip_placeholder")
+                )
 
         self.app._refresh_monster_select_options()
         # Replaced _load_skill_slots_from_cfg with equivalent logic inline
         saved = (
-            self.app.hunt_cfg.get("skill_slots", []) if hasattr(self.app, "hunt_cfg") else []
+            self.app.hunt_cfg.get("skill_slots", [])
+            if hasattr(self.app, "hunt_cfg")
+            else []
         )
 
         normalized_slots = []
@@ -954,7 +1115,10 @@ class HuntTab(ttk.Frame):
         # Section 3.5: Skill Performance Statistics (Sprint 22 Patch 1 - Training Mode)
         # Re-parented into the active target status panel.
         self.app.skill_stats_frame = tk.LabelFrame(
-            self.skill_strip_frame, text=self.app._t("skill_stats_title"), padx=10, pady=8
+            self.skill_strip_frame,
+            text=self.app._t("skill_stats_title"),
+            padx=10,
+            pady=8,
         )
         self.app.skill_stats_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
 
