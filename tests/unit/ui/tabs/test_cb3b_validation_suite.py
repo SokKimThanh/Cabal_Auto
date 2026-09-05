@@ -111,15 +111,20 @@ class TestCB3BValidationSuite(unittest.TestCase):
         import importlib.util
         spec = importlib.util.spec_from_file_location("app_gui", "app_gui.py")
         app_gui_module = importlib.util.module_from_spec(spec)
-        # Mock transitive dependencies that app_gui uses globally
+        # Mock transitive dependencies that app_gui uses globally (auto-restored)
         import sys
-        sys.modules['cv2'] = MagicMock()
-        sys.modules['win32gui'] = MagicMock()
-        sys.modules['lib.vision.vision_engine'] = MagicMock()
-        sys.modules['lib.system.bot_manager'] = MagicMock()
-        sys.modules['ui.controllers.overlay_controller'] = MagicMock()
-        sys.modules['lib.features.hunt.hunt_runner'] = MagicMock()
-        spec.loader.exec_module(app_gui_module)
+        with patch.dict(
+            sys.modules,
+            {
+                "cv2": MagicMock(),
+                "win32gui": MagicMock(),
+                "lib.vision.vision_engine": MagicMock(),
+                "lib.system.bot_manager": MagicMock(),
+                "ui.controllers.overlay_controller": MagicMock(),
+                "lib.features.hunt.hunt_runner": MagicMock(),
+            },
+        ):
+            spec.loader.exec_module(app_gui_module)
 
         # Extract the standalone _collect_skill_slots method to test it isolated
         skills, buffs = app_gui_module.App._collect_skill_slots(mock_app)
