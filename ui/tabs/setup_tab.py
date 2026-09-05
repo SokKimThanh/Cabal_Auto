@@ -35,7 +35,8 @@ class SetupTab(tk.Frame):
 
         btn_text_var = tk.StringVar(value=f"▶ {self._t(title_key)}")
 
-        content_frame = ttk.Frame(group_frame, padding=(12, 10))
+        content_frame = tk.LabelFrame(group_frame, bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_TEXT_PRIMARY, padx=12, pady=10)
+
 
         def toggle(event=None):
             visible = not is_visible_var.get()
@@ -278,7 +279,7 @@ class SetupTab(tk.Frame):
         self.grid_columnconfigure(1, weight=1)
 
         # Section 1: Configuration Mode
-        mode_frame = ttk.LabelFrame(self, text=self._t("setup_mode"), padding=(12, 10))
+        mode_frame = tk.LabelFrame(self, bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_TEXT_PRIMARY, text=self._t("setup_mode"), padx=12, pady=10)
         mode_frame.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, 12))
 
         mode_desc = ttk.Label(
