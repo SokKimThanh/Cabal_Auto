@@ -77,7 +77,13 @@ class ActivityLogsFrame(tk.Frame):
         except queue.Empty:
             pass
         finally:
-            self.after(100, self._process_queue)
+            try:
+                if not self.winfo_exists():
+                    return
+                delay_ms = 100 if not self.message_queue.empty() else 500
+                self.after(delay_ms, self._process_queue)
+            except tk.TclError:
+                return
 
     def _append_message_internal(self, message: str):
         self.text_widget.config(state="normal")
