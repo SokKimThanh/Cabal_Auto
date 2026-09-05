@@ -94,6 +94,7 @@ class HuntTab(ttk.Frame):
                             with Image.open(default_path) as img:
                                 img = img.resize((img_size, img_size))
                                 photo = ImageTk.PhotoImage(img)
+                        except Exception:
                             pass
 
                 self.set_target_photo(photo)
