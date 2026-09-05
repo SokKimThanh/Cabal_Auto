@@ -11,6 +11,7 @@ Design:
 - Keys are organized by namespace (screen/feature), e.g., 'library_manager', 'global', etc.
 - Keep all tooltip copy in lib/translations.py under each namespace's translations.
 """
+
 from __future__ import annotations
 import tkinter as tk
 from typing import Callable, Optional
@@ -28,7 +29,15 @@ class I18nToolTip:
 
     The text is resolved lazily on show using i18n.t with (key, ns, lang_provider()).
     """
-    def __init__(self, widget: tk.Widget, key: str, ns: Optional[str], lang_provider: Callable[[], str], delay: int = 400):
+
+    def __init__(
+        self,
+        widget: tk.Widget,
+        key: str,
+        ns: Optional[str],
+        lang_provider: Callable[[], str],
+        delay: int = 400,
+    ):
         self.widget = widget
         self.key = key
         self.ns = ns
@@ -37,9 +46,9 @@ class I18nToolTip:
         self._after_id = None
         self._tip_win: Optional[tk.Toplevel] = None
         try:
-            widget.bind('<Enter>', self._on_enter, add='+')
-            widget.bind('<Leave>', self._on_leave, add='+')
-            widget.bind('<ButtonPress>', self._on_leave, add='+')
+            widget.bind("<Enter>", self._on_enter, add="+")
+            widget.bind("<Leave>", self._on_leave, add="+")
+            widget.bind("<ButtonPress>", self._on_leave, add="+")
         except Exception:
             pass
 
@@ -74,12 +83,12 @@ class I18nToolTip:
             label = tk.Label(
                 tw,
                 text=text,
-                background='#ffffe0',
-                relief='solid',
+                background="#ffffe0",
+                relief="solid",
                 borderwidth=1,
                 padx=6,
                 pady=3,
-                justify='left'
+                justify="left",
             )
             label.pack()
         except Exception:
@@ -102,7 +111,13 @@ class I18nToolTip:
             self._after_id = None
 
 
-def attach_i18n_tooltip(widget: tk.Widget, key: str, ns: Optional[str], lang_provider: Callable[[], str], delay: int = 400) -> I18nToolTip:
+def attach_i18n_tooltip(
+    widget: tk.Widget,
+    key: str,
+    ns: Optional[str],
+    lang_provider: Callable[[], str],
+    delay: int = 400,
+) -> I18nToolTip:
     """Attach an i18n-enabled tooltip to a widget.
 
     - key: translation key
@@ -113,7 +128,7 @@ def attach_i18n_tooltip(widget: tk.Widget, key: str, ns: Optional[str], lang_pro
     tip = I18nToolTip(widget, key=key, ns=ns, lang_provider=lang_provider, delay=delay)
     # Keep a reference on the widget to avoid GC of bindings (optional)
     try:
-        setattr(widget, '_i18n_tooltip', tip)
+        setattr(widget, "_i18n_tooltip", tip)
     except Exception:
         pass
     return tip

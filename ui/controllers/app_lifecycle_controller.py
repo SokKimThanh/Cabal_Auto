@@ -42,11 +42,17 @@ class AppLifecycleController:
         # Check if user has completed basic setup
         # Must have ALL THREE to be considered configured
         window_title = self.app.hunt_cfg.get("window_title", "")
-        has_window = bool(window_title.strip() if isinstance(window_title, str) else window_title)
+        has_window = bool(
+            window_title.strip() if isinstance(window_title, str) else window_title
+        )
 
         # Phase 3 compatibility: Check both legacy and new monster fields
         monster_selected_name = self.app.hunt_cfg.get("monster_selected_name", "")
-        has_monster_legacy = bool(monster_selected_name.strip() if isinstance(monster_selected_name, str) else monster_selected_name)
+        has_monster_legacy = bool(
+            monster_selected_name.strip()
+            if isinstance(monster_selected_name, str)
+            else monster_selected_name
+        )
 
         has_monster_list = (
             bool(self.app.hunt_cfg.get("monster_list"))
@@ -107,20 +113,18 @@ class AppLifecycleController:
                 user_skipped_wizard = True
 
         # Check PIL availability and show one-time warning if missing
-        if not getattr(self.app, "pil_available", True) and not getattr(self.app, "_is_destroyed", False):
+        if not getattr(self.app, "pil_available", True) and not getattr(
+            self.app, "_is_destroyed", False
+        ):
 
             print("[PIL Check] PIL/Pillow not available - showing install instructions")
 
             try:
 
                 messagebox.showinfo(
-
                     self.app._t("info_title"),
-
                     self.app._t("pil_not_installed_message"),
-
-                    parent=self.app
-
+                    parent=self.app,
                 )
 
             except Exception:
@@ -188,7 +192,9 @@ class AppLifecycleController:
                     current_status = self.app.hunt_status.get()
                     self.app.hunt_status.set(f"✓ Game window ready: {title}")
                     # Restore previous status after 3 seconds
-                    self.app.after(3000, lambda: self.app.hunt_status.set(current_status))
+                    self.app.after(
+                        3000, lambda: self.app.hunt_status.set(current_status)
+                    )
             else:
                 print(f"[Auto Bring] ✗ Failed to bring window to front: {title}")
 
@@ -254,9 +260,15 @@ class AppLifecycleController:
 
     def on_close(self) -> None:
         """Handles high-level close orchestration (abort checks, thread joining)."""
-        if hasattr(self.app, "try_close_setup_wizard") and not self.app.try_close_setup_wizard():
+        if (
+            hasattr(self.app, "try_close_setup_wizard")
+            and not self.app.try_close_setup_wizard()
+        ):
             return
-        if hasattr(self.app, "try_close_library_manager") and not self.app.try_close_library_manager():
+        if (
+            hasattr(self.app, "try_close_library_manager")
+            and not self.app.try_close_library_manager()
+        ):
             return
 
         self.app.hunt_running = False

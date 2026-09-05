@@ -356,23 +356,39 @@ def create_icon_button(
     if is_photoimage:
         # PhotoImage: use image= parameter
         if text:
-            # Icon + text: use compound='left' to show both
-            button = tk.Button(
-                parent,
-                image=icon,
-                text=text,
-                compound='left',
-                command=command,
-                **final_config
-            )
+            try:
+                # Icon + text: use compound='left' to show both
+                button = tk.Button(
+                    parent,
+                    image=icon,
+                    text=text,
+                    compound='left',
+                    command=command,
+                    **final_config
+                )
+            except Exception:
+                button = tk.Button(
+                    parent,
+                    text=text,
+                    command=command,
+                    **final_config
+                )
         else:
-            # Icon only: just image
-            button = tk.Button(
-                parent,
-                image=icon,
-                command=command,
-                **final_config
-            )
+            try:
+                # Icon only: just image
+                button = tk.Button(
+                    parent,
+                    image=icon,
+                    command=command,
+                    **final_config
+                )
+            except Exception:
+                button = tk.Button(
+                    parent,
+                    text='?',
+                    command=command,
+                    **final_config
+                )
     else:
         # Emoji string: use text= parameter
         if text:
