@@ -21,8 +21,9 @@ class SkillPresetRepository:
                     conn.close()
                 except Exception:
                     pass
+
     def get_preset_skills(self, preset_id: int) -> Dict[str, List[int]]:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return {}
         try:
@@ -43,10 +44,14 @@ class SkillPresetRepository:
 
             return result
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def set_preset_skills(self, preset_id: int, skills_by_lane: Dict[str, List[int]]) -> bool:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return False
         try:
@@ -67,10 +72,14 @@ class SkillPresetRepository:
             conn.rollback()
             return False
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def delete_preset(self, preset_id: int) -> bool:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return False
         try:
@@ -79,10 +88,14 @@ class SkillPresetRepository:
             conn.commit()
             return True
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def get_presets_by_class(self, class_name: str) -> List[Dict[str, Any]]:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return []
         try:
@@ -91,10 +104,14 @@ class SkillPresetRepository:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def get_preset(self, preset_id: int) -> Optional[Dict[str, Any]]:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return None
         try:
@@ -105,4 +122,8 @@ class SkillPresetRepository:
                 return dict(row)
             return None
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass

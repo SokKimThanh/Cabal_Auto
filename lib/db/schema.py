@@ -105,4 +105,43 @@ def setup_skills_schema(conn: sqlite3.Connection):
         )
     """)
 
+    # Bảng skill_presets - Lưu các preset skill presets (mặc định hoặc tùy chỉnh)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS skill_presets (
+            preset_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            class_name TEXT NOT NULL,
+            name TEXT NOT NULL,
+            is_default INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_presets_class ON skill_presets(class_name)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_presets_default ON skill_presets(is_default)")
+
+    # Bảng preset_skills - Lưu skill order trong một preset
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS preset_skills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            preset_id INTEGER NOT NULL,
+            skill_id INTEGER NOT NULL,
+            lane TEXT NOT NULL,
+            position INTEGER NOT NULL,
+            FOREIGN KEY (preset_id) REFERENCES skill_presets(preset_id) ON DELETE CASCADE
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_preset_skills_preset ON preset_skills(preset_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_preset_skills_skill ON preset_skills(skill_id)")
+
+    # Bảng user_preset_state - Theo dõi preset active hiện tại cho mỗi class
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_preset_state (
+            class_name TEXT PRIMARY KEY,
+            active_preset_id INTEGER,
+            preset_mode TEXT DEFAULT 'default',
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (active_preset_id) REFERENCES skill_presets(preset_id) ON DELETE SET NULL
+        )
+    """)
+
     conn.commit()

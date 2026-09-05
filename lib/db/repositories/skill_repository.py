@@ -19,7 +19,7 @@ class SkillRepository:
                 except Exception:
                     pass
     def list_skills(self, class_id: Optional[int] = None, type_filter: Optional[str] = None) -> List[Dict[str, Any]]:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return []
         try:
@@ -42,4 +42,8 @@ class SkillRepository:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
