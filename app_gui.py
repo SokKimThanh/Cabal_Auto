@@ -551,7 +551,9 @@ class App(tk.Tk):
                 self.after(0, fn) if hasattr(self, "after") else fn()
             ),
             clear_target_ui=self.clear_target_ui,
-            set_target_info=lambda txt: getattr(self, "hunt_target_info", tk.StringVar()).set(txt)
+            set_target_info=lambda txt: getattr(self, "hunt_target_info", tk.StringVar()).set(txt),
+            update_target_status=lambda txt: self.hunt_tab.update_status(txt) if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "update_status") else None,
+            update_target_hp=lambda hp: self.hunt_tab.update_hp_display(hp) if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "update_hp_display") else None
         )
 
         # Keyboard shortcuts (Window-focused only)
@@ -2398,7 +2400,9 @@ class App(tk.Tk):
                 text=f"✓ {self._t('all_saved')}", fg="#4CAF50"  # Green color
             )
 
-    def clear_target_ui(self):
+    def clear_target_ui(self, delay_ms=0):
+        if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "clear_target_card"):
+            self.hunt_tab.clear_target_card(delay_ms)
         if hasattr(self, "hunt_target_info"):
             self.hunt_target_info.set("Target: None")
         if hasattr(self, "monster_rotation_listbox"):

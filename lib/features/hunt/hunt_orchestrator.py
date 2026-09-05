@@ -30,11 +30,15 @@ class HuntOrchestrator:
         schedule_ui_task: Callable[[Callable], None],
         clear_target_ui: Callable[[], None] = None,
         set_target_info: Callable[[str], None] = None,
-        on_scene_monsters_detected: Callable[[tuple], None] = None
+        on_scene_monsters_detected: Callable[[tuple], None] = None,
+        update_target_status: Callable[[str], None] = None,
+        update_target_hp: Callable[[float], None] = None
     ):
         self.clear_target_ui = clear_target_ui
         self.on_scene_monsters_detected = on_scene_monsters_detected
         self.set_target_info = set_target_info
+        self.update_target_status = update_target_status
+        self.update_target_hp = update_target_hp
         self.on_status_update = on_status_update
         self.on_state_change = on_state_change
         self.locate_target = locate_target
@@ -110,6 +114,8 @@ class HuntOrchestrator:
 
             target_bar_detector = TargetBarDetector(hwnd=hwnd)
             target_name_reader = TargetNameReader(hwnd=hwnd)
+            from lib.vision.target_hp_reader import TargetHPReader
+            target_hp_reader = TargetHPReader(target_bar_detector)
             consecutive_false_readings = 0
             logger = get_hunt_logger()
 
@@ -278,6 +284,18 @@ class HuntOrchestrator:
                         is_alive = target_bar_detector.is_target_alive(frame)
 
                         if is_alive:
+                            # Update HP
+                            hp_percent = target_hp_reader.calculate_target_hp_percent(frame)
+                            if getattr(self, 'update_target_hp', None):
+                                self.schedule_ui_task(lambda hp=hp_percent: self.update_target_hp(hp))
+
+                            if mode == "search":
+                                if getattr(self, 'update_target_status', None):
+                                    self.schedule_ui_task(lambda: self.update_target_status("APPROACHING"))
+                            elif mode == "attack":
+                                if getattr(self, 'update_target_status', None):
+                                    self.schedule_ui_task(lambda: self.update_target_status("ATTACKING"))
+
                             if not have_target or (now - last_ocr_time) > 2.0:
                                 last_ocr_time = now
                                 name_str = target_name_reader.read_name(frame)
@@ -457,11 +475,28 @@ class HuntOrchestrator:
                         mode = "search"
                         search_started = now
 
+                        if getattr(self, 'update_target_status', None):
+                            self.schedule_ui_task(lambda: self.update_target_status("TARGET_DEAD"))
+                        if getattr(self, 'update_target_hp', None):
+                            self.schedule_ui_task(lambda: self.update_target_hp(0.0))
+
                         # Clear UI cache on advance
                         cached_target_id = None
                         cached_target_name = None
+
+                        # 0.2s delay for clear target ui
                         if getattr(self, 'clear_target_ui', None):
-                            self.schedule_ui_task(self.clear_target_ui)
+                            # clear_target_ui will be called with delay if we inject lambda delay: self.clear_target_ui(delay) but clear_target_ui comes from UI
+                            # Wait, the signature of clear_target_ui in app might not accept args.
+                            # Oh, we need to pass delay to clear_target_ui, or use a new callback.
+                            # Let's check how clear_target_ui is bound in App
+                            # Usually clear_target_ui is `app.hunt_tab.clear_target_card` which has `delay_ms`.
+                            def _safe_clear():
+                                try:
+                                    self.clear_target_ui(delay_ms=200)
+                                except TypeError:
+                                    self.clear_target_ui()
+                            self.schedule_ui_task(_safe_clear)
 
                         time.sleep(0.05)
                     time.sleep(0.02)
