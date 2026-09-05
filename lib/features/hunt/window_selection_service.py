@@ -92,14 +92,23 @@ class WindowRecoveryController:
         wm = WindowManager()
         success = wm.restore(self._hwnd) and wm.set_foreground(self._hwnd)
 
-        if success or self._retry_step >= self._retry_max:
+        if success:
             self._retry_in_progress = False
-            if not success and self._on_failure:
+            return
+
+        if self._retry_step >= self._retry_max:
+            self._retry_in_progress = False
+            if self._on_failure:
                 self._on_failure()
             return
 
-        # Next step logic should be implemented by caller since this runs asynchronously
-
+        if callable(getattr(self, "_schedule_after_ms", None)):
+            self._schedule_after_ms(getattr(self, "_delay_ms", 500), self._execute_retry_step)
+        else:
+            # No scheduler provided; avoid permanent lock-out and fail fast.
+            self._retry_in_progress = False
+            if self._on_failure:
+                self._on_failure()
 
 class WindowSelectionService:
     """Service for target window and bounds validation logic used by hunt setup/runtime."""
