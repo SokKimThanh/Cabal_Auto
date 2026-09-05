@@ -246,7 +246,7 @@ except ImportError:
         FONT_SECTION = ("Segoe UI", 11, "bold")
         FONT_LABEL = ("Segoe UI", 10)
         FONT_TEXT = ("Segoe UI", 10)
-        FONT_BUTTON = (UIStyle.resolve_font_family("body"), 10, "bold")
+        FONT_BUTTON = ("Segoe UI", 10, "bold")
         FONT_SMALL = ("Segoe UI", 8)
         COLOR_PRIMARY = "#2196F3"
         COLOR_PRIMARY_TEXT = "#0D47A1"
