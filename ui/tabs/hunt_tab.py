@@ -81,8 +81,9 @@ class HuntTab(ttk.Frame):
                 img_size = int(120 * scale_factor)
                 if info.get("image_path") and os.path.exists(info["image_path"]):
                     try:
-                        img = Image.open(info["image_path"]).resize((img_size, img_size))
-                        photo = ImageTk.PhotoImage(img)
+                        with Image.open(info["image_path"]) as img:
+                            img = img.resize((img_size, img_size))
+                            photo = ImageTk.PhotoImage(img)
                     except Exception:
                         pass
 
