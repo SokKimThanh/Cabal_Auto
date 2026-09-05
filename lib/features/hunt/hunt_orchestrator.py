@@ -488,11 +488,7 @@ class HuntOrchestrator:
 
                         # 0.2s delay for clear target ui
                         if getattr(self, 'clear_target_ui', None):
-                            # clear_target_ui will be called with delay if we inject lambda delay: self.clear_target_ui(delay) but clear_target_ui comes from UI
-                            # Wait, the signature of clear_target_ui in app might not accept args.
-                            # Oh, we need to pass delay to clear_target_ui, or use a new callback.
-                            # Let's check how clear_target_ui is bound in App
-                            # Usually clear_target_ui is `app.hunt_tab.clear_target_card` which has `delay_ms`.
+                            # Schedule a delayed clear; fall back to no-arg callback if delay is unsupported.
                             def _safe_clear():
                                 try:
                                     self.clear_target_ui(delay_ms=200)
