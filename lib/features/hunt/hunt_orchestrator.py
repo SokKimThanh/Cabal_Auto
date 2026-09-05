@@ -284,6 +284,8 @@ class HuntOrchestrator:
                         is_alive = target_bar_detector.is_target_alive(frame)
 
                         if is_alive:
+                            if not have_target:
+                                target_hp_reader.reset()
                             # Update HP
                             hp_percent = target_hp_reader.calculate_target_hp_percent(frame)
                             if getattr(self, 'update_target_hp', None):
