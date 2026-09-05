@@ -52,7 +52,8 @@ class HuntTab(ttk.Frame):
         self.target_hp_label.config(text=str(info["hp"]))
         self.target_def_label.config(text=str(info["defense"]))
 
-        self.hunt_target_info_label.config(text=f"Target: #{info['id']}")
+        if hasattr(self.app, "hunt_target_info"):
+            self.app.hunt_target_info.set(f"Target: #{info['id']}")
 
         if info.get("is_placeholder"):
             self.hunt_status_label.config(fg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
