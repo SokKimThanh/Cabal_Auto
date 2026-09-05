@@ -427,7 +427,8 @@ class HuntOrchestrator:
                                 skill_stats=skill_stats,
                                 backend=self.input_backend,
                             )
-                            time.sleep(float(cfg.get("attack_interval", 0.2)))
+                            if not cfg.get("combo", {}).get("enabled", False):
+                                time.sleep(float(cfg.get("attack_interval", 0.2)))
                             continue
 
                         fallback_keys = [

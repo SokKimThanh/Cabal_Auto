@@ -93,17 +93,15 @@ except ImportError:
 try:
     from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
-    class ActionNotificationMixin:
-        def __init__(self, *args, debug_mode: bool = False, **kwargs):
-            # Cooperative multiple inheritance: forward remaining args/kwargs.
+    class ActionNotificationMixin(tk.Widget):
+        def __init__(self, *args, debug_mode=False, **kwargs):
             try:
                 super().__init__(*args, **kwargs)
             except TypeError:
-                # Some bases (e.g. tkinter widgets) don't accept keyword args.
-                if kwargs:
-                    super().__init__(*args)
-                else:
-                    raise
+                super().__init__(*args)
+                for key, value in kwargs.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
 
         def show_notification(self, *args, **kwargs):
             pass
@@ -349,7 +347,7 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
-class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
+class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
     """
     Main Monster Manager Window (Master View with Table Layout).
     """
@@ -367,7 +365,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
         try:
             super().__init__(parent, debug_mode=False)
-        except TypeError:
+        except (_tkinter.TclError, TypeError):
             super().__init__(parent)
 
         # Sắp xếp
@@ -739,9 +737,13 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
             if self.db is not None:
                 # Save pending changes directly to DB
-                for k, monster in pending.items():
+                # Make a copy of keys to safely remove successful ones during iteration
+                for k in list(pending.keys()):
+                    monster = pending[k]
                     if not self.db.insert_or_update_monster(monster):
                         failed_keys.append(k)
+                    else:
+                        del self.pending_changes[k]
 
                 if failed_keys:
                     self._show_status_message("Lưu thất bại một phần: không thể ghi một số monster vào DB", is_error=True)
