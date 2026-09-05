@@ -536,10 +536,7 @@ class AppStateController:
 
         combo_enabled = app.hunt_cfg.get("combo", {}).get("enabled", False)
 
-        # Instantiate CastDeliveryManager locally if not exists
-        if not hasattr(self, 'cast_delivery_mgr'):
-            from lib.features.skills.cast_delivery import CastDeliveryManager
-            self.cast_delivery_mgr = CastDeliveryManager()
+        # NOTE: CastDeliveryManager integration is handled by SkillRuntime reservations; remove unused manager.
 
         # Get next skill from SkillRuntime object
         if not hasattr(self, 'skill_runtime_obj') or self.skill_runtime_obj is None:
