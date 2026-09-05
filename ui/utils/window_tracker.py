@@ -38,6 +38,7 @@ except ImportError:
 
 class WindowState(Enum):
     """Window state enumeration"""
+
     NORMAL = "normal"
     MINIMIZED = "minimized"
     MAXIMIZED = "maximized"
@@ -47,37 +48,38 @@ class WindowState(Enum):
 @dataclass
 class WindowSnapshot:
     """Snapshot of window state at a point in time"""
+
     hwnd: int
     rect: Dict[str, int]  # {left, top, right, bottom, width, height}
     state: WindowState
     is_visible: bool
     is_foreground: bool
     timestamp: float
-    
+
     def __eq__(self, other) -> bool:
         """Compare snapshots (ignore timestamp)"""
         if not isinstance(other, WindowSnapshot):
             return False
         return (
-            self.hwnd == other.hwnd and
-            self.rect == other.rect and
-            self.state == other.state and
-            self.is_visible == other.is_visible and
-            self.is_foreground == other.is_foreground
+            self.hwnd == other.hwnd
+            and self.rect == other.rect
+            and self.state == other.state
+            and self.is_visible == other.is_visible
+            and self.is_foreground == other.is_foreground
         )
 
 
 class WindowTracker:
     """
     Real-time window state tracker with callback system.
-    
+
     Monitors a target window and triggers callbacks when:
     - Position changes (move)
     - Size changes (resize)
     - Visibility changes (show/hide)
     - State changes (normal/minimized/maximized)
     """
-    
+
     def __init__(
         self,
         target_hwnd: int,
@@ -90,7 +92,7 @@ class WindowTracker:
     ):
         """
         Initialize window tracker.
-        
+
         Args:
             target_hwnd: Window handle to track
             poll_rate: Polling frequency in Hz (default 60 FPS)
@@ -103,54 +105,52 @@ class WindowTracker:
         self.target_hwnd = target_hwnd
         self.poll_rate = poll_rate
         self.poll_interval = 1.0 / poll_rate
-        
+
         # Callbacks
         self.on_position_change = on_position_change
         self.on_size_change = on_size_change
         self.on_visibility_change = on_visibility_change
         self.on_state_change = on_state_change
         self.on_any_change = on_any_change
-        
+
         # State
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._last_snapshot: Optional[WindowSnapshot] = None
-        
+
         print(f"[WindowTracker] Initialized for HWND:{target_hwnd} @ {poll_rate} FPS")
-    
+
     def start(self) -> None:
         """Start tracking window."""
         if self._running:
             print("[WindowTracker] Already running")
             return
-        
+
         self._running = True
         self._stop_event.clear()
-        
+
         self._thread = threading.Thread(
-            target=self._tracking_loop,
-            name="WindowTracker",
-            daemon=True
+            target=self._tracking_loop, name="WindowTracker", daemon=True
         )
         self._thread.start()
-        
+
         print(f"[WindowTracker] Started tracking HWND:{self.target_hwnd}")
-    
+
     def stop(self) -> None:
         """Stop tracking window."""
         if not self._running:
             return
-        
+
         self._running = False
         self._stop_event.set()
-        
+
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1.0)
-        
+
         self._thread = None
         print("[WindowTracker] Stopped")
-    
+
     def get_current_snapshot(self) -> Optional[WindowSnapshot]:
         """Get current window snapshot (thread-safe)."""
         try:
@@ -158,7 +158,7 @@ class WindowTracker:
         except Exception as e:
             print(f"[WindowTracker] Error capturing snapshot: {e}")
             return None
-    
+
     def _capture_snapshot(self) -> WindowSnapshot:
         """Capture current window state."""
         # Get window rect
@@ -166,72 +166,74 @@ class WindowTracker:
             rect_tuple = win32gui.GetWindowRect(self.target_hwnd)
             left, top, right, bottom = rect_tuple
             rect = {
-                'left': left,
-                'top': top,
-                'right': right,
-                'bottom': bottom,
-                'width': right - left,
-                'height': bottom - top
+                "left": left,
+                "top": top,
+                "right": right,
+                "bottom": bottom,
+                "width": right - left,
+                "height": bottom - top,
             }
         except Exception:
             # Window may be destroyed
             raise RuntimeError(f"Cannot get rect for HWND:{self.target_hwnd}")
-        
+
         # Get window state
         state = self._get_window_state()
-        
+
         # Check visibility
         is_visible = win32gui.IsWindowVisible(self.target_hwnd) != 0
-        
+
         # Check if foreground
         foreground_hwnd = win32gui.GetForegroundWindow()
-        is_foreground = (foreground_hwnd == self.target_hwnd)
-        
+        is_foreground = foreground_hwnd == self.target_hwnd
+
         return WindowSnapshot(
             hwnd=self.target_hwnd,
             rect=rect,
             state=state,
             is_visible=is_visible,
             is_foreground=is_foreground,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
-    
+
     def _get_window_state(self) -> WindowState:
         """Determine current window state."""
         try:
             # Check minimized
             if win32gui.IsIconic(self.target_hwnd):
                 return WindowState.MINIMIZED
-            
+
             # Check maximized
             if win32gui.IsZoomed(self.target_hwnd):
                 return WindowState.MAXIMIZED
-            
+
             # Check visible
             if not win32gui.IsWindowVisible(self.target_hwnd):
                 return WindowState.HIDDEN
-            
+
             return WindowState.NORMAL
-            
+
         except Exception:
             return WindowState.HIDDEN
-    
+
     def _tracking_loop(self) -> None:
         """Main tracking loop (runs in background thread)."""
         print(f"[WindowTracker] Tracking loop started @ {self.poll_rate} FPS")
-        print(f"[WindowTracker] Callbacks registered: pos={self.on_position_change is not None}, size={self.on_size_change is not None}, vis={self.on_visibility_change is not None}, state={self.on_state_change is not None}")
-        
+        print(
+            f"[WindowTracker] Callbacks registered: pos={self.on_position_change is not None}, size={self.on_size_change is not None}, vis={self.on_visibility_change is not None}, state={self.on_state_change is not None}"
+        )
+
         frame_count = 0
         start_time = time.time()
-        
+
         try:
             while not self._stop_event.is_set():
                 loop_start = time.time()
-                
+
                 try:
                     # Capture current state
                     snapshot = self._capture_snapshot()
-                    
+
                     # Compare with last snapshot
                     if self._last_snapshot is None:
                         # First snapshot - trigger all callbacks
@@ -239,67 +241,75 @@ class WindowTracker:
                     else:
                         # Detect changes and trigger appropriate callbacks
                         self._detect_and_trigger_changes(self._last_snapshot, snapshot)
-                    
+
                     # Update last snapshot
                     self._last_snapshot = snapshot
                     frame_count += 1
-                    
+
                     # Log stats every 5 seconds
                     if frame_count % (self.poll_rate * 5) == 0:
                         elapsed = time.time() - start_time
                         actual_fps = frame_count / elapsed
-                        print(f"[WindowTracker] Stats: {frame_count} frames, {actual_fps:.1f} FPS avg")
-                    
+                        print(
+                            f"[WindowTracker] Stats: {frame_count} frames, {actual_fps:.1f} FPS avg"
+                        )
+
                 except RuntimeError as e:
                     # Window destroyed or invalid
                     print(f"[WindowTracker] Target window lost: {e}")
                     break
-                    
+
                 except Exception as e:
                     print(f"[WindowTracker] Loop error: {e}")
-                
+
                 # Sleep to maintain poll rate
                 elapsed = time.time() - loop_start
                 sleep_time = max(0, self.poll_interval - elapsed)
                 self._stop_event.wait(timeout=sleep_time)
-                
+
         except Exception as e:
             print(f"[WindowTracker] Fatal error in tracking loop: {e}")
             import traceback
+
             traceback.print_exc()
-        
+
         print("[WindowTracker] Tracking loop ended")
-    
+
     def _detect_and_trigger_changes(
-        self,
-        old: WindowSnapshot,
-        new: WindowSnapshot
+        self, old: WindowSnapshot, new: WindowSnapshot
     ) -> None:
         """Detect changes between snapshots and trigger callbacks."""
         # Position change
-        if (old.rect['left'] != new.rect['left'] or 
-            old.rect['top'] != new.rect['top']):
+        if old.rect["left"] != new.rect["left"] or old.rect["top"] != new.rect["top"]:
             try:
                 if self.on_position_change:
                     self.on_position_change(new.rect)
-                    print(f"[Overlay] Position synced: ({new.rect['left']},{new.rect['top']})")
+                    print(
+                        f"[Overlay] Position synced: ({new.rect['left']},{new.rect['top']})"
+                    )
             except Exception as e:
                 print(f"[WindowTracker] ❌ Error in on_position_change: {e}")
                 import traceback
+
                 traceback.print_exc()
-        
+
         # Size change
-        if (old.rect['width'] != new.rect['width'] or 
-            old.rect['height'] != new.rect['height']):
+        if (
+            old.rect["width"] != new.rect["width"]
+            or old.rect["height"] != new.rect["height"]
+        ):
             try:
                 if self.on_size_change:
                     self.on_size_change(new.rect)
-                    print(f"[Overlay] Size synced: {new.rect['width']}x{new.rect['height']}")
+                    print(
+                        f"[Overlay] Size synced: {new.rect['width']}x{new.rect['height']}"
+                    )
             except Exception as e:
                 print(f"[WindowTracker] ❌ Error in on_size_change: {e}")
                 import traceback
+
                 traceback.print_exc()
-        
+
         # Visibility change
         if old.is_visible != new.is_visible:
             try:
@@ -309,8 +319,9 @@ class WindowTracker:
             except Exception as e:
                 print(f"[WindowTracker] ❌ Error in on_visibility_change: {e}")
                 import traceback
+
                 traceback.print_exc()
-        
+
         # State change
         if old.state != new.state:
             try:
@@ -320,8 +331,9 @@ class WindowTracker:
             except Exception as e:
                 print(f"[WindowTracker] ❌ Error in on_state_change: {e}")
                 import traceback
+
                 traceback.print_exc()
-        
+
         # Any change
         if old != new:
             try:
@@ -330,44 +342,50 @@ class WindowTracker:
             except Exception as e:
                 print(f"[WindowTracker] ❌ Error in on_any_change: {e}")
                 import traceback
+
                 traceback.print_exc()
-    
+
     def _trigger_all_callbacks(
-        self,
-        snapshot: WindowSnapshot,
-        is_initial: bool = False
+        self, snapshot: WindowSnapshot, is_initial: bool = False
     ) -> None:
         """Trigger all callbacks with initial snapshot."""
         prefix = "[Initial] " if is_initial else ""
-        
+
         try:
             if self.on_position_change:
                 self.on_position_change(snapshot.rect)
                 if is_initial:
-                    print(f"{prefix}Position: ({snapshot.rect['left']},{snapshot.rect['top']})")
+                    print(
+                        f"{prefix}Position: ({snapshot.rect['left']},{snapshot.rect['top']})"
+                    )
         except Exception as e:
             print(f"[WindowTracker] ❌ Error in on_position_change: {e}")
             import traceback
+
             traceback.print_exc()
-        
+
         try:
             if self.on_size_change:
                 self.on_size_change(snapshot.rect)
                 if is_initial:
-                    print(f"{prefix}Size: {snapshot.rect['width']}x{snapshot.rect['height']}")
+                    print(
+                        f"{prefix}Size: {snapshot.rect['width']}x{snapshot.rect['height']}"
+                    )
         except Exception as e:
             print(f"[WindowTracker] ❌ Error in on_size_change: {e}")
             import traceback
+
             traceback.print_exc()
-        
+
         try:
             if self.on_visibility_change:
                 self.on_visibility_change(snapshot.is_visible)
         except Exception as e:
             print(f"[WindowTracker] ❌ Error in on_visibility_change: {e}")
             import traceback
+
             traceback.print_exc()
-        
+
         try:
             if self.on_state_change:
                 self.on_state_change(snapshot.state)
@@ -376,25 +394,27 @@ class WindowTracker:
         except Exception as e:
             print(f"[WindowTracker] ❌ Error in on_state_change: {e}")
             import traceback
+
             traceback.print_exc()
-        
+
         try:
             if self.on_any_change:
                 self.on_any_change(snapshot)
         except Exception as e:
             print(f"[WindowTracker] ❌ Error in on_any_change: {e}")
             import traceback
+
             traceback.print_exc()
-    
+
     def is_running(self) -> bool:
         """Check if tracker is running."""
         return self._running
-    
+
     def __enter__(self):
         """Context manager support."""
         self.start()
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager cleanup."""
         self.stop()

@@ -15,7 +15,7 @@
 8. CB3 gốc phải được xác nhận hoàn tất trước CB3C.
 9. DS1-DS5 là phase visual migration riêng, chỉ chạy sau UX5.2 để không restyle
    widget đang tiếp tục bị tái cấu trúc.
-10. `DESIGN-SYSTEM-TKINTER-ADAPTER.md` là nguồn chuyển đổi bắt buộc; không truyền
+10. `PROMPT-DT-tkinter-adapter.md` là nguồn chuyển đổi bắt buộc; không truyền
    token CSS như `rgba`, gradient, shadow hoặc CSS font string vào Tkinter.
 11. Nạp `00-global-rules.md` kèm mỗi session.
 12. `PROMPT-R1-core-gate-remediation.md` là recovery gate độc lập: có thể chạy
@@ -59,38 +59,58 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 8. Hỗ trợ tối thiểu 1366x768 và DPI 100%-200%.
 9. Nếu dependency gate fail, báo `BLOCKED`; không mở rộng session để vá dependency.
 
-## Thứ Tự Thực Thi
+## Thứ Tự Thực Thi — 38 Sessions (R1-2 + 1-29 ✅ DONE + 30-38 Pending)
 
-| # | Prompt | Phase | Kết quả chính | Phụ thuộc |
-| :---: | --- | --- | --- | --- |
-| R1 | `PROMPT-R1` | Recovery | Khép blocker CB1/CB2/CB2B/CB4/CB2D đã xác minh. | Không có; chạy ngay |
-| R2 | `PROMPT-R2` | Maintenance | Inventory và cleanup file/thư mục toàn project theo evidence và manifest. | Không có; chạy độc lập |
-| 01 | `PROMPT-UX1` | UX | Quick Action Bar và Start/Stop debounce. | Window service |
-| 02 | `PROMPT-UX2` | UX | Core shell và view swapping. | UX1 |
-| 03 | `PROMPT-UX6` | UX | Activity logging theo kiến trúc UI hiện hành. | UX2, HuntLogger |
-| 04 | `PROMPT-CB5` | Combat | Window scanner và ScreenCapture buffer. | ScreenCapture |
-| 05 | `PROMPT-CB1` | Combat | Target Bar alive/dead và HP%. | CB5 |
-| 06 | `PROMPT-CB2` | Combat | Hunt loop không spam target key trong attack. | CB1 |
-| 07 | `PROMPT-CB2B` | Combat | OCR target name và resolve DB ID/HP. | CB2, database.py |
-| 08 | `PROMPT-CB4` | Data | Canonical config, `target_policy`, skill ack metadata, migration và atomic save. | CB2B |
-| 09 | `PROMPT-CB2D` | Vision | Detection snapshot và resolved runtime attack queue. | CB5, CB2B, CB4 |
-| 10 | `PROMPT-UX3A` | UX | DB Monster Picker dialog, chỉ trả canonical selection. | CB4, CB2B |
-| 11 | `PROMPT-UX3` | UX | Configured rotation: picker integration, add/remove/reorder, DB metadata, Apply All. | CB4, CB2B, UX3A |
-| 12 | `PROMPT-UX3B` | UX | Segmented three-mode UI, two lists và detected-to-configured promotion. | CB4, UX3A, UX3, CB2D |
-| 13 | `PROMPT-CB2E` | System | Background HWND input capability và fail-closed backend. | CB5, CB2 |
-| 14 | `PROMPT-CB2C` | Combat | Thực thi ba policy; chỉ attack khi active policy cho phép. | CB1, CB2, CB2B, CB2D, CB2E, CB4, UX3, UX3B |
-| 15 | `PROMPT-UX4.1` / `CB3B` | UX | Dual-Lane Skill Strip (Combo Chain + Buff Lane). | UX2, CB4 |
-| 16 | `PROMPT-UX4.2` | UX | Smart routing và conflict migration. | UX4.1, CB4 |
-| 17 | `PROMPT-CB6` | Combat | Combo Bar timing trigger, không tự commit cast success. | CB5, Orchestrator |
-| 18 | `PROMPT-CB3D` | Combat | Skill delivery acknowledgment, reservation/commit và truthful stats. | CB1, CB2E, CB4, UX4.2, CB6 |
-| 19 | `PROMPT-CB3C` | Combat | Fast-Break và timing harmonization trên cast transaction đã xác minh. | CB6, CB3D, CB2C, CB3 gốc |
-| 20 | `PROMPT-UX5.1` | UX | Active Target Card và image lifecycle. | UX2, CB2B |
-| 21 | `PROMPT-UX5.2` | UX | Dynamic HP Canvas và window recovery. | UX5.1, CB1 |
-| 22 | `PROMPT-DS1` | Design | Tkinter-safe tokens, font resolver và compatibility aliases. | Session 01-21 |
-| 23 | `PROMPT-DS2` | Design | Central ttk theme và semantic component primitives. | DS1 |
-| 24 | `PROMPT-DS3` | Design | Dark shell, sidebar, action bar và bottom chrome. | DS1, DS2 |
-| 25 | `PROMPT-DS4` | Design | Hunt workspace, three-mode lists, skills và target card theme. | DS3, UX3B, UX4.2, UX5.2 |
-| 26 | `PROMPT-DS5` | Design | Secondary views, dialogs và visual/accessibility acceptance. | DS4 |
+**Status**: Sessions 1-29 (all core + enhancement + design phases) đã hoàn tất và lưu trong `done/` folder. Sessions 30-38 (Reference/Advanced docs) chưa làm.
+
+| # | Mã | Tài Liệu | Loại | Kết Quả Chính | Phụ Thuộc |
+| :---: | :---: | --- | --- | --- | --- |
+| R1 | R1 | `PROMPT-R1-core-gate-remediation.md` | Recovery | Khép blocker CB1/CB2/CB2B/CB4/CB2D đã xác minh. | Chạy ngay |
+| R2 | R2 | `PROMPT-R2-project-wide-cleanup.md` | Maintenance | Inventory & cleanup file/thư mục toàn project. | Độc lập |
+| 1 | UX1 | `PROMPT-UX1-quick-action-bar.md` | UX | Quick Action Bar & Start/Stop debounce. | Window service |
+| 2 | UX2 | `PROMPT-UX2-core-grid-shell.md` | UX | Core shell & view swapping. | UX1 |
+| 3 | UX6 | `PROMPT-UX6-collapsible-bottom-logs.md` | UX | Activity logging theo UI hiện hành. | UX2 |
+| 4 | CB5 | `PROMPT-CB5-stability-and-scanner-fix.md` | Combat | Window scanner & ScreenCapture buffer. | ScreenCapture |
+| 5 | CB1 | `PROMPT-CB1-target-bar-detector.md` | Combat | Target Bar alive/dead & HP%. | CB5 |
+| 6 | CB2 | `PROMPT-CB2-fix-hunt-orchestrator-combat-loop.md` | Combat | Hunt loop (không spam target key). | CB1 |
+| 7 | CB2B | `PROMPT-CB2B-target-name-ocr-id-mapper.md` | Combat | OCR target name & resolve DB ID/HP. | CB2 |
+| 8 | CB4 | `PROMPT-CB4-sync-config-schema.md` | Data | Canonical config & atomic save. | CB2B |
+| 9 | CB2D | `PROMPT-CB2D-runtime-scene-monster-detection.md` | Vision | Detection snapshot & attack queue. | CB5, CB2B, CB4 |
+| 10 | UX3A | `PROMPT-UX3A-db-monster-picker-dialog.md` | UX | DB Monster Picker dialog. | CB4, CB2B |
+| 11 | UX3 | `PROMPT-UX3-dynamic-rotation-queue.md` | UX | Configured rotation & integration. | CB4, UX3A |
+| 12 | UX3B | `PROMPT-UX3B-three-mode-detection-workspace.md` | UX | Three-mode UI & detection list. | CB4, UX3A, UX3, CB2D |
+| 13 | CB2E | `PROMPT-CB2E-background-window-input.md` | System | Background HWND input. | CB5, CB2 |
+| 14 | CB2C | `PROMPT-CB2C-target-rotation-acquisition.md` | Combat | Policy coordination & attack gate. | CB1, CB2, CB2B, CB2D, CB2E, CB4, UX3B |
+| 15 | CB3B | `PROMPT-CB3B-Combo Rotation Builder & Hotbar Mapping.md` | UX | Dual-Lane Skill Strip. | UX2, CB4 |
+| 16 | UX4.2 | `Prompt-UX4.2 Smart Skill Routing, Key Conflict & JSON Migration.md` | UX | Smart routing & conflict. | CB3B, CB4 |
+| 17 | CB6 | `PROMPT-CB6-Implement Cabal Horizontal Combo Bar Timing Detector.md` | Combat | Combo timing trigger. | CB5 |
+| 18 | CB3D | `PROMPT-CB3D-skill-command-delivery-verification.md` | Combat | Skill acknowledgment & stats. | CB1, CB2E, CB4, UX4.2, CB6 |
+| 19 | CB3C | `PROMPT-CB3C-Harmonize Timing Calculator with Combo Mode & Fast-Break.md` | Combat | Fast-Break & timing. | CB6, CB3D, CB2C |
+| 20 | UX5.1 | `Prompt-UX5.1 Active Target Card Shell, Fallback Schema & Image Lifecycle.md` | UX | Active Target Card. | UX2, CB2B |
+| 21 | UX5.2 | `Prompt-UX5.2 Dynamic Canvas HP Bar, Throttling & Window Recovery Logic.md` | UX | Dynamic HP Canvas. | UX5.1, CB1 |
+| 22 | UX6-WHD | `PROMPT-UX6-window-detection-and-refresh.md` | Enhancement | Window enumeration + scan + screen state. | 1-3 |
+| 23 | AH | `PROMPT-UX-auto-hunt-flow.md` | Enhancement | Orchestrator + Start/Stop + session tracking. | 1-21 |
+| 24 | DS1 | `PROMPT-DS1-tkinter-safe-tokens.md` | Design | Tkinter-safe tokens & resolvers. | 1-23 ✅ DONE |
+| 25 | DS2 | `PROMPT-DS2-ttk-component-primitives.md` | Design | TTK theme & primitives. | DS1 ✅ DONE |
+| 26 | DS3 | `PROMPT-DS3-shell-navigation-theme.md` | Design | Shell & navigation theme. | DS1, DS2 ✅ DONE |
+| 27 | DS4 | `PROMPT-DS4-hunt-workspace-theme.md` | Design | Hunt workspace theme. | DS3, UX3B, UX4.2, UX5.2 ✅ DONE |
+| 28 | DS5 | `PROMPT-DS5-secondary-views-visual-acceptance.md` | Design | Secondary views & acceptance. | DS4 ✅ DONE |
+| 29 | DS6 | `PROMPT-DS6-layout-refactor-priority-driven.md` | Design | Layout refactor & priority-driven optimization. | DS5 ✅ DONE |
+| 30 | WA | `PROMPT-WA-workspace-architecture.md` | Reference | Workspace architecture alignment. | Độc lập |
+| 31 | WL | `PROMPT-WL-workspace-logic-design.md` | Reference | Workspace logic & data flow. | Độc lập |
+| 32 | WU | `PROMPT-WU-workspace-ui-design.md` | Reference | Workspace UI design specs. | Độc lập |
+| 33 | UM | `PROMPT-UM-ui-master-plan.md` | Reference | UI redesign master plan. | Độc lập |
+| 34 | UV | `PROMPT-UV-ui-visual-reference.md` | Reference | Visual reference & component specs. | Độc lập |
+| 35 | DT | `PROMPT-DT-tkinter-adapter.md` | Reference | Design tokens (Tkinter adapter). | Độc lập |
+| 36 | VISION | `PROMPT-VISION-ENGINE-REFACTOR.md` | Reference | Vision engine refactoring roadmap. | Độc lập |
+| 37 | UI-IMP | `PROMPT-UI-IMPROVEMENTS.md` | Reference | UI improvements guide. | Độc lập |
+| 38 | UI-REDESIGN-2 | `PROMPT-UI-REDESIGN-PHASE-2.md` | Advanced | UI redesign phase 2 (9 sub-phases). | 1-28 |
+
+**Tài liệu Reference**: Xem bảng execution table rows 30-38 ở trên.
+
+**Annotations**:
+- **Sessions 1-29**: ✅ All DONE, files in `done/` folder
+- **Sessions 30-38**: ⏳ Pending (Reference & Advanced docs in root folder, not yet executed)
 
 ## Luồng Target Và Scene Detection
 
@@ -184,9 +204,9 @@ Design direction:
 
 | Session | Prompt | Status | File | Ghi Chú |
 | :---: | --- | --- | --- | --- |
-| UX6 | `PROMPT-UX6` | 🟡 20% UI | [PROMPT-UX6.md](PROMPT-UX6.md) | Backend 90% xong; UI wiring incomplete |
-| Auto Hunt | `PROMPT-AUTO-HUNT-FLOW` | 🟡 20% Integration | [PROMPT-AUTO-HUNT-FLOW.md](PROMPT-AUTO-HUNT-FLOW.md) | Backend 80% xong; HuntOrchestrator integration pending |
-| CB3B | `PROMPT-CB3B` | � ~95% | [PROMPT-CB3B.md](PROMPT-CB3B.md) | All 5 phases done; pending test verification + pre-commit |
+| UX6 | `PROMPT-UX6` | 🟡 20% UI | `PROMPT-UX6-window-detection-and-refresh.md` | Backend 90% xong; UI wiring incomplete |
+| Auto Hunt | `PROMPT-UX-AH` | 🟡 20% Integration | `PROMPT-UX-auto-hunt-flow.md` + `PROMPT-AH-roadmap.md` | Backend 80% xong; HuntOrchestrator integration pending |
+| CB3B | `PROMPT-CB3B` | 🟡 ~95% | `PROMPT-CB3B-Combo Rotation Builder & Hotbar Mapping.md` | All 5 phases done; pending test verification + pre-commit |
 | UX4.2 | `PROMPT-UX4.2` | 🟡 Ready (after CB3B PASSED) | — | Depends: CB3B Phase 2 (buff_slots) ✅ DONE |
 | CB3D | `PROMPT-CB3D` | 🟡 Ready (after UX4.2 PASSED) | — | Depends: UX4.2 (ready after CB3B) |
 | CB3C | `PROMPT-CB3C` | 🟡 Ready (after CB3D PASSED) | — | Depends: CB3D |
@@ -259,10 +279,89 @@ Design direction:
 | DS2 | `PROMPT-DS2` | ttk theme + semantic primitives | DS1 |
 | DS3 | `PROMPT-DS3` | Dark shell, sidebar, action bar | DS1, DS2 |
 | DS4 | `PROMPT-DS4` | Hunt workspace theme | DS3, UX3B, UX4.2, UX5.2 |
-| DS5 | `PROMPT-DS5` | Secondary views + visual acceptance | DS4 |
+| DS5 | `PROMPT-DS5` | ✅ PASSED | DS4 |
 
 **Design Direction**:
 - Dark neutral command-center (no solid dark-blue)
 - Green = active/hunting, Blue = selected/info, Yellow = ready, Red = stop/danger
 - Solid colors only (no gradients/shadows on native widgets)
 - Font fallback required (Rajdhani/Inter optional)
+
+---
+
+## 📂 File Organization & Naming Convention
+
+**Quy tắc thống nhất**: `CATEGORY-NUMBER-CODE-Title.md`
+
+### Categories
+
+| Category | Prefix | Purpose | Example |
+|----------|--------|---------|---------|
+| **Phase Prompts** | `PHASE-` | Main feature prompts (01-26 + features) | `PHASE-22-DS1-Tkinter-Tokens.md` |
+| **Global Rules** | `00-` | Project-wide guidelines | `00-GLOBAL-RULES.md` |
+| **Enhancements** | *(code name)* | Optional features (UX6-WHD, AUTO-HUNT) | `UX6-Window-Detection.md` |
+| **References** | `REFERENCE-` | Design specs, visual guides, adapter | `REFERENCE-UI-Design-Visual.md` |
+| **Summaries** | `INDEX-` | Consolidated tóm tắt across multiple docs | `INDEX-Summary-All-Features.md` |
+| **Archive** | `archive/` | Previous versions, deprecated docs | `archive/PROMPT-UX6-old.md` |
+
+### Current File Mapping
+
+**Phase Prompts (Thứ tự 01-26)**:
+- `PHASE-01-UX1-Quick-Action-Bar.md`
+- `PHASE-02-UX2-Core-Shell.md`
+- `PHASE-03-UX6-Activity-Logging.md`
+- `PHASE-04-CB5-Window-Scanner.md`
+- ... (continues to 26)
+- `PHASE-22-DS1-Tkinter-Tokens.md`
+- `PHASE-23-DS2-TTK-Primitives.md`
+- `PHASE-24-DS3-Shell-Navigation.md`
+- `PHASE-25-DS4-Hunt-Workspace.md`
+- `PHASE-26-DS5-Secondary-Views.md`
+
+**Enhancements (After Core 26)**:
+- `UX6-Window-Detection.md` ← IMPROVED-PROMPT-UX6.md (renamed)
+- `AUTO-HUNT-Flow-Integration.md` ← IMPROVED-PROMPT-AUTO-HUNT-FLOW.md (renamed)
+- `ROADMAP-Auto-Hunt-UX6.md` ← IMPLEMENTATION-ROADMAP-AUTO-HUNT-UX6.md (renamed)
+
+**Global & References**:
+- `00-GLOBAL-RULES.md` ← 00-global-rules.md (no change)
+- `REFERENCE-Design-System-Adapter.md` ← DESIGN-SYSTEM-TKINTER-ADAPTER.md (renamed)
+- `REFERENCE-UI-Design-Visual.md` ← UI-REDESIGN-VISUAL-REFERENCE.md (renamed)
+- `REFERENCE-Workspace-Architecture.md` ← WORKSPACE-REDESIGN-ARCHITECTURE-ALIGNMENT.md (renamed)
+- `REFERENCE-Workspace-Logic.md` ← WORKSPACE-REDESIGN-LOGIC-DESIGN.md (renamed)
+- `REFERENCE-Master-Plan.md` ← UI-REDESIGN-MASTER-PLAN.md (renamed)
+
+**Consolidated Summary**:
+- `INDEX-Summary-All-Features.md` ← Combines: 00-SUMMARY-..., REVIEW-UX6-..., all architecture docs
+
+**Archive** (To be moved to `archive/` folder):
+- `PROMPT-UX6-window-detection-and-refresh.md` ← Replaced by `UX6-Window-Detection.md`
+- `PROMPT-UX-auto-hunt-flow.md` ← Replaced by `AUTO-HUNT-Flow-Integration.md`
+- ~~`00-SUMMARY-FEATURE-REVIEW-AND-IMPROVEMENTS.md`~~ ← Merged into `INDEX-Summary-All-Features.md`
+- ~~`REVIEW-UX6-AND-AUTO-HUNT-vs-CURRENT.md`~~ ← Merged into `INDEX-Summary-All-Features.md`
+
+**Design References** (May keep as-is or prefix with REFERENCE-):
+- `PROMPT-DS1-tkinter-safe-tokens.md` ← Rename to `PHASE-22-DS1-Tkinter-Tokens.md`
+- `PROMPT-DS2-ttk-component-primitives.md` ← Rename to `PHASE-23-DS2-TTK-Primitives.md`
+- `PROMPT-DS3-shell-navigation-theme.md` ← Rename to `PHASE-24-DS3-Shell-Navigation.md`
+- `PROMPT-DS4-hunt-workspace-theme.md` ← Rename to `PHASE-25-DS4-Hunt-Workspace.md`
+- `PROMPT-DS5-secondary-views-visual-acceptance.md` ← Rename to `PHASE-26-DS5-Secondary-Views.md`
+
+**Combat & Feature Prompts** (Will be renamed in future sessions):
+- `PROMPT-CB3B-Combo Rotation Builder & Hotbar Mapping.md` ← Rename to `PHASE-15-CB3B-Dual-Lane-Skill-Strip.md`
+
+### How to Find a File
+
+1. **Looking for Phase XX implementation?** → Search `PHASE-XX-`
+2. **Looking for feature enhancement?** → Search by code name (UX6, AUTO-HUNT, etc.)
+3. **Looking for design system?** → Search `REFERENCE-` or specific phase number
+4. **Looking for summary/overview?** → Check `INDEX-Summary-All-Features.md`
+5. **Looking for global rules?** → Check `00-GLOBAL-RULES.md`
+
+### Next Actions
+
+- [ ] Rename all files to follow new convention
+- [ ] Move old versions to `archive/` folder
+- [ ] Update all cross-references in documents
+- [ ] Create soft links for backward compatibility (optional)
+- [ ] Update this file when new phases are added

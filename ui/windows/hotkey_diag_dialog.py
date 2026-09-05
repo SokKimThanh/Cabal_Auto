@@ -6,6 +6,7 @@ def show_hotkey_diagnostics_modal(parent):
     """Show diagnostics modal for hotkeys (e.g. keyboard package missing)."""
     try:
         import keyboard  # noqa
+
         messagebox.showinfo(
             parent._t("diag_hotkeys_title"),
             parent._t("diag_hotkeys_ok"),
@@ -39,14 +40,10 @@ def show_hotkey_diagnostics_modal(parent):
     ).pack(anchor="w", pady=(0, 20))
 
     # Instructions
-    inst_frm = ttk.LabelFrame(
-        frm, text=parent._t("diag_hotkeys_fix_title"), padding=10
-    )
+    inst_frm = ttk.LabelFrame(frm, text=parent._t("diag_hotkeys_fix_title"), padding=10)
     inst_frm.pack(fill="x", pady=(0, 20))
 
-    ttk.Label(inst_frm, text=parent._t("diag_hotkeys_step1")).pack(
-        anchor="w", pady=2
-    )
+    ttk.Label(inst_frm, text=parent._t("diag_hotkeys_step1")).pack(anchor="w", pady=2)
 
     # Command entry (readonly)
     cmd = tk.StringVar(value="pip install keyboard")
@@ -55,14 +52,14 @@ def show_hotkey_diagnostics_modal(parent):
     )
     cmd_entry.pack(fill="x", pady=(5, 10))
 
-    ttk.Label(inst_frm, text=parent._t("diag_hotkeys_step2")).pack(
-        anchor="w", pady=2
-    )
+    ttk.Label(inst_frm, text=parent._t("diag_hotkeys_step2")).pack(anchor="w", pady=2)
 
     btn_frm = ttk.Frame(frm)
     btn_frm.pack(fill="x", side="bottom")
 
-    ttk.Button(btn_frm, text=parent._t("btn_close"), command=modal.destroy).pack(side="right")
+    ttk.Button(btn_frm, text=parent._t("btn_close"), command=modal.destroy).pack(
+        side="right"
+    )
 
     # Try to position modal center of parent
     parent.update_idletasks()

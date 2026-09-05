@@ -17,5 +17,5 @@ Date: 2025-10-25
 from ui.mixins.button_state_mixin import ButtonStateMixin
 
 __all__ = [
-    'ButtonStateMixin',
+    "ButtonStateMixin",
 ]

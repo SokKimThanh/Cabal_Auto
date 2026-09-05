@@ -29,7 +29,7 @@
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                  Hunt Workspace                         │
-│  (UI Layer - WORKSPACE-REDESIGN-UI-DESIGN.md)          │
+│  (UI Layer - PROMPT-WU-workspace-ui-design.md)          │
 └────────────┬────────────────────────────────────────────┘
              │
              ▼ (Data Binding)
@@ -1980,7 +1980,7 @@ def on_skill_property_changed(skill_id: int, class_id: int = None):
 ┌─────────────────────────────────────────────────────────┐
 │   Hunt Workspace Redesign Architecture                 │
 │                                                         │
-│   UI Layer (WORKSPACE-REDESIGN-UI-DESIGN.md)           │
+│   UI Layer (PROMPT-WU-workspace-ui-design.md)           │
 │   ├─ SkillPanel (Column 1, Row 2)                      │
 │   │  ├─ Displays current skill_slots                   │
 │   │  ├─ Dropdowns for runtime changes                  │
@@ -2756,7 +2756,7 @@ assert app_state._preset_mode in ['default', 'custom']
 
 ## Appendix B: Related Documents
 
-- **WORKSPACE-REDESIGN-UI-DESIGN.md** - 4-panel layout, components, styling
+- **PROMPT-WU-workspace-ui-design.md** - 4-panel layout, components, styling
 - **UX4.2-AUTO-FIX-PROMPT.md** - Technical implementation for existing features
 - **UX4.2-CORRECTED-GUIDELINE.md** - Original UX4.2 specification
 

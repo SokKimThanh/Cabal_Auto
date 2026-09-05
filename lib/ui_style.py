@@ -6,12 +6,13 @@ Usage:
     from lib.ui_style import UIStyle as UI
     tk.Label(parent, font=UI.FONT_LABEL, fg=UI.COLOR_TEXT)
 """
+
 from __future__ import annotations
 
 
 class UIStyle:
     # Font family and sizes
-    FONT_FAMILY = 'Segoe UI'
+    FONT_FAMILY = "Segoe UI"
     SIZE_TITLE = 12
     SIZE_SECTION = 11
     SIZE_LABEL = 10
@@ -20,56 +21,56 @@ class UIStyle:
     SIZE_SMALL = 8
 
     # Font tuples
-    FONT_TITLE = (FONT_FAMILY, SIZE_TITLE, 'bold')
-    FONT_SECTION = (FONT_FAMILY, SIZE_SECTION, 'bold')
+    FONT_TITLE = (FONT_FAMILY, SIZE_TITLE, "bold")
+    FONT_SECTION = (FONT_FAMILY, SIZE_SECTION, "bold")
     FONT_LABEL = (FONT_FAMILY, SIZE_LABEL)
     FONT_TEXT = (FONT_FAMILY, SIZE_TEXT)
     FONT_BUTTON = (FONT_FAMILY, SIZE_BUTTON)
     FONT_SMALL = (FONT_FAMILY, SIZE_SMALL)
 
     # Colors
-    COLOR_PRIMARY = '#2196F3'
-    COLOR_PRIMARY_TEXT = '#0D47A1'
-    COLOR_ACCENT = '#4CAF50'
-    COLOR_DANGER = '#F44336'
-    COLOR_WARNING = '#FF7043'
-    COLOR_INFO = '#1976D2'
-    COLOR_MUTED = '#757575'
-    COLOR_TEXT = '#212121'
-    COLOR_SUBTEXT = '#666666'
-    COLOR_HINT = '#757575'
+    COLOR_PRIMARY = "#2196F3"
+    COLOR_PRIMARY_TEXT = "#0D47A1"
+    COLOR_ACCENT = "#4CAF50"
+    COLOR_DANGER = "#F44336"
+    COLOR_WARNING = "#FF7043"
+    COLOR_INFO = "#1976D2"
+    COLOR_MUTED = "#757575"
+    COLOR_TEXT = "#212121"
+    COLOR_SUBTEXT = "#666666"
+    COLOR_HINT = "#757575"
 
     # Backgrounds
-    BG_DEFAULT = '#FFFFFF'
-    BG_MUTED = '#F5F5F5'
-    BG_PANEL = '#F5F5F5'
-    BG_SECTION = '#E3F2FD'
-    BG_TITLE = '#2196F3'
+    BG_DEFAULT = "#FFFFFF"
+    BG_MUTED = "#F5F5F5"
+    BG_PANEL = "#F5F5F5"
+    BG_SECTION = "#E3F2FD"
+    BG_TITLE = "#2196F3"
 
     # Design System Tkinter-Safe Tokens (Dark Command-Center)
     # --------------------------------------------------------
     # Colors (Solid Hex Only)
-    THEME_BG_APP = '#0b0d12'
-    THEME_BG_SIDEBAR = '#10131c'
-    THEME_BG_PANEL = '#111520'
-    THEME_BG_INPUT = '#0d1018'
-    THEME_BG_TOOLBAR = '#0d1018'
-    THEME_BG_STATUSBAR = '#080b10'
+    THEME_BG_APP = "#0b0d12"
+    THEME_BG_SIDEBAR = "#10131c"
+    THEME_BG_PANEL = "#111520"
+    THEME_BG_INPUT = "#0d1018"
+    THEME_BG_TOOLBAR = "#0d1018"
+    THEME_BG_STATUSBAR = "#080b10"
 
-    THEME_BORDER_DEFAULT = '#1e2333'
-    THEME_BORDER_PANEL = '#1e2535'
+    THEME_BORDER_DEFAULT = "#1e2333"
+    THEME_BORDER_PANEL = "#1e2535"
 
-    THEME_TEXT_PRIMARY = '#e2e8f0'
-    THEME_TEXT_SECONDARY = '#94a3b8'
-    THEME_TEXT_MUTED = '#6b7280'
+    THEME_TEXT_PRIMARY = "#e2e8f0"
+    THEME_TEXT_SECONDARY = "#94a3b8"
+    THEME_TEXT_MUTED = "#6b7280"
 
-    THEME_STATE_HUNTING = '#4ade80'
-    THEME_STATE_HUNTING_BORDER = '#16a34a'
-    THEME_STATE_SELECTED = '#1d4ed8'
-    THEME_STATE_INFO = '#3b82f6'
+    THEME_STATE_HUNTING = "#4ade80"
+    THEME_STATE_HUNTING_BORDER = "#16a34a"
+    THEME_STATE_SELECTED = "#1d4ed8"
+    THEME_STATE_INFO = "#3b82f6"
 
-    THEME_STATE_READY = '#eab308'
-    THEME_STATE_DANGER = '#dc2626'
+    THEME_STATE_READY = "#eab308"
+    THEME_STATE_DANGER = "#dc2626"
 
     # Spacing and Sizes
     SPACING_2 = 2
@@ -98,14 +99,14 @@ class UIStyle:
                 available_fonts = tkfont.families()
             except Exception:
                 available_fonts = []
-        if role == 'display':
-            fallbacks = ['Rajdhani', 'Segoe UI Semibold', 'Segoe UI']
-        elif role == 'body':
-            fallbacks = ['Inter', 'Segoe UI']
-        elif role == 'mono':
-            fallbacks = ['JetBrains Mono', 'Cascadia Mono', 'Consolas']
+        if role == "display":
+            fallbacks = ["Rajdhani", "Segoe UI Semibold", "Segoe UI"]
+        elif role == "body":
+            fallbacks = ["Inter", "Segoe UI"]
+        elif role == "mono":
+            fallbacks = ["JetBrains Mono", "Cascadia Mono", "Consolas"]
         else:
-            fallbacks = ['Segoe UI']
+            fallbacks = ["Segoe UI"]
 
         for f in fallbacks:
             if f in available_fonts:
@@ -115,31 +116,39 @@ class UIStyle:
     @classmethod
     def blend_alpha_to_hex(cls, alpha: float, fg_hex: str, bg_hex: str) -> str:
         """Pre-blend a color with alpha on a background color to return a solid hex."""
-        fg_hex = fg_hex.lstrip('#')
-        bg_hex = bg_hex.lstrip('#')
+        fg_hex = fg_hex.lstrip("#")
+        bg_hex = bg_hex.lstrip("#")
 
-        r_fg, g_fg, b_fg = int(fg_hex[0:2], 16), int(fg_hex[2:4], 16), int(fg_hex[4:6], 16)
-        r_bg, g_bg, b_bg = int(bg_hex[0:2], 16), int(bg_hex[2:4], 16), int(bg_hex[4:6], 16)
+        r_fg, g_fg, b_fg = (
+            int(fg_hex[0:2], 16),
+            int(fg_hex[2:4], 16),
+            int(fg_hex[4:6], 16),
+        )
+        r_bg, g_bg, b_bg = (
+            int(bg_hex[0:2], 16),
+            int(bg_hex[2:4], 16),
+            int(bg_hex[4:6], 16),
+        )
 
         r = int(r_fg * alpha + r_bg * (1 - alpha))
         g = int(g_fg * alpha + g_bg * (1 - alpha))
         b = int(b_fg * alpha + b_bg * (1 - alpha))
 
-        return f'#{r:02x}{g:02x}{b:02x}'
+        return f"#{r:02x}{g:02x}{b:02x}"
 
     # Button backgrounds
-    BTN_PRIMARY_BG = '#2E7D32'
-    BTN_PRIMARY_FG = '#FFFFFF'
-    BTN_NEUTRAL_BG = '#757575'
-    BTN_NEUTRAL_FG = '#FFFFFF'
-    BTN_DANGER_BG = '#F44336'
-    BTN_DANGER_FG = '#FFFFFF'
-    BTN_INFO_BG = '#1976D2'
-    BTN_INFO_FG = '#FFFFFF'
-    BTN_ACCENT_BG = '#00897B'
-    BTN_ACCENT_FG = '#FFFFFF'
-    BTN_START_BG = '#4CAF50'
-    BTN_STOP_BG = '#F44336'
+    BTN_PRIMARY_BG = "#2E7D32"
+    BTN_PRIMARY_FG = "#FFFFFF"
+    BTN_NEUTRAL_BG = "#757575"
+    BTN_NEUTRAL_FG = "#FFFFFF"
+    BTN_DANGER_BG = "#F44336"
+    BTN_DANGER_FG = "#FFFFFF"
+    BTN_INFO_BG = "#1976D2"
+    BTN_INFO_FG = "#FFFFFF"
+    BTN_ACCENT_BG = "#00897B"
+    BTN_ACCENT_FG = "#FFFFFF"
+    BTN_START_BG = "#4CAF50"
+    BTN_STOP_BG = "#F44336"
 
     # Icon sizes
     ICON_SMALL = 16
@@ -152,61 +161,63 @@ class UIStyle:
 
     # Button Spacing (Negative Space)
     # Rule: text/icon+text buttons must be rectangular and auto-sized, not fixed-width squares.
-    BTN_PADDING_X = 16        # Horizontal padding inside button (left/right) - for text buttons
-    BTN_PADDING_Y = 8         # Vertical padding inside button (top/bottom) - for text buttons
-    BTN_TEXT_PADX_MIN = 10    # Minimum horizontal padding for text/icon+text buttons
+    BTN_PADDING_X = (
+        16  # Horizontal padding inside button (left/right) - for text buttons
+    )
+    BTN_PADDING_Y = 8  # Vertical padding inside button (top/bottom) - for text buttons
+    BTN_TEXT_PADX_MIN = 10  # Minimum horizontal padding for text/icon+text buttons
     BTN_TEXT_PADX_DEFAULT = 12  # Recommended padding for readable icon+text controls
-    BTN_MIN_WIDTH = 64        # Minimum button width in pixels
-    BTN_MIN_HEIGHT = 36       # Minimum button height (follows Material Design)
-    BTN_SPACING = 8           # Space between buttons
+    BTN_MIN_WIDTH = 64  # Minimum button width in pixels
+    BTN_MIN_HEIGHT = 36  # Minimum button height (follows Material Design)
+    BTN_SPACING = 8  # Space between buttons
 
     # Icon-only Button Spacing
     # Rule: Button size = Icon size + (Padding × 2)
     # This ensures icons have proper breathing room regardless of icon size
 
     # Compact icons (16x16) - Ultra-compact UI controls (list actions, etc.)
-    BTN_ICON_PADDING_COMPACT = 2   # Minimal padding for 16x16 icons
-    BTN_ICON_SIZE_COMPACT = 20     # Total: 16 + (2×2) = 20px
+    BTN_ICON_PADDING_COMPACT = 2  # Minimal padding for 16x16 icons
+    BTN_ICON_SIZE_COMPACT = 20  # Total: 16 + (2×2) = 20px
     # For compact buttons, use width=0 to disable character-based sizing
 
     # Small icons (16x16) - Compact UI controls
-    BTN_ICON_PADDING_SMALL = 10    # Padding for 16x16 icons
-    BTN_ICON_SIZE_SMALL = 36       # Total: 16 + (10×2) = 36px
-    BTN_ICON_WIDTH_SMALL = 3       # Width in characters for small emoji
+    BTN_ICON_PADDING_SMALL = 10  # Padding for 16x16 icons
+    BTN_ICON_SIZE_SMALL = 36  # Total: 16 + (10×2) = 36px
+    BTN_ICON_WIDTH_SMALL = 3  # Width in characters for small emoji
 
     # Medium icons (20x20) - Default for most actions
-    BTN_ICON_PADDING_MEDIUM = 12   # Padding for 20x20 icons
-    BTN_ICON_SIZE_MEDIUM = 44      # Total: 20 + (12×2) = 44px
-    BTN_ICON_WIDTH_MEDIUM = 3      # Width in characters for medium emoji
+    BTN_ICON_PADDING_MEDIUM = 12  # Padding for 20x20 icons
+    BTN_ICON_SIZE_MEDIUM = 44  # Total: 20 + (12×2) = 44px
+    BTN_ICON_WIDTH_MEDIUM = 3  # Width in characters for medium emoji
 
     # Large icons (24x24) - Primary/important actions
-    BTN_ICON_PADDING_LARGE = 14    # Padding for 24x24 icons
-    BTN_ICON_SIZE_LARGE = 52       # Total: 24 + (14×2) = 52px
-    BTN_ICON_WIDTH_LARGE = 4       # Width in characters for large emoji
+    BTN_ICON_PADDING_LARGE = 14  # Padding for 24x24 icons
+    BTN_ICON_SIZE_LARGE = 52  # Total: 24 + (14×2) = 52px
+    BTN_ICON_WIDTH_LARGE = 4  # Width in characters for large emoji
 
     # Button Hierarchy (Size variants)
-    BTN_LARGE_WIDTH = 120     # Large buttons (primary actions)
-    BTN_MEDIUM_WIDTH = 80     # Medium buttons (secondary actions)
-    BTN_SMALL_WIDTH = 64      # Small buttons (tertiary actions)
-    BTN_ICON_WIDTH = 40       # Icon-only square buttons
+    BTN_LARGE_WIDTH = 120  # Large buttons (primary actions)
+    BTN_MEDIUM_WIDTH = 80  # Medium buttons (secondary actions)
+    BTN_SMALL_WIDTH = 64  # Small buttons (tertiary actions)
+    BTN_ICON_WIDTH = 40  # Icon-only square buttons
 
     # Button States
-    BTN_BORDER_WIDTH = 1      # Border width for outlined buttons
-    BTN_BORDER_RADIUS = 4     # Corner radius (if supported)
-    BTN_RELIEF_NORMAL = 'raised'    # Normal state relief
-    BTN_RELIEF_PRESSED = 'sunken'   # Pressed state relief
-    BTN_RELIEF_FLAT = 'flat'        # Flat style buttons
+    BTN_BORDER_WIDTH = 1  # Border width for outlined buttons
+    BTN_BORDER_RADIUS = 4  # Corner radius (if supported)
+    BTN_RELIEF_NORMAL = "raised"  # Normal state relief
+    BTN_RELIEF_PRESSED = "sunken"  # Pressed state relief
+    BTN_RELIEF_FLAT = "flat"  # Flat style buttons
 
     # Button Hover States (for activebackground)
-    BTN_PRIMARY_HOVER = '#1B5E20'      # Darker green
-    BTN_ACCENT_HOVER = '#00695C'       # Darker teal
-    BTN_NEUTRAL_HOVER = '#616161'      # Darker gray
-    BTN_DANGER_HOVER = '#D32F2F'       # Darker red
-    BTN_INFO_HOVER = '#1565C0'         # Darker blue
+    BTN_PRIMARY_HOVER = "#1B5E20"  # Darker green
+    BTN_ACCENT_HOVER = "#00695C"  # Darker teal
+    BTN_NEUTRAL_HOVER = "#616161"  # Darker gray
+    BTN_DANGER_HOVER = "#D32F2F"  # Darker red
+    BTN_INFO_HOVER = "#1565C0"  # Darker blue
 
     # Disabled State
-    BTN_DISABLED_BG = '#E0E0E0'        # Light gray
-    BTN_DISABLED_FG = '#9E9E9E'        # Muted gray text
+    BTN_DISABLED_BG = "#E0E0E0"  # Light gray
+    BTN_DISABLED_FG = "#9E9E9E"  # Muted gray text
 
     # Contrast Ratios (WCAG AA compliance >= 4.5:1)
     # All current color combinations meet WCAG AA standards:
@@ -221,8 +232,8 @@ class UIStyle:
     # =========================================================================
 
     # Overlay Background
-    OVERLAY_BG_ALPHA = 0.3            # 30% opacity for black background
-    OVERLAY_BG_COLOR = (0, 0, 0)      # Black RGB tuple for Win32
+    OVERLAY_BG_ALPHA = 0.3  # 30% opacity for black background
+    OVERLAY_BG_COLOR = (0, 0, 0)  # Black RGB tuple for Win32
 
     # Basic Colors (RGB tuples for Win32 GDI)
     COLOR_BLACK_RGB = (0, 0, 0)
@@ -232,24 +243,24 @@ class UIStyle:
     COLOR_BLUE_RGB = (0, 0, 255)
 
     # Detection Box States (color-coded)
-    DETECTION_STATE_SEARCHING = COLOR_RED_RGB     # Red for searching
-    DETECTION_STATE_DETECTED = COLOR_GREEN_RGB    # Green for detected
-    DETECTION_STATE_TRACKING = COLOR_BLUE_RGB     # Blue for tracking
+    DETECTION_STATE_SEARCHING = COLOR_RED_RGB  # Red for searching
+    DETECTION_STATE_DETECTED = COLOR_GREEN_RGB  # Green for detected
+    DETECTION_STATE_TRACKING = COLOR_BLUE_RGB  # Blue for tracking
 
     # Detection Box Rendering
-    DETECTION_BORDER_WIDTH = 2        # Border thickness in pixels
-    DETECTION_TEXT_FONT_HEIGHT = 16   # Text font height (Segoe UI style)
-    DETECTION_TEXT_PADDING = 4        # Padding around text labels
-    DETECTION_TEXT_CHAR_WIDTH = 8     # Approximate character width
+    DETECTION_BORDER_WIDTH = 2  # Border thickness in pixels
+    DETECTION_TEXT_FONT_HEIGHT = 16  # Text font height (Segoe UI style)
+    DETECTION_TEXT_PADDING = 4  # Padding around text labels
+    DETECTION_TEXT_CHAR_WIDTH = 8  # Approximate character width
 
     # Text Label Styles (opaque rendering for visibility)
-    DETECTION_TEXT_COLOR = COLOR_BLACK_RGB        # Black text
-    DETECTION_TEXT_BG_COLOR = COLOR_WHITE_RGB     # White opaque background
+    DETECTION_TEXT_COLOR = COLOR_BLACK_RGB  # Black text
+    DETECTION_TEXT_BG_COLOR = COLOR_WHITE_RGB  # White opaque background
 
     # FPS Counter
     FPS_COUNTER_WIDTH = 100
     FPS_COUNTER_HEIGHT = 20
     FPS_COUNTER_PADDING = 4
-    FPS_COUNTER_TEXT_COLOR = COLOR_BLACK_RGB      # Black text
-    FPS_COUNTER_BG_COLOR = COLOR_WHITE_RGB        # White background
-    FPS_COUNTER_POSITION = 'top-right'            # Position anchor
+    FPS_COUNTER_TEXT_COLOR = COLOR_BLACK_RGB  # Black text
+    FPS_COUNTER_BG_COLOR = COLOR_WHITE_RGB  # White background
+    FPS_COUNTER_POSITION = "top-right"  # Position anchor

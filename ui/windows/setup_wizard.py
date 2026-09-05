@@ -13,12 +13,14 @@ This module provides a friendly first-run experience.
 """
 
 import ctypes
+
 # Optional psutil: import only if available to avoid static analysis/import errors
 import importlib
 import importlib.util
 import json
 import os
 import tkinter as tk
+from lib.ui_style import UIStyle
 from ctypes import wintypes
 from pathlib import Path
 from tkinter import messagebox, ttk
@@ -345,7 +347,7 @@ class SetupWizard:
         self.progress_label = tk.Label(
             header_frame,
             text="Step 1 of 5",
-            font=("Arial", 12, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 12, "bold"),
             bg="#f0f0f0",
             fg="#333",
         )
@@ -360,7 +362,7 @@ class SetupWizard:
             dot = tk.Label(
                 self.dots_frame,
                 text="●",
-                font=("Arial", 16),
+                font=(UIStyle.resolve_font_family("body"), 16),
                 bg="#f0f0f0",
                 fg="#4CAF50" if i == 0 else "#ccc",
             )
@@ -431,7 +433,7 @@ class SetupWizard:
             image=back_icon if not isinstance(back_icon, str) else "",
             compound="left" if not isinstance(back_icon, str) else "none",
             command=self._on_back,
-            font=("Arial", 10),
+            font=(UIStyle.resolve_font_family("body"), 10),
             padx=20,
             pady=8,
             state=tk.DISABLED,  # Disabled on first step
@@ -462,7 +464,7 @@ class SetupWizard:
             image=next_icon if not isinstance(next_icon, str) else "",
             compound="right" if not isinstance(next_icon, str) else "none",
             command=self._on_next,
-            font=("Arial", 11, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 11, "bold"),
             bg="#357A38",  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
             fg="white",
             activebackground="#2E7D32",  # Darker on hover
@@ -499,7 +501,7 @@ class SetupWizard:
             image=cancel_icon if not isinstance(cancel_icon, str) else "",
             compound="left" if not isinstance(cancel_icon, str) else "none",
             command=self._on_cancel,
-            font=("Arial", 10),
+            font=(UIStyle.resolve_font_family("body"), 10),
             padx=20,
             pady=8,
         )
@@ -562,7 +564,7 @@ class SetupWizard:
                     compound="left" if not isinstance(finish_icon, str) else "none",
                     bg="#2196F3",
                     activebackground="#1976D2",
-                    font=("Arial", 11, "bold"),
+                    font=(UIStyle.resolve_font_family("body"), 11, "bold"),
                 )
                 if not isinstance(finish_icon, str):
                     try:
@@ -583,7 +585,7 @@ class SetupWizard:
                     compound="right" if not isinstance(next_icon, str) else "none",
                     bg="#357A38",
                     activebackground="#2E7D32",
-                    font=("Arial", 11, "bold"),
+                    font=(UIStyle.resolve_font_family("body"), 11, "bold"),
                 )
                 if not isinstance(next_icon, str):
                     try:
@@ -615,7 +617,7 @@ class SetupWizard:
         title = tk.Label(
             self.content_frame,
             text=self._t("step1_title"),
-            font=("Arial", 18, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 18, "bold"),
             bg="white",
             fg="#333",
         )
@@ -625,7 +627,7 @@ class SetupWizard:
         subtitle = tk.Label(
             self.content_frame,
             text=self._t("step1_subtitle"),
-            font=("Arial", 12),
+            font=(UIStyle.resolve_font_family("body"), 12),
             bg="white",
             fg="#666",
         )
@@ -647,7 +649,7 @@ It takes about 2 minutes. Let's begin!"""
         info_label = tk.Label(
             info_frame,
             text=info_text,
-            font=("Arial", 11),
+            font=(UIStyle.resolve_font_family("body"), 11),
             bg="white",
             fg="#333",
             justify=tk.LEFT,
@@ -659,7 +661,7 @@ It takes about 2 minutes. Let's begin!"""
         lang_frame = tk.LabelFrame(
             self.content_frame,
             text=self._t("language_group"),
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             bg="white",
             padx=20,
             pady=15,
@@ -674,7 +676,7 @@ It takes about 2 minutes. Let's begin!"""
             text="🇬🇧 English",
             variable=self.language_var,
             value="en",
-            font=("Arial", 11),
+            font=(UIStyle.resolve_font_family("body"), 11),
             bg="white",
             command=self._on_language_change,
         )
@@ -692,7 +694,7 @@ It takes about 2 minutes. Let's begin!"""
             text="🇻🇳 Tiếng Việt",
             variable=self.language_var,
             value="vi",
-            font=("Arial", 11),
+            font=(UIStyle.resolve_font_family("body"), 11),
             bg="white",
             command=self._on_language_change,
         )
@@ -709,7 +711,7 @@ It takes about 2 minutes. Let's begin!"""
         user_level_frame = tk.LabelFrame(
             self.content_frame,
             text=self._t("user_level_group"),
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             bg="white",
             padx=20,
             pady=15,
@@ -725,7 +727,7 @@ It takes about 2 minutes. Let's begin!"""
             text=self._t("user_level_new"),
             variable=self.user_level_var,
             value="new",
-            font=("Arial", 11),
+            font=(UIStyle.resolve_font_family("body"), 11),
             bg="white",
             command=self._on_user_level_change,
         )
@@ -734,7 +736,7 @@ It takes about 2 minutes. Let's begin!"""
         self.level_new_desc = tk.Label(
             user_level_frame,
             text="  " + self._t("user_level_new_desc"),
-            font=("Arial", 9),
+            font=(UIStyle.resolve_font_family("body"), 9),
             bg="white",
             fg="#666",
             justify=tk.LEFT,
@@ -755,7 +757,7 @@ It takes about 2 minutes. Let's begin!"""
             text=self._t("user_level_experienced"),
             variable=self.user_level_var,
             value="experienced",
-            font=("Arial", 11),
+            font=(UIStyle.resolve_font_family("body"), 11),
             bg="white",
             command=self._on_user_level_change,
         )
@@ -764,7 +766,7 @@ It takes about 2 minutes. Let's begin!"""
         self.level_experienced_desc = tk.Label(
             user_level_frame,
             text="  " + self._t("user_level_experienced_desc"),
-            font=("Arial", 9),
+            font=(UIStyle.resolve_font_family("body"), 9),
             bg="white",
             fg="#666",
             justify=tk.LEFT,
@@ -791,7 +793,7 @@ It takes about 2 minutes. Let's begin!"""
                     if self.lang == "en"
                     else "Người dùng mới phải bắt đầu với tùy chọn 'Người mới'"
                 ),
-                font=("Arial", 9, "italic"),
+                font=(UIStyle.resolve_font_family("body"), 9, "italic"),
                 bg="white",
                 fg="#2196F3",
                 justify=tk.LEFT,
@@ -802,7 +804,7 @@ It takes about 2 minutes. Let's begin!"""
         hint = tk.Label(
             self.content_frame,
             text=self._t("get_started_hint"),
-            font=("Arial", 10, "italic"),
+            font=(UIStyle.resolve_font_family("body"), 10, "italic"),
             bg="white",
             fg="#999",
         )
@@ -813,7 +815,7 @@ It takes about 2 minutes. Let's begin!"""
         title = tk.Label(
             self.content_frame,
             text=self._t("step2_title"),
-            font=("Arial", 16, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 16, "bold"),
             bg="white",
         )
         title.pack(pady=(10, 5))
@@ -821,7 +823,7 @@ It takes about 2 minutes. Let's begin!"""
         subtitle = tk.Label(
             self.content_frame,
             text=self._t("step2_subtitle"),
-            font=("Arial", 10),
+            font=(UIStyle.resolve_font_family("body"), 10),
             bg="white",
             fg="#666",
         )
@@ -863,7 +865,7 @@ It takes about 2 minutes. Let's begin!"""
             bg="#357A38",  # Enhanced contrast (was #4CAF50 CR 2.78:1, now CR 5.26:1)
             fg="white",
             activebackground="#2E7D32",
-            font=("Arial", 9, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 9, "bold"),
             cursor="hand2",
             padx=18,
             pady=8,
@@ -910,7 +912,7 @@ It takes about 2 minutes. Let's begin!"""
         self.window_info_label = tk.Label(
             self.content_frame,
             text=self._t("hint_window_running"),
-            font=("Arial", 9, "italic"),
+            font=(UIStyle.resolve_font_family("body"), 9, "italic"),
             bg="white",
             fg="#666",
         )
@@ -924,7 +926,7 @@ It takes about 2 minutes. Let's begin!"""
         title = tk.Label(
             self.content_frame,
             text=self._t("step3_title"),
-            font=("Arial", 16, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 16, "bold"),
             bg="white",
         )
         title.pack(pady=(10, 5))
@@ -932,7 +934,7 @@ It takes about 2 minutes. Let's begin!"""
         subtitle = tk.Label(
             self.content_frame,
             text=self._t("step3_subtitle") + " (Optional - you can add monsters later)",
-            font=("Arial", 10),
+            font=(UIStyle.resolve_font_family("body"), 10),
             bg="white",
             fg="#666",
         )
@@ -966,7 +968,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 info_frame,
                 text="📋 No Monsters Yet",
-                font=("Arial", 14, "bold"),
+                font=(UIStyle.resolve_font_family("body"), 14, "bold"),
                 bg="white",
                 fg="#FF9800",
             ).pack(pady=(20, 10))
@@ -974,7 +976,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 info_frame,
                 text=self._t("no_monsters_found"),
-                font=("Arial", 10),
+                font=(UIStyle.resolve_font_family("body"), 10),
                 bg="white",
                 fg="#666",
             ).pack(pady=5)
@@ -982,7 +984,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 info_frame,
                 text="✓ You can skip this step and add monsters later via Library Manager",
-                font=("Arial", 10),
+                font=(UIStyle.resolve_font_family("body"), 10),
                 bg="white",
                 fg="#4CAF50",
             ).pack(pady=10)
@@ -990,7 +992,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 info_frame,
                 text="💡 Tip: Click 'Next' to continue setup without selecting a monster",
-                font=("Arial", 9, "italic"),
+                font=(UIStyle.resolve_font_family("body"), 9, "italic"),
                 bg="white",
                 fg="#2196F3",
             ).pack(pady=(20, 10))
@@ -1004,7 +1006,10 @@ It takes about 2 minutes. Let's begin!"""
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.monster_listbox = tk.Listbox(
-            list_frame, height=10, yscrollcommand=scrollbar.set, font=("Arial", 10)
+            list_frame,
+            height=10,
+            yscrollcommand=scrollbar.set,
+            font=(UIStyle.resolve_font_family("body"), 10),
         )
         self.monster_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.monster_listbox.yview)
@@ -1036,7 +1041,7 @@ It takes about 2 minutes. Let's begin!"""
         self.monster_info_label = tk.Label(
             self.content_frame,
             text="",
-            font=("Arial", 9),
+            font=(UIStyle.resolve_font_family("body"), 9),
             bg="white",
             fg="#333",
             justify=tk.LEFT,
@@ -1048,7 +1053,7 @@ It takes about 2 minutes. Let's begin!"""
         title = tk.Label(
             self.content_frame,
             text=self._t("step4_title"),
-            font=("Arial", 16, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 16, "bold"),
             bg="white",
         )
         title.pack(pady=(10, 5))
@@ -1056,7 +1061,7 @@ It takes about 2 minutes. Let's begin!"""
         subtitle = tk.Label(
             self.content_frame,
             text=self._t("step4_subtitle") + " (Optional - you can configure later)",
-            font=("Arial", 10),
+            font=(UIStyle.resolve_font_family("body"), 10),
             bg="white",
             fg="#666",
         )
@@ -1105,7 +1110,7 @@ It takes about 2 minutes. Let's begin!"""
                     slot_container,
                     text=f"Slot {slot_num}:",
                     bg="white",
-                    font=("Arial", 9, "bold"),
+                    font=(UIStyle.resolve_font_family("body"), 9, "bold"),
                 ).pack(anchor="w")
 
                 # Combobox
@@ -1146,7 +1151,7 @@ It takes about 2 minutes. Let's begin!"""
             image=clear_icon if not isinstance(clear_icon, str) else "",
             compound="left" if not isinstance(clear_icon, str) else "none",
             command=self._clear_all_skill_slots,
-            font=("Arial", 10),
+            font=(UIStyle.resolve_font_family("body"), 10),
             padx=18,
             pady=8,
         )
@@ -1182,7 +1187,7 @@ It takes about 2 minutes. Let's begin!"""
             bg="#2196F3",  # Blue (CR 3.12:1 - OK for large/bold text)
             fg="white",
             activebackground="#1976D2",
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             padx=20,  # Negative space
             pady=8,
             cursor="hand2",
@@ -1210,7 +1215,7 @@ It takes about 2 minutes. Let's begin!"""
         self.rotation_builder_hint = tk.Label(
             self.content_frame,
             text="",
-            font=("Arial", 9, "italic"),
+            font=(UIStyle.resolve_font_family("body"), 9, "italic"),
             bg="white",
             fg="#999",
         )
@@ -1226,7 +1231,7 @@ It takes about 2 minutes. Let's begin!"""
         info = tk.Label(
             self.content_frame,
             text=self._t("skills_order_hint"),
-            font=("Arial", 9, "italic"),
+            font=(UIStyle.resolve_font_family("body"), 9, "italic"),
             bg="white",
             fg="#666",
         )
@@ -1237,7 +1242,7 @@ It takes about 2 minutes. Let's begin!"""
         title = tk.Label(
             self.content_frame,
             text=self._t("step5_title"),
-            font=("Arial", 16, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 16, "bold"),
             bg="white",
         )
         title.pack(pady=(10, 5))
@@ -1245,7 +1250,7 @@ It takes about 2 minutes. Let's begin!"""
         subtitle = tk.Label(
             self.content_frame,
             text=self._t("step5_subtitle"),
-            font=("Arial", 10),
+            font=(UIStyle.resolve_font_family("body"), 10),
             bg="white",
             fg="#666",
         )
@@ -1255,7 +1260,7 @@ It takes about 2 minutes. Let's begin!"""
         review_frame = tk.LabelFrame(
             self.content_frame,
             text="Configuration Summary",
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             bg="white",
             padx=20,
             pady=15,
@@ -1268,14 +1273,14 @@ It takes about 2 minutes. Let's begin!"""
         tk.Label(
             review_frame,
             text=f"🪟 Game Window:",
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             bg="white",
             anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
         tk.Label(
             review_frame,
             text=f"   {window_info} (PID: {window_pid})",
-            font=("Arial", 9),
+            font=(UIStyle.resolve_font_family("body"), 9),
             bg="white",
             fg="#333",
             anchor="w",
@@ -1287,14 +1292,14 @@ It takes about 2 minutes. Let's begin!"""
         tk.Label(
             review_frame,
             text=f"👾 Monster:",
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             bg="white",
             anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
         tk.Label(
             review_frame,
             text=f"   {monster_name} ({len(monster_templates)} template(s))",
-            font=("Arial", 9),
+            font=(UIStyle.resolve_font_family("body"), 9),
             bg="white",
             fg="#333",
             anchor="w",
@@ -1306,7 +1311,7 @@ It takes about 2 minutes. Let's begin!"""
         tk.Label(
             review_frame,
             text=f"⚔️ Skills:",
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             bg="white",
             anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
@@ -1316,7 +1321,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 review_frame,
                 text=skills_text,
-                font=("Arial", 9),
+                font=(UIStyle.resolve_font_family("body"), 9),
                 bg="white",
                 fg="#333",
                 anchor="w",
@@ -1327,7 +1332,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 review_frame,
                 text="   No skills assigned",
-                font=("Arial", 9, "italic"),
+                font=(UIStyle.resolve_font_family("body"), 9, "italic"),
                 bg="white",
                 fg="#999",
                 anchor="w",
@@ -1338,7 +1343,7 @@ It takes about 2 minutes. Let's begin!"""
         tk.Label(
             review_frame,
             text=f"⏱️ Timing:",
-            font=("Arial", 10, "bold"),
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
             bg="white",
             anchor="w",
         ).pack(fill=tk.X, pady=(0, 2))
@@ -1346,7 +1351,7 @@ It takes about 2 minutes. Let's begin!"""
         tk.Label(
             review_frame,
             text=timing_text,
-            font=("Arial", 9),
+            font=(UIStyle.resolve_font_family("body"), 9),
             bg="white",
             fg="#333",
             anchor="w",
@@ -1357,7 +1362,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 self.content_frame,
                 text="⚠️ Warning: No game window selected (Required)",
-                font=("Arial", 9, "bold"),
+                font=(UIStyle.resolve_font_family("body"), 9, "bold"),
                 bg="white",
                 fg="red",
             ).pack(pady=(10, 0))
@@ -1366,7 +1371,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 self.content_frame,
                 text="ℹ️ Note: No monster selected (Can be added later)",
-                font=("Arial", 9),
+                font=(UIStyle.resolve_font_family("body"), 9),
                 bg="white",
                 fg="#2196F3",
             ).pack(pady=(5, 0))
@@ -1375,7 +1380,7 @@ It takes about 2 minutes. Let's begin!"""
             tk.Label(
                 self.content_frame,
                 text="ℹ️ Note: No skills configured (Can be added later)",
-                font=("Arial", 9),
+                font=(UIStyle.resolve_font_family("body"), 9),
                 bg="white",
                 fg="#2196F3",
             ).pack(pady=(5, 0))
@@ -2222,7 +2227,7 @@ if __name__ == "__main__":
         image=wizard_icon if wizard_icon and not isinstance(wizard_icon, str) else "",
         compound="left" if wizard_icon and not isinstance(wizard_icon, str) else "none",
         command=lambda: show_setup_wizard(root, on_complete=on_wizard_complete),
-        font=("Arial", 12, "bold"),
+        font=(UIStyle.resolve_font_family("body"), 12, "bold"),
         bg="#2196F3",
         fg="white",
         activebackground="#1976D2",

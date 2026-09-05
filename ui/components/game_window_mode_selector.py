@@ -13,13 +13,13 @@ Features:
 
 Usage:
     from ui.components.game_window_mode_selector import create_game_window_mode_selector
-    
+
     # Simple usage
     selector = create_game_window_mode_selector(
         parent=frame,
         config_path="lib/data/hunt_config.json"
     )
-    
+
     # Advanced usage with callback
     def on_mode_changed(mode: str):
         print(f"Game window mode changed to: {mode}")
@@ -27,7 +27,7 @@ Usage:
             launch_game_topmost()
         elif mode == "below":
             launch_game_below()
-    
+
     selector = create_game_window_mode_selector(
         parent=frame,
         config_path="lib/data/hunt_config.json",
@@ -39,6 +39,7 @@ Usage:
 Author: SokKimThanh
 Created: 2025-10-24
 """
+
 import json
 import tkinter as tk
 from tkinter import ttk
@@ -49,13 +50,13 @@ from typing import Optional, Callable, Any
 class GameWindowModeSelector:
     """
     Game window mode selector with icon feedback and auto-save.
-    
+
     Manages three display modes for game window:
     - none: No game window
     - below: Game window below app
     - above: Game window topmost (above app)
     """
-    
+
     def __init__(
         self,
         parent: Any,
@@ -65,11 +66,11 @@ class GameWindowModeSelector:
         icon_size: int = 16,
         show_label: bool = False,  # Changed default to False
         label_text: str = "Game:",
-        tooltip_text: str = "Điều khiển vị trí cửa sổ game\n• None: Không làm gì\n• Below: Đặt dưới app\n• Above: Đặt trên tất cả"
+        tooltip_text: str = "Điều khiển vị trí cửa sổ game\n• None: Không làm gì\n• Below: Đặt dưới app\n• Above: Đặt trên tất cả",
     ):
         """
         Initialize game window mode selector.
-        
+
         Args:
             parent: Parent widget to attach to
             config_path: Path to hunt_config.json
@@ -84,232 +85,233 @@ class GameWindowModeSelector:
         self.config_path = Path(config_path)
         self.on_mode_change_callback = on_mode_change
         self.icon_size = icon_size
-        
+
         # Mode state
         self.current_mode = tk.StringVar(value=initial_mode)
-        
+
         # Load initial mode from config
         self._load_mode_from_config()
-        
+
         # Create UI
         self.container = tk.Frame(parent, bg=self._get_bg_color())
-        
+
         # Label (optional)
         if show_label:
             self.label = tk.Label(
                 self.container,
                 text=label_text,
-                font=('Segoe UI', 9),
-                bg=self._get_bg_color()
+                font=("Segoe UI", 9),
+                bg=self._get_bg_color(),
             )
-            self.label.pack(side='left', padx=(0, 5))
-        
+            self.label.pack(side="left", padx=(0, 5))
+
         # Mode selector combobox
         # Optimal width for game window modes (none, below, above)
         self.mode_combo = ttk.Combobox(
             self.container,
             textvariable=self.current_mode,
-            values=['none', 'below', 'above'],
-            state='readonly',
+            values=["none", "below", "above"],
+            state="readonly",
             width=8,  # Reduced from 10 for better spacing
-            font=('Segoe UI', 9)
+            font=("Segoe UI", 9),
         )
-        self.mode_combo.pack(side='left')
-        self.mode_combo.bind('<<ComboboxSelected>>', self._on_mode_selected)
-        
+        self.mode_combo.pack(side="left")
+        self.mode_combo.bind("<<ComboboxSelected>>", self._on_mode_selected)
+
         # Icon indicator (shows current mode visually)
         self.icon_label = tk.Label(
             self.container,
             text=self._get_mode_icon(self.current_mode.get()),
-            font=('Segoe UI', icon_size),
-            bg=self._get_bg_color()
+            font=("Segoe UI", icon_size),
+            bg=self._get_bg_color(),
         )
-        self.icon_label.pack(side='left', padx=(5, 0))
-        
+        self.icon_label.pack(side="left", padx=(5, 0))
+
         # Tooltip
         self._attach_tooltip(self.mode_combo, tooltip_text)
         self._attach_tooltip(self.icon_label, tooltip_text)
-    
+
     def _get_bg_color(self) -> str:
         """Get background color from parent or default."""
         try:
-            return self.parent.cget('bg')
+            return self.parent.cget("bg")
         except:
-            return '#F5F5F5'
-    
+            return "#F5F5F5"
+
     def _get_mode_icon(self, mode: str) -> str:
         """
         Get icon emoji for current mode.
-        
+
         Args:
             mode: Current mode string
-            
+
         Returns:
             Icon emoji string
         """
         icons = {
-            'none': '🚫',      # Screen off
-            'below': '⬇️',     # Below app
-            'above': '⬆️'      # Above/topmost
+            "none": "🚫",  # Screen off
+            "below": "⬇️",  # Below app
+            "above": "⬆️",  # Above/topmost
         }
-        return icons.get(mode, '❓')
-    
+        return icons.get(mode, "❓")
+
     def _load_mode_from_config(self) -> None:
         """Load game_window_mode from hunt_config.json."""
         try:
             if self.config_path.exists():
-                with open(self.config_path, 'r', encoding='utf-8') as f:
+                with open(self.config_path, "r", encoding="utf-8") as f:
                     config = json.load(f)
-                mode = config.get('game_window_mode', 'none')
+                mode = config.get("game_window_mode", "none")
                 self.current_mode.set(mode)
                 print(f"[GameWindowMode] Loaded mode: {mode}")
             else:
                 print(f"[GameWindowMode] Config not found, using default 'none'")
         except Exception as e:
             print(f"[GameWindowMode] Error loading config: {e}")
-    
+
     def _save_mode_to_config(self, mode: str) -> None:
         """
         Save game_window_mode to hunt_config.json.
-        
+
         Args:
             mode: Mode to save
         """
         try:
             # Load existing config
             if self.config_path.exists():
-                with open(self.config_path, 'r', encoding='utf-8') as f:
+                with open(self.config_path, "r", encoding="utf-8") as f:
                     config = json.load(f)
             else:
                 config = {}
-            
+
             # Update mode
-            config['game_window_mode'] = mode
-            
+            config["game_window_mode"] = mode
+
             # Save back
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.config_path, 'w', encoding='utf-8') as f:
+            with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
-            
+
             print(f"[GameWindowMode] Saved mode '{mode}' to config")
         except Exception as e:
             print(f"[GameWindowMode] Error saving config: {e}")
-    
+
     def _on_mode_selected(self, event: Any = None) -> None:
         """
         Handle mode selection from combobox.
-        
+
         Args:
             event: Combobox event (unused)
         """
         new_mode = self.current_mode.get()
         print(f"[GameWindowMode] Mode changed to: {new_mode}")
-        
+
         # Update icon
         self.icon_label.config(text=self._get_mode_icon(new_mode))
-        
+
         # Save to config
         self._save_mode_to_config(new_mode)
-        
+
         # Call user callback
         if self.on_mode_change_callback:
             try:
                 self.on_mode_change_callback(new_mode)
             except Exception as e:
                 print(f"[GameWindowMode] Error in callback: {e}")
-    
+
     def _attach_tooltip(self, widget: Any, text: str) -> None:
         """
         Attach simple tooltip to widget.
-        
+
         Args:
             widget: Widget to attach tooltip to
             text: Tooltip text
         """
+
         def on_enter(event):
             # Create tooltip window
             tooltip = tk.Toplevel(widget)
             tooltip.wm_overrideredirect(True)
             tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
-            
+
             label = tk.Label(
                 tooltip,
                 text=text,
-                font=('Segoe UI', 8),
-                bg='#FFFFE0',
-                fg='#000000',
-                relief='solid',
+                font=("Segoe UI", 8),
+                bg="#FFFFE0",
+                fg="#000000",
+                relief="solid",
                 borderwidth=1,
                 padx=5,
-                pady=2
+                pady=2,
             )
             label.pack()
-            
+
             # Store reference
             widget._tooltip = tooltip
-        
+
         def on_leave(event):
             # Destroy tooltip
-            if hasattr(widget, '_tooltip'):
+            if hasattr(widget, "_tooltip"):
                 try:
                     widget._tooltip.destroy()
                 except:
                     pass
-                delattr(widget, '_tooltip')
-        
-        widget.bind('<Enter>', on_enter)
-        widget.bind('<Leave>', on_leave)
-    
+                delattr(widget, "_tooltip")
+
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
+
     def get_mode(self) -> str:
         """
         Get current mode.
-        
+
         Returns:
             Current mode string
         """
         return self.current_mode.get()
-    
+
     def set_mode(self, mode: str) -> None:
         """
         Set mode programmatically.
-        
+
         Args:
             mode: Mode to set ('none', 'below', 'above')
         """
-        if mode in ['none', 'below', 'above']:
+        if mode in ["none", "below", "above"]:
             self.current_mode.set(mode)
             self.icon_label.config(text=self._get_mode_icon(mode))
             self._save_mode_to_config(mode)
         else:
             print(f"[GameWindowMode] Invalid mode: {mode}")
-    
+
     def show(self) -> None:
         """Show the selector (make visible)."""
-        self.container.pack(side='left', padx=(0, 8))
-    
+        self.container.pack(side="left", padx=(0, 8))
+
     def hide(self) -> None:
         """Hide the selector (make invisible)."""
         self.container.pack_forget()
-    
+
     def is_visible(self) -> bool:
         """Check if selector is currently visible."""
         return self.container.winfo_ismapped()
-    
+
     def toggle(self) -> None:
         """Toggle visibility of selector."""
         if self.is_visible():
             self.hide()
         else:
             self.show()
-    
+
     def pack(self, **kwargs) -> None:
         """Pack the container frame."""
         self.container.pack(**kwargs)
-    
+
     def grid(self, **kwargs) -> None:
         """Grid the container frame."""
         self.container.grid(**kwargs)
-    
+
     def place(self, **kwargs) -> None:
         """Place the container frame."""
         self.container.place(**kwargs)
@@ -323,11 +325,11 @@ def create_game_window_mode_selector(
     icon_size: int = 16,
     show_label: bool = False,  # Changed default to False
     label_text: str = "Game:",
-    tooltip_text: str = "Điều khiển vị trí cửa sổ game\n• None: Không làm gì\n• Below: Đặt dưới app\n• Above: Đặt trên tất cả"
+    tooltip_text: str = "Điều khiển vị trí cửa sổ game\n• None: Không làm gì\n• Below: Đặt dưới app\n• Above: Đặt trên tất cả",
 ) -> GameWindowModeSelector:
     """
     Factory function to create game window mode selector.
-    
+
     Args:
         parent: Parent widget
         config_path: Path to hunt_config.json
@@ -337,10 +339,10 @@ def create_game_window_mode_selector(
         show_label: Show "Game:" label
         label_text: Label text
         tooltip_text: Tooltip text
-    
+
     Returns:
         GameWindowModeSelector instance
-    
+
     Example:
         selector = create_game_window_mode_selector(
             parent=frame,
@@ -356,5 +358,5 @@ def create_game_window_mode_selector(
         icon_size=icon_size,
         show_label=show_label,
         label_text=label_text,
-        tooltip_text=tooltip_text
+        tooltip_text=tooltip_text,
     )

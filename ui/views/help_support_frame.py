@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from ui.tabs.help_tab import HelpTab
 
+
 class HelpSupportFrame(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)

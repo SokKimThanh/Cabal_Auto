@@ -9,8 +9,8 @@ from .confirmation_widget import ConfirmationWidget
 from .notification_widget import NotificationWidget
 
 __all__ = [
-    'create_icon_button',
-    'create_icon_label',
-    'ConfirmationWidget',
-    'NotificationWidget'
+    "create_icon_button",
+    "create_icon_label",
+    "ConfirmationWidget",
+    "NotificationWidget",
 ]

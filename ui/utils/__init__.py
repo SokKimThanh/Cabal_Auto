@@ -10,9 +10,9 @@ UI utility functions:
 """
 
 __all__ = [
-    'detection_converter',
-    'overlay_controller',
-    'overlay_settings',
-    'window_tracker',
-    'win_input',
+    "detection_converter",
+    "overlay_controller",
+    "overlay_settings",
+    "window_tracker",
+    "win_input",
 ]

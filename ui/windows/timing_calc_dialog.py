@@ -27,13 +27,22 @@ class TimingCalcDialog(tk.Toplevel):
         self.dps_var = tk.StringVar(value="500")
 
         # Input Frame
-        input_frm = ttk.LabelFrame(frm, text=self.app._t("calc_input_title"), padding=10)
+        input_frm = ttk.LabelFrame(
+            frm, text=self.app._t("calc_input_title"), padding=10
+        )
         input_frm.pack(fill="x", pady=(0, 15))
 
         # Pre-fill EHP if we have it
-        if hasattr(self.app, 'monster_estimate_stats') and self.app.monster_estimate_stats:
-            self.ehp_var.set(str(int(self.app.monster_estimate_stats.get("effective_hp", 1000))))
-            self.dps_var.set(str(int(self.app.monster_estimate_stats.get("required_dps", 500))))
+        if (
+            hasattr(self.app, "monster_estimate_stats")
+            and self.app.monster_estimate_stats
+        ):
+            self.ehp_var.set(
+                str(int(self.app.monster_estimate_stats.get("effective_hp", 1000)))
+            )
+            self.dps_var.set(
+                str(int(self.app.monster_estimate_stats.get("required_dps", 500)))
+            )
 
         ttk.Label(input_frm, text=self.app._t("calc_aps")).grid(
             row=0, column=0, sticky="w", pady=5
@@ -76,10 +85,15 @@ class TimingCalcDialog(tk.Toplevel):
                 dps = float(self.dps_var.get())
 
                 from lib.features.timing.calculator import calculate_timing
+
                 if aps <= 0:
-                    raise ValueError('APS must be > 0')
+                    raise ValueError("APS must be > 0")
                 damage_per_hit = dps / aps
-                rec = calculate_timing(monster_hp=ehp, damage_per_hit=damage_per_hit, attacks_per_second=aps)
+                rec = calculate_timing(
+                    monster_hp=ehp,
+                    damage_per_hit=damage_per_hit,
+                    attacks_per_second=aps,
+                )
                 self.recommended_time = rec.estimated_kill_time_sec
 
                 # Format text
@@ -92,10 +106,15 @@ class TimingCalcDialog(tk.Toplevel):
                 )
                 self.res_label.config(text=text, foreground="#333")
             except ValueError:
-                self.res_label.config(text=self.app._t("calc_err_value"), foreground="#d32f2f")
+                self.res_label.config(
+                    text=self.app._t("calc_err_value"), foreground="#d32f2f"
+                )
             except Exception as e:
                 import logging
-                logging.getLogger("timing_calculator").error(f"Timing calculation error: {e}", exc_info=True)
+
+                logging.getLogger("timing_calculator").error(
+                    f"Timing calculation error: {e}", exc_info=True
+                )
                 err_msg = (
                     "Calculation error. Please check your skill and monster inputs."
                     if getattr(self.app, "lang", "en") == "en"

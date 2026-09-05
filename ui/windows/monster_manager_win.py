@@ -42,9 +42,11 @@ except ImportError:
     try:
         from mock.fallbacks import ensure_unique_monster_id
     except ImportError:
+
         def ensure_unique_monster_id(m):
             if "id" not in m or not m["id"]:
                 import uuid
+
                 m["id"] = str(uuid.uuid4())
             return m
 
@@ -87,12 +89,13 @@ try:
 except ImportError:
 
     def get_button_config(button_type: str) -> dict:
-        return {"font": ("Arial", 10, "bold")}
+        return {"font": (UIStyle.resolve_font_family("body"), 10, "bold")}
 
 
 try:
     from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
+
     class ActionNotificationMixin(tk.Widget):
         def __init__(self, *args, debug_mode=False, **kwargs):
             try:
@@ -118,6 +121,7 @@ except ImportError:
 
         def has_action_rule(self, *args, **kwargs):
             return False
+
 
 try:
     from ui.components import create_icon_button, create_icon_label
@@ -234,7 +238,7 @@ except ImportError:
 
 
 try:
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style import UIStyle
 except ImportError:
 
     class UIStyle:
@@ -242,7 +246,7 @@ except ImportError:
         FONT_SECTION = ("Segoe UI", 11, "bold")
         FONT_LABEL = ("Segoe UI", 10)
         FONT_TEXT = ("Segoe UI", 10)
-        FONT_BUTTON = ("Arial", 10, "bold")
+        FONT_BUTTON = ("Segoe UI", 10, "bold")
         FONT_SMALL = ("Segoe UI", 8)
         COLOR_PRIMARY = "#2196F3"
         COLOR_PRIMARY_TEXT = "#0D47A1"
@@ -312,11 +316,15 @@ class CompatibleTreeview(ttk.Treeview):
             if values:
                 raw_name = str(values[0]).split("\n")[0].strip()
                 level = 1
-                if len(values) >= 2 and (isinstance(values[1], int) or str(values[1]).isdigit()):
+                if len(values) >= 2 and (
+                    isinstance(values[1], int) or str(values[1]).isdigit()
+                ):
                     level = values[1]
                 else:
                     for v in values[1:]:
-                        if isinstance(v, int) or (isinstance(v, str) and str(v).isdigit()):
+                        if isinstance(v, int) or (
+                            isinstance(v, str) and str(v).isdigit()
+                        ):
                             level = v
                             break
                 return f"👹 {raw_name} (Lv.{level})"
@@ -745,7 +753,10 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
                         del self.pending_changes[k]
 
                 if failed_keys:
-                    self._show_status_message("Lưu thất bại một phần: không thể ghi một số monster vào DB", is_error=True)
+                    self._show_status_message(
+                        "Lưu thất bại một phần: không thể ghi một số monster vào DB",
+                        is_error=True,
+                    )
                     # Remove successful changes from pending_changes, keep only failed ones
                     for k in list(pending.keys()):
                         if k not in failed_keys:
@@ -768,7 +779,9 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
                         all_monsters.append(monster)
 
                 if not self.sync_manager.save_monsters(all_monsters):
-                    self._show_status_message("Lưu thất bại: sync_manager", is_error=True)
+                    self._show_status_message(
+                        "Lưu thất bại: sync_manager", is_error=True
+                    )
                     # Don't clear pending on full failure
                     return False
             else:
@@ -821,7 +834,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self._create_bottom_bar()
 
     def _create_top_panel(self) -> None:
-        top_frame = tk.Frame(self, bg=UI.BG_PANEL, height=50)
+        top_frame = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL, height=50)
         top_frame.pack(side="top", fill="x")
         top_frame.pack_propagate(False)
 
@@ -833,20 +846,20 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
                 "quick_editor_title", ns="monster_editor", default="Quản Lý Quái Vật"
             ),
             icon_fallback="👹",
-            font=UI.FONT_TITLE,
-            fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_PANEL,
+            font=UIStyle.FONT_TITLE,
+            fg=UIStyle.THEME_TEXT_PRIMARY,
+            bg=UIStyle.THEME_BG_PANEL,
         )
         header_title.pack(side="left", padx=15, pady=10)
 
         # Action buttons (right side)
-        btn_frame = tk.Frame(top_frame, bg=UI.BG_PANEL)
+        btn_frame = tk.Frame(top_frame, bg=UIStyle.THEME_BG_PANEL)
         btn_frame.pack(side="right", padx=15, pady=10)
 
         self.status_badge = tk.Label(
             btn_frame,
             text=i18n_t("badge_saved", ns="monster_editor", default="Đã lưu tất cả"),
-            font=UI.FONT_SMALL,
+            font=UIStyle.FONT_SMALL,
             fg="white",
             bg="#28A745",
             padx=8,
@@ -869,7 +882,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.save_button.pack(side="left", padx=3)
 
     def _create_search_bar(self) -> None:
-        search_frame = tk.Frame(self, bg=UI.BG_PANEL)
+        search_frame = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL)
         search_frame.pack(fill="x", padx=10, pady=(5, 0))
 
         create_icon_label(
@@ -877,11 +890,11 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             icon_name="search",
             text=i18n_t("search_label", ns="monster_editor", default="Tìm kiếm:"),
             icon_fallback="🔍",
-            font=UI.FONT_LABEL,
-            bg=UI.BG_PANEL,
+            font=UIStyle.FONT_LABEL,
+            bg=UIStyle.THEME_BG_PANEL,
         ).grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
 
-        self.search_entry = tk.Entry(search_frame, font=UI.FONT_TEXT)
+        self.search_entry = tk.Entry(search_frame, font=UIStyle.FONT_TEXT)
         self.search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=5)
         self.search_entry.bind("<KeyRelease>", self._on_search_changed)
         self.search_entry.bind("<Escape>", self._on_clear_search)
@@ -916,9 +929,9 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             search_frame,
             text="Column Visibility",
             command=self._open_column_visibility_menu,
-            bg=UI.BG_DEFAULT,
-            fg=UI.COLOR_TEXT,
-            font=UI.FONT_LABEL,
+            bg=UIStyle.THEME_BG_APP,
+            fg=UIStyle.THEME_TEXT_PRIMARY,
+            font=UIStyle.FONT_LABEL,
         )
         self.column_visibility_button.grid(
             row=0, column=5, sticky="ew", padx=(0, 5), pady=5
@@ -930,7 +943,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             command=self._clear_all_filters,
             bg="#FDECEC",
             fg="#B42318",
-            font=UI.FONT_LABEL,
+            font=UIStyle.FONT_LABEL,
             borderwidth=1,
             relief="solid",
         )
@@ -1117,7 +1130,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self._refresh_monster_table()
 
     def _create_table_area(self) -> None:
-        table_frame = tk.Frame(self, bg=UI.BG_DEFAULT)
+        table_frame = tk.Frame(self, bg=UIStyle.THEME_BG_APP)
         table_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.table_scroll_y = tk.Scrollbar(table_frame, orient=tk.VERTICAL)
@@ -1187,7 +1200,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             text=i18n_t(
                 "confirm_delete_banner", ns="monster_editor", default="Xác nhận xóa?"
             ),
-            font=UI.FONT_LABEL,
+            font=UIStyle.FONT_LABEL,
             bg="#FFF3CD",
             fg="#856404",
         )
@@ -1242,11 +1255,15 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             name = target_monster.get("name", "Unnamed")
             if self.db is not None:
                 if not self.db.delete_monster(m_id):
-                    self._show_status_message("Xóa thất bại: không thể xóa trong DB", is_error=True)
+                    self._show_status_message(
+                        "Xóa thất bại: không thể xóa trong DB", is_error=True
+                    )
                     return
             elif self.sync_manager and m_id:
                 if not self.sync_manager.delete_monster(m_id):
-                    self._show_status_message("Xóa thất bại: sync_manager", is_error=True)
+                    self._show_status_message(
+                        "Xóa thất bại: sync_manager", is_error=True
+                    )
                     return
             # Chỉ xóa khỏi danh sách nếu xóa DB thành công
             self.monsters.pop(target_idx)
@@ -1264,7 +1281,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             self._execute_delete_monster_by_id(m_id)
 
     def _create_bottom_bar(self) -> None:
-        self.bottom_bar_frame = tk.Frame(self, bg=UI.BG_PANEL, height=50)
+        self.bottom_bar_frame = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL, height=50)
         self.bottom_bar_frame.pack(side="bottom", fill="x")
 
         # "+ Thêm Quái" Button
@@ -1304,7 +1321,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.delete_monster_button.pack(side="left", padx=5, pady=5)
 
         # --- Phần bên phải: phân trang + trạng thái ---
-        status_frame = tk.Frame(self.bottom_bar_frame, bg=UI.BG_PANEL)
+        status_frame = tk.Frame(self.bottom_bar_frame, bg=UIStyle.THEME_BG_PANEL)
         status_frame.pack(side="right", fill="x", expand=True, padx=10)
 
         # Nút Trang trước (◀)
@@ -1322,7 +1339,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
 
         # Ô nhập số trang
         self.page_entry = tk.Entry(
-            status_frame, width=4, font=UI.FONT_TEXT, justify="center"
+            status_frame, width=4, font=UIStyle.FONT_TEXT, justify="center"
         )
         self.page_entry.pack(side="left", padx=2)
         self.page_entry.bind("<Return>", lambda e: self._go_to_page_from_entry())
@@ -1357,9 +1374,9 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.stats_label = tk.Label(
             status_frame,
             text="📊 Hiển thị 0 / 0 quái vật (Trang 1/1)",
-            font=UI.FONT_SMALL,
-            fg=UI.COLOR_TEXT,
-            bg=UI.BG_PANEL,
+            font=UIStyle.FONT_SMALL,
+            fg=UIStyle.THEME_TEXT_PRIMARY,
+            bg=UIStyle.THEME_BG_PANEL,
         )
         self.stats_label.pack(side="left", padx=10)
 
@@ -1369,9 +1386,9 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             icon_name="info",
             text="",
             icon_fallback="ℹ️",
-            font=UI.FONT_TEXT,
-            fg=UI.COLOR_TEXT,
-            bg=UI.BG_PANEL,
+            font=UIStyle.FONT_TEXT,
+            fg=UIStyle.THEME_TEXT_PRIMARY,
+            bg=UIStyle.THEME_BG_PANEL,
         )
         self.status_icon_label.pack(side="right")
 
@@ -1391,7 +1408,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             self.after_cancel(self._status_timer)
             self._status_timer = None
 
-        color = UI.COLOR_DANGER if is_error else UI.COLOR_PRIMARY_TEXT
+        color = UIStyle.COLOR_DANGER if is_error else UIStyle.THEME_TEXT_PRIMARY
         self.status_icon_label.config(fg=color, text=f" {message}")
 
         def clear():
@@ -1519,7 +1536,9 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
                         self.filtered_monsters[index] = pending
 
                 # Ensure pending changes not in the current DB page are added to the list
-                existing_ids = {str(m.get("id")) for m in self.filtered_monsters if m.get("id")}
+                existing_ids = {
+                    str(m.get("id")) for m in self.filtered_monsters if m.get("id")
+                }
                 orphaned_pending = []
                 for p_id, p_data in self.pending_changes.items():
                     if str(p_id) not in existing_ids:
@@ -1655,7 +1674,11 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             self._update_page_entry()
         except Exception as e:
             print(f"[Stats Label] Error updating: {e}")
-            if hasattr(self, "stats_label") and hasattr(self.stats_label, "config") and callable(getattr(self.stats_label, "config", None)):
+            if (
+                hasattr(self, "stats_label")
+                and hasattr(self.stats_label, "config")
+                and callable(getattr(self.stats_label, "config", None))
+            ):
                 if hasattr(self, "filtered_monsters") and hasattr(self, "monsters"):
                     self.stats_label.config(
                         text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật"
@@ -1744,6 +1767,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
                 self.pending_changes[m_id] = updated_data
             else:
                 import uuid
+
                 m_id = str(uuid.uuid4())
                 updated_data["id"] = m_id
                 self.pending_changes[m_id] = updated_data

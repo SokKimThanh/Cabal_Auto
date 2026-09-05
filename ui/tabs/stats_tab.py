@@ -1,9 +1,4 @@
 from tkinter import ttk
-try:
-    from PIL import Image, ImageTk
-except ImportError:
-    Image = None
-    ImageTk = None
 
 
 class StatsTab(ttk.Frame):
@@ -13,4 +8,31 @@ class StatsTab(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self):
-        pass
+        # Stats Treeview with dark theme
+        columns = ("stat", "value")
+        self.tree = ttk.Treeview(
+            self, columns=columns, show="headings", style="Treeview"
+        )
+
+        self.tree.heading(
+            "stat", text=self.app._t("stat_name") if hasattr(self.app, "_t") else "Stat"
+        )
+        self.tree.heading(
+            "value",
+            text=self.app._t("stat_value") if hasattr(self.app, "_t") else "Value",
+        )
+
+        self.tree.column("stat", width=200, anchor="w")
+        self.tree.column("value", width=100, anchor="e")
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        self.tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Populate some empty states
+        self.tree.insert("", "end", values=("Target Found", "0"))
+        self.tree.insert("", "end", values=("Target Lost", "0"))
+        self.tree.insert("", "end", values=("Skills Cast", "0"))

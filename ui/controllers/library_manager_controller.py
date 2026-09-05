@@ -2,6 +2,7 @@ from typing import Any, Dict
 import tkinter as tk
 from lib.features.hunt.hunt_config import save_hunt_config
 
+
 class LibraryManagerController:
     """Manages library manager window lifecycle and callback dispatch."""
 
@@ -32,8 +33,12 @@ class LibraryManagerController:
                     save_hunt_config(self.app.hunt_cfg)
                 monsters = changes.get("monsters")
                 if monsters is not None:
-                    if hasattr(self.app, "skill_service") and hasattr(self.app.skill_service, "_normalize_library_items"):
-                        self.app.monsters = self.app.skill_service._normalize_library_items(monsters)
+                    if hasattr(self.app, "skill_service") and hasattr(
+                        self.app.skill_service, "_normalize_library_items"
+                    ):
+                        self.app.monsters = (
+                            self.app.skill_service._normalize_library_items(monsters)
+                        )
                     else:
                         self.app.monsters = monsters
                     save_monster_library(self.app.monsters)
@@ -43,8 +48,12 @@ class LibraryManagerController:
                         self.app._refresh_monster_rotation_list()
                 skills = changes.get("skills")
                 if skills is not None:
-                    if hasattr(self.app, "skill_service") and hasattr(self.app.skill_service, "_normalize_library_items"):
-                        self.app.skills = self.app.skill_service._normalize_library_items(skills)
+                    if hasattr(self.app, "skill_service") and hasattr(
+                        self.app.skill_service, "_normalize_library_items"
+                    ):
+                        self.app.skills = (
+                            self.app.skill_service._normalize_library_items(skills)
+                        )
                     else:
                         self.app.skills = skills
                     save_skill_library(self.app.skills)
@@ -53,7 +62,11 @@ class LibraryManagerController:
 
                 # S4E cleanup: trigger SkillManagerController.on_window_closed to reload skills via service
                 controller = getattr(self.app, "skill_manager_controller", None)
-                if skills is not None and controller and hasattr(controller, "on_window_closed"):
+                if (
+                    skills is not None
+                    and controller
+                    and hasattr(controller, "on_window_closed")
+                ):
                     controller.on_window_closed()
 
             finally:
@@ -69,19 +82,26 @@ class LibraryManagerController:
                 on_close_callback=on_close_callback,
             )
         except tk.TclError:
+
             class _HeadlessLibraryManagerStub:
                 def __init__(self):
                     self._exists = True
+
                 def winfo_exists(self) -> bool:
                     return self._exists
+
                 def deiconify(self) -> None:
                     return None
+
                 def lift(self) -> None:
                     return None
+
                 def focus_force(self) -> None:
                     return None
+
                 def _on_window_close(self) -> None:
                     self._exists = False
+
                 def destroy(self) -> None:
                     self._exists = False
 
