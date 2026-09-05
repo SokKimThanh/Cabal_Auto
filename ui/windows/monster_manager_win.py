@@ -17,7 +17,6 @@ Updated: 2025-10-25
 
 from __future__ import annotations
 import tkinter as tk
-import _tkinter
 from tkinter import ttk, messagebox
 from typing import Optional, Dict, Any, Callable, List, Union
 from unittest.mock import MagicMock
