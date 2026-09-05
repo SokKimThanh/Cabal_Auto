@@ -156,10 +156,10 @@ class SkillRuntime:
                 return res
         return None
 
-    def commit_cast(self, token: str, outcome, current_time: float):
+    def commit_cast(self, token: str, outcome: CastOutcome, current_time: float) -> None:
         if token in self._reservations:
             res = self._reservations.pop(token)
-            if outcome == CastOutcome.ACCEPTED or (hasattr(outcome, 'lane') and outcome.lane == 'attack'):
+            if outcome == CastOutcome.ACCEPTED:
                 self.mark_cast(res.key, current_time)
                 if res.lane == 'attack':
                     if res.expected_strategy == 'combo':
