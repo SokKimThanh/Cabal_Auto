@@ -127,7 +127,7 @@ class AppStateController:
             idle_text = "Idle"
 
         app.hunt_status = tk.StringVar(master=root, value=idle_text)
-        app.hunt_target_info = tk.StringVar(master=root, value="Target: None")
+        app.hunt_target_info = tk.StringVar(master=root, value=app._t("target_card.target_none"))
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         app = self.root

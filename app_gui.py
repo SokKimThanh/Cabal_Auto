@@ -728,13 +728,14 @@ class App(tk.Tk):
 
         # Configure columns for action_bar_frame
         self.action_bar_frame.columnconfigure(
-            0, minsize=380, weight=1
+            0, minsize=380, weight=2
         )  # Window Selection
         self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)  # Refresh
         self.action_bar_frame.columnconfigure(2, minsize=44, weight=0)  # Scan
         self.action_bar_frame.columnconfigure(3, minsize=260, weight=0)  # Bounds
         self.action_bar_frame.columnconfigure(4, minsize=160, weight=0)  # Start/Stop
         self.action_bar_frame.columnconfigure(5, minsize=80, weight=0)  # Language
+        self.action_bar_frame.columnconfigure(6, minsize=160, weight=0)  # Global Apply
 
         # Window Selection Combobox
         self.win_combo_var = tk.StringVar()
@@ -941,16 +942,16 @@ class App(tk.Tk):
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
-        self.global_apply_frame = tk.Frame(self, relief="sunken", bd=1, bg=UI.THEME_BG_PANEL)
+        self.global_apply_frame = tk.Frame(self.action_bar_frame, bg=UI.THEME_BG_APP)
         apply_frame = self.global_apply_frame
-        apply_frame.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
+        apply_frame.grid(row=0, column=6, sticky="e", padx=(0, 12))
 
         # Unsaved changes indicator (left side)
-        indicator_frame = tk.Frame(apply_frame, bg=UI.THEME_BG_PANEL)
+        indicator_frame = tk.Frame(apply_frame, bg=UI.THEME_BG_APP)
         indicator_frame.pack(side="left", padx=8, pady=6)
 
         self.unsaved_indicator_label = tk.Label(
-            indicator_frame, text="", fg=UI.THEME_TEXT_SECONDARY, font=UI.FONT_TEXT, bg=UI.THEME_BG_PANEL
+            indicator_frame, text="", fg=UI.THEME_TEXT_SECONDARY, font=UI.FONT_TEXT, bg=UI.THEME_BG_APP
         )
         self.unsaved_indicator_label.pack(side="left")
 
@@ -2582,7 +2583,7 @@ class App(tk.Tk):
         if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "clear_target_card"):
             self.hunt_tab.clear_target_card(delay_ms)
         if hasattr(self, "hunt_target_info"):
-            self.hunt_target_info.set("Target: None")
+            self.hunt_target_info.set(self._t("target_card.target_none"))
         if hasattr(self, "monster_rotation_listbox"):
             try:
                 self.monster_rotation_listbox.selection_clear(0, tk.END)
