@@ -62,8 +62,8 @@ class HuntTab(ttk.Frame):
         if not hasattr(self, "hp_progressbar"):
             return
         self.hp_progressbar.config(value=hp_percent)
-        if hasattr(self, "target_hp_label"):
-            self.target_hp_label.config(text=f"{hp_percent:.1f}%")
+        if hasattr(self, "hp_percent_label"):
+            self.hp_percent_label.config(text=f"{hp_percent:.1f}%")
 
     def clear_target_card(self, delay_ms: int = 0):
         if delay_ms > 0:
