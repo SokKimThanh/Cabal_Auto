@@ -1,12 +1,18 @@
+import os
+
 import pytest
 
 pytest.importorskip("tkinter", reason="Skipping ttk theme tests because tkinter is not available")
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests",
+)
 
 import tkinter as tk
 from tkinter import ttk
 from ui.theme.ttk_theme import configure_ttk_styles
 from ui.helpers.button_styles import get_button_config, apply_button_role
-
 @pytest.fixture
 def tk_root():
     root = tk.Tk()
