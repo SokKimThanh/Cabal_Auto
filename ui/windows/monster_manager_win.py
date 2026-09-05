@@ -292,8 +292,7 @@ except ImportError:
 
 # Register translations
 try:
-    from lib.i18n.monster_editor_translations import MONSTER_EDITOR_TRANSLATIONS
-
+    pass
 except ImportError:
     pass
 
@@ -365,7 +364,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
 
         try:
             super().__init__(parent, debug_mode=False)
-        except (_tkinter.TclError, TypeError):
+        except (tk.TclError, TypeError):
             super().__init__(parent)
 
         # Sắp xếp

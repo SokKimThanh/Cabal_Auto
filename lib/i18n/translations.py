@@ -23,6 +23,36 @@ GLOBAL_TRANSLATIONS = {
         "en": "Details will be updated in the next version"
     },
 
+
+    "target_card.level": {
+        "vi": "Cấp Độ",
+        "en": "Level"
+    },
+    "target_card.max_hp": {
+        "vi": "Máu Tối Đa",
+        "en": "Max HP"
+    },
+    "target_card.defense": {
+        "vi": "Phòng Thủ",
+        "en": "Defense"
+    },
+    "target_card.status_idle": {
+        "vi": "✓ Sẵn sàng săn",
+        "en": "✓ Ready to hunt"
+    },
+    "target_card.status_approaching": {
+        "vi": "🏃 Đang tiếp cận...",
+        "en": "🏃 Approaching..."
+    },
+    "target_card.status_attacking": {
+        "vi": "⚔️ Đang tấn công...",
+        "en": "⚔️ Attacking..."
+    },
+    "target_card.unknown_mob": {
+        "vi": "Mục Tiêu Không Xác Định",
+        "en": "Unknown Target"
+    },
+
     "logs_title": {
         "vi": "Nhật Ký Hoạt Động",
         "en": "Activity Logs"
@@ -160,7 +190,7 @@ GLOBAL_TRANSLATIONS = {
         'vision_add_template': 'Add Template',
         'vision_manage_templates': 'Manage Templates',
         'vision_toggle_overlay': 'Toggle Overlay',
-        
+
         # Overlay Window translations (Sprint 23 Phase 5)
         'overlay_missing_dependency_title': 'Missing Dependency',
         'overlay_missing_dependency_message': (
@@ -192,7 +222,7 @@ GLOBAL_TRANSLATIONS = {
         'overlay_settings_applied': 'Overlay settings have been applied.',
         'overlay_settings_error': 'Failed to open overlay settings:\n{error}',
         'overlay_settings_error_title': 'Settings Error',
-        
+
         'monster_section': 'Monster library',
         'monster_list': 'Monsters:',
         'monster_name': 'Name:',
@@ -809,7 +839,7 @@ Mẹo:
         'timing_effective_aps': '  • Tốc độ hiệu dụng: {aps:.2f} đòn/giây\n',
         # Template recognition messages
         'monster_template_test_found_noconf': 'Tìm thấy tại ({x}, {y})',
-        
+
         # Vision Menu translations (Sprint 22 Phase 1B)
         'vision_open_wizard': 'Mở Vision Wizard',
         'vision_scan_region': 'Quét Vùng',
@@ -817,7 +847,7 @@ Mẹo:
         'vision_add_template': 'Thêm Template',
         'vision_manage_templates': 'Quản Lý Template',
         'vision_toggle_overlay': 'Bật/Tắt Overlay',
-        
+
         # Overlay Window translations (Sprint 23 Phase 5)
         'overlay_missing_dependency_title': 'Thiếu Thư Viện',
         'overlay_missing_dependency_message': (
@@ -993,7 +1023,7 @@ LIBRARY_MANAGER_TRANSLATIONS = {
         'vision_add_template': 'Thêm Template',
         'vision_manage_templates': 'Quản Lý Template',
         'vision_toggle_overlay': 'Bật/Tắt Overlay',
-        
+
         # Overlay Window translations (Sprint 23 Phase 5)
         'overlay_missing_dependency_title': 'Thiếu Thư Viện',
         'overlay_missing_dependency_message': (

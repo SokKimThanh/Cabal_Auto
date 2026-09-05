@@ -113,3 +113,80 @@ def calculate_monster_estimate(monster: Optional[Dict[str, Any]]) -> Dict[str, A
         "defense": base_def,
         "level": level,
     }
+
+
+DEFAULT_MONSTER_SCHEMA = {
+    "id": "0",
+    "name": "Unknown Target",
+    "level": "N/A",
+    "hp": 10000,
+    "defense": 0,
+    "image_path": None,
+    "is_placeholder": True,
+}
+
+
+def get_target_monster_info(name_or_id: str):
+    """
+    SINGLE SOURCE OF TRUTH for Phase 1 & 2 target info.
+    Implements a safe 2-tier fallback to resolve monster metadata.
+    """
+    from database import get_monster_by_id_api, find_monster_by_name_api
+
+    result = None
+    try:
+        if name_or_id.isdigit():
+            result = get_monster_by_id_api(name_or_id)
+        if not result:
+            result = find_monster_by_name_api(name_or_id)
+
+        if result:
+            return {
+                "id": str(result.get("id", "0")),
+                "name": result.get("name") or name_or_id,
+                "level": result.get("level", "N/A"),
+                "hp": result.get("hp") or 10000,
+                "defense": result.get("defense") or 0,
+                "image_path": result.get("image_path"),
+                "is_placeholder": False,
+            }
+
+    except Exception as e:
+        print(f"Error resolving monster from DB: {e}")
+
+    # Tier 2: Fallback to JSON library
+    try:
+        json_data = load_monster_library()
+
+        if isinstance(json_data, dict):
+            items = list(json_data.items())
+        elif isinstance(json_data, list):
+            items = [(None, m) for m in json_data]
+        else:
+            items = []
+
+        for m_id, m_data in items:
+            if not isinstance(m_data, dict):
+                continue
+
+            if (
+                (m_id is not None and str(m_id) == str(name_or_id))
+                or str(m_data.get("id", "")) == str(name_or_id)
+                or m_data.get("name") == name_or_id
+            ):
+                return {
+                    "id": str(m_data.get("id", m_id or "0")),
+                    "name": m_data.get("name") or name_or_id,
+                    "level": m_data.get("level", "N/A"),
+                    "hp": m_data.get("hp") if m_data.get("hp") is not None else 10000,
+                    "defense": m_data.get("defense") if m_data.get("defense") is not None else 0,
+                    "image_path": m_data.get("image_path"),
+                    "is_placeholder": False,
+                }
+    except Exception as e:
+        print(f"Error resolving monster from JSON fallback: {e}")
+
+    # Tier 3: Fallback schema
+    fallback = DEFAULT_MONSTER_SCHEMA.copy()
+    fallback["name"] = name_or_id
+    return fallback

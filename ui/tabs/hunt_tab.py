@@ -1,6 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 from lib.ui_style import UIStyle as UI
+
+from lib.features.monsters.monster_repo import get_target_monster_info
+import os
+
 try:
     from PIL import Image, ImageTk
 except ImportError:
@@ -26,6 +30,75 @@ class HuntTab(ttk.Frame):
             self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
         elif state == "stopped":
             self.hunt_status_label.config(fg=UI.COLOR_WARNING)
+
+    def clear_target_photo(self):
+        if hasattr(self, 'target_image_label') and self.target_image_label:
+            self.target_image_label.configure(image="", text="[ NO IMAGE ]", bg=UI.BG_MUTED)
+        if hasattr(self, '_current_target_photo') and self._current_target_photo:
+            del self._current_target_photo
+            self._current_target_photo = None
+
+    def set_target_photo(self, photo_image=None):
+        self.clear_target_photo()
+        if photo_image:
+            self._current_target_photo = photo_image
+            self.target_image_label.configure(image=photo_image, text="")
+
+    def update_target_card(self, name_or_id: str):
+        info = get_target_monster_info(name_or_id)
+
+        self.target_name_label.config(text=info["name"])
+        self.target_level_label.config(text=str(info["level"]))
+        self.target_hp_label.config(text=str(info["hp"]))
+        self.target_def_label.config(text=str(info["defense"]))
+
+        if hasattr(self.app, "hunt_target_info"):
+            self.app.hunt_target_info.set(f"Target: #{info['id']}")
+
+        if info.get("is_placeholder"):
+            self.hunt_status_label.config(fg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+            if hasattr(self.app, "_create_tooltip"):
+                self.app._create_tooltip(self.hunt_status_label, self.app._t("target_card.unknown_mob"))
+        else:
+            self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
+            if hasattr(self.app, "_destroy_widget_tooltip"):
+                self.app._destroy_widget_tooltip(self.hunt_status_label)
+            self.hunt_status_label.unbind("<Enter>")
+            self.hunt_status_label.unbind("<Leave>")
+
+        try:
+            scale_factor = getattr(self, "tk", None) and getattr(self, "tk", None).call('tk', 'scaling') * 72 / 100.0
+            if scale_factor is None:
+                scale_factor = 1.0
+        except Exception:
+            scale_factor = 1.0
+
+        self.set_target_photo(None)
+
+        if Image and ImageTk:
+            def _load_and_set_photo():
+                photo = None
+                img_size = int(120 * scale_factor)
+                if info.get("image_path") and os.path.exists(info["image_path"]):
+                    try:
+                        with Image.open(info["image_path"]) as img:
+                            img = img.resize((img_size, img_size))
+                            photo = ImageTk.PhotoImage(img)
+                    except Exception:
+                        pass
+
+                if not photo:
+                    default_path = os.path.join("assets", "images", "default_monster.png")
+                    if os.path.exists(default_path):
+                        try:
+                            with Image.open(default_path) as img:
+                                img = img.resize((img_size, img_size))
+                                photo = ImageTk.PhotoImage(img)
+                            pass
+
+                self.set_target_photo(photo)
+
+            self.app.schedule_ui_task(_load_and_set_photo)
 
     def _show_monster_context_menu(self, event):
         """Show rotation actions while preserving an existing multi-selection."""
@@ -119,7 +192,7 @@ class HuntTab(ttk.Frame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=0)
 
-        # Section 1: Active Target & Status Panel
+        # Section 1: Active Target Card Panel (UX5.1)
         self.app.active_target_status_frame = tk.LabelFrame(
             self, text=self.app._t("hunt_active_target_status"), padx=4, pady=4
         )
@@ -128,9 +201,10 @@ class HuntTab(ttk.Frame):
         )
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
-        # Sub-section: Hunt Status Bar (current hunt state + current target)
+        # Header Bar
         status_frame = tk.Frame(self.app.active_target_status_frame, relief="groove", bd=1, height=32)
         status_frame.pack(fill="x", pady=(0, 4))
+
         self.hunt_status_label = tk.Label(
             status_frame,
             textvariable=self.app.hunt_status,
@@ -148,6 +222,54 @@ class HuntTab(ttk.Frame):
             anchor="e",
         )
         self.hunt_target_info_label.pack(side="right", padx=8, pady=6)
+
+        # Target Card Container
+        card_container = tk.Frame(self.app.active_target_status_frame, bg=UI.BG_MUTED)
+        card_container.pack(fill="both", expand=True, padx=4, pady=4)
+
+        try:
+            scale_factor = getattr(self, "tk", None) and getattr(self, "tk", None).call('tk', 'scaling') * 72 / 100.0
+            if scale_factor is None:
+                scale_factor = 1.0
+        except Exception:
+            scale_factor = 1.0
+
+        # Left Column (Image)
+        self.target_image_label = tk.Label(
+            card_container,
+            text="[ NO IMAGE ]",
+            bg=UI.BG_MUTED,
+            width=20,  # rough width for text mode
+            height=10
+        )
+        self.target_image_label.pack(side="left", padx=8, pady=8)
+
+        # Right Column (Stats)
+        stats_frame = tk.Frame(card_container, bg=UI.BG_MUTED)
+        stats_frame.pack(side="left", fill="both", expand=True, padx=8, pady=8)
+
+        self.target_name_label = tk.Label(
+            stats_frame,
+            text="Unknown Target",
+            font=(UI.FONT_FAMILY, int(14 * scale_factor), "bold"),
+            bg=UI.BG_MUTED,
+            anchor="w",
+            wraplength=int(250 * scale_factor),
+            justify="left"
+        )
+        self.target_name_label.pack(fill="x", anchor="w", pady=(0, 8))
+
+        def create_stat_row(parent, label_key):
+            row = tk.Frame(parent, bg=UI.BG_MUTED)
+            row.pack(fill="x", pady=2)
+            tk.Label(row, text=self.app._t(label_key) + ":", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, width=12, anchor="w").pack(side="left")
+            val_lbl = tk.Label(row, text="-", bg=UI.BG_MUTED, anchor="w")
+            val_lbl.pack(side="left", fill="x", expand=True)
+            return val_lbl
+
+        self.target_level_label = create_stat_row(stats_frame, "target_card.level")
+        self.target_hp_label = create_stat_row(stats_frame, "target_card.max_hp")
+        self.target_def_label = create_stat_row(stats_frame, "target_card.defense")
 
         # Section 2: Monster Selection (Phase 3: Multi-Monster Support)
         # Sprint 22 Patch 2: Dynamic title based on training mode
@@ -185,7 +307,8 @@ class HuntTab(ttk.Frame):
                 self.app._update_unsaved_indicator()
             self._update_target_policy_layout()
 
-        self.app.target_policy_var.trace_add("write", _on_policy_change)
+        if hasattr(self.app.target_policy_var, "trace_add"):
+            self.app.target_policy_var.trace_add("write", _on_policy_change)
 
         policies = [
             ("configured_only", self.app._t("hunt_policy_configured")),
@@ -572,9 +695,9 @@ class HuntTab(ttk.Frame):
             # Title
             t_combo = self.app._t('skill_strip.combo_lane')
             t_buff = self.app._t('skill_strip.buff_lane')
-            title_text = f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col+1}" if is_combo_lane else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col+1}"
+            title_text = f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col + 1}" if is_combo_lane else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col + 1}"
 
-            tk.Label(card, text=title_text, bg=UI.BG_DEFAULT, fg=UI.COLOR_SUBTEXT, font=(UI.FONT_FAMILY, int(8*scale_factor))).pack(anchor="w", padx=2, pady=(2, 0))
+            tk.Label(card, text=title_text, bg=UI.BG_DEFAULT, fg=UI.COLOR_SUBTEXT, font=(UI.FONT_FAMILY, int(8 * scale_factor))).pack(anchor="w", padx=2, pady=(2, 0))
 
             # Combobox
             cmb = ttk.Combobox(card, textvariable=var, state="readonly")
