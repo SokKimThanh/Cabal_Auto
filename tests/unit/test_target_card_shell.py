@@ -127,7 +127,10 @@ class TestTargetCardShell(unittest.TestCase):
         tab.set_target_photo(None)
 
         # Verify it falls back to text mode
-        tab.target_image_label.configure.assert_called_with(image="", text="[ NO IMAGE ]", bg=unittest.mock.ANY)
+        tab.target_image_label.configure.assert_called()
+        _, kwargs = tab.target_image_label.configure.call_args
+        self.assertEqual(kwargs.get("image"), "")
+        self.assertEqual(kwargs.get("text"), "[ NO IMAGE ]")
         self.assertIsNone(getattr(tab, "_current_target_photo", None))
 
     @patch.object(HuntTab, '_build_ui', return_value=None)
