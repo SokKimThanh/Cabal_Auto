@@ -1,8 +1,29 @@
-import pytest
-import time
+import os
+import platform
 import sys
 from unittest.mock import MagicMock, patch
+
+import pytest
+
+pytest.importorskip(
+    "tkinter",
+    reason="Skipping UI imports because tkinter is not available in headless environment",
+)
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests",
+)
+
 import tkinter as tk
+
+if platform.system() != "Windows":
+    for m in ["win32gui", "win32con", "win32process", "win32api", "pywintypes"]:
+        sys.modules[m] = MagicMock()
+
+from lib.vision.target_hp_reader import TargetHPReader
+from lib.features.hunt.window_selection_service import WindowRecoveryController
+from ui.tabs.hunt_tab import HuntTab
 
 import platform
 if platform.system() != 'Windows':
