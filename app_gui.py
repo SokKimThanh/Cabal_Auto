@@ -661,24 +661,12 @@ class App(tk.Tk):
                 UI.FONT_LABEL,
                 None,
             ),
-            (
-                "sidebar_configuration",
-                lambda: self.switch_view("setup"),
-                UI.FONT_SECTION,
-                "setup",
-            ),
+            ("tab_stats", lambda: self.switch_view("stats"), UI.FONT_SECTION, "stats"),
             (
                 "sidebar_support",
                 lambda: self.switch_view("help"),
                 UI.FONT_SECTION,
                 "help",
-            ),
-            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt"),
-            (
-                "sidebar_activity_logs",
-                lambda: self.switch_view("logs"),
-                UI.FONT_SECTION,
-                "logs",
             ),
         ]
         self._sidebar_widgets = []
