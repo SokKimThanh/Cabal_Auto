@@ -617,20 +617,22 @@ class AppStateController:
             else:
                 tap(res.key, int(app.hunt_cfg.get("attack_press_ms", 60)))
 
+        cast_ts = time.time()
+
         # Commit cast
-        self.skill_runtime_obj.commit_cast(res.token, outcome, time.time())
+        self.skill_runtime_obj.commit_cast(res.token, outcome, cast_ts)
 
         # Record stats
         if skill_stats:
             try:
-                skill_stats.record_cast(res.skill_name or res.key, success=True, timestamp=time.time())
+                skill_stats.record_cast(res.skill_name or res.key, success=True, timestamp=cast_ts)
             except Exception:
                 pass
 
         # Also update old dict
         for s in skill_runtime:
             if s.get("key") == res.key:
-                s["_last_cast"] = time.time()
+                s["_last_cast"] = cast_ts
                 cast_time = float(s.get("cast_time", 0.0))
                 if cast_time > 0 and not combo_enabled:
                     time.sleep(cast_time)
