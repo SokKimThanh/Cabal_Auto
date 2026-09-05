@@ -186,10 +186,10 @@ Design direction:
 | :---: | --- | --- | --- | --- |
 | UX6 | `PROMPT-UX6` | 🟡 20% UI | [PROMPT-UX6.md](PROMPT-UX6.md) | Backend 90% xong; UI wiring incomplete |
 | Auto Hunt | `PROMPT-AUTO-HUNT-FLOW` | 🟡 20% Integration | [PROMPT-AUTO-HUNT-FLOW.md](PROMPT-AUTO-HUNT-FLOW.md) | Backend 80% xong; HuntOrchestrator integration pending |
-| CB3B | `PROMPT-CB3B` | 🟡 55-60% | [PROMPT-CB3B.md](PROMPT-CB3B.md) | Dual-lane layout done; buff_slots separation ⚠️ blocking |
-| UX4.2 | `PROMPT-UX4.2` | ⏳ BLOCKED | — | Depends: CB3B Phase 2 (buff_slots) |
-| CB3D | `PROMPT-CB3D` | ⏳ BLOCKED | — | Depends: UX4.2 |
-| CB3C | `PROMPT-CB3C` | ⏳ BLOCKED | — | Depends: CB3D |
+| CB3B | `PROMPT-CB3B` | � ~95% | [PROMPT-CB3B.md](PROMPT-CB3B.md) | All 5 phases done; pending test verification + pre-commit |
+| UX4.2 | `PROMPT-UX4.2` | 🟡 Ready (after CB3B PASSED) | — | Depends: CB3B Phase 2 (buff_slots) ✅ DONE |
+| CB3D | `PROMPT-CB3D` | 🟡 Ready (after UX4.2 PASSED) | — | Depends: UX4.2 (ready after CB3B) |
+| CB3C | `PROMPT-CB3C` | 🟡 Ready (after CB3D PASSED) | — | Depends: CB3D |
 | DS1-5 | `PROMPT-DS1` thru `DS5` | ⏳ BLOCKED | — | Depends: UX5.2 complete (phút 21) |
 
 ### UX6 — Activity Logging
@@ -227,25 +227,26 @@ Design direction:
 ### CB3B — Dual-Lane Skill Strip
 
 **File**: [PROMPT-CB3B.md](PROMPT-CB3B.md)  
-**Status**: 🟡 55-60%  
-**Phụ thuộc**: UX2, CB4  
-**Blocks**: UX4.2, CB3D, CB3C
+**Status**: � ~95% (Ready for PASSED Gate)  
+**Phụ thuộc**: UX2 ✅, CB4 ✅  
+**Unblocks**: UX4.2, CB3D, CB3C
 
-**Hoàn Thành (55-60%)**:
+**Hoàn Thành (95%)**:
 - ✅ Dual-Lane Layout (combo + buff lanes)
-- ✅ Combo Mode Controls
-- ✅ Skill Card Display
-- ✅ Config schema
+- ✅ Combo Mode Controls (checkbox + key selector)
+- ✅ Skill Card Display (dropdown, stats badges)
+- ✅ **Hotkey Conflict Validation** — Implemented in `lib/features/hotkey/hotkey_validator.py`, wired to UI
+- ✅ **buff_slots Config Separation** — Migrator + UI + controller refactored, strictly separated
+- ✅ **Auto-Refresh Interval (duration_sec)** — Spinbox added to Buff Lane cards, persists to config
+- ✅ **Test Suite** — Created `tests/unit/ui/tabs/test_cb3b_validation_suite.py` (hotkey, migration, round-trip, i18n, DPI)
 - ✅ i18n + DPI scaling
 
-**Chưa làm (40-45%)**:
-- ❌ Hotkey Conflict Validation (10-12 min)
-- ❌ buff_slots Config Separation ⚠️ HIGH PRIORITY (15-18 min) — **BLOCKING UX4.2**
-- ❌ Auto-Refresh Interval (8-10 min)
-- ❌ Buff Runtime Scheduling (15-20 min, IF IN SCOPE)
-- ❌ Test Suite (10-12 min)
+**Pending PASSED Gate**:
+- ⏳ Run full test suite (`pytest tests/unit/ui/tabs/test_cb3b_validation_suite.py`)
+- ⏳ Smoke test in-app (hotkey conflict, buff_slots persistence, Auto-Refresh)
+- ⏳ Pre-commit checks (tests, linting, no debug prints)
 
-**Quick Path to PASSED**: Phase 1-3 (33-40 min) → Phase 2 (buff_slots) must complete before UX4.2 start
+**Immediate Action**: Jules → Run tests & pre-commit → Submit when all PASS
 
 ### DS1-DS5 — Design System Phases
 
