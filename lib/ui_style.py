@@ -46,6 +46,84 @@ class UIStyle:
     BG_SECTION = '#E3F2FD'
     BG_TITLE = '#2196F3'
 
+    # Design System Tkinter-Safe Tokens (Dark Command-Center)
+    # --------------------------------------------------------
+    # Colors (Solid Hex Only)
+    THEME_BG_APP = '#0b0d12'
+    THEME_BG_SIDEBAR = '#10131c'
+    THEME_BG_PANEL = '#111520'
+    THEME_BG_INPUT = '#0d1018'
+    THEME_BG_TOOLBAR = '#0d1018'
+    THEME_BG_STATUSBAR = '#080b10'
+
+    THEME_BORDER_DEFAULT = '#1e2333'
+    THEME_BORDER_PANEL = '#1e2535'
+
+    THEME_TEXT_PRIMARY = '#e2e8f0'
+    THEME_TEXT_SECONDARY = '#94a3b8'
+    THEME_TEXT_MUTED = '#6b7280'
+
+    THEME_STATE_HUNTING = '#4ade80'
+    THEME_STATE_HUNTING_BORDER = '#16a34a'
+    THEME_STATE_SELECTED = '#1d4ed8'
+    THEME_STATE_INFO = '#3b82f6'
+
+    THEME_STATE_READY = '#eab308'
+    THEME_STATE_DANGER = '#dc2626'
+
+    # Spacing and Sizes
+    SPACING_2 = 2
+    SPACING_4 = 4
+    SPACING_6 = 6
+    SPACING_8 = 8
+    SPACING_10 = 10
+    SPACING_12 = 12
+    SPACING_16 = 16
+    SPACING_20 = 20
+    SPACING_24 = 24
+    SPACING_32 = 32
+
+    @classmethod
+    def resolve_font_family(cls, role: str) -> str:
+        """Resolve font family based on availability in Tkinter."""
+        import tkinter.font
+
+        # Ensure we can check fonts even if root doesn't exist yet by trying to get families
+        # but if we can't get families, fallback to standard
+        try:
+            available_fonts = tkinter.font.families()
+        except Exception:
+            available_fonts = []
+
+        if role == 'display':
+            fallbacks = ['Rajdhani', 'Segoe UI Semibold', 'Segoe UI']
+        elif role == 'body':
+            fallbacks = ['Inter', 'Segoe UI']
+        elif role == 'mono':
+            fallbacks = ['JetBrains Mono', 'Cascadia Mono', 'Consolas']
+        else:
+            fallbacks = ['Segoe UI']
+
+        for f in fallbacks:
+            if f in available_fonts:
+                return f
+        return fallbacks[-1]
+
+    @classmethod
+    def blend_alpha_to_hex(cls, alpha: float, fg_hex: str, bg_hex: str) -> str:
+        """Pre-blend a color with alpha on a background color to return a solid hex."""
+        fg_hex = fg_hex.lstrip('#')
+        bg_hex = bg_hex.lstrip('#')
+
+        r_fg, g_fg, b_fg = int(fg_hex[0:2], 16), int(fg_hex[2:4], 16), int(fg_hex[4:6], 16)
+        r_bg, g_bg, b_bg = int(bg_hex[0:2], 16), int(bg_hex[2:4], 16), int(bg_hex[4:6], 16)
+
+        r = int(r_fg * alpha + r_bg * (1 - alpha))
+        g = int(g_fg * alpha + g_bg * (1 - alpha))
+        b = int(b_fg * alpha + b_bg * (1 - alpha))
+
+        return f'#{r:02x}{g:02x}{b:02x}'
+
     # Button backgrounds
     BTN_PRIMARY_BG = '#2E7D32'
     BTN_PRIMARY_FG = '#FFFFFF'
