@@ -78,6 +78,8 @@ class HuntTab(ttk.Frame):
 
             if hasattr(self, "hp_percent_label"):
                 self.hp_percent_label.config(text="0.0%")
+            if hasattr(self, "hp_progressbar"):
+                self.hp_progressbar.config(value=0.0)
             return
 
         # Normal rendering
