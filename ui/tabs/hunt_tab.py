@@ -44,7 +44,57 @@ class HuntTab(ttk.Frame):
             self._current_target_photo = photo_image
             self.target_image_label.configure(image=photo_image, text="")
 
+
+    def update_status(self, status_string: str):
+        if not hasattr(self, "status_label"):
+            return
+        self.status_label.config(text=status_string)
+        if status_string == "APPROACHING":
+            self.status_label.config(fg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+        elif status_string == "ATTACKING":
+            self.status_label.config(fg=getattr(UI, 'STATE_ERROR', getattr(UI, 'COLOR_DANGER', '#F44336')))
+        elif status_string == "TARGET_DEAD":
+            self.status_label.config(fg=getattr(UI, 'STATE_MUTED', getattr(UI, 'COLOR_MUTED', '#9E9E9E')))
+        else:
+            self.status_label.config(fg=getattr(UI, 'COLOR_ACCENT', '#2196F3'))
+
+    def update_hp_display(self, hp_percent: float):
+        if not hasattr(self, "hp_progressbar"):
+            return
+        self.hp_progressbar.config(value=hp_percent)
+        if hasattr(self, "hp_percent_label"):
+            self.hp_percent_label.config(text=f"{hp_percent:.1f}%")
+
+    def clear_target_card(self, delay_ms: int = 0):
+        if delay_ms > 0:
+            clear_id = getattr(self, "_pending_clear_id", None)
+            if clear_id:
+                try:
+                    self.after_cancel(clear_id)
+                except tk.TclError:
+                    pass
+            self._pending_clear_id = self.after(delay_ms, lambda: self.clear_target_card(0))
+            return
+
+        self.clear_target_photo()
+        if hasattr(self, "target_name_label"):
+            self.target_name_label.config(text="Unknown Target")
+        if hasattr(self, "target_level_label"):
+            self.target_level_label.config(text="-")
+        if hasattr(self, "target_hp_label"):
+            self.target_hp_label.config(text="-")
+        if hasattr(self, "target_def_label"):
+            self.target_def_label.config(text="-")
+        if hasattr(self, "hp_progressbar"):
+            self.hp_progressbar.config(value=0)
+        self.update_status("IDLE")
+        if hasattr(self.app, "hunt_target_info"):
+            self.app.hunt_target_info.set("")
+
     def update_target_card(self, name_or_id: str):
+        if hasattr(self, "_pending_clear_id") and self._pending_clear_id:
+            self.after_cancel(self._pending_clear_id)
+            self._pending_clear_id = None
         info = get_target_monster_info(name_or_id)
 
         self.target_name_label.config(text=info["name"])
@@ -94,6 +144,7 @@ class HuntTab(ttk.Frame):
                             with Image.open(default_path) as img:
                                 img = img.resize((img_size, img_size))
                                 photo = ImageTk.PhotoImage(img)
+                        except Exception:
                             pass
 
                 self.set_target_photo(photo)
@@ -259,6 +310,21 @@ class HuntTab(ttk.Frame):
         )
         self.target_name_label.pack(fill="x", anchor="w", pady=(0, 8))
 
+        self.status_label = tk.Label(
+            stats_frame,
+            text="IDLE",
+            font=(UI.FONT_FAMILY, int(12 * scale_factor), "bold"),
+            bg=UI.BG_MUTED,
+            fg=UI.COLOR_ACCENT,
+            anchor="w"
+        )
+        self.status_label.pack(fill="x", anchor="w", pady=(0, 4))
+
+        # ProgressBar
+        self.hp_progressbar = ttk.Progressbar(stats_frame, orient="horizontal", mode="determinate", maximum=100)
+        self.hp_progressbar.pack(fill="x", pady=(0, 2))
+        self.hp_percent_label = tk.Label(stats_frame, text="-", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, anchor="w")
+        self.hp_percent_label.pack(fill="x", anchor="w", pady=(0, 4))
         def create_stat_row(parent, label_key):
             row = tk.Frame(parent, bg=UI.BG_MUTED)
             row.pack(fill="x", pady=2)
