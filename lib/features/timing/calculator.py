@@ -20,6 +20,8 @@ Usage:
 """
 
 from dataclasses import dataclass
+import logging
+logger = logging.getLogger(__name__)
 from typing import Optional
 import math
 
@@ -132,9 +134,19 @@ def calculate_timing(
             avg_cast_time = sum(s.get('cast_time', 1.0) for s in attack_skills) / len(attack_skills)
             avg_cooldown = sum(s.get('cooldown', 1.5) for s in attack_skills) / len(attack_skills)
             
+
             # Total rotation cycle time = cast all skills once
             rotation_cycle_time = sum(s.get('cast_time', 1.0) for s in attack_skills)
             
+            # Bottleneck validation
+            max_cooldown = max(s.get('cooldown', 1.5) for s in attack_skills)
+            if rotation_cycle_time < max_cooldown:
+                longest_skills = [s.get('name', 'Unknown') for s in attack_skills if s.get('cooldown', 1.5) == max_cooldown]
+                logger.warning(
+                    f"Bottleneck detected: Total rotation cast time ({rotation_cycle_time:.2f}s) "
+                    f"is less than max cooldown ({max_cooldown:.2f}s) for {', '.join(longest_skills)}."
+                )
+
             # Effective attacks per second = skills per cycle / cycle time
             attacks_per_second = len(attack_skills) / rotation_cycle_time
             

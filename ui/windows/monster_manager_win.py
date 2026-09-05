@@ -93,23 +93,15 @@ except ImportError:
 try:
     from ui.mixins.action_notification_mixin import ActionNotificationMixin
 except ImportError:
-    class ActionNotificationMixin:
+    class ActionNotificationMixin(tk.Widget):
         def __init__(self, *args, debug_mode=False, **kwargs):
-            # Properly cooperative multiple inheritance
-            if hasattr(super(), '__init__'):
-                try:
-                    super().__init__(*args, **kwargs)
-                except TypeError:
-                    # Try without debug_mode kwarg
-                    try:
-                        super().__init__(*args)
-                    except TypeError:
-                        # Last resort: just pass parent
-                        if args:
-                            try:
-                                super().__init__(args[0])
-                            except TypeError:
-                                pass
+            try:
+                super().__init__(*args, **kwargs)
+            except TypeError:
+                super().__init__(*args)
+                for key, value in kwargs.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
 
         def show_notification(self, *args, **kwargs):
             pass
@@ -355,7 +347,7 @@ class CompatibleTreeview(ttk.Treeview):
         super().selection_clear()
 
 
-class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
+class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
     """
     Main Monster Manager Window (Master View with Table Layout).
     """
@@ -373,7 +365,7 @@ class MonsterManagerWin(ActionNotificationMixin, tk.Toplevel):
 
         try:
             super().__init__(parent, debug_mode=False)
-        except TypeError:
+        except (_tkinter.TclError, TypeError):
             super().__init__(parent)
 
         # Sắp xếp
