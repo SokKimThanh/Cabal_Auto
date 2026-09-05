@@ -1,6 +1,13 @@
+import os
+
 import pytest
 
 pytest.importorskip("tkinter", reason="Skipping ttk theme tests because tkinter is not available")
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("DISPLAY") and os.name != "nt",
+    reason="Requires active display or xvfb to run Tkinter tests",
+)
 
 import tkinter as tk
 from tkinter import ttk
