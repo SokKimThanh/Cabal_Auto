@@ -5,18 +5,25 @@ from lib.db.repositories.skill_preset_repository import SkillPresetRepository
 
 class PresetStateManager:
     def get_active_preset(self, class_name: str) -> Optional[int]:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return None
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT active_preset_id FROM user_preset_state WHERE class_name = ?", (class_name,))
+            cursor.execute(
+                "SELECT active_preset_id FROM user_preset_state WHERE class_name = ?",
+                (class_name,),
+            )
             row = cursor.fetchone()
             if row:
-                return row['active_preset_id']
+                return row["active_preset_id"]
             return None
         finally:
-            conn.close()
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def set_active_preset(self, class_name: str, preset_id: int, mode: str = 'default') -> bool:
         conn, _ = get_connection()
