@@ -206,7 +206,7 @@ class HuntTab(ttk.Frame):
 
         self.hunt_status_label = tk.Label(
             status_frame,
-            text=self.app._t("target_card.status_idle"),
+            textvariable=self.app.hunt_status,
             font=UI.FONT_SECTION,
             fg=UI.COLOR_ACCENT,
             anchor="w",
