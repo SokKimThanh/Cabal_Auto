@@ -56,19 +56,8 @@ def test_combo_mode_sequential(skills_data):
     assert skill is not None
     assert skill.name == 'Fireball'
 
-    # In combo mode, reserve_next_skill needs to pick from combo_rotation_index!
-    # Wait, reserve_next_skill currently uses attack_rotation_index!
-
-def test_combo_mode_sequential(skills_data):
-    """Verify skill keys are reserved sequentially without skipping slots, and only commit_cast(ACCEPTED) advances the pointer."""
-    runtime = SkillRuntime(skills_data)
-    now = time.time()
-
-    skill = runtime.get_next_combo_skill(now)
-    assert skill is not None
-    assert skill.name == 'Fireball'
-
     res = runtime.reserve_next_skill('attack', now, is_combo=True)
+    assert res is not None
     assert res.skill_name == 'Fireball'
     assert runtime.combo_rotation_index == 0
 
@@ -76,10 +65,10 @@ def test_combo_mode_sequential(skills_data):
     assert runtime.combo_rotation_index == 0
 
     res2 = runtime.reserve_next_skill('attack', now, is_combo=True)
+    assert res2 is not None
     runtime.commit_cast(res2.token, CastOutcome.ACCEPTED, now)
 
     assert runtime.combo_rotation_index == 1
-
 def test_mode_switch_handoff(skills_data):
     """Start in Standard, advance, toggle combo, and assert it picks up."""
     runtime = SkillRuntime(skills_data)
