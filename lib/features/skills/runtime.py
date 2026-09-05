@@ -34,6 +34,9 @@ import time
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 
+from lib.features.skills.cast_delivery import CastReservation, CastOutcome
+
+
 
 @dataclass
 class SkillInfo:
@@ -94,6 +97,11 @@ class SkillRuntime:
         
         # Track current rotation index for attacks
         self.attack_rotation_index = 0
+        self.combo_rotation_index = 0
+
+        # Reservations
+        import uuid
+        self._reservations = {}
     
     def _load_skills(self, skills_data: List[Dict]):
         """Load and categorize skills from skills.json data."""
@@ -116,6 +124,62 @@ class SkillRuntime:
             else:
                 self.attack_skills.append(skill)
     
+
+    def get_next_combo_skill(self, current_time: float) -> Optional[SkillInfo]:
+        """
+        Get the next attack skill in sequence without advancing the combo rotation index.
+        Returns None if the skill is not ready.
+        """
+        if not self.attack_skills:
+            return None
+
+        skill = self.attack_skills[self.combo_rotation_index]
+        if skill.is_ready(current_time):
+            return skill
+        return None
+
+    def reserve_next_skill(self, lane: str, current_time: float, is_combo: bool = False) -> Optional[CastReservation]:
+        """
+        Reserves the next skill for the given lane.
+        """
+        import uuid
+        if lane == 'attack':
+            if not self.attack_skills:
+                return None
+
+            idx = self.combo_rotation_index if is_combo else self.attack_rotation_index
+            skill = self.attack_skills[idx]
+            if skill.is_ready(current_time):
+                token = str(uuid.uuid4())
+                res = CastReservation(token=token, key=skill.key, skill_name=skill.name, lane=lane, created_at=current_time, expected_strategy="combo" if is_combo else "standard")
+                self._reservations[token] = res
+                return res
+        return None
+
+    def commit_cast(self, token: str, outcome: CastOutcome, current_time: float) -> None:
+        if token in self._reservations:
+            res = self._reservations.pop(token)
+            if outcome == CastOutcome.ACCEPTED:
+                self.mark_cast(res.key, current_time)
+                if res.lane == 'attack':
+                    if res.expected_strategy == 'combo':
+                        self.combo_rotation_index = (self.combo_rotation_index + 1) % len(self.attack_skills)
+                    else:
+                        self.attack_rotation_index = (self.attack_rotation_index + 1) % len(self.attack_skills)
+
+    def release_cast(self, token: str, outcome: CastOutcome = CastOutcome.REJECTED):
+        if token in self._reservations:
+            self._reservations.pop(token)
+
+    def sync_combo_pointer(self, to_combo: bool):
+        """
+        Sync pointers when switching modes to prevent skipping skills.
+        """
+        if to_combo:
+            self.combo_rotation_index = self.attack_rotation_index
+        else:
+            self.attack_rotation_index = self.combo_rotation_index
+
     def get_attack_to_cast(self, current_time: float) -> Optional[str]:
         """
         Get next attack skill key to cast (round-robin rotation).
@@ -130,14 +194,13 @@ class SkillRuntime:
             return None
         
         # Try each attack skill in rotation order
-        for _ in range(len(self.attack_skills)):
-            skill = self.attack_skills[self.attack_rotation_index]
-            
-            # Move to next skill in rotation
-            self.attack_rotation_index = (self.attack_rotation_index + 1) % len(self.attack_skills)
+        for i in range(len(self.attack_skills)):
+            idx = (self.attack_rotation_index + i) % len(self.attack_skills)
+            skill = self.attack_skills[idx]
             
             # Check if ready
             if skill.is_ready(current_time):
+                self.attack_rotation_index = idx  # Update pointer to the ready skill, but we won't advance past it until commit
                 return skill.key
         
         # No skill ready
