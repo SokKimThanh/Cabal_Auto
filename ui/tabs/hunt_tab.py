@@ -321,10 +321,10 @@ class HuntTab(ttk.Frame):
         self.status_label.pack(fill="x", anchor="w", pady=(0, 4))
 
         # ProgressBar
-        self.hp_progressbar = ttk.Progressbar(stats_frame, orient="horizontal", mode="determinate")
-        self.hp_progressbar.pack(fill="x", pady=(0, 4))
-
-
+        self.hp_progressbar = ttk.Progressbar(stats_frame, orient="horizontal", mode="determinate", maximum=100)
+        self.hp_progressbar.pack(fill="x", pady=(0, 2))
+        self.hp_percent_label = tk.Label(stats_frame, text="-", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, anchor="w")
+        self.hp_percent_label.pack(fill="x", anchor="w", pady=(0, 4))
         def create_stat_row(parent, label_key):
             row = tk.Frame(parent, bg=UI.BG_MUTED)
             row.pack(fill="x", pady=2)
