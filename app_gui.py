@@ -611,7 +611,7 @@ class App(tk.Tk):
 
         # Build Sidebar Navigation
         sidebar_items = [
-            ("sidebar_quick_setup", lambda: self.switch_view('setup'), UI.FONT_SECTION, 'setup'),
+            ("sidebar_quick_setup", lambda: self.on_setup_wizard(hide_parent=False), UI.FONT_SECTION, None),
             ("sidebar_managers", None, UI.FONT_SECTION, None),
             ("btn_monster_manager", self.monster_manager_controller.open_window, UI.FONT_LABEL, None),
             ("btn_skill_manager", self.skill_manager_controller.open_window, UI.FONT_LABEL, None),
