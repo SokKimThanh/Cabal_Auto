@@ -566,6 +566,9 @@ class App(tk.Tk):
         # Responsive layout bindings
         self.bind("<Configure>", self._on_window_configure)
 
+        from ui.theme.ttk_theme import configure_ttk_styles
+        configure_ttk_styles(self)
+
         self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
@@ -579,7 +582,7 @@ class App(tk.Tk):
 
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
-        self.main_shell = tk.Frame(self, bg=UI.BG_DEFAULT)
+        self.main_shell = tk.Frame(self, bg=UI.THEME_BG_APP)
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         try:
@@ -597,11 +600,11 @@ class App(tk.Tk):
         self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)      # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.THEME_BG_APP)
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
-        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_PANEL)
+        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.THEME_BG_SIDEBAR)
         self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
         self.shell_zone_c1.configure(padx=16, pady=20)
         self.shell_zone_c1.grid_propagate(False)
@@ -628,8 +631,8 @@ class App(tk.Tk):
                 lbl = tk.Label(
                     self.shell_zone_c1,
                     text=self._t(key),
-                    bg=UI.BG_PANEL,
-                    fg=UI.COLOR_TEXT,
+                    bg=UI.THEME_BG_SIDEBAR,
+                    fg=UI.THEME_TEXT_PRIMARY,
                     font=font,
                     anchor="w"
                 )
@@ -641,8 +644,8 @@ class App(tk.Tk):
                     self.shell_zone_c1,
                     text=self._t(key),
                     command=command,
-                    bg=UI.BG_SECTION,
-                    fg=UI.COLOR_TEXT,
+                    bg=UI.THEME_BG_SIDEBAR,
+                    fg=UI.THEME_TEXT_PRIMARY,
                     font=font,
                     anchor="w",
                     padx=12,
@@ -658,7 +661,7 @@ class App(tk.Tk):
                 self._sidebar_widgets.append((btn, key, view_target))
 
         # Vùng B: Active Hunt Workspace
-        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_DEFAULT)
+        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.THEME_BG_APP)
         self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
 
 
@@ -666,7 +669,7 @@ class App(tk.Tk):
         self.after(1000, self._update_logs_metrics)
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
-        self.action_bar_frame = tk.Frame(self.shell_zone_a, padx=32, pady=18, bg=UI.BG_DEFAULT)
+        self.action_bar_frame = tk.Frame(self.shell_zone_a, padx=32, pady=18, bg=UI.THEME_BG_APP)
         self.action_bar_frame.grid(row=0, column=0, sticky="nsew")
         self.shell_zone_a.grid_columnconfigure(0, weight=1)
         self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
@@ -748,7 +751,7 @@ class App(tk.Tk):
         self.btn_manual_scan.grid(row=0, column=2, sticky="w", padx=(0, 12))
 
         # Bounds Readiness State Placeholder (Minimum 260x36)
-        self.bounds_placeholder = tk.Frame(self.action_bar_frame, width=260, height=36)
+        self.bounds_placeholder = tk.Frame(self.action_bar_frame, width=260, height=36, bg=UI.THEME_BG_APP)
         self.bounds_placeholder.grid(row=0, column=3, sticky="w", padx=(0, 12))
         self.bounds_placeholder.pack_propagate(False)
 
@@ -756,7 +759,9 @@ class App(tk.Tk):
         self.bounds_readiness_label = tk.Label(
             self.bounds_placeholder,
             textvariable=self.bounds_status_var,
-            font=UI.FONT_LABEL
+            font=UI.FONT_LABEL,
+            bg=UI.THEME_BG_APP,
+            fg=UI.THEME_TEXT_PRIMARY
         )
         self.bounds_readiness_label.pack(side="left", fill="y", padx=5)
 
@@ -844,8 +849,8 @@ class App(tk.Tk):
             padx=8,
             pady=3,
             font=UI.FONT_TEXT,
-            bg="#e8e8e8",
-            fg="#555555",
+            bg=UI.THEME_BG_STATUSBAR,
+            fg=UI.THEME_TEXT_SECONDARY,
             relief="sunken",
         )
         self._db_status_bar.pack(fill="x", side="bottom")
@@ -855,16 +860,16 @@ class App(tk.Tk):
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
-        self.global_apply_frame = tk.Frame(self, relief="sunken", bd=1, bg="#f0f0f0")
+        self.global_apply_frame = tk.Frame(self, relief="sunken", bd=1, bg=UI.THEME_BG_PANEL)
         apply_frame = self.global_apply_frame
         apply_frame.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
 
         # Unsaved changes indicator (left side)
-        indicator_frame = tk.Frame(apply_frame, bg="#f0f0f0")
+        indicator_frame = tk.Frame(apply_frame, bg=UI.THEME_BG_PANEL)
         indicator_frame.pack(side="left", padx=8, pady=6)
 
         self.unsaved_indicator_label = tk.Label(
-            indicator_frame, text="", fg="#666", font=UI.FONT_TEXT, bg="#f0f0f0"
+            indicator_frame, text="", fg=UI.THEME_TEXT_SECONDARY, font=UI.FONT_TEXT, bg=UI.THEME_BG_PANEL
         )
         self.unsaved_indicator_label.pack(side="left")
 
@@ -1016,12 +1021,21 @@ class App(tk.Tk):
 
         # Update sidebar selected state
         if hasattr(self, '_sidebar_widgets'):
-            for widget, _, view_target in self._sidebar_widgets:
+            for widget, key, view_target in self._sidebar_widgets:
                 if isinstance(widget, tk.Button):
+                    original_text = self._t(key)
                     if view_target == view_key:
-                        widget.config(bg=UI.COLOR_INFO, fg=UI.BG_DEFAULT)
+                        widget.config(
+                            bg=UI.THEME_STATE_SELECTED,
+                            fg=UI.THEME_TEXT_PRIMARY,
+                            text=f" ▌ {original_text}"
+                        )
                     else:
-                        widget.config(bg=UI.BG_SECTION, fg=UI.COLOR_TEXT)
+                        widget.config(
+                            bg=UI.THEME_BG_SIDEBAR,
+                            fg=UI.THEME_TEXT_PRIMARY,
+                            text=f"   {original_text}"
+                        )
 
         if hasattr(target_view, "on_view_shown"):
             target_view.on_view_shown()
