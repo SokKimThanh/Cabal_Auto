@@ -2,91 +2,27 @@
 # Global app translations (formerly LANG in app_gui.py)
 
 GLOBAL_TRANSLATIONS = {
-    "skill_strip.auto_combo": {
-        "vi": "Bật Auto Combo",
-        "en": "Enable Auto Combo"
-    },
-    "skill_strip.combo_start_key": {
-        "vi": "Phím Mở Combo",
-        "en": "Combo Start Key"
-    },
-    "skill_strip.combo_lane": {
-        "vi": "Combo Chain",
-        "en": "Combo Chain"
-    },
-    "skill_strip.buff_lane": {
-        "vi": "Buff Lane",
-        "en": "Buff Lane"
-    },
-    "skill_strip.tooltip_placeholder": {
-        "vi": "Chi tiết sẽ cập nhật ở bản tiếp theo",
-        "en": "Details will be updated in the next version"
-    },
-
-
-    "target_card.level": {
-        "vi": "Cấp Độ",
-        "en": "Level"
-    },
-    "target_card.max_hp": {
-        "vi": "Máu Tối Đa",
-        "en": "Max HP"
-    },
-    "target_card.defense": {
-        "vi": "Phòng Thủ",
-        "en": "Defense"
-    },
-    "target_card.status_idle": {
-        "vi": "✓ Sẵn sàng săn",
-        "en": "✓ Ready to hunt"
-    },
-    "target_card.status_approaching": {
-        "vi": "🏃 Đang tiếp cận...",
-        "en": "🏃 Approaching..."
-    },
-    "target_card.status_attacking": {
-        "vi": "⚔️ Đang tấn công...",
-        "en": "⚔️ Attacking..."
-    },
-    "target_card.unknown_mob": {
-        "vi": "Mục Tiêu Không Xác Định",
-        "en": "Unknown Target"
-    },
-    "target_card.target_dead": {
-        "vi": "[ Đã Tiêu Diệt ]",
-        "en": "[ Defeated ]"
-    },
-    "target_card.recovery_btn": {
-        "vi": "Khôi Phục Cửa Sổ Game",
-        "en": "Restore Game Window"
-    },
-    "target_card.recovery_retry": {
-        "vi": "⏳ Đang thử lại ({step}/3)...",
-        "en": "⏳ Retrying ({step}/3)..."
-    },
-    "target_card.recovery_failed": {
-        "vi": "Không thể khôi phục game. Vui lòng mở lại game bằng tay.",
-        "en": "Cannot restore game. Please reopen game manually."
-    },
-
-    "logs_title": {
-        "vi": "Nhật Ký Hoạt Động",
-        "en": "Activity Logs"
-    },
-    "logs_collapse": {
-        "vi": "▼ Thu Gọn",
-        "en": "▼ Collapse"
-    },
-    "logs_expand": {
-        "vi": "▲ Mở Rộng",
-        "en": "▲ Expand"
-    },
-    "logs_clear": {
-        "vi": "Xóa Log Màn Hình",
-        "en": "Clear UI Log"
-    },
-
     'en': {
+        'skill_strip.auto_combo': 'Enable Auto Combo',
+        'skill_strip.combo_start_key': 'Combo Start Key',
+        'skill_strip.combo_lane': 'Combo Chain',
+        'skill_strip.buff_lane': 'Buff Lane',
+        'skill_strip.tooltip_placeholder': 'Details will be updated in the next version',
+        'target_card.level': 'Level',
+        'target_card.max_hp': 'Max HP',
+        'target_card.defense': 'Defense',
+        'target_card.status_idle': '✓ Ready to hunt',
+        'target_card.status_approaching': '🏃 Approaching...',
+        'target_card.status_attacking': '⚔️ Attacking...',
+        'target_card.unknown_mob': 'Unknown Target',
+        'target_card.target_dead': '[ Defeated ]',
+        'target_card.recovery_btn': 'Restore Game Window',
+        'target_card.recovery_retry': '⏳ Retrying ({step}/3)...',
+        'target_card.recovery_failed': 'Cannot restore game. Please reopen game manually.',
+        'logs_title': 'Activity Logs',
+        'logs_collapse': '▼ Collapse',
+        'logs_expand': '▲ Expand',
+        'logs_clear': 'Clear UI Log',
         'app_title': 'Cabal Auto Manager',
         'language': 'Language',
         'tab_hunt': 'Hunt',
@@ -496,6 +432,26 @@ Tips:
         'bounds_state_failed': 'Cannot restore window. Please manually Alt+Tab or click the game window.',
     },
     'vi': {
+        'skill_strip.auto_combo': 'Bật Auto Combo',
+        'skill_strip.combo_start_key': 'Phím Mở Combo',
+        'skill_strip.combo_lane': 'Combo Chain',
+        'skill_strip.buff_lane': 'Buff Lane',
+        'skill_strip.tooltip_placeholder': 'Chi tiết sẽ cập nhật ở bản tiếp theo',
+        'target_card.level': 'Cấp Độ',
+        'target_card.max_hp': 'Máu Tối Đa',
+        'target_card.defense': 'Phòng Thủ',
+        'target_card.status_idle': '✓ Sẵn sàng săn',
+        'target_card.status_approaching': '🏃 Đang tiếp cận...',
+        'target_card.status_attacking': '⚔️ Đang tấn công...',
+        'target_card.unknown_mob': 'Mục Tiêu Không Xác Định',
+        'target_card.target_dead': '[ Đã Tiêu Diệt ]',
+        'target_card.recovery_btn': 'Khôi Phục Cửa Sổ Game',
+        'target_card.recovery_retry': '⏳ Đang thử lại ({step}/3)...',
+        'target_card.recovery_failed': 'Không thể khôi phục game. Vui lòng mở lại game bằng tay.',
+        'logs_title': 'Nhật Ký Hoạt Động',
+        'logs_collapse': '▼ Thu Gọn',
+        'logs_expand': '▲ Mở Rộng',
+        'logs_clear': 'Xóa Log Màn Hình',
         'app_title': 'Trợ lý săn Cabal',
         'language': 'Ngôn ngữ',
         'tab_hunt': 'Săn',
