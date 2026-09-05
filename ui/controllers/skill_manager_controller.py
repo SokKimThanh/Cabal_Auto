@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from app_gui import App
 
+
 class SkillManagerController:
     """Manages the modal lifecycle and external integrations for the Skill Manager Window."""
 
@@ -15,7 +16,9 @@ class SkillManagerController:
         # Use LibraryManagerController as the single source of truth for skill editing
         controller = getattr(self.root, "library_manager_controller", None)
         if not controller:
-            print("[SkillManagerController] Cannot open window: library_manager_controller missing.")
+            print(
+                "[SkillManagerController] Cannot open window: library_manager_controller missing."
+            )
             return
 
         # Open or focus the library manager window
