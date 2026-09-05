@@ -4,19 +4,20 @@ from lib.db.connection import get_connection
 
 class SkillRepository:
     def get_skill(self, skill_id: int) -> Optional[Dict[str, Any]]:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return None
         try:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM skills WHERE skill_id = ?", (skill_id,))
             row = cursor.fetchone()
-            if row:
-                return dict(row)
-            return None
+            return dict(row) if row else None
         finally:
-            conn.close()
-
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
     def list_skills(self, class_id: Optional[int] = None, type_filter: Optional[str] = None) -> List[Dict[str, Any]]:
         conn, _ = get_connection()
         if not conn:
