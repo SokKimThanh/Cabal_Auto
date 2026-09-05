@@ -34,7 +34,7 @@ class HuntTab(ttk.Frame):
     def clear_target_photo(self):
         if hasattr(self, "target_image_label") and self.target_image_label:
             self.target_image_label.configure(
-                image="", text="[ NO IMAGE ]", bg=UI.THEME_BG_PANEL
+                image="", text=self.app._t("target_card.no_image"), bg=UI.THEME_BG_PANEL
             )
         if hasattr(self, "_current_target_photo") and self._current_target_photo:
             del self._current_target_photo
@@ -195,7 +195,7 @@ class HuntTab(ttk.Frame):
 
         self.clear_target_photo()
         if hasattr(self, "target_name_label"):
-            self.target_name_label.config(text="Unknown Target")
+            self.target_name_label.config(text=self.app._t("target_card.unknown_mob"))
         if hasattr(self, "target_level_label"):
             self.target_level_label.config(text="-")
         if hasattr(self, "target_hp_label"):
@@ -207,7 +207,7 @@ class HuntTab(ttk.Frame):
             self.hp_canvas.itemconfig(self.hp_text, text="")
         if hasattr(self, "hp_progressbar"):
             self.hp_progressbar.config(value=0)
-        self.update_status("IDLE")
+        self.update_status(self.app._t("target_card.status_idle"))
         if hasattr(self.app, "hunt_target_info"):
             self.app.hunt_target_info.set("")
 
@@ -370,8 +370,8 @@ class HuntTab(ttk.Frame):
         # Layout: Split into two primary panels: Monster Rotation and Active Target & Status
         self.grid_columnconfigure(0, weight=1, uniform="panel")
         self.grid_columnconfigure(1, weight=1, uniform="panel")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=1)
 
         # Section 1: Active Target Card Panel (UX5.1)
         self.app.active_target_status_frame = tk.LabelFrame(
@@ -423,7 +423,7 @@ class HuntTab(ttk.Frame):
         # Left Column (Image)
         self.target_image_label = tk.Label(
             card_container,
-            text="[ NO IMAGE ]",
+            text=self.app._t("target_card.no_image"),
             bg=UI.THEME_BG_PANEL,
             width=20,  # rough width for text mode
             height=10,
@@ -436,7 +436,7 @@ class HuntTab(ttk.Frame):
 
         self.target_name_label = tk.Label(
             stats_frame,
-            text="Unknown Target",
+            text=self.app._t("target_card.unknown_mob"),
             font=(UI.FONT_FAMILY, int(14 * scale_factor), "bold"),
             bg=UI.THEME_BG_PANEL,
             anchor="w",
@@ -447,7 +447,7 @@ class HuntTab(ttk.Frame):
 
         self.status_label = tk.Label(
             stats_frame,
-            text="IDLE",
+            text=self.app._t("target_card.status_idle"),
             font=(UI.FONT_FAMILY, int(12 * scale_factor), "bold"),
             bg=UI.THEME_BG_PANEL,
             fg=UI.COLOR_ACCENT,
@@ -512,7 +512,7 @@ class HuntTab(ttk.Frame):
                 row,
                 text=self.app._t(label_key) + ":",
                 bg=UI.THEME_BG_PANEL,
-                fg=UI.THEME_TEXT_SECONDARY,
+                fg=UI.THEME_TEXT_PRIMARY,
                 width=12,
                 anchor="w",
             ).pack(side="left")
@@ -640,14 +640,8 @@ class HuntTab(ttk.Frame):
                 self.app, "promote_detected_monster", lambda x: None
             )(self.app.detected_monsters_listbox.curselection()),
             style="compact",
-            bg_color=(
-                UI.BTN_ACCENT_BG if hasattr(UI, "BTN_ACCENT_BG") else UI.COLOR_PRIMARY
-            ),
-            hover_color=(
-                UI.BTN_ACCENT_HOVER
-                if hasattr(UI, "BTN_ACCENT_HOVER")
-                else UI.COLOR_PRIMARY_TEXT
-            ),
+            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
+            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
         )
         self.app.btn_promote_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
@@ -743,14 +737,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="➕",
             command=self.app._on_monster_add_smart,
             style="compact",
-            bg_color=(
-                UI.BTN_ACCENT_BG if hasattr(UI, "BTN_ACCENT_BG") else UI.COLOR_PRIMARY
-            ),
-            hover_color=(
-                UI.BTN_ACCENT_HOVER
-                if hasattr(UI, "BTN_ACCENT_HOVER")
-                else UI.COLOR_PRIMARY_TEXT
-            ),
+            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
+            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
         )
         self.app.btn_add_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
@@ -763,10 +751,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="↑",
             command=self.app._on_monster_move_up,
             style="compact",
-            bg_color=UI.BTN_INFO_BG if hasattr(UI, "BTN_INFO_BG") else UI.COLOR_INFO,
-            hover_color=(
-                UI.BTN_INFO_HOVER if hasattr(UI, "BTN_INFO_HOVER") else UI.COLOR_PRIMARY
-            ),
+            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
+            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
         )
         self.app.btn_move_up.pack(pady=(0, 4))
 
@@ -775,10 +761,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="↓",
             command=self.app._on_monster_move_down,
             style="compact",
-            bg_color=UI.BTN_INFO_BG if hasattr(UI, "BTN_INFO_BG") else UI.COLOR_INFO,
-            hover_color=(
-                UI.BTN_INFO_HOVER if hasattr(UI, "BTN_INFO_HOVER") else UI.COLOR_PRIMARY
-            ),
+            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
+            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
         )
         self.app.btn_move_down.pack(pady=(0, 12))
 
@@ -788,8 +772,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="✖",
             command=self.app._on_monster_delete_from_list,
             style="compact",
-            bg_color=UI.COLOR_DANGER,
-            hover_color=UI.COLOR_WARNING,
+            bg_color=UI.BTN_DANGER_BG if hasattr(UI, "BTN_DANGER_BG") else UI.COLOR_DANGER,
+            hover_color=UI.BTN_DANGER_HOVER if hasattr(UI, "BTN_DANGER_HOVER") else UI.COLOR_WARNING,
         )
         self.app.btn_remove_monster.pack()
         self.app._create_tooltip(
@@ -839,7 +823,7 @@ class HuntTab(ttk.Frame):
         tk.Label(
             self.configured_container,
             text=self.app._t("monster_rotation_delete_hint"),
-            fg=UI.THEME_TEXT_SECONDARY,
+            fg=UI.THEME_TEXT_PRIMARY,
             font=UI.FONT_TEXT,
             anchor="w",
         ).pack(fill="x", pady=(4, 0))
@@ -994,7 +978,7 @@ class HuntTab(ttk.Frame):
 
             cast_str = f"{cast_time}s" if cast_time is not None else "--s"
             cd_str = f"{cd}s" if cd is not None else "--s"
-            lbl.config(text=f"⚡ {cast_str} | ⏳ {cd_str}")
+            lbl.config(text=f"C: {cast_str} | CD: {cd_str}")
 
         self.update_card_stats = update_card_stats
 
@@ -1019,9 +1003,9 @@ class HuntTab(ttk.Frame):
             t_combo = self.app._t("skill_strip.combo_lane")
             t_buff = self.app._t("skill_strip.buff_lane")
             title_text = (
-                f"{t_combo if t_combo != 'skill_strip.combo_lane' else 'Combo Chain'} {col + 1}"
+                f"{t_combo} {col + 1}"
                 if is_combo_lane
-                else f"{t_buff if t_buff != 'skill_strip.buff_lane' else 'Buff Lane'} {col + 1}"
+                else f"{t_buff} {col + 1}"
             )
 
             tk.Label(
@@ -1038,7 +1022,7 @@ class HuntTab(ttk.Frame):
 
             stats_lbl = tk.Label(
                 card,
-                text="⚡ --s | ⏳ --s",
+                text="C: --s | CD: --s",
                 fg=UI.THEME_TEXT_SECONDARY,
                 bg=UI.THEME_BG_APP,
                 font=card_font,
@@ -1118,7 +1102,7 @@ class HuntTab(ttk.Frame):
             self.skill_strip_frame,
             text=self.app._t("skill_stats_title"),
             padx=10,
-            pady=8,
+            pady=(12, 8),
         )
         self.app.skill_stats_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
 
