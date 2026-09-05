@@ -580,6 +580,7 @@ class App(tk.Tk):
         self.bind("<Configure>", self._on_window_configure)
 
         from ui.theme.ttk_theme import configure_ttk_styles
+
         configure_ttk_styles(self)
 
         self.hotkey_controller.register_all()
@@ -635,7 +636,25 @@ class App(tk.Tk):
 
         # Build Sidebar Navigation
         sidebar_items = [
-            ("sidebar_quick_setup", lambda: self.on_setup_wizard(hide_parent=False), UI.FONT_SECTION, None),
+            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt"),
+            (
+                "sidebar_quick_setup",
+                lambda: self.on_setup_wizard(hide_parent=False),
+                UI.FONT_SECTION,
+                None,
+            ),
+            (
+                "setup_hotkeys",
+                lambda: show_hotkey_diagnostics_modal(self),
+                UI.FONT_SECTION,
+                None,
+            ),
+            (
+                "sidebar_activity_logs",
+                lambda: self.switch_view("logs"),
+                UI.FONT_SECTION,
+                "logs",
+            ),
             ("sidebar_managers", None, UI.FONT_SECTION, None),
             (
                 "btn_monster_manager",
@@ -655,24 +674,12 @@ class App(tk.Tk):
                 UI.FONT_LABEL,
                 None,
             ),
-            (
-                "sidebar_configuration",
-                lambda: self.switch_view("setup"),
-                UI.FONT_SECTION,
-                "setup",
-            ),
+            ("tab_stats", lambda: self.switch_view("stats"), UI.FONT_SECTION, "stats"),
             (
                 "sidebar_support",
                 lambda: self.switch_view("help"),
                 UI.FONT_SECTION,
                 "help",
-            ),
-            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt"),
-            (
-                "sidebar_activity_logs",
-                lambda: self.switch_view("logs"),
-                UI.FONT_SECTION,
-                "logs",
             ),
         ]
         self._sidebar_widgets = []
@@ -721,7 +728,9 @@ class App(tk.Tk):
         self.after(1000, self._update_logs_metrics)
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
-        self.action_bar_frame = tk.Frame(self.shell_zone_a, padx=32, pady=18, bg=UI.THEME_BG_APP)
+        self.action_bar_frame = tk.Frame(
+            self.shell_zone_a, padx=32, pady=18, bg=UI.THEME_BG_APP
+        )
         self.action_bar_frame.grid(row=0, column=0, sticky="nsew")
         self.shell_zone_a.grid_columnconfigure(0, weight=1)
         self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
@@ -810,7 +819,9 @@ class App(tk.Tk):
         self.btn_manual_scan.grid(row=0, column=2, sticky="w", padx=(0, 12))
 
         # Bounds Readiness State Placeholder (Minimum 260x36)
-        self.bounds_placeholder = tk.Frame(self.action_bar_frame, width=260, height=36, bg=UI.THEME_BG_APP)
+        self.bounds_placeholder = tk.Frame(
+            self.action_bar_frame, width=260, height=36, bg=UI.THEME_BG_APP
+        )
         self.bounds_placeholder.grid(row=0, column=3, sticky="w", padx=(0, 12))
         self.bounds_placeholder.pack_propagate(False)
 
@@ -820,7 +831,7 @@ class App(tk.Tk):
             textvariable=self.bounds_status_var,
             font=UI.FONT_LABEL,
             bg=UI.THEME_BG_APP,
-            fg=UI.THEME_TEXT_PRIMARY
+            fg=UI.THEME_TEXT_PRIMARY,
         )
         self.bounds_readiness_label.pack(side="left", fill="y", padx=5)
 
@@ -941,7 +952,9 @@ class App(tk.Tk):
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
-        self.global_apply_frame = tk.Frame(self, relief="sunken", bd=1, bg=UI.THEME_BG_PANEL)
+        self.global_apply_frame = tk.Frame(
+            self, relief="sunken", bd=1, bg=UI.THEME_BG_PANEL
+        )
         apply_frame = self.global_apply_frame
         apply_frame.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
 
@@ -950,7 +963,11 @@ class App(tk.Tk):
         indicator_frame.pack(side="left", padx=8, pady=6)
 
         self.unsaved_indicator_label = tk.Label(
-            indicator_frame, text="", fg=UI.THEME_TEXT_SECONDARY, font=UI.FONT_TEXT, bg=UI.THEME_BG_PANEL
+            indicator_frame,
+            text="",
+            fg=UI.THEME_TEXT_SECONDARY,
+            font=UI.FONT_TEXT,
+            bg=UI.THEME_BG_PANEL,
         )
         self.unsaved_indicator_label.pack(side="left")
 
@@ -1100,7 +1117,7 @@ class App(tk.Tk):
         self.current_view_key = view_key
 
         # Update sidebar selected state
-        if hasattr(self, '_sidebar_widgets'):
+        if hasattr(self, "_sidebar_widgets"):
             for widget, key, view_target in self._sidebar_widgets:
                 if isinstance(widget, tk.Button):
                     original_text = self._t(key)
@@ -1108,13 +1125,13 @@ class App(tk.Tk):
                         widget.config(
                             bg=UI.THEME_STATE_SELECTED,
                             fg=UI.THEME_TEXT_PRIMARY,
-                            text=f" ▌ {original_text}"
+                            text=f" ▌ {original_text}",
                         )
                     else:
                         widget.config(
                             bg=UI.THEME_BG_SIDEBAR,
                             fg=UI.THEME_TEXT_PRIMARY,
-                            text=f"   {original_text}"
+                            text=f"   {original_text}",
                         )
 
         if hasattr(target_view, "on_view_shown"):
