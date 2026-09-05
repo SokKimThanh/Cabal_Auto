@@ -215,7 +215,7 @@ class HuntTab(ttk.Frame):
 
         self.hunt_target_info_label = tk.Label(
             status_frame,
-            text="Target: #0",
+            textvariable=self.app.hunt_target_info,
             font=UI.FONT_LABEL,
             fg=UI.COLOR_SUBTEXT,
             anchor="e",
