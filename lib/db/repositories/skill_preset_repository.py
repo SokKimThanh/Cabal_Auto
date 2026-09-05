@@ -4,20 +4,23 @@ from lib.db.connection import get_connection
 
 class SkillPresetRepository:
     def create_preset(self, class_name: str, name: str, is_default: int = 0) -> int:
-        conn, _ = get_connection()
+        conn, is_local = get_connection()
         if not conn:
             return -1
         try:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO skill_presets (class_name, name, is_default) VALUES (?, ?, ?)",
-                (class_name, name, is_default)
+                (class_name, name, is_default),
             )
             conn.commit()
             return cursor.lastrowid
         finally:
-            conn.close()
-
+            if is_local and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
     def get_preset_skills(self, preset_id: int) -> Dict[str, List[int]]:
         conn, _ = get_connection()
         if not conn:
