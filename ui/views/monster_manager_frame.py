@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from lib.ui_style import UIStyle
-from tkinter import ttk
 
+from lib.ui_style import UIStyle
 
 class MonsterManagerFrame(ttk.Frame):
     def __init__(self, parent, app):
