@@ -10,7 +10,7 @@ class TargetHPReader:
         self.min_diff = 1.0
 
     def calculate_target_hp_percent(self, frame) -> float:
-        now = time.time()
+        now = time.monotonic()
         # Throttle frequency
         if (now - self.last_update_time) * 1000 < self.throttle_ms:
             return self.last_hp
