@@ -12,5 +12,9 @@ class TestTargetBarDetectorHWND:
         mock_win32gui.GetClientRect.return_value = (0, 0, 1024, 768)
 
         detector = TargetBarDetector(hwnd=12345)
+        # Trigger client size check
+        w, h = detector._get_client_size()
         # Should call GetClientRect
         assert mock_win32gui.GetClientRect.called
+        assert w == 1024
+        assert h == 768
