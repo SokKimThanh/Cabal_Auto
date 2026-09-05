@@ -44,6 +44,49 @@ class HuntTab(ttk.Frame):
             self._current_target_photo = photo_image
             self.target_image_label.configure(image=photo_image, text="")
 
+    def show_recovery(self):
+        if hasattr(self, "recovery_frame"):
+            self.recovery_frame.config(bg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+            self.recovery_frame.pack(fill="x", pady=(4, 4), after=self.hp_percent_label)
+            if hasattr(self, "recovery_btn"):
+                self.recovery_btn.config(state="normal", text=self.app._t("target_card.recovery_btn"))
+
+    def hide_recovery(self):
+        if hasattr(self, "recovery_frame"):
+            self.recovery_frame.pack_forget()
+
+    def _on_recovery_click(self):
+        from lib.features.hunt.window_selection_service import WindowRecoveryController
+        if not hasattr(self, "app") or not hasattr(self.app, "hunt_cfg"):
+            return
+
+        hwnd = self.app.hunt_cfg.get("window_hwnd")
+        if not hwnd:
+            return
+
+        if hasattr(self, "recovery_btn"):
+            self.recovery_btn.config(state="disabled")
+
+        def _on_progress(step):
+            if hasattr(self, "recovery_btn"):
+                text = self.app._t("target_card.recovery_retry").format(step=step)
+                self.recovery_btn.config(text=text)
+
+        def _on_failure():
+            if hasattr(self, "recovery_frame"):
+                self.recovery_frame.config(bg=getattr(UI, 'STATE_ERROR', getattr(UI, 'COLOR_DANGER', '#F44336')))
+            if hasattr(self, "recovery_btn"):
+                self.recovery_btn.config(state="normal")
+            if hasattr(self.app, "show_toast"):
+                self.app.show_toast(self.app._t("target_card.recovery_failed"))
+
+        WindowRecoveryController.instance().start_async_recovery(
+            hwnd=int(hwnd),
+            schedule_after_ms=self.after,
+            on_progress=_on_progress,
+            on_failure=_on_failure,
+            delay_ms=500
+        )
 
     def update_status(self, status_string: str):
         if not hasattr(self, "status_label"):
@@ -390,6 +433,21 @@ class HuntTab(ttk.Frame):
 
         self.hp_percent_label = tk.Label(stats_frame, text="-", bg=UI.BG_MUTED, fg=UI.COLOR_SUBTEXT, anchor="w")
         self.hp_percent_label.pack(fill="x", anchor="w", pady=(0, 4))
+
+        # Recovery Frame (Hidden by default)
+        self.recovery_frame = tk.Frame(stats_frame, bg=getattr(UI, 'STATE_WARN', getattr(UI, 'COLOR_WARNING', '#FFC107')))
+        self.recovery_frame.pack_forget()
+
+        self.recovery_btn = tk.Button(
+            self.recovery_frame,
+            text=self.app._t("target_card.recovery_btn"),
+            font=UI.FONT_BUTTON,
+            bg=UI.BTN_NEUTRAL_BG,
+            fg=UI.BTN_NEUTRAL_FG,
+            relief=UI.BTN_RELIEF_NORMAL,
+            command=self._on_recovery_click
+        )
+        self.recovery_btn.pack(fill="x", padx=4, pady=4)
 
         def create_stat_row(parent, label_key):
             row = tk.Frame(parent, bg=UI.BG_MUTED)
