@@ -3,7 +3,7 @@
 
 2. **`ui/tabs/hunt_tab.py`**:
    - In `_build_ui`, instantiate `self.recovery_frame` within the active target card context. Inside it, create a button `[ Khôi Phục Cửa Sổ Game ]` using the key `target_card.recovery_btn`. Initialize it as hidden (`pack_forget` or don't pack initially).
-   - Implement a `show_recovery(hwnd)` method to show this frame. Also, update the UI style of a wrapper/label (if desired) to `STATE_WARN`. Wait, the issue says: "Dashboard hiển thị khung màu cam UIStyle.STATE_WARN kèm nút [ Khôi Phục Cửa Sổ Game ]". I'll create `self.recovery_frame = tk.Frame(..., bg=UI.COLOR_WARNING)` and pack it.
+   - Implement a `show_recovery()` method to show this frame, and update the UI style (if desired) to `STATE_WARN`.
    - Implement `hide_recovery()` method.
    - Implement the button command which disables the button and calls `WindowRecoveryController.instance().start_async_recovery`.
    - Update `on_progress(step)` to change the button text to `target_card.recovery_retry`.
