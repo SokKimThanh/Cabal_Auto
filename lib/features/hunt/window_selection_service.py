@@ -14,7 +14,7 @@ class WindowValidationResult:
 def validate_selected_cabal_window(
     selected: Any,
     known_items: List[Dict[str, Any]],
-    allowed_processes: List[str] = ["cabal.exe"],
+    allowed_processes: List[str] = ["cabal.exe", "cabalmain.exe"],
 ) -> WindowValidationResult:
     if not isinstance(selected, dict) or not isinstance(selected.get("hwnd"), int):
         return WindowValidationResult(False, "no_window_selected")
