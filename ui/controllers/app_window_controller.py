@@ -65,26 +65,16 @@ class AppWindowController:
         return results
 
     def _retry_resolve_bounds(self, hwnd, attempt):
-        from lib.system.window_manager import WindowManager
+        from lib.features.hunt.window_detection_service import WindowDetectionService
         import logging
 
         logger = logging.getLogger(__name__)
 
-        wm = WindowManager()
-        wm.restore(hwnd)
-        try:
-            import win32gui
+        service = WindowDetectionService()
+        success = service.restore_window_if_minimized(hwnd)
 
-            win32gui.SetForegroundWindow(hwnd)
-        except Exception:
-            pass
-
-        # Re-check bounds immediately after request (with small implicit delay by execution time)
-        # But properly we should check again on the next tick, however the prompt allows
-        # checking immediately in the callback or scheduling it. Let's just check now.
-        new_info = wm.get_window_info(hwnd)
-        if new_info and not new_info.is_minimized and not new_info.is_offscreen:
-            logger.info(f"Window successfully restored. New bounds: {new_info.rect}")
+        if success:
+            logger.info("Window successfully restored.")
             self.root.bounds_recovery_failed = False
             self.on_hunt_find_windows()
             return
@@ -110,14 +100,14 @@ class AppWindowController:
         if hasattr(self, "root") and hasattr(self.root, "after"):
             self.root.after(500, lambda: setattr(self, "_refresh_locked", False))
 
-        from lib.system.window_manager import WindowManager
+        from lib.features.hunt.window_detection_service import WindowDetectionService
 
         selected = getattr(self.root, "hunt_selected", None)
         if selected and isinstance(selected, dict):
             hwnd = selected.get("hwnd")
             if hwnd:
-                wm = WindowManager()
-                info = wm.get_window_info(hwnd)
+                service = WindowDetectionService()
+                bounds = service.get_window_bounds(hwnd)
 
                 # Check if minimized or off-screen
                 if info and (info.is_minimized or info.is_offscreen):
@@ -273,30 +263,29 @@ class AppWindowController:
 
     def _auto_detect_and_save_cabal_window(self) -> None:
         try:
-            items = self._list_windows()
-            if not items:
+            from lib.features.hunt.window_detection_service import WindowDetectionService
+            service = WindowDetectionService()
+            best_window = service.find_best_cabal_window()
+
+            if not best_window:
                 return
-            self.root.win_items = items
-            if hasattr(self.root, "win_combo"):
-                self.root.win_combo["values"] = [item["title"] for item in items]
 
-            # Find the first valid item
-            from lib.features.hunt.window_selection_service import (
-                validate_selected_cabal_window,
-            )
+            self.on_hunt_find_windows()
 
-            valid_index = -1
-            for i, item in enumerate(items):
-                if validate_selected_cabal_window(item, items).is_valid:
-                    valid_index = i
-                    break
+            if hasattr(self.root, "win_items") and self.root.win_items:
+                items = self.root.win_items
+                valid_index = -1
+                for i, item in enumerate(items):
+                    if item["hwnd"] == best_window["hwnd"]:
+                        valid_index = i
+                        break
 
-            if valid_index >= 0:
-                if hasattr(self.root, "win_combo"):
-                    self.root.win_combo.current(valid_index)
-                if hasattr(self.root, "win_combo_var"):
-                    self.root.win_combo_var.set(items[valid_index]["title"])
-                self.on_window_combo_selected()
+                if valid_index >= 0:
+                    if hasattr(self.root, "win_combo"):
+                        self.root.win_combo.current(valid_index)
+                    if hasattr(self.root, "win_combo_var"):
+                        self.root.win_combo_var.set(items[valid_index]["title"])
+                    self.on_window_combo_selected()
         except Exception as e:
             logger.error(f"Exception during operation: {e}")
             return
@@ -312,7 +301,9 @@ class AppWindowController:
 
     def _bring_window_to_front_by_pid(self, pid: int) -> bool:
         try:
-            for item in self._list_windows():
+            from lib.features.hunt.window_detection_service import WindowDetectionService
+            service = WindowDetectionService()
+            for item in service.find_all_cabal_windows():
                 if int(item["pid"]) == int(pid):
                     return self._bring_window_to_front_by_hwnd(int(item["hwnd"]))
         except Exception as e:
@@ -324,93 +315,14 @@ class AppWindowController:
         if not title:
             return False
         try:
-            for item in self._list_windows(title_contains=title):
+            from lib.features.hunt.window_detection_service import WindowDetectionService
+            service = WindowDetectionService()
+            for item in service.find_all_cabal_windows(filter_text=title):
                 return self._bring_window_to_front_by_hwnd(int(item["hwnd"]))
         except Exception as e:
             logger.error(f"Exception during operation: {e}")
             return False
         return False
-
-    def on_setup_wizard(self, hide_parent=True):
-        from ui.windows.setup_wizard import show_setup_wizard
-
-        def on_wizard_complete(wizard_data):
-            if hide_parent:
-                self.root.deiconify()
-            from lib.features.hunt.hunt_config import load_hunt_config
-
-            self.root.hunt_cfg = load_hunt_config()
-            if hasattr(self.root, "_populate_hunt_ui_from_config"):
-                self.root._populate_hunt_ui_from_config()
-            lang = wizard_data.get("language", "en")
-            if hasattr(self.root, "hunt_status"):
-                self.root.hunt_status.set(
-                    f"✅ Wizard completed! Configuration loaded. Ready to hunt. (Language: {lang})"
-                )
-
-        def on_wizard_cancel():
-            if hide_parent:
-                self.root.deiconify()
-
-        if callable(show_setup_wizard):
-            try:
-                show_setup_wizard(
-                    self.root,
-                    config_manager=self.root.config_mgr,
-                    on_complete=on_wizard_complete,
-                    on_cancel=on_wizard_cancel,
-                    hide_parent=hide_parent,
-                )
-            except tk.TclError:
-                app_lang = getattr(self.root, "lang", "en")
-
-                class _HeadlessSetupWizardStub:
-                    def __init__(self):
-                        self.wizard_data = {"language": app_lang}
-                        self.dialog = self
-                        self._dirty = False
-
-                    def has_unsaved_changes(self):
-                        return self._dirty or bool(self.wizard_data)
-
-                    def attempt_close_from_external(self):
-                        return True
-
-                    def destroy(self):
-                        return None
-
-                self.root._setup_wizard_win = _HeadlessSetupWizardStub()
-        else:
-            try:
-                _t = getattr(self.root, "_t", lambda x: x)
-                messagebox.showinfo(
-                    _t("info_title"),
-                    "Setup wizard is not available in this build.",
-                    parent=self.root,
-                )
-            except Exception:
-                pass
-
-    def try_close_setup_wizard(self) -> bool:
-        try:
-            wiz = getattr(self.root, "_setup_wizard_win", None)
-            if wiz is None:
-                for c in list(self.root.winfo_children()):
-                    if getattr(c, "_is_setup_wizard", False):
-                        wiz = getattr(c, "_wizard_ref", None) or c
-                        break
-            if wiz is None:
-                return True
-            fn = getattr(wiz, "attempt_close_from_external", None)
-            if callable(fn):
-                try:
-                    return bool(fn())
-                except Exception:
-                    return False
-            return False
-        except Exception as e:
-            logger.error(f"Exception during operation: {e}")
-            return False
 
     def open_vision_wizard(self):
         try:

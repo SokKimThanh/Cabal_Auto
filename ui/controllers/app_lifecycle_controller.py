@@ -76,41 +76,20 @@ class AppLifecycleController:
         user_skipped_wizard = False
 
         if is_new_user:
-            print("[First-time check] Showing messagebox to ask user...")
-
-            # Force main window to front before showing messagebox
-            self.app.lift()
-            self.app.focus_force()
-            self.app.attributes("-topmost", True)
-            self.app.update()
-
-            # Ask user if they want to run setup wizard
-            response = messagebox.askyesno(
-                self.app._t("wizard_first_time_title"),
-                self.app._t("wizard_first_time_message"),
-                icon="question",
-                parent=self.app,  # Ensure messagebox is child of main window
+            print(
+                "[First-time check] Attempting auto window detection..."
             )
+            if hasattr(self.app.window_controller, "_auto_detect_and_save_cabal_window"):
+                self.app.window_controller._auto_detect_and_save_cabal_window()
 
-            # Disable topmost after messagebox
-            self.app.attributes("-topmost", False)
-
-            print(f"[First-time check] User response: {response}")
-
-            if response:
-                # User clicked Yes - launch wizard
-                print("[First-time check] Launching wizard...")
-                self.app.window_controller.on_setup_wizard()
-            else:
-                # User clicked No - auto-detect Cabal window and save
+            try:
+                self.app.hunt_cfg["is_configured"] = True
+                save_hunt_config(self.app.hunt_cfg)
                 print(
-                    "[First-time check] User skipped wizard - attempting auto PID detection..."
+                    "[First-time check] Saved is_configured=True"
                 )
-                if hasattr(self.app, "_auto_detect_and_save_cabal_window"):
-                    self.app._auto_detect_and_save_cabal_window()
-                if hasattr(self.app, "hunt_status"):
-                    self.app.hunt_status.set(self.app._t("wizard_skipped_hint"))
-                user_skipped_wizard = True
+            except Exception as e:
+                print(f"[First-time check] Failed to save is_configured state: {e}")
 
         # Check PIL availability and show one-time warning if missing
         if not getattr(self.app, "pil_available", True) and not getattr(
@@ -131,19 +110,6 @@ class AppLifecycleController:
 
                 pass
         print("[First-time check] Check completed, global hotkeys now fully active")
-
-        # ✅ Sprint 24 Enhancement: Persist wizard completion state
-        # Save to config to avoid re-showing wizard on next launch
-        if user_skipped_wizard:
-            # User skipped wizard - mark as configured to prevent re-prompt
-            try:
-                self.app.hunt_cfg["is_configured"] = True
-                save_hunt_config(self.app.hunt_cfg)
-                print(
-                    "[First-time check] Saved is_configured=True to prevent wizard re-prompt"
-                )
-            except Exception as e:
-                print(f"[First-time check] Failed to save is_configured state: {e}")
 
     def auto_bring_to_front_on_startup(self) -> None:
         """Auto bring saved Cabal window to front BELOW app on startup."""
@@ -260,11 +226,6 @@ class AppLifecycleController:
 
     def on_close(self) -> None:
         """Handles high-level close orchestration (abort checks, thread joining)."""
-        if (
-            hasattr(self.app, "try_close_setup_wizard")
-            and not self.app.try_close_setup_wizard()
-        ):
-            return
         if (
             hasattr(self.app, "try_close_library_manager")
             and not self.app.try_close_library_manager()

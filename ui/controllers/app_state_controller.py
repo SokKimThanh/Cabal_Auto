@@ -32,7 +32,6 @@ class AppStateController:
         # Global hotkeys - registered after config load
         app._global_start_hotkey = None
         app._global_stop_hotkey = None
-        app._global_wizard_hotkey = None
         app._global_library_hotkey = None
         app._global_vision_hotkey = None
         app._global_monster_hotkey = None
