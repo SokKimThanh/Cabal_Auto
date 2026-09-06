@@ -847,6 +847,8 @@ class App(tk.Tk):
         self.action_bar_frame.columnconfigure(3, minsize=160, weight=0)  # Start/Stop
         self.action_bar_frame.columnconfigure(4, minsize=80, weight=0)  # Language
         self.action_bar_frame.columnconfigure(5, minsize=160, weight=0)  # Global Apply
+        # Allow row 0 to expand for dropdown
+        self.action_bar_frame.rowconfigure(0, weight=1)
 
         # Compact Window Selector (replaces combobox + refresh button)
         from ui.components.compact_window_selector import CompactWindowSelector
@@ -881,8 +883,9 @@ class App(tk.Tk):
         )
         # Auto-refresh window list on startup
         self.compact_window_selector._on_refresh()
+        # Use sticky="ewns" to allow dropdown to expand vertically
         self.compact_window_selector.get_frame().grid(
-            row=0, column=0, sticky="ew", padx=(0, 12)
+            row=0, column=0, sticky="ewns", padx=(0, 12)
         )
 
         # Scan Manual Button (column 1 now, was column 2)
