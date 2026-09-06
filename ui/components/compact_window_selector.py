@@ -162,7 +162,7 @@ class CompactWindowSelector:
             self.listbox_frame.config(height=150)
             self.is_open = True
             self.dropdown_btn.config(text="▲")
-            self.listbox.focus()
+            self.search_entry.focus_set()
             self._update_listbox()
             # Auto-select first
             if self.filtered_windows:
