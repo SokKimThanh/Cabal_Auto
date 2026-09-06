@@ -193,10 +193,12 @@ class WindowManager:
                 # IsWindowVisible() returns False for minimized, but we want to show them
                 if visible_only:
                     # Check if window is minimized - include minimized windows
-                    placement = win32gui.GetWindowPlacement(hwnd)
-                    show_cmd = placement[1]
-                    is_minimized = show_cmd in (win32con.SW_MINIMIZE, win32con.SW_SHOWMINIMIZED)
+                    import win32con
+                    is_minimized = (win32gui.GetWindowPlacement(hwnd)[0] == win32con.SW_MINIMIZE)
                     is_visible = win32gui.IsWindowVisible(hwnd)
+
+                    # Include window if: visible OR minimized (for game windows)
+                    if not (is_visible or is_minimized):
                         return True  # Skip completely hidden/closed windows
 
                 # Get window info

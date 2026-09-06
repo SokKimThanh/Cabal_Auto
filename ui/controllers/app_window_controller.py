@@ -78,25 +78,25 @@ class AppWindowController:
                 GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
                 pid_val = int(pid.value)
 
-                # Prefer WindowManager process_name (works without psutil); fallback to psutil if needed
-                info = None
-                try:
-                    info = wm.get_window_info(hwnd)
-                except Exception:
-                    info = None
-
-                proc_name = (info.process_name or "") if info else ""
-                if not proc_name and PSUTIL_AVAILABLE and psutil is not None:
+                proc_name = ""
+                if PSUTIL_AVAILABLE and psutil is not None:
                     try:
-                        proc_name = psutil.Process(pid_val).name()
+                        p = psutil.Process(pid_val)
+                        proc_name = p.name()
                     except Exception:
                         proc_name = ""
 
-                if not proc_name or proc_name.lower() not in allowed_processes:
+                if proc_name and proc_name.lower() not in allowed_processes:
                     return True
 
-                bounds = normalize_window_bounds_value(info.rect) if info else None
-                is_minimized = info.is_minimized if info else False
+                # We also need window bounds for Hunt Tab
+                try:
+                    info = wm.get_window_info(hwnd)
+                    bounds = normalize_window_bounds_value(info.rect) if info else None
+                    is_minimized = info.is_minimized if info else False
+                except Exception:
+                    bounds = None
+                    is_minimized = False
 
                 results.append(
                     {
