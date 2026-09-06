@@ -113,53 +113,83 @@ class CompactWindowSelector:
         return self.frame
 
     def _on_refresh(self):
-        """Refresh window list - works like wizard 'Find windows' button."""
+        """Refresh window list synchronously."""
         logger.debug("CompactWindowSelector._on_refresh() called")
         try:
             # Refresh window list
-            self.win_items = self.window_controller._list_windows()
-            # Update app.win_items for validation
-            self.root.win_items = self.win_items
-            logger.debug(f"  Found {len(self.win_items)} windows")
-
-            # Update UI label
-            self.info_label.config(
-                text=f"✓ Found {len(self.win_items)} window(s)",
-                fg="#4ade80"
-            )
-
-            # If dropdown is open, immediately update listbox
-            # This mimics wizard behavior where Find Windows button updates list in real-time
-            if self.is_open and self.listbox:
-                self._update_listbox()
-                # Auto-select first window if available
-                if self.filtered_windows:
-                    self.listbox.selection_set(0)
-                    self.listbox.activate(0)
-                    self.listbox.see(0)  # Make sure it's visible
+            windows = self.window_controller._list_windows()
+            self._update_ui_with_windows(windows)
         except Exception as e:
-            logger.error(f"  Failed to refresh: {e}")
-            self.info_label.config(
-                text=f"Error: {e}",
-                fg="#dc2626"
-            )
-            self.win_items = []
+            self._handle_refresh_error(e)
+
+    def _update_ui_with_windows(self, windows):
+        """Update UI with fetched windows (Main Thread only)."""
+        self.win_items = windows
+        if hasattr(self.root, 'win_items'):
+            self.root.win_items = windows
+        logger.debug(f"  Found {len(self.win_items)} windows")
+
+        # Update UI label
+        self.info_label.config(
+            text=f"✓ Found {len(self.win_items)} window(s)",
+            fg="#4ade80"
+        )
+
+        # If dropdown is open, immediately update listbox
+        if self.is_open and self.listbox:
+            self._update_listbox()
+            # Auto-select first window if available
+            if self.filtered_windows:
+                self.listbox.selection_set(0)
+                self.listbox.activate(0)
+                self.listbox.see(0)
+
+        # Reset button state if it was loading
+        if self.refresh_btn.cget("state") == "disabled":
+            self.refresh_btn.config(state="normal", text="🔄")
+
+    def _handle_refresh_error(self, e):
+        """Handle errors during refresh (Main Thread only)."""
+        logger.error(f"  Failed to refresh: {e}")
+        self.info_label.config(
+            text=f"Error: {e}",
+            fg="#dc2626"
+        )
+        self.win_items = []
+        if hasattr(self.root, 'win_items'):
             self.root.win_items = []
 
+        # Reset button state if it was loading
+        if self.refresh_btn.cget("state") == "disabled":
+            self.refresh_btn.config(state="normal", text="🔄")
+
     def _on_refresh_clicked(self):
-        """Handle refresh button click with visual feedback."""
+        """Handle refresh button click (Asynchronous)."""
         # Show loading state
-        original_text = self.refresh_btn.cget("text")
         self.refresh_btn.config(state="disabled", text="⟳")  # Spinning icon
+        self.refresh_btn.update()
 
-        # Do the refresh
-        self._on_refresh()
+        import threading
 
-        # Restore button after a short delay
-        def restore_button():
-            self.refresh_btn.config(state="normal", text=original_text)
+        def fetch_windows_task():
+            try:
+                windows = self.window_controller._list_windows()
 
-        self.refresh_btn.after(300, restore_button)
+                # Log the windows to console per user request
+                logger.info("=== Window List Refresh Results ===")
+                for i, w in enumerate(windows):
+                    logger.info(f"[{i}] {w.get('title', 'Unknown')} (PID: {w.get('pid', 'N/A')})")
+                logger.info(f"Total windows found: {len(windows)}")
+                logger.info("===================================")
+
+                self.root.after(0, self._update_ui_with_windows, windows)
+                logger.debug(f"[Refresh] Thread found {len(windows)} windows")
+            except Exception as e:
+                logger.error(f"[Refresh] Thread error: {e}")
+                self.root.after(0, self._handle_refresh_error, e)
+
+        # Start thread
+        threading.Thread(target=fetch_windows_task, daemon=True).start()
 
     def _on_search_focus_in(self, event=None):
         """Show dropdown when search box focused."""
