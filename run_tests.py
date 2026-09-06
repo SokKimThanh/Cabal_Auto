@@ -1,5 +1,15 @@
 import unittest
-from tests.unit.test_skill_strip_logic import TestSkillStripLogic
+import sys
 
 if __name__ == '__main__':
-    unittest.main()
+    loader = unittest.TestLoader()
+    if len(sys.argv) > 1:
+        # Load specific test module
+        test_module = sys.argv[1].replace('/', '.').replace('\\', '.').replace('.py', '')
+        suite = loader.loadTestsFromName(test_module)
+    else:
+        # Discover and run all tests
+        suite = loader.discover('tests')
+
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(suite)
