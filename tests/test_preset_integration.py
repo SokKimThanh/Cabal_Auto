@@ -1,9 +1,7 @@
 import unittest
-import tkinter as tk
 from unittest.mock import MagicMock, patch
 
 from ui.controllers.app_state_controller import AppStateController
-from lib.features.skills.skill_preset_service import SkillPresetService
 
 class TestPresetIntegration(unittest.TestCase):
     def setUp(self):
