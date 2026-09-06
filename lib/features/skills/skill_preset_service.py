@@ -12,7 +12,7 @@ class SkillPresetService:
         self.preset_repo = SkillPresetRepository()
         self.state_manager = PresetStateManager()
 
-    def apply_preset(self, preset_id: int, class_name: str) -> Dict[str, Any]:
+    def apply_preset(self, preset_id: int, class_id: int) -> Dict[str, Any]:
         """Applies a specific preset and updates state"""
         preset = self.preset_repo.get_preset(preset_id)
         if not preset:
@@ -20,15 +20,15 @@ class SkillPresetService:
 
         # Update user state
         mode = 'default' if preset.get('is_default') else 'custom'
-        self.state_manager.set_active_preset(class_name, preset_id, mode)
+        self.state_manager.set_active_preset(class_id, preset_id, mode)
 
         skills = self.preset_repo.get_preset_skills(preset_id)
         return {"success": True, "skill_slots": skills, "preset": preset}
 
-    def create_custom_preset(self, class_name: str, name: str, skill_slots: Dict[str, List[int]]) -> Dict[str, Any]:
+    def create_custom_preset(self, class_id: int, name: str, skill_slots: Dict[str, List[int]]) -> Dict[str, Any]:
         """Creates a new custom preset and sets it as active"""
         try:
-            preset_id = self.preset_repo.create_preset(class_name, name, is_default=0)
+            preset_id = self.preset_repo.create_preset(class_id, name, is_default=0)
             if preset_id <= 0:
                 return {"success": False, "error": "Failed to create preset"}
 
@@ -38,7 +38,7 @@ class SkillPresetService:
                 self.preset_repo.delete_preset(preset_id)
                 return {"success": False, "error": "Failed to add skills to preset"}
 
-            self.state_manager.set_active_preset(class_name, preset_id, 'custom')
+            self.state_manager.set_active_preset(class_id, preset_id, 'custom')
             return {"success": True, "preset_id": preset_id}
         except Exception as e:
             logger.error(f"Error creating custom preset: {e}")
@@ -60,21 +60,21 @@ class SkillPresetService:
             return False
         return self.preset_repo.delete_preset(preset_id)
 
-    def list_presets_by_class(self, class_name: str) -> List[Dict[str, Any]]:
-        return self.preset_repo.get_presets_by_class(class_name)
+    def list_presets_by_class(self, class_id: int) -> List[Dict[str, Any]]:
+        return self.preset_repo.get_presets_by_class(class_id)
 
-    def migrate_legacy_presets(self, legacy_cfg: dict, class_name: str) -> None:
+    def migrate_legacy_presets(self, legacy_cfg: dict, class_id: int, class_name: str) -> None:
         """Migrates legacy JSON config skill_slots into the database as a default preset"""
         skill_slots_list = legacy_cfg.get("skill_slots", [])
         if not skill_slots_list:
             return
 
         # Check if default preset already exists for this class
-        existing = self.list_presets_by_class(class_name)
+        existing = self.list_presets_by_class(class_id)
         has_default = any(p['is_default'] for p in existing)
 
         if not has_default:
-            preset_id = self.preset_repo.create_preset(class_name, "Migrated Legacy Preset", is_default=1)
+            preset_id = self.preset_repo.create_preset(class_id, "Migrated Legacy Preset", is_default=1)
 
             # Convert legacy array format to dictionary of lanes
             # We map attack skills to 'attack_combo' and buff skills to 'buff_lane'
@@ -95,5 +95,5 @@ class SkillPresetService:
                         lanes['attack_combo'].append(skill_id)
 
             self.preset_repo.set_preset_skills(preset_id, lanes)
-            self.state_manager.set_active_preset(class_name, preset_id, 'default')
+            self.state_manager.set_active_preset(class_id, preset_id, 'default')
             logger.info(f"Migrated legacy preset for {class_name}")

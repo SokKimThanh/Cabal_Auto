@@ -4,15 +4,15 @@ from lib.db.connection import get_connection
 from lib.db.repositories.skill_preset_repository import SkillPresetRepository
 
 class PresetStateManager:
-    def get_active_preset(self, class_name: str) -> Optional[int]:
+    def get_active_preset(self, class_id: int) -> Optional[int]:
         conn, is_local = get_connection()
         if not conn:
             return None
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT active_preset_id FROM user_preset_state WHERE class_name = ?",
-                (class_name,),
+                "SELECT active_preset_id FROM user_preset_state WHERE class_id = ?",
+                (class_id,),
             )
             row = cursor.fetchone()
             if row:
@@ -25,7 +25,7 @@ class PresetStateManager:
                 except Exception:
                     pass
 
-    def set_active_preset(self, class_name: str, preset_id: int, mode: str = 'default') -> bool:
+    def set_active_preset(self, class_id: int, preset_id: int, mode: str = 'default') -> bool:
         conn, is_local = get_connection()
         if not conn:
             return False
@@ -33,13 +33,13 @@ class PresetStateManager:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO user_preset_state (class_name, active_preset_id, preset_mode)
+                INSERT INTO user_preset_state (class_id, active_preset_id, preset_mode)
                 VALUES (?, ?, ?)
-                ON CONFLICT(class_name) DO UPDATE SET
+                ON CONFLICT(class_id) DO UPDATE SET
                 active_preset_id = excluded.active_preset_id,
                 preset_mode = excluded.preset_mode
                 """,
-                (class_name, preset_id, mode)
+                (class_id, preset_id, mode)
             )
             conn.commit()
             return True
@@ -50,13 +50,13 @@ class PresetStateManager:
                 except Exception:
                     pass
 
-    def get_preset_mode(self, class_name: str) -> str:
+    def get_preset_mode(self, class_id: int) -> str:
         conn, is_local = get_connection()
         if not conn:
             return 'default'
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT preset_mode FROM user_preset_state WHERE class_name = ?", (class_name,))
+            cursor.execute("SELECT preset_mode FROM user_preset_state WHERE class_id = ?", (class_id,))
             row = cursor.fetchone()
             if row and row['preset_mode']:
                 return row['preset_mode']
@@ -68,10 +68,10 @@ class PresetStateManager:
                 except Exception:
                     pass
 
-    def reset_to_default(self, class_name: str) -> Optional[int]:
+    def reset_to_default(self, class_id: int) -> Optional[int]:
         """Resets to default preset, updates state, and returns the default preset_id"""
         preset_repo = SkillPresetRepository()
-        presets = preset_repo.get_presets_by_class(class_name)
+        presets = preset_repo.get_presets_by_class(class_id)
 
         default_preset_id = None
         for preset in presets:
@@ -80,6 +80,6 @@ class PresetStateManager:
                 break
 
         if default_preset_id is not None:
-            self.set_active_preset(class_name, default_preset_id, 'default')
+            self.set_active_preset(class_id, default_preset_id, 'default')
 
         return default_preset_id
