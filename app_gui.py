@@ -91,6 +91,10 @@ except ImportError:
 # Imported for its side effect: self-registers GLOBAL_TRANSLATIONS into the i18n registry.
 from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
 
+# Logger for debugging
+import logging
+logger = logging.getLogger(__name__)
+
 # Import icon button component
 try:
     from ui.components import create_icon_button as _create_icon_btn_component
@@ -836,62 +840,50 @@ class App(tk.Tk):
 
         # Configure columns for action_bar_frame
         self.action_bar_frame.columnconfigure(
-            0, minsize=380, weight=2
-        )  # Window Selection
-        self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)  # Refresh
-        self.action_bar_frame.columnconfigure(2, minsize=44, weight=0)  # Scan
-        self.action_bar_frame.columnconfigure(3, minsize=260, weight=0)  # Bounds
-        self.action_bar_frame.columnconfigure(4, minsize=160, weight=0)  # Start/Stop
-        self.action_bar_frame.columnconfigure(5, minsize=80, weight=0)  # Language
-        self.action_bar_frame.columnconfigure(6, minsize=160, weight=0)  # Global Apply
+            0, minsize=420, weight=2
+        )  # Window Selection (compact selector)
+        self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)  # Scan
+        self.action_bar_frame.columnconfigure(2, minsize=260, weight=0)  # Bounds
+        self.action_bar_frame.columnconfigure(3, minsize=160, weight=0)  # Start/Stop
+        self.action_bar_frame.columnconfigure(4, minsize=80, weight=0)  # Language
+        self.action_bar_frame.columnconfigure(5, minsize=160, weight=0)  # Global Apply
 
-        # Window Selection Combobox
-        self.win_combo_var = tk.StringVar()
-        self.win_combo = ttk.Combobox(
-            self.action_bar_frame, textvariable=self.win_combo_var, state="normal"
+        # Compact Window Selector (replaces combobox + refresh button)
+        from ui.components.compact_window_selector import CompactWindowSelector
+        
+        def on_window_selected_from_compact(window_dict):
+            """Callback when user selects window from compact selector."""
+            try:
+                # Set hunt_selected with window info
+                self.hunt_selected = {
+                    "hwnd": window_dict.get("hwnd"),
+                    "pid": window_dict.get("pid"),
+                    "title": window_dict.get("title"),
+                    "bounds": window_dict.get("bounds"),
+                }
+                # Save to config
+                self.hunt_cfg["window_pid"] = window_dict.get("pid")
+                self.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
+                self.hunt_cfg["window_title"] = window_dict.get("title")
+                save_hunt_config(self.hunt_cfg)
+                # Update bounds display
+                if hasattr(self, "state_controller"):
+                    self.state_controller._update_window_bounds_display()
+                self.hunt_status.set(f"✓ Selected: {window_dict['title']}")
+            except Exception as e:
+                logger.error(f"Error selecting window: {e}")
+        
+        self.compact_window_selector = CompactWindowSelector(
+            self.action_bar_frame,
+            on_window_selected=on_window_selected_from_compact,
+            window_controller=self.window_controller,
+            root=self,
         )
-        self.win_combo.grid(row=0, column=0, sticky="ew", padx=(0, 12))
+        self.compact_window_selector.get_frame().grid(
+            row=0, column=0, sticky="ew", padx=(0, 12)
+        )
 
-        # Auto-populate windows when dropdown is clicked (first time or refresh)
-        self.win_combo.bind(
-            "<Button-1>",
-            lambda e: self.window_controller.on_hunt_find_windows(),
-        )
-        # Handle window selection
-        self.win_combo.bind(
-            "<<ComboboxSelected>>", self.window_controller.on_window_combo_selected
-        )
-
-        # Attach tooltip to combobox explaining window selection
-        attach_i18n_tooltip(
-            self.win_combo,
-            key="window_select_tooltip",
-            ns=I18N_GLOBAL,
-            lang_provider=lambda: self.lang,
-        )
-
-        # Refresh button - Using icon_button component
-        refresh_tooltip = (
-            self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
-            if hasattr(self, "_t")
-            else "Refresh"
-        )
-
-        self.refresh_btn = _create_icon_btn_component(
-            parent=self.action_bar_frame,
-            icon_name="refresh",
-            icon_fallback="🔄",
-            icon_size=16,
-            button_size=36,
-            command=self.window_controller.on_hunt_refresh_windows,
-            button_type="refresh",
-            tooltip_text=refresh_tooltip,
-            state="normal",
-            auto_hover_disabled=False,
-        )
-        self.refresh_btn.grid(row=0, column=1, sticky="w", padx=(0, 12))
-
-        # Scan Manual Button
+        # Scan Manual Button (column 1 now, was column 2)
         from ui.icon_library import Icons
 
         self.scan_btn_icon_name = Icons.SCAN_SCREEN
@@ -912,18 +904,18 @@ class App(tk.Tk):
             state="normal",
             auto_hover_disabled=False,
         )
-        self.btn_manual_scan.grid(row=0, column=2, sticky="w", padx=(0, 12))
+        self.btn_manual_scan.grid(row=0, column=1, sticky="w", padx=(0, 12))
 
-        # Status Chips (Replaces Bounds Placeholder)
+        # Status Chips (Replaces Bounds Placeholder, column 2 now)
         self.bounds_placeholder = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
-        self.bounds_placeholder.grid(row=0, column=3, sticky="w", padx=(0, 12))
+        self.bounds_placeholder.grid(row=0, column=2, sticky="w", padx=(0, 12))
 
         from ui.panels.screen_state_panel import ScreenStatePanel
 
         self.screen_state_panel = ScreenStatePanel(self.bounds_placeholder)
         self.screen_state_panel.pack(side="left", fill="both", expand=True)
 
-        # Unified Start/Stop Button (width 140px minimum layout space available, so we use min width via grid and padding)
+        # Unified Start/Stop Button (column 3 now, was 4)
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
 
         self.start_stop_btn = _create_icon_btn_component(
@@ -944,16 +936,15 @@ class App(tk.Tk):
             width=140,
         )
 
-        # Grid it into columns 3 and 4 merged, or just use 3 since we redefined it
-        self.start_stop_btn.grid(row=0, column=4, sticky="w", padx=(0, 12))
+        self.start_stop_btn.grid(row=0, column=3, sticky="w", padx=(0, 12))
 
-        # Language Selector (moved from header)
+        # Language Selector (column 4 now, was 5)
         self.lang_var = tk.StringVar(value=self.lang)
         self.lang_cmb = ttk.Combobox(
             self.action_bar_frame, textvariable=self.lang_var, state="readonly", width=4
         )
         self.lang_cmb["values"] = ("en", "vi")
-        self.lang_cmb.grid(row=0, column=5, sticky="e")
+        self.lang_cmb.grid(row=0, column=4, sticky="e")
         self.lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
 
         # DPI Scaling Guard using main action bar frame width
