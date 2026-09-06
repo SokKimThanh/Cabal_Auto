@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Test window detection service"""
+"""Test window detection service (manual script; not a pytest test)."""
+
+import sys
+
+if "pytest" in sys.modules:
+    import pytest
+
+    pytest.skip("Manual script; skip during pytest collection", allow_module_level=True)
 
 from lib.features.hunt.window_detection_service import WindowDetectionService
 from lib.system.window_manager import WindowManager
-
 print("[Test] Testing window enumeration...")
 print()
 
