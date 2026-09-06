@@ -185,7 +185,6 @@ class WindowManager:
         Results:
             List of WindowInfo objects
         """
-        print(f"🟣 [WindowManager.list_windows] START - visible_only={visible_only}")
         results = []
         window_count = [0]  # Mutable counter for callback
         skipped_count = [0]
@@ -268,7 +267,7 @@ class WindowManager:
         except Exception as e:
             logger.error(f"EnumWindows failed: {e}")
 
-        print(f"🟣 [WindowManager.list_windows] END - Found {len(results)} windows (enumerated={window_count[0]}, skipped={skipped_count[0]})\n")
+
         logger.debug(f"Found {len(results)} windows (enumerated={window_count[0]}, skipped={skipped_count[0]})")
         return results
 

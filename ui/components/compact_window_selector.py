@@ -109,7 +109,7 @@ class CompactWindowSelector:
             activeforeground="#ffffff"
         )
         self.refresh_btn.pack(side="left", padx=(0, 6), pady=0)
-        logger.info(f"[DEBUG] Refresh button created and bound to: {self._on_refresh_clicked}")
+        logger.debug("Refresh button created")
         
         # Dropdown button (select first window)
         self.dropdown_btn = tk.Button(
@@ -135,7 +135,6 @@ class CompactWindowSelector:
 
     def _on_dropdown_clicked(self):
         """Handle dropdown button click - fetch windows and auto-select first."""
-        print("🔵 [DEBUG] _on_dropdown_clicked() called")
         logger.info("Dropdown button clicked")
         
         # Fetch windows
@@ -153,7 +152,6 @@ class CompactWindowSelector:
 
     def _update_ui_with_windows(self, windows):
         """Update UI with fetched windows (Main Thread only)."""
-        print(f"🟢 [DEBUG] _update_ui_with_windows() called with {len(windows)} windows")
         logger.info(f"Received {len(windows)} windows")
         
         self.win_items = windows
@@ -169,22 +167,21 @@ class CompactWindowSelector:
             
             # Auto-select first window
             selected = self.win_items[0]
-            print(f"🟢 [DEBUG] Auto-selecting first window: {selected['title']}")
+            logger.debug(f"Auto-selecting first window: {selected['title']}")
             self.on_window_selected(selected)
         else:
             text = "⚠ Chưa mở game | Không có window"
             fg_color = "#ff6b6b"  # Bright red
 
         self.info_label.config(text=text, fg=fg_color)
-        print(f"🟢 [DEBUG] Updated info_label to: {text}")
+        logger.debug(f"Updated info_label to: {text}")
 
         if self.refresh_btn.cget("state") == "disabled":
             self.refresh_btn.config(state="normal", text="🔄")
-        print("🟢 [DEBUG] Refresh complete\n")
+        logger.debug("Refresh complete")
 
     def _handle_refresh_error(self, e):
         """Handle errors during refresh (Main Thread only)."""
-        print(f"🔴 [DEBUG] _handle_refresh_error() called: {e}")
         logger.error(f"Refresh failed: {e}", exc_info=True)
         self.info_label.config(text=f"✗ Error", fg=UI.DANGER if "UI" in globals() else "#f87171")
         self.win_items = []
@@ -196,7 +193,6 @@ class CompactWindowSelector:
 
     def _on_refresh_clicked(self):
         """Handle refresh button click (Asynchronous)."""
-        print("\n🔴 [DEBUG] _on_refresh_clicked() CALLED!!!\n")  # Direct print for debugging
         logger.info("Refresh button clicked")
         self.refresh_btn.config(state="disabled", text="⟳")
         self.refresh_btn.update()
@@ -205,18 +201,14 @@ class CompactWindowSelector:
 
         def fetch_windows_task():
             try:
-                print("🟡 [DEBUG] fetch_windows_task() running in thread...")
                 windows = self.window_controller._list_windows()
-                print(f"🟡 [DEBUG] Got {len(windows)} windows from controller")
-                logger.info(f"Refresh: Found {len(windows)} windows")
+                logger.debug(f"Refresh: Found {len(windows)} windows")
                 self.root.after(0, self._update_ui_with_windows, windows)
             except Exception as e:
-                print(f"🔴 [DEBUG] fetch_windows_task() error: {e}")
                 logger.error(f"Refresh error: {e}", exc_info=True)
                 self.root.after(0, self._handle_refresh_error, e)
 
         # Start thread with a name
         thread = threading.Thread(target=fetch_windows_task, daemon=True, name="WindowRefreshThread")
         thread.start()
-        print(f"🟡 [DEBUG] Refresh thread started: {thread.name}\n")
         logger.debug(f"Refresh thread started: {thread.name}")

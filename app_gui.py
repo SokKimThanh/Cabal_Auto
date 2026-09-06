@@ -92,6 +92,11 @@ from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
 
 # Logger for debugging
 import logging
+from lib.logging_config import setup_logging
+
+# Initialize logging system (size-based rotation: 5MB per file, keep 3 backups)
+setup_logging(rotation_type='size')
+
 logger = logging.getLogger(__name__)
 
 # Import icon button component
