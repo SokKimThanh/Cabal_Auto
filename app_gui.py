@@ -1330,17 +1330,11 @@ class App(tk.Tk):
         self.refresh_translations()
 
         # Re-apply window selection robustly by hwnd
-        if saved_hwnd and hasattr(self, "win_items_map"):
-            new_title = self.win_items_map.get(saved_hwnd)
-            if new_title and hasattr(self, "win_items"):
-                for idx, item in enumerate(self.win_items):
-                    if item.get("hwnd") == saved_hwnd:
-                        if hasattr(self, "win_combo"):
-                            self.win_combo.current(idx)
-                        if hasattr(self, "win_combo_var"):
-                            self.win_combo_var.set(new_title)
-                        self.window_controller.on_window_combo_selected()
-                        break
+        if saved_hwnd and hasattr(self, "compact_window_selector"):
+            # Refresh windows and set search text to the saved window title
+            if hasattr(self, "hunt_selected") and isinstance(self.hunt_selected, dict):
+                saved_title = self.hunt_selected.get("title", "")
+                self.compact_window_selector.set_search_text(saved_title)
 
     def refresh_translations(self):
         # Dynamically update text on widgets without rebuilding
@@ -1348,25 +1342,7 @@ class App(tk.Tk):
         # But if it returns standard button, we config directly.
         self._refresh_start_stop_visual()
 
-        if hasattr(self.refresh_btn, "set_tooltip"):
-            refresh_tooltip_new = (
-                self._t("refresh_tooltip") + "\n" + self._t("refresh_tooltip_desc")
-            )
-            self.refresh_btn.set_tooltip(refresh_tooltip_new)
-
-        # Update combo tooltip
-        try:
-            from ui.helpers.tooltip import attach_i18n_tooltip
-            from lib.i18n import I18N_GLOBAL
-
-            attach_i18n_tooltip(
-                self.win_combo,
-                key="window_select_tooltip",
-                ns=I18N_GLOBAL,
-                lang_provider=lambda: self.lang,
-            )
-        except ImportError:
-            pass
+        # Note: Refresh button is now part of CompactWindowSelector, no separate update needed
 
         # Update bounds readiness label explicitly via state controller
         if hasattr(self, "state_controller") and hasattr(
@@ -2670,10 +2646,9 @@ class App(tk.Tk):
                     "proc": None,  # Process name not saved in config
                 }
 
-                # Populate combobox with saved window (show only window title without PID)
-                if hasattr(self, "win_combo"):
-                    self.win_combo["values"] = [window_title]
-                    self.win_combo.current(0)
+                # Populate compact selector with saved window
+                if hasattr(self, "compact_window_selector"):
+                    self.compact_window_selector.set_search_text(window_title)
                     self.win_items = [self.hunt_selected]
 
         # 2. Monster template (if exists)
