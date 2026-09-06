@@ -33,7 +33,7 @@ class AppWindowController:
             logger.error(f"Failed to get own title: {e}")
             own_title = ""
 
-        allowed_processes = ["cabal.exe"]
+        allowed_processes = ["cabal.exe", "cabalmain.exe"]
 
         for info in windows:
             title = (info.title or "").strip()
