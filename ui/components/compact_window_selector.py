@@ -1,4 +1,4 @@
-"""Compact window selector for hunt tab header bar."""
+"""Compact window selector for hunt tab header bar - Linear UI version."""
 
 import tkinter as tk
 from tkinter import ttk
@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 class CompactWindowSelector:
     """Window selector UI component for hunt tab header.
     
-    Replaces combobox + refresh button with:
-    - Search entry field
-    - Dropdown listbox with filtered windows
-    - Refresh icon button
+    Linear UI with:
+    - Search entry + Dropdown button + Refresh button + Close button (same row)
+    - Listbox below (expandable/collapsible)
+    - Info label showing window count
     """
 
     def __init__(
@@ -32,185 +32,209 @@ class CompactWindowSelector:
         self.win_items: List[Dict[str, Any]] = []
         self.filtered_windows: List[Dict[str, Any]] = []
         self.is_open = False
-        self.listbox = None  # Will be created when dropdown opens
-        self.dropdown_window = None
+        self.listbox = None
+        self.listbox_frame = None
         
         self._build_ui()
 
     def _build_ui(self):
-        """Build the compact window selector UI."""
-        # Main frame - will contain search bar and dropdown
+        """Build the linear window selector UI."""
+        # Main container
         self.frame = tk.Frame(self.parent, bg=self.parent.cget("bg"))
         
-        # Search frame (always visible)
-        self.search_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"))
-        self.search_frame.pack(side="top", fill="x", expand=False)
+        # ===== Top row: Controls (always visible) =====
+        control_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"), height=40)
+        control_frame.pack(side="top", fill="x", padx=0, pady=0)
+        control_frame.pack_propagate(False)  # Fixed height
         
-        # Search label
-        search_label = tk.Label(
-            self.search_frame,
-            text="Window:",
-            bg=self.parent.cget("bg"),
-            fg="#9ca3af",
-            font=("Arial", 9),
-        )
-        search_label.pack(side="left", padx=(0, 5))
-        
-        # Search entry
-        self.search_var = tk.StringVar()
-        self.search_entry = tk.Entry(
-            self.search_frame,
-            textvariable=self.search_var,
-            width=30,
-            font=("Arial", 9),
-        )
-        self.search_entry.pack(side="left", padx=(0, 8), fill="x", expand=True)
-        self.search_entry.bind("<Return>", self._on_search_enter)
-        self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
-        self.search_entry.bind("<FocusIn>", self._on_search_focus_in)
-        
-        # Dropdown button
-        self.dropdown_btn = tk.Button(
-            self.search_frame,
-            text="▼",
-            width=2,
-            height=1,
-            bg="#2a2a2a",
-            fg="#d1d5db",
-            relief="flat",
-            command=self._toggle_dropdown,
-            cursor="hand2",
-        )
-        self.dropdown_btn.pack(side="left", padx=(0, 8))
-        
-        # Refresh button (icon only)
-        self.refresh_btn = tk.Button(
-            self.search_frame,
-            text="🔄",
-            width=2,
-            height=1,
-            bg="#2a2a2a",
-            fg="#d1d5db",
-            relief="flat",
-            command=self._on_refresh,
-            cursor="hand2",
-        )
-        self.refresh_btn.pack(side="left")
-        
-        # Info label
+        # Info label (window count) - leftmost
         self.info_label = tk.Label(
-            self.frame,
-            text="Click refresh to load windows",
-            font=("Arial", 8),
+            control_frame,
+            text="? windows",
+            font=("Arial", 8, "bold"),
             bg=self.parent.cget("bg"),
             fg="#6b7280",
+            width=14,
         )
-        self.info_label.pack(side="bottom", fill="x", pady=(2, 0))
+        self.info_label.pack(side="left", padx=(10, 5))
+
+        # Dropdown button (toggle listbox)
+        self.dropdown_btn = tk.Button(
+            control_frame,
+            text="▼",
+            width=2,
+            bg="#2a2a2a",
+            fg="#d1d5db",
+            relief="flat",
+            command=self._toggle_listbox,
+            cursor="hand2",
+            font=("Arial", 8),
+        )
+        self.dropdown_btn.pack(side="left", padx=(0, 5))
+        
+        # Refresh button
+        self.refresh_btn = tk.Button(
+            control_frame,
+            text="🔄",
+            width=2,
+            bg="#2a2a2a",
+            fg="#d1d5db",
+            relief="flat",
+            command=self._on_refresh_clicked,
+            cursor="hand2",
+            font=("Arial", 8),
+        )
+        self.refresh_btn.pack(side="left", padx=(0, 5))
+        
+        # Close button
+        self.close_btn = tk.Button(
+            control_frame,
+            text="✕",
+            width=2,
+            bg="#2a2a2a",
+            fg="#d1d5db",
+            relief="flat",
+            command=self._close_listbox,
+            cursor="hand2",
+            font=("Arial", 8),
+        )
+        self.close_btn.pack(side="left", padx=(0, 10))
+
+        # ===== Bottom: Listbox (collapsible) =====
+        self.listbox_frame = tk.Frame(self.frame, bg="#111111", height=0)
+        self.listbox_frame.pack(side="top", fill="x", padx=5, pady=(0, 5))
+        self.listbox_frame.pack_propagate(False)  # Don't auto-resize
+
+        # Search entry inside listbox frame
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(
+            self.listbox_frame,
+            textvariable=self.search_var,
+            width=40,
+            font=("Arial", 9),
+        )
+        self.search_entry.pack(side="top", fill="x", padx=5, pady=(5, 0))
+        self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
+        self.search_entry.bind("<Escape>", lambda e: self._close_listbox())
+
+        # Listbox container frame
+        listbox_container = tk.Frame(self.listbox_frame, bg="#111111")
+        listbox_container.pack(side="top", fill="both", expand=True, padx=0, pady=5)
+
+        # Create listbox and scrollbar inside container
+        scrollbar = tk.Scrollbar(listbox_container)
+        scrollbar.pack(side="right", fill="y")
+
+        self.listbox = tk.Listbox(
+            listbox_container,
+            height=0,
+            width=50,
+            yscrollcommand=scrollbar.set,
+            font=("Courier New", 9),
+            bg="#111111",
+            fg="#d1d5db",
+            selectmode="single",
+            bd=0,
+            highlightthickness=0,
+        )
+        self.listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=self.listbox.yview)
+        self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
+        self.listbox.bind("<Escape>", lambda e: self._close_listbox())
+
+        # Initially hidden (height=0)
+        self.is_open = False
 
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
         return self.frame
 
+    def _toggle_listbox(self):
+        """Toggle listbox visibility."""
+        if self.is_open:
+            self._close_listbox()
+        else:
+            # Refresh before opening
+            self._on_refresh()
+            # Show listbox
+            self.listbox_frame.pack_propagate(True)
+            self.listbox.config(height=6)
+            self.listbox_frame.config(height=150)
+            self.is_open = True
+            self.dropdown_btn.config(text="▲")
+            self.listbox.focus()
+            self._update_listbox()
+            # Auto-select first
+            if self.filtered_windows:
+                self.listbox.selection_set(0)
+                self.listbox.activate(0)
+            logger.debug("[Toggle] Listbox opened")
+
+    def _close_listbox(self):
+        """Close listbox (collapse)."""
+        if self.is_open:
+            self.listbox.config(height=0)
+            self.listbox_frame.config(height=0)
+            self.listbox_frame.pack_propagate(False)
+            self.is_open = False
+            self.dropdown_btn.config(text="▼")
+            logger.debug("[Toggle] Listbox closed")
+
     def _on_refresh(self):
         """Refresh window list."""
-        logger.debug("CompactWindowSelector._on_refresh() called")
+        logger.debug("[Refresh] Starting refresh...")
         try:
-            self.win_items = self.window_controller._list_windows()
-            # Update app.win_items for validation
-            self.root.win_items = self.win_items
-            logger.debug(f"  Found {len(self.win_items)} windows")
-            self._update_listbox()
-            self.info_label.config(
-                text=f"✓ Found {len(self.win_items)} window(s)",
-                fg="#4ade80"
-            )
+            windows = self.window_controller._list_windows()
+            self.win_items = windows
+            self.root.win_items = windows
+            
+            # Update info label
+            count = len(self.win_items)
+            if count > 0:
+                text = f"✓ {count} window(s)"
+                fg_color = "#4ade80"
+            else:
+                text = "✗ 0 windows"
+                fg_color = "#ef4444"
+            
+            self.info_label.config(text=text, fg=fg_color)
+            self.info_label.update()  # Force update immediately
+            logger.debug(f"[Refresh] Updated label: '{text}'")
+            
+            # Update listbox if open
+            if self.is_open:
+                self._update_listbox()
+                if self.filtered_windows:
+                    self.listbox.selection_set(0)
+                    self.listbox.activate(0)
         except Exception as e:
-            logger.error(f"  Failed to refresh: {e}")
-            self.info_label.config(
-                text=f"Error: {e}",
-                fg="#dc2626"
-            )
+            logger.error(f"[Refresh] Failed: {e}", exc_info=True)
+            self.info_label.config(text=f"✗ Error: {e}", fg="#dc2626")
+            self.info_label.update()
             self.win_items = []
             self.root.win_items = []
 
-    def _on_search_focus_in(self, event=None):
-        """Show dropdown when search box focused."""
-        # Only auto-open if dropdown is not already open
-        # Also ignore focus events that come from Toplevel closing
-        if not self.is_open and not self.dropdown_window:
-            self._toggle_dropdown()
+    def _on_refresh_clicked(self):
+        """Handle refresh button click."""
+        logger.debug("[Refresh] Button clicked")
+        self.refresh_btn.config(state="disabled", text="⟳")
+        self.refresh_btn.update()  # Show loading state immediately
 
-    def _on_search_text_changed(self, event=None):
-        """Filter listbox as user types."""
-        if self.is_open:
-            self._update_listbox()
+        try:
+            self._on_refresh()
+            logger.debug(f"[Refresh] Found {len(self.win_items)} windows")
+        except Exception as e:
+            logger.error(f"[Refresh] Error: {e}")
 
-    def _on_search_enter(self, event=None):
-        """Select first item on Enter."""
-        if self.listbox and self.listbox.size() > 0:
-            self.listbox.selection_set(0)
-            self._on_listbox_select()
+        # Reset button after 300ms
+        def reset_btn():
+            self.refresh_btn.config(state="normal", text="🔄")
+            logger.debug("[Refresh] Button reset")
 
-    def _toggle_dropdown(self):
-        """Toggle dropdown visibility using Toplevel popup window."""
-        if self.is_open:
-            if self.dropdown_window:
-                self.dropdown_window.destroy()
-                self.dropdown_window = None
-            self.is_open = False
-            self.dropdown_btn.config(text="▼")
-        else:
-            if not self.win_items:
-                self._on_refresh()
-            
-            # Create Toplevel popup window for dropdown
-            self.dropdown_window = tk.Toplevel(self.parent)
-            self.dropdown_window.wm_overrideredirect(True)  # No window decorations
-            self.dropdown_window.configure(bg="#1a1a1a")
-            # Make popup grab all events (modal-like behavior)
-            self.dropdown_window.grab_set()
-            
-            # Position dropdown below search frame
-            self.frame.update_idletasks()
-            parent_x = self.parent.winfo_rootx()
-            parent_y = self.parent.winfo_rooty()
-            frame_width = self.frame.winfo_width()
-            search_height = self.search_frame.winfo_height()
-            
-            # Calculate dropdown position (below search_frame)
-            dropdown_x = parent_x
-            dropdown_y = parent_y + search_height
-            
-            # Create scrollbar and listbox in Toplevel
-            scrollbar = tk.Scrollbar(self.dropdown_window)
-            scrollbar.pack(side="right", fill="y")
-            
-            self.listbox = tk.Listbox(
-                self.dropdown_window,
-                height=6,
-                width=50,
-                yscrollcommand=scrollbar.set,
-                font=("Courier New", 9),
-                bg="#111111",
-                fg="#d1d5db",
-                selectmode="single",
-            )
-            self.listbox.pack(side="left", fill="both", expand=True)
-            scrollbar.config(command=self.listbox.yview)
-            self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
-            
-            # Position and resize Toplevel window
-            self.dropdown_window.geometry(f"{frame_width}x150+{dropdown_x}+{dropdown_y}")
-            
-            self._update_listbox()
-            
-            self.is_open = True
-            self.dropdown_btn.config(text="▲")
-            self.search_entry.focus()
+        self.refresh_btn.after(300, reset_btn)
 
     def _update_listbox(self):
         """Update listbox with filtered windows."""
-        # Only update if listbox exists (dropdown is open)
         if not self.listbox:
             return
         
@@ -228,10 +252,6 @@ class CompactWindowSelector:
         for w in self.filtered_windows:
             label = f"{w['title']}  [PID:{w['pid']}]"
             self.listbox.insert(tk.END, label)
-        
-        if self.filtered_windows:
-            self.listbox.selection_set(0)
-            self.listbox.activate(0)
 
     def _on_listbox_select(self, event=None):
         """Handle window selection from listbox."""
@@ -243,44 +263,20 @@ class CompactWindowSelector:
                 return
             
             selected = self.filtered_windows[sel[0]]
-            logger.debug(f"Selected window: {selected['title']}")
+            logger.debug(f"Selected: {selected['title']}")
             
-            # Update search entry with selection
+            # Update search entry
             self.search_var.set(selected["title"])
             
-            # Call callback
+            # Fire callback
             self.on_window_selected(selected)
             
-            # Temporarily unbind FocusIn to prevent re-opening
-            self.search_entry.unbind("<FocusIn>")
-            
-            # Close dropdown directly
-            if self.dropdown_window:
-                self.dropdown_window.grab_release()
-                self.dropdown_window.destroy()
-                self.dropdown_window = None
-            self.is_open = False
-            self.dropdown_btn.config(text="▼")
-            
-            # Restore FocusIn binding after a short delay
-            self.search_entry.after(100, lambda: self.search_entry.bind("<FocusIn>", self._on_search_focus_in))
-            
+            # Close listbox
+            self._close_listbox()
         except Exception as e:
-            logger.error(f"Error on window select: {e}")
+            logger.error(f"Selection failed: {e}")
 
-    def set_search_text(self, text: str):
-        """Set search entry text programmatically."""
-        self.search_var.set(text)
-
-    def get_selected_window(self) -> Optional[Dict[str, Any]]:
-        """Get currently selected window dict."""
-        try:
-            if not self.listbox:
-                return None
-            sel = self.listbox.curselection()
-            if sel:
-                return self.filtered_windows[sel[0]]
-        except Exception:
-            pass
-        return None
-        return None
+    def _on_search_text_changed(self, event=None):
+        """Update listbox as user types."""
+        if self.is_open:
+            self._update_listbox()
