@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Direct test of CompactWindowSelector._on_refresh"""
+"""Direct test of CompactWindowSelector._on_refresh (manual script; not a pytest test)."""
 
-import tkinter as tk
 import sys
 
+if "pytest" in sys.modules:
+    import pytest
+
+    pytest.skip("Manual script; skip during pytest collection", allow_module_level=True)
+
+import tkinter as tk
 # Setup app context
 from lib.features.hunt.hunt_config import load_hunt_config
 
