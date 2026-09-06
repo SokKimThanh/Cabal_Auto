@@ -28,25 +28,20 @@ class WindowDetectionService:
         windows = self.enumerate_windows_raw()
         results = []
 
-        allowed_processes = ["cabal.exe"]
+allowed_processes = ["cabal.exe"]
 
-        for win in windows:
-            title = win["title"]
-            proc_name = win["proc"]
+for win in windows:
+    info = self.wm.get_window_info(win["hwnd"])
+    if not info:
+        continue
 
-            if proc_name and proc_name.lower() not in allowed_processes:
-                continue
+    if (info.process_name or "").lower() not in allowed_processes:
+        continue
 
-            info = self.wm.get_window_info(win["hwnd"])
-            if info:
-                win["bounds"] = normalize_window_bounds_value(info.rect)
-                win["is_minimized"] = info.is_minimized
-            else:
-                win["bounds"] = None
-                win["is_minimized"] = False
-
-            results.append(win)
-
+    win["proc"] = info.process_name
+    win["bounds"] = normalize_window_bounds_value(info.rect)
+    win["is_minimized"] = info.is_minimized
+    results.append(win)
         results = self.filter_windows(results, filter_text)
 
         results.sort(
