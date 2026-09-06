@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List, Dict, Any, Callable, Optional
 import logging
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 logger = logging.getLogger(__name__)
 
@@ -62,43 +63,49 @@ class CompactWindowSelector:
         self.dropdown_btn = tk.Button(
             control_frame,
             text="▼",
-            width=2,
+            width=3,
             bg="#2a2a2a",
             fg="#d1d5db",
             relief="flat",
             command=self._toggle_listbox,
             cursor="hand2",
             font=("Arial", 8),
+            padx=4,
+            pady=2
         )
-        self.dropdown_btn.pack(side="left", padx=(0, 5))
+        self.dropdown_btn.pack(side="left", padx=(0, 6), pady=6)
         
         # Refresh button
         self.refresh_btn = tk.Button(
             control_frame,
             text="🔄",
-            width=2,
+            width=3,
             bg="#2a2a2a",
             fg="#d1d5db",
             relief="flat",
             command=self._on_refresh_clicked,
             cursor="hand2",
             font=("Arial", 8),
+            padx=4,
+            pady=2
         )
-        self.refresh_btn.pack(side="left", padx=(0, 5))
+        self.refresh_btn.pack(side="left", padx=(0, 6), pady=6)
         
         # Close button
         self.close_btn = tk.Button(
             control_frame,
             text="✕",
-            width=2,
+            width=3,
             bg="#2a2a2a",
             fg="#d1d5db",
             relief="flat",
             command=self._close_listbox,
             cursor="hand2",
             font=("Arial", 8),
+            padx=4,
+            pady=2
         )
-        self.close_btn.pack(side="left", padx=(0, 10))
+        self.close_btn.pack(side="left", padx=(0, 10), pady=6)
 
         # ===== Bottom: Listbox (collapsible) =====
         self.listbox_frame = tk.Frame(self.frame, bg="#111111", height=0)
@@ -192,10 +199,10 @@ class CompactWindowSelector:
             count = len(self.win_items)
             if count > 0:
                 text = f"✓ {count} window(s)"
-                fg_color = "#4ade80"
+                fg_color = UI.ACCENT_GREEN if "UI" in globals() else "#4ade80"
             else:
                 text = "✗ 0 windows"
-                fg_color = "#ef4444"
+                fg_color = UI.DANGER if "UI" in globals() else "#f87171"
             
             self.info_label.config(text=text, fg=fg_color)
             self.info_label.update()  # Force update immediately
@@ -209,7 +216,7 @@ class CompactWindowSelector:
                     self.listbox.activate(0)
         except Exception as e:
             logger.error(f"[Refresh] Failed: {e}", exc_info=True)
-            self.info_label.config(text=f"✗ Error: {e}", fg="#dc2626")
+            self.info_label.config(text=f"✗ Error: {e}", fg=UI.DANGER if "UI" in globals() else "#f87171")
             self.info_label.update()
             self.win_items = []
             self.root.win_items = []

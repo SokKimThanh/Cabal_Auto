@@ -41,7 +41,7 @@ class SkillStatsPanel(ttk.LabelFrame):
                 col, width=width, anchor="center", stretch=(col == "skill")
             )
 
-        stats_scroll = tk.Scrollbar(
+        stats_scroll = ttk.Scrollbar(
             tree_container,
             orient="vertical",
             command=self.app.skill_stats_tree.yview,

@@ -39,9 +39,12 @@ class SkillPanel(ttk.LabelFrame):
             variable=cb_var,
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_PRIMARY,
-            selectcolor=UI.BG_ELEVATED,
+            selectcolor=UI.BG_BASE,
             activebackground=UI.BG_ELEVATED,
             activeforeground=UI.TEXT_PRIMARY,
+            relief="flat",
+            bd=0,
+            highlightthickness=0
         )
         self.widgets["auto_combo_cb"] = cb
         cb.pack(side="left", padx=12, pady=10)
@@ -131,7 +134,7 @@ class SkillPanel(ttk.LabelFrame):
             dd = ttk.Combobox(
                 card, textvariable=dd_var, state="readonly", values=skill_names
             )
-            dd.pack(fill="x", padx=6, pady=4)
+            dd.pack(fill="x", padx=8, pady=8)
             dd.bind(
                 "<<ComboboxSelected>>",
                 lambda e, idx=i: self._on_skill_changed(e, "attack_combo", idx),
@@ -157,20 +160,24 @@ class SkillPanel(ttk.LabelFrame):
 
         # Divider
         divider = tk.Frame(content_frame, bg=UI.BG_BASE)
-        divider.pack(fill="x", pady=12)
-        tk.Frame(divider, height=1, bg=UI.BORDER_PRIMARY).pack(
-            side="left", fill="x", expand=True
-        )
+        divider.pack(fill="x", pady=16)
+
+        # Use explicit frames to avoid border intersection
+        left_line = tk.Frame(divider, height=1, bg=UI.BORDER_PRIMARY)
+        left_line.pack(side="left", fill="x", expand=True)
+
+        lbl_container = tk.Frame(divider, bg=UI.BG_BASE, padx=12, pady=4)
+        lbl_container.pack(side="left")
         tk.Label(
-            divider,
+            lbl_container,
             text=getattr(self.app_state, "_t", lambda x: x)("skill_strip.buff_lane"),
             font=UI.FONT_SMALL,
             bg=UI.BG_BASE,
             fg=UI.TEXT_MUTED,
-        ).pack(side="left", padx=8)
-        tk.Frame(divider, height=1, bg=UI.BORDER_PRIMARY).pack(
-            side="left", fill="x", expand=True
-        )
+        ).pack(side="left")
+
+        right_line = tk.Frame(divider, height=1, bg=UI.BORDER_PRIMARY)
+        right_line.pack(side="left", fill="x", expand=True)
 
         # Buff lane section (2 cards grid)
         buff_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
@@ -236,7 +243,7 @@ class SkillPanel(ttk.LabelFrame):
             dd = ttk.Combobox(
                 card, textvariable=dd_var, state="readonly", values=skill_names
             )
-            dd.pack(fill="x", padx=6, pady=4)
+            dd.pack(fill="x", padx=8, pady=8)
             dd.bind(
                 "<<ComboboxSelected>>",
                 lambda e, idx=i: self._on_skill_changed(e, "buff_lane", idx),

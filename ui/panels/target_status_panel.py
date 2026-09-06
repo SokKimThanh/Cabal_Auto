@@ -38,7 +38,8 @@ class TargetStatusPanel(ttk.LabelFrame):
             status_frame,
             textvariable=self.app.hunt_target_info,
             font=UI.FONT_LABEL,
-            fg=UI.TEXT_SECONDARY,
+            fg=UI.TEXT_PRIMARY,
+            bg=UI.BG_SURFACE,
             anchor="e",
         )
         self.app.hunt_target_info_label.pack(side="right", padx=8, pady=6)
@@ -69,7 +70,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         )
 
         self.app.hp_percent_label = tk.Label(
-            self, text="-", bg=UI.BG_SURFACE, fg=UI.TEXT_SECONDARY, anchor="w"
+            self, text="-", bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, anchor="w"
         )
         self.app.hp_percent_label.pack(fill="x", padx=8, anchor="w", pady=(0, 4))
 
@@ -115,7 +116,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         )
 
         self.resource_label = tk.Label(
-            self, text="- / - MP", bg=UI.BG_SURFACE, fg=UI.TEXT_SECONDARY, anchor="w"
+            self, text="- / - MP", bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, anchor="w"
         )
         self.resource_label.pack(fill="x", padx=8, anchor="w", pady=(0, 4))
 

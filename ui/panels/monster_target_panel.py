@@ -131,14 +131,24 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         self.policy_radios = []
         for val, text in policies:
-            rb = ttk.Radiobutton(
+            rb = tk.Radiobutton(
                 mode_bar,
                 text=text,
                 value=val,
                 variable=self.app.target_policy_var,
-                style="Toolbutton",
+                indicatoron=0,
+                bg=UI.BG_SURFACE,
+                fg=UI.TEXT_SECONDARY,
+                selectcolor=UI.BG_ELEVATED,
+                activebackground=UI.BG_ELEVATED,
+                activeforeground=UI.TEXT_PRIMARY,
+                relief="flat",
+                bd=0,
+                padx=16,
+                pady=6,
+                cursor="hand2"
             )
-            rb.pack(side="left", padx=2)
+            rb.pack(side="left", padx=2, pady=4)
             self.policy_radios.append(rb)
 
         self.policy_content_frame = tk.Frame(self.app.monster_frame, bg=UI.BG_SURFACE)
@@ -180,7 +190,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         self.app.monster_rotation_listbox.pack(side="left", fill="both", expand=True)
 
-        monster_scroll = tk.Scrollbar(
+        monster_scroll = ttk.Scrollbar(
             listbox_frame,
             orient="vertical",
             command=self.app.monster_rotation_listbox.yview,
@@ -191,36 +201,48 @@ class MonsterTargetPanel(ttk.LabelFrame):
         btn_container = tk.Frame(list_container, bg=UI.BG_SURFACE)
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
-        self.app.btn_add_monster = self.app._create_icon_button(
+        self.app.btn_add_monster = tk.Button(
             btn_container,
-            icon_emoji="➕",
+            text="➕",
             command=self.app._on_monster_add_smart,
-            style="compact",
-            bg_color=UI.BG_ELEVATED,
-            hover_color=UI.BG_SURFACE,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            relief="flat",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2"
         )
         self.app.btn_add_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
             self.app.btn_add_monster, self.app._t("monster_rotation_add")
         )
 
-        self.app.btn_move_up = self.app._create_icon_button(
+        self.app.btn_move_up = tk.Button(
             btn_container,
-            icon_emoji="↑",
+            text="↑",
             command=self.app._on_monster_move_up,
-            style="compact",
-            bg_color=UI.BG_ELEVATED,
-            hover_color=UI.BG_SURFACE,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            relief="flat",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2"
         )
         self.app.btn_move_up.pack(pady=(0, 4))
 
-        self.app.btn_move_down = self.app._create_icon_button(
+        self.app.btn_move_down = tk.Button(
             btn_container,
-            icon_emoji="↓",
+            text="↓",
             command=self.app._on_monster_move_down,
-            style="compact",
-            bg_color=UI.BG_ELEVATED,
-            hover_color=UI.BG_SURFACE,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            relief="flat",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2"
         )
         self.app.btn_move_down.pack(pady=(0, 12))
 
@@ -264,7 +286,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         self.app.detected_monsters_listbox.pack(side="left", fill="both", expand=True)
 
-        detected_scroll = tk.Scrollbar(
+        detected_scroll = ttk.Scrollbar(
             detected_listbox_frame, command=self.app.detected_monsters_listbox.yview
         )
         detected_scroll.pack(side="right", fill="y")
@@ -272,15 +294,19 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         detected_btn_container = tk.Frame(self.detected_container, bg=UI.BG_SURFACE)
         detected_btn_container.pack(side="right", fill="y", padx=(8, 0))
-        self.app.btn_promote_monster = self.app._create_icon_button(
+        self.app.btn_promote_monster = tk.Button(
             detected_btn_container,
-            icon_emoji="➕",
+            text="➕",
             command=lambda: getattr(
                 self.app, "promote_detected_monster", lambda x: None
             )(self.app.detected_monsters_listbox.curselection()),
-            style="compact",
-            bg_color=UI.BG_ELEVATED,
-            hover_color=UI.BG_SURFACE,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            relief="flat",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2"
         )
         self.app.btn_promote_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
@@ -422,6 +448,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             self.configured_container,
             text=self.app._t("monster_rotation_delete_hint"),
             fg=UI.TEXT_PRIMARY,
+            bg=UI.BG_SURFACE,
             font=UI.FONT_TEXT,
             anchor="w",
         ).pack(fill="x", pady=(4, 0))
