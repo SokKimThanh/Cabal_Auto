@@ -31,13 +31,29 @@ class PresetDialog(tk.Toplevel):
         btn_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
         btn_frame.pack(fill="x", pady=5)
 
-        tk.Button(btn_frame, text="Cancel", command=self.destroy).pack(
-            side="right", padx=2
+        tk.Button(
+            btn_frame,
+            text="Cancel",
+            command=self.destroy,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+        ).pack(side="right", padx=2)
+        self.apply_btn = tk.Button(
+            btn_frame,
+            text="Apply",
+            command=self._on_apply,
+            bg=UI.BTN_PRIMARY_BG,
+            fg=UI.BTN_PRIMARY_FG,
         )
-        self.apply_btn = tk.Button(btn_frame, text="Apply", command=self._on_apply)
         self.apply_btn.pack(side="right", padx=2)
 
-        self.delete_btn = tk.Button(btn_frame, text="Delete", command=self._on_delete)
+        self.delete_btn = tk.Button(
+            btn_frame,
+            text="Delete",
+            command=self._on_delete,
+            bg=UI.BTN_DANGER_BG,
+            fg=UI.BTN_DANGER_FG,
+        )
         self.delete_btn.pack(side="left", padx=2)
 
         self.listbox.bind("<<ListboxSelect>>", self._on_select)

@@ -49,9 +49,7 @@ class HuntTab(ttk.Frame):
 
     def show_recovery(self):
         if hasattr(self, "recovery_frame"):
-            self.recovery_frame.config(
-                bg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
-            )
+            self.recovery_frame.config(bg=UI.ACCENT_AMBER)
             self.recovery_frame.pack(fill="x", pady=(4, 4), after=self.hp_percent_label)
             if hasattr(self, "recovery_btn"):
                 self.recovery_btn.config(
@@ -105,19 +103,13 @@ class HuntTab(ttk.Frame):
             return
         self.status_label.config(text=status_string)
         if status_string == "APPROACHING":
-            self.status_label.config(
-                fg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
-            )
+            self.status_label.config(fg=UI.ACCENT_AMBER)
         elif status_string == "ATTACKING":
-            self.status_label.config(
-                fg=getattr(UI, "STATE_ERROR", getattr(UI, "COLOR_DANGER", "#F44336"))
-            )
+            self.status_label.config(fg=UI.DANGER)
         elif status_string == "TARGET_DEAD":
-            self.status_label.config(
-                fg=getattr(UI, "STATE_MUTED", getattr(UI, "COLOR_MUTED", "#9E9E9E"))
-            )
+            self.status_label.config(fg=UI.TEXT_MUTED)
         else:
-            self.status_label.config(fg=getattr(UI, "COLOR_ACCENT", "#2196F3"))
+            self.status_label.config(fg=UI.ACCENT_BLUE)
 
     def update_hp_display(
         self, hp_percent: float, current_hp: int = 0, max_hp: int = 10000
@@ -227,9 +219,7 @@ class HuntTab(ttk.Frame):
             self.app.hunt_target_info.set(f"Target: #{info['id']}")
 
         if info.get("is_placeholder"):
-            self.hunt_status_label.config(
-                fg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
-            )
+            self.hunt_status_label.config(fg=UI.ACCENT_AMBER)
             if hasattr(self.app, "_create_tooltip"):
                 self.app._create_tooltip(
                     self.hunt_status_label, self.app._t("target_card.unknown_mob")
@@ -380,9 +370,9 @@ class HuntTab(ttk.Frame):
 
         # Split workspace into 60/40 columns
 
-        self.workspace.grid_columnconfigure(0, weight=1)
+        self.workspace.grid_columnconfigure(0, weight=6)
 
-        self.workspace.grid_columnconfigure(1, weight=1)
+        self.workspace.grid_columnconfigure(1, weight=4)
 
         self.workspace.grid_rowconfigure(0, weight=1)
 
@@ -394,7 +384,7 @@ class HuntTab(ttk.Frame):
 
         self.col_interaction.grid_rowconfigure(0, weight=35)
 
-        self.col_interaction.grid_rowconfigure(1, weight=15)
+        self.col_interaction.grid_rowconfigure(1, weight=65)
 
         self.col_interaction.grid_columnconfigure(0, weight=1)
 
@@ -565,7 +555,7 @@ class HuntTab(ttk.Frame):
         # Recovery Frame (Hidden by default)
         self.recovery_frame = tk.Frame(
             stats_frame,
-            bg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107")),
+            bg=UI.ACCENT_AMBER,
         )
         self.recovery_frame.pack_forget()
 
