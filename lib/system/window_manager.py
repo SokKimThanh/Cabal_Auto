@@ -186,37 +186,70 @@ class WindowManager:
             List of WindowInfo objects
         """
         results = []
+        window_count = [0]  # Mutable counter for callback
+        skipped_count = [0]
+
+        import ctypes
+        import sys
+
+        if sys.platform == "win32":
+            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+        else:
+            EnumWindowsProc = ctypes.CFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 
         def callback(hwnd, _):
+            window_count[0] += 1
             try:
-                # Include minimized windows for game selection
-                # IsWindowVisible() returns False for minimized, but we want to show them
+                # Convert ctypes pointer to int
+                hwnd_int = ctypes.cast(hwnd, ctypes.c_void_p).value
+                
                 if visible_only:
-                    # Check if window is minimized - include minimized windows
                     import win32con
-                    is_minimized = (win32gui.GetWindowPlacement(hwnd)[0] == win32con.SW_MINIMIZE)
-                    is_visible = win32gui.IsWindowVisible(hwnd)
-
-                    # Include window if: visible OR minimized (for game windows)
+                    try:
+                        is_minimized = (win32gui.GetWindowPlacement(hwnd_int)[0] == win32con.SW_MINIMIZE)
+                    except Exception as e:
+                        logger.debug(f"GetWindowPlacement failed for {hwnd_int}: {e}")
+                        skipped_count[0] += 1
+                        return True
+                    
+                    if sys.platform == "win32":
+                        is_visible = ctypes.windll.user32.IsWindowVisible(hwnd_int) != 0
+                    else:
+                        is_visible = win32gui.IsWindowVisible(hwnd_int)
+                    
                     if not (is_visible or is_minimized):
-                        return True  # Skip completely hidden/closed windows
+                        skipped_count[0] += 1
+                        return True
+
+                # Get window title directly using ctypes for speed (Windows only)
+                if sys.platform == "win32":
+                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd_int)
+                    buf = ctypes.create_unicode_buffer(length + 1)
+                    ctypes.windll.user32.GetWindowTextW(hwnd_int, buf, length + 1)
+                    title = buf.value
+                else:
+                    title = win32gui.GetWindowText(hwnd_int)
+
+                if title_contains and title_contains.lower() not in title.lower():
+                    skipped_count[0] += 1
+                    return True
 
                 # Get window info
-                info = self.get_window_info(hwnd)
+                info = self.get_window_info(hwnd_int)
                 if not info:
+                    skipped_count[0] += 1
                     return True
 
-                # Apply filters
-                if title_contains and title_contains.lower() not in info.title.lower():
-                    return True
-
+                # Apply remaining filters
                 if class_name and class_name != info.class_name:
+                    skipped_count[0] += 1
                     return True
 
                 if (
                     process_name
                     and process_name.lower() not in info.process_name.lower()
                 ):
+                    skipped_count[0] += 1
                     return True
 
                 results.append(info)
@@ -227,11 +260,15 @@ class WindowManager:
             return True
 
         try:
-            win32gui.EnumWindows(callback, None)
+            if sys.platform == "win32":
+                ctypes.windll.user32.EnumWindows(EnumWindowsProc(callback), 0)
+            else:
+                win32gui.EnumWindows(callback, None)
         except Exception as e:
             logger.error(f"EnumWindows failed: {e}")
 
-        logger.debug(f"Found {len(results)} windows")
+
+        logger.debug(f"Found {len(results)} windows (enumerated={window_count[0]}, skipped={skipped_count[0]})")
         return results
 
     def get_window_info(self, hwnd: int) -> Optional[WindowInfo]:

@@ -6,6 +6,13 @@ import sys
 import os
 from pathlib import Path
 import time
+import logging
+
+# Enable DEBUG logging to see all logs
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -54,11 +61,13 @@ def test_refresh_button():
         # Test 2: Simulate refresh button click
         print("\n[Test 2] Clicking refresh button...")
         print(f"  - Button state before: {selector.refresh_btn.cget('state')}")
+        print("\n>>> CALLING REFRESH BUTTON NOW <<<")
         selector.refresh_btn.invoke()  # Programmatically click
 
         print(f"  - Button state after invoke: {selector.refresh_btn.cget('state')}")
         root.update()
-        print(f"  - Button text during refresh: '{selector.refresh_btn.cget('text')}'")
+        btn_text = repr(selector.refresh_btn.cget('text'))  # Use repr to avoid emoji encoding issues
+        print(f"  - Button text during refresh: {btn_text}")
         print(f"  - Info label after refresh: '{selector.info_label.cget('text')}'")
 
         # Test 3: Check if refresh worked
@@ -71,7 +80,8 @@ def test_refresh_button():
         root.after(350, lambda: root.quit())
         root.mainloop()
 
-        print(f"  - Button text after reset: '{selector.refresh_btn.cget('text')}'")
+        reset_text = repr(selector.refresh_btn.cget('text'))
+        print(f"  - Button text after reset: {reset_text}")
         print(f"  - Button state after reset: '{selector.refresh_btn.cget('state')}'")
 
         print("\n[Test] ALL TESTS PASSED ✓")

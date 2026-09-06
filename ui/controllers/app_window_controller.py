@@ -25,6 +25,7 @@ class AppWindowController:
 
         wm = WindowManager()
         windows = wm.list_windows(title_contains=title_contains, visible_only=True)
+        logger.debug(f"Found {len(windows)} total windows")
 
         results: List[Dict[str, Any]] = []
         own_title = ""
@@ -38,12 +39,15 @@ class AppWindowController:
 
         for info in windows:
             title = (info.title or "").strip()
+            proc_name_lower = info.process_name.lower()
+            
             if not title or title == own_title:
+                logger.debug(f"Skipped window: empty title or is own window")
                 continue
 
-            if info.process_name.lower() not in allowed_processes:
+            if proc_name_lower not in allowed_processes:
+                logger.debug(f"Skipped window: process '{proc_name_lower}' not in allowed list")
                 continue
-
             results.append(
                 {
                     "hwnd": int(info.hwnd),
@@ -62,6 +66,10 @@ class AppWindowController:
                 item["pid"],
             )
         )
+        logger.debug(f"After filtering: {len(results)} windows returned")
+        
+        if len(results) == 0 and len(windows) > 0:
+            logger.info("Game not running! No Cabal/Game windows found.")
         return results
 
     def _retry_resolve_bounds(self, hwnd, attempt):
