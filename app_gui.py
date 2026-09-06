@@ -668,7 +668,6 @@ class App(tk.Tk):
         )  # Vùng B - Workspace
 
         # Ensure main_shell fills root window
-        self.main_shell.grid_rowconfigure(0, weight=1)
         self.main_shell.grid_rowconfigure(1, weight=1)
         self.main_shell.grid_columnconfigure(0, weight=1)
         self.main_shell.grid_columnconfigure(1, weight=1)
@@ -678,8 +677,9 @@ class App(tk.Tk):
         )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE)
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=80)
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
+        self.shell_zone_a.grid_propagate(False)
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
         self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_ELEVATED)
@@ -834,22 +834,45 @@ class App(tk.Tk):
         self.after(1000, self._update_logs_metrics)
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
+        # Redesign Header Bar (3 Columns + Scrollbar)
+        self.action_bar_canvas = tk.Canvas(self.shell_zone_a, bg=UI.BG_BASE, highlightthickness=0, height=80)
+        self.action_bar_scrollbar = ttk.Scrollbar(self.shell_zone_a, orient="horizontal", command=self.action_bar_canvas.xview)
+
         self.action_bar_frame = tk.Frame(
-            self.shell_zone_a, padx=32, pady=18, bg=UI.BG_BASE
+            self.action_bar_canvas, padx=32, pady=18, bg=UI.BG_BASE
         )
-        self.action_bar_frame.grid(row=0, column=0, sticky="nsew")
+
+        # Configure scroll region when frame size changes
+        self.action_bar_frame.bind(
+            "<Configure>",
+            lambda e: self.action_bar_canvas.configure(
+                scrollregion=self.action_bar_canvas.bbox("all")
+            )
+        )
+
+        self.action_bar_frame_id = self.action_bar_canvas.create_window((0, 0), window=self.action_bar_frame, anchor="nw")
+
+        # Ensure the frame expands to fill the canvas horizontally
+        self.action_bar_canvas.bind(
+            "<Configure>",
+            lambda e: self.action_bar_canvas.itemconfig(
+                self.action_bar_frame_id,
+                width=max(e.width, self.action_bar_frame.winfo_reqwidth())
+            )
+        )
+
+        self.action_bar_canvas.configure(xscrollcommand=self.action_bar_scrollbar.set)
+
+        self.action_bar_canvas.grid(row=0, column=0, sticky="nsew")
+        self.action_bar_scrollbar.grid(row=1, column=0, sticky="ew")
+
         self.shell_zone_a.grid_columnconfigure(0, weight=1)
         self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
 
-        # Configure columns for action_bar_frame
-        self.action_bar_frame.columnconfigure(
-            0, minsize=420, weight=2
-        )  # Window Selection (compact selector)
-        self.action_bar_frame.columnconfigure(1, minsize=44, weight=0)  # Scan
-        self.action_bar_frame.columnconfigure(2, minsize=260, weight=0)  # Bounds
-        self.action_bar_frame.columnconfigure(3, minsize=160, weight=0)  # Start/Stop
-        self.action_bar_frame.columnconfigure(4, minsize=80, weight=0)  # Language
-        self.action_bar_frame.columnconfigure(5, minsize=160, weight=0)  # Global Apply
+        # Configure columns for action_bar_frame (3 columns)
+        self.action_bar_frame.columnconfigure(0, weight=1)  # Left
+        self.action_bar_frame.columnconfigure(1, weight=1)  # Center
+        self.action_bar_frame.columnconfigure(2, weight=1)  # Right
 
         # Compact Window Selector (replaces combobox + refresh button)
         from ui.components.compact_window_selector import CompactWindowSelector
@@ -876,8 +899,12 @@ class App(tk.Tk):
             except Exception as e:
                 logger.error(f"Error selecting window: {e}")
         
+        # Col 0 Subframe
+        col0_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
+        col0_frame.grid(row=0, column=0, sticky="w")
+
         self.compact_window_selector = CompactWindowSelector(
-            self.action_bar_frame,
+            col0_frame,
             on_window_selected=on_window_selected_from_compact,
             window_controller=self.window_controller,
             root=self,
@@ -885,11 +912,9 @@ class App(tk.Tk):
         # Auto-refresh window list on startup
         self.compact_window_selector._on_refresh()
         # Use place() geometry for dropdown to work properly below the search bar
-        self.compact_window_selector.get_frame().grid(
-            row=0, column=0, sticky="ew", padx=(0, 12)
-        )
+        self.compact_window_selector.get_frame().pack(side="left", padx=(0, 12))
 
-        # Scan Manual Button (column 1 now, was column 2)
+        # Scan Manual Button
         from ui.icon_library import Icons
 
         self.scan_btn_icon_name = Icons.SCAN_SCREEN
@@ -899,7 +924,7 @@ class App(tk.Tk):
                 self.scan_controller.run_scan(manual=True)
 
         self.btn_manual_scan = _create_icon_btn_component(
-            parent=self.action_bar_frame,
+            parent=col0_frame,
             icon_name=self.scan_btn_icon_name,
             icon_fallback="🔍",
             icon_size=16,
@@ -910,22 +935,26 @@ class App(tk.Tk):
             state="normal",
             auto_hover_disabled=False,
         )
-        self.btn_manual_scan.grid(row=0, column=1, sticky="w", padx=(0, 12))
+        self.btn_manual_scan.pack(side="left", padx=(0, 12))
 
-        # Status Chips (Replaces Bounds Placeholder, column 2 now)
+        # Status Chips (Center - Column 1)
         self.bounds_placeholder = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
-        self.bounds_placeholder.grid(row=0, column=2, sticky="w", padx=(0, 12))
+        self.bounds_placeholder.grid(row=0, column=1, sticky="w", padx=(0, 12))
 
         from ui.panels.screen_state_panel import ScreenStatePanel
 
         self.screen_state_panel = ScreenStatePanel(self.bounds_placeholder)
         self.screen_state_panel.pack(side="left", fill="both", expand=True)
 
-        # Unified Start/Stop Button (column 3 now, was 4)
+        # Col 2 Subframe (Right - Column 2)
+        col2_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
+        col2_frame.grid(row=0, column=2, sticky="e")
+
+        # Unified Start/Stop Button
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
 
         self.start_stop_btn = _create_icon_btn_component(
-            parent=self.action_bar_frame,
+            parent=col2_frame,
             icon_name="start",
             icon_fallback="▶️",
             text=self._t("start_hunt"),
@@ -942,15 +971,15 @@ class App(tk.Tk):
             width=140,
         )
 
-        self.start_stop_btn.grid(row=0, column=3, sticky="w", padx=(0, 12))
+        self.start_stop_btn.pack(side="left", padx=(0, 12))
 
-        # Language Selector (column 4 now, was 5)
+        # Language Selector
         self.lang_var = tk.StringVar(value=self.lang)
         self.lang_cmb = ttk.Combobox(
-            self.action_bar_frame, textvariable=self.lang_var, state="readonly", width=4
+            col2_frame, textvariable=self.lang_var, state="readonly", width=4
         )
         self.lang_cmb["values"] = ("en", "vi")
-        self.lang_cmb.grid(row=0, column=4, sticky="e")
+        self.lang_cmb.pack(side="left")
         self.lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
 
         # DPI Scaling Guard using main action bar frame width
