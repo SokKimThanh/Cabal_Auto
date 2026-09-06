@@ -85,10 +85,12 @@ class WindowDetectionService:
 
         return windows[0]
 
-    def enumerate_windows_raw(self) -> List[Dict[str, Any]]:
-        """Low-level window enumeration using WinAPI."""
-        user32 = ctypes.windll.user32
-        EnumWindows = user32.EnumWindows
+def enumerate_windows_raw(self) -> List[Dict[str, Any]]:
+    """Low-level window enumeration using WinAPI."""
+    if sys.platform != "win32":
+        return []
+
+    user32 = ctypes.windll.user32
         EnumWindowsProc = ctypes.WINFUNCTYPE(
             ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
         )
