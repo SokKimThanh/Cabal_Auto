@@ -651,80 +651,125 @@ class App(tk.Tk):
         self.shell_zone_c1.configure(padx=16, pady=20)
         self.shell_zone_c1.grid_propagate(False)
 
+        # Sidebar Branding / Logo
+        brand_frame = tk.Frame(self.shell_zone_c1, bg=UI.BG_ELEVATED)
+        brand_frame.pack(fill="x", pady=(0, 16))
+
+        brand_label = tk.Label(
+            brand_frame,
+            text="⚔️ CABAL ASSISTANT",
+            font=UI.FONT_TINY,
+            fg=UI.ACCENT_GREEN,
+            bg=UI.BG_ELEVATED,
+            anchor="w",
+            justify="left"
+        )
+        brand_label.pack(fill="x", pady=(16, 12))
+
+        # Divider below brand
+        tk.Frame(brand_frame, bg="#2a2a2a", height=1).pack(fill="x")
+
         # Build Sidebar Navigation
         sidebar_items = [
-            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt"),
-            ("tab_setup", lambda: self.switch_view("setup"), UI.FONT_SECTION, "setup"),
+            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt", "🎯"),
+            ("tab_setup", lambda: self.switch_view("setup"), UI.FONT_SECTION, "setup", "⚙️"),
             (
                 "btn_skill_manager",
                 self.skill_manager_controller.open_window,
                 UI.FONT_SECTION,
                 None,
+                "⚔️"
             ),
             (
                 "btn_monster_manager",
                 self.monster_manager_controller.open_window,
                 UI.FONT_SECTION,
                 None,
+                "🐉"
             ),
             (
                 "btn_library_manager",
                 self.library_manager_controller.open_library_manager,
                 UI.FONT_SECTION,
                 None,
+                "📚"
             ),
-            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs"),
-            ("tab_stats", lambda: self.switch_view("stats"), UI.FONT_SECTION, "stats"),
+            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs", "📋"),
+            ("tab_stats", lambda: self.switch_view("stats"), UI.FONT_SECTION, "stats", "📊"),
             (
                 "sidebar_support",
                 lambda: self.switch_view("help"),
                 UI.FONT_SECTION,
                 "help",
+                "❓"
             ),
             (
                 "sidebar_quick_setup",
                 lambda: self.on_setup_wizard(hide_parent=False),
                 UI.FONT_SECTION,
                 None,
+                "🔧"
             ),
         ]
         self._sidebar_widgets = []
 
+        def apply_button_hover_effects(button, active_color=None, hover_color=None):
+            """Apply hover effects to a Tkinter button"""
+            default_bg = button.cget("bg")
+            default_fg = button.cget("fg")
+
+            hover_bg = hover_color or UI.BORDER_PRIMARY
+            hover_fg = UI.TEXT_PRIMARY if hover_color else default_fg
+
+            def on_enter(event):
+                if button.cget("bg") != UI.ACCENT_GREEN_BG:
+                    button.config(bg=hover_bg, fg=hover_fg, relief="raised")
+
+            def on_leave(event):
+                if button.cget("bg") != UI.ACCENT_GREEN_BG:
+                    button.config(bg=default_bg, fg=default_fg, relief="flat")
+
+            button.bind("<Enter>", on_enter)
+            button.bind("<Leave>", on_leave)
+
         for item_idx, item in enumerate(sidebar_items):
-            key, command, font, view_target = item
+            key, command, font, view_target, icon = item
             if command is None:
-                # Section label
+                # Section label (not used in current items but keep logic for safety)
                 lbl = tk.Label(
                     self.shell_zone_c1,
-                    text=f"   {self._t(key)}",
+                    text=f"   {icon} {self._t(key)}",
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
                     font=font,
                     anchor="w",
                 )
                 lbl.pack(fill="x", pady=(10, 4))
-                self._sidebar_widgets.append((lbl, key, view_target))
+                self._sidebar_widgets.append((lbl, key, view_target, icon))
             else:
                 # Button
                 btn = tk.Button(
                     self.shell_zone_c1,
-                    text=f"   {self._t(key)}",
+                    text=f"   {icon} {self._t(key)}",
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
-                    font=font,
+                    font=UI.FONT_SMALL,
                     anchor="w",
                     padx=12,
                     pady=8,
                     relief="flat",
                     cursor="hand2",
                 )
+
+                apply_button_hover_effects(btn, hover_color=UI.BG_SURFACE, active_color=UI.ACCENT_GREEN_BG)
+
                 if font == UI.FONT_LABEL:
                     # Indent sub-items slightly
                     btn.pack(fill="x", pady=2, padx=(12, 0))
                 else:
                     btn.pack(fill="x", pady=2)
-                self._sidebar_widgets.append((btn, key, view_target))
+                self._sidebar_widgets.append((btn, key, view_target, icon))
 
         # Vùng B: Active Hunt Workspace
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_BASE)
@@ -1150,20 +1195,20 @@ class App(tk.Tk):
 
         # Update sidebar selected state
         if hasattr(self, "_sidebar_widgets"):
-            for widget, key, view_target in self._sidebar_widgets:
+            for widget, key, view_target, icon in self._sidebar_widgets:
                 if isinstance(widget, tk.Button):
                     original_text = self._t(key)
                     if view_target == view_key:
                         widget.config(
                             bg=UI.ACCENT_GREEN_BG,
                             fg=UI.ACCENT_GREEN,
-                            text=f" ▌ {original_text}",
+                            text=f" ▌ {icon} {original_text}",
                         )
                     else:
                         widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_SECONDARY,
-                            text=f"   {original_text}",
+                            text=f"   {icon} {original_text}",
                         )
 
         if hasattr(target_view, "on_view_shown"):
