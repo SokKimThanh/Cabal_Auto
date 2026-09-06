@@ -182,16 +182,24 @@ class WindowManager:
             process_name: Filter by process name
             visible_only: Only return visible windows
 
-        Returns:
+        Results:
             List of WindowInfo objects
         """
         results = []
 
         def callback(hwnd, _):
             try:
-                # Basic visibility check
-                if visible_only and not win32gui.IsWindowVisible(hwnd):
-                    return True
+                # Include minimized windows for game selection
+                # IsWindowVisible() returns False for minimized, but we want to show them
+                if visible_only:
+                    # Check if window is minimized - include minimized windows
+                    import win32con
+                    is_minimized = (win32gui.GetWindowPlacement(hwnd)[0] == win32con.SW_MINIMIZE)
+                    is_visible = win32gui.IsWindowVisible(hwnd)
+                    
+                    # Include window if: visible OR minimized (for game windows)
+                    if not (is_visible or is_minimized):
+                        return True  # Skip completely hidden/closed windows
 
                 # Get window info
                 info = self.get_window_info(hwnd)
