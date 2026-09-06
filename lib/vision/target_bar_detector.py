@@ -5,7 +5,8 @@ import logging
 # Actively set DPI awareness if on Windows
 try:
     import ctypes
-    if hasattr(ctypes, 'windll') and hasattr(ctypes.windll, 'shcore'):
+
+    if hasattr(ctypes, "windll") and hasattr(ctypes.windll, "shcore"):
         ctypes.windll.shcore.SetProcessDpiAwareness(2)  # 2 = per-monitor DPI aware
 except Exception as e:
     logging.debug(f"Could not set DPI awareness (might not be on Windows): {e}")
@@ -15,6 +16,7 @@ try:
 except ImportError:
     win32gui = None
     logging.debug("win32gui not available.")
+
 
 class TargetBarDetector:
     def __init__(self, window_bounds=None, hwnd=None):
@@ -26,13 +28,13 @@ class TargetBarDetector:
         self.hwnd = hwnd
 
         if window_bounds is None:
-            self.window_bounds = [0, 0, 1920, 1080] # Default fallback
+            self.window_bounds = [0, 0, 1920, 1080]  # Default fallback
         elif isinstance(window_bounds, dict):
             self.window_bounds = [
-                window_bounds.get('x', 0),
-                window_bounds.get('y', 0),
-                window_bounds.get('w', 1920),
-                window_bounds.get('h', 1080)
+                window_bounds.get("x", 0),
+                window_bounds.get("y", 0),
+                window_bounds.get("w", 1920),
+                window_bounds.get("h", 1080),
             ]
         else:
             self.window_bounds = list(window_bounds)
@@ -77,7 +79,12 @@ class TargetBarDetector:
 
     def _get_roi(self, frame):
         """Validates the frame and extracts the ROI."""
-        if frame is None or not isinstance(frame, np.ndarray) or frame.size == 0 or len(frame.shape) < 2:
+        if (
+            frame is None
+            or not isinstance(frame, np.ndarray)
+            or frame.size == 0
+            or len(frame.shape) < 2
+        ):
             return None
 
         # Prefer the detected client size when it matches the captured frame,
@@ -94,7 +101,14 @@ class TargetBarDetector:
         top, bottom, left, right = self._get_roi_coords(h, w)
 
         # Boundary checks
-        if top < 0 or bottom > h or left < 0 or right > w or top >= bottom or left >= right:
+        if (
+            top < 0
+            or bottom > h
+            or left < 0
+            or right > w
+            or top >= bottom
+            or left >= right
+        ):
             return None
 
         roi = frame[top:bottom, left:right]

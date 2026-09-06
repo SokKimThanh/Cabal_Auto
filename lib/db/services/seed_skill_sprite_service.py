@@ -8,7 +8,9 @@ from lib.db.connection import get_connection
 logger = logging.getLogger("SeedSkillSpriteService")
 if not logger.handlers:
     handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
@@ -25,13 +27,15 @@ class SeedSkillSpriteService:
             "bm2-bm3-detail-skill-db-cabal.txt",
             "color-skill-character-db-cabal.txt",
             "monsters.json",
-            "hunt_config.json"
+            "hunt_config.json",
         ]
 
     def _validate_source(self):
         """Validates that the source file is authorized and not forbidden."""
         if self.source_file != self.authorized_file:
-            raise ValueError(f"Unauthorized source file: {self.source_file}. Must be {self.authorized_file}")
+            raise ValueError(
+                f"Unauthorized source file: {self.source_file}. Must be {self.authorized_file}"
+            )
 
         for forbidden in self.forbidden_inputs:
             if forbidden in self.source_file:
@@ -40,10 +44,10 @@ class SeedSkillSpriteService:
     def _extract_sprites(self) -> Tuple[Dict[str, Any], str]:
         self._validate_source()
 
-        with open(self.source_file, 'r', encoding='utf-8') as f:
+        with open(self.source_file, "r", encoding="utf-8") as f:
             content = f.read()
 
-        file_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
+        file_hash = hashlib.md5(content.encode("utf-8")).hexdigest()
 
         start_str = "JSON.parse('"
         start_idx = content.find(start_str)
@@ -63,7 +67,7 @@ class SeedSkillSpriteService:
             char = content[i]
 
             if in_string:
-                if char == '\\' and not escape_char:
+                if char == "\\" and not escape_char:
                     escape_char = True
                 else:
                     if char == '"' and not escape_char:
@@ -72,9 +76,9 @@ class SeedSkillSpriteService:
             else:
                 if char == '"':
                     in_string = True
-                elif char == '{':
+                elif char == "{":
                     brace_count += 1
-                elif char == '}':
+                elif char == "}":
                     brace_count -= 1
                     if brace_count == 0:
                         end_idx = i + 1
@@ -87,7 +91,7 @@ class SeedSkillSpriteService:
 
         try:
             data = json.loads(json_str)
-            sprites = data.get('sprites', {})
+            sprites = data.get("sprites", {})
             return sprites, file_hash
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to decode JSON from source: {e}")
@@ -139,14 +143,16 @@ class SeedSkillSpriteService:
                     skipped += 1
                     continue
 
-                records_to_insert.append((
-                    skill_code,  # name
-                    skill_code,  # skill_code
-                    coords.get("x", 0),
-                    coords.get("y", 0),
-                    coords.get("width", 0),
-                    coords.get("height", 0)
-                ))
+                records_to_insert.append(
+                    (
+                        skill_code,  # name
+                        skill_code,  # skill_code
+                        coords.get("x", 0),
+                        coords.get("y", 0),
+                        coords.get("width", 0),
+                        coords.get("height", 0),
+                    )
+                )
 
             if records_to_insert:
                 try:
@@ -155,11 +161,14 @@ class SeedSkillSpriteService:
                         INSERT INTO skills (name, skill_code, icon_x, icon_y, icon_w, icon_h)
                         VALUES (?, ?, ?, ?, ?, ?)
                         """,
-                        records_to_insert
+                        records_to_insert,
                     )
                     inserted += len(records_to_insert)
                 except Exception as batch_err:
-                    logger.warning(f"Batch insert error: {batch_err}. Falling back to individual inserts.", exc_info=True)
+                    logger.warning(
+                        f"Batch insert error: {batch_err}. Falling back to individual inserts.",
+                        exc_info=True,
+                    )
                     # Fallback to individual inserts to find out exactly which record failed
                     for record in records_to_insert:
                         try:
@@ -168,12 +177,15 @@ class SeedSkillSpriteService:
                                 INSERT INTO skills (name, skill_code, icon_x, icon_y, icon_w, icon_h)
                                 VALUES (?, ?, ?, ?, ?, ?)
                                 """,
-                                record
+                                record,
                             )
                             inserted += 1
                         except Exception as single_err:
                             skill_code = record[0]
-                            logger.error(f"Failed to insert record {skill_code}: {single_err}", exc_info=True)
+                            logger.error(
+                                f"Failed to insert record {skill_code}: {single_err}",
+                                exc_info=True,
+                            )
                             errors += 1
 
             try:
@@ -190,7 +202,9 @@ class SeedSkillSpriteService:
             total_rows, distinct_names = cursor.fetchone()
 
             if expected_count != (inserted + skipped + errors):
-                logger.warning(f"Integrity warning: Expected {expected_count} records but processed {inserted + skipped + errors}")
+                logger.warning(
+                    f"Integrity warning: Expected {expected_count} records but processed {inserted + skipped + errors}"
+                )
 
             return {
                 "status": status,
@@ -202,7 +216,7 @@ class SeedSkillSpriteService:
                 "skipped": skipped,
                 "errors": errors,
                 "total_rows": total_rows,
-                "distinct_names": distinct_names
+                "distinct_names": distinct_names,
             }
 
         except Exception as e:

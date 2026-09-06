@@ -10,10 +10,18 @@ pytestmark = pytest.mark.integration
 
 
 class MockHuntLogger:
-    def log_state_change(self, *args, **kwargs): pass
-    def log_hunt_start(self, *args, **kwargs): pass
-    def log_hunt_stop(self, *args, **kwargs): pass
-    def log_error(self, *args, **kwargs): pass
+    def log_state_change(self, *args, **kwargs):
+        pass
+
+    def log_hunt_start(self, *args, **kwargs):
+        pass
+
+    def log_hunt_stop(self, *args, **kwargs):
+        pass
+
+    def log_error(self, *args, **kwargs):
+        pass
+
 
 @pytest.fixture
 def orchestrator():
@@ -41,14 +49,17 @@ def orchestrator():
         get_hunt_selected=get_selected,
         schedule_ui_task=schedule,
         prepare_skill_runtime=MagicMock(),
-        try_cast_skills=MagicMock()
+        try_cast_skills=MagicMock(),
     )
     orch.bot_manager = MagicMock()
     orch.bot_manager.screen_capture = MagicMock()
     orch.bot_manager.screen_capture.hwnd = 123
-    orch.bot_manager.screen_capture.get_latest_frame = MagicMock(return_value="mock_frame")
+    orch.bot_manager.screen_capture.get_latest_frame = MagicMock(
+        return_value="mock_frame"
+    )
     orch.try_cast_skills = MagicMock()
     return orch
+
 
 def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatch):
     """
@@ -56,21 +67,31 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
     no global SendInput or focus methods are called.
     """
     mock_global_tap = MagicMock()
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.global_tap", mock_global_tap)
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.global_tap", mock_global_tap
+    )
 
     mock_backend_tap = MagicMock()
 
     class MockBackgroundBackend:
         mode = "background"
+
         def __init__(self, hwnd):
             pass
+
         def tap(self, *args, **kwargs):
             mock_backend_tap(*args, **kwargs)
+
         def close(self):
             pass
 
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.BackgroundWindowMessageBackend", MockBackgroundBackend)
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger())
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.BackgroundWindowMessageBackend",
+        MockBackgroundBackend,
+    )
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger()
+    )
 
     # Mock window validation
     mock_validation = MagicMock()
@@ -94,7 +115,9 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
             orchestrator.hunt_running = False
             return False
 
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector)
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector
+    )
 
     # Mock capability check so it passes
     mock_capability_mgr = MagicMock()
@@ -104,18 +127,21 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
         hunt_orchestrator_module.InputCapabilityState.SUPPORTED,
         True,
     )
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.InputCapabilityManager", lambda *args: mock_capability_mgr_instance)
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.InputCapabilityManager",
+        lambda *args: mock_capability_mgr_instance,
+    )
 
     # Use a dummy cfg with background input_mode
     cfg = {
         "input_mode": "background",
-            "target_key": "z",
-            "target_policy": "any_target",
-            "lost_timeout_sec": 0,
+        "target_key": "z",
+        "target_policy": "any_target",
+        "lost_timeout_sec": 0,
         "target_lost_debounce_frames": 3,
         "search_tap_delay_sec": 0.0,
         "attack_interval": 0.0,
-        "bring_to_front_each_cycle": True
+        "bring_to_front_each_cycle": True,
     }
 
     # Override orchestrator methods
@@ -127,12 +153,14 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
     try:
         # Wait for the thread to finish
         orchestrator.hunt_thread.join(timeout=2.0)
-        assert not orchestrator.hunt_thread.is_alive(), (
-            "Hunt thread should terminate within the join timeout"
-        )
+        assert (
+            not orchestrator.hunt_thread.is_alive()
+        ), "Hunt thread should terminate within the join timeout"
 
         # Assert no global tap was called
-        assert not mock_global_tap.called, "Global tap should not be called in background mode"
+        assert (
+            not mock_global_tap.called
+        ), "Global tap should not be called in background mode"
 
         # Assert background backend tap was called
         assert mock_backend_tap.called, "Background backend tap should be called"
@@ -142,8 +170,12 @@ def test_background_mode_does_not_call_global_sendinput(orchestrator, monkeypatc
         assert not orchestrator.bring_window_to_front_by_hwnd.called
 
     finally:
-        if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
+        if (
+            getattr(orchestrator, "hunt_thread", None)
+            and orchestrator.hunt_thread.is_alive()
+        ):
             orchestrator.stop_hunt()
+
 
 def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
     """
@@ -153,17 +185,30 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
     3. During attack mode, 'tap' is NOT called (spam removed).
     """
     mock_backend_tap = MagicMock()
+
     class MockForegroundBackend:
         mode = "foreground"
-        def __init__(self): pass
-        def tap(self, *args, **kwargs): mock_backend_tap(*args, **kwargs)
-        def close(self): pass
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend", MockForegroundBackend)
+
+        def __init__(self):
+            pass
+
+        def tap(self, *args, **kwargs):
+            mock_backend_tap(*args, **kwargs)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend",
+        MockForegroundBackend,
+    )
 
     mock_tap = MagicMock()
     monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.global_tap", mock_tap)
 
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger())
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger()
+    )
     # Mock window validation
     mock_validation = MagicMock()
     mock_validation.is_valid = True
@@ -193,13 +238,15 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
             orchestrator.hunt_running = False
             return False
 
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector)
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector
+    )
 
     # Use a dummy cfg
     cfg = {
         "target_key": "z",
-            "target_policy": "any_target",
-            "lost_timeout_sec": 0, # Strict timeout for testing
+        "target_policy": "any_target",
+        "lost_timeout_sec": 0,  # Strict timeout for testing
         "target_lost_debounce_frames": 3,
         "search_tap_delay_sec": 0.0,
         "attack_interval": 0.0,
@@ -210,9 +257,9 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
     try:
         # Wait for the thread to finish
         orchestrator.hunt_thread.join(timeout=2.0)
-        assert not orchestrator.hunt_thread.is_alive(), (
-            "Hunt thread should terminate within the join timeout"
-        )
+        assert (
+            not orchestrator.hunt_thread.is_alive()
+        ), "Hunt thread should terminate within the join timeout"
 
         # Verify mock_backend_tap was called during search mode (before target found)
         assert mock_backend_tap.called, "Tap should be called during search mode"
@@ -221,27 +268,43 @@ def test_target_lost_debounce_and_no_spam_attack(orchestrator, monkeypatch):
         tap_calls = mock_backend_tap.call_args_list
         # All tap calls should be with 'z' (or the configured target key)
         for call in tap_calls:
-            assert call[0][0] == 'z'
+            assert call[0][0] == "z"
         # Ensure try_cast_skills was called during attack phase
         assert orchestrator.try_cast_skills.called
     finally:
-        if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
+        if (
+            getattr(orchestrator, "hunt_thread", None)
+            and orchestrator.hunt_thread.is_alive()
+        ):
             orchestrator.stop_hunt()
 
 
 def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
     """Test that a wrong target transitions to cycle, but no cast skills."""
     mock_backend_tap = MagicMock()
+
     class MockForegroundBackend:
         mode = "foreground"
-        def __init__(self): pass
-        def tap(self, *args, **kwargs): mock_backend_tap(*args, **kwargs)
-        def close(self): pass
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend", MockForegroundBackend)
+
+        def __init__(self):
+            pass
+
+        def tap(self, *args, **kwargs):
+            mock_backend_tap(*args, **kwargs)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend",
+        MockForegroundBackend,
+    )
 
     mock_tap = MagicMock()
     monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.global_tap", mock_tap)
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger())
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger()
+    )
 
     # Mock window validation
     mock_validation = MagicMock()
@@ -251,7 +314,9 @@ def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
     seq_idx = 0
 
     class MockTargetBarDetector:
-        def __init__(self, hwnd=None): self.hwnd = hwnd
+        def __init__(self, hwnd=None):
+            self.hwnd = hwnd
+
         def is_target_alive(self, frame):
             nonlocal seq_idx
             if seq_idx < len(target_alive_seq):
@@ -261,11 +326,19 @@ def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
             orchestrator.hunt_running = False
             return False
 
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector)
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector
+    )
 
     # Mock name resolution to return WRONG target
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.find_monster_by_name_api", lambda *args: {"id": 205, "name": "Orc"})
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetNameReader.read_name", lambda *args: "Orc")
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.find_monster_by_name_api",
+        lambda *args: {"id": 205, "name": "Orc"},
+    )
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.TargetNameReader.read_name",
+        lambda *args: "Orc",
+    )
 
     cfg = {
         "target_key": "z",
@@ -274,7 +347,7 @@ def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
         "search_tap_delay_sec": 0.0,
         "attack_interval": 0.0,
         "target_policy": "configured_only",
-        "monster_rotation": [{"monster_id": 101, "priority": 1}]
+        "monster_rotation": [{"monster_id": 101, "priority": 1}],
     }
 
     orchestrator.start_hunt(cfg)
@@ -286,30 +359,48 @@ def test_orchestrator_wrong_target_no_cast(orchestrator, monkeypatch):
         calls = orchestrator.try_cast_skills.call_args_list
         for call in calls:
             args, kwargs = call
-            attack_phase = kwargs.get('attack_phase', False)
-            if len(args) > 3: attack_phase = attack_phase or args[3]
-            assert not attack_phase, "try_cast_skills should not be called with attack_phase=True for wrong target"
+            attack_phase = kwargs.get("attack_phase", False)
+            if len(args) > 3:
+                attack_phase = attack_phase or args[3]
+            assert (
+                not attack_phase
+            ), "try_cast_skills should not be called with attack_phase=True for wrong target"
 
         assert mock_backend_tap.called
     finally:
-        if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
+        if (
+            getattr(orchestrator, "hunt_thread", None)
+            and orchestrator.hunt_thread.is_alive()
+        ):
             orchestrator.stop_hunt()
-
 
 
 def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
     """Test that a correct target transitions to attack and casts skills."""
     mock_backend_tap = MagicMock()
+
     class MockForegroundBackend:
         mode = "foreground"
-        def __init__(self): pass
-        def tap(self, *args, **kwargs): mock_backend_tap(*args, **kwargs)
-        def close(self): pass
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend", MockForegroundBackend)
+
+        def __init__(self):
+            pass
+
+        def tap(self, *args, **kwargs):
+            mock_backend_tap(*args, **kwargs)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.ForegroundSendInputBackend",
+        MockForegroundBackend,
+    )
 
     mock_tap = MagicMock()
     monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.global_tap", mock_tap)
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger())
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.get_hunt_logger", lambda: MockHuntLogger()
+    )
 
     # Mock window validation
     mock_validation = MagicMock()
@@ -319,7 +410,9 @@ def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
     seq_idx = 0
 
     class MockTargetBarDetector:
-        def __init__(self, hwnd=None): self.hwnd = hwnd
+        def __init__(self, hwnd=None):
+            self.hwnd = hwnd
+
         def is_target_alive(self, frame):
             nonlocal seq_idx
             if seq_idx < len(target_alive_seq):
@@ -329,11 +422,19 @@ def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
             orchestrator.hunt_running = False
             return False
 
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector)
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.TargetBarDetector", MockTargetBarDetector
+    )
 
     # Mock name resolution to return CORRECT target
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.find_monster_by_name_api", lambda *args: {"id": 101, "name": "Slime Xanh"})
-    monkeypatch.setattr("lib.features.hunt.hunt_orchestrator.TargetNameReader.read_name", lambda *args: "Slime Xanh")
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.find_monster_by_name_api",
+        lambda *args: {"id": 101, "name": "Slime Xanh"},
+    )
+    monkeypatch.setattr(
+        "lib.features.hunt.hunt_orchestrator.TargetNameReader.read_name",
+        lambda *args: "Slime Xanh",
+    )
 
     cfg = {
         "target_key": "z",
@@ -342,10 +443,12 @@ def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
         "search_tap_delay_sec": 0.0,
         "attack_interval": 0.0,
         "target_policy": "configured_only",
-        "monster_rotation": [{"monster_id": 101, "priority": 1}]
+        "monster_rotation": [{"monster_id": 101, "priority": 1}],
     }
 
-    def mock_prepare(*args, **kwargs): return [{"type": "attack", "key": "1"}]
+    def mock_prepare(*args, **kwargs):
+        return [{"type": "attack", "key": "1"}]
+
     monkeypatch.setattr(orchestrator, "prepare_skill_runtime", mock_prepare)
 
     orchestrator.start_hunt(cfg)
@@ -357,12 +460,17 @@ def test_orchestrator_correct_target_casts(orchestrator, monkeypatch):
         attack_calls = []
         for call in calls:
             args, kwargs = call
-            if kwargs.get('attack_phase', False):
+            if kwargs.get("attack_phase", False):
                 attack_calls.append(call)
             elif len(args) > 3 and args[3] is True:
                 attack_calls.append(call)
 
-        assert len(attack_calls) > 0, "try_cast_skills should be called with attack_phase=True for correct target"
+        assert (
+            len(attack_calls) > 0
+        ), "try_cast_skills should be called with attack_phase=True for correct target"
     finally:
-        if getattr(orchestrator, "hunt_thread", None) and orchestrator.hunt_thread.is_alive():
+        if (
+            getattr(orchestrator, "hunt_thread", None)
+            and orchestrator.hunt_thread.is_alive()
+        ):
             orchestrator.stop_hunt()

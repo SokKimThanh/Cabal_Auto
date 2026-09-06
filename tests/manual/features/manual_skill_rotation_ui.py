@@ -10,9 +10,9 @@ from pathlib import Path
 root_dir = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(root_dir))
 
-print("="*70)
+print("=" * 70)
 print("🧪 SKILL ROTATION BUILDER - QUICK TEST")
-print("="*70)
+print("=" * 70)
 print()
 
 # Test 1: Import module
@@ -22,8 +22,9 @@ try:
         SkillRotation,
         calculate_rotation_timing,
         generate_rotation_preview,
-        SkillRotationUI
+        SkillRotationUI,
     )
+
     print("✅ Module imported successfully")
 except ImportError as e:
     print(f"❌ Import failed: {e}")
@@ -35,26 +36,26 @@ print()
 print("Test 2: Calculate sample rotation...")
 sample_skills = [
     {
-        'name': 'Dark Explosion',
-        'key': '1',
-        'type': 'attack',
-        'cooldown': 1.9,
-        'cast_time': 1.7
+        "name": "Dark Explosion",
+        "key": "1",
+        "type": "attack",
+        "cooldown": 1.9,
+        "cast_time": 1.7,
     },
     {
-        'name': 'Regeneration',
-        'key': '4',
-        'type': 'buff',
-        'cooldown': 2.2,
-        'cast_time': 1.0
+        "name": "Regeneration",
+        "key": "4",
+        "type": "buff",
+        "cooldown": 2.2,
+        "cast_time": 1.0,
     },
     {
-        'name': 'Bone Javelin',
-        'key': '2',
-        'type': 'attack',
-        'cooldown': 2.4,
-        'cast_time': 1.5
-    }
+        "name": "Bone Javelin",
+        "key": "2",
+        "type": "attack",
+        "cooldown": 2.4,
+        "cast_time": 1.5,
+    },
 ]
 
 try:
@@ -89,9 +90,9 @@ print()
 print("Test 4: Check UI class...")
 try:
     # Just verify class is available
-    assert hasattr(SkillRotationUI, '_build_ui')
-    assert hasattr(SkillRotationUI, '_calculate_rotation')
-    assert hasattr(SkillRotationUI, '_apply_rotation')
+    assert hasattr(SkillRotationUI, "_build_ui")
+    assert hasattr(SkillRotationUI, "_calculate_rotation")
+    assert hasattr(SkillRotationUI, "_apply_rotation")
     print("✅ UI class has required methods")
 except AssertionError:
     print("❌ UI class missing methods")
@@ -103,16 +104,17 @@ print()
 print("Test 5: Check hunt_config.json...")
 try:
     import json
-    config_path = root_dir / 'lib' / 'data' / 'hunt_config.json'
-    
+
+    config_path = root_dir / "lib" / "data" / "hunt_config.json"
+
     if config_path.exists():
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
-        
-        skills = config.get('skill_slots', [])
+
+        skills = config.get("skill_slots", [])
         print(f"✅ hunt_config.json found")
         print(f"   • Skills available: {len(skills)}")
-        
+
         if skills:
             print(f"   • Sample skill: {skills[0]['name']}")
     else:
@@ -121,9 +123,9 @@ except Exception as e:
     print(f"⚠️  Config check failed: {e}")
 
 print()
-print("="*70)
+print("=" * 70)
 print("✅ ALL TESTS PASSED!")
-print("="*70)
+print("=" * 70)
 print()
 print("🚀 Next step: Run `python app_gui.py` and go to 'Skill Rotation' tab")
 print()

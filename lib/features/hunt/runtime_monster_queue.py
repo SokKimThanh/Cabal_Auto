@@ -3,12 +3,13 @@ import time
 import uuid
 from typing import Dict, List, Any, Optional
 
+
 class RuntimeMonsterQueue:
     def __init__(
         self,
         capacity: int = 50,
         ttl_sec: float = 1.0,
-        publish_callback: Optional[Any] = None
+        publish_callback: Optional[Any] = None,
     ):
         self.capacity = capacity
         self.ttl_sec = ttl_sec
@@ -42,7 +43,7 @@ class RuntimeMonsterQueue:
         confidence: float,
         template_id: str,
         resolution_state: str,
-        dungeon_id: Optional[str] = None
+        dungeon_id: Optional[str] = None,
     ) -> None:
         now = time.time()
 
@@ -56,7 +57,10 @@ class RuntimeMonsterQueue:
                 if item["monster_id"] == monster_id:
                     iou = self._calculate_iou(bbox, item["bbox"])
                     # Proximity fallback (distance between centers)
-                    dist = ((center_x - item["center"][0]) ** 2 + (center_y - item["center"][1]) ** 2) ** 0.5
+                    dist = (
+                        (center_x - item["center"][0]) ** 2
+                        + (center_y - item["center"][1]) ** 2
+                    ) ** 0.5
 
                     if iou > 0.5 or dist < 50:
                         best_match_key = key
@@ -91,7 +95,9 @@ class RuntimeMonsterQueue:
                 # Check capacity
                 if len(self.items) >= self.capacity:
                     # Drop lowest confidence
-                    lowest_key = min(self.items.keys(), key=lambda k: self.items[k]["confidence"])
+                    lowest_key = min(
+                        self.items.keys(), key=lambda k: self.items[k]["confidence"]
+                    )
                     if confidence > self.items[lowest_key]["confidence"]:
                         del self.items[lowest_key]
                         self.items[runtime_id] = new_item
@@ -101,7 +107,9 @@ class RuntimeMonsterQueue:
             self._prune_stale_items(now)
 
     def _prune_stale_items(self, now: float) -> None:
-        stale_keys = [k for k, v in self.items.items() if (now - v["last_seen"]) > self.ttl_sec]
+        stale_keys = [
+            k for k, v in self.items.items() if (now - v["last_seen"]) > self.ttl_sec
+        ]
         for k in stale_keys:
             del self.items[k]
 
@@ -111,9 +119,7 @@ class RuntimeMonsterQueue:
             return tuple(item.copy() for item in self.items.values())
 
     def get_attack_queue(
-        self,
-        target_policy: str,
-        configured_rotation_ids: List[int]
+        self, target_policy: str, configured_rotation_ids: List[int]
     ) -> tuple:
         snapshot = self.get_snapshot()
 

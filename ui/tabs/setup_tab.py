@@ -36,8 +36,13 @@ class SetupTab(tk.Frame):
 
         btn_text_var = tk.StringVar(value=f"▶ {self._t(title_key)}")
 
-        content_frame = tk.LabelFrame(group_frame, bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_TEXT_PRIMARY, padx=12, pady=10)
-
+        content_frame = tk.LabelFrame(
+            group_frame,
+            bg=UIStyle.THEME_BG_APP,
+            fg=UIStyle.THEME_TEXT_PRIMARY,
+            padx=12,
+            pady=10,
+        )
 
         def toggle(event=None):
             visible = not is_visible_var.get()
@@ -78,7 +83,6 @@ class SetupTab(tk.Frame):
         btn = ttk.Label(
             header_frame,
             textvariable=btn_text_var,
-
             cursor="hand2",
         )
         btn.bind("<Button-1>", toggle)
@@ -88,7 +92,6 @@ class SetupTab(tk.Frame):
             desc_label = ttk.Label(
                 header_frame,
                 text=self._t(desc_key),
-
                 cursor="hand2",
             )
             desc_label.bind("<Button-1>", toggle)
@@ -112,7 +115,6 @@ class SetupTab(tk.Frame):
             frame,
             text=enable_text,
             variable=self.app.global_hotkey_enabled_var,
-
             command=self._on_global_hotkey_toggle,
         ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
 
@@ -131,7 +133,6 @@ class SetupTab(tk.Frame):
         ttk.Label(
             frame,
             text="Start Hunt:" if self.lang == "en" else "Bắt đầu Hunt:",
-
         ).grid(row=1, column=0, sticky="e", padx=(0, 8), pady=4)
         self.app.global_hotkey_start_var = tk.StringVar(
             value=hotkey_cfg.get("start_key", "ctrl+shift+r")
@@ -147,7 +148,6 @@ class SetupTab(tk.Frame):
         ttk.Label(
             frame,
             text="Stop Hunt:" if self.lang == "en" else "Dừng Hunt:",
-
         ).grid(row=2, column=0, sticky="e", padx=(0, 8), pady=4)
         self.app.global_hotkey_stop_var = tk.StringVar(
             value=hotkey_cfg.get("stop_key", "ctrl+shift+e")
@@ -280,13 +280,19 @@ class SetupTab(tk.Frame):
         self.grid_columnconfigure(1, weight=1)
 
         # Section 1: Configuration Mode
-        mode_frame = tk.LabelFrame(self, bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_TEXT_PRIMARY, text=self._t("setup_mode"), padx=12, pady=10)
+        mode_frame = tk.LabelFrame(
+            self,
+            bg=UIStyle.THEME_BG_APP,
+            fg=UIStyle.THEME_TEXT_PRIMARY,
+            text=self._t("setup_mode"),
+            padx=12,
+            pady=10,
+        )
         mode_frame.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, 12))
 
         mode_desc = ttk.Label(
             mode_frame,
             text=self._t("setup_mode_desc"),
-
         )
         mode_desc.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 8))
 
@@ -310,13 +316,11 @@ class SetupTab(tk.Frame):
                 variable=self.app.setup_mode_var,
                 value=mode_val,
                 command=self._on_setup_mode_changed,
-
             )
             rb.grid(row=idx + 1, column=0, sticky="ew", pady=2)
             desc_label = ttk.Label(
                 mode_frame,
                 text=f"  {mode_desc_text}",
-
             )
             desc_label.grid(row=idx + 1, column=1, sticky="ew", padx=(4, 0), pady=2)
 

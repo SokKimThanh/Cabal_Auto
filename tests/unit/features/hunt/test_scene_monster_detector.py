@@ -28,13 +28,18 @@ def mock_vision_engine():
 
     return engine
 
+
 def test_scene_monster_detector_pipeline(mock_vision_engine, monkeypatch):
     # Mock DB lookup
     def mock_get_monster_by_id_api(monster_id):
         if monster_id == "1":
             return {"id": 1, "name": "Slime DB"}
         return None
-    monkeypatch.setattr("lib.features.hunt.scene_monster_detector.get_monster_by_id_api", mock_get_monster_by_id_api)
+
+    monkeypatch.setattr(
+        "lib.features.hunt.scene_monster_detector.get_monster_by_id_api",
+        mock_get_monster_by_id_api,
+    )
 
     queue = RuntimeMonsterQueue()
     detector = SceneMonsterDetector(mock_vision_engine, queue)

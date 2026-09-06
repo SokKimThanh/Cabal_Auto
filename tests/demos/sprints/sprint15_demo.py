@@ -124,8 +124,8 @@ Benefits:
 
 Integration with skill_runtime.py:
 ----------------------------------
-The GUI fields now allow users to configure the duration_sec and 
-pre_refresh_sec values that skill_runtime.py uses for automatic 
+The GUI fields now allow users to configure the duration_sec and
+pre_refresh_sec values that skill_runtime.py uses for automatic
 buff recasting. The workflow is:
 
 1. User creates/edits buff skill in GUI
@@ -149,18 +149,18 @@ GUI Configuration → skills.json → skill_runtime.py → auto_hunt.py
 
 🎉 Sprint 15 Complete!
 ======================
-All 15 sprints finished. System fully production-ready with complete 
+All 15 sprints finished. System fully production-ready with complete
 buff management from GUI configuration to automatic runtime casting.
 
 Total project: ~5,166 lines
 New in Sprint 15: +80 lines (buff GUI fields, validation, localization)
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(__doc__)
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Sprint 15: Buff Duration GUI Fields")
-    print("="*70)
+    print("=" * 70)
     print("\n✅ Features implemented:")
     print("  • Dynamic buff fields visibility")
     print("  • Required validation for buff duration")
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     print("  • Tooltips with helpful hints")
     print("  • Auto-toggle on skill type change")
     print("  • Complete EN/VI localization")
-    
+
     print("\n📋 To test:")
     print("  1. Run: python app_gui.py")
     print("  2. Navigate to Skills Manager")
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     print("  4. Toggle between Attack and Buff types")
     print("  5. Observe buff fields appearing/disappearing")
     print("  6. Try saving with invalid values to see validation")
-    
+
     print("\n🎯 Example buff configuration:")
     print("  Name: Regeneration")
     print("  Key: 5")
@@ -185,11 +185,11 @@ if __name__ == '__main__':
     print("  Cast time: 0.5 s")
     print("  Duration: 60.0 s  ← NEW!")
     print("  Pre-refresh: 5.0 s  ← NEW!")
-    
+
     print("\n💡 Runtime behavior:")
     print("  • Buff cast at T=0s")
     print("  • At T=55s: Auto-recast (60s - 5s pre-refresh)")
     print("  • Seamless buff uptime during hunting!")
-    
+
     print("\n🎊 All 15 sprints complete!")
-    print("="*70)
+    print("=" * 70)

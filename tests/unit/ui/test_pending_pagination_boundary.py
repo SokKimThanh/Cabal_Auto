@@ -17,11 +17,15 @@ class MockDB:
         self.should_fail_save = False
 
     def get_all_monsters(self, offset=0, limit=100, name_filter=None):
-        filtered = [m for m in self.monsters if not name_filter or name_filter in m["name"]]
-        return filtered[offset:offset+limit]
+        filtered = [
+            m for m in self.monsters if not name_filter or name_filter in m["name"]
+        ]
+        return filtered[offset : offset + limit]
 
     def count_monsters(self, name_filter=None):
-        return len([m for m in self.monsters if not name_filter or name_filter in m["name"]])
+        return len(
+            [m for m in self.monsters if not name_filter or name_filter in m["name"]]
+        )
 
     def save_monster(self, monster):
         pass
@@ -38,14 +42,19 @@ class MockDB:
         self.monsters.append(monster)
         return True
 
-    def get_dungeon_list(self): return []
-    def get_monster_type_list(self): return []
+    def get_dungeon_list(self):
+        return []
+
+    def get_monster_type_list(self):
+        return []
+
 
 class MockParent(tk.Tk):
     def __init__(self):
         super().__init__()
         self.db = MockDB()
         self.monster_file = "dummy_file.json"
+
 
 @pytest.fixture
 def manager_win():
@@ -137,7 +146,7 @@ def test_successful_persistence_clears_pending_changes(manager_win):
 
     manager_win.db.should_fail_save = False
 
-    with patch.object(manager_win, 'db') as mock_db:
+    with patch.object(manager_win, "db") as mock_db:
         mock_db.insert_or_update_monster.return_value = True
         success = manager_win._save_monsters()
         assert success is True
@@ -145,6 +154,7 @@ def test_successful_persistence_clears_pending_changes(manager_win):
     # Verify pending change is cleared
     assert m_id not in manager_win.pending_changes
     assert len(manager_win.pending_changes) == 0
+
 
 def test_pending_added_record_survives_pagination_and_is_visible(manager_win):
     # Set page size to 1 for testing pagination

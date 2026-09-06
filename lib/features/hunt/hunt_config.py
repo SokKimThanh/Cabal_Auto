@@ -25,7 +25,6 @@ def save_config(cfg):
         json.dump(cfg, f, indent=4)
 
 
-
 import os
 import tempfile
 import threading
@@ -39,7 +38,9 @@ def save_hunt_config(cfg):
         try:
             # Ensure parent directory exists
             HUNT_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-            fd, temp_path = tempfile.mkstemp(dir=HUNT_CONFIG_PATH.parent, prefix=HUNT_CONFIG_PATH.name + ".")
+            fd, temp_path = tempfile.mkstemp(
+                dir=HUNT_CONFIG_PATH.parent, prefix=HUNT_CONFIG_PATH.name + "."
+            )
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(cfg, f, indent=4, ensure_ascii=False)
                 f.flush()
@@ -57,8 +58,10 @@ def save_hunt_config(cfg):
                 except OSError:
                     pass
 
+
 import shutil
 from lib.features.hunt.config_migrator import migrate_hunt_config
+
 
 def load_hunt_config():
     with _CONFIG_LOCK:
@@ -75,7 +78,6 @@ def load_hunt_config():
                 print(f"Error loading hunt config: {e}")
 
         original_version = data.get("schema_version", 1) if success_load else 0
-
 
         # Always migrate (it will skip version changes if already current, but always runs _sanitize_v3)
         data = migrate_hunt_config(data)
@@ -136,6 +138,7 @@ class ConfigManager:
         """Reload configs from disk."""
         self.cfg.update(load_config())
         self.hunt_cfg.update(load_hunt_config())
+
 
 def update_hunt_config(mutator_func):
     """Thread-safe read-modify-write operation using a mutation callback."""

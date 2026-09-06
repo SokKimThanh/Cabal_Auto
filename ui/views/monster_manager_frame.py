@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from lib.ui_style import UIStyle
 
+
 class MonsterManagerFrame(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)

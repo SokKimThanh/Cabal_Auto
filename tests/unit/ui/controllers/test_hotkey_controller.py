@@ -9,7 +9,7 @@ from ui.controllers.hotkey_controller import HotkeyController
 pytestmark = pytest.mark.unit
 
 
-@patch('ui.controllers.hotkey_controller.keyboard')
+@patch("ui.controllers.hotkey_controller.keyboard")
 def test_hotkey_controller_register_all(mock_keyboard):
     # Explicitly test a config setup
     hunt_cfg = {
@@ -20,9 +20,9 @@ def test_hotkey_controller_register_all(mock_keyboard):
             "setup_wizard_key": "f7",
             "library_manager_key": "f8",
             "vision_wizard_key": "f9",
-            "monster_editor_key": "f10"
+            "monster_editor_key": "f10",
         },
-        "ui_mode": "beginner"
+        "ui_mode": "beginner",
     }
 
     parent = MagicMock()
@@ -32,10 +32,15 @@ def test_hotkey_controller_register_all(mock_keyboard):
     controller.register_all()
 
     assert mock_keyboard.add_hotkey.call_count == 6
-    mock_keyboard.add_hotkey.assert_any_call("f5", controller.on_hunt_start, suppress=False)
-    mock_keyboard.add_hotkey.assert_any_call("f10", controller.on_monster_editor, suppress=False)
+    mock_keyboard.add_hotkey.assert_any_call(
+        "f5", controller.on_hunt_start, suppress=False
+    )
+    mock_keyboard.add_hotkey.assert_any_call(
+        "f10", controller.on_monster_editor, suppress=False
+    )
 
-@patch('ui.controllers.hotkey_controller.keyboard')
+
+@patch("ui.controllers.hotkey_controller.keyboard")
 def test_hotkey_controller_unregister_all(mock_keyboard):
     hunt_cfg = {
         "global_hotkeys": {
@@ -45,9 +50,9 @@ def test_hotkey_controller_unregister_all(mock_keyboard):
             "setup_wizard_key": "f7",
             "library_manager_key": "f8",
             "vision_wizard_key": "f9",
-            "monster_editor_key": "f10"
+            "monster_editor_key": "f10",
         },
-        "ui_mode": "beginner"
+        "ui_mode": "beginner",
     }
 
     parent = MagicMock()
@@ -61,7 +66,10 @@ def test_hotkey_controller_unregister_all(mock_keyboard):
 
     controller.unregister_all()
 
-    assert mock_keyboard.remove_hotkey.call_count == 6  # 6 hotkeys registered by default
+    assert (
+        mock_keyboard.remove_hotkey.call_count == 6
+    )  # 6 hotkeys registered by default
+
 
 def test_hotkey_controller_on_setup_wizard():
     hunt_cfg = {"ui_mode": "beginner"}
@@ -78,6 +86,7 @@ def test_hotkey_controller_on_setup_wizard():
     assert parent.after.call_count == 1
     args, kwargs = parent.after.call_args
     assert args[0] == 0
+
 
 def test_hotkey_controller_on_library_manager():
     parent = MagicMock()

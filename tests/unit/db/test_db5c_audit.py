@@ -29,9 +29,17 @@ def mock_files(tmp_path):
 
     return str(source_file), str(sprite_file)
 
-@patch('lib.db.services.db5c_audit_hybrid_and_consolidate.SOURCE_FILE', new_callable=str)
-@patch('lib.db.services.db5c_audit_hybrid_and_consolidate.SPRITE_CATALOGUE_FILE', new_callable=str)
-def test_idempotency_and_malformed(mock_sprite, mock_source, mock_files, tmp_path, monkeypatch):
+
+@patch(
+    "lib.db.services.db5c_audit_hybrid_and_consolidate.SOURCE_FILE", new_callable=str
+)
+@patch(
+    "lib.db.services.db5c_audit_hybrid_and_consolidate.SPRITE_CATALOGUE_FILE",
+    new_callable=str,
+)
+def test_idempotency_and_malformed(
+    mock_sprite, mock_source, mock_files, tmp_path, monkeypatch
+):
     source_path, sprite_path = mock_files
 
     # We patch the globals in the module. Since we can't easily patch constants directly if they are used as default args
@@ -49,29 +57,32 @@ def test_idempotency_and_malformed(mock_sprite, mock_source, mock_files, tmp_pat
 
     # Run 1
     db5c.run_audit()
-    assert os.path.exists('db5_consolidated_manifest_v1.0.0.json')
+    assert os.path.exists("db5_consolidated_manifest_v1.0.0.json")
 
-    with open('db5_consolidated_manifest_v1.0.0.json', 'r') as f:
+    with open("db5_consolidated_manifest_v1.0.0.json", "r") as f:
         run1_data = json.load(f)
 
     # Run 2
     db5c.run_audit()
-    with open('db5_consolidated_manifest_v1.0.0.json', 'r') as f:
+    with open("db5_consolidated_manifest_v1.0.0.json", "r") as f:
         run2_data = json.load(f)
 
     # Check idempotency: metadata timestamp will differ, but checksums and data should be identical
-    assert run1_data['metadata']['manifest_checksum'] == run2_data['metadata']['manifest_checksum']
-    assert run1_data['data'] == run2_data['data']
-    assert run1_data['rejected'] == run2_data['rejected']
+    assert (
+        run1_data["metadata"]["manifest_checksum"]
+        == run2_data["metadata"]["manifest_checksum"]
+    )
+    assert run1_data["data"] == run2_data["data"]
+    assert run1_data["rejected"] == run2_data["rejected"]
 
     # Test missing/malformed file (does not crash)
     db5c.SOURCE_FILE = "non_existent_file.txt"
     # Should not throw exception
     db5c.run_audit()
 
-    with open('db5_consolidated_manifest_v1.0.0.json', 'r') as f:
+    with open("db5_consolidated_manifest_v1.0.0.json", "r") as f:
         malformed_data = json.load(f)
-        assert malformed_data['data'] == {} # Empty data
+        assert malformed_data["data"] == {}  # Empty data
 
     # Restore
     db5c.SOURCE_FILE = orig_source

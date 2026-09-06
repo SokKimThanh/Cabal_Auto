@@ -12,10 +12,12 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import tkinter as tk
 from tkinter import messagebox
+
 
 def main():
     print("=" * 70)
@@ -61,37 +63,39 @@ def main():
     print("   - Verify badge: Đang chỉnh sửa → Đã lưu")
     print()
     print("=" * 70)
-    
+
     # Confirm to continue
     root = tk.Tk()
     root.withdraw()
-    
+
     response = messagebox.askyesno(
         "Start Test",
         "Ready to test?\n\n"
         "App will open Library Manager.\n"
-        "Follow the instructions printed in terminal."
+        "Follow the instructions printed in terminal.",
     )
-    
+
     if not response:
         print("\n❌ Test cancelled")
         root.destroy()
         return
-    
+
     root.destroy()
-    
+
     # Launch app
     print("\n🚀 Launching app...")
     print("Please follow the steps above to test template save feature.")
     print()
-    
+
     try:
         import app_gui
+
         # This will start the main app
     except Exception as e:
         print(f"\n❌ Failed to launch app: {e}")
         print("\nManual launch:")
         print("   python app_gui.py")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

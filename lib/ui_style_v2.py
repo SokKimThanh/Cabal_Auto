@@ -4,33 +4,34 @@ Design System for Cabal Auto Hunt - Phase 2 Modern Dark Theme
 Centralized fonts, colors, and sizes for a consistent, modern UI.
 """
 
+
 class UIStyleV2:
     # =========================================================
     # COLOR PALETTE (Semantic Tokens)
     # =========================================================
 
     # Backgrounds
-    BG_BASE = "#0f0f0f"      # Main app background
-    BG_SURFACE = "#1a1a1a"   # Panels, cards, elevated content
+    BG_BASE = "#0f0f0f"  # Main app background
+    BG_SURFACE = "#1a1a1a"  # Panels, cards, elevated content
     BG_ELEVATED = "#111111"  # Sidebar, header, inputs, surfaces
-    BG_SUBTLE = "#0a0a0a"    # Status bar, dividers
+    BG_SUBTLE = "#0a0a0a"  # Status bar, dividers
 
     # Borders & Dividers
-    BORDER_PRIMARY = "#2a2a2a" # Standard panel borders
+    BORDER_PRIMARY = "#2a2a2a"  # Standard panel borders
     BORDER_SUBTLE = "#1f1f1f"  # Subtle dividers, secondary borders
 
     # Text
-    TEXT_PRIMARY = "#d1d5db"   # Main content text
-    TEXT_SECONDARY = "#9ca3af" # Secondary text
-    TEXT_MUTED = "#6b7280"     # Tertiary text
-    TEXT_SUBTLE = "#374151"    # Placeholders
+    TEXT_PRIMARY = "#d1d5db"  # Main content text
+    TEXT_SECONDARY = "#9ca3af"  # Secondary text
+    TEXT_MUTED = "#6b7280"  # Tertiary text
+    TEXT_SUBTLE = "#374151"  # Placeholders
 
     # Accent Colors
-    ACCENT_GREEN = "#4ade80"     # Active, success, primary actions
+    ACCENT_GREEN = "#4ade80"  # Active, success, primary actions
     ACCENT_GREEN_BG = "#1f2d1f"  # Green background tint
-    ACCENT_AMBER = "#f59e0b"     # Warning, waiting state
-    ACCENT_BLUE = "#38bdf8"      # Info, running/active state
-    DANGER = "#dc2626"           # Errors, critical, health low
+    ACCENT_AMBER = "#f59e0b"  # Warning, waiting state
+    ACCENT_BLUE = "#38bdf8"  # Info, running/active state
+    DANGER = "#dc2626"  # Errors, critical, health low
 
     # =========================================================
     # TYPOGRAPHY
@@ -40,18 +41,18 @@ class UIStyleV2:
     FONT_FAMILY_UI_FALLBACK = "Segoe UI"
     FONT_FAMILY_MONO = "JetBrains Mono"
     FONT_FAMILY_MONO_FALLBACK = "Courier New"
-    
+
     # Backward compatibility aliases
     FONT_FAMILY = FONT_FAMILY_UI_FALLBACK  # For old code expecting FONT_FAMILY
 
     # Sizes
-    SIZE_TITLE = 16    # Title/Section
-    SIZE_HEADER = 14   # Header
-    SIZE_BODY = 13     # Body
-    SIZE_LABEL = 12    # Label
-    SIZE_SMALL = 11    # Small/caption
-    SIZE_TINY = 10     # Tiny/badge/tag
-    
+    SIZE_TITLE = 16  # Title/Section
+    SIZE_HEADER = 14  # Header
+    SIZE_BODY = 13  # Body
+    SIZE_LABEL = 12  # Label
+    SIZE_SMALL = 11  # Small/caption
+    SIZE_TINY = 10  # Tiny/badge/tag
+
     # Backward compatibility aliases for old UIStyle constants
     SIZE_TEXT = SIZE_BODY
     SIZE_BUTTON = SIZE_LABEL
@@ -76,13 +77,20 @@ class UIStyleV2:
             family = cls.resolve_font_family("mono")
 
         if size is None:
-            if role == "title": size = cls.SIZE_TITLE
-            elif role == "header": size = cls.SIZE_HEADER
-            elif role == "body": size = cls.SIZE_BODY
-            elif role == "label": size = cls.SIZE_LABEL
-            elif role == "small": size = cls.SIZE_SMALL
-            elif role == "tiny": size = cls.SIZE_TINY
-            else: size = cls.SIZE_BODY
+            if role == "title":
+                size = cls.SIZE_TITLE
+            elif role == "header":
+                size = cls.SIZE_HEADER
+            elif role == "body":
+                size = cls.SIZE_BODY
+            elif role == "label":
+                size = cls.SIZE_LABEL
+            elif role == "small":
+                size = cls.SIZE_SMALL
+            elif role == "tiny":
+                size = cls.SIZE_TINY
+            else:
+                size = cls.SIZE_BODY
 
         return (family, size, weight)
 
@@ -102,7 +110,12 @@ class UIStyleV2:
                 pass
 
         if type == "mono":
-            fallbacks = [cls.FONT_FAMILY_MONO, cls.FONT_FAMILY_MONO_FALLBACK, "Consolas", "monospace"]
+            fallbacks = [
+                cls.FONT_FAMILY_MONO,
+                cls.FONT_FAMILY_MONO_FALLBACK,
+                "Consolas",
+                "monospace",
+            ]
         else:
             fallbacks = [cls.FONT_FAMILY_UI, cls.FONT_FAMILY_UI_FALLBACK, "sans-serif"]
 
@@ -123,9 +136,9 @@ class UIStyleV2:
     SPACE_XL = 24
 
     # Border Radius (Logical representation, Tkinter support varies)
-    RADIUS_SM = 4   # inputs, small elements
-    RADIUS_MD = 6   # buttons, cards
-    RADIUS_LG = 8   # panels
+    RADIUS_SM = 4  # inputs, small elements
+    RADIUS_MD = 6  # buttons, cards
+    RADIUS_LG = 8  # panels
     RADIUS_XL = 12  # large sections
 
     # =========================================================
@@ -138,7 +151,7 @@ class UIStyleV2:
             "bg": cls.BG_SURFACE,
             "highlightbackground": cls.BORDER_PRIMARY,
             "highlightcolor": cls.BORDER_PRIMARY,
-            "highlightthickness": 1
+            "highlightthickness": 1,
         }
 
     @classmethod
@@ -148,10 +161,10 @@ class UIStyleV2:
             return {
                 "bg": cls.ACCENT_GREEN,
                 "fg": "#000000",
-                "activebackground": "#86efac", # Lighter green for hover/active
+                "activebackground": "#86efac",  # Lighter green for hover/active
                 "activeforeground": "#000000",
                 "relief": "flat",
-                "borderwidth": 0
+                "borderwidth": 0,
             }
         elif variant == "secondary":
             return {

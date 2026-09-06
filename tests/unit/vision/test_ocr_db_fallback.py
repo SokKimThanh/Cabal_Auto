@@ -13,6 +13,7 @@ class TestOCRDBFallbackContract:
     def test_ocr_db_fallback_contract(self):
         """Verify that OCR fallback dictates id=0, hp=None, defense=None."""
         from lib.features.hunt.scene_monster_detector import SceneMonsterDetector
+
         vision_engine = MagicMock()
         runtime_queue = MagicMock()
 
@@ -33,7 +34,10 @@ class TestOCRDBFallbackContract:
         vision_engine.templates = {"test_tmpl": tmpl}
         vision_engine.detect_monster_pipeline.return_value = [det]
 
-        with patch('lib.features.hunt.scene_monster_detector.get_monster_by_id_api', return_value=None):
+        with patch(
+            "lib.features.hunt.scene_monster_detector.get_monster_by_id_api",
+            return_value=None,
+        ):
             detector.process_frame(np.zeros((10, 10)))
 
             # The runtime queue add_or_update should be called with id=0 and name="Unknown target"
@@ -44,14 +48,18 @@ class TestOCRDBFallbackContract:
                 confidence=0.9,
                 template_id="test_tmpl",
                 resolution_state="db_miss",
-                dungeon_id=None
+                dungeon_id=None,
             )
 
-    @patch('lib.vision.target_name_reader.TargetNameReader._get_roi')
+    @patch("lib.vision.target_name_reader.TargetNameReader._get_roi")
     def test_ocr_failure_safe(self, mock_get_roi):
         """Verify OCR fails safely when pytesseract throws or returns empty."""
-        original_pytesseract = getattr(lib.vision.target_name_reader, 'pytesseract', None)
-        original_tesseract_cmd = getattr(lib.vision.target_name_reader, 'TESSERACT_CMD', None)
+        original_pytesseract = getattr(
+            lib.vision.target_name_reader, "pytesseract", None
+        )
+        original_tesseract_cmd = getattr(
+            lib.vision.target_name_reader, "TESSERACT_CMD", None
+        )
 
         try:
             lib.vision.target_name_reader.pytesseract = MagicMock()
@@ -67,8 +75,12 @@ class TestOCRDBFallbackContract:
 
     def test_ocr_fallback_tesseract_mock(self):
         """Verify OCR handles generic text resolution and fallback."""
-        original_pytesseract = getattr(lib.vision.target_name_reader, 'pytesseract', None)
-        original_tesseract_cmd = getattr(lib.vision.target_name_reader, 'TESSERACT_CMD', None)
+        original_pytesseract = getattr(
+            lib.vision.target_name_reader, "pytesseract", None
+        )
+        original_tesseract_cmd = getattr(
+            lib.vision.target_name_reader, "TESSERACT_CMD", None
+        )
 
         try:
             mock_pytesseract = MagicMock()

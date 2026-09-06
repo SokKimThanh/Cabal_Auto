@@ -32,7 +32,10 @@ def memory_db():
 
 @pytest.fixture
 def mock_get_connection(memory_db):
-    with patch('lib.db.services.translation_service.get_connection', return_value=(memory_db, False)):
+    with patch(
+        "lib.db.services.translation_service.get_connection",
+        return_value=(memory_db, False),
+    ):
         yield memory_db
 
 
@@ -40,6 +43,7 @@ def test_get_all_empty(mock_get_connection):
     service = TranslationService()
     results = service.get_all()
     assert results == []
+
 
 def test_upsert_new_and_existing(mock_get_connection):
     service = TranslationService()
@@ -68,14 +72,8 @@ def test_bulk_upsert_transaction(mock_get_connection):
     service = TranslationService()
 
     translations = {
-        "en": {
-            "key1": "Hello",
-            "key2": "World"
-        },
-        "vi": {
-            "key1": "Xin chao",
-            "key2": "The gioi"
-        }
+        "en": {"key1": "Hello", "key2": "World"},
+        "vi": {"key1": "Xin chao", "key2": "The gioi"},
     }
 
     success = service.bulk_upsert("ns2", translations)
@@ -85,11 +83,7 @@ def test_bulk_upsert_transaction(mock_get_connection):
     assert len(results) == 4
 
     # Check that update works properly
-    translations_update = {
-        "en": {
-            "key1": "Hello!"
-        }
-    }
+    translations_update = {"en": {"key1": "Hello!"}}
     success = service.bulk_upsert("ns2", translations_update)
     assert success is True
 

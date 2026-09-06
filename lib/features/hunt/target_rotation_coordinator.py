@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional, Any
 import copy
 
+
 class TargetRotationCoordinator:
     """
     Coordinates target acquisition based on configured policies.
@@ -32,7 +33,7 @@ class TargetRotationCoordinator:
                             "name": str(entry.get("name", "")).strip(),
                             "priority": int(entry.get("priority", i)),
                             "dungeon_id": entry.get("dungeon_id"),
-                            "original_index": i
+                            "original_index": i,
                         }
                         valid.append(new_entry)
                 except (ValueError, TypeError):
@@ -44,7 +45,7 @@ class TargetRotationCoordinator:
     def is_rotation_valid(self) -> bool:
         if self.target_policy == "configured_only":
             return len(self.configured_rotation) > 0
-        return True # other modes can be empty init
+        return True  # other modes can be empty init
 
     def get_desired_target(self) -> Optional[Dict]:
         """Returns the current desired target for status/UI."""
@@ -133,13 +134,17 @@ class TargetRotationCoordinator:
 
         if self.target_policy == "configured_only":
             if self.configured_rotation:
-                self.current_index = (self.current_index + 1) % len(self.configured_rotation)
+                self.current_index = (self.current_index + 1) % len(
+                    self.configured_rotation
+                )
 
         elif self.target_policy == "all_resolved":
             # Remove current active, pick next
             if self.active_runtime_candidate:
                 active_id = self.active_runtime_candidate["monster_id"]
-                self.runtime_queue = [c for c in self.runtime_queue if c["monster_id"] != active_id]
+                self.runtime_queue = [
+                    c for c in self.runtime_queue if c["monster_id"] != active_id
+                ]
                 self.active_runtime_candidate = None
 
             if self.runtime_queue:

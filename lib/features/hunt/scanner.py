@@ -26,6 +26,7 @@ else:
 
 logger = logging.getLogger(__name__)
 
+
 class AutoScanner:
     def __init__(self, vision_engine: VisionEngine):
         self.vision_engine = vision_engine
@@ -57,14 +58,11 @@ class AutoScanner:
 
         rect = self.window_manager.get_window_rect(hwnd)
 
-        if rect['width'] == 0 or rect['height'] == 0:
+        if rect["width"] == 0 or rect["height"] == 0:
             logger.warning("Window dimensions invalid.")
             return None
 
-        return {
-            'hwnd': hwnd,
-            'rect': rect
-        }
+        return {"hwnd": hwnd, "rect": rect}
 
     def _find_cabal_window(self) -> Optional[int]:
         if not self.window_manager:
@@ -79,28 +77,31 @@ class AutoScanner:
     def scan_screen(self, window_info: Dict[str, Any]) -> Dict[str, Any]:
         """Quét màn hình để nhận diện quái và skills."""
         if not self.screen_capture:
-            return {'monsters': [], 'skills': []}
+            return {"monsters": [], "skills": []}
 
-        hwnd = window_info['hwnd']
+        hwnd = window_info["hwnd"]
         try:
-            if not getattr(self.screen_capture, 'hwnd', None) == hwnd:
+            if not getattr(self.screen_capture, "hwnd", None) == hwnd:
                 import win32gui
+
                 title = win32gui.GetWindowText(hwnd)
                 if not self.screen_capture.start(title):
                     logger.warning("Failed to start screen capture.")
-                    return {'monsters': [], 'skills': []}
+                    return {"monsters": [], "skills": []}
 
             frame = self.screen_capture.get_frame(timeout=1.0)
             if frame is None:
                 logger.warning("Failed to capture frame.")
-                return {'monsters': [], 'skills': []}
+                return {"monsters": [], "skills": []}
 
             monsters = self.vision_engine.detect_monster_pipeline(frame)
 
             # Real skill detection using user's skill data
             skill_detections = []
 
-            skills_db_path = Path(__file__).parent.parent.parent / "data" / "skills.json"
+            skills_db_path = (
+                Path(__file__).parent.parent.parent / "data" / "skills.json"
+            )
             if skills_db_path.exists():
                 with open(skills_db_path, "r", encoding="utf-8") as f:
                     skills_data = json.load(f)
@@ -110,7 +111,9 @@ class AutoScanner:
                     img_path = skill_info.get("image", "")
                     if img_path and Path(img_path).exists():
                         # Add template dynamically
-                        tmpl = self.vision_engine.add_template(str(img_path), threshold=0.7)
+                        tmpl = self.vision_engine.add_template(
+                            str(img_path), threshold=0.7
+                        )
                         if tmpl:
                             templates_added.append(tmpl.id)
                 if templates_added:
@@ -123,13 +126,10 @@ class AutoScanner:
                     for sid in templates_added:
                         self.vision_engine.remove_template(sid)
 
-            return {
-                'monsters': monsters,
-                'skills': skill_detections
-            }
+            return {"monsters": monsters, "skills": skill_detections}
         except Exception as e:
             logger.error(f"Error during scan: {e}")
-            return {'monsters': [], 'skills': []}
+            return {"monsters": [], "skills": []}
 
     def normalize_and_detect_class(self, detected_skills: List[Detection]) -> str:
         """Xác định class dựa trên skill nhận diện."""
@@ -143,22 +143,23 @@ class AutoScanner:
         """Luồng chạy chính của AutoScanner."""
         window_info = self.detect_window()
         if not window_info:
-            return {'status': 'error', 'message': 'Không tìm thấy cửa sổ hợp lệ.'}
+            return {"status": "error", "message": "Không tìm thấy cửa sổ hợp lệ."}
 
         scan_data = self.scan_screen(window_info)
-        detected_class = self.normalize_and_detect_class(scan_data['skills'])
+        detected_class = self.normalize_and_detect_class(scan_data["skills"])
         recommended_skills = self.recommend_skills(detected_class)
 
         try:
             from lib.db.services.scan_service import ScanService
+
             scan_service = ScanService()
 
             # Persist scan summary (scans table currently supports a single monster_id/skill_id)
             data = {
-                'monster_id': None,  # Keep None to avoid FK constraint fails if not loaded
-                'skill_id': None,
-                'class_id': None,
-                'status': 'Success'
+                "monster_id": None,  # Keep None to avoid FK constraint fails if not loaded
+                "skill_id": None,
+                "class_id": None,
+                "status": "Success",
             }
             persisted_id = scan_service.create_scan(data)
             scan_id = persisted_id if persisted_id is not None else "error"
@@ -167,10 +168,10 @@ class AutoScanner:
             scan_id = "error"
 
         return {
-            'status': 'success',
-            'scan_id': scan_id,
-            'class': detected_class,
-            'monsters': [m.template_id for m in scan_data['monsters']],
-            'skills': [s.template_id for s in scan_data['skills']],
-            'recommended_skills': recommended_skills
+            "status": "success",
+            "scan_id": scan_id,
+            "class": detected_class,
+            "monsters": [m.template_id for m in scan_data["monsters"]],
+            "skills": [s.template_id for s in scan_data["skills"]],
+            "recommended_skills": recommended_skills,
         }

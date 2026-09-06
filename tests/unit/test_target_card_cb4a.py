@@ -2,10 +2,12 @@ import os
 import pytest
 import time
 
-pytest.importorskip("tkinter", reason="Skipping UI tests because tkinter is not available")
+pytest.importorskip(
+    "tkinter", reason="Skipping UI tests because tkinter is not available"
+)
 pytestmark = pytest.mark.skipif(
     not os.getenv("DISPLAY") and os.name != "nt",
-    reason="Requires active display or xvfb to run Tkinter tests"
+    reason="Requires active display or xvfb to run Tkinter tests",
 )
 
 import unittest
@@ -14,6 +16,7 @@ from unittest.mock import MagicMock, patch
 
 from ui.tabs.hunt_tab import HuntTab
 from lib.vision.target_hp_reader import TargetHPReader
+
 
 class DummyApp:
     def __init__(self):
@@ -28,9 +31,17 @@ class DummyApp:
         task()
 
     def __getattr__(self, name):
-        if name.startswith('_on_') or name.startswith('_refresh_') or name.startswith('_create_') or name.startswith('_update_'):
-            return lambda *args, **kwargs: tk.Label() if name.startswith('_create_') else None
-        if name.endswith('_var'):
+        if (
+            name.startswith("_on_")
+            or name.startswith("_refresh_")
+            or name.startswith("_create_")
+            or name.startswith("_update_")
+        ):
+            return lambda *args, **kwargs: (
+                tk.Label() if name.startswith("_create_") else None
+            )
+        if name.endswith("_var"):
+
             class DummyVar(tk.Variable):
                 def __init__(self, name=""):
                     self.val = ""
@@ -44,6 +55,7 @@ class DummyApp:
 
                 def trace_add(self, *args, **kwargs):
                     pass
+
             var = DummyVar(name=name)
             setattr(self, name, var)
             return var
@@ -59,8 +71,10 @@ class DummyApp:
         class MockMagic:
             def __call__(self, *args, **kwargs):
                 pass
+
             def __getattr__(self, name):
                 return MockMagic()
+
         return MockMagic()
 
 
@@ -74,8 +88,8 @@ class TestTargetCardCB4A(unittest.TestCase):
     def tearDown(self):
         self.root.destroy()
 
-    @patch('database.get_monster_by_id_api')
-    @patch('lib.features.monsters.monster_repo.load_monster_library', return_value={})
+    @patch("database.get_monster_by_id_api")
+    @patch("lib.features.monsters.monster_repo.load_monster_library", return_value={})
     def test_case_1_valid_monster(self, mock_load, mock_get):
         mock_get.return_value = {
             "id": "999",
@@ -83,7 +97,7 @@ class TestTargetCardCB4A(unittest.TestCase):
             "level": "50",
             "hp": 5000,
             "defense": 300,
-            "image_path": "path/to/dragon.png"
+            "image_path": "path/to/dragon.png",
         }
 
         self.tab.update_target_card("999")
@@ -91,9 +105,9 @@ class TestTargetCardCB4A(unittest.TestCase):
         self.assertEqual(self.tab.target_hp_label.cget("text"), "5000")
         self.assertEqual(self.tab.target_level_label.cget("text"), "50")
 
-    @patch('database.get_monster_by_id_api', return_value=None)
-    @patch('database.find_monster_by_name_api', return_value=None)
-    @patch('lib.features.monsters.monster_repo.load_monster_library', return_value={})
+    @patch("database.get_monster_by_id_api", return_value=None)
+    @patch("database.find_monster_by_name_api", return_value=None)
+    @patch("lib.features.monsters.monster_repo.load_monster_library", return_value={})
     def test_case_2_missing_asset(self, mock_load, mock_find, mock_get):
         self.tab.update_target_card("UnknownMob")
         self.assertEqual(self.tab.target_name_label.cget("text"), "UnknownMob")
@@ -128,9 +142,17 @@ class TestTargetCardCB4A(unittest.TestCase):
         self.assertIsNotNone(self.tab._pending_clear_id)
 
         # Rapid retarget before clear executes
-        with patch('database.get_monster_by_id_api', return_value={
-            "id": "1", "name": "Slime", "level": "1", "hp": 100, "defense": 10, "image_path": None
-        }):
+        with patch(
+            "database.get_monster_by_id_api",
+            return_value={
+                "id": "1",
+                "name": "Slime",
+                "level": "1",
+                "hp": 100,
+                "defense": 10,
+                "image_path": None,
+            },
+        ):
             self.tab.update_target_card("1")
 
         self.assertIsNone(getattr(self.tab, "_pending_clear_id", None))
@@ -145,11 +167,12 @@ class TestTargetCardCB4A(unittest.TestCase):
 
         self.assertEqual(self.tab.target_name_label.cget("text"), "Slime")
 
-    @patch('database.get_monster_by_id_api', return_value=None)
-    @patch('database.find_monster_by_name_api', return_value=None)
-    @patch('lib.features.monsters.monster_repo.load_monster_library', return_value={})
+    @patch("database.get_monster_by_id_api", return_value=None)
+    @patch("database.find_monster_by_name_api", return_value=None)
+    @patch("lib.features.monsters.monster_repo.load_monster_library", return_value={})
     def test_case_5_placeholder_hp(self, mock_load, mock_find, mock_get):
         from lib.features.monsters.monster_repo import get_target_monster_info
+
         info = get_target_monster_info("Ghost")
 
         self.assertEqual(info["hp"], 10000)
@@ -167,5 +190,6 @@ class TestTargetCardCB4A(unittest.TestCase):
 
         mock_detector.get_hp_percentage.assert_called_once_with(frame)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

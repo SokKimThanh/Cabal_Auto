@@ -16,10 +16,7 @@ import sys
 import tkinter as tk
 from pathlib import Path
 
-pytestmark = [
-    pytest.mark.manual,
-    pytest.mark.gui
-]
+pytestmark = [pytest.mark.manual, pytest.mark.gui]
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -31,9 +28,9 @@ from ui.windows.monster_manager_win import MonsterManagerWin
 
 def main():
     """Test MonsterManagerWin with notifications."""
-    print("="*70)
+    print("=" * 70)
     print("🎮 MonsterManagerWin - ActionNotificationMixin Integration Test")
-    print("="*70)
+    print("=" * 70)
     print()
     print("📖 What to Test:")
     print("  1. Click 'Add Monster' in View Mode")
@@ -54,36 +51,36 @@ def main():
     print("  • Notification = User feedback (info/success/warning/error)")
     print("  • ActionNotificationMixin = Integration layer")
     print()
-    print("="*70)
+    print("=" * 70)
     print()
-    
+
     # Create root window
     root = tk.Tk()
     root.withdraw()  # Hide root window
-    
+
     # Open MonsterManagerWin
     editor = MonsterManagerWin(root)
-    
+
     # Check if mixin is integrated
-    has_mixin = hasattr(editor, 'execute_action')
+    has_mixin = hasattr(editor, "execute_action")
     print(f"✅ ActionNotificationMixin integrated: {has_mixin}")
-    
+
     if has_mixin:
         # Check if rules are registered
-        has_add_rule = editor.has_action_rule('add_monster')
-        has_delete_rule = editor.has_action_rule('delete_monster')
+        has_add_rule = editor.has_action_rule("add_monster")
+        has_delete_rule = editor.has_action_rule("delete_monster")
         print(f"✅ Add monster rule registered: {has_add_rule}")
         print(f"✅ Delete monster rule registered: {has_delete_rule}")
     else:
         print("⚠️  ActionNotificationMixin not available (using fallback)")
-    
+
     print()
     print("🎯 Editor is now open - try the tests above!")
     print()
-    
+
     # Run event loop
     root.mainloop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

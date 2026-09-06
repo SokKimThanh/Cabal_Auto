@@ -6,6 +6,7 @@ Tests complete workflows: Capture → Add Template → Test Recognition.
 Author: SokKimThanh
 Created: 2025-10-24
 """
+
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -19,7 +20,7 @@ pytestmark = pytest.mark.integration
 
 class TestMonsterEditorFlow:
     """Integration tests for monster editor workflows."""
-    
+
     def test_create_monster_with_template(self, tmp_path: Path) -> None:
         """Test complete flow: create monster + add template."""
         # TODO: Implement test
@@ -29,7 +30,7 @@ class TestMonsterEditorFlow:
         # Assert monster has template
         # Assert files created
         pass
-    
+
     def test_capture_to_test_flow(self, tmp_path: Path, monkeypatch) -> None:
         """Test flow: Capture → Add Template → Test Recognition."""
         # TODO: Implement test
@@ -40,7 +41,7 @@ class TestMonsterEditorFlow:
         # Test template
         # Assert test results
         pass
-    
+
     def test_quick_editor_workflow(self, tmp_path: Path) -> None:
         """Test quick editor complete workflow."""
         # TODO: Implement test
@@ -50,7 +51,7 @@ class TestMonsterEditorFlow:
         # Save
         # Assert monster created
         pass
-    
+
     def test_worker_integration(self, tmp_path: Path) -> None:
         """Test worker integration with monster operations."""
         # TODO: Implement test
@@ -63,7 +64,7 @@ class TestMonsterEditorFlow:
 
 class TestHotkeyIntegration:
     """Test hotkey integration."""
-    
+
     def test_register_monster_editor_hotkey(self) -> None:
         """Test registering Ctrl+Shift+M hotkey."""
         # TODO: Implement test
@@ -72,7 +73,7 @@ class TestHotkeyIntegration:
         # Trigger hotkey (mocked)
         # Assert quick editor opened
         pass
-    
+
     def test_hotkey_capability_report(self) -> None:
         """Test hotkey capability report."""
         # TODO: Implement test
@@ -84,7 +85,7 @@ class TestHotkeyIntegration:
 
 class TestLoggingIntegration:
     """Test logging integration."""
-    
+
     def test_operations_logged(self, tmp_path: Path, monkeypatch) -> None:
         """Test that operations are logged correctly."""
         # TODO: Implement test
@@ -94,7 +95,7 @@ class TestLoggingIntegration:
         # Assert log entries correct
         # Assert log NOT in repo
         pass
-    
+
     def test_log_schema_validation(self, tmp_path: Path) -> None:
         """Test log entries follow schema."""
         # TODO: Implement test

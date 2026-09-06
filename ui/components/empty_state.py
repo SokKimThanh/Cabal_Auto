@@ -19,7 +19,7 @@ class EmptyState(tk.Frame):
             text=icon,
             font=(UI.FONT_FAMILY_UI_FALLBACK, 48),
             bg=UI.BG_BASE,
-            fg=UI.TEXT_MUTED
+            fg=UI.TEXT_MUTED,
             # Note: fg_opacity parameter doesn't exist in standard tkinter label,
             # so we just use the TEXT_MUTED color.
         )
@@ -27,11 +27,7 @@ class EmptyState(tk.Frame):
 
         # Main message
         msg_label = tk.Label(
-            self,
-            text=message,
-            font=UI.FONT_SECTION,
-            bg=UI.BG_BASE,
-            fg=UI.TEXT_PRIMARY
+            self, text=message, font=UI.FONT_SECTION, bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY
         )
         msg_label.pack(pady=5)
 
@@ -43,6 +39,6 @@ class EmptyState(tk.Frame):
                 font=UI.FONT_SMALL,
                 bg=UI.BG_BASE,
                 fg=UI.TEXT_MUTED,
-                wraplength=300
+                wraplength=300,
             )
             sub_label.pack(pady=10)

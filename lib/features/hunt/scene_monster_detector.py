@@ -5,6 +5,7 @@ from lib.vision.vision_engine import VisionEngine
 from lib.features.hunt.runtime_monster_queue import RuntimeMonsterQueue
 from database import get_monster_by_id_api
 
+
 class SceneMonsterDetector:
     def __init__(self, vision_engine: VisionEngine, runtime_queue: RuntimeMonsterQueue):
         self.vision_engine = vision_engine
@@ -28,22 +29,24 @@ class SceneMonsterDetector:
         Process a single frame to detect scene monsters and update the runtime queue.
         Must be called from a worker thread.
         """
-        if frame is None or getattr(frame, 'size', 0) == 0:
+        if frame is None or getattr(frame, "size", 0) == 0:
             return
 
         # 1. Gather valid template IDs
         # Only process templates that have a valid mapped monster_id
         valid_template_ids = []
         for tmpl in self.vision_engine.templates.values():
-            if tmpl.enabled and hasattr(tmpl, "monster_id") and tmpl.monster_id is not None:
+            if (
+                tmpl.enabled
+                and hasattr(tmpl, "monster_id")
+                and tmpl.monster_id is not None
+            ):
                 valid_template_ids.append(tmpl.id)
 
         # 2. Run detection pipeline
         # Force use_fast_hsv=False as we don't want generic blobs
         detections = self.vision_engine.detect_monster_pipeline(
-            frame,
-            template_ids=valid_template_ids,
-            use_fast_hsv=False
+            frame, template_ids=valid_template_ids, use_fast_hsv=False
         )
 
         # 3. Process detections and enqueue
@@ -64,7 +67,7 @@ class SceneMonsterDetector:
                     confidence=det.score,
                     template_id=det.template_id,
                     resolution_state="unmapped_visual",
-                    dungeon_id=dungeon_id
+                    dungeon_id=dungeon_id,
                 )
                 continue
 
@@ -78,7 +81,7 @@ class SceneMonsterDetector:
                     confidence=det.score,
                     template_id=det.template_id,
                     resolution_state="db_match",
-                    dungeon_id=dungeon_id
+                    dungeon_id=dungeon_id,
                 )
             else:
                 self.runtime_queue.add_or_update(
@@ -88,5 +91,5 @@ class SceneMonsterDetector:
                     confidence=det.score,
                     template_id=det.template_id,
                     resolution_state="db_miss",
-                    dungeon_id=dungeon_id
+                    dungeon_id=dungeon_id,
                 )
