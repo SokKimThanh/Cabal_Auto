@@ -72,10 +72,10 @@ class SkillPanel:
 
         self.widgets['combo_dropdowns'] = []
         for i in range(4):
-            card = tk.Frame(combo_frame, bg=UI.BG_ELEVATED, highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
+            card = tk.Frame(combo_frame, bg=UI.BG_SURFACE, highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
             card.grid(row=0, column=i, sticky="nsew", padx=3, pady=3)
 
-            tk.Label(card, text=f"CHAIN {i+1}", font=UI.FONT_SMALL, bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED).pack(anchor="w", padx=8, pady=(8,2))
+            tk.Label(card, text=f"CHAIN {i+1}", font=UI.FONT_SMALL, bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(anchor="w", padx=8, pady=(8,2))
 
             dd_var = tk.StringVar()
             dd = ttk.Combobox(card, textvariable=dd_var, state='readonly', values=skill_names)
@@ -83,10 +83,10 @@ class SkillPanel:
             dd.bind('<<ComboboxSelected>>', lambda e, idx=i: self._on_skill_changed(e, 'attack_combo', idx))
             self.widgets['combo_dropdowns'].append(dd)
 
-            stats = tk.Frame(card, bg=UI.BG_ELEVATED)
+            stats = tk.Frame(card, bg=UI.BG_SURFACE)
             stats.pack(fill='x', padx=8, pady=(2,8))
-            tk.Label(stats, text="⏱ 0.5s", font=UI.FONT_SMALL, bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED).pack(side='left')
-            tk.Label(stats, text="🔄 5s", font=UI.FONT_SMALL, bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED).pack(side='right')
+            tk.Label(stats, text="⏱ 0.5s", font=UI.FONT_SMALL, bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(side='left')
+            tk.Label(stats, text="🔄 5s", font=UI.FONT_SMALL, bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(side='right')
 
         # Divider
         divider = tk.Frame(content_frame, bg=UI.BG_BASE)
@@ -103,10 +103,10 @@ class SkillPanel:
 
         self.widgets['buff_dropdowns'] = []
         for i in range(2):
-            card = tk.Frame(buff_frame, bg="#161616", highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
+            card = tk.Frame(buff_frame, bg=UI.BG_SURFACE, highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
             card.grid(row=0, column=i, sticky="nsew", padx=3, pady=3)
 
-            tk.Label(card, text=f"BUFF LANE {i+1}", font=UI.FONT_SMALL, bg="#161616", fg=UI.TEXT_MUTED).pack(anchor="w", padx=8, pady=(8,2))
+            tk.Label(card, text=f"BUFF LANE {i+1}", font=UI.FONT_SMALL, bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(anchor="w", padx=8, pady=(8,2))
 
             dd_var = tk.StringVar()
             dd = ttk.Combobox(card, textvariable=dd_var, state='readonly', values=skill_names)
@@ -114,10 +114,10 @@ class SkillPanel:
             dd.bind('<<ComboboxSelected>>', lambda e, idx=i: self._on_skill_changed(e, 'buff_lane', idx))
             self.widgets['buff_dropdowns'].append(dd)
 
-            stats = tk.Frame(card, bg="#161616")
+            stats = tk.Frame(card, bg=UI.BG_SURFACE)
             stats.pack(fill='x', padx=8, pady=(2,8))
-            tk.Label(stats, text="⏱ 2.0s", font=UI.FONT_SMALL, bg="#161616", fg=UI.TEXT_MUTED).pack(side='left')
-            tk.Label(stats, text="🔄 20s", font=UI.FONT_SMALL, bg="#161616", fg=UI.TEXT_MUTED).pack(side='right')
+            tk.Label(stats, text="⏱ 2.0s", font=UI.FONT_SMALL, bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(side='left')
+            tk.Label(stats, text="🔄 20s", font=UI.FONT_SMALL, bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(side='right')
 
     def on_skill_slots_changed(self, skill_slots=None):
         """Logic moved from HuntTab"""
