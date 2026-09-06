@@ -138,7 +138,9 @@ class CompactWindowSelector:
 
     def _on_search_focus_in(self, event=None):
         """Show dropdown when search box focused."""
-        if not self.is_open:
+        # Only auto-open if dropdown is not already open
+        # Also ignore focus events that come from Toplevel closing
+        if not self.is_open and not self.dropdown_window:
             self._toggle_dropdown()
 
     def _on_search_text_changed(self, event=None):
@@ -172,6 +174,8 @@ class CompactWindowSelector:
             self.dropdown_window = tk.Toplevel(self.parent)
             self.dropdown_window.wm_overrideredirect(True)  # No window decorations
             self.dropdown_window.configure(bg="#1a1a1a")
+            # Make popup grab all events (modal-like behavior)
+            self.dropdown_window.grab_set()
             
             # Position dropdown below search frame
             self.frame.update_idletasks()
@@ -249,19 +253,21 @@ class CompactWindowSelector:
                 return
             
             selected = self.filtered_windows[sel[0]]
+            print(f"[DEBUG] Selected window: {selected['title']}")
             logger.debug(f"Selected window: {selected['title']}")
             
             # Update search entry with selection
             self.search_var.set(selected["title"])
             
-            # Close dropdown
+            # Call callback BEFORE closing dropdown
+            self.on_window_selected(selected)
+            
+            # Close dropdown after callback
             if self.is_open:
                 self._toggle_dropdown()
             
-            # Call callback
-            self.on_window_selected(selected)
-            
         except Exception as e:
+            print(f"[DEBUG] Error on window select: {e}")
             logger.error(f"Error on window select: {e}")
 
     def set_search_text(self, text: str):
