@@ -152,10 +152,8 @@ class AppStateController:
             for handler in self.root._callbacks[event]:
                 try:
                     handler(*args, **kwargs)
-                except Exception as e:
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.error(f"Error in callback for {event}: {e}")
+                except Exception:
+                    logger.exception("Error in callback for %s", event)
 
     def load_preset_for_class(self, class_id: int, preset_id: Optional[int] = None) -> None:
         self.root._current_class_id = class_id
