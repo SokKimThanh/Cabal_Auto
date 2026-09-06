@@ -11,7 +11,6 @@ from lib.vision.matcher_service import MatcherService
 pytestmark = pytest.mark.unit
 
 
-
 @pytest.fixture
 def matcher_service():
     return MatcherService()
@@ -24,7 +23,12 @@ def test_matcher_service_empty_frame_and_roi(matcher_service):
 
     valid_frame = np.zeros((100, 100, 3), dtype=np.uint8)
     out_of_bounds_roi = (200, 200, 50, 50)
-    assert matcher_service.match_templates(valid_frame, templates={}, roi=out_of_bounds_roi) == []
+    assert (
+        matcher_service.match_templates(
+            valid_frame, templates={}, roi=out_of_bounds_roi
+        )
+        == []
+    )
 
 
 def test_matcher_service_bgr_color_matching_mode(matcher_service):
@@ -44,9 +48,7 @@ def test_matcher_service_bgr_color_matching_mode(matcher_service):
 
     # With use_grayscale=False, matching Red template on Blue frame should yield no detection due to color mismatch
     dets_bgr = matcher_service.match_templates(
-        blue_frame,
-        templates={template.id: template},
-        use_grayscale=False
+        blue_frame, templates={template.id: template}, use_grayscale=False
     )
     assert len(dets_bgr) == 0
 
@@ -60,14 +62,18 @@ def test_matcher_service_channel_compatibility(matcher_service):
     bgr_frame = np.zeros((150, 150, 3), dtype=np.uint8)
     bgr_frame[40:70, 40:70] = tpl_img
 
-    dets_bgr = matcher_service.match_templates(bgr_frame, templates={template.id: template})
+    dets_bgr = matcher_service.match_templates(
+        bgr_frame, templates={template.id: template}
+    )
     assert len(dets_bgr) > 0
     assert dets_bgr[0].x == 40
     assert dets_bgr[0].y == 40
 
     # 1-channel grayscale frame directly passed to match_template_at_scale
     gray_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2GRAY)
-    dets_gray = matcher_service.match_template_at_scale(gray_frame, template, scale=1.0, offset_x=0, offset_y=0)
+    dets_gray = matcher_service.match_template_at_scale(
+        gray_frame, template, scale=1.0, offset_x=0, offset_y=0
+    )
     assert len(dets_gray) > 0
     assert dets_gray[0].x == 40
     assert dets_gray[0].y == 40

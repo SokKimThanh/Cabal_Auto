@@ -10,11 +10,13 @@ import tests.unit.test_attack_keys_migration as t
 failed = 0
 
 for name in dir(t):
-    if name.startswith('test_'):
+    if name.startswith("test_"):
         func = getattr(t, name)
         if callable(func):
             try:
-                with tempfile.TemporaryDirectory(prefix='cabal_auto_tmp_test_dir_') as temp_dir:
+                with tempfile.TemporaryDirectory(
+                    prefix="cabal_auto_tmp_test_dir_"
+                ) as temp_dir:
                     func(Path(temp_dir))
             except TypeError:
                 # no args

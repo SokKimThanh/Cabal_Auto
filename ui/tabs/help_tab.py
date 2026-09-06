@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from lib.ui_style_v2 import UIStyleV2 as UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 
 class HelpTab(ttk.Frame):
@@ -13,7 +13,7 @@ class HelpTab(ttk.Frame):
         title = ttk.Label(
             self,
             text="Help & Support",
-            font=(UIStyle.resolve_font_family("display"), 16, "bold"),
+            font=UI.FONT_TITLE,
         )
         title.pack(anchor="w", pady=(0, 16))
 
@@ -32,9 +32,9 @@ class HelpTab(ttk.Frame):
 
         text = tk.Text(
             self,
-            bg=UIStyle.THEME_BG_APP,
-            fg=UIStyle.THEME_TEXT_PRIMARY,
-            font=(UIStyle.resolve_font_family("body"), 10),
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY,
+            font=UI.FONT_BODY,
             wrap="word",
             state="normal",
             relief="flat",

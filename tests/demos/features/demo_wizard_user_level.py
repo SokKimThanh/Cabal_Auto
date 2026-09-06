@@ -18,18 +18,18 @@ def test_wizard_scenarios():
     root = tk.Tk()
     root.title("Setup Wizard - User Level Test")
     root.geometry("600x400")
-    
-    info_frame = tk.Frame(root, bg='#E3F2FD', padx=30, pady=30)
-    info_frame.pack(fill='both', expand=True)
-    
+
+    info_frame = tk.Frame(root, bg="#E3F2FD", padx=30, pady=30)
+    info_frame.pack(fill="both", expand=True)
+
     title = tk.Label(
         info_frame,
         text="Setup Wizard - User Level Integration Test",
-        font=('Arial', 16, 'bold'),
-        bg='#E3F2FD'
+        font=("Arial", 16, "bold"),
+        bg="#E3F2FD",
     )
     title.pack(pady=(0, 20))
-    
+
     instructions = tk.Label(
         info_frame,
         text=(
@@ -44,32 +44,32 @@ def test_wizard_scenarios():
             "   • DISABLED (gray) for Experienced Users\n\n"
             "5. When enabled, click it to open Library Manager!"
         ),
-        font=('Arial', 10),
-        bg='#E3F2FD',
-        justify=tk.LEFT
+        font=("Arial", 10),
+        bg="#E3F2FD",
+        justify=tk.LEFT,
     )
     instructions.pack(pady=(0, 30))
-    
+
     def launch_wizard():
         wizard = SetupWizard(
             root,
             on_complete=lambda data: print("Wizard completed:", data),
-            on_cancel=lambda: print("Wizard cancelled")
+            on_cancel=lambda: print("Wizard cancelled"),
         )
-    
+
     launch_btn = tk.Button(
         info_frame,
         text="🧙 Launch Setup Wizard",
         command=launch_wizard,
-        font=('Arial', 14, 'bold'),
-        bg='#4CAF50',
-        fg='white',
+        font=("Arial", 14, "bold"),
+        bg="#4CAF50",
+        fg="white",
         padx=30,
         pady=15,
-        cursor='hand2'
+        cursor="hand2",
     )
     launch_btn.pack()
-    
+
     notes = tk.Label(
         info_frame,
         text=(
@@ -79,13 +79,13 @@ def test_wizard_scenarios():
             "• Integration with Library Manager\n"
             "• Full English + Vietnamese support"
         ),
-        font=('Arial', 9, 'italic'),
-        bg='#E3F2FD',
-        fg='#666',
-        justify=tk.LEFT
+        font=("Arial", 9, "italic"),
+        bg="#E3F2FD",
+        fg="#666",
+        justify=tk.LEFT,
     )
     notes.pack(pady=(20, 0))
-    
+
     root.mainloop()
 
 
@@ -100,5 +100,5 @@ if __name__ == "__main__":
     print("  ✓ Skill data refresh")
     print("\nLaunching test window...")
     print("=" * 60)
-    
+
     test_wizard_scenarios()

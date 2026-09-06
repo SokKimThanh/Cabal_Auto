@@ -2,6 +2,7 @@ import sqlite3
 from typing import List, Dict, Any, Optional
 from lib.db.connection import get_connection
 
+
 class SynergyService:
     def __init__(self):
         pass
@@ -31,20 +32,24 @@ class SynergyService:
                     "name": data.get("name"),
                     "activation_sequence": data.get("activation_sequence"),
                     "recommendation": data.get("recommendation"),
-                }
+                },
             )
             synergy_id = cursor.lastrowid
             conn.commit()
             return synergy_id
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SynergyService] Create synergy error: {e}")
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def get_synergy_by_id(self, synergy_id: int) -> Optional[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -52,12 +57,16 @@ class SynergyService:
             return None
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM synergies WHERE synergy_id = ?", (synergy_id,))
+            cursor.execute(
+                "SELECT * FROM synergies WHERE synergy_id = ?", (synergy_id,)
+            )
             row = cursor.fetchone()
             if row:
                 synergy = dict(row)
-                cursor.execute("SELECT * FROM synergy_effects WHERE synergy_id = ?", (synergy_id,))
-                synergy['effects'] = [dict(e) for e in cursor.fetchall()]
+                cursor.execute(
+                    "SELECT * FROM synergy_effects WHERE synergy_id = ?", (synergy_id,)
+                )
+                synergy["effects"] = [dict(e) for e in cursor.fetchall()]
                 return synergy
             return None
         except Exception as e:
@@ -65,8 +74,10 @@ class SynergyService:
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def get_synergies_by_class(self, class_id: int) -> List[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -80,21 +91,24 @@ class SynergyService:
             if not synergies:
                 return []
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT e.*
                 FROM synergy_effects e
                 JOIN synergies s ON e.synergy_id = s.synergy_id
                 WHERE s.class_id = ?
-            """, (class_id,))
+            """,
+                (class_id,),
+            )
 
             effects_by_synergy = {}
             for e in cursor.fetchall():
                 effect_dict = dict(e)
-                syn_id = effect_dict['synergy_id']
+                syn_id = effect_dict["synergy_id"]
                 effects_by_synergy.setdefault(syn_id, []).append(effect_dict)
 
             for syn in synergies:
-                syn['effects'] = effects_by_synergy.get(syn['synergy_id'], [])
+                syn["effects"] = effects_by_synergy.get(syn["synergy_id"], [])
 
             return synergies
         except Exception as e:
@@ -102,8 +116,10 @@ class SynergyService:
             return []
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def update_synergy(self, synergy_id: int, data: Dict[str, Any]) -> bool:
         conn, is_local = get_connection()
@@ -134,20 +150,24 @@ class SynergyService:
                     "name": data.get("name"),
                     "activation_sequence": data.get("activation_sequence"),
                     "recommendation": data.get("recommendation"),
-                }
+                },
             )
             updated = cursor.rowcount > 0
             conn.commit()
             return updated
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SynergyService] Update error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def delete_synergy(self, synergy_id: int) -> bool:
         conn, is_local = get_connection()
@@ -161,22 +181,30 @@ class SynergyService:
             conn.commit()
             return deleted
         except sqlite3.IntegrityError as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SynergyService] Integrity error on delete: {e}")
             return False
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SynergyService] Delete error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     # --- Effects ---
-    def create_synergy_effect(self, synergy_id: int, data: Dict[str, Any]) -> Optional[int]:
+    def create_synergy_effect(
+        self, synergy_id: int, data: Dict[str, Any]
+    ) -> Optional[int]:
         conn, is_local = get_connection()
         if not conn:
             return None
@@ -184,7 +212,9 @@ class SynergyService:
             conn.execute("BEGIN TRANSACTION")
             cursor = conn.cursor()
 
-            cursor.execute("SELECT 1 FROM synergies WHERE synergy_id = ?", (synergy_id,))
+            cursor.execute(
+                "SELECT 1 FROM synergies WHERE synergy_id = ?", (synergy_id,)
+            )
             if not cursor.fetchone():
                 raise ValueError(f"synergy_id {synergy_id} does not exist.")
 
@@ -199,20 +229,24 @@ class SynergyService:
                     "value": data.get("value"),
                     "duration": data.get("duration"),
                     "target": data.get("target"),
-                }
+                },
             )
             effect_id = cursor.lastrowid
             conn.commit()
             return effect_id
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SynergyService] Create effect error: {e}")
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def update_synergy_effect(self, effect_id: int, data: Dict[str, Any]) -> bool:
         conn, is_local = get_connection()
@@ -237,20 +271,24 @@ class SynergyService:
                     "value": data.get("value"),
                     "duration": data.get("duration"),
                     "target": data.get("target"),
-                }
+                },
             )
             updated = cursor.rowcount > 0
             conn.commit()
             return updated
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SynergyService] Update effect error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def delete_synergy_effect(self, effect_id: int) -> bool:
         conn, is_local = get_connection()
@@ -259,16 +297,22 @@ class SynergyService:
         try:
             conn.execute("BEGIN TRANSACTION")
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM synergy_effects WHERE effect_id = ?", (effect_id,))
+            cursor.execute(
+                "DELETE FROM synergy_effects WHERE effect_id = ?", (effect_id,)
+            )
             deleted = cursor.rowcount > 0
             conn.commit()
             return deleted
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SynergyService] Delete effect error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass

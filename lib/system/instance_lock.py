@@ -19,6 +19,7 @@ class SingleInstanceLock:
         try:
             if sys.platform == "win32":
                 import ctypes
+
                 kernel32 = ctypes.windll.kernel32
                 mutex_name = f"Global\\{self.app_name}_SingleInstance"
                 self.mutex = kernel32.CreateMutexW(None, False, mutex_name)
@@ -33,6 +34,7 @@ class SingleInstanceLock:
                 return True
             else:
                 import fcntl
+
                 try:
                     self.lock_file = open(self.lock_file_path, "w")
                     fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -54,12 +56,14 @@ class SingleInstanceLock:
             if sys.platform == "win32":
                 if self.mutex and self.is_locked:
                     import ctypes
+
                     kernel32 = ctypes.windll.kernel32
                     kernel32.CloseHandle(self.mutex)
                     self.is_locked = False
             else:
                 if self.lock_file and self.is_locked:
                     import fcntl
+
                     fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
                     self.lock_file.close()
                     try:

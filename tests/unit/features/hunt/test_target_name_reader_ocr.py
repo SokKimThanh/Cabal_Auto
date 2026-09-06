@@ -11,12 +11,14 @@ pytestmark = pytest.mark.unit
 def reader():
     return TargetNameReader(window_bounds=[0, 0, 1920, 1080])
 
+
 def test_target_name_reader_fast_fail_pytesseract():
     with patch("lib.vision.target_name_reader.pytesseract", None):
         reader = TargetNameReader()
         with pytest.raises(RuntimeError) as excinfo:
             reader.read_name(np.zeros((1080, 1920, 3), dtype=np.uint8))
         assert "Tesseract Python wrapper missing" in str(excinfo.value)
+
 
 def test_target_name_reader_fast_fail_tesseract_binary():
     with patch("lib.vision.target_name_reader.pytesseract", MagicMock()):
@@ -25,6 +27,7 @@ def test_target_name_reader_fast_fail_tesseract_binary():
             with pytest.raises(RuntimeError) as excinfo:
                 reader.read_name(np.zeros((1080, 1920, 3), dtype=np.uint8))
             assert "Tesseract binary missing from PATH" in str(excinfo.value)
+
 
 def test_target_name_reader_success():
     mock_pytesseract = MagicMock()

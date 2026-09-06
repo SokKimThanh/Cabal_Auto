@@ -21,27 +21,32 @@ def mock_app():
 
     # Recreate the target methods from App
     from app_gui import App as RealApp
-    app._refresh_monster_rotation_list = RealApp._refresh_monster_rotation_list.__get__(app)
+
+    app._refresh_monster_rotation_list = RealApp._refresh_monster_rotation_list.__get__(
+        app
+    )
     app._on_monster_move_up = RealApp._on_monster_move_up.__get__(app)
     app._on_monster_move_down = RealApp._on_monster_move_down.__get__(app)
     app._on_monster_delete_from_list = RealApp._on_monster_delete_from_list.__get__(app)
     app._on_monster_add_smart = RealApp._on_monster_add_smart.__get__(app)
-    app.current_lang = 'en'
-
+    app.current_lang = "en"
 
     return app
+
 
 def test_refresh_monster_rotation_list_caches_db_calls(mock_app):
     mock_app.monster_rotation = [
         {"monster_id": 1, "name": "Monster1", "priority": 1, "dungeon_id": "D1"},
-        {"monster_id": 2, "name": "Monster2", "priority": 2, "dungeon_id": None}
+        {"monster_id": 2, "name": "Monster2", "priority": 2, "dungeon_id": None},
     ]
 
-    with patch('database.get_monster_by_id_api', side_effect=[
-        {"id": 1, "level": 5, "hp": 50},
-        None
-    ]) as mock_by_id, \
-         patch('database.find_monster_by_name_api', return_value={"id": 2, "level": 10, "hp": 200}) as mock_by_name:
+    with patch(
+        "database.get_monster_by_id_api",
+        side_effect=[{"id": 1, "level": 5, "hp": 50}, None],
+    ) as mock_by_id, patch(
+        "database.find_monster_by_name_api",
+        return_value={"id": 2, "level": 10, "hp": 200},
+    ) as mock_by_name:
 
         # First refresh calls DB
         mock_app._refresh_monster_rotation_list()
@@ -69,8 +74,9 @@ def test_refresh_handles_unknown_monsters(mock_app):
         {"monster_id": 99, "name": "Missing", "priority": 1, "dungeon_id": None},
     ]
 
-    with patch('database.get_monster_by_id_api', return_value=None), \
-         patch('database.find_monster_by_name_api', return_value=None):
+    with patch("database.get_monster_by_id_api", return_value=None), patch(
+        "database.find_monster_by_name_api", return_value=None
+    ):
 
         mock_app._refresh_monster_rotation_list()
 
@@ -126,17 +132,20 @@ def test_delete_normalizes_priority(mock_app):
 
     mock_app._mark_unsaved.assert_called_once()
 
+
 def test_picker_integration(mock_app):
     mock_app.monster_rotation = []
 
-    with patch('app_gui.MonsterPickerDialog') as mock_dialog:
+    with patch("app_gui.MonsterPickerDialog") as mock_dialog:
         mock_app._on_monster_add_smart()
 
         # The callback is passed as the third argument to MonsterPickerDialog
         on_monster_selected = mock_dialog.call_args[0][2]
 
         # Simulate selecting a monster
-        on_monster_selected({"monster_id": 99, "name": "PickerMonster", "dungeon_id": "D99"})
+        on_monster_selected(
+            {"monster_id": 99, "name": "PickerMonster", "dungeon_id": "D99"}
+        )
 
         assert len(mock_app.monster_rotation) == 1
         assert mock_app.monster_rotation[0]["monster_id"] == 99
@@ -152,7 +161,7 @@ def test_picker_integration(mock_app):
 def test_dirty_state_preservation(mock_app):
     mock_app.monster_rotation = []
 
-    with patch('app_gui.MonsterPickerDialog') as mock_dialog:
+    with patch("app_gui.MonsterPickerDialog") as mock_dialog:
         mock_app._on_monster_add_smart()
         on_monster_selected = mock_dialog.call_args[0][2]
         on_monster_selected({"monster_id": 1, "name": "M1", "dungeon_id": None})
@@ -168,7 +177,9 @@ def test_metadata_not_persisted(mock_app):
     ]
 
     # Simulate DB lookup fetching extra metadata (hp, level)
-    with patch('database.get_monster_by_id_api', return_value={"id": 1, "level": 10, "hp": 500}):
+    with patch(
+        "database.get_monster_by_id_api", return_value={"id": 1, "level": 10, "hp": 500}
+    ):
         mock_app._refresh_monster_rotation_list()
 
         # Ensure that the extra metadata was not injected into the persistent dict
@@ -176,6 +187,7 @@ def test_metadata_not_persisted(mock_app):
         assert "level" not in entry
         assert "hp" not in entry
         assert list(entry.keys()) == ["monster_id", "name", "priority", "dungeon_id"]
+
 
 def test_rotation_mode_boundary(mock_app):
     # Verify we only toggle UI mode and don't mutate UX3B runtime policy
@@ -187,7 +199,10 @@ def test_rotation_mode_boundary(mock_app):
 
     # Needs a mock for _on_rotation_mode_changed
     from app_gui import App as RealApp
-    mock_app._on_rotation_mode_changed = RealApp._on_rotation_mode_changed.__get__(mock_app)
+
+    mock_app._on_rotation_mode_changed = RealApp._on_rotation_mode_changed.__get__(
+        mock_app
+    )
 
     mock_app._on_rotation_mode_changed()
 

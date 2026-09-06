@@ -30,7 +30,7 @@ class HuntRunner:
         get_notebook: callable,
         tab_setup,
         tab_hunt,
-        schedule_ui_task: callable
+        schedule_ui_task: callable,
     ):
         self.hunt_cfg = hunt_cfg
         self.set_status = set_status

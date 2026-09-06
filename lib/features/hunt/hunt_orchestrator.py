@@ -7,7 +7,11 @@ from typing import Callable, Dict, Any
 from lib.system.hunt_logger import get_hunt_logger
 from lib.system.win_input import tap as global_tap
 from lib.features.skills.skill_stats import SkillStats
-from lib.system.input_backend import InputBackend, ForegroundSendInputBackend, BackgroundWindowMessageBackend
+from lib.system.input_backend import (
+    InputBackend,
+    ForegroundSendInputBackend,
+    BackgroundWindowMessageBackend,
+)
 from lib.system.input_capability import InputCapabilityManager, InputCapabilityState
 from lib.vision.target_name_reader import TargetNameReader
 from database import find_monster_by_name_api
@@ -32,7 +36,7 @@ class HuntOrchestrator:
         set_target_info: Callable[[str], None] = None,
         on_scene_monsters_detected: Callable[[tuple], None] = None,
         update_target_status: Callable[[str], None] = None,
-        update_target_hp: Callable[[float], None] = None
+        update_target_hp: Callable[[float], None] = None,
     ):
         self.clear_target_ui = clear_target_ui
         self.on_scene_monsters_detected = on_scene_monsters_detected
@@ -67,7 +71,9 @@ class HuntOrchestrator:
         self.input_mode = cfg.get("input_mode", "foreground")
         fb = cfg.get("background_input_fallback", "stop")
         # Handle both boolean True/False and string values
-        self.background_input_fallback = True if fb in (True, "foreground", "true") else False
+        self.background_input_fallback = (
+            True if fb in (True, "foreground", "true") else False
+        )
 
         logger = get_hunt_logger()
         hunt_selected = self.get_hunt_selected()
@@ -79,25 +85,49 @@ class HuntOrchestrator:
         if self.input_mode == "background":
             if not hwnd:
                 if not self.background_input_fallback:
-                    logger.log_error("input_capability", "Background mode requested but no HWND found. Stopped.")
-                    self.schedule_ui_task(lambda: self.on_status_update("Error: Background input unsupported (no HWND). Stopped."))
+                    logger.log_error(
+                        "input_capability",
+                        "Background mode requested but no HWND found. Stopped.",
+                    )
+                    self.schedule_ui_task(
+                        lambda: self.on_status_update(
+                            "Error: Background input unsupported (no HWND). Stopped."
+                        )
+                    )
                     self.schedule_ui_task(lambda: self.on_state_change("error"))
                     return
                 else:
-                    logger.log_error("input_capability", "No HWND found. Falling back to foreground input.")
+                    logger.log_error(
+                        "input_capability",
+                        "No HWND found. Falling back to foreground input.",
+                    )
                     self.input_backend = ForegroundSendInputBackend()
             else:
-                self.input_capability_manager = InputCapabilityManager(hwnd, self.input_mode, logger)
-                state, is_ready = self.input_capability_manager.check_and_verify_capability()
+                self.input_capability_manager = InputCapabilityManager(
+                    hwnd, self.input_mode, logger
+                )
+                state, is_ready = (
+                    self.input_capability_manager.check_and_verify_capability()
+                )
 
                 if not is_ready:
                     if not self.background_input_fallback:
-                        logger.log_error("input_capability", f"Background input capability is {state.value}. Fallback disabled. Hunt aborted.")
-                        self.schedule_ui_task(lambda: self.on_status_update(f"Error: Background input {state.value}. Stopped."))
+                        logger.log_error(
+                            "input_capability",
+                            f"Background input capability is {state.value}. Fallback disabled. Hunt aborted.",
+                        )
+                        self.schedule_ui_task(
+                            lambda: self.on_status_update(
+                                f"Error: Background input {state.value}. Stopped."
+                            )
+                        )
                         self.schedule_ui_task(lambda: self.on_state_change("error"))
                         return
                     else:
-                        logger.log_error("input_capability", f"Background input {state.value}. Falling back to foreground.")
+                        logger.log_error(
+                            "input_capability",
+                            f"Background input {state.value}. Falling back to foreground.",
+                        )
                         self.input_backend = ForegroundSendInputBackend()
                 else:
                     self.input_backend = BackgroundWindowMessageBackend(hwnd)
@@ -115,6 +145,7 @@ class HuntOrchestrator:
             target_bar_detector = TargetBarDetector(hwnd=hwnd)
             target_name_reader = TargetNameReader(hwnd=hwnd)
             from lib.vision.target_hp_reader import TargetHPReader
+
             target_hp_reader = TargetHPReader(target_bar_detector)
             consecutive_false_readings = 0
             logger = get_hunt_logger()
@@ -122,34 +153,56 @@ class HuntOrchestrator:
             # Setup scene monster detection logic
             from lib.features.hunt.runtime_monster_queue import RuntimeMonsterQueue
             from lib.features.hunt.scene_monster_detector import SceneMonsterDetector
-            from lib.features.hunt.target_rotation_coordinator import TargetRotationCoordinator
+            from lib.features.hunt.target_rotation_coordinator import (
+                TargetRotationCoordinator,
+            )
 
             # We need vision_engine. It's stored in self.bot_manager if available.
             # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
-            runtime_queue = RuntimeMonsterQueue(publish_callback=getattr(self, 'on_scene_monsters_detected', None))
+            runtime_queue = RuntimeMonsterQueue(
+                publish_callback=getattr(self, "on_scene_monsters_detected", None)
+            )
             scene_detector = None
-            if hasattr(self, 'bot_manager') and self.bot_manager and hasattr(self.bot_manager, 'vision_engine'):
-                scene_detector = SceneMonsterDetector(self.bot_manager.vision_engine, runtime_queue)
+            if (
+                hasattr(self, "bot_manager")
+                and self.bot_manager
+                and hasattr(self.bot_manager, "vision_engine")
+            ):
+                scene_detector = SceneMonsterDetector(
+                    self.bot_manager.vision_engine, runtime_queue
+                )
 
-            self.runtime_queue = runtime_queue # expose for tests
+            self.runtime_queue = runtime_queue  # expose for tests
 
             target_policy = cfg.get("target_policy", "configured_only")
-            target_coordinator = TargetRotationCoordinator(target_policy, cfg.get("monster_rotation", []))
+            target_coordinator = TargetRotationCoordinator(
+                target_policy, cfg.get("monster_rotation", [])
+            )
 
             # Check if start is valid
             if not target_coordinator.is_rotation_valid():
-                logger.log_error("hunt_loop", "Invalid rotation or empty rotation for policy.")
-                self.schedule_ui_task(lambda: self.on_status_update("Error: Invalid rotation or empty rotation for policy."))
+                logger.log_error(
+                    "hunt_loop", "Invalid rotation or empty rotation for policy."
+                )
+                self.schedule_ui_task(
+                    lambda: self.on_status_update(
+                        "Error: Invalid rotation or empty rotation for policy."
+                    )
+                )
                 self.hunt_running = False
                 self.schedule_ui_task(lambda: self.on_state_change("error"))
                 return
 
             cycle_attempts = 0
             last_cycle_time = 0.0
-            target_cycle_min_interval_sec = float(cfg.get("target_cycle_min_interval_sec", 0.20))
+            target_cycle_min_interval_sec = float(
+                cfg.get("target_cycle_min_interval_sec", 0.20)
+            )
             target_cycle_max_attempts = int(cfg.get("target_cycle_max_attempts", 20))
             target_death_confirm_sec = float(cfg.get("target_death_confirm_sec", 0.35))
-            target_acquire_timeout_sec = float(cfg.get("target_acquire_timeout_sec", 8.0))
+            target_acquire_timeout_sec = float(
+                cfg.get("target_acquire_timeout_sec", 8.0)
+            )
             death_confirm_started = 0.0
             death_confirm_mode = False
             last_ocr_time = 0.0
@@ -207,17 +260,26 @@ class HuntOrchestrator:
                     now = time.time()
 
                     # Periodic window validation
-                    from lib.features.hunt.window_selection_service import validate_selected_cabal_window
+                    from lib.features.hunt.window_selection_service import (
+                        validate_selected_cabal_window,
+                    )
 
                     hunt_selected = self.get_hunt_selected()
                     if hunt_selected:
                         validation = validate_selected_cabal_window(hunt_selected, [])
                         if not validation.is_valid:
-                            logger.log_error("window_validation_failed", f"Validation failed: {validation.code}")
+                            logger.log_error(
+                                "window_validation_failed",
+                                f"Validation failed: {validation.code}",
+                            )
                             self.hunt_running = False
                             self.schedule_ui_task(lambda: self.on_state_change("error"))
                             break
-                    if cfg.get("bring_to_front_each_cycle") and getattr(self.input_backend, "mode", "foreground") != "background":
+                    if (
+                        cfg.get("bring_to_front_each_cycle")
+                        and getattr(self.input_backend, "mode", "foreground")
+                        != "background"
+                    ):
                         ok = False
                         try:
                             hunt_selected = self.get_hunt_selected()
@@ -240,9 +302,12 @@ class HuntOrchestrator:
                     frame = None
                     try:
                         if self.bot_manager and self.bot_manager.screen_capture:
-                            if getattr(self.bot_manager.screen_capture, 'hwnd', None) != hunt_selected.get("hwnd"):
+                            if getattr(
+                                self.bot_manager.screen_capture, "hwnd", None
+                            ) != hunt_selected.get("hwnd"):
                                 # Ensure we are capturing the right window
                                 import win32gui
+
                                 hwnd = int(hunt_selected.get("hwnd", 0))
                                 if hwnd:
                                     title = win32gui.GetWindowText(hwnd)
@@ -252,7 +317,9 @@ class HuntOrchestrator:
                             if frame is not None:
                                 frame = frame.copy()  # return a copy to readers
                     except Exception as e:
-                        logger.log_error("vision_capture", f"Failed to capture frame: {e}")
+                        logger.log_error(
+                            "vision_capture", f"Failed to capture frame: {e}"
+                        )
 
                     # Process scene monsters
                     if frame is not None and scene_detector is not None:
@@ -287,28 +354,47 @@ class HuntOrchestrator:
                             if not have_target:
                                 target_hp_reader.reset()
                             # Update HP
-                            hp_percent = target_hp_reader.calculate_target_hp_percent(frame)
-                            if getattr(self, 'update_target_hp', None):
-                                self.schedule_ui_task(lambda hp=hp_percent: self.update_target_hp(hp))
+                            hp_percent = target_hp_reader.calculate_target_hp_percent(
+                                frame
+                            )
+                            if getattr(self, "update_target_hp", None):
+                                self.schedule_ui_task(
+                                    lambda hp=hp_percent: self.update_target_hp(hp)
+                                )
 
                             if mode == "search":
-                                if getattr(self, 'update_target_status', None):
-                                    self.schedule_ui_task(lambda: self.update_target_status("APPROACHING"))
+                                if getattr(self, "update_target_status", None):
+                                    self.schedule_ui_task(
+                                        lambda: self.update_target_status("APPROACHING")
+                                    )
                             elif mode == "attack":
-                                if getattr(self, 'update_target_status', None):
-                                    self.schedule_ui_task(lambda: self.update_target_status("ATTACKING"))
+                                if getattr(self, "update_target_status", None):
+                                    self.schedule_ui_task(
+                                        lambda: self.update_target_status("ATTACKING")
+                                    )
 
                             if not have_target or (now - last_ocr_time) > 2.0:
                                 last_ocr_time = now
                                 name_str = target_name_reader.read_name(frame)
                                 if name_str:
                                     desired = target_coordinator.get_desired_target()
-                                    dungeon_id = desired.get("dungeon_id") if desired else None
-                                    monster = find_monster_by_name_api(name_str, dungeon_id)
+                                    dungeon_id = (
+                                        desired.get("dungeon_id") if desired else None
+                                    )
+                                    monster = find_monster_by_name_api(
+                                        name_str, dungeon_id
+                                    )
                                     if not monster:
-                                        monster = {"id": 0, "name": name_str, "hp": None, "defense": None}
+                                        monster = {
+                                            "id": 0,
+                                            "name": name_str,
+                                            "hp": None,
+                                            "defense": None,
+                                        }
 
-                                    if cached_target_id != monster["id"] or cached_target_name != monster.get("name"):
+                                    if cached_target_id != monster[
+                                        "id"
+                                    ] or cached_target_name != monster.get("name"):
                                         cached_target_id = monster["id"]
                                         cached_target_name = monster.get("name")
                                         m_id = monster.get("id", 0)
@@ -316,9 +402,11 @@ class HuntOrchestrator:
                                         m_hp = monster.get("hp", "Unknown")
                                         fmt = f"[ID: #{m_id}] {m_name} (HP: {m_hp})"
 
-                                        if getattr(self, 'set_target_info', None):
+                                        if getattr(self, "set_target_info", None):
                                             self.schedule_ui_task(
-                                                lambda text=fmt: self.set_target_info(text)
+                                                lambda text=fmt: self.set_target_info(
+                                                    text
+                                                )
                                             )
 
                             have_target = True
@@ -326,30 +414,40 @@ class HuntOrchestrator:
                             consecutive_false_readings = 0
                         else:
                             consecutive_false_readings += 1
-                            if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
+                            if consecutive_false_readings >= int(
+                                cfg.get("target_lost_debounce_frames", 3)
+                            ):
                                 have_target = False
                                 cached_target_id = None
                                 cached_target_name = None
-                                if getattr(self, 'clear_target_ui', None):
+                                if getattr(self, "clear_target_ui", None):
                                     self.schedule_ui_task(self.clear_target_ui)
                     else:
                         consecutive_false_readings += 1
-                        if consecutive_false_readings >= int(cfg.get("target_lost_debounce_frames", 3)):
+                        if consecutive_false_readings >= int(
+                            cfg.get("target_lost_debounce_frames", 3)
+                        ):
                             have_target = False
                             cached_target_id = None
                             cached_target_name = None
-                            if getattr(self, 'clear_target_ui', None):
+                            if getattr(self, "clear_target_ui", None):
                                 self.schedule_ui_task(self.clear_target_ui)
 
-                    if hasattr(self, 'runtime_attack_queue'):
-                        target_coordinator.update_runtime_queue(self.runtime_attack_queue)
+                    if hasattr(self, "runtime_attack_queue"):
+                        target_coordinator.update_runtime_queue(
+                            self.runtime_attack_queue
+                        )
                     if (
                         skill_stats
                         and (now - last_stats_update) >= stats_update_interval
                     ):
                         try:
                             all_stats = skill_stats.get_all_stats()
-                            self.schedule_ui_task(lambda stats=all_stats: self.update_skill_stats_display(stats))
+                            self.schedule_ui_task(
+                                lambda stats=all_stats: self.update_skill_stats_display(
+                                    stats
+                                )
+                            )
                             last_stats_update = now
                         except Exception:
                             pass
@@ -366,8 +464,15 @@ class HuntOrchestrator:
 
                     if mode == "search":
                         if (now - search_started) > target_acquire_timeout_sec:
-                            logger.log_error("hunt_loop", f"Target acquire timeout ({target_acquire_timeout_sec}s). Backing off.")
-                            self.schedule_ui_task(lambda: self.on_status_update(f"Target acquire timeout. Retrying..."))
+                            logger.log_error(
+                                "hunt_loop",
+                                f"Target acquire timeout ({target_acquire_timeout_sec}s). Backing off.",
+                            )
+                            self.schedule_ui_task(
+                                lambda: self.on_status_update(
+                                    f"Target acquire timeout. Retrying..."
+                                )
+                            )
                             search_started = now
                             backoff_wait = 1.0
                             while backoff_wait > 0 and self.hunt_running:
@@ -376,22 +481,44 @@ class HuntOrchestrator:
                             continue
 
                         if have_target:
-                            eval_result = target_coordinator.evaluate_target(cached_target_id, have_target)
+                            eval_result = target_coordinator.evaluate_target(
+                                cached_target_id, have_target
+                            )
                             if eval_result == TargetRotationCoordinator.MATCHED:
-                                logger.log_state_change("search", "attack", f"target_found MATCHED {cached_target_id}")
+                                logger.log_state_change(
+                                    "search",
+                                    "attack",
+                                    f"target_found MATCHED {cached_target_id}",
+                                )
                                 mode = "attack"
                                 attack_started = now
                                 cycle_attempts = 0
                                 search_started = now
                                 death_confirm_mode = False
                                 continue
-                            elif eval_result in (TargetRotationCoordinator.MISMATCH, TargetRotationCoordinator.UNKNOWN):
+                            elif eval_result in (
+                                TargetRotationCoordinator.MISMATCH,
+                                TargetRotationCoordinator.UNKNOWN,
+                            ):
                                 # CYCLE_TARGET
-                                if not training_mode_active and (now - last_cycle_time) >= target_cycle_min_interval_sec:
-                                    logger.log_info(f"Target decision: {eval_result} for ID {cached_target_id}")
+                                if (
+                                    not training_mode_active
+                                    and (now - last_cycle_time)
+                                    >= target_cycle_min_interval_sec
+                                ):
+                                    logger.log_info(
+                                        f"Target decision: {eval_result} for ID {cached_target_id}"
+                                    )
                                     if cycle_attempts >= target_cycle_max_attempts:
-                                        logger.log_error("hunt_loop", f"Max cycle attempts reached ({target_cycle_max_attempts}). Backing off.")
-                                        self.schedule_ui_task(lambda: self.on_status_update(f"Max cycle attempts ({target_cycle_max_attempts}). Retrying..."))
+                                        logger.log_error(
+                                            "hunt_loop",
+                                            f"Max cycle attempts reached ({target_cycle_max_attempts}). Backing off.",
+                                        )
+                                        self.schedule_ui_task(
+                                            lambda: self.on_status_update(
+                                                f"Max cycle attempts ({target_cycle_max_attempts}). Retrying..."
+                                            )
+                                        )
                                         backoff_wait = 1.0
                                         while backoff_wait > 0 and self.hunt_running:
                                             time.sleep(0.1)
@@ -400,12 +527,16 @@ class HuntOrchestrator:
                                         last_cycle_time = now
                                     else:
                                         if self.input_backend:
-                                            self.input_backend.tap(cfg.get("target_key", "z"))
+                                            self.input_backend.tap(
+                                                cfg.get("target_key", "z")
+                                            )
                                         else:
                                             global_tap(cfg.get("target_key", "z"))
                                         last_cycle_time = now
                                         cycle_attempts += 1
-                                        time.sleep(float(cfg.get("search_tap_delay_sec", 0.08)))
+                                        time.sleep(
+                                            float(cfg.get("search_tap_delay_sec", 0.08))
+                                        )
                                 continue
 
                         if not training_mode_active:
@@ -430,7 +561,9 @@ class HuntOrchestrator:
                             death_confirm_started = now
                             target_active = True
                         else:
-                            if (now - death_confirm_started) <= target_death_confirm_sec:
+                            if (
+                                now - death_confirm_started
+                            ) <= target_death_confirm_sec:
                                 target_active = True
                             else:
                                 target_active = False
@@ -463,7 +596,9 @@ class HuntOrchestrator:
                                 break
                             try:
                                 if self.input_backend:
-                                    self.input_backend.tap(k, int(cfg.get("attack_press_ms", 100)))
+                                    self.input_backend.tap(
+                                        k, int(cfg.get("attack_press_ms", 100))
+                                    )
                                 else:
                                     global_tap(k, int(cfg.get("attack_press_ms", 100)))
                             except Exception:
@@ -473,13 +608,19 @@ class HuntOrchestrator:
                         # ADVANCE_ROTATION
                         prev_target = target_coordinator.advance_pointer()
                         next_target = target_coordinator.get_desired_target()
-                        logger.log_state_change("attack", "search", f"target dead/lost. Advanced {prev_target} -> {next_target}")
+                        logger.log_state_change(
+                            "attack",
+                            "search",
+                            f"target dead/lost. Advanced {prev_target} -> {next_target}",
+                        )
                         mode = "search"
                         search_started = now
 
-                        if getattr(self, 'update_target_status', None):
-                            self.schedule_ui_task(lambda: self.update_target_status("TARGET_DEAD"))
-                        if getattr(self, 'update_target_hp', None):
+                        if getattr(self, "update_target_status", None):
+                            self.schedule_ui_task(
+                                lambda: self.update_target_status("TARGET_DEAD")
+                            )
+                        if getattr(self, "update_target_hp", None):
                             self.schedule_ui_task(lambda: self.update_target_hp(0.0))
 
                         # Clear UI cache on advance
@@ -487,13 +628,14 @@ class HuntOrchestrator:
                         cached_target_name = None
 
                         # 0.2s delay for clear target ui
-                        if getattr(self, 'clear_target_ui', None):
+                        if getattr(self, "clear_target_ui", None):
                             # Schedule a delayed clear; fall back to no-arg callback if delay is unsupported.
                             def _safe_clear():
                                 try:
                                     self.clear_target_ui(delay_ms=200)
                                 except TypeError:
                                     self.clear_target_ui()
+
                             self.schedule_ui_task(_safe_clear)
 
                         time.sleep(0.05)

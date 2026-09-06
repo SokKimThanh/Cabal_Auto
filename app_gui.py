@@ -132,13 +132,31 @@ except ImportError:
         )
         # Handle None command
         btn_command = command if command is not None else lambda: None
-        
+
         # Filter out custom options that tk.Button doesn't understand
-        valid_button_options = {'bg', 'fg', 'activebackground', 'activeforeground', 'relief', 'bd', 'borderwidth', 
-                                'padx', 'pady', 'width', 'height', 'highlightthickness', 'highlightbackground',
-                                'highlightcolor', 'font', 'cursor', 'wraplength', 'overrelief', 'bitmap'}
+        valid_button_options = {
+            "bg",
+            "fg",
+            "activebackground",
+            "activeforeground",
+            "relief",
+            "bd",
+            "borderwidth",
+            "padx",
+            "pady",
+            "width",
+            "height",
+            "highlightthickness",
+            "highlightbackground",
+            "highlightcolor",
+            "font",
+            "cursor",
+            "wraplength",
+            "overrelief",
+            "bitmap",
+        }
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_button_options}
-        
+
         btn = tk.Button(
             parent,
             text=icon_fallback or "?",
@@ -661,46 +679,70 @@ class App(tk.Tk):
             fg=UI.ACCENT_GREEN,
             bg=UI.BG_ELEVATED,
             anchor="w",
-            justify="left"
+            justify="left",
         )
         brand_label.pack(fill="x", pady=(16, 12))
 
         # Divider below brand
-        tk.Frame(brand_frame, bg="#2a2a2a", height=1).pack(fill="x")
+        tk.Frame(brand_frame, bg=UI.BORDER_PRIMARY, height=1).pack(fill="x")
 
         # Build Sidebar Navigation
         sidebar_items = [
-            ("tab_hunt", lambda: self.switch_view("hunt"), UI.FONT_SECTION, "hunt", "🎯"),
-            ("tab_setup", lambda: self.switch_view("setup"), UI.FONT_SECTION, "setup", "⚙️"),
+            (
+                "tab_hunt",
+                lambda: self.switch_view("hunt"),
+                UI.FONT_SECTION,
+                "hunt",
+                "🎯",
+            ),
+            (
+                "tab_setup",
+                lambda: self.switch_view("setup"),
+                UI.FONT_SECTION,
+                "setup",
+                "⚙️",
+            ),
             (
                 "btn_skill_manager",
                 self.skill_manager_controller.open_window,
                 UI.FONT_SECTION,
                 None,
-                "⚔️"
+                "⚔️",
             ),
             (
                 "btn_monster_manager",
                 self.monster_manager_controller.open_window,
                 UI.FONT_SECTION,
                 None,
-                "🐉"
+                "🐉",
             ),
             (
                 "btn_library_manager",
                 self.library_manager_controller.open_library_manager,
                 UI.FONT_SECTION,
                 None,
-                "📚"
+                "📚",
             ),
-            ("sidebar_activity_logs", lambda: self.switch_view("logs"), UI.FONT_SECTION, "logs", "📋"),
-            ("tab_stats", lambda: self.switch_view("stats"), UI.FONT_SECTION, "stats", "📊"),
+            (
+                "sidebar_activity_logs",
+                lambda: self.switch_view("logs"),
+                UI.FONT_SECTION,
+                "logs",
+                "📋",
+            ),
+            (
+                "tab_stats",
+                lambda: self.switch_view("stats"),
+                UI.FONT_SECTION,
+                "stats",
+                "📊",
+            ),
             (
                 "sidebar_support",
                 lambda: self.switch_view("help"),
                 UI.FONT_SECTION,
                 "help",
-                "❓"
+                "❓",
             ),
         ]
         self._sidebar_widgets = []
@@ -754,7 +796,9 @@ class App(tk.Tk):
                     cursor="hand2",
                 )
 
-                apply_button_hover_effects(btn, hover_color=UI.BG_SURFACE, active_color=UI.ACCENT_GREEN_BG)
+                apply_button_hover_effects(
+                    btn, hover_color=UI.BG_SURFACE, active_color=UI.ACCENT_GREEN_BG
+                )
 
                 if font == UI.FONT_LABEL:
                     # Indent sub-items slightly
@@ -863,12 +907,11 @@ class App(tk.Tk):
         self.btn_manual_scan.grid(row=0, column=2, sticky="w", padx=(0, 12))
 
         # Status Chips (Replaces Bounds Placeholder)
-        self.bounds_placeholder = tk.Frame(
-            self.action_bar_frame, bg=UI.BG_BASE
-        )
+        self.bounds_placeholder = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
         self.bounds_placeholder.grid(row=0, column=3, sticky="w", padx=(0, 12))
 
         from ui.panels.screen_state_panel import ScreenStatePanel
+
         self.screen_state_panel = ScreenStatePanel(self.bounds_placeholder)
         self.screen_state_panel.pack(side="left", fill="both", expand=True)
 
@@ -978,7 +1021,7 @@ class App(tk.Tk):
             height=24,
             bd=0,
             highlightbackground=UI.BORDER_SUBTLE,
-            highlightthickness=1
+            highlightthickness=1,
         )
         self.status_bar_frame.grid(row=1, column=0, columnspan=7, sticky="ew")
         self.status_bar_frame.pack_propagate(False)
@@ -1232,13 +1275,14 @@ class App(tk.Tk):
         if hasattr(self, "screen_state_panel"):
             # Fetch state from ScreenStateAnalyzer
             from lib.features.setup.screen_state_analyzer import ScreenStateAnalyzer
+
             analyzer = ScreenStateAnalyzer()
             # For a manual scan triggered via UI, we typically use the selected window hwnd
             hwnd = None
             if hasattr(self, "app_window_controller"):
                 hwnd = self.app_window_controller.get_current_hwnd()
             if not hwnd:
-                hwnd = 0 # Default fallback
+                hwnd = 0  # Default fallback
 
             # Analyze screen state
             state = analyzer.scan_screen_state(hwnd)
@@ -1426,7 +1470,7 @@ class App(tk.Tk):
                     else "Tất cả phím tắt đã đăng ký thành công"
                 )
                 self._hotkey_status_var.set(f"✅ {success_text}")
-                self._hotkey_status_label.config(fg="#4CAF50")  # Green
+                self._hotkey_status_label.config(fg=UI.ACCENT_GREEN)  # Green
 
                 # Show count and active hotkeys list
                 detail_text = (
@@ -1454,7 +1498,7 @@ class App(tk.Tk):
                     else f"{failed_count} phím tắt đăng ký thất bại"
                 )
                 self._hotkey_status_var.set(f"⚠️ {warning_text}")
-                self._hotkey_status_label.config(fg="#FF9800")  # Orange
+                self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)  # Orange
 
                 # Show guidance
                 guidance = (
@@ -1485,7 +1529,7 @@ class App(tk.Tk):
                     else "Phím tắt không khả dụng"
                 )
                 self._hotkey_status_var.set(f"❌ {error_text}")
-                self._hotkey_status_label.config(fg="#F44336")  # Red
+                self._hotkey_status_label.config(fg=UI.DANGER)  # Red
 
                 # Show explanation
                 if has_import_error:
@@ -1524,7 +1568,7 @@ class App(tk.Tk):
             # Fallback: show basic error
             try:
                 self._hotkey_status_var.set(f"⚠️ Error updating status: {e}")
-                self._hotkey_status_label.config(fg="#FF9800")
+                self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)
             except Exception:
                 pass
 
@@ -2346,9 +2390,7 @@ class App(tk.Tk):
                 for btn in [self.btn_move_up, self.btn_move_down]:
                     # IMPORTANT: Keep original bg colors when disabled
                     original_bg = (
-                        UI.BG_ELEVATED
-                        if btn == self.btn_move_up
-                        else UI.BG_ELEVATED
+                        UI.BG_ELEVATED if btn == self.btn_move_up else UI.BG_ELEVATED
                     )
                     btn.config(state="disabled", bg=original_bg)
                     if isinstance(locked_icon, str):
@@ -2356,9 +2398,7 @@ class App(tk.Tk):
                     else:
                         btn.config(image=locked_icon, text="")
             except Exception:
-                self.btn_move_up.config(
-                    state="disabled", text="🔒", bg=UI.BG_ELEVATED
-                )
+                self.btn_move_up.config(state="disabled", text="🔒", bg=UI.BG_ELEVATED)
                 self.btn_move_down.config(
                     state="disabled", text="🔒", bg=UI.BG_ELEVATED
                 )
@@ -2630,11 +2670,12 @@ class App(tk.Tk):
 
         if self.has_unsaved_changes:
             self.unsaved_indicator_label.config(
-                text=f"● {self._t('unsaved_indicator')}", fg="#FF9800"  # Orange color
+                text=f"● {self._t('unsaved_indicator')}",
+                fg=UI.ACCENT_AMBER,  # Orange color
             )
         else:
             self.unsaved_indicator_label.config(
-                text=f"✓ {self._t('all_saved')}", fg="#4CAF50"  # Green color
+                text=f"✓ {self._t('all_saved')}", fg=UI.ACCENT_GREEN  # Green color
             )
 
     def clear_target_ui(self, delay_ms=0):
@@ -2825,7 +2866,7 @@ class App(tk.Tk):
             "fg": fg_color,
             "activebackground": hover_color,
             "activeforeground": fg_color,
-            "relief": 'flat',
+            "relief": "flat",
             "cursor": "hand2",
             **config,
             **kwargs,
@@ -2846,7 +2887,7 @@ class App(tk.Tk):
                 label = tk.Label(
                     tooltip,
                     text=text,
-                    background="#ffffe0",
+                    background=UI.ACCENT_AMBER,
                     relief="solid",
                     borderwidth=1,
                     padx=5,

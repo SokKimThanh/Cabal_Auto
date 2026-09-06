@@ -11,7 +11,6 @@ from lib.vision.vision_engine import VisionEngine, Template, Detection
 pytestmark = pytest.mark.unit
 
 
-
 @pytest.fixture
 def vision_engine(tmp_path):
     """Fixture providing a clean VisionEngine instance"""
@@ -23,22 +22,20 @@ def test_reverify_track_with_bgr_roi(vision_engine):
     """Test reverify_track when passing 3-channel BGR frame ROI with cached grayscale template"""
     tpl_img = np.random.randint(50, 200, (40, 40, 3), dtype=np.uint8)
     template = Template(
-        id="reverify_test",
-        path="test_path",
-        image=tpl_img,
-        threshold=0.8
+        id="reverify_test", path="test_path", image=tpl_img, threshold=0.8
     )
 
     frame = np.zeros((200, 200, 3), dtype=np.uint8)
     frame[50:90, 50:90] = tpl_img
 
     from lib.vision.vision_engine import TrackedObject
+
     tracked_obj = TrackedObject(
         tracker_id="track_1",
         bbox=(50, 50, 40, 40),
         template_id=template.id,
         confidence=0.9,
-        last_verify_score=0.9
+        last_verify_score=0.9,
     )
 
     score = vision_engine.reverify_track(frame, tracked_obj, template)
@@ -48,17 +45,15 @@ def test_reverify_track_with_bgr_roi(vision_engine):
 def test_empty_roi_match_templates(vision_engine):
     """Test match_templates with out-of-bounds / empty ROI"""
     tpl_img = np.ones((20, 20, 3), dtype=np.uint8) * 100
-    template = Template(
-        id="empty_roi_test",
-        path="test_path",
-        image=tpl_img
-    )
+    template = Template(id="empty_roi_test", path="test_path", image=tpl_img)
     vision_engine.templates[template.id] = template
 
     frame = np.zeros((100, 100, 3), dtype=np.uint8)
     # ROI completely outside frame dimensions
     out_of_bounds_roi = (200, 200, 50, 50)
-    dets = vision_engine.match_templates(frame, roi=out_of_bounds_roi, templates=[template.id])
+    dets = vision_engine.match_templates(
+        frame, roi=out_of_bounds_roi, templates=[template.id]
+    )
     assert dets == []
 
 
@@ -66,10 +61,7 @@ def test_template_grayscale_caching_and_matching(vision_engine):
     """Test that Template automatically caches image_gray and matches accurately"""
     tpl_img = np.random.randint(50, 200, (60, 60, 3), dtype=np.uint8)
     template = Template(
-        id="grayscale_test",
-        path="test_path",
-        image=tpl_img,
-        threshold=0.8
+        id="grayscale_test", path="test_path", image=tpl_img, threshold=0.8
     )
 
     # Verify image_gray was cached automatically in post_init
@@ -96,7 +88,9 @@ def test_template_grayscale_caching_and_matching(vision_engine):
 
 def test_detection_dataclass():
     """Test Detection dataclass bbox and center calculations"""
-    det = Detection(x=100, y=200, w=50, h=60, score=0.9, template_id="test_tpl", method_used="test")
+    det = Detection(
+        x=100, y=200, w=50, h=60, score=0.9, template_id="test_tpl", method_used="test"
+    )
     assert det.bbox() == (100, 200, 50, 60)
     assert det.center() == (125, 230)
     assert det.to_dict()["score"] == 0.9
@@ -113,11 +107,7 @@ def test_hsv_target_detection(vision_engine):
     upper_red = (10, 255, 255)
 
     detections = vision_engine.detect_hsv_target(
-        frame,
-        lower_hsv=lower_red,
-        upper_hsv=upper_red,
-        min_area=50,
-        max_area=10000
+        frame, lower_hsv=lower_red, upper_hsv=upper_red, min_area=50, max_area=10000
     )
 
     assert len(detections) > 0
@@ -127,7 +117,10 @@ def test_hsv_target_detection(vision_engine):
     assert abs(best_det.y - 150) <= 2
     assert abs(best_det.w - 60) <= 2
     assert abs(best_det.h - 30) <= 2
-    assert best_det.center() == (best_det.x + best_det.w // 2, best_det.y + best_det.h // 2)
+    assert best_det.center() == (
+        best_det.x + best_det.w // 2,
+        best_det.y + best_det.h // 2,
+    )
 
 
 def test_hsv_noise_filtering(vision_engine):
@@ -145,11 +138,7 @@ def test_hsv_noise_filtering(vision_engine):
 
     # Filter out noise (<100) and huge area (>10000)
     detections = vision_engine.detect_hsv_target(
-        frame,
-        lower_hsv=lower_red,
-        upper_hsv=upper_red,
-        min_area=100,
-        max_area=10000
+        frame, lower_hsv=lower_red, upper_hsv=upper_red, min_area=100, max_area=10000
     )
 
     assert len(detections) == 1
@@ -163,10 +152,7 @@ def test_feature_matching_orb(vision_engine):
     tpl_img = rng.integers(0, 256, (100, 100, 3), dtype=np.uint8)
 
     template = Template(
-        id="pattern_monster",
-        path="synthetic",
-        image=tpl_img,
-        threshold=0.6
+        id="pattern_monster", path="synthetic", image=tpl_img, threshold=0.6
     )
 
     # Place transformed image in a larger scene
@@ -180,10 +166,7 @@ def test_feature_matching_orb(vision_engine):
     scene[200:320, 300:420] = transformed_tpl
 
     detections = vision_engine.detect_features(
-        scene,
-        template=template,
-        feature_type='ORB',
-        min_matches=4
+        scene, template=template, feature_type="ORB", min_matches=4
     )
 
     assert len(detections) > 0
@@ -213,7 +196,7 @@ def test_roi_and_downscaling(vision_engine):
         upper_hsv=upper_red,
         min_area=50,
         roi=roi,
-        downscale_factor=0.5
+        downscale_factor=0.5,
     )
 
     assert len(detections) > 0
@@ -232,12 +215,14 @@ def test_monster_pipeline_priority(vision_engine):
     cv2.rectangle(frame, (200, 200), (250, 230), (0, 0, 255), -1)
 
     # Set engine HSV params & enable red threat level for this test
-    vision_engine.set_params({
-        'hsv_lower': (0, 150, 150),
-        'hsv_upper': (10, 255, 255),
-        'hsv_min_area': 10,
-        'target_threat_levels': ["gray", "yellow", "red"]
-    })
+    vision_engine.set_params(
+        {
+            "hsv_lower": (0, 150, 150),
+            "hsv_upper": (10, 255, 255),
+            "hsv_min_area": 10,
+            "target_threat_levels": ["gray", "yellow", "red"],
+        }
+    )
 
     detections = vision_engine.detect_monster_pipeline(frame, use_fast_hsv=True)
 
@@ -270,9 +255,7 @@ def test_multicolor_hsv_and_threat_filtering(vision_engine):
 
     # Enable "red" threat level in target_threat_levels: ["gray", "yellow", "red"]
     dets_all = vision_engine.detect_hsv_target(
-        frame,
-        min_area=50,
-        target_threat_levels=["gray", "yellow", "red"]
+        frame, min_area=50, target_threat_levels=["gray", "yellow", "red"]
     )
     assert len(dets_all) == 3
     x_coords_all = [d.x for d in dets_all]
@@ -280,9 +263,7 @@ def test_multicolor_hsv_and_threat_filtering(vision_engine):
 
     # Test only "red" threat level enabled
     dets_red_only = vision_engine.detect_hsv_target(
-        frame,
-        min_area=50,
-        target_threat_levels=["red"]
+        frame, min_area=50, target_threat_levels=["red"]
     )
     assert len(dets_red_only) == 1
     assert abs(dets_red_only[0].x - 300) <= 2
@@ -301,9 +282,7 @@ def test_edge_cases_empty_and_black_images(vision_engine):
 
     # 3. Feature matching with zero keypoints
     blank_template = Template(
-        id="blank",
-        path="blank",
-        image=np.zeros((50, 50, 3), dtype=np.uint8)
+        id="blank", path="blank", image=np.zeros((50, 50, 3), dtype=np.uint8)
     )
     assert vision_engine.detect_features(black_frame, blank_template) == []
 
@@ -314,6 +293,7 @@ def test_edge_cases_empty_and_black_images(vision_engine):
     # 5. Extremely small downscale factor or invalid dimensions
     assert vision_engine.detect_hsv_target(black_frame, downscale_factor=0.00001) == []
 
+
 def test_detect_features_invalid_homography(vision_engine, monkeypatch):
     """Test that detect_features correctly rejects invalid homography (e.g. non-convex or abnormal area)."""
     # Build a deterministic, feature-rich template and embed it into a frame so feature matching
@@ -323,13 +303,12 @@ def test_detect_features_invalid_homography(vision_engine, monkeypatch):
     cv2.line(tpl_img, (10, 10), (90, 90), (255, 255, 255), 2)
     cv2.line(tpl_img, (90, 10), (10, 90), (255, 255, 255), 2)
     cv2.circle(tpl_img, (50, 50), 18, (255, 255, 255), 2)
-    cv2.putText(tpl_img, "X", (35, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+    cv2.putText(
+        tpl_img, "X", (35, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2
+    )
 
     template = Template(
-        id="synthetic_template",
-        path="synthetic",
-        image=tpl_img,
-        threshold=0.6
+        id="synthetic_template", path="synthetic", image=tpl_img, threshold=0.6
     )
 
     frame = np.zeros((600, 800, 3), dtype=np.uint8)
@@ -337,10 +316,23 @@ def test_detect_features_invalid_homography(vision_engine, monkeypatch):
 
     original_find_homography = cv2.findHomography
 
-    def fake_find_homography(src_pts, dst_pts, method=0, ransacReprojThreshold=None, mask=None, maxIters=None, confidence=None):
+    def fake_find_homography(
+        src_pts,
+        dst_pts,
+        method=0,
+        ransacReprojThreshold=None,
+        mask=None,
+        maxIters=None,
+        confidence=None,
+    ):
         # Only force a known-bad homography when detect_features has enough correspondences to try
         # computing one; otherwise preserve OpenCV behavior.
-        if src_pts is not None and dst_pts is not None and len(src_pts) >= 4 and len(dst_pts) >= 4:
+        if (
+            src_pts is not None
+            and dst_pts is not None
+            and len(src_pts) >= 4
+            and len(dst_pts) >= 4
+        ):
             bad_homography = np.array(
                 [
                     [1000.0, 0.0, 0.0],

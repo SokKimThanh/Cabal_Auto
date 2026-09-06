@@ -7,6 +7,7 @@ This file provides:
 - Auto-skip markers for platform-specific tests
 - Common test utilities and fixtures
 """
+
 import sys
 import platform
 from pathlib import Path
@@ -18,41 +19,34 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Platform detection
-IS_WINDOWS = sys.platform == 'win32' or platform.system() == 'Windows'
-IS_LINUX = sys.platform.startswith('linux') or platform.system() == 'Linux'
-IS_MACOS = sys.platform == 'darwin' or platform.system() == 'Darwin'
+IS_WINDOWS = sys.platform == "win32" or platform.system() == "Windows"
+IS_LINUX = sys.platform.startswith("linux") or platform.system() == "Linux"
+IS_MACOS = sys.platform == "darwin" or platform.system() == "Darwin"
 
 
 # ============================================================================
 # Pytest Hooks
 # ============================================================================
 
+
 def pytest_configure(config):
     """Register custom markers."""
     config.addinivalue_line(
         "markers", "windows: mark test as Windows-only (will skip on other platforms)"
     )
-    config.addinivalue_line(
-        "markers", "gui: mark test as requiring GUI interaction"
-    )
-    config.addinivalue_line(
-        "markers", "integration: mark test as integration test"
-    )
-    config.addinivalue_line(
-        "markers", "unit: mark test as unit test"
-    )
+    config.addinivalue_line("markers", "gui: mark test as requiring GUI interaction")
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "unit: mark test as unit test")
     config.addinivalue_line(
         "markers", "vision: mark test as vision/image processing test"
     )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow-running"
-    )
+    config.addinivalue_line("markers", "slow: mark test as slow-running")
 
 
 def pytest_collection_modifyitems(config, items):
     """Auto-skip tests based on platform markers."""
     skip_windows = pytest.mark.skip(reason="Test requires Windows platform")
-    
+
     for item in items:
         # Auto-skip Windows-only tests on non-Windows platforms
         if "windows" in item.keywords and not IS_WINDOWS:
@@ -63,18 +57,20 @@ def pytest_collection_modifyitems(config, items):
 # Fixtures - Platform Mocks
 # ============================================================================
 
-@pytest.fixture(autouse=True, scope='session')
+
+@pytest.fixture(autouse=True, scope="session")
 def setup_platform_mocks():
     """Centralized platform compatibility mocks for cross-platform testing."""
     import sys
     from unittest.mock import MagicMock
-    if platform.system() != 'Windows':
+
+    if platform.system() != "Windows":
         mocks_dict = {
-            'win32gui': MagicMock(),
-            'win32con': MagicMock(),
-            'win32process': MagicMock(),
-            'win32api': MagicMock(),
-            'pywintypes': MagicMock(),
+            "win32gui": MagicMock(),
+            "win32con": MagicMock(),
+            "win32process": MagicMock(),
+            "win32api": MagicMock(),
+            "pywintypes": MagicMock(),
         }
         for module_name, mock_module in mocks_dict.items():
             if module_name not in sys.modules:
@@ -88,6 +84,7 @@ def setup_platform_mocks():
 # ============================================================================
 # Fixtures - Platform Detection
 # ============================================================================
+
 
 @pytest.fixture
 def is_windows():
@@ -117,6 +114,7 @@ def platform_name():
 # Fixtures - Skip Decorators
 # ============================================================================
 
+
 @pytest.fixture
 def skip_if_not_windows():
     """Fixture that skips test if not on Windows."""
@@ -135,13 +133,15 @@ def skip_if_not_linux():
 def skip_if_ci():
     """Fixture that skips test if running in CI environment."""
     import os
-    if os.getenv('CI') or os.getenv('GITHUB_ACTIONS'):
+
+    if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
         pytest.skip("Test skipped in CI environment")
 
 
 # ============================================================================
 # Fixtures - Test Utilities
 # ============================================================================
+
 
 @pytest.fixture
 def project_root_path():
@@ -152,7 +152,7 @@ def project_root_path():
 @pytest.fixture
 def assets_path():
     """Fixture that returns the assets directory path."""
-    return project_root / 'assets'
+    return project_root / "assets"
 
 
 @pytest.fixture
@@ -165,11 +165,12 @@ def temp_test_dir(tmp_path):
 # Fixtures - Mock Imports (for non-Windows platforms)
 # ============================================================================
 
+
 @pytest.fixture
 def mock_win_input():
     """
     Fixture that provides a mock win_input module for testing on non-Windows.
-    
+
     Usage:
         def test_something(mock_win_input):
             mock_win_input.tap('1')  # Will not actually send input on non-Windows
@@ -177,6 +178,7 @@ def mock_win_input():
     if IS_WINDOWS:
         # On Windows, use the real module
         from lib.system import win_input
+
         return win_input
     else:
         # On non-Windows, use a mock
@@ -184,17 +186,17 @@ def mock_win_input():
             @staticmethod
             def key_down(key: str):
                 pass
-            
+
             @staticmethod
             def key_up(key: str):
                 pass
-            
+
             @staticmethod
             def tap(key: str, press_ms: int = 50):
                 pass
-            
+
             IS_WINDOWS = False
-        
+
         return MockWinInput()
 
 
@@ -202,10 +204,11 @@ def mock_win_input():
 # Fixtures - Vision/Image Testing
 # ============================================================================
 
+
 @pytest.fixture
 def sample_image_path():
     """Fixture that returns path to sample test image."""
-    sample_path = project_root / 'tests' / 'samples' / 'sample.png'
+    sample_path = project_root / "tests" / "samples" / "sample.png"
     if sample_path.exists():
         return sample_path
     return None
@@ -215,20 +218,23 @@ def sample_image_path():
 def mock_screen_capture():
     """
     Fixture that mocks screen capture for testing without actual screenshots.
-    
+
     Returns a function that returns a dummy image array.
     """
+
     def _capture(region=None):
         import numpy as np
+
         # Return a dummy 100x100 RGB image
         return np.zeros((100, 100, 3), dtype=np.uint8)
-    
+
     return _capture
 
 
 # ============================================================================
 # Session-level Fixtures
 # ============================================================================
+
 
 @pytest.fixture(scope="session")
 def test_session_info():
@@ -246,15 +252,16 @@ def test_session_info():
 @pytest.fixture(scope="session", autouse=True)
 def print_test_environment(test_session_info):
     """Auto-use fixture that prints test environment info at session start."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TEST ENVIRONMENT")
-    print("="*60)
+    print("=" * 60)
     for key, value in test_session_info.items():
         if key == "python_version":
             # Print only first line of Python version
-            value = value.split('\n')[0]
+            value = value.split("\n")[0]
         print(f"{key:20s}: {value}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
+
 
 @pytest.fixture
 def patched_monster_editor(tmp_path):
@@ -263,24 +270,24 @@ def patched_monster_editor(tmp_path):
 
     # Create temp data file
     temp_data_file = tmp_path / "monsters.json"
-    temp_data_file.write_text('[]', encoding='utf-8')
+    temp_data_file.write_text("[]", encoding="utf-8")
 
     # Create list of patches
     patches_list = [
-        patch('ui.windows.monster_manager_win.DATA_PATH', temp_data_file),
-        patch('ui.windows.monster_manager_win.get_db', return_value=None),
-        patch('ui.windows.monster_manager_win.DataSyncManager', autospec=True),
+        patch("ui.windows.monster_manager_win.DATA_PATH", temp_data_file),
+        patch("ui.windows.monster_manager_win.get_db", return_value=None),
+        patch("ui.windows.monster_manager_win.DataSyncManager", autospec=True),
     ]
 
     # Apply all patches
     mocks = [p.start() for p in patches_list]
 
     yield {
-        'temp_data_file': temp_data_file,
-        'DATA_PATH_mock': mocks[0],
-        'get_db_mock': mocks[1],
-        'DataSyncManager_mock': mocks[2],
-        'patches': patches_list
+        "temp_data_file": temp_data_file,
+        "DATA_PATH_mock": mocks[0],
+        "get_db_mock": mocks[1],
+        "DataSyncManager_mock": mocks[2],
+        "patches": patches_list,
     }
 
     # Stop all patches
@@ -293,19 +300,25 @@ def patched_monster_editor(tmp_path):
             temp_data_file.unlink()
     except (PermissionError, OSError):
         import time
+
         time.sleep(0.05)
         try:
             temp_data_file.unlink()
         except Exception:
             pass
 
+
 @pytest.fixture(autouse=True)
 def mock_icon_helper(monkeypatch):
     class MockIconHelper:
         def get_icon(self, name, fallback="", size=16):
             return fallback
+
     try:
         from ui.helpers.icon_helper import get_icon_helper
-        monkeypatch.setattr('ui.helpers.icon_helper.get_icon_helper', lambda: MockIconHelper())
+
+        monkeypatch.setattr(
+            "ui.helpers.icon_helper.get_icon_helper", lambda: MockIconHelper()
+        )
     except ImportError:
         pass

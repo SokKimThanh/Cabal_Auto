@@ -1,10 +1,12 @@
 import os
 import pytest
 
-pytest.importorskip("tkinter", reason="Skipping UI tests because tkinter is not available")
+pytest.importorskip(
+    "tkinter", reason="Skipping UI tests because tkinter is not available"
+)
 pytestmark = pytest.mark.skipif(
     not os.getenv("DISPLAY") and os.name != "nt",
-    reason="Requires active display or xvfb to run Tkinter tests"
+    reason="Requires active display or xvfb to run Tkinter tests",
 )
 
 import unittest
@@ -32,9 +34,17 @@ class DummyApp:
         task()
 
     def __getattr__(self, name):
-        if name.startswith('_on_') or name.startswith('_refresh_') or name.startswith('_create_') or name.startswith('_update_'):
-            return lambda *args, **kwargs: tk.Label() if name.startswith('_create_') else None
-        if name.endswith('_var'):
+        if (
+            name.startswith("_on_")
+            or name.startswith("_refresh_")
+            or name.startswith("_create_")
+            or name.startswith("_update_")
+        ):
+            return lambda *args, **kwargs: (
+                tk.Label() if name.startswith("_create_") else None
+            )
+        if name.endswith("_var"):
+
             class DummyVar(tk.Variable):
                 def __init__(self, name=""):
                     self.val = ""
@@ -71,6 +81,7 @@ class DummyApp:
 
             def __getattr__(self, name):
                 return MockMagic()
+
         return MockMagic()
 
 
@@ -82,9 +93,9 @@ class TestTargetCardShell(unittest.TestCase):
     def tearDown(self):
         self.root.destroy()
 
-    @patch('database.get_monster_by_id_api', return_value=None)
-    @patch('database.find_monster_by_name_api', return_value=None)
-    @patch('lib.features.monsters.monster_repo.load_monster_library', return_value={})
+    @patch("database.get_monster_by_id_api", return_value=None)
+    @patch("database.find_monster_by_name_api", return_value=None)
+    @patch("lib.features.monsters.monster_repo.load_monster_library", return_value={})
     def test_schema_fallback(self, mock_load, mock_find, mock_get):
         info = get_target_monster_info("NonExistentMob")
 
@@ -96,7 +107,7 @@ class TestTargetCardShell(unittest.TestCase):
         self.assertIsNone(info["image_path"])
         self.assertTrue(info["is_placeholder"])
 
-    @patch('database.get_monster_by_id_api')
+    @patch("database.get_monster_by_id_api")
     def test_schema_db_hit(self, mock_get):
         mock_get.return_value = {
             "id": "123",
@@ -104,7 +115,7 @@ class TestTargetCardShell(unittest.TestCase):
             "level": "5",
             "hp": 200,
             "defense": 10,
-            "image_path": "path/to/img.png"
+            "image_path": "path/to/img.png",
         }
         info = get_target_monster_info("123")
 
@@ -116,7 +127,7 @@ class TestTargetCardShell(unittest.TestCase):
         self.assertEqual(info["image_path"], "path/to/img.png")
         self.assertFalse(info["is_placeholder"])
 
-    @patch.object(HuntTab, '_build_ui', return_value=None)
+    @patch.object(HuntTab, "_build_ui", return_value=None)
     def test_zero_asset_fallback(self, mock_build):
         tab = HuntTab(self.root, self.app)
 
@@ -133,7 +144,7 @@ class TestTargetCardShell(unittest.TestCase):
         self.assertEqual(kwargs.get("text"), "[ NO IMAGE ]")
         self.assertIsNone(getattr(tab, "_current_target_photo", None))
 
-    @patch.object(HuntTab, '_build_ui', return_value=None)
+    @patch.object(HuntTab, "_build_ui", return_value=None)
     def test_clear_before_set_ordering(self, mock_build):
         tab = HuntTab(self.root, self.app)
         tab.target_image_label = MagicMock()
@@ -153,7 +164,7 @@ class TestTargetCardShell(unittest.TestCase):
         self.assertEqual(tab.clear_target_photo.call_count, 2)
         self.assertEqual(tab._current_target_photo, photo2)
 
-    @patch.object(HuntTab, '_build_ui', return_value=None)
+    @patch.object(HuntTab, "_build_ui", return_value=None)
     def test_high_load_memory_stability(self, mock_build):
         tab = HuntTab(self.root, self.app)
         tab.target_image_label = MagicMock()
@@ -177,5 +188,5 @@ class TestTargetCardShell(unittest.TestCase):
         self.assertLess(diff_mb, 20.0, f"Memory leak detected! Grew by {diff_mb} MB")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

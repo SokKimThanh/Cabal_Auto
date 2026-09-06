@@ -8,13 +8,18 @@ pytestmark = pytest.mark.unit
 
 
 class MockDB:
-    def get_dungeon_list(self): return []
-    def get_monster_type_list(self): return []
+    def get_dungeon_list(self):
+        return []
+
+    def get_monster_type_list(self):
+        return []
+
 
 class MockParent(tk.Tk):
     def __init__(self):
         super().__init__()
         self.db = MockDB()
+
 
 @pytest.fixture
 def tk_root():
@@ -22,6 +27,7 @@ def tk_root():
     root.withdraw()
     yield root
     root.destroy()
+
 
 def test_hidden_advanced_fields_retained(tk_root):
     # Data with some advanced fields set
@@ -42,12 +48,13 @@ def test_hidden_advanced_fields_retained(tk_root):
     assert data["penetration"] == 50
     assert data["evasion"] == 20
 
+
 def test_unknown_keys_preserved(tk_root):
     initial_data = {
         "id": "1",
         "name": "Unknown Key Test",
         "custom_unknown_key": "some_value",
-        "another_key": [1, 2, 3]
+        "another_key": [1, 2, 3],
     }
     dialog = MonsterEditDialog(tk_root, monster=initial_data)
 
@@ -57,6 +64,7 @@ def test_unknown_keys_preserved(tk_root):
     assert data["custom_unknown_key"] == "some_value"
     assert "another_key" in data
     assert data["another_key"] == [1, 2, 3]
+
 
 def test_repeated_collapse_expand_preserves_values(tk_root):
     initial_data = {
@@ -69,7 +77,7 @@ def test_repeated_collapse_expand_preserves_values(tk_root):
     # We need to find the toggle buttons and click them, or directly call the toggle function
     # Unfortunately the toggle logic is bound to lambdas in _create_collapsible_group
     # Let's simulate grid_remove and grid
-    if hasattr(dialog, 'pen_entry'):
+    if hasattr(dialog, "pen_entry"):
         assert dialog.pen_entry.get() == "50"
 
         # modify

@@ -58,7 +58,7 @@ def calculate_monster_estimate(monster: Optional[Dict[str, Any]]) -> Dict[str, A
             "effective_hp": 0.0,
             "base_hp": 0,
             "defense": 0,
-            "level": 0
+            "level": 0,
         }
 
     # Get stats with defaults (Sprint 21 Phase 3 format)
@@ -179,7 +179,11 @@ def get_target_monster_info(name_or_id: str):
                     "name": m_data.get("name") or name_or_id,
                     "level": m_data.get("level", "N/A"),
                     "hp": m_data.get("hp") if m_data.get("hp") is not None else 10000,
-                    "defense": m_data.get("defense") if m_data.get("defense") is not None else 0,
+                    "defense": (
+                        m_data.get("defense")
+                        if m_data.get("defense") is not None
+                        else 0
+                    ),
                     "image_path": m_data.get("image_path"),
                     "is_placeholder": False,
                 }

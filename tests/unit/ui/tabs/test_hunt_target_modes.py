@@ -13,6 +13,7 @@ def root():
     yield root
     root.destroy()
 
+
 @pytest.fixture
 def mock_app(root):
     app = MagicMock(spec=tk.Tk)
@@ -39,6 +40,7 @@ def mock_app(root):
     app._create_tooltip = lambda *args, **kwargs: None
     return app
 
+
 def test_target_policy_vars(root, mock_app):
     # App now initializes target_policy_var itself? Wait, it's done in HuntTab
     hunt_tab = HuntTab(root, mock_app)
@@ -48,11 +50,13 @@ def test_target_policy_vars(root, mock_app):
     assert hunt_tab.detected_container.winfo_manager() == ""
     assert hunt_tab.any_target_container.winfo_manager() == ""
 
+
 def test_target_policy_changes(root, mock_app):
     hunt_tab = HuntTab(root, mock_app)
     mock_app.target_policy_var.set("all_resolved")
     assert mock_app.hunt_cfg["target_policy"] == "all_resolved"
     assert mock_app.has_unsaved_changes is True
+
 
 def test_hunt_running_locks_policy(root, mock_app):
     hunt_tab = HuntTab(root, mock_app)

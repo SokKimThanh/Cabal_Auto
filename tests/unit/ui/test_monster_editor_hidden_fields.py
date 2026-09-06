@@ -3,15 +3,20 @@ import tkinter as tk
 import json
 import os
 
-pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
+pytest.importorskip(
+    "tkinter",
+    reason="Skipping UI imports because tkinter is not available in headless environment",
+)
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("DISPLAY") and os.name != "nt",
-    reason="Requires active display or xvfb to run Tkinter tests"
+    reason="Requires active display or xvfb to run Tkinter tests",
 )
+
 
 def test_hidden_fields_retention():
     from dialogs.monster_edit import MonsterEditDialog
+
     root = tk.Tk()
     root.withdraw()
     try:
@@ -24,7 +29,7 @@ def test_hidden_fields_retention():
             "damage_per_hit": 15,
             "priority": 3,
             "unknown_field_123": "preserve_me",
-            "another_unknown": [1, 2, 3]
+            "another_unknown": [1, 2, 3],
         }
 
         dialog = MonsterEditDialog(root, monster=existing_monster)
@@ -54,8 +59,10 @@ def test_hidden_fields_retention():
     finally:
         root.destroy()
 
+
 def test_repeated_collapse_expand_preserves_values():
     from dialogs.monster_edit import MonsterEditDialog
+
     root = tk.Tk()
     root.withdraw()
     try:
@@ -98,8 +105,10 @@ def test_repeated_collapse_expand_preserves_values():
     finally:
         root.destroy()
 
+
 def test_complete_candidate_output_fields():
     from dialogs.monster_edit import MonsterEditDialog
+
     root = tk.Tk()
     root.withdraw()
     try:
@@ -120,8 +129,10 @@ def test_complete_candidate_output_fields():
     finally:
         root.destroy()
 
+
 def test_widget_visibility_with_grid_remove_pack_forget():
     from dialogs.monster_edit import MonsterEditDialog
+
     root = tk.Tk()
     root.withdraw()
     try:

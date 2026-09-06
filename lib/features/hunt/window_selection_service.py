@@ -11,7 +11,11 @@ class WindowValidationResult:
     window: Optional[Dict[str, Any]] = None
 
 
-def validate_selected_cabal_window(selected: Any, known_items: List[Dict[str, Any]], allowed_processes: List[str] = ["cabal.exe"]) -> WindowValidationResult:
+def validate_selected_cabal_window(
+    selected: Any,
+    known_items: List[Dict[str, Any]],
+    allowed_processes: List[str] = ["cabal.exe"],
+) -> WindowValidationResult:
     if not isinstance(selected, dict) or not isinstance(selected.get("hwnd"), int):
         return WindowValidationResult(False, "no_window_selected")
 
@@ -28,7 +32,12 @@ def validate_selected_cabal_window(selected: Any, known_items: List[Dict[str, An
     if info.process_name.lower() not in allowed_processes:
         return WindowValidationResult(False, "no_cabal_window")
 
-    if not info.is_visible or not info.is_enabled or info.is_minimized or info.is_offscreen:
+    if (
+        not info.is_visible
+        or not info.is_enabled
+        or info.is_minimized
+        or info.is_offscreen
+    ):
         return WindowValidationResult(False, "window_unavailable")
 
     # Valid known items check (make sure it's in the currently scanned list if known_items is provided)
@@ -43,7 +52,7 @@ def validate_selected_cabal_window(selected: Any, known_items: List[Dict[str, An
         "title": (info.title or "").strip(),
         "proc": info.process_name,
         "bounds": normalize_window_bounds_value(info.rect),
-        "is_minimized": info.is_minimized
+        "is_minimized": info.is_minimized,
     }
     return WindowValidationResult(True, "ok", win_dict)
 
@@ -67,7 +76,14 @@ class WindowRecoveryController:
             cls._instance = cls()
         return cls._instance
 
-    def start_async_recovery(self, hwnd: int, schedule_after_ms=None, on_progress=None, on_failure=None, delay_ms: int = 500):
+    def start_async_recovery(
+        self,
+        hwnd: int,
+        schedule_after_ms=None,
+        on_progress=None,
+        on_failure=None,
+        delay_ms: int = 500,
+    ):
         """Start recovery retries without blocking the UI thread (caller provides scheduler)."""
         if self._retry_in_progress:
             return  # Lock: already retrying
@@ -81,6 +97,7 @@ class WindowRecoveryController:
         self._delay_ms = delay_ms
 
         self._execute_retry_step()
+
     def _execute_retry_step(self):
         """Execute one retry step."""
         self._retry_step += 1
@@ -103,18 +120,23 @@ class WindowRecoveryController:
             return
 
         if callable(getattr(self, "_schedule_after_ms", None)):
-            self._schedule_after_ms(getattr(self, "_delay_ms", 500), self._execute_retry_step)
+            self._schedule_after_ms(
+                getattr(self, "_delay_ms", 500), self._execute_retry_step
+            )
         else:
             # No scheduler provided; avoid permanent lock-out and fail fast.
             self._retry_in_progress = False
             if self._on_failure:
                 self._on_failure()
 
+
 class WindowSelectionService:
     """Service for target window and bounds validation logic used by hunt setup/runtime."""
 
     @staticmethod
-    def resolve_bounds(config: Any, current_bounds: Optional[List[int]] = None) -> Optional[List[int]]:
+    def resolve_bounds(
+        config: Any, current_bounds: Optional[List[int]] = None
+    ) -> Optional[List[int]]:
         """Resolve the active window bounds from the config or current bounds.
 
         Checks current_bounds first, then hunt_area.window_bounds, then root window_bounds.

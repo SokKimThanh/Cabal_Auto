@@ -6,13 +6,16 @@ from lib.features.hotkey.hotkey_validator import validate_hotkey_no_conflict
 from lib.features.hunt.config_migrator import migrate_hunt_config
 from ui.tabs.hunt_tab import HuntTab
 
+
 class TestCB3BValidationSuite(unittest.TestCase):
 
     def setUp(self):
         try:
             self.root = tk.Tk()
         except tk.TclError as exc:
-            self.skipTest(f"Requires active display or xvfb to run Tkinter tests: {exc}")
+            self.skipTest(
+                f"Requires active display or xvfb to run Tkinter tests: {exc}"
+            )
         self.root.withdraw()
 
     def tearDown(self):
@@ -50,7 +53,7 @@ class TestCB3BValidationSuite(unittest.TestCase):
         """Test precedence rules for unclassified entries"""
         mock_load_skill.return_value = {
             "s1": {"name": "Mana Heal", "type": "buff"},
-            "s2": {"name": "Sword Slash", "type": "attack"}
+            "s2": {"name": "Sword Slash", "type": "attack"},
         }
 
         legacy_cfg = {
@@ -70,23 +73,26 @@ class TestCB3BValidationSuite(unittest.TestCase):
         self.assertEqual(migrated["buff_slots"][0]["type"], "buff")
 
         # Assert Unknown Skill in skill_slots (default)
-        self.assertTrue(any(s["name"] == "Unknown Skill" for s in migrated["skill_slots"]))
+        self.assertTrue(
+            any(s["name"] == "Unknown Skill" for s in migrated["skill_slots"])
+        )
 
-        unknown_skill = next(s for s in migrated["skill_slots"] if s["name"] == "Unknown Skill")
+        unknown_skill = next(
+            s for s in migrated["skill_slots"] if s["name"] == "Unknown Skill"
+        )
         self.assertEqual(unknown_skill["type"], "attack")
 
     def test_save_reload_round_trip(self):
         """Verify skill_slots/buff_slots don't cross-contaminate"""
         # Mocking the UI data collection logic for round-trip validation
         mock_app = MagicMock()
+        mock_app._current_class_id = 1
         mock_app.skills = [
             {"name": "Attack1", "type": "attack", "key": "1"},
-            {"name": "Buff1", "type": "buff", "key": "2"}
+            {"name": "Buff1", "type": "buff", "key": "2"},
         ]
 
-        mock_app.hunt_cfg = {
-            "buff_slots": [{"name": "Buff1", "duration_sec": 450}]
-        }
+        mock_app.hunt_cfg = {"buff_slots": [{"name": "Buff1", "duration_sec": 450}]}
 
         var_attack = tk.StringVar(value="Attack1")
         var_empty1 = tk.StringVar(value="")
@@ -98,21 +104,31 @@ class TestCB3BValidationSuite(unittest.TestCase):
         # Combo lane: 0, 1, 2, 3
         # Buff lane: 4, 5, 6, 7
         mock_app.skill_slot_vars = [
-            var_attack, var_empty1, var_empty2, var_empty3,
-            var_buff, var_empty4
+            var_attack,
+            var_empty1,
+            var_empty2,
+            var_empty3,
+            var_buff,
+            var_empty4,
         ]
 
         mock_app.skill_slot_duration_vars = [
-            tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(),
-            tk.StringVar(value="450"), tk.StringVar()
+            tk.StringVar(),
+            tk.StringVar(),
+            tk.StringVar(),
+            tk.StringVar(),
+            tk.StringVar(value="450"),
+            tk.StringVar(),
         ]
 
         # Import directly from the file to avoid importing cv2 and GUI
         import importlib.util
+
         spec = importlib.util.spec_from_file_location("app_gui", "app_gui.py")
         app_gui_module = importlib.util.module_from_spec(spec)
         # Mock transitive dependencies that app_gui uses globally (auto-restored)
         import sys
+
         with patch.dict(
             sys.modules,
             {
@@ -141,6 +157,7 @@ class TestCB3BValidationSuite(unittest.TestCase):
     def test_i18n_round_trip(self):
         """Verify all lane headers/labels translate correctly"""
         mock_app = MagicMock()
+        mock_app._current_class_id = 1
 
         def mock_t(key):
             translations = {
@@ -177,5 +194,6 @@ class TestCB3BValidationSuite(unittest.TestCase):
         self.assertTrue(len(combo_labels) > 0)
         self.assertTrue(len(buff_labels) > 0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

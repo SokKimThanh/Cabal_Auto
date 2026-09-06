@@ -2,7 +2,8 @@
 """Test script for Phase 3: Multi-Monster Rotation Logic"""
 
 import sys
-sys.path.insert(0, 'e:/Cabal_Auto')
+
+sys.path.insert(0, "e:/Cabal_Auto")
 
 from ui.auto_hunt import load_cfg, get_monster_rotation_targets
 
@@ -23,14 +24,14 @@ print(f"\n2. Monster rotation targets: {len(targets)} monsters")
 
 if targets:
     for i, monster in enumerate(targets):
-        name = monster['name']
-        priority = monster['priority']
-        template_count = len(monster['templates'])
+        name = monster["name"]
+        priority = monster["priority"]
+        template_count = len(monster["templates"])
         print(f"   [{i+1}] {name} (Priority: {priority}) - {template_count} templates")
-        
+
         # Show first 2 templates
-        for j, tmpl in enumerate(monster['templates'][:2]):
-            tmpl_name = tmpl.get('name', 'unnamed')
+        for j, tmpl in enumerate(monster["templates"][:2]):
+            tmpl_name = tmpl.get("name", "unnamed")
             print(f"       └─ Template {j+1}: {tmpl_name}")
 else:
     print("   No enabled monsters found")
@@ -38,8 +39,8 @@ else:
 
 # Test both rotation modes
 print(f"\n3. Testing rotation modes:")
-for mode in ['sequence', 'priority']:
-    cfg['rotation_mode'] = mode
+for mode in ["sequence", "priority"]:
+    cfg["rotation_mode"] = mode
     targets = get_monster_rotation_targets(cfg)
     print(f"   {mode.upper()} mode: {len(targets)} monsters")
     if targets:

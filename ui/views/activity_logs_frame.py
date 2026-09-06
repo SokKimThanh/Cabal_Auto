@@ -6,48 +6,48 @@ import queue
 
 class ActivityLogsFrame(tk.Frame):
     def __init__(self, parent, app):
-        super().__init__(parent, bg=UI.THEME_BG_APP)
+        super().__init__(parent, bg=UI.BG_BASE)
         self.app = app
         self.message_queue = queue.Queue()
 
         # Header
-        self.header_frame = tk.Frame(self, bg=UI.THEME_BG_SIDEBAR, height=36)
+        self.header_frame = tk.Frame(self, bg=UI.BG_ELEVATED, height=36)
         self.header_frame.pack(fill="x", side="top")
         self.header_frame.pack_propagate(False)
 
         self.title_label = tk.Label(
             self.header_frame,
             text=self.app._t("logs_title"),
-            bg=UI.THEME_BG_SIDEBAR,
-            fg=UI.THEME_TEXT_PRIMARY,
-            font=(UI.resolve_font_family("display"), 11, "bold"),
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            font=UI.FONT_TITLE,
         )
         self.title_label.pack(side="left", padx=12)
 
         self.clear_btn = tk.Button(
             self.header_frame,
             text=self.app._t("logs_clear"),
-            bg=UI.THEME_BG_SIDEBAR,
-            fg=UI.THEME_TEXT_PRIMARY,
-            font=(UI.resolve_font_family("mono"), 9),
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            font=UI.FONT_BODY,
             relief="flat",
-            activebackground=UI.THEME_STATE_SELECTED,
-            activeforeground=UI.THEME_TEXT_PRIMARY,
+            activebackground=UI.BG_SURFACE,
+            activeforeground=UI.TEXT_PRIMARY,
             cursor="hand2",
             command=self.clear,
         )
         self.clear_btn.pack(side="right", padx=12)
 
         # Content container
-        self.content_frame = tk.Frame(self, bg=UI.THEME_BG_PANEL)
+        self.content_frame = tk.Frame(self, bg=UI.BG_SURFACE)
         self.content_frame.pack(fill="both", expand=True, padx=0, pady=0)
 
         # Text widget
         self.text_widget = tk.Text(
             self.content_frame,
-            bg=UI.THEME_BG_PANEL,
-            fg=UI.THEME_TEXT_PRIMARY,
-            font=(UI.resolve_font_family("mono"), 9),
+            bg=UI.BG_SURFACE,
+            fg=UI.TEXT_PRIMARY,
+            font=UI.FONT_BODY,
             wrap="word",
             state="disabled",
             relief="flat",

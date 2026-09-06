@@ -26,7 +26,7 @@ class HuntTab(ttk.Frame):
         if state == "running":
             self.hunt_status_badge.set_status("hunting")
         elif state == "error":
-            self.hunt_status_badge.set_status("waiting") # Fallback for error
+            self.hunt_status_badge.set_status("waiting")  # Fallback for error
         elif state == "idle":
             self.hunt_status_badge.set_status("waiting")
         elif state == "stopped":
@@ -49,9 +49,7 @@ class HuntTab(ttk.Frame):
 
     def show_recovery(self):
         if hasattr(self, "recovery_frame"):
-            self.recovery_frame.config(
-                bg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
-            )
+            self.recovery_frame.config(bg=UI.ACCENT_AMBER)
             self.recovery_frame.pack(fill="x", pady=(4, 4), after=self.hp_percent_label)
             if hasattr(self, "recovery_btn"):
                 self.recovery_btn.config(
@@ -105,19 +103,13 @@ class HuntTab(ttk.Frame):
             return
         self.status_label.config(text=status_string)
         if status_string == "APPROACHING":
-            self.status_label.config(
-                fg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
-            )
+            self.status_label.config(fg=UI.ACCENT_AMBER)
         elif status_string == "ATTACKING":
-            self.status_label.config(
-                fg=getattr(UI, "STATE_ERROR", getattr(UI, "COLOR_DANGER", "#F44336"))
-            )
+            self.status_label.config(fg=UI.DANGER)
         elif status_string == "TARGET_DEAD":
-            self.status_label.config(
-                fg=getattr(UI, "STATE_MUTED", getattr(UI, "COLOR_MUTED", "#9E9E9E"))
-            )
+            self.status_label.config(fg=UI.TEXT_MUTED)
         else:
-            self.status_label.config(fg=getattr(UI, "COLOR_ACCENT", "#2196F3"))
+            self.status_label.config(fg=UI.ACCENT_BLUE)
 
     def update_hp_display(
         self, hp_percent: float, current_hp: int = 0, max_hp: int = 10000
@@ -227,9 +219,7 @@ class HuntTab(ttk.Frame):
             self.app.hunt_target_info.set(f"Target: #{info['id']}")
 
         if info.get("is_placeholder"):
-            self.hunt_status_label.config(
-                fg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107"))
-            )
+            self.hunt_status_label.config(fg=UI.ACCENT_AMBER)
             if hasattr(self.app, "_create_tooltip"):
                 self.app._create_tooltip(
                     self.hunt_status_label, self.app._t("target_card.unknown_mob")
@@ -370,130 +360,106 @@ class HuntTab(ttk.Frame):
 
         # Layout: 4-Panel Workspace Redesign
 
-
         self.workspace = tk.Frame(self, bg=UI.BG_BASE)
-
 
         self.workspace.grid(row=0, column=0, sticky="nsew")
 
-
         self.grid_rowconfigure(0, weight=1)
-
 
         self.grid_columnconfigure(0, weight=1)
 
-
-
         # Split workspace into 60/40 columns
-
 
         self.workspace.grid_columnconfigure(0, weight=6)
 
-
         self.workspace.grid_columnconfigure(1, weight=4)
-
 
         self.workspace.grid_rowconfigure(0, weight=1)
 
-
-
         # Left Column (60%): Interaction
-
 
         self.col_interaction = tk.Frame(self.workspace, bg=UI.BG_BASE)
 
-
         self.col_interaction.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
-
 
         self.col_interaction.grid_rowconfigure(0, weight=35)
 
-
         self.col_interaction.grid_rowconfigure(1, weight=65)
-
 
         self.col_interaction.grid_columnconfigure(0, weight=1)
 
-
-
         # Right Column (40%): Monitoring
-
 
         self.col_monitoring = tk.Frame(self.workspace, bg=UI.BG_BASE)
 
-
         self.col_monitoring.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
-
 
         self.col_monitoring.grid_rowconfigure(0, weight=50)
 
-
         self.col_monitoring.grid_rowconfigure(1, weight=50)
 
-
         self.col_monitoring.grid_columnconfigure(0, weight=1)
-
-
 
         from ui.components.styled_panel import StyledPanel
 
         # Containers for panels
 
-
         self.container_monster_target = tk.Frame(self.col_interaction, bg=UI.BG_BASE)
-
 
         self.container_monster_target.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
 
-
-
         self.container_skill_panel = tk.Frame(self.col_interaction, bg=UI.BG_BASE)
-
 
         self.container_skill_panel.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
 
-
         self.skill_panel_controller = SkillPanel(self.container_skill_panel, self.app)
-
-
 
         self.container_target_status = tk.Frame(self.col_monitoring, bg=UI.BG_BASE)
 
-
         self.container_target_status.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
-
-
 
         self.container_skill_stats = tk.Frame(self.col_monitoring, bg=UI.BG_BASE)
 
-
         self.container_skill_stats.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
 
-
-
         # Section 1: Active Target Card Panel (Monitoring -> Right Top)
-
 
         self.app.active_target_status_frame_panel = StyledPanel(
             self.container_target_status, show_border=True
         )
         self.app.active_target_status_frame_panel.pack(fill="both", expand=True)
-        self.app.active_target_status_frame = self.app.active_target_status_frame_panel.get_content_frame()
+        self.app.active_target_status_frame = (
+            self.app.active_target_status_frame_panel.get_content_frame()
+        )
         self.app.active_target_status_frame.grid_columnconfigure(0, weight=1)
 
-        active_title = tk.Label(self.app.active_target_status_frame, text=self.app._t("hunt_active_target_status"), font=UI.FONT_SECTION, fg=UI.TEXT_PRIMARY, bg=UI.BG_SURFACE, anchor="w")
+        active_title = tk.Label(
+            self.app.active_target_status_frame,
+            text=self.app._t("hunt_active_target_status"),
+            font=UI.FONT_SECTION,
+            fg=UI.TEXT_PRIMARY,
+            bg=UI.BG_SURFACE,
+            anchor="w",
+        )
         active_title.pack(fill="x", padx=8, pady=(8, 4))
 
         # Header Bar
         status_frame = tk.Frame(
-            self.app.active_target_status_frame, relief="flat", bd=1, height=32, bg=UI.BG_SURFACE
+            self.app.active_target_status_frame,
+            relief="flat",
+            bd=1,
+            height=32,
+            bg=UI.BG_SURFACE,
         )
         status_frame.pack(fill="x", pady=(0, 4), padx=8)
 
         from ui.components.status_badge import StatusBadge
+
         self.hunt_status_badge = StatusBadge(status_frame, status="waiting")
         self.hunt_status_badge.pack(side="left", padx=8, pady=6)
-        self.hunt_status_label = self.hunt_status_badge # keep reference for legacy code
+        self.hunt_status_label = (
+            self.hunt_status_badge
+        )  # keep reference for legacy code
 
         self.hunt_target_info_label = tk.Label(
             status_frame,
@@ -589,7 +555,7 @@ class HuntTab(ttk.Frame):
         # Recovery Frame (Hidden by default)
         self.recovery_frame = tk.Frame(
             stats_frame,
-            bg=getattr(UI, "STATE_WARN", getattr(UI, "COLOR_WARNING", "#FFC107")),
+            bg=UI.ACCENT_AMBER,
         )
         self.recovery_frame.pack_forget()
 
@@ -599,7 +565,7 @@ class HuntTab(ttk.Frame):
             font=UI.FONT_BUTTON,
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_MUTED,
-            relief='flat',
+            relief="flat",
             command=self._on_recovery_click,
         )
         self.recovery_btn.pack(fill="x", padx=4, pady=4)
@@ -625,9 +591,7 @@ class HuntTab(ttk.Frame):
 
         # Section 2: Monster Selection (Interaction -> Left Top)
 
-
         # Sprint 22 Patch 2: Dynamic title based on training mode
-
 
         self.app.monster_frame_panel = StyledPanel(
             self.container_monster_target, show_border=True
@@ -636,7 +600,14 @@ class HuntTab(ttk.Frame):
         self.app.monster_frame = self.app.monster_frame_panel.get_content_frame()
         self.app.monster_frame.grid_columnconfigure(0, weight=1)
 
-        monster_title = tk.Label(self.app.monster_frame, text=self.app._t("monster_rotation_title"), font=UI.FONT_SECTION, fg=UI.TEXT_PRIMARY, bg=UI.BG_SURFACE, anchor="w")
+        monster_title = tk.Label(
+            self.app.monster_frame,
+            text=self.app._t("monster_rotation_title"),
+            font=UI.FONT_SECTION,
+            fg=UI.TEXT_PRIMARY,
+            bg=UI.BG_SURFACE,
+            anchor="w",
+        )
         monster_title.pack(fill="x", padx=10, pady=(10, 4))
 
         # Segmented control for target policy
@@ -694,20 +665,25 @@ class HuntTab(ttk.Frame):
 
         # 1. Configured Only view (and Configured part of All Resolved)
         # Note: We need a reusable container for configured list
-        self.configured_container = tk.Frame(self.policy_content_frame, bg=UI.BG_SURFACE)
+        self.configured_container = tk.Frame(
+            self.policy_content_frame, bg=UI.BG_SURFACE
+        )
 
         # 2. All Resolved view
         self.detected_container = tk.Frame(self.policy_content_frame, bg=UI.BG_SURFACE)
 
         # 3. Any Target view
-        self.any_target_container = tk.Frame(self.policy_content_frame, bg=UI.BG_SURFACE)
+        self.any_target_container = tk.Frame(
+            self.policy_content_frame, bg=UI.BG_SURFACE
+        )
 
         from ui.components.empty_state import EmptyState
+
         self.any_target_empty = EmptyState(
             self.any_target_container,
             icon="🎯",
             message=self.app._t("any_target_warning"),
-            submessage="Tất cả mục tiêu trong màn hình sẽ bị tấn công."
+            submessage="Tất cả mục tiêu trong màn hình sẽ bị tấn công.",
         )
         self.any_target_empty.pack(fill="both", expand=True)
 
@@ -975,7 +951,6 @@ class HuntTab(ttk.Frame):
         self.app.training_mode_status_var = tk.StringVar()
         # Status label hidden, only used internally
 
-
         # Phase 3: Populate monster rotation list
         self.app._refresh_monster_rotation_list()
 
@@ -985,9 +960,18 @@ class HuntTab(ttk.Frame):
             self.container_skill_stats, show_border=True
         )
         self.app.skill_stats_frame_panel.pack(fill="both", expand=True)
-        self.app.skill_stats_frame = self.app.skill_stats_frame_panel.get_content_frame()
+        self.app.skill_stats_frame = (
+            self.app.skill_stats_frame_panel.get_content_frame()
+        )
 
-        stats_title = tk.Label(self.app.skill_stats_frame, text=self.app._t("skill_stats_title"), font=UI.FONT_SECTION, fg=UI.TEXT_PRIMARY, bg=UI.BG_SURFACE, anchor="w")
+        stats_title = tk.Label(
+            self.app.skill_stats_frame,
+            text=self.app._t("skill_stats_title"),
+            font=UI.FONT_SECTION,
+            fg=UI.TEXT_PRIMARY,
+            bg=UI.BG_SURFACE,
+            anchor="w",
+        )
         stats_title.pack(fill="x", padx=10, pady=(10, 4))
 
         # Container for treeview to add padding
@@ -1024,8 +1008,12 @@ class HuntTab(ttk.Frame):
         self.app.skill_stats_tree.pack(side="left", fill="both", expand=True)
         stats_scroll.pack(side="right", fill="y")
 
-        self.app.skill_stats_tree.tag_configure("striped_even", background=UI.BG_ELEVATED, foreground=UI.TEXT_PRIMARY)
-        self.app.skill_stats_tree.tag_configure("striped_odd", background=UI.BG_BASE, foreground=UI.TEXT_PRIMARY)
+        self.app.skill_stats_tree.tag_configure(
+            "striped_even", background=UI.BG_ELEVATED, foreground=UI.TEXT_PRIMARY
+        )
+        self.app.skill_stats_tree.tag_configure(
+            "striped_odd", background=UI.BG_BASE, foreground=UI.TEXT_PRIMARY
+        )
         self.app.skill_stats_tree.tag_configure("excellent", foreground=UI.ACCENT_GREEN)
         self.app.skill_stats_tree.tag_configure("good", foreground=UI.ACCENT_AMBER)
         self.app.skill_stats_tree.tag_configure("poor", foreground=UI.DANGER)

@@ -6,8 +6,8 @@ from lib.features.skills.runtime import SkillRuntime
 
 def test_reserve_commit_release():
     skills_data = [
-        {'name': 'Fireball', 'key': '1', 'type': 'attack', 'cooldown': 5.0},
-        {'name': 'Iceball', 'key': '2', 'type': 'attack', 'cooldown': 5.0},
+        {"name": "Fireball", "key": "1", "type": "attack", "cooldown": 5.0},
+        {"name": "Iceball", "key": "2", "type": "attack", "cooldown": 5.0},
     ]
     runtime = SkillRuntime(skills_data)
 
@@ -16,8 +16,8 @@ def test_reserve_commit_release():
     # Initial rotation is 0 (Fireball)
     assert runtime.attack_rotation_index == 0
 
-    res1 = runtime.reserve_next_skill('attack', now)
-    assert res1.skill_name == 'Fireball'
+    res1 = runtime.reserve_next_skill("attack", now)
+    assert res1.skill_name == "Fireball"
 
     # Reserving does not advance rotation index
     assert runtime.attack_rotation_index == 0
@@ -26,8 +26,8 @@ def test_reserve_commit_release():
     runtime.release_cast(res1.token, CastOutcome.REJECTED)
     assert runtime.attack_rotation_index == 0
 
-    res2 = runtime.reserve_next_skill('attack', now)
-    assert res2.skill_name == 'Fireball'
+    res2 = runtime.reserve_next_skill("attack", now)
+    assert res2.skill_name == "Fireball"
 
     # If accepted, we commit, advancing rotation
     runtime.commit_cast(res2.token, res2, now)
@@ -36,5 +36,5 @@ def test_reserve_commit_release():
     # Fireball is now on cooldown
     assert runtime.attack_skills[0].last_cast_time == now
 
-    res3 = runtime.reserve_next_skill('attack', now)
-    assert res3.skill_name == 'Iceball'
+    res3 = runtime.reserve_next_skill("attack", now)
+    assert res3.skill_name == "Iceball"

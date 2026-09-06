@@ -26,13 +26,15 @@ from lib.features.hunt.window_selection_service import WindowRecoveryController
 from ui.tabs.hunt_tab import HuntTab
 
 import platform
-if platform.system() != 'Windows':
-    for m in ['win32gui', 'win32con', 'win32process', 'win32api', 'pywintypes']:
+
+if platform.system() != "Windows":
+    for m in ["win32gui", "win32con", "win32process", "win32api", "pywintypes"]:
         sys.modules[m] = MagicMock()
 
 from lib.vision.target_hp_reader import TargetHPReader
 from lib.features.hunt.window_selection_service import WindowRecoveryController
 from ui.tabs.hunt_tab import HuntTab
+
 
 # Mock dependencies
 class MockApp:
@@ -52,7 +54,9 @@ class MockApp:
     def schedule_ui_task(self, func):
         func()
 
-    def _create_icon_button(self, parent, icon_emoji, command, style, bg_color, hover_color):
+    def _create_icon_button(
+        self, parent, icon_emoji, command, style, bg_color, hover_color
+    ):
         return tk.Button(parent, text=icon_emoji, command=command)
 
     def _create_tooltip(self, widget, text):
@@ -64,11 +68,20 @@ class MockApp:
     def _on_monster_remove(self):
         pass
 
-    def _on_monster_move_up(self): pass
-    def _on_monster_move_down(self): pass
-    def _on_monster_clear_rotation(self): pass
-    def _on_config_monster(self): pass
-    def _on_monster_delete_from_list(self): pass
+    def _on_monster_move_up(self):
+        pass
+
+    def _on_monster_move_down(self):
+        pass
+
+    def _on_monster_clear_rotation(self):
+        pass
+
+    def _on_config_monster(self):
+        pass
+
+    def _on_monster_delete_from_list(self):
+        pass
 
     def _t(self, key):
         return key
@@ -84,6 +97,7 @@ class MockApp:
 
     def show_toast(self, msg):
         pass
+
 
 @pytest.fixture
 def tk_root():
@@ -110,7 +124,7 @@ def test_stress_hp_throttling():
         return current_time
 
     current_time = start_time
-    with patch('time.monotonic', side_effect=mock_time):
+    with patch("time.monotonic", side_effect=mock_time):
         # Initial call to set the baseline
         reader.calculate_target_hp_percent(None)
 
@@ -137,20 +151,20 @@ def test_delta_threshold_skip():
     detector.get_hp_percentage.return_value = 100.0
     reader = TargetHPReader(detector)
 
-    with patch('time.monotonic', return_value=1000.0):
+    with patch("time.monotonic", return_value=1000.0):
         # Initial draw
         res = reader.calculate_target_hp_percent(None)
         assert res == 100.0
 
-    with patch('time.monotonic', return_value=1000.2): # 200ms elapsed
-        detector.get_hp_percentage.return_value = 99.6 # Delta 0.4
+    with patch("time.monotonic", return_value=1000.2):  # 200ms elapsed
+        detector.get_hp_percentage.return_value = 99.6  # Delta 0.4
         res = reader.calculate_target_hp_percent(None)
         # Should NOT draw because delta < 0.5
         assert res == 100.0
         assert reader.last_drawn_percent == 100.0
 
-    with patch('time.monotonic', return_value=1000.4): # 400ms elapsed
-        detector.get_hp_percentage.return_value = 99.5 # Delta 0.5
+    with patch("time.monotonic", return_value=1000.4):  # 400ms elapsed
+        detector.get_hp_percentage.return_value = 99.5  # Delta 0.5
         res = reader.calculate_target_hp_percent(None)
         # SHOULD draw because delta >= 0.5
         assert res == 99.5
@@ -164,7 +178,7 @@ def test_graceful_death_delay(tk_root):
     tab._pending_clear_id = None
 
     # Mock clear_target_card
-    with patch.object(tab, 'clear_target_card') as mock_clear:
+    with patch.object(tab, "clear_target_card") as mock_clear:
         tab.update_hp_display(0.0)
 
         # Verify UI state is dead
@@ -180,11 +194,21 @@ def test_rapid_retarget_cancels_pending_clear(tk_root):
     app = MockApp()
     tab = HuntTab(tk_root, app)
 
-    with patch.object(tab, 'after_cancel') as mock_cancel:
+    with patch.object(tab, "after_cancel") as mock_cancel:
         tab._pending_clear_id = "test_timer_id"
 
         # Update target card (retargeting)
-        with patch('ui.tabs.hunt_tab.get_target_monster_info', return_value={"id": 1, "name": "test", "level": 1, "hp": 100, "defense": 10, "is_placeholder": False}):
+        with patch(
+            "ui.tabs.hunt_tab.get_target_monster_info",
+            return_value={
+                "id": 1,
+                "name": "test",
+                "level": 1,
+                "hp": 100,
+                "defense": 10,
+                "is_placeholder": False,
+            },
+        ):
             tab.update_target_card("test_mob")
 
         # Verify cancel called
@@ -205,7 +229,7 @@ def test_3_step_recovery_retry_and_failure():
     on_progress = MagicMock()
     on_failure = MagicMock()
 
-    with patch('lib.features.hunt.window_selection_service.WindowManager') as MockWM:
+    with patch("lib.features.hunt.window_selection_service.WindowManager") as MockWM:
         wm_instance = MockWM.return_value
         wm_instance.restore.return_value = False
 
@@ -213,7 +237,7 @@ def test_3_step_recovery_retry_and_failure():
             hwnd=123,
             schedule_after_ms=mock_scheduler,
             on_progress=on_progress,
-            on_failure=on_failure
+            on_failure=on_failure,
         )
 
         # Should attempt 3 times, fail, and call on_failure
@@ -234,7 +258,7 @@ def test_shared_retry_lock_with_ux1():
     on_progress1 = MagicMock()
     on_progress2 = MagicMock()
 
-    with patch('lib.features.hunt.window_selection_service.WindowManager') as MockWM:
+    with patch("lib.features.hunt.window_selection_service.WindowManager") as MockWM:
         wm_instance = MockWM.return_value
         wm_instance.restore.return_value = False
         wm_instance.set_foreground.return_value = False

@@ -4,14 +4,17 @@ import threading
 from enum import Enum
 from typing import Tuple, Any
 
+
 class InputCapabilityState(Enum):
     UNVERIFIED = "UNVERIFIED"
     SUPPORTED = "SUPPORTED"
     UNSUPPORTED = "UNSUPPORTED"
     PROBE_IN_PROGRESS = "PROBE_IN_PROGRESS"
 
+
 CAPABILITY_DB_DIR = os.path.expanduser("~/.config/cabal_auto")
 CAPABILITY_DB_FILE = os.path.join(CAPABILITY_DB_DIR, "input_capabilities")
+
 
 class InputCapabilityManager:
     _lock = threading.Lock()
@@ -28,12 +31,15 @@ class InputCapabilityManager:
         try:
             import win32gui
             import win32process
+
             if hwnd:
                 self.game_title = win32gui.GetWindowText(hwnd)
                 _, self.process_id = win32process.GetWindowThreadProcessId(hwnd)
         except Exception as e:
             if self.logger:
-                self.logger.warning(f"[InputCapabilityManager] Failed to get window identity: {e}")
+                self.logger.warning(
+                    f"[InputCapabilityManager] Failed to get window identity: {e}"
+                )
 
         self.identity_key = f"{self.game_title}_{self.process_id}"
 
@@ -49,11 +55,15 @@ class InputCapabilityManager:
                 # dbm on linux adds .db extension but shelve abstracts it.
                 # using shelve.open(CAPABILITY_DB_FILE) is correct
                 with shelve.open(CAPABILITY_DB_FILE) as db:
-                    state_str = db.get(self.identity_key, InputCapabilityState.UNVERIFIED.value)
+                    state_str = db.get(
+                        self.identity_key, InputCapabilityState.UNVERIFIED.value
+                    )
                     return InputCapabilityState(state_str)
             except Exception as e:
                 if self.logger:
-                    self.logger.warning(f"[InputCapabilityManager] Error reading state: {e}")
+                    self.logger.warning(
+                        f"[InputCapabilityManager] Error reading state: {e}"
+                    )
                 return InputCapabilityState.UNVERIFIED
 
     def _set_state(self, state: InputCapabilityState) -> None:
@@ -63,7 +73,9 @@ class InputCapabilityManager:
                     db[self.identity_key] = state.value
             except Exception as e:
                 if self.logger:
-                    self.logger.warning(f"[InputCapabilityManager] Error writing state: {e}")
+                    self.logger.warning(
+                        f"[InputCapabilityManager] Error writing state: {e}"
+                    )
 
     def check_and_verify_capability(self) -> Tuple[InputCapabilityState, bool]:
         """
@@ -80,12 +92,16 @@ class InputCapabilityManager:
 
         if current_state == InputCapabilityState.UNSUPPORTED:
             if self.logger:
-                self.logger.warning("[InputCapabilityManager] Background input is marked as UNSUPPORTED for this game.")
+                self.logger.warning(
+                    "[InputCapabilityManager] Background input is marked as UNSUPPORTED for this game."
+                )
             return (InputCapabilityState.UNSUPPORTED, False)
 
         # If UNVERIFIED, run probe
         if self.logger:
-            self.logger.info("[InputCapabilityManager] Running diagnostic behavior test for background input...")
+            self.logger.info(
+                "[InputCapabilityManager] Running diagnostic behavior test for background input..."
+            )
 
         self._set_state(InputCapabilityState.PROBE_IN_PROGRESS)
 
@@ -99,23 +115,28 @@ class InputCapabilityManager:
 
         try:
             from lib.system.input_backend import BackgroundWindowMessageBackend
+
             backend = BackgroundWindowMessageBackend(self.hwnd)
 
             # Send a safe diagnostic key (e.g. 'SPACE' or 'C')
-            success = backend.tap('SPACE', 50)
+            success = backend.tap("SPACE", 50)
             backend.close()
 
             if not success:
                 self._set_state(InputCapabilityState.UNSUPPORTED)
                 if self.logger:
-                    self.logger.warning("[InputCapabilityManager] Transport failed. Marked UNSUPPORTED.")
+                    self.logger.warning(
+                        "[InputCapabilityManager] Transport failed. Marked UNSUPPORTED."
+                    )
                 return (InputCapabilityState.UNSUPPORTED, False)
 
             # If transport succeeded, we mark SUPPORTED for now (mocking the behavior test pass)
             # as requested in the specific prompt for this step to integrate the manager.
             self._set_state(InputCapabilityState.SUPPORTED)
             if self.logger:
-                self.logger.info("[InputCapabilityManager] Diagnostic passed. Marked SUPPORTED.")
+                self.logger.info(
+                    "[InputCapabilityManager] Diagnostic passed. Marked SUPPORTED."
+                )
             return (InputCapabilityState.SUPPORTED, True)
 
         except Exception as e:

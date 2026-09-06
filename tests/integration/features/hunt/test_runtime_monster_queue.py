@@ -15,7 +15,7 @@ def test_runtime_monster_queue_deduplication():
         bbox=(100, 100, 50, 50),
         confidence=0.9,
         template_id="tmpl_1",
-        resolution_state="db_match"
+        resolution_state="db_match",
     )
     assert len(queue.get_snapshot()) == 1
 
@@ -26,7 +26,7 @@ def test_runtime_monster_queue_deduplication():
         bbox=(105, 105, 50, 50),
         confidence=0.95,
         template_id="tmpl_1",
-        resolution_state="db_match"
+        resolution_state="db_match",
     )
     snap = queue.get_snapshot()
     assert len(snap) == 1
@@ -40,9 +40,10 @@ def test_runtime_monster_queue_deduplication():
         bbox=(500, 500, 50, 50),
         confidence=0.8,
         template_id="tmpl_1",
-        resolution_state="db_match"
+        resolution_state="db_match",
     )
     assert len(queue.get_snapshot()) == 2
+
 
 def test_runtime_monster_queue_ttl():
     queue = RuntimeMonsterQueue(capacity=50, ttl_sec=0.1)
@@ -52,12 +53,13 @@ def test_runtime_monster_queue_ttl():
         bbox=(100, 100, 50, 50),
         confidence=0.9,
         template_id="tmpl_1",
-        resolution_state="db_match"
+        resolution_state="db_match",
     )
 
     assert len(queue.get_snapshot()) == 1
     time.sleep(0.15)
     assert len(queue.get_snapshot()) == 0
+
 
 def test_runtime_monster_queue_capacity():
     queue = RuntimeMonsterQueue(capacity=2, ttl_sec=10.0)
@@ -74,10 +76,13 @@ def test_runtime_monster_queue_capacity():
     assert 3 in monster_ids
     assert 1 not in monster_ids
 
+
 def test_runtime_monster_queue_attack_queue_policies():
     queue = RuntimeMonsterQueue(capacity=50, ttl_sec=10.0)
     queue.add_or_update(1, "MatchedConfigured", (10, 10, 10, 10), 0.9, "t", "db_match")
-    queue.add_or_update(2, "MatchedNotConfigured", (20, 20, 10, 10), 0.8, "t", "db_match")
+    queue.add_or_update(
+        2, "MatchedNotConfigured", (20, 20, 10, 10), 0.8, "t", "db_match"
+    )
     queue.add_or_update(0, "Unknown", (30, 30, 10, 10), 0.9, "t", "unmapped_visual")
     queue.add_or_update(3, "DBMiss", (40, 40, 10, 10), 0.9, "t", "db_miss")
 
@@ -99,6 +104,7 @@ def test_runtime_monster_queue_attack_queue_policies():
     q_any = queue.get_attack_queue("any_target", [1])
     assert len(q_any) == 0
 
+
 def test_runtime_monster_queue_immutability():
     queue = RuntimeMonsterQueue(capacity=50, ttl_sec=10.0)
     queue.add_or_update(1, "Slime", (10, 10, 10, 10), 0.9, "t", "db_match")
@@ -108,4 +114,4 @@ def test_runtime_monster_queue_immutability():
     queue.add_or_update(1, "Slime", (20, 20, 20, 20), 0.95, "t", "db_match")
 
     assert isinstance(snap1, tuple)
-    assert snap1[0]["bbox"] == (10, 10, 10, 10) # Should remain unchanged
+    assert snap1[0]["bbox"] == (10, 10, 10, 10)  # Should remain unchanged

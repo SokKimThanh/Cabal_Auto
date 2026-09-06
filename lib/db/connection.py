@@ -2,6 +2,7 @@ import sqlite3
 from typing import Optional, Tuple
 import database
 
+
 def get_connection() -> Tuple[Optional[sqlite3.Connection], bool]:
     """
     Returns (connection, is_local_connection).
