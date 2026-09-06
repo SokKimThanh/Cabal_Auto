@@ -4,8 +4,15 @@ from typing import Callable, Dict, Any
 from database import get_all_monsters_api, search_monsters_api
 from lib.ui_style_v2 import UIStyleV2 as UI
 
+
 class MonsterPickerDialog(tk.Toplevel):
-    def __init__(self, parent, lang, on_select: Callable[[Dict[str, Any]], None], t_func: Callable):
+    def __init__(
+        self,
+        parent,
+        lang,
+        on_select: Callable[[Dict[str, Any]], None],
+        t_func: Callable,
+    ):
         super().__init__(parent)
         self.parent = parent
         self.lang = lang
@@ -46,8 +53,8 @@ class MonsterPickerDialog(tk.Toplevel):
             main_frame,
             text=self._t("monster_picker_instruction"),
             font=UI.FONT_LABEL,
-            fg=UI.COLOR_TEXT,
-            anchor="w"
+            fg=UI.TEXT_PRIMARY,
+            anchor="w",
         )
         lbl_instruction.pack(fill="x", pady=(0, 8))
 
@@ -59,16 +66,14 @@ class MonsterPickerDialog(tk.Toplevel):
             search_frame,
             text=self._t("monster_picker_search_label"),
             font=UI.FONT_LABEL,
-            fg=UI.COLOR_TEXT
+            fg=UI.TEXT_PRIMARY,
         )
         lbl_search.pack(side="left", padx=(0, 8))
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_change)
         self.search_entry = tk.Entry(
-            search_frame,
-            textvariable=self.search_var,
-            font=UI.FONT_TEXT
+            search_frame, textvariable=self.search_var, font=UI.FONT_TEXT
         )
         self.search_entry.pack(side="left", fill="x", expand=True)
         self.search_entry.focus_set()
@@ -78,8 +83,9 @@ class MonsterPickerDialog(tk.Toplevel):
             main_frame,
             text=self._t("monster_picker_results"),
             font=UI.FONT_LABEL,
-            fg=UI.COLOR_TEXT,
-            padx=8, pady=8
+            fg=UI.TEXT_PRIMARY,
+            padx=8,
+            pady=8,
         )
         tree_frame.pack(fill="both", expand=True, pady=(0, 8))
 
@@ -87,13 +93,19 @@ class MonsterPickerDialog(tk.Toplevel):
             tree_frame,
             columns=("id", "name", "level", "hp"),
             show="headings",
-            selectmode="browse"
+            selectmode="browse",
         )
 
         self.tree.heading("id", text="ID", anchor="w")
-        self.tree.heading("name", text=self._t("monster_name") if self._t else "Name", anchor="w")
-        self.tree.heading("level", text=self._t("monster_level") if self._t else "Lv", anchor="center")
-        self.tree.heading("hp", text=self._t("monster_hp") if self._t else "HP", anchor="e")
+        self.tree.heading(
+            "name", text=self._t("monster_name") if self._t else "Name", anchor="w"
+        )
+        self.tree.heading(
+            "level", text=self._t("monster_level") if self._t else "Lv", anchor="center"
+        )
+        self.tree.heading(
+            "hp", text=self._t("monster_hp") if self._t else "HP", anchor="e"
+        )
 
         self.tree.column("id", width=50, stretch=False)
         self.tree.column("name", width=250, stretch=True)
@@ -102,7 +114,9 @@ class MonsterPickerDialog(tk.Toplevel):
 
         self.tree.pack(side="left", fill="both", expand=True)
 
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(
+            tree_frame, orient="vertical", command=self.tree.yview
+        )
         scrollbar.pack(side="right", fill="y")
         self.tree.configure(yscrollcommand=scrollbar.set)
 
@@ -116,7 +130,7 @@ class MonsterPickerDialog(tk.Toplevel):
             main_frame,
             textvariable=self.status_var,
             font=UI.FONT_TEXT,
-            fg=UI.COLOR_WARNING
+            fg=UI.ACCENT_AMBER,
         )
         self.status_label.pack(fill="x", pady=(0, 4))
 
@@ -129,7 +143,7 @@ class MonsterPickerDialog(tk.Toplevel):
             text=self._t("monster_picker_cancel"),
             font=UI.FONT_BUTTON,
             command=self._on_cancel,
-            width=10
+            width=10,
         )
         self.btn_cancel.pack(side="right", padx=(8, 0))
 
@@ -140,8 +154,8 @@ class MonsterPickerDialog(tk.Toplevel):
             command=self._on_confirm,
             state="disabled",
             width=10,
-            bg=UI.COLOR_PRIMARY,
-            fg="white"
+            bg=UI.BTN_PRIMARY_BG,
+            fg=UI.BTN_PRIMARY_FG,
         )
         self.btn_confirm.pack(side="right")
 
@@ -152,6 +166,7 @@ class MonsterPickerDialog(tk.Toplevel):
             self._render_results(results)
         except Exception as e:
             import logging
+
             logging.error(f"[MonsterPicker] Error loading data: {e}", exc_info=True)
             self._render_error()
 
@@ -177,6 +192,7 @@ class MonsterPickerDialog(tk.Toplevel):
             self._render_results(results)
         except Exception as e:
             import logging
+
             logging.error(f"[MonsterPicker] Error loading data: {e}", exc_info=True)
             self._render_error()
 
@@ -202,12 +218,14 @@ class MonsterPickerDialog(tk.Toplevel):
             except (ValueError, TypeError):
                 monster_id = 0
 
-            item_id = self.tree.insert("", "end", values=(f"#{id_val}", name_val, lvl_val, hp_val))
+            item_id = self.tree.insert(
+                "", "end", values=(f"#{id_val}", name_val, lvl_val, hp_val)
+            )
             # Attach canonical record to the item for retrieval later
             canonical_record = {
                 "monster_id": monster_id,
                 "name": str(name_val).strip(),
-                "dungeon_id": str(dungeon_id) if dungeon_id else None
+                "dungeon_id": str(dungeon_id) if dungeon_id else None,
             }
             # Store canonical mapping
             self._item_map[item_id] = canonical_record
@@ -230,7 +248,7 @@ class MonsterPickerDialog(tk.Toplevel):
             return
 
         item_id = selected[0]
-        if hasattr(self, '_item_map') and item_id in self._item_map:
+        if hasattr(self, "_item_map") and item_id in self._item_map:
             canonical_record = self._item_map[item_id]
             # Valid canonical record
             if canonical_record["monster_id"] > 0:

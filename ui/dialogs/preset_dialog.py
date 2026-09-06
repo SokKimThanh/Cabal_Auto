@@ -3,6 +3,7 @@ from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.features.skills.skill_preset_service import SkillPresetService
 
+
 class PresetDialog(tk.Toplevel):
     def __init__(self, parent, app, **kwargs):
         super().__init__(parent, **kwargs)
@@ -13,35 +14,55 @@ class PresetDialog(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
 
-        self.class_id = getattr(self.app, '_current_class_id', 1)
+        self.class_id = getattr(self.app, "_current_class_id", 1)
 
         self._build_ui()
         self._load_presets()
 
     def _build_ui(self):
         main_frame = tk.Frame(self, bg=UI.BG_BASE, padx=10, pady=10)
-        main_frame.pack(fill='both', expand=True)
+        main_frame.pack(fill="both", expand=True)
 
-        self.listbox = tk.Listbox(main_frame, bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, selectmode='single')
-        self.listbox.pack(fill='both', expand=True, pady=5)
+        self.listbox = tk.Listbox(
+            main_frame, bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, selectmode="single"
+        )
+        self.listbox.pack(fill="both", expand=True, pady=5)
 
         btn_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
-        btn_frame.pack(fill='x', pady=5)
+        btn_frame.pack(fill="x", pady=5)
 
-        tk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side='right', padx=2)
-        self.apply_btn = tk.Button(btn_frame, text="Apply", command=self._on_apply)
-        self.apply_btn.pack(side='right', padx=2)
+        tk.Button(
+            btn_frame,
+            text="Cancel",
+            command=self.destroy,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+        ).pack(side="right", padx=2)
+        self.apply_btn = tk.Button(
+            btn_frame,
+            text="Apply",
+            command=self._on_apply,
+            bg=UI.BTN_PRIMARY_BG,
+            fg=UI.BTN_PRIMARY_FG,
+        )
+        self.apply_btn.pack(side="right", padx=2)
 
-        self.delete_btn = tk.Button(btn_frame, text="Delete", command=self._on_delete)
-        self.delete_btn.pack(side='left', padx=2)
+        self.delete_btn = tk.Button(
+            btn_frame,
+            text="Delete",
+            command=self._on_delete,
+            bg=UI.BTN_DANGER_BG,
+            fg=UI.BTN_DANGER_FG,
+        )
+        self.delete_btn.pack(side="left", padx=2)
 
-        self.listbox.bind('<<ListboxSelect>>', self._on_select)
+        self.listbox.bind("<<ListboxSelect>>", self._on_select)
 
     def _load_presets(self):
         self.presets = self.service.list_presets_by_class(self.class_id)
         self.listbox.delete(0, tk.END)
         for preset in self.presets:
-            icon = "⭐" if preset['is_default'] else "✏️"
+            icon = "⭐" if preset["is_default"] else "✏️"
             self.listbox.insert(tk.END, f"{icon} {preset['name']}")
 
         self._update_buttons()
@@ -52,26 +73,26 @@ class PresetDialog(tk.Toplevel):
     def _update_buttons(self):
         selection = self.listbox.curselection()
         if not selection:
-            self.apply_btn.config(state='disabled')
-            self.delete_btn.config(state='disabled')
+            self.apply_btn.config(state="disabled")
+            self.delete_btn.config(state="disabled")
             return
 
-        self.apply_btn.config(state='normal')
+        self.apply_btn.config(state="normal")
 
         idx = selection[0]
         preset = self.presets[idx]
-        if preset['is_default']:
-            self.delete_btn.config(state='disabled')
+        if preset["is_default"]:
+            self.delete_btn.config(state="disabled")
         else:
-            self.delete_btn.config(state='normal')
+            self.delete_btn.config(state="normal")
 
     def _on_apply(self):
         selection = self.listbox.curselection()
         if selection:
             idx = selection[0]
             preset = self.presets[idx]
-            if hasattr(self.app, 'load_preset_for_class'):
-                self.app.load_preset_for_class(self.class_id, preset['preset_id'])
+            if hasattr(self.app, "load_preset_for_class"):
+                self.app.load_preset_for_class(self.class_id, preset["preset_id"])
             self.destroy()
 
     def _on_delete(self):
@@ -79,6 +100,6 @@ class PresetDialog(tk.Toplevel):
         if selection:
             idx = selection[0]
             preset = self.presets[idx]
-            if not preset['is_default']:
-                self.service.delete_custom_preset(preset['preset_id'])
+            if not preset["is_default"]:
+                self.service.delete_custom_preset(preset["preset_id"])
                 self._load_presets()
