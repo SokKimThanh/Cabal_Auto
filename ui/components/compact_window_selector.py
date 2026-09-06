@@ -32,6 +32,8 @@ class CompactWindowSelector:
         self.win_items: List[Dict[str, Any]] = []
         self.filtered_windows: List[Dict[str, Any]] = []
         self.is_open = False
+        self.listbox = None  # Will be created when dropdown opens
+        self.dropdown_window = None
         
         self._build_ui()
 
@@ -95,10 +97,6 @@ class CompactWindowSelector:
         )
         self.refresh_btn.pack(side="left")
         
-        # Dropdown listbox frame (will be shown as Toplevel popup)
-        # Don't create it yet - will be created on first toggle
-        self.dropdown_window = None
-        
         # Info label
         self.info_label = tk.Label(
             self.frame,
@@ -150,7 +148,7 @@ class CompactWindowSelector:
 
     def _on_search_enter(self, event=None):
         """Select first item on Enter."""
-        if self.listbox.size() > 0:
+        if self.listbox and self.listbox.size() > 0:
             self.listbox.selection_set(0)
             self._on_listbox_select()
 
@@ -218,6 +216,10 @@ class CompactWindowSelector:
 
     def _update_listbox(self):
         """Update listbox with filtered windows."""
+        # Only update if listbox exists (dropdown is open)
+        if not self.listbox:
+            return
+        
         search_text = self.search_var.get().lower()
         
         # Filter windows
@@ -240,6 +242,8 @@ class CompactWindowSelector:
     def _on_listbox_select(self, event=None):
         """Handle window selection from listbox."""
         try:
+            if not self.listbox:
+                return
             sel = self.listbox.curselection()
             if not sel:
                 return
@@ -267,9 +271,12 @@ class CompactWindowSelector:
     def get_selected_window(self) -> Optional[Dict[str, Any]]:
         """Get currently selected window dict."""
         try:
+            if not self.listbox:
+                return None
             sel = self.listbox.curselection()
             if sel:
                 return self.filtered_windows[sel[0]]
         except Exception:
             pass
+        return None
         return None
