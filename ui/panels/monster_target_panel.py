@@ -147,6 +147,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
         self.detected_container = tk.Frame(self.policy_content_frame, bg=UI.BG_SURFACE)
         self.any_target_container = tk.Frame(self.policy_content_frame, bg=UI.BG_SURFACE)
 
+        # Render default view after containers exist.
+        self._update_target_policy_layout()
+
         tk.Label(
             self.configured_container,
             text=self.app._t("configured_monsters_title"),
