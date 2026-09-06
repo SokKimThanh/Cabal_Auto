@@ -71,31 +71,10 @@ class CompactWindowSelector:
             font=("Arial", 8),
         )
         self.dropdown_btn.pack(side="left", padx=(0, 5))
-
-        # ===== Bottom: Listbox (collapsible) =====
-        self.listbox_frame = tk.Frame(self.frame, bg="#111111", height=0)
-        self.listbox_frame.pack(side="top", fill="x", padx=5, pady=(0, 5))
-        self.listbox_frame.pack_propagate(False)  # Don't auto-resize
-
-        # Header inside listbox frame (Search + Buttons)
-        self.search_header_frame = tk.Frame(self.listbox_frame, bg="#111111")
-        self.search_header_frame.pack(side="top", fill="x", padx=5, pady=(5, 0))
         
-        # Search entry
-        self.search_var = tk.StringVar()
-        self.search_entry = tk.Entry(
-            self.search_header_frame,
-            textvariable=self.search_var,
-            width=30,
-            font=("Arial", 9),
-        )
-        self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
-        self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
-        self.search_entry.bind("<Escape>", lambda e: self._close_listbox())
-
-        # Refresh button inside listbox header
+        # Refresh button
         self.refresh_btn = tk.Button(
-            self.search_header_frame,
+            control_frame,
             text="🔄",
             width=2,
             bg="#2a2a2a",
@@ -107,9 +86,9 @@ class CompactWindowSelector:
         )
         self.refresh_btn.pack(side="left", padx=(0, 5))
         
-        # Close button inside listbox header
+        # Close button
         self.close_btn = tk.Button(
-            self.search_header_frame,
+            control_frame,
             text="✕",
             width=2,
             bg="#2a2a2a",
@@ -119,8 +98,25 @@ class CompactWindowSelector:
             cursor="hand2",
             font=("Arial", 8),
         )
-        self.close_btn.pack(side="left", padx=(0, 0))
-        
+        self.close_btn.pack(side="left", padx=(0, 10))
+
+        # ===== Bottom: Listbox (collapsible) =====
+        self.listbox_frame = tk.Frame(self.frame, bg="#111111", height=0)
+        self.listbox_frame.pack(side="top", fill="x", padx=5, pady=(0, 5))
+        self.listbox_frame.pack_propagate(False)  # Don't auto-resize
+
+        # Search entry inside listbox frame
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(
+            self.listbox_frame,
+            textvariable=self.search_var,
+            width=40,
+            font=("Arial", 9),
+        )
+        self.search_entry.pack(side="top", fill="x", padx=5, pady=(5, 0))
+        self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
+        self.search_entry.bind("<Escape>", lambda e: self._close_listbox())
+
         # Listbox container frame
         listbox_container = tk.Frame(self.listbox_frame, bg="#111111")
         listbox_container.pack(side="top", fill="both", expand=True, padx=0, pady=5)
