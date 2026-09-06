@@ -71,7 +71,7 @@ class PresetDialog(tk.Toplevel):
             idx = selection[0]
             preset = self.presets[idx]
             if hasattr(self.app, 'load_preset_for_class'):
-                self.app.load_preset_for_class(self.class_name, preset['preset_id'])
+                self.app.load_preset_for_class(self.class_id, preset['preset_id'])
             self.destroy()
 
     def _on_delete(self):

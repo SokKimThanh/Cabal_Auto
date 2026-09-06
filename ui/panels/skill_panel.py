@@ -56,7 +56,7 @@ class SkillPanel:
 
         # Load available skills for combobox values
         class_id = getattr(self.app_state, '_current_class_id', 1)
-        skills = self.skill_service.skill_repo.list_skills() # No filtering for now
+        skills = self.skill_service.skill_repo.list_skills(class_id=class_id)
         skill_names = [s.get('name') for s in skills if s.get('name')]
 
         content_frame = tk.Frame(self.frame, bg=UI.BG_BASE)
