@@ -20,7 +20,7 @@ class TestPublishCallback:
             confidence=0.99,
             template_id="tmpl",
             resolution_state="db_match",
-            dungeon_id=None
+            dungeon_id=None,
         )
 
         # Publish

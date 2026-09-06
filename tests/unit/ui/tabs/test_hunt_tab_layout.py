@@ -9,7 +9,7 @@ pytestmark = pytest.mark.unit
 class MockApp:
     def __getattr__(self, name):
         # Fallback for all other mock methods/properties
-        if name.startswith('_on_'):
+        if name.startswith("_on_"):
             return MagicMock()
         return MagicMock()
 
@@ -52,8 +52,10 @@ class MockApp:
         self.root = root
 
     def _t(self, key, *args, **kwargs):
-        if key == "monster_rotation_add": return "Add Monster"
-        if key == "monster_rotation_remove": return "Remove"
+        if key == "monster_rotation_add":
+            return "Add Monster"
+        if key == "monster_rotation_remove":
+            return "Remove"
         return key
 
     def _create_icon_button(self, *args, **kwargs):
@@ -61,6 +63,7 @@ class MockApp:
 
     def _create_tooltip(self, *args, **kwargs):
         pass
+
 
 @pytest.fixture
 def tk_root():
@@ -72,9 +75,11 @@ def tk_root():
     yield root
     root.destroy()
 
+
 @pytest.fixture
 def hunt_tab(tk_root):
     app = MockApp(tk_root)
+    app._current_class_id = 1
     # mock get_icon and create_icon_button to prevent PIL/image loading issues
     app.get_icon = MagicMock(return_value=None)
 
@@ -83,20 +88,27 @@ def hunt_tab(tk_root):
     tab = HuntTab(tk_root, app)
     return tab
 
+
 def test_hunt_tab_horizontal_layout(hunt_tab):
     hunt_tab.update_idletasks()
 
-    col_0_config = hunt_tab.columnconfigure(0)
-    col_1_config = hunt_tab.columnconfigure(1)
+    col_0_config = hunt_tab.workspace.columnconfigure(0)
+    col_1_config = hunt_tab.workspace.columnconfigure(1)
 
     # ensure minsize constraint is removed or reasonably small
     # For a 1366px screen, two cols of 776px = 1552px which is too large
     # The requirement is to eliminate the minsize=776.
-    assert int(col_0_config.get('minsize', 0)) < 776, f"Unexpected column 0 config: {col_0_config}"
-    assert int(col_1_config.get('minsize', 0)) < 776, f"Unexpected column 1 config: {col_1_config}"
+    assert (
+        int(col_0_config.get("minsize", 0)) < 776
+    ), f"Unexpected column 0 config: {col_0_config}"
+    assert (
+        int(col_1_config.get("minsize", 0)) < 776
+    ), f"Unexpected column 1 config: {col_1_config}"
 
     # ensure they are weighted evenly
-    assert int(col_0_config.get('weight', 0)) > 0, f"Unexpected column 0 config: {col_0_config}"
-    assert col_0_config.get('weight') == col_1_config.get('weight'), (
-        f"Column weights differ: col_0={col_0_config}, col_1={col_1_config}"
-    )
+    assert (
+        int(col_0_config.get("weight", 0)) > 0
+    ), f"Unexpected column 0 config: {col_0_config}"
+    assert col_0_config.get("weight") == col_1_config.get(
+        "weight"
+    ), f"Column weights differ: col_0={col_0_config}, col_1={col_1_config}"

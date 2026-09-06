@@ -6,15 +6,19 @@ pytestmark = pytest.mark.unit
 
 
 # Mock modules before importing controller
-with patch.dict('sys.modules', {
-    'tkinter': MagicMock(),
-    'tkinter.messagebox': MagicMock(),
-    'PIL': MagicMock(),
-    'PIL.ImageTk': MagicMock()
-}):
+with patch.dict(
+    "sys.modules",
+    {
+        "tkinter": MagicMock(),
+        "tkinter.messagebox": MagicMock(),
+        "PIL": MagicMock(),
+        "PIL.ImageTk": MagicMock(),
+    },
+):
     from ui.controllers.library_manager_controller import LibraryManagerController
 
-@patch('ui.windows.library_manager.LibraryManagerWindow')
+
+@patch("ui.windows.library_manager.LibraryManagerWindow")
 def test_duplicate_window_prevention(mock_window_class):
     # Setup mock app
     app = MagicMock()
@@ -22,7 +26,7 @@ def test_duplicate_window_prevention(mock_window_class):
     app.hunt_cfg = {}
     app.monsters = []
     app.skills = []
-    app.lang = 'vi'
+    app.lang = "vi"
 
     controller = LibraryManagerController(app)
 

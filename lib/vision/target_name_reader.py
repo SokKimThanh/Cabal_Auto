@@ -20,10 +20,10 @@ class TargetNameReader:
             self.window_bounds = [0, 0, 1920, 1080]
         elif isinstance(window_bounds, dict):
             self.window_bounds = [
-                window_bounds.get('x', 0),
-                window_bounds.get('y', 0),
-                window_bounds.get('w', 1920),
-                window_bounds.get('h', 1080)
+                window_bounds.get("x", 0),
+                window_bounds.get("y", 0),
+                window_bounds.get("w", 1920),
+                window_bounds.get("h", 1080),
             ]
         else:
             self.window_bounds = list(window_bounds)
@@ -36,6 +36,7 @@ class TargetNameReader:
     def _get_client_size(self):
         try:
             import win32gui
+
             if self.hwnd and win32gui:
                 rect = win32gui.GetClientRect(self.hwnd)
                 width = rect[2] - rect[0]
@@ -47,7 +48,12 @@ class TargetNameReader:
         return self.window_bounds[2], self.window_bounds[3]
 
     def _get_roi(self, frame):
-        if frame is None or not isinstance(frame, np.ndarray) or frame.size == 0 or len(frame.shape) < 2:
+        if (
+            frame is None
+            or not isinstance(frame, np.ndarray)
+            or frame.size == 0
+            or len(frame.shape) < 2
+        ):
             return None
         w, h = self._get_client_size()
         if frame.shape[1] != w or frame.shape[0] != h:
@@ -58,7 +64,14 @@ class TargetNameReader:
         left = int(w * self.roi_left_frac)
         right = int(w * self.roi_right_frac)
 
-        if top < 0 or bottom > h or left < 0 or right > w or top >= bottom or left >= right:
+        if (
+            top < 0
+            or bottom > h
+            or left < 0
+            or right > w
+            or top >= bottom
+            or left >= right
+        ):
             return None
         return frame[top:bottom, left:right]
 
@@ -83,7 +96,7 @@ class TargetNameReader:
         _, binarized = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         try:
-            text = pytesseract.image_to_string(binarized, config='--psm 7').strip()
+            text = pytesseract.image_to_string(binarized, config="--psm 7").strip()
             return text
         except Exception as e:
             logging.error(f"OCR failed: {e}")

@@ -13,16 +13,20 @@ mock_wm = MagicMock()
 @pytest.fixture
 def app_instance():
     from app_gui import App
+
     app = App()
     app.update()
     yield app
     app.destroy()
 
+
 def test_debounce_click(app_instance):
     # Mock orchestrator and validation
     app_instance.hunt_orchestrator = MagicMock()
     app_instance.hunt_orchestrator.hunt_running = False
-    app_instance.state_controller._validate_hunt_prerequisites = MagicMock(return_value=None)
+    app_instance.state_controller._validate_hunt_prerequisites = MagicMock(
+        return_value=None
+    )
     app_instance.state_controller._hunt_from_ui = MagicMock(return_value={})
     app_instance.hunt_cfg = {}
 
@@ -35,10 +39,13 @@ def test_debounce_click(app_instance):
         assert app_instance.hunt_orchestrator.start_hunt.call_count == 1
         assert getattr(app_instance, "_action_locked", False) is True
 
+
 def test_start_stop_state_correctness(app_instance):
     app_instance.hunt_orchestrator = MagicMock()
     app_instance.hunt_orchestrator.hunt_running = False
-    app_instance.state_controller._validate_hunt_prerequisites = MagicMock(return_value=None)
+    app_instance.state_controller._validate_hunt_prerequisites = MagicMock(
+        return_value=None
+    )
     app_instance.state_controller._hunt_from_ui = MagicMock(return_value={})
     app_instance.hunt_cfg = {}
 
@@ -89,7 +96,8 @@ def test_minimize_recovery(app_instance):
     class MockInfo:
         is_minimized = True
         is_offscreen = True
-        rect = {'left': -32000, 'top': -32000}
+        rect = {"left": -32000, "top": -32000}
+
     mock_wm_instance.get_window_info.return_value = MockInfo()
 
     app_instance.hunt_selected = {"hwnd": 12345}
@@ -100,7 +108,10 @@ def test_minimize_recovery(app_instance):
     for _ in range(20):
         app_instance.update()
 
-    assert mock_wm_instance.restore.call_count >= 0  # Ignore strictly testing call counts inside the app's event loop since testing it is brittle
+    assert (
+        mock_wm_instance.restore.call_count >= 0
+    )  # Ignore strictly testing call counts inside the app's event loop since testing it is brittle
+
 
 def test_retry_exhausted(app_instance):
     import sys
@@ -116,7 +127,8 @@ def test_retry_exhausted(app_instance):
     class MockInfo:
         is_minimized = True
         is_offscreen = True
-        rect = {'left': -32000, 'top': -32000}
+        rect = {"left": -32000, "top": -32000}
+
     mock_wm_instance.get_window_info.return_value = MockInfo()
 
     app_instance.hunt_selected = {"hwnd": 12345}
@@ -142,7 +154,12 @@ def test_retry_exhausted(app_instance):
 
     # Check failure text applied
     text = app_instance.bounds_status_var.get()
-    assert "Cannot restore window" in text or "Không thể" in text or "Cửa sổ" in text or "[!]" in text
+    assert (
+        "Cannot restore window" in text
+        or "Không thể" in text
+        or "Cửa sổ" in text
+        or "[!]" in text
+    )
 
 
 def test_dynamic_i18n(app_instance):
@@ -161,7 +178,9 @@ def test_dynamic_i18n(app_instance):
     # In 'vi' language (fallback text or defined translations)
     if hasattr(app_instance.start_stop_btn, "cget"):
         text = app_instance.start_stop_btn.cget("text")
-        assert "Bắt Đầu" in text or "Bắt đầu" in text or "Start" not in text  # Checking it changed
+        assert (
+            "Bắt Đầu" in text or "Bắt đầu" in text or "Start" not in text
+        )  # Checking it changed
 
 
 def test_action_bar_layout(app_instance):
@@ -169,12 +188,13 @@ def test_action_bar_layout(app_instance):
     assert app_instance.btn_manual_scan.master == app_instance.action_bar_frame
 
     # Verify column layout for widgets in the action bar
-    assert app_instance.win_combo.grid_info()['column'] == 0
-    assert app_instance.refresh_btn.grid_info()['column'] == 1
-    assert app_instance.btn_manual_scan.grid_info()['column'] == 2
-    assert app_instance.bounds_placeholder.grid_info()['column'] == 3
-    assert app_instance.start_stop_btn.grid_info()['column'] == 4
-    assert app_instance.lang_cmb.grid_info()['column'] == 5
+    assert app_instance.win_combo.grid_info()["column"] == 0
+    assert app_instance.refresh_btn.grid_info()["column"] == 1
+    assert app_instance.btn_manual_scan.grid_info()["column"] == 2
+    assert app_instance.bounds_placeholder.grid_info()["column"] == 3
+    assert app_instance.start_stop_btn.grid_info()["column"] == 4
+    assert app_instance.lang_cmb.grid_info()["column"] == 5
+
 
 def test_scan_button_click(app_instance):
     """Verify that clicking the scan button triggers run_scan."""

@@ -11,16 +11,24 @@ pytestmark = pytest.mark.integration
 @pytest.fixture
 def mock_db():
     db = MagicMock()
+
     # Provide multiple pages of monsters
-    def get_filtered_monsters(keyword, monster_type, dungeon_id, page, page_size, sort_column, sort_order):
+    def get_filtered_monsters(
+        keyword, monster_type, dungeon_id, page, page_size, sort_column, sort_order
+    ):
         return {
-            "items": [{"id": f"m{i}", "name": f"Monster {i}"} for i in range((page-1)*page_size, page*page_size)],
+            "items": [
+                {"id": f"m{i}", "name": f"Monster {i}"}
+                for i in range((page - 1) * page_size, page * page_size)
+            ],
             "total": 100,
             "page": page,
-            "page_size": page_size
+            "page_size": page_size,
         }
+
     db.get_filtered_monsters = get_filtered_monsters
     return db
+
 
 @pytest.fixture
 def root():
@@ -28,6 +36,7 @@ def root():
     root.withdraw()
     yield root
     root.destroy()
+
 
 def test_pending_changes_merge_by_id(root, mock_db):
     """Verify pending_changes merge is keyed by monster ID and never depends on current page order/index."""
@@ -79,6 +88,7 @@ def test_pending_changes_merge_by_id(root, mock_db):
     assert m15_found, "Pending change for m15 (off-page) was lost"
     assert new1_found, "New pending monster was lost"
 
+
 def test_pending_changes_survive_navigation(root, mock_db):
     """Verify add/edit pending records survive refresh, filter change, next/previous page, and dialog close/reopen."""
     win = MonsterManagerWin(root)
@@ -98,7 +108,9 @@ def test_pending_changes_survive_navigation(root, mock_db):
     win._refresh_monster_table()
 
     assert "m25" in win.pending_changes
-    m25_found = any(m["id"] == "m25" and m["name"] == "Pending Edit 25" for m in win.monsters)
+    m25_found = any(
+        m["id"] == "m25" and m["name"] == "Pending Edit 25" for m in win.monsters
+    )
     assert m25_found, "Pending change was not merged when navigating to its native page"
 
     # Change filter
@@ -106,8 +118,11 @@ def test_pending_changes_survive_navigation(root, mock_db):
     win._refresh_monster_table()
 
     assert "m25" in win.pending_changes
-    m25_found = any(m["id"] == "m25" and m["name"] == "Pending Edit 25" for m in win.monsters)
+    m25_found = any(
+        m["id"] == "m25" and m["name"] == "Pending Edit 25" for m in win.monsters
+    )
     assert m25_found, "Pending change was excluded by filter"
+
 
 def test_pending_changes_cleared_on_success(root, mock_db):
     """Verify pending_changes clears only after every persistence operation succeeds."""
@@ -127,6 +142,7 @@ def test_pending_changes_cleared_on_success(root, mock_db):
     win._save_monsters()
 
     assert len(win.pending_changes) == 0
+
 
 def test_pending_changes_retained_on_failure(root, mock_db):
     """Verify simulated DB/JSON failure retains all pending records and gives an actionable error."""
@@ -157,7 +173,10 @@ def test_pending_changes_retained_on_failure(root, mock_db):
     assert win.pending_changes["m2"]["name"] == "Failed Edit"
 
     # Assert actionable error was shown
-    win._show_status_message.assert_called_with("Lưu thất bại một phần: không thể ghi một số monster vào DB", is_error=True)
+    win._show_status_message.assert_called_with(
+        "Lưu thất bại một phần: không thể ghi một số monster vào DB", is_error=True
+    )
+
 
 def test_duplicate_name_validation(root, mock_db):
     """Verify duplicate-name validation queries/compares the complete relevant dataset, not just visible table rows."""
@@ -172,7 +191,7 @@ def test_duplicate_name_validation(root, mock_db):
     # DB has m1 on page 1, m99 on page 10
     mock_db.get_all_monsters.return_value = [
         {"id": "m1", "name": "Goblin"},
-        {"id": "m99", "name": "Dragon"}
+        {"id": "m99", "name": "Dragon"},
     ]
 
     win.pending_changes["m2"] = {"id": "m2", "name": "Orc"}

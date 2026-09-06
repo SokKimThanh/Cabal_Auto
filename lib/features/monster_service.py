@@ -11,9 +11,7 @@ import uuid
 
 
 def check_duplicate_name(
-    monsters: List[Dict[str, Any]],
-    name: str,
-    current_id: Optional[str] = None
+    monsters: List[Dict[str, Any]], name: str, current_id: Optional[str] = None
 ) -> bool:
     """
     Check if a monster name already exists in the monsters list.
@@ -31,8 +29,8 @@ def check_duplicate_name(
 
     target_name = name.strip().lower()
     for monster in monsters:
-        m_id = str(monster.get('id', ''))
-        m_name = str(monster.get('name', '')).strip().lower()
+        m_id = str(monster.get("id", ""))
+        m_name = str(monster.get("name", "")).strip().lower()
 
         if current_id and m_id == str(current_id):
             continue
@@ -44,9 +42,7 @@ def check_duplicate_name(
 
 
 def generate_unique_name(
-    monsters: List[Dict[str, Any]],
-    name: str,
-    current_id: Optional[str] = None
+    monsters: List[Dict[str, Any]], name: str, current_id: Optional[str] = None
 ) -> str:
     """
     Generate a unique monster name by appending an index suffix (e.g. "Quái Mới (1)").
@@ -80,7 +76,7 @@ def generate_unique_name(
 
 def ensure_unique_monster_id(
     monster_data: Dict[str, Any],
-    existing_monsters: Optional[List[Dict[str, Any]]] = None
+    existing_monsters: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """
     Ensure monster_data has a valid unique ID.
@@ -95,12 +91,12 @@ def ensure_unique_monster_id(
     existing_ids = set()
     if existing_monsters:
         for m in existing_monsters:
-            if m.get('id'):
-                existing_ids.add(str(m['id']))
+            if m.get("id"):
+                existing_ids.add(str(m["id"]))
 
-    m_id = str(monster_data.get('id', '')).strip()
+    m_id = str(monster_data.get("id", "")).strip()
     if not m_id or m_id in existing_ids:
         m_id = str(uuid.uuid4())
-        monster_data['id'] = m_id
+        monster_data["id"] = m_id
 
     return m_id

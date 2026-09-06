@@ -13,10 +13,9 @@ class StyledPanel(tk.Frame):
         self.show_border = kwargs.pop("show_border", True)
 
         if self.show_border:
-            kwargs.update({
-                "highlightbackground": UI.BORDER_PRIMARY,
-                "highlightthickness": 1
-            })
+            kwargs.update(
+                {"highlightbackground": UI.BORDER_PRIMARY, "highlightthickness": 1}
+            )
 
         # Initialize frame with dark theme
         super().__init__(parent, bg=UI.BG_SURFACE, **kwargs)

@@ -9,14 +9,19 @@ pytestmark = pytest.mark.unit
 def detector():
     return TargetBarDetector()
 
-def create_synthetic_frame(width=1920, height=1080, fill_ratio=0.5, bgr_color=(0, 255, 255), is_black=False):
+
+def create_synthetic_frame(
+    width=1920, height=1080, fill_ratio=0.5, bgr_color=(0, 255, 255), is_black=False
+):
     """
     Creates a synthetic frame with an optional target bar.
     """
     if is_black:
         return np.zeros((height, width, 3), dtype=np.uint8)
 
-    frame = np.full((height, width, 3), (50, 50, 50), dtype=np.uint8) # Dark gray background
+    frame = np.full(
+        (height, width, 3), (50, 50, 50), dtype=np.uint8
+    )  # Dark gray background
 
     # Calculate ROI based on detector's logic
     roi_top = int(height * 0.048)
@@ -29,9 +34,10 @@ def create_synthetic_frame(width=1920, height=1080, fill_ratio=0.5, bgr_color=(0
 
     # Draw the bar
     if fill_width > 0:
-        frame[roi_top:roi_bottom, roi_left:roi_left+fill_width] = bgr_color
+        frame[roi_top:roi_bottom, roi_left : roi_left + fill_width] = bgr_color
 
     return frame
+
 
 def test_yellow_bar_alive(detector):
     # Yellow in BGR is (0, 255, 255)
@@ -41,17 +47,20 @@ def test_yellow_bar_alive(detector):
 
     # Also verify HP percentage
     hp = detector.get_hp_percentage(frame)
-    assert 45.0 <= hp <= 55.0 # Should be around 50%
+    assert 45.0 <= hp <= 55.0  # Should be around 50%
+
 
 def test_empty_black_frame(detector):
     frame = create_synthetic_frame(is_black=True)
     assert detector.is_target_alive(frame) is False
     assert detector.get_hp_percentage(frame) == 0.0
 
+
 def test_none_corrupted_frame(detector):
     assert detector.is_target_alive(None) is False
     assert detector.is_target_alive(np.array([])) is False
     assert detector.get_hp_percentage(None) == 0.0
+
 
 def test_different_resolutions(detector):
     # 1080p
@@ -62,6 +71,7 @@ def test_different_resolutions(detector):
     frame_4k = create_synthetic_frame(width=3840, height=2160)
     assert detector.is_target_alive(frame_4k) is True
 
+
 def test_get_client_size_hwnd():
     import sys
     from unittest.mock import MagicMock, patch
@@ -70,10 +80,11 @@ def test_get_client_size_hwnd():
     mock_win32gui = MagicMock()
     mock_win32gui.GetClientRect.return_value = (0, 0, 800, 600)
 
-    with patch.dict('sys.modules', {'win32gui': mock_win32gui}):
+    with patch.dict("sys.modules", {"win32gui": mock_win32gui}):
         # Re-import to pickup mock
         import lib.vision.target_bar_detector
         from importlib import reload
+
         reload(lib.vision.target_bar_detector)
         TargetBarDetector = lib.vision.target_bar_detector.TargetBarDetector
 
@@ -97,13 +108,16 @@ def test_get_client_size_hwnd():
 
         assert roi.shape == (bottom - top, right - left, 3)
 
+
 def test_target_bar_detector_hwnd_zero_or_none():
     from lib.vision.target_bar_detector import TargetBarDetector
+
     detector = TargetBarDetector(hwnd=0)
     w, h = detector._get_client_size()
     # Should fallback to window_bounds default (1920x1080)
     assert w == 1920
     assert h == 1080
+
 
 def test_dark_colored_non_empty_bar(detector):
     # Dark yellow/brown: e.g. BGR (0, 150, 150)
@@ -127,12 +141,16 @@ def test_dark_colored_non_empty_bar(detector):
     # only catches TRULY black frames (mean < 5).
     # If mean >= 5, it should be processed.
     # We will make the whole ROI mean around 6.
-    frame_dark[roi_top:roi_bottom, roi_left:roi_right] = (2, 2, 2) # Very dark gray background
+    frame_dark[roi_top:roi_bottom, roi_left:roi_right] = (
+        2,
+        2,
+        2,
+    )  # Very dark gray background
 
     # Add a valid color block
     # Lower HSV [12, 130, 130] -> approx BGR (0, 130, 130) to (0, 255, 255)
     valid_color = (0, 140, 140)
-    fill_width = int((roi_right - roi_left) * 0.1) # 10% width
-    frame_dark[roi_top:roi_bottom, roi_left:roi_left+fill_width] = valid_color
+    fill_width = int((roi_right - roi_left) * 0.1)  # 10% width
+    frame_dark[roi_top:roi_bottom, roi_left : roi_left + fill_width] = valid_color
 
     assert detector.is_target_alive(frame_dark) is True

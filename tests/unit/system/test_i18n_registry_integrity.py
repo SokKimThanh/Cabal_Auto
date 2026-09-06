@@ -17,6 +17,7 @@ import lib.i18n
 
 pytestmark = pytest.mark.fast
 
+
 def test_i18n_registry_integrity():
     """Dynamically discover all *_TRANSLATIONS and verify they are registered."""
     from lib.i18n import set_default_lang, t, get_registered_namespaces
@@ -30,7 +31,9 @@ def test_i18n_registry_integrity():
             if var_name.endswith("_TRANSLATIONS") and isinstance(var_val, dict):
                 discovered_dicts.append((modname, var_name, var_val))
 
-    assert len(discovered_dicts) > 0, "No translation dictionaries found under lib/i18n/"
+    assert (
+        len(discovered_dicts) > 0
+    ), "No translation dictionaries found under lib/i18n/"
 
     # Now verify each dictionary against what's registered
     for modname, dict_name, translations in discovered_dicts:
@@ -83,11 +86,24 @@ def test_load_from_db_hydration():
     # Create a mock for the TranslationService
     mock_service = MagicMock()
     mock_service.get_all.return_value = [
-        {"namespace": "test_ns", "key": "test_key", "lang": "en", "text": "Test English"},
-        {"namespace": "test_ns", "key": "test_key", "lang": "vi", "text": "Test Vietnamese"}
+        {
+            "namespace": "test_ns",
+            "key": "test_key",
+            "lang": "en",
+            "text": "Test English",
+        },
+        {
+            "namespace": "test_ns",
+            "key": "test_key",
+            "lang": "vi",
+            "text": "Test Vietnamese",
+        },
     ]
 
-    with patch('lib.db.services.translation_service.TranslationService', return_value=mock_service):
+    with patch(
+        "lib.db.services.translation_service.TranslationService",
+        return_value=mock_service,
+    ):
         # Clear registry for this test
         original_registry = dict(lib.i18n._REGISTRY)
         lib.i18n._REGISTRY.clear()
@@ -101,8 +117,8 @@ def test_load_from_db_hydration():
             assert lib.i18n._REGISTRY["test_ns"]["vi"]["test_key"] == "Test Vietnamese"
 
             # Check translation works
-            lib.i18n.set_default_lang('en')
-            assert lib.i18n.t('test_key', ns='test_ns') == "Test English"
+            lib.i18n.set_default_lang("en")
+            assert lib.i18n.t("test_key", ns="test_ns") == "Test English"
 
         finally:
             # Restore registry

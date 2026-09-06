@@ -19,12 +19,13 @@ def test_orchestrator_init():
         iconify_app=MagicMock(),
         update_skill_stats_display=MagicMock(),
         get_hunt_selected=MagicMock(),
-        schedule_ui_task=MagicMock()
+        schedule_ui_task=MagicMock(),
     )
 
     assert orchestrator.hunt_running is False
 
-@patch('threading.Thread')
+
+@patch("threading.Thread")
 def test_start_hunt(mock_thread):
     mock_schedule = MagicMock()
     orchestrator = HuntOrchestrator(
@@ -39,7 +40,7 @@ def test_start_hunt(mock_thread):
         iconify_app=MagicMock(),
         update_skill_stats_display=MagicMock(),
         get_hunt_selected=MagicMock(),
-        schedule_ui_task=mock_schedule
+        schedule_ui_task=mock_schedule,
     )
 
     orchestrator.start_hunt({"search_interval": 1.0})
@@ -51,6 +52,7 @@ def test_start_hunt(mock_thread):
     orchestrator.start_hunt({"search_interval": 1.0})
     # It should early exit and not start a new thread
     mock_thread.assert_called_once()
+
 
 def test_stop_hunt():
     orchestrator = HuntOrchestrator(
@@ -65,7 +67,7 @@ def test_stop_hunt():
         iconify_app=MagicMock(),
         update_skill_stats_display=MagicMock(),
         get_hunt_selected=MagicMock(),
-        schedule_ui_task=MagicMock()
+        schedule_ui_task=MagicMock(),
     )
 
     orchestrator.hunt_running = True

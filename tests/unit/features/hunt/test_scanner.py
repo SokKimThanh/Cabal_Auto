@@ -21,7 +21,7 @@ def test_scanner_detect_window_no_attribute_error():
     mock_info = DummyWindowInfo(is_minimized=True)
 
     mock_window_manager.get_window_info.return_value = mock_info
-    mock_window_manager.get_window_rect.return_value = {'width': 1024, 'height': 768}
+    mock_window_manager.get_window_rect.return_value = {"width": 1024, "height": 768}
 
     # Mock finding the window
     scanner.window_manager = mock_window_manager
@@ -35,4 +35,4 @@ def test_scanner_detect_window_no_attribute_error():
     mock_window_manager.get_window_rect.assert_called_once_with(12345)
 
     # verify the returned dictionary
-    assert result == {'hwnd': 12345, 'rect': {'width': 1024, 'height': 768}}
+    assert result == {"hwnd": 12345, "rect": {"width": 1024, "height": 768}}

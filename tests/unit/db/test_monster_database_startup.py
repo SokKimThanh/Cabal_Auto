@@ -6,7 +6,6 @@ import pytest
 from database import MonsterDatabase
 from app_gui import App
 
-
 pytestmark = pytest.mark.db
 
 
@@ -23,6 +22,7 @@ class _StatusVar:
 
 class _AppStub:
     """Stub minimale của App dùng cho unit test _check_db_connection."""
+
     def __init__(self) -> None:
         self._db_status_var = _StatusVar()
         self._db_status_bg = "#e8e8e8"
@@ -38,18 +38,23 @@ class _AppStub:
             self._db_status_fg = "#721c24"
 
 
-def test_init_db_creates_database_and_updates_status(monkeypatch, tmp_path: Path) -> None:
+def test_init_db_creates_database_and_updates_status(
+    monkeypatch, tmp_path: Path
+) -> None:
     from database import close_db
+
     close_db()
 
     db_path = tmp_path / "monsters.db"
     monkeypatch.setattr(MonsterDatabase, "DB_PATH", db_path)
     # Bỏ qua messagebox trong test
     import tkinter.messagebox as mb
+
     monkeypatch.setattr(mb, "showwarning", lambda *a, **kw: None)
 
     stub = _AppStub()
     from ui.controllers.app_lifecycle_controller import AppLifecycleController
+
     lifecycle = AppLifecycleController(stub)
     lifecycle.check_db_connection()
 
@@ -64,7 +69,9 @@ def test_init_db_creates_database_and_updates_status(monkeypatch, tmp_path: Path
     assert count > 0
 
 
-def test_init_db_reuses_existing_database_without_overwriting(monkeypatch, tmp_path: Path) -> None:
+def test_init_db_reuses_existing_database_without_overwriting(
+    monkeypatch, tmp_path: Path
+) -> None:
     db_path = tmp_path / "monsters.db"
     monkeypatch.setattr(MonsterDatabase, "DB_PATH", db_path)
 
@@ -85,10 +92,12 @@ def test_init_db_reuses_existing_database_without_overwriting(monkeypatch, tmp_p
     db.conn.commit()
 
     import tkinter.messagebox as mb
+
     monkeypatch.setattr(mb, "showwarning", lambda *a, **kw: None)
 
     stub = _AppStub()
     from ui.controllers.app_lifecycle_controller import AppLifecycleController
+
     lifecycle = AppLifecycleController(stub)
     lifecycle.check_db_connection()
 

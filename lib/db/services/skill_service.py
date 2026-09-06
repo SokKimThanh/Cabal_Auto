@@ -2,6 +2,7 @@ import sqlite3
 from typing import List, Dict, Any, Optional
 from lib.db.connection import get_connection
 
+
 class SkillService:
     def __init__(self):
         pass
@@ -35,20 +36,24 @@ class SkillService:
                     "icon_h": data.get("icon_h", 0),
                     "class_id": class_id,
                     "type": data.get("type"),
-                }
+                },
             )
             skill_id = cursor.lastrowid
             conn.commit()
             return skill_id
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SkillService] Create error: {e}")
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def get_skill_by_id(self, skill_id: int) -> Optional[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -64,10 +69,14 @@ class SkillService:
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
-    def get_skills_by_filter(self, class_id: Optional[int] = None, skill_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_skills_by_filter(
+        self, class_id: Optional[int] = None, skill_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         conn, is_local = get_connection()
         if not conn:
             return []
@@ -91,8 +100,10 @@ class SkillService:
             return []
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def update_skill(self, skill_id: int, data: Dict[str, Any]) -> bool:
         conn, is_local = get_connection()
@@ -132,20 +143,24 @@ class SkillService:
                     "icon_h": data.get("icon_h"),
                     "class_id": class_id,
                     "type": data.get("type"),
-                }
+                },
             )
             updated = cursor.rowcount > 0
             conn.commit()
             return updated
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SkillService] Update error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def delete_skill(self, skill_id: int) -> bool:
         conn, is_local = get_connection()
@@ -159,16 +174,22 @@ class SkillService:
             conn.commit()
             return deleted
         except sqlite3.IntegrityError as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SkillService] Integrity error on delete (FK violation?): {e}")
             return False
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[SkillService] Delete error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass

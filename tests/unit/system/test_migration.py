@@ -13,13 +13,8 @@ def test_idempotency():
     legacy_config = {
         "schema_version": 1,
         "ui_mode": "beginner",
-        "monsters": [
-            {"id": "100", "name": "Goblin"},
-            {"id": "101", "name": "Orc"}
-        ],
-        "skills": {
-            "1": {"key": "1", "cast_time": 1.5, "cooldown": 2.0}
-        }
+        "monsters": [{"id": "100", "name": "Goblin"}, {"id": "101", "name": "Orc"}],
+        "skills": {"1": {"key": "1", "cast_time": 1.5, "cooldown": 2.0}},
     }
 
     migrated_1 = migrate_hunt_config(dict(legacy_config))
@@ -28,11 +23,12 @@ def test_idempotency():
     assert migrated_1 == migrated_2
     assert migrated_2["schema_version"] == 3
 
+
 def test_backup(tmp_path):
     legacy_config = {
         "schema_version": 1,
         "ui_mode": "beginner",
-        "monsters": [{"id": "100", "name": "Goblin"}]
+        "monsters": [{"id": "100", "name": "Goblin"}],
     }
 
     config_file = tmp_path / "hunt_config.json"
@@ -49,15 +45,14 @@ def test_backup(tmp_path):
         backup_content = json.load(f)
     assert backup_content == legacy_config
 
+
 def test_conflict_precedence():
     legacy_config = {
-        "skills": {
-            "1": {"key": "1", "cast_time": 2.0, "cooldown": 3.0}
-        },
+        "skills": {"1": {"key": "1", "cast_time": 2.0, "cooldown": 3.0}},
         "attack_keys": [
             {"key": "1", "cast_time": 1.0, "cooldown": 1.0},
-            {"key": "2", "cast_time": 0.5, "cooldown": 0.5}
-        ]
+            {"key": "2", "cast_time": 0.5, "cooldown": 0.5},
+        ],
     }
 
     migrated = migrate_hunt_config(legacy_config)
@@ -69,11 +64,12 @@ def test_conflict_precedence():
     assert skills["2"]["cast_time"] == 0.5  # attack_keys fallback
     assert skills["2"]["cooldown"] == 0.5
 
+
 def test_malformed_entry_skipped():
     legacy_config = {
         "skills": {
             "1": {"key": "1", "cast_time": 1.5},
-            "2": {"key": "2"}  # missing cast_time
+            "2": {"key": "2"},  # missing cast_time
         }
     }
 
@@ -83,12 +79,13 @@ def test_malformed_entry_skipped():
     assert "1" in skills
     assert "2" not in skills
 
+
 def test_monster_rotation_migration():
     legacy_config = {
         "monsters": [
             {"id": "100", "name": "Goblin"},
             "200",
-            {"monster_id": "300", "name": "Dragon"}
+            {"monster_id": "300", "name": "Dragon"},
         ]
     }
 
@@ -108,11 +105,12 @@ def test_monster_rotation_migration():
     assert rotation[2]["priority"] == 3
     assert rotation[2]["name"] == "Dragon"
 
+
 def test_priority_schema_enforced():
     legacy_config = {
         "monster_rotation": [
             {"priority": 1, "id": 50},
-            {"priority": 2, "id": 60, "name": "Test"}
+            {"priority": 2, "id": 60, "name": "Test"},
         ]
     }
     migrated = migrate_hunt_config(legacy_config)
@@ -124,10 +122,11 @@ def test_priority_schema_enforced():
     assert r2["monster_id"] == 60
     assert r2["priority"] == 2
 
+
 def test_v2_to_v3_schema_bump():
     legacy_config = {
         "schema_version": 2,
-        "monster_rotation": [{"monster_id": 100, "priority": 1, "name": "Test"}]
+        "monster_rotation": [{"monster_id": 100, "priority": 1, "name": "Test"}],
     }
     migrated = migrate_hunt_config(dict(legacy_config))
     assert migrated["schema_version"] == 3
@@ -136,13 +135,14 @@ def test_v2_to_v3_schema_bump():
     assert migrated["hotbar_roi"] is None
     assert migrated["ack_timeout_ms"] == 500
 
+
 def test_v3_current_schema_sanitizer_idempotency():
     config = {
         "schema_version": 3,
         "target_policy": "invalid_policy",
         "ack_strategy": "invalid",
         "hotbar_roi": [10, 20, "NaN", 40],
-        "ack_timeout_ms": "abc"
+        "ack_timeout_ms": "abc",
     }
     migrated_1 = migrate_hunt_config(dict(config))
     assert migrated_1["target_policy"] == "configured_only"
@@ -153,23 +153,26 @@ def test_v3_current_schema_sanitizer_idempotency():
     migrated_2 = migrate_hunt_config(dict(migrated_1))
     assert migrated_1 == migrated_2
 
+
 def test_target_policy_validation():
     for policy in ["configured_only", "all_resolved", "any_target"]:
         config = {"schema_version": 3, "target_policy": policy}
         migrated = migrate_hunt_config(dict(config))
         assert migrated["target_policy"] == policy
 
+
 def test_skill_ack_metadata_validation():
     config = {
         "schema_version": 3,
         "ack_strategy": "combo",
         "hotbar_roi": [100, 200, 50, 50],
-        "ack_timeout_ms": 1000
+        "ack_timeout_ms": 1000,
     }
     migrated = migrate_hunt_config(dict(config))
     assert migrated["ack_strategy"] == "combo"
     assert migrated["hotbar_roi"] == [100, 200, 50, 50]
     assert migrated["ack_timeout_ms"] == 1000
+
 
 def test_atomic_failure_cleanup(tmp_path):
     from lib.features.hunt.hunt_config import save_hunt_config, HUNT_CONFIG_PATH
@@ -192,21 +195,16 @@ def test_atomic_failure_cleanup(tmp_path):
         with open(config_file, "r") as f:
             assert f.read() == '{"valid": true}'
 
+
 def test_monster_rotation_conflict_precedence():
     from lib.features.hunt.config_migrator import migrate_hunt_config
 
     legacy_config = {
-        "monster_rotation": [
-            {"monster_id": 999, "name": "Canonical"}
-        ],
-        "monsters": [
-            {"id": 100, "name": "Legacy"}
-        ],
-        "monster_list": [101]
+        "monster_rotation": [{"monster_id": 999, "name": "Canonical"}],
+        "monsters": [{"id": 100, "name": "Legacy"}],
+        "monster_list": [101],
     }
 
     migrated = migrate_hunt_config(legacy_config)
     assert len(migrated["monster_rotation"]) == 1
     assert migrated["monster_rotation"][0]["monster_id"] == 999
-
-

@@ -9,33 +9,41 @@ def test_normalize_window_bounds_value_dict():
     bounds = {"left": 10, "top": 20, "width": 100, "height": 200}
     assert normalize_window_bounds_value(bounds) == [10, 20, 100, 200]
 
+
 def test_normalize_window_bounds_value_dict_malformed():
     bounds = {"left": 10, "top": 20, "width": 100}  # Missing height
     assert normalize_window_bounds_value(bounds) is None
+
 
 def test_normalize_window_bounds_value_dict_invalid_types():
     bounds = {"left": 10, "top": 20, "width": "abc", "height": 200}
     assert normalize_window_bounds_value(bounds) is None
 
+
 def test_normalize_window_bounds_value_list():
     bounds = [10, 20, 100, 200]
     assert normalize_window_bounds_value(bounds) == [10, 20, 100, 200]
+
 
 def test_normalize_window_bounds_value_list_malformed():
     bounds = [10, 20, 100]  # Missing height
     assert normalize_window_bounds_value(bounds) is None
 
+
 def test_normalize_window_bounds_value_list_invalid_types():
     bounds = [10, 20, "abc", 200]
     assert normalize_window_bounds_value(bounds) is None
 
+
 def test_normalize_window_bounds_value_none():
     assert normalize_window_bounds_value(None) is None
+
 
 def test_migrate_hunt_config_adds_ui_mode():
     cfg = {}
     migrate_hunt_config(cfg)
     assert cfg["ui_mode"] == "beginner"
+
 
 def test_migrate_hunt_config_legacy_monsters_list_of_dicts():
     cfg = {
@@ -52,10 +60,9 @@ def test_migrate_hunt_config_legacy_monsters_list_of_dicts():
     assert cfg["monster_rotation"][1]["priority"] == 2
     assert "monsters" not in cfg
 
+
 def test_migrate_hunt_config_legacy_monsters_list_of_strings():
-    cfg = {
-        "monsters": ["100", "200"]
-    }
+    cfg = {"monsters": ["100", "200"]}
     migrate_hunt_config(cfg)
     assert len(cfg["monster_rotation"]) == 2
     assert cfg["monster_rotation"][0]["monster_id"] == 100
@@ -64,6 +71,7 @@ def test_migrate_hunt_config_legacy_monsters_list_of_strings():
     assert cfg["monster_rotation"][1]["priority"] == 2
     assert "monsters" not in cfg
 
+
 def test_migrate_hunt_config_adds_defaults():
     cfg = {}
     migrate_hunt_config(cfg)
@@ -71,6 +79,7 @@ def test_migrate_hunt_config_adds_defaults():
     assert cfg["skill_slots"] == []
     assert cfg["global_hotkeys"]["enabled"] is True
     assert cfg["hunt_area"] == {"window_bounds": None}
+
 
 def test_migrate_hunt_config_normalizes_window_bounds():
     cfg = {
@@ -81,6 +90,7 @@ def test_migrate_hunt_config_normalizes_window_bounds():
     migrate_hunt_config(cfg)
     assert cfg["hunt_area"]["window_bounds"] == [10, 20, 100, 200]
 
+
 def test_migrate_hunt_config_malformed_hunt_area():
     cfg = {"hunt_area": None}
     migrate_hunt_config(cfg)
@@ -89,6 +99,7 @@ def test_migrate_hunt_config_malformed_hunt_area():
     cfg2 = {"hunt_area": []}
     migrate_hunt_config(cfg2)
     assert cfg2["hunt_area"] == {"window_bounds": None}
+
 
 def test_migrate_hunt_config_malformed_global_hotkeys():
     cfg = {"global_hotkeys": None}
@@ -99,6 +110,7 @@ def test_migrate_hunt_config_malformed_global_hotkeys():
     migrate_hunt_config(cfg2)
     assert cfg2["global_hotkeys"]["enabled"] is True
 
+
 def test_migrate_hunt_config_malformed_top_level():
     cfg = migrate_hunt_config(None)
     assert isinstance(cfg, dict)
@@ -107,6 +119,7 @@ def test_migrate_hunt_config_malformed_top_level():
     cfg2 = migrate_hunt_config([])
     assert isinstance(cfg2, dict)
     assert cfg2["hunt_area"] == {"window_bounds": None}
+
 
 def test_migrate_hunt_config_keeps_existing_fields():
     cfg = {

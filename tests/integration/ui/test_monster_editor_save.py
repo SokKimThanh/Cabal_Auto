@@ -1,5 +1,9 @@
 import pytest
-pytest.importorskip("tkinter", reason="Skipping UI imports because tkinter is not available in headless environment")
+
+pytest.importorskip(
+    "tkinter",
+    reason="Skipping UI imports because tkinter is not available in headless environment",
+)
 
 """
 Unit tests for Monster Editor Save All Functionality (Batch 9).
@@ -15,22 +19,24 @@ from typing import Optional
 from unittest.mock import patch, MagicMock
 
 
-
 import os
+
 pytestmark = pytest.mark.skipif(
     not os.getenv("DISPLAY") and os.name != "nt",
-    reason="Requires active display or xvfb to run Tkinter tests"
+    reason="Requires active display or xvfb to run Tkinter tests",
 )
+
+
 class TestMonsterEditorSaveAll:
     """Test suite for Save All functionality."""
-    
+
     @pytest.fixture
     def temp_data_file(self, tmp_path: Path):
         """
         Create temporary monsters.json file safely for Windows.
         """
         temp_file = tmp_path / "monsters.json"
-        temp_file.write_text('[]', encoding='utf-8')
+        temp_file.write_text("[]", encoding="utf-8")
         yield temp_file
 
         try:
@@ -38,49 +44,52 @@ class TestMonsterEditorSaveAll:
                 temp_file.unlink()
         except (PermissionError, OSError):
             import time
+
             time.sleep(0.05)
             try:
                 temp_file.unlink()
             except Exception:
                 pass
-    
+
     @pytest.fixture
     def sample_monsters(self) -> list:
         """
         Create sample monster data for testing.
-        
+
         Returns:
             List of monster dictionaries
         """
         return [
             {
-                'id': 'monster_1',
-                'name': 'Goblin',
-                'level': 5,
-                'priority': 1,
-                'hp': 100,
-                'damage': 10,
-                'description': 'A weak monster'
+                "id": "monster_1",
+                "name": "Goblin",
+                "level": 5,
+                "priority": 1,
+                "hp": 100,
+                "damage": 10,
+                "description": "A weak monster",
             },
             {
-                'id': 'monster_2',
-                'name': 'Orc',
-                'level': 10,
-                'priority': 2,
-                'hp': 200,
-                'damage': 20,
-                'description': 'A stronger monster'
-            }
+                "id": "monster_2",
+                "name": "Orc",
+                "level": 10,
+                "priority": 2,
+                "hp": 200,
+                "damage": 20,
+                "description": "A stronger monster",
+            },
         ]
-    
-    def test_save_button_saves_all_monsters(self, sample_monsters: list, patched_monster_editor) -> None:
+
+    def test_save_button_saves_all_monsters(
+        self, sample_monsters: list, patched_monster_editor
+    ) -> None:
         """Test that clicking Save button saves all monsters to JSON."""
         # Write initial data
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
-        temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
-        
+        temp_data_file = patched_monster_editor["temp_data_file"]
+        patched_monster_editor["get_db_mock"].return_value = None
+        patched_monster_editor["DataSyncManager_mock"].return_value = None
+        temp_data_file.write_text(json.dumps(sample_monsters), encoding="utf-8")
+
         from ui.windows.monster_manager_win import MonsterManagerWin
 
         try:
@@ -94,17 +103,17 @@ class TestMonsterEditorSaveAll:
 
         try:
             editor = MonsterManagerWin(root)
-            
+
             # Rule 2: Check None before access
             assert editor.monsters is not None, "Monsters list should be loaded"
             assert len(editor.monsters) == 2, "Should load 2 monsters"
-            
+
             # Modify a monster
             if editor.name_entry is not None:
                 editor.name_entry.delete(0, tk.END)
-                editor.name_entry.insert(0, 'Modified Goblin')
+                editor.name_entry.insert(0, "Modified Goblin")
                 editor._on_info_change()
-            
+
             # Rule 2: Check button exists
             assert editor.save_button is not None, "Save button should exist"
 
@@ -116,7 +125,7 @@ class TestMonsterEditorSaveAll:
             assert temp_data_file.exists(), "Data file should exist after save"
 
             # Read and verify saved data
-            with open(temp_data_file, 'r', encoding='utf-8') as f:
+            with open(temp_data_file, "r", encoding="utf-8") as f:
                 saved_data = json.load(f)
 
             # Rule 1: Type check saved data
@@ -127,15 +136,17 @@ class TestMonsterEditorSaveAll:
             if editor is not None:
                 editor.destroy()
             root.destroy()
-    
-    @patch('tkinter.messagebox.showinfo')
-    def test_save_clears_dirty_state(self, mock_info, sample_monsters: list, patched_monster_editor) -> None:
+
+    @patch("tkinter.messagebox.showinfo")
+    def test_save_clears_dirty_state(
+        self, mock_info, sample_monsters: list, patched_monster_editor
+    ) -> None:
         """Test that saving clears dirty state and updates UI."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
-        temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
-        
+        temp_data_file = patched_monster_editor["temp_data_file"]
+        patched_monster_editor["get_db_mock"].return_value = None
+        patched_monster_editor["DataSyncManager_mock"].return_value = None
+        temp_data_file.write_text(json.dumps(sample_monsters), encoding="utf-8")
+
         from ui.windows.monster_manager_win import MonsterManagerWin
 
         try:
@@ -149,14 +160,14 @@ class TestMonsterEditorSaveAll:
 
         try:
             editor = MonsterManagerWin(root)
-            
+
             # Make a change to set dirty
             editor.set_dirty(True)
             root.update_idletasks()
-            
+
             # Verify dirty before save
             assert editor.is_dirty is True, "Should be dirty after change"
-            
+
             # Rule 2: Check widgets exist
             assert editor.save_button is not None, "Save button should exist"
             assert editor.status_label is not None, "Status label should exist"
@@ -167,40 +178,48 @@ class TestMonsterEditorSaveAll:
 
             # Verify clean state
             assert editor.is_dirty is False, "Should be clean after save"
-            assert editor.is_monster_dirty is False, "Monster should be clean after save"
+            assert (
+                editor.is_monster_dirty is False
+            ), "Monster should be clean after save"
 
             # Verify UI updated
-            status_text = editor.status_label.cget('text')
-            assert 'All saved' in status_text or 'Đã lưu tất cả' in status_text, "Status should show saved"
+            status_text = editor.status_label.cget("text")
+            assert (
+                "All saved" in status_text or "Đã lưu tất cả" in status_text
+            ), "Status should show saved"
 
             # Verify save button disabled
-            assert editor.save_button['state'] == 'disabled', "Save button should be disabled when clean"
+            assert (
+                editor.save_button["state"] == "disabled"
+            ), "Save button should be disabled when clean"
 
         finally:
             if editor is not None:
                 editor.destroy()
             root.destroy()
-    
-    @patch('tkinter.messagebox.showerror')
-    def test_save_validates_monster_names(self, mock_error, patched_monster_editor) -> None:
+
+    @patch("tkinter.messagebox.showerror")
+    def test_save_validates_monster_names(
+        self, mock_error, patched_monster_editor
+    ) -> None:
         """Test that save validates monster names (no empty names)."""
         # Create monster with empty name
         invalid_monsters = [
             {
-                'id': 'monster_1',
-                'name': '',  # Empty name
-                'level': 5,
-                'priority': 1,
-                'hp': 100,
-                'damage': 10,
-                'description': ''
+                "id": "monster_1",
+                "name": "",  # Empty name
+                "level": 5,
+                "priority": 1,
+                "hp": 100,
+                "damage": 10,
+                "description": "",
             }
         ]
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
-        temp_data_file.write_text(json.dumps(invalid_monsters), encoding='utf-8')
-        
+        temp_data_file = patched_monster_editor["temp_data_file"]
+        patched_monster_editor["get_db_mock"].return_value = None
+        patched_monster_editor["DataSyncManager_mock"].return_value = None
+        temp_data_file.write_text(json.dumps(invalid_monsters), encoding="utf-8")
+
         from ui.windows.monster_manager_win import MonsterManagerWin
 
         try:
@@ -214,32 +233,36 @@ class TestMonsterEditorSaveAll:
 
         try:
             editor = MonsterManagerWin(root)
-            
+
             # Rule 2: Check button exists
             assert editor.save_button is not None, "Save button should exist"
-            
+
             # Mock messagebox to capture error
             editor.save_button.invoke()
             root.update_idletasks()
-            
+
             # Verify error shown
             assert mock_error.called, "Should show error for empty name"
             call_args = mock_error.call_args[0]
-            assert 'no name' in call_args[1].lower(), "Error should mention missing name"
+            assert (
+                "no name" in call_args[1].lower()
+            ), "Error should mention missing name"
 
         finally:
             if editor is not None:
                 editor.destroy()
             root.destroy()
-    
-    @patch('tkinter.messagebox.showwarning')
-    def test_save_with_no_monsters_shows_warning(self, mock_warning, patched_monster_editor) -> None:
+
+    @patch("tkinter.messagebox.showwarning")
+    def test_save_with_no_monsters_shows_warning(
+        self, mock_warning, patched_monster_editor
+    ) -> None:
         """Test that saving with no monsters shows warning."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
-        temp_data_file.write_text('[]', encoding='utf-8')
-        
+        temp_data_file = patched_monster_editor["temp_data_file"]
+        patched_monster_editor["get_db_mock"].return_value = None
+        patched_monster_editor["DataSyncManager_mock"].return_value = None
+        temp_data_file.write_text("[]", encoding="utf-8")
+
         from ui.windows.monster_manager_win import MonsterManagerWin
 
         try:
@@ -253,13 +276,13 @@ class TestMonsterEditorSaveAll:
 
         try:
             editor = MonsterManagerWin(root)
-            
+
             # Verify no monsters
             assert len(editor.monsters) == 0, "Should have no monsters"
-            
+
             # Rule 2: Check button exists
             assert editor.save_button is not None, "Save button should exist"
-            
+
             # Mock messagebox
             editor.save_button.invoke()
             root.update_idletasks()
@@ -271,14 +294,16 @@ class TestMonsterEditorSaveAll:
             if editor is not None:
                 editor.destroy()
             root.destroy()
-    
-    def test_save_button_initially_disabled(self, sample_monsters: list, patched_monster_editor) -> None:
+
+    def test_save_button_initially_disabled(
+        self, sample_monsters: list, patched_monster_editor
+    ) -> None:
         """Test that Save button is initially disabled when clean."""
-        temp_data_file = patched_monster_editor['temp_data_file']
-        patched_monster_editor['get_db_mock'].return_value = None
-        patched_monster_editor['DataSyncManager_mock'].return_value = None
-        temp_data_file.write_text(json.dumps(sample_monsters), encoding='utf-8')
-        
+        temp_data_file = patched_monster_editor["temp_data_file"]
+        patched_monster_editor["get_db_mock"].return_value = None
+        patched_monster_editor["DataSyncManager_mock"].return_value = None
+        temp_data_file.write_text(json.dumps(sample_monsters), encoding="utf-8")
+
         from ui.windows.monster_manager_win import MonsterManagerWin
 
         try:
@@ -292,14 +317,16 @@ class TestMonsterEditorSaveAll:
 
         try:
             editor = MonsterManagerWin(root)
-            
+
             # Rule 2: Check button exists
             assert editor.save_button is not None, "Save button should exist"
-            
+
             # Verify initially disabled (clean state)
             assert editor.is_dirty is False, "Should be clean initially"
-            assert editor.save_button['state'] == 'disabled', "Save button should be disabled when clean"
-            
+            assert (
+                editor.save_button["state"] == "disabled"
+            ), "Save button should be disabled when clean"
+
         finally:
             if editor is not None:
                 editor.destroy()

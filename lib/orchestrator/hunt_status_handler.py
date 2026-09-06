@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, Callable, Optional
 
+
 class HuntStatusHandler(ABC):
     """Abstract base class for orchestrator status callbacks."""
 
@@ -51,7 +52,10 @@ class HuntStatusHandler(ABC):
         """Minimize application."""
         pass
 
-def locate_target(self, params: Dict) -> Tuple[Optional[Tuple[int, int, int, int]], Optional[dict]]:
+
+def locate_target(
+    self, params: Dict
+) -> Tuple[Optional[Tuple[int, int, int, int]], Optional[dict]]:
 
     @abstractmethod
     def prepare_skill_runtime(self, skill_def: Dict) -> list:

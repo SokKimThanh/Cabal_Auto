@@ -12,7 +12,6 @@ from lib.vision.template_loader import Template, TemplateService
 pytestmark = pytest.mark.unit
 
 
-
 @pytest.fixture
 def template_service(tmp_path):
     return TemplateService(config_dir=tmp_path)

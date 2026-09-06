@@ -2,6 +2,7 @@ import sqlite3
 from typing import List, Dict, Any, Optional
 from lib.db.connection import get_connection
 
+
 class ClassService:
     def __init__(self):
         pass
@@ -25,20 +26,24 @@ class ClassService:
                     "str_base": data.get("str_base", 0),
                     "int_base": data.get("int_base", 0),
                     "dex_base": data.get("dex_base", 0),
-                }
+                },
             )
             class_id = cursor.lastrowid
             conn.commit()
             return class_id
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[ClassService] Create error: {e}")
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def get_class_by_id(self, class_id: int) -> Optional[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -54,8 +59,10 @@ class ClassService:
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def get_all_classes(self) -> List[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -70,8 +77,10 @@ class ClassService:
             return []
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def update_class(self, class_id: int, data: Dict[str, Any]) -> bool:
         conn, is_local = get_connection()
@@ -99,20 +108,24 @@ class ClassService:
                     "str_base": data.get("str_base"),
                     "int_base": data.get("int_base"),
                     "dex_base": data.get("dex_base"),
-                }
+                },
             )
             updated = cursor.rowcount > 0
             conn.commit()
             return updated
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[ClassService] Update error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def delete_class(self, class_id: int) -> bool:
         conn, is_local = get_connection()
@@ -126,16 +139,22 @@ class ClassService:
             conn.commit()
             return deleted
         except sqlite3.IntegrityError as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[ClassService] Integrity error on delete (FK violation?): {e}")
             return False
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[ClassService] Delete error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
