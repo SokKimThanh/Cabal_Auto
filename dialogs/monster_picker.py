@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Dict, Any
 from database import get_all_monsters_api, search_monsters_api
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 class MonsterPickerDialog(tk.Toplevel):
     def __init__(self, parent, lang, on_select: Callable[[Dict[str, Any]], None], t_func: Callable):

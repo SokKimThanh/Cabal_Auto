@@ -20,7 +20,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 import tkinter
-from lib.ui_style import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from tkinter import ttk
 from icon_button import (
     create_icon_button,

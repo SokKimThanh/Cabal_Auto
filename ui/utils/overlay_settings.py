@@ -30,7 +30,7 @@ import json
 # Global translations and tooltip support
 from lib.i18n import t as i18n_t
 from ui.helpers.tooltip import attach_i18n_tooltip
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 
 class OverlaySettingsDialog:

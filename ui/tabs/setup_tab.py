@@ -3,7 +3,7 @@ from tkinter import ttk, filedialog
 from typing import TYPE_CHECKING
 
 from lib.i18n import t as i18n_t, GLOBAL_NS as I18N_GLOBAL
-from lib.ui_style import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 if TYPE_CHECKING:
     from app_gui import App

@@ -32,7 +32,7 @@ Xử lý toàn bộ tầng logic dữ liệu cho Dải kỹ năng Dual-Lane: Đi
 
 ### 2. Bộ Cảnh Báo Trùng Phím Tắt (Key Conflict Soft Warning)
 - Hàm `check_key_conflicts()` quét toàn bộ phím gán trên **cả hai làn** (Combo + Buff), **và đối chiếu thêm với `combo_start_key`** hiện tại (đã có ở CB3B/UX4.1) — dùng chung một hàm kiểm tra duy nhất cho cả hai chiều (skill-vs-skill và skill-vs-combo-start-key), thay vì để CB3B kiểm tra một chiều còn session này kiểm tra chiều khác một cách độc lập.
-  * Nếu phát hiện trùng phím: Đổi viền ô sang màu vàng cam `UIStyle.STATE_WARN`, gắn Tooltip khi Hover: `[!] Cảnh báo: Phím này đang bị gán trùng lặp`. Nếu trùng với `combo_start_key`, ghi rõ trong tooltip: `[!] Cảnh báo: Phím này trùng với Combo Start Key`.
+  * Nếu phát hiện trùng phím: Đổi viền ô sang màu vàng cam `UIStyleV2.STATE_WARN`, gắn Tooltip khi Hover: `[!] Cảnh báo: Phím này đang bị gán trùng lặp`. Nếu trùng với `combo_start_key`, ghi rõ trong tooltip: `[!] Cảnh báo: Phím này trùng với Combo Start Key`.
   * Cho phép lưu cấu hình (không chặn cứng), nhưng ghi log cảnh báo ra hệ thống.
 
 ### 3. Tương Thích Ngược & Phục Hồi Dữ Liệu Rác (Resilient JSON Migration)

@@ -22,7 +22,7 @@ except ImportError:
     from mock.fallbacks import create_icon_label, create_save_button, create_cancel_button
 
 try:
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
 except ImportError:
     from mock.fallbacks import UIStyle as UI
 
@@ -54,7 +54,7 @@ class DisplaySettingsDialog(tk.Toplevel):
         self.geometry(f"+{x}+{y}")
 
     def _setup_ui(self) -> None:
-        main_frame = tk.Frame(self, bg=UI.BG_PANEL, padx=15, pady=15)
+        main_frame = tk.Frame(self, bg=UI.THEME_BG_PANEL, padx=15, pady=15)
         main_frame.pack(fill="both", expand=True)
 
         header = create_icon_label(
@@ -65,8 +65,8 @@ class DisplaySettingsDialog(tk.Toplevel):
             ),
             icon_fallback="⚙️",
             font=UI.FONT_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
-            bg=UI.BG_PANEL,
+            fg=UI.THEME_TEXT_PRIMARY,
+            bg=UI.THEME_BG_PANEL,
         )
         header.pack(anchor="w", pady=(0, 15))
 
@@ -77,7 +77,7 @@ class DisplaySettingsDialog(tk.Toplevel):
                 "label_game_mode", ns="monster_editor", default="Game Window Mode"
             ),
             font=UI.FONT_LABEL,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             padx=10,
             pady=10,
         )
@@ -101,7 +101,7 @@ class DisplaySettingsDialog(tk.Toplevel):
                 default="Hiển thị cột trong danh sách Template",
             ),
             font=UI.FONT_LABEL,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             padx=10,
             pady=10,
         )
@@ -121,7 +121,7 @@ class DisplaySettingsDialog(tk.Toplevel):
             cols_frame,
             text=i18n_t("chk_col_image", ns="monster_editor", default="Hình ảnh"),
             variable=self.chk_image_var,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             font=UI.FONT_TEXT,
         )
         chk_img.pack(anchor="w", pady=2)
@@ -132,7 +132,7 @@ class DisplaySettingsDialog(tk.Toplevel):
                 "chk_col_threshold", ns="monster_editor", default="% Ngưỡng nhận diện"
             ),
             variable=self.chk_threshold_var,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             font=UI.FONT_TEXT,
         )
         chk_thresh.pack(anchor="w", pady=2)
@@ -141,13 +141,13 @@ class DisplaySettingsDialog(tk.Toplevel):
             cols_frame,
             text=i18n_t("chk_col_path", ns="monster_editor", default="Đường dẫn"),
             variable=self.chk_path_var,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             font=UI.FONT_TEXT,
         )
         chk_path.pack(anchor="w", pady=2)
 
         # Bottom Buttons
-        btn_box = tk.Frame(main_frame, bg=UI.BG_PANEL)
+        btn_box = tk.Frame(main_frame, bg=UI.THEME_BG_PANEL)
         btn_box.pack(fill="x", side="bottom")
 
         save_btn = create_save_button(

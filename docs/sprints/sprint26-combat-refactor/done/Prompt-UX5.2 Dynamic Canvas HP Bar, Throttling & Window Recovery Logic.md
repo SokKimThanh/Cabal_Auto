@@ -46,12 +46,12 @@ Tích hợp thanh máu Canvas tự co giãn với hiệu năng vẽ tối ưu (S
 
 ### 2. Bộ Điều Khiển Phục Hồi Cửa Sổ (Fail-Safe Recovery UX)
 - Khi `WindowSelectionService` phát hiện tọa độ ≤ -32000:
-  * Dashboard hiển thị khung màu cam `UIStyle.STATE_WARN` kèm nút `[ Khôi Phục Cửa Sổ Game ]`.
+  * Dashboard hiển thị khung màu cam `UIStyleV2.STATE_WARN` kèm nút `[ Khôi Phục Cửa Sổ Game ]`.
 - **Hành vi Nút Bấm & Retry Logic (dùng chung service với UX1, bất đồng bộ bắt buộc):**
   * Khi click: khóa nút (`state="disabled"`), gọi vào hàm retry dùng chung ở `window_selection_service.py` (cùng hàm mà nút Refresh của UX1 gọi), triển khai bằng chuỗi lịch trình `self.after(500, self._retry_step)` — **tuyệt đối không dùng `time.sleep()`** giữa các bước retry, vì đây là code chạy trên Main Thread.
   * Hiển thị text tiến trình `⏳ Đang thử lại (1/3)...` → `(2/3)...` → `(3/3)...` (mỗi bước cách nhau 500ms qua `self.after`, không chặn UI).
   * Gọi `WindowManager.restore(hwnd)` và `WindowManager.set_foreground(hwnd)` ở mỗi bước.
-  * **Nếu thất bại sau 3 lần:** Đổi nhãn cảnh báo sang màu đỏ `UIStyle.STATE_ERROR`, kích hoạt Toast: `target_card.recovery_failed` ("Không thể khôi phục game. Vui lòng mở lại game bằng tay") và mở lại trạng thái nút.
+  * **Nếu thất bại sau 3 lần:** Đổi nhãn cảnh báo sang màu đỏ `UIStyleV2.STATE_ERROR`, kích hoạt Toast: `target_card.recovery_failed` ("Không thể khôi phục game. Vui lòng mở lại game bằng tay") và mở lại trạng thái nút.
   * Nếu nút Refresh (UX1, Action Bar) đang retry đồng thời với nút này (người dùng bấm cả hai gần nhau), hàm dùng chung phải khoá lẫn nhau (chỉ một chuỗi retry chạy tại một thời điểm) để tránh 2 chuỗi retry chồng chéo cùng thao tác trên `hwnd`.
 
 ### 3. Đa Ngôn Ngữ (i18n)

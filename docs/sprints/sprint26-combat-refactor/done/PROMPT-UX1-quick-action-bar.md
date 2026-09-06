@@ -54,7 +54,7 @@ Gộp toàn bộ thanh Header và công cụ trên cùng thành Vùng A (Quick A
       self._refresh_start_stop_visual()
   ```
   - Debounce 500ms ở tầng UI (`disabled` state) chỉ để chống double-click gây khó chịu trải nghiệm; đây **không phải** cơ chế đảm bảo an toàn logic duy nhất — `SingleInstanceLock` ở tầng khởi động luồng vẫn phải được giữ nguyên như lớp bảo vệ thực sự chống khởi động trùng, hai cơ chế bổ trợ nhau, không thay thế nhau.
-  - Màu sắc: `UIStyle.BTN_START_BG` (Xanh lá) khi rảnh và `UIStyle.BTN_STOP_BG` (Đỏ) khi bot đang chạy, cập nhật qua `_refresh_start_stop_visual()` dựa trên `self.hunt_state` thực tế tại thời điểm gọi, không suy đoán từ hành động vừa bấm.
+  - Màu sắc: `UIStyleV2.BTN_START_BG` (Xanh lá) khi rảnh và `UIStyleV2.BTN_STOP_BG` (Đỏ) khi bot đang chạy, cập nhật qua `_refresh_start_stop_visual()` dựa trên `self.hunt_state` thực tế tại thời điểm gọi, không suy đoán từ hành động vừa bấm.
 
 ### 4. Chuyển Đổi Ngôn Ngữ Động (Dynamic i18n)
 - Khi người dùng đổi `vi ↔ en`, gọi hàm `self.refresh_translations()`:

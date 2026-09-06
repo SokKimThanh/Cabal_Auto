@@ -20,7 +20,7 @@ import importlib.util
 import json
 import os
 import tkinter as tk
-from lib.ui_style import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from ctypes import wintypes
 from pathlib import Path
 from tkinter import messagebox, ttk

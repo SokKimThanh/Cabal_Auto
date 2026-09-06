@@ -18,7 +18,7 @@ Xây dựng container chính `main_shell` quản lý bằng `pack()` (khi gắn 
 ## Implementation Details
 
 ### 1. Phân Bổ Khung Lưới 4 Vùng (Explicit minsize & DPI Guard)
-- Khởi tạo `main_shell = tk.Frame(root, bg=UIStyle.BG_APP)`.
+- Khởi tạo `main_shell = tk.Frame(root, bg=UIStyleV2.BG_APP)`.
 - Thiết lập thông số hàng và cột chi tiết:
   * **Hàng 0 (Vùng A - Action Bar):** `rowconfigure(0, weight=0, minsize=80)`.
   * **Hàng 1 (Nội dung chính):** `rowconfigure(1, weight=1, minsize=540)`.

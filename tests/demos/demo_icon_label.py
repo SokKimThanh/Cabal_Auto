@@ -15,7 +15,7 @@ import tkinter as tk
 from ui.components import create_icon_label
 
 try:
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
 except ImportError:
     class UIStyle:
         FONT_TITLE = ('Segoe UI', 12, 'bold')
@@ -40,13 +40,13 @@ def create_demo():
         root,
         text="Icon Label Component Demo",
         font=UI.FONT_TITLE,
-        fg=UI.COLOR_PRIMARY_TEXT,
+        fg=UI.THEME_TEXT_PRIMARY,
         bg=UI.BG_DEFAULT
     )
     title.pack(pady=(20, 10))
     
     # Section 1: Basic labels
-    section1_frame = tk.Frame(root, bg=UI.BG_PANEL)
+    section1_frame = tk.Frame(root, bg=UI.THEME_BG_PANEL)
     section1_frame.pack(fill='x', padx=20, pady=10)
     
     section1_title = create_icon_label(
@@ -56,8 +56,8 @@ def create_demo():
         icon_fallback='🗂️',
         icon_size=16,
         font=UI.FONT_SECTION,
-        fg=UI.COLOR_PRIMARY_TEXT,
-        bg=UI.BG_PANEL
+        fg=UI.THEME_TEXT_PRIMARY,
+        bg=UI.THEME_BG_PANEL
     )
     section1_title.pack(anchor='w', padx=10, pady=(10, 5))
     
@@ -69,7 +69,7 @@ def create_demo():
         icon_fallback='👹',
         icon_size=16,
         tooltip_text='Enter the monster name',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     monster_label.pack(anchor='w', padx=20, pady=5)
     
@@ -81,7 +81,7 @@ def create_demo():
         icon_fallback='↑',
         icon_size=16,
         tooltip_text='Monster level',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     level_label.pack(anchor='w', padx=20, pady=5)
     
@@ -93,12 +93,12 @@ def create_demo():
         icon_fallback='❤️',
         icon_size=16,
         tooltip_text='Health points',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     hp_label.pack(anchor='w', padx=20, pady=(5, 10))
     
     # Section 2: Info labels
-    section2_frame = tk.Frame(root, bg=UI.BG_PANEL)
+    section2_frame = tk.Frame(root, bg=UI.THEME_BG_PANEL)
     section2_frame.pack(fill='x', padx=20, pady=10)
     
     section2_title = create_icon_label(
@@ -108,8 +108,8 @@ def create_demo():
         icon_fallback='📋',
         icon_size=16,
         font=UI.FONT_SECTION,
-        fg=UI.COLOR_PRIMARY_TEXT,
-        bg=UI.BG_PANEL
+        fg=UI.THEME_TEXT_PRIMARY,
+        bg=UI.THEME_BG_PANEL
     )
     section2_title.pack(anchor='w', padx=10, pady=(10, 5))
     
@@ -121,7 +121,7 @@ def create_demo():
         icon_fallback='🎯',
         icon_size=16,
         tooltip_text='Monster priority',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     priority_label.pack(anchor='w', padx=20, pady=5)
     
@@ -133,7 +133,7 @@ def create_demo():
         icon_fallback='⚔️',
         icon_size=16,
         tooltip_text='Damage per hit',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     damage_label.pack(anchor='w', padx=20, pady=5)
     
@@ -145,12 +145,12 @@ def create_demo():
         icon_fallback='⚙️',
         icon_size=16,
         tooltip_text='Configuration settings',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     settings_label.pack(anchor='w', padx=20, pady=(5, 10))
     
     # Section 3: Action labels
-    section3_frame = tk.Frame(root, bg=UI.BG_PANEL)
+    section3_frame = tk.Frame(root, bg=UI.THEME_BG_PANEL)
     section3_frame.pack(fill='x', padx=20, pady=10)
     
     section3_title = create_icon_label(
@@ -160,8 +160,8 @@ def create_demo():
         icon_fallback='📁',
         icon_size=16,
         font=UI.FONT_SECTION,
-        fg=UI.COLOR_PRIMARY_TEXT,
-        bg=UI.BG_PANEL
+        fg=UI.THEME_TEXT_PRIMARY,
+        bg=UI.THEME_BG_PANEL
     )
     section3_title.pack(anchor='w', padx=10, pady=(10, 5))
     
@@ -173,7 +173,7 @@ def create_demo():
         icon_fallback='💾',
         icon_size=16,
         fg='#2E7D32',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     save_label.pack(anchor='w', padx=20, pady=5)
     
@@ -185,7 +185,7 @@ def create_demo():
         icon_fallback='⚠️',
         icon_size=16,
         fg='#FF9800',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     warning_label.pack(anchor='w', padx=20, pady=5)
     
@@ -197,24 +197,24 @@ def create_demo():
         icon_fallback='🗑️',
         icon_size=16,
         fg='#C62828',
-        bg=UI.BG_PANEL
+        bg=UI.THEME_BG_PANEL
     )
     delete_label.pack(anchor='w', padx=20, pady=(5, 10))
     
     # Section 4: Icon only
-    section4_frame = tk.Frame(root, bg=UI.BG_PANEL)
+    section4_frame = tk.Frame(root, bg=UI.THEME_BG_PANEL)
     section4_frame.pack(fill='x', padx=20, pady=10)
     
     section4_title = tk.Label(
         section4_frame,
         text='Icon Only',
         font=UI.FONT_SECTION,
-        fg=UI.COLOR_PRIMARY_TEXT,
-        bg=UI.BG_PANEL
+        fg=UI.THEME_TEXT_PRIMARY,
+        bg=UI.THEME_BG_PANEL
     )
     section4_title.pack(anchor='w', padx=10, pady=(10, 5))
     
-    icon_frame = tk.Frame(section4_frame, bg=UI.BG_PANEL)
+    icon_frame = tk.Frame(section4_frame, bg=UI.THEME_BG_PANEL)
     icon_frame.pack(anchor='w', padx=20, pady=(5, 10))
     
     # Icon only labels
@@ -235,7 +235,7 @@ def create_demo():
             icon_fallback=fallback,
             icon_size=20,
             tooltip_text=tooltip,
-            bg=UI.BG_PANEL
+            bg=UI.THEME_BG_PANEL
         )
         icon_label.pack(side='left', padx=5)
     

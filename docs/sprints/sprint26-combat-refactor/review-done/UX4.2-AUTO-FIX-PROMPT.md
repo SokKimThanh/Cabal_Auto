@@ -228,7 +228,7 @@ def _validate_slot_key_duplicates(self):
     Does NOT block save (soft warning only).
     """
     import tkinter as tk
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
     
     root = self.root  # self.root should be the App instance
     

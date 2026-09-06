@@ -48,7 +48,7 @@ except ImportError:
     from mock.fallbacks import create_icon_label, create_icon_button, create_add_button, create_delete_button, create_save_button, create_cancel_button, create_refresh_button
 
 try:
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
 except ImportError:
     from mock.fallbacks import UIStyle as UI
 
@@ -371,7 +371,7 @@ class MonsterEditDialog(tk.Toplevel):
             text=i18n_t("tab_info", ns="monster_editor", default="Thông Tin Quái"),
             icon_fallback="📋",
             font=UI.FONT_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             bg=UI.BG_DEFAULT,
         )
         info_label.pack(side="left")
@@ -392,7 +392,7 @@ class MonsterEditDialog(tk.Toplevel):
         id_frame = tk.Frame(form_frame, bg=UI.BG_DEFAULT)
         id_frame.grid(row=0, column=1, sticky="w", pady=4, padx=(12, 0))
 
-        self.id_val_label = tk.Label(id_frame, text="", font=UI.FONT_TEXT, bg=UI.BG_DEFAULT, fg=UI.COLOR_PRIMARY_TEXT)
+        self.id_val_label = tk.Label(id_frame, text="", font=UI.FONT_TEXT, bg=UI.BG_DEFAULT, fg=UI.THEME_TEXT_PRIMARY)
         self.id_val_label.pack(side="left")
 
         self.btn_generate_id = create_refresh_button(
@@ -510,24 +510,24 @@ class MonsterEditDialog(tk.Toplevel):
         self._create_advanced_groups(self.info_scrollable_frame)
 
         # --- Tab 2: Templates ---
-        self.templates_tab = tk.Frame(self.notebook, bg=UI.BG_PANEL)
+        self.templates_tab = tk.Frame(self.notebook, bg=UI.THEME_BG_PANEL)
         self.notebook.add(
             self.templates_tab,
             text=i18n_t("tab_templates", ns="monster_editor", default="Templates"),
         )
 
         # Split frame: Left sub-panel & Right sub-panel
-        tmpl_container = tk.Frame(self.templates_tab, bg=UI.BG_PANEL)
+        tmpl_container = tk.Frame(self.templates_tab, bg=UI.THEME_BG_PANEL)
         tmpl_container.pack(fill="both", expand=True, padx=10, pady=10)
 
-        left_sub = tk.Frame(tmpl_container, bg=UI.BG_PANEL, width=340)
+        left_sub = tk.Frame(tmpl_container, bg=UI.THEME_BG_PANEL, width=340)
         left_sub.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
-        right_sub = tk.Frame(tmpl_container, bg=UI.BG_PANEL, width=380)
+        right_sub = tk.Frame(tmpl_container, bg=UI.THEME_BG_PANEL, width=380)
         right_sub.pack(side="right", fill="both", expand=True, padx=(5, 0))
 
         # --- Left Sub-panel (Template List Table & Toolbar) ---
-        left_tb = tk.Frame(left_sub, bg=UI.BG_PANEL)
+        left_tb = tk.Frame(left_sub, bg=UI.THEME_BG_PANEL)
         left_tb.pack(fill="x", pady=(0, 5))
 
         self.btn_add_template = create_add_button(
@@ -575,7 +575,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.template_badge.pack(side="right", padx=2)
 
         # Template Treeview Table
-        tree_frame = tk.Frame(left_sub, bg=UI.BG_PANEL)
+        tree_frame = tk.Frame(left_sub, bg=UI.THEME_BG_PANEL)
         tree_frame.pack(fill="both", expand=True)
 
         tree_scroll = tk.Scrollbar(tree_frame, orient=tk.VERTICAL)
@@ -608,7 +608,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.template_listbox.bind("<<TreeviewSelect>>", self._on_template_select)
 
         # --- Right Sub-panel (Preview & Calibration Toolbar + Preview Area) ---
-        right_tb = tk.Frame(right_sub, bg=UI.BG_PANEL)
+        right_tb = tk.Frame(right_sub, bg=UI.THEME_BG_PANEL)
         right_tb.pack(fill="x", pady=(0, 5))
 
         self.capture_button = create_icon_button(
@@ -659,13 +659,13 @@ class MonsterEditDialog(tk.Toplevel):
                 "preview_label", ns="monster_editor", default="Chưa chọn\ntemplate"
             ),
             font=UI.FONT_SMALL,
-            fg=UI.COLOR_SUBTEXT,
+            fg=UI.THEME_TEXT_SECONDARY,
             bg="white",
         )
         self.preview_label.pack(fill="both", expand=True)
 
         # Threshold Slider & Display Entry/Label
-        slider_frame = tk.Frame(right_sub, bg=UI.BG_PANEL)
+        slider_frame = tk.Frame(right_sub, bg=UI.THEME_BG_PANEL)
         slider_frame.pack(fill="x", pady=(5, 0))
 
         create_icon_label(
@@ -674,7 +674,7 @@ class MonsterEditDialog(tk.Toplevel):
             text=i18n_t( "monster_threshold_label", ns="monster_editor", default="Ngưỡng:" ),
             icon_fallback="⚙️",
             font=UI.FONT_SMALL,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
         ).pack(side="left", padx=(0, 5))
 
         self.threshold_scale = tk.Scale(
@@ -690,7 +690,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.threshold_scale.pack(side="left", fill="x", expand=True)
 
         self.threshold_value_label = tk.Label(
-            slider_frame, text="0.70", font=UI.FONT_SMALL, bg=UI.BG_PANEL, width=5
+            slider_frame, text="0.70", font=UI.FONT_SMALL, bg=UI.THEME_BG_PANEL, width=5
         )
         self.threshold_value_label.pack(side="right", padx=(5, 0))
         self.threshold_label = self.threshold_value_label  # alias compatibility
@@ -710,7 +710,7 @@ class MonsterEditDialog(tk.Toplevel):
                 default="Hiển thị cột trong danh sách Template",
             ),
             font=UI.FONT_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             bg=UI.BG_DEFAULT,
             padx=15,
             pady=15,
@@ -747,7 +747,7 @@ class MonsterEditDialog(tk.Toplevel):
         self.chk_col_path.pack(anchor="w", pady=4)
 
         # Bottom Action Bar
-        bottom_bar = tk.Frame(main_container, bg=UI.BG_PANEL)
+        bottom_bar = tk.Frame(main_container, bg=UI.THEME_BG_PANEL)
         bottom_bar.pack(fill="x", side="bottom")
 
         self.save_btn = create_save_button(
@@ -774,7 +774,7 @@ class MonsterEditDialog(tk.Toplevel):
         container = tk.Frame(parent, bg=UI.BG_DEFAULT)
         container.pack(fill="x", padx=15, pady=5)
 
-        header = tk.Frame(container, bg=UI.BG_PANEL, cursor="hand2")
+        header = tk.Frame(container, bg=UI.THEME_BG_PANEL, cursor="hand2")
         header.pack(fill="x")
 
         content = tk.Frame(container, bg=UI.BG_DEFAULT)
@@ -782,10 +782,10 @@ class MonsterEditDialog(tk.Toplevel):
         content.columnconfigure(1, weight=1, minsize=100)
         content.columnconfigure(3, weight=1, minsize=100)
 
-        lbl = tk.Label(header, text=title, font=UI.FONT_SECTION, bg=UI.BG_PANEL, fg=UI.COLOR_PRIMARY_TEXT)
+        lbl = tk.Label(header, text=title, font=UI.FONT_SECTION, bg=UI.THEME_BG_PANEL, fg=UI.THEME_TEXT_PRIMARY)
         lbl.pack(side="left", padx=10, pady=5)
 
-        arrow = tk.Label(header, text="▼" if start_expanded else "▶", font=UI.FONT_SMALL, bg=UI.BG_PANEL, fg=UI.COLOR_SUBTEXT)
+        arrow = tk.Label(header, text="▼" if start_expanded else "▶", font=UI.FONT_SMALL, bg=UI.THEME_BG_PANEL, fg=UI.THEME_TEXT_SECONDARY)
         arrow.pack(side="right", padx=10, pady=5)
 
         is_expanded = start_expanded

@@ -131,7 +131,7 @@ except ImportError:
         return 'vi'
 
 try:
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
 except ImportError:
     UI = None
 
@@ -718,7 +718,7 @@ def create_icon_label(
     """
     # Get default styles
     try:
-        from lib.ui_style import UIStyle as UI
+        from lib.ui_style_v2 import UIStyleV2 as UI
     except ImportError:
         # Fallback UIStyle
         class UIStyle:
