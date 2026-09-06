@@ -96,7 +96,8 @@ class CompactWindowSelector:
         self.refresh_btn.pack(side="left")
         
         # Dropdown listbox (hidden until toggled) - row 1
-        self.dropdown_frame = tk.Frame(self.frame, bg="#1a1a1a", relief="solid", bd=1, height=150)
+        self.dropdown_frame = tk.Frame(self.frame, bg="#1a1a1a", relief="solid", bd=1)
+        # Don't grid here - will grid on toggle
         
         scrollbar = tk.Scrollbar(self.dropdown_frame)
         scrollbar.pack(side="right", fill="y")
@@ -125,8 +126,9 @@ class CompactWindowSelector:
         )
         self.info_label.grid(row=2, column=0, sticky="ew", padx=0, pady=(2, 0))
         
-        # Configure grid
+        # Configure grid - allow column 0 and row 1 to expand
         self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(1, weight=1)  # Allow dropdown row to expand
 
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
@@ -178,6 +180,7 @@ class CompactWindowSelector:
         print(f"[DEBUG] _toggle_dropdown: is_open={self.is_open}, win_items={len(self.win_items)}")
         if self.is_open:
             self.dropdown_frame.grid_forget()
+            print(f"[DEBUG] Dropdown hidden with grid_forget()")
             self.is_open = False
             self.dropdown_btn.config(text="▼")
         else:
@@ -185,9 +188,14 @@ class CompactWindowSelector:
                 print(f"[DEBUG] No items, calling _on_refresh()")
                 self._on_refresh()
                 print(f"[DEBUG] After refresh, win_items={len(self.win_items)}")
-            self.dropdown_frame.grid(row=1, column=0, sticky="ew", padx=0, pady=(2, 0))
+            # Show dropdown with proper grid configuration
+            self.dropdown_frame.grid(row=1, column=0, sticky="ewns", padx=0, pady=(2, 0))
+            # Ensure frame can expand
+            self.frame.rowconfigure(1, weight=1)
+            print(f"[DEBUG] Dropdown shown at row=1, sticky=ewns")
             self._update_listbox()
             print(f"[DEBUG] Listbox size after update: {self.listbox.size()}")
+            print(f"[DEBUG] Dropdown_frame.winfo_height() = {self.dropdown_frame.winfo_height()}")
             self.is_open = True
             self.dropdown_btn.config(text="▲")
             self.search_entry.focus()
