@@ -2,6 +2,7 @@ import sqlite3
 from typing import Optional, List, Dict, Any
 from lib.db.connection import get_connection
 
+
 class SkillRepository:
     def get_skill(self, skill_id: int) -> Optional[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -18,7 +19,10 @@ class SkillRepository:
                     conn.close()
                 except Exception:
                     pass
-    def list_skills(self, class_id: Optional[int] = None, type_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+
+    def list_skills(
+        self, class_id: Optional[int] = None, type_filter: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         conn, is_local = get_connection()
         if not conn:
             return []

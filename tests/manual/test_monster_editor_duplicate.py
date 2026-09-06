@@ -23,9 +23,9 @@ if str(project_root) not in sys.path:
 
 def test_monster_editor_duplicate():
     """Test if Monster Editor opens duplicate windows."""
-    print("="*70)
+    print("=" * 70)
     print("🧪 Testing Monster Editor Duplicate Window Issue")
-    print("="*70)
+    print("=" * 70)
     print()
     print("📋 Test Steps:")
     print("  1. App will start")
@@ -42,56 +42,61 @@ def test_monster_editor_duplicate():
     print("  • Multiple '[Monster Editor] Opening...' messages")
     print("  • 2 Monster Editor windows visible")
     print()
-    print("="*70)
+    print("=" * 70)
     print()
     print("⏳ Starting app... Press Ctrl+Shift+M to test")
     print()
-    
+
     # Import app
     try:
         from app_gui import App
         import tkinter as tk
-        
+
         # Create app
         root = tk.Tk()
         root.withdraw()  # Hide root
-        
+
         app = App()
-        
+
         # Add counter for Monster Editor opens
         original_open = app._open_monster_editor
-        open_count = {'count': 0}
-        
+        open_count = {"count": 0}
+
         def tracked_open():
-            open_count['count'] += 1
-            print(f"\n🔍 [TEST] Monster Editor open called (Count: {open_count['count']})")
+            open_count["count"] += 1
+            print(
+                f"\n🔍 [TEST] Monster Editor open called (Count: {open_count['count']})"
+            )
             original_open()
-        
+
         app._open_monster_editor = tracked_open
-        
+
         # Add instructions
         def check_count():
-            if open_count['count'] > 1:
-                print(f"\n❌ [TEST] BUG DETECTED: Monster Editor opened {open_count['count']} times!")
-            elif open_count['count'] == 1:
+            if open_count["count"] > 1:
+                print(
+                    f"\n❌ [TEST] BUG DETECTED: Monster Editor opened {open_count['count']} times!"
+                )
+            elif open_count["count"] == 1:
                 print(f"\n✅ [TEST] PASS: Monster Editor opened exactly once")
-            
+
             # Schedule next check
             app.after(5000, check_count)
-        
+
         app.after(5000, check_count)
-        
+
         print("✅ App started. Waiting for Ctrl+Shift+M...")
         print("   (The test will auto-check every 5 seconds)")
         print()
-        
+
         app.mainloop()
-        
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_monster_editor_duplicate()

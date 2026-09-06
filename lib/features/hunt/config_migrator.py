@@ -163,12 +163,13 @@ def _migrate_buff_slots(data: Dict[str, Any]) -> None:
             skill_entries = (
                 skill_db.values()
                 if isinstance(skill_db, dict)
-                else skill_db
-                if isinstance(skill_db, list)
-                else []
+                else skill_db if isinstance(skill_db, list) else []
             )
             for skill_entry in skill_entries:
-                if isinstance(skill_entry, dict) and skill_entry.get("name") == skill_name:
+                if (
+                    isinstance(skill_entry, dict)
+                    and skill_entry.get("name") == skill_name
+                ):
                     catalog_type = skill_entry.get("type")
                     break
 

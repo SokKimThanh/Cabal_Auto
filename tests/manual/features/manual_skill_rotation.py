@@ -1,11 +1,12 @@
 """
 Test skill rotation independently - Kiểm tra skill rotation độc lập
 """
+
 import sys
 import time
 import pytest
 
-sys.path.insert(0, 'E:/Cabal_Auto')
+sys.path.insert(0, "E:/Cabal_Auto")
 
 from lib.system.win_input import tap
 
@@ -43,17 +44,19 @@ try:
     for i in range(3):  # Test 3 lần
         print(f"\n--- Round {i+1} ---")
         for skill in skills:
-            print(f"[{time.strftime('%H:%M:%S')}] Casting {skill['name']} (key={skill['key']}, press={skill['press_ms']}ms)")
+            print(
+                f"[{time.strftime('%H:%M:%S')}] Casting {skill['name']} (key={skill['key']}, press={skill['press_ms']}ms)"
+            )
             try:
-                tap(skill['key'], skill['press_ms'])
+                tap(skill["key"], skill["press_ms"])
                 print(f"  ✓ Sent key '{skill['key']}' successfully")
             except Exception as e:
                 print(f"  ✗ Failed: {e}")
-            
+
             # Wait for cooldown
             print(f"  Waiting {skill['cooldown']}s cooldown...")
-            time.sleep(skill['cooldown'])
-        
+            time.sleep(skill["cooldown"])
+
         print(f"\nCompleted round {i+1}/3")
         if i < 2:
             time.sleep(1)

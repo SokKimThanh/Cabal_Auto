@@ -25,9 +25,10 @@ def test_ocr_fallback_contract():
 
     # We will capture tasks scheduled for the UI
     ui_tasks = []
+
     def mock_schedule(task):
         ui_tasks.append(task)
-        task() # execute it synchronously
+        task()  # execute it synchronously
 
     mock_set_target_info = MagicMock()
 
@@ -44,10 +45,12 @@ def test_ocr_fallback_contract():
         update_skill_stats_display=mock_update_stats,
         get_hunt_selected=mock_get_selected,
         schedule_ui_task=mock_schedule,
-        set_target_info=mock_set_target_info
+        set_target_info=mock_set_target_info,
     )
 
-    with patch("lib.features.hunt.hunt_orchestrator.find_monster_by_name_api") as mock_find:
+    with patch(
+        "lib.features.hunt.hunt_orchestrator.find_monster_by_name_api"
+    ) as mock_find:
         # Simulate unknown monster from DB (returns None)
         mock_find.return_value = None
 
@@ -56,23 +59,30 @@ def test_ocr_fallback_contract():
             mock_tbd.is_target_alive.return_value = True
             MockTBD.return_value = mock_tbd
 
-            with patch("lib.features.hunt.hunt_orchestrator.TargetNameReader") as MockTNR:
+            with patch(
+                "lib.features.hunt.hunt_orchestrator.TargetNameReader"
+            ) as MockTNR:
                 mock_tnr = MagicMock()
                 mock_tnr.read_name.return_value = "Unknown Mob"
                 MockTNR.return_value = mock_tnr
 
-                with patch("lib.features.hunt.hunt_orchestrator.get_hunt_logger", MagicMock()):
+                with patch(
+                    "lib.features.hunt.hunt_orchestrator.get_hunt_logger", MagicMock()
+                ):
 
                     orchestrator.bot_manager = MagicMock()
                     orchestrator.bot_manager.screen_capture = MagicMock()
                     orchestrator.bot_manager.screen_capture.hwnd = 123
                     # Return a valid frame that bypasses 'frame is not None' check
-                    orchestrator.bot_manager.screen_capture.get_latest_frame.return_value = "mock_frame"
+                    orchestrator.bot_manager.screen_capture.get_latest_frame.return_value = (
+                        "mock_frame"
+                    )
 
                     # Run the loop just once, then exit
                     def mock_is_alive_side_effect(*args):
                         orchestrator.hunt_running = False
                         return True
+
                     mock_tbd.is_target_alive.side_effect = mock_is_alive_side_effect
 
                     cfg = {
@@ -89,4 +99,7 @@ def test_ocr_fallback_contract():
                     # Verify that the fallback mechanism worked and scheduled UI task
                     assert mock_set_target_info.called
                     # The fallback should pass name, hp as None, ID as 0
-                    assert "[ID: #0] Unknown Mob (HP: None)" in mock_set_target_info.call_args[0][0]
+                    assert (
+                        "[ID: #0] Unknown Mob (HP: None)"
+                        in mock_set_target_info.call_args[0][0]
+                    )

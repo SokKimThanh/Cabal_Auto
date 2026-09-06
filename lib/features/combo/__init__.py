@@ -2,5 +2,4 @@
 
 from .combo_timing_detector import CabalComboDetector
 
-__all__ = ['CabalComboDetector']
-
+__all__ = ["CabalComboDetector"]

@@ -11,6 +11,7 @@ def test_runtime_queue_publish_callback_rate_limit():
 
     # Track task executions
     tasks = []
+
     def schedule_fn(task):
         tasks.append(task)
         task()
@@ -25,7 +26,7 @@ def test_runtime_queue_publish_callback_rate_limit():
             bbox=(10, 10, 10, 10),
             confidence=0.9,
             template_id="t",
-            resolution_state="db_match"
+            resolution_state="db_match",
         )
         queue.maybe_publish(schedule_fn)
 
@@ -44,6 +45,6 @@ def test_runtime_queue_publish_callback_rate_limit():
 
     # No schedule_fn or callback should be safe
     queue_no_cb = RuntimeMonsterQueue(publish_callback=None)
-    queue_no_cb.maybe_publish(schedule_fn) # should not crash
+    queue_no_cb.maybe_publish(schedule_fn)  # should not crash
 
-    queue.maybe_publish(None) # should not crash
+    queue.maybe_publish(None)  # should not crash

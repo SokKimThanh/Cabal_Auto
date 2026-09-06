@@ -1,11 +1,12 @@
 """
 Diagnostic test - Kiểm tra chi tiết từng phím
 """
+
 import sys
 import time
 import pytest
 
-sys.path.insert(0, 'E:/Cabal_Auto')
+sys.path.insert(0, "E:/Cabal_Auto")
 
 from lib.system.win_input import tap, key_down, key_up
 
@@ -29,7 +30,7 @@ print("\n" + "=" * 60)
 print("PHASE 1: Test phím ngắn (50ms) - Giống attack thường")
 print("=" * 60)
 
-for key in ['1', '2', '3', '4']:
+for key in ["1", "2", "3", "4"]:
     print(f"\n[Test] Phím '{key}' - Press 50ms (attack)")
     try:
         tap(key, 50)
@@ -43,7 +44,7 @@ print("\n" + "=" * 60)
 print("PHASE 2: Test phím dài (1500ms) - Giống skill cast")
 print("=" * 60)
 
-for key in ['1', '2', '3', '4']:
+for key in ["1", "2", "3", "4"]:
     print(f"\n[Test] Phím '{key}' - Press 1500ms (skill)")
     try:
         tap(key, 1500)
@@ -57,7 +58,7 @@ print("\n" + "=" * 60)
 print("PHASE 3: Test key_down + key_up riêng biệt")
 print("=" * 60)
 
-for key in ['1', '2', '3', '4']:
+for key in ["1", "2", "3", "4"]:
     print(f"\n[Test] Phím '{key}' - key_down, wait 1.5s, key_up")
     try:
         print(f"  → key_down('{key}')")
@@ -76,7 +77,7 @@ print("\n" + "=" * 60)
 print("PHASE 4: Test phím khác (không conflict)")
 print("=" * 60)
 
-test_keys = ['5', '6', 'q', 'e']
+test_keys = ["5", "6", "q", "e"]
 for key in test_keys:
     print(f"\n[Test] Phím '{key}' - Press 1500ms")
     try:
@@ -92,7 +93,9 @@ print("TEST COMPLETED")
 print("=" * 60)
 print("\n📋 PHÂN TÍCH:")
 print("• Nếu phím 4 (buff) hoạt động nhưng 1-3 không:")
-print("  → Có thể game hoặc server ưu tiên phím gán cho skill (skill slot keys) hơn các phím khác")
+print(
+    "  → Có thể game hoặc server ưu tiên phím gán cho skill (skill slot keys) hơn các phím khác"
+)
 print("  → Hoặc có anti-cheat chỉ block attack skills")
 print("• Nếu phím 5, 6, q, e hoạt động:")
 print("  → Phím 1-4 bị conflict trong game config")

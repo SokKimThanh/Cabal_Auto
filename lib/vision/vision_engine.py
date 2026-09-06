@@ -269,11 +269,18 @@ class VisionEngine:
 
         # Fallback to CSRT if tracker type is unknown
         if tracker_type not in ["CSRT", "KCF"]:
-            logger.warning(f"Unknown tracker type: {tracker_type}, falling back to CSRT")
+            logger.warning(
+                f"Unknown tracker type: {tracker_type}, falling back to CSRT"
+            )
             tracker_type = "CSRT"
 
         candidates = [
-            ("legacy", getattr(getattr(cv2, "legacy", None), f"Tracker{tracker_type}_create", None)),
+            (
+                "legacy",
+                getattr(
+                    getattr(cv2, "legacy", None), f"Tracker{tracker_type}_create", None
+                ),
+            ),
             ("main", getattr(cv2, f"Tracker{tracker_type}_create", None)),
         ]
 
@@ -281,13 +288,19 @@ class VisionEngine:
             if callable(creator):
                 try:
                     tracker = creator()
-                    logger.debug(f"Tracker {tracker_type} created successfully from {source} module.")
+                    logger.debug(
+                        f"Tracker {tracker_type} created successfully from {source} module."
+                    )
                     break
                 except Exception as e:
-                    logger.debug(f"Tracker candidate {source}.Tracker{tracker_type}_create failed: {e}")
+                    logger.debug(
+                        f"Tracker candidate {source}.Tracker{tracker_type}_create failed: {e}"
+                    )
 
         if tracker is None:
-            logger.error(f"Tracker {tracker_type} is not supported or failed to initialize in current OpenCV build.")
+            logger.error(
+                f"Tracker {tracker_type} is not supported or failed to initialize in current OpenCV build."
+            )
             return ""
 
         bbox = detection.bbox()
@@ -708,15 +721,21 @@ class VisionEngine:
 
         pts_int = dst.astype(np.int32)
         if not cv2.isContourConvex(pts_int):
-            logger.debug("Feature matching rejected: Transformed polygon is non-convex or self-intersecting.")
+            logger.debug(
+                "Feature matching rejected: Transformed polygon is non-convex or self-intersecting."
+            )
             return []
 
         poly_area = cv2.contourArea(pts_int)
         min_poly_area = self.params.get("feature_min_poly_area", 20)
-        max_poly_area = self.params.get("feature_max_poly_area", frame_w * frame_h * 0.9)
+        max_poly_area = self.params.get(
+            "feature_max_poly_area", frame_w * frame_h * 0.9
+        )
 
         if poly_area < min_poly_area or poly_area > max_poly_area:
-            logger.debug(f"Feature matching rejected: Polygon area {poly_area:.1f} out of bounds ({min_poly_area}-{max_poly_area}).")
+            logger.debug(
+                f"Feature matching rejected: Polygon area {poly_area:.1f} out of bounds ({min_poly_area}-{max_poly_area})."
+            )
             return []
 
         x_coords, y_coords = dst[:, 0, 0], dst[:, 0, 1]
@@ -888,16 +907,24 @@ class VisionEngine:
         if len(self.trackers) == 0:
             pipeline_mode = self.params.get("worker_pipeline", "template")
             if pipeline_mode == "monster":
-                detections = self.detect_monster_pipeline(frame, roi=self.default_region)
+                detections = self.detect_monster_pipeline(
+                    frame, roi=self.default_region
+                )
             else:
                 detections = self.match_templates(frame, roi=self.default_region)
 
             if self.params.get("auto_track", False) and detections:
-                strategy = self.params.get("target_selection_strategy", "highest_confidence")
+                strategy = self.params.get(
+                    "target_selection_strategy", "highest_confidence"
+                )
                 if strategy == "center_screen":
                     fh, fw = frame.shape[:2]
                     cx, cy = fw // 2, fh // 2
-                    best_det = min(detections, key=lambda d: (d.center()[0] - cx)**2 + (d.center()[1] - cy)**2)
+                    best_det = min(
+                        detections,
+                        key=lambda d: (d.center()[0] - cx) ** 2
+                        + (d.center()[1] - cy) ** 2,
+                    )
                 else:  # "highest_confidence"
                     best_det = max(detections, key=lambda d: d.score)
                 self.start_track(frame, best_det)

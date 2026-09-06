@@ -2,15 +2,18 @@ from enum import Enum
 from typing import Dict, Optional
 from dataclasses import dataclass
 
+
 class TransportStatus(Enum):
     SENT = "sent"
     FAILED = "failed"
+
 
 class CastOutcome(Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     UNVERIFIED = "unverified"
     CANCELLED = "cancelled"
+
 
 @dataclass
 class CastReservation:
@@ -21,13 +24,18 @@ class CastReservation:
     created_at: float
     expected_strategy: str
 
+
 class CastDeliveryManager:
     def __init__(self):
         self.pending_reservations: Dict[str, CastReservation] = {}
 
     def add_reservation(self, reservation: CastReservation):
         # Allow one reservation per lane
-        existing_tokens = [k for k, v in self.pending_reservations.items() if v.lane == reservation.lane]
+        existing_tokens = [
+            k
+            for k, v in self.pending_reservations.items()
+            if v.lane == reservation.lane
+        ]
         for token in existing_tokens:
             del self.pending_reservations[token]
         self.pending_reservations[reservation.token] = reservation

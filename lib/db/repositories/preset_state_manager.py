@@ -6,6 +6,7 @@ from lib.db.repositories.skill_preset_repository import SkillPresetRepository
 
 logger = logging.getLogger(__name__)
 
+
 class PresetStateManager:
     def get_active_preset(self, class_id: int) -> Optional[int]:
         conn, is_local = get_connection()
@@ -31,7 +32,9 @@ class PresetStateManager:
                 except Exception:
                     pass
 
-    def set_active_preset(self, class_id: int, preset_id: int, mode: str = 'default') -> bool:
+    def set_active_preset(
+        self, class_id: int, preset_id: int, mode: str = "default"
+    ) -> bool:
         conn, is_local = get_connection()
         if not conn:
             return False
@@ -45,7 +48,7 @@ class PresetStateManager:
                 active_preset_id = excluded.active_preset_id,
                 preset_mode = excluded.preset_mode
                 """,
-                (class_id, preset_id, mode)
+                (class_id, preset_id, mode),
             )
             conn.commit()
             return True
@@ -63,17 +66,20 @@ class PresetStateManager:
     def get_preset_mode(self, class_id: int) -> str:
         conn, is_local = get_connection()
         if not conn:
-            return 'default'
+            return "default"
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT preset_mode FROM user_preset_state WHERE class_id = ?", (class_id,))
+            cursor.execute(
+                "SELECT preset_mode FROM user_preset_state WHERE class_id = ?",
+                (class_id,),
+            )
             row = cursor.fetchone()
-            if row and row['preset_mode']:
-                return row['preset_mode']
-            return 'default'
+            if row and row["preset_mode"]:
+                return row["preset_mode"]
+            return "default"
         except Exception as e:
             logger.error(f"Error getting preset mode for class_id {class_id}: {e}")
-            return 'default'
+            return "default"
         finally:
             if is_local and conn:
                 try:
@@ -88,11 +94,11 @@ class PresetStateManager:
 
         default_preset_id = None
         for preset in presets:
-            if preset['is_default']:
-                default_preset_id = preset['preset_id']
+            if preset["is_default"]:
+                default_preset_id = preset["preset_id"]
                 break
 
         if default_preset_id is not None:
-            self.set_active_preset(class_id, default_preset_id, 'default')
+            self.set_active_preset(class_id, default_preset_id, "default")
 
         return default_preset_id

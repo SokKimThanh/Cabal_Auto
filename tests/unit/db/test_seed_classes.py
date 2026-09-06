@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 
 # Thêm đường dẫn gốc để import modules
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 from lib.db.services.seed_classes_service import SeedClassesService
 import database
@@ -36,8 +36,9 @@ def test_db_setup():
         os.remove(db_path)
     os.rmdir(temp_dir)
 
+
 def test_seed_classes_idempotent(test_db_setup):
-    service = SeedClassesService() # Uses real txt file fallback
+    service = SeedClassesService()  # Uses real txt file fallback
     src, acc, rej = service.seed_classes()
 
     assert src == 9
@@ -57,6 +58,7 @@ def test_seed_classes_idempotent(test_db_setup):
     cursor.execute("SELECT COUNT(*) FROM classes")
     count2 = cursor.fetchone()[0]
     assert count2 == 9
+
 
 def test_seed_classes_parse_robustness():
     # Write a temporary text file with malformed data
@@ -78,11 +80,12 @@ def test_seed_classes_parse_robustness():
     # Blader X should be accepted, Warrior rejected
     assert len(valid) == 1
     assert rejected == 1
-    assert valid[0]['class_code'] == 'blader-x' # Normalization check
+    assert valid[0]["class_code"] == "blader-x"  # Normalization check
     assert h != ""
 
     os.remove(temp_file)
     os.rmdir(temp_dir)
+
 
 def test_seed_classes_empty_db(test_db_setup):
     # Verify empty db state first
@@ -94,6 +97,7 @@ def test_seed_classes_empty_db(test_db_setup):
     service = SeedClassesService()
     src, acc, rej = service.seed_classes()
     assert acc == 9
+
 
 def test_seed_classes_backfill_duplicate_names(test_db_setup):
     # Setup dummy data with non-unique names that might clash in standard backfill

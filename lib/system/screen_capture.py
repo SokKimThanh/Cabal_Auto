@@ -57,6 +57,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CaptureStats:
     """Capture performance statistics"""
+
     frames_captured: int = 0
     frames_dropped: int = 0
     fps: float = 0.0
@@ -85,7 +86,7 @@ class ScreenCapture:
         queue_size: int = 5,
         target_fps: int = 15,
         downsample: Optional[Tuple[int, int]] = None,
-        on_capture_lost: Optional[callable] = None
+        on_capture_lost: Optional[callable] = None,
     ):
         """
         Initialize screen capture
@@ -138,6 +139,7 @@ class ScreenCapture:
         Returns:
             Window handle (HWND) or None if not found
         """
+
         def callback(hwnd, results):
             if win32gui.IsWindowVisible(hwnd):
                 title = win32gui.GetWindowText(hwnd)
@@ -185,12 +187,12 @@ class ScreenCapture:
             right, bottom = left + width, top + height
 
             self.window_rect = {
-                'left': left,
-                'top': top,
-                'right': right,
-                'bottom': bottom,
-                'width': width,
-                'height': height
+                "left": left,
+                "top": top,
+                "right": right,
+                "bottom": bottom,
+                "width": width,
+                "height": height,
             }
 
             logger.info(
@@ -297,17 +299,24 @@ class ScreenCapture:
                         client_rect = win32gui.GetClientRect(self.hwnd)
                         width = max(0, client_rect[2] - client_rect[0])
                         height = max(0, client_rect[3] - client_rect[1])
-                        is_minimized = win32gui.IsIconic(self.hwnd) or width == 0 or height == 0
+                        is_minimized = (
+                            win32gui.IsIconic(self.hwnd) or width == 0 or height == 0
+                        )
                     except Exception as e:
                         logger.error(f"Failed to get client rect: {e}")
                         is_minimized = True
 
                     if is_minimized:
                         with self._frame_lock:
-                            frame = None if self._latest_frame is None else self._latest_frame.copy()
+                            frame = (
+                                None
+                                if self._latest_frame is None
+                                else self._latest_frame.copy()
+                            )
                     else:
                         if self.window_rect is not None and (
-                            width != self.window_rect['width'] or height != self.window_rect['height']
+                            width != self.window_rect["width"]
+                            or height != self.window_rect["height"]
                         ):
                             # Ensure we update window_rect correctly from the fresh client_rect variables above
                             try:
@@ -316,12 +325,12 @@ class ScreenCapture:
                                 win_rect_updated = [0, 0, width, height]
 
                             self.window_rect = {
-                                'left': win_rect_updated[0],
-                                'top': win_rect_updated[1],
-                                'right': win_rect_updated[2],
-                                'bottom': win_rect_updated[3],
-                                'width': width,
-                                'height': height,
+                                "left": win_rect_updated[0],
+                                "top": win_rect_updated[1],
+                                "right": win_rect_updated[2],
+                                "bottom": win_rect_updated[3],
+                                "width": width,
+                                "height": height,
                             }
                             self._reallocate_buffer(width, height)
 
@@ -368,8 +377,8 @@ class ScreenCapture:
             self._saveDC = self._mfcDC.CreateCompatibleDC()
 
             # Create bitmap
-            w = self.window_rect['width']
-            h = self.window_rect['height']
+            w = self.window_rect["width"]
+            h = self.window_rect["height"]
             self._saveBitMap = win32ui.CreateBitmap()
             self._saveBitMap.CreateCompatibleBitmap(self._mfcDC, w, h)
             self._saveDC.SelectObject(self._saveBitMap)
@@ -438,30 +447,25 @@ class ScreenCapture:
             assert self._mfcDC is not None
             assert self._saveBitMap is not None
 
-            w = self.window_rect['width']
-            h = self.window_rect['height']
+            w = self.window_rect["width"]
+            h = self.window_rect["height"]
 
             # BitBlt: Copy window DC to memory DC
             result = windll.user32.PrintWindow(
-                self.hwnd,
-                self._saveDC.GetSafeHdc(),
-                2  # PW_RENDERFULLCONTENT
+                self.hwnd, self._saveDC.GetSafeHdc(), 2  # PW_RENDERFULLCONTENT
             )
 
             if not result:
                 logger.warning("PrintWindow failed, trying BitBlt")
                 self._saveDC.BitBlt(
-                    (0, 0), (w, h),
-                    self._mfcDC,
-                    (0, 0),
-                    win32con.SRCCOPY
+                    (0, 0), (w, h), self._mfcDC, (0, 0), win32con.SRCCOPY
                 )
 
             # Convert to numpy array
             bmpinfo = self._saveBitMap.GetInfo()
             bmpstr = self._saveBitMap.GetBitmapBits(True)
             frame = np.frombuffer(bmpstr, dtype=np.uint8)
-            frame = frame.reshape((bmpinfo['bmHeight'], bmpinfo['bmWidth'], 4))
+            frame = frame.reshape((bmpinfo["bmHeight"], bmpinfo["bmWidth"], 4))
 
             # ⚡ Bolt Optimization:
             # 💡 What: Reorder frame downsampling before color conversion and use INTER_AREA.
@@ -508,7 +512,9 @@ class ScreenCapture:
 
             # Average capture time
             if self._capture_times:
-                self.stats.avg_capture_time_ms = sum(self._capture_times) / len(self._capture_times)
+                self.stats.avg_capture_time_ms = sum(self._capture_times) / len(
+                    self._capture_times
+                )
 
             # Queue size
             self.stats.queue_size = self.frame_queue.qsize()
@@ -524,10 +530,11 @@ class ScreenCapture:
 # Convenience Functions
 # =====================================================================
 
+
 def create_capture(
     window_title: str = "Cabal",
     target_fps: int = 15,
-    downsample: Optional[Tuple[int, int]] = None
+    downsample: Optional[Tuple[int, int]] = None,
 ) -> Optional[ScreenCapture]:
     """
     Create and start screen capture
@@ -571,10 +578,10 @@ if __name__ == "__main__":
                     f"Captured: {stats.frames_captured} | "
                     f"Dropped: {stats.frames_dropped} | "
                     f"Queue: {stats.queue_size}     ",
-                    end=""
+                    end="",
                 )
 
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
 
     except KeyboardInterrupt:

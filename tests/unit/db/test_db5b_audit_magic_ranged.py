@@ -11,6 +11,7 @@ def test_audit_empty_source(tmp_path, capsys):
 
     # We need to temporarily patch SOURCE_FILE in the module
     import lib.db.services.db5b_audit_magic_ranged as audit_module
+
     old_file = audit_module.SOURCE_FILE
     audit_module.SOURCE_FILE = str(test_file)
 
@@ -19,7 +20,7 @@ def test_audit_empty_source(tmp_path, capsys):
         captured = capsys.readouterr()
 
         # Manifest output should be generated but for all keys it should be 0 or empty
-        assert "Total:" not in captured.out or "\"total\": 0" in captured.out
+        assert "Total:" not in captured.out or '"total": 0' in captured.out
 
         with open("lib/data/db5b_magic_ranged_manifest.json", "r") as f:
             manifest = json.load(f)
@@ -27,11 +28,13 @@ def test_audit_empty_source(tmp_path, capsys):
     finally:
         audit_module.SOURCE_FILE = old_file
 
+
 def test_audit_malformed_input(tmp_path, capsys):
     test_file = tmp_path / "malformed.txt"
     test_file.write_text("just some random text without any proper structure")
 
     import lib.db.services.db5b_audit_magic_ranged as audit_module
+
     old_file = audit_module.SOURCE_FILE
     audit_module.SOURCE_FILE = str(test_file)
 
@@ -43,6 +46,7 @@ def test_audit_malformed_input(tmp_path, capsys):
             assert manifest == {}
     finally:
         audit_module.SOURCE_FILE = old_file
+
 
 def test_audit_idempotency_and_logic(tmp_path):
     test_file = tmp_path / "test_data.txt"
@@ -69,6 +73,7 @@ def test_audit_idempotency_and_logic(tmp_path):
     test_file.write_text(content)
 
     import lib.db.services.db5b_audit_magic_ranged as audit_module
+
     old_file = audit_module.SOURCE_FILE
     audit_module.SOURCE_FILE = str(test_file)
 
@@ -88,7 +93,9 @@ def test_audit_idempotency_and_logic(tmp_path):
         # Check BM2
         assert w_skills["twin-gunner"]["category"] == "bm2"
         assert w_skills["twin-gunner-attack"]["category"] == "bm2"
-        assert w_skills["twin-gunner-attack"]["confidence"] == "AMBIGUOUS" # Due to suffix strip
+        assert (
+            w_skills["twin-gunner-attack"]["confidence"] == "AMBIGUOUS"
+        )  # Due to suffix strip
 
         # Check Buffs and Suffix Strip
         assert w_skills["vital-force"]["category"] == "buff"

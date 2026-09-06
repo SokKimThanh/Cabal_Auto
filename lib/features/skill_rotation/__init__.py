@@ -9,23 +9,20 @@ from .builder import (
     calculate_rotation_timing,
     calculate_press_duration,
     generate_rotation_preview,
-    generate_execution_preview
+    generate_execution_preview,
 )
 
-from .ui_integration import (
-    SkillRotationUI,
-    integrate_rotation_builder
-)
+from .ui_integration import SkillRotationUI, integrate_rotation_builder
 
 __all__ = [
-    'SkillTiming',
-    'SkillRotation',
-    'calculate_rotation_timing',
-    'calculate_press_duration',
-    'generate_rotation_preview',
-    'generate_execution_preview',
-    'SkillRotationUI',
-    'integrate_rotation_builder'
+    "SkillTiming",
+    "SkillRotation",
+    "calculate_rotation_timing",
+    "calculate_press_duration",
+    "generate_rotation_preview",
+    "generate_execution_preview",
+    "SkillRotationUI",
+    "integrate_rotation_builder",
 ]
 
-__version__ = '1.0.0'
+__version__ = "1.0.0"

@@ -19,10 +19,11 @@ def test_scan_controller_init():
         set_status_text=mock_set_text,
         set_status_icon=mock_set_icon,
         show_results=mock_show,
-        icons=DummyIcons
+        icons=DummyIcons,
     )
 
     assert controller.vision_engine_getter == mock_getter
+
 
 @patch("threading.Thread")
 def test_scan_controller_run_scan(mock_thread):
@@ -42,7 +43,7 @@ def test_scan_controller_run_scan(mock_thread):
         set_status_text=mock_set_text,
         set_status_icon=mock_set_icon,
         show_results=mock_show,
-        icons=DummyIcons
+        icons=DummyIcons,
     )
 
     controller.run_scan(manual=True)

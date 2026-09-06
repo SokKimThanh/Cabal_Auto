@@ -33,38 +33,38 @@ from ui.setup_wizard import SetupWizard
 
 def setup_first_time_config():
     """Create an incomplete config to simulate first-time user."""
-    config_path = project_root / 'lib' / 'data' / 'hunt_config.json'
+    config_path = project_root / "lib" / "data" / "hunt_config.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Create incomplete config (missing required fields)
     incomplete_config = {
         "version": "1.0",
         "window_title": "",
         "monster_list": [],
-        "skill_slots": []
+        "skill_slots": [],
     }
-    
-    with open(config_path, 'w', encoding='utf-8') as f:
+
+    with open(config_path, "w", encoding="utf-8") as f:
         json.dump(incomplete_config, f, indent=2)
-    
+
     print(f"✅ Created first-time config at: {config_path}")
     return config_path
 
 
 def test_language_persistence():
     """Test language persistence when navigating through wizard steps."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Language Persistence During Navigation")
-    print("="*70)
-    
+    print("=" * 70)
+
     # Setup first-time config
     setup_first_time_config()
-    
+
     # Create GUI
     root = tk.Tk()
     root.title("Test: Language Persistence")
     root.geometry("800x700")
-    
+
     # Instructions
     instructions = tk.Label(
         root,
@@ -90,62 +90,62 @@ def test_language_persistence():
             "✅ EXPECTED (After Fix):\n"
             "Language persists across navigation - selected language remains"
         ),
-        justify='left',
-        bg='#e7f3ff',
-        fg='#004085',
+        justify="left",
+        bg="#e7f3ff",
+        fg="#004085",
         padx=20,
         pady=20,
-        font=('Arial', 10),
-        relief='solid',
-        borderwidth=1
+        font=("Arial", 10),
+        relief="solid",
+        borderwidth=1,
     )
-    instructions.pack(fill='both', expand=True, padx=20, pady=20)
-    
+    instructions.pack(fill="both", expand=True, padx=20, pady=20)
+
     # Status label
     status_label = tk.Label(
         root,
         text="Status: Ready to test",
-        font=('Arial', 11, 'bold'),
-        bg='#ffc107',
-        fg='#000',
-        pady=10
+        font=("Arial", 11, "bold"),
+        bg="#ffc107",
+        fg="#000",
+        pady=10,
     )
-    status_label.pack(fill='x')
-    
+    status_label.pack(fill="x")
+
     def open_wizard():
         """Open the setup wizard."""
         status_label.config(
             text="Status: Wizard opened - Follow test steps above",
-            bg='#28a745',
-            fg='white'
+            bg="#28a745",
+            fg="white",
         )
         wizard = SetupWizard(root, on_complete=lambda cfg: on_wizard_complete(cfg))
-    
+
     def on_wizard_complete(config):
         """Handle wizard completion."""
-        lang = config.get('language', 'unknown')
+        lang = config.get("language", "unknown")
         status_label.config(
             text=f"Status: Wizard completed - Final language: {lang}",
-            bg='#17a2b8',
-            fg='white'
+            bg="#17a2b8",
+            fg="white",
         )
         print(f"✅ Wizard completed with language: {lang}")
-    
+
     # Button to open wizard
     open_btn = tk.Button(
         root,
         text="🚀 Open Setup Wizard - Test Language Persistence",
         command=open_wizard,
-        font=('Arial', 12, 'bold'),
-        bg='#007bff',
-        fg='white',
+        font=("Arial", 12, "bold"),
+        bg="#007bff",
+        fg="white",
         padx=20,
         pady=15,
-        relief='raised',
-        bd=3
+        relief="raised",
+        bd=3,
     )
     open_btn.pack(pady=20)
-    
+
     # Quick reference
     quick_ref = tk.Label(
         root,
@@ -156,34 +156,34 @@ def test_language_persistence():
             "• Test both EN → VI and VI → EN transitions\n"
             "• Test multiple navigation cycles"
         ),
-        justify='left',
-        bg='#f8f9fa',
-        fg='#495057',
+        justify="left",
+        bg="#f8f9fa",
+        fg="#495057",
         padx=15,
         pady=10,
-        font=('Arial', 9),
-        relief='solid',
-        borderwidth=1
+        font=("Arial", 9),
+        relief="solid",
+        borderwidth=1,
     )
-    quick_ref.pack(fill='x', padx=20, pady=(0, 20))
-    
+    quick_ref.pack(fill="x", padx=20, pady=(0, 20))
+
     root.mainloop()
 
 
 def test_user_level_persistence():
     """Test user level persistence when navigating through wizard steps."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: User Level Persistence During Navigation")
-    print("="*70)
-    
+    print("=" * 70)
+
     # Setup first-time config
     setup_first_time_config()
-    
+
     # Create GUI
     root = tk.Tk()
     root.title("Test: User Level Persistence")
     root.geometry("800x700")
-    
+
     # Instructions
     instructions = tk.Label(
         root,
@@ -205,62 +205,62 @@ def test_user_level_persistence():
             "✅ EXPECTED (After Fix):\n"
             "User level persists - 'New User' remains selected"
         ),
-        justify='left',
-        bg='#d4edda',
-        fg='#155724',
+        justify="left",
+        bg="#d4edda",
+        fg="#155724",
         padx=20,
         pady=20,
-        font=('Arial', 10),
-        relief='solid',
-        borderwidth=1
+        font=("Arial", 10),
+        relief="solid",
+        borderwidth=1,
     )
-    instructions.pack(fill='both', expand=True, padx=20, pady=20)
-    
+    instructions.pack(fill="both", expand=True, padx=20, pady=20)
+
     # Status label
     status_label = tk.Label(
         root,
         text="Status: Ready to test",
-        font=('Arial', 11, 'bold'),
-        bg='#ffc107',
-        fg='#000',
-        pady=10
+        font=("Arial", 11, "bold"),
+        bg="#ffc107",
+        fg="#000",
+        pady=10,
     )
-    status_label.pack(fill='x')
-    
+    status_label.pack(fill="x")
+
     def open_wizard():
         """Open the setup wizard."""
         status_label.config(
             text="Status: Wizard opened - Follow test steps above",
-            bg='#28a745',
-            fg='white'
+            bg="#28a745",
+            fg="white",
         )
         wizard = SetupWizard(root, on_complete=lambda cfg: on_wizard_complete(cfg))
-    
+
     def on_wizard_complete(config):
         """Handle wizard completion."""
-        level = config.get('user_level', 'unknown')
+        level = config.get("user_level", "unknown")
         status_label.config(
             text=f"Status: Wizard completed - Final user level: {level}",
-            bg='#17a2b8',
-            fg='white'
+            bg="#17a2b8",
+            fg="white",
         )
         print(f"✅ Wizard completed with user level: {level}")
-    
+
     # Button to open wizard
     open_btn = tk.Button(
         root,
         text="🚀 Open Setup Wizard - Test User Level Persistence",
         command=open_wizard,
-        font=('Arial', 12, 'bold'),
-        bg='#28a745',
-        fg='white',
+        font=("Arial", 12, "bold"),
+        bg="#28a745",
+        fg="white",
         padx=20,
         pady=15,
-        relief='raised',
-        bd=3
+        relief="raised",
+        bd=3,
     )
     open_btn.pack(pady=20)
-    
+
     root.mainloop()
 
 
@@ -269,18 +269,18 @@ def show_menu():
     root = tk.Tk()
     root.title("Language & User Level Persistence Tests")
     root.geometry("700x500")
-    
+
     # Header
     header = tk.Label(
         root,
         text="🧪 Setup Wizard Persistence Tests",
-        font=('Arial', 16, 'bold'),
-        bg='#343a40',
-        fg='white',
-        pady=15
+        font=("Arial", 16, "bold"),
+        bg="#343a40",
+        fg="white",
+        pady=15,
     )
-    header.pack(fill='x')
-    
+    header.pack(fill="x")
+
     # Description
     desc = tk.Label(
         root,
@@ -290,16 +290,16 @@ def show_menu():
             "Bug Fixed: language_var and user_level_var were being\n"
             "reset to default values every time Step 1 was rebuilt."
         ),
-        font=('Arial', 11),
-        justify='center',
-        pady=20
+        font=("Arial", 11),
+        justify="center",
+        pady=20,
     )
     desc.pack()
-    
+
     # Test buttons frame
     buttons_frame = tk.Frame(root)
-    buttons_frame.pack(expand=True, fill='both', padx=30, pady=10)
-    
+    buttons_frame.pack(expand=True, fill="both", padx=30, pady=10)
+
     # Test 1 button
     btn1 = tk.Button(
         buttons_frame,
@@ -309,17 +309,17 @@ def show_menu():
             "Verify language doesn't reset"
         ),
         command=lambda: [root.destroy(), test_language_persistence()],
-        font=('Arial', 11),
-        bg='#007bff',
-        fg='white',
+        font=("Arial", 11),
+        bg="#007bff",
+        fg="white",
         padx=20,
         pady=20,
-        justify='center',
-        relief='raised',
-        bd=3
+        justify="center",
+        relief="raised",
+        bd=3,
     )
-    btn1.pack(fill='x', pady=10)
-    
+    btn1.pack(fill="x", pady=10)
+
     # Test 2 button
     btn2 = tk.Button(
         buttons_frame,
@@ -329,41 +329,41 @@ def show_menu():
             "Verify selection doesn't reset"
         ),
         command=lambda: [root.destroy(), test_user_level_persistence()],
-        font=('Arial', 11),
-        bg='#28a745',
-        fg='white',
+        font=("Arial", 11),
+        bg="#28a745",
+        fg="white",
         padx=20,
         pady=20,
-        justify='center',
-        relief='raised',
-        bd=3
+        justify="center",
+        relief="raised",
+        bd=3,
     )
-    btn2.pack(fill='x', pady=10)
-    
+    btn2.pack(fill="x", pady=10)
+
     # Exit button
     exit_btn = tk.Button(
         buttons_frame,
         text="❌ Exit Tests",
         command=root.destroy,
-        font=('Arial', 11),
-        bg='#dc3545',
-        fg='white',
+        font=("Arial", 11),
+        bg="#dc3545",
+        fg="white",
         padx=20,
         pady=15,
-        relief='raised',
-        bd=3
+        relief="raised",
+        bd=3,
     )
-    exit_btn.pack(fill='x', pady=20)
-    
+    exit_btn.pack(fill="x", pady=20)
+
     root.mainloop()
 
 
-if __name__ == '__main__':
-    print("\n" + "="*70)
+if __name__ == "__main__":
+    print("\n" + "=" * 70)
     print("SETUP WIZARD PERSISTENCE TEST SUITE")
-    print("="*70)
+    print("=" * 70)
     print("\nTests that wizard state persists when navigating between steps.")
     print("Bug: language_var and user_level_var were reset on Step 1 rebuild.")
     print("Fix: Restore from self.language and self.user_level.\n")
-    
+
     show_menu()

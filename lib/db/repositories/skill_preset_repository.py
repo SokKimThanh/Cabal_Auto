@@ -5,6 +5,7 @@ from lib.db.connection import get_connection
 
 logger = logging.getLogger(__name__)
 
+
 class SkillPresetRepository:
     def create_preset(self, class_id: int, name: str, is_default: int = 0) -> int:
         conn, is_local = get_connection()
@@ -40,14 +41,14 @@ class SkillPresetRepository:
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT lane_type, skill_id FROM preset_skills WHERE preset_id = ? ORDER BY lane_type, position",
-                (preset_id,)
+                (preset_id,),
             )
             rows = cursor.fetchall()
 
             result = {}
             for row in rows:
-                lane = row['lane_type']
-                skill_id = row['skill_id']
+                lane = row["lane_type"]
+                skill_id = row["skill_id"]
                 if lane not in result:
                     result[lane] = []
                 result[lane].append(skill_id)
@@ -63,20 +64,24 @@ class SkillPresetRepository:
                 except Exception:
                     pass
 
-    def set_preset_skills(self, preset_id: int, skills_by_lane: Dict[str, List[int]]) -> bool:
+    def set_preset_skills(
+        self, preset_id: int, skills_by_lane: Dict[str, List[int]]
+    ) -> bool:
         conn, is_local = get_connection()
         if not conn:
             return False
         try:
             cursor = conn.cursor()
 
-            cursor.execute("DELETE FROM preset_skills WHERE preset_id = ?", (preset_id,))
+            cursor.execute(
+                "DELETE FROM preset_skills WHERE preset_id = ?", (preset_id,)
+            )
 
             for lane, skill_ids in skills_by_lane.items():
                 for position, skill_id in enumerate(skill_ids):
                     cursor.execute(
                         "INSERT INTO preset_skills (preset_id, skill_id, lane_type, position) VALUES (?, ?, ?, ?)",
-                        (preset_id, skill_id, lane, position)
+                        (preset_id, skill_id, lane, position),
                     )
 
             conn.commit()
@@ -98,7 +103,9 @@ class SkillPresetRepository:
             return False
         try:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM skill_presets WHERE preset_id = ?", (preset_id,))
+            cursor.execute(
+                "DELETE FROM skill_presets WHERE preset_id = ?", (preset_id,)
+            )
             conn.commit()
             return True
         except Exception as e:
@@ -118,7 +125,9 @@ class SkillPresetRepository:
             return []
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM skill_presets WHERE class_id = ?", (class_id,))
+            cursor.execute(
+                "SELECT * FROM skill_presets WHERE class_id = ?", (class_id,)
+            )
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         except Exception as e:
@@ -137,7 +146,9 @@ class SkillPresetRepository:
             return None
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM skill_presets WHERE preset_id = ?", (preset_id,))
+            cursor.execute(
+                "SELECT * FROM skill_presets WHERE preset_id = ?", (preset_id,)
+            )
             row = cursor.fetchone()
             if row:
                 return dict(row)

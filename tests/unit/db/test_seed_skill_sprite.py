@@ -6,10 +6,9 @@ from lib.db.services.seed_skill_sprite_service import SeedSkillSpriteService
 pytestmark = pytest.mark.unit
 
 
-
 @pytest.fixture
 def memory_db():
-    conn = sqlite3.connect(':memory:')
+    conn = sqlite3.connect(":memory:")
     # Create the schema WITHOUT the icon_* columns to verify the dynamic addition
     cursor = conn.cursor()
     cursor.execute("""
@@ -34,16 +33,21 @@ def memory_db():
 
 def test_seed_with_empty_db(memory_db):
     # Mock get_connection to return our memory DB
-    with patch('lib.db.services.seed_skill_sprite_service.get_connection', return_value=(memory_db, False)):
+    with patch(
+        "lib.db.services.seed_skill_sprite_service.get_connection",
+        return_value=(memory_db, False),
+    ):
         service = SeedSkillSpriteService()
 
         # We'll mock _extract_sprites directly for the DB test to isolate from file reading
         mock_sprites = {
             "test_skill_1": {"x": 10, "y": 20, "width": 30, "height": 40},
-            "test_skill_2": {"x": 50, "y": 60, "width": 30, "height": 40}
+            "test_skill_2": {"x": 50, "y": 60, "width": 30, "height": 40},
         }
 
-        with patch.object(service, '_extract_sprites', return_value=(mock_sprites, "dummy_hash")):
+        with patch.object(
+            service, "_extract_sprites", return_value=(mock_sprites, "dummy_hash")
+        ):
             result = service.seed_skill_sprites()
 
             assert result["status"] == "PASSED"
@@ -61,7 +65,9 @@ def test_seed_with_empty_db(memory_db):
             assert "icon_h" in columns
 
             # Verify data
-            cursor.execute("SELECT skill_code, icon_x, icon_y FROM skills ORDER BY skill_code")
+            cursor.execute(
+                "SELECT skill_code, icon_x, icon_y FROM skills ORDER BY skill_code"
+            )
             rows = cursor.fetchall()
             assert len(rows) == 2
             assert rows[0] == ("test_skill_1", 10, 20)
@@ -69,13 +75,16 @@ def test_seed_with_empty_db(memory_db):
 
 
 def test_seed_idempotency(memory_db):
-    with patch('lib.db.services.seed_skill_sprite_service.get_connection', return_value=(memory_db, False)):
+    with patch(
+        "lib.db.services.seed_skill_sprite_service.get_connection",
+        return_value=(memory_db, False),
+    ):
         service = SeedSkillSpriteService()
-        mock_sprites = {
-            "test_skill_1": {"x": 10, "y": 20, "width": 30, "height": 40}
-        }
+        mock_sprites = {"test_skill_1": {"x": 10, "y": 20, "width": 30, "height": 40}}
 
-        with patch.object(service, '_extract_sprites', return_value=(mock_sprites, "dummy_hash")):
+        with patch.object(
+            service, "_extract_sprites", return_value=(mock_sprites, "dummy_hash")
+        ):
             # First insert
             result1 = service.seed_skill_sprites()
             assert result1["status"] == "PASSED"
@@ -99,7 +108,7 @@ def test_malformed_source_no_boundary():
     # Source file content without JSON.parse('
     malformed_content = "This is some text but not the right boundary."
 
-    with patch('builtins.open', mock_open(read_data=malformed_content)):
+    with patch("builtins.open", mock_open(read_data=malformed_content)):
         with pytest.raises(ValueError, match="Could not find JSON.parse boundary"):
             service._extract_sprites()
 
@@ -107,9 +116,11 @@ def test_malformed_source_no_boundary():
 def test_malformed_source_invalid_json():
     service = SeedSkillSpriteService()
     # Source file content with bad JSON inside the boundary
-    malformed_content = "some text JSON.parse('{ \"sprites\": { bad json } }') more text"
+    malformed_content = (
+        "some text JSON.parse('{ \"sprites\": { bad json } }') more text"
+    )
 
-    with patch('builtins.open', mock_open(read_data=malformed_content)):
+    with patch("builtins.open", mock_open(read_data=malformed_content)):
         with pytest.raises(ValueError, match="Failed to decode JSON"):
             service._extract_sprites()
 
@@ -122,13 +133,21 @@ def test_forbidden_file():
 
 def test_stress_test_large_batch(memory_db):
     """Stress test the seeding mechanism with 5000+ records to ensure batch insert is robust."""
-    with patch('lib.db.services.seed_skill_sprite_service.get_connection', return_value=(memory_db, False)):
+    with patch(
+        "lib.db.services.seed_skill_sprite_service.get_connection",
+        return_value=(memory_db, False),
+    ):
         service = SeedSkillSpriteService()
 
         # Generate 6000 mock records
-        mock_sprites = {f"stress_skill_{i}": {"x": i, "y": i, "width": 38, "height": 38} for i in range(6000)}
+        mock_sprites = {
+            f"stress_skill_{i}": {"x": i, "y": i, "width": 38, "height": 38}
+            for i in range(6000)
+        }
 
-        with patch.object(service, '_extract_sprites', return_value=(mock_sprites, "stress_hash")):
+        with patch.object(
+            service, "_extract_sprites", return_value=(mock_sprites, "stress_hash")
+        ):
             result = service.seed_skill_sprites()
 
             assert result["status"] == "PASSED"
@@ -145,13 +164,13 @@ def test_file_hash_variation():
     """Verify that different file contents yield different hashes when extracted."""
     service = SeedSkillSpriteService()
 
-    content_a = "prefix JSON.parse('{\"sprites\": {\"a\": {\"x\": 1}}}') suffix"
-    content_b = "prefix JSON.parse('{\"sprites\": {\"a\": {\"x\": 2}}}') suffix"
+    content_a = 'prefix JSON.parse(\'{"sprites": {"a": {"x": 1}}}\') suffix'
+    content_b = 'prefix JSON.parse(\'{"sprites": {"a": {"x": 2}}}\') suffix'
 
-    with patch('builtins.open', mock_open(read_data=content_a)):
+    with patch("builtins.open", mock_open(read_data=content_a)):
         sprites_a, hash_a = service._extract_sprites()
 
-    with patch('builtins.open', mock_open(read_data=content_b)):
+    with patch("builtins.open", mock_open(read_data=content_b)):
         sprites_b, hash_b = service._extract_sprites()
 
     assert hash_a != hash_b

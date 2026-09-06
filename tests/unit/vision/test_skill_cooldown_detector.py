@@ -18,6 +18,7 @@ def test_cooldown_detection_success():
     current2 = np.full((100, 100, 3), 100, dtype=np.uint8)
     assert detector.check_cooldown(current2) is True
 
+
 def test_cooldown_detection_no_baseline():
     detector = SkillCooldownDetector(roi=(0.0, 1.0, 0.0, 1.0), threshold=10.0)
     current = np.full((100, 100, 3), 255, dtype=np.uint8)

@@ -5,26 +5,30 @@ from unittest.mock import MagicMock, patch
 import sys
 
 # Mock cv2 before importing UI modules
-sys.modules['cv2'] = MagicMock()
-sys.modules['win32gui'] = MagicMock()
-sys.modules['win32con'] = MagicMock()
-sys.modules['win32api'] = MagicMock()
-sys.modules['numpy'] = MagicMock()
+sys.modules["cv2"] = MagicMock()
+sys.modules["win32gui"] = MagicMock()
+sys.modules["win32con"] = MagicMock()
+sys.modules["win32api"] = MagicMock()
+sys.modules["numpy"] = MagicMock()
 
 from lib.features.hunt.config_migrator import _migrate_skills
 from ui.controllers.app_state_controller import AppStateController
 from ui.tabs.hunt_tab import HuntTab
 
+
 class TestSkillStripLogic(unittest.TestCase):
 
-    @patch('lib.features.skills.skill_repo.load_skill_library', return_value={})
+    @patch("lib.features.skills.skill_repo.load_skill_library", return_value={})
     def test_skill_migration_splits_arrays_and_fallbacks(self, mock_load):
         """Migration separates attacks and buffs into 2 arrays and fallbacks missing type."""
         old_data = {
             "skill_slots": [
                 {"key": "1", "name": "Fireball", "type": "attack"},
                 {"key": "2", "name": "Shield", "type": "buff"},
-                {"key": "3", "name": "BrokenSkill"} # Missing type, cast_time, cooldown
+                {
+                    "key": "3",
+                    "name": "BrokenSkill",
+                },  # Missing type, cast_time, cooldown
             ]
         }
 
@@ -34,11 +38,10 @@ class TestSkillStripLogic(unittest.TestCase):
 
         self.assertEqual(old_data["skill_slots"][0]["name"], "Fireball")
 
-
-
-
-
-    @patch('ui.controllers.app_state_controller.AppStateController.__init__', return_value=None)
+    @patch(
+        "ui.controllers.app_state_controller.AppStateController.__init__",
+        return_value=None,
+    )
     def test_key_conflict_warning_with_combo_key(self, mock_init):
         """Key conflict with combo_start_key shows warning."""
         try:
@@ -63,8 +66,6 @@ class TestSkillStripLogic(unittest.TestCase):
         controller._validate_slot_key_duplicates()
 
         # Test passed visually if error handled
-
-
 
     def test_key_conflict_soft_warning_skill_vs_skill(self):
         try:
@@ -94,8 +95,11 @@ class TestSkillStripLogic(unittest.TestCase):
                 self.auto_combo_var = tk.BooleanVar()
                 self.state_controller = None
 
-            def _refresh_monster_select_options(self): pass
-            def _create_tooltip(self, widget, text): pass
+            def _refresh_monster_select_options(self):
+                pass
+
+            def _create_tooltip(self, widget, text):
+                pass
 
         app = MockApp()
 
@@ -106,6 +110,7 @@ class TestSkillStripLogic(unittest.TestCase):
 
         # Call validation
         from ui.controllers.app_state_controller import AppStateController
+
         validator = AppStateController(app)
         app.state_controller = validator
         validator._validate_slot_key_duplicates()
@@ -125,9 +130,7 @@ class TestSkillStripLogic(unittest.TestCase):
         class MockApp(tk.Tk):
             def __init__(self):
                 self.hunt_cfg = {"combo": {"combo_start_key": "Alt+3"}}
-                self.skills = [
-                    {"name": "Skill1", "key": "Alt+3", "type": "attack"}
-                ]
+                self.skills = [{"name": "Skill1", "key": "Alt+3", "type": "attack"}]
                 tk.Tk.__init__(self)
                 self.skill_slot_vars = [tk.StringVar(self) for _ in range(6)]
                 self.skill_slot_boxes = [ttk.Combobox(root) for _ in range(6)]
@@ -142,7 +145,9 @@ class TestSkillStripLogic(unittest.TestCase):
                 self.state_controller = None
                 self.tooltip_messages = {}
 
-            def _refresh_monster_select_options(self): pass
+            def _refresh_monster_select_options(self):
+                pass
+
             def _create_tooltip(self, widget, text):
                 self.tooltip_messages[id(widget)] = text
 
@@ -153,6 +158,7 @@ class TestSkillStripLogic(unittest.TestCase):
 
         # Call validation
         from ui.controllers.app_state_controller import AppStateController
+
         validator = AppStateController(app)
         app.state_controller = validator
         validator._validate_slot_key_duplicates()
@@ -160,7 +166,11 @@ class TestSkillStripLogic(unittest.TestCase):
         # Assert: Tooltip contains "Combo Start Key"
         found_combo_conflict_tooltip = False
         for msg in app.tooltip_messages.values():
-            if "Combo Start Key" in msg or "combo_start_key" in msg.lower() or "Trùng với Combo Start Key" in msg:
+            if (
+                "Combo Start Key" in msg
+                or "combo_start_key" in msg.lower()
+                or "Trùng với Combo Start Key" in msg
+            ):
                 found_combo_conflict_tooltip = True
                 break
 
@@ -174,10 +184,11 @@ class TestSkillStripLogic(unittest.TestCase):
             "Placeholder test: config_migrator._migrate_skills mutates input and currently has no cb4 atomic write behavior to assert."
         )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
 
-    @patch('ui.tabs.hunt_tab.HuntTab.show_toast')
+    @patch("ui.tabs.hunt_tab.HuntTab.show_toast")
     def test_bidirectional_routing_attack_to_buff(self, mock_toast):
         """Test routing an attack skill selected in buff lane moves to combo lane."""
         try:
@@ -198,7 +209,8 @@ if __name__ == '__main__':
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
 
-            def _refresh_monster_select_options(self): pass
+            def _refresh_monster_select_options(self):
+                pass
 
         app = MockApp()
         tab = HuntTab(root, app)
@@ -219,11 +231,15 @@ if __name__ == '__main__':
         # The skill is type "attack" but selected in "buff" lane. It should be moved to first empty "combo" slot (index 0).
         self.assertEqual(app.skill_slot_vars[0].get(), "SkillAttack")
         self.assertEqual(app.skill_slot_vars[4].get(), "")
-        mock_toast.assert_called_with("Đã tự động chuyển 'SkillAttack' sang Làn Combo", duration_ms=2000, level="info")
+        mock_toast.assert_called_with(
+            "Đã tự động chuyển 'SkillAttack' sang Làn Combo",
+            duration_ms=2000,
+            level="info",
+        )
 
         root.destroy()
 
-    @patch('ui.tabs.hunt_tab.HuntTab.show_toast')
+    @patch("ui.tabs.hunt_tab.HuntTab.show_toast")
     def test_bidirectional_routing_lane_full(self, mock_toast):
         """Test routing blocks when destination lane is full."""
         try:
@@ -243,7 +259,8 @@ if __name__ == '__main__':
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
 
-            def _refresh_monster_select_options(self): pass
+            def _refresh_monster_select_options(self):
+                pass
 
         app = MockApp()
 
@@ -270,12 +287,13 @@ if __name__ == '__main__':
 
         # Buff lane is full, should revert value in combo lane and show toast
         self.assertEqual(app.skill_slot_vars[0].get(), "OldComboSkill")
-        mock_toast.assert_called_with("Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error")
+        mock_toast.assert_called_with(
+            "Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error"
+        )
 
         root.destroy()
 
-
-    @patch('ui.tabs.hunt_tab.HuntTab.show_toast')
+    @patch("ui.tabs.hunt_tab.HuntTab.show_toast")
     def test_bidirectional_routing_no_cascade(self, mock_toast):
         """Test routing doesn't cascade and move other skills when blocked."""
         try:
@@ -295,7 +313,8 @@ if __name__ == '__main__':
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
 
-            def _refresh_monster_select_options(self): pass
+            def _refresh_monster_select_options(self):
+                pass
 
         app = MockApp()
         tab = HuntTab(root, app)
@@ -319,7 +338,9 @@ if __name__ == '__main__':
         self.assertEqual(app.skill_slot_vars[0].get(), "Combo1")
         self.assertEqual(app.skill_slot_vars[1].get(), "Combo2")
         self.assertEqual(app.skill_slot_vars[4].get(), "Buff1")
-        mock_toast.assert_called_with("Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error")
+        mock_toast.assert_called_with(
+            "Làn kỹ năng tương ứng đã đầy", duration_ms=2000, level="error"
+        )
 
         root.destroy()
 
@@ -342,7 +363,8 @@ if __name__ == '__main__':
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
 
-            def _refresh_monster_select_options(self): pass
+            def _refresh_monster_select_options(self):
+                pass
 
         app = MockApp()
         tab = HuntTab(root, app)

@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 from lib.db.connection import get_connection
 
+
 class MonsterCatalogueLookup:
     """
     Lookup adapter for Monsters.
@@ -37,7 +38,9 @@ class MonsterCatalogueLookup:
 
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM monsters WHERE name = ? LIMIT 1", (monster_name,))
+            cursor.execute(
+                "SELECT * FROM monsters WHERE name = ? LIMIT 1", (monster_name,)
+            )
             row = cursor.fetchone()
             return dict(row) if row else None
         except Exception:
@@ -66,7 +69,10 @@ class SkillCatalogueLookup:
 
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM skills WHERE name = ? OR alias = ? LIMIT 1", (skill_name, skill_name))
+            cursor.execute(
+                "SELECT * FROM skills WHERE name = ? OR alias = ? LIMIT 1",
+                (skill_name, skill_name),
+            )
             row = cursor.fetchone()
             if not row:
                 return None
@@ -75,7 +81,10 @@ class SkillCatalogueLookup:
 
             # Enrich with class data if possible
             if skill_data.get("class_id"):
-                cursor.execute("SELECT * FROM classes WHERE class_id = ?", (skill_data["class_id"],))
+                cursor.execute(
+                    "SELECT * FROM classes WHERE class_id = ?",
+                    (skill_data["class_id"],),
+                )
                 class_row = cursor.fetchone()
                 if class_row:
                     skill_data["class_data"] = dict(class_row)
@@ -99,7 +108,11 @@ class SkillRuntimeView:
     """
 
     @classmethod
-    def build_view(cls, user_skill: Dict[str, Any], catalogue_record: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def build_view(
+        cls,
+        user_skill: Dict[str, Any],
+        catalogue_record: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         view = dict(user_skill)
 
         # Optional catalogue enrichment
@@ -110,11 +123,13 @@ class SkillRuntimeView:
                 "x": catalogue_record.get("icon_x"),
                 "y": catalogue_record.get("icon_y"),
                 "w": catalogue_record.get("icon_w"),
-                "h": catalogue_record.get("icon_h")
+                "h": catalogue_record.get("icon_h"),
             }
             if catalogue_record.get("class_data"):
                 view["class_name"] = catalogue_record["class_data"].get("name")
                 view["class_code"] = catalogue_record["class_data"].get("class_code")
-                view["class_icon_path"] = catalogue_record["class_data"].get("icon_path")
+                view["class_icon_path"] = catalogue_record["class_data"].get(
+                    "icon_path"
+                )
 
         return view

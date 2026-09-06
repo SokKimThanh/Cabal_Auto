@@ -2,6 +2,7 @@ import sqlite3
 from typing import List, Dict, Any, Optional
 from lib.db.connection import get_connection
 
+
 class BuildService:
     def __init__(self):
         pass
@@ -31,20 +32,24 @@ class BuildService:
                     "author": data.get("author"),
                     "description": data.get("description"),
                     "upvote_count": data.get("upvote_count", 0),
-                }
+                },
             )
             build_id = cursor.lastrowid
             conn.commit()
             return build_id
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[BuildService] Create build error: {e}")
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def get_build_by_id(self, build_id: int) -> Optional[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -60,8 +65,10 @@ class BuildService:
             return None
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def get_builds(self) -> List[Dict[str, Any]]:
         conn, is_local = get_connection()
@@ -76,8 +83,10 @@ class BuildService:
             return []
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def update_build(self, build_id: int, data: Dict[str, Any]) -> bool:
         conn, is_local = get_connection()
@@ -109,20 +118,24 @@ class BuildService:
                     "author": data.get("author"),
                     "description": data.get("description"),
                     "upvote_count": data.get("upvote_count"),
-                }
+                },
             )
             updated = cursor.rowcount > 0
             conn.commit()
             return updated
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[BuildService] Update build error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def delete_build(self, build_id: int) -> bool:
         conn, is_local = get_connection()
@@ -136,11 +149,15 @@ class BuildService:
             conn.commit()
             return deleted
         except Exception as e:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"[BuildService] Delete build error: {e}")
             return False
         finally:
             if is_local and conn:
-                try: conn.close()
-                except: pass
+                try:
+                    conn.close()
+                except:
+                    pass

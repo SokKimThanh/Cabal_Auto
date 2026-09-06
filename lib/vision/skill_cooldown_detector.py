@@ -11,6 +11,7 @@ class SkillCooldownDetector:
     Detects if a skill on the hotbar went on cooldown.
     Uses mean absolute pixel difference on a predefined ROI.
     """
+
     def __init__(self, roi: Tuple[float, float, float, float], threshold: float = 30.0):
         """
         roi: (y_start_ratio, y_end_ratio, x_start_ratio, x_end_ratio)

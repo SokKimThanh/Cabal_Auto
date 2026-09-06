@@ -14,8 +14,8 @@ from lib.features.timing.calculator import calculate_timing
 
 # Test data
 skills = [
-    {'name': 'Dark Explosion', 'cooldown': 1.9, 'cast_time': 1.7, 'type': 'attack'},
-    {'name': 'Bone Javelin', 'cooldown': 2.4, 'cast_time': 1.5, 'type': 'attack'}
+    {"name": "Dark Explosion", "cooldown": 1.9, "cast_time": 1.7, "type": "attack"},
+    {"name": "Bone Javelin", "cooldown": 2.4, "cast_time": 1.5, "type": "attack"},
 ]
 
 result = calculate_timing(10000, 500, skill_rotation=skills)

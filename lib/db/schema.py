@@ -1,5 +1,6 @@
 import sqlite3
 
+
 def setup_skills_schema(conn: sqlite3.Connection):
     cursor = conn.cursor()
 
@@ -74,8 +75,12 @@ def setup_skills_schema(conn: sqlite3.Connection):
             FOREIGN KEY (skill_id) REFERENCES skills(skill_id) ON DELETE CASCADE
         )
     """)
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_csa_class_id ON class_skill_assignments(class_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_csa_skill_id ON class_skill_assignments(skill_id)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_csa_class_id ON class_skill_assignments(class_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_csa_skill_id ON class_skill_assignments(skill_id)"
+    )
 
     # Bảng scans
     # monster_id tham chiếu tới bảng monsters(id) hiện có (kiểu TEXT)
@@ -119,8 +124,12 @@ def setup_skills_schema(conn: sqlite3.Connection):
             FOREIGN KEY(class_id) REFERENCES classes(class_id) ON DELETE CASCADE
         )
     """)
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_presets_class ON skill_presets(class_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_presets_default ON skill_presets(is_default)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_presets_class ON skill_presets(class_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_presets_default ON skill_presets(is_default)"
+    )
 
     # Bảng preset_skills - Lưu skill order trong một preset
     cursor.execute("""
@@ -136,8 +145,12 @@ def setup_skills_schema(conn: sqlite3.Connection):
             UNIQUE(preset_id, lane_type, position)
         )
     """)
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_preset_skills_preset ON preset_skills(preset_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_preset_skills_skill ON preset_skills(skill_id)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_preset_skills_preset ON preset_skills(preset_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_preset_skills_skill ON preset_skills(skill_id)"
+    )
 
     # Bảng user_preset_state - Theo dõi preset active hiện tại cho mỗi class
     cursor.execute("""

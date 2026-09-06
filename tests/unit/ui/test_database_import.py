@@ -9,8 +9,10 @@ pytestmark = pytest.mark.unit
 def test_import_database():
     import database
     from database import MonsterDatabase
+
     assert database is not None
     assert MonsterDatabase is not None
+
 
 def test_database_init():
     import database
@@ -20,6 +22,8 @@ def test_database_init():
     db_path = database.MonsterDatabase.DB_PATH
     if db_path.exists():
         os.remove(db_path)
+    if hasattr(database, "_db_instance"):
+        database._db_instance = None
 
     init_database()
 

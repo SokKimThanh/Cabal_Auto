@@ -1,6 +1,7 @@
 import time
 from lib.vision.target_bar_detector import TargetBarDetector
 
+
 class TargetHPReader:
     def __init__(self, target_bar_detector: TargetBarDetector):
         self.detector = target_bar_detector
