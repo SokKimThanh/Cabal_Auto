@@ -259,12 +259,16 @@ class CompactWindowSelector:
             # Update search entry with selection
             self.search_var.set(selected["title"])
             
-            # Call callback BEFORE closing dropdown
+            # Call callback
             self.on_window_selected(selected)
             
-            # Close dropdown after callback
-            if self.is_open:
-                self._toggle_dropdown()
+            # Close dropdown directly (avoid re-triggering focus_in)
+            if self.dropdown_window:
+                self.dropdown_window.grab_release()
+                self.dropdown_window.destroy()
+                self.dropdown_window = None
+            self.is_open = False
+            self.dropdown_btn.config(text="▼")
             
         except Exception as e:
             print(f"[DEBUG] Error on window select: {e}")
