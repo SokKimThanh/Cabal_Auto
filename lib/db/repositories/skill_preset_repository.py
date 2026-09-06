@@ -18,9 +18,12 @@ class SkillPresetRepository:
             )
             conn.commit()
             return cursor.lastrowid
-        except Exception as e:
-            logger.error(f"Error creating preset for class_id {class_id}: {e}")
-            conn.rollback()
+        except Exception:
+            logger.exception("Error creating preset for class_id %s", class_id)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
             return -1
         finally:
             if is_local and conn:
