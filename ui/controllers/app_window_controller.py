@@ -175,8 +175,10 @@ class AppWindowController:
                 self.root.hunt_status.set("No Cabal windows found. Launch game and try again.")
 
     def on_window_combo_selected(self, _evt=None) -> None:
+        logger.debug("on_window_combo_selected() called")
 
         if not getattr(self.root, "win_items", None):
+            logger.debug("  win_items is empty, setting hunt_selected = None")
             self.root.hunt_selected = None
             return
 
@@ -186,21 +188,27 @@ class AppWindowController:
         index = 0
         try:
             index = int(self.root.win_combo.current())
-        except Exception:
+            logger.debug(f"  Combobox current index: {index}")
+        except Exception as e:
+            logger.debug(f"  Failed to get combobox index: {e}")
             selected_title = (
                 self.root.win_combo_var.get().strip()
                 if hasattr(self.root, "win_combo_var")
                 else ""
             )
+            logger.debug(f"  Trying to find by title: {selected_title}")
             for idx, item in enumerate(self.root.win_items):
                 if item["title"] == selected_title:
                     index = idx
+                    logger.debug(f"  Found at index {idx}")
                     break
 
         if index < 0 or index >= len(self.root.win_items):
+            logger.debug(f"  Index {index} out of bounds, resetting to 0")
             index = 0
 
         selected = dict(self.root.win_items[index])
+        logger.debug(f"  Selected window: {selected['title']} (hwnd={selected['hwnd']})")
 
         # RESTORE WINDOW FIRST if minimized (important for new selections)
         hwnd = selected.get("hwnd")
@@ -227,6 +235,7 @@ class AppWindowController:
 
         validation = validate_selected_cabal_window(selected, self.root.win_items)
         if not validation.is_valid:
+            logger.warning(f"  Window validation failed: {validation.code}")
             if hasattr(self.root, "hunt_status"):
                 self.root.hunt_status.set(
                     f"Selected window is invalid: {validation.code}"
@@ -235,12 +244,14 @@ class AppWindowController:
 
         selected = validation.window
         bounds = normalize_window_bounds_value(selected.get("bounds"))
+        logger.debug(f"  Validation passed, setting hunt_selected")
 
         # Re-enable UI if it was locked
         if hasattr(self.root, "start_stop_btn"):
             self.root.start_stop_btn.config(state="normal")
         self.root.hunt_selected = selected
         self.root.current_window_bounds = bounds
+        logger.debug(f"  hunt_selected set: {self.root.hunt_selected}")
 
         self.root.hunt_cfg["window_title"] = selected["title"]
         self.root.hunt_cfg["window_pid"] = selected["pid"]
@@ -256,6 +267,7 @@ class AppWindowController:
         save_hunt_config(self.root.hunt_cfg)
         if hasattr(self.root, "hunt_status"):
             self.root.hunt_status.set(f"Window selected: {selected['title']}")
+        logger.debug(f"  on_window_combo_selected() completed successfully")
 
     def _auto_detect_and_save_cabal_window(self) -> None:
         try:
