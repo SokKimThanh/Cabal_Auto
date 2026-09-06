@@ -69,7 +69,12 @@ class AutoScanner:
     def _find_cabal_window(self) -> Optional[int]:
         if not self.window_manager:
             return None
-        titles = ["Cabal", "CABAL", "cabal"]
+        titles = [
+            "Cabal", "CABAL", "cabal",       # English
+            "카발", "온라인",                # Korean
+            "Cabała", "Online",              # Polish
+            "卡巴尔", "在线"                 # Chinese
+        ]
         for title in titles:
             hwnd = self.window_manager.find_window(title_contains=title)
             if hwnd:
