@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Detailed test of CompactWindowSelector UI behavior."""
+"""Detailed test of CompactWindowSelector UI behavior (manual script; not a pytest test)."""
+
+import sys
+
+if "pytest" in sys.modules:
+    import pytest
+
+    pytest.skip("Manual script; skip during pytest collection", allow_module_level=True)
 
 import tkinter as tk
-import sys
 import os
 from pathlib import Path
 
-# Add parent to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 def test_selector_ui():
