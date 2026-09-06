@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.features.skills.skill_preset_service import SkillPresetService
 
 class PresetDialog(tk.Toplevel):
@@ -13,7 +13,7 @@ class PresetDialog(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
 
-        self.class_name = getattr(self.app, '_current_class', 'Unknown')
+        self.class_id = getattr(self.app, '_current_class_id', 1)
 
         self._build_ui()
         self._load_presets()
@@ -38,7 +38,7 @@ class PresetDialog(tk.Toplevel):
         self.listbox.bind('<<ListboxSelect>>', self._on_select)
 
     def _load_presets(self):
-        self.presets = self.service.list_presets_by_class(self.class_name)
+        self.presets = self.service.list_presets_by_class(self.class_id)
         self.listbox.delete(0, tk.END)
         for preset in self.presets:
             icon = "⭐" if preset['is_default'] else "✏️"

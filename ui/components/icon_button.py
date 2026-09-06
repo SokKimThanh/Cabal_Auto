@@ -337,6 +337,15 @@ def create_icon_button(
         **state_overrides,
         **kwargs
     }
+    
+    # Filter out non-Tkinter button options (custom options like bg_color, hover_color, etc.)
+    valid_button_options = {
+        'bg', 'fg', 'activebackground', 'activeforeground', 'relief', 'bd', 'borderwidth',
+        'padx', 'pady', 'width', 'height', 'highlightthickness', 'highlightbackground',
+        'highlightcolor', 'font', 'cursor', 'wraplength', 'overrelief', 'bitmap', 'state',
+        'command', 'image', 'text', 'compound'
+    }
+    final_config = {k: v for k, v in final_config.items() if k in valid_button_options}
 
     # Enforce the project UI rule: text/buttons with label must stay rectangular and auto-sized.
     if text:
