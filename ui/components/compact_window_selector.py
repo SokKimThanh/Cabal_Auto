@@ -40,9 +40,9 @@ class CompactWindowSelector:
         # Main frame
         self.frame = tk.Frame(self.parent, bg=self.parent.cget("bg"))
         
-        # Search frame (always visible)
+        # Search frame (always visible) - row 0
         self.search_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"))
-        self.search_frame.pack(fill="x", expand=False)
+        self.search_frame.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
         
         # Search label
         search_label = tk.Label(
@@ -95,8 +95,8 @@ class CompactWindowSelector:
         )
         self.refresh_btn.pack(side="left")
         
-        # Dropdown listbox (hidden until toggled)
-        self.dropdown_frame = tk.Frame(self.frame, bg="#1a1a1a", relief="solid", bd=1)
+        # Dropdown listbox (hidden until toggled) - row 1
+        self.dropdown_frame = tk.Frame(self.frame, bg="#1a1a1a", relief="solid", bd=1, height=150)
         
         scrollbar = tk.Scrollbar(self.dropdown_frame)
         scrollbar.pack(side="right", fill="y")
@@ -115,7 +115,7 @@ class CompactWindowSelector:
         scrollbar.config(command=self.listbox.yview)
         self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
         
-        # Info label
+        # Info label - row 2
         self.info_label = tk.Label(
             self.frame,
             text="Click refresh to load windows",
@@ -123,7 +123,10 @@ class CompactWindowSelector:
             bg=self.parent.cget("bg"),
             fg="#6b7280",
         )
-        self.info_label.pack(fill="x", pady=(2, 0))
+        self.info_label.grid(row=2, column=0, sticky="ew", padx=0, pady=(2, 0))
+        
+        # Configure grid
+        self.frame.columnconfigure(0, weight=1)
 
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
@@ -174,7 +177,7 @@ class CompactWindowSelector:
         """Toggle dropdown visibility."""
         print(f"[DEBUG] _toggle_dropdown: is_open={self.is_open}, win_items={len(self.win_items)}")
         if self.is_open:
-            self.dropdown_frame.pack_forget()
+            self.dropdown_frame.grid_forget()
             self.is_open = False
             self.dropdown_btn.config(text="▼")
         else:
@@ -182,7 +185,7 @@ class CompactWindowSelector:
                 print(f"[DEBUG] No items, calling _on_refresh()")
                 self._on_refresh()
                 print(f"[DEBUG] After refresh, win_items={len(self.win_items)}")
-            self.dropdown_frame.pack(fill="both", expand=True, pady=(2, 0))
+            self.dropdown_frame.grid(row=1, column=0, sticky="ew", padx=0, pady=(2, 0))
             self._update_listbox()
             print(f"[DEBUG] Listbox size after update: {self.listbox.size()}")
             self.is_open = True
