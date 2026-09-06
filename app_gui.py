@@ -2,7 +2,7 @@ from ui.windows.setup_wizard import show_setup_wizard
 from dialogs.monster_picker import MonsterPickerDialog
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
-from lib.ui_style import UIStyle as UI  # Global UI style constants
+from lib.ui_style_v2 import UIStyleV2 as UI  # Global UI style constants
 from lib.system.win_input import tap
 from lib.system.instance_lock import SingleInstanceLock
 from lib.system.hunt_logger import get_hunt_logger
@@ -589,7 +589,7 @@ class App(tk.Tk):
 
     # -----------------
     def _build_ui(self):
-        from lib.ui_style import UIStyle as UI
+        from lib.ui_style_v2 import UIStyleV2 as UI
 
         # Clear (for language rebuild)
         for w in self.winfo_children():
@@ -601,7 +601,7 @@ class App(tk.Tk):
 
         # --- UX2.1: Core Grid Construction ---
         # Isolated main container for the upcoming UI redesign
-        self.main_shell = tk.Frame(self, bg=UI.THEME_BG_APP)
+        self.main_shell = tk.Frame(self, bg=UI.BG_BASE)
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         try:
@@ -636,11 +636,11 @@ class App(tk.Tk):
         )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.THEME_BG_APP)
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE)
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
-        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.THEME_BG_SIDEBAR)
+        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_ELEVATED)
         self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
         self.shell_zone_c1.configure(padx=16, pady=20)
         self.shell_zone_c1.grid_propagate(False)
@@ -690,9 +690,9 @@ class App(tk.Tk):
                 # Section label
                 lbl = tk.Label(
                     self.shell_zone_c1,
-                    text=self._t(key),
-                    bg=UI.THEME_BG_SIDEBAR,
-                    fg=UI.THEME_TEXT_PRIMARY,
+                    text=f"   {self._t(key)}",
+                    bg=UI.BG_ELEVATED,
+                    fg=UI.TEXT_SECONDARY,
                     font=font,
                     anchor="w",
                 )
@@ -702,10 +702,10 @@ class App(tk.Tk):
                 # Button
                 btn = tk.Button(
                     self.shell_zone_c1,
-                    text=self._t(key),
+                    text=f"   {self._t(key)}",
                     command=command,
-                    bg=UI.THEME_BG_SIDEBAR,
-                    fg=UI.THEME_TEXT_PRIMARY,
+                    bg=UI.BG_ELEVATED,
+                    fg=UI.TEXT_SECONDARY,
                     font=font,
                     anchor="w",
                     padx=12,
@@ -721,7 +721,7 @@ class App(tk.Tk):
                 self._sidebar_widgets.append((btn, key, view_target))
 
         # Vùng B: Active Hunt Workspace
-        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.THEME_BG_APP)
+        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_BASE)
         self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
 
         self.after(100, self._poll_log_queue)
@@ -729,7 +729,7 @@ class App(tk.Tk):
 
         # Vùng A: Quick Action Bar - 80px target height (using padding)
         self.action_bar_frame = tk.Frame(
-            self.shell_zone_a, padx=32, pady=18, bg=UI.THEME_BG_APP
+            self.shell_zone_a, padx=32, pady=18, bg=UI.BG_BASE
         )
         self.action_bar_frame.grid(row=0, column=0, sticky="nsew")
         self.shell_zone_a.grid_columnconfigure(0, weight=1)
@@ -819,22 +819,22 @@ class App(tk.Tk):
         )
         self.btn_manual_scan.grid(row=0, column=2, sticky="w", padx=(0, 12))
 
-        # Bounds Readiness State Placeholder (Minimum 260x36)
+        # Status Chips (Replaces Bounds Placeholder)
         self.bounds_placeholder = tk.Frame(
-            self.action_bar_frame, width=260, height=36, bg=UI.THEME_BG_APP
+            self.action_bar_frame, bg=UI.BG_BASE
         )
         self.bounds_placeholder.grid(row=0, column=3, sticky="w", padx=(0, 12))
-        self.bounds_placeholder.pack_propagate(False)
 
-        self.bounds_status_var = tk.StringVar()
-        self.bounds_readiness_label = tk.Label(
-            self.bounds_placeholder,
-            textvariable=self.bounds_status_var,
-            font=UI.FONT_LABEL,
-            bg=UI.THEME_BG_APP,
-            fg=UI.THEME_TEXT_PRIMARY,
-        )
-        self.bounds_readiness_label.pack(side="left", fill="y", padx=5)
+        def create_chip(parent, title):
+            chip = tk.Frame(parent, bg=UI.BG_ELEVATED, highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
+            chip.pack(side="left", padx=4, pady=4)
+            tk.Label(chip, text="●", font=UI.FONT_SMALL, fg=UI.ACCENT_GREEN, bg=UI.BG_ELEVATED).pack(side="left", padx=(6, 2))
+            tk.Label(chip, text=f"{title}", font=UI.FONT_LABEL, fg=UI.TEXT_MUTED, bg=UI.BG_ELEVATED).pack(side="left", padx=(0, 6))
+            return chip
+
+        create_chip(self.bounds_placeholder, "Server: OK")
+        create_chip(self.bounds_placeholder, "Character: Ready")
+        create_chip(self.bounds_placeholder, "Time: 12:00")
 
         # Unified Start/Stop Button (width 140px minimum layout space available, so we use min width via grid and padding)
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
@@ -848,7 +848,9 @@ class App(tk.Tk):
             button_size=44,
             padding={"padx": 20, "pady": 6},
             command=self.on_start_stop_clicked,
-            button_type="green",
+            button_type="primary",
+            bg_color=UI.ACCENT_GREEN,
+            hover_color=UI.ACCENT_GREEN_BG,
             tooltip_text=start_tooltip,
             state="normal",
             auto_hover_disabled=False,
@@ -934,19 +936,42 @@ class App(tk.Tk):
         self._build_global_apply_section()
 
         # DB Status Bar (bottom of window)
-        self._db_status_var = tk.StringVar(value="⏳ Đang kiểm tra CSDL...")
-        self._db_status_bar = tk.Label(
+        self.status_bar_frame = tk.Frame(
             self,
+            bg=UI.BG_SUBTLE,
+            height=24,
+            bd=0,
+            highlightbackground=UI.BORDER_SUBTLE,
+            highlightthickness=1
+        )
+        self.status_bar_frame.grid(row=1, column=0, columnspan=7, sticky="ew")
+        self.status_bar_frame.pack_propagate(False)
+
+        self._db_status_var = tk.StringVar(value="⠋ Đang kiểm tra CSDL...")
+        self._db_status_bar = tk.Label(
+            self.status_bar_frame,
             textvariable=self._db_status_var,
             anchor="w",
-            padx=8,
-            pady=3,
-            font=UI.FONT_TEXT,
-            bg=UI.THEME_BG_STATUSBAR,
-            fg=UI.THEME_TEXT_SECONDARY,
-            relief="sunken",
+            padx=12,
+            font=UI.FONT_SMALL,
+            bg=UI.BG_SUBTLE,
+            fg=UI.TEXT_MUTED,
+            relief="flat",
         )
-        self._db_status_bar.grid(row=1, column=0, columnspan=7, sticky="ew")
+        self._db_status_bar.pack(side="left", fill="y")
+
+        # Right Section: Version and Status
+        self.right_status = tk.Label(
+            self.status_bar_frame,
+            text="v2.1.0 · CSDL: ✓ · 0 lỗi",
+            anchor="e",
+            padx=12,
+            font=UI.FONT_SMALL,
+            bg=UI.BG_SUBTLE,
+            fg=UI.TEXT_MUTED,
+            relief="flat",
+        )
+        self.right_status.pack(side="right", fill="y")
 
         self.main_shell.grid(row=0, column=0, columnspan=7, sticky="nsew", pady=(10, 0))
 
@@ -954,21 +979,21 @@ class App(tk.Tk):
         """Build global apply button section below tabs."""
         # Frame for global apply section (right-aligned)
         self.global_apply_frame = tk.Frame(
-            self, relief="sunken", bd=1, bg=UI.THEME_BG_PANEL
+            self, relief="sunken", bd=1, bg=UI.BG_SURFACE
         )
         apply_frame = self.global_apply_frame
         apply_frame.grid(row=0, column=6, sticky="e", padx=(0, 12))
 
         # Unsaved changes indicator (left side)
-        indicator_frame = tk.Frame(apply_frame, bg=UI.THEME_BG_APP)
+        indicator_frame = tk.Frame(apply_frame, bg=UI.BG_BASE)
         indicator_frame.pack(side="left", padx=8, pady=6)
 
         self.unsaved_indicator_label = tk.Label(
             indicator_frame,
             text="",
-            fg=UI.THEME_TEXT_SECONDARY,
+            fg=UI.TEXT_SECONDARY,
             font=UI.FONT_TEXT,
-            bg=UI.THEME_BG_PANEL,
+            bg=UI.BG_SURFACE,
         )
         self.unsaved_indicator_label.pack(side="left")
 
@@ -1124,14 +1149,14 @@ class App(tk.Tk):
                     original_text = self._t(key)
                     if view_target == view_key:
                         widget.config(
-                            bg=UI.THEME_STATE_SELECTED,
-                            fg=UI.THEME_TEXT_PRIMARY,
+                            bg=UI.ACCENT_GREEN_BG,
+                            fg=UI.ACCENT_GREEN,
                             text=f" ▌ {original_text}",
                         )
                     else:
                         widget.config(
-                            bg=UI.THEME_BG_SIDEBAR,
-                            fg=UI.THEME_TEXT_PRIMARY,
+                            bg=UI.BG_ELEVATED,
+                            fg=UI.TEXT_SECONDARY,
                             text=f"   {original_text}",
                         )
 
@@ -1490,11 +1515,11 @@ class App(tk.Tk):
         if is_running:
             text = self._t("stop_hunt")
             tooltip = self._t("stop_hunt") + "\n(Ctrl+F6)"
-            bg_color = UI.BTN_STOP_BG
+            bg_color = UI.DANGER
         else:
             text = self._t("start_hunt")
             tooltip = self._t("start_hunt") + "\n(Ctrl+F5)"
-            bg_color = UI.BTN_START_BG
+            bg_color = UI.ACCENT_GREEN
 
         if hasattr(self.start_stop_btn, "set_text"):
             self.start_stop_btn.set_text(text)
@@ -2300,9 +2325,9 @@ class App(tk.Tk):
                 for btn in [self.btn_move_up, self.btn_move_down]:
                     # IMPORTANT: Keep original bg colors when disabled
                     original_bg = (
-                        UI.BTN_NEUTRAL_BG
+                        UI.BG_ELEVATED
                         if btn == self.btn_move_up
-                        else UI.BTN_NEUTRAL_BG
+                        else UI.BG_ELEVATED
                     )
                     btn.config(state="disabled", bg=original_bg)
                     if isinstance(locked_icon, str):
@@ -2311,10 +2336,10 @@ class App(tk.Tk):
                         btn.config(image=locked_icon, text="")
             except Exception:
                 self.btn_move_up.config(
-                    state="disabled", text="🔒", bg=UI.BTN_NEUTRAL_BG
+                    state="disabled", text="🔒", bg=UI.BG_ELEVATED
                 )
                 self.btn_move_down.config(
-                    state="disabled", text="🔒", bg=UI.BTN_NEUTRAL_BG
+                    state="disabled", text="🔒", bg=UI.BG_ELEVATED
                 )
 
             # Update tooltips for disabled buttons
@@ -2356,45 +2381,45 @@ class App(tk.Tk):
                     self.btn_move_up.config(
                         state="normal",
                         text=up_icon,
-                        bg=UI.BTN_INFO_BG,  # Blue for consistency
-                        fg=UI.BTN_INFO_FG,
+                        bg=UI.ACCENT_BLUE,  # Blue for consistency
+                        fg=UI.BG_BASE,
                     )
                 else:
                     self.btn_move_up.config(
                         state="normal",
                         image=up_icon,
                         text="",
-                        bg=UI.BTN_INFO_BG,
-                        fg=UI.BTN_INFO_FG,
+                        bg=UI.ACCENT_BLUE,
+                        fg=UI.BG_BASE,
                     )
 
                 if isinstance(down_icon, str):
                     self.btn_move_down.config(
                         state="normal",
                         text=down_icon,
-                        bg=UI.BTN_INFO_BG,  # Blue for consistency
-                        fg=UI.BTN_INFO_FG,
+                        bg=UI.ACCENT_BLUE,  # Blue for consistency
+                        fg=UI.BG_BASE,
                     )
                 else:
                     self.btn_move_down.config(
                         state="normal",
                         image=down_icon,
                         text="",
-                        bg=UI.BTN_INFO_BG,
-                        fg=UI.BTN_INFO_FG,
+                        bg=UI.ACCENT_BLUE,
+                        fg=UI.BG_BASE,
                     )
             except Exception:
                 self.btn_move_up.config(
                     state="normal",
                     text="↑",
-                    bg=UI.BTN_INFO_BG,  # Blue for consistency
-                    fg=UI.BTN_INFO_FG,
+                    bg=UI.ACCENT_BLUE,  # Blue for consistency
+                    fg=UI.BG_BASE,
                 )
                 self.btn_move_down.config(
                     state="normal",
                     text="↓",
-                    bg=UI.BTN_INFO_BG,  # Blue for consistency
-                    fg=UI.BTN_INFO_FG,
+                    bg=UI.ACCENT_BLUE,  # Blue for consistency
+                    fg=UI.BG_BASE,
                 )
 
             # Restore normal tooltips
@@ -2665,7 +2690,7 @@ class App(tk.Tk):
         hover_color=None,
         **kwargs,
     ):
-        """Create a standardized icon button following UIStyle guidelines.
+        """Create a standardized icon button following UIStyleV2 guidelines.
 
         **DEPRECATED**: This method now uses the new icon_button component internally.
         For new code, prefer using `from ui.components import create_icon_button` directly.
@@ -2700,16 +2725,16 @@ class App(tk.Tk):
 
             # Map bg_color to button_type
             button_type_map = {
-                UI.BTN_PRIMARY_BG: "green_light",
-                UI.BTN_ACCENT_BG: "green_light",
-                UI.BTN_DANGER_BG: "red",
-                UI.BTN_INFO_BG: "blue",
-                UI.BTN_NEUTRAL_BG: "refresh",
+                UI.ACCENT_GREEN: "green_light",
+                UI.ACCENT_GREEN: "green_light",
+                UI.DANGER: "red",
+                UI.ACCENT_BLUE: "blue",
+                UI.BG_ELEVATED: "refresh",
             }
 
             icon_name = emoji_to_icon.get(icon_emoji, "add")
             button_type = button_type_map.get(
-                bg_color or UI.BTN_ACCENT_BG, "green_light"
+                bg_color or UI.ACCENT_GREEN, "green_light"
             )
 
             # Map style to variant
@@ -2737,44 +2762,44 @@ class App(tk.Tk):
             "compact": {
                 "width": 0,
                 "height": 0,
-                "padx": UI.BTN_ICON_PADDING_COMPACT,
-                "pady": UI.BTN_ICON_PADDING_COMPACT,
+                "padx": UI.SPACE_XS,
+                "pady": UI.SPACE_XS,
             },
             "small": {
-                "width": UI.BTN_ICON_WIDTH_SMALL,
+                "width": 3,
                 "height": 1,
-                "padx": UI.BTN_ICON_PADDING_SMALL,
-                "pady": UI.BTN_ICON_PADDING_SMALL,
+                "padx": UI.SPACE_SM,
+                "pady": UI.SPACE_SM,
             },
             "medium": {
-                "width": UI.BTN_ICON_WIDTH_MEDIUM,
+                "width": 3,
                 "height": 1,
-                "padx": UI.BTN_ICON_PADDING_MEDIUM,
-                "pady": UI.BTN_ICON_PADDING_MEDIUM,
+                "padx": UI.SPACE_MD,
+                "pady": UI.SPACE_MD,
             },
             "large": {
-                "width": UI.BTN_ICON_WIDTH_LARGE,
+                "width": 4,
                 "height": 1,
-                "padx": UI.BTN_ICON_PADDING_LARGE,
-                "pady": UI.BTN_ICON_PADDING_LARGE,
+                "padx": UI.SPACE_LG,
+                "pady": UI.SPACE_LG,
             },
         }
 
         config = style_configs.get(style, style_configs["compact"])
 
         if bg_color is None:
-            bg_color = UI.BTN_ACCENT_BG
+            bg_color = UI.ACCENT_GREEN
         if hover_color is None:
-            hover_color = UI.BTN_ACCENT_HOVER
+            hover_color = UI.ACCENT_GREEN_BG
 
         color_map = {
-            UI.BTN_PRIMARY_BG: UI.BTN_PRIMARY_FG,
-            UI.BTN_ACCENT_BG: UI.BTN_ACCENT_FG,
-            UI.BTN_INFO_BG: UI.BTN_INFO_FG,
-            UI.BTN_NEUTRAL_BG: UI.BTN_NEUTRAL_FG,
-            UI.BTN_DANGER_BG: UI.BTN_DANGER_FG,
+            UI.ACCENT_GREEN: UI.BG_BASE,
+            UI.ACCENT_GREEN: UI.BG_BASE,
+            UI.ACCENT_BLUE: UI.BG_BASE,
+            UI.BG_ELEVATED: UI.TEXT_MUTED,
+            UI.DANGER: UI.BG_BASE,
         }
-        fg_color = color_map.get(bg_color, UI.BTN_ACCENT_FG)
+        fg_color = color_map.get(bg_color, UI.BG_BASE)
 
         button_config = {
             "text": icon_emoji,
@@ -2784,7 +2809,7 @@ class App(tk.Tk):
             "fg": fg_color,
             "activebackground": hover_color,
             "activeforeground": fg_color,
-            "relief": UI.BTN_RELIEF_NORMAL,
+            "relief": 'flat',
             "cursor": "hand2",
             **config,
             **kwargs,
