@@ -185,7 +185,10 @@ class WindowManager:
         Results:
             List of WindowInfo objects
         """
+        print(f"🟣 [WindowManager.list_windows] START - visible_only={visible_only}")
         results = []
+        window_count = [0]  # Mutable counter for callback
+        skipped_count = [0]
 
         import ctypes
         import sys
@@ -196,43 +199,58 @@ class WindowManager:
             EnumWindowsProc = ctypes.CFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 
         def callback(hwnd, _):
+            window_count[0] += 1
             try:
+                # Convert ctypes pointer to int
+                hwnd_int = ctypes.cast(hwnd, ctypes.c_void_p).value
+                
                 if visible_only:
                     import win32con
-                    is_minimized = (win32gui.GetWindowPlacement(hwnd)[0] == win32con.SW_MINIMIZE)
+                    try:
+                        is_minimized = (win32gui.GetWindowPlacement(hwnd_int)[0] == win32con.SW_MINIMIZE)
+                    except Exception as e:
+                        logger.debug(f"GetWindowPlacement failed for {hwnd_int}: {e}")
+                        skipped_count[0] += 1
+                        return True
+                    
                     if sys.platform == "win32":
-                        is_visible = ctypes.windll.user32.IsWindowVisible(hwnd) != 0
+                        is_visible = ctypes.windll.user32.IsWindowVisible(hwnd_int) != 0
                     else:
-                        is_visible = win32gui.IsWindowVisible(hwnd)
-
+                        is_visible = win32gui.IsWindowVisible(hwnd_int)
+                    
                     if not (is_visible or is_minimized):
+                        skipped_count[0] += 1
                         return True
 
                 # Get window title directly using ctypes for speed (Windows only)
                 if sys.platform == "win32":
-                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd_int)
                     buf = ctypes.create_unicode_buffer(length + 1)
-                    ctypes.windll.user32.GetWindowTextW(hwnd, buf, length + 1)
+                    ctypes.windll.user32.GetWindowTextW(hwnd_int, buf, length + 1)
                     title = buf.value
                 else:
-                    title = win32gui.GetWindowText(hwnd)
+                    title = win32gui.GetWindowText(hwnd_int)
 
                 if title_contains and title_contains.lower() not in title.lower():
+                    skipped_count[0] += 1
                     return True
 
                 # Get window info
-                info = self.get_window_info(hwnd)
+                info = self.get_window_info(hwnd_int)
                 if not info:
+                    skipped_count[0] += 1
                     return True
 
                 # Apply remaining filters
                 if class_name and class_name != info.class_name:
+                    skipped_count[0] += 1
                     return True
 
                 if (
                     process_name
                     and process_name.lower() not in info.process_name.lower()
                 ):
+                    skipped_count[0] += 1
                     return True
 
                 results.append(info)
@@ -250,7 +268,8 @@ class WindowManager:
         except Exception as e:
             logger.error(f"EnumWindows failed: {e}")
 
-        logger.debug(f"Found {len(results)} windows")
+        print(f"🟣 [WindowManager.list_windows] END - Found {len(results)} windows (enumerated={window_count[0]}, skipped={skipped_count[0]})\n")
+        logger.debug(f"Found {len(results)} windows (enumerated={window_count[0]}, skipped={skipped_count[0]})")
         return results
 
     def get_window_info(self, hwnd: int) -> Optional[WindowInfo]:
