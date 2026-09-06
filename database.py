@@ -72,7 +72,7 @@ class MonsterDatabase:
 
     def _connect(self) -> None:
         """Kết nối tới SQLite database và thiết lập Pragma"""
-        self.conn = sqlite3.connect(str(self.DB_PATH))
+        self.conn = sqlite3.connect(str(self.DB_PATH), check_same_thread=False)
         self.conn.row_factory = sqlite3.Row  # Cho phép truy cập column theo tên
         cursor = self.conn.cursor()
         cursor.execute("PRAGMA foreign_keys = ON;")

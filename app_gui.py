@@ -179,6 +179,7 @@ class App(tk.Tk):
             self.skill_service.save_skills(value)
 
     def _t(self, key: str, **kwargs) -> str:
+        kwargs.pop("ns", None)
         return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
 
     def __init__(self):
