@@ -31,7 +31,7 @@ class AppLifecycleController:
 
     def _step_db_connection(self):
         self.check_db_connection()
-        # Skip first-time check - disabled for stable window detection
+        # Skip first-time wizard - only need auto-find feature in selector
         self.app.after(500, self.auto_bring_to_front_on_startup)
 
     def check_first_time_setup(self) -> None:

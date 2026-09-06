@@ -68,6 +68,7 @@ class CompactWindowSelector:
         self.search_entry.bind("<Return>", self._on_search_enter)
         self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
         self.search_entry.bind("<FocusIn>", self._on_search_focus_in)
+        self.search_entry.bind("<Escape>", lambda e: self._close_dropdown())
         
         # Dropdown button
         self.dropdown_btn = tk.Button(
@@ -198,6 +199,8 @@ class CompactWindowSelector:
             self.listbox.pack(side="left", fill="both", expand=True)
             scrollbar.config(command=self.listbox.yview)
             self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
+            # Allow Escape key to close dropdown
+            self.listbox.bind("<Escape>", lambda e: self._close_dropdown())
             
             # Position and resize Toplevel window
             self.dropdown_window.geometry(f"{frame_width}x150+{dropdown_x}+{dropdown_y}")
@@ -233,6 +236,23 @@ class CompactWindowSelector:
             self.listbox.selection_set(0)
             self.listbox.activate(0)
 
+    def _close_dropdown(self):
+        """Close dropdown window safely."""
+        if self.is_open:
+            if self.dropdown_window:
+                try:
+                    self.dropdown_window.grab_release()
+                except Exception:
+                    pass
+                try:
+                    self.dropdown_window.destroy()
+                except Exception:
+                    pass
+                self.dropdown_window = None
+            self.is_open = False
+            self.dropdown_btn.config(text="▼")
+            self.listbox = None
+
     def _on_listbox_select(self, event=None):
         """Handle window selection from listbox."""
         try:
@@ -254,13 +274,8 @@ class CompactWindowSelector:
             # Temporarily unbind FocusIn to prevent re-opening
             self.search_entry.unbind("<FocusIn>")
             
-            # Close dropdown directly
-            if self.dropdown_window:
-                self.dropdown_window.grab_release()
-                self.dropdown_window.destroy()
-                self.dropdown_window = None
-            self.is_open = False
-            self.dropdown_btn.config(text="▼")
+            # Close dropdown using helper method
+            self._close_dropdown()
             
             # Restore FocusIn binding after a short delay
             self.search_entry.after(100, lambda: self.search_entry.bind("<FocusIn>", self._on_search_focus_in))
