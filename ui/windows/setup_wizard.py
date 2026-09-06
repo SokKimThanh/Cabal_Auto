@@ -153,7 +153,6 @@ class SetupWizard:
                 setattr(self.dialog, "_wizard_ref", self)
             except Exception:
                 pass
-                pass
             try:
                 title_text = i18n_t(
                     "wizard_title", ns="setup_wizard", lang=self.language
