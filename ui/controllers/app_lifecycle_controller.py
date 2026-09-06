@@ -31,10 +31,7 @@ class AppLifecycleController:
 
     def _step_db_connection(self):
         self.check_db_connection()
-        self.app.after(200, self._step_first_time_setup)
-
-    def _step_first_time_setup(self):
-        self.check_first_time_setup()
+        # Skip first-time wizard - only need auto-find feature in selector
         self.app.after(500, self.auto_bring_to_front_on_startup)
 
     def check_first_time_setup(self) -> None:
@@ -117,9 +114,12 @@ class AppLifecycleController:
             # Check if we have a valid hunt_selected window
             if not hasattr(self.app, "hunt_selected") or not self.app.hunt_selected:
                 print("[Auto Bring] No saved window to bring to front")
+                print(f"[Auto Bring] Window state: {self.app.state()}")
+                print(f"[Auto Bring] Calling deiconify()...")
                 # Ensure app deiconifies even if there's no window to bring to front
                 if hasattr(self.app, "deiconify"):
                     self.app.deiconify()
+                    print(f"[Auto Bring] After deiconify(), state: {self.app.state()}")
                 return
 
             hwnd = self.app.hunt_selected.get("hwnd")

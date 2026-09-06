@@ -22,10 +22,16 @@ class AppWindowController:
     ) -> List[Dict[str, Any]]:
         from lib.system.window_manager import WindowManager
         from lib.features.hunt.config_validator import normalize_window_bounds_value
-
-        wm = WindowManager()
-        windows = wm.list_windows(title_contains=title_contains, visible_only=True)
+        import ctypes
+        from ctypes import wintypes
         
+        try:
+            import psutil
+            PSUTIL_AVAILABLE = True
+        except ImportError:
+            psutil = None
+            PSUTIL_AVAILABLE = False
+
         results: List[Dict[str, Any]] = []
         own_title = ""
         try:
@@ -34,27 +40,83 @@ class AppWindowController:
             logger.error(f"Failed to get own title: {e}")
             own_title = ""
 
+        try:
+            user32 = ctypes.windll.user32
+            EnumWindows = user32.EnumWindows
+            EnumWindowsProc = ctypes.WINFUNCTYPE(
+                ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
+            )
+            IsWindowVisible = user32.IsWindowVisible
+            GetWindowTextW = user32.GetWindowTextW
+            GetWindowTextLengthW = user32.GetWindowTextLengthW
+            GetWindowThreadProcessId = user32.GetWindowThreadProcessId
+        except AttributeError:
+            logger.warning("Windows API not available. Cannot enumerate windows.")
+            return []
+
+        wm = WindowManager()
+
         allowed_processes = ["cabal.exe", "cabalmain.exe"]
 
-        for info in windows:
-            title = (info.title or "").strip()
-            if not title or title == own_title:
-                continue
+        def callback(hwnd, lParam):
+            try:
+                if not IsWindowVisible(hwnd):
+                    return True
+                length = GetWindowTextLengthW(hwnd)
+                if length == 0:
+                    return True
+                buf = ctypes.create_unicode_buffer(length + 1)
+                GetWindowTextW(hwnd, buf, length + 1)
+                title = buf.value.strip()
+                if not title or title == own_title:
+                    return True
 
-            if info.process_name.lower() not in allowed_processes:
-                continue
+                if title_contains and title_contains.lower() not in title.lower():
+                    return True
 
-            results.append(
-                {
-                    "hwnd": int(info.hwnd),
-                    "pid": int(info.pid),
-                    "title": title,
-                    "proc": info.process_name,
-                    "bounds": normalize_window_bounds_value(info.rect),
-                    "is_minimized": info.is_minimized,
-                }
-            )
-        
+                pid = wintypes.DWORD()
+                GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                pid_val = int(pid.value)
+
+                proc_name = ""
+                if PSUTIL_AVAILABLE and psutil is not None:
+                    try:
+                        p = psutil.Process(pid_val)
+                        proc_name = p.name()
+                    except Exception:
+                        proc_name = ""
+
+                if proc_name and proc_name.lower() not in allowed_processes:
+                    return True
+
+                # We also need window bounds for Hunt Tab
+                try:
+                    info = wm.get_window_info(hwnd)
+                    bounds = normalize_window_bounds_value(info.rect) if info else None
+                    is_minimized = info.is_minimized if info else False
+                except Exception:
+                    bounds = None
+                    is_minimized = False
+
+                results.append(
+                    {
+                        "hwnd": int(hwnd),
+                        "pid": pid_val,
+                        "title": title,
+                        "proc": proc_name,
+                        "bounds": bounds,
+                        "is_minimized": is_minimized,
+                    }
+                )
+            except Exception:
+                pass
+            return True
+
+        try:
+            EnumWindows(EnumWindowsProc(callback), 0)
+        except Exception as e:
+            logger.error(f"EnumWindows failed: {e}")
+
         results.sort(
             key=lambda item: (
                 "cabal" not in item["title"].lower(),
