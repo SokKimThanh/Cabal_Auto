@@ -70,12 +70,12 @@
 ### 2. Giao Diện Thẻ Mục Tiêu & Quản Lý Bộ Nhớ Ảnh (776 x 552 px)
 - Header Bar:
   - Status Badge lớn (🏃 Đang tiếp cận... / ⚔️ Đang tấn công... / ✓ Sẵn sàng săn) kèm Target ID (`Target: #<id>`). Dùng chung namespace i18n với CB4A cho 3 trạng thái này nếu CB4A đã định nghĩa key tương ứng — không tạo bộ key dịch thứ hai cho cùng khái niệm.
-  - Nếu dùng dữ liệu fallback (`is_placeholder == True`): Đổi màu badge sang `UIStyle.STATE_WARN` và gắn tooltip cảnh báo dữ liệu mặc định.
+  - Nếu dùng dữ liệu fallback (`is_placeholder == True`): Đổi màu badge sang `UIStyleV2.STATE_WARN` và gắn tooltip cảnh báo dữ liệu mặc định.
 - Thẻ Quái Vật (Active Target Card Container):
   - Cột trái - Khung ảnh đại diện:
     - Co giãn theo DPI: Kích thước `int(120 * scale_factor)`.
     - Cơ chế Fallback 3 tầng: Nạp ảnh quái → Nạp `default_monster.png` → Hiển thị placeholder `[ NO IMAGE ]`.
-    - **Dùng một `Label` duy nhất cho cả 3 tầng**, không chuyển đổi qua lại giữa `Label` và `Canvas` khi fallback — tránh churn loại widget (tạo/huỷ Canvas liên tục) có thể phát sinh widget rác nếu xử lý huỷ không triệt để. Khi ở tầng "no image", set `image_label.configure(image="", text="[ NO IMAGE ]", bg=UIStyle.BG_MUTED)`; khi có ảnh, set `image_label.configure(image=photo, text="")`.
+    - **Dùng một `Label` duy nhất cho cả 3 tầng**, không chuyển đổi qua lại giữa `Label` và `Canvas` khi fallback — tránh churn loại widget (tạo/huỷ Canvas liên tục) có thể phát sinh widget rác nếu xử lý huỷ không triệt để. Khi ở tầng "no image", set `image_label.configure(image="", text="[ NO IMAGE ]", bg=UIStyleV2.BG_MUTED)`; khi có ảnh, set `image_label.configure(image=photo, text="")`.
     - **Thread-safety (nhắc lại từ CB4A):** đọc/giải mã file ảnh có thể ở background thread, nhưng khởi tạo `ImageTk.PhotoImage(...)` bắt buộc chạy trên Main Thread (qua `schedule_ui_task`), và phải giữ reference mạnh để tránh garbage-collection — áp dụng đúng quy tắc đã chốt ở CB4A, không cần thiết kế lại.
     - **Thứ tự giải phóng RAM triệt để**: gọi `clear_target_photo()` **trước** khi gán ảnh mới (không chỉ khi chuyển về trạng thái "không có mục tiêu"), để tránh khoảnh khắc giữ đồng thời cả reference ảnh cũ và ảnh mới khi đổi mục tiêu liên tục nhanh:
       ```python

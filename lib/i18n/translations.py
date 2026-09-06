@@ -1047,8 +1047,16 @@ SETUP_WIZARD_TRANSLATIONS = {
         # Step 3 - Monster selection
         "tip_monster_list": "Choose a monster to hunt",
         # Step 4 - Skills
-        "tip_skill_slot": "Assign a skill to this slot",
-        "tip_clear_all_slots": "Clear all skill slots",
+        'tip_skill_slot': 'Assign a skill to this slot',
+        'tip_clear_all_slots': 'Clear all skill slots',
+        # Setup Screen State
+        'setup.character_class_label': 'Character Class: ',
+        'setup.skills_found': '✅ {count} skills valid',
+        'setup.skills_invalid': '⚠️ {n} invalid',
+        'setup.location_town': '📍 Town',
+        'setup.location_zone': '📍 Zone',
+        'setup.monster_found': '👹 Found',
+        'setup.monster_not_found': '🟢 Ready',
         # Texts/labels
         "wizard_title": "Setup Wizard - Cabal Auto Hunt",
         "step1_title": "🎉 Welcome to Cabal Auto Hunt!",
@@ -1118,8 +1126,16 @@ Save configuration and close wizard?""",
         # Step 3 - Monster selection
         "tip_monster_list": "Chọn quái để săn",
         # Step 4 - Skills
-        "tip_skill_slot": "Gán kỹ năng cho ô này",
-        "tip_clear_all_slots": "Xóa tất cả kỹ năng đã chọn",
+        'tip_skill_slot': 'Gán kỹ năng cho ô này',
+        'tip_clear_all_slots': 'Xóa tất cả kỹ năng đã chọn',
+        # Setup Screen State
+        'setup.character_class_label': 'Lớp Nhân Vật: ',
+        'setup.skills_found': '✅ {count} kỹ năng hợp lệ',
+        'setup.skills_invalid': '⚠️ Có {n} skill không hợp lệ',
+        'setup.location_town': '📍 Thành Phố',
+        'setup.location_zone': '📍 Khu Vực Quái',
+        'setup.monster_found': '👹 Có Quái',
+        'setup.monster_not_found': '🟢 Sẵn Sàng',
         # Texts/labels
         "wizard_title": "Trợ Lý Thiết Lập - Cabal Auto Hunt",
         "step1_title": "🎉 Chào mừng đến Cabal Auto Hunt!",

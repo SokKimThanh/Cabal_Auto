@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(
 import tkinter as tk
 from tkinter import ttk
 from ui.theme.ttk_theme import configure_ttk_styles
-from lib.ui_style import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 
 @pytest.fixture

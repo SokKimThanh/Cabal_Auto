@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 import queue
 
 

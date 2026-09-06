@@ -35,7 +35,7 @@ Usage:
 """
 
 import tkinter as tk
-from lib.ui_style import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from typing import Literal, Optional
 
 # Notification types and their colors

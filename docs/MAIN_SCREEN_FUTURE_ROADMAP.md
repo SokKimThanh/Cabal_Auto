@@ -77,5 +77,5 @@ To avoid feature bloat and prioritize utility over novelty, implementation must 
 
 - **Ownership & Lifecycle:** The Main Thread is the sole owner of Tkinter updates; background workers must pass data via a scheduler (`after(0, ...)`) or `queue.Queue`.
 - **DPI & Layout:** Hard-coded absolute pixel dimensions for interactive components are forbidden. The application uses proportional grid weights and `minsize` fallbacks to support 125%-150% DPI environments.
-- **Visual Palette:** Status signals rely on `lib.ui_style.UIStyle` (Green for ready/start, Red for blocking error/stop, Orange for warnings, Blue for refresh/neutral). Semantic text contrast adheres to WCAG AA ($4.5:1$ minimum).
+- **Visual Palette:** Status signals rely on `lib.ui_style_v2.UIStyleV2` (Green for ready/start, Red for blocking error/stop, Orange for warnings, Blue for refresh/neutral). Semantic text contrast adheres to WCAG AA ($4.5:1$ minimum).
 - **i18n Readiness:** Every user-visible string introduced in this roadmap requires a translation key (`en` and `vi`) via `App._t` or zone-specific `_t` helpers. Raw keys and string concatenation are strictly prohibited.

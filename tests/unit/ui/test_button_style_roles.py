@@ -58,7 +58,7 @@ def test_apply_button_role(tk_root):
 def test_legacy_constants_use_tokens():
     # Verify legacy constants read from DS1 tokens
     from ui.helpers.button_styles import BTN_GREEN_BG, BTN_RED_BG, BTN_BLUE_BG
-    from lib.ui_style import UIStyle
+    from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
     assert BTN_GREEN_BG == UIStyle.THEME_STATE_HUNTING
     assert BTN_RED_BG == UIStyle.THEME_STATE_DANGER

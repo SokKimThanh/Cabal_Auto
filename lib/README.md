@@ -377,7 +377,7 @@ Global UI style constants.
 
 **Sử dụng:**
 ```python
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 button = tk.Button(
     parent,
@@ -481,7 +481,7 @@ from lib.system.win_input import tap
 from lib.system.hunt_logger import get_hunt_logger
 from lib.features.timing.calculator import (calculate_timing, ...)
 from lib.features.skills.skill_stats import (load_skill_library, ...)
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.helpers.icon_helper import get_icon_helper
 from ui.helpers.button_styles import get_button_config
 from ui.windows.library_manager import LibraryManagerWindow

@@ -25,7 +25,7 @@ Các buttons trong Monster Rotation section (➕, ↑, ↓) đang dùng style c�
 
 ### 1. Added Import
 ```python
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 ```
 
 ### 2. Updated Button Styles
@@ -131,7 +131,7 @@ self.btn_move_up = tk.Button(
 
 ### File Modified
 **app_gui.py**:
-- Line 51: Added `from lib.ui_style import UIStyle as UI`
+- Line 51: Added `from lib.ui_style_v2 import UIStyleV2 as UI`
 - Lines 843-896: Updated 3 button definitions (~54 lines)
 
 ### UIStyle Constants Used

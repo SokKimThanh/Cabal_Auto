@@ -100,7 +100,7 @@ Trạng thái: Đang tìm / Đang đánh
 ```
 
 Không dùng modal cảnh báo mỗi lần Start. Cảnh báo luôn hiện trong mode bằng
-`UIStyle.COLOR_WARNING`.
+`UIStyleV2.COLOR_WARNING`.
 
 Configured list vẫn tồn tại trong RAM/persist và phải xuất hiện lại nguyên vẹn
 khi quay về `configured_only`.

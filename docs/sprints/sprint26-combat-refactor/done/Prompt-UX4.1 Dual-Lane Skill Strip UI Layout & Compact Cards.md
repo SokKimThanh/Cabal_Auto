@@ -32,7 +32,7 @@ Xây dựng khung giao diện dải kỹ năng tại đáy Vùng B (kích thư�
 ## Implementation Details
 
 ### 1. Bố Cục Dual-Lane & DPI Scaling Guard (1576 x 120 px)
-- Khởi tạo container dải kỹ năng với viền phẳng `UIStyle.BORDER_COLOR` (1px).
+- Khởi tạo container dải kỹ năng với viền phẳng `UIStyleV2.BORDER_COLOR` (1px).
 - Phân chia 2 dải ngang độc lập:
   * **Làn A (Combo Chain):** 4–6 thẻ Compact Card xếp ngang, quản lý bằng `grid(row=0, column=i, sticky="ew")` với `weight=1`.
   * **Làn B (Buff Lane):** 2–3 ô Compact Card quản lý bằng `grid(row=1, column=i, sticky="ew")`.

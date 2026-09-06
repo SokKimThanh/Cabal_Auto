@@ -876,16 +876,9 @@ class App(tk.Tk):
         )
         self.bounds_placeholder.grid(row=0, column=3, sticky="w", padx=(0, 12))
 
-        def create_chip(parent, title):
-            chip = tk.Frame(parent, bg=UI.BG_ELEVATED, highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
-            chip.pack(side="left", padx=4, pady=4)
-            tk.Label(chip, text="●", font=UI.FONT_SMALL, fg=UI.ACCENT_GREEN, bg=UI.BG_ELEVATED).pack(side="left", padx=(6, 2))
-            tk.Label(chip, text=f"{title}", font=UI.FONT_LABEL, fg=UI.TEXT_MUTED, bg=UI.BG_ELEVATED).pack(side="left", padx=(0, 6))
-            return chip
-
-        create_chip(self.bounds_placeholder, "Server: OK")
-        create_chip(self.bounds_placeholder, "Character: Ready")
-        create_chip(self.bounds_placeholder, "Time: 12:00")
+        from ui.panels.screen_state_panel import ScreenStatePanel
+        self.screen_state_panel = ScreenStatePanel(self.bounds_placeholder)
+        self.screen_state_panel.pack(side="left", fill="both", expand=True)
 
         # Unified Start/Stop Button (width 140px minimum layout space available, so we use min width via grid and padding)
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
@@ -1244,7 +1237,25 @@ class App(tk.Tk):
                 print(f"[UI] Error updating scan status icon: {e}")
 
     def _show_scan_results(self, results):
-        pass  # Optional mock since it's just messagebox in real app or we can add it
+        if hasattr(self, "screen_state_panel"):
+            # Fetch state from ScreenStateAnalyzer
+            from lib.features.setup.screen_state_analyzer import ScreenStateAnalyzer
+            analyzer = ScreenStateAnalyzer()
+            # For a manual scan triggered via UI, we typically use the selected window hwnd
+            hwnd = None
+            if hasattr(self, "app_window_controller"):
+                hwnd = self.app_window_controller.get_current_hwnd()
+            if not hwnd:
+                hwnd = 0 # Default fallback
+
+            # Analyze screen state
+            state = analyzer.scan_screen_state(hwnd)
+
+            # Optionally update state with scanner results if needed
+            if "class" in results and results["class"] != "Unknown":
+                state["character_class"] = results["class"]
+
+            self.screen_state_panel.update_from_scan(state)
 
     def _load_monster_rotation_list(self):
         saved_list = self.hunt_cfg.get("monster_rotation", [])

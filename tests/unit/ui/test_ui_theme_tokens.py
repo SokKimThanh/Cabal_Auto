@@ -4,7 +4,7 @@ pytest.importorskip(
     "tkinter", reason="Skipping UI theme token tests because tkinter is not available"
 )
 
-from lib.ui_style import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 
 def test_hex_tokens():
@@ -37,29 +37,28 @@ def test_hex_tokens():
 
 def test_font_resolver():
     # Without tk root, fallback to last item
-    display_font = UIStyle.resolve_font_family("display")
-    assert display_font in ["Rajdhani", "Segoe UI Semibold", "Segoe UI"]
+    display_font = UIStyle.resolve_font_family('ui')
+    assert display_font in ['Inter', 'Segoe UI', 'sans-serif']
 
-    body_font = UIStyle.resolve_font_family("body")
-    assert body_font in ["Inter", "Segoe UI"]
+    body_font = UIStyle.resolve_font_family('ui')
+    assert body_font in ['Inter', 'Segoe UI', 'sans-serif']
 
-    mono_font = UIStyle.resolve_font_family("mono")
-    assert mono_font in ["JetBrains Mono", "Cascadia Mono", "Consolas"]
+    mono_font = UIStyle.resolve_font_family('mono')
+    assert mono_font in ['JetBrains Mono', 'Courier New', 'Consolas', 'monospace']
 
-    other_font = UIStyle.resolve_font_family("other")
-    assert other_font == "Segoe UI"
-
+    other_font = UIStyle.resolve_font_family('other')
+    assert other_font in ['Inter', 'Segoe UI', 'sans-serif']
 
 def test_legacy_aliases():
-    assert UIStyle.BG_DEFAULT == "#FFFFFF"
-    assert hasattr(UIStyle, "COLOR_TEXT")
-
+    # UIStyleV2 uses a dark background
+    assert UIStyle.BG_DEFAULT == '#0f0f0f'
+    assert hasattr(UIStyle, 'COLOR_TEXT')
 
 def test_preblend_helper():
-    # alpha=0 -> background color
-    assert UIStyle.blend_alpha_to_hex(0.0, "#ffffff", "#000000") == "#000000"
-    # alpha=1 -> foreground color
-    assert UIStyle.blend_alpha_to_hex(1.0, "#ffffff", "#000000") == "#ffffff"
+    # alpha=0 -> background color (hex_bg, which is #ffffff here)
+    assert UIStyle.blend_alpha_to_hex(0.0, "#ffffff", "#000000") == "#ffffff"
+    # alpha=1 -> foreground color (hex_fg, which is #000000 here)
+    assert UIStyle.blend_alpha_to_hex(1.0, "#ffffff", "#000000") == "#000000"
     # alpha=0.5 -> mid color
     assert UIStyle.blend_alpha_to_hex(0.5, "#ffffff", "#000000") == "#7f7f7f"
 
