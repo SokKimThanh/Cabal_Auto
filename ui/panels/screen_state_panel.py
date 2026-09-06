@@ -60,5 +60,8 @@ class ScreenStatePanel(tk.Frame):
         if mismatches:
             self.lbl_skills.config(text=t("setup.skills_invalid", "⚠️ {n} invalid").format(n=len(mismatches)))
         else:
-            # Note: We aren't returning valid count right now so using 0 or len(skills)
-            self.lbl_skills.config(text=t("setup.skills_found", "✅ {count} skills valid").format(count=0))
+            self.lbl_skills.config(
+                text=t("setup.skills_found", "✅ {count} skills valid").format(
+                    count=state.get("skills_valid_count", "—")
+                )
+            )
