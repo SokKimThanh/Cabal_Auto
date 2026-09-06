@@ -58,7 +58,10 @@ root.update()
 print(f"\n[Test] Results:")
 print(f"  Found {len(selector.win_items)} windows in selector.win_items")
 print(f"  Found {len(root.win_items)} windows in root.win_items")
-print(f"  Info label: {selector.info_label.cget('text')}")
+info_text = selector.info_label.cget('text')
+# Remove unicode checkmark for compatibility
+info_text = info_text.replace('\u2713', '[OK]')
+print(f"  Info label: {info_text}")
 
 # List windows
 for i, w in enumerate(selector.win_items):
