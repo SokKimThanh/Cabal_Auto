@@ -23,10 +23,8 @@ class AppWindowController:
         from lib.system.window_manager import WindowManager
         from lib.features.hunt.config_validator import normalize_window_bounds_value
 
-        print(f"[AppWindowController._list_windows] Called with title_contains={title_contains}")
         wm = WindowManager()
         windows = wm.list_windows(title_contains=title_contains, visible_only=True)
-        print(f"[AppWindowController._list_windows] WindowManager.list_windows() returned {len(windows)} windows")
         
         results: List[Dict[str, Any]] = []
         own_title = ""
@@ -36,23 +34,16 @@ class AppWindowController:
             logger.error(f"Failed to get own title: {e}")
             own_title = ""
 
-        print(f"[AppWindowController._list_windows] own_title='{own_title}'")
         allowed_processes = ["cabal.exe", "cabalmain.exe"]
 
-        for i, info in enumerate(windows):
+        for info in windows:
             title = (info.title or "").strip()
-            process_lower = info.process_name.lower()
-            print(f"[AppWindowController._list_windows] Window {i}: title='{title}', process='{info.process_name}' (lower: {process_lower})")
-            
             if not title or title == own_title:
-                print(f"  -> SKIPPED: empty title or matches own_title")
                 continue
 
-            if process_lower not in allowed_processes:
-                print(f"  -> SKIPPED: process '{process_lower}' not in {allowed_processes}")
+            if info.process_name.lower() not in allowed_processes:
                 continue
 
-            print(f"  -> ACCEPTED")
             results.append(
                 {
                     "hwnd": int(info.hwnd),
@@ -64,8 +55,6 @@ class AppWindowController:
                 }
             )
         
-        print(f"[AppWindowController._list_windows] Final result: {len(results)} windows")
-        return results
         results.sort(
             key=lambda item: (
                 "cabal" not in item["title"].lower(),

@@ -24,7 +24,6 @@ class CompactWindowSelector:
         window_controller: Any,  # AppWindowController instance
         root: tk.Tk,
     ):
-        print(f"[CompactWindowSelector] __init__ called")
         self.parent = parent
         self.on_window_selected = on_window_selected
         self.window_controller = window_controller
@@ -35,7 +34,6 @@ class CompactWindowSelector:
         self.is_open = False
         
         self._build_ui()
-        print(f"[CompactWindowSelector] __init__ complete")
 
     def _build_ui(self):
         """Build the compact window selector UI."""
@@ -133,22 +131,18 @@ class CompactWindowSelector:
 
     def _on_refresh(self):
         """Refresh window list."""
-        print(f"[CompactWindowSelector] _on_refresh() called")
         logger.debug("CompactWindowSelector._on_refresh() called")
         try:
             self.win_items = self.window_controller._list_windows()
             # Update app.win_items for validation
             self.root.win_items = self.win_items
-            print(f"[CompactWindowSelector] Found {len(self.win_items)} windows")
             logger.debug(f"  Found {len(self.win_items)} windows")
             self._update_listbox()
             self.info_label.config(
                 text=f"✓ Found {len(self.win_items)} window(s)",
                 fg="#4ade80"
             )
-            print(f"[CompactWindowSelector] Info label updated, listbox has {self.listbox.size()} items")
         except Exception as e:
-            print(f"[CompactWindowSelector] Failed to refresh: {e}")
             logger.error(f"  Failed to refresh: {e}")
             self.info_label.config(
                 text=f"Error: {e}",
@@ -175,26 +169,22 @@ class CompactWindowSelector:
 
     def _toggle_dropdown(self):
         """Toggle dropdown visibility."""
-        print(f"[CompactWindowSelector] _toggle_dropdown() called, is_open={self.is_open}")
         if self.is_open:
             self.dropdown_frame.pack_forget()
             self.is_open = False
             self.dropdown_btn.config(text="▼")
         else:
             if not self.win_items:
-                print(f"[CompactWindowSelector] No items, calling _on_refresh()")
                 self._on_refresh()
             self.dropdown_frame.pack(fill="both", expand=True, pady=(2, 0))
             self._update_listbox()
             self.is_open = True
             self.dropdown_btn.config(text="▲")
             self.search_entry.focus()
-            print(f"[CompactWindowSelector] Dropdown opened with {self.listbox.size()} items")
 
     def _update_listbox(self):
         """Update listbox with filtered windows."""
         search_text = self.search_var.get().lower()
-        print(f"[CompactWindowSelector] _update_listbox() called, search='{search_text}', items={len(self.win_items)}")
         
         # Filter windows
         self.filtered_windows = [
@@ -208,8 +198,6 @@ class CompactWindowSelector:
         for w in self.filtered_windows:
             label = f"{w['title']}  [PID:{w['pid']}]"
             self.listbox.insert(tk.END, label)
-        
-        print(f"[CompactWindowSelector] Listbox updated: {self.listbox.size()} items shown")
         
         if self.filtered_windows:
             self.listbox.selection_set(0)
