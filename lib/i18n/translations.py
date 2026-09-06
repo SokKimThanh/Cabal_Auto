@@ -310,25 +310,7 @@ GLOBAL_TRANSLATIONS = {
         "help_quickstart": "Quick Start Guide",
         "help_quickstart_text": '1. Click "Find Windows" to list game windows\n2. Select your game window from dropdown\n3. Configure monsters and skills in Setup tab\n4. Click "Start Hunt" to begin\n5. Press Ctrl+Shift+R to start or Ctrl+Shift+E to stop hunt anytime',
         "help_shortcuts": "Keyboard Shortcuts",
-        "help_shortcuts_text": """Application Shortcuts:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⌨️  Ctrl+K             →  Open Skill Manager
-⌨️  Alt+1              →  Switch to Hunt tab
-⌨️  Alt+2              →  Switch to Setup tab
-⌨️  Ctrl+Shift+R       →  Start Hunt (global hotkey)
-⌨️  Ctrl+Shift+E       →  Stop Hunt (global hotkey)
-
-In-Game Controls (configured in Setup):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎮  Z                  →  Target next monster
-🎮  1-6                →  Use skills (skill slots)
-🎮  Attack Keys        →  Attack current target
-
-Tips:
-• Use Ctrl+Shift+R/E for quick hunt start/stop without mouse
-• Ctrl+K opens skill manager from anywhere
-• Global hotkeys work even when app is minimized
-• You can customize hotkeys in Setup → Global Hotkeys section''',
+        "help_shortcuts_text": 'Application Shortcuts:\n⌨️  Ctrl+K → Open Skill Manager\n⌨️  Alt+1 → Switch to Hunt tab\n⌨️  Alt+2 → Switch to Setup tab\n⌨️  Ctrl+Shift+R → Start Hunt (global hotkey)\n⌨️  Ctrl+Shift+E → Stop Hunt (global hotkey)\n\nIn-Game Controls:\n🎮  Z → Target next monster\n🎮  1-6 → Use skills (skill slots)\n🎮  Attack Keys → Attack current target\n\nTips:\n• Use Ctrl+Shift+R/E for quick hunt start/stop without mouse\n• Ctrl+K opens skill manager from anywhere\n• Global hotkeys work even when app is minimized\n• Customize hotkeys in Setup → Global Hotkeys section',
         'help_troubleshooting': 'Troubleshooting',
         'help_troubleshooting_text': 'Q: Hunt not working?\nA: Make sure game window is selected and brought to front.\n\nQ: Skills not casting?\nA: Check skill slots are enabled and cooldowns are correct.\n\nQ: Can\'t find monster?\nA: Try lowering template threshold in Setup tab.',
         'help_about': 'About',
@@ -682,25 +664,7 @@ Tips:
         "help_quickstart": "Hướng dẫn nhanh",
         "help_quickstart_text": '1. Nhấn "Tìm cửa sổ" để liệt kê cửa sổ game\n2. Chọn cửa sổ game từ danh sách\n3. Cấu hình quái vật và kỹ năng trong tab Thiết lập\n4. Nhấn "Bắt đầu săn" để bắt đầu\n5. Nhấn Ctrl+Shift+R để bắt đầu hoặc Ctrl+Shift+E để dừng săn bất cứ lúc nào',
         "help_shortcuts": "Phím tắt",
-        "help_shortcuts_text": """Phím tắt ứng dụng:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⌨️  Ctrl+K             →  Mở Quản lý Kỹ năng
-⌨️  Alt+1              →  Chuyển sang tab Săn
-⌨️  Alt+2              →  Chuyển sang tab Thiết lập
-⌨️  Ctrl+Shift+R       →  Bắt đầu Săn (hotkey toàn cục)
-⌨️  Ctrl+Shift+E       →  Dừng Săn (hotkey toàn cục)
-
-Điều khiển trong game (cấu hình trong Thiết lập):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎮  Z                  →  Chọn quái tiếp theo
-🎮  1-6                →  Sử dụng kỹ năng (skill slots)
-🎮  Phím tấn công       →  Đánh mục tiêu hiện tại
-
-Mẹo:
-• Dùng Ctrl+Shift+R/E để bắt đầu/dừng săn nhanh không cần chuột
-• Ctrl+K mở quản lý kỹ năng từ bất kỳ đâu
-• Phím tắt toàn cục hoạt động khi ứng dụng thu nhỏ
-• Bạn có thể tùy chỉnh phím tắt trong Thiết lập → Global Hotkeys''',
+        "help_shortcuts_text": 'Phím tắt ứng dụng:\n⌨️  Ctrl+K → Mở Quản lý Kỹ năng\n⌨️  Alt+1 → Chuyển sang tab Săn\n⌨️  Alt+2 → Chuyển sang tab Thiết lập\n⌨️  Ctrl+Shift+R → Bắt đầu Săn (hotkey toàn cục)\n⌨️  Ctrl+Shift+E → Dừng Săn (hotkey toàn cục)\n\nĐiều khiển trong game:\n🎮  Z → Chọn quái tiếp theo\n🎮  1-6 → Sử dụng kỹ năng (skill slots)\n🎮  Phím tấn công → Đánh mục tiêu hiện tại\n\nMẹo:\n• Dùng Ctrl+Shift+R/E để bắt đầu/dừng săn nhanh\n• Ctrl+K mở quản lý kỹ năng từ bất kỳ đâu\n• Phím tắt toàn cục hoạt động khi ứng dụng thu nhỏ',
         'help_troubleshooting': 'Xử lý sự cố',
         'help_troubleshooting_text': 'Q: Săn không hoạt động?\nA: Đảm bảo cửa sổ game đã được chọn và đưa lên trước.\n\nQ: Kỹ năng không ra?\nA: Kiểm tra skill slots đã bật và cooldown đúng chưa.\n\nQ: Không tìm thấy quái?\nA: Thử giảm threshold trong tab Thiết lập.',
         'help_about': 'Thông tin',
