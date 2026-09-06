@@ -95,26 +95,9 @@ class CompactWindowSelector:
         )
         self.refresh_btn.pack(side="left")
         
-        # Dropdown listbox frame (will be shown/hidden with place())
-        # IMPORTANT: Make it a child of self.frame for proper coordinate positioning
-        self.dropdown_frame = tk.Frame(self.frame, bg="#1a1a1a", relief="solid", bd=1)
-        
-        scrollbar = tk.Scrollbar(self.dropdown_frame)
-        scrollbar.pack(side="right", fill="y")
-        
-        self.listbox = tk.Listbox(
-            self.dropdown_frame,
-            height=6,
-            width=50,
-            yscrollcommand=scrollbar.set,
-            font=("Courier New", 9),
-            bg="#111111",
-            fg="#d1d5db",
-            selectmode="single",
-        )
-        self.listbox.pack(side="left", fill="both", expand=True)
-        scrollbar.config(command=self.listbox.yview)
-        self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
+        # Dropdown listbox frame (will be shown as Toplevel popup)
+        # Don't create it yet - will be created on first toggle
+        self.dropdown_window = None
         
         # Info label
         self.info_label = tk.Label(
@@ -172,11 +155,13 @@ class CompactWindowSelector:
             self._on_listbox_select()
 
     def _toggle_dropdown(self):
-        """Toggle dropdown visibility using place() positioning."""
+        """Toggle dropdown visibility using Toplevel popup window."""
         print(f"[DEBUG] _toggle_dropdown: is_open={self.is_open}, win_items={len(self.win_items)}")
         if self.is_open:
-            self.dropdown_frame.place_forget()
-            print(f"[DEBUG] Dropdown hidden with place_forget()")
+            if self.dropdown_window:
+                self.dropdown_window.destroy()
+                self.dropdown_window = None
+            print(f"[DEBUG] Dropdown window destroyed")
             self.is_open = False
             self.dropdown_btn.config(text="▼")
         else:
@@ -185,28 +170,47 @@ class CompactWindowSelector:
                 self._on_refresh()
                 print(f"[DEBUG] After refresh, win_items={len(self.win_items)}")
             
-            # Update to get latest dimensions
-            self.frame.update_idletasks()
+            # Create Toplevel popup window for dropdown
+            self.dropdown_window = tk.Toplevel(self.parent)
+            self.dropdown_window.wm_overrideredirect(True)  # No window decorations
+            self.dropdown_window.configure(bg="#1a1a1a")
             
-            # Get dimensions
+            # Position dropdown below search frame
+            self.frame.update_idletasks()
+            parent_x = self.parent.winfo_rootx()
+            parent_y = self.parent.winfo_rooty()
             frame_width = self.frame.winfo_width()
             search_height = self.search_frame.winfo_height()
             
-            print(f"[DEBUG] Frame width={frame_width}, search_height={search_height}")
+            # Calculate dropdown position (below search_frame)
+            dropdown_x = parent_x
+            dropdown_y = parent_y + search_height
             
-            # Position dropdown immediately below search frame
-            # Using place() with y offset and fixed height
-            self.dropdown_frame.place(
-                x=0,
-                y=search_height,  # Place below search frame
-                width=frame_width,
-                height=150  # Fixed dropdown height
+            print(f"[DEBUG] Creating Toplevel at x={dropdown_x}, y={dropdown_y}, width={frame_width}")
+            
+            # Create scrollbar and listbox in Toplevel
+            scrollbar = tk.Scrollbar(self.dropdown_window)
+            scrollbar.pack(side="right", fill="y")
+            
+            self.listbox = tk.Listbox(
+                self.dropdown_window,
+                height=6,
+                width=50,
+                yscrollcommand=scrollbar.set,
+                font=("Courier New", 9),
+                bg="#111111",
+                fg="#d1d5db",
+                selectmode="single",
             )
-            print(f"[DEBUG] Dropdown placed at y={search_height}, width={frame_width}, height=150")
+            self.listbox.pack(side="left", fill="both", expand=True)
+            scrollbar.config(command=self.listbox.yview)
+            self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
+            
+            # Position and resize Toplevel window
+            self.dropdown_window.geometry(f"{frame_width}x150+{dropdown_x}+{dropdown_y}")
             
             self._update_listbox()
             print(f"[DEBUG] Listbox size after update: {self.listbox.size()}")
-            print(f"[DEBUG] Dropdown_frame.winfo_height() = {self.dropdown_frame.winfo_height()}")
             
             self.is_open = True
             self.dropdown_btn.config(text="▲")
