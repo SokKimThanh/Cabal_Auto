@@ -4,15 +4,19 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.features.skills.skill_preset_service import SkillPresetService
 
 
-class SkillPanel:
+class SkillPanel(ttk.LabelFrame):
     """Full panel with both widgets AND logic"""
 
-    def __init__(self, parent, app_state):
-        self.frame = tk.Frame(parent, bg=UI.BG_BASE)
-        self.frame.pack(fill="both", expand=True)
+    def __init__(self, parent, app_state, scale_factor=1.0, hunt_tab=None):
+        padding = (int(10 * scale_factor), int(8 * scale_factor))
+        super().__init__(parent, text="⚔️ Active Skills", padding=padding)
+        self.pack(fill="both", expand=True)
         self.app_state = app_state
+        self.scale_factor = scale_factor
+        self.hunt_tab = hunt_tab
         self.skill_service = SkillPresetService()
         self.widgets = {}
+        self.frame = self # Alias for backwards compatibility
         self._build()
 
         # Register for app state changes
@@ -60,7 +64,7 @@ class SkillPanel:
 
         self.widgets["btn_build"] = tk.Button(
             btn_frame,
-            text="⚙️",
+            text="[⚙️ Build]",
             command=self.on_build,
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_MUTED,
@@ -70,7 +74,7 @@ class SkillPanel:
         self.widgets["btn_build"].pack(side="left", padx=2)
         self.widgets["btn_presets"] = tk.Button(
             btn_frame,
-            text="📋",
+            text="[📋 Presets]",
             command=self.on_presets,
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_MUTED,
@@ -80,7 +84,7 @@ class SkillPanel:
         self.widgets["btn_presets"].pack(side="left", padx=2)
         self.widgets["btn_reset"] = tk.Button(
             btn_frame,
-            text="🔄",
+            text="[🔄 Reset]",
             command=self.on_reset,
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_MUTED,
@@ -173,6 +177,42 @@ class SkillPanel:
         buff_frame.pack(fill="x")
         buff_frame.columnconfigure(0, weight=1)
         buff_frame.columnconfigure(1, weight=1)
+        # Combo Mode Indicator and Controls
+        controls_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
+        controls_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        self.widgets["combo_indicator_dot"] = tk.Label(
+            controls_frame, text="🔴", bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY
+        )
+        self.widgets["combo_indicator_dot"].pack(side="left", padx=(10, 5), pady=10)
+
+        self.widgets["combo_indicator_text"] = tk.Label(
+            controls_frame, text="COMBO MODE: INACTIVE", bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED
+        )
+        self.widgets["combo_indicator_text"].pack(side="left", pady=10)
+
+        self.widgets["btn_start_combo"] = tk.Button(
+            controls_frame,
+            text="▶️ START COMBO MODE",
+            command=self.on_start_combo,
+            bg=UI.ACCENT_GREEN_BG,
+            fg=UI.ACCENT_GREEN,
+            relief="flat",
+            font=UI.FONT_BUTTON,
+        )
+        self.widgets["btn_start_combo"].pack(side="right", padx=10, pady=10)
+
+        self.widgets["btn_stop_combo"] = tk.Button(
+            controls_frame,
+            text="⏹️ STOP COMBO MODE",
+            command=self.on_stop_combo,
+            bg=UI.DANGER,
+            fg=UI.TEXT_PRIMARY,
+            relief="flat",
+            font=UI.FONT_BUTTON,
+        )
+        # Initially hidden
+
 
         self.widgets["buff_dropdowns"] = []
         for i in range(2):
@@ -219,6 +259,27 @@ class SkillPanel:
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
             ).pack(side="right")
+
+
+    def on_start_combo(self):
+        self.widgets["combo_indicator_dot"].config(text="🟢")
+        self.widgets["combo_indicator_text"].config(text="COMBO MODE: ACTIVE", fg=UI.ACCENT_GREEN)
+        self.widgets["btn_start_combo"].pack_forget()
+        self.widgets["btn_stop_combo"].pack(side="right", padx=10, pady=10)
+
+        # Lock dropdowns
+        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
+            dd.config(state="disabled")
+
+    def on_stop_combo(self):
+        self.widgets["combo_indicator_dot"].config(text="🔴")
+        self.widgets["combo_indicator_text"].config(text="COMBO MODE: INACTIVE", fg=UI.TEXT_MUTED)
+        self.widgets["btn_stop_combo"].pack_forget()
+        self.widgets["btn_start_combo"].pack(side="right", padx=10, pady=10)
+
+        # Unlock dropdowns
+        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
+            dd.config(state="readonly")
 
     def on_skill_slots_changed(self, skill_slots=None):
         """Logic moved from HuntTab"""
