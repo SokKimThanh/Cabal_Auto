@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class CompactWindowSelector:
     """Window selector UI component for hunt tab header.
-    
+
     Replaces combobox + refresh button with:
     - Search entry field
     - Dropdown listbox with filtered windows
@@ -28,24 +28,24 @@ class CompactWindowSelector:
         self.on_window_selected = on_window_selected
         self.window_controller = window_controller
         self.root = root
-        
+
         self.win_items: List[Dict[str, Any]] = []
         self.filtered_windows: List[Dict[str, Any]] = []
         self.is_open = False
         self.listbox = None  # Will be created when dropdown opens
         self.dropdown_window = None
-        
+
         self._build_ui()
 
     def _build_ui(self):
         """Build the compact window selector UI."""
         # Main frame - will contain search bar and dropdown
         self.frame = tk.Frame(self.parent, bg=self.parent.cget("bg"))
-        
+
         # Search frame (always visible)
         self.search_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"))
         self.search_frame.pack(side="top", fill="x", expand=False)
-        
+
         # Search label
         search_label = tk.Label(
             self.search_frame,
@@ -55,7 +55,7 @@ class CompactWindowSelector:
             font=("Arial", 9),
         )
         search_label.pack(side="left", padx=(0, 5))
-        
+
         # Search entry
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(
@@ -69,7 +69,7 @@ class CompactWindowSelector:
         self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
         self.search_entry.bind("<FocusIn>", self._on_search_focus_in)
         self.search_entry.bind("<Escape>", lambda e: self._close_dropdown())
-        
+
         # Dropdown button
         self.dropdown_btn = tk.Button(
             self.search_frame,
@@ -83,7 +83,7 @@ class CompactWindowSelector:
             cursor="hand2",
         )
         self.dropdown_btn.pack(side="left", padx=(0, 8))
-        
+
         # Refresh button (icon only)
         self.refresh_btn = tk.Button(
             self.search_frame,
@@ -97,7 +97,7 @@ class CompactWindowSelector:
             cursor="hand2",
         )
         self.refresh_btn.pack(side="left")
-        
+
         # Info label
         self.info_label = tk.Label(
             self.frame,
@@ -121,13 +121,13 @@ class CompactWindowSelector:
             # Update app.win_items for validation
             self.root.win_items = self.win_items
             logger.debug(f"  Found {len(self.win_items)} windows")
-            
+
             # Update UI label
             self.info_label.config(
                 text=f"✓ Found {len(self.win_items)} window(s)",
                 fg="#4ade80"
             )
-            
+
             # If dropdown is open, immediately update listbox
             # This mimics wizard behavior where Find Windows button updates list in real-time
             if self.is_open and self.listbox:
@@ -151,14 +151,14 @@ class CompactWindowSelector:
         # Show loading state
         original_text = self.refresh_btn.cget("text")
         self.refresh_btn.config(state="disabled", text="⟳")  # Spinning icon
-        
+
         # Do the refresh
         self._on_refresh()
-        
+
         # Restore button after a short delay
         def restore_button():
             self.refresh_btn.config(state="normal", text=original_text)
-        
+
         self.refresh_btn.after(300, restore_button)
 
     def _on_search_focus_in(self, event=None):
@@ -190,29 +190,29 @@ class CompactWindowSelector:
         else:
             if not self.win_items:
                 self._on_refresh()
-            
+
             # Create Toplevel popup window for dropdown
             self.dropdown_window = tk.Toplevel(self.parent)
             self.dropdown_window.wm_overrideredirect(True)  # No window decorations
             self.dropdown_window.configure(bg="#1a1a1a")
             # Make popup grab all events (modal-like behavior)
             self.dropdown_window.grab_set()
-            
+
             # Position dropdown below search frame
             self.frame.update_idletasks()
             parent_x = self.parent.winfo_rootx()
             parent_y = self.parent.winfo_rooty()
             frame_width = self.frame.winfo_width()
             search_height = self.search_frame.winfo_height()
-            
+
             # Calculate dropdown position (below search_frame)
             dropdown_x = parent_x
             dropdown_y = parent_y + search_height
-            
+
             # Create scrollbar and listbox in Toplevel
             scrollbar = tk.Scrollbar(self.dropdown_window)
             scrollbar.pack(side="right", fill="y")
-            
+
             self.listbox = tk.Listbox(
                 self.dropdown_window,
                 height=6,
@@ -228,12 +228,12 @@ class CompactWindowSelector:
             self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
             # Allow Escape key to close dropdown
             self.listbox.bind("<Escape>", lambda e: self._close_dropdown())
-            
+
             # Position and resize Toplevel window
             self.dropdown_window.geometry(f"{frame_width}x150+{dropdown_x}+{dropdown_y}")
-            
+
             self._update_listbox()
-            
+
             self.is_open = True
             self.dropdown_btn.config(text="▲")
             self.search_entry.focus()
@@ -243,22 +243,22 @@ class CompactWindowSelector:
         # Only update if listbox exists (dropdown is open)
         if not self.listbox:
             return
-        
+
         search_text = self.search_var.get().lower()
-        
+
         # Filter windows
         self.filtered_windows = [
             w for w in self.win_items
             if search_text in w["title"].lower()
             or search_text in w.get("proc", "").lower()
         ]
-        
+
         # Update listbox
         self.listbox.delete(0, tk.END)
         for w in self.filtered_windows:
             label = f"{w['title']}  [PID:{w['pid']}]"
             self.listbox.insert(tk.END, label)
-        
+
         if self.filtered_windows:
             self.listbox.selection_set(0)
             self.listbox.activate(0)
@@ -288,25 +288,25 @@ class CompactWindowSelector:
             sel = self.listbox.curselection()
             if not sel:
                 return
-            
+
             selected = self.filtered_windows[sel[0]]
             logger.debug(f"Selected window: {selected['title']}")
-            
+
             # Update search entry with selection
             self.search_var.set(selected["title"])
-            
+
             # Call callback
             self.on_window_selected(selected)
-            
+
             # Temporarily unbind FocusIn to prevent re-opening
             self.search_entry.unbind("<FocusIn>")
-            
+
             # Close dropdown using helper method
             self._close_dropdown()
-            
+
             # Restore FocusIn binding after a short delay
             self.search_entry.after(100, lambda: self.search_entry.bind("<FocusIn>", self._on_search_focus_in))
-            
+
         except Exception as e:
             logger.error(f"Error on window select: {e}")
 

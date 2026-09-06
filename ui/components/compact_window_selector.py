@@ -57,7 +57,7 @@ class CompactWindowSelector:
             width=14,
         )
         self.info_label.pack(side="left", padx=(10, 5))
-        
+
         # Dropdown button (toggle listbox)
         self.dropdown_btn = tk.Button(
             control_frame,
@@ -99,12 +99,12 @@ class CompactWindowSelector:
             font=("Arial", 8),
         )
         self.close_btn.pack(side="left", padx=(0, 10))
-        
+
         # ===== Bottom: Listbox (collapsible) =====
         self.listbox_frame = tk.Frame(self.frame, bg="#111111", height=0)
         self.listbox_frame.pack(side="top", fill="x", padx=5, pady=(0, 5))
         self.listbox_frame.pack_propagate(False)  # Don't auto-resize
-        
+
         # Search entry inside listbox frame
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(
@@ -116,15 +116,15 @@ class CompactWindowSelector:
         self.search_entry.pack(side="top", fill="x", padx=5, pady=(5, 0))
         self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
         self.search_entry.bind("<Escape>", lambda e: self._close_listbox())
-        
+
         # Listbox container frame
         listbox_container = tk.Frame(self.listbox_frame, bg="#111111")
         listbox_container.pack(side="top", fill="both", expand=True, padx=0, pady=5)
-        
+
         # Create listbox and scrollbar inside container
         scrollbar = tk.Scrollbar(listbox_container)
         scrollbar.pack(side="right", fill="y")
-        
+
         self.listbox = tk.Listbox(
             listbox_container,
             height=0,
@@ -141,7 +141,7 @@ class CompactWindowSelector:
         scrollbar.config(command=self.listbox.yview)
         self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
         self.listbox.bind("<Escape>", lambda e: self._close_listbox())
-        
+
         # Initially hidden (height=0)
         self.is_open = False
 
@@ -219,18 +219,18 @@ class CompactWindowSelector:
         logger.debug("[Refresh] Button clicked")
         self.refresh_btn.config(state="disabled", text="⟳")
         self.refresh_btn.update()  # Show loading state immediately
-        
+
         try:
             self._on_refresh()
             logger.debug(f"[Refresh] Found {len(self.win_items)} windows")
         except Exception as e:
             logger.error(f"[Refresh] Error: {e}")
-        
+
         # Reset button after 300ms
         def reset_btn():
             self.refresh_btn.config(state="normal", text="🔄")
             logger.debug("[Refresh] Button reset")
-        
+
         self.refresh_btn.after(300, reset_btn)
 
     def _update_listbox(self):

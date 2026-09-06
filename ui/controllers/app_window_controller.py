@@ -25,7 +25,7 @@ class AppWindowController:
 
         wm = WindowManager()
         windows = wm.list_windows(title_contains=title_contains, visible_only=True)
-        
+
         results: List[Dict[str, Any]] = []
         own_title = ""
         try:
@@ -54,7 +54,7 @@ class AppWindowController:
                     "is_minimized": info.is_minimized,
                 }
             )
-        
+
         results.sort(
             key=lambda item: (
                 "cabal" not in item["title"].lower(),
