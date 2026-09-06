@@ -718,20 +718,16 @@ class App(tk.Tk):
             default_bg = button.cget("bg")
             default_fg = button.cget("fg")
 
-            active_bg = active_color or UI.ACCENT_GREEN_BG
             hover_bg = hover_color or UI.BORDER_PRIMARY
             hover_fg = UI.TEXT_PRIMARY if hover_color else default_fg
 
             def on_enter(event):
-                if button.cget("bg") != active_bg:
+                if button.cget("bg") != UI.ACCENT_GREEN_BG:
                     button.config(bg=hover_bg, fg=hover_fg, relief="raised")
 
             def on_leave(event):
-                if button.cget("bg") != active_bg:
+                if button.cget("bg") != UI.ACCENT_GREEN_BG:
                     button.config(bg=default_bg, fg=default_fg, relief="flat")
-                else:
-                    # Ensure an active button never gets stuck in "raised"
-                    button.config(relief="flat")
 
             button.bind("<Enter>", on_enter)
             button.bind("<Leave>", on_leave)

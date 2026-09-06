@@ -493,7 +493,7 @@ class HuntTab(ttk.Frame):
         from ui.components.status_badge import StatusBadge
         self.hunt_status_badge = StatusBadge(status_frame, status="waiting")
         self.hunt_status_badge.pack(side="left", padx=8, pady=6)
-        self.hunt_status_label = self.hunt_status_badge.icon_label  # keep reference for legacy code
+        self.hunt_status_label = self.hunt_status_badge # keep reference for legacy code
 
         self.hunt_target_info_label = tk.Label(
             status_frame,
