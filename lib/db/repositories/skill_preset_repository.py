@@ -1,6 +1,9 @@
 import sqlite3
+import logging
 from typing import Optional, List, Dict, Any
 from lib.db.connection import get_connection
+
+logger = logging.getLogger(__name__)
 
 class SkillPresetRepository:
     def create_preset(self, class_id: int, name: str, is_default: int = 0) -> int:
@@ -15,6 +18,10 @@ class SkillPresetRepository:
             )
             conn.commit()
             return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"Error creating preset for class_id {class_id}: {e}")
+            conn.rollback()
+            return -1
         finally:
             if is_local and conn:
                 try:
@@ -43,6 +50,9 @@ class SkillPresetRepository:
                 result[lane].append(skill_id)
 
             return result
+        except Exception as e:
+            logger.error(f"Error getting preset skills for preset_id {preset_id}: {e}")
+            return {}
         finally:
             if is_local and conn:
                 try:
@@ -68,7 +78,8 @@ class SkillPresetRepository:
 
             conn.commit()
             return True
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error setting preset skills for preset_id {preset_id}: {e}")
             conn.rollback()
             return False
         finally:
@@ -87,6 +98,10 @@ class SkillPresetRepository:
             cursor.execute("DELETE FROM skill_presets WHERE preset_id = ?", (preset_id,))
             conn.commit()
             return True
+        except Exception as e:
+            logger.error(f"Error deleting preset {preset_id}: {e}")
+            conn.rollback()
+            return False
         finally:
             if is_local and conn:
                 try:
@@ -103,6 +118,9 @@ class SkillPresetRepository:
             cursor.execute("SELECT * FROM skill_presets WHERE class_id = ?", (class_id,))
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Error getting presets by class_id {class_id}: {e}")
+            return []
         finally:
             if is_local and conn:
                 try:
@@ -120,6 +138,9 @@ class SkillPresetRepository:
             row = cursor.fetchone()
             if row:
                 return dict(row)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting preset {preset_id}: {e}")
             return None
         finally:
             if is_local and conn:

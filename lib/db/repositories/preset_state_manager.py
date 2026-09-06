@@ -1,7 +1,10 @@
 import sqlite3
+import logging
 from typing import Optional, Dict, Any, Tuple
 from lib.db.connection import get_connection
 from lib.db.repositories.skill_preset_repository import SkillPresetRepository
+
+logger = logging.getLogger(__name__)
 
 class PresetStateManager:
     def get_active_preset(self, class_id: int) -> Optional[int]:
@@ -17,6 +20,9 @@ class PresetStateManager:
             row = cursor.fetchone()
             if row:
                 return row["active_preset_id"]
+            return None
+        except Exception as e:
+            logger.error(f"Error getting active preset for class_id {class_id}: {e}")
             return None
         finally:
             if is_local and conn:
@@ -43,6 +49,10 @@ class PresetStateManager:
             )
             conn.commit()
             return True
+        except Exception as e:
+            logger.error(f"Error setting active preset for class_id {class_id}: {e}")
+            conn.rollback()
+            return False
         finally:
             if is_local and conn:
                 try:
@@ -60,6 +70,9 @@ class PresetStateManager:
             row = cursor.fetchone()
             if row and row['preset_mode']:
                 return row['preset_mode']
+            return 'default'
+        except Exception as e:
+            logger.error(f"Error getting preset mode for class_id {class_id}: {e}")
             return 'default'
         finally:
             if is_local and conn:
