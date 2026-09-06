@@ -1,7 +1,4 @@
-from typing import Dict, Any, List, Optional
-import logging
-
-logger = logging.getLogger(__name__)
+from typing import Dict, Any, List
 
 class ValidationResult:
     def __init__(self, is_valid: bool, mismatches: List[Dict[str, Any]] = None):
