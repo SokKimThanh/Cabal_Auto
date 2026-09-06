@@ -260,7 +260,7 @@ Check key conflicts:
 2. Skill-vs-Combo-Start-Key (specific warning)
 
 NOT blocking, but:
-- Update border color to UIStyle.STATE_WARN
+- Update border color to UIStyleV2.STATE_WARN
 - Attach Hover Tooltip with specific message
 - Log warning to system
 """

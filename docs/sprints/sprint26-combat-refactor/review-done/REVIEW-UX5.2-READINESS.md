@@ -325,7 +325,7 @@ def _show_recovery_failed(self):
     if hasattr(self, "recovery_status_label"):
         self.recovery_status_label.config(
             text="❌ Không thể khôi phục",
-            fg=UIStyle.STATE_ERROR
+            fg=UIStyleV2.STATE_ERROR
         )
     
     # Show Toast

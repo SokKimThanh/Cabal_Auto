@@ -98,26 +98,26 @@ def test_view_hidden_stops_self_polling(monkeypatch):
 def test_switch_view_updates_sidebar_visual_state(monkeypatch):
     monkeypatch.setitem(sys.modules, 'lib.system.window_manager', Mock())
     from app_gui import App
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
     app = App()
     try:
         app.switch_view('setup')
         # Find the setup button and check its color
         setup_btn = None
         hunt_btn = None
-        for widget, key, view_target in app._sidebar_widgets:
+        for widget, key, view_target, icon in app._sidebar_widgets:
             if view_target == 'setup':
                 setup_btn = widget
             elif view_target == 'hunt':
                 hunt_btn = widget
 
         assert setup_btn is not None
-        assert setup_btn.cget('bg') == UI.THEME_STATE_SELECTED
+        assert setup_btn.cget('bg') == UI.ACCENT_GREEN_BG
         assert "▌" in setup_btn.cget('text')
 
         # Verify unselected state for hunt
         if hunt_btn is not None:
-            assert hunt_btn.cget('bg') == UI.THEME_BG_SIDEBAR
+            assert hunt_btn.cget('bg') == UI.BG_ELEVATED
             assert "▌" not in hunt_btn.cget('text')
 
     finally:

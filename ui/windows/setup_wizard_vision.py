@@ -25,7 +25,7 @@ import numpy as np
 
 # Import các module cần thiết từ lib
 try:
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
 except ImportError:
     # Fallback nếu không tìm thấy UIStyle
     class UIStyle:
@@ -444,7 +444,7 @@ class VisionWizard(tk.Toplevel):
                 default="Độ chính xác cần thiết (0.7 = 70%)",
             ),
             font=UI.FONT_SMALL,
-            fg=UI.COLOR_SUBTEXT,
+            fg=UI.THEME_TEXT_SECONDARY,
             bg=UI.BG_DEFAULT,
         ).pack(side="left", padx=(10, 0))
 
@@ -473,7 +473,7 @@ class VisionWizard(tk.Toplevel):
                 "hotkey_settings_title", ns="vision_wizard", default="Cấu hình phím tắt"
             ),
             font=UI.FONT_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             bg=UI.BG_DEFAULT,
         ).pack(side="left")
 
@@ -550,7 +550,7 @@ class VisionWizard(tk.Toplevel):
                 "overlay_settings_title", ns="vision_wizard", default="Cấu hình Overlay"
             ),
             font=UI.FONT_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             bg=UI.BG_DEFAULT,
         ).pack(side="left")
 

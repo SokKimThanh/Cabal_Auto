@@ -401,7 +401,7 @@ vision_menu.add_command(
 
 ## 🎨 UI Style Guide
 
-Module sử dụng `lib.ui_style.UIStyle` để đảm bảo tính nhất quán:
+Module sử dụng `lib.ui_style_v2.UIStyleV2` để đảm bảo tính nhất quán:
 
 | Component | Style |
 |-----------|-------|

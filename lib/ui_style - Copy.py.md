@@ -3,7 +3,7 @@
 UI Style Guide - Centralized fonts, colors, and sizes for consistent UI.
 
 Usage:
-    from lib.ui_style import UIStyle as UI
+    from lib.ui_style_v2 import UIStyleV2 as UI
     tk.Label(parent, font=UI.FONT_LABEL, fg=UI.COLOR_TEXT)
 """
 from __future__ import annotations

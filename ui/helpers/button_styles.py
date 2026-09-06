@@ -5,7 +5,7 @@ This module provides semantic role-based configuration for buttons.
 It transitions away from hard-coded fonts and colors in favor of ttk style tokens.
 """
 
-from lib.ui_style import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 # Map semantic roles to ttk styles
 # These correspond to styles defined in ui.theme.ttk_theme

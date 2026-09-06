@@ -42,7 +42,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 
 # Global UI styles
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 # Win32 imports
 if sys.platform == "win32":

@@ -13,8 +13,8 @@ Date: October 18, 2025
 
 import tkinter as tk
 from lib.i18n import t as i18n_t
-from lib.ui_style import UIStyle
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.i18n.translations import LIBRARY_MANAGER_TRANSLATIONS
 from tkinter import ttk, messagebox, filedialog
 from typing import Callable, Optional, Dict, Any
@@ -1307,8 +1307,8 @@ Track progress at:
         tk.Label(
             top_bar,
             text=self._t("library_manager_title"),
-            bg=UI.BG_PANEL,
-            fg=UI.COLOR_PRIMARY_TEXT,
+            bg=UI.THEME_BG_PANEL,
+            fg=UI.THEME_TEXT_PRIMARY,
             font=UI.FONT_TITLE,
         ).pack(side="left", padx=8)
         # Right-aligned actions
@@ -1419,7 +1419,7 @@ Track progress at:
         search_frame.pack(fill="x")
         search_container = tk.Frame(
             search_frame,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             highlightbackground="#E0E0E0",
             highlightthickness=1,
         )
@@ -1444,7 +1444,7 @@ Track progress at:
                 search_container,
                 text=search_txt,
                 font=(UI.FONT_FAMILY, 11),
-                bg=UI.BG_PANEL,
+                bg=UI.THEME_BG_PANEL,
                 fg=UI.COLOR_HINT,
             ).pack(side="left", padx=(10, 5))
         self.monster_search_var = tk.StringVar()
@@ -1454,7 +1454,7 @@ Track progress at:
             textvariable=self.monster_search_var,
             font=UI.FONT_TEXT,
             border=0,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             fg=UI.COLOR_TEXT,
         ).pack(side="left", fill="x", expand=True, pady=10, padx=(0, 10))
 
@@ -1502,7 +1502,7 @@ Track progress at:
             action_bar,
             text=("Monster Editor" if self.lang == "en" else "Chỉnh Sửa Quái"),
             bg=UI.BG_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             font=UI.FONT_TITLE,
         ).pack(side="left", padx=12)
         # Details panel
@@ -2097,7 +2097,7 @@ Track progress at:
             textvariable=self.template_path_var,
             font=UI.FONT_TEXT,
             state="readonly",
-            fg=UI.COLOR_SUBTEXT,
+            fg=UI.THEME_TEXT_SECONDARY,
             relief="solid",
             borderwidth=1,
         )
@@ -2131,7 +2131,7 @@ Track progress at:
         ).pack(side="left", padx=(6, 0))
 
         # Right: edit panel with toolbar + inline form (created but not packed until used)
-        edit_toolbar = tk.Frame(self.template_edit_panel, bg=UI.BG_PANEL)
+        edit_toolbar = tk.Frame(self.template_edit_panel, bg=UI.THEME_BG_PANEL)
         edit_toolbar.pack(fill="x", padx=10, pady=(10, 0))
         # Right-align with 4px margins
         self._make_icon_button(
@@ -2240,7 +2240,7 @@ Track progress at:
             text=("Template Name" if self.lang == "en" else "Tên Template"),
             bg=UI.BG_SECTION,
             font=(UI.FONT_FAMILY, 9, "bold"),
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             anchor="w",
         ).pack(fill="x", pady=(0, 4))
         self.template_name_var = tk.StringVar()
@@ -2273,7 +2273,7 @@ Track progress at:
             text=("Match Threshold" if self.lang == "en" else "Ngưỡng Khớp"),
             bg=UI.BG_SECTION,
             font=(UI.FONT_FAMILY, 9, "bold"),
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             anchor="w",
         ).pack(fill="x", pady=(0, 4))
         th_input = tk.Frame(th_col, bg=UI.BG_SECTION)
@@ -3640,7 +3640,7 @@ Track progress at:
         search_frame.pack(fill="x")
         search_container = tk.Frame(
             search_frame,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             highlightbackground="#E0E0E0",
             highlightthickness=1,
         )
@@ -3665,7 +3665,7 @@ Track progress at:
                 search_container,
                 text=search_txt,
                 font=(UI.FONT_FAMILY, 11),
-                bg=UI.BG_PANEL,
+                bg=UI.THEME_BG_PANEL,
                 fg=UI.COLOR_HINT,
             ).pack(side="left", padx=(10, 5))
         self.skill_search_var = tk.StringVar()
@@ -3675,7 +3675,7 @@ Track progress at:
             textvariable=self.skill_search_var,
             font=UI.FONT_TEXT,
             border=0,
-            bg=UI.BG_PANEL,
+            bg=UI.THEME_BG_PANEL,
             fg=UI.COLOR_TEXT,
         ).pack(side="left", fill="x", expand=True, pady=10, padx=(0, 10))
 
@@ -3753,7 +3753,7 @@ Track progress at:
             action_bar,
             text=("Skill Editor" if self.lang == "en" else "Chỉnh Sửa Kỹ Năng"),
             bg=UI.BG_SECTION,
-            fg=UI.COLOR_PRIMARY_TEXT,
+            fg=UI.THEME_TEXT_PRIMARY,
             font=UI.FONT_TITLE,
         ).pack(side="left", padx=12)
 

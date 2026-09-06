@@ -559,7 +559,7 @@ class AppStateController:
             return
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
-        from lib.ui_style import UIStyle
+        from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
         bounds = WindowSelectionService.resolve_bounds(
             getattr(app, "hunt_cfg", {}), getattr(app, "current_window_bounds", None)
