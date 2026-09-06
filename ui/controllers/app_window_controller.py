@@ -121,10 +121,14 @@ class AppWindowController:
 
                     logger = logging.getLogger(__name__)
                     logger.info(f"Window {hwnd} is minimized, attempting recovery...")
+                    # Schedule restoration and window refresh (don't return early!)
                     self.root.after(300, self._retry_resolve_bounds, hwnd, 0)
+                    # Continue to scan windows anyway
+                    self.root.bounds_recovery_failed = False
+                    self.on_hunt_find_windows()
                     return
 
-        # Finally re-scan windows to update bounds in UI
+        # Scan windows to update bounds in UI
         self.root.bounds_recovery_failed = False
         self.on_hunt_find_windows()
 
