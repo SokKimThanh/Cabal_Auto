@@ -537,6 +537,10 @@ class App(tk.Tk):
         if pyautogui is not None:
             pyautogui.FAILSAFE = bool(self.cfg.get("safety", {}).get("failsafe", True))
 
+        # Initialize window selection state
+        self.win_items = []
+        self.win_items_map = {}
+
         self._build_ui()
         self.hunt_runner = HuntRunner(
             hunt_cfg=self.hunt_cfg,
@@ -844,18 +848,14 @@ class App(tk.Tk):
         # Window Selection Combobox
         self.win_combo_var = tk.StringVar()
         self.win_combo = ttk.Combobox(
-            self.action_bar_frame, textvariable=self.win_combo_var, state="readonly"
+            self.action_bar_frame, textvariable=self.win_combo_var, state="normal"
         )
         self.win_combo.grid(row=0, column=0, sticky="ew", padx=(0, 12))
 
-        # Auto-populate windows when dropdown is clicked
+        # Auto-populate windows when dropdown is clicked (first time or refresh)
         self.win_combo.bind(
             "<Button-1>",
-            lambda e: (
-                self.window_controller.on_hunt_find_windows()
-                if not self.win_items
-                else None
-            ),
+            lambda e: self.window_controller.on_hunt_find_windows(),
         )
         # Handle window selection
         self.win_combo.bind(
