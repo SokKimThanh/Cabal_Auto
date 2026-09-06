@@ -1,10 +1,15 @@
 import ctypes
 import ctypes.wintypes as wintypes
+import sys
 from typing import Any, Dict, List, Optional
-import psutil
 
-from lib.system.window_manager import WindowManager
+try:
+    import psutil  # type: ignore
+except ImportError:
+    psutil = None  # type: ignore
+
 from lib.features.hunt.config_validator import normalize_window_bounds_value
+from lib.system.window_manager import WindowManager
 
 class WindowDetectionService:
     """Centralized window detection for Cabal game."""
