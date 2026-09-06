@@ -250,6 +250,14 @@ class CompactWindowSelector:
         def fetch_windows_task():
             try:
                 windows = self.window_controller._list_windows()
+
+                # Log the windows to console per user request
+                logger.info("=== Window List Refresh Results ===")
+                for i, w in enumerate(windows):
+                    logger.info(f"[{i}] {w.get('title', 'Unknown')} (PID: {w.get('pid', 'N/A')})")
+                logger.info(f"Total windows found: {len(windows)}")
+                logger.info("===================================")
+
                 self.root.after(0, self._update_ui_with_windows, windows)
                 logger.debug(f"[Refresh] Thread found {len(windows)} windows")
             except Exception as e:

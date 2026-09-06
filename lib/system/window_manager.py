@@ -188,12 +188,13 @@ class WindowManager:
         results = []
 
         import ctypes
-        from ctypes import wintypes
         import sys
 
-        EnumWindowsProc = None
         if sys.platform == "win32":
-            EnumWindowsProc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+        else:
+            EnumWindowsProc = ctypes.CFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+
         def callback(hwnd, _):
             try:
                 if visible_only:
