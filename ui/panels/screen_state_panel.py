@@ -1,7 +1,7 @@
 import tkinter as tk
 from typing import Dict, Any
 from lib.ui_style_v2 import UIStyleV2 as UI
-from lib.i18n.translations import t
+from lib.i18n import t
 
 class ScreenStatePanel(tk.Frame):
     def __init__(self, parent: tk.Widget, *args, **kwargs):
@@ -14,7 +14,7 @@ class ScreenStatePanel(tk.Frame):
         self.container.pack(fill=tk.BOTH, expand=True)
 
         # Labels for state
-        self.lbl_class = self._create_label(self.container, t("setup.character_class_label", "Character Class: ") + "Unknown")
+        self.lbl_class = self._create_label(self.container, t("setup.character_class_label", default="Character Class: ") + "Unknown")
         self.lbl_class.grid(row=0, column=0, sticky="w", padx=4, pady=2)
 
         self.lbl_location = self._create_label(self.container, "📍 Unknown")
@@ -23,7 +23,7 @@ class ScreenStatePanel(tk.Frame):
         self.lbl_monster = self._create_label(self.container, "🟢 Ready")
         self.lbl_monster.grid(row=1, column=0, sticky="w", padx=4, pady=2)
 
-        self.lbl_skills = self._create_label(self.container, t("setup.skills_found", "✅ {count} skills valid").format(count=0))
+        self.lbl_skills = self._create_label(self.container, t("setup.skills_found", default="✅ {count} skills valid").format(count=0))
         self.lbl_skills.grid(row=1, column=1, sticky="w", padx=4, pady=2)
 
     def _create_label(self, parent: tk.Widget, text: str) -> tk.Label:
@@ -32,7 +32,7 @@ class ScreenStatePanel(tk.Frame):
             text=text,
             bg=UI.BG_BASE,
             fg=UI.TEXT_PRIMARY,
-            font=(UI.FONT_MAIN, 9)
+            font=UI.FONT_LABEL
         )
         return lbl
 
@@ -42,26 +42,26 @@ class ScreenStatePanel(tk.Frame):
             return
 
         char_class = state.get("character_class", "Unknown")
-        self.lbl_class.config(text=t("setup.character_class_label", "Character Class: ") + char_class)
+        self.lbl_class.config(text=t("setup.character_class_label", default="Character Class: ") + char_class)
 
         loc = state.get("location", "ZONE")
         if loc == "TOWN":
-            self.lbl_location.config(text=t("setup.location_town", "📍 Town"))
+            self.lbl_location.config(text=t("setup.location_town", default="📍 Town"))
         else:
-            self.lbl_location.config(text=t("setup.location_zone", "📍 Zone"))
+            self.lbl_location.config(text=t("setup.location_zone", default="📍 Zone"))
 
         has_monster = state.get("has_monster", False)
         if has_monster:
-            self.lbl_monster.config(text=t("setup.monster_found", "👹 Found"))
+            self.lbl_monster.config(text=t("setup.monster_found", default="👹 Found"))
         else:
-            self.lbl_monster.config(text=t("setup.monster_not_found", "🟢 Ready"))
+            self.lbl_monster.config(text=t("setup.monster_not_found", default="🟢 Ready"))
 
         mismatches = state.get("skill_mismatches", [])
         if mismatches:
-            self.lbl_skills.config(text=t("setup.skills_invalid", "⚠️ {n} invalid").format(n=len(mismatches)))
+            self.lbl_skills.config(text=t("setup.skills_invalid", default="⚠️ {n} invalid").format(n=len(mismatches)))
         else:
             self.lbl_skills.config(
-                text=t("setup.skills_found", "✅ {count} skills valid").format(
+                text=t("setup.skills_found", default="✅ {count} skills valid").format(
                     count=state.get("skills_valid_count", "—")
                 )
             )
