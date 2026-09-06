@@ -338,14 +338,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     0 <= target_y <= target.winfo_height()
                     and 0 <= target_x <= target.winfo_width()
                 ):
-                    idx = target.nearest(target_y)
-                    # Use promote logic but insert at specific index
-                    # Note: We rely on the app state method for clean promotion
                     promote_fn = getattr(self.app, "promote_detected_monster", None)
                     if promote_fn:
-                        promote_fn(
-                            (event.widget.drag_data["source_idx"],), target_idx=idx
-                        )
+                        promote_fn((event.widget.drag_data["source_idx"],))
                 target.selection_clear(0, tk.END)
             del event.widget.drag_data
 
