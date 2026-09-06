@@ -187,29 +187,45 @@ class WindowManager:
         """
         results = []
 
+        import ctypes
+        import sys
+
+        if sys.platform == "win32":
+            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+        else:
+            EnumWindowsProc = ctypes.CFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+
         def callback(hwnd, _):
             try:
-                # Include minimized windows for game selection
-                # IsWindowVisible() returns False for minimized, but we want to show them
                 if visible_only:
-                    # Check if window is minimized - include minimized windows
                     import win32con
                     is_minimized = (win32gui.GetWindowPlacement(hwnd)[0] == win32con.SW_MINIMIZE)
-                    is_visible = win32gui.IsWindowVisible(hwnd)
+                    if sys.platform == "win32":
+                        is_visible = ctypes.windll.user32.IsWindowVisible(hwnd) != 0
+                    else:
+                        is_visible = win32gui.IsWindowVisible(hwnd)
 
-                    # Include window if: visible OR minimized (for game windows)
                     if not (is_visible or is_minimized):
-                        return True  # Skip completely hidden/closed windows
+                        return True
+
+                # Get window title directly using ctypes for speed (Windows only)
+                if sys.platform == "win32":
+                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+                    buf = ctypes.create_unicode_buffer(length + 1)
+                    ctypes.windll.user32.GetWindowTextW(hwnd, buf, length + 1)
+                    title = buf.value
+                else:
+                    title = win32gui.GetWindowText(hwnd)
+
+                if title_contains and title_contains.lower() not in title.lower():
+                    return True
 
                 # Get window info
                 info = self.get_window_info(hwnd)
                 if not info:
                     return True
 
-                # Apply filters
-                if title_contains and title_contains.lower() not in info.title.lower():
-                    return True
-
+                # Apply remaining filters
                 if class_name and class_name != info.class_name:
                     return True
 
@@ -227,7 +243,10 @@ class WindowManager:
             return True
 
         try:
-            win32gui.EnumWindows(callback, None)
+            if sys.platform == "win32":
+                ctypes.windll.user32.EnumWindows(EnumWindowsProc(callback), 0)
+            else:
+                win32gui.EnumWindows(callback, None)
         except Exception as e:
             logger.error(f"EnumWindows failed: {e}")
 

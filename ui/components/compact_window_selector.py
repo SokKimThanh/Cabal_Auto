@@ -188,57 +188,76 @@ class CompactWindowSelector:
             logger.debug("[Toggle] Listbox closed")
 
     def _on_refresh(self):
-        """Refresh window list."""
-        logger.debug("[Refresh] Starting refresh...")
+        """Refresh window list (triggered internally without button loading state)."""
+        logger.debug("[Refresh] Starting refresh synchronously...")
         try:
             windows = self.window_controller._list_windows()
-            self.win_items = windows
-            self.root.win_items = windows
-            
-            # Update info label
-            count = len(self.win_items)
-            if count > 0:
-                text = f"✓ {count} window(s)"
-                fg_color = UI.ACCENT_GREEN if "UI" in globals() else "#4ade80"
-            else:
-                text = "✗ 0 windows"
-                fg_color = UI.DANGER if "UI" in globals() else "#f87171"
-            
-            self.info_label.config(text=text, fg=fg_color)
-            self.info_label.update()  # Force update immediately
-            logger.debug(f"[Refresh] Updated label: '{text}'")
-            
-            # Update listbox if open
-            if self.is_open:
-                self._update_listbox()
-                if self.filtered_windows:
-                    self.listbox.selection_set(0)
-                    self.listbox.activate(0)
+            self._update_ui_with_windows(windows)
         except Exception as e:
-            logger.error(f"[Refresh] Failed: {e}", exc_info=True)
-            self.info_label.config(text=f"✗ Error: {e}", fg=UI.DANGER if "UI" in globals() else "#f87171")
-            self.info_label.update()
-            self.win_items = []
+            self._handle_refresh_error(e)
+
+    def _update_ui_with_windows(self, windows):
+        """Update UI with fetched windows (Main Thread only)."""
+        self.win_items = windows
+        # Handle cases where root might not have win_items attached
+        if hasattr(self.root, 'win_items'):
+            self.root.win_items = windows
+
+        # Update info label
+        count = len(self.win_items)
+        if count > 0:
+            text = f"✓ {count} window(s)"
+            fg_color = UI.ACCENT_GREEN if "UI" in globals() else "#4ade80"
+        else:
+            text = "✗ 0 windows"
+            fg_color = UI.DANGER if "UI" in globals() else "#f87171"
+
+        self.info_label.config(text=text, fg=fg_color)
+        logger.debug(f"[Refresh] Updated label: '{text}'")
+
+        # Update listbox if open
+        if self.is_open:
+            self._update_listbox()
+            if self.filtered_windows:
+                self.listbox.selection_set(0)
+                self.listbox.activate(0)
+
+        # Reset button state if it was loading
+        if self.refresh_btn.cget("state") == "disabled":
+            self.refresh_btn.config(state="normal", text="🔄")
+            logger.debug("[Refresh] Button reset")
+
+    def _handle_refresh_error(self, e):
+        """Handle errors during refresh (Main Thread only)."""
+        logger.error(f"[Refresh] Failed: {e}", exc_info=True)
+        self.info_label.config(text=f"✗ Error", fg=UI.DANGER if "UI" in globals() else "#f87171")
+        self.win_items = []
+        if hasattr(self.root, 'win_items'):
             self.root.win_items = []
 
+        # Reset button state if it was loading
+        if self.refresh_btn.cget("state") == "disabled":
+            self.refresh_btn.config(state="normal", text="🔄")
+
     def _on_refresh_clicked(self):
-        """Handle refresh button click."""
+        """Handle refresh button click (Asynchronous)."""
         logger.debug("[Refresh] Button clicked")
         self.refresh_btn.config(state="disabled", text="⟳")
         self.refresh_btn.update()  # Show loading state immediately
 
-        try:
-            self._on_refresh()
-            logger.debug(f"[Refresh] Found {len(self.win_items)} windows")
-        except Exception as e:
-            logger.error(f"[Refresh] Error: {e}")
+        import threading
 
-        # Reset button after 300ms
-        def reset_btn():
-            self.refresh_btn.config(state="normal", text="🔄")
-            logger.debug("[Refresh] Button reset")
+        def fetch_windows_task():
+            try:
+                windows = self.window_controller._list_windows()
+                self.root.after(0, self._update_ui_with_windows, windows)
+                logger.debug(f"[Refresh] Thread found {len(windows)} windows")
+            except Exception as e:
+                logger.error(f"[Refresh] Thread error: {e}")
+                self.root.after(0, self._handle_refresh_error, e)
 
-        self.refresh_btn.after(300, reset_btn)
+        # Start thread
+        threading.Thread(target=fetch_windows_task, daemon=True).start()
 
     def _update_listbox(self):
         """Update listbox with filtered windows."""
