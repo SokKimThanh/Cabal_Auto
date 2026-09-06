@@ -206,7 +206,6 @@ class App(tk.Tk):
     def __init__(self):
         try:
             super().__init__()
-            print("[App.__init__] Starting...")
             self._is_destroyed = False
             self._last_height_under_900 = False
             # Load config and language
@@ -261,7 +260,6 @@ class App(tk.Tk):
             x = max((screen_w - w) // 2, 0)
             y = max((screen_h - h) // 2, 0)
             self.geometry(f"{w}x{h}+{x}+{y}")
-            print(f"[App.__init__] Geometry set: {w}x{h}+{x}+{y}")
         except Exception as e:
             print(f"[App.__init__] Error in early init: {e}")
             import traceback
@@ -626,24 +624,10 @@ class App(tk.Tk):
 
         self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
-        
-        # Force window to display before lifecycle starts
-        print("[App] Forcing window visibility...")
-        self.state('normal')  # Explicitly set state
-        self.update()  # Force render
-        self.update_idletasks()
-        self.lift()
-        self.focus()
-        self.deiconify()
-        self.attributes('-topmost', True)  # Force to top
-        self.update()
-        print(f"[App] Window geometry: {self.geometry()}, state: {self.state()}")
-        
         self.lifecycle_controller.start_lifecycle()
 
     # -----------------
     def _build_ui(self):
-        print("[App._build_ui] Starting UI build...")
         # Clear (for language rebuild)
         for w in self.winfo_children():
             w.destroy()
@@ -894,9 +878,7 @@ class App(tk.Tk):
             root=self,
         )
         # Auto-refresh window list on startup
-        print("[App] Calling compact_window_selector._on_refresh() on startup...")
         self.compact_window_selector._on_refresh()
-        print("[App] _on_refresh() call completed")
         # Use place() geometry for dropdown to work properly below the search bar
         self.compact_window_selector.get_frame().grid(
             row=0, column=0, sticky="ew", padx=(0, 12)
