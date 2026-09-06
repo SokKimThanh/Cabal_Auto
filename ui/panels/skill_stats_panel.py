@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 
+
 class SkillStatsPanel(ttk.LabelFrame):
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(8 * scale_factor), int(6 * scale_factor))
