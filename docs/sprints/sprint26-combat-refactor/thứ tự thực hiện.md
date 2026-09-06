@@ -109,6 +109,7 @@ Windows API trả thành công chỉ chứng minh `SENT`, không chứng minh ga
 **Tài liệu Reference**: Xem bảng execution table rows 30-38 ở trên.
 
 **Annotations**:
+
 - **Sessions 1-29**: ✅ All DONE, files in `done/` folder
 - **Sessions 30-38**: ⏳ Pending (Reference & Advanced docs in root folder, not yet executed)
 
@@ -219,11 +220,13 @@ Design direction:
 **Phụ thuộc**: UX2, HuntLogger
 
 **Hoàn Thành**:
+
 - ✅ Backend logging service
 - ✅ Session tracking structure
 - ✅ Config persistence
 
 **Chưa làm**:
+
 - ❌ UI wiring to HuntTab (Start/Stop events)
 - ❌ Log viewing panel integration
 

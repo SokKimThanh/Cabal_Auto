@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 from lib.features.monsters.monster_repo import get_target_monster_info
 from ui.panels.skill_panel import SkillPanel
@@ -24,18 +24,18 @@ class HuntTab(ttk.Frame):
             return
 
         if state == "running":
-            self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
+            self.hunt_status_label.config(fg=UI.ACCENT_GREEN)
         elif state == "error":
-            self.hunt_status_label.config(fg=UI.COLOR_DANGER)
+            self.hunt_status_label.config(fg=UI.DANGER)
         elif state == "idle":
-            self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
+            self.hunt_status_label.config(fg=UI.ACCENT_GREEN)
         elif state == "stopped":
-            self.hunt_status_label.config(fg=UI.COLOR_WARNING)
+            self.hunt_status_label.config(fg=UI.ACCENT_AMBER)
 
     def clear_target_photo(self):
         if hasattr(self, "target_image_label") and self.target_image_label:
             self.target_image_label.configure(
-                image="", text=self.app._t("target_card.no_image"), bg=UI.THEME_BG_PANEL
+                image="", text=self.app._t("target_card.no_image"), bg=UI.BG_SURFACE
             )
         if hasattr(self, "_current_target_photo") and self._current_target_photo:
             del self._current_target_photo
@@ -235,7 +235,7 @@ class HuntTab(ttk.Frame):
                     self.hunt_status_label, self.app._t("target_card.unknown_mob")
                 )
         else:
-            self.hunt_status_label.config(fg=UI.COLOR_ACCENT)
+            self.hunt_status_label.config(fg=UI.ACCENT_GREEN)
             if hasattr(self.app, "_destroy_widget_tooltip"):
                 self.app._destroy_widget_tooltip(self.hunt_status_label)
             self.hunt_status_label.unbind("<Enter>")
@@ -371,7 +371,7 @@ class HuntTab(ttk.Frame):
         # Layout: 4-Panel Workspace Redesign
 
 
-        self.workspace = tk.Frame(self, bg=UI.THEME_BG_APP)
+        self.workspace = tk.Frame(self, bg=UI.BG_BASE)
 
 
         self.workspace.grid(row=0, column=0, sticky="nsew")
@@ -400,7 +400,7 @@ class HuntTab(ttk.Frame):
         # Left Column (60%): Interaction
 
 
-        self.col_interaction = tk.Frame(self.workspace, bg=UI.THEME_BG_APP)
+        self.col_interaction = tk.Frame(self.workspace, bg=UI.BG_BASE)
 
 
         self.col_interaction.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
@@ -419,7 +419,7 @@ class HuntTab(ttk.Frame):
         # Right Column (40%): Monitoring
 
 
-        self.col_monitoring = tk.Frame(self.workspace, bg=UI.THEME_BG_APP)
+        self.col_monitoring = tk.Frame(self.workspace, bg=UI.BG_BASE)
 
 
         self.col_monitoring.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
@@ -438,14 +438,14 @@ class HuntTab(ttk.Frame):
         # Containers for panels
 
 
-        self.container_monster_target = tk.Frame(self.col_interaction, bg=UI.THEME_BG_APP)
+        self.container_monster_target = tk.Frame(self.col_interaction, bg=UI.BG_BASE)
 
 
         self.container_monster_target.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
 
 
 
-        self.container_skill_panel = tk.Frame(self.col_interaction, bg=UI.THEME_BG_APP)
+        self.container_skill_panel = tk.Frame(self.col_interaction, bg=UI.BG_BASE)
 
 
         self.container_skill_panel.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
@@ -455,14 +455,14 @@ class HuntTab(ttk.Frame):
 
 
 
-        self.container_target_status = tk.Frame(self.col_monitoring, bg=UI.THEME_BG_APP)
+        self.container_target_status = tk.Frame(self.col_monitoring, bg=UI.BG_BASE)
 
 
         self.container_target_status.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
 
 
 
-        self.container_skill_stats = tk.Frame(self.col_monitoring, bg=UI.THEME_BG_APP)
+        self.container_skill_stats = tk.Frame(self.col_monitoring, bg=UI.BG_BASE)
 
 
         self.container_skill_stats.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
@@ -473,11 +473,8 @@ class HuntTab(ttk.Frame):
 
 
         self.app.active_target_status_frame = tk.LabelFrame(
-
-
-            self.container_target_status, text=self.app._t("hunt_active_target_status"), padx=4, pady=4
-
-
+            self.container_target_status, text=self.app._t("hunt_active_target_status"),
+            bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, padx=4, pady=4
         )
 
 
@@ -494,7 +491,8 @@ class HuntTab(ttk.Frame):
             status_frame,
             textvariable=self.app.hunt_status,
             font=UI.FONT_SECTION,
-            fg=UI.COLOR_ACCENT,
+            bg=UI.ACCENT_GREEN_BG,
+            fg=UI.ACCENT_GREEN,
             anchor="w",
         )
         self.hunt_status_label.pack(side="left", padx=8, pady=6)
@@ -503,13 +501,13 @@ class HuntTab(ttk.Frame):
             status_frame,
             textvariable=self.app.hunt_target_info,
             font=UI.FONT_LABEL,
-            fg=UI.THEME_TEXT_SECONDARY,
+            fg=UI.TEXT_SECONDARY,
             anchor="e",
         )
         self.hunt_target_info_label.pack(side="right", padx=8, pady=6)
 
         # Target Card Container
-        card_container = tk.Frame(self.app.active_target_status_frame, bg=UI.THEME_BG_PANEL)
+        card_container = tk.Frame(self.app.active_target_status_frame, bg=UI.BG_SURFACE)
         card_container.pack(fill="both", expand=True, padx=4, pady=4)
 
         try:
@@ -526,21 +524,21 @@ class HuntTab(ttk.Frame):
         self.target_image_label = tk.Label(
             card_container,
             text=self.app._t("target_card.no_image"),
-            bg=UI.THEME_BG_PANEL,
+            bg=UI.BG_SURFACE,
             width=20,  # rough width for text mode
             height=10,
         )
         self.target_image_label.pack(side="left", padx=8, pady=8)
 
         # Right Column (Stats)
-        stats_frame = tk.Frame(card_container, bg=UI.THEME_BG_PANEL)
+        stats_frame = tk.Frame(card_container, bg=UI.BG_SURFACE)
         stats_frame.pack(side="left", fill="both", expand=True, padx=8, pady=8)
 
         self.target_name_label = tk.Label(
             stats_frame,
             text=self.app._t("target_card.unknown_mob"),
             font=(UI.FONT_FAMILY, int(14 * scale_factor), "bold"),
-            bg=UI.THEME_BG_PANEL,
+            bg=UI.BG_SURFACE,
             anchor="w",
             wraplength=int(250 * scale_factor),
             justify="left",
@@ -551,15 +549,15 @@ class HuntTab(ttk.Frame):
             stats_frame,
             text=self.app._t("target_card.status_idle"),
             font=(UI.FONT_FAMILY, int(12 * scale_factor), "bold"),
-            bg=UI.THEME_BG_PANEL,
-            fg=UI.COLOR_ACCENT,
+            bg=UI.BG_SURFACE,
+            fg=UI.ACCENT_GREEN,
             anchor="w",
         )
         self.status_label.pack(fill="x", anchor="w", pady=(0, 4))
 
         # ProgressBar (Replaced with Canvas for UX5.2)
         self.hp_canvas = tk.Canvas(
-            stats_frame, height=24, bg=UI.THEME_BG_PANEL, highlightthickness=0
+            stats_frame, height=24, bg=UI.BG_SURFACE, highlightthickness=0
         )
         self.hp_canvas.pack(fill="x", pady=(0, 2))
 
@@ -575,17 +573,17 @@ class HuntTab(ttk.Frame):
 
         # Pre-init Canvas objects
         self.hp_bg = self.hp_canvas.create_rectangle(
-            0, 0, 1, 24, fill="#27272A", outline="#27272A"
+            0, 0, 1, 24, fill="#1f1f1f", outline="#1f1f1f"
         )
         self.hp_fill = self.hp_canvas.create_rectangle(
-            0, 0, 0, 24, fill="#00E86D", outline="#00E86D"
+            0, 0, 0, 24, fill="#f97316", outline="#f97316"
         )
         self.hp_text = self.hp_canvas.create_text(
             0, 12, text="", fill="white", anchor="center"
         )
 
         self.hp_percent_label = tk.Label(
-            stats_frame, text="-", bg=UI.THEME_BG_PANEL, fg=UI.THEME_TEXT_SECONDARY, anchor="w"
+            stats_frame, text="-", bg=UI.BG_SURFACE, fg=UI.TEXT_SECONDARY, anchor="w"
         )
         self.hp_percent_label.pack(fill="x", anchor="w", pady=(0, 4))
 
@@ -600,25 +598,25 @@ class HuntTab(ttk.Frame):
             self.recovery_frame,
             text=self.app._t("target_card.recovery_btn"),
             font=UI.FONT_BUTTON,
-            bg=UI.BTN_NEUTRAL_BG,
-            fg=UI.BTN_NEUTRAL_FG,
-            relief=UI.BTN_RELIEF_NORMAL,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_MUTED,
+            relief='flat',
             command=self._on_recovery_click,
         )
         self.recovery_btn.pack(fill="x", padx=4, pady=4)
 
         def create_stat_row(parent, label_key):
-            row = tk.Frame(parent, bg=UI.THEME_BG_PANEL)
+            row = tk.Frame(parent, bg=UI.BG_SURFACE)
             row.pack(fill="x", pady=2)
             tk.Label(
                 row,
                 text=self.app._t(label_key) + ":",
-                bg=UI.THEME_BG_PANEL,
-                fg=UI.THEME_TEXT_PRIMARY,
+                bg=UI.BG_SURFACE,
+                fg=UI.TEXT_PRIMARY,
                 width=12,
                 anchor="w",
             ).pack(side="left")
-            val_lbl = tk.Label(row, text="-", bg=UI.THEME_BG_PANEL, anchor="w")
+            val_lbl = tk.Label(row, text="-", bg=UI.BG_SURFACE, anchor="w")
             val_lbl.pack(side="left", fill="x", expand=True)
             return val_lbl
 
@@ -633,26 +631,13 @@ class HuntTab(ttk.Frame):
 
 
         self.app.monster_frame = tk.LabelFrame(
-
-
             self.container_monster_target,
-
-
             text=self.app._t("monster_rotation_title"),
-
-
             font=UI.FONT_SECTION,
-
-
-            fg=UI.THEME_TEXT_PRIMARY,
-
-
+            fg=UI.TEXT_PRIMARY,
+            bg=UI.BG_SURFACE,
             padx=10,
-
-
             pady=8,
-
-
         )
 
 
@@ -724,7 +709,7 @@ class HuntTab(ttk.Frame):
         any_target_label = tk.Label(
             self.any_target_container,
             text=self.app._t("any_target_warning"),
-            fg=UI.COLOR_WARNING,
+            fg=UI.ACCENT_AMBER,
             font=UI.FONT_TEXT,
         )
         any_target_label.pack(pady=20)
@@ -743,6 +728,12 @@ class HuntTab(ttk.Frame):
             exportselection=False,
             selectmode="single",
             font=UI.FONT_TEXT,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            selectbackground=UI.ACCENT_GREEN_BG,
+            selectforeground=UI.ACCENT_GREEN,
+            highlightthickness=0,
+            relief="flat",
         )
         self.app.detected_monsters_listbox.pack(side="left", fill="both", expand=True)
         detected_scroll = tk.Scrollbar(
@@ -760,8 +751,8 @@ class HuntTab(ttk.Frame):
                 self.app, "promote_detected_monster", lambda x: None
             )(self.app.detected_monsters_listbox.curselection()),
             style="compact",
-            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
-            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
+            bg_color=UI.BG_ELEVATED,
+            hover_color=UI.BG_SURFACE,
         )
         self.app.btn_promote_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
@@ -857,8 +848,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="➕",
             command=self.app._on_monster_add_smart,
             style="compact",
-            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
-            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
+            bg_color=UI.BG_ELEVATED,
+            hover_color=UI.BG_SURFACE,
         )
         self.app.btn_add_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
@@ -871,8 +862,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="↑",
             command=self.app._on_monster_move_up,
             style="compact",
-            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
-            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
+            bg_color=UI.BG_ELEVATED,
+            hover_color=UI.BG_SURFACE,
         )
         self.app.btn_move_up.pack(pady=(0, 4))
 
@@ -881,8 +872,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="↓",
             command=self.app._on_monster_move_down,
             style="compact",
-            bg_color=getattr(UI, "BTN_NEUTRAL_BG", "#757575"),
-            hover_color=getattr(UI, "BTN_NEUTRAL_HOVER", "#616161"),
+            bg_color=UI.BG_ELEVATED,
+            hover_color=UI.BG_SURFACE,
         )
         self.app.btn_move_down.pack(pady=(0, 12))
 
@@ -892,8 +883,8 @@ class HuntTab(ttk.Frame):
             icon_emoji="✖",
             command=self.app._on_monster_delete_from_list,
             style="compact",
-            bg_color=UI.BTN_DANGER_BG if hasattr(UI, "BTN_DANGER_BG") else UI.COLOR_DANGER,
-            hover_color=UI.BTN_DANGER_HOVER if hasattr(UI, "BTN_DANGER_HOVER") else UI.COLOR_WARNING,
+            bg_color=UI.DANGER,
+            hover_color=UI.ACCENT_AMBER,
         )
         self.app.btn_remove_monster.pack()
         self.app._create_tooltip(
@@ -905,7 +896,7 @@ class HuntTab(ttk.Frame):
         tk.Label(
             self.app.monster_frame,
             textvariable=self.app.monster_status_var,
-            fg=UI.COLOR_PRIMARY,
+            fg=UI.TEXT_PRIMARY,
             font=(UI.FONT_FAMILY, UI.SIZE_TEXT, "bold"),
         ).pack(fill="x", pady=(8, 0))
 
@@ -943,7 +934,7 @@ class HuntTab(ttk.Frame):
         tk.Label(
             self.configured_container,
             text=self.app._t("monster_rotation_delete_hint"),
-            fg=UI.THEME_TEXT_PRIMARY,
+            fg=UI.TEXT_PRIMARY,
             font=UI.FONT_TEXT,
             anchor="w",
         ).pack(fill="x", pady=(4, 0))
@@ -984,6 +975,8 @@ class HuntTab(ttk.Frame):
         self.app.skill_stats_frame = tk.LabelFrame(
             self.container_skill_stats,
             text=self.app._t("skill_stats_title"),
+            bg=UI.BG_SURFACE,
+            fg=UI.TEXT_PRIMARY,
             padx=10,
             pady=10,
         )
@@ -1019,10 +1012,12 @@ class HuntTab(ttk.Frame):
         self.app.skill_stats_tree.pack(side="left", fill="both", expand=True)
         stats_scroll.pack(side="right", fill="y")
 
-        self.app.skill_stats_tree.tag_configure("excellent", foreground="#2E7D32")
-        self.app.skill_stats_tree.tag_configure("good", foreground="#F57F17")
-        self.app.skill_stats_tree.tag_configure("poor", foreground="#C62828")
-        self.app.skill_stats_tree.tag_configure("placeholder", foreground="#999")
+        self.app.skill_stats_tree.tag_configure("striped_even", background=UI.BG_ELEVATED, foreground=UI.TEXT_PRIMARY)
+        self.app.skill_stats_tree.tag_configure("striped_odd", background=UI.BG_BASE, foreground=UI.TEXT_PRIMARY)
+        self.app.skill_stats_tree.tag_configure("excellent", foreground=UI.ACCENT_GREEN)
+        self.app.skill_stats_tree.tag_configure("good", foreground=UI.ACCENT_AMBER)
+        self.app.skill_stats_tree.tag_configure("poor", foreground=UI.DANGER)
+        self.app.skill_stats_tree.tag_configure("placeholder", foreground=UI.TEXT_MUTED)
         if hasattr(self.app, "skill_stats_tree"):
             self.app.skill_stats_tree.insert(
                 "",

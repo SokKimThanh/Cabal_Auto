@@ -7,7 +7,7 @@
 ## Quick Facts
 
 | Aspect | Status | Details |
-|--------|--------|---------|
+| --------- | --------- | --------------------------------------------------- |
 | **UX5.1 Phase 1** | ✅ READY | Target Card shell complete, can commit |
 | **CB4A Phase 2** | ⚠️ PARTIAL | Exists but has wrong specs + missing handlers |
 | **UX5.2 Phase 3** | 🔴 BLOCKED | Cannot start until blockers fixed |
@@ -20,28 +20,32 @@
 ## The 4 Blockers (In Priority Order)
 
 ### 1. **HP Throttle Spec Wrong** (5 min fix)
-```
+
+```text
 Current:  throttle_ms = 150, min_diff = 1.0, OR logic
 Needed:   throttle_ms = 100, min_delta = 0.5, AND logic
 Impact:   UI will exceed 10 FPS, causes stutters
 ```
 
 ### 2. **No Canvas HP Bar** (5 min fix)
-```
+
+```text
 Current:  ttk.Progressbar only
 Needed:   tk.Canvas with step-fill rendering
 Impact:   Cannot implement any UX5.2 HP features
 ```
 
 ### 3. **No Death Handler** (5 min fix)
-```
+
+```text
 Current:  clear_target_card exists, but no HP=0% logic
 Needed:   Gray bar + [Đã Tiêu Diệt] + race guard
 Impact:   Quick kills break card display
 ```
 
 ### 4. **No Window Recovery Service** (10 min fix)
-```
+
+```text
 Current:  Only validation exists
 Needed:   WindowRecoveryController with async retry + lock
 Impact:   Cannot implement recovery button
@@ -52,11 +56,14 @@ Impact:   Cannot implement recovery button
 ## What to Do Now
 
 ### ✅ You Can Do Right Now
+
 1. ✅ Commit UX5.1 phase 1 (it's ready)
 2. ✅ Review the 2 new documents I created
 
 ### 🔴 You Must Do Before UX5.2
+
 Complete these 5 prerequisite tasks (30 min total):
+
 
 1. **Fix target_hp_reader.py** (5 min)
    - Change: `throttle_ms = 150` → `100`
@@ -92,7 +99,7 @@ Complete these 5 prerequisite tasks (30 min total):
 
 ## Timeline
 
-```
+```text
 Now:              UX5.1 ready to commit ✅
 ↓ (5 min)        
 Fix throttle      AND update logic
@@ -181,6 +188,7 @@ Both in: `docs/sprints/sprint26-combat-refactor/`
 ## Recommendation
 
 **Conservative Path (Safest):**
+
 1. Commit UX5.1 now ✅
 2. Do all 5 prerequisite tasks (30 min)
 3. Test everything passes ✅
@@ -194,16 +202,19 @@ Both in: `docs/sprints/sprint26-combat-refactor/`
 ## Next Steps
 
 **Right Now:**
+
 - [ ] Read REVIEW-UX5.2-READINESS.md (understand scope)
 - [ ] Read UX5.2-PREREQUISITES-AND-ISSUES.md (implementation tasks)
 - [ ] Commit UX5.1 if not already done
 
 **Then:**
+
 - [ ] Complete 5 prerequisite tasks (30 min)
 - [ ] Run test suite
 - [ ] Start UX5.2 session (25-30 min)
 
 **Questions?**
+
 - All details in the two new documents
 - Code examples included for each fix
 - Validation checklist provided

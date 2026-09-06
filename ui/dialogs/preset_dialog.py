@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from lib.ui_style import UIStyle as UI
+from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.features.skills.skill_preset_service import SkillPresetService
 
 class PresetDialog(tk.Toplevel):
@@ -13,20 +13,19 @@ class PresetDialog(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
 
-        app_root = getattr(self.app, "root", self.app)
-        self.class_id = getattr(app_root, "_current_class_id", 1)
+        self.class_id = getattr(self.app, '_current_class_id', 1)
 
         self._build_ui()
         self._load_presets()
 
     def _build_ui(self):
-        main_frame = tk.Frame(self, bg=UI.THEME_BG_APP, padx=10, pady=10)
+        main_frame = tk.Frame(self, bg=UI.BG_BASE, padx=10, pady=10)
         main_frame.pack(fill='both', expand=True)
 
-        self.listbox = tk.Listbox(main_frame, bg=UI.THEME_BG_PANEL, fg=UI.THEME_TEXT_PRIMARY, selectmode='single')
+        self.listbox = tk.Listbox(main_frame, bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, selectmode='single')
         self.listbox.pack(fill='both', expand=True, pady=5)
 
-        btn_frame = tk.Frame(main_frame, bg=UI.THEME_BG_APP)
+        btn_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
         btn_frame.pack(fill='x', pady=5)
 
         tk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side='right', padx=2)

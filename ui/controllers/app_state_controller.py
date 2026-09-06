@@ -25,6 +25,9 @@ class AppStateController:
         app.win_items = []  # list of {'hwnd','pid','title','proc'}
         app.hunt_selected = None  # currently selected window info
         app._skip_auto_bring = False  # Flag to prevent double bring-to-front
+        
+        # Character class selection for presets
+        app._current_class_id = 1  # Default to first character class
 
         # Global hotkeys - registered after config load
         app._global_start_hotkey = None

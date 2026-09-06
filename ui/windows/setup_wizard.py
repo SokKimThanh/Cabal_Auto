@@ -395,7 +395,10 @@ class SetupWizard:
 
         # Enable mouse wheel scrolling
         def _on_mousewheel(event):
-            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            try:
+                self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            except Exception:
+                pass
 
         self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
