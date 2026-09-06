@@ -25,11 +25,18 @@ class SkillPanel:
 
         # Combo header with custom checkbox
         cb_var = tk.BooleanVar(value=True)
+        self.widgets['auto_combo_var'] = cb_var
         cb = tk.Checkbutton(
-            header_frame, text="Bật Auto Combo", variable=cb_var,
-            bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY,
-            selectcolor=UI.BG_ELEVATED, activebackground=UI.BG_ELEVATED, activeforeground=UI.TEXT_PRIMARY
+            header_frame,
+            text="Bật Auto Combo",
+            variable=cb_var,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_PRIMARY,
+            selectcolor=UI.BG_ELEVATED,
+            activebackground=UI.BG_ELEVATED,
+            activeforeground=UI.TEXT_PRIMARY,
         )
+        self.widgets['auto_combo_cb'] = cb
         cb.pack(side='left', padx=12, pady=10)
 
         tk.Label(header_frame, text="[Alt+3]", font=UI.FONT_SMALL, bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(side='left')
