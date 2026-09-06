@@ -55,7 +55,7 @@ class SkillPanel:
         self.widgets['btn_reset'].pack(side='left', padx=2)
 
         # Load available skills for combobox values
-        class_name = getattr(self.app_state, '_current_class', 'Unknown')
+        class_id = getattr(self.app_state, '_current_class_id', 1)
         skills = self.skill_service.skill_repo.list_skills() # No filtering for now
         skill_names = [s.get('name') for s in skills if s.get('name')]
 
@@ -167,9 +167,9 @@ class SkillPanel:
 
     def on_reset(self):
         """Revert to default preset"""
-        class_name = getattr(self.app_state, '_current_class', 'Unknown')
+        class_id = getattr(self.app_state, '_current_class_id', 1)
         if hasattr(self.app_state, 'apply_default_preset'):
-            self.app_state.apply_default_preset(class_name)
+            self.app_state.apply_default_preset(class_id)
 
     def get_frame(self):
         return self.frame

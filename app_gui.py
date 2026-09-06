@@ -133,12 +133,19 @@ except ImportError:
         )
         # Handle None command
         btn_command = command if command is not None else lambda: None
+        
+        # Filter out custom options that tk.Button doesn't understand
+        valid_button_options = {'bg', 'fg', 'activebackground', 'activeforeground', 'relief', 'bd', 'borderwidth', 
+                                'padx', 'pady', 'width', 'height', 'highlightthickness', 'highlightbackground',
+                                'highlightcolor', 'font', 'cursor', 'wraplength', 'overrelief', 'bitmap'}
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_button_options}
+        
         btn = tk.Button(
             parent,
             text=icon_fallback or "?",
             command=btn_command,
             state=btn_state,
-            **kwargs,
+            **filtered_kwargs,
         )
         return btn
 
@@ -589,8 +596,6 @@ class App(tk.Tk):
 
     # -----------------
     def _build_ui(self):
-        from lib.ui_style_v2 import UIStyleV2 as UI
-
         # Clear (for language rebuild)
         for w in self.winfo_children():
             w.destroy()

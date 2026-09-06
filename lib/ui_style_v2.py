@@ -40,6 +40,9 @@ class UIStyleV2:
     FONT_FAMILY_UI_FALLBACK = "Segoe UI"
     FONT_FAMILY_MONO = "JetBrains Mono"
     FONT_FAMILY_MONO_FALLBACK = "Courier New"
+    
+    # Backward compatibility aliases
+    FONT_FAMILY = FONT_FAMILY_UI_FALLBACK  # For old code expecting FONT_FAMILY
 
     # Sizes
     SIZE_TITLE = 16    # Title/Section
@@ -48,6 +51,21 @@ class UIStyleV2:
     SIZE_LABEL = 12    # Label
     SIZE_SMALL = 11    # Small/caption
     SIZE_TINY = 10     # Tiny/badge/tag
+    
+    # Backward compatibility aliases for old UIStyle constants
+    SIZE_TEXT = SIZE_BODY
+    SIZE_BUTTON = SIZE_LABEL
+
+    # Font tuples for backward compatibility with older code
+    FONT_TITLE = (FONT_FAMILY_UI_FALLBACK, SIZE_TITLE, "bold")
+    FONT_SECTION = (FONT_FAMILY_UI_FALLBACK, SIZE_HEADER, "bold")
+    FONT_HEADER = (FONT_FAMILY_UI_FALLBACK, SIZE_HEADER, "bold")
+    FONT_BODY = (FONT_FAMILY_UI_FALLBACK, SIZE_BODY)
+    FONT_LABEL = (FONT_FAMILY_UI_FALLBACK, SIZE_LABEL)
+    FONT_TEXT = (FONT_FAMILY_UI_FALLBACK, SIZE_BODY)
+    FONT_BUTTON = (FONT_FAMILY_UI_FALLBACK, SIZE_LABEL)
+    FONT_SMALL = (FONT_FAMILY_UI_FALLBACK, SIZE_SMALL)
+    FONT_TINY = (FONT_FAMILY_UI_FALLBACK, SIZE_TINY)
 
     # Base Font definitions (can be resolved dynamically)
     @classmethod
