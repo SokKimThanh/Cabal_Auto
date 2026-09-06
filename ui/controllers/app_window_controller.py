@@ -100,7 +100,9 @@ class AppWindowController:
                 self.root.state_controller._update_window_bounds_display()
 
     def on_hunt_refresh_windows(self, *_args) -> None:
+        logger.debug("on_hunt_refresh_windows() called")
         if getattr(self, "_refresh_locked", False):
+            logger.debug("  Refresh locked, returning early")
             return
         self._refresh_locked = True
         if hasattr(self, "root") and hasattr(self.root, "after"):
@@ -117,25 +119,27 @@ class AppWindowController:
 
                 # Check if minimized or off-screen
                 if info and (info.is_minimized or info.is_offscreen):
-                    import logging
-
-                    logger = logging.getLogger(__name__)
                     logger.info(f"Window {hwnd} is minimized, attempting recovery...")
                     # Schedule restoration and window refresh (don't return early!)
                     self.root.after(300, self._retry_resolve_bounds, hwnd, 0)
                     # Continue to scan windows anyway
                     self.root.bounds_recovery_failed = False
+                    logger.debug("  Calling on_hunt_find_windows() after scheduling restore")
                     self.on_hunt_find_windows()
                     return
 
         # Scan windows to update bounds in UI
         self.root.bounds_recovery_failed = False
+        logger.debug("  Calling on_hunt_find_windows()")
         self.on_hunt_find_windows()
 
     def on_hunt_find_windows(self, _evt=None) -> None:
+        logger.debug("on_hunt_find_windows() called")
         try:
             items = self._list_windows()
+            logger.debug(f"  _list_windows() returned {len(items)} items")
         except Exception as exc:
+            logger.error(f"  _list_windows() failed: {exc}")
             self.root.win_items = []
             if hasattr(self.root, "win_combo"):
                 self.root.win_combo["values"] = []
@@ -150,8 +154,12 @@ class AppWindowController:
             item.get("hwnd"): item.get("title") for item in items
         }
         values = [item["title"] for item in items]
+        logger.debug(f"  Setting combobox values: {values}")
         if hasattr(self.root, "win_combo"):
             self.root.win_combo["values"] = values
+            logger.debug(f"  Combobox values set. Current: {self.root.win_combo['values']}")
+        else:
+            logger.warning("  win_combo not found on root!")
 
         from lib.features.hunt.window_selection_service import (
             validate_selected_cabal_window,
