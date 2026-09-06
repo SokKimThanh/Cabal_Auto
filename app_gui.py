@@ -801,7 +801,7 @@ class App(tk.Tk):
                     text=f"   {icon} {self._t(key)}",
                     command=command,
                     bg=UI.BG_ELEVATED,
-                    fg=UI.TEXT_SECONDARY,
+                    fg=UI.TEXT_PRIMARY,
                     font=UI.FONT_SMALL,
                     anchor="w",
                     padx=12,
@@ -1236,7 +1236,7 @@ class App(tk.Tk):
                     else:
                         widget.config(
                             bg=UI.BG_ELEVATED,
-                            fg=UI.TEXT_SECONDARY,
+                            fg=UI.TEXT_PRIMARY,
                             text=f"   {icon} {original_text}",
                         )
 

@@ -10,19 +10,19 @@ class StatusBadge(tk.Frame):
     STATUS_STYLES = {
         "waiting": {
             "bg": "#292218",  # Dark brown
-            "fg": UI.ACCENT_AMBER,  # Amber text
+            "fg": UI.TEXT_PRIMARY,  # White text for high contrast
             "icon": "●",
             "label": "Đang chờ",
         },
         "ready": {
             "bg": UI.ACCENT_GREEN_BG,  # Green bg
-            "fg": UI.ACCENT_GREEN,  # Green text
+            "fg": UI.TEXT_PRIMARY,  # White text for high contrast
             "icon": "●",
             "label": "Sẵn sàng",
         },
         "hunting": {
             "bg": "#1e2d3d",  # Dark blue
-            "fg": UI.ACCENT_BLUE,  # Blue text
+            "fg": UI.TEXT_PRIMARY,  # White text for high contrast
             "icon": "●",
             "label": "Đang săn",
             "animate": True,
