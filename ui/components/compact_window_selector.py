@@ -202,7 +202,7 @@ class CompactWindowSelector:
                 fg_color = "#ef4444"
             
             self.info_label.config(text=text, fg=fg_color)
-            self.info_label.update()  # Force update immediately
+            self.info_label.update_idletasks()  # Flush pending UI updates without nested event loop
             logger.debug(f"[Refresh] Updated label: '{text}'")
             
             # Update listbox if open
