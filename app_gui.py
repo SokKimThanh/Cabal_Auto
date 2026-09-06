@@ -204,61 +204,69 @@ class App(tk.Tk):
         return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
 
     def __init__(self):
-        super().__init__()
-        self._is_destroyed = False
-        self._last_height_under_900 = False
-        # Load config and language
-        self.cfg = load_config()
-        self.hunt_cfg = load_hunt_config()
-        self.lang = str(self.cfg.get("ui", {}).get("language", "vi"))
         try:
-            i18n_set_lang(self.lang)
-        except Exception:
-            pass
-        try:
-            i18n_set_lang(self.lang)
-        except Exception:
-            pass
+            super().__init__()
+            print("[App.__init__] Starting...")
+            self._is_destroyed = False
+            self._last_height_under_900 = False
+            # Load config and language
+            self.cfg = load_config()
+            self.hunt_cfg = load_hunt_config()
+            self.lang = str(self.cfg.get("ui", {}).get("language", "vi"))
+            try:
+                i18n_set_lang(self.lang)
+            except Exception:
+                pass
+            try:
+                i18n_set_lang(self.lang)
+            except Exception:
+                pass
 
-        self.hotkey_controller = HotkeyController(self, self.hunt_cfg)
-        # Centralized icon helper
-        try:
-            from ui.helpers.icon_helper import get_icon_helper
-            from ui.icon_library import register_icons
+            self.hotkey_controller = HotkeyController(self, self.hunt_cfg)
+            # Centralized icon helper
+            try:
+                from ui.helpers.icon_helper import get_icon_helper
+                from ui.icon_library import register_icons
 
-            self.icon_helper = get_icon_helper()
-            register_icons(self.icon_helper)
-        except Exception:
-            self.icon_helper = None
+                self.icon_helper = get_icon_helper()
+                register_icons(self.icon_helper)
+            except Exception:
+                self.icon_helper = None
 
-        # Create config manager for wizard
-        self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
+            # Create config manager for wizard
+            self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
 
-        self.title(self._t("app_title"))
-        self.resizable(True, True)
+            self.title(self._t("app_title"))
+            self.resizable(True, True)
 
-        # Calculate scale factor for layout limits
-        try:
-            dpi_percent = self.tk.call("tk", "scaling") * 72
-            scale_factor = dpi_percent / 100.0
-        except Exception:
-            scale_factor = 1.0
+            # Calculate scale factor for layout limits
+            try:
+                dpi_percent = self.tk.call("tk", "scaling") * 72
+                scale_factor = dpi_percent / 100.0
+            except Exception:
+                scale_factor = 1.0
 
-        self.minsize(int(1220 * scale_factor), int(656 * scale_factor))
+            self.minsize(int(1220 * scale_factor), int(656 * scale_factor))
 
-        screen_w = self.winfo_screenwidth()
-        screen_h = self.winfo_screenheight()
+            screen_w = self.winfo_screenwidth()
+            screen_h = self.winfo_screenheight()
 
-        # Limit initial geometry to not cover taskbar/titlebar
-        max_init_w = screen_w - 20
-        max_init_h = screen_h - 80
+            # Limit initial geometry to not cover taskbar/titlebar
+            max_init_w = screen_w - 20
+            max_init_h = screen_h - 80
 
-        w = min(1920, max_init_w)
-        h = min(1080, max_init_h)
+            w = min(1920, max_init_w)
+            h = min(1080, max_init_h)
 
-        x = max((screen_w - w) // 2, 0)
-        y = max((screen_h - h) // 2, 0)
-        self.geometry(f"{w}x{h}+{x}+{y}")
+            x = max((screen_w - w) // 2, 0)
+            y = max((screen_h - h) // 2, 0)
+            self.geometry(f"{w}x{h}+{x}+{y}")
+            print(f"[App.__init__] Geometry set: {w}x{h}+{x}+{y}")
+        except Exception as e:
+            print(f"[App.__init__] Error in early init: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
         # Initialize ScanController
         from lib.features.hunt.scan_controller import ScanController
@@ -618,10 +626,24 @@ class App(tk.Tk):
 
         self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
+        
+        # Force window to display before lifecycle starts
+        print("[App] Forcing window visibility...")
+        self.state('normal')  # Explicitly set state
+        self.update()  # Force render
+        self.update_idletasks()
+        self.lift()
+        self.focus()
+        self.deiconify()
+        self.attributes('-topmost', True)  # Force to top
+        self.update()
+        print(f"[App] Window geometry: {self.geometry()}, state: {self.state()}")
+        
         self.lifecycle_controller.start_lifecycle()
 
     # -----------------
     def _build_ui(self):
+        print("[App._build_ui] Starting UI build...")
         # Clear (for language rebuild)
         for w in self.winfo_children():
             w.destroy()
@@ -1047,6 +1069,7 @@ class App(tk.Tk):
         self.right_status.pack(side="right", fill="y")
 
         self.main_shell.grid(row=0, column=0, columnspan=7, sticky="nsew", pady=(10, 0))
+        print("[App._build_ui] ✓ UI build complete, main_shell gridded")
 
     def _build_global_apply_section(self):
         """Build global apply button section below tabs."""
