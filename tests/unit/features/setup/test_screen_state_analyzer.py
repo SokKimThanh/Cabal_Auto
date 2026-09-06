@@ -7,18 +7,17 @@ class TestScreenStateAnalyzer(unittest.TestCase):
     def test_screen_state_analyzer_extraction(self):
         analyzer = ScreenStateAnalyzer()
 
-        # Mocking actual detection, in real implementation it would use the snapshot
+        analyzer.get_character_class_from_screen = MagicMock(return_value="warrior")
+        analyzer.detect_location_type = MagicMock(return_value="ZONE")
+        analyzer.detect_monster_presence = MagicMock(return_value=False)
+
         state = analyzer.scan_screen_state(12345)
 
-        self.assertIn('character_class', state)
-        self.assertEqual(state['character_class'], "Unknown")
-
-        self.assertIn('character_level', state)
-        self.assertEqual(state['character_level'], 1)
-
-        self.assertIn('hp_percent', state)
-        self.assertEqual(state['hp_percent'], 100.0)
-
+        self.assertEqual(state["character_class"], "warrior")
+        self.assertEqual(state["location"], "ZONE")
+        self.assertEqual(state["has_monster"], False)
+        self.assertEqual(state["character_level"], 1)
+        self.assertEqual(state["hp_percent"], 100.0)
     def test_screen_state_analyzer_location_detection(self):
         analyzer = ScreenStateAnalyzer()
         location = analyzer.detect_location_type(None)
