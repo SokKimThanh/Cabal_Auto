@@ -19,7 +19,7 @@ class EmptyState(tk.Frame):
             text=icon,
             font=(UI.FONT_FAMILY_UI_FALLBACK, 48),
             bg=UI.BG_BASE,
-            fg=UI.TEXT_MUTED
+            fg=UI.TEXT_MUTED,
             # Note: fg_opacity parameter doesn't exist in standard tkinter label,
             # so we just use the TEXT_MUTED color.
         )
