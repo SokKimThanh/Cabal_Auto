@@ -37,12 +37,12 @@ class CompactWindowSelector:
 
     def _build_ui(self):
         """Build the compact window selector UI."""
-        # Main frame
+        # Main frame - will contain search bar and dropdown
         self.frame = tk.Frame(self.parent, bg=self.parent.cget("bg"))
         
-        # Search frame (always visible) - row 0
+        # Search frame (always visible)
         self.search_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"))
-        self.search_frame.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
+        self.search_frame.pack(side="top", fill="x", expand=False)
         
         # Search label
         search_label = tk.Label(
@@ -95,9 +95,9 @@ class CompactWindowSelector:
         )
         self.refresh_btn.pack(side="left")
         
-        # Dropdown listbox (hidden until toggled) - row 1
+        # Dropdown listbox frame (will be shown/hidden with place())
+        # IMPORTANT: Make it a child of self.frame for proper coordinate positioning
         self.dropdown_frame = tk.Frame(self.frame, bg="#1a1a1a", relief="solid", bd=1)
-        # Don't grid here - will grid on toggle
         
         scrollbar = tk.Scrollbar(self.dropdown_frame)
         scrollbar.pack(side="right", fill="y")
@@ -116,7 +116,7 @@ class CompactWindowSelector:
         scrollbar.config(command=self.listbox.yview)
         self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
         
-        # Info label - row 2
+        # Info label
         self.info_label = tk.Label(
             self.frame,
             text="Click refresh to load windows",
@@ -124,11 +124,7 @@ class CompactWindowSelector:
             bg=self.parent.cget("bg"),
             fg="#6b7280",
         )
-        self.info_label.grid(row=2, column=0, sticky="ew", padx=0, pady=(2, 0))
-        
-        # Configure grid - allow column 0 and row 1 to expand
-        self.frame.columnconfigure(0, weight=1)
-        self.frame.rowconfigure(1, weight=1)  # Allow dropdown row to expand
+        self.info_label.pack(side="bottom", fill="x", pady=(2, 0))
 
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
@@ -176,11 +172,11 @@ class CompactWindowSelector:
             self._on_listbox_select()
 
     def _toggle_dropdown(self):
-        """Toggle dropdown visibility."""
+        """Toggle dropdown visibility using place() positioning."""
         print(f"[DEBUG] _toggle_dropdown: is_open={self.is_open}, win_items={len(self.win_items)}")
         if self.is_open:
-            self.dropdown_frame.grid_forget()
-            print(f"[DEBUG] Dropdown hidden with grid_forget()")
+            self.dropdown_frame.place_forget()
+            print(f"[DEBUG] Dropdown hidden with place_forget()")
             self.is_open = False
             self.dropdown_btn.config(text="▼")
         else:
@@ -188,14 +184,30 @@ class CompactWindowSelector:
                 print(f"[DEBUG] No items, calling _on_refresh()")
                 self._on_refresh()
                 print(f"[DEBUG] After refresh, win_items={len(self.win_items)}")
-            # Show dropdown with proper grid configuration
-            self.dropdown_frame.grid(row=1, column=0, sticky="ewns", padx=0, pady=(2, 0))
-            # Ensure frame can expand
-            self.frame.rowconfigure(1, weight=1)
-            print(f"[DEBUG] Dropdown shown at row=1, sticky=ewns")
+            
+            # Update to get latest dimensions
+            self.frame.update_idletasks()
+            
+            # Get dimensions
+            frame_width = self.frame.winfo_width()
+            search_height = self.search_frame.winfo_height()
+            
+            print(f"[DEBUG] Frame width={frame_width}, search_height={search_height}")
+            
+            # Position dropdown immediately below search frame
+            # Using place() with y offset and fixed height
+            self.dropdown_frame.place(
+                x=0,
+                y=search_height,  # Place below search frame
+                width=frame_width,
+                height=150  # Fixed dropdown height
+            )
+            print(f"[DEBUG] Dropdown placed at y={search_height}, width={frame_width}, height=150")
+            
             self._update_listbox()
             print(f"[DEBUG] Listbox size after update: {self.listbox.size()}")
             print(f"[DEBUG] Dropdown_frame.winfo_height() = {self.dropdown_frame.winfo_height()}")
+            
             self.is_open = True
             self.dropdown_btn.config(text="▲")
             self.search_entry.focus()
