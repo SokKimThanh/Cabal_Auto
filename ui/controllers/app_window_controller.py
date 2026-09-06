@@ -23,8 +23,10 @@ class AppWindowController:
         from lib.system.window_manager import WindowManager
         from lib.features.hunt.config_validator import normalize_window_bounds_value
 
+        print(f"[DEBUG] _list_windows called")
         wm = WindowManager()
         windows = wm.list_windows(title_contains=title_contains, visible_only=True)
+        print(f"[DEBUG] WindowManager returned {len(windows)} windows")
         
         results: List[Dict[str, Any]] = []
         own_title = ""
@@ -55,6 +57,7 @@ class AppWindowController:
                 }
             )
         
+        print(f"[DEBUG] _list_windows returning {len(results)} results")
         results.sort(
             key=lambda item: (
                 "cabal" not in item["title"].lower(),

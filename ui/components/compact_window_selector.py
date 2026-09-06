@@ -131,9 +131,11 @@ class CompactWindowSelector:
 
     def _on_refresh(self):
         """Refresh window list."""
+        print(f"[DEBUG] _on_refresh() called")
         logger.debug("CompactWindowSelector._on_refresh() called")
         try:
             self.win_items = self.window_controller._list_windows()
+            print(f"[DEBUG] _list_windows() returned {len(self.win_items)} items")
             # Update app.win_items for validation
             self.root.win_items = self.win_items
             logger.debug(f"  Found {len(self.win_items)} windows")
@@ -143,6 +145,7 @@ class CompactWindowSelector:
                 fg="#4ade80"
             )
         except Exception as e:
+            print(f"[DEBUG] _on_refresh error: {e}")
             logger.error(f"  Failed to refresh: {e}")
             self.info_label.config(
                 text=f"Error: {e}",
@@ -169,15 +172,19 @@ class CompactWindowSelector:
 
     def _toggle_dropdown(self):
         """Toggle dropdown visibility."""
+        print(f"[DEBUG] _toggle_dropdown: is_open={self.is_open}, win_items={len(self.win_items)}")
         if self.is_open:
             self.dropdown_frame.pack_forget()
             self.is_open = False
             self.dropdown_btn.config(text="▼")
         else:
             if not self.win_items:
+                print(f"[DEBUG] No items, calling _on_refresh()")
                 self._on_refresh()
+                print(f"[DEBUG] After refresh, win_items={len(self.win_items)}")
             self.dropdown_frame.pack(fill="both", expand=True, pady=(2, 0))
             self._update_listbox()
+            print(f"[DEBUG] Listbox size after update: {self.listbox.size()}")
             self.is_open = True
             self.dropdown_btn.config(text="▲")
             self.search_entry.focus()
