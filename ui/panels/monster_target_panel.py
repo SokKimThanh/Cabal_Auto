@@ -435,14 +435,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         self.app.training_mode_hint_label.pack(fill="x", pady=(4, 0), padx=10)
 
-        if getattr(self, "hunt_tab", None):
-            for prop in ["target_image_label", "target_name_label", "status_label",
-                         "target_level_label", "target_hp_label", "target_def_label",
-                         "hp_canvas", "hp_percent_label", "recovery_frame", "hp_bg", "hp_fill", "hp_text",
-                         "hunt_status_badge", "hunt_status_label", "skill_stats_tree"]:
-                if hasattr(self.app, prop):
-                    setattr(self.hunt_tab, prop, getattr(self.app, prop))
-
+        # Legacy wiring to HuntTab is applied after refreshing the rotation list below.
         if hasattr(self.app, "_refresh_monster_rotation_list"):
             self.app._refresh_monster_rotation_list()
 
