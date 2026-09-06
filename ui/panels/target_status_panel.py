@@ -30,10 +30,9 @@ class TargetStatusPanel(ttk.LabelFrame):
         self.app.hunt_status_badge.pack(side="left", padx=8, pady=6)
 
         # Keep reference for legacy code in HuntTab
-        if hasattr(self.app, "hunt_tab"):
-            self.app.hunt_tab.hunt_status_label = self.app.hunt_status_badge
-            self.app.hunt_tab.hunt_status_badge = self.app.hunt_status_badge
-
+        if self.hunt_tab is not None:
+            self.hunt_tab.hunt_status_label = self.app.hunt_status_badge
+            self.hunt_tab.hunt_status_badge = self.app.hunt_status_badge
         self.app.hunt_target_info_label = tk.Label(
             status_frame,
             textvariable=self.app.hunt_target_info,
