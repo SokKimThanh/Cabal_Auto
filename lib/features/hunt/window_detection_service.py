@@ -1,5 +1,6 @@
 import ctypes
 import ctypes.wintypes as wintypes
+import logging
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -10,6 +11,9 @@ except ImportError:
 
 from lib.features.hunt.config_validator import normalize_window_bounds_value
 from lib.system.window_manager import WindowManager
+
+logger = logging.getLogger(__name__)
+
 
 class WindowDetectionService:
     """Centralized window detection for Cabal game."""
@@ -27,22 +31,23 @@ class WindowDetectionService:
         """
         windows = self.enumerate_windows_raw()
         results = []
+        allowed_processes = ["cabal.exe", "cabalmain.exe"]
 
-allowed_processes = ["cabal.exe"]
+        for win in windows:
+            info = self.wm.get_window_info(win["hwnd"])
+            if not info:
+                continue
 
-for win in windows:
-    info = self.wm.get_window_info(win["hwnd"])
-    if not info:
-        continue
+            if (info.process_name or "").lower() not in allowed_processes:
+                continue
 
-    if (info.process_name or "").lower() not in allowed_processes:
-        continue
+            win["proc"] = info.process_name
+            win["bounds"] = normalize_window_bounds_value(info.rect)
+            win["is_minimized"] = info.is_minimized
+            results.append(win)
 
-    win["proc"] = info.process_name
-    win["bounds"] = normalize_window_bounds_value(info.rect)
-    win["is_minimized"] = info.is_minimized
-    results.append(win)
-        results = self.filter_windows(results, filter_text)
+        if filter_text:
+            results = self.filter_windows(results, filter_text)
 
         results.sort(
             key=lambda item: (
@@ -78,66 +83,72 @@ for win in windows:
             if "cabal" in w["title"].lower():
                 return w
 
-        return windows[0]
+        return windows[0] if windows else None
 
-def enumerate_windows_raw(self) -> List[Dict[str, Any]]:
-    """Low-level window enumeration using WinAPI."""
-    if sys.platform != "win32":
-        return []
-
-    user32 = ctypes.windll.user32
-        EnumWindowsProc = ctypes.WINFUNCTYPE(
-            ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
-        )
-        IsWindowVisible = user32.IsWindowVisible
-        GetWindowTextW = user32.GetWindowTextW
-        GetWindowTextLengthW = user32.GetWindowTextLengthW
-        GetWindowThreadProcessId = user32.GetWindowThreadProcessId
-
-        results = []
-
-        def callback(hwnd, lParam):
-            try:
-                if not IsWindowVisible(hwnd):
-                    return True
-                length = GetWindowTextLengthW(hwnd)
-                if length == 0:
-                    return True
-                buf = ctypes.create_unicode_buffer(length + 1)
-                GetWindowTextW(hwnd, buf, length + 1)
-                title = buf.value.strip()
-                if not title:
-                    return True
-
-                pid = wintypes.DWORD()
-                GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-                pid_val = int(pid.value)
-
-                proc_name = None
-                try:
-                    p = psutil.Process(pid_val)
-                    proc_name = p.name()
-                except Exception:
-                    proc_name = None
-
-                results.append(
-                    {
-                        "hwnd": int(hwnd),
-                        "pid": pid_val,
-                        "title": title,
-                        "proc": proc_name,
-                    }
-                )
-            except Exception:
-                pass
-            return True
+    def enumerate_windows_raw(self) -> List[Dict[str, Any]]:
+        """Low-level window enumeration using WinAPI."""
+        if sys.platform != "win32":
+            return []
 
         try:
-            EnumWindows(EnumWindowsProc(callback), 0)
-        except Exception:
-            pass
+            user32 = ctypes.windll.user32
+            EnumWindowsProc = ctypes.WINFUNCTYPE(
+                ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
+            )
+            IsWindowVisible = user32.IsWindowVisible
+            GetWindowTextW = user32.GetWindowTextW
+            GetWindowTextLengthW = user32.GetWindowTextLengthW
+            GetWindowThreadProcessId = user32.GetWindowThreadProcessId
+            EnumWindows = user32.EnumWindows
 
-        return results
+            results = []
+
+            def callback(hwnd, lParam):
+                try:
+                    if not IsWindowVisible(hwnd):
+                        return True
+                    length = GetWindowTextLengthW(hwnd)
+                    if length == 0:
+                        return True
+                    buf = ctypes.create_unicode_buffer(length + 1)
+                    GetWindowTextW(hwnd, buf, length + 1)
+                    title = buf.value.strip()
+                    if not title:
+                        return True
+
+                    pid = wintypes.DWORD()
+                    GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                    pid_val = int(pid.value)
+
+                    proc_name = None
+                    try:
+                        if psutil:
+                            p = psutil.Process(pid_val)
+                            proc_name = p.name()
+                    except Exception:
+                        proc_name = None
+
+                    results.append(
+                        {
+                            "hwnd": int(hwnd),
+                            "pid": pid_val,
+                            "title": title,
+                            "proc": proc_name,
+                        }
+                    )
+                except Exception:
+                    pass
+                return True
+
+            try:
+                EnumWindows(EnumWindowsProc(callback), 0)
+            except Exception as e:
+                logger.error(f"Error enumerating windows: {e}")
+
+            return results
+        except Exception as e:
+            logger.error(f"Error in enumerate_windows_raw: {e}")
+            return []
 
     def filter_windows(self, windows: List[Dict[str, Any]], filter_text: Optional[str]) -> List[Dict[str, Any]]:
         """Filter windows by title/process name."""
@@ -152,10 +163,10 @@ def enumerate_windows_raw(self) -> List[Dict[str, Any]]:
 
     def get_window_bounds(self, hwnd: int) -> Optional[Dict[str, int]]:
         """Get window rectangle and state."""
-info = self.wm.get_window_info(hwnd)
-if info and not info.is_minimized and not info.is_offscreen:
-    return info.rect
-return None
+        info = self.wm.get_window_info(hwnd)
+        if info and not info.is_minimized and not info.is_offscreen:
+            return info.rect
+        return None
 
     def restore_window_if_minimized(self, hwnd: int) -> bool:
         """Try to restore minimized window."""
