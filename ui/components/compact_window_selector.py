@@ -262,13 +262,19 @@ class CompactWindowSelector:
             # Call callback
             self.on_window_selected(selected)
             
-            # Close dropdown directly (avoid re-triggering focus_in)
+            # Temporarily unbind FocusIn to prevent re-opening
+            self.search_entry.unbind("<FocusIn>")
+            
+            # Close dropdown directly
             if self.dropdown_window:
                 self.dropdown_window.grab_release()
                 self.dropdown_window.destroy()
                 self.dropdown_window = None
             self.is_open = False
             self.dropdown_btn.config(text="▼")
+            
+            # Restore FocusIn binding after a short delay
+            self.search_entry.after(100, lambda: self.search_entry.bind("<FocusIn>", self._on_search_focus_in))
             
         except Exception as e:
             print(f"[DEBUG] Error on window select: {e}")
