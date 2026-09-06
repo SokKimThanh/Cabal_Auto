@@ -358,7 +358,10 @@ class MonsterTargetPanel(ttk.LabelFrame):
             self.any_target_container,
             icon="🎯",
             message=self.app._t("any_target_warning"),
-            submessage="Tất cả mục tiêu trong màn hình sẽ bị tấn công.",
+            submessage=self.app._t(
+                "any_target_warning_submessage",
+                default="Tất cả mục tiêu trong màn hình sẽ bị tấn công.",
+            ),
         )
         self.any_target_empty.pack(fill="both", expand=True)
 
