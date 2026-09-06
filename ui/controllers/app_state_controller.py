@@ -214,13 +214,18 @@ class AppStateController:
                 if res.get('success'):
                     self.root._active_preset_id = res.get('preset_id')
         else:
-             # Need to create new custom preset
-             service = SkillPresetService()
-             skill_slots_for_db = {lane: [s['skill_id'] for s in self.root.skill_slots.get(lane, [])] for lane in self.root.skill_slots}
-             res = service.create_custom_preset(self.root._current_class_id, preset_name, skill_slots_for_db)
-             if res.get('success'):
-                 self.root._active_preset_id = res.get('preset_id')
-                 self.root._preset_mode = "custom"
+            # Need to create new custom preset
+            service = SkillPresetService()
+            skill_slots_for_db = {
+                lane: [s['skill_id'] for s in self.root.skill_slots.get(lane, [])]
+                for lane in self.root.skill_slots
+            }
+            res = service.create_custom_preset(
+                self.root._current_class_id, preset_name, skill_slots_for_db
+            )
+            if res.get('success'):
+                self.root._active_preset_id = res.get('preset_id')
+                self.root._preset_mode = "custom"
 
         self._emit_event('on_preset_changed')
 
