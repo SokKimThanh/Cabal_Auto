@@ -879,6 +879,8 @@ class App(tk.Tk):
             window_controller=self.window_controller,
             root=self,
         )
+        # Auto-refresh window list on startup
+        self.compact_window_selector._on_refresh()
         self.compact_window_selector.get_frame().grid(
             row=0, column=0, sticky="ew", padx=(0, 12)
         )
