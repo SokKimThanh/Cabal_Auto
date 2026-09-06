@@ -51,10 +51,10 @@ class UIStyleV2:
     COLOR_DANGER = '#F44336'
     COLOR_WARNING = '#FF7043'
     COLOR_INFO = '#1976D2'
-    COLOR_MUTED = '#757575'
-    COLOR_TEXT = '#212121'
-    COLOR_SUBTEXT = '#666666'
-    COLOR_HINT = '#757575'
+    COLOR_MUTED = TEXT_MUTED
+    COLOR_TEXT = TEXT_PRIMARY
+    COLOR_SUBTEXT = TEXT_SECONDARY
+    COLOR_HINT = TEXT_SUBTLE
 
     OVERLAY_BG_ALPHA = 0.3            # 30% opacity for black background
     OVERLAY_BG_COLOR = (0, 0, 0)      # Black RGB tuple for Win32
