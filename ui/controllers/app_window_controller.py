@@ -24,7 +24,9 @@ class AppWindowController:
         from lib.features.hunt.config_validator import normalize_window_bounds_value
 
         wm = WindowManager()
+        print(f"[AppWindowController._list_windows] Calling wm.list_windows(visible_only=True)...")
         windows = wm.list_windows(title_contains=title_contains, visible_only=True)
+        print(f"[AppWindowController._list_windows] Got {len(windows)} windows from WindowManager")
         
         results: List[Dict[str, Any]] = []
         own_title = ""
@@ -36,14 +38,18 @@ class AppWindowController:
 
         allowed_processes = ["cabal.exe", "cabalmain.exe"]
 
-        for info in windows:
+        for i, info in enumerate(windows):
             title = (info.title or "").strip()
+            print(f"[AppWindowController._list_windows] [{i}] title={title}, proc={info.process_name}, is_minimized={info.is_minimized}")
             if not title or title == own_title:
+                print(f"[AppWindowController._list_windows]   -> Skipped (empty or own_title)")
                 continue
 
             if info.process_name.lower() not in allowed_processes:
+                print(f"[AppWindowController._list_windows]   -> Skipped (proc not in allowed_processes)")
                 continue
 
+            print(f"[AppWindowController._list_windows]   -> ADDED to results")
             results.append(
                 {
                     "hwnd": int(info.hwnd),
@@ -62,6 +68,7 @@ class AppWindowController:
                 item["pid"],
             )
         )
+        print(f"[AppWindowController._list_windows] Returning {len(results)} results")
         return results
 
     def _retry_resolve_bounds(self, hwnd, attempt):

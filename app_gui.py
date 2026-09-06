@@ -894,7 +894,9 @@ class App(tk.Tk):
             root=self,
         )
         # Auto-refresh window list on startup
+        print("[App] Calling compact_window_selector._on_refresh() on startup...")
         self.compact_window_selector._on_refresh()
+        print("[App] _on_refresh() call completed")
         # Use place() geometry for dropdown to work properly below the search bar
         self.compact_window_selector.get_frame().grid(
             row=0, column=0, sticky="ew", padx=(0, 12)
