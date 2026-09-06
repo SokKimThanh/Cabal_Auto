@@ -25,6 +25,7 @@ def test_backward_compat_aliases():
         'BTN_DANGER_BG', 'BTN_DANGER_FG', 'BTN_INFO_BG', 'BTN_INFO_FG',
         'SPACING_2', 'SPACING_4', 'SPACING_8', 'SPACING_12',
         'SIZE_SECTION'
+    ]
     for attr in required_aliases:
         assert hasattr(UI, attr), f"Missing backward compat: {attr}"
 
