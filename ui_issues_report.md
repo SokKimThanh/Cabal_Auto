@@ -1,6 +1,6 @@
 # Báo cáo Đánh giá Giao diện Người dùng (UI/UX Review)
 
-Dựa trên hình ảnh giao diện được cung cấp, dưới đây là tổng hợp các vấn đề về thiết kế, bố cục, và độ tương phản màu sắc cần được khắc phục để hoàn thiện trải nghiệm người dùng (UX) và tính thẩm mỹ (UI):
+Dựa trên hình ảnh giao diện được cung cấp (`image.png`), dưới đây là tổng hợp các vấn đề về thiết kế, bố cục, và độ tương phản màu sắc cần được khắc phục để hoàn thiện trải nghiệm người dùng (UX) và tính thẩm mỹ (UI):
 
 ## 1. Vấn đề về Độ tương phản & Màu sắc (Contrast & Colors)
 * **Khu vực góc trên bên trái ("0 windows"):** Dữ liệu chữ màu đỏ sẫm đặt trên nền xám đen/tối có độ tương phản quá thấp, rất khó đọc. Cần đổi sang màu đỏ sáng hơn (light red/pastel red).
@@ -9,7 +9,7 @@ Dựa trên hình ảnh giao diện được cung cấp, dưới đây là tổn
 * **Lỗi nền trắng phá vỡ Dark Theme:**
   * Dòng hướng dẫn "Nhấp chuột phải để xóa từng quái..." dưới danh sách quái có nền màu trắng tinh.
   * Nhãn "Mục tiêu: Trống" ở góc trên phải có nền trắng.
--> Hai thành phần này hoàn toàn phá vỡ tổng thể giao diện chế độ tối (dark mode). Cần đổi nền thành màu xám/đen (`UI.BG_SURFACE`) và dùng chữ màu sáng (`UI.TEXT_PRIMARY`).
+  -> Hai thành phần này hoàn toàn phá vỡ tổng thể giao diện chế độ tối (dark mode). Cần đổi nền thành màu xám/đen (`BG_SURFACE`) và dùng chữ màu sáng (`TEXT_PRIMARY`).
 
 ## 2. Vấn đề về Styling & Widget Mặc định (Unstyled Components)
 * **Thanh cuộn (Scrollbar):** Các thanh cuộn ở phần danh sách quái (Current Target) và thống kê kỹ năng (Skill Performance) đang dùng giao diện mặc định của hệ điều hành (màu trắng/xám sáng), cực kỳ lệch tông với giao diện tối của ứng dụng. Cần custom lại scrollbar (màu xám tối).

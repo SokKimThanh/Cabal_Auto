@@ -12,24 +12,24 @@ Dưới đây là một prompt thực thi (execution prompt) chi tiết dựa tr
 **Nhiệm vụ cụ thể (Tasks):**
 
 1.  **Sửa lỗi Độ tương phản & Màu nền rò rỉ:**
-    *   Tìm khu vực hiển thị số lượng cửa sổ (chữ '0 windows' góc trên bên trái). Thay đổi màu chữ từ đỏ sẫm sang một màu đỏ sáng hơn (light red / pastel red) để dễ đọc trên nền tối.
-    *   Sửa màu chữ cho tab 'Săn' ở Sidebar (Menu trái). Đảm bảo chữ bên trong tab có màu sáng (ví dụ: `TEXT_PRIMARY`) để nổi bật trên nền/viền xanh lá.
-    *   Tìm các nhãn hiển thị trạng thái như 'Đã lưu tất cả thay đổi' (màu xanh lá đậm) và 'CHỜ' (ở phần Current Target). Thay đổi sang màu sáng hơn hoặc áp dụng màu nền (background/badge) tương phản tốt.
-    *   **Lỗi nền trắng:** Tìm Label chứa dòng chữ 'Nhấp chuột phải để xóa từng quái...' (dưới danh sách quái) và Label 'Mục tiêu: Trống' (góc trên phải). Ép các thành phần này sử dụng nền tối (`BG_SURFACE` hoặc `bg` tương ứng) và chữ sáng (`TEXT_PRIMARY`) thay vì để rò rỉ nền trắng của hệ thống.
+    *   **"0 windows"**: Trong `ui/components/compact_window_selector.py` (tìm chuỗi `"✗ 0 windows"`). Thay đổi màu chữ từ đỏ sẫm sang một màu đỏ sáng hơn (light red / pastel red) để dễ đọc trên nền tối.
+    *   **Tab "Săn" ở Sidebar**: Trong `app_gui.py` (vòng lặp tạo `tk.Button` cho `sidebar_items`). Đảm bảo chữ bên trong tab có màu sáng (ví dụ: `TEXT_PRIMARY`) để nổi bật trên nền/viền xanh lá.
+    *   **Nhãn trạng thái**: Trong `ui/panels/target_status_panel.py` (các nhãn như `hunt_status_badge` dùng `StatusBadge`). Thay đổi sang màu sáng hơn hoặc áp dụng màu nền (background/badge) tương phản tốt.
+    *   **Lỗi nền trắng**:
+        *   Nhãn "Nhấp chuột phải để xóa từng quái..." trong `ui/panels/monster_target_panel.py` (biến `monster_rotation_delete_hint`). Ép sử dụng nền tối (`BG_SURFACE`) và chữ sáng (`TEXT_PRIMARY`).
+        *   Nhãn "Mục tiêu: Trống" trong `ui/panels/target_status_panel.py` (`hunt_target_info_label`). Ép sử dụng nền tối và chữ sáng.
 
 2.  **Style các Widget Mặc định (Unstyled Components):**
-    *   Tìm các Listbox/Treeview ở phần 'Current Target' và 'Skill Performance'. Thiết lập lại màu nền (background) và màu chữ (foreground) cho Listbox/Treeview và các Scrollbar đi kèm để phù hợp với giao diện tối. Tránh dùng Scrollbar mặc định màu trắng/xám sáng của Windows.
-    *   Định kiểu lại các nút điều khiển danh sách (+, ^, v, x ở bên phải danh sách quái). Xóa style native (mặc định) và áp dụng thiết kế phẳng phù hợp với nút của ứng dụng (ví dụ: dùng `tk.Button` với `relief='flat'`, set `bg` và `fg`).
-    *   Cập nhật style cho thanh điều hướng Tabs (Notebook) 'Quái đã chọn', 'Tự nhận diện', 'Mọi mục tiêu'. Tăng padding và style lại `TNotebook.Tab` để rõ ràng tab nào đang được chọn.
-    *   Tìm các Checkbox ('Bật Auto Combo', '0 skills valid') và đảm bảo chúng có style dark mode (không bị viền nổi trắng bao quanh). Sử dụng `selectcolor` phù hợp.
+    *   **Thanh cuộn (Scrollbar)**: Trong `ui/panels/monster_target_panel.py` (các `tk.Scrollbar` cho `monster_rotation_listbox` và `detected_monsters_listbox`) và `ui/panels/skill_stats_panel.py` (`tk.Scrollbar`). Cập nhật để chúng không dùng giao diện mặc định (trắng/xám sáng) của Windows.
+    *   **Nút điều khiển danh sách**: Trong `ui/panels/monster_target_panel.py` (các nút dùng `_create_icon_button` như `btn_add_monster`, `btn_move_up`, v.v.). Xóa style native và áp dụng thiết kế phẳng phù hợp với giao diện.
+    *   **Thanh điều hướng Tabs**: Trong `ui/panels/monster_target_panel.py` (hiện tại dùng `ttk.Radiobutton` nhưng đóng vai trò như tabs điều hướng cho policy). Style lại để phân biệt rõ tab nào đang được chọn và tăng padding.
+    *   **Checkbox**: Trong `ui/panels/skill_panel.py` (tìm `tk.Checkbutton` của biến Auto Combo). Đảm bảo không bị viền nổi trắng bao quanh, sử dụng `selectcolor` phù hợp.
 
 3.  **Sửa Bố cục & Căn chỉnh (Layout & Alignment):**
-    *   Tìm khung `LabelFrame` chứa 'Buff Lane'. Sửa lỗi đường viền cắt ngang chữ tiêu đề bằng cách thêm padding dọc (ví dụ `pady=(12, 8)`) để tiêu đề có không gian, hoặc thay thế bằng một Frame thông thường có thẻ tiêu đề (Label) riêng biệt.
-    *   Căn chỉnh lại các nút công cụ nhỏ kế bên chữ '0 windows' cho cách xa nhau một chút (thêm padding ngang) và căn giữa theo chiều dọc (vertical alignment) với đoạn text.
-    *   Điều chỉnh khoảng cách/padding bên trong các trường nhập liệu (Dropdown, Entry) của phần 'Combo Chain' để giao diện bớt chật chội.
-    *   Mở rộng kích thước (width) hoặc thêm padding cho Dropdown ngôn ngữ ('vi') ở góc trên phải để dễ click hơn.
+    *   **Khung viền Buff Lane**: Trong `ui/panels/skill_panel.py` (tìm `skill_strip.buff_lane`). Sửa lỗi đường viền cắt ngang chữ tiêu đề bằng cách thêm padding dọc, hoặc sử dụng `tk.Frame` với `tk.Label` rời thay vì `LabelFrame`.
+    *   **Khoảng cách nút công cụ**: Trong `ui/components/compact_window_selector.py` (khu vực gần chữ "0 windows"). Thêm padding ngang cho các nút công cụ nhỏ và căn giữa theo chiều dọc.
+    *   **Khoảng cách Dropdown/Entry**: Trong `ui/panels/skill_panel.py` (khu vực Combo Chain / Dropdown). Tăng không gian và padding để giao diện bớt chật chội.
 
 **Nguyên tắc thực hiện:**
-*   Sử dụng công cụ tìm kiếm (`grep`, `read_file`) để xác định đúng file chứa UI (thường nằm trong thư mục `ui/panels/`, `ui/components/` hoặc `app_gui.py`).
 *   **Luôn Verify:** Sau mỗi thay đổi, hãy đọc lại file hoặc chạy thử nghiệm headless UI để đảm bảo không sinh ra lỗi cú pháp hay `_tkinter.TclError`.
 *   Chỉ sử dụng token từ `lib/ui_style_v2.py` (nếu có import), không hardcode màu sắc."
