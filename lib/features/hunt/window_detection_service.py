@@ -152,10 +152,10 @@ def enumerate_windows_raw(self) -> List[Dict[str, Any]]:
 
     def get_window_bounds(self, hwnd: int) -> Optional[Dict[str, int]]:
         """Get window rectangle and state."""
-        info = self.wm.get_window_info(hwnd)
-        if info:
-            return info.rect
-        return None
+info = self.wm.get_window_info(hwnd)
+if info and not info.is_minimized and not info.is_offscreen:
+    return info.rect
+return None
 
     def restore_window_if_minimized(self, hwnd: int) -> bool:
         """Try to restore minimized window."""
