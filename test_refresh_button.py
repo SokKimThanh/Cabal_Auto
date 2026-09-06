@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Test refresh button directly."""
+"""Test refresh button directly (manual script; not a pytest test)."""
+
+import sys
+
+if "pytest" in sys.modules:
+    import pytest
+
+    pytest.skip("Manual script; skip during pytest collection", allow_module_level=True)
 
 import tkinter as tk
-import sys
 import os
 from pathlib import Path
 import time
