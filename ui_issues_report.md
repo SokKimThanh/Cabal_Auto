@@ -1,6 +1,6 @@
 # Báo cáo Đánh giá Giao diện Người dùng (UI/UX Review)
 
-Dựa trên hình ảnh giao diện được cung cấp (`image.png`), dưới đây là tổng hợp các vấn đề về thiết kế, bố cục, và độ tương phản màu sắc cần được khắc phục để hoàn thiện trải nghiệm người dùng (UX) và tính thẩm mỹ (UI):
+Dựa trên hình ảnh giao diện được cung cấp, dưới đây là tổng hợp các vấn đề về thiết kế, bố cục, và độ tương phản màu sắc cần được khắc phục để hoàn thiện trải nghiệm người dùng (UX) và tính thẩm mỹ (UI):
 
 ## 1. Vấn đề về Độ tương phản & Màu sắc (Contrast & Colors)
 * **Khu vực góc trên bên trái ("0 windows"):** Dữ liệu chữ màu đỏ sẫm đặt trên nền xám đen/tối có độ tương phản quá thấp, rất khó đọc. Cần đổi sang màu đỏ sáng hơn (light red/pastel red).
