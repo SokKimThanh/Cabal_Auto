@@ -18,10 +18,13 @@ def test_backward_compat_aliases():
     """Check old UIStyle constants are aliased"""
     required_aliases = [
         'THEME_BG_APP', 'THEME_BG_SIDEBAR', 'THEME_BG_PANEL',
-        'THEME_TEXT_PRIMARY', 'THEME_STATE_HUNTING',
+        'BG_DEFAULT', 'BG_PANEL', 'BG_MUTED', 'BG_SECTION',
+        'THEME_TEXT_PRIMARY', 'THEME_TEXT_SECONDARY', 'THEME_TEXT_MUTED',
+        'THEME_STATE_HUNTING',
+        'BTN_PRIMARY_BG', 'BTN_PRIMARY_FG', 'BTN_NEUTRAL_BG', 'BTN_NEUTRAL_FG',
+        'BTN_DANGER_BG', 'BTN_DANGER_FG', 'BTN_INFO_BG', 'BTN_INFO_FG',
         'SPACING_2', 'SPACING_4', 'SPACING_8', 'SPACING_12',
         'SIZE_SECTION'
-    ]
     for attr in required_aliases:
         assert hasattr(UI, attr), f"Missing backward compat: {attr}"
 
