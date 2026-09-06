@@ -4,6 +4,7 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.components.styled_panel import StyledPanel
 from ui.components.empty_state import EmptyState
 
+
 class MonsterTargetPanel(ttk.LabelFrame):
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(10 * scale_factor), int(8 * scale_factor))
