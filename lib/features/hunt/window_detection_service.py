@@ -105,7 +105,7 @@ class WindowDetectionService:
 
             def callback(hwnd, lParam):
                 try:
-                    if not IsWindowVisible(hwnd):
+                    if not IsWindowVisible(hwnd) and not user32.IsIconic(hwnd):
                         return True
                     length = GetWindowTextLengthW(hwnd)
                     if length == 0:
