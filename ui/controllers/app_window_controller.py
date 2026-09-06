@@ -3,28 +3,117 @@ import tkinter as tk
 from tkinter import messagebox
 from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
 
-
 import logging
+import ctypes
+from ctypes import wintypes
 
 logger = logging.getLogger(__name__)
 
+# Try to import psutil for process name detection
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+
 
 class AppWindowController:
-    ALLOWED_PROCESSES = ["cabal.exe"]
+    ALLOWED_PROCESSES = ["cabal.exe", "cabalmain.exe"]
 
     """Manages dialog/window ownership tracking and target window selection lifecycle."""
 
     def __init__(self, root: tk.Tk):
         self.root = root
 
+    def _enum_windows_winapi(self) -> List[Dict[str, Any]]:
+        """Enumerate visible windows using WinAPI (from setup_wizard).
+        
+        This is more reliable than WindowManager for getting complete list.
+        Uses direct Win32 API calls via ctypes.
+        """
+        try:
+            user32 = ctypes.windll.user32
+            EnumWindows = user32.EnumWindows
+            EnumWindowsProc = ctypes.WINFUNCTYPE(
+                ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
+            )
+            IsWindowVisible = user32.IsWindowVisible
+            GetWindowTextW = user32.GetWindowTextW
+            GetWindowTextLengthW = user32.GetWindowTextLengthW
+            GetWindowThreadProcessId = user32.GetWindowThreadProcessId
+
+            results = []
+
+            def callback(hwnd, lParam):
+                try:
+                    if not IsWindowVisible(hwnd):
+                        return True
+                    length = GetWindowTextLengthW(hwnd)
+                    if length == 0:
+                        return True
+                    buf = ctypes.create_unicode_buffer(length + 1)
+                    GetWindowTextW(hwnd, buf, length + 1)
+                    title = buf.value.strip()
+                    if not title:
+                        return True
+
+                    pid = wintypes.DWORD()
+                    GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                    pid_val = int(pid.value)
+
+                    proc_name = None
+                    if PSUTIL_AVAILABLE and psutil is not None:
+                        try:
+                            p = psutil.Process(pid_val)
+                            proc_name = p.name()
+                        except Exception:
+                            proc_name = None
+
+                    results.append(
+                        {
+                            "hwnd": int(hwnd),
+                            "pid": pid_val,
+                            "title": title,
+                            "proc": proc_name,
+                        }
+                    )
+                except Exception:
+                    pass
+                return True
+
+            try:
+                EnumWindows(EnumWindowsProc(callback), 0)
+            except Exception as e:
+                logger.error(f"EnumWindows failed: {e}")
+                pass
+
+            logger.debug(f"WinAPI enumeration found {len(results)} total windows")
+            return results
+        except Exception as e:
+            logger.error(f"_enum_windows_winapi failed: {e}")
+            return []
+
     def _list_windows(
         self, title_contains: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        from lib.system.window_manager import WindowManager
+        """List Cabal windows using WinAPI enumeration.
+        
+        Flow:
+        1. Uses _enum_windows_winapi() for complete window list
+        2. Filters to only Cabal process windows (cabal.exe, cabalmain.exe)
+        3. Excludes app's own window (Cabal Auto Hunt)
+        4. Gets bounds from each window via WindowManager
+        5. Sorts by title
+        
+        Returns list of window dicts with: hwnd, pid, title, proc, bounds, is_minimized
+        """
         from lib.features.hunt.config_validator import normalize_window_bounds_value
+        from lib.system.window_manager import WindowManager
 
-        wm = WindowManager()
-        windows = wm.list_windows(title_contains=title_contains, visible_only=True)
+        # Get all visible windows via WinAPI
+        all_windows = self._enum_windows_winapi()
+        logger.debug(f"WinAPI returned {len(all_windows)} visible windows")
+
         results: List[Dict[str, Any]] = []
         own_title = ""
         try:
@@ -33,26 +122,59 @@ class AppWindowController:
             logger.error(f"Failed to get own title: {e}")
             own_title = ""
 
-        allowed_processes = ["cabal.exe", "cabalmain.exe"]
+        logger.debug(f"Own window title: '{own_title}'")
+        logger.debug(f"Allowed processes: {self.ALLOWED_PROCESSES}")
 
-        for info in windows:
-            title = (info.title or "").strip()
+        # Filter to Cabal windows only
+        for info in all_windows:
+            title = (info.get("title") or "").strip()
             if not title or title == own_title:
+                logger.debug(f"Skipping window: empty title or own app (title='{title}')")
                 continue
 
-            if info.process_name.lower() not in allowed_processes:
+            # Check if process name matches allowed processes
+            proc_name = (info.get("proc") or "").lower()
+            logger.debug(f"Checking window '{title}': proc='{proc_name}'")
+            
+            # Match if proc_name contains any allowed process name
+            is_cabal = any(
+                ap.lower() in proc_name 
+                for ap in self.ALLOWED_PROCESSES
+            ) if proc_name else False
+            
+            if not is_cabal:
+                logger.debug(f"  → Not a Cabal window, skipping")
                 continue
+
+            logger.debug(f"  → Found Cabal window!")
+
+            # Get window bounds
+            wm = WindowManager()
+            hwnd = info["hwnd"]
+            win_info = wm.get_window_info(hwnd)
+            
+            if win_info is None:
+                logger.debug(f"Could not get window info for HWND {hwnd}, using default bounds")
+                bounds = {"left": 0, "top": 0, "width": 0, "height": 0}
+                is_minimized = False
+            else:
+                bounds = normalize_window_bounds_value(win_info.rect)
+                is_minimized = win_info.is_minimized
+                logger.debug(f"  Bounds: {bounds}, is_minimized={is_minimized}")
 
             results.append(
                 {
-                    "hwnd": int(info.hwnd),
-                    "pid": int(info.pid),
+                    "hwnd": int(info["hwnd"]),
+                    "pid": int(info["pid"]),
                     "title": title,
-                    "proc": info.process_name,
-                    "bounds": normalize_window_bounds_value(info.rect),
-                    "is_minimized": info.is_minimized,
+                    "proc": info.get("proc") or "",
+                    "bounds": bounds,
+                    "is_minimized": is_minimized,
                 }
             )
+            logger.debug(f"  Added: HWND={info['hwnd']}, Title='{title}', PID={info['pid']}")
+
+        # Sort by title
         results.sort(
             key=lambda item: (
                 "cabal" not in item["title"].lower(),
@@ -60,6 +182,7 @@ class AppWindowController:
                 item["pid"],
             )
         )
+        logger.debug(f"_list_windows returning {len(results)} Cabal windows after filtering")
         return results
 
     def _retry_resolve_bounds(self, hwnd, attempt):
