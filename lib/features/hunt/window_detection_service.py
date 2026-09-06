@@ -1,0 +1,170 @@
+import ctypes
+import ctypes.wintypes as wintypes
+from typing import Any, Dict, List, Optional
+import psutil
+
+from lib.system.window_manager import WindowManager
+from lib.features.hunt.config_validator import normalize_window_bounds_value
+
+class WindowDetectionService:
+    """Centralized window detection for Cabal game."""
+
+    def __init__(self):
+        """Initialize with WindowManager."""
+        self.wm = WindowManager()
+
+    def find_all_cabal_windows(self, filter_text: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Find all Cabal windows with optional text filtering.
+
+        Returns:
+            List of dicts with keys: hwnd, pid, title, proc, bounds, is_minimized
+        """
+        windows = self.enumerate_windows_raw()
+        results = []
+
+        allowed_processes = ["cabal.exe"]
+
+        for win in windows:
+            title = win["title"]
+            proc_name = win["proc"]
+
+            if proc_name and proc_name.lower() not in allowed_processes:
+                continue
+
+            info = self.wm.get_window_info(win["hwnd"])
+            if info:
+                win["bounds"] = normalize_window_bounds_value(info.rect)
+                win["is_minimized"] = info.is_minimized
+            else:
+                win["bounds"] = None
+                win["is_minimized"] = False
+
+            results.append(win)
+
+        results = self.filter_windows(results, filter_text)
+
+        results.sort(
+            key=lambda item: (
+                "cabal" not in item["title"].lower(),
+                item["title"].lower(),
+                item["pid"],
+            )
+        )
+        return results
+
+    def find_best_cabal_window(self, prefer_current_hwnd: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        """
+        Auto-detect best Cabal window.
+
+        Priority:
+        1. Currently selected window (if still valid)
+        2. First window with "Cabal" in title
+        3. First cabal.exe process window
+
+        Returns:
+            Window dict or None
+        """
+        windows = self.find_all_cabal_windows()
+        if not windows:
+            return None
+
+        if prefer_current_hwnd:
+            for w in windows:
+                if w["hwnd"] == prefer_current_hwnd:
+                    return w
+
+        for w in windows:
+            if "cabal" in w["title"].lower():
+                return w
+
+        return windows[0]
+
+    def enumerate_windows_raw(self) -> List[Dict[str, Any]]:
+        """Low-level window enumeration using WinAPI."""
+        user32 = ctypes.windll.user32
+        EnumWindows = user32.EnumWindows
+        EnumWindowsProc = ctypes.WINFUNCTYPE(
+            ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
+        )
+        IsWindowVisible = user32.IsWindowVisible
+        GetWindowTextW = user32.GetWindowTextW
+        GetWindowTextLengthW = user32.GetWindowTextLengthW
+        GetWindowThreadProcessId = user32.GetWindowThreadProcessId
+
+        results = []
+
+        def callback(hwnd, lParam):
+            try:
+                if not IsWindowVisible(hwnd):
+                    return True
+                length = GetWindowTextLengthW(hwnd)
+                if length == 0:
+                    return True
+                buf = ctypes.create_unicode_buffer(length + 1)
+                GetWindowTextW(hwnd, buf, length + 1)
+                title = buf.value.strip()
+                if not title:
+                    return True
+
+                pid = wintypes.DWORD()
+                GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                pid_val = int(pid.value)
+
+                proc_name = None
+                try:
+                    p = psutil.Process(pid_val)
+                    proc_name = p.name()
+                except Exception:
+                    proc_name = None
+
+                results.append(
+                    {
+                        "hwnd": int(hwnd),
+                        "pid": pid_val,
+                        "title": title,
+                        "proc": proc_name,
+                    }
+                )
+            except Exception:
+                pass
+            return True
+
+        try:
+            EnumWindows(EnumWindowsProc(callback), 0)
+        except Exception:
+            pass
+
+        return results
+
+    def filter_windows(self, windows: List[Dict[str, Any]], filter_text: Optional[str]) -> List[Dict[str, Any]]:
+        """Filter windows by title/process name."""
+        if not filter_text:
+            return windows
+
+        filter_text = filter_text.lower()
+        return [
+            w for w in windows
+            if filter_text in w["title"].lower() or (w["proc"] and filter_text in w["proc"].lower())
+        ]
+
+    def get_window_bounds(self, hwnd: int) -> Optional[Dict[str, int]]:
+        """Get window rectangle and state."""
+        info = self.wm.get_window_info(hwnd)
+        if info:
+            return info.rect
+        return None
+
+    def restore_window_if_minimized(self, hwnd: int) -> bool:
+        """Try to restore minimized window."""
+        info = self.wm.get_window_info(hwnd)
+        if info and (info.is_minimized or info.is_offscreen):
+            self.wm.restore(hwnd)
+            try:
+                import win32gui
+                win32gui.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+            new_info = self.wm.get_window_info(hwnd)
+            return bool(new_info and not new_info.is_minimized and not new_info.is_offscreen)
+        return True

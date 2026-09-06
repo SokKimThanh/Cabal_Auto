@@ -95,21 +95,6 @@ GLOBAL_TRANSLATIONS = {
         'save_hunt': 'Save hunt config',
         'start_hunt': 'Start hunt',
         'stop_hunt': 'Stop hunt',
-        'setup_wizard': '🧙 Setup Wizard',
-        'wizard_first_time_title': 'Welcome to Cabal Auto Hunt!',
-        'wizard_first_time_message': (
-            "It looks like this is your first time using Cabal Auto Hunt.\n\n"
-            "Would you like to run the Setup Wizard to configure your settings?\n\n"
-            "The wizard will guide you through:\n"
-            "  • Selecting your game window\n"
-            "  • Choosing a monster to hunt\n"
-            "  • Configuring your attack skills\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "• Click 'Yes' → Run full setup wizard\n"
-            "• Click 'No' → Auto-detect Cabal window (PID)\n\n"
-            "You can always run the wizard later by clicking the '🧙 Setup Wizard' button."
-        ),
-        'wizard_skipped_hint': "Setup wizard skipped. Auto-detected Cabal window. Click '🧙 Setup Wizard' to configure monster & skills.",
         'hunt_idle': 'Ready to hunt',
         'hunt_running': 'Hunting…',
         'hunt_stopped': 'Hunt stopped',
@@ -355,8 +340,6 @@ Tips:
         'tooltip_region_strategy': 'Window: use game window bounds\nCustom: use specific region below',
         'tooltip_window_bounds': 'Game window area (Left, Top, Width, Height). Leave blank to auto-detect.',
         'window_select_tooltip': 'Select your Cabal game window.\n• Click "Find Windows" to refresh list\n• Selected window will auto bring-to-front\n• Tip: Look for window with PID matching your game process',
-        'wizard_enabled_tooltip': 'Launch Setup Wizard for guided configuration.\n\n• Step-by-step setup for beginners\n• Configure window, monsters, and skills\n• Automatic settings validation',
-        'wizard_disabled_tooltip': 'Setup Wizard is only available in Beginner mode.\n\nTo use the wizard:\n1. Switch to Beginner mode above\n2. Click this button to launch guided setup',
         'apply_all_settings': 'Apply Hunt Settings',
         'unsaved_indicator': 'Changes detected - click Apply to save',
         'all_saved': 'All changes saved',
@@ -534,21 +517,6 @@ Tips:
         'stop_hunt': 'Dừng săn',
         'refresh_tooltip': 'Làm Mới Danh Sách Cửa Sổ',
         'refresh_tooltip_desc': 'Quét lại các cửa sổ game',
-        'setup_wizard': 'Trợ lý thiết lập',
-        'wizard_first_time_title': 'Chào mừng đến Cabal Auto Hunt!',
-        'wizard_first_time_message': (
-            "Có vẻ đây là lần đầu bạn sử dụng Cabal Auto Hunt.\n\n"
-            "Bạn có muốn chạy Trợ lý thiết lập để cấu hình không?\n\n"
-            "Trợ lý sẽ hướng dẫn bạn:\n"
-            "  • Chọn cửa sổ game\n"
-            "  • Chọn quái để săn\n"
-            "  • Cấu hình kỹ năng tấn công\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "• Bấm 'Yes' → Chạy trợ lý đầy đủ\n"
-            "• Bấm 'No' → Tự động tìm cửa sổ Cabal (PID)\n\n"
-            "Bạn luôn có thể chạy trợ lý sau bằng nút '🧙 Trợ lý thiết lập'."
-        ),
-        'wizard_skipped_hint': "Đã bỏ qua trợ lý. Tự động phát hiện cửa sổ Cabal. Bấm '🧙 Trợ lý' để cấu hình quái & kỹ năng.",
         'hunt_idle': 'Sẵn sàng săn',
         'hunt_running': 'Đang săn…',
         'hunt_stopped': 'Đã dừng săn',
@@ -744,8 +712,6 @@ Mẹo:
         'tooltip_region_strategy': 'Window: dùng biên cửa sổ game\nCustom: dùng vùng cụ thể bên dưới',
         'tooltip_window_bounds': 'Vùng cửa sổ game (Trái, Trên, Rộng, Cao). Để trống để tự phát hiện.',
         'window_select_tooltip': 'Chọn cửa sổ game Cabal của bạn.\n• Nhấn "Tìm cửa sổ" để làm mới danh sách\n• Cửa sổ đã chọn sẽ tự động đưa lên trước\n• Mẹo: Tìm cửa sổ có PID khớp với tiến trình game',
-        'wizard_enabled_tooltip': 'Khởi chạy Trợ lý Thiết lập cho cấu hình hướng dẫn.\n\n• Thiết lập từng bước cho người mới\n• Cấu hình cửa sổ, quái vật và kỹ năng\n• Tự động kiểm tra cài đặt',
-        'wizard_disabled_tooltip': 'Trợ lý Thiết lập chỉ có sẵn ở chế độ Người mới.\n\nĐể sử dụng trợ lý:\n1. Chuyển sang chế độ Người mới ở trên\n2. Nhấn nút này để khởi chạy hướng dẫn thiết lập',
         'apply_all_settings': 'Áp dụng Cài đặt Săn',
         'unsaved_indicator': 'Phát hiện thay đổi - nhấn Áp dụng để lưu',
         'all_saved': 'Đã lưu tất cả thay đổi',
@@ -1036,167 +1002,6 @@ LIBRARY_MANAGER_TRANSLATIONS = {
     }
 }
 
-# Setup Wizard specific translations (tooltips and small hints)
-SETUP_WIZARD_TRANSLATIONS = {
-    'en': {
-        # Footer buttons
-        'tip_wizard_back': 'Go back to previous step',
-        'tip_wizard_next': 'Go to next step',
-        'tip_wizard_finish': 'Finish and save configuration',
-        'tip_wizard_cancel': 'Cancel and close the setup wizard',
-        # Step 1 - Language
-        'tip_lang_english': 'Switch language to English',
-        'tip_lang_vietnamese': 'Switch language to Vietnamese',
-        # Step 2 - Window selection
-        'tip_filter': 'Filter by window title or process name',
-        'tip_search_windows': 'Find running game windows',
-        'tip_window_list': 'Select the game window to control',
-        # Step 3 - Monster selection
-        'tip_monster_list': 'Choose a monster to hunt',
-        # Step 4 - Skills
-        'tip_skill_slot': 'Assign a skill to this slot',
-        'tip_clear_all_slots': 'Clear all skill slots',
-        # Setup Screen State
-        'setup.character_class_label': 'Character Class: ',
-        'setup.skills_found': '✅ {count} skills valid',
-        'setup.skills_invalid': '⚠️ {n} invalid',
-        'setup.location_town': '📍 Town',
-        'setup.location_zone': '📍 Zone',
-        'setup.monster_found': '👹 Found',
-        'setup.monster_not_found': '🟢 Ready',
-        # Texts/labels
-        'wizard_title': 'Setup Wizard - Cabal Auto Hunt',
-        'step1_title': '🎉 Welcome to Cabal Auto Hunt!',
-        'step1_subtitle': "Let's get you set up in just 5 easy steps",
-        'language_group': 'Choose Your Language / Chọn ngôn ngữ',
-        'get_started_hint': "Click 'Next' to get started →",
-        'step2_title': 'Step 2: Select Game Window',
-        'step2_subtitle': 'Choose which game window to control',
-        'filter_label': 'Filter:',
-        'search_windows': '🔍 Search Windows',
-        'step3_title': 'Step 3: Choose Monster to Hunt',
-        'step3_subtitle': 'Select which monster you want to hunt',
-        'step4_title': 'Step 4: Configure Attack Skills',
-        'step4_subtitle': 'Assign skills to 9 quick slots (leave empty if not needed)',
-        'clear_all_slots': 'Clear All Slots',
-        'step5_title': 'Step 5: Review & Confirm',
-        'step5_subtitle': 'Review your setup and click Finish to save',
-        'finish_title': 'Finish Setup',
-        'finish_message': '''Configuration completed successfully!
-
-⌨️ KEYBOARD SHORTCUTS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Ctrl+K        →  Open Skill Manager
-• Alt+1         →  Switch to Hunt tab
-• Alt+2         →  Switch to Setup tab
-• Ctrl+Shift+R  →  Start Hunt (global hotkey)
-• Ctrl+Shift+E  →  Stop Hunt (global hotkey)
-
-💡 TIP: Use Ctrl+Shift+R to start and Ctrl+Shift+E to stop hunt!
-
-Save configuration and close wizard?''',
-        'cancel_title': 'Cancel Setup',
-        'cancel_message': 'Are you sure you want to cancel the setup wizard?',
-        # Hints and errors
-        'hint_window_running': '💡 Tip: Make sure your game is running before searching',
-        'err_load_monsters': '⚠️ Error loading monsters: {e}',
-        'no_monsters_found': '⚠️ No monsters found. Please add monsters first.',
-        'err_load_skills': '⚠️ Error loading skills: {e}',
-        'skills_order_hint': '💡 Tip: Skills will be used in order from Slot 1 to Slot 9',
-        # User level selection
-        'user_level_group': 'Select Your Experience Level',
-        'user_level_new': '🌱 New User',
-        'user_level_new_desc': 'First time using the bot - I need help with skill rotation',
-        'user_level_experienced': '⚙️ Experienced User',
-        'user_level_experienced_desc': 'I know what I\'m doing - skip the extra guidance',
-        'tip_user_level_new': 'Get guided help with skill rotation setup',
-        'tip_user_level_experienced': 'Skip extra guidance for experienced users',
-        'first_time_user_hint': 'First-time users must start with \'New User\' option',
-        # Rotation builder button
-        'open_rotation_builder': '🎯 Open Skill Rotation Builder',
-        'tip_rotation_builder': 'Open advanced rotation builder to configure precise skill timing and order (for new users)',
-        'rotation_builder_disabled_hint': '💡 This feature is only available for new users. Select "New User" in Step 1 to enable it.',
-    },
-    'vi': {
-        # Footer buttons
-        'tip_wizard_back': 'Quay lại bước trước',
-        'tip_wizard_next': 'Sang bước tiếp theo',
-        'tip_wizard_finish': 'Hoàn tất và lưu cấu hình',
-        'tip_wizard_cancel': 'Hủy và đóng trợ lý thiết lập',
-        # Step 1 - Language
-        'tip_lang_english': 'Chuyển sang tiếng Anh',
-        'tip_lang_vietnamese': 'Chuyển sang Tiếng Việt',
-        # Step 2 - Window selection
-        'tip_filter': 'Lọc theo tiêu đề cửa sổ hoặc tên tiến trình',
-        'tip_search_windows': 'Tìm các cửa sổ game đang chạy',
-        'tip_window_list': 'Chọn cửa sổ game để điều khiển',
-        # Step 3 - Monster selection
-        'tip_monster_list': 'Chọn quái để săn',
-        # Step 4 - Skills
-        'tip_skill_slot': 'Gán kỹ năng cho ô này',
-        'tip_clear_all_slots': 'Xóa tất cả kỹ năng đã chọn',
-        # Setup Screen State
-        'setup.character_class_label': 'Lớp Nhân Vật: ',
-        'setup.skills_found': '✅ {count} kỹ năng hợp lệ',
-        'setup.skills_invalid': '⚠️ Có {n} skill không hợp lệ',
-        'setup.location_town': '📍 Thành Phố',
-        'setup.location_zone': '📍 Khu Vực Quái',
-        'setup.monster_found': '👹 Có Quái',
-        'setup.monster_not_found': '🟢 Sẵn Sàng',
-        # Texts/labels
-        'wizard_title': 'Trợ Lý Thiết Lập - Cabal Auto Hunt',
-        'step1_title': '🎉 Chào mừng đến Cabal Auto Hunt!',
-        'step1_subtitle': 'Thiết lập trong 5 bước đơn giản',
-        'language_group': 'Chọn ngôn ngữ / Choose Your Language',
-        'get_started_hint': "Nhấn 'Next' để bắt đầu →",
-        'step2_title': 'Bước 2: Chọn cửa sổ game',
-        'step2_subtitle': 'Chọn cửa sổ game để điều khiển',
-        'filter_label': 'Lọc:',
-        'search_windows': '🔍 Tìm cửa sổ',
-        'step3_title': 'Bước 3: Chọn quái để săn',
-        'step3_subtitle': 'Chọn quái bạn muốn săn',
-        'step4_title': 'Bước 4: Thiết lập kỹ năng tấn công',
-        'step4_subtitle': 'Gán kỹ năng vào 9 ô nhanh (có thể để trống)',
-        'clear_all_slots': 'Xóa tất cả ô',
-        'step5_title': 'Bước 5: Xem lại & Xác nhận',
-        'step5_subtitle': 'Xem lại cấu hình và nhấn Finish để lưu',
-        'finish_title': 'Hoàn tất thiết lập',
-        'finish_message': '''Cấu hình hoàn tất thành công!
-
-⌨️ PHÍM TẮT:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Ctrl+K        →  Mở Quản lý Kỹ năng
-• Alt+1         →  Chuyển sang tab Săn
-• Alt+2         →  Chuyển sang tab Thiết lập
-• Ctrl+Shift+R  →  Bắt đầu Săn (hotkey toàn cục)
-• Ctrl+Shift+E  →  Dừng Săn (hotkey toàn cục)
-
-💡 MẸO: Dùng Ctrl+Shift+R để bắt đầu và Ctrl+Shift+E để dừng săn!
-
-Lưu cấu hình và đóng trợ lý?''',
-        'cancel_title': 'Hủy thiết lập',
-        'cancel_message': 'Bạn chắc chắn muốn hủy trợ lý thiết lập?',
-        # Hints and errors
-        'hint_window_running': '💡 Mẹo: Hãy đảm bảo game đang chạy trước khi tìm kiếm',
-        'err_load_monsters': '⚠️ Lỗi khi tải danh sách quái: {e}',
-        'no_monsters_found': '⚠️ Không tìm thấy quái. Vui lòng thêm quái trước.',
-        'err_load_skills': '⚠️ Lỗi khi tải danh sách kỹ năng: {e}',
-        'skills_order_hint': '💡 Mẹo: Kỹ năng sẽ được dùng theo thứ tự từ Ô 1 đến Ô 9',
-        # User level selection
-        'user_level_group': 'Chọn mức độ kinh nghiệm',
-        'user_level_new': '🌱 Người mới',
-        'user_level_new_desc': 'Lần đầu dùng bot - Cần hỗ trợ thiết lập kỹ năng',
-        'user_level_experienced': '⚙️ Người có kinh nghiệm',
-        'user_level_experienced_desc': 'Tôi đã biết cách sử dụng - Bỏ qua hướng dẫn',
-        'tip_user_level_new': 'Nhận hướng dẫn chi tiết thiết lập kỹ năng',
-        'tip_user_level_experienced': 'Bỏ qua hướng dẫn cho người dùng có kinh nghiệm',
-        'first_time_user_hint': 'Người dùng lần đầu phải bắt đầu với tùy chọn \'Người mới\'',
-        # Rotation builder button
-        'open_rotation_builder': '🎯 Mở công cụ thiết lập kỹ năng',
-        'tip_rotation_builder': 'Mở công cụ nâng cao để cấu hình thứ tự và thời gian kỹ năng chính xác (dành cho người mới)',
-        'rotation_builder_disabled_hint': '💡 Tính năng này chỉ dành cho người mới. Chọn "Người mới" ở Bước 1 để kích hoạt.',
-    }
-}
 VISION_WIZARD_TRANSLATIONS = {
     "vi": {
         "vision_wizard_title": "Trình Quản Lý Vision System",
@@ -1367,5 +1172,4 @@ VISION_WIZARD_TRANSLATIONS = {
 }
 
 _register_bulk('library_manager', LIBRARY_MANAGER_TRANSLATIONS)
-_register_bulk('setup_wizard', SETUP_WIZARD_TRANSLATIONS)
 _register_bulk('vision_wizard', VISION_WIZARD_TRANSLATIONS)

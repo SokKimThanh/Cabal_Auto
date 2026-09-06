@@ -1,4 +1,3 @@
-from ui.windows.setup_wizard import show_setup_wizard
 from dialogs.monster_picker import MonsterPickerDialog
 from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
@@ -703,13 +702,6 @@ class App(tk.Tk):
                 "help",
                 "❓"
             ),
-            (
-                "sidebar_quick_setup",
-                lambda: self.on_setup_wizard(hide_parent=False),
-                UI.FONT_SECTION,
-                None,
-                "🔧"
-            ),
         ]
         self._sidebar_widgets = []
 
@@ -1355,12 +1347,6 @@ class App(tk.Tk):
                 except Exception:
                     pass
 
-    def on_setup_wizard(self, hide_parent=True):
-        self.window_controller.on_setup_wizard(hide_parent)
-
-    def try_close_setup_wizard(self) -> bool:
-        return self.window_controller.try_close_setup_wizard()
-
     def try_close_library_manager(self) -> bool:
         return self.library_manager_controller.try_close_library_manager()
 
@@ -1386,33 +1372,9 @@ class App(tk.Tk):
         # TODO Phase 2: Refresh templates or update UI if needed
 
     def _update_hotkeys_state(self):
-        """Update Setup Wizard hotkey enable/disable state based on UI mode.
-
-        Called when:
-        - UI mode changes (beginner/intermediate/advanced)
-        - Global hotkeys are re-registered
-
-        Rules:
-        - Setup Wizard hotkey: Only active in beginner mode
-        - Library Manager hotkey: Always active
+        """Update hotkey state.
+        Called when Global hotkeys are re-registered.
         """
-        mode = (
-            self.setup_mode_var.get() if hasattr(self, "setup_mode_var") else "beginner"
-        )
-
-        # Update Setup Wizard hotkey combo state
-        if hasattr(self, "wizard_hotkey_combo"):
-            if mode == "beginner":
-                self.wizard_hotkey_combo.config(state="readonly")
-                if hasattr(self, "wizard_hotkey_label"):
-                    self.wizard_hotkey_label.config(fg="black")
-            else:
-                self.wizard_hotkey_combo.config(state="disabled")
-                if hasattr(self, "wizard_hotkey_label"):
-                    self.wizard_hotkey_label.config(fg="#999")
-
-        # Library Manager hotkey always enabled (no change needed)
-        # But we re-register hotkeys to update wizard hotkey state
         if hasattr(self, "hunt_cfg"):
             self.hotkey_controller.register_all()
 
@@ -1448,9 +1410,6 @@ class App(tk.Tk):
             if getattr(self.hotkey_controller, "_global_stop_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Stop" if self.lang == "en" else "Dừng")
-            if getattr(self.hotkey_controller, "_global_wizard_hotkey", None):
-                registered_count += 1
-                hotkey_details.append("Wizard" if self.lang == "en" else "Trợ lý")
             if getattr(self.hotkey_controller, "_global_library_hotkey", None):
                 registered_count += 1
                 hotkey_details.append("Library" if self.lang == "en" else "Thư viện")
@@ -2533,9 +2492,6 @@ class App(tk.Tk):
                 stop_key = _hotkey_value(
                     "global_hotkey_stop_var", "stop_key", "ctrl+shift+e"
                 )
-                wizard_key = _hotkey_value(
-                    "global_hotkey_wizard_var", "setup_wizard_key", "ctrl+alt+n"
-                )
                 library_key = _hotkey_value(
                     "global_hotkey_library_var", "library_manager_key", "ctrl+shift+l"
                 )
@@ -2550,7 +2506,6 @@ class App(tk.Tk):
                 all_keys = [
                     start_key,
                     stop_key,
-                    wizard_key,
                     library_key,
                     vision_key,
                     monster_key,
@@ -2571,7 +2526,6 @@ class App(tk.Tk):
                     "enabled": enabled,
                     "start_key": start_key,
                     "stop_key": stop_key,
-                    "setup_wizard_key": wizard_key,
                     "library_manager_key": library_key,
                     "vision_wizard_key": vision_key,
                     "monster_editor_key": monster_key,

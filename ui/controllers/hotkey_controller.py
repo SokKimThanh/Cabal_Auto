@@ -16,7 +16,6 @@ class HotkeyController:
         # Track registered handlers for proper cleanup
         self._global_start_hotkey = None
         self._global_stop_hotkey = None
-        self._global_wizard_hotkey = None
         self._global_library_hotkey = None
         self._global_vision_hotkey = None
         self._global_monster_hotkey = None
@@ -71,7 +70,6 @@ class HotkeyController:
 
                 seq_start = _to_tk_seq(hotkey_cfg.get("start_key", "ctrl+shift+r"))
                 seq_stop = _to_tk_seq(hotkey_cfg.get("stop_key", "ctrl+shift+e"))
-                seq_wiz = _to_tk_seq(hotkey_cfg.get("setup_wizard_key", "ctrl+shift+n"))
                 seq_lib = _to_tk_seq(
                     hotkey_cfg.get("library_manager_key", "ctrl+shift+l")
                 )
@@ -101,14 +99,6 @@ class HotkeyController:
                         add="+",
                     )
                     self._hotkey_fallback_bound.append(seq_stop)
-                    # Wizard only meaningful in beginner mode
-                    if self.parent.hunt_cfg.get("ui_mode", "beginner") == "beginner":
-                        self.parent.bind_all(
-                            seq_wiz,
-                            lambda e: self.on_setup_wizard(),
-                            add="+",
-                        )
-                        self._hotkey_fallback_bound.append(seq_wiz)
                     self.parent.bind_all(
                         seq_lib,
                         lambda e: self.on_library_manager(),
@@ -140,7 +130,6 @@ class HotkeyController:
             # Get hotkey config
             start_key = hotkey_cfg.get("start_key", "ctrl+shift+r")
             stop_key = hotkey_cfg.get("stop_key", "ctrl+shift+e")
-            wizard_key = hotkey_cfg.get("setup_wizard_key", "ctrl+shift+n")
             library_key = hotkey_cfg.get("library_manager_key", "ctrl+shift+l")
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
             monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
@@ -170,24 +159,6 @@ class HotkeyController:
                 print(f"Failed to register stop hotkey '{stop_key}': {e}")
                 self._failed_hotkeys[stop_key] = repr(e)
                 self._global_stop_hotkey = None
-
-            current_mode = self.parent.hunt_cfg.get("ui_mode", "beginner")
-            if current_mode == "beginner":
-                try:
-                    self._global_wizard_hotkey = keyboard.add_hotkey(
-                        wizard_key,
-                        self.on_setup_wizard,
-                        suppress=False,
-                    )
-                    self._registered_hotkey_handlers[wizard_key] = (
-                        self._global_wizard_hotkey
-                    )
-                except Exception as e:
-                    print(f"Failed to register wizard hotkey '{wizard_key}': {e}")
-                    self._failed_hotkeys[wizard_key] = repr(e)
-                    self._global_wizard_hotkey = None
-            else:
-                self._global_wizard_hotkey = None
 
             try:
                 self._global_library_hotkey = keyboard.add_hotkey(
@@ -239,8 +210,6 @@ class HotkeyController:
                 registered.append(f"Start={start_key}")
             if self._global_stop_hotkey:
                 registered.append(f"Stop={stop_key}")
-            if self._global_wizard_hotkey:
-                registered.append(f"Wizard={wizard_key}")
             if self._global_library_hotkey:
                 registered.append(f"Library={library_key}")
             if self._global_vision_hotkey:
@@ -309,14 +278,6 @@ class HotkeyController:
                     print(f"Error unregistering stop hotkey: {e}")
                 finally:
                     self._global_stop_hotkey = None
-
-            if self._global_wizard_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_wizard_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering wizard hotkey: {e}")
-                finally:
-                    self._global_wizard_hotkey = None
 
             if self._global_library_hotkey is not None:
                 try:
