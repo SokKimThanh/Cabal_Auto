@@ -38,7 +38,7 @@ class CompactWindowSelector:
     def _build_ui(self):
         """Build the compact window selector UI."""
         # Main frame
-        self.frame = tk.Frame(self.parent, bg="transparent")
+        self.frame = tk.Frame(self.parent, bg=self.parent.cget("bg"))
         
         # Search frame (always visible)
         self.search_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"))
@@ -134,6 +134,8 @@ class CompactWindowSelector:
         logger.debug("CompactWindowSelector._on_refresh() called")
         try:
             self.win_items = self.window_controller._list_windows()
+            # Update app.win_items for validation
+            self.root.win_items = self.win_items
             logger.debug(f"  Found {len(self.win_items)} windows")
             self._update_listbox()
             self.info_label.config(
@@ -147,6 +149,7 @@ class CompactWindowSelector:
                 fg="#dc2626"
             )
             self.win_items = []
+            self.root.win_items = []
 
     def _on_search_focus_in(self, event=None):
         """Show dropdown when search box focused."""
