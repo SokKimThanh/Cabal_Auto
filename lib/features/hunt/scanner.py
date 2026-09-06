@@ -71,9 +71,9 @@ class AutoScanner:
             return None
         titles = [
             "Cabal", "CABAL", "cabal",       # English
-            "카발", "온라인",                # Korean
-            "Cabała", "Online",              # Polish
-            "卡巴尔", "在线"                 # Chinese
+            "카발",                          # Korean (Cabal)
+            "Cabała",                        # Polish (Cabal)
+            "卡巴尔",                         # Chinese (Cabal)
         ]
         for title in titles:
             hwnd = self.window_manager.find_window(title_contains=title)
