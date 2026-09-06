@@ -25,6 +25,7 @@ class AppWindowController:
 
         wm = WindowManager()
         windows = wm.list_windows(title_contains=title_contains, visible_only=True)
+        
         results: List[Dict[str, Any]] = []
         own_title = ""
         try:
@@ -33,7 +34,7 @@ class AppWindowController:
             logger.error(f"Failed to get own title: {e}")
             own_title = ""
 
-        allowed_processes = ["cabal.exe"]
+        allowed_processes = ["cabal.exe", "cabalmain.exe"]
 
         for info in windows:
             title = (info.title or "").strip()
@@ -53,6 +54,7 @@ class AppWindowController:
                     "is_minimized": info.is_minimized,
                 }
             )
+        
         results.sort(
             key=lambda item: (
                 "cabal" not in item["title"].lower(),
@@ -100,7 +102,9 @@ class AppWindowController:
                 self.root.state_controller._update_window_bounds_display()
 
     def on_hunt_refresh_windows(self, *_args) -> None:
+        logger.debug("on_hunt_refresh_windows() called")
         if getattr(self, "_refresh_locked", False):
+            logger.debug("  Refresh locked, returning early")
             return
         self._refresh_locked = True
         if hasattr(self, "root") and hasattr(self.root, "after"):
@@ -117,21 +121,33 @@ class AppWindowController:
 
                 # Check if minimized or off-screen
                 if info and (info.is_minimized or info.is_offscreen):
-                    import logging
-
-                    logger = logging.getLogger(__name__)
                     logger.info(f"Window {hwnd} is minimized, attempting recovery...")
+                    # Schedule restoration and window refresh (don't return early!)
                     self.root.after(300, self._retry_resolve_bounds, hwnd, 0)
+                    # Continue to scan windows anyway
+                    self.root.bounds_recovery_failed = False
+                    logger.debug("  Calling on_hunt_find_windows() after scheduling restore")
+                    self.on_hunt_find_windows()
                     return
 
-        # Finally re-scan windows to update bounds in UI
+        # Scan windows to update bounds in UI
         self.root.bounds_recovery_failed = False
+        logger.debug("  Calling on_hunt_find_windows()")
         self.on_hunt_find_windows()
 
     def on_hunt_find_windows(self, _evt=None) -> None:
+        """List available windows and update combobox values.
+        
+        IMPORTANT: This only updates the list of available windows in the combobox.
+        It does NOT auto-select, validate, or change the current selection.
+        Selection validation only happens when hunt starts.
+        """
+        logger.debug("on_hunt_find_windows() called")
         try:
             items = self._list_windows()
+            logger.debug(f"  _list_windows() returned {len(items)} items")
         except Exception as exc:
+            logger.error(f"  _list_windows() failed: {exc}")
             self.root.win_items = []
             if hasattr(self.root, "win_combo"):
                 self.root.win_combo["values"] = []
@@ -146,66 +162,25 @@ class AppWindowController:
             item.get("hwnd"): item.get("title") for item in items
         }
         values = [item["title"] for item in items]
+        logger.debug(f"  Setting combobox values: {values}")
         if hasattr(self.root, "win_combo"):
             self.root.win_combo["values"] = values
+            logger.debug(f"  Combobox values set. Current: {self.root.win_combo['values']}")
+        else:
+            logger.warning("  win_combo not found on root!")
 
-        from lib.features.hunt.window_selection_service import (
-            validate_selected_cabal_window,
-        )
-
-        selected = getattr(self.root, "hunt_selected", None)
-
-        # If we have a selection but no items, or the selection is now invalid
-        is_selection_valid = False
-        if selected and items:
-            validation = validate_selected_cabal_window(selected, items)
-            is_selection_valid = validation.is_valid
-
-        if not items or (selected and not is_selection_valid):
-            self.root.hunt_selected = None
-            if hasattr(self.root, "win_combo_var"):
-                self.root.win_combo_var.set("")
-            if hasattr(self.root, "win_combo"):
-                self.root.win_combo.set("")
-            self.root.current_window_bounds = None
-            if hasattr(self.root, "_update_window_bounds_display"):
-                self.root._update_window_bounds_display()
-            if hasattr(self.root, "hunt_status"):
-                if not items:
-                    self.root.hunt_status.set("No visible windows found")
-                else:
-                    self.root.hunt_status.set(
-                        "Selected window invalid, cleared selection."
-                    )
-
-            # Since selection is cleared, ensure we lock UI if needed
-            if hasattr(self.root, "start_stop_btn"):
-                self.root.start_stop_btn.config(state="disabled")
-
-            if not items:
-                return
-
-        target_index = 0
-        selected = getattr(self.root, "hunt_selected", None) or {}
-        selected_hwnd = selected.get("hwnd") if isinstance(selected, dict) else None
-        selected_title = selected.get("title") if isinstance(selected, dict) else None
-        for idx, item in enumerate(items):
-            if selected_hwnd and item["hwnd"] == selected_hwnd:
-                target_index = idx
-                break
-            if selected_title and item["title"] == selected_title:
-                target_index = idx
-                break
-
-        if hasattr(self.root, "win_combo"):
-            self.root.win_combo.current(target_index)
-        if hasattr(self.root, "win_combo_var"):
-            self.root.win_combo_var.set(values[target_index])
-        self.on_window_combo_selected()
+        # Update status to show how many windows found
+        if hasattr(self.root, "hunt_status"):
+            if items:
+                self.root.hunt_status.set(f"Found {len(items)} window(s). Select and click Start.")
+            else:
+                self.root.hunt_status.set("No Cabal windows found. Launch game and try again.")
 
     def on_window_combo_selected(self, _evt=None) -> None:
+        logger.debug("on_window_combo_selected() called")
 
         if not getattr(self.root, "win_items", None):
+            logger.debug("  win_items is empty, setting hunt_selected = None")
             self.root.hunt_selected = None
             return
 
@@ -215,21 +190,46 @@ class AppWindowController:
         index = 0
         try:
             index = int(self.root.win_combo.current())
-        except Exception:
+            logger.debug(f"  Combobox current index: {index}")
+        except Exception as e:
+            logger.debug(f"  Failed to get combobox index: {e}")
             selected_title = (
                 self.root.win_combo_var.get().strip()
                 if hasattr(self.root, "win_combo_var")
                 else ""
             )
+            logger.debug(f"  Trying to find by title: {selected_title}")
             for idx, item in enumerate(self.root.win_items):
                 if item["title"] == selected_title:
                     index = idx
+                    logger.debug(f"  Found at index {idx}")
                     break
 
         if index < 0 or index >= len(self.root.win_items):
+            logger.debug(f"  Index {index} out of bounds, resetting to 0")
             index = 0
 
         selected = dict(self.root.win_items[index])
+        logger.debug(f"  Selected window: {selected['title']} (hwnd={selected['hwnd']})")
+
+        # RESTORE WINDOW FIRST if minimized (important for new selections)
+        hwnd = selected.get("hwnd")
+        if hwnd and selected.get("is_minimized"):
+            logger.info(f"Selected window {hwnd} is minimized, restoring...")
+            try:
+                from lib.system.window_manager import WindowManager
+                wm = WindowManager()
+                wm.restore(hwnd)
+                # Wait briefly for restoration
+                import time
+                time.sleep(0.2)
+                # Get updated window info
+                updated_info = wm.get_window_info(hwnd)
+                if updated_info:
+                    selected["is_minimized"] = updated_info.is_minimized
+                    selected["bounds"] = normalize_window_bounds_value(updated_info.rect)
+            except Exception as e:
+                logger.warning(f"Failed to restore window: {e}")
 
         from lib.features.hunt.window_selection_service import (
             validate_selected_cabal_window,
@@ -237,6 +237,7 @@ class AppWindowController:
 
         validation = validate_selected_cabal_window(selected, self.root.win_items)
         if not validation.is_valid:
+            logger.warning(f"  Window validation failed: {validation.code}")
             if hasattr(self.root, "hunt_status"):
                 self.root.hunt_status.set(
                     f"Selected window is invalid: {validation.code}"
@@ -245,12 +246,14 @@ class AppWindowController:
 
         selected = validation.window
         bounds = normalize_window_bounds_value(selected.get("bounds"))
+        logger.debug(f"  Validation passed, setting hunt_selected")
 
         # Re-enable UI if it was locked
         if hasattr(self.root, "start_stop_btn"):
             self.root.start_stop_btn.config(state="normal")
         self.root.hunt_selected = selected
         self.root.current_window_bounds = bounds
+        logger.debug(f"  hunt_selected set: {self.root.hunt_selected}")
 
         self.root.hunt_cfg["window_title"] = selected["title"]
         self.root.hunt_cfg["window_pid"] = selected["pid"]
@@ -266,6 +269,7 @@ class AppWindowController:
         save_hunt_config(self.root.hunt_cfg)
         if hasattr(self.root, "hunt_status"):
             self.root.hunt_status.set(f"Window selected: {selected['title']}")
+        logger.debug(f"  on_window_combo_selected() completed successfully")
 
     def _auto_detect_and_save_cabal_window(self) -> None:
         try:

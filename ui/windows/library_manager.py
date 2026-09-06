@@ -2201,14 +2201,14 @@ Track progress at:
         )
 
         # Title
-        form_title_frame = tk.Frame(self.template_form_frame, bg=UI.BG_TITLE, height=45)
+        form_title_frame = tk.Frame(self.template_form_frame, bg=UI.BG_ELEVATED, height=45)
         form_title_frame.pack(fill="x")
         form_title_frame.pack_propagate(False)
         self.form_title_label = tk.Label(
             form_title_frame,
             text="",
             font=(UI.FONT_FAMILY, 11, "bold"),
-            bg=UI.BG_TITLE,
+            bg=UI.BG_ELEVATED,
             fg="#FFFFFF",
         )
         self.form_title_label.pack(pady=12, padx=15, side="left")
