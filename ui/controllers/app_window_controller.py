@@ -134,6 +134,12 @@ class AppWindowController:
         self.on_hunt_find_windows()
 
     def on_hunt_find_windows(self, _evt=None) -> None:
+        """List available windows and update combobox values.
+        
+        IMPORTANT: This only updates the list of available windows in the combobox.
+        It does NOT auto-select, validate, or change the current selection.
+        Selection validation only happens when hunt starts.
+        """
         logger.debug("on_hunt_find_windows() called")
         try:
             items = self._list_windows()
@@ -161,59 +167,12 @@ class AppWindowController:
         else:
             logger.warning("  win_combo not found on root!")
 
-        from lib.features.hunt.window_selection_service import (
-            validate_selected_cabal_window,
-        )
-
-        selected = getattr(self.root, "hunt_selected", None)
-
-        # If we have a selection but no items, or the selection is now invalid
-        is_selection_valid = False
-        if selected and items:
-            validation = validate_selected_cabal_window(selected, items)
-            is_selection_valid = validation.is_valid
-
-        if not items or (selected and not is_selection_valid):
-            self.root.hunt_selected = None
-            if hasattr(self.root, "win_combo_var"):
-                self.root.win_combo_var.set("")
-            if hasattr(self.root, "win_combo"):
-                self.root.win_combo.set("")
-            self.root.current_window_bounds = None
-            if hasattr(self.root, "_update_window_bounds_display"):
-                self.root._update_window_bounds_display()
-            if hasattr(self.root, "hunt_status"):
-                if not items:
-                    self.root.hunt_status.set("No visible windows found")
-                else:
-                    self.root.hunt_status.set(
-                        "Selected window invalid, cleared selection."
-                    )
-
-            # Since selection is cleared, ensure we lock UI if needed
-            if hasattr(self.root, "start_stop_btn"):
-                self.root.start_stop_btn.config(state="disabled")
-
-            if not items:
-                return
-
-        target_index = 0
-        selected = getattr(self.root, "hunt_selected", None) or {}
-        selected_hwnd = selected.get("hwnd") if isinstance(selected, dict) else None
-        selected_title = selected.get("title") if isinstance(selected, dict) else None
-        for idx, item in enumerate(items):
-            if selected_hwnd and item["hwnd"] == selected_hwnd:
-                target_index = idx
-                break
-            if selected_title and item["title"] == selected_title:
-                target_index = idx
-                break
-
-        if hasattr(self.root, "win_combo"):
-            self.root.win_combo.current(target_index)
-        if hasattr(self.root, "win_combo_var"):
-            self.root.win_combo_var.set(values[target_index])
-        self.on_window_combo_selected()
+        # Update status to show how many windows found
+        if hasattr(self.root, "hunt_status"):
+            if items:
+                self.root.hunt_status.set(f"Found {len(items)} window(s). Select and click Start.")
+            else:
+                self.root.hunt_status.set("No Cabal windows found. Launch game and try again.")
 
     def on_window_combo_selected(self, _evt=None) -> None:
 
