@@ -13,7 +13,8 @@ class PresetDialog(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
 
-        self.class_id = getattr(self.app, '_current_class_id', 1)
+        app_root = getattr(self.app, "root", self.app)
+        self.class_id = getattr(app_root, "_current_class_id", 1)
 
         self._build_ui()
         self._load_presets()
