@@ -113,11 +113,9 @@ class CompactWindowSelector:
 
     def _on_refresh(self):
         """Refresh window list."""
-        print(f"[DEBUG] _on_refresh() called")
         logger.debug("CompactWindowSelector._on_refresh() called")
         try:
             self.win_items = self.window_controller._list_windows()
-            print(f"[DEBUG] _list_windows() returned {len(self.win_items)} items")
             # Update app.win_items for validation
             self.root.win_items = self.win_items
             logger.debug(f"  Found {len(self.win_items)} windows")
@@ -127,7 +125,6 @@ class CompactWindowSelector:
                 fg="#4ade80"
             )
         except Exception as e:
-            print(f"[DEBUG] _on_refresh error: {e}")
             logger.error(f"  Failed to refresh: {e}")
             self.info_label.config(
                 text=f"Error: {e}",
@@ -156,19 +153,15 @@ class CompactWindowSelector:
 
     def _toggle_dropdown(self):
         """Toggle dropdown visibility using Toplevel popup window."""
-        print(f"[DEBUG] _toggle_dropdown: is_open={self.is_open}, win_items={len(self.win_items)}")
         if self.is_open:
             if self.dropdown_window:
                 self.dropdown_window.destroy()
                 self.dropdown_window = None
-            print(f"[DEBUG] Dropdown window destroyed")
             self.is_open = False
             self.dropdown_btn.config(text="▼")
         else:
             if not self.win_items:
-                print(f"[DEBUG] No items, calling _on_refresh()")
                 self._on_refresh()
-                print(f"[DEBUG] After refresh, win_items={len(self.win_items)}")
             
             # Create Toplevel popup window for dropdown
             self.dropdown_window = tk.Toplevel(self.parent)
@@ -187,8 +180,6 @@ class CompactWindowSelector:
             # Calculate dropdown position (below search_frame)
             dropdown_x = parent_x
             dropdown_y = parent_y + search_height
-            
-            print(f"[DEBUG] Creating Toplevel at x={dropdown_x}, y={dropdown_y}, width={frame_width}")
             
             # Create scrollbar and listbox in Toplevel
             scrollbar = tk.Scrollbar(self.dropdown_window)
@@ -212,7 +203,6 @@ class CompactWindowSelector:
             self.dropdown_window.geometry(f"{frame_width}x150+{dropdown_x}+{dropdown_y}")
             
             self._update_listbox()
-            print(f"[DEBUG] Listbox size after update: {self.listbox.size()}")
             
             self.is_open = True
             self.dropdown_btn.config(text="▲")
@@ -253,7 +243,6 @@ class CompactWindowSelector:
                 return
             
             selected = self.filtered_windows[sel[0]]
-            print(f"[DEBUG] Selected window: {selected['title']}")
             logger.debug(f"Selected window: {selected['title']}")
             
             # Update search entry with selection
@@ -277,7 +266,6 @@ class CompactWindowSelector:
             self.search_entry.after(100, lambda: self.search_entry.bind("<FocusIn>", self._on_search_focus_in))
             
         except Exception as e:
-            print(f"[DEBUG] Error on window select: {e}")
             logger.error(f"Error on window select: {e}")
 
     def set_search_text(self, text: str):
