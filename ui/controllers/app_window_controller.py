@@ -231,6 +231,25 @@ class AppWindowController:
 
         selected = dict(self.root.win_items[index])
 
+        # RESTORE WINDOW FIRST if minimized (important for new selections)
+        hwnd = selected.get("hwnd")
+        if hwnd and selected.get("is_minimized"):
+            logger.info(f"Selected window {hwnd} is minimized, restoring...")
+            try:
+                from lib.system.window_manager import WindowManager
+                wm = WindowManager()
+                wm.restore(hwnd)
+                # Wait briefly for restoration
+                import time
+                time.sleep(0.2)
+                # Get updated window info
+                updated_info = wm.get_window_info(hwnd)
+                if updated_info:
+                    selected["is_minimized"] = updated_info.is_minimized
+                    selected["bounds"] = normalize_window_bounds_value(updated_info.rect)
+            except Exception as e:
+                logger.warning(f"Failed to restore window: {e}")
+
         from lib.features.hunt.window_selection_service import (
             validate_selected_cabal_window,
         )
