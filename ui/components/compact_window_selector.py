@@ -249,7 +249,7 @@ class CompactWindowSelector:
                 height=6,
                 width=50,
                 yscrollcommand=scrollbar.set,
-                font=UI.FONT_MONO,
+                font=UI.FONT_BODY,
                 bg=UI.BG_BASE,
                 fg=UI.TEXT_PRIMARY,
                 selectmode="single",
