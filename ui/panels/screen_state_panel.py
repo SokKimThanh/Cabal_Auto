@@ -1,5 +1,6 @@
 import tkinter as tk
 from typing import Dict, Any
+from PIL import ImageTk, Image
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.i18n import t
 
@@ -25,6 +26,12 @@ class ScreenStatePanel(tk.Frame):
 
         self.lbl_skills = self._create_label(self.container, t("setup.skills_found", default="✅ {count} skills valid").format(count=0))
         self.lbl_skills.grid(row=1, column=1, sticky="w", padx=4, pady=2)
+
+        self.lbl_scan_status = self._create_label(self.container, "⏳ Đang theo dõi...")
+        self.lbl_scan_status.grid(row=2, column=0, columnspan=2, sticky="w", padx=4, pady=2)
+
+        self.lbl_thumbnail = tk.Label(self.container, bg=UI.BG_BASE)
+        self.lbl_thumbnail.grid(row=3, column=0, columnspan=2, sticky="w", padx=4, pady=2)
 
     def _create_label(self, parent: tk.Widget, text: str) -> tk.Label:
         lbl = tk.Label(
@@ -65,3 +72,11 @@ class ScreenStatePanel(tk.Frame):
                     count=state.get("skills_valid_count", "—")
                 )
             )
+
+
+    def update_thumbnail(self, thumbnail_img: Image.Image):
+        """Updates the thumbnail from a PIL image."""
+        if thumbnail_img:
+            self._photo_img = ImageTk.PhotoImage(thumbnail_img)
+            self.lbl_thumbnail.config(image=self._photo_img)
+            self.lbl_scan_status.config(text="✅ Đã cập nhật scan")
