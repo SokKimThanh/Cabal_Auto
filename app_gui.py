@@ -776,7 +776,7 @@ class App(tk.Tk):
 
             def on_enter(event):
                 if button.cget("bg") != UI.BG_SURFACE:
-                    button.config(bg=hover_bg, fg=hover_fg, relief="raised")
+                    button.config(bg=hover_bg, fg=hover_fg, relief="flat")
 
             def on_leave(event):
                 if button.cget("bg") != UI.BG_SURFACE:
@@ -1275,13 +1275,13 @@ class App(tk.Tk):
                         widget.config(
                             bg=UI.BG_SURFACE,
                             fg=UI.ACCENT_GREEN,
-                            text=f"{icon}",
+                            text=f" ▌ {icon}",
                         )
                     else:
                         widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
-                            text=f"{icon}",
+                            text=f" {icon} ",
                         )
 
         if hasattr(target_view, "on_view_shown"):
