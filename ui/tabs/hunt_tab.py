@@ -369,7 +369,12 @@ class HuntTab(ttk.Frame):
         self.col1_paned.add(self.col1_row1_container, weight=35)
 
         from ui.panels.monster_target_panel import MonsterTargetPanel
-        self.monster_target_panel = MonsterTargetPanel(self.col1_row1_container, self.app, scale_factor, hunt_tab=self)
+        self.monster_target_panel = MonsterTargetPanel(
+            self.col1_row1_container,
+            self.app,
+            scale_factor,
+            hunt_tab=self,
+        )
         self.monster_target_panel.pack(fill=tk.BOTH, expand=True)
 
         # Column 1, Row 2 (65%)
