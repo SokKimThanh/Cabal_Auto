@@ -10,20 +10,20 @@ from lib.features.timing.calculator import (
     calculate_timing,
     format_timing_recommendation,
     get_timing_presets,
-)
+        )
 from lib.features.skills.skill_stats import (
     SkillStats,
-)  # Sprint 22 Patch 1: Training Mode
+        )  # Sprint 22 Patch 1: Training Mode
 from ui.controllers.skill_manager_controller import SkillManagerController
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 from lib.features.skills.skill_repo import (
     calculate_attack_speed_from_skills,
-)
+        )
 from lib.features.monsters.monster_repo import (
     calculate_monster_estimate,
     load_monster_library,
     save_monster_library,
-)
+        )
 from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 from lib.features.hunt.hunt_runner import HuntRunner
 from lib.features.hunt.hunt_config import (
@@ -33,7 +33,7 @@ from lib.features.hunt.hunt_config import (
     load_hunt_config,
     save_config,
     save_hunt_config,
-)
+        )
 from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
 from ui.utils.overlay_controller import OverlayController
 from ui.helpers.tooltip import attach_i18n_tooltip
@@ -654,7 +654,7 @@ class App(tk.Tk):
 
         # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
         self.main_shell.columnconfigure(
-            0, minsize=int(260 * scale_factor), weight=0
+            0, minsize=int(72 * scale_factor), weight=0
         )  # Vùng C1 - Sidebar
         self.main_shell.columnconfigure(
             1, minsize=int(960 * scale_factor), weight=1
@@ -677,7 +677,7 @@ class App(tk.Tk):
         )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * scale_factor))
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * scale_factor))
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.shell_zone_a.grid_propagate(False)
 
@@ -791,7 +791,7 @@ self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * sca
                 # Section label (not used in current items but keep logic for safety)
                 lbl = tk.Label(
                     self.shell_zone_c1,
-                    text=f"   {icon} {self._t(key)}",
+                    text=f" {icon} ",
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
                     font=font,
@@ -803,12 +803,12 @@ self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * sca
                 # Button
                 btn = tk.Button(
                     self.shell_zone_c1,
-                    text=f"   {icon} {self._t(key)}",
+                    text=f" {icon} ",
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_PRIMARY,
-                    font=UI.FONT_SMALL,
-                    anchor="w",
+                    font=("Arial", 16),
+                    anchor="center",
                     padx=12,
                     pady=8,
                     relief="flat",
@@ -825,6 +825,15 @@ self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * sca
                 else:
                     btn.pack(fill="x", pady=2)
                 self._sidebar_widgets.append((btn, key, view_target, icon))
+
+                # Add tooltip
+                from ui.helpers.tooltip import attach_i18n_tooltip
+                attach_i18n_tooltip(
+                    btn,
+                    key=key,
+                    ns="global",
+                    lang_provider=lambda: getattr(self, "lang", "en"),
+                )
 
         # Vùng B: Active Hunt Workspace
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_BASE)
@@ -844,13 +853,13 @@ self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * sca
 
         # Configure scroll region when frame size changes
 # Configure scroll region when frame size changes
-_action_bar_config_tag = "action_bar_frame_config"
-self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
-self.bind_class(
-    _action_bar_config_tag,
-    "<Configure>",
-    lambda e: self.action_bar_canvas.configure(scrollregion=self.action_bar_canvas.bbox("all")),
-)
+        _action_bar_config_tag = "action_bar_frame_config"
+        self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
+        self.bind_class(
+            _action_bar_config_tag,
+            "<Configure>",
+            lambda e: self.action_bar_canvas.configure(scrollregion=self.action_bar_canvas.bbox("all")),
+        )
 
         self.action_bar_frame_id = self.action_bar_canvas.create_window((0, 0), window=self.action_bar_frame, anchor="nw")
 
@@ -872,9 +881,9 @@ self.bind_class(
         self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
 
         # Configure columns for action_bar_frame (3 columns)
-        self.action_bar_frame.columnconfigure(0, weight=1)  # Left
+        self.action_bar_frame.columnconfigure(0, weight=0)  # Left
         self.action_bar_frame.columnconfigure(1, weight=1)  # Center
-        self.action_bar_frame.columnconfigure(2, weight=1)  # Right
+        self.action_bar_frame.columnconfigure(2, weight=0)  # Right
 
         # Compact Window Selector (replaces combobox + refresh button)
         from ui.components.compact_window_selector import CompactWindowSelector
@@ -1400,7 +1409,7 @@ self.bind_class(
             for widget, key, _ in self._sidebar_widgets:
                 try:
                     if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
-                        widget.config(text=self._t(key))
+                        pass # Translations for sidebar now handled by tooltips
                 except Exception:
                     pass
 
