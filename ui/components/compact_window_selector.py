@@ -1,10 +1,10 @@
-"""Compact window selector for hunt tab header bar - Linear UI version."""
-
- # NOTE: Avoid mutating sys.path at import-time; ensure the app is launched from the project root so absolute imports resolve.
+"""Compact window selector for hunt tab header bar."""
 
 import tkinter as tk
+from tkinter import ttk
 from typing import List, Dict, Any, Callable, Optional
 import logging
+from lib.ui_style_v2 import UIStyleV2 as UI
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,8 @@ class CompactWindowSelector:
             self.search_frame,
             text="Window:",
             bg=self.parent.cget("bg"),
-            fg="#9ca3af",
-            font=("Arial", 9),
+            fg=UI.TEXT_SECONDARY,
+            font=UI.FONT_TEXT,
         )
         search_label.pack(side="left", padx=(0, 5))
 
@@ -63,7 +63,7 @@ class CompactWindowSelector:
             self.search_frame,
             textvariable=self.search_var,
             width=30,
-            font=("Arial", 9),
+            font=UI.FONT_TEXT,
         )
         self.search_entry.pack(side="left", padx=(0, 8), fill="x", expand=True)
         self.search_entry.bind("<Return>", self._on_search_enter)
@@ -77,8 +77,8 @@ class CompactWindowSelector:
             text="▼",
             width=2,
             height=1,
-            bg="#2a2a2a",
-            fg="#d1d5db",
+            bg=UI.BG_SURFACE,
+            fg=UI.TEXT_PRIMARY,
             relief="flat",
             command=self._toggle_dropdown,
             cursor="hand2",
@@ -91,8 +91,8 @@ class CompactWindowSelector:
             text="🔄",
             width=2,
             height=1,
-            bg="#2a2a2a",
-            fg="#d1d5db",
+            bg=UI.BG_SURFACE,
+            fg=UI.TEXT_PRIMARY,
             relief="flat",
             command=self._on_refresh_clicked,
             cursor="hand2",
@@ -103,9 +103,9 @@ class CompactWindowSelector:
         self.info_label = tk.Label(
             self.frame,
             text="Click refresh to load windows",
-            font=("Arial", 8),
+            font=UI.FONT_SMALL,
             bg=self.parent.cget("bg"),
-            fg="#6b7280",
+            fg=UI.TEXT_MUTED,
         )
         self.info_label.pack(side="bottom", fill="x", pady=(2, 0))
 
@@ -133,7 +133,7 @@ class CompactWindowSelector:
         # Update UI label
         self.info_label.config(
             text=f"✓ Found {len(self.win_items)} window(s)",
-            fg="#4ade80"
+            fg=UI.ACCENT_GREEN
         )
 
         # If dropdown is open, immediately update listbox
@@ -154,7 +154,7 @@ class CompactWindowSelector:
         logger.error(f"  Failed to refresh: {e}")
         self.info_label.config(
             text=f"Error: {e}",
-            fg="#dc2626"
+            fg=UI.DANGER
         )
         self.win_items = []
         if hasattr(self.root, 'win_items'):
@@ -225,7 +225,7 @@ class CompactWindowSelector:
             # Create Toplevel popup window for dropdown
             self.dropdown_window = tk.Toplevel(self.parent)
             self.dropdown_window.wm_overrideredirect(True)  # No window decorations
-            self.dropdown_window.configure(bg="#1a1a1a")
+            self.dropdown_window.configure(bg=UI.BG_ELEVATED)
             # Make popup grab all events (modal-like behavior)
             self.dropdown_window.grab_set()
 
@@ -249,9 +249,9 @@ class CompactWindowSelector:
                 height=6,
                 width=50,
                 yscrollcommand=scrollbar.set,
-                font=("Courier New", 9),
-                bg="#111111",
-                fg="#d1d5db",
+                font=UI.FONT_MONO,
+                bg=UI.BG_BASE,
+                fg=UI.TEXT_PRIMARY,
                 selectmode="single",
             )
             self.listbox.pack(side="left", fill="both", expand=True)
@@ -355,5 +355,4 @@ class CompactWindowSelector:
                 return self.filtered_windows[sel[0]]
         except Exception:
             pass
-        return None
         return None

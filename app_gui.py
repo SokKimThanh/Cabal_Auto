@@ -95,8 +95,7 @@ import logging
 from lib.logging_config import setup_logging
 
 # Initialize logging system (size-based rotation: 5MB per file, keep 3 backups)
-if not logging.getLogger().handlers:
-     setup_logging(rotation_type='size')
+setup_logging(rotation_type='size')
 
 logger = logging.getLogger(__name__)
 
@@ -808,7 +807,7 @@ class App(tk.Tk):
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_PRIMARY,
-                    font=("Arial", 16),
+                    font=UI.FONT_LARGE,
                     anchor="center",
                     padx=12,
                     pady=8,
@@ -852,6 +851,7 @@ class App(tk.Tk):
         )
 
         # Configure scroll region when frame size changes
+# Configure scroll region when frame size changes
         _action_bar_config_tag = "action_bar_frame_config"
         self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
         self.bind_class(
