@@ -219,13 +219,13 @@ class HuntTab(ttk.Frame):
             self.app.hunt_target_info.set(f"Target: #{info['id']}")
 
         if info.get("is_placeholder"):
-            self.hunt_status_label.config(fg=UI.ACCENT_AMBER)
+            if isinstance(self.hunt_status_label, tk.Label): self.hunt_status_label.config(fg=UI.ACCENT_AMBER)
             if hasattr(self.app, "_create_tooltip"):
                 self.app._create_tooltip(
                     self.hunt_status_label, self.app._t("target_card.unknown_mob")
                 )
         else:
-            self.hunt_status_label.config(fg=UI.ACCENT_GREEN)
+            if isinstance(self.hunt_status_label, tk.Label): self.hunt_status_label.config(fg=UI.ACCENT_GREEN)
             if hasattr(self.app, "_destroy_widget_tooltip"):
                 self.app._destroy_widget_tooltip(self.hunt_status_label)
             self.hunt_status_label.unbind("<Enter>")
