@@ -11,10 +11,10 @@ class UIStyleV2:
     # =========================================================
 
     # Backgrounds
-    BG_BASE = "#0f0f0f"  # Main app background
-    BG_SURFACE = "#1a1a1a"  # Panels, cards, elevated content
-    BG_ELEVATED = "#111111"  # Sidebar, header, inputs, surfaces
-    BG_SUBTLE = "#0a0a0a"  # Status bar, dividers
+    BG_BASE = "#10131A"  # Main app background
+    BG_SURFACE = "#181C25"  # Panels, cards, elevated content
+    BG_ELEVATED = "#131720"  # Sidebar, header, inputs, surfaces
+    BG_SUBTLE = "#0C0F15"  # Status bar, dividers
 
     # Borders & Dividers
     BORDER_PRIMARY = "#2a2a2a"  # Standard panel borders
@@ -118,9 +118,9 @@ class UIStyleV2:
     # TYPOGRAPHY
     # =========================================================
 
-    FONT_FAMILY_UI = "Inter"
+    FONT_FAMILY_UI = "IBM Plex Sans"
     FONT_FAMILY_UI_FALLBACK = "Segoe UI"
-    FONT_FAMILY_MONO = "JetBrains Mono"
+    FONT_FAMILY_MONO = "IBM Plex Mono"
     FONT_FAMILY_MONO_FALLBACK = "Courier New"
 
     # Backward compatibility aliases

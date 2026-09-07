@@ -3,7 +3,6 @@
 import tkinter as tk
 from lib.ui_style_v2 import UIStyleV2 as UI
 
-
 class EmptyState(tk.Frame):
     """Display empty state with icon, message, and guidance"""
 
@@ -20,8 +19,6 @@ class EmptyState(tk.Frame):
             font=(UI.FONT_FAMILY_UI_FALLBACK, 48),
             bg=UI.BG_BASE,
             fg=UI.TEXT_MUTED,
-            # Note: fg_opacity parameter doesn't exist in standard tkinter label,
-            # so we just use the TEXT_MUTED color.
         )
         icon_label.pack(pady=(20, 10))
 

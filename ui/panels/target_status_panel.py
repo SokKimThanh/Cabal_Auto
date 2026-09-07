@@ -192,13 +192,14 @@ class TargetStatusPanel(ttk.LabelFrame):
             bg=UI.BG_SURFACE
         ).pack()
 
-        tk.Label(
+        from ui.components.empty_state import EmptyState
+        self.empty_state_comp = EmptyState(
             self.empty_identity_frame,
-            text="Bắt đầu săn để hiển thị thông tin",
-            font=(self.font_ui, UI.SIZE_TINY),
-            fg=UI.TEXT_SUBTLE,
-            bg=UI.BG_SURFACE
-        ).pack()
+            icon="ℹ️",
+            message="Chưa có mục tiêu",
+            submessage="Bắt đầu săn để hiển thị thông tin mục tiêu ở đây."
+        )
+        self.empty_state_comp.pack(fill="both", expand=True)
 
         # Active state container
         self.active_identity_frame = tk.Frame(self.identity_frame, bg=UI.BG_SURFACE)
@@ -304,24 +305,25 @@ class TargetStatusPanel(ttk.LabelFrame):
         )
         val_lbl.pack(side="right")
 
-        # Row 1: Bar
-        canvas = tk.Canvas(frame, height=5, bg=UI.BG_SUBTLE, highlightthickness=0)
-        canvas.pack(fill="x", pady=(2, 0))
+        # Row 1: Real Progress Bar (Thicker, more visible)
+        bar_height = 16
+        canvas = tk.Canvas(frame, height=bar_height, bg=UI.BG_SUBTLE, highlightthickness=0)
+        canvas.pack(fill="x", pady=(4, 0))
 
         # We need to bind configure to update the fill width correctly
         def _on_resize(event):
             # Track width is event.width
-            canvas.coords(track, 0, 0, event.width, 5)
+            canvas.coords(track, 0, 0, event.width, bar_height)
             # Fill width needs to be calculated based on current ratio
             if hasattr(canvas, 'current_ratio'):
-                canvas.coords(fill_rect, 0, 0, event.width * canvas.current_ratio, 5)
+                canvas.coords(fill_rect, 0, 0, event.width * canvas.current_ratio, bar_height)
             else:
-                canvas.coords(fill_rect, 0, 0, 0, 5)
+                canvas.coords(fill_rect, 0, 0, 0, bar_height)
 
         canvas.bind("<Configure>", _on_resize)
 
-        track = canvas.create_rectangle(0, 0, 1, 5, fill=UI.BG_SUBTLE, outline=UI.BG_SUBTLE)
-        fill_rect = canvas.create_rectangle(0, 0, 0, 5, fill=color, outline=color)
+        track = canvas.create_rectangle(0, 0, 1, bar_height, fill=UI.BG_SUBTLE, outline=UI.BG_SUBTLE)
+        fill_rect = canvas.create_rectangle(0, 0, 0, bar_height, fill=color, outline=color)
         canvas.current_ratio = 0.0
 
         return val_lbl, canvas, fill_rect
@@ -414,13 +416,13 @@ class TargetStatusPanel(ttk.LabelFrame):
             hp_ratio = info.hp / info.max_hp if info.max_hp > 0 else 0
             self.hp_bar_canvas.current_ratio = hp_ratio
             width = self.hp_bar_canvas.winfo_width()
-            self.hp_bar_canvas.coords(self.hp_fill_rect, 0, 0, width * hp_ratio, 5)
+            self.hp_bar_canvas.coords(self.hp_fill_rect, 0, 0, width * hp_ratio, 16)
 
             self.mp_val_lbl.config(text=format_stat(info.mp, info.max_mp), fg=UI.TEXT_PRIMARY)
             mp_ratio = info.mp / info.max_mp if info.max_mp > 0 else 0
             self.mp_bar_canvas.current_ratio = mp_ratio
             width = self.mp_bar_canvas.winfo_width()
-            self.mp_bar_canvas.coords(self.mp_fill_rect, 0, 0, width * mp_ratio, 5)
+            self.mp_bar_canvas.coords(self.mp_fill_rect, 0, 0, width * mp_ratio, 16)
 
             # 4. Cập nhật 3 stat pills
             self.def_val_lbl.config(text=f"{info.defense:,}")

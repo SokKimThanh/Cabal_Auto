@@ -139,7 +139,14 @@ class MonsterTargetPanel(ttk.LabelFrame):
         monster_scroll.pack(side="right", fill="y")
         self.app.monster_rotation_listbox.config(yscrollcommand=monster_scroll.set)
 
-        btn_container = tk.Frame(list_container, bg=UI.BG_SURFACE)
+        # Create a toolbar frame with a subtle background and rounded-like appearance
+        btn_container = tk.Frame(
+            list_container,
+            bg=UI.BG_ELEVATED,
+            highlightbackground=UI.BORDER_SUBTLE,
+            highlightthickness=1,
+            padx=4, pady=4
+        )
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
         self.app.btn_add_monster = tk.Button(
@@ -385,14 +392,28 @@ class MonsterTargetPanel(ttk.LabelFrame):
         self.app.monster_rotation_listbox.bind("<Control-a>", _select_all_monsters)
         self.app.monster_rotation_listbox.bind("<Control-A>", _select_all_monsters)
 
-        tk.Label(
+        self.configured_empty = EmptyState(
             self.configured_container,
-            text=self.app._t("monster_rotation_delete_hint"),
-            fg=UI.TEXT_PRIMARY,
-            bg=UI.BG_SURFACE,
-            font=UI.FONT_TEXT,
-            anchor="w",
-        ).pack(fill="x", pady=(4, 0))
+            icon="🎯",
+            message="Danh sách mục tiêu trống",
+            submessage="Thêm quái vật vào danh sách để bắt đầu săn.",
+        )
+        self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
+
+        def _update_configured_empty_state(*args):
+            if hasattr(self.app, "monster_rotation_listbox"):
+                if self.app.monster_rotation_listbox.size() > 0:
+                    self.configured_empty.pack_forget()
+                else:
+                    self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
+
+        # Use a polling loop to check listbox size dynamically since we don't have direct bindings here
+        def _poll_configured_empty_state():
+            _update_configured_empty_state()
+            self.after(1000, _poll_configured_empty_state)
+
+        self.after(100, _poll_configured_empty_state)
+
 
         self.app.training_mode_hint_var = tk.StringVar()
         self.app.training_mode_hint_label = tk.Label(

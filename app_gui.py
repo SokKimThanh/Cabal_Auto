@@ -1339,6 +1339,9 @@ class App(tk.Tk):
 
             self.screen_state_panel.update_from_scan(state)
 
+            if "thumbnail" in results:
+                self.screen_state_panel.update_thumbnail(results["thumbnail"])
+
     def _load_monster_rotation_list(self):
         saved_list = self.hunt_cfg.get("monster_rotation", [])
         self.monster_rotation = []
