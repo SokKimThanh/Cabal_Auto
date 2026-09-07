@@ -693,12 +693,12 @@ class App(tk.Tk):
 
         brand_label = tk.Label(
             brand_frame,
-            text="⚔️",
-            font=UI.FONT_LARGE,
+            text="⚔️ CABAL ASSISTANT",
+            font=UI.FONT_SMALL,
             fg=UI.ACCENT_GREEN,
             bg=UI.BG_ELEVATED,
-            anchor="center",
-            justify="center",
+            anchor="w",
+            justify="left",
         )
         brand_label.pack(fill="x", pady=(16, 12))
 
@@ -791,7 +791,7 @@ class App(tk.Tk):
                 # Section label (not used in current items but keep logic for safety)
                 lbl = tk.Label(
                     self.shell_zone_c1,
-                    text=f"{icon}",
+                    text=f" {icon} ",
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
                     font=font,
@@ -816,7 +816,7 @@ class App(tk.Tk):
                 )
 
                 apply_button_hover_effects(
-                    btn, hover_color=UI.BG_SURFACE, active_color=UI.BG_SURFACE
+                    btn, hover_color=UI.BG_SURFACE, active_color=UI.ACCENT_GREEN_BG
                 )
 
                 if font == UI.FONT_LABEL:
@@ -1273,15 +1273,15 @@ class App(tk.Tk):
                     original_text = self._t(key)
                     if view_target == view_key:
                         widget.config(
-                            bg=UI.BG_SURFACE,
+                            bg=UI.ACCENT_GREEN_BG,
                             fg=UI.ACCENT_GREEN,
-                            text=f"{icon}",
+                            text=f" ▌ {icon} ",
                         )
                     else:
                         widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
-                            text=f"{icon}",
+                            text=f" {icon} ",
                         )
 
         if hasattr(target_view, "on_view_shown"):
