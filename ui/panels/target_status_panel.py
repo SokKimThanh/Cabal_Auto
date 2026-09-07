@@ -33,11 +33,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
     def _setup_legacy_wrappers(self):
         """Creates dummy objects for legacy code that expects standard tkinter widgets"""
-        # We need to map some of the legacy app references to this widget
-        # to ensure code that directly manipulates app.hp_canvas etc doesn't crash
-        # For full correctness, those codes should use update_target.
-
-        self.app.hp_canvas = tk.Canvas(self) # Dummy for compatibility
+        self.app.hp_canvas = tk.Canvas(self)
         self.app.hp_percent_label = tk.Label(self)
         self.app.target_image_label = tk.Label(self)
         self.app.target_name_label = tk.Label(self)
@@ -55,6 +51,8 @@ class TargetStatusPanel(ttk.LabelFrame):
         self.app.hunt_target_info = tk.StringVar(value="")
         self.app.hunt_target_info_label = tk.Label(self, textvariable=self.app.hunt_target_info)
 
+        self._current_info = TargetInfo()
+
         if getattr(self, "hunt_tab", None):
             for prop in ["target_image_label", "target_name_label", "status_label",
                          "target_level_label", "target_hp_label", "target_def_label",
@@ -63,21 +61,84 @@ class TargetStatusPanel(ttk.LabelFrame):
                 if hasattr(self.app, prop):
                     setattr(self.hunt_tab, prop, getattr(self.app, prop))
 
-        # Intercept config on some labels to update TargetInfo if needed
-        # Since hunt_tab.update_target_card calls config on target_name_label,
-        # we can hook into it.
-        orig_config = self.app.target_name_label.config
-        def hooked_config(*args, **kwargs):
+        def intercept_name(*args, **kwargs):
             if "text" in kwargs:
-                # Basic sync for target name changes
-                pass
-            return orig_config(*args, **kwargs)
-        self.app.target_name_label.config = hooked_config
+                self._current_info.name = kwargs["text"]
+                if self._current_info.state == "waiting" and self._current_info.name and self._current_info.name != "UnknownMob":
+                    self._current_info.state = "ready"
+                elif not self._current_info.name or self._current_info.name == "UnknownMob":
+                    self._current_info.state = "waiting"
+                self.update_target(self._current_info)
+            return tk.Label.config(self.app.target_name_label, *args, **kwargs)
+        self.app.target_name_label.config = intercept_name
+
+        def intercept_level(*args, **kwargs):
+            if "text" in kwargs:
+                try: self._current_info.level = int(kwargs["text"])
+                except: pass
+                self.update_target(self._current_info)
+            return tk.Label.config(self.app.target_level_label, *args, **kwargs)
+        self.app.target_level_label.config = intercept_level
+
+        def intercept_max_hp(*args, **kwargs):
+            if "text" in kwargs:
+                try:
+                    self._current_info.max_hp = int(kwargs["text"])
+                    if self._current_info.hp == 0:
+                        self._current_info.hp = self._current_info.max_hp # initialize full
+                except: pass
+                self.update_target(self._current_info)
+            return tk.Label.config(self.app.target_hp_label, *args, **kwargs)
+        self.app.target_hp_label.config = intercept_max_hp
+
+        def intercept_def(*args, **kwargs):
+            if "text" in kwargs:
+                try: self._current_info.defense = int(kwargs["text"])
+                except: pass
+                self.update_target(self._current_info)
+            return tk.Label.config(self.app.target_def_label, *args, **kwargs)
+        self.app.target_def_label.config = intercept_def
+
+        def intercept_status(*args, **kwargs):
+            if "status" in kwargs:
+                if kwargs["status"] == "hunting": self._current_info.state = "hunting"
+                elif kwargs["status"] == "waiting": self._current_info.state = "waiting"
+                else: self._current_info.state = "ready"
+                self.update_target(self._current_info)
+            return tk.Label.config(self.app.status_label, *args, **kwargs)
+        self.app.status_label.config = intercept_status
+
+        # Intercept hp_canvas itemconfig for HP updates
+        orig_itemconfig = self.app.hp_canvas.itemconfig
+        def intercept_hp_canvas_itemconfig(tagOrId, **kwargs):
+            if tagOrId == self.app.hp_fill and "fill" in kwargs:
+                color = kwargs["fill"]
+                if color == "#52525B": # dead
+                    self._current_info.hp = 0
+                    self._current_info.state = "waiting"
+                    self.update_target(self._current_info)
+                elif color == UI.ACCENT_GREEN: # hunting / full
+                    self._current_info.state = "hunting"
+                    self.update_target(self._current_info)
+            return orig_itemconfig(tagOrId, **kwargs)
+        self.app.hp_canvas.itemconfig = intercept_hp_canvas_itemconfig
+
+        # Intercept coords to update HP ratio
+        orig_coords = self.app.hp_canvas.coords
+        def intercept_hp_canvas_coords(tagOrId, *args):
+            if tagOrId == self.app.hp_fill and len(args) == 4:
+                # args are x1, y1, x2, y2
+                width = args[2] - args[0]
+                total_width = self.app.hp_canvas.winfo_width()
+                if total_width > 0:
+                    ratio = width / total_width
+                    self._current_info.hp = int(self._current_info.max_hp * ratio)
+                    self.update_target(self._current_info)
+            return orig_coords(tagOrId, *args)
+        self.app.hp_canvas.coords = intercept_hp_canvas_coords
+
 
     def _build_ui(self):
-        # Outer Frame padding
-        self.pack_propagate(False) # if we want fixed width
-
         # --- SECTION 1: Header bar ---
         header_frame = tk.Frame(self, bg=UI.BG_ELEVATED)
         header_frame.pack(side="top", fill="x")
