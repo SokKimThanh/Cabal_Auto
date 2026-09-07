@@ -54,3 +54,14 @@ ui/
 2. **Bước 2**: Chuyển đổi các Panel hiện có trong `ui/panels/` (ví dụ `ScreenStatePanel`, `SkillStatsPanel`, `MonsterTargetPanel`) để kế thừa từ `ResponsiveGridBase` thay vì `tk.Frame` hay `ttk.LabelFrame`.
 3. **Bước 3**: Loại bỏ các layout cứng ngắc gây che lấp như `ttk.PanedWindow` trong các Workspace (`ui/tabs/hunt_tab.py`) và thay thế bằng việc xếp các `ResponsiveGridBase` vào một luồng (flow) tự động scroll.
 4. **Bước 4**: Tinh chỉnh lại luồng dữ liệu một chiều (One-way data flow: Controller -> Component -> Action).
+
+## 5. Tiêu Chí Đo Lường Sự Thành Công (Measurable Criteria)
+Để xác nhận quá trình migration sang hệ thống lưới mới thành công và đạt được mục tiêu "chống che khuất", hệ thống phải thỏa mãn các tiêu chí đo lường sau:
+
+### 5.1. Kích thước cửa sổ (Window Dimensions)
+- **Độ phân giải mục tiêu (Target Resolution)**: Giao diện phải hiển thị hoàn hảo, không có thanh cuộn (scrollbars) dư thừa ở độ phân giải tiêu chuẩn `1920x1080`.
+- **Kích thước cửa sổ tối thiểu (Minimum Window Size)**: Giao diện phải duy trì được cấu trúc, không bị lỗi layout khi cửa sổ bị ép xuống kích thước tối thiểu là `800x600`. Dưới kích thước này, thanh cuộn phải xuất hiện để bao bọc toàn bộ nội dung.
+
+### 5.2. Đo lường "Chống che khuất" (Zero-occlusion Measurement)
+- **Kiểm tra thông số kỹ thuật (Technical Verification)**: Tại mọi thời điểm, chiều rộng thực tế của một widget không được nhỏ hơn chiều rộng yêu cầu tối thiểu của nó. Hệ thống test cần xác nhận: `widget.winfo_width() >= widget.winfo_reqwidth()` đối với tất cả các leaf-widgets (như Button, Label).
+- **Kiểm tra hành vi cuộn (Scroll Behavior)**: Khi chiều cao thực tế của cửa sổ (`window.winfo_height()`) nhỏ hơn tổng chiều cao yêu cầu của các component bên trong (`frame.winfo_reqheight()`), thanh trượt dọc (Vertical Scrollbar) phải tự động được kích hoạt và cho phép người dùng cuộn đến điểm tận cùng của component dưới cùng.
