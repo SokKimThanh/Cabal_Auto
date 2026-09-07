@@ -1275,13 +1275,13 @@ class App(tk.Tk):
                         widget.config(
                             bg=UI.ACCENT_GREEN_BG,
                             fg=UI.ACCENT_GREEN,
-                            text=f" ▌ {icon} {original_text}",
+                            text=f" ▌ {icon} ",
                         )
                     else:
                         widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
-                            text=f"   {icon} {original_text}",
+                            text=f" {icon} ",
                         )
 
         if hasattr(target_view, "on_view_shown"):
