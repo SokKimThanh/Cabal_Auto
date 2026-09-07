@@ -7,7 +7,9 @@ Tài liệu này đề xuất một kiến trúc hệ thống Grid (lưới) m�
 - **Component-based Architecture**: Tách biệt UI và Logic thành các component độc lập, có đầu vào (inputs/props) và đầu ra (outputs/callbacks/events) rõ ràng.
 - **Theo dõi vòng đời**: Tích hợp cơ chế logging cho các sự kiện layout để dễ dàng debug.
 
-## 2. Kiến Trúc Lõi: Component "ResponsiveGridBase"
+## 2. Kiến Trúc Lõi: Component "ResponsiveGridBase" (Proposed - Not Yet Implemented)
+
+*Lưu ý: Component `ResponsiveGridBase` hiện tại là một đề xuất thiết kế và chưa được cài đặt trong codebase. Hệ thống hiện hành vẫn đang dùng các Frame tiêu chuẩn (`ttk.Frame`, `tk.Frame`) mà không có cơ chế cuộn tự động này.*
 
 Hệ thống sẽ được xây dựng xoay quanh một class gốc (base class) có tên `ResponsiveGridBase` kế thừa từ một khung cuộn (Scrollable Frame). Tất cả các Panel hiện có (như trong `ui/panels/`) sẽ kế thừa từ component này.
 
@@ -20,11 +22,11 @@ Hệ thống sẽ được xây dựng xoay quanh một class gốc (base class)
   - Binding sự kiện cuộn chuột (Mouse wheel) phải được xử lý cross-platform: Windows dùng `<MouseWheel>` với delta ±120, trong khi Linux/Mac dùng `<Button-4>` và `<Button-5>`.
 
 ### 2.1.a. Chiến lược Responsive cho Sidebar (`shell_zone_c1`)
-Vùng Sidebar (Navigation) cũng phải kế thừa cơ chế cuộn tương tự `ResponsiveGridBase`. Khi số lượng tab điều hướng vượt quá chiều cao màn hình, thanh cuộn phải tự động xuất hiện để người dùng không bị mất quyền truy cập vào các tab bên dưới.
+Vùng Sidebar (Navigation) cũng sẽ phải được nâng cấp để kế thừa cơ chế cuộn tương tự `ResponsiveGridBase`. *(Hiện tại sidebar trong `app_gui.py` vẫn là một vùng tĩnh không cuộn).* Khi số lượng tab điều hướng vượt quá chiều cao màn hình, thanh cuộn phải tự động xuất hiện để người dùng không bị mất quyền truy cập vào các tab bên dưới.
 
 ### 2.2. Tích hợp UIStyleV2
 Mọi chỉ số trong Grid phải được ánh xạ từ `UIStyleV2`:
-- `padx`, `pady` sử dụng `UIStyleV2.SPACING_MD`, `SPACING_LG`.
+- `padx`, `pady` sử dụng các hằng số không gian (spacing) chính xác từ `UIStyleV2` như `UIStyleV2.SPACE_MD`, `UIStyleV2.SPACE_LG` (lưu ý tiền tố `SPACE_` để tương thích với codebase hiện tại).
 - Backgrounds phải kế thừa từ `UIStyleV2.BG_BASE` hoặc `UIStyleV2.BG_SURFACE`.
 
 ### 2.3. Cơ chế Logging Vòng Đời Layout
@@ -56,7 +58,9 @@ ui/
 ```
 
 ## 4. Nguyên Tắc Cập Nhật & Di Dời (Migration Strategy)
-1. **Bước 1**: Tạo `ResponsiveGridBase` hoàn chỉnh với tính năng scroll và logging, đảm bảo chữ ký (constructor signature) tương thích ngược (hoặc có wrapper proxy) với `ttk.LabelFrame` để không phá vỡ logic khởi tạo hiện hành.
+*Trạng thái hiện tại: Hệ thống đang ở Bước 0. Các panel đã được tách ra thư mục riêng (`ui/panels/`) nhưng vẫn dùng `tk.Frame`/`ttk.Frame` nguyên thủy và bố cục cứng (như `ttk.PanedWindow`).*
+
+1. **Bước 1**: Tạo file `ui/components/base/responsive_grid_base.py` và implement `ResponsiveGridBase` hoàn chỉnh với tính năng scroll và logging, đảm bảo chữ ký (constructor signature) tương thích ngược (hoặc có wrapper proxy) với `ttk.LabelFrame`/`ttk.Frame` để không phá vỡ logic khởi tạo hiện hành.
 2. **Bước 2**: Xác định ưu tiên chuyển đổi (Priority Routing) - Bắt đầu từ các Panel ít phụ thuộc nhất (như `SkillStatsPanel`), kiểm thử hồi quy (regression test) trước khi di dời các Panel phức tạp hơn (như `MonsterTargetPanel`).
 3. **Bước 3**: Loại bỏ các layout cứng ngắc gây che lấp như `ttk.PanedWindow` trong các Workspace (`ui/tabs/hunt_tab.py`) và thay thế bằng việc xếp các `ResponsiveGridBase` vào một luồng (flow) tự động scroll.
 4. **Bước 4**: Tinh chỉnh lại luồng dữ liệu một chiều (One-way data flow: Controller -> Component -> Action).
