@@ -684,11 +684,14 @@ class App(tk.Tk):
         self.shell_zone_a.grid_propagate(False)
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
-        self.shell_zone_c1 = tk.Frame(
+        from ui.components.base.responsive_grid_base import ResponsiveGridBase
+        self.shell_zone_c1 = ResponsiveGridBase(
             self.main_shell, bg=UI.BG_ELEVATED, width=sidebar_width
         )
         self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
-        self.shell_zone_c1.configure(padx=4, pady=12)
+        # configure is not robust for ResponsiveGridBase directly due to canvas/frame layers
+        # so padding is applied to the inner frame instead if needed.
+        self.shell_zone_c1.get_content_frame().configure(padx=4, pady=12, bg=UI.BG_ELEVATED)
         self.shell_zone_c1.grid_propagate(False)
 
         # Build Sidebar Navigation
@@ -776,7 +779,7 @@ class App(tk.Tk):
             if command is None:
                 # Section label (not used in current items but keep logic for safety)
                 lbl = tk.Label(
-                    self.shell_zone_c1,
+                    self.shell_zone_c1.get_content_frame(),
                     text=f"{icon}",
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
@@ -787,7 +790,7 @@ class App(tk.Tk):
                 self._sidebar_widgets.append((lbl, key, view_target, icon))
             else:
                 menu_cell = tk.Frame(
-                    self.shell_zone_c1,
+                    self.shell_zone_c1.get_content_frame(),
                     bg=UI.BG_ELEVATED,
                     width=sidebar_menu_size,
                     height=sidebar_menu_size,

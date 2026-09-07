@@ -1,12 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 
-
-class SkillStatsPanel(ttk.LabelFrame):
+class SkillStatsPanel(ResponsiveGridBase):
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
-        padding = (int(8 * scale_factor), int(6 * scale_factor))
-        super().__init__(parent, text="📈 Skill Performance", padding=padding)
+        super().__init__(parent, bg=UI.BG_BASE)
         self.app = app
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
@@ -16,9 +15,20 @@ class SkillStatsPanel(ttk.LabelFrame):
         return max(8, int(base_size * self.scale_factor))
 
     def _build_ui(self):
+        # We need a Label/Header for the Panel since we removed ttk.LabelFrame
+        header_label = tk.Label(
+            self.get_content_frame(),
+            text="📈 Skill Performance",
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY,
+            font=UI.get_font('ui', 'bold'),
+            anchor="w"
+        )
+        header_label.pack(fill="x", padx=UI.SPACE_MD, pady=(UI.SPACE_MD, 0))
+
         # Container for treeview to add padding
-        tree_container = tk.Frame(self, bg=UI.BG_SURFACE)
-        tree_container.pack(fill="both", expand=True, padx=10, pady=10)
+        tree_container = tk.Frame(self.get_content_frame(), bg=UI.BG_SURFACE)
+        tree_container.pack(fill="both", expand=True, padx=UI.SPACE_LG, pady=UI.SPACE_LG)
 
         stats_columns = ("skill", "casts", "last_cast", "cooldown", "success")
         self.app.skill_stats_tree = ttk.Treeview(
