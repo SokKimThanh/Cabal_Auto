@@ -903,18 +903,30 @@ class App(tk.Tk):
         
         # Col 0 Subframe
         col0_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
-        col0_frame.grid(row=0, column=0, sticky="w")
+        col0_frame.grid(row=0, column=0, sticky="ew", padx=(0, 12))
+        
+        # Debug: check col0_frame size
+        self.after(100, lambda: logger.debug(f"col0_frame size: {col0_frame.winfo_reqwidth()}x{col0_frame.winfo_reqheight()}"))
+
+        def on_save_hunt_config():
+            """Save hunt configuration callback."""
+            save_hunt_config(self.hunt_cfg)
+            logger.info("Hunt config saved from header bar")
 
         self.compact_window_selector = CompactWindowSelector(
             col0_frame,
             on_window_selected=on_window_selected_from_compact,
             window_controller=self.window_controller,
             root=self,
+            on_save_config=on_save_hunt_config,
         )
         # Auto-refresh window list on startup
         self.compact_window_selector._on_refresh()
-        # Use place() geometry for dropdown to work properly below the search bar
-        self.compact_window_selector.get_frame().pack(side="left", padx=(0, 12))
+        
+        # Pack the compact window selector frame
+        selector_frame = self.compact_window_selector.get_frame()
+        selector_frame.pack(side="left", fill="x", expand=True)
+        logger.debug(f"CompactWindowSelector frame packed: reqsize={selector_frame.winfo_reqwidth()}x{selector_frame.winfo_reqheight()}")
 
         # Scan Manual Button
         from ui.icon_library import Icons
