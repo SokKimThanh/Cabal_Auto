@@ -3052,7 +3052,15 @@ def main():
         app = App()
         app.protocol("WM_DELETE_WINDOW", app.on_close)
         print("[Main] Tkinter window initialized and mainloop starting...")
-        app.mainloop()
+        try:
+            app.mainloop()
+        except KeyboardInterrupt:
+            logger.info("Đã nhận Ctrl+C. Ứng dụng đã thoát.")
+            app.hunt_running = False
+            try:
+                app.destroy()
+            except tk.TclError:
+                pass
     finally:
         # Always release lock on exit
         instance_lock.release()
