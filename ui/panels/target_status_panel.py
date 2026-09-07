@@ -25,10 +25,10 @@ class TargetStatusPanel(ttk.LabelFrame):
             height=32,
             bg=UI.BG_SURFACE,
         )
-        status_frame.pack(fill="x", pady=(0, 4), padx=8)
+        status_frame.pack(fill="x", pady=(0, 2), padx=4)
 
         self.app.hunt_status_badge = StatusBadge(status_frame, status="waiting")
-        self.app.hunt_status_badge.pack(side="left", padx=8, pady=6)
+        self.app.hunt_status_badge.pack(side="left", padx=4, pady=4)
 
         # Keep reference for legacy code in HuntTab
         if self.hunt_tab is not None:
@@ -42,13 +42,15 @@ class TargetStatusPanel(ttk.LabelFrame):
             bg=UI.BG_SURFACE,
             anchor="e",
         )
-        self.app.hunt_target_info_label.pack(side="right", padx=8, pady=6)
+        self.app.hunt_target_info_label.pack(side="right", padx=4, pady=4)
+
+        self._build_current_target_card()
 
         # ProgressBar Canvas
         self.app.hp_canvas = tk.Canvas(
             self, height=24, bg=UI.BG_SURFACE, highlightthickness=0
         )
-        self.app.hp_canvas.pack(fill="x", padx=8, pady=(8, 2))
+        self.app.hp_canvas.pack(fill="x", padx=4, pady=(4, 1))
 
         def _on_hp_canvas_resize(event):
             width = event.width
@@ -72,7 +74,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         self.app.hp_percent_label = tk.Label(
             self, text="-", bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, anchor="w"
         )
-        self.app.hp_percent_label.pack(fill="x", padx=8, anchor="w", pady=(0, 4))
+        self.app.hp_percent_label.pack(fill="x", padx=4, anchor="w", pady=(0, 2))
 
         # Recovery Frame
         self.app.recovery_frame = tk.Frame(
@@ -100,7 +102,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         self.resource_canvas = tk.Canvas(
             self, height=16, bg=UI.BG_SURFACE, highlightthickness=0
         )
-        self.resource_canvas.pack(fill="x", padx=8, pady=(10, 2))
+        self.resource_canvas.pack(fill="x", padx=4, pady=(4, 1))
 
         def _on_mp_canvas_resize(event):
             width = event.width
@@ -118,15 +120,15 @@ class TargetStatusPanel(ttk.LabelFrame):
         self.resource_label = tk.Label(
             self, text="- / - MP", bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, anchor="w"
         )
-        self.resource_label.pack(fill="x", padx=8, anchor="w", pady=(0, 4))
+        self.resource_label.pack(fill="x", padx=4, anchor="w", pady=(0, 2))
 
         # Status Effects and Defense placeholders
         tk.Label(
             self, text="Status Effects:", bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY, anchor="w"
-        ).pack(fill="x", padx=8, pady=(10, 0))
+        ).pack(fill="x", padx=4, pady=(4, 0))
 
         self.status_effects_frame = tk.Frame(self, bg=UI.BG_SURFACE)
-        self.status_effects_frame.pack(fill="x", padx=8, pady=(4, 10))
+        self.status_effects_frame.pack(fill="x", padx=4, pady=(2, 4))
         tk.Label(self.status_effects_frame, text="None", bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED).pack(side="left")
 
         if getattr(self, "hunt_tab", None):
@@ -136,3 +138,69 @@ class TargetStatusPanel(ttk.LabelFrame):
                          "hunt_status_badge", "hunt_status_label", "skill_stats_tree"]:
                 if hasattr(self.app, prop):
                     setattr(self.hunt_tab, prop, getattr(self.app, prop))
+
+    def _build_current_target_card(self):
+        """Build the compact current-target summary within the status panel."""
+        card_container = tk.Frame(self, bg=UI.BG_SURFACE)
+        card_container.pack(fill="x", padx=4, pady=(2, 4))
+
+        self.app.target_image_label = tk.Label(
+            card_container,
+            text=self.app._t("target_card.no_image"),
+            bg=UI.BG_SURFACE,
+            width=max(5, int(6 * self.scale_factor)),
+            height=max(2, int(3 * self.scale_factor)),
+        )
+        self.app.target_image_label.pack(side="left", padx=(2, 6), pady=2)
+
+        stats_frame = tk.Frame(card_container, bg=UI.BG_SURFACE)
+        stats_frame.pack(side="left", fill="x", expand=True, pady=2)
+
+        self.app.target_name_label = tk.Label(
+            stats_frame,
+            text=self.app._t("target_card.unknown_mob"),
+            font=UI.FONT_LABEL,
+            bg=UI.BG_SURFACE,
+            fg=UI.TEXT_PRIMARY,
+            anchor="w",
+            wraplength=int(180 * self.scale_factor),
+            justify="left",
+        )
+        self.app.target_name_label.pack(fill="x", anchor="w")
+
+        self.app.status_label = tk.Label(
+            stats_frame,
+            text=self.app._t("target_card.status_idle"),
+            font=UI.FONT_SMALL,
+            bg=UI.BG_SURFACE,
+            fg=UI.ACCENT_GREEN,
+            anchor="w",
+        )
+        self.app.status_label.pack(fill="x", anchor="w")
+
+        def create_stat_row(label_key):
+            row = tk.Frame(stats_frame, bg=UI.BG_SURFACE)
+            row.pack(fill="x")
+            tk.Label(
+                row,
+                text=self.app._t(label_key) + ":",
+                bg=UI.BG_SURFACE,
+                fg=UI.TEXT_SECONDARY,
+                font=UI.FONT_TINY,
+                width=7,
+                anchor="w",
+            ).pack(side="left")
+            value_label = tk.Label(
+                row,
+                text="-",
+                bg=UI.BG_SURFACE,
+                fg=UI.TEXT_PRIMARY,
+                font=UI.FONT_TINY,
+                anchor="w",
+            )
+            value_label.pack(side="left", fill="x", expand=True)
+            return value_label
+
+        self.app.target_level_label = create_stat_row("target_card.level")
+        self.app.target_hp_label = create_stat_row("target_card.max_hp")
+        self.app.target_def_label = create_stat_row("target_card.defense")

@@ -8,7 +8,7 @@ from ui.components.empty_state import EmptyState
 class MonsterTargetPanel(ttk.LabelFrame):
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(10 * scale_factor), int(8 * scale_factor))
-        super().__init__(parent, text="🎯 Current Target", padding=padding)
+        super().__init__(parent, text="🎯 Target Setup", padding=padding)
         self.app = app
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
@@ -33,65 +33,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
             self.any_target_container.pack(fill="both", expand=True)
 
     def _build_ui(self):
-        # Top half: Target Card Info
-        card_container = tk.Frame(self, bg=UI.BG_SURFACE)
-        card_container.pack(fill="x", expand=False, padx=8, pady=8)
-
-        # Left Column (Image)
-        self.app.target_image_label = tk.Label(
-            card_container,
-            text=self.app._t("target_card.no_image"),
-            bg=UI.BG_SURFACE,
-            width=int(20 * self.scale_factor),
-            height=int(10 * self.scale_factor),
-        )
-        self.app.target_image_label.pack(side="left", padx=8, pady=8)
-
-        # Right Column (Stats)
-        stats_frame = tk.Frame(card_container, bg=UI.BG_SURFACE)
-        stats_frame.pack(side="left", fill="both", expand=True, padx=8, pady=8)
-
-        self.app.target_name_label = tk.Label(
-            stats_frame,
-            text=self.app._t("target_card.unknown_mob"),
-            font=UI.FONT_TITLE,
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            anchor="w",
-            wraplength=int(250 * self.scale_factor),
-            justify="left",
-        )
-        self.app.target_name_label.pack(fill="x", anchor="w", pady=(0, 8))
-
-        self.app.status_label = tk.Label(
-            stats_frame,
-            text=self.app._t("target_card.status_idle"),
-            font=UI.FONT_HEADER,
-            bg=UI.BG_SURFACE,
-            fg=UI.ACCENT_GREEN,
-            anchor="w",
-        )
-        self.app.status_label.pack(fill="x", anchor="w", pady=(0, 4))
-
-        def create_stat_row(parent, label_key):
-            row = tk.Frame(parent, bg=UI.BG_SURFACE)
-            row.pack(fill="x", pady=2)
-            tk.Label(
-                row,
-                text=self.app._t(label_key) + ":",
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_PRIMARY,
-                width=12,
-                anchor="w",
-            ).pack(side="left")
-            val_lbl = tk.Label(row, text="-", bg=UI.BG_SURFACE, anchor="w")
-            val_lbl.pack(side="left", fill="x", expand=True)
-            return val_lbl
-
-        self.app.target_level_label = create_stat_row(stats_frame, "target_card.level")
-        self.app.target_hp_label = create_stat_row(stats_frame, "target_card.max_hp")
-        self.app.target_def_label = create_stat_row(stats_frame, "target_card.defense")
-
         # We also maintain monster frame panel properties if needed for backward compatibility
         self.app.monster_frame_panel = StyledPanel(self, show_border=False)
         self.app.monster_frame = self.app.monster_frame_panel.get_content_frame()
