@@ -677,7 +677,7 @@ class App(tk.Tk):
         )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=80)
+self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * scale_factor))
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.shell_zone_a.grid_propagate(False)
 
