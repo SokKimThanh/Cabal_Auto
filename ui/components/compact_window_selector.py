@@ -1,7 +1,6 @@
 """Compact window selector for hunt tab header bar."""
 
 import tkinter as tk
-from tkinter import ttk
 from typing import List, Dict, Any, Callable, Optional
 import logging
 from lib.ui_style_v2 import UIStyleV2 as UI
@@ -24,6 +23,7 @@ class CompactWindowSelector:
         on_window_selected: Callable[[Dict[str, Any]], None],
         window_controller: Any,  # AppWindowController instance
         root: tk.Tk,
+        on_save_config: Optional[Callable[[], None]] = None,  # Callback to save config
     ):
         self.parent = parent
         self.on_window_selected = on_window_selected
