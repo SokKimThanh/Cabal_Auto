@@ -1,15 +1,15 @@
 # Tài Liệu Thiết Kế: Hệ Thống Grid Cải Tiến (Improved Grid System Design)
 
 ## 1. Mục Tiêu (Objective)
-Dựa trên tài liệu `layout_review.md` và tình trạng hiện tại của ứng dụng, tài liệu này đề xuất một kiến trúc hệ thống Grid (lưới) mới, nhằm chuẩn hóa bố cục cho **toàn bộ các màn hình**. Mục tiêu cốt lõi:
+Tài liệu này đề xuất một kiến trúc hệ thống Grid (lưới) mới, nhằm chuẩn hóa bố cục cho **toàn bộ các màn hình**. Mục tiêu cốt lõi:
 - **Tính nhất quán**: Tuân thủ tuyệt đối các chuẩn thiết kế từ `UIStyleV2`.
-- **Responsive & Chống che khuất**: Giải quyết bài toán thiếu không gian hiển thị bằng cơ chế trượt (scroll) linh hoạt, đẩy component lên trên thay vì che lấp hoặc cắt xén.
+- **Responsive & Chống che khuất (Zero-occlusion)**: Khắc phục nhược điểm của kiến trúc `ttk.PanedWindow` hiện tại (như đang dùng trong `HuntTab`), vốn có xu hướng ép nén (shrink) hoặc che lấp component khi không gian hiển thị bị thu hẹp. Giải pháp mới sẽ dùng cơ chế trượt (scroll) linh hoạt để đẩy component lên trên.
 - **Component-based Architecture**: Tách biệt UI và Logic thành các component độc lập, có đầu vào (inputs/props) và đầu ra (outputs/callbacks/events) rõ ràng.
 - **Theo dõi vòng đời**: Tích hợp cơ chế logging cho các sự kiện layout để dễ dàng debug.
 
 ## 2. Kiến Trúc Lõi: Component "ResponsiveGridBase"
 
-Hệ thống sẽ được xây dựng xoay quanh một class gốc (base class) có tên `ResponsiveGridBase` kế thừa từ một khung cuộn (Scrollable Frame). Tất cả các Panel hoặc Tab mới sẽ kế thừa từ component này.
+Hệ thống sẽ được xây dựng xoay quanh một class gốc (base class) có tên `ResponsiveGridBase` kế thừa từ một khung cuộn (Scrollable Frame). Tất cả các Panel hiện có (như trong `ui/panels/`) sẽ kế thừa từ component này.
 
 ### 2.1. Giải pháp Responsive (Cuộn nội dung)
 Để đảm bảo các component không bao giờ bị che mất khi kích thước cửa sổ thu hẹp:
@@ -29,26 +29,28 @@ Base component sẽ tự động ghi log (thông qua thư viện `logging`) khi 
 
 ## 3. Kiến Trúc Component Độc Lập (Componentization)
 
-Thay vì thiết kế giao diện liền khối (monolithic UI) như `HuntTab` cũ, mọi thành phần UX/UI mới sẽ được mô-đun hóa:
+Mặc dù ứng dụng hiện tại đã bắt đầu quá trình mô-đun hóa (ví dụ: chia `HuntTab` thành `MonsterTargetPanel`, `SkillPanel`, v.v. nằm trong `ui/panels/`), kiến trúc mới yêu cầu nâng cấp cách thức truyền dữ liệu:
 
 ### 3.1. Cấu trúc một Component tiêu chuẩn
-Mỗi giao diện (VD: `TargetStatusPanel`) sẽ được viết lại thành một Class với đặc tả sau:
 - **Inputs (Đầu vào)**: Nhận thông qua constructor (ví dụ: `initial_data`) và các phương thức `update_state(data: dict)`.
-- **Outputs (Đầu ra)**: Truyền các hàm callback thông qua constructor (ví dụ: `on_action_click=self.handle_action`) để Component không cần biết đến Logic hoặc Database.
+- **Outputs (Đầu ra)**: Truyền các hàm callback thông qua constructor (ví dụ: `on_action_click=self.handle_action`) để Component không cần gọi ngược (tightly-couple) trực tiếp đến `self.app` hoặc các dịch vụ lõi bên dưới nếu không cần thiết.
 - **Tách biệt Logic**: Component chỉ chịu trách nhiệm render UI dựa trên Inputs và phát ra sự kiện (Outputs). Logic xử lý (ví dụ: truy vấn DB, gọi API quét màn hình) phải nằm ở lớp Service/Controller.
 
 ### 3.2. Cấu trúc Thư mục Đề nghị
+Bảo lưu cấu trúc `ui/panels/` hiện có, nhưng bổ sung thêm `ResponsiveGridBase`:
 ```text
 ui/
   components/
     base/
-      responsive_grid_base.py  # Chứa Base Class
-    panels/
-      ...                      # Các Component cụ thể kế thừa từ base
+      responsive_grid_base.py  # Chứa Base Class (Canvas + Scrollbar + Logging)
+  panels/
+    monster_target_panel.py    # Kế thừa ResponsiveGridBase thay vì ttk.LabelFrame
+    skill_panel.py             # Kế thừa ResponsiveGridBase
+    ...
 ```
 
 ## 4. Nguyên Tắc Cập Nhật & Di Dời (Migration Strategy)
 1. **Bước 1**: Tạo `ResponsiveGridBase` hoàn chỉnh với tính năng scroll và logging.
-2. **Bước 2**: Đóng gói các panel nhỏ lẻ (như `ScreenStatePanel`, `SkillStatsPanel`) vào base mới.
-3. **Bước 3**: Lắp ráp các panel này lại vào các Zone (như `shell_zone_b`) trong `app_gui.py` thông qua Grid.
-4. **Bước 4**: Loại bỏ dần code giao diện liền khối cũ và chuyển giao toàn bộ qua cơ chế quản lý trạng thái luồng dữ liệu một chiều (One-way data flow: Controller -> Component -> Action).
+2. **Bước 2**: Chuyển đổi các Panel hiện có trong `ui/panels/` (ví dụ `ScreenStatePanel`, `SkillStatsPanel`, `MonsterTargetPanel`) để kế thừa từ `ResponsiveGridBase` thay vì `tk.Frame` hay `ttk.LabelFrame`.
+3. **Bước 3**: Loại bỏ các layout cứng ngắc gây che lấp như `ttk.PanedWindow` trong các Workspace (`ui/tabs/hunt_tab.py`) và thay thế bằng việc xếp các `ResponsiveGridBase` vào một luồng (flow) tự động scroll.
+4. **Bước 4**: Tinh chỉnh lại luồng dữ liệu một chiều (One-way data flow: Controller -> Component -> Action).
