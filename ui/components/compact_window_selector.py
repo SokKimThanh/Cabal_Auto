@@ -1,4 +1,6 @@
-"""Compact window selector for hunt tab header bar."""
+"""Compact window selector for hunt tab header bar - Linear UI version."""
+
+ # NOTE: Avoid mutating sys.path at import-time; ensure the app is launched from the project root so absolute imports resolve.
 
 import tkinter as tk
 from tkinter import ttk
