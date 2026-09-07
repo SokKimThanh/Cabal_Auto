@@ -828,7 +828,6 @@ class App(tk.Tk):
                 self._sidebar_widgets.append((btn, key, view_target, icon))
 
                 # Add tooltip
-                from ui.helpers.tooltip import attach_i18n_tooltip
                 attach_i18n_tooltip(
                     btn,
                     key=key,
