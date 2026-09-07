@@ -380,19 +380,30 @@ class HuntTab(ttk.Frame):
         content_frame = self.scrollable_workspace.get_content_frame()
         content_frame.config(bg=UI.BG_BASE)
 
-        # Stack panels vertically inside the responsive grid
+        # Set up a 2-column grid layout inside the responsive area (60% / 40%)
+        content_frame.columnconfigure(0, weight=6)
+        content_frame.columnconfigure(1, weight=4)
+
+        # Left Column Container (60%)
+        self.left_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
+        self.left_col_frame.grid(row=0, column=0, sticky="nsew", padx=(0, UI.SPACE_MD))
+
+        # Right Column Container (40%)
+        self.right_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
+        self.right_col_frame.grid(row=0, column=1, sticky="nsew")
+
+        # Stack panels inside the columns
         from ui.panels.skill_panel import SkillPanel
-        self.skill_panel_controller = SkillPanel(content_frame, self.app, scale_factor, hunt_tab=self)
+        self.skill_panel_controller = SkillPanel(self.left_col_frame, self.app, scale_factor, hunt_tab=self)
         # Note: SkillPanel handles its own packing internally in some implementations,
-        # but normally it needs to be packed if it's just a frame. Looking at original code,
-        # it was instantiated without pack, but let's make sure it shows up.
+        # but normally it needs to be packed if it's just a frame.
         if isinstance(self.skill_panel_controller, tk.Widget):
-            self.skill_panel_controller.pack(side=tk.TOP, fill=tk.X, pady=(0, UI.SPACE_MD))
+            self.skill_panel_controller.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         from ui.panels.target_status_panel import TargetStatusPanel
-        self.target_status_panel = TargetStatusPanel(content_frame, self.app, scale_factor, hunt_tab=self)
-        self.target_status_panel.pack(side=tk.TOP, fill=tk.X, pady=(0, UI.SPACE_MD))
+        self.target_status_panel = TargetStatusPanel(self.right_col_frame, self.app, scale_factor, hunt_tab=self)
+        self.target_status_panel.pack(side=tk.TOP, fill=tk.BOTH, pady=(0, UI.SPACE_MD))
 
         from ui.panels.skill_stats_panel import SkillStatsPanel
-        self.skill_stats_panel = SkillStatsPanel(content_frame, self.app, scale_factor, hunt_tab=self)
-        self.skill_stats_panel.pack(side=tk.TOP, fill=tk.X, pady=(0, UI.SPACE_MD))
+        self.skill_stats_panel = SkillStatsPanel(self.right_col_frame, self.app, scale_factor, hunt_tab=self)
+        self.skill_stats_panel.pack(side=tk.TOP, fill=tk.BOTH)
