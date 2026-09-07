@@ -10,20 +10,20 @@ from lib.features.timing.calculator import (
     calculate_timing,
     format_timing_recommendation,
     get_timing_presets,
-)
+        )
 from lib.features.skills.skill_stats import (
     SkillStats,
-)  # Sprint 22 Patch 1: Training Mode
+        )  # Sprint 22 Patch 1: Training Mode
 from ui.controllers.skill_manager_controller import SkillManagerController
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 from lib.features.skills.skill_repo import (
     calculate_attack_speed_from_skills,
-)
+        )
 from lib.features.monsters.monster_repo import (
     calculate_monster_estimate,
     load_monster_library,
     save_monster_library,
-)
+        )
 from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 from lib.features.hunt.hunt_runner import HuntRunner
 from lib.features.hunt.hunt_config import (
@@ -33,7 +33,7 @@ from lib.features.hunt.hunt_config import (
     load_hunt_config,
     save_config,
     save_hunt_config,
-)
+        )
 from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
 from ui.utils.overlay_controller import OverlayController
 from ui.helpers.tooltip import attach_i18n_tooltip
@@ -95,8 +95,7 @@ import logging
 from lib.logging_config import setup_logging
 
 # Initialize logging system (size-based rotation: 5MB per file, keep 3 backups)
-if not logging.getLogger().handlers:
-     setup_logging(rotation_type='size')
+setup_logging(rotation_type='size')
 
 logger = logging.getLogger(__name__)
 
@@ -654,8 +653,10 @@ class App(tk.Tk):
             scale_factor = 1.0
 
         # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
+        sidebar_width = int(64 * scale_factor)
+        sidebar_menu_size = int(56 * scale_factor)
         self.main_shell.columnconfigure(
-            0, minsize=int(260 * scale_factor), weight=0
+            0, minsize=sidebar_width, weight=0
         )  # Vùng C1 - Sidebar
         self.main_shell.columnconfigure(
             1, minsize=int(960 * scale_factor), weight=1
@@ -670,7 +671,7 @@ class App(tk.Tk):
 
         # Ensure main_shell fills root window
         self.main_shell.grid_rowconfigure(1, weight=1)
-        self.main_shell.grid_columnconfigure(0, weight=1)
+        self.main_shell.grid_columnconfigure(0, minsize=sidebar_width, weight=0)
         self.main_shell.grid_columnconfigure(1, weight=1)
 
         self.main_shell.rowconfigure(
@@ -683,28 +684,12 @@ class App(tk.Tk):
         self.shell_zone_a.grid_propagate(False)
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
-        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_ELEVATED)
-        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
-        self.shell_zone_c1.configure(padx=16, pady=20)
-        self.shell_zone_c1.grid_propagate(False)
-
-        # Sidebar Branding / Logo
-        brand_frame = tk.Frame(self.shell_zone_c1, bg=UI.BG_ELEVATED)
-        brand_frame.pack(fill="x", pady=(0, 16))
-
-        brand_label = tk.Label(
-            brand_frame,
-            text="⚔️ CABAL ASSISTANT",
-            font=UI.FONT_TINY,
-            fg=UI.ACCENT_GREEN,
-            bg=UI.BG_ELEVATED,
-            anchor="w",
-            justify="left",
+        self.shell_zone_c1 = tk.Frame(
+            self.main_shell, bg=UI.BG_ELEVATED, width=sidebar_width
         )
-        brand_label.pack(fill="x", pady=(16, 12))
-
-        # Divider below brand
-        tk.Frame(brand_frame, bg=UI.BORDER_PRIMARY, height=1).pack(fill="x")
+        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
+        self.shell_zone_c1.configure(padx=4, pady=12)
+        self.shell_zone_c1.grid_propagate(False)
 
         # Build Sidebar Navigation
         sidebar_items = [
@@ -767,7 +752,7 @@ class App(tk.Tk):
         ]
         self._sidebar_widgets = []
 
-        def apply_button_hover_effects(button, active_color=None, hover_color=None):
+        def apply_button_hover_effects(button, hover_color=None):
             """Apply hover effects to a Tkinter button"""
             default_bg = button.cget("bg")
             default_fg = button.cget("fg")
@@ -776,11 +761,11 @@ class App(tk.Tk):
             hover_fg = UI.TEXT_PRIMARY if hover_color else default_fg
 
             def on_enter(event):
-                if button.cget("bg") != UI.ACCENT_GREEN_BG:
-                    button.config(bg=hover_bg, fg=hover_fg, relief="raised")
+                if not getattr(button, "_sidebar_active", False):
+                    button.config(bg=hover_bg, fg=hover_fg, relief="flat")
 
             def on_leave(event):
-                if button.cget("bg") != UI.ACCENT_GREEN_BG:
+                if not getattr(button, "_sidebar_active", False):
                     button.config(bg=default_bg, fg=default_fg, relief="flat")
 
             button.bind("<Enter>", on_enter)
@@ -792,7 +777,7 @@ class App(tk.Tk):
                 # Section label (not used in current items but keep logic for safety)
                 lbl = tk.Label(
                     self.shell_zone_c1,
-                    text=f"   {icon} {self._t(key)}",
+                    text=f"{icon}",
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
                     font=font,
@@ -801,31 +786,43 @@ class App(tk.Tk):
                 lbl.pack(fill="x", pady=(10, 4))
                 self._sidebar_widgets.append((lbl, key, view_target, icon))
             else:
-                # Button
-                btn = tk.Button(
+                menu_cell = tk.Frame(
                     self.shell_zone_c1,
-                    text=f"   {icon} {self._t(key)}",
+                    bg=UI.BG_ELEVATED,
+                    width=sidebar_menu_size,
+                    height=sidebar_menu_size,
+                )
+                menu_cell.pack(pady=2)
+                menu_cell.pack_propagate(False)
+
+                btn = tk.Button(
+                    menu_cell,
+                    text=f" {icon} ",
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_PRIMARY,
-                    font=UI.FONT_SMALL,
-                    anchor="w",
-                    padx=12,
-                    pady=8,
+                    font=UI.FONT_TITLE,
+                    anchor="center",
+                    padx=0,
+                    pady=0,
                     relief="flat",
                     cursor="hand2",
                 )
 
                 apply_button_hover_effects(
-                    btn, hover_color=UI.BG_SURFACE, active_color=UI.ACCENT_GREEN_BG
+                    btn, hover_color=UI.BG_SURFACE
                 )
 
-                if font == UI.FONT_LABEL:
-                    # Indent sub-items slightly
-                    btn.pack(fill="x", pady=2, padx=(12, 0))
-                else:
-                    btn.pack(fill="x", pady=2)
+                btn.pack(fill="both", expand=True)
                 self._sidebar_widgets.append((btn, key, view_target, icon))
+
+                # Add tooltip
+                attach_i18n_tooltip(
+                    btn,
+                    key=key,
+                    ns="global",
+                    lang_provider=lambda: getattr(self, "lang", "en"),
+                )
 
         # Vùng B: Active Hunt Workspace
         self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_BASE)
@@ -844,6 +841,7 @@ class App(tk.Tk):
         )
 
         # Configure scroll region when frame size changes
+# Configure scroll region when frame size changes
         _action_bar_config_tag = "action_bar_frame_config"
         self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
         self.bind_class(
@@ -872,9 +870,9 @@ class App(tk.Tk):
         self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
 
         # Configure columns for action_bar_frame (3 columns)
-        self.action_bar_frame.columnconfigure(0, weight=1)  # Left
+        self.action_bar_frame.columnconfigure(0, weight=0)  # Left
         self.action_bar_frame.columnconfigure(1, weight=1)  # Center
-        self.action_bar_frame.columnconfigure(2, weight=1)  # Right
+        self.action_bar_frame.columnconfigure(2, weight=0)  # Right
 
         # Compact Window Selector (replaces combobox + refresh button)
         from ui.components.compact_window_selector import CompactWindowSelector
@@ -904,6 +902,15 @@ class App(tk.Tk):
         # Col 0 Subframe
         col0_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
         col0_frame.grid(row=0, column=0, sticky="w")
+
+        brand_label = tk.Label(
+            col0_frame,
+            text="⚔️",
+            font=UI.FONT_TITLE,
+            fg=UI.ACCENT_GREEN,
+            bg=UI.BG_BASE,
+        )
+        brand_label.pack(side="left", padx=(0, 12))
 
         self.compact_window_selector = CompactWindowSelector(
             col0_frame,
@@ -1264,16 +1271,18 @@ class App(tk.Tk):
                 if isinstance(widget, tk.Button):
                     original_text = self._t(key)
                     if view_target == view_key:
+                        widget._sidebar_active = True
                         widget.config(
-                            bg=UI.ACCENT_GREEN_BG,
+                            bg=UI.BG_SURFACE,
                             fg=UI.ACCENT_GREEN,
-                            text=f" ▌ {icon} {original_text}",
+                            text=f" {icon} ",
                         )
                     else:
+                        widget._sidebar_active = False
                         widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
-                            text=f"   {icon} {original_text}",
+                            text=f" {icon} ",
                         )
 
         if hasattr(target_view, "on_view_shown"):
@@ -1404,7 +1413,7 @@ class App(tk.Tk):
             for widget, key, _ in self._sidebar_widgets:
                 try:
                     if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
-                        widget.config(text=self._t(key))
+                        pass # Translations for sidebar now handled by tooltips
                 except Exception:
                     pass
 

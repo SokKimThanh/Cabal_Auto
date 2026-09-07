@@ -1,9 +1,6 @@
-"""Compact window selector for hunt tab header bar - Linear UI version."""
-
- # NOTE: Avoid mutating sys.path at import-time; ensure the app is launched from the project root so absolute imports resolve.
+"""Compact window selector for hunt tab header bar."""
 
 import tkinter as tk
-from tkinter import ttk
 from typing import List, Dict, Any, Callable, Optional
 import logging
 from lib.ui_style_v2 import UIStyleV2 as UI
@@ -13,195 +10,180 @@ logger = logging.getLogger(__name__)
 
 class CompactWindowSelector:
     """Window selector UI component for hunt tab header.
-    
-    Simple UI with:
-    - Info label showing window count/status
-    - Refresh button (🔄) to manually fetch windows
-    - Dropdown button (▼) to auto-select first window
-    
-    No listbox - auto-selects first window when dropdown is clicked.
-    """
 
-    @staticmethod
-    def check_active_threads():
-        """Print all active threads (debugging helper)."""
-        import threading
-        print("\n" + "="*60)
-        print("🧵 ACTIVE THREADS:")
-        print("="*60)
-        for thread in threading.enumerate():
-            print(f"  • {thread.name:30s} | Daemon: {str(thread.daemon):5s} | Alive: {thread.is_alive()}")
-        print("="*60 + "\n")
+    Replaces combobox + refresh button with a read-only selected-window field.
+    The dropdown arrow searches for and selects the first detected Cabal window.
+    """
 
     def __init__(
         self,
         parent: tk.Widget,
         on_window_selected: Callable[[Dict[str, Any]], None],
         window_controller: Any,  # AppWindowController instance
-        root: tk.Tk,
+        root: Any,
     ):
         self.parent = parent
         self.on_window_selected = on_window_selected
         self.window_controller = window_controller
         self.root = root
-        
+
         self.win_items: List[Dict[str, Any]] = []
-        
+        self.selected_window: Optional[Dict[str, Any]] = None
+
         self._build_ui()
 
     def _build_ui(self):
-        """Build simple window selector UI (no listbox - auto-select first window)."""
-        # Main container
+        """Build the compact window selector UI."""
         self.frame = tk.Frame(self.parent, bg=self.parent.cget("bg"))
-        
-        # ===== Top row: Controls (always visible) =====
-        control_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"), height=50)
-        control_frame.pack(side="top", fill="x", padx=0, pady=0)
-        control_frame.pack_propagate(False)  # Fixed height
-        
-        # Info label box with background
-        info_box = tk.Frame(
-            control_frame,
-            bg="#1a1a1a",
-            relief="solid",
-            bd=1,
-            highlightthickness=0
-        )
-        info_box.pack(side="left", padx=8, pady=6, fill="both", expand=True)
-        
-        self.info_label = tk.Label(
-            info_box,
-            text="? windows",
-            font=("Arial", 11, "bold"),
-            bg="#1a1a1a",
-            fg="#ff6b6b",
-            anchor="w",
-            padx=12,
-            pady=8,
-        )
-        self.info_label.pack(side="left", fill="both", expand=True)
 
-        # ===== Button frame (right side) =====
-        button_frame = tk.Frame(control_frame, bg=self.parent.cget("bg"))
-        button_frame.pack(side="right", padx=8, pady=0)
+        # Search frame (always visible)
+        self.search_frame = tk.Frame(self.frame, bg=self.parent.cget("bg"))
+        self.search_frame.pack(side="top", fill="x", expand=False)
 
-        # Refresh button
+        # Search label
+        search_label = tk.Label(
+            self.search_frame,
+            text="Window:",
+            bg=self.parent.cget("bg"),
+            fg=UI.TEXT_SECONDARY,
+            font=UI.FONT_TEXT,
+        )
+        search_label.pack(side="left", padx=(0, 5))
+
+        # Selected window display
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(
+            self.search_frame,
+            textvariable=self.search_var,
+            width=30,
+            font=UI.FONT_TEXT,
+            state="readonly",
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_MUTED,
+            readonlybackground=UI.BG_ELEVATED,
+            relief="flat",
+        )
+        self.search_entry.pack(side="left", padx=(0, 8), fill="x", expand=True)
+        self._set_entry_status("Chưa chọn cửa sổ Cabal", UI.TEXT_MUTED, UI.BG_ELEVATED)
+
+        # Select the first detected Cabal window.
+        self.dropdown_btn = tk.Button(
+            self.search_frame,
+            text="▼",
+            width=2,
+            height=1,
+            bg=UI.BG_SURFACE,
+            fg=UI.TEXT_PRIMARY,
+            relief="flat",
+            command=self._on_select_clicked,
+            cursor="hand2",
+        )
+        self.dropdown_btn.pack(side="left", padx=(0, 8))
+
+        # Refresh button (icon only)
         self.refresh_btn = tk.Button(
-            button_frame,
+            self.search_frame,
             text="🔄",
-            width=3,
-            bg="#333333",
-            fg="#ffffff",
+            width=2,
+            height=1,
+            bg=UI.BG_SURFACE,
+            fg=UI.TEXT_PRIMARY,
             relief="flat",
             command=self._on_refresh_clicked,
             cursor="hand2",
-            font=("Arial", 10, "bold"),
-            padx=6,
-            pady=4,
-            activebackground="#444444",
-            activeforeground="#ffffff"
         )
-        self.refresh_btn.pack(side="left", padx=(0, 6), pady=0)
-        logger.debug("Refresh button created")
-        
-        # Dropdown button (select first window)
-        self.dropdown_btn = tk.Button(
-            button_frame,
-            text="▼",
-            width=3,
-            bg="#333333",
-            fg="#ffffff",
-            relief="flat",
-            command=self._on_dropdown_clicked,
-            cursor="hand2",
-            font=("Arial", 10, "bold"),
-            padx=6,
-            pady=4,
-            activebackground="#444444",
-            activeforeground="#ffffff"
-        )
-        self.dropdown_btn.pack(side="left", padx=0, pady=0)
+        self.refresh_btn.pack(side="left")
 
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
         return self.frame
 
-    def _on_dropdown_clicked(self):
-        """Handle dropdown button click - fetch windows and auto-select first."""
-        logger.info("Dropdown button clicked")
-        
-        # Fetch windows
-        self._on_refresh()
-
     def _on_refresh(self):
-        """Refresh window list (triggered internally without button loading state)."""
+        """Refresh and select the first detected Cabal window."""
         try:
-            windows = self.window_controller._list_windows()
-            logger.debug(f"Sync refresh: Got {len(windows)} windows")
-            self._update_ui_with_windows(windows)
-        except Exception as e:
-            logger.error(f"Error in sync refresh: {e}", exc_info=True)
-            self._handle_refresh_error(e)
+            self._update_ui_with_windows(
+                self.window_controller._list_windows(), select_first=True
+            )
+        except Exception as error:
+            self._handle_refresh_error(error)
 
-    def _update_ui_with_windows(self, windows):
+    def _update_ui_with_windows(
+        self, windows: List[Dict[str, Any]], select_first: bool = False
+    ):
         """Update UI with fetched windows (Main Thread only)."""
-        logger.info(f"Received {len(windows)} windows")
-        
         self.win_items = windows
-        logger.debug(f"Saved windows: {[w.get('title', 'Unknown')[:30] for w in windows]}")
-        
-        if hasattr(self.root, 'win_items'):
-            self.root.win_items = windows
+        self.root.win_items = windows
 
-        count = len(self.win_items)
-        if count > 0:
-            text = f"✓ {count} window(s) found"
-            fg_color = "#4ade80"  # Green
-            
-            # Auto-select first window
-            selected = self.win_items[0]
-            logger.debug(f"Auto-selecting first window: {selected['title']}")
-            self.on_window_selected(selected)
-        else:
-            text = "⚠ Chưa mở game | Không có window"
-            fg_color = "#ff6b6b"  # Bright red
+        if not windows:
+            self.selected_window = None
+            message = "Không tìm thấy cửa sổ Cabal đang mở"
+            self._set_entry_status(message, UI.DANGER, UI.BG_SURFACE)
+        elif select_first or self.selected_window is None:
+            self._select_window(windows[0])
 
-        self.info_label.config(text=text, fg=fg_color)
-        logger.debug(f"Updated info_label to: {text}")
+        self._set_loading_state(False)
 
-        if self.refresh_btn.cget("state") == "disabled":
-            self.refresh_btn.config(state="normal", text="🔄")
-        logger.debug("Refresh complete")
-
-    def _handle_refresh_error(self, e):
+    def _handle_refresh_error(self, error: Exception):
         """Handle errors during refresh (Main Thread only)."""
-        logger.error(f"Refresh failed: {e}", exc_info=True)
-        self.info_label.config(text=f"✗ Error", fg=UI.DANGER if "UI" in globals() else "#f87171")
+        logger.error("Failed to refresh Cabal windows: %s", error)
         self.win_items = []
-        if hasattr(self.root, 'win_items'):
-            self.root.win_items = []
+        self.selected_window = None
+        self.root.win_items = []
+        message = f"Không thể tìm cửa sổ Cabal: {error}"
+        self._set_entry_status(message, UI.DANGER, UI.BG_SURFACE)
+        self._set_loading_state(False)
 
-        if self.refresh_btn.cget("state") == "disabled":
-            self.refresh_btn.config(state="normal", text="🔄")
+    def _select_window(self, window: Dict[str, Any]):
+        """Persist and display the detected Cabal window."""
+        self.selected_window = window
+        title = window.get("title") or "Cabal"
+        self._set_entry_status(title, UI.ACCENT_GREEN, UI.ACCENT_GREEN_BG)
+        self.on_window_selected(window)
+
+    def _set_entry_status(self, text: str, foreground: str, background: str):
+        """Show the current selection state in the locked window field."""
+        self.search_var.set(text)
+        self.search_entry.config(fg=foreground, readonlybackground=background)
+
+    def _set_loading_state(self, loading: bool):
+        """Prevent duplicate scans while window detection is running."""
+        state = "disabled" if loading else "normal"
+        self.refresh_btn.config(state=state, text="⟳" if loading else "🔄")
+        self.dropdown_btn.config(state=state, text="⟳" if loading else "▼")
 
     def _on_refresh_clicked(self):
-        """Handle refresh button click (Asynchronous)."""
-        logger.info("Refresh button clicked")
-        self.refresh_btn.config(state="disabled", text="⟳")
-        self.refresh_btn.update()
+        """Refresh and select the first detected Cabal window."""
+        self._refresh_windows_async(select_first=True)
 
-        import threading
+    def _on_select_clicked(self):
+        """Find and select the first detected Cabal window."""
+        self._refresh_windows_async(select_first=True)
+
+    def _refresh_windows_async(self, select_first: bool):
+        """Fetch windows outside Tk's main thread and update the UI when complete."""
+        self._set_loading_state(True)
 
         def fetch_windows_task():
             try:
                 windows = self.window_controller._list_windows()
-                logger.debug(f"Refresh: Found {len(windows)} windows")
-                self.root.after(0, self._update_ui_with_windows, windows)
-            except Exception as e:
-                logger.error(f"Refresh error: {e}", exc_info=True)
-                self.root.after(0, self._handle_refresh_error, e)
+                self.root.after(
+                    0, self._update_ui_with_windows, windows, select_first
+                )
+            except Exception as error:
+                self.root.after(0, self._handle_refresh_error, error)
 
-        # Start thread with a name
-        thread = threading.Thread(target=fetch_windows_task, daemon=True, name="WindowRefreshThread")
-        thread.start()
-        logger.debug(f"Refresh thread started: {thread.name}")
+        import threading
+
+        threading.Thread(target=fetch_windows_task, daemon=True).start()
+
+    def set_search_text(self, text: str):
+        """Set search entry text programmatically."""
+        self._set_entry_status(
+            text or "Chưa chọn cửa sổ Cabal",
+            UI.ACCENT_GREEN if text else UI.TEXT_MUTED,
+            UI.ACCENT_GREEN_BG if text else UI.BG_ELEVATED,
+        )
+
+    def get_selected_window(self) -> Optional[Dict[str, Any]]:
+        """Return the automatically selected Cabal window, if any."""
+        return self.selected_window
