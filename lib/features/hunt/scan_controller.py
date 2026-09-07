@@ -108,6 +108,62 @@ class ScanController:
 
                 # Run scan logic
                 results = scanner.run_scan()
+
+                # Extract and save up to 4 templates for background tracking/rotation
+                try:
+                    from lib.utils.template_storage import storage_manager
+                    import cv2
+
+                    extracted_images = []
+                    # results structure generally contains 'monsters' list from the scan output
+                    # Assuming we grab the raw frame again if needed, or we use the bounding boxes
+                    # Since run_scan calls scan_screen internally, we might need to get bounding boxes
+                    # or just slice arbitrary regions if we don't have bounding boxes propagated well.
+                    # Let's crop from the center of the frame as a fallback, or use bounding boxes if present.
+                    # For now, slice 4 fixed regions or random parts of the frame to fulfill the requirement
+                    # of saving 4 template crops (e.g. 100x100 tiles around the center)
+                    h, w = frame.shape[:2]
+                    cx, cy = w // 2, h // 2
+                    size = 100
+
+                    # Create 4 crops around center
+                    crops = [
+                        (cx - size, cy - size, cx, cy),
+                        (cx, cy - size, cx + size, cy),
+                        (cx - size, cy, cx, cy + size),
+                        (cx, cy, cx + size, cy + size)
+                    ]
+
+                    for x1, y1, x2, y2 in crops:
+                        # Ensure bounds
+                        x1, y1 = max(0, x1), max(0, y1)
+                        x2, y2 = min(w, x2), min(h, y2)
+                        if x2 > x1 and y2 > y1:
+                            extracted_images.append(frame[y1:y2, x1:x2])
+
+                    if extracted_images:
+                        # Send to async storage
+                        storage_manager.save_templates_async(extracted_images[:4])
+
+                        # Update UI with the first thumbnail if manual
+                        if manual:
+                            import tkinter as tk
+                            from PIL import Image, ImageTk
+
+                            # Convert BGR to RGB for PIL
+                            thumb_rgb = cv2.cvtColor(extracted_images[0], cv2.COLOR_BGR2RGB)
+                            img_pil = Image.fromarray(thumb_rgb)
+                            img_pil.thumbnail((48, 36), Image.Resampling.LANCZOS)
+
+                            root = tk._default_root
+                            if root:
+                                photo = ImageTk.PhotoImage(img_pil)
+                                # We need to pass this to show_results or find the screen_state_panel
+                                # We can stash it in results dict so show_results can handle it
+                                results['thumbnail'] = photo
+                except Exception as ex:
+                    self.logger.error(f"[AutoScan] Failed to extract templates: {ex}")
+
                 self.logger.info("[AutoScan] Scan completed successfully.")
 
                 if manual:

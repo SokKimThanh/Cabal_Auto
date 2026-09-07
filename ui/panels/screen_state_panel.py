@@ -26,6 +26,14 @@ class ScreenStatePanel(tk.Frame):
         self.lbl_skills = self._create_label(self.container, t("setup.skills_found", default="✅ {count} skills valid").format(count=0))
         self.lbl_skills.grid(row=1, column=1, sticky="w", padx=4, pady=2)
 
+        # Tracking Thumbnail for Async Scan Feedback
+        self.lbl_scan_status = self._create_label(self.container, "⏳ Đang theo dõi...")
+        self.lbl_scan_status.config(fg=UI.TEXT_MUTED, font=("Consolas", 8))
+        self.lbl_scan_status.grid(row=0, column=2, rowspan=2, sticky="e", padx=(10, 4))
+
+        self.lbl_thumbnail = tk.Label(self.container, bg=UI.BG_SURFACE, width=48, height=36)
+        self.lbl_thumbnail.grid(row=0, column=3, rowspan=2, sticky="w", padx=(0, 4))
+
     def _create_label(self, parent: tk.Widget, text: str) -> tk.Label:
         lbl = tk.Label(
             parent,
@@ -35,6 +43,13 @@ class ScreenStatePanel(tk.Frame):
             font=UI.FONT_LABEL
         )
         return lbl
+
+    def update_thumbnail(self, photo_image: Any):
+        """Updates the thumbnail image to provide visual feedback for scanning."""
+        if photo_image:
+            self.lbl_thumbnail.config(image=photo_image, width=48, height=36)
+            self.lbl_thumbnail.image = photo_image
+            self.lbl_scan_status.config(text="✅ Đã cập nhật scan")
 
     def update_from_scan(self, state: Dict[str, Any]):
         """Updates the panel with scan state results."""
