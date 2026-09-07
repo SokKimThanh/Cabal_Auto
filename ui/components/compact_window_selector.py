@@ -3,7 +3,6 @@
  # NOTE: Avoid mutating sys.path at import-time; ensure the app is launched from the project root so absolute imports resolve.
 
 import tkinter as tk
-from tkinter import ttk
 from typing import List, Dict, Any, Callable, Optional
 import logging
 
