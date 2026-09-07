@@ -1,13 +1,6 @@
 """Compact window selector for hunt tab header bar - Linear UI version."""
 
-import sys
-import os
-from pathlib import Path
-
-# Add project root to path for imports
-project_root = str(Path(__file__).parent.parent.parent)
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+ # NOTE: Avoid mutating sys.path at import-time; ensure the app is launched from the project root so absolute imports resolve.
 
 import tkinter as tk
 from tkinter import ttk

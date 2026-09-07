@@ -95,7 +95,8 @@ import logging
 from lib.logging_config import setup_logging
 
 # Initialize logging system (size-based rotation: 5MB per file, keep 3 backups)
-setup_logging(rotation_type='size')
+if not logging.getLogger().handlers:
+     setup_logging(rotation_type='size')
 
 logger = logging.getLogger(__name__)
 
@@ -677,7 +678,7 @@ class App(tk.Tk):
         )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * scale_factor))
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * scale_factor))
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.shell_zone_a.grid_propagate(False)
 
@@ -843,14 +844,13 @@ self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * sca
         )
 
         # Configure scroll region when frame size changes
-# Configure scroll region when frame size changes
-_action_bar_config_tag = "action_bar_frame_config"
-self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
-self.bind_class(
-    _action_bar_config_tag,
-    "<Configure>",
-    lambda e: self.action_bar_canvas.configure(scrollregion=self.action_bar_canvas.bbox("all")),
-)
+        _action_bar_config_tag = "action_bar_frame_config"
+        self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
+        self.bind_class(
+            _action_bar_config_tag,
+            "<Configure>",
+            lambda e: self.action_bar_canvas.configure(scrollregion=self.action_bar_canvas.bbox("all")),
+        )
 
         self.action_bar_frame_id = self.action_bar_canvas.create_window((0, 0), window=self.action_bar_frame, anchor="nw")
 
