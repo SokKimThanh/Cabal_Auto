@@ -10,28 +10,28 @@ class ScreenStatePanel(tk.Frame):
         self._build_ui()
 
     def _build_ui(self):
-        # Container frame
+        # Container frame using horizontal pack (flex-like)
         self.container = tk.Frame(self, bg=UI.BG_BASE)
         self.container.pack(fill=tk.BOTH, expand=True)
 
-        # Labels for state
+        # Labels for state - arranged horizontally
         self.lbl_class = self._create_label(self.container, t("setup.character_class_label", default="Character Class: ") + "Unknown")
-        self.lbl_class.grid(row=0, column=0, sticky="w", padx=4, pady=2)
+        self.lbl_class.pack(side="left", padx=(0, 12))
 
         self.lbl_location = self._create_label(self.container, "📍 Unknown")
-        self.lbl_location.grid(row=0, column=1, sticky="w", padx=4, pady=2)
+        self.lbl_location.pack(side="left", padx=(0, 12))
 
         self.lbl_monster = self._create_label(self.container, "🟢 Ready")
-        self.lbl_monster.grid(row=1, column=0, sticky="w", padx=4, pady=2)
+        self.lbl_monster.pack(side="left", padx=(0, 12))
 
         self.lbl_skills = self._create_label(self.container, t("setup.skills_found", default="✅ {count} skills valid").format(count=0))
-        self.lbl_skills.grid(row=1, column=1, sticky="w", padx=4, pady=2)
+        self.lbl_skills.pack(side="left", padx=(0, 12))
 
         self.lbl_scan_status = self._create_label(self.container, "⏳ Đang theo dõi...")
-        self.lbl_scan_status.grid(row=2, column=0, columnspan=2, sticky="w", padx=4, pady=2)
+        self.lbl_scan_status.pack(side="left", padx=(0, 12))
 
         self.lbl_thumbnail = tk.Label(self.container, bg=UI.BG_BASE)
-        self.lbl_thumbnail.grid(row=3, column=0, columnspan=2, sticky="w", padx=4, pady=2)
+        self.lbl_thumbnail.pack(side="left", padx=(0, 12))
 
     def _create_label(self, parent: tk.Widget, text: str) -> tk.Label:
         lbl = tk.Label(
@@ -72,7 +72,6 @@ class ScreenStatePanel(tk.Frame):
                     count=state.get("skills_valid_count", "—")
                 )
             )
-
 
     def update_thumbnail(self, thumbnail_img: Image.Image):
         """Updates the thumbnail from a PIL image."""
