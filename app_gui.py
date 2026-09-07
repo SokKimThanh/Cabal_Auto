@@ -654,7 +654,7 @@ class App(tk.Tk):
 
         # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
         self.main_shell.columnconfigure(
-            0, minsize=int(72 * scale_factor), weight=0
+            0, minsize=int(56 * scale_factor), weight=0
         )  # Vùng C1 - Sidebar
         self.main_shell.columnconfigure(
             1, minsize=int(960 * scale_factor), weight=1
@@ -809,8 +809,10 @@ class App(tk.Tk):
                     fg=UI.TEXT_PRIMARY,
                     font=UI.FONT_TITLE,
                     anchor="center",
-                    padx=12,
-                    pady=12,
+                    padx=8,
+                    pady=8,
+                    width=2,
+                    height=1,
                     relief="flat",
                     cursor="hand2",
                 )
