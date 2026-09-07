@@ -1,7 +1,6 @@
 """Compact window selector for hunt tab header bar."""
 
 import tkinter as tk
-from tkinter import ttk
 from typing import List, Dict, Any, Callable, Optional
 import logging
 from lib.ui_style_v2 import UIStyleV2 as UI
@@ -12,10 +11,8 @@ logger = logging.getLogger(__name__)
 class CompactWindowSelector:
     """Window selector UI component for hunt tab header.
 
-    Replaces combobox + refresh button with:
-    - Search entry field
-    - Dropdown listbox with filtered windows
-    - Refresh icon button
+    Replaces combobox + refresh button with a read-only selected-window field.
+    The dropdown arrow searches for and selects the first detected Cabal window.
     """
 
     def __init__(
@@ -23,7 +20,7 @@ class CompactWindowSelector:
         parent: tk.Widget,
         on_window_selected: Callable[[Dict[str, Any]], None],
         window_controller: Any,  # AppWindowController instance
-        root: tk.Tk,
+        root: Any,
     ):
         self.parent = parent
         self.on_window_selected = on_window_selected
@@ -31,16 +28,12 @@ class CompactWindowSelector:
         self.root = root
 
         self.win_items: List[Dict[str, Any]] = []
-        self.filtered_windows: List[Dict[str, Any]] = []
-        self.is_open = False
-        self.listbox = None  # Will be created when dropdown opens
-        self.dropdown_window = None
+        self.selected_window: Optional[Dict[str, Any]] = None
 
         self._build_ui()
 
     def _build_ui(self):
         """Build the compact window selector UI."""
-        # Main frame - will contain search bar and dropdown
         self.frame = tk.Frame(self.parent, bg=self.parent.cget("bg"))
 
         # Search frame (always visible)
@@ -57,21 +50,23 @@ class CompactWindowSelector:
         )
         search_label.pack(side="left", padx=(0, 5))
 
-        # Search entry
+        # Selected window display
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(
             self.search_frame,
             textvariable=self.search_var,
             width=30,
             font=UI.FONT_TEXT,
+            state="readonly",
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_MUTED,
+            readonlybackground=UI.BG_ELEVATED,
+            relief="flat",
         )
         self.search_entry.pack(side="left", padx=(0, 8), fill="x", expand=True)
-        self.search_entry.bind("<Return>", self._on_search_enter)
-        self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
-        self.search_entry.bind("<FocusIn>", self._on_search_focus_in)
-        self.search_entry.bind("<Escape>", lambda e: self._close_dropdown())
+        self._set_entry_status("Chưa chọn cửa sổ Cabal", UI.TEXT_MUTED, UI.BG_ELEVATED)
 
-        # Dropdown button
+        # Select the first detected Cabal window.
         self.dropdown_btn = tk.Button(
             self.search_frame,
             text="▼",
@@ -80,7 +75,7 @@ class CompactWindowSelector:
             bg=UI.BG_SURFACE,
             fg=UI.TEXT_PRIMARY,
             relief="flat",
-            command=self._toggle_dropdown,
+            command=self._on_select_clicked,
             cursor="hand2",
         )
         self.dropdown_btn.pack(side="left", padx=(0, 8))
@@ -99,260 +94,96 @@ class CompactWindowSelector:
         )
         self.refresh_btn.pack(side="left")
 
-        # Info label
-        self.info_label = tk.Label(
-            self.frame,
-            text="Click refresh to load windows",
-            font=UI.FONT_SMALL,
-            bg=self.parent.cget("bg"),
-            fg=UI.TEXT_MUTED,
-        )
-        self.info_label.pack(side="bottom", fill="x", pady=(2, 0))
-
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
         return self.frame
 
     def _on_refresh(self):
-        """Refresh window list synchronously."""
-        logger.debug("CompactWindowSelector._on_refresh() called")
+        """Refresh and select the first detected Cabal window."""
         try:
-            # Refresh window list
-            windows = self.window_controller._list_windows()
-            self._update_ui_with_windows(windows)
-        except Exception as e:
-            self._handle_refresh_error(e)
+            self._update_ui_with_windows(
+                self.window_controller._list_windows(), select_first=True
+            )
+        except Exception as error:
+            self._handle_refresh_error(error)
 
-    def _update_ui_with_windows(self, windows):
+    def _update_ui_with_windows(
+        self, windows: List[Dict[str, Any]], select_first: bool = False
+    ):
         """Update UI with fetched windows (Main Thread only)."""
         self.win_items = windows
-        if hasattr(self.root, 'win_items'):
-            self.root.win_items = windows
-        logger.debug(f"  Found {len(self.win_items)} windows")
+        self.root.win_items = windows
 
-        # Update UI label
-        self.info_label.config(
-            text=f"✓ Found {len(self.win_items)} window(s)",
-            fg=UI.ACCENT_GREEN
-        )
+        if not windows:
+            self.selected_window = None
+            message = "Không tìm thấy cửa sổ Cabal đang mở"
+            self._set_entry_status(message, UI.DANGER, UI.BG_SURFACE)
+        elif select_first or self.selected_window is None:
+            self._select_window(windows[0])
 
-        # If dropdown is open, immediately update listbox
-        if self.is_open and self.listbox:
-            self._update_listbox()
-            # Auto-select first window if available
-            if self.filtered_windows:
-                self.listbox.selection_set(0)
-                self.listbox.activate(0)
-                self.listbox.see(0)
+        self._set_loading_state(False)
 
-        # Reset button state if it was loading
-        if self.refresh_btn.cget("state") == "disabled":
-            self.refresh_btn.config(state="normal", text="🔄")
-
-    def _handle_refresh_error(self, e):
+    def _handle_refresh_error(self, error: Exception):
         """Handle errors during refresh (Main Thread only)."""
-        logger.error(f"  Failed to refresh: {e}")
-        self.info_label.config(
-            text=f"Error: {e}",
-            fg=UI.DANGER
-        )
+        logger.error("Failed to refresh Cabal windows: %s", error)
         self.win_items = []
-        if hasattr(self.root, 'win_items'):
-            self.root.win_items = []
+        self.selected_window = None
+        self.root.win_items = []
+        message = f"Không thể tìm cửa sổ Cabal: {error}"
+        self._set_entry_status(message, UI.DANGER, UI.BG_SURFACE)
+        self._set_loading_state(False)
 
-        # Reset button state if it was loading
-        if self.refresh_btn.cget("state") == "disabled":
-            self.refresh_btn.config(state="normal", text="🔄")
+    def _select_window(self, window: Dict[str, Any]):
+        """Persist and display the detected Cabal window."""
+        self.selected_window = window
+        title = window.get("title") or "Cabal"
+        self._set_entry_status(title, UI.ACCENT_GREEN, UI.ACCENT_GREEN_BG)
+        self.on_window_selected(window)
+
+    def _set_entry_status(self, text: str, foreground: str, background: str):
+        """Show the current selection state in the locked window field."""
+        self.search_var.set(text)
+        self.search_entry.config(fg=foreground, readonlybackground=background)
+
+    def _set_loading_state(self, loading: bool):
+        """Prevent duplicate scans while window detection is running."""
+        state = "disabled" if loading else "normal"
+        self.refresh_btn.config(state=state, text="⟳" if loading else "🔄")
+        self.dropdown_btn.config(state=state, text="⟳" if loading else "▼")
 
     def _on_refresh_clicked(self):
-        """Handle refresh button click (Asynchronous)."""
-        # Show loading state
-        self.refresh_btn.config(state="disabled", text="⟳")  # Spinning icon
-        self.refresh_btn.update()
+        """Refresh and select the first detected Cabal window."""
+        self._refresh_windows_async(select_first=True)
 
-        import threading
+    def _on_select_clicked(self):
+        """Find and select the first detected Cabal window."""
+        self._refresh_windows_async(select_first=True)
+
+    def _refresh_windows_async(self, select_first: bool):
+        """Fetch windows outside Tk's main thread and update the UI when complete."""
+        self._set_loading_state(True)
 
         def fetch_windows_task():
             try:
                 windows = self.window_controller._list_windows()
+                self.root.after(
+                    0, self._update_ui_with_windows, windows, select_first
+                )
+            except Exception as error:
+                self.root.after(0, self._handle_refresh_error, error)
 
-                # Log the windows to console per user request
-                logger.info("=== Window List Refresh Results ===")
-                for i, w in enumerate(windows):
-                    logger.info(f"[{i}] {w.get('title', 'Unknown')} (PID: {w.get('pid', 'N/A')})")
-                logger.info(f"Total windows found: {len(windows)}")
-                logger.info("===================================")
+        import threading
 
-                self.root.after(0, self._update_ui_with_windows, windows)
-                logger.debug(f"[Refresh] Thread found {len(windows)} windows")
-            except Exception as e:
-                logger.error(f"[Refresh] Thread error: {e}")
-                self.root.after(0, self._handle_refresh_error, e)
-
-        # Start thread
         threading.Thread(target=fetch_windows_task, daemon=True).start()
-
-    def _on_search_focus_in(self, event=None):
-        """Show dropdown when search box focused."""
-        # Only auto-open if dropdown is not already open
-        # Also ignore focus events that come from Toplevel closing
-        if not self.is_open and not self.dropdown_window:
-            self._toggle_dropdown()
-
-    def _on_search_text_changed(self, event=None):
-        """Filter listbox as user types."""
-        if self.is_open:
-            self._update_listbox()
-
-    def _on_search_enter(self, event=None):
-        """Select first item on Enter."""
-        if self.listbox and self.listbox.size() > 0:
-            self.listbox.selection_set(0)
-            self._on_listbox_select()
-
-    def _toggle_dropdown(self):
-        """Toggle dropdown visibility using Toplevel popup window."""
-        if self.is_open:
-            if self.dropdown_window:
-                self.dropdown_window.destroy()
-                self.dropdown_window = None
-            self.is_open = False
-            self.dropdown_btn.config(text="▼")
-        else:
-            if not self.win_items:
-                self._on_refresh()
-
-            # Create Toplevel popup window for dropdown
-            self.dropdown_window = tk.Toplevel(self.parent)
-            self.dropdown_window.wm_overrideredirect(True)  # No window decorations
-            self.dropdown_window.configure(bg=UI.BG_ELEVATED)
-            # Make popup grab all events (modal-like behavior)
-            self.dropdown_window.grab_set()
-
-            # Position dropdown below search frame
-            self.frame.update_idletasks()
-            parent_x = self.parent.winfo_rootx()
-            parent_y = self.parent.winfo_rooty()
-            frame_width = self.frame.winfo_width()
-            search_height = self.search_frame.winfo_height()
-
-            # Calculate dropdown position (below search_frame)
-            dropdown_x = parent_x
-            dropdown_y = parent_y + search_height
-
-            # Create scrollbar and listbox in Toplevel
-            scrollbar = tk.Scrollbar(self.dropdown_window)
-            scrollbar.pack(side="right", fill="y")
-
-            self.listbox = tk.Listbox(
-                self.dropdown_window,
-                height=6,
-                width=50,
-                yscrollcommand=scrollbar.set,
-                font=UI.FONT_MONO,
-                bg=UI.BG_BASE,
-                fg=UI.TEXT_PRIMARY,
-                selectmode="single",
-            )
-            self.listbox.pack(side="left", fill="both", expand=True)
-            scrollbar.config(command=self.listbox.yview)
-            self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
-            # Allow Escape key to close dropdown
-            self.listbox.bind("<Escape>", lambda e: self._close_dropdown())
-
-            # Position and resize Toplevel window
-            self.dropdown_window.geometry(f"{frame_width}x150+{dropdown_x}+{dropdown_y}")
-
-            self._update_listbox()
-
-            self.is_open = True
-            self.dropdown_btn.config(text="▲")
-            self.search_entry.focus()
-
-    def _update_listbox(self):
-        """Update listbox with filtered windows."""
-        # Only update if listbox exists (dropdown is open)
-        if not self.listbox:
-            return
-
-        search_text = self.search_var.get().lower()
-
-        # Filter windows
-        self.filtered_windows = [
-            w for w in self.win_items
-            if search_text in w["title"].lower()
-            or search_text in w.get("proc", "").lower()
-        ]
-
-        # Update listbox
-        self.listbox.delete(0, tk.END)
-        for w in self.filtered_windows:
-            label = f"{w['title']}  [PID:{w['pid']}]"
-            self.listbox.insert(tk.END, label)
-
-        if self.filtered_windows:
-            self.listbox.selection_set(0)
-            self.listbox.activate(0)
-
-    def _close_dropdown(self):
-        """Close dropdown window safely."""
-        if self.is_open:
-            if self.dropdown_window:
-                try:
-                    self.dropdown_window.grab_release()
-                except Exception:
-                    pass
-                try:
-                    self.dropdown_window.destroy()
-                except Exception:
-                    pass
-                self.dropdown_window = None
-            self.is_open = False
-            self.dropdown_btn.config(text="▼")
-            self.listbox = None
-
-    def _on_listbox_select(self, event=None):
-        """Handle window selection from listbox."""
-        try:
-            if not self.listbox:
-                return
-            sel = self.listbox.curselection()
-            if not sel:
-                return
-
-            selected = self.filtered_windows[sel[0]]
-            logger.debug(f"Selected window: {selected['title']}")
-
-            # Update search entry with selection
-            self.search_var.set(selected["title"])
-
-            # Call callback
-            self.on_window_selected(selected)
-
-            # Temporarily unbind FocusIn to prevent re-opening
-            self.search_entry.unbind("<FocusIn>")
-
-            # Close dropdown using helper method
-            self._close_dropdown()
-
-            # Restore FocusIn binding after a short delay
-            self.search_entry.after(100, lambda: self.search_entry.bind("<FocusIn>", self._on_search_focus_in))
-
-        except Exception as e:
-            logger.error(f"Error on window select: {e}")
 
     def set_search_text(self, text: str):
         """Set search entry text programmatically."""
-        self.search_var.set(text)
+        self._set_entry_status(
+            text or "Chưa chọn cửa sổ Cabal",
+            UI.ACCENT_GREEN if text else UI.TEXT_MUTED,
+            UI.ACCENT_GREEN_BG if text else UI.BG_ELEVATED,
+        )
 
     def get_selected_window(self) -> Optional[Dict[str, Any]]:
-        """Get currently selected window dict."""
-        try:
-            if not self.listbox:
-                return None
-            sel = self.listbox.curselection()
-            if sel:
-                return self.filtered_windows[sel[0]]
-        except Exception:
-            pass
-        return None
+        """Return the automatically selected Cabal window, if any."""
+        return self.selected_window

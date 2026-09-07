@@ -653,8 +653,10 @@ class App(tk.Tk):
             scale_factor = 1.0
 
         # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
+        sidebar_width = int(64 * scale_factor)
+        sidebar_menu_size = int(56 * scale_factor)
         self.main_shell.columnconfigure(
-            0, minsize=int(48 * scale_factor), weight=0
+            0, minsize=sidebar_width, weight=0
         )  # Vùng C1 - Sidebar
         self.main_shell.columnconfigure(
             1, minsize=int(960 * scale_factor), weight=1
@@ -669,7 +671,7 @@ class App(tk.Tk):
 
         # Ensure main_shell fills root window
         self.main_shell.grid_rowconfigure(1, weight=1)
-        self.main_shell.grid_columnconfigure(0, weight=1)
+        self.main_shell.grid_columnconfigure(0, minsize=sidebar_width, weight=0)
         self.main_shell.grid_columnconfigure(1, weight=1)
 
         self.main_shell.rowconfigure(
@@ -682,28 +684,12 @@ class App(tk.Tk):
         self.shell_zone_a.grid_propagate(False)
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
-        self.shell_zone_c1 = tk.Frame(self.main_shell, bg=UI.BG_ELEVATED)
-        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
-        self.shell_zone_c1.configure(padx=16, pady=20)
-        self.shell_zone_c1.grid_propagate(False)
-
-        # Sidebar Branding / Logo
-        brand_frame = tk.Frame(self.shell_zone_c1, bg=UI.BG_ELEVATED)
-        brand_frame.pack(fill="x", pady=(0, 16))
-
-        brand_label = tk.Label(
-            brand_frame,
-            text="⚔️",
-            font=UI.FONT_TITLE,
-            fg=UI.ACCENT_GREEN,
-            bg=UI.BG_ELEVATED,
-            anchor="center",
-            justify="center",
+        self.shell_zone_c1 = tk.Frame(
+            self.main_shell, bg=UI.BG_ELEVATED, width=sidebar_width
         )
-        brand_label.pack(fill="x", pady=(16, 12))
-
-        # Divider below brand
-        tk.Frame(brand_frame, bg=UI.BORDER_PRIMARY, height=1).pack(fill="x")
+        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
+        self.shell_zone_c1.configure(padx=4, pady=12)
+        self.shell_zone_c1.grid_propagate(False)
 
         # Build Sidebar Navigation
         sidebar_items = [
@@ -766,7 +752,7 @@ class App(tk.Tk):
         ]
         self._sidebar_widgets = []
 
-        def apply_button_hover_effects(button, active_color=None, hover_color=None):
+        def apply_button_hover_effects(button, hover_color=None):
             """Apply hover effects to a Tkinter button"""
             default_bg = button.cget("bg")
             default_fg = button.cget("fg")
@@ -775,11 +761,11 @@ class App(tk.Tk):
             hover_fg = UI.TEXT_PRIMARY if hover_color else default_fg
 
             def on_enter(event):
-                if button.cget("bg") != UI.BG_SURFACE:
+                if not getattr(button, "_sidebar_active", False):
                     button.config(bg=hover_bg, fg=hover_fg, relief="flat")
 
             def on_leave(event):
-                if button.cget("bg") != UI.BG_SURFACE:
+                if not getattr(button, "_sidebar_active", False):
                     button.config(bg=default_bg, fg=default_fg, relief="flat")
 
             button.bind("<Enter>", on_enter)
@@ -800,9 +786,17 @@ class App(tk.Tk):
                 lbl.pack(fill="x", pady=(10, 4))
                 self._sidebar_widgets.append((lbl, key, view_target, icon))
             else:
-                # Button
-                btn = tk.Button(
+                menu_cell = tk.Frame(
                     self.shell_zone_c1,
+                    bg=UI.BG_ELEVATED,
+                    width=sidebar_menu_size,
+                    height=sidebar_menu_size,
+                )
+                menu_cell.pack(pady=2)
+                menu_cell.pack_propagate(False)
+
+                btn = tk.Button(
+                    menu_cell,
                     text=f" {icon} ",
                     command=command,
                     bg=UI.BG_ELEVATED,
@@ -810,22 +804,16 @@ class App(tk.Tk):
                     font=UI.FONT_TITLE,
                     anchor="center",
                     padx=0,
-                    pady=4,
-                    width=3,
-                    height=1,
+                    pady=0,
                     relief="flat",
                     cursor="hand2",
                 )
 
                 apply_button_hover_effects(
-                    btn, hover_color=UI.BG_SURFACE, active_color=UI.BG_SURFACE
+                    btn, hover_color=UI.BG_SURFACE
                 )
 
-                if font == UI.FONT_LABEL:
-                    # Indent sub-items slightly
-                    btn.pack(fill="x", pady=2, padx=4)
-                else:
-                    btn.pack(fill="x", pady=2, padx=4)
+                btn.pack(fill="both", expand=True)
                 self._sidebar_widgets.append((btn, key, view_target, icon))
 
                 # Add tooltip
@@ -914,6 +902,15 @@ class App(tk.Tk):
         # Col 0 Subframe
         col0_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
         col0_frame.grid(row=0, column=0, sticky="w")
+
+        brand_label = tk.Label(
+            col0_frame,
+            text="⚔️",
+            font=UI.FONT_TITLE,
+            fg=UI.ACCENT_GREEN,
+            bg=UI.BG_BASE,
+        )
+        brand_label.pack(side="left", padx=(0, 12))
 
         self.compact_window_selector = CompactWindowSelector(
             col0_frame,
@@ -1274,12 +1271,14 @@ class App(tk.Tk):
                 if isinstance(widget, tk.Button):
                     original_text = self._t(key)
                     if view_target == view_key:
+                        widget._sidebar_active = True
                         widget.config(
                             bg=UI.BG_SURFACE,
                             fg=UI.ACCENT_GREEN,
-                            text=f" ▌ {icon}",
+                            text=f" {icon} ",
                         )
                     else:
+                        widget._sidebar_active = False
                         widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
