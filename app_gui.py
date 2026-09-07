@@ -807,7 +807,7 @@ class App(tk.Tk):
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_PRIMARY,
-                    font=UI.FONT_LARGE,
+                    font=UI.FONT_TITLE,
                     anchor="center",
                     padx=12,
                     pady=8,
