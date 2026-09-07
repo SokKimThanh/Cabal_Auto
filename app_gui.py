@@ -843,12 +843,14 @@ self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * sca
         )
 
         # Configure scroll region when frame size changes
-        self.action_bar_frame.bind(
-            "<Configure>",
-            lambda e: self.action_bar_canvas.configure(
-                scrollregion=self.action_bar_canvas.bbox("all")
-            )
-        )
+# Configure scroll region when frame size changes
+_action_bar_config_tag = "action_bar_frame_config"
+self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
+self.bind_class(
+    _action_bar_config_tag,
+    "<Configure>",
+    lambda e: self.action_bar_canvas.configure(scrollregion=self.action_bar_canvas.bbox("all")),
+)
 
         self.action_bar_frame_id = self.action_bar_canvas.create_window((0, 0), window=self.action_bar_frame, anchor="nw")
 
