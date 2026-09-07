@@ -654,7 +654,7 @@ class App(tk.Tk):
 
         # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
         self.main_shell.columnconfigure(
-            0, minsize=int(56 * scale_factor), weight=0
+            0, minsize=int(48 * scale_factor), weight=0
         )  # Vùng C1 - Sidebar
         self.main_shell.columnconfigure(
             1, minsize=int(960 * scale_factor), weight=1
@@ -809,9 +809,9 @@ class App(tk.Tk):
                     fg=UI.TEXT_PRIMARY,
                     font=UI.FONT_TITLE,
                     anchor="center",
-                    padx=8,
-                    pady=8,
-                    width=2,
+                    padx=0,
+                    pady=4,
+                    width=3,
                     height=1,
                     relief="flat",
                     cursor="hand2",
@@ -823,9 +823,9 @@ class App(tk.Tk):
 
                 if font == UI.FONT_LABEL:
                     # Indent sub-items slightly
-                    btn.pack(pady=4)
+                    btn.pack(fill="x", pady=2, padx=4)
                 else:
-                    btn.pack(pady=4)
+                    btn.pack(fill="x", pady=2, padx=4)
                 self._sidebar_widgets.append((btn, key, view_target, icon))
 
                 # Add tooltip
