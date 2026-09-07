@@ -694,7 +694,7 @@ class App(tk.Tk):
         brand_label = tk.Label(
             brand_frame,
             text="⚔️",
-            font=UI.FONT_LARGE,
+            font=UI.FONT_TITLE,
             fg=UI.ACCENT_GREEN,
             bg=UI.BG_ELEVATED,
             anchor="center",
@@ -807,7 +807,7 @@ class App(tk.Tk):
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_PRIMARY,
-                    font=UI.FONT_LARGE,
+                    font=UI.FONT_TITLE,
                     anchor="center",
                     padx=12,
                     pady=12,
