@@ -1,6 +1,7 @@
 """Compact window selector for hunt tab header bar."""
 
 import tkinter as tk
+from tkinter import ttk
 from typing import List, Dict, Any, Callable, Optional
 import logging
 from lib.ui_style_v2 import UIStyleV2 as UI
@@ -22,7 +23,7 @@ class CompactWindowSelector:
         parent: tk.Widget,
         on_window_selected: Callable[[Dict[str, Any]], None],
         window_controller: Any,  # AppWindowController instance
-        root: Any,
+        root: tk.Tk,
     ):
         self.parent = parent
         self.on_window_selected = on_window_selected
@@ -68,12 +69,12 @@ class CompactWindowSelector:
         self.search_entry.bind("<Return>", self._on_search_enter)
         self.search_entry.bind("<KeyRelease>", self._on_search_text_changed)
         self.search_entry.bind("<FocusIn>", self._on_search_focus_in)
-        self.search_entry.bind("<Escape>", lambda _event: self._close_dropdown())
+        self.search_entry.bind("<Escape>", lambda e: self._close_dropdown())
 
         # Dropdown button
         self.dropdown_btn = tk.Button(
             self.search_frame,
-            text="✕",
+            text="▼",
             width=2,
             height=1,
             bg=UI.BG_SURFACE,
@@ -216,7 +217,7 @@ class CompactWindowSelector:
                 self.dropdown_window.destroy()
                 self.dropdown_window = None
             self.is_open = False
-            self.dropdown_btn.config(text="✕")
+            self.dropdown_btn.config(text="▼")
         else:
             if not self.win_items:
                 self._on_refresh()
@@ -228,11 +229,16 @@ class CompactWindowSelector:
             # Make popup grab all events (modal-like behavior)
             self.dropdown_window.grab_set()
 
-            # Anchor the popup directly beneath the visible search controls.
-            self.search_frame.update_idletasks()
-            dropdown_x = self.search_frame.winfo_rootx()
-            dropdown_y = self.search_frame.winfo_rooty() + self.search_frame.winfo_height()
-            frame_width = self.search_frame.winfo_width()
+            # Position dropdown below search frame
+            self.frame.update_idletasks()
+            parent_x = self.parent.winfo_rootx()
+            parent_y = self.parent.winfo_rooty()
+            frame_width = self.frame.winfo_width()
+            search_height = self.search_frame.winfo_height()
+
+            # Calculate dropdown position (below search_frame)
+            dropdown_x = parent_x
+            dropdown_y = parent_y + search_height
 
             # Create scrollbar and listbox in Toplevel
             scrollbar = tk.Scrollbar(self.dropdown_window)
@@ -243,7 +249,7 @@ class CompactWindowSelector:
                 height=6,
                 width=50,
                 yscrollcommand=scrollbar.set,
-                font=UI.FONT_TEXT,
+                font=UI.FONT_MONO,
                 bg=UI.BG_BASE,
                 fg=UI.TEXT_PRIMARY,
                 selectmode="single",
@@ -252,7 +258,7 @@ class CompactWindowSelector:
             scrollbar.config(command=self.listbox.yview)
             self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
             # Allow Escape key to close dropdown
-            self.listbox.bind("<Escape>", lambda _event: self._close_dropdown())
+            self.listbox.bind("<Escape>", lambda e: self._close_dropdown())
 
             # Position and resize Toplevel window
             self.dropdown_window.geometry(f"{frame_width}x150+{dropdown_x}+{dropdown_y}")
@@ -260,7 +266,7 @@ class CompactWindowSelector:
             self._update_listbox()
 
             self.is_open = True
-            self.dropdown_btn.config(text="▼")
+            self.dropdown_btn.config(text="▲")
             self.search_entry.focus()
 
     def _update_listbox(self):
@@ -302,7 +308,7 @@ class CompactWindowSelector:
                     pass
                 self.dropdown_window = None
             self.is_open = False
-            self.dropdown_btn.config(text="✕")
+            self.dropdown_btn.config(text="▼")
             self.listbox = None
 
     def _on_listbox_select(self, event=None):

@@ -693,12 +693,12 @@ class App(tk.Tk):
 
         brand_label = tk.Label(
             brand_frame,
-            text="⚔️ CABAL ASSISTANT",
-            font=UI.FONT_SMALL,
+            text="⚔️",
+            font=UI.FONT_LARGE,
             fg=UI.ACCENT_GREEN,
             bg=UI.BG_ELEVATED,
-            anchor="w",
-            justify="left",
+            anchor="center",
+            justify="center",
         )
         brand_label.pack(fill="x", pady=(16, 12))
 
@@ -775,11 +775,11 @@ class App(tk.Tk):
             hover_fg = UI.TEXT_PRIMARY if hover_color else default_fg
 
             def on_enter(event):
-                if button.cget("bg") != UI.ACCENT_GREEN_BG:
+                if button.cget("bg") != UI.BG_SURFACE:
                     button.config(bg=hover_bg, fg=hover_fg, relief="raised")
 
             def on_leave(event):
-                if button.cget("bg") != UI.ACCENT_GREEN_BG:
+                if button.cget("bg") != UI.BG_SURFACE:
                     button.config(bg=default_bg, fg=default_fg, relief="flat")
 
             button.bind("<Enter>", on_enter)
@@ -791,7 +791,7 @@ class App(tk.Tk):
                 # Section label (not used in current items but keep logic for safety)
                 lbl = tk.Label(
                     self.shell_zone_c1,
-                    text=f" {icon} ",
+                    text=f"{icon}",
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
                     font=font,
@@ -807,23 +807,23 @@ class App(tk.Tk):
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_PRIMARY,
-                    font=UI.FONT_TITLE,
+                    font=UI.FONT_LARGE,
                     anchor="center",
                     padx=12,
-                    pady=8,
+                    pady=12,
                     relief="flat",
                     cursor="hand2",
                 )
 
                 apply_button_hover_effects(
-                    btn, hover_color=UI.BG_SURFACE, active_color=UI.ACCENT_GREEN_BG
+                    btn, hover_color=UI.BG_SURFACE, active_color=UI.BG_SURFACE
                 )
 
                 if font == UI.FONT_LABEL:
                     # Indent sub-items slightly
-                    btn.pack(fill="x", pady=2, padx=(12, 0))
+                    btn.pack(pady=4)
                 else:
-                    btn.pack(fill="x", pady=2)
+                    btn.pack(pady=4)
                 self._sidebar_widgets.append((btn, key, view_target, icon))
 
                 # Add tooltip
@@ -1273,15 +1273,15 @@ class App(tk.Tk):
                     original_text = self._t(key)
                     if view_target == view_key:
                         widget.config(
-                            bg=UI.ACCENT_GREEN_BG,
+                            bg=UI.BG_SURFACE,
                             fg=UI.ACCENT_GREEN,
-                            text=f" ▌ {icon} ",
+                            text=f"{icon}",
                         )
                     else:
                         widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
-                            text=f" {icon} ",
+                            text=f"{icon}",
                         )
 
         if hasattr(target_view, "on_view_shown"):
@@ -3052,15 +3052,7 @@ def main():
         app = App()
         app.protocol("WM_DELETE_WINDOW", app.on_close)
         print("[Main] Tkinter window initialized and mainloop starting...")
-        try:
-            app.mainloop()
-        except KeyboardInterrupt:
-            logger.info("Đã nhận Ctrl+C. Ứng dụng đã thoát.")
-            app.hunt_running = False
-            try:
-                app.destroy()
-            except tk.TclError:
-                pass
+        app.mainloop()
     finally:
         # Always release lock on exit
         instance_lock.release()
