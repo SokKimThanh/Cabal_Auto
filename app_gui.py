@@ -14,6 +14,7 @@ from lib.features.timing.calculator import (
 from lib.features.skills.skill_stats import (
     SkillStats,
         )  # Sprint 22 Patch 1: Training Mode
+from ui.controllers.skill_manager_controller import SkillManagerController
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 from lib.features.skills.skill_repo import (
     calculate_attack_speed_from_skills,
@@ -291,18 +292,24 @@ class App(tk.Tk):
 
         # State Bookkeeping Extracted
         from ui.controllers.app_window_controller import AppWindowController
+        from ui.controllers.library_manager_controller import LibraryManagerController
         from ui.controllers.app_state_controller import AppStateController
         from ui.controllers.overlay_controller import (
             OverlayController as AppOverlayController,
         )
         from ui.controllers.window_tracker_controller import WindowTrackerController
         from lib.features.monsters.monster_library_service import MonsterLibraryService
+        from ui.controllers.monster_manager_controller import MonsterManagerController
 
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
+        self.library_manager_controller = LibraryManagerController(self)
         self.overlay_controller = AppOverlayController(self)
         self.window_tracker_controller = WindowTrackerController(self)
         self.monster_library_service = MonsterLibraryService()
+        self.monster_manager_controller = MonsterManagerController(self)
+        self.skill_service = SkillRuntimeService()
+        self.skill_manager_controller = SkillManagerController(self)
 
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
@@ -605,9 +612,9 @@ class App(tk.Tk):
         )
 
         # Keyboard shortcuts (Window-focused only)
-        self.bind("<Control-m>", lambda e: self.switch_view("monster_manager"))
-        self.bind("<Control-k>", lambda e: self.switch_view("skill_manager"))
-
+        self.bind(
+            "<Control-k>", lambda e: self.skill_manager_controller.open_window()
+        )  # Ctrl+K: Manage skills
         self.bind("<Alt-Key-1>", lambda e: self.switch_view("hunt"))  # Alt+1: Hunt tab
         self.bind(
             "<Alt-Key-2>", lambda e: self.switch_view("setup")
@@ -705,17 +712,24 @@ class App(tk.Tk):
             ),
             (
                 "btn_skill_manager",
-                lambda: self.switch_view("skill_manager"),
+                self.skill_manager_controller.open_window,
                 UI.FONT_SECTION,
-                "skill_manager",
+                None,
                 "⚔️",
             ),
             (
                 "btn_monster_manager",
-                lambda: self.switch_view("monster_manager"),
+                self.monster_manager_controller.open_window,
                 UI.FONT_SECTION,
-                "monster_manager",
+                None,
                 "🐉",
+            ),
+            (
+                "btn_library_manager",
+                self.library_manager_controller.open_library_manager,
+                UI.FONT_SECTION,
+                None,
+                "📚",
             ),
             (
                 "sidebar_activity_logs",
@@ -1013,13 +1027,6 @@ class App(tk.Tk):
         self._views["help"] = HelpSupportFrame(self.shell_zone_b, self)
         self._views["stats"] = StatsContentFrame(self.shell_zone_b, self)
         self._views["logs"] = ActivityLogsFrame(self.shell_zone_b, self)
-
-        # New Workspace Views
-        from ui.views.monster_manager_frame import MonsterManagerFrame
-        from ui.views.skill_manager_frame import SkillManagerFrame
-
-        self._views["monster_manager"] = MonsterManagerFrame(self.shell_zone_b, self)
-        self._views["skill_manager"] = SkillManagerFrame(self.shell_zone_b, self)
 
         self.logs_text_widget = self._views["logs"].text_widget
 
@@ -1359,6 +1366,8 @@ class App(tk.Tk):
                 except Exception:
                     pass
 
+    def try_close_library_manager(self) -> bool:
+        return self.library_manager_controller.try_close_library_manager()
 
     def _switch_to_tab(self, tab_index: int):
         """Switch to specified tab via keyboard shortcut."""
