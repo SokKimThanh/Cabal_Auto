@@ -939,14 +939,14 @@ class App(tk.Tk):
 
         def close_expanded_status():
             self.expanded_status_frame.pack_forget()
-            # self.shell_zone_a.config(height=int(80 * scale_factor)) # Optionally restore height if fixed
+            expand_btn.config(text="▼")
 
         def toggle_expanded_status():
             if self.expanded_status_frame.winfo_ismapped():
                 close_expanded_status()
             else:
                 self.expanded_status_frame.pack(fill="x", expand=True, padx=4, pady=(0, 4))
-                # self.shell_zone_a.config(height=int(220 * scale_factor)) # Optionally expand height
+                expand_btn.config(text="▲")
 
         close_btn = tk.Button(
             self.expanded_status_frame, text="✖", font=UI.FONT_SMALL, bg=UI.BG_BASE, fg=UI.TEXT_MUTED, bd=0, command=close_expanded_status, cursor="hand2"
