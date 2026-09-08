@@ -23,17 +23,17 @@ def get_icon_name(name: str) -> str:
 def register_icons(icon_helper):
     """Register all custom icons mapping in IconHelper."""
     mapping = {
-        Icons.SCAN_FAILED: ("scan-failed.ico", "❌"),
-        Icons.SCAN_SCREEN: ("scan-screen.ico", "🔍"),
-        Icons.SCANNING: ("scaning.ico", "⏳"),
-        Icons.SCAN_COMPLETE: ("scan-complete.ico", "✅"),
-        Icons.APP: ("app.ico", "📱"),
-        Icons.SETTINGS: ("settings.ico", "⚙️"),
-        Icons.DB_SYNC: ("db-sync.ico", "🔄"),
-        Icons.HELP: ("help.ico", "❓"),
-        Icons.INFO: ("info.ico", "ℹ️"),
-        Icons.CLOSE: ("close.ico", "✖️"),
-        Icons.WARNING: ("warning.ico", "⚠️"),
+        Icons.SCAN_FAILED: ("scan-failed", "❌"),
+        Icons.SCAN_SCREEN: ("search", "🔍"),
+        Icons.SCANNING: ("scaning", "⏳"),
+        Icons.SCAN_COMPLETE: ("scan-complete", "✅"),
+        Icons.APP: ("app", "📱"),
+        Icons.SETTINGS: ("settings", "⚙️"),
+        Icons.DB_SYNC: ("db-sync", "🔄"),
+        Icons.HELP: ("help", "❓"),
+        Icons.INFO: ("info", "ℹ️"),
+        Icons.CLOSE: ("close", "✖️"),
+        Icons.WARNING: ("warning", "⚠️"),
     }
 
     for name, (filename, fallback) in mapping.items():
