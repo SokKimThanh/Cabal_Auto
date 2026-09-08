@@ -69,6 +69,7 @@ class ResponsiveGridBase(tk.Frame):
     def _on_resize(self, width, height):
         """Lifecycle event when component changes size."""
         logger.debug(f"[ResponsiveGridBase] Size changed: {width}x{height} - {self.__class__.__name__}")
+        self._check_scrollbar_visibility()
 
     def get_content_frame(self):
         """Returns the inner frame where child widgets should be placed."""
@@ -93,9 +94,26 @@ class ResponsiveGridBase(tk.Frame):
 
     def _update_scrollregion(self):
         try:
-            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            bbox = self.canvas.bbox("all")
+            self.canvas.configure(scrollregion=bbox)
+            self._check_scrollbar_visibility()
         except tk.TclError:
             pass # Widget might have been destroyed
+
+    def _check_scrollbar_visibility(self):
+        try:
+            req_height = self.content_frame.winfo_reqheight()
+            canvas_height = self.canvas.winfo_height()
+
+            # Show scrollbar only if content exceeds canvas height
+            if req_height > canvas_height and canvas_height > 1:
+                self.scrollbar.grid(row=0, column=1, sticky="ns")
+            else:
+                self.scrollbar.grid_remove()
+                # Optional: reset canvas yview to top if scrollbar is hidden
+                self.canvas.yview_moveto(0)
+        except tk.TclError:
+            pass
 
     def _on_enter(self, event=None):
         """Bind mouse wheel scrolling cross-platform when mouse enters the widget."""

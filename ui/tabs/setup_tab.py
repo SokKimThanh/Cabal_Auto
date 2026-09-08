@@ -3,15 +3,19 @@ from tkinter import ttk, filedialog
 from typing import TYPE_CHECKING
 
 from lib.i18n import t as i18n_t, GLOBAL_NS as I18N_GLOBAL
-from lib.ui_style_v2 import UIStyleV2 as UIStyle
+from lib.ui_style_v2 import UIStyleV2
 
 if TYPE_CHECKING:
     from app_gui import App
 
 
-class SetupTab(tk.Frame):
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
+
+class SetupTab(ResponsiveGridBase):
     def __init__(self, parent: ttk.Notebook, app: "App", *args, **kwargs):
-        super().__init__(parent, padx=12, pady=12, *args, **kwargs)
+        super().__init__(parent, bg=UIStyleV2.THEME_BG_APP, *args, **kwargs)
+        # Pad the content frame instead to maintain visual consistency
+        self.get_content_frame().configure(padx=12, pady=12)
         self.parent = parent
         self.app = app
         self.lang = getattr(app, "lang", "vi")
@@ -25,7 +29,7 @@ class SetupTab(tk.Frame):
         return i18n_t(key, ns=I18N_GLOBAL, lang=self.lang, **kwargs)
 
     def _build_collapsible_group(self, row, title_key, desc_key, content_builder):
-        group_frame = ttk.Frame(self)
+        group_frame = ttk.Frame(self.get_content_frame())
         group_frame.grid(row=row, column=0, columnspan=2, sticky="nsew", pady=(0, 12))
         group_frame.grid_columnconfigure(0, weight=1)
 
@@ -36,12 +40,11 @@ class SetupTab(tk.Frame):
 
         btn_text_var = tk.StringVar(value=f"▶ {self._t(title_key)}")
 
-        content_frame = tk.LabelFrame(
+        content_frame = tk.Frame(
             group_frame,
-            bg=UIStyle.THEME_BG_APP,
-            fg=UIStyle.THEME_TEXT_PRIMARY,
-            padx=12,
-            pady=10,
+            bg=UIStyleV2.THEME_BG_APP,
+            padx=UIStyleV2.SPACE_MD,
+            pady=UIStyleV2.SPACE_SM,
         )
 
         def toggle(event=None):
@@ -130,33 +133,36 @@ class SetupTab(tk.Frame):
 
         ttk.Label(
             frame,
-            text=self._t("hotkey_start_hunt"),
+            text=self._t("start_stop_hotkeys"),
         ).grid(row=1, column=0, sticky="e", padx=(0, 8), pady=4)
         self.app.global_hotkey_start_var = tk.StringVar(
             value=hotkey_cfg.get("start_key", "ctrl+shift+r")
         )
+        self.app.global_hotkey_stop_var = tk.StringVar(
+            value=hotkey_cfg.get("stop_key", "ctrl+shift+e")
+        )
+
+        # Container for the two Comboboxes side by side
+        hotkey_container = ttk.Frame(frame)
+        hotkey_container.grid(row=1, column=1, sticky="w", pady=4)
+
         ttk.Combobox(
-            frame,
+            hotkey_container,
             textvariable=self.app.global_hotkey_start_var,
             values=hotkey_options,
             width=15,
             state="readonly",
-        ).grid(row=1, column=1, sticky="w", pady=4)
+        ).pack(side="left")
 
-        ttk.Label(
-            frame,
-            text=self._t("hotkey_stop_hunt"),
-        ).grid(row=2, column=0, sticky="e", padx=(0, 8), pady=4)
-        self.app.global_hotkey_stop_var = tk.StringVar(
-            value=hotkey_cfg.get("stop_key", "ctrl+shift+e")
-        )
+        ttk.Label(hotkey_container, text=" / ").pack(side="left")
+
         ttk.Combobox(
-            frame,
+            hotkey_container,
             textvariable=self.app.global_hotkey_stop_var,
             values=hotkey_options,
             width=15,
             state="readonly",
-        ).grid(row=2, column=1, sticky="w", pady=4)
+        ).pack(side="left")
 
     def _validate_numeric(self, action, value_if_allowed):
         if action == "1":  # Insertion
@@ -169,7 +175,8 @@ class SetupTab(tk.Frame):
         return True
 
     def _add_entry_row(
-        self, frame, row, label_key, var_obj, col_offset=0, width=8, validate=False
+        self, frame, row, label_key, var_obj, col_offset=0, width=8,
+        validate=False, from_=0, to=100, increment=1, is_float=False
     ):
         ttk.Label(frame, text=self._t(label_key)).grid(
             row=row,
@@ -178,7 +185,16 @@ class SetupTab(tk.Frame):
             padx=(16 if col_offset else 0, 4),
             pady=4,
         )
-        kwargs = {"textvariable": var_obj, "width": width}
+        kwargs = {
+            "textvariable": var_obj,
+            "width": width,
+            "from_": from_,
+            "to": to,
+            "increment": increment,
+        }
+        if is_float:
+            kwargs["format"] = "%.2f"
+
         if validate:
             kwargs.update(
                 {
@@ -190,9 +206,34 @@ class SetupTab(tk.Frame):
                     ),
                 }
             )
-        ttk.Entry(frame, **kwargs).grid(
+            input_widget = ttk.Spinbox(frame, **kwargs)
+        else:
+            # For non-numeric fields like target_key, use Entry
+            # We don't want Spinbox for string values
+            input_widget = ttk.Entry(frame, textvariable=var_obj, width=width)
+
+        input_widget.grid(
             row=row, column=1 + col_offset, sticky="ew", pady=4
         )
+
+        # Add warning label placeholder
+        warning_label = ttk.Label(frame, text="", foreground=UIStyleV2.THEME_STATE_READY)
+        warning_label.grid(row=row, column=2 + col_offset, sticky="w", padx=(4, 0))
+
+        def check_warning(*args):
+            try:
+                val = float(var_obj.get())
+                if is_float and val < 0.2 and label_key in ("search_interval", "attack_interval"):
+                    warning_label.config(text="⚠️", foreground=UIStyleV2.THEME_STATE_DANGER)
+                elif val > to or val < from_:
+                    warning_label.config(text="⚠️", foreground=UIStyleV2.THEME_STATE_DANGER)
+                else:
+                    warning_label.config(text="")
+            except ValueError:
+                pass
+
+        var_obj.trace_add("write", check_warning)
+        check_warning() # Initial check
 
     def _build_advanced_content(self, frame):
         self.app.setup_target_key_var = tk.StringVar(
@@ -220,15 +261,17 @@ class SetupTab(tk.Frame):
         self._add_entry_row(frame, 0, "target_key", self.app.setup_target_key_var)
 
         self._add_entry_row(
-            frame, 1, "press_ms", self.app.setup_press_ms_var, validate=True
+            frame, 1, "press_ms", self.app.setup_press_ms_var, validate=True,
+            from_=10, to=1000, increment=10, is_float=False, col_offset=0
         )
         self._add_entry_row(
             frame,
             1,
             "target_cycle",
             self.app.setup_target_cycle_var,
-            col_offset=2,
+            col_offset=3,
             validate=True,
+            from_=0.1, to=5.0, increment=0.1, is_float=True
         )
         self._add_entry_row(
             frame,
@@ -236,25 +279,29 @@ class SetupTab(tk.Frame):
             "search_interval",
             self.app.setup_search_interval_var,
             validate=True,
+            from_=0.1, to=5.0, increment=0.1, is_float=True, col_offset=0
         )
         self._add_entry_row(
             frame,
             2,
             "attack_interval",
             self.app.setup_attack_interval_var,
-            col_offset=2,
+            col_offset=3,
             validate=True,
+            from_=0.1, to=5.0, increment=0.1, is_float=True
         )
         self._add_entry_row(
-            frame, 3, "lost_timeout", self.app.setup_lost_timeout_var, validate=True
+            frame, 3, "lost_timeout", self.app.setup_lost_timeout_var, validate=True,
+            from_=0.5, to=10.0, increment=0.1, is_float=True, col_offset=0
         )
         self._add_entry_row(
             frame,
             3,
             "attack_duration",
             self.app.setup_attack_duration_var,
-            col_offset=2,
+            col_offset=3,
             validate=True,
+            from_=0.5, to=60.0, increment=0.5, is_float=True
         )
 
     def _build_window_content(self, frame):
@@ -269,19 +316,18 @@ class SetupTab(tk.Frame):
         ttk.Entry(frame, textvariable=self.app.setup_template_var, width=30).grid(
             row=0, column=1, columnspan=2, sticky="ew", pady=4
         )
-        ttk.Button(frame, text=self._t("browse"), command=self._browse_template).grid(
-            row=0, column=3, padx=(4, 0), pady=4
-        )
+        self.browse_btn = ttk.Button(frame, text=self._t("browse"), command=self._browse_template)
+        self.browse_btn.grid(row=0, column=3, padx=(4, 0), pady=4)
 
     def _build_ui(self):
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
+        self.get_content_frame().grid_columnconfigure(0, weight=1)
+        self.get_content_frame().grid_columnconfigure(1, weight=1)
 
         # Section 1: Configuration Mode
         mode_frame = tk.LabelFrame(
-            self,
-            bg=UIStyle.THEME_BG_APP,
-            fg=UIStyle.THEME_TEXT_PRIMARY,
+            self.get_content_frame(),
+            bg=UIStyleV2.THEME_BG_APP,
+            fg=UIStyleV2.THEME_TEXT_PRIMARY,
             text=self._t("setup_mode"),
             padx=12,
             pady=10,
@@ -344,12 +390,18 @@ class SetupTab(tk.Frame):
         )
 
     def _browse_template(self):
-        path = filedialog.askopenfilename(
-            title="Select template image",
-            filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp")],
-        )
-        if path:
-            self.app.setup_template_var.set(path)
+        self.browse_btn.state(["disabled"])
+
+        def open_dialog():
+            path = filedialog.askopenfilename(
+                title="Select template image",
+                filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp")],
+            )
+            if path:
+                self.app.setup_template_var.set(path)
+            self.browse_btn.state(["!disabled"])
+
+        self.after(50, open_dialog)
 
     def _on_setup_mode_changed(self):
         if hasattr(self.app, "_on_setup_mode_changed"):
