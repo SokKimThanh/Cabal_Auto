@@ -108,9 +108,7 @@ class SetupTab(tk.Frame):
             value=hotkey_cfg.get("enabled", True)
         )
 
-        enable_text = (
-            "Enable Global Hotkeys" if self.lang == "en" else "Bật phím tắt toàn cục"
-        )
+        enable_text = self._t("enable_global_hotkeys")
         ttk.Checkbutton(
             frame,
             text=enable_text,
@@ -132,7 +130,7 @@ class SetupTab(tk.Frame):
 
         ttk.Label(
             frame,
-            text="Start Hunt:" if self.lang == "en" else "Bắt đầu Hunt:",
+            text=self._t("hotkey_start_hunt"),
         ).grid(row=1, column=0, sticky="e", padx=(0, 8), pady=4)
         self.app.global_hotkey_start_var = tk.StringVar(
             value=hotkey_cfg.get("start_key", "ctrl+shift+r")
@@ -147,7 +145,7 @@ class SetupTab(tk.Frame):
 
         ttk.Label(
             frame,
-            text="Stop Hunt:" if self.lang == "en" else "Dừng Hunt:",
+            text=self._t("hotkey_stop_hunt"),
         ).grid(row=2, column=0, sticky="e", padx=(0, 8), pady=4)
         self.app.global_hotkey_stop_var = tk.StringVar(
             value=hotkey_cfg.get("stop_key", "ctrl+shift+e")
