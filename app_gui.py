@@ -297,15 +297,10 @@ class App(tk.Tk):
         )
         from ui.controllers.window_tracker_controller import WindowTrackerController
         from lib.features.monsters.monster_library_service import MonsterLibraryService
-        from ui.controllers.monster_manager_controller import MonsterManagerController
+        from ui.controllers.app_state_controller import AppStateController
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
-        self.library_manager_controller = LibraryManagerController(self)
-        self.overlay_controller = AppOverlayController(self)
         self.window_tracker_controller = WindowTrackerController(self)
-        self.monster_manager_controller = MonsterManagerController(self)
-        self.skill_service = SkillRuntimeService()
-        self.skill_manager_controller = SkillManagerController(self)
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
             menubar = tk.Menu(self)
