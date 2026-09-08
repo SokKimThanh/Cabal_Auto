@@ -14,7 +14,6 @@ from lib.features.timing.calculator import (
 from lib.features.skills.skill_stats import (
     SkillStats,
         )  # Sprint 22 Patch 1: Training Mode
-from ui.controllers.skill_manager_controller import SkillManagerController
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 from lib.features.skills.skill_repo import (
     calculate_attack_speed_from_skills,
@@ -298,16 +297,12 @@ class App(tk.Tk):
         )
         from ui.controllers.window_tracker_controller import WindowTrackerController
         from lib.features.monsters.monster_library_service import MonsterLibraryService
-        from ui.controllers.monster_manager_controller import MonsterManagerController
 
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
         self.overlay_controller = AppOverlayController(self)
         self.window_tracker_controller = WindowTrackerController(self)
         self.monster_library_service = MonsterLibraryService()
-        self.monster_manager_controller = MonsterManagerController(self)
-        self.skill_service = SkillRuntimeService()
-        self.skill_manager_controller = SkillManagerController(self)
 
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
@@ -610,9 +605,9 @@ class App(tk.Tk):
         )
 
         # Keyboard shortcuts (Window-focused only)
-        self.bind(
-            "<Control-k>", lambda e: self.skill_manager_controller.open_window()
-        )  # Ctrl+K: Manage skills
+        self.bind("<Control-m>", lambda e: self.switch_view("monster_manager"))
+        self.bind("<Control-k>", lambda e: self.switch_view("skill_manager"))
+
         self.bind("<Alt-Key-1>", lambda e: self.switch_view("hunt"))  # Alt+1: Hunt tab
         self.bind(
             "<Alt-Key-2>", lambda e: self.switch_view("setup")
