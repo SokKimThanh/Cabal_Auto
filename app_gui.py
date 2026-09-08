@@ -853,7 +853,7 @@ class App(tk.Tk):
         # ---------------------------------------------------------
         # Column 1: Window Status Panel
         # ---------------------------------------------------------
-        col1_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_ELEVATED, bd=1, relief="solid", highlightbackground=UI.BORDER_DEFAULT, highlightthickness=1)
+        col1_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_ELEVATED, bd=1, relief="solid", highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
         col1_frame.grid(row=0, column=0, sticky="w")
 
         # Header Row (Always visible)
