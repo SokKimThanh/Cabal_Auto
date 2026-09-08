@@ -1,12 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 
-
-class SkillStatsPanel(ttk.LabelFrame):
+class SkillStatsPanel(ResponsiveGridBase):
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
-        padding = (int(8 * scale_factor), int(6 * scale_factor))
-        super().__init__(parent, text="📈 Skill Performance", padding=padding)
+        super().__init__(parent, bg=UI.BG_BASE)
         self.app = app
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
@@ -16,9 +15,20 @@ class SkillStatsPanel(ttk.LabelFrame):
         return max(8, int(base_size * self.scale_factor))
 
     def _build_ui(self):
+        # We need a Label/Header for the Panel since we removed ttk.LabelFrame
+        header_label = tk.Label(
+            self.get_content_frame(),
+            text="📈 Skill Performance",
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY,
+            font=UI.FONT_HEADER,
+            anchor="w"
+        )
+        header_label.pack(fill="x", padx=UI.SPACE_MD, pady=(UI.SPACE_MD, 0))
+
         # Container for treeview to add padding
-        tree_container = tk.Frame(self, bg=UI.BG_SURFACE)
-        tree_container.pack(fill="both", expand=True, padx=10, pady=10)
+        tree_container = tk.Frame(self.get_content_frame(), bg=UI.BG_SURFACE)
+        tree_container.pack(fill="both", expand=True, padx=UI.SPACE_LG, pady=UI.SPACE_LG)
 
         stats_columns = ("skill", "casts", "last_cast", "cooldown", "success")
         self.app.skill_stats_tree = ttk.Treeview(
@@ -59,33 +69,6 @@ class SkillStatsPanel(ttk.LabelFrame):
         self.app.skill_stats_tree.tag_configure("excellent", foreground=UI.ACCENT_GREEN)
         self.app.skill_stats_tree.tag_configure("good", foreground=UI.ACCENT_AMBER)
         self.app.skill_stats_tree.tag_configure("poor", foreground=UI.DANGER)
-        from ui.components.empty_state import EmptyState
-        self.stats_empty = EmptyState(
-            self.app.skill_stats_tree,
-            icon="⚔️",
-            message=self.app._t("skill_stats_empty"),
-            submessage="Số liệu sẽ hiển thị khi bắt đầu tấn công."
-        )
-        self.stats_empty.place(relx=0.5, rely=0.5, anchor="center")
-
-        # We also need a way to hide it when real stats arrive.
-        # For this patch, we assume external logic will insert into tree,
-        # we can bind the tree item insert to hide the empty state.
-        def _on_tree_insert(*args):
-            if len(self.app.skill_stats_tree.get_children()) > 0:
-                self.stats_empty.place_forget()
-
-        self.app.skill_stats_tree.bind("<<TreeviewSelect>>", _on_tree_insert) # Fallback trigger
-        # We can also poll
-        def _poll_tree_size():
-            if hasattr(self.app, "skill_stats_tree"):
-                if len(self.app.skill_stats_tree.get_children()) > 0:
-                    self.stats_empty.place_forget()
-                else:
-                    self.stats_empty.place(relx=0.5, rely=0.5, anchor="center")
-            self.after(1000, _poll_tree_size)
-        self.after(1000, _poll_tree_size)
-
 
         if getattr(self, "hunt_tab", None):
             for prop in ["target_image_label", "target_name_label", "status_label",

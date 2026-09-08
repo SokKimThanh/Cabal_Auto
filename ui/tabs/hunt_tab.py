@@ -343,7 +343,7 @@ class HuntTab(ttk.Frame):
             value=bool(self.app.hunt_cfg.get("bring_to_front_each_cycle", False))
         )
 
-        # Layout: 4-Panel Workspace Redesign (PanedWindow Version)
+        # Layout: 4-Panel Workspace Redesign (ResponsiveGridBase Version)
 
         try:
             scale_factor = (
@@ -355,56 +355,51 @@ class HuntTab(ttk.Frame):
         except Exception:
             scale_factor = 1.0
 
-        # Main 2-Column Layout
-        self.main_container = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
-        self.main_container.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        # Main static container for the entire tab
+        self.main_container = tk.Frame(self, bg=UI.BG_BASE)
+        self.main_container.pack(fill=tk.BOTH, expand=True)
 
-        # Column 1 (60%)
-        self.col1_container = ttk.Frame(self.main_container)
-        self.col1_paned = ttk.PanedWindow(self.col1_container, orient=tk.VERTICAL)
-        self.col1_paned.pack(fill=tk.BOTH, expand=True)
+        # Responsive Scrollable Grid for ALL panels
+        from ui.components.base.responsive_grid_base import ResponsiveGridBase
+        self.scrollable_workspace = ResponsiveGridBase(self.main_container, bg=UI.BG_BASE)
+        self.scrollable_workspace.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=UI.SPACE_MD, pady=UI.SPACE_MD)
 
-        # Column 1, Row 1 (35%)
-        self.col1_row1_container = ttk.Frame(self.col1_paned)
-        self.col1_paned.add(self.col1_row1_container, weight=35)
+        content_frame = self.scrollable_workspace.get_content_frame()
+        content_frame.config(bg=UI.BG_BASE)
 
+        # Set up a 2-column grid layout inside the responsive area (60% / 40%)
+        content_frame.columnconfigure(0, weight=6)
+        content_frame.columnconfigure(1, weight=4)
+
+        # Left Column Container (60%)
+        self.left_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
+        self.left_col_frame.grid(row=0, column=0, sticky="nsew", padx=(0, UI.SPACE_MD))
+
+        # Right Column Container (40%)
+        self.right_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
+        self.right_col_frame.grid(row=0, column=1, sticky="nsew")
+
+        # Stack panels inside the columns
         from ui.panels.monster_target_panel import MonsterTargetPanel
         self.monster_target_panel = MonsterTargetPanel(
-            self.col1_row1_container,
+            self.left_col_frame,
             self.app,
             scale_factor,
             hunt_tab=self,
         )
-        self.monster_target_panel.pack(fill=tk.BOTH, expand=True)
-
-        # Column 1, Row 2 (65%)
-        self.col1_row2_container = ttk.Frame(self.col1_paned)
-        self.col1_paned.add(self.col1_row2_container, weight=65)
+        self.monster_target_panel.pack(side=tk.TOP, fill=tk.X, expand=False, pady=(0, UI.SPACE_MD))
 
         from ui.panels.skill_panel import SkillPanel
-        self.skill_panel_controller = SkillPanel(self.col1_row2_container, self.app, scale_factor, hunt_tab=self)
-
-        # Column 2 (40%)
-        self.col2_container = ttk.Frame(self.main_container)
-        self.col2_paned = ttk.PanedWindow(self.col2_container, orient=tk.VERTICAL)
-        self.col2_paned.pack(fill=tk.BOTH, expand=True)
-
-        # Column 2, Row 1 (50%)
-        self.col2_row1_container = ttk.Frame(self.col2_paned)
-        self.col2_paned.add(self.col2_row1_container, weight=50)
+        self.skill_panel_controller = SkillPanel(self.left_col_frame, self.app, scale_factor, hunt_tab=self)
+        # Note: SkillPanel handles its own packing internally in some implementations,
+        # but normally it needs to be packed if it's just a frame.
+        if isinstance(self.skill_panel_controller, tk.Widget):
+            self.skill_panel_controller.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         from ui.panels.target_status_panel import TargetStatusPanel
-        self.target_status_panel = TargetStatusPanel(self.col2_row1_container, self.app, scale_factor, hunt_tab=self)
-        self.target_status_panel.pack(fill=tk.BOTH, expand=True)
-
-        # Column 2, Row 2 (50%)
-        self.col2_row2_container = ttk.Frame(self.col2_paned)
-        self.col2_paned.add(self.col2_row2_container, weight=50)
+        self.target_status_panel = TargetStatusPanel(self.right_col_frame, self.app, scale_factor, hunt_tab=self)
+        self.target_status_panel.pack(side=tk.TOP, fill=tk.BOTH, pady=(0, UI.SPACE_MD))
 
         from ui.panels.skill_stats_panel import SkillStatsPanel
-        self.skill_stats_panel = SkillStatsPanel(self.col2_row2_container, self.app, scale_factor, hunt_tab=self)
-        self.skill_stats_panel.pack(fill=tk.BOTH, expand=True)
-
-        # Add to main container
-        self.main_container.add(self.col1_container, weight=60)
-        self.main_container.add(self.col2_container, weight=40)
+        self.skill_stats_panel = SkillStatsPanel(self.right_col_frame, self.app, scale_factor, hunt_tab=self)
+        self.skill_stats_panel.pack(side=tk.TOP, fill=tk.BOTH)
