@@ -834,48 +834,40 @@ class App(tk.Tk):
         self.after(100, self._poll_log_queue)
         self.after(1000, self._update_logs_metrics)
 
-        # Vùng A: Quick Action Bar - 80px target height (using padding)
-        # Redesign Header Bar (3 Columns + Scrollbar)
-        self.action_bar_canvas = tk.Canvas(self.shell_zone_a, bg=UI.BG_BASE, highlightthickness=0, height=80)
-        self.action_bar_scrollbar = ttk.Scrollbar(self.shell_zone_a, orient="horizontal", command=self.action_bar_canvas.xview)
-
-        self.action_bar_frame = tk.Frame(
-            self.action_bar_canvas, padx=32, pady=18, bg=UI.BG_BASE
-        )
-
-        # Configure scroll region when frame size changes
-# Configure scroll region when frame size changes
-        _action_bar_config_tag = "action_bar_frame_config"
-        self.action_bar_frame.bindtags((_action_bar_config_tag,) + self.action_bar_frame.bindtags())
-        self.bind_class(
-            _action_bar_config_tag,
-            "<Configure>",
-            lambda e: self.action_bar_canvas.configure(scrollregion=self.action_bar_canvas.bbox("all")),
-        )
-
-        self.action_bar_frame_id = self.action_bar_canvas.create_window((0, 0), window=self.action_bar_frame, anchor="nw")
-
-        # Ensure the frame expands to fill the canvas horizontally
-        self.action_bar_canvas.bind(
-            "<Configure>",
-            lambda e: self.action_bar_canvas.itemconfig(
-                self.action_bar_frame_id,
-                width=max(e.width, self.action_bar_frame.winfo_reqwidth())
-            )
-        )
-
-        self.action_bar_canvas.configure(xscrollcommand=self.action_bar_scrollbar.set)
-
-        self.action_bar_canvas.grid(row=0, column=0, sticky="nsew")
-        self.action_bar_scrollbar.grid(row=1, column=0, sticky="ew")
+        # Vùng A: Quick Action Bar
+        from ui.components.base.responsive_grid_base import ResponsiveGridBase
 
         self.shell_zone_a.grid_columnconfigure(0, weight=1)
-        self.shell_zone_a.grid_rowconfigure(0, minsize=80, weight=1)
+        self.shell_zone_a.grid_rowconfigure(0, weight=1)
 
-        # Configure columns for action_bar_frame (3 columns)
-        self.action_bar_frame.columnconfigure(0, weight=0)  # Left
-        self.action_bar_frame.columnconfigure(1, weight=1)  # Center
-        self.action_bar_frame.columnconfigure(2, weight=0)  # Right
+        self.action_bar_scrollable = ResponsiveGridBase(self.shell_zone_a, bg=UI.BG_BASE)
+        self.action_bar_scrollable.grid(row=0, column=0, sticky="nsew")
+
+        self.action_bar_frame = self.action_bar_scrollable.get_content_frame()
+        self.action_bar_frame.configure(padx=32, pady=18)
+
+        # Configure columns for action_bar_frame (2 columns as requested)
+        self.action_bar_frame.columnconfigure(0, weight=1)  # Left (Window Status)
+        self.action_bar_frame.columnconfigure(1, weight=0)  # Right (Actions)
+
+        # ---------------------------------------------------------
+        # Column 1: Window Status Panel
+        # ---------------------------------------------------------
+        col1_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_ELEVATED, bd=1, relief="solid", highlightbackground=UI.BORDER_DEFAULT, highlightthickness=1)
+        col1_frame.grid(row=0, column=0, sticky="w")
+
+        # Header Row (Always visible)
+        status_header = tk.Frame(col1_frame, bg=UI.BG_ELEVATED)
+        status_header.pack(fill="x", padx=8, pady=6)
+
+        window_status_lbl = tk.Label(
+            status_header,
+            text=self._t("window_status_label"),
+            font=UI.FONT_SECTION,
+            fg=UI.TEXT_PRIMARY,
+            bg=UI.BG_ELEVATED
+        )
+        window_status_lbl.pack(side="left", padx=(0, 12))
 
         # Compact Window Selector (replaces combobox + refresh button)
         from ui.components.compact_window_selector import CompactWindowSelector
@@ -901,34 +893,19 @@ class App(tk.Tk):
                 self.hunt_status.set(f"✓ Selected: {window_dict['title']}")
             except Exception as e:
                 logger.error(f"Error selecting window: {e}")
-        
-        # Col 0 Subframe
-        col0_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
-        col0_frame.grid(row=0, column=0, sticky="w")
-
-        brand_label = tk.Label(
-            col0_frame,
-            text="⚔️",
-            font=UI.FONT_TITLE,
-            fg=UI.ACCENT_GREEN,
-            bg=UI.BG_BASE,
-        )
-        brand_label.pack(side="left", padx=(0, 12))
 
         self.compact_window_selector = CompactWindowSelector(
-            col0_frame,
+            status_header,
             on_window_selected=on_window_selected_from_compact,
             window_controller=self.window_controller,
             root=self,
         )
         # Auto-refresh window list on startup
         self.compact_window_selector._on_refresh()
-        # Use place() geometry for dropdown to work properly below the search bar
         self.compact_window_selector.get_frame().pack(side="left", padx=(0, 12))
 
         # Scan Manual Button
         from ui.icon_library import Icons
-
         self.scan_btn_icon_name = Icons.SCAN_SCREEN
 
         def on_scan_clicked():
@@ -936,11 +913,11 @@ class App(tk.Tk):
                 self.scan_controller.run_scan(manual=True)
 
         self.btn_manual_scan = _create_icon_btn_component(
-            parent=col0_frame,
+            parent=status_header,
             icon_name=self.scan_btn_icon_name,
             icon_fallback="🔍",
             icon_size=16,
-            button_size=36,
+            button_size=32,
             command=on_scan_clicked,
             button_type="green_light",
             tooltip_text=self._t("scan_tooltip") if hasattr(self, "_t") else "Scan",
@@ -949,22 +926,64 @@ class App(tk.Tk):
         )
         self.btn_manual_scan.pack(side="left", padx=(0, 12))
 
-        # Status Chips (Center - Column 1)
-        self.bounds_placeholder = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
-        self.bounds_placeholder.grid(row=0, column=1, sticky="w", padx=(0, 12))
+        # Expanded Frame (Hidden initially)
+        self.expanded_status_frame = tk.Frame(col1_frame, bg=UI.BG_BASE, highlightbackground=UI.BORDER_SUBTLE, highlightthickness=1)
 
+        # Screen State Panel (inside expanded)
         from ui.panels.screen_state_panel import ScreenStatePanel
+        self.bounds_placeholder = tk.Frame(self.expanded_status_frame, bg=UI.BG_BASE)
+        self.bounds_placeholder.pack(side="left", fill="both", expand=True, padx=8, pady=4)
 
         self.screen_state_panel = ScreenStatePanel(self.bounds_placeholder)
         self.screen_state_panel.pack(side="left", fill="both", expand=True)
 
-        # Col 2 Subframe (Right - Column 2)
+        def close_expanded_status():
+            self.expanded_status_frame.pack_forget()
+            # self.shell_zone_a.config(height=int(80 * scale_factor)) # Optionally restore height if fixed
+
+        def toggle_expanded_status():
+            if self.expanded_status_frame.winfo_ismapped():
+                close_expanded_status()
+            else:
+                self.expanded_status_frame.pack(fill="x", expand=True, padx=4, pady=(0, 4))
+                # self.shell_zone_a.config(height=int(220 * scale_factor)) # Optionally expand height
+
+        close_btn = tk.Button(
+            self.expanded_status_frame, text="✖", font=UI.FONT_SMALL, bg=UI.BG_BASE, fg=UI.TEXT_MUTED, bd=0, command=close_expanded_status, cursor="hand2"
+        )
+        close_btn.pack(side="right", anchor="n", padx=4, pady=4)
+
+        expand_btn = tk.Button(
+            status_header, text="▼", font=UI.FONT_SMALL, bg=UI.BG_ELEVATED, fg=UI.TEXT_SECONDARY, bd=0, command=toggle_expanded_status, cursor="hand2"
+        )
+        expand_btn.pack(side="right", padx=4)
+
+        # ---------------------------------------------------------
+        # Column 2: Global Apply, Start, Lang
+        # ---------------------------------------------------------
         col2_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
-        col2_frame.grid(row=0, column=2, sticky="e")
+        col2_frame.grid(row=0, column=1, sticky="e")
+
+        # Global Apply Button
+        from ui.helpers.button_styles import get_button_config
+        apply_config = get_button_config("green_light")
+        apply_kwargs = dict(apply_config)
+
+        self.global_apply_btn = tk.Button(
+            col2_frame,
+            text=f"✓ {self._t('apply_all_settings_saved')}",
+            command=self.on_global_apply,
+            padx=16,
+            pady=6,
+            bg=UI.ACCENT_GREEN,
+            activebackground=UI.ACCENT_GREEN_BG,
+            state="disabled",
+            **{k: v for k, v in apply_kwargs.items() if k not in ["bg", "activebackground"]}
+        )
+        self.global_apply_btn.pack(side="left", padx=(0, 12))
 
         # Unified Start/Stop Button
         start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
-
         self.start_stop_btn = _create_icon_btn_component(
             parent=col2_frame,
             icon_name="start",
@@ -982,7 +1001,6 @@ class App(tk.Tk):
             auto_hover_disabled=False,
             width=140,
         )
-
         self.start_stop_btn.pack(side="left", padx=(0, 12))
 
         # Language Selector
@@ -993,25 +1011,6 @@ class App(tk.Tk):
         self.lang_cmb["values"] = ("en", "vi")
         self.lang_cmb.pack(side="left")
         self.lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
-
-        # DPI Scaling Guard using main action bar frame width
-        # 1920 is standard. If the window is compressed significantly (< 1200), we fallback to compact.
-        def on_action_bar_configure(event):
-            if hasattr(self, "state_controller") and hasattr(
-                self.state_controller, "_update_window_bounds_display"
-            ):
-                if event.width < 1200 and not getattr(
-                    self, "_bounds_compact_mode", False
-                ):
-                    self._bounds_compact_mode = True
-                    self.state_controller._update_window_bounds_display()
-                elif event.width >= 1200 and getattr(
-                    self, "_bounds_compact_mode", False
-                ):
-                    self._bounds_compact_mode = False
-                    self.state_controller._update_window_bounds_display()
-
-        self.action_bar_frame.bind("<Configure>", on_action_bar_configure)
 
         # UX2: View Manager for Zone B
         self._current_view = None
@@ -1102,59 +1101,7 @@ class App(tk.Tk):
         print("[App._build_ui] ✓ UI build complete, main_shell gridded")
 
     def _build_global_apply_section(self):
-        """Build global apply button section below tabs."""
-        # Frame for global apply section (right-aligned)
-        self.global_apply_frame = tk.Frame(
-            self, relief="sunken", bd=1, bg=UI.BG_SURFACE
-        )
-        apply_frame = self.global_apply_frame
-        apply_frame.grid(row=0, column=6, sticky="e", padx=(0, 12))
-
-        # Unsaved changes indicator (left side)
-        indicator_frame = tk.Frame(apply_frame, bg=UI.BG_BASE)
-        indicator_frame.pack(side="left", padx=8, pady=6)
-
-        self.unsaved_indicator_label = tk.Label(
-            indicator_frame,
-            text="",
-            fg=UI.TEXT_SECONDARY,
-            font=UI.FONT_TEXT,
-            bg=UI.BG_SURFACE,
-        )
-        self.unsaved_indicator_label.pack(side="left")
-
-        # Apply All Settings button (right side) - Using global green_light style with save icon
-        # Optimized for: Negative Space, Hierarchy, Contrast Ratio (WCAG AA: 5.26:1)
-        from ui.helpers.button_styles import get_button_config
-
-        apply_config = get_button_config("green_light")
-
-        # Load save icon (22px to scale with 11pt font)
-        save_icon = self._icon("save", "💾", size=22)
-
-        apply_kwargs = dict(apply_config)
-        apply_text = self._t("apply_all_settings")
-        if not isinstance(save_icon, str):
-            apply_kwargs.update({"image": save_icon, "compound": "left"})
-            apply_text = f" {apply_text}"
-        else:
-            apply_text = f"💾 {apply_text}"
-        self.global_apply_btn = tk.Button(
-            apply_frame,
-            text=apply_text,
-            command=self.on_global_apply,
-            padx=24,
-            pady=10,
-            **apply_kwargs,
-        )
-        self.global_apply_btn.pack(side="right", padx=10, pady=6)
-
-        if not isinstance(save_icon, str):
-            try:
-                self._image_refs.append(save_icon)
-            except Exception:
-                pass
-
+        """Deprecated: Handled in Action Bar (shell_zone_a)."""
         self.has_unsaved_changes = False
         self._update_unsaved_indicator()
 
@@ -2692,17 +2639,24 @@ class App(tk.Tk):
 
     def _update_unsaved_indicator(self):
         """Update unsaved changes indicator UI."""
-        if not hasattr(self, "unsaved_indicator_label"):
+        if not hasattr(self, "global_apply_btn"):
             return
 
         if self.has_unsaved_changes:
-            self.unsaved_indicator_label.config(
-                text=f"● {self._t('unsaved_indicator')}",
-                fg=UI.ACCENT_AMBER,  # Orange color
+            # Enable button, show prominent color and text
+            self.global_apply_btn.config(
+                text=f"💾 {self._t('apply_all_settings_unsaved')}",
+                bg=UI.ACCENT_AMBER,
+                activebackground="#d97706",
+                state="normal"
             )
         else:
-            self.unsaved_indicator_label.config(
-                text=f"✓ {self._t('all_saved')}", fg=UI.ACCENT_GREEN  # Green color
+            # Disable button, show green color and "no changes" text
+            self.global_apply_btn.config(
+                text=f"✓ {self._t('apply_all_settings_saved')}",
+                bg=UI.ACCENT_GREEN,
+                activebackground=UI.ACCENT_GREEN_BG,
+                state="disabled"
             )
 
     def clear_target_ui(self, delay_ms=0):
