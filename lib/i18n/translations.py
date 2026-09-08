@@ -95,9 +95,6 @@ GLOBAL_TRANSLATIONS = {
         'save_hunt': 'Save hunt config',
         'start_hunt': 'Start hunt',
         'stop_hunt': 'Stop hunt',
-        'enable_global_hotkeys': 'Enable Global Hotkeys',
-        'hotkey_start_hunt': 'Start Hunt:',
-        'hotkey_stop_hunt': 'Stop Hunt:',
         'hunt_idle': 'Ready to hunt',
         'hunt_running': 'Hunting…',
         'hunt_stopped': 'Hunt stopped',
@@ -498,9 +495,6 @@ GLOBAL_TRANSLATIONS = {
         'save_hunt': 'Lưu cấu hình săn',
         'start_hunt': 'Bắt đầu săn',
         'stop_hunt': 'Dừng săn',
-        'enable_global_hotkeys': 'Bật phím tắt toàn cục',
-        'hotkey_start_hunt': 'Bắt đầu Hunt:',
-        'hotkey_stop_hunt': 'Dừng Hunt:',
         'refresh_tooltip': 'Làm Mới Danh Sách Cửa Sổ',
         'refresh_tooltip_desc': 'Quét lại các cửa sổ game',
         'hunt_idle': 'Sẵn sàng săn',
@@ -1142,3 +1136,17 @@ VISION_WIZARD_TRANSLATIONS = {
 
 _register_bulk('library_manager', LIBRARY_MANAGER_TRANSLATIONS)
 _register_bulk('vision_wizard', VISION_WIZARD_TRANSLATIONS)
+
+# Overrides for specific missing keys in the UI
+_register_bulk(_GLOBAL_NS, {
+    'en': {
+        'apply_all_settings_unsaved': 'Changes need saving',
+        'apply_all_settings_saved': 'All settings saved',
+        'window_status_label': 'Window Status',
+    },
+    'vi': {
+        'apply_all_settings_unsaved': 'Có thay đổi cần lưu',
+        'apply_all_settings_saved': 'Đã lưu cài đặt',
+        'window_status_label': 'Trạng thái cửa sổ',
+    }
+})

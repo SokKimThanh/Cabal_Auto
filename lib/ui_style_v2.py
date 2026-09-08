@@ -362,9 +362,9 @@ class UIStyleV2:
         }
         return styles.get(status, styles["waiting"])
 
-    @classmethod
-    def get_sidebar_item_style(cls, is_active=False):
-        return cls.get_tab_style(is_active=is_active)
+@classmethod
+def get_sidebar_item_style(cls, is_active=False):
+    return cls.get_tab_style(is_active=is_active)
 
     @classmethod
     def get_label_style(cls, variant="primary"):
