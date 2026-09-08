@@ -30,7 +30,6 @@
         "enabled": true,
         "start_key": "ctrl+shift+r",
         "stop_key": "ctrl+shift+e",
-        "setup_wizard_key": "ctrl+alt+n",
         "library_manager_key": "ctrl+shift+l",
         "vision_wizard_key": "ctrl+shift+v",
         "monster_editor_key": "ctrl+shift+m"
