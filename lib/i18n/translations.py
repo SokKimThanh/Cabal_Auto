@@ -1136,3 +1136,17 @@ VISION_WIZARD_TRANSLATIONS = {
 
 _register_bulk('library_manager', LIBRARY_MANAGER_TRANSLATIONS)
 _register_bulk('vision_wizard', VISION_WIZARD_TRANSLATIONS)
+
+# Overrides for specific missing keys in the UI
+_register_bulk(_GLOBAL_NS, {
+    'en': {
+        'apply_all_settings_unsaved': 'Changes need saving',
+        'apply_all_settings_saved': 'All settings saved',
+        'window_status_label': 'Window Status',
+    },
+    'vi': {
+        'apply_all_settings_unsaved': 'Có thay đổi cần lưu',
+        'apply_all_settings_saved': 'Đã lưu cài đặt',
+        'window_status_label': 'Trạng thái cửa sổ',
+    }
+})
