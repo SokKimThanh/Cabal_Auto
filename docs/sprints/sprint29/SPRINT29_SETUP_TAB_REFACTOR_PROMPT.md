@@ -8,7 +8,7 @@ The current `SetupTab` relies on a rigid grid layout with raw `ttk.Entry` fields
 ## Required Tasks
 
 ### 1. Architectural Migration (`ResponsiveGridBase`)
-- Refactor the class `SetupTab(tk.Frame)` to inherit from `ResponsiveGridBase`.
+- Refactor the class `SetupTab(tk.Frame)` to inherit from `ResponsiveGridBase` (located in `ui/components/base/responsive_grid_base.py`).
 - Ensure all children (collapsible sections, inputs, mode selectors) are parented to `self.get_content_frame()` rather than `self`.
 - Verify that expanding all collapsible sections does not result in the content overflowing silently (the canvas scrollbar should appear).
 
@@ -18,7 +18,7 @@ The current `SetupTab` relies on a rigid grid layout with raw `ttk.Entry` fields
 - Add an inline visual indicator (e.g., dynamic color highlighting on the label or a tiny icon tooltip) when a value reaches an extreme threshold (e.g., search interval below 0.1s).
 
 ### 3. Layout and Visual Cleanup
-- Simplify the collapsible frame layouts (`_build_collapsible_group`) to reduce unnecessary `tk.LabelFrame` nesting. Rely on `UIStyleV2.SPACE_*` padding tokens and whitespace for visual hierarchy rather than solid borders.
+- Simplify the collapsible frame layouts (`_build_collapsible_group`) to reduce unnecessary `tk.LabelFrame` nesting. Rely on `UIStyleV2.SPACE_*` padding tokens from `lib.ui_style_v2` and whitespace for visual hierarchy rather than solid borders.
 - Refactor the "Bắt đầu Hunt:" and "Dừng Hunt:" labels within the Global Hotkeys section. They are currently slightly redundant; redesign this sub-section to be more concise (e.g., "Start/Stop Hotkeys"). Remember to update/add the necessary `i18n` keys in `lib/i18n/translations.py`.
 
 ### 4. Improve File Dialog UX
