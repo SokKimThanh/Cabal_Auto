@@ -69,33 +69,6 @@ class SkillStatsPanel(ResponsiveGridBase):
         self.app.skill_stats_tree.tag_configure("excellent", foreground=UI.ACCENT_GREEN)
         self.app.skill_stats_tree.tag_configure("good", foreground=UI.ACCENT_AMBER)
         self.app.skill_stats_tree.tag_configure("poor", foreground=UI.DANGER)
-        from ui.components.empty_state import EmptyState
-        self.stats_empty = EmptyState(
-            self.app.skill_stats_tree,
-            icon="⚔️",
-            message=self.app._t("skill_stats_empty"),
-            submessage="Số liệu sẽ hiển thị khi bắt đầu tấn công."
-        )
-        self.stats_empty.place(relx=0.5, rely=0.5, anchor="center")
-
-        # We also need a way to hide it when real stats arrive.
-        # For this patch, we assume external logic will insert into tree,
-        # we can bind the tree item insert to hide the empty state.
-        def _on_tree_insert(*args):
-            if len(self.app.skill_stats_tree.get_children()) > 0:
-                self.stats_empty.place_forget()
-
-        self.app.skill_stats_tree.bind("<<TreeviewSelect>>", _on_tree_insert) # Fallback trigger
-        # We can also poll
-        def _poll_tree_size():
-            if hasattr(self.app, "skill_stats_tree"):
-                if len(self.app.skill_stats_tree.get_children()) > 0:
-                    self.stats_empty.place_forget()
-                else:
-                    self.stats_empty.place(relx=0.5, rely=0.5, anchor="center")
-            self.after(1000, _poll_tree_size)
-        self.after(1000, _poll_tree_size)
-
 
         if getattr(self, "hunt_tab", None):
             for prop in ["target_image_label", "target_name_label", "status_label",

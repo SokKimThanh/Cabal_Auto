@@ -359,20 +359,7 @@ class HuntTab(ttk.Frame):
         self.main_container = tk.Frame(self, bg=UI.BG_BASE)
         self.main_container.pack(fill=tk.BOTH, expand=True)
 
-        # Pinned top section (Stacking Priority) - Must NOT be in the scrollable area
-        from ui.panels.monster_target_panel import MonsterTargetPanel
-        self.pinned_container = tk.Frame(self.main_container, bg=UI.BG_BASE)
-        self.pinned_container.pack(side=tk.TOP, fill=tk.X, padx=UI.SPACE_MD, pady=(UI.SPACE_MD, 0))
-
-        self.monster_target_panel = MonsterTargetPanel(
-            self.pinned_container,
-            self.app,
-            scale_factor,
-            hunt_tab=self,
-        )
-        self.monster_target_panel.pack(fill=tk.X, expand=True)
-
-        # Responsive Scrollable Grid for the rest of the panels
+        # Responsive Scrollable Grid for ALL panels
         from ui.components.base.responsive_grid_base import ResponsiveGridBase
         self.scrollable_workspace = ResponsiveGridBase(self.main_container, bg=UI.BG_BASE)
         self.scrollable_workspace.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=UI.SPACE_MD, pady=UI.SPACE_MD)
@@ -393,6 +380,15 @@ class HuntTab(ttk.Frame):
         self.right_col_frame.grid(row=0, column=1, sticky="nsew")
 
         # Stack panels inside the columns
+        from ui.panels.monster_target_panel import MonsterTargetPanel
+        self.monster_target_panel = MonsterTargetPanel(
+            self.left_col_frame,
+            self.app,
+            scale_factor,
+            hunt_tab=self,
+        )
+        self.monster_target_panel.pack(side=tk.TOP, fill=tk.X, expand=False, pady=(0, UI.SPACE_MD))
+
         from ui.panels.skill_panel import SkillPanel
         self.skill_panel_controller = SkillPanel(self.left_col_frame, self.app, scale_factor, hunt_tab=self)
         # Note: SkillPanel handles its own packing internally in some implementations,
