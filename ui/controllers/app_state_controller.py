@@ -409,8 +409,8 @@ class AppStateController:
             "attack_press_ms": ("setup_press_ms_var", 60),
         }
 
-        if hasattr(app, "setup_mode_var"):
-            cfg["ui_mode"] = app.setup_mode_var.get()
+        # Force advanced mode since mode selection is removed
+        cfg["ui_mode"] = "advanced"
 
         if hasattr(app, "setup_template_var"):
             cfg["template_path"] = app.setup_template_var.get()
