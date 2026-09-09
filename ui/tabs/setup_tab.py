@@ -1,17 +1,29 @@
+"""
+Setup Tab Module.
+Provides the UI for application configuration and setup.
+"""
+
 import tkinter as tk
 from tkinter import ttk, filedialog
 from typing import TYPE_CHECKING
 
 from lib.i18n import t as i18n_t, GLOBAL_NS as I18N_GLOBAL
 from lib.ui_style_v2 import UIStyleV2
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 
 if TYPE_CHECKING:
     from app_gui import App
 
 
-from ui.components.base.responsive_grid_base import ResponsiveGridBase
-
 class SetupTab(ResponsiveGridBase):
+    """
+    Setup Tab UI Class.
+    Manages settings, hotkeys, and configuration modes.
+    """
+    # pylint: disable=too-many-instance-attributes,too-few-public-methods
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+    # pylint: disable=too-many-ancestors,protected-access
+
     def __init__(self, parent: ttk.Notebook, app: "App", *args, **kwargs):
         super().__init__(parent, bg=UIStyleV2.THEME_BG_APP, *args, **kwargs)
         # Pad the content frame instead to maintain visual consistency
@@ -19,6 +31,7 @@ class SetupTab(ResponsiveGridBase):
         self.parent = parent
         self.app = app
         self.lang = getattr(app, "lang", "vi")
+        self.browse_btn = None
 
         self._build_ui()
         self._update_setup_visibility()
@@ -47,7 +60,7 @@ class SetupTab(ResponsiveGridBase):
             pady=UIStyleV2.SPACE_SM,
         )
 
-        def toggle(event=None):
+        def toggle(_event=None):
             visible = not is_visible_var.get()
             is_visible_var.set(visible)
             if visible:
@@ -68,16 +81,16 @@ class SetupTab(ResponsiveGridBase):
             takefocus=1,
         )
 
-        def _on_focus_in(event):
+        def _on_focus_in(_event):
             try:
                 pass
-            except Exception:
+            except tk.TclError:
                 pass
 
-        def _on_focus_out(event):
+        def _on_focus_out(_event):
             try:
                 pass
-            except Exception:
+            except tk.TclError:
                 pass
 
         header_frame.bind("<FocusIn>", _on_focus_in)
@@ -220,7 +233,7 @@ class SetupTab(ResponsiveGridBase):
         warning_label = ttk.Label(frame, text="", foreground=UIStyleV2.THEME_STATE_READY)
         warning_label.grid(row=row, column=2 + col_offset, sticky="w", padx=(4, 0))
 
-        def check_warning(*args):
+        def check_warning(*_args):
             try:
                 val = float(var_obj.get())
                 if is_float and val < 0.2 and label_key in ("search_interval", "attack_interval"):
