@@ -18,7 +18,7 @@ class ScreenStatePanel(tk.Frame):
         self.lbl_class = self._create_label(self.container, t("setup.character_class_label", default="Character Class: ") + "Unknown")
         self.lbl_class.pack(side="left", padx=(0, 12))
 
-        self.lbl_location = self._create_label(self.container, "📍 Unknown")
+        self.lbl_location = self._create_label(self.container, t("screen_state.location_unknown", default="📍 Unknown"))
         self.lbl_location.pack(side="left", padx=(0, 12))
 
         self.lbl_monster = self._create_label(self.container, "🟢 Ready")
@@ -27,7 +27,7 @@ class ScreenStatePanel(tk.Frame):
         self.lbl_skills = self._create_label(self.container, t("setup.skills_found", default="✅ {count} skills valid").format(count=0))
         self.lbl_skills.pack(side="left", padx=(0, 12))
 
-        self.lbl_scan_status = self._create_label(self.container, "⏳ Đang theo dõi...")
+        self.lbl_scan_status = self._create_label(self.container, t("screen_state.tracking", default="⏳ Đang theo dõi..."))
         self.lbl_scan_status.pack(side="left", padx=(0, 12))
 
         self.lbl_thumbnail = tk.Label(self.container, bg=UI.BG_BASE)
@@ -78,4 +78,4 @@ class ScreenStatePanel(tk.Frame):
         if thumbnail_img:
             self._photo_img = ImageTk.PhotoImage(thumbnail_img)
             self.lbl_thumbnail.config(image=self._photo_img)
-            self.lbl_scan_status.config(text="✅ Đã cập nhật scan")
+            self.lbl_scan_status.config(text=t("screen_state.scan_updated", default="✅ Đã cập nhật scan"))

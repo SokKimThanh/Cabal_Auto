@@ -186,7 +186,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         tk.Label(
             self.empty_identity_frame,
-            text="Chưa có mục tiêu",
+            text=self.app._t("target_status.no_target"),
             font=(self.font_mono, UI.SIZE_SMALL),
             fg=UI.TEXT_MUTED,
             bg=UI.BG_SURFACE
@@ -196,8 +196,8 @@ class TargetStatusPanel(ttk.LabelFrame):
         self.empty_state_comp = EmptyState(
             self.empty_identity_frame,
             icon="ℹ️",
-            message="Chưa có mục tiêu",
-            submessage="Bắt đầu săn để hiển thị thông tin mục tiêu ở đây."
+            message=self.app._t("target_status.no_target"),
+            submessage=self.app._t("target_status.no_target_submessage")
         )
         self.empty_state_comp.pack(fill="both", expand=True)
 
@@ -231,7 +231,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         tk.Label(
             right_col,
-            text="CẤP",
+            text=self.app._t("target_status.level"),
             font=(self.font_mono, UI.SIZE_TINY),
             fg=UI.TEXT_MUTED,
             bg=UI.BG_SURFACE,
@@ -269,9 +269,9 @@ class TargetStatusPanel(ttk.LabelFrame):
         stats_row.grid_columnconfigure(1, weight=1)
         stats_row.grid_columnconfigure(2, weight=1)
 
-        self.def_val_lbl = self._make_stat_pill(stats_row, "PHÒNG THỦ", 0)
-        self.type_val_lbl = self._make_stat_pill(stats_row, "LOẠI", 1)
-        self.drop_val_lbl = self._make_stat_pill(stats_row, "DROP", 2)
+        self.def_val_lbl = self._make_stat_pill(stats_row, self.app._t("target_status.defense"), 0)
+        self.type_val_lbl = self._make_stat_pill(stats_row, self.app._t("target_status.type"), 1)
+        self.drop_val_lbl = self._make_stat_pill(stats_row, self.app._t("target_status.drop"), 2)
 
         # Set initial state
         self.update_target(TargetInfo())
@@ -366,11 +366,11 @@ class TargetStatusPanel(ttk.LabelFrame):
         # 1. Cập nhật badge state (header)
         badge_style = UI.get_badge_style(info.state)
 
-        badge_text = "● CHỜ"
+        badge_text = self.app._t("target_status.badge_waiting")
         if info.state == "ready":
-            badge_text = "● KHÓA MỤC TIÊU"
+            badge_text = self.app._t("target_status.badge_ready")
         elif info.state == "hunting":
-            badge_text = "● ĐANG CHIẾN ĐẤU"
+            badge_text = self.app._t("target_status.badge_hunting")
 
         self.badge_label.config(
             text=badge_text,
@@ -426,7 +426,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
             # 4. Cập nhật 3 stat pills
             self.def_val_lbl.config(text=f"{info.defense:,}")
-            self.type_val_lbl.config(text="Unknown") # If type isn't provided
+            self.type_val_lbl.config(text=self.app._t("target_status.unknown")) # If type isn't provided
             self.drop_val_lbl.config(text="★★★") # If drop isn't provided
 
 if __name__ == "__main__":
