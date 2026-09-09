@@ -291,3 +291,12 @@ class SeedBM3SynergiesService:
                     conn.close()
                 except:
                     pass
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    service = SeedBM3SynergiesService()
+    success, syn_count, eff_count = service.seed()
+    if success:
+        print(f"Seeding completed: {syn_count} synergies, {eff_count} effects inserted/updated.")
+    else:
+        print("Seeding failed.")
