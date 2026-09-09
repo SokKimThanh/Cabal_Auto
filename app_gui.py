@@ -315,6 +315,16 @@ class App(tk.Tk):
         self._detected_snapshot_items = []
         self._last_snapshot = None
         self.hunt_selected = {}
+
+        # Safe fallback initializations to prevent AttributeError during startup
+        self.monster_rotation_listbox = None
+        self.detected_monsters_listbox = None
+        self.btn_add_monster = None
+        self.btn_move_up = None
+        self.btn_move_down = None
+        self.btn_remove_monster = None
+        self.btn_promote_monster = None
+
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
             menubar = tk.Menu(self)
