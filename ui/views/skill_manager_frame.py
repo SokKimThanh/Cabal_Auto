@@ -8,7 +8,7 @@ from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 class SkillManagerFrame(ResponsiveGridBase):
     def __init__(self, parent, app=None, *args, **kwargs):
-        super().__init__(parent, app=app, *args, **kwargs)
+        super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app
         self.skills = []
 
@@ -35,8 +35,8 @@ class SkillManagerFrame(ResponsiveGridBase):
             content_frame,
             text=self.app._t("skill_manager_title", default="Quản lý Kỹ năng"),
             font=(UIStyle.resolve_font_family("title") if hasattr(UIStyle, "resolve_font_family") else "IBM Plex Sans", 16, "bold"),
-            bg=UIStyle.THEME_BG_APP,
-            fg=UIStyle.THEME_FG_TEXT if hasattr(UIStyle, "THEME_FG_TEXT") else UIStyle.TEXT_PRIMARY
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY
         )
         title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
 
@@ -81,8 +81,8 @@ class SkillManagerFrame(ResponsiveGridBase):
         filter_btn.pack(side="left")
 
         # Treeview Area
-        table_frame = tk.Frame(content_frame, bg=UIStyle.THEME_BG_APP)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8))
+        table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
+        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
 
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
         self.tree_scroll_y.pack(side="right", fill="y")
@@ -122,16 +122,14 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.tree.pack(fill="both", expand=True)
 
         # Bottom Bar for Actions
-        bottom_bar = tk.Frame(content_frame, bg=UIStyle.THEME_BG_PANEL, height=50)
+        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
         add_btn = tk.Button(
             bottom_bar,
             text=self.app._t("btn_add_skill", default=" Thêm"),
             command=self._add_skill,
-            bg=UIStyle.ACCENT_GREEN,
-            fg="white",
-            relief="flat"
+            **UIStyle.get_button_style("primary")
         )
         add_btn.pack(side="left", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
@@ -139,9 +137,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             bottom_bar,
             text=self.app._t("btn_edit_skill", default=" Sửa"),
             command=self._edit_skill,
-            bg=UIStyle.ACCENT_GREEN,
-            fg="white",
-            relief="flat"
+            **UIStyle.get_button_style("primary")
         )
         edit_btn.pack(side="left", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
@@ -149,9 +145,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             bottom_bar,
             text=self.app._t("btn_del_skill", default=" Xóa"),
             command=self._delete_skill,
-            bg=UIStyle.DANGER,
-            fg="white",
-            relief="flat"
+            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
         )
         del_btn.pack(side="left", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
@@ -159,9 +153,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             bottom_bar,
             text=self.app._t("btn_refresh_skill", default=" Làm mới"),
             command=self._load_skills,
-            bg=UIStyle.BG_ELEVATED,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            **UIStyle.get_button_style("secondary")
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
