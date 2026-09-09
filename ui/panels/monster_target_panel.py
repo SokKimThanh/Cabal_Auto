@@ -395,8 +395,8 @@ class MonsterTargetPanel(ttk.LabelFrame):
         self.configured_empty = EmptyState(
             self.configured_container,
             icon="🎯",
-            message="Danh sách mục tiêu trống",
-            submessage="Thêm quái vật vào danh sách để bắt đầu săn.",
+            message=self.app._t("monster_target.empty_list"),
+            submessage=self.app._t("monster_target.empty_list_submessage"),
         )
         self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
 
