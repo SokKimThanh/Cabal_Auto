@@ -37,7 +37,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
         self.tree_scroll_x.pack(side="bottom", fill="x")
 
-        self.columns = ("ID", "Name", "Category", "Hotkey", "Cooldown", "Priority", "Status")
+        self.columns = ("ID", "Name", "Type", "Class", "Alias")
         self.tree = ttk.Treeview(
             table_frame,
             columns=self.columns,
@@ -50,27 +50,21 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.tree_scroll_y.config(command=self.tree.yview)
         self.tree_scroll_x.config(command=self.tree.xview)
 
-        # 7 core columns: ID, Name, Category, Hotkey, Cooldown, Priority, Status
+        # 5 core columns for DB skills: ID, Name, Type, Class, Alias
         self.tree.heading("ID", text=self.app._t("col_skill_id", default="ID"))
         self.tree.column("ID", width=70, anchor="center")
 
         self.tree.heading("Name", text=self.app._t("col_skill_name", default="Name"))
         self.tree.column("Name", width=180, anchor="w")
 
-        self.tree.heading("Category", text=self.app._t("col_skill_category", default="Category"))
-        self.tree.column("Category", width=100, anchor="center")
+        self.tree.heading("Type", text=self.app._t("col_skill_type", default="Type"))
+        self.tree.column("Type", width=100, anchor="center")
 
-        self.tree.heading("Hotkey", text=self.app._t("col_skill_hotkey", default="Hotkey"))
-        self.tree.column("Hotkey", width=80, anchor="center")
+        self.tree.heading("Class", text=self.app._t("col_skill_class", default="Class ID"))
+        self.tree.column("Class", width=80, anchor="center")
 
-        self.tree.heading("Cooldown", text=self.app._t("col_skill_cooldown", default="Cooldown"))
-        self.tree.column("Cooldown", width=90, anchor="center")
-
-        self.tree.heading("Priority", text=self.app._t("col_skill_priority", default="Priority"))
-        self.tree.column("Priority", width=80, anchor="center")
-
-        self.tree.heading("Status", text=self.app._t("col_skill_status", default="Status"))
-        self.tree.column("Status", width=90, anchor="center")
+        self.tree.heading("Alias", text=self.app._t("col_skill_alias", default="Alias"))
+        self.tree.column("Alias", width=120, anchor="w")
 
         self.tree.pack(fill="both", expand=True)
 
@@ -120,20 +114,9 @@ class SkillManagerFrame(ResponsiveGridBase):
 
     def _load_skills(self):
         try:
-            if hasattr(self.app, "skill_service"):
-                svc = self.app.skill_service
-                if hasattr(svc, "get_skills_by_filter"):
-                    self.skills = svc.get_skills_by_filter()
-                elif hasattr(svc, "get_all_skills"):
-                    self.skills = svc.get_all_skills()
-                elif hasattr(svc, "get_skills"):
-                    self.skills = svc.get_skills()
-                elif hasattr(svc, "skills"):
-                    self.skills = svc.skills
-                elif hasattr(svc, "_skills"):
-                    self.skills = svc._skills
-                else:
-                    self.skills = []
+            if hasattr(self.app, "db_skill_service"):
+                svc = self.app.db_skill_service
+                self.skills = svc.get_skills_by_filter()
             else:
                 self.skills = []
 
@@ -150,87 +133,47 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         for s in self.skills:
             if isinstance(s, dict):
-                s_status = "Active" if s.get("enabled", True) else "Disabled"
                 values = (
-                    s.get("id", s.get("skill_id", "")),
+                    s.get("skill_id", ""),
                     s.get("name", "Unknown"),
-                    s.get("category", s.get("type", "")),
-                    s.get("hotkey", s.get("key", s.get("slot", ""))),
-                    s.get("cooldown", 0),
-                    s.get("priority", 0),
-                    s_status
+                    s.get("type", ""),
+                    s.get("class_id", ""),
+                    s.get("alias", "")
                 )
-                self.tree.insert("", "end", iid=str(s.get("id", s.get("skill_id", str(id(s))))), values=values)
-
-    def _save_skills(self):
-        try:
-            if hasattr(self.app, "skill_service"):
-                svc = self.app.skill_service
-                if hasattr(svc, "save_skills"):
-                    svc.save_skills(self.skills)
-                elif hasattr(svc, "save_skill_library"):
-                    svc.save_skill_library(self.skills)
-                elif hasattr(svc, "update_skill") or hasattr(svc, "create_skill"):
-                    # Individual saves would be handled per row action
-                    pass
-        except Exception as e:
-            messagebox.showerror(
-                self.app._t("err_title", default="Lỗi"),
-                self.app._t("err_save_skills", default="Không thể lưu danh sách kỹ năng: ") + str(e),
-                parent=self
-            )
+                self.tree.insert("", "end", iid=str(s.get("skill_id", str(id(s)))), values=values)
 
     def _add_skill(self):
-        prompt = self.app._t("prompt_add_skill", default="Nhập thông tin (Tên Kỹ Năng, Loại (Attack/Buff), Phím Tắt, Cooldown(s), Priority):")
-        result = simpledialog.askstring(
-            self.app._t("title_add_skill", default="Thêm Kỹ năng"),
-            prompt,
-            parent=self
+        from ui.dialogs.skill_edit_dialog import SkillEditDialog
+
+        def _on_save(data: dict):
+            if hasattr(self.app, "db_skill_service"):
+                svc = self.app.db_skill_service
+                success_id = svc.create_skill(data)
+                if success_id:
+                    messagebox.showinfo(
+                        self.app._t("success_title", default="Thành công"),
+                        self.app._t("msg_add_skill_success", default="Thêm kỹ năng thành công."),
+                        parent=self
+                    )
+                    self._load_skills()
+                else:
+                    messagebox.showerror(
+                        self.app._t("error_title", default="Lỗi"),
+                        self.app._t("err_add_skill", default="Không thể thêm kỹ năng."),
+                        parent=self
+                    )
+
+        SkillEditDialog(
+            parent=self.winfo_toplevel(),
+            app=self.app,
+            title=self.app._t("title_add_skill", default="Thêm Kỹ năng"),
+            skill_data=None,
+            on_save=_on_save
         )
-        if result:
-            parts = [x.strip() for x in result.split(",")]
-            if len(parts) >= 1:
-                name = parts[0]
-                category = parts[1] if len(parts) > 1 else "Attack"
-                hotkey = parts[2] if len(parts) > 2 else ""
-                cooldown = float(parts[3]) if len(parts) > 3 else 0.0
-                priority = int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else 1
-
-                # generate id
-                max_id = 0
-                for s in self.skills:
-                    try:
-                        s_id = s.get("id", s.get("skill_id", 0))
-                        if isinstance(s_id, int):
-                            if s_id > max_id:
-                                max_id = s_id
-                        elif isinstance(s_id, str) and s_id.isdigit():
-                            if int(s_id) > max_id:
-                                max_id = int(s_id)
-                    except ValueError:
-                        pass
-
-                new_id = f"S{max_id + 1}"
-
-                new_skill = {
-                    "id": new_id,
-                    "name": name,
-                    "category": category,
-                    "type": category,
-                    "hotkey": hotkey,
-                    "key": hotkey,
-                    "cooldown": cooldown,
-                    "priority": priority,
-                    "enabled": True
-                }
-
-                self.skills.append(new_skill)
-                # Ensure it saves as dict mapping ID to dict if needed? The normalizer takes list.
-                # If skills is stored as a list of dicts, saving it back should work if save_skills takes list.
-                self._save_skills()
-                self._refresh_tree()
 
     def _edit_skill(self):
+        from ui.dialogs.skill_edit_dialog import SkillEditDialog
+
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning(
@@ -243,44 +186,41 @@ class SkillManagerFrame(ResponsiveGridBase):
         s_id = selected[0]
         target_skill = None
         for s in self.skills:
-            if str(s.get("id", s.get("skill_id", ""))) == s_id:
+            if str(s.get("skill_id", "")) == s_id:
                 target_skill = s
                 break
 
         if target_skill:
-            name = target_skill.get("name", "")
-            cat = target_skill.get("category", target_skill.get("type", ""))
-            hotkey = target_skill.get("hotkey", target_skill.get("key", ""))
-            cd = target_skill.get("cooldown", 0)
-            prio = target_skill.get("priority", 0)
+            def _on_save(data: dict):
+                if hasattr(self.app, "db_skill_service"):
+                    svc = self.app.db_skill_service
+                    skill_id = data.get("skill_id")
+                    if skill_id is None:
+                        # Fallback for unexpected missing id
+                        return
 
-            initial = f"{name}, {cat}, {hotkey}, {cd}, {prio}"
-            prompt = self.app._t("prompt_edit_skill", default="Sửa thông tin (Tên Kỹ Năng, Loại (Attack/Buff), Phím Tắt, Cooldown(s), Priority):")
-            result = simpledialog.askstring(
-                self.app._t("title_edit_skill", default="Sửa Kỹ năng"),
-                prompt,
-                initialvalue=initial,
-                parent=self
+                    success = svc.update_skill(skill_id, data)
+                    if success:
+                        messagebox.showinfo(
+                            self.app._t("success_title", default="Thành công"),
+                            self.app._t("msg_edit_skill_success", default="Cập nhật kỹ năng thành công."),
+                            parent=self
+                        )
+                        self._load_skills()
+                    else:
+                        messagebox.showerror(
+                            self.app._t("error_title", default="Lỗi"),
+                            self.app._t("err_edit_skill", default="Không thể cập nhật kỹ năng."),
+                            parent=self
+                        )
+
+            SkillEditDialog(
+                parent=self.winfo_toplevel(),
+                app=self.app,
+                title=self.app._t("title_edit_skill", default="Sửa Kỹ năng"),
+                skill_data=target_skill,
+                on_save=_on_save
             )
-
-            if result:
-                parts = [x.strip() for x in result.split(",")]
-                if len(parts) >= 1:
-                    target_skill["name"] = parts[0]
-                    target_skill["category"] = parts[1] if len(parts) > 1 else target_skill.get("category", "Attack")
-                    target_skill["type"] = target_skill["category"]
-                    target_skill["hotkey"] = parts[2] if len(parts) > 2 else target_skill.get("hotkey", "")
-                    target_skill["key"] = target_skill["hotkey"]
-
-                    try:
-                        target_skill["cooldown"] = float(parts[3]) if len(parts) > 3 else target_skill.get("cooldown", 0.0)
-                    except ValueError:
-                        pass
-
-                    target_skill["priority"] = int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else target_skill.get("priority", 1)
-
-                    self._save_skills()
-                    self._refresh_tree()
 
     def _delete_skill(self):
         selected = self.tree.selection()
@@ -295,7 +235,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         s_id = selected[0]
         target_skill = None
         for s in self.skills:
-            if str(s.get("id", s.get("skill_id", ""))) == s_id:
+            if str(s.get("skill_id", "")) == s_id:
                 target_skill = s
                 break
 
@@ -308,9 +248,24 @@ class SkillManagerFrame(ResponsiveGridBase):
             )
 
             if confirm:
-                self.skills.remove(target_skill)
-                self._save_skills()
-                self._refresh_tree()
+                if hasattr(self.app, "db_skill_service"):
+                    svc = self.app.db_skill_service
+                    skill_id = target_skill.get("skill_id")
+                    if skill_id is not None:
+                        success = svc.delete_skill(skill_id)
+                        if success:
+                            messagebox.showinfo(
+                                self.app._t("success_title", default="Thành công"),
+                                self.app._t("msg_del_skill_success", default="Xóa kỹ năng thành công."),
+                                parent=self
+                            )
+                            self._load_skills()
+                        else:
+                            messagebox.showerror(
+                                self.app._t("error_title", default="Lỗi"),
+                                self.app._t("err_del_skill", default="Không thể xóa kỹ năng."),
+                                parent=self
+                            )
 
     def on_view_shown(self):
         self._load_skills()

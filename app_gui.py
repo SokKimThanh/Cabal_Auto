@@ -298,9 +298,11 @@ class App(tk.Tk):
         from lib.features.monsters.monster_library_service import MonsterLibraryService
         from ui.controllers.app_state_controller import AppStateController
         from lib.features.skills.skill_runtime_service import SkillRuntimeService
+        from lib.db.services.skill_service import SkillService as DbSkillService
 
         self.monster_library_service = MonsterLibraryService()
         self.skill_service = SkillRuntimeService()
+        self.db_skill_service = DbSkillService()
         self.overlay_controller = AppOverlayController(self)
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
