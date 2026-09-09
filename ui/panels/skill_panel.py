@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.features.skills.skill_preset_service import SkillPresetService
+from lib.features.skills.skill_runtime_service import SkillRuntimeService
+
 
 
 class SkillPanel(ttk.LabelFrame):
@@ -112,7 +114,11 @@ class SkillPanel(ttk.LabelFrame):
         combo_frame.columnconfigure(2, weight=1)
         combo_frame.columnconfigure(3, weight=1)
 
+
         self.widgets["combo_dropdowns"] = []
+        self.widgets["combo_hotkeys"] = []
+        self.widgets["combo_stats"] = []
+
         for i in range(4):
             card = tk.Frame(
                 combo_frame,
@@ -122,13 +128,30 @@ class SkillPanel(ttk.LabelFrame):
             )
             card.grid(row=0, column=i, sticky="nsew", padx=3, pady=3)
 
+            # Header with title and hotkey entry
+            header = tk.Frame(card, bg=UI.BG_SURFACE)
+            header.pack(fill="x", padx=8, pady=(8, 2))
             tk.Label(
-                card,
+                header,
                 text=f"{getattr(self.app_state, '_t', lambda x: x)('skill_strip.combo_lane')} {i+1}",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
-            ).pack(anchor="w", padx=8, pady=(8, 2))
+            ).pack(side="left")
+
+            hk_entry = tk.Entry(
+                header,
+                width=5,
+                bg=UI.BG_BASE,
+                fg=UI.TEXT_PRIMARY,
+                insertbackground=UI.TEXT_PRIMARY,
+                relief="flat",
+                justify="center"
+            )
+            hk_entry.pack(side="right")
+            hk_entry.bind("<FocusOut>", lambda e, idx=i: self._on_hotkey_changed(e, "attack_combo", idx))
+            hk_entry.bind("<Return>", lambda e, idx=i: self._on_hotkey_changed(e, "attack_combo", idx))
+            self.widgets["combo_hotkeys"].append(hk_entry)
 
             dd_var = tk.StringVar()
             dd = ttk.Combobox(
@@ -143,21 +166,23 @@ class SkillPanel(ttk.LabelFrame):
 
             stats = tk.Frame(card, bg=UI.BG_SURFACE)
             stats.pack(fill="x", padx=8, pady=(2, 8))
-            tk.Label(
+            cast_lbl = tk.Label(
                 stats,
-                text="⏱ 0.5s",
+                text="⏱ -",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
-            ).pack(side="left")
-            tk.Label(
+            )
+            cast_lbl.pack(side="left")
+            cd_lbl = tk.Label(
                 stats,
-                text="🔄 5s",
+                text="🔄 -",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
-            ).pack(side="right")
-
+            )
+            cd_lbl.pack(side="right")
+            self.widgets["combo_stats"].append((cast_lbl, cd_lbl))
         # Divider
         divider = tk.Frame(content_frame, bg=UI.BG_BASE)
         divider.pack(fill="x", pady=16)
@@ -221,7 +246,11 @@ class SkillPanel(ttk.LabelFrame):
         # Initially hidden
 
 
+
         self.widgets["buff_dropdowns"] = []
+        self.widgets["buff_hotkeys"] = []
+        self.widgets["buff_stats"] = []
+
         for i in range(2):
             card = tk.Frame(
                 buff_frame,
@@ -231,13 +260,30 @@ class SkillPanel(ttk.LabelFrame):
             )
             card.grid(row=0, column=i, sticky="nsew", padx=3, pady=3)
 
+            header = tk.Frame(card, bg=UI.BG_SURFACE)
+            header.pack(fill="x", padx=8, pady=(8, 2))
             tk.Label(
-                card,
+                header,
                 text=f"BUFF LANE {i+1}",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
-            ).pack(anchor="w", padx=8, pady=(8, 2))
+            ).pack(side="left")
+
+            hk_entry = tk.Entry(
+                header,
+                width=5,
+                bg=UI.BG_BASE,
+                fg=UI.TEXT_PRIMARY,
+                insertbackground=UI.TEXT_PRIMARY,
+                relief="flat",
+                justify="center"
+            )
+            hk_entry.pack(side="right")
+            hk_entry.bind("<FocusOut>", lambda e, idx=i: self._on_hotkey_changed(e, "buff_lane", idx))
+            hk_entry.bind("<Return>", lambda e, idx=i: self._on_hotkey_changed(e, "buff_lane", idx))
+            self.widgets["buff_hotkeys"].append(hk_entry)
+
 
             dd_var = tk.StringVar()
             dd = ttk.Combobox(
@@ -252,22 +298,23 @@ class SkillPanel(ttk.LabelFrame):
 
             stats = tk.Frame(card, bg=UI.BG_SURFACE)
             stats.pack(fill="x", padx=8, pady=(2, 8))
-            tk.Label(
+            cast_lbl = tk.Label(
                 stats,
-                text="⏱ 2.0s",
+                text="⏱ -",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
-            ).pack(side="left")
-            tk.Label(
+            )
+            cast_lbl.pack(side="left")
+            cd_lbl = tk.Label(
                 stats,
-                text="🔄 20s",
+                text="🔄 -",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
-            ).pack(side="right")
-
-
+            )
+            cd_lbl.pack(side="right")
+            self.widgets["buff_stats"].append((cast_lbl, cd_lbl))
     def on_start_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🟢")
         self.widgets["combo_indicator_text"].config(text="COMBO MODE: ACTIVE", fg=UI.ACCENT_GREEN)
@@ -288,6 +335,15 @@ class SkillPanel(ttk.LabelFrame):
         for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
             dd.config(state="readonly")
 
+    def _on_hotkey_changed(self, event, lane, position_idx):
+        entry = event.widget
+        new_hotkey = entry.get().strip()
+        if hasattr(self.app_state, "set_skill_hotkey"):
+            self.app_state.set_skill_hotkey(lane, position_idx, new_hotkey)
+        # Prevent FocusOut / Return from causing UI weirdness
+        if event.keysym == 'Return':
+            self.focus_set()
+
     def on_skill_slots_changed(self, skill_slots=None):
         """Logic moved from HuntTab"""
         if not skill_slots:
@@ -295,19 +351,60 @@ class SkillPanel(ttk.LabelFrame):
                 self.app_state, "skill_slots", {"attack_combo": [], "buff_lane": []}
             )
 
-        # Update dropdowns
-        for lane_key, dropdown_list in [
-            ("attack_combo", self.widgets["combo_dropdowns"]),
-            ("buff_lane", self.widgets["buff_dropdowns"]),
+        runtime_srv = SkillRuntimeService()
+        all_runtime_skills = runtime_srv.get_all_skills()
+
+        # Update dropdowns, hotkeys, and stats
+        for lane_key, dropdown_list, hotkeys_list, stats_list in [
+            ("attack_combo", self.widgets.get("combo_dropdowns", []), self.widgets.get("combo_hotkeys", []), self.widgets.get("combo_stats", [])),
+            ("buff_lane", self.widgets.get("buff_dropdowns", []), self.widgets.get("buff_hotkeys", []), self.widgets.get("buff_stats", [])),
         ]:
             lane_skills = skill_slots.get(lane_key, [])
             for i, dd in enumerate(dropdown_list):
+                hk_entry = hotkeys_list[i] if i < len(hotkeys_list) else None
+                cast_lbl, cd_lbl = stats_list[i] if i < len(stats_list) else (None, None)
+
                 if i < len(lane_skills) and lane_skills[i]:
-                    skill = self.skill_service.skill_repo.get_skill(lane_skills[i])
+                    # We might have dict (if from app_state.skill_slots) or int (if from old structure)
+                    slot_data = lane_skills[i]
+                    skill_id = slot_data.get("skill_id") if isinstance(slot_data, dict) else slot_data
+
+                    skill = self.skill_service.skill_repo.get_skill(skill_id)
                     if skill:
                         dd.set(skill.get("name", ""))
+
+                        # Find runtime stats
+                        runtime_info = next((s for s in all_runtime_skills if s.get("name") == skill.get("name")), None)
+
+                        # Update Hotkey
+                        user_hk = slot_data.get("user_hotkey", "") if isinstance(slot_data, dict) else ""
+                        if not user_hk and runtime_info:
+                            user_hk = runtime_info.get("key", "")
+
+                        if hk_entry:
+                            hk_entry.delete(0, 'end')
+                            hk_entry.insert(0, user_hk)
+
+                        # Update Stats
+                        if runtime_info:
+                            if cast_lbl: cast_lbl.config(text=f"⏱ {runtime_info.get('cast_time', 0)}s")
+                            if cd_lbl: cd_lbl.config(text=f"🔄 {runtime_info.get('cooldown', 0)}s")
+                        else:
+                            if cast_lbl: cast_lbl.config(text="⏱ -")
+                            if cd_lbl: cd_lbl.config(text="🔄 -")
+
+                    else:
+                        dd.set("")
+                        if hk_entry:
+                            hk_entry.delete(0, 'end')
+                        if cast_lbl: cast_lbl.config(text="⏱ -")
+                        if cd_lbl: cd_lbl.config(text="🔄 -")
                 else:
                     dd.set("")
+                    if hk_entry:
+                        hk_entry.delete(0, 'end')
+                    if cast_lbl: cast_lbl.config(text="⏱ -")
+                    if cd_lbl: cd_lbl.config(text="🔄 -")
 
         # Update preset indicator
         preset_mode = getattr(self.app_state, "_preset_mode", "default")
