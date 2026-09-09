@@ -3,3 +3,4 @@ from .setup_content_frame import SetupContentFrame
 from .monster_manager_frame import MonsterManagerFrame
 from .help_support_frame import HelpSupportFrame
 from .stats_content_frame import StatsContentFrame
+from .skill_manager_frame import SkillManagerFrame
