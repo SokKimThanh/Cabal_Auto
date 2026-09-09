@@ -1,3 +1,4 @@
+import math
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from typing import Dict, Any
@@ -10,6 +11,18 @@ class SkillManagerFrame(ResponsiveGridBase):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app
         self.skills = []
+
+        # Pagination state
+        self.current_page = 1
+        self.items_per_page = 20
+        self.total_pages = 1
+        self.total_items = 0
+
+        # Filter state variables
+        self.search_var = tk.StringVar()
+        self.class_filter_var = tk.StringVar()
+        self.type_filter_var = tk.StringVar()
+        self.classes_map = {}
 
         self._setup_ui()
         self._load_skills()
@@ -26,6 +39,46 @@ class SkillManagerFrame(ResponsiveGridBase):
             fg=UIStyle.TEXT_PRIMARY
         )
         title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+
+        # Filters Area
+        filter_frame = tk.Frame(content_frame, bg=UIStyle.THEME_BG_APP)
+        filter_frame.pack(fill="x", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8))
+
+        # Search
+        search_lbl = tk.Label(filter_frame, text=self.app._t("lbl_search", default="Tìm kiếm:"), bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_FG_TEXT if hasattr(UIStyle, "THEME_FG_TEXT") else UIStyle.TEXT_PRIMARY)
+        search_lbl.pack(side="left", padx=(0, 5))
+        self.search_entry = ttk.Entry(filter_frame, textvariable=self.search_var, width=20)
+        self.search_entry.pack(side="left", padx=(0, 15))
+        self.search_entry.bind("<Return>", lambda e: self._on_filter_changed())
+
+        # Class Filter
+        class_lbl = tk.Label(filter_frame, text=self.app._t("lbl_class", default="Class:"), bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_FG_TEXT if hasattr(UIStyle, "THEME_FG_TEXT") else UIStyle.TEXT_PRIMARY)
+        class_lbl.pack(side="left", padx=(0, 5))
+        self.class_combo = ttk.Combobox(filter_frame, textvariable=self.class_filter_var, state="readonly", width=15)
+        self.class_combo.pack(side="left", padx=(0, 15))
+        self.class_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
+        self._load_classes()
+
+        # Type Filter
+        type_lbl = tk.Label(filter_frame, text=self.app._t("lbl_type", default="Loại:"), bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_FG_TEXT if hasattr(UIStyle, "THEME_FG_TEXT") else UIStyle.TEXT_PRIMARY)
+        type_lbl.pack(side="left", padx=(0, 5))
+        self.type_combo = ttk.Combobox(filter_frame, textvariable=self.type_filter_var, state="readonly", width=15,
+                                       values=["All", "Attack", "Buff", "Dash", "Blink", "Passive", "GM"])
+        self.type_combo.current(0)
+        self.type_combo.pack(side="left", padx=(0, 15))
+        self.type_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
+
+        # Filter Button
+        filter_btn = tk.Button(
+            filter_frame,
+            text=self.app._t("btn_search", default="Lọc"),
+            command=self._on_filter_changed,
+            bg=UIStyle.ACCENT_BLUE if hasattr(UIStyle, "ACCENT_BLUE") else "#3b82f6",
+            fg="white",
+            relief="flat",
+            padx=10
+        )
+        filter_btn.pack(side="left")
 
         # Treeview Area
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
@@ -104,19 +157,133 @@ class SkillManagerFrame(ResponsiveGridBase):
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
+        # Pagination controls in bottom bar
+        self.next_btn = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_next", default="Sau >"),
+            command=self._next_page,
+            bg=UIStyle.THEME_BG_APP,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
+        )
+        self.next_btn.pack(side="right", padx=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+
+        self.page_lbl = tk.Label(
+            bottom_bar,
+            text="1 / 1",
+            bg=UIStyle.THEME_BG_PANEL,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        self.page_lbl.pack(side="right", padx=(0, 10))
+
+        self.prev_btn = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_prev", default="< Trước"),
+            command=self._prev_page,
+            bg=UIStyle.THEME_BG_APP,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
+        )
+        self.prev_btn.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+
+    def _load_classes(self):
+        try:
+            if hasattr(self.app, "db_class_service"):
+                svc = self.app.db_class_service
+                classes = svc.get_all_classes()
+                self.classes_map = {str(c.get("class_id")): c.get("name") for c in classes}
+                values = ["All"] + [f"{c_id} - {name}" for c_id, name in self.classes_map.items()]
+                self.class_combo['values'] = values
+                if values:
+                    self.class_combo.current(0)
+            else:
+                self.class_combo['values'] = ["All"]
+                self.class_combo.current(0)
+        except Exception as e:
+            print(f"Error loading classes: {e}")
+            self.class_combo['values'] = ["All"]
+            self.class_combo.current(0)
+
+    def _on_filter_changed(self):
+        self.current_page = 1
+        self._load_skills()
+
+    def _prev_page(self):
+        if self.current_page > 1:
+            self.current_page -= 1
+            self._load_skills()
+
+    def _next_page(self):
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            self._load_skills()
+
+    def _update_pagination_ui(self):
+        self.page_lbl.config(text=f"{self.current_page} / {max(1, self.total_pages)}")
+
+        if self.current_page <= 1:
+            self.prev_btn.config(state="disabled")
+        else:
+            self.prev_btn.config(state="normal")
+
+        if self.current_page >= self.total_pages:
+            self.next_btn.config(state="disabled")
+        else:
+            self.next_btn.config(state="normal")
+
     def _load_skills(self):
         try:
             if hasattr(self.app, "db_skill_service"):
                 svc = self.app.db_skill_service
-                self.skills = svc.get_skills_by_filter()
+
+                # Parse filters
+                search_text = self.search_var.get().strip() or None
+
+                type_val = self.type_filter_var.get()
+                skill_type = None if type_val == "All" or not type_val else type_val
+
+                class_val = self.class_filter_var.get()
+                class_id = None
+                if class_val and class_val != "All":
+                    try:
+                        class_id = int(class_val.split(" - ")[0])
+                    except:
+                        pass
+
+                offset = (self.current_page - 1) * self.items_per_page
+
+                self.total_items = svc.get_total_skills_count(
+                    class_id=class_id,
+                    skill_type=skill_type,
+                    search_text=search_text
+                )
+
+                self.total_pages = math.ceil(self.total_items / self.items_per_page) if self.total_items > 0 else 1
+                if self.current_page > self.total_pages:
+                    self.current_page = self.total_pages
+                    offset = (self.current_page - 1) * self.items_per_page
+
+                self.skills = svc.get_skills_by_filter(
+                    class_id=class_id,
+                    skill_type=skill_type,
+                    search_text=search_text,
+                    limit=self.items_per_page,
+                    offset=offset
+                )
             else:
                 self.skills = []
+                self.total_items = 0
+                self.total_pages = 1
 
             if not isinstance(self.skills, list):
                 self.skills = []
         except Exception as e:
             self.skills = []
+            self.total_items = 0
+            self.total_pages = 1
             print(f"Error loading skills: {e}")
+
+        self._update_pagination_ui()
         self._refresh_tree()
 
     def _refresh_tree(self):
