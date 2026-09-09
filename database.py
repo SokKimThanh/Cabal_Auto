@@ -380,6 +380,7 @@ class MonsterDatabase:
         safe_page = max(1, int(page or 1))
         safe_page_size = max(1, int(page_size or 25))
         allowed_columns = {
+            "id",
             "name",
             "level",
             "hp",
@@ -448,14 +449,14 @@ class MonsterDatabase:
         row = cursor.fetchone()
         return dict(row) if row else None
 
-    def search_monsters(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def search_monsters(self, keyword: str, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
         cursor = self.conn.cursor()
         cursor.execute(
             """
             SELECT id, name, level, hp FROM monsters
-            WHERE name LIKE ? LIMIT ?
+            WHERE name LIKE ? LIMIT ? OFFSET ?
         """,
-            (f"%{keyword}%", limit),
+            (f"%{keyword}%", limit, offset),
         )
         return [dict(row) for row in cursor.fetchall()]
 
@@ -595,8 +596,8 @@ def find_monster_by_name_api(name_str: str, dungeon_id: Optional[str] = None) ->
     return get_db().find_monster_by_name(name_str, dungeon_id)
 
 
-def search_monsters_api(keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
-    return get_db().search_monsters(keyword, limit)
+def search_monsters_api(keyword: str, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+    return get_db().search_monsters(keyword, limit, offset)
 
 
 def get_monster_types_api() -> List[Any]:
