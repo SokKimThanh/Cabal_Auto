@@ -55,4 +55,4 @@
 | `warrior` | `morale_shout` | `morale_shout` | `warrior-buffs` | `HIGH` | `morale-shout` |
 | `warrior` | `cats_recovery` | `cats_recovery` | `warrior-buffs` | `HIGH` | `cats-recovery` |
 
-*(Full manifest available in `db5a_audit_report.json`)*
+*(Full manifest available in `docs/archive/db_audit/db5a_audit_report.json`)*
