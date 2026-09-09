@@ -1,17 +1,22 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
-from typing import Dict, Any
+from tkinter import ttk, messagebox
+from typing import Dict, Any, List
 
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
-
+from database import get_db, get_all_monsters_api
+from dialogs.monster_edit import MonsterEditDialog
 
 class MonsterManagerFrame(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg=UIStyle.THEME_BG_APP)
         self.app = app
         self.monsters = []
+        self.db = get_db()
+        self.dungeon_map = {}
+        self.type_map = {}
 
         self._setup_ui()
+        self._load_reference_data()
         self._load_monsters()
 
     def _setup_ui(self):
@@ -49,10 +54,12 @@ class MonsterManagerFrame(tk.Frame):
         self.tree_scroll_x.config(command=self.tree.xview)
 
         for col in self.columns:
-            self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col))
+            self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col), command=lambda c=col: self._sort_treeview(c, False))
             self.tree.column(col, width=100, minwidth=80)
 
         self.tree.pack(fill="both", expand=True)
+
+        self.tree.bind("<Double-1>", lambda e: self._edit_monster())
 
         # Bottom Bar for Actions
         bottom_bar = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL, height=50)
@@ -98,11 +105,34 @@ class MonsterManagerFrame(tk.Frame):
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
+    def _sort_treeview(self, col, reverse):
+        l = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
+        try:
+            l.sort(key=lambda t: float(t[0]), reverse=reverse)
+        except ValueError:
+            l.sort(reverse=reverse)
+
+        for index, (val, k) in enumerate(l):
+            self.tree.move(k, '', index)
+
+        self.tree.heading(col, command=lambda: self._sort_treeview(col, not reverse))
+
+    def _load_reference_data(self):
+        try:
+            types = self.db.get_monster_types()
+            for t in types:
+                self.type_map[str(t['value'])] = t['label']
+
+            dungeons = self.db.get_dungeons()
+            for d in dungeons:
+                self.dungeon_map[str(d['id'])] = d['name']
+        except Exception as e:
+            print(f"Error loading reference data: {e}")
+
     def _load_monsters(self):
         try:
-            self.monsters = self.app.monster_library_service.load_monsters()
-            if not isinstance(self.monsters, list):
-                self.monsters = []
+            res = self.db.get_filtered_monsters(limit=5000)
+            self.monsters = res.get('items', [])
         except Exception as e:
             self.monsters = []
             print(f"Error loading monsters: {e}")
@@ -114,68 +144,53 @@ class MonsterManagerFrame(tk.Frame):
 
         for m in self.monsters:
             if isinstance(m, dict):
+                m_type = m.get("serverBossType")
+                type_label = self.type_map.get(str(m_type), "Normal") if m_type is not None else "Normal"
+
+                dungeon_id = m.get("dungeonId")
+                dungeon_name = self.dungeon_map.get(str(dungeon_id), str(dungeon_id)) if dungeon_id else ""
+
                 values = (
                     m.get("id", ""),
                     m.get("name", "Unknown"),
                     m.get("level", 0),
                     m.get("hp", 0),
                     m.get("defense", 0),
-                    m.get("type", ""),
-                    m.get("dungeonId", "")
+                    type_label,
+                    dungeon_name
                 )
                 self.tree.insert("", "end", iid=str(m.get("id", str(id(m)))), values=values)
 
-    def _save_monsters(self):
+    def get_all_monsters_for_validation(self) -> List[Dict[str, Any]]:
+        return self.monsters
+
+    def _save_monster_callback(self, data: Dict[str, Any]):
         try:
-            self.app.monster_library_service.save_monsters(self.monsters)
+            success = self.db.insert_or_update_monster(data)
+            if success:
+                self._load_monsters()
+            else:
+                messagebox.showerror(
+                    self.app._t("err_title", default="Lỗi"),
+                    self.app._t("err_save_monsters", default="Không thể lưu quái vật vào CSDL."),
+                    parent=self
+                )
         except Exception as e:
             messagebox.showerror(
                 self.app._t("err_title", default="Lỗi"),
-                self.app._t("err_save_monsters", default="Không thể lưu danh sách quái: ") + str(e),
+                f"Exception saving monster: {e}",
                 parent=self
             )
 
     def _add_monster(self):
-        prompt = self.app._t("prompt_add_monster", default="Nhập thông tin (Tên, Cấp, HP, Defense, Type, Dungeon):")
-        result = simpledialog.askstring(
-            self.app._t("title_add_monster", default="Thêm Quái"),
-            prompt,
-            parent=self
-        )
-        if result:
-            parts = [x.strip() for x in result.split(",")]
-            if len(parts) >= 1:
-                name = parts[0]
-                level = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 1
-                hp = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 100
-                defense = int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else 0
-                m_type = parts[4] if len(parts) > 4 else "Normal"
-                dungeon = parts[5] if len(parts) > 5 else ""
-
-                # generate id
-                max_id = 0
-                for m in self.monsters:
-                    try:
-                        m_id = int(m.get("id", 0))
-                        if m_id > max_id:
-                            max_id = m_id
-                    except ValueError:
-                        pass
-                new_id = max_id + 1
-
-                new_monster = {
-                    "id": new_id,
-                    "name": name,
-                    "level": level,
-                    "hp": hp,
-                    "defense": defense,
-                    "type": m_type,
-                    "dungeonId": dungeon
-                }
-
-                self.monsters.append(new_monster)
-                self._save_monsters()
-                self._refresh_tree()
+        new_data = {
+            "id": "",
+            "name": "",
+            "level": 1,
+            "hp": 100,
+            "defense": 0
+        }
+        MonsterEditDialog(self, new_data, self._save_monster_callback)
 
     def _edit_monster(self):
         selected = self.tree.selection()
@@ -188,34 +203,16 @@ class MonsterManagerFrame(tk.Frame):
             return
 
         m_id = selected[0]
-        target_monster = None
-        for m in self.monsters:
-            if str(m.get("id", "")) == m_id:
-                target_monster = m
-                break
+        target_monster = self.db.get_monster_by_id(m_id)
 
         if target_monster:
-            initial = f"{target_monster.get('name', '')}, {target_monster.get('level', 0)}, {target_monster.get('hp', 0)}, {target_monster.get('defense', 0)}, {target_monster.get('type', '')}, {target_monster.get('dungeonId', '')}"
-            prompt = self.app._t("prompt_edit_monster", default="Sửa thông tin (Tên, Cấp, HP, Defense, Type, Dungeon):")
-            result = simpledialog.askstring(
-                self.app._t("title_edit_monster", default="Sửa Quái"),
-                prompt,
-                initialvalue=initial,
+            MonsterEditDialog(self, target_monster, self._save_monster_callback)
+        else:
+            messagebox.showerror(
+                self.app._t("err_title", default="Lỗi"),
+                f"Không tìm thấy quái vật ID: {m_id} trong cơ sở dữ liệu.",
                 parent=self
             )
-
-            if result:
-                parts = [x.strip() for x in result.split(",")]
-                if len(parts) >= 1:
-                    target_monster["name"] = parts[0]
-                    target_monster["level"] = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else target_monster.get("level", 1)
-                    target_monster["hp"] = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else target_monster.get("hp", 100)
-                    target_monster["defense"] = int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else target_monster.get("defense", 0)
-                    target_monster["type"] = parts[4] if len(parts) > 4 else target_monster.get("type", "Normal")
-                    target_monster["dungeonId"] = parts[5] if len(parts) > 5 else target_monster.get("dungeonId", "")
-
-                    self._save_monsters()
-                    self._refresh_tree()
 
     def _delete_monster(self):
         selected = self.tree.selection()
@@ -243,9 +240,15 @@ class MonsterManagerFrame(tk.Frame):
             )
 
             if confirm:
-                self.monsters.remove(target_monster)
-                self._save_monsters()
-                self._refresh_tree()
+                success = self.db.delete_monster(m_id)
+                if success:
+                    self._load_monsters()
+                else:
+                    messagebox.showerror(
+                        self.app._t("err_title", default="Lỗi"),
+                        "Không thể xóa quái vật từ CSDL.",
+                        parent=self
+                    )
 
     def on_view_shown(self):
         self._load_monsters()
