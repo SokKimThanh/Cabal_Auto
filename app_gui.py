@@ -305,6 +305,16 @@ class App(tk.Tk):
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
         self.window_tracker_controller = WindowTrackerController(self)
+        self.overlay_ctrl = None
+        self.hunt_status = tk.StringVar()
+        self.hunt_target_info = tk.StringVar()
+        self.monster_status_var = tk.StringVar()
+        self.monster_estimate_var = tk.StringVar()
+        self.training_mode_var = tk.BooleanVar(value=False)
+        self.global_hotkey_enabled_var = tk.BooleanVar(value=True)
+        self._detected_snapshot_items = []
+        self._last_snapshot = None
+        self.hunt_selected = {}
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
             menubar = tk.Menu(self)
