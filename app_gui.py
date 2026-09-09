@@ -47,17 +47,6 @@ except Exception:
     ImageTk = None  # type: ignore
     ImageDraw = None  # type: ignore
 
-try:
-    pass
-except Exception:
-    keyboard = None  # type: ignore
-
-
-try:
-    pass
-except ImportError:
-    ScreenCapture = None
-
 # Imported for its side effect: self-registers GLOBAL_TRANSLATIONS into the i18n registry.
 
 # Logger for debugging
@@ -146,12 +135,6 @@ except ImportError:
 
     print("Warning: Icon button component not available, using fallback")
 
-try:
-    pass
-except Exception:
-    capture_region_and_save = None  # type: ignore
-
-
 # =====================================================================
 # Single Instance Lock (Prevent multiple app instances)
 
@@ -194,10 +177,6 @@ class App(tk.Tk):
             self.cfg = load_config()
             self.hunt_cfg = load_hunt_config()
             self.lang = str(self.cfg.get("ui", {}).get("language", "vi"))
-            try:
-                i18n_set_lang(self.lang)
-            except Exception:
-                pass
             try:
                 i18n_set_lang(self.lang)
             except Exception:
@@ -616,8 +595,6 @@ class App(tk.Tk):
         )  # Alt+2: Setup tab
 
         # Responsive layout bindings
-        self.bind("<Configure>", self._on_window_configure)
-
         from ui.theme.ttk_theme import configure_ttk_styles
 
         configure_ttk_styles(self)
@@ -1048,9 +1025,6 @@ class App(tk.Tk):
         # Display default view
         self.switch_view("hunt")
 
-        # Global Apply Section (below tabs, right-aligned)
-        self._build_global_apply_section()
-
         # DB Status Bar (bottom of window)
         self.status_bar_frame = tk.Frame(
             self,
@@ -1091,14 +1065,6 @@ class App(tk.Tk):
 
         self.main_shell.grid(row=0, column=0, columnspan=7, sticky="nsew", pady=(10, 0))
         print("[App._build_ui] ✓ UI build complete, main_shell gridded")
-
-    def _build_global_apply_section(self):
-        """Deprecated: Handled in Action Bar (shell_zone_a)."""
-        self.has_unsaved_changes = False
-        self._update_unsaved_indicator()
-
-    def _on_window_configure(self, event):
-        pass
 
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
@@ -1313,10 +1279,6 @@ class App(tk.Tk):
             i18n_set_lang(self.lang)
         except Exception:
             pass
-        try:
-            i18n_set_lang(self.lang)
-        except Exception:
-            pass
         self.title(self._t("app_title"))
         self.refresh_translations()
 
@@ -1344,19 +1306,6 @@ class App(tk.Tk):
         # Optionally update tabs here, though the prompt primarily requests
         # Zone A widgets to change immediately without losing state.
         # Now handled by views instead of notebook
-        if hasattr(self, "update_shell_translations"):
-            self.update_shell_translations()
-
-    def update_shell_translations(self):
-        """Update i18n text for shell elements like sidebar."""
-        if hasattr(self, "_sidebar_widgets"):
-            for widget, _key, _ in self._sidebar_widgets:
-                try:
-                    if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
-                        pass # Translations for sidebar now handled by tooltips
-                except Exception:
-                    pass
-
 
     def _switch_to_tab(self, tab_index: int):
         """Switch to specified tab via keyboard shortcut."""
@@ -1378,163 +1327,6 @@ class App(tk.Tk):
         """Callback when Vision Wizard is closed"""
         print("[Vision] Wizard closed")
         # TODO Phase 2: Refresh templates or update UI if needed
-
-    def _update_hotkeys_state(self):
-        """Update hotkey state.
-        Called when Global hotkeys are re-registered.
-        """
-        if hasattr(self, "hunt_cfg"):
-            self.hotkey_controller.register_all()
-
-    # --- Helpers to attempt closing other windows while respecting unsaved changes ---
-    def _update_hotkey_diagnostics_ui(self):
-        """Update the hotkey status UI based on registration state.
-
-        This new implementation uses a status-driven approach:
-        - Success state: Show green checkmark, hide action buttons
-        - Partial failure: Show orange warning, show retry button
-        - Complete failure: Show red error, show both buttons
-        """
-        try:
-            # Determine current state
-            has_import_error = (
-                hasattr(self, "_hotkey_import_diag") and self._hotkey_import_diag
-            )
-            has_failed_hotkeys = (
-                hasattr(self.hotkey_controller, "_failed_hotkeys")
-                and self.hotkey_controller._failed_hotkeys
-            )
-            hotkeys_enabled = getattr(
-                self.hotkey_controller, "_hotkeys_registered_ok", False
-            )
-
-            # Count actual registered hotkeys (not bindings)
-            registered_count = 0
-            hotkey_details = []
-
-            if getattr(self.hotkey_controller, "_global_start_hotkey", None):
-                registered_count += 1
-                hotkey_details.append("Start" if self.lang == "en" else "Báº¯t Ä‘áº§u")
-            if getattr(self.hotkey_controller, "_global_stop_hotkey", None):
-                registered_count += 1
-                hotkey_details.append("Stop" if self.lang == "en" else "Dừng")
-            if getattr(self.hotkey_controller, "_global_library_hotkey", None):
-                registered_count += 1
-                hotkey_details.append("Library" if self.lang == "en" else "Thư viện")
-            if getattr(self.hotkey_controller, "_global_vision_hotkey", None):
-                registered_count += 1
-                hotkey_details.append("Vision" if self.lang == "en" else "Thị giác")
-
-            # State 1: Success - All hotkeys registered
-            if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
-                # Green success state
-                success_text = (
-                    "All hotkeys registered successfully"
-                    if self.lang == "en"
-                    else "Tất cả phím tắt đã đăng ký thành công"
-                )
-                self._hotkey_status_var.set(f"✅ {success_text}")
-                self._hotkey_status_label.config(fg=UI.ACCENT_GREEN)  # Green
-
-                # Show count and active hotkeys list
-                detail_text = (
-                    f"{registered_count} hotkeys active"
-                    if self.lang == "en"
-                    else f"{registered_count} phím tắt đang hoạt động"
-                )
-                if hotkey_details:
-                    detail_text += f": {', '.join(hotkey_details)}"
-                self._hotkey_status_detail_var.set(f"   {detail_text}")
-
-                # Hide action buttons (not needed)
-                if hasattr(self, "_hotkey_retry_btn"):
-                    self._hotkey_retry_btn.pack_forget()
-                if hasattr(self, "_hotkey_details_btn"):
-                    self._hotkey_details_btn.pack_forget()
-
-            # State 2: Partial failure - Some hotkeys failed
-            elif has_failed_hotkeys and not has_import_error:
-                # Orange warning state
-                failed_count = len(self.hotkey_controller._failed_hotkeys)
-                warning_text = (
-                    f"{failed_count} hotkey(s) failed to register"
-                    if self.lang == "en"
-                    else f"{failed_count} phím tắt đăng ký thất bại"
-                )
-                self._hotkey_status_var.set(f"⚠️ {warning_text}")
-                self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)  # Orange
-
-                # Show guidance
-                guidance = (
-                    "Try changing the conflicting hotkey, then click Apply."
-                    if self.lang == "en"
-                    else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
-                )
-                self._hotkey_status_detail_var.set(f"   {guidance}")
-
-                # Show retry button only
-                if hasattr(self, "_hotkey_retry_btn"):
-                    retry_text = (
-                        "🔄 Retry Registration"
-                        if self.lang == "en"
-                        else "🔄 Thử Đăng Ký Lại"
-                    )
-                    self._hotkey_retry_btn.config(text=retry_text)
-                    self._hotkey_retry_btn.pack(side="left", padx=(0, 8))
-                if hasattr(self, "_hotkey_details_btn"):
-                    self._hotkey_details_btn.pack_forget()
-
-            # State 3: Complete failure - Import error or no hotkeys registered
-            else:
-                # Red error state
-                error_text = (
-                    "Hotkeys not available"
-                    if self.lang == "en"
-                    else "Phím tắt không khả dụng"
-                )
-                self._hotkey_status_var.set(f"❌ {error_text}")
-                self._hotkey_status_label.config(fg=UI.DANGER)  # Red
-
-                # Show explanation
-                if has_import_error:
-                    explanation = (
-                        "The 'keyboard' package is not installed in your Python environment."
-                        if self.lang == "en"
-                        else "Gói 'keyboard' chưa được cài đặt trong Python của bạn."
-                    )
-                else:
-                    explanation = (
-                        "Failed to register global hotkeys."
-                        if self.lang == "en"
-                        else "Không thể đăng ký phím tắt toàn cục."
-                    )
-                self._hotkey_status_detail_var.set(f"   {explanation}")
-
-                # Show both buttons
-                if hasattr(self, "_hotkey_details_btn"):
-                    fix_text = (
-                        "📋 Show Fix Instructions"
-                        if self.lang == "en"
-                        else "📋 Hướng Dẫn Khắc Phục"
-                    )
-                    self._hotkey_details_btn.config(text=fix_text)
-                    self._hotkey_details_btn.pack(side="left", padx=(0, 8))
-                if hasattr(self, "_hotkey_retry_btn"):
-                    retry_text = (
-                        "🔄 Retry After Fix"
-                        if self.lang == "en"
-                        else "🔄 Thử Lại Sau Khi Sửa"
-                    )
-                    self._hotkey_retry_btn.config(text=retry_text)
-                    self._hotkey_retry_btn.pack(side="left")
-
-        except Exception as e:
-            # Fallback: show basic error
-            try:
-                self._hotkey_status_var.set(f"⚠️ Error updating status: {e}")
-                self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)
-            except Exception:
-                pass
 
     def _refresh_start_stop_visual(self):
         is_running = hasattr(self, "hunt_orchestrator") and getattr(
@@ -2016,7 +1808,7 @@ class App(tk.Tk):
 
         # Reset listbox background to default
         if hasattr(self, "monster_rotation_listbox"):
-            self.monster_rotation_listbox.config(bg="white")
+            self.monster_rotation_listbox.config(bg=UI.BG_BASE)
 
         self.monster_frame.config(text=title)
 
@@ -2270,194 +2062,52 @@ class App(tk.Tk):
             self.rotation_desc_var.set("Always hunt highest priority (lowest number)")
 
     def _update_training_mode_buttons(self):
-        """Update monster control buttons based on training mode state.
-
-        Training Mode ON:
-        - Add button: Shows finish.ico if dummy set, else add.ico with training tooltip
-        - Add button: Disabled if training dummy already in list
-        - Up/Down buttons: Disabled (no rotation needed)
-
-        Training Mode OFF:
-        - Add button: Shows add.ico with normal tooltip
-        - Add button: Always enabled
-        - Up/Down buttons: Enabled
-        """
+        """Update monster control buttons based on training mode state."""
         if not hasattr(self, "btn_add_monster"):
             return
 
         is_training = self.training_mode_var.get()
-        has_training_dummy = any(
-            m.get("training_mode", False) for m in self.monster_rotation
-        )
+        has_training_dummy = any(m.get("training_mode", False) for m in self.monster_rotation)
+
+        def _update_btn(btn, icon_name, fallback, state, bg_color=None, fg_color=None):
+            if not btn: return
+            icon = self._icon(icon_name, fallback, size=16, color=fg_color if fg_color != UI.BG_BASE else None)
+            kwargs = {"state": state}
+            if bg_color: kwargs["bg"] = bg_color
+            if fg_color: kwargs["fg"] = fg_color
+            if isinstance(icon, str):
+                kwargs["text"] = icon
+            else:
+                kwargs["image"] = icon
+                kwargs["text"] = ""
+            btn.config(**kwargs)
 
         if is_training:
-            # Training mode: Update add button
             if has_training_dummy:
-                # Dummy already set - show accept icon and disable
-                try:
-                    # Use size=16 to match compact button
-                    accept_icon = self._icon("accept", "✓", size=16)
-                    if isinstance(accept_icon, str):
-                        self.btn_add_monster.config(text=accept_icon, state="disabled")
-                    else:
-                        self.btn_add_monster.config(
-                            image=accept_icon, text="", state="disabled"
-                        )
-                except Exception:
-                    self.btn_add_monster.config(text="✓", state="disabled")
-
-                # Update tooltip for locked state
-                tooltip_text = self._t("tooltip_add_monster_locked")
-                tooltip = getattr(self.btn_add_monster, "_tooltip", None)
-                if tooltip is not None:
-                    try:
-                        tooltip.destroy()
-                    except Exception:
-                        pass
-                    try:
-                        delattr(self.btn_add_monster, "_tooltip")
-                    except Exception:
-                        pass
-                self._create_tooltip(self.btn_add_monster, tooltip_text)
-            else:
-                # No dummy yet - show add icon and enable
-                try:
-                    # Use size=16 to match compact button
-                    add_icon = self._icon("add", "➕", size=16)
-                    if isinstance(add_icon, str):
-                        self.btn_add_monster.config(text=add_icon, state="normal")
-                    else:
-                        self.btn_add_monster.config(
-                            image=add_icon, text="", state="normal"
-                        )
-                except Exception:
-                    self.btn_add_monster.config(text="➕", state="normal")
-
-                # Update tooltip for training helper
-                tooltip_text = self._t("tooltip_add_monster_training")
-                tooltip = getattr(self.btn_add_monster, "_tooltip", None)
-                if tooltip is not None:
-                    try:
-                        tooltip.destroy()
-                    except Exception:
-                        pass
-                    try:
-                        delattr(self.btn_add_monster, "_tooltip")
-                    except Exception:
-                        pass
-                self._create_tooltip(self.btn_add_monster, tooltip_text)
-
-            # Disable priority reorder buttons with locked icon (white on gray)
-            # Use size=16 to match SMALL buttons (36px)
-            try:
-                locked_icon = self._icon("locked", "🔒", size=16, color="#FFFFFF")
-                for btn in [self.btn_move_up, self.btn_move_down]:
-                    # IMPORTANT: Keep original bg colors when disabled
-                    original_bg = (
-                        UI.BG_ELEVATED if btn == self.btn_move_up else UI.BG_ELEVATED
-                    )
-                    btn.config(state="disabled", bg=original_bg)
-                    if isinstance(locked_icon, str):
-                        btn.config(text=locked_icon)
-                    else:
-                        btn.config(image=locked_icon, text="")
-            except Exception:
-                self.btn_move_up.config(state="disabled", text="🔒", bg=UI.BG_ELEVATED)
-                self.btn_move_down.config(
-                    state="disabled", text="🔒", bg=UI.BG_ELEVATED
-                )
-
-            # Update tooltips for disabled buttons
-            for btn in [self.btn_move_up, self.btn_move_down]:
-                # Safely destroy any existing tooltip then create a new one
-                try:
-                    self._destroy_widget_tooltip(btn)
-                except Exception:
-                    pass
-                self._create_tooltip(btn, self._t("tooltip_reorder_locked"))
-        else:
-            # Normal mode: Restore defaults
-            try:
-                # Use size=16 to match compact button
-                add_icon = self._icon("add", "➕", size=16)
-                if isinstance(add_icon, str):
-                    self.btn_add_monster.config(text=add_icon, state="normal")
-                else:
-                    self.btn_add_monster.config(image=add_icon, text="", state="normal")
-            except Exception:
-                self.btn_add_monster.config(text="➕", state="normal")
-
-            # Restore normal tooltip
-            try:
+                _update_btn(self.btn_add_monster, "accept", "✓", "disabled")
                 self._destroy_widget_tooltip(self.btn_add_monster)
-            except Exception:
-                pass
-            self._create_tooltip(
-                self.btn_add_monster, self._t("tooltip_add_monster_normal")
-            )
+                self._create_tooltip(self.btn_add_monster, self._t("tooltip_add_monster_locked"))
+            else:
+                _update_btn(self.btn_add_monster, "add", "➕", "normal")
+                self._destroy_widget_tooltip(self.btn_add_monster)
+                self._create_tooltip(self.btn_add_monster, self._t("tooltip_add_monster_training"))
 
-            # Enable priority reorder buttons with original icons and colors (both blue for consistency)
-            try:
-                # Use size=16 to match SMALL buttons
-                up_icon = self._icon("up", "↑", size=16)
-                down_icon = self._icon("down", "↓", size=16)
+            _update_btn(self.btn_move_up, "locked", "🔒", "disabled", UI.BG_ELEVATED, UI.TEXT_PRIMARY)
+            _update_btn(self.btn_move_down, "locked", "🔒", "disabled", UI.BG_ELEVATED, UI.TEXT_PRIMARY)
+            self._destroy_widget_tooltip(self.btn_move_up)
+            self._create_tooltip(self.btn_move_up, self._t("tooltip_reorder_locked"))
+            self._destroy_widget_tooltip(self.btn_move_down)
+            self._create_tooltip(self.btn_move_down, self._t("tooltip_reorder_locked"))
+        else:
+            _update_btn(self.btn_add_monster, "add", "➕", "normal")
+            self._destroy_widget_tooltip(self.btn_add_monster)
+            self._create_tooltip(self.btn_add_monster, self._t("tooltip_add_monster_normal"))
 
-                if isinstance(up_icon, str):
-                    self.btn_move_up.config(
-                        state="normal",
-                        text=up_icon,
-                        bg=UI.ACCENT_BLUE,  # Blue for consistency
-                        fg=UI.BG_BASE,
-                    )
-                else:
-                    self.btn_move_up.config(
-                        state="normal",
-                        image=up_icon,
-                        text="",
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-
-                if isinstance(down_icon, str):
-                    self.btn_move_down.config(
-                        state="normal",
-                        text=down_icon,
-                        bg=UI.ACCENT_BLUE,  # Blue for consistency
-                        fg=UI.BG_BASE,
-                    )
-                else:
-                    self.btn_move_down.config(
-                        state="normal",
-                        image=down_icon,
-                        text="",
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-            except Exception:
-                self.btn_move_up.config(
-                    state="normal",
-                    text="↑",
-                    bg=UI.ACCENT_BLUE,  # Blue for consistency
-                    fg=UI.BG_BASE,
-                )
-                self.btn_move_down.config(
-                    state="normal",
-                    text="↓",
-                    bg=UI.ACCENT_BLUE,  # Blue for consistency
-                    fg=UI.BG_BASE,
-                )
-
-            # Restore normal tooltips
-            try:
-                self._destroy_widget_tooltip(self.btn_move_up)
-            except Exception:
-                pass
+            _update_btn(self.btn_move_up, "up", "↑", "normal", UI.ACCENT_BLUE, UI.BG_BASE)
+            _update_btn(self.btn_move_down, "down", "↓", "normal", UI.ACCENT_BLUE, UI.BG_BASE)
+            self._destroy_widget_tooltip(self.btn_move_up)
             self._create_tooltip(self.btn_move_up, self._t("tooltip_move_up"))
-
-            try:
-                self._destroy_widget_tooltip(self.btn_move_down)
-            except Exception:
-                pass
+            self._destroy_widget_tooltip(self.btn_move_down)
             self._create_tooltip(self.btn_move_down, self._t("tooltip_move_down"))
 
     def on_global_apply(self):
@@ -2600,7 +2250,7 @@ class App(tk.Tk):
             self.global_apply_btn.config(
                 text=f"💾 {self._t('apply_all_settings_unsaved')}",
                 bg=UI.ACCENT_AMBER,
-                activebackground="#d97706",
+                activebackground=UI.ACCENT_AMBER,
                 state="normal"
             )
         else:
