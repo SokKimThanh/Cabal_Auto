@@ -1,0 +1,132 @@
+# Phân tích lỗi `ModuleNotFoundError` tiềm ẩn trong `app_gui.py`
+
+Dưới đây là danh sách các vị trí có thể gây ra lỗi `ModuleNotFoundError` trong file `app_gui.py`, kèm nguyên nhân và hướng khắc phục. Chia thành 3 nhóm: **import nội bộ**, **import thư viện bên ngoài**, và **import có điều kiện**.
+
+---
+
+## 1. Import nội bộ (các module thuộc project)
+
+Những import này sẽ gây lỗi nếu file tương ứng không tồn tại trong hệ thống thư mục. Cần đảm bảo toàn bộ cấu trúc dự án được hoàn chỉnh.
+
+### 1.1. Các import ở đầu file
+| **Dòng** | **Module** | **Nguy cơ** | **Cách xử lý** |
+|----------|------------|-------------|----------------|
+| `from dialogs.monster_picker import MonsterPickerDialog` | `dialogs/monster_picker.py` | Cao | Kiểm tra tồn tại file hoặc tạo stub nếu chưa có. |
+| `from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal` | `ui/windows/hotkey_diag_dialog.py` | Cao | Đảm bảo file được tạo. |
+| `from ui.controllers.app_lifecycle_controller import AppLifecycleController` | `ui/controllers/app_lifecycle_controller.py` | Cao | Xác nhận file tồn tại. |
+| `from lib.ui_style_v2 import UIStyleV2 as UI` | `lib/ui_style_v2.py` | Cao | Tạo file chứa class UIStyleV2. |
+| `from lib.system.win_input import tap` | `lib/system/win_input.py` | Cao | File cần có hàm `tap`. |
+| `from lib.system.instance_lock import SingleInstanceLock` | `lib/system/instance_lock.py` | Cao | Kiểm tra sự tồn tại. |
+| `from lib.system.hunt_logger import get_hunt_logger` | `lib/system/hunt_logger.py` | Cao | Cần có logger. |
+| `from ui.controllers.hotkey_controller import HotkeyController` | `ui/controllers/hotkey_controller.py` | Cao | Phải tồn tại. |
+| `from lib.features.timing.calculator import ...` | `lib/features/timing/calculator.py` | Cao | Đảm bảo các hàm được export. |
+| `from lib.features.skills.skill_stats import SkillStats` | `lib/features/skills/skill_stats.py` | Cao | File cần có class SkillStats. |
+| `from lib.features.skills.skill_runtime_service import SkillRuntimeService` | `lib/features/skills/skill_runtime_service.py` | Cao | Cần có class. |
+| `from lib.features.skills.skill_repo import calculate_attack_speed_from_skills` | `lib/features/skills/skill_repo.py` | Cao | Cần có hàm. |
+| `from lib.features.monsters.monster_repo import ...` | `lib/features/monsters/monster_repo.py` | Cao | Cần các hàm. |
+| `from lib.features.hunt.hunt_orchestrator import HuntOrchestrator` | `lib/features/hunt/hunt_orchestrator.py` | Cao | Phải có. |
+| `from lib.features.hunt.hunt_runner import HuntRunner` | `lib/features/hunt/hunt_runner.py` | Cao | Cần class. |
+| `from lib.features.hunt.hunt_config import ...` | `lib/features/hunt/hunt_config.py` | Cao | Các hàm và hằng số. |
+| `from ui.utils.overlay_controller import OverlayController` | `ui/utils/overlay_controller.py` | Cao | Có thể trùng với `ui.controllers.overlay_controller`. |
+| `from ui.helpers.tooltip import attach_i18n_tooltip` | `ui/helpers/tooltip.py` | Cao | Cần có hàm. |
+| `from lib.system.bot_manager import BotManager` | `lib/system/bot_manager.py` | Cao | Cần class. |
+| `from lib.i18n import ...` | `lib/i18n.py` | Cao | Cần có module i18n. |
+| `from lib.features.hunt.config_validator import get_valid_hunt_area` | `lib/features/hunt/config_validator.py` | Cao | Cần hàm. |
+| `from lib.vision.vision_engine import VisionEngine` | `lib/vision/vision_engine.py` | Cao | Cần class. |
+| `from lib.vision.template_matcher import locate_template` | `lib/vision/template_matcher.py` | Cao | Cần hàm. |
+| `from lib.i18n.translations import GLOBAL_TRANSLATIONS` | `lib/i18n/translations.py` | Trung bình | Import có side effect (đăng ký bản dịch). Nếu thiếu, lỗi xảy ra. |
+| `from lib.logging_config import setup_logging` | `lib/logging_config.py` | Cao | Cần hàm setup. |
+
+### 1.2. Import trong `__init__` và các phương thức
+| **Module** | **Vị trí** | **Nguy cơ** | **Cách xử lý** |
+|------------|------------|-------------|----------------|
+| `from lib.features.hunt.scan_controller import ScanController` | `__init__` | Cao | Tạo file. |
+| `from ui.icon_library import Icons` | `__init__` | Cao | File cần chứa class Icons. |
+| `from ui.helpers.icon_helper import get_icon_helper` | `__init__` | Cao | Cần hàm. |
+| `from ui.controllers.app_window_controller import AppWindowController` | `__init__` | Cao | Cần class. |
+| `from ui.controllers.library_manager_controller import LibraryManagerController` | `__init__` | Cao | Cần class. |
+| `from ui.controllers.overlay_controller import OverlayController as AppOverlayController` | `__init__` | Cao | Có thể trùng tên, cần phân biệt. |
+| `from ui.controllers.window_tracker_controller import WindowTrackerController` | `__init__` | Cao | Cần class. |
+| `from lib.features.monsters.monster_library_service import MonsterLibraryService` | `__init__` | Cao | Cần class. |
+| `from ui.controllers.app_state_controller import AppStateController` | `__init__` | Cao | Cần class. |
+| `from lib.features.hunt.window_selection_service import WindowSelectionService` | `__init__` | Cao | Cần class. |
+| `from ui.components.base.responsive_grid_base import ResponsiveGridBase` | `_build_ui` | Cao | Cần class. |
+| `from ui.components.compact_window_selector import CompactWindowSelector` | `_build_ui` | Cao | Cần class. |
+| `from ui.panels.screen_state_panel import ScreenStatePanel` | `_build_ui` | Cao | Cần class. |
+| `from ui.helpers.button_styles import get_button_config` | `_build_ui` | Cao | Cần hàm. |
+| `from ui.views.hunt_workspace_frame import HuntWorkspaceFrame` | `_build_ui` | Cao | Cần class. |
+| `from ui.views.setup_content_frame import SetupContentFrame` | `_build_ui` | Cao | Cần class. |
+| `from ui.views.help_support_frame import HelpSupportFrame` | `_build_ui` | Cao | Cần class. |
+| `from ui.views.stats_content_frame import StatsContentFrame` | `_build_ui` | Cao | Cần class. |
+| `from ui.views.activity_logs_frame import ActivityLogsFrame` | `_build_ui` | Cao | Cần class. |
+| `from ui.views.monster_manager_frame import MonsterManagerFrame` | `_build_ui` | Cao | Cần class. |
+| `from ui.views.skill_manager_frame import SkillManagerFrame` | `_build_ui` | Cao | Cần class. |
+| `from lib.features.setup.screen_state_analyzer import ScreenStateAnalyzer` | `_show_scan_results` | Cao | Cần class. |
+| `from database import get_monster_by_id_api, find_monster_by_name_api` | `_refresh_monster_rotation_list` | Cao | Cần module `database.py` (hoặc gói). |
+
+---
+
+## 2. Import thư viện bên ngoài (third-party)
+
+Một số thư viện có thể chưa được cài đặt, nhưng đã được xử lý bằng `try/except` ngoại trừ `win32gui`.
+
+### 2.1. Đã được bắt ngoại lệ
+| **Thư viện** | **Dòng** | **Tác động** |
+|--------------|----------|--------------|
+| `pyautogui` | `try: import pyautogui` | Nếu thiếu, biến `pyautogui` được đặt là `None`, sau đó có kiểm tra trước khi dùng. |
+| `PIL (Image, ImageDraw, ImageTk)` | `try: from PIL import ...` | Thiếu thì các biến gán `None`, không gây lỗi ở import. |
+| `keyboard` | `try: import keyboard` | Thiếu thì biến `keyboard` là `None`, hotkey sẽ không hoạt động nhưng không crash. |
+| `lib.system.screen_capture` | `try: from lib.system.screen_capture import ScreenCapture` | Nếu thiếu, `ScreenCapture = None`. |
+
+### 2.2. Chưa được bắt (nguy cơ cao)
+| **Thư viện** | **Vị trí** | **Nguy cơ** | **Cách xử lý** |
+|--------------|------------|-------------|----------------|
+| `win32gui` | Trong hàm `main()`: `import win32gui` | **Cao** – Nếu thiếu pywin32, chương trình sẽ crash ngay khi khởi động. | Thêm `try/except ImportError` và hiển thị thông báo lỗi thân thiện. |
+| `ctypes.wintypes` | Đã import ở đầu file | `ctypes` là built-in, không có vấn đề. | - |
+| `queue`, `threading`, `datetime`, ... | Built-in | Không gây lỗi. | - |
+
+---
+
+## 3. Import có điều kiện (được import bên trong hàm/phương thức)
+
+Những import này chỉ được gọi khi chạy đến dòng đó, vì vậy lỗi có thể xuất hiện muộn.
+
+| **Module** | **Vị trí** | **Nguy cơ** | **Ghi chú** |
+|------------|------------|-------------|-------------|
+| `ui.components` (import động trong `_create_icon_btn_component`) | `_build_ui` (khi tạo icon button) | Trung bình | Đã có `try/except`, nên không crash. |
+| `ui.helpers.capture_helper` | `try: from ui.helpers.capture_helper import capture_region_and_save` | Trung bình | Đã bắt, gán `None`. |
+| `lib.features.hunt.scan_controller` | `__init__` (dùng trong `ScanController` constructor) | Cao | Nếu file scan_controller không tồn tại, lỗi ngay khi khởi tạo. |
+
+---
+
+## 4. Đề xuất sửa chữa tổng thể
+
+### 4.1. Đảm bảo cấu trúc thư mục
+- Kiểm tra tất cả các file nội bộ được liệt kê ở Mục 1. Nếu thiếu, tạo file hoặc điều chỉnh import cho đúng.
+- Sử dụng công cụ như `pylint` hoặc `mypy` để phát hiện import lỗi trong quá trình phát triển.
+
+### 4.2. Xử lý thư viện ngoài
+- Bổ sung `try/except ImportError` cho `win32gui` trong `main()`:
+  ```python
+  try:
+      import win32gui
+  except ImportError:
+      print("⚠️ pywin32 chưa được cài đặt. Vui lòng chạy: pip install pywin32")
+      sys.exit(1)
+  ```
+- Đối với các thư viện khác (PIL, keyboard, pyautogui), có thể hiển thị cảnh báo khi thiếu nhưng vẫn cho ứng dụng chạy với chức năng bị hạn chế.
+
+### 4.3. Kiểm tra sự tồn tại của module database
+- Import `database` ở dòng `from database import ...` có thể gây lỗi nếu file `database.py` không nằm ở thư mục gốc. Có thể thay bằng đường dẫn tương đối hoặc đảm bảo file tồn tại.
+
+### 4.4. Sử dụng import absolute thay vì relative
+- Nhiều import bắt đầu bằng `from lib...` hoặc `from ui...` đều là absolute (với điều kiện thư mục gốc nằm trong `sys.path`). Đảm bảo thêm đoạn `sys.path.insert(0, str(Path(__file__).parent.parent))` để thêm thư mục cha vào path. Đoạn này đã có trong file (dòng 68-69) nên các import nội bộ sẽ hoạt động nếu cấu trúc đúng.
+
+### 4.5. Tạo file `__init__.py` trong các thư mục con
+- Đảm bảo tất cả thư mục chứa module đều có `__init__.py` (có thể rỗng) để Python nhận diện là package.
+
+---
+
+## Tài liệu tham khảo
+
+Bạn có thể lưu nội dung này vào file `MODULE_NOT_FOUND_FIXES.md` và thực hiện kiểm tra từng mục. Ngoài ra, hãy chạy ứng dụng trong môi trường development để phát hiện lỗi cụ thể và bổ sung xử lý ngoại lệ nơi cần thiết.

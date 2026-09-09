@@ -1,0 +1,657 @@
+# Phân tích lỗi `AttributeError` tiềm ẩn trong `app_gui.py`
+
+Dưới đây là danh sách các vị trí có khả năng gây ra lỗi `AttributeError` trong file `app_gui.py`, kèm mô tả nguyên nhân và đề xuất cách sửa.
+
+---
+
+## 1. `self.monster_library_service` chưa được khởi tạo
+
+**Vị trí:** Dòng trong `__init__`:
+```python
+self.monsters = self.monster_library_service.load_monsters()
+```
+**Nguyên nhân:** `monster_library_service` không được định nghĩa trong `__init__` hoặc bất kỳ đâu trước đó.
+
+**Cách sửa:** Khởi tạo service phù hợp, ví dụ:
+```python
+from lib.features.monsters.monster_library_service import MonsterLibraryService
+self.monster_library_service = MonsterLibraryService()
+```
+
+---
+
+## 2. `self.skill_service` chưa được khởi tạo
+
+**Vị trí:**
+- Property `skills`:
+```python
+@property
+def skills(self):
+    if hasattr(self, "skill_service"):
+        return self.skill_service.get_all_skills()
+    return []
+```
+- Trong `__init__`:
+```python
+self.monsters = self.skill_service._normalize_library_items(self.monsters)
+```
+
+**Nguyên nhân:** `skill_service` không được tạo trước khi sử dụng.
+
+**Cách sửa:** Khởi tạo `SkillRuntimeService` (hoặc tương tự) trong `__init__`:
+```python
+from lib.features.skills.skill_runtime_service import SkillRuntimeService
+self.skill_service = SkillRuntimeService()
+```
+
+---
+
+## 3. `self.overlay_ctrl` không được khởi tạo
+
+**Vị trí:** Trong `HuntRunner`:
+```python
+get_overlay_ctrl=lambda: getattr(self, "overlay_ctrl", None),
+```
+**Nguyên nhân:** `overlay_ctrl` không được gán giá trị trước đó.
+
+**Cách sửa:** Nếu cần overlay, tạo `OverlayController` và gán `self.overlay_ctrl`. Nếu không, giữ nguyên `getattr` nhưng vẫn có thể gây lỗi logic.
+
+---
+
+## 4. `self.rotation_mode_map` chưa được khởi tạo
+
+**Vị trí:** Trong `_on_rotation_mode_changed`:
+```python
+mode = self.rotation_mode_map.get(display_mode, display_mode)
+```
+**Nguyên nhân:** Không có biến `rotation_mode_map` trong `__init__`.
+
+**Cách sửa:** Khởi tạo ánh xạ:
+```python
+self.rotation_mode_map = {"sequence": "sequence", "priority": "priority"}
+```
+hoặc đơn giản hóa bằng `mode = display_mode`.
+
+---
+
+## 5. `self._detected_snapshot_items` chưa được khởi tạo
+
+**Vị trí:** `promote_detected_monster` và `_update_detected_monsters_list` truy cập `self._detected_snapshot_items`.
+
+**Nguyên nhân:** Biến chỉ được gán trong `_update_detected_monsters_list`, nhưng có thể được gọi trước khi gán.
+
+**Cách sửa:** Khởi tạo trong `__init__`:
+```python
+self._detected_snapshot_items = []
+```
+
+---
+
+## 6. `self.detected_monsters_listbox` chưa được khởi tạo
+
+**Vị trí:** `_update_detected_monsters_list`:
+```python
+if not hasattr(self, "detected_monsters_listbox"):
+    return
+```
+**Nguyên nhân:** Widget này được tạo trong view (có thể là `HuntWorkspaceFrame`) nhưng không được gán vào `self`.
+
+**Cách sửa:** Đảm bảo view gán `self.app.detected_monsters_listbox = listbox` hoặc truy cập qua `self._views["hunt"].detected_monsters_listbox`.
+
+---
+
+## 7. `self.monster_rotation_listbox` chưa được khởi tạo
+
+**Vị trí:** Nhiều phương thức: `_refresh_monster_rotation_list`, `_on_monster_move_up`, `_on_monster_move_down`, `_on_monster_delete_from_list`, `clear_target_ui`.
+
+**Nguyên nhân:** Tương tự như trên, widget chưa được gán.
+
+**Cách sửa:** Truy xuất từ view hoặc gán trực tiếp khi tạo.
+
+---
+
+## 8. `self.btn_add_monster`, `self.btn_move_up`, `self.btn_move_down` chưa được khởi tạo
+
+**Vị trí:** `_update_training_mode_buttons`.
+
+**Nguyên nhân:** Các button này thuộc về view.
+
+**Cách sửa:** Truy cập qua `self._views["hunt"]` hoặc gán từ view.
+
+---
+
+## 9. `self.training_mode_var` chưa được khởi tạo
+
+**Vị trí:** `_update_training_mode_buttons`.
+
+**Nguyên nhân:** Biến `training_mode_var` không được khởi tạo.
+
+**Cách sửa:** Khởi tạo `self.training_mode_var = tk.BooleanVar(value=False)` và liên kết với view.
+
+---
+
+## 10. `self.monster_frame` chưa được khởi tạo
+
+**Vị trí:** `_update_monster_frame_title`.
+
+**Nguyên nhân:** Frame chưa được gán.
+
+**Cách sửa:** Tạo hoặc lấy từ view.
+
+---
+
+## 11. `self.monster_status_var` chưa được khởi tạo
+
+**Vị trí:** `_update_monster_status`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.monster_status_var = tk.StringVar()`.
+
+---
+
+## 12. `self.monster_select_combo` và `self.monster_select_var` chưa được khởi tạo
+
+**Vị trí:** `_refresh_monster_select_options` và `on_monster_select_change`.
+
+**Nguyên nhân:** Widget và biến liên kết chưa được tạo.
+
+**Cách sửa:** Đảm bảo view tạo và gán hoặc truy cập qua view.
+
+---
+
+## 13. `self.monster_estimate_var` chưa được khởi tạo
+
+**Vị trí:** `on_monster_select_change`, `on_monster_apply_from_select`, `on_monster_use_for_hunt`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.monster_estimate_var = tk.StringVar()`.
+
+---
+
+## 14. `self.template_var` chưa được khởi tạo
+
+**Vị trí:** `on_monster_use_for_hunt`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.template_var = tk.StringVar()`.
+
+---
+
+## 15. `self.attack_duration_var` và `self.lost_timeout_var` chưa được khởi tạo
+
+**Vị trí:** `on_monster_use_for_hunt`.
+
+**Nguyên nhân:** Chưa tạo các `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.attack_duration_var = tk.StringVar()` và `self.lost_timeout_var = tk.StringVar()`.
+
+---
+
+## 16. `self.skill_slot_boxes`, `self.skill_slot_vars`, `self.skill_slot_duration_vars` chưa được khởi tạo
+
+**Vị trí:** Nhiều phương thức quản lý skill slots.
+
+**Nguyên nhân:** Các danh sách widget/biến chưa được tạo.
+
+**Cách sửa:** Khởi tạo danh sách rỗng, sau đó các view sẽ gán hoặc thêm phần tử.
+
+---
+
+## 17. `self.global_hotkey_enabled_var`, `self.global_hotkey_start_var`, ... chưa được khởi tạo
+
+**Vị trí:** `on_global_apply`.
+
+**Nguyên nhân:** Các biến điều khiển hotkey chưa được tạo.
+
+**Cách sửa:** Khởi tạo các `BooleanVar` và `StringVar` tương ứng (có thể từ `SetupContentFrame`).
+
+---
+
+## 18. `self.setup_search_interval_var`, `self.setup_attack_interval_var`, ... chưa được khởi tạo
+
+**Vị trí:** `_reload_setup_advanced_settings`.
+
+**Nguyên nhân:** Các biến cài đặt từ setup chưa được gán.
+
+**Cách sửa:** Đảm bảo `SetupContentFrame` tạo và gán vào `self`.
+
+---
+
+## 19. `self._last_snapshot` chưa được khởi tạo
+
+**Vị trí:** `promote_detected_monster` và `_update_detected_monsters_list`.
+
+**Nguyên nhân:** Biến chỉ được gán trong `on_scene_monsters_detected`.
+
+**Cách sửa:** Khởi tạo `self._last_snapshot = None` trong `__init__`.
+
+---
+
+## 20. `self.logs_metrics_label` chưa được khởi tạo
+
+**Vị trí:** `_update_logs_metrics`.
+
+**Nguyên nhân:** Label metrics chưa được gán.
+
+**Cách sửa:** Đảm bảo view `ActivityLogsFrame` tạo và gán hoặc truy cập qua view.
+
+---
+
+## 21. `self._hotkey_status_var`, `self._hotkey_status_label`, `self._hotkey_retry_btn`, `self._hotkey_details_btn` chưa được khởi tạo
+
+**Vị trí:** `_update_hotkey_diagnostics_ui`.
+
+**Nguyên nhân:** Các thành phần UI này chưa được tạo.
+
+**Cách sửa:** Tạo các biến và widget trong `_build_ui` hoặc trong view tương ứng.
+
+---
+
+## 22. `self.rotation_desc_var` chưa được khởi tạo
+
+**Vị trí:** `_update_rotation_mode_description`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.rotation_desc_var = tk.StringVar()`.
+
+---
+
+## 23. `self.hunt_selected` có thể chưa tồn tại
+
+**Vị trí:** `_populate_hunt_ui_from_config` gán `self.hunt_selected = {...}`, nhưng nếu chưa có, sẽ tạo mới nên không lỗi. Tuy nhiên các phương thức khác có thể dùng mà chưa được gán.
+
+**Cách sửa:** Đảm bảo khởi tạo `self.hunt_selected = {}` trong `__init__`.
+
+---
+
+## 24. `self.hunt_status` và `self.hunt_target_info` chưa được khởi tạo
+
+**Vị trí:** Nhiều nơi gọi `self.hunt_status.set(...)`, `self.hunt_target_info.set(...)`.
+
+**Nguyên nhân:** Các biến StringVar được tạo trong `_build_ui` nhưng có thể được gọi trước đó.
+
+**Cách sửa:** Khởi tạo các biến này ngay trong `__init__`:
+```python
+self.hunt_status = tk.StringVar(value="Ready")
+self.hunt_target_info = tk.StringVar(value="")
+```
+
+---
+
+## Tóm tắt các đề xuất sửa chữa chính
+
+1. **Khởi tạo tất cả service và controller cần thiết** trong `__init__`:
+   - `MonsterLibraryService`
+   - `SkillRuntimeService` (hoặc tương tự)
+   - `OverlayController` (nếu cần)
+
+2. **Khởi tạo các biến trạng thái**:
+   - `_detected_snapshot_items = []`
+   - `_last_snapshot = None`
+   - `hunt_selected = {}`
+   - `hunt_status = tk.StringVar()`
+   - `hunt_target_info = tk.StringVar()`
+   - `monster_estimate_var = tk.StringVar()`
+   - `template_var = tk.StringVar()`
+   - `attack_duration_var = tk.StringVar()`
+   - `lost_timeout_var = tk.StringVar()`
+   - `monster_status_var = tk.StringVar()`
+   - `rotation_desc_var = tk.StringVar()`
+   - `training_mode_var = tk.BooleanVar(value=False)`
+   - `global_hotkey_enabled_var = tk.BooleanVar(value=True)`
+   - Các biến hotkey khác (start, stop, library, vision, monster)
+
+3. **Đảm bảo các widget được truy cập thông qua view** hoặc gán trực tiếp vào `self` khi tạo trong view:
+   - `self.detected_monsters_listbox`
+   - `self.monster_rotation_listbox`
+   - `self.btn_add_monster`, `self.btn_move_up`, `self.btn_move_down`
+   - `self.monster_select_combo`, `self.monster_select_var`
+   - `self.skill_slot_boxes`, `self.skill_slot_vars`, `self.skill_slot_duration_vars`
+   - `self.setup_search_interval_var`, v.v.
+   - `self._hotkey_status_var`, `self._hotkey_status_label`, v.v.
+   - `self.logs_metrics_label`
+   - `self.monster_frame`
+
+4. **Sử dụng `getattr` hoặc kiểm tra `hasattr`** ở những nơi mà thuộc tính có thể chưa tồn tại để tránh lỗi.
+
+5. **Tách biệt logic UI ra khỏi controller** bằng cách đưa các thao tác với widget vào các view cụ thể, không để `App` trực tiếp thao tác widget.
+
+---
+
+## File tài liệu đề xuất
+
+Bạn có thể lưu nội dung trên vào một file `ATTRIBUTE_ERROR_FIXES.md` để tham khảo khi sửa lỗi.
+
+Ngoài ra, để giảm thiểu rủi ro, hãy xem xét việc áp dụng mô hình **MVP (Model-View-Presenter)** hoặc **MVC** để tách biệt rõ ràng giữa controller và view, giúp tránh các tham chiếu chéo gây lỗi.# Phân tích lỗi `AttributeError` tiềm ẩn trong `app_gui.py`
+
+Dưới đây là danh sách các vị trí có khả năng gây ra lỗi `AttributeError` trong file `app_gui.py`, kèm mô tả nguyên nhân và đề xuất cách sửa.
+
+---
+
+## 1. `self.monster_library_service` chưa được khởi tạo
+
+**Vị trí:** Dòng trong `__init__`:
+```python
+self.monsters = self.monster_library_service.load_monsters()
+```
+**Nguyên nhân:** `monster_library_service` không được định nghĩa trong `__init__` hoặc bất kỳ đâu trước đó.
+
+**Cách sửa:** Khởi tạo service phù hợp, ví dụ:
+```python
+from lib.features.monsters.monster_library_service import MonsterLibraryService
+self.monster_library_service = MonsterLibraryService()
+```
+
+---
+
+## 2. `self.skill_service` chưa được khởi tạo
+
+**Vị trí:**
+- Property `skills`:
+```python
+@property
+def skills(self):
+    if hasattr(self, "skill_service"):
+        return self.skill_service.get_all_skills()
+    return []
+```
+- Trong `__init__`:
+```python
+self.monsters = self.skill_service._normalize_library_items(self.monsters)
+```
+
+**Nguyên nhân:** `skill_service` không được tạo trước khi sử dụng.
+
+**Cách sửa:** Khởi tạo `SkillRuntimeService` (hoặc tương tự) trong `__init__`:
+```python
+from lib.features.skills.skill_runtime_service import SkillRuntimeService
+self.skill_service = SkillRuntimeService()
+```
+
+---
+
+## 3. `self.overlay_ctrl` không được khởi tạo
+
+**Vị trí:** Trong `HuntRunner`:
+```python
+get_overlay_ctrl=lambda: getattr(self, "overlay_ctrl", None),
+```
+**Nguyên nhân:** `overlay_ctrl` không được gán giá trị trước đó.
+
+**Cách sửa:** Nếu cần overlay, tạo `OverlayController` và gán `self.overlay_ctrl`. Nếu không, giữ nguyên `getattr` nhưng vẫn có thể gây lỗi logic.
+
+---
+
+## 4. `self.rotation_mode_map` chưa được khởi tạo
+
+**Vị trí:** Trong `_on_rotation_mode_changed`:
+```python
+mode = self.rotation_mode_map.get(display_mode, display_mode)
+```
+**Nguyên nhân:** Không có biến `rotation_mode_map` trong `__init__`.
+
+**Cách sửa:** Khởi tạo ánh xạ:
+```python
+self.rotation_mode_map = {"sequence": "sequence", "priority": "priority"}
+```
+hoặc đơn giản hóa bằng `mode = display_mode`.
+
+---
+
+## 5. `self._detected_snapshot_items` chưa được khởi tạo
+
+**Vị trí:** `promote_detected_monster` và `_update_detected_monsters_list` truy cập `self._detected_snapshot_items`.
+
+**Nguyên nhân:** Biến chỉ được gán trong `_update_detected_monsters_list`, nhưng có thể được gọi trước khi gán.
+
+**Cách sửa:** Khởi tạo trong `__init__`:
+```python
+self._detected_snapshot_items = []
+```
+
+---
+
+## 6. `self.detected_monsters_listbox` chưa được khởi tạo
+
+**Vị trí:** `_update_detected_monsters_list`:
+```python
+if not hasattr(self, "detected_monsters_listbox"):
+    return
+```
+**Nguyên nhân:** Widget này được tạo trong view (có thể là `HuntWorkspaceFrame`) nhưng không được gán vào `self`.
+
+**Cách sửa:** Đảm bảo view gán `self.app.detected_monsters_listbox = listbox` hoặc truy cập qua `self._views["hunt"].detected_monsters_listbox`.
+
+---
+
+## 7. `self.monster_rotation_listbox` chưa được khởi tạo
+
+**Vị trí:** Nhiều phương thức: `_refresh_monster_rotation_list`, `_on_monster_move_up`, `_on_monster_move_down`, `_on_monster_delete_from_list`, `clear_target_ui`.
+
+**Nguyên nhân:** Tương tự như trên, widget chưa được gán.
+
+**Cách sửa:** Truy xuất từ view hoặc gán trực tiếp khi tạo.
+
+---
+
+## 8. `self.btn_add_monster`, `self.btn_move_up`, `self.btn_move_down` chưa được khởi tạo
+
+**Vị trí:** `_update_training_mode_buttons`.
+
+**Nguyên nhân:** Các button này thuộc về view.
+
+**Cách sửa:** Truy cập qua `self._views["hunt"]` hoặc gán từ view.
+
+---
+
+## 9. `self.training_mode_var` chưa được khởi tạo
+
+**Vị trí:** `_update_training_mode_buttons`.
+
+**Nguyên nhân:** Biến `training_mode_var` không được khởi tạo.
+
+**Cách sửa:** Khởi tạo `self.training_mode_var = tk.BooleanVar(value=False)` và liên kết với view.
+
+---
+
+## 10. `self.monster_frame` chưa được khởi tạo
+
+**Vị trí:** `_update_monster_frame_title`.
+
+**Nguyên nhân:** Frame chưa được gán.
+
+**Cách sửa:** Tạo hoặc lấy từ view.
+
+---
+
+## 11. `self.monster_status_var` chưa được khởi tạo
+
+**Vị trí:** `_update_monster_status`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.monster_status_var = tk.StringVar()`.
+
+---
+
+## 12. `self.monster_select_combo` và `self.monster_select_var` chưa được khởi tạo
+
+**Vị trí:** `_refresh_monster_select_options` và `on_monster_select_change`.
+
+**Nguyên nhân:** Widget và biến liên kết chưa được tạo.
+
+**Cách sửa:** Đảm bảo view tạo và gán hoặc truy cập qua view.
+
+---
+
+## 13. `self.monster_estimate_var` chưa được khởi tạo
+
+**Vị trí:** `on_monster_select_change`, `on_monster_apply_from_select`, `on_monster_use_for_hunt`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.monster_estimate_var = tk.StringVar()`.
+
+---
+
+## 14. `self.template_var` chưa được khởi tạo
+
+**Vị trí:** `on_monster_use_for_hunt`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.template_var = tk.StringVar()`.
+
+---
+
+## 15. `self.attack_duration_var` và `self.lost_timeout_var` chưa được khởi tạo
+
+**Vị trí:** `on_monster_use_for_hunt`.
+
+**Nguyên nhân:** Chưa tạo các `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.attack_duration_var = tk.StringVar()` và `self.lost_timeout_var = tk.StringVar()`.
+
+---
+
+## 16. `self.skill_slot_boxes`, `self.skill_slot_vars`, `self.skill_slot_duration_vars` chưa được khởi tạo
+
+**Vị trí:** Nhiều phương thức quản lý skill slots.
+
+**Nguyên nhân:** Các danh sách widget/biến chưa được tạo.
+
+**Cách sửa:** Khởi tạo danh sách rỗng, sau đó các view sẽ gán hoặc thêm phần tử.
+
+---
+
+## 17. `self.global_hotkey_enabled_var`, `self.global_hotkey_start_var`, ... chưa được khởi tạo
+
+**Vị trí:** `on_global_apply`.
+
+**Nguyên nhân:** Các biến điều khiển hotkey chưa được tạo.
+
+**Cách sửa:** Khởi tạo các `BooleanVar` và `StringVar` tương ứng (có thể từ `SetupContentFrame`).
+
+---
+
+## 18. `self.setup_search_interval_var`, `self.setup_attack_interval_var`, ... chưa được khởi tạo
+
+**Vị trí:** `_reload_setup_advanced_settings`.
+
+**Nguyên nhân:** Các biến cài đặt từ setup chưa được gán.
+
+**Cách sửa:** Đảm bảo `SetupContentFrame` tạo và gán vào `self`.
+
+---
+
+## 19. `self._last_snapshot` chưa được khởi tạo
+
+**Vị trí:** `promote_detected_monster` và `_update_detected_monsters_list`.
+
+**Nguyên nhân:** Biến chỉ được gán trong `on_scene_monsters_detected`.
+
+**Cách sửa:** Khởi tạo `self._last_snapshot = None` trong `__init__`.
+
+---
+
+## 20. `self.logs_metrics_label` chưa được khởi tạo
+
+**Vị trí:** `_update_logs_metrics`.
+
+**Nguyên nhân:** Label metrics chưa được gán.
+
+**Cách sửa:** Đảm bảo view `ActivityLogsFrame` tạo và gán hoặc truy cập qua view.
+
+---
+
+## 21. `self._hotkey_status_var`, `self._hotkey_status_label`, `self._hotkey_retry_btn`, `self._hotkey_details_btn` chưa được khởi tạo
+
+**Vị trí:** `_update_hotkey_diagnostics_ui`.
+
+**Nguyên nhân:** Các thành phần UI này chưa được tạo.
+
+**Cách sửa:** Tạo các biến và widget trong `_build_ui` hoặc trong view tương ứng.
+
+---
+
+## 22. `self.rotation_desc_var` chưa được khởi tạo
+
+**Vị trí:** `_update_rotation_mode_description`.
+
+**Nguyên nhân:** Chưa tạo `StringVar`.
+
+**Cách sửa:** Khởi tạo `self.rotation_desc_var = tk.StringVar()`.
+
+---
+
+## 23. `self.hunt_selected` có thể chưa tồn tại
+
+**Vị trí:** `_populate_hunt_ui_from_config` gán `self.hunt_selected = {...}`, nhưng nếu chưa có, sẽ tạo mới nên không lỗi. Tuy nhiên các phương thức khác có thể dùng mà chưa được gán.
+
+**Cách sửa:** Đảm bảo khởi tạo `self.hunt_selected = {}` trong `__init__`.
+
+---
+
+## 24. `self.hunt_status` và `self.hunt_target_info` chưa được khởi tạo
+
+**Vị trí:** Nhiều nơi gọi `self.hunt_status.set(...)`, `self.hunt_target_info.set(...)`.
+
+**Nguyên nhân:** Các biến StringVar được tạo trong `_build_ui` nhưng có thể được gọi trước đó.
+
+**Cách sửa:** Khởi tạo các biến này ngay trong `__init__`:
+```python
+self.hunt_status = tk.StringVar(value="Ready")
+self.hunt_target_info = tk.StringVar(value="")
+```
+
+---
+
+## Tóm tắt các đề xuất sửa chữa chính
+
+1. **Khởi tạo tất cả service và controller cần thiết** trong `__init__`:
+   - `MonsterLibraryService`
+   - `SkillRuntimeService` (hoặc tương tự)
+   - `OverlayController` (nếu cần)
+
+2. **Khởi tạo các biến trạng thái**:
+   - `_detected_snapshot_items = []`
+   - `_last_snapshot = None`
+   - `hunt_selected = {}`
+   - `hunt_status = tk.StringVar()`
+   - `hunt_target_info = tk.StringVar()`
+   - `monster_estimate_var = tk.StringVar()`
+   - `template_var = tk.StringVar()`
+   - `attack_duration_var = tk.StringVar()`
+   - `lost_timeout_var = tk.StringVar()`
+   - `monster_status_var = tk.StringVar()`
+   - `rotation_desc_var = tk.StringVar()`
+   - `training_mode_var = tk.BooleanVar(value=False)`
+   - `global_hotkey_enabled_var = tk.BooleanVar(value=True)`
+   - Các biến hotkey khác (start, stop, library, vision, monster)
+
+3. **Đảm bảo các widget được truy cập thông qua view** hoặc gán trực tiếp vào `self` khi tạo trong view:
+   - `self.detected_monsters_listbox`
+   - `self.monster_rotation_listbox`
+   - `self.btn_add_monster`, `self.btn_move_up`, `self.btn_move_down`
+   - `self.monster_select_combo`, `self.monster_select_var`
+   - `self.skill_slot_boxes`, `self.skill_slot_vars`, `self.skill_slot_duration_vars`
+   - `self.setup_search_interval_var`, v.v.
+   - `self._hotkey_status_var`, `self._hotkey_status_label`, v.v.
+   - `self.logs_metrics_label`
+   - `self.monster_frame`
+
+4. **Sử dụng `getattr` hoặc kiểm tra `hasattr`** ở những nơi mà thuộc tính có thể chưa tồn tại để tránh lỗi.
+
+5. **Tách biệt logic UI ra khỏi controller** bằng cách đưa các thao tác với widget vào các view cụ thể, không để `App` trực tiếp thao tác widget.
+
+---
+
+## File tài liệu đề xuất
+
+Bạn có thể lưu nội dung trên vào một file `ATTRIBUTE_ERROR_FIXES.md` để tham khảo khi sửa lỗi.
+
+Ngoài ra, để giảm thiểu rủi ro, hãy xem xét việc áp dụng mô hình **MVP (Model-View-Presenter)** hoặc **MVC** để tách biệt rõ ràng giữa controller và view, giúp tránh các tham chiếu chéo gây lỗi.
