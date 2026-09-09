@@ -1,28 +1,13 @@
 from dialogs.monster_picker import MonsterPickerDialog
-from ui.windows.hotkey_diag_dialog import show_hotkey_diagnostics_modal
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from lib.ui_style_v2 import UIStyleV2 as UI  # Global UI style constants
-from lib.system.win_input import tap
 from lib.system.instance_lock import SingleInstanceLock
 from lib.system.hunt_logger import get_hunt_logger
 from ui.controllers.hotkey_controller import HotkeyController
-from lib.features.timing.calculator import (
-    calculate_timing,
-    format_timing_recommendation,
-    get_timing_presets,
-        )
-from lib.features.skills.skill_stats import (
-    SkillStats,
-        )  # Sprint 22 Patch 1: Training Mode
-from lib.features.skills.skill_runtime_service import SkillRuntimeService
-from lib.features.skills.skill_repo import (
-    calculate_attack_speed_from_skills,
-        )
-from lib.features.monsters.monster_repo import (
-    calculate_monster_estimate,
-    load_monster_library,
-    save_monster_library,
-        )
+
+
+
+
 from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
 from lib.features.hunt.hunt_runner import HuntRunner
 from lib.features.hunt.hunt_config import (
@@ -33,31 +18,18 @@ from lib.features.hunt.hunt_config import (
     save_config,
     save_hunt_config,
         )
-from lib.features.hunt.hunt_config import CONFIG_PATH, HUNT_CONFIG_PATH
-from ui.utils.overlay_controller import OverlayController
 from ui.helpers.tooltip import attach_i18n_tooltip
-from lib.system.bot_manager import BotManager
 from lib.i18n import t as i18n_t
 from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
-from lib.vision.vision_engine import VisionEngine
-from lib.vision.template_matcher import locate_template
-from ctypes import wintypes
 from tkinter import filedialog, messagebox, ttk
 import tkinter as tk
-import copy
-import ctypes
-import json
-import math
-import os
 import sys
-import threading
-import time
 from datetime import datetime
 from pathlib import Path
 import queue
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 # Add parent directory to path for lib imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -76,18 +48,17 @@ except Exception:
     ImageDraw = None  # type: ignore
 
 try:
-    import keyboard  # type: ignore
+    pass
 except Exception:
     keyboard = None  # type: ignore
 
 
 try:
-    from lib.system.screen_capture import ScreenCapture
+    pass
 except ImportError:
     ScreenCapture = None
 
 # Imported for its side effect: self-registers GLOBAL_TRANSLATIONS into the i18n registry.
-from lib.i18n.translations import GLOBAL_TRANSLATIONS  # noqa: F401
 
 # Logger for debugging
 import logging
@@ -130,7 +101,6 @@ except ImportError:
         **kwargs,
     ):
         """Fallback icon button creator when component not available."""
-        import tkinter as tk
         from typing import Literal, cast
 
         # Cast state to proper type
@@ -177,7 +147,7 @@ except ImportError:
     print("Warning: Icon button component not available, using fallback")
 
 try:
-    from ui.helpers.capture_helper import capture_region_and_save
+    pass
 except Exception:
     capture_region_and_save = None  # type: ignore
 
@@ -208,6 +178,14 @@ class App(tk.Tk):
         return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
 
     def __init__(self):
+        self.has_unsaved_changes = False
+        self._btn_scan_ref = None
+        self._action_locked = {}
+        self._monster_metadata_cache = {}
+        self.monster_selected_index = None
+        self._icon_cache = {}
+        self._tooltips = {}
+
         try:
             super().__init__()
             self._is_destroyed = False
@@ -296,8 +274,8 @@ class App(tk.Tk):
         )
         from ui.controllers.window_tracker_controller import WindowTrackerController
         from lib.features.monsters.monster_library_service import MonsterLibraryService
-        from ui.controllers.app_state_controller import AppStateController
         from lib.features.skills.skill_runtime_service import SkillRuntimeService
+        from ui.controllers.app_state_controller import AppStateController
         from lib.db.services.skill_service import SkillService as DbSkillService
 
         self.monster_library_service = MonsterLibraryService()
@@ -785,7 +763,7 @@ class App(tk.Tk):
             button.bind("<Enter>", on_enter)
             button.bind("<Leave>", on_leave)
 
-        for item_idx, item in enumerate(sidebar_items):
+        for _item_idx, item in enumerate(sidebar_items):
             key, command, font, view_target, icon = item
             if command is None:
                 # Section label (not used in current items but keep logic for safety)
@@ -846,7 +824,6 @@ class App(tk.Tk):
         self.after(1000, self._update_logs_metrics)
 
         # Vùng A: Quick Action Bar
-        from ui.components.base.responsive_grid_base import ResponsiveGridBase
 
         self.shell_zone_a.grid_columnconfigure(0, weight=1)
         self.shell_zone_a.grid_rowconfigure(0, weight=1)
@@ -902,8 +879,8 @@ class App(tk.Tk):
                 if hasattr(self, "state_controller"):
                     self.state_controller._update_window_bounds_display()
                 self.hunt_status.set(f"✓ Selected: {window_dict['title']}")
-            except Exception as e:
-                logger.error(f"Error selecting window: {e}")
+            except Exception:
+                logger.error("Error selecting window")
 
         self.compact_window_selector = CompactWindowSelector(
             status_header,
@@ -1233,7 +1210,7 @@ class App(tk.Tk):
         if hasattr(self, "_sidebar_widgets"):
             for widget, key, view_target, icon in self._sidebar_widgets:
                 if isinstance(widget, tk.Button):
-                    original_text = self._t(key)
+                    _original_text = self._t(key)
                     if view_target == view_key:
                         widget._sidebar_active = True
                         widget.config(
@@ -1373,7 +1350,7 @@ class App(tk.Tk):
     def update_shell_translations(self):
         """Update i18n text for shell elements like sidebar."""
         if hasattr(self, "_sidebar_widgets"):
-            for widget, key, _ in self._sidebar_widgets:
+            for widget, _key, _ in self._sidebar_widgets:
                 try:
                     if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
                         pass # Translations for sidebar now handled by tooltips
@@ -1838,7 +1815,7 @@ class App(tk.Tk):
             if m.get("monster_id")
         }
 
-        for idx, item in enumerate(snapshot):
+        for _idx, item in enumerate(snapshot):
             self._detected_snapshot_items.append(item)
 
             name = item.get("name", "Unknown")
@@ -1884,7 +1861,7 @@ class App(tk.Tk):
         # Re-sort list just to be safe
         self.monster_rotation.sort(key=lambda x: x.get("priority", 999))
 
-        for idx, entry in enumerate(self.monster_rotation):
+        for _idx, entry in enumerate(self.monster_rotation):
             monster_id = entry.get("monster_id")
             name = entry.get("name")
             dungeon_id = entry.get("dungeon_id")
@@ -2591,7 +2568,7 @@ class App(tk.Tk):
 
         # 2. Monster template (if exists)
         monster_name = self.hunt_cfg.get("monster_selected_name", "").strip()
-        template_path = self.hunt_cfg.get("template_path", "").strip()
+        _template_path = self.hunt_cfg.get("template_path", "").strip()
 
         if monster_name:
             # Update monster name display (assuming you have a monster_name variable)
@@ -2644,7 +2621,6 @@ class App(tk.Tk):
             try:
                 self.monster_rotation_listbox.selection_clear(0, tk.END)
             except Exception as e:
-                import logging
 
                 logging.debug(f"Failed to clear monster rotation listbox: {e}")
 
@@ -2740,7 +2716,6 @@ class App(tk.Tk):
             # Map bg_color to button_type
             button_type_map = {
                 UI.ACCENT_GREEN: "green_light",
-                UI.ACCENT_GREEN: "green_light",
                 UI.DANGER: "red",
                 UI.ACCENT_BLUE: "blue",
                 UI.BG_ELEVATED: "refresh",
@@ -2807,7 +2782,6 @@ class App(tk.Tk):
             hover_color = UI.ACCENT_GREEN_BG
 
         color_map = {
-            UI.ACCENT_GREEN: UI.BG_BASE,
             UI.ACCENT_GREEN: UI.BG_BASE,
             UI.ACCENT_BLUE: UI.BG_BASE,
             UI.BG_ELEVATED: UI.TEXT_MUTED,
@@ -2934,7 +2908,7 @@ def main():
     """Main entry point with single instance lock."""
     # Check critical dependencies (pywin32 for overlay)
     try:
-        import win32gui  # Test pywin32 availability
+        pass
     except ImportError:
         # Show warning but don't block - overlay will show error when toggled
         print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
@@ -2979,7 +2953,6 @@ def main():
 
             load_from_db()
         except Exception as e:
-            import logging
 
             logging.getLogger(__name__).error(
                 f"[i18n Init] Failed to call load_from_db: {e}"

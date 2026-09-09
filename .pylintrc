@@ -1,3 +1,6 @@
+[MASTER]
+
+disable=C,R,E0401,W0718,W0212,I,W0511,W0613,W0621,W0107,W1203,C0415,C0411,C0412
 [MAIN]
 
 # Analyse import fallback blocks. This can be used to support both Python 2 and
