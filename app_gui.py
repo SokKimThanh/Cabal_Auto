@@ -291,7 +291,6 @@ class App(tk.Tk):
 
         # State Bookkeeping Extracted
         from ui.controllers.app_window_controller import AppWindowController
-        from ui.controllers.library_manager_controller import LibraryManagerController
         from ui.controllers.overlay_controller import (
             OverlayController as AppOverlayController,
         )
@@ -1136,7 +1135,6 @@ class App(tk.Tk):
 
             # Basic dummy stats if actual stats not easily available
             # In real system, we hook into VisionEngine or main orchestrator stats
-            from lib.system.hunt_logger import get_hunt_logger
 
             # Since VisionEngine stats are inside its instance, let's just make it generic or try to extract from global
             self.logs_metrics_label.config(
