@@ -298,6 +298,11 @@ class App(tk.Tk):
         from ui.controllers.window_tracker_controller import WindowTrackerController
         from lib.features.monsters.monster_library_service import MonsterLibraryService
         from ui.controllers.app_state_controller import AppStateController
+        from lib.features.skills.skill_runtime_service import SkillRuntimeService
+
+        self.monster_library_service = MonsterLibraryService()
+        self.skill_service = SkillRuntimeService()
+        self.overlay_controller = AppOverlayController(self)
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
         self.window_tracker_controller = WindowTrackerController(self)
