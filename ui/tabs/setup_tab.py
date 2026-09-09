@@ -41,6 +41,11 @@ class SetupTab(ResponsiveGridBase):
             return self.app._t(key, **kwargs)
         return i18n_t(key, ns=I18N_GLOBAL, lang=self.lang, **kwargs)
 
+    def _on_setting_changed(self, *args):
+        """Callback triggered when any setting is modified."""
+        if hasattr(self.app, "_mark_unsaved"):
+            self.app._mark_unsaved()
+
     def _build_collapsible_group(self, row, title_key, desc_key, content_builder):
         group_frame = ttk.Frame(self.get_content_frame())
         group_frame.grid(row=row, column=0, columnspan=2, sticky="nsew", pady=(0, 12))
@@ -130,6 +135,7 @@ class SetupTab(ResponsiveGridBase):
         self.app.global_hotkey_enabled_var = tk.BooleanVar(
             value=hotkey_cfg.get("enabled", True)
         )
+        self.app.global_hotkey_enabled_var.trace_add("write", self._on_setting_changed)
 
         enable_text = self._t("enable_global_hotkeys")
         ttk.Checkbutton(
@@ -158,9 +164,12 @@ class SetupTab(ResponsiveGridBase):
         self.app.global_hotkey_start_var = tk.StringVar(
             value=hotkey_cfg.get("start_key", "ctrl+shift+r")
         )
+        self.app.global_hotkey_start_var.trace_add("write", self._on_setting_changed)
+
         self.app.global_hotkey_stop_var = tk.StringVar(
             value=hotkey_cfg.get("stop_key", "ctrl+shift+e")
         )
+        self.app.global_hotkey_stop_var.trace_add("write", self._on_setting_changed)
 
         # Container for the two Comboboxes side by side
         hotkey_container = ttk.Frame(frame)
@@ -259,24 +268,37 @@ class SetupTab(ResponsiveGridBase):
         self.app.setup_target_key_var = tk.StringVar(
             value=str(self.app.hunt_cfg.get("target_key", "TAB"))
         )
+        self.app.setup_target_key_var.trace_add("write", self._on_setting_changed)
+
         self.app.setup_press_ms_var = tk.StringVar(
             value=str(self.app.hunt_cfg.get("attack_press_ms", 60))
         )
+        self.app.setup_press_ms_var.trace_add("write", self._on_setting_changed)
+
         self.app.setup_target_cycle_var = tk.StringVar(
             value=str(self.app.hunt_cfg.get("target_cycle_delay", 0.2))
         )
+        self.app.setup_target_cycle_var.trace_add("write", self._on_setting_changed)
+
         self.app.setup_search_interval_var = tk.StringVar(
             value=str(self.app.hunt_cfg.get("search_interval", 0.25))
         )
+        self.app.setup_search_interval_var.trace_add("write", self._on_setting_changed)
+
         self.app.setup_attack_interval_var = tk.StringVar(
             value=str(self.app.hunt_cfg.get("attack_interval", 0.15))
         )
+        self.app.setup_attack_interval_var.trace_add("write", self._on_setting_changed)
+
         self.app.setup_lost_timeout_var = tk.StringVar(
             value=str(self.app.hunt_cfg.get("lost_timeout_sec", 1.2))
         )
+        self.app.setup_lost_timeout_var.trace_add("write", self._on_setting_changed)
+
         self.app.setup_attack_duration_var = tk.StringVar(
             value=str(self.app.hunt_cfg.get("attack_min_duration_sec", 1.5))
         )
+        self.app.setup_attack_duration_var.trace_add("write", self._on_setting_changed)
 
         self._add_entry_row(frame, 0, "target_key", self.app.setup_target_key_var)
 
@@ -333,6 +355,7 @@ class SetupTab(ResponsiveGridBase):
                 self.app.hunt_cfg.get("template_path", "assets/images/target_frame.png")
             )
         )
+        self.app.setup_template_var.trace_add("write", self._on_setting_changed)
         ttk.Entry(frame, textvariable=self.app.setup_template_var, width=30).grid(
             row=0, column=1, columnspan=2, sticky="ew", pady=4
         )
