@@ -680,7 +680,7 @@ class App(tk.Tk):
         )  # Vùng B - Workspace
 
         self.main_shell.rowconfigure(
-            0, minsize=int(80 * scale_factor), weight=0
+            0, minsize=int(96 * scale_factor), weight=0
         )  # Vùng A - Action Bar
         self.main_shell.rowconfigure(
             1, minsize=int(540 * scale_factor), weight=1
@@ -696,7 +696,7 @@ class App(tk.Tk):
         )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * scale_factor))
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(96 * scale_factor))
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.shell_zone_a.grid_propagate(False)
 
@@ -855,7 +855,7 @@ class App(tk.Tk):
         self.action_bar_scrollable.grid(row=0, column=0, sticky="nsew")
 
         self.action_bar_frame = self.action_bar_scrollable.get_content_frame()
-        self.action_bar_frame.configure(padx=32, pady=18)
+        self.action_bar_frame.configure(padx=32, pady=10)
 
         # Configure columns for action_bar_frame (2 columns as requested)
         self.action_bar_frame.columnconfigure(0, weight=1)  # Left (Window Status)
