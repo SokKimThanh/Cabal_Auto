@@ -30,7 +30,7 @@ class MonsterDatabase:
         Path(__file__).parent / "lib" / "data" / "type-monster-db-cabal.txt"
     )
 
-    REQUIRED_TABLES = ["monsters", "dungeons", "monster_type"]
+    REQUIRED_TABLES = ["monsters", "dungeons", "monster_type", "classes", "skills", "synergies", "synergy_effects", "class_skill_assignments", "scans", "builds", "skill_presets", "preset_skills", "user_preset_state", "translations"]
 
     MONSTER_COLUMNS = [
         "id",

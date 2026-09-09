@@ -107,4 +107,4 @@ def test_init_db_reuses_existing_database_without_overwriting(
     assert count >= 0
     status = stub._db_status_var.get()
     assert "✅" in status
-    assert "Quái:" in status
+    assert "monsters:" in status
