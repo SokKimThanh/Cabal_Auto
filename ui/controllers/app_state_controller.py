@@ -400,14 +400,21 @@ class AppStateController:
             cfg["target_policy"] = app.target_policy_var.get()
 
         simple_vars = {
-            "target_key": ("target_key_var", "TAB"),
-            "target_cycle_delay": ("target_cycle_var", 0.2),
-            "search_interval": ("search_interval_var", 0.25),
-            "attack_interval": ("attack_interval_var", 0.15),
-            "lost_timeout_sec": ("lost_timeout_var", 1.2),
-            "attack_min_duration_sec": ("attack_duration_var", 1.5),
-            "attack_press_ms": ("attack_press_var", 60),
+            "target_key": ("setup_target_key_var", "TAB"),
+            "target_cycle_delay": ("setup_target_cycle_var", 0.2),
+            "search_interval": ("setup_search_interval_var", 0.25),
+            "attack_interval": ("setup_attack_interval_var", 0.15),
+            "lost_timeout_sec": ("setup_lost_timeout_var", 1.2),
+            "attack_min_duration_sec": ("setup_attack_duration_var", 1.5),
+            "attack_press_ms": ("setup_press_ms_var", 60),
         }
+
+        if hasattr(app, "setup_mode_var"):
+            cfg["ui_mode"] = app.setup_mode_var.get()
+
+        if hasattr(app, "setup_template_var"):
+            cfg["template_path"] = app.setup_template_var.get()
+
         for key, (attr_name, default) in simple_vars.items():
             var = getattr(app, attr_name, None)
             if var is None:
@@ -456,6 +463,29 @@ class AppStateController:
                     )
 
         cfg.setdefault("templates", [])
+
+        # Extract hotkey settings if they are available on the app object
+        if hasattr(app, "global_hotkey_enabled_var"):
+            enabled = app.global_hotkey_enabled_var.get()
+            hotkeys = cfg.get("global_hotkeys", {})
+
+            def _hotkey_value(attr_name, config_name, default):
+                variable = getattr(app, attr_name, None)
+                return (
+                    variable.get()
+                    if variable is not None
+                    else hotkeys.get(config_name, default)
+                )
+
+            cfg["global_hotkeys"] = {
+                "enabled": enabled,
+                "start_key": _hotkey_value("global_hotkey_start_var", "start_key", "ctrl+shift+r"),
+                "stop_key": _hotkey_value("global_hotkey_stop_var", "stop_key", "ctrl+shift+e"),
+                "library_manager_key": _hotkey_value("global_hotkey_library_var", "library_manager_key", "ctrl+shift+l"),
+                "vision_wizard_key": _hotkey_value("global_hotkey_vision_var", "vision_wizard_key", "ctrl+shift+v"),
+                "monster_editor_key": _hotkey_value("global_hotkey_monster_var", "monster_editor_key", "ctrl+shift+m"),
+            }
+
         return cfg
 
     def _calculate_monster_estimate(

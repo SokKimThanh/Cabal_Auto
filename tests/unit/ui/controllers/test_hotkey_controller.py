@@ -31,7 +31,7 @@ def test_hotkey_controller_register_all(mock_keyboard):
     controller = HotkeyController(parent, hunt_cfg)
     controller.register_all()
 
-    assert mock_keyboard.add_hotkey.call_count == 6
+    assert mock_keyboard.add_hotkey.call_count == 5
     mock_keyboard.add_hotkey.assert_any_call(
         "f5", controller.on_hunt_start, suppress=False
     )
@@ -67,8 +67,8 @@ def test_hotkey_controller_unregister_all(mock_keyboard):
     controller.unregister_all()
 
     assert (
-        mock_keyboard.remove_hotkey.call_count == 6
-    )  # 6 hotkeys registered by default
+        mock_keyboard.remove_hotkey.call_count == 5
+    )  # 5 hotkeys registered by default
 
 
 def test_hotkey_controller_on_setup_wizard():
