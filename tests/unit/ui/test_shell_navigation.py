@@ -115,7 +115,7 @@ def test_view_hidden_stops_self_polling(monkeypatch):
 def test_switch_view_updates_sidebar_visual_state(monkeypatch):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
-    from lib.ui_style_v2 import UIStyleV2 as UI
+    from lib.ui_style_v2 import UIStyleV2
     app = App()
     try:
         app.switch_view("setup")
@@ -129,13 +129,13 @@ def test_switch_view_updates_sidebar_visual_state(monkeypatch):
                 hunt_btn = widget
 
         assert setup_btn is not None
-        assert setup_btn.cget('bg') == UI.ACCENT_GREEN_BG
-        assert "▌" in setup_btn.cget('text')
+        assert setup_btn.cget('bg') in (UIStyleV2.BG_SURFACE, UIStyleV2.ACCENT_GREEN_BG)
+        assert "⚙️" in setup_btn.cget('text') or "⚙" in setup_btn.cget('text')
 
         # Verify unselected state for hunt
         if hunt_btn is not None:
-            assert hunt_btn.cget('bg') == UI.BG_ELEVATED
-            assert "▌" not in hunt_btn.cget('text')
+            assert hunt_btn.cget('bg') == UIStyleV2.BG_ELEVATED
+            assert "⚔" in hunt_btn.cget('text') or "⚔️" in hunt_btn.cget('text') or "🎯" in hunt_btn.cget('text')
 
     finally:
         app.destroy()

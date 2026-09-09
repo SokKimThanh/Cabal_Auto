@@ -21,7 +21,7 @@ class MonsterManagerFrame(tk.Frame):
             text=self.app._t("monster_manager_title", default="Quản lý Quái vật"),
             font=(UIStyle.resolve_font_family("title"), 16, "bold"),
             bg=UIStyle.THEME_BG_APP,
-            fg=UIStyle.THEME_FG_TEXT
+            fg=UIStyle.TEXT_PRIMARY
         )
         title_lbl.pack(pady=UIStyle.SPACE_MD)
 
@@ -62,7 +62,7 @@ class MonsterManagerFrame(tk.Frame):
             bottom_bar,
             text=self.app._t("btn_add_monster", default=" Thêm"),
             command=self._add_monster,
-            bg=UIStyle.THEME_BG_PRIMARY,
+            bg=UIStyle.ACCENT_GREEN,
             fg="white",
             relief="flat"
         )
@@ -72,7 +72,7 @@ class MonsterManagerFrame(tk.Frame):
             bottom_bar,
             text=self.app._t("btn_edit_monster", default=" Sửa"),
             command=self._edit_monster,
-            bg=UIStyle.THEME_BG_PRIMARY,
+            bg=UIStyle.ACCENT_GREEN,
             fg="white",
             relief="flat"
         )
@@ -92,8 +92,8 @@ class MonsterManagerFrame(tk.Frame):
             bottom_bar,
             text=self.app._t("btn_refresh_monster", default=" Làm mới"),
             command=self._load_monsters,
-            bg=UIStyle.THEME_BG_SECONDARY,
-            fg=UIStyle.THEME_FG_TEXT,
+            bg=UIStyle.BG_ELEVATED,
+            fg=UIStyle.TEXT_PRIMARY,
             relief="flat"
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
@@ -123,7 +123,7 @@ class MonsterManagerFrame(tk.Frame):
                     m.get("type", ""),
                     m.get("dungeonId", "")
                 )
-                self.tree.insert("", "end", iid=str(m.get("id", "")), values=values)
+                self.tree.insert("", "end", iid=str(m.get("id", str(id(m)))), values=values)
 
     def _save_monsters(self):
         try:
