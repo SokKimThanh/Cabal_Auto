@@ -848,14 +848,14 @@ class App(tk.Tk):
         status_header = tk.Frame(col1_frame, bg=UI.BG_ELEVATED)
         status_header.pack(fill="x", padx=8, pady=6)
 
-        window_status_lbl = tk.Label(
+        self.window_status_lbl = tk.Label(
             status_header,
             text=self._t("window_status_label"),
             font=UI.FONT_SECTION,
             fg=UI.TEXT_PRIMARY,
             bg=UI.BG_ELEVATED
         )
-        window_status_lbl.pack(side="left", padx=(0, 12))
+        self.window_status_lbl.pack(side="left", padx=(0, 12))
 
         # Compact Window Selector (replaces combobox + refresh button)
         from ui.components.compact_window_selector import CompactWindowSelector
@@ -1338,6 +1338,10 @@ class App(tk.Tk):
         # _create_icon_btn_component returns a wrapper with set_text/set_tooltip if it's our custom component
         # But if it returns standard button, we config directly.
         self._refresh_start_stop_visual()
+        self._update_unsaved_indicator()
+
+        if hasattr(self, "window_status_lbl"):
+            self.window_status_lbl.config(text=self._t("window_status_label"))
 
         # Note: Refresh button is now part of CompactWindowSelector, no separate update needed
 
