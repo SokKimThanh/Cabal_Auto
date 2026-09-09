@@ -1233,6 +1233,12 @@ class App(tk.Tk):
 
     # Hunt Tab (Refactored - Sprint 18 Phase 4 Task #2 + UX Enhancement)
 
+
+    def _set_db_status(self, msg: str, ok: bool = True):
+        """Called by AppLifecycleController to display DB health status."""
+        if hasattr(self, "hunt_status"):
+            self.after(0, lambda: self.hunt_status.set(msg))
+
     def _update_scan_status_text(self, text):
         if hasattr(self, "hunt_status"):
             self.after(0, lambda: self.hunt_status.set(text))

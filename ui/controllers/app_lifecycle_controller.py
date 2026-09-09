@@ -186,12 +186,16 @@ class AppLifecycleController:
 
             if result.get("ok"):
                 counts = result.get("counts", {})
-                msg = (
-                    f"✅ CSDL sẵn sàng"
-                    f" | Quái: {counts.get('monsters', 0)}"
-                    f" | Phụ bản: {counts.get('dungeons', 0)}"
-                    f" | Loại quái: {counts.get('monster_type', 0)}"
-                )
+
+                # Format a concise summary string like: "monsters: 3480, skills: 10..."
+                parts = []
+                for table, count in counts.items():
+                    if count > 0:
+                        parts.append(f"{table}: {count}")
+
+                summary = ", ".join(parts)
+                msg = f"✅ CSDL sẵn sàng | {summary}"
+
                 if hasattr(self.app, "_set_db_status"):
                     self.app._set_db_status(msg, ok=True)
                 print(f"[DB] {msg}")
