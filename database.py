@@ -226,6 +226,52 @@ class MonsterDatabase:
         if cursor.fetchone()[0] == 0:
             self._seed_monster_type()
 
+        try:
+            cursor.execute("SELECT COUNT(*) FROM classes")
+            if cursor.fetchone()[0] == 0:
+                from lib.db.services.seed_classes_service import SeedClassesService
+                print("[DB] Seeding classes table...")
+                SeedClassesService().seed_classes()
+        except Exception as e:
+            print(f"[DB] Lỗi khi seed classes: {e}")
+
+        try:
+            cursor.execute("SELECT COUNT(*) FROM skills")
+            if cursor.fetchone()[0] == 0:
+                from lib.db.services.seed_skill_sprite_service import SeedSkillSpriteService
+                print("[DB] Seeding skills table...")
+                SeedSkillSpriteService().seed_skill_sprites()
+        except Exception as e:
+            print(f"[DB] Lỗi khi seed skills: {e}")
+
+        try:
+            cursor.execute("SELECT COUNT(*) FROM class_skill_assignments")
+            if cursor.fetchone()[0] == 0:
+                from lib.db.services.seed_class_skill_assignments_service import SeedClassSkillAssignmentsService
+                print("[DB] Seeding class_skill_assignments table...")
+                SeedClassSkillAssignmentsService().seed_assignments()
+        except Exception as e:
+            print(f"[DB] Lỗi khi seed class_skill_assignments: {e}")
+
+        try:
+            cursor.execute("SELECT COUNT(*) FROM synergies")
+            if cursor.fetchone()[0] == 0:
+                from lib.db.services.seed_bm3_synergies_service import SeedBM3SynergiesService
+                print("[DB] Seeding synergies table...")
+                SeedBM3SynergiesService().seed()
+        except Exception as e:
+            print(f"[DB] Lỗi khi seed synergies: {e}")
+
+        try:
+            cursor.execute("SELECT COUNT(*) FROM translations")
+            if cursor.fetchone()[0] == 0:
+                from lib.db.services.seed_window_validation_translations import seed_window_translations
+                print("[DB] Seeding window translations...")
+                seed_window_translations()
+        except Exception as e:
+            print(f"[DB] Lỗi khi seed translations: {e}")
+
+
     def init_db(self) -> None:
         """Khởi tạo database schema và seed dữ liệu tham chiếu."""
         self.setup_schema()
