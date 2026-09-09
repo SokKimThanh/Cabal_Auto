@@ -46,7 +46,7 @@ class SetupTab(ResponsiveGridBase):
         group_frame.grid(row=row, column=0, columnspan=2, sticky="nsew", pady=(0, 12))
         group_frame.grid_columnconfigure(0, weight=1)
 
-        is_visible_var = tk.BooleanVar(value=False)
+        is_visible_var = tk.BooleanVar(value=True)
         header_frame = ttk.Frame(group_frame)
         header_frame.grid(row=0, column=0, sticky="nsew")
         header_frame.grid_columnconfigure(0, weight=1)
@@ -114,6 +114,13 @@ class SetupTab(ResponsiveGridBase):
             desc_label.pack(side="left", padx=(8, 0))
 
         content_builder(content_frame)
+
+        # Initial render based on is_visible_var
+        if is_visible_var.get():
+            btn_text_var.set(f"▼ {self._t(title_key)}")
+            content_frame.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
+            content_frame.grid_columnconfigure(1, weight=1)
+            content_frame.grid_columnconfigure(3, weight=1)
 
         # Store these for _update_setup_visibility to show/hide the entire group
         return group_frame, is_visible_var, toggle
@@ -336,51 +343,6 @@ class SetupTab(ResponsiveGridBase):
         self.get_content_frame().grid_columnconfigure(0, weight=1)
         self.get_content_frame().grid_columnconfigure(1, weight=1)
 
-        # Section 1: Configuration Mode
-        mode_frame = tk.LabelFrame(
-            self.get_content_frame(),
-            bg=UIStyleV2.THEME_BG_APP,
-            fg=UIStyleV2.THEME_TEXT_PRIMARY,
-            text=self._t("setup_mode"),
-            padx=12,
-            pady=10,
-        )
-        mode_frame.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, 12))
-
-        mode_desc = ttk.Label(
-            mode_frame,
-            text=self._t("setup_mode_desc"),
-        )
-        mode_desc.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 8))
-
-        current_mode = self.app.hunt_cfg.get("ui_mode", "beginner")
-        self.app.setup_mode_var = tk.StringVar(value=current_mode)
-
-        modes = [
-            ("beginner", self._t("mode_beginner"), self._t("mode_beginner_desc")),
-            (
-                "intermediate",
-                self._t("mode_intermediate"),
-                self._t("mode_intermediate_desc"),
-            ),
-            ("advanced", self._t("mode_advanced"), self._t("mode_advanced_desc")),
-        ]
-
-        for idx, (mode_val, mode_label, mode_desc_text) in enumerate(modes):
-            rb = tk.Radiobutton(
-                mode_frame,
-                text=mode_label,
-                variable=self.app.setup_mode_var,
-                value=mode_val,
-                command=self._on_setup_mode_changed,
-            )
-            rb.grid(row=idx + 1, column=0, sticky="ew", pady=2)
-            desc_label = ttk.Label(
-                mode_frame,
-                text=f"  {mode_desc_text}",
-            )
-            desc_label.grid(row=idx + 1, column=1, sticky="ew", padx=(4, 0), pady=2)
-
         # Section 2: Global Hotkeys
         self.hotkey_group, self.hotkey_visible, self.hotkey_toggle = (
             self._build_collapsible_group(
@@ -416,27 +378,13 @@ class SetupTab(ResponsiveGridBase):
 
         self.after(50, open_dialog)
 
-    def _on_setup_mode_changed(self):
-        if hasattr(self.app, "_on_setup_mode_changed"):
-            self.app._on_setup_mode_changed()
-        self._update_setup_visibility()
+
 
     def _on_global_hotkey_toggle(self):
         if hasattr(self.app, "_on_global_hotkey_toggle"):
             self.app._on_global_hotkey_toggle()
 
     def _update_setup_visibility(self):
-        mode = (
-            self.app.setup_mode_var.get()
-            if hasattr(self.app, "setup_mode_var")
-            else "beginner"
-        )
-        if mode == "beginner":
-            self.adv_group.grid_remove()
-            self.window_group.grid_remove()
-        elif mode == "intermediate":
-            self.adv_group.grid()
-            self.window_group.grid_remove()
-        elif mode == "advanced":
-            self.adv_group.grid()
-            self.window_group.grid()
+        # All groups are always visible now since we only have advanced mode.
+        self.adv_group.grid()
+        self.window_group.grid()

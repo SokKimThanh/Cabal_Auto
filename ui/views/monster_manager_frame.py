@@ -7,6 +7,7 @@ from database import get_db, get_all_monsters_api
 from dialogs.monster_edit import MonsterEditDialog
 
 class MonsterManagerFrame(tk.Frame):
+
     def __init__(self, parent, app):
         super().__init__(parent, bg=UIStyle.THEME_BG_APP)
         self.app = app
@@ -14,6 +15,15 @@ class MonsterManagerFrame(tk.Frame):
         self.db = get_db()
         self.dungeon_map = {}
         self.type_map = {}
+
+        # State phân trang và lọc
+        self.current_page = 1
+        self.page_size = 25
+        self.total_pages = 1
+        self.total_records = 0
+        self.keyword = ""
+        self.monster_type_filter = "All Monsters"
+        self.dungeon_filter = "All Locations"
 
         self._setup_ui()
         self._load_reference_data()
@@ -29,6 +39,8 @@ class MonsterManagerFrame(tk.Frame):
             fg=UIStyle.TEXT_PRIMARY
         )
         title_lbl.pack(pady=UIStyle.SPACE_MD)
+
+        self._create_search_bar()
 
         # Treeview Area
         table_frame = tk.Frame(self, bg=UIStyle.THEME_BG_APP)
@@ -60,6 +72,8 @@ class MonsterManagerFrame(tk.Frame):
         self.tree.pack(fill="both", expand=True)
 
         self.tree.bind("<Double-1>", lambda e: self._edit_monster())
+
+        self._create_pagination_bar()
 
         # Bottom Bar for Actions
         bottom_bar = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL, height=50)
@@ -98,12 +112,66 @@ class MonsterManagerFrame(tk.Frame):
         ref_btn = tk.Button(
             bottom_bar,
             text=self.app._t("btn_refresh_monster", default=" Làm mới"),
-            command=self._load_monsters,
+            command=self._on_refresh,
             bg=UIStyle.BG_ELEVATED,
             fg=UIStyle.TEXT_PRIMARY,
             relief="flat"
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+    def _create_search_bar(self) -> None:
+        search_frame = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL)
+        search_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_SM, 0))
+
+        # Keyword Search
+        lbl_search = tk.Label(search_frame, text=self.app._t("search_label", default="Tìm kiếm:"), bg=UIStyle.THEME_BG_PANEL, fg=UIStyle.TEXT_PRIMARY)
+        lbl_search.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
+
+        self.search_entry = tk.Entry(search_frame, font=(UIStyle.resolve_font_family("text"), 10))
+        self.search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=5)
+        self.search_entry.bind("<KeyRelease>", self._on_search_changed)
+        self.search_entry.bind("<Escape>", self._on_clear_search)
+
+        # Monster Type
+        self.monster_type_var = tk.StringVar(value="All Monsters")
+        self.monster_type_box = ttk.Combobox(search_frame, textvariable=self.monster_type_var, state="readonly", width=15)
+        self.monster_type_box.grid(row=0, column=2, sticky="ew", padx=(0, 5), pady=5)
+        self.monster_type_box.bind("<<ComboboxSelected>>", self._on_filter_changed)
+
+        # Location / Dungeon
+        self.location_var = tk.StringVar(value="All Locations")
+        self.location_box = ttk.Combobox(search_frame, textvariable=self.location_var, state="readonly", width=15)
+        self.location_box.grid(row=0, column=3, sticky="ew", padx=(0, 5), pady=5)
+        self.location_box.bind("<<ComboboxSelected>>", self._on_filter_changed)
+
+        # Page size
+        self.page_size_var = tk.StringVar(value="25")
+        self.page_size_box = ttk.Combobox(search_frame, textvariable=self.page_size_var, state="readonly", width=5, values=["25", "50", "100", "200"])
+        self.page_size_box.grid(row=0, column=4, sticky="ew", padx=(0, 5), pady=5)
+        self.page_size_box.bind("<<ComboboxSelected>>", self._on_filter_changed)
+
+        search_frame.columnconfigure(1, weight=1)
+
+    def _create_pagination_bar(self) -> None:
+        page_frame = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL)
+        page_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(0, UIStyle.SPACE_SM))
+
+        self.stats_label = tk.Label(page_frame, text="", bg=UIStyle.THEME_BG_PANEL, fg=UIStyle.TEXT_SECONDARY)
+        self.stats_label.pack(side="left", padx=5, pady=5)
+
+        # Controls on right
+        controls_frame = tk.Frame(page_frame, bg=UIStyle.THEME_BG_PANEL)
+        controls_frame.pack(side="right", padx=5)
+
+        self.btn_prev_page = tk.Button(controls_frame, text="<", command=self._on_prev_page, bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
+        self.btn_prev_page.pack(side="left", padx=2)
+
+        self.page_entry = tk.Entry(controls_frame, width=4, justify="center")
+        self.page_entry.pack(side="left", padx=2)
+        self.page_entry.bind("<Return>", lambda e: self._go_to_page_from_entry())
+
+        self.btn_next_page = tk.Button(controls_frame, text=">", command=self._on_next_page, bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
+        self.btn_next_page.pack(side="left", padx=2)
 
     def _sort_treeview(self, col, reverse):
         l = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
@@ -117,26 +185,132 @@ class MonsterManagerFrame(tk.Frame):
 
         self.tree.heading(col, command=lambda: self._sort_treeview(col, not reverse))
 
+
+    def _on_search_changed(self, event=None) -> None:
+        if hasattr(self, "_search_timer"):
+            self.after_cancel(self._search_timer)
+        self._search_timer = self.after(500, self._apply_search)
+
+    def _apply_search(self) -> None:
+        self.keyword = self.search_entry.get().strip()
+        self.current_page = 1
+        self._load_monsters()
+
+    def _on_clear_search(self, event=None) -> None:
+        self.search_entry.delete(0, tk.END)
+        self.keyword = ""
+        self.current_page = 1
+        self._load_monsters()
+
+    def _on_refresh(self) -> None:
+        self.search_entry.delete(0, tk.END)
+        self.keyword = ""
+        self.monster_type_var.set("All Monsters")
+        self.location_var.set("All Locations")
+        self.page_size_var.set("25")
+        self.monster_type_filter = "All Monsters"
+        self.dungeon_filter = "All Locations"
+        self.page_size = 25
+        self.current_page = 1
+        self._load_monsters()
+
+    def _on_filter_changed(self, event=None) -> None:
+        self.monster_type_filter = self.monster_type_var.get()
+        self.dungeon_filter = self.location_var.get()
+        self.page_size = int(self.page_size_var.get())
+        self.current_page = 1
+        self._load_monsters()
+
+    def _on_prev_page(self) -> None:
+        if self.current_page > 1:
+            self.current_page -= 1
+            self._load_monsters()
+
+    def _on_next_page(self) -> None:
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            self._load_monsters()
+
+    def _go_to_page_from_entry(self) -> None:
+        try:
+            page = int(self.page_entry.get().strip())
+            if page < 1:
+                page = 1
+            elif page > self.total_pages:
+                page = self.total_pages
+            if page != self.current_page:
+                self.current_page = page
+                self._load_monsters()
+            else:
+                self._update_page_ui()
+        except ValueError:
+            self._update_page_ui()
+
+    def _update_page_ui(self) -> None:
+        self.page_entry.delete(0, tk.END)
+        self.page_entry.insert(0, str(self.current_page))
+
+        displayed = len(self.monsters)
+        stats_text = f"Hiển thị {displayed} / {self.total_records} (Trang {self.current_page}/{self.total_pages})"
+        self.stats_label.config(text=stats_text)
+
+        self.btn_prev_page.config(state="normal" if self.current_page > 1 else "disabled")
+        self.btn_next_page.config(state="normal" if self.current_page < self.total_pages else "disabled")
+
     def _load_reference_data(self):
         try:
-            types = self.db.get_monster_types()
-            for t in types:
-                self.type_map[str(t['value'])] = t['label']
+            type_list = self.db.get_monster_type_list() if hasattr(self.db, "get_monster_type_list") else []
+            self.type_map = {str(t['value']): t['label'] for t in type_list}
+            type_values = ["All Monsters"] + [t['label'] for t in type_list]
+            if hasattr(self, "monster_type_box"):
+                self.monster_type_box.config(values=type_values)
 
-            dungeons = self.db.get_dungeons()
-            for d in dungeons:
-                self.dungeon_map[str(d['id'])] = d['name']
+            dungeon_list = self.db.get_dungeon_list() if hasattr(self.db, "get_dungeon_list") else []
+            self.dungeon_map = {str(d['id']): d['name'] for d in dungeon_list}
+            dungeon_values = ["All Locations"] + [d['name'] for d in dungeon_list]
+            if hasattr(self, "location_box"):
+                self.location_box.config(values=dungeon_values)
+
         except Exception as e:
             print(f"Error loading reference data: {e}")
 
     def _load_monsters(self):
         try:
-            res = self.db.get_filtered_monsters(limit=5000)
+            m_type = self.monster_type_filter if self.monster_type_filter != "All Monsters" else None
+            d_id = self.dungeon_filter if self.dungeon_filter != "All Locations" else None
+
+            # Map values back to IDs for the database query
+            if m_type:
+                for k, v in self.type_map.items():
+                    if v == m_type:
+                        m_type = k
+                        break
+            if d_id:
+                for k, v in self.dungeon_map.items():
+                    if v == d_id:
+                        d_id = k
+                        break
+
+            res = self.db.get_filtered_monsters(
+                keyword=self.keyword,
+                monster_type=m_type,
+                dungeon_id=d_id,
+                page=self.current_page,
+                page_size=self.page_size,
+                sort_column="id",
+                sort_order="ASC"
+            )
             self.monsters = res.get('items', [])
+            self.total_records = res.get('total_records', 0)
+            self.total_pages = res.get('total_pages', 1)
         except Exception as e:
             self.monsters = []
+            self.total_records = 0
+            self.total_pages = 1
             print(f"Error loading monsters: {e}")
+
         self._refresh_tree()
+        self._update_page_ui()
 
     def _refresh_tree(self):
         for item in self.tree.get_children():

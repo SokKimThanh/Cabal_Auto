@@ -658,7 +658,7 @@ class App(tk.Tk):
         )  # Vùng B - Workspace
 
         self.main_shell.rowconfigure(
-            0, minsize=int(80 * scale_factor), weight=0
+            0, minsize=int(96 * scale_factor), weight=0
         )  # Vùng A - Action Bar
         self.main_shell.rowconfigure(
             1, minsize=int(540 * scale_factor), weight=1
@@ -674,7 +674,7 @@ class App(tk.Tk):
         )  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(80 * scale_factor))
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(96 * scale_factor))
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.shell_zone_a.grid_propagate(False)
 
@@ -832,7 +832,7 @@ class App(tk.Tk):
         self.action_bar_scrollable.grid(row=0, column=0, sticky="nsew")
 
         self.action_bar_frame = self.action_bar_scrollable.get_content_frame()
-        self.action_bar_frame.configure(padx=32, pady=18)
+        self.action_bar_frame.configure(padx=32, pady=10)
 
         # Configure columns for action_bar_frame (2 columns as requested)
         self.action_bar_frame.columnconfigure(0, weight=1)  # Left (Window Status)
@@ -2477,43 +2477,18 @@ class App(tk.Tk):
             # 2. Update hunt config from Hunt tab UI (in-place update)
             cfg = self.state_controller._hunt_from_ui()
 
-            # 2.5. Update global hotkeys from Setup tab UI
-            if hasattr(self, "global_hotkey_enabled_var"):
-                enabled = self.global_hotkey_enabled_var.get()
-                hotkeys = cfg.get("global_hotkeys", {})
-
-                def _hotkey_value(attr_name, config_name, default):
-                    variable = getattr(self, attr_name, None)
-                    return (
-                        variable.get()
-                        if variable is not None
-                        else hotkeys.get(config_name, default)
-                    )
-
-                start_key = _hotkey_value(
-                    "global_hotkey_start_var", "start_key", "ctrl+shift+r"
-                )
-                stop_key = _hotkey_value(
-                    "global_hotkey_stop_var", "stop_key", "ctrl+shift+e"
-                )
-                library_key = _hotkey_value(
-                    "global_hotkey_library_var", "library_manager_key", "ctrl+shift+l"
-                )
-
-                # Validate: all hotkeys must be unique
-                vision_key = _hotkey_value(
-                    "global_hotkey_vision_var", "vision_wizard_key", "ctrl+shift+v"
-                )
-                monster_key = _hotkey_value(
-                    "global_hotkey_monster_var", "monster_editor_key", "ctrl+shift+m"
-                )
+            # Validate hotkey uniqueness before applying
+            if "global_hotkeys" in cfg:
+                hk = cfg["global_hotkeys"]
                 all_keys = [
-                    start_key,
-                    stop_key,
-                    library_key,
-                    vision_key,
-                    monster_key,
+                    hk.get("start_key"),
+                    hk.get("stop_key"),
+                    hk.get("library_manager_key"),
+                    hk.get("vision_wizard_key"),
+                    hk.get("monster_editor_key"),
                 ]
+                # Filter out empty or None hotkeys
+                all_keys = [k for k in all_keys if k]
                 if len(all_keys) != len(set(all_keys)):
                     messagebox.showerror(
                         self._t("error_title"),
@@ -2525,17 +2500,6 @@ class App(tk.Tk):
                     )
                     return
 
-                # Update config
-                cfg["global_hotkeys"] = {
-                    "enabled": enabled,
-                    "start_key": start_key,
-                    "stop_key": stop_key,
-                    "library_manager_key": library_key,
-                    "vision_wizard_key": vision_key,
-                    "monster_editor_key": monster_key,
-                }
-
-                # Re-register hotkeys with new settings
                 self.hunt_cfg = cfg  # Update instance config first
                 self.hotkey_controller.unregister_all()
                 self.hotkey_controller.register_all()
