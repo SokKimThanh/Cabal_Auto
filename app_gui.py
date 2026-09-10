@@ -2972,7 +2972,14 @@ def main():
         app = App()
         app.protocol("WM_DELETE_WINDOW", app.on_close)
         print("[Main] Tkinter window initialized and mainloop starting...")
-        app.mainloop()
+        try:
+            app.mainloop()
+        except KeyboardInterrupt:
+            print("\n[Exit] Application stopped by user (KeyboardInterrupt) | Ứng dụng đã bị dừng bởi người dùng (KeyboardInterrupt)")
+            try:
+                app.destroy()
+            except Exception:
+                pass
     finally:
         # Always release lock on exit
         instance_lock.release()
