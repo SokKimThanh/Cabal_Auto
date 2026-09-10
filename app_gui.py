@@ -30,7 +30,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 import queue
-from typing import Optional
+from typing import Optional, Any
+from dataclasses import dataclass
 
 # Add parent directory to path for lib imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -157,6 +158,14 @@ except Exception:
 # Single Instance Lock (Prevent multiple app instances)
 
 # =====================================================================
+
+
+@dataclass
+class SidebarWidgetDef:
+    widget: Any
+    key: str
+    view_target: str
+    icon: str
 
 
 class App(tk.Tk):
@@ -797,7 +806,7 @@ class App(tk.Tk):
                     anchor="w",
                 )
                 lbl.pack(fill="x", pady=(10, 4))
-                self._sidebar_widgets.append((lbl, key, view_target, icon))
+                self._sidebar_widgets.append(SidebarWidgetDef(widget=lbl, key=key, view_target=view_target, icon=icon))
             else:
                 menu_cell = tk.Frame(
                     self.shell_zone_c1.get_content_frame(),
@@ -827,7 +836,7 @@ class App(tk.Tk):
                 )
 
                 btn.pack(fill="both", expand=True)
-                self._sidebar_widgets.append((btn, key, view_target, icon))
+                self._sidebar_widgets.append(SidebarWidgetDef(widget=btn, key=key, view_target=view_target, icon=icon))
 
                 # Add tooltip
                 attach_i18n_tooltip(
@@ -1229,22 +1238,22 @@ class App(tk.Tk):
 
         # Update sidebar selected state
         if hasattr(self, "_sidebar_widgets"):
-            for widget, key, view_target, icon in self._sidebar_widgets:
-                if isinstance(widget, tk.Button):
-                    _original_text = self._t(key)
-                    if view_target == view_key:
-                        widget._sidebar_active = True
-                        widget.config(
+            for item in self._sidebar_widgets:
+                if isinstance(item.widget, tk.Button):
+                    _original_text = self._t(item.key)
+                    if item.view_target == view_key:
+                        item.widget._sidebar_active = True
+                        item.widget.config(
                             bg=UI.BG_SURFACE,
                             fg=UI.ACCENT_GREEN,
-                            text=f" {icon} ",
+                            text=f" {item.icon} ",
                         )
                     else:
-                        widget._sidebar_active = False
-                        widget.config(
+                        item.widget._sidebar_active = False
+                        item.widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
-                            text=f" {icon} ",
+                            text=f" {item.icon} ",
                         )
 
         if hasattr(target_view, "on_view_shown"):
@@ -1385,9 +1394,9 @@ class App(tk.Tk):
     def update_shell_translations(self):
         """Update i18n text for shell elements like sidebar."""
         if hasattr(self, "_sidebar_widgets"):
-            for widget, _key, _ in self._sidebar_widgets:
+            for item in self._sidebar_widgets:
                 try:
-                    if isinstance(widget, tk.Label) or isinstance(widget, tk.Button):
+                    if isinstance(item.widget, tk.Label) or isinstance(item.widget, tk.Button):
                         pass # Translations for sidebar now handled by tooltips
                 except Exception:
                     pass
