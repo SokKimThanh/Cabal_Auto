@@ -82,7 +82,7 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         # Treeview Area
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+        table_frame.pack(fill="both", expand=False, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
 
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
         self.tree_scroll_y.pack(side="right", fill="y")
@@ -96,6 +96,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             columns=self.columns,
             show="headings",
             selectmode="browse",
+            height=20,
             yscrollcommand=self.tree_scroll_y.set,
             xscrollcommand=self.tree_scroll_x.set
         )
@@ -119,7 +120,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.tree.heading("Alias", text=self.app._t("col_skill_alias", default="Alias"))
         self.tree.column("Alias", width=120, anchor="w")
 
-        self.tree.pack(fill="both", expand=True)
+        self.tree.pack(fill="both", expand=False)
 
         # Bottom Bar for Actions
         bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)

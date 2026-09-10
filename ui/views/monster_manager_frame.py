@@ -46,7 +46,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         # Treeview Area
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+        table_frame.pack(fill="both", expand=False, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
 
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
         self.tree_scroll_y.pack(side="right", fill="y")
@@ -60,6 +60,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
             columns=self.columns,
             show="headings",
             selectmode="browse",
+            height=20,
             yscrollcommand=self.tree_scroll_y.set,
             xscrollcommand=self.tree_scroll_x.set
         )
@@ -71,7 +72,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
             self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col), command=lambda c=col: self._sort_treeview(c, False))
             self.tree.column(col, width=100, minwidth=80)
 
-        self.tree.pack(fill="both", expand=True)
+        self.tree.pack(fill="both", expand=False)
 
         self.tree.bind("<Double-1>", lambda e: self._edit_monster())
 
