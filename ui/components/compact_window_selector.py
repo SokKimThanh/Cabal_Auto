@@ -116,7 +116,7 @@ class CompactWindowSelector:
 
         if not windows:
             self.selected_window = None
-            message = "Không tìm thấy cửa sổ Cabal đang mở"
+            message = self.root._t("error_no_cabal_window_found")
             self._set_entry_status(message, UI.DANGER, UI.BG_SURFACE)
         elif select_first or self.selected_window is None:
             self._select_window(windows[0])
