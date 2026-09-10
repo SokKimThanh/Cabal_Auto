@@ -49,7 +49,8 @@ class SkillManagerFrame(ResponsiveGridBase):
         search_lbl.pack(side="left", padx=(0, 5))
         self.search_entry = ttk.Entry(filter_frame, textvariable=self.search_var, width=20)
         self.search_entry.pack(side="left", padx=(0, 15))
-        self.search_entry.bind("<Return>", lambda e: self._on_filter_changed())
+        self.search_entry.bind("<KeyRelease>", self._on_search_changed)
+        self.search_entry.bind("<Escape>", self._on_clear_search)
 
         # Class Filter
         class_lbl = tk.Label(filter_frame, text=self.app._t("lbl_class", default="Class:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
@@ -200,6 +201,20 @@ class SkillManagerFrame(ResponsiveGridBase):
             print(f"Error loading classes: {e}")
             self.class_combo['values'] = ["All"]
             self.class_combo.current(0)
+
+    def _on_search_changed(self, event=None):
+        if hasattr(self, "_search_timer"):
+            self.after_cancel(self._search_timer)
+        self._search_timer = self.after(500, self._apply_search)
+
+    def _apply_search(self):
+        self.current_page = 1
+        self._load_skills()
+
+    def _on_clear_search(self, event=None):
+        self.search_entry.delete(0, tk.END)
+        self.current_page = 1
+        self._load_skills()
 
     def _on_filter_changed(self):
         try:
