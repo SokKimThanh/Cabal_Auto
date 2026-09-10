@@ -296,10 +296,12 @@ class App(tk.Tk):
         from lib.features.skills.skill_runtime_service import SkillRuntimeService
         from ui.controllers.app_state_controller import AppStateController
         from lib.db.services.skill_service import SkillService as DbSkillService
+        from lib.db.services.class_service import ClassService as DbClassService
 
         self.monster_library_service = MonsterLibraryService()
         self.skill_service = SkillRuntimeService()
         self.db_skill_service = DbSkillService()
+        self.db_class_service = DbClassService()
         self.overlay_controller = AppOverlayController(self)
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
@@ -2995,7 +2997,14 @@ def main():
         app = App()
         app.protocol("WM_DELETE_WINDOW", app.on_close)
         print("[Main] Tkinter window initialized and mainloop starting...")
-        app.mainloop()
+        try:
+            app.mainloop()
+        except KeyboardInterrupt:
+            print("\n[Exit] Application stopped by user (KeyboardInterrupt) | Ứng dụng đã bị dừng bởi người dùng (KeyboardInterrupt)")
+            try:
+                app.destroy()
+            except Exception:
+                pass
     finally:
         # Always release lock on exit
         instance_lock.release()
