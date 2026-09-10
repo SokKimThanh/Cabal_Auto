@@ -19,6 +19,7 @@ class HotkeyController:
         self._global_library_hotkey = None
         self._global_vision_hotkey = None
         self._global_monster_hotkey = None
+        self._global_build_hotkey = None
 
         # Track fallback tkinter bindings
         self._hotkey_fallback_bound = []
@@ -133,6 +134,7 @@ class HotkeyController:
             library_key = hotkey_cfg.get("library_manager_key", "ctrl+shift+l")
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
             monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
+            build_key = hotkey_cfg.get("build_manager_key", "ctrl+b")
 
             # Unregister old hotkeys first (in case of re-registration)
             self.unregister_all()
@@ -202,6 +204,19 @@ class HotkeyController:
                 self._failed_hotkeys[monster_key] = repr(e)
                 self._global_monster_hotkey = None
 
+            try:
+                self._global_build_hotkey = keyboard.add_hotkey(
+                    build_key,
+                    self.on_build_manager,
+                    suppress=False,
+                )
+                self._registered_hotkey_handlers[build_key] = (
+                    self._global_build_hotkey
+                )
+            except Exception as e:
+                print(f"Failed to register build manager hotkey '{build_key}': {e}")
+                self._failed_hotkeys[build_key] = repr(e)
+                self._global_build_hotkey = None
             self._hotkeys_registered_ok = len(self._failed_hotkeys) == 0
 
             # Log successful registration
@@ -216,6 +231,8 @@ class HotkeyController:
                 registered.append(f"Vision={vision_key}")
             if self._global_monster_hotkey:
                 registered.append(f"Monster={monster_key}")
+            if self._global_build_hotkey:
+                registered.append(f"Build={build_key}")
 
             if registered:
                 print(f"Global hotkeys registered: {', '.join(registered)}")
@@ -303,6 +320,13 @@ class HotkeyController:
                 finally:
                     self._global_monster_hotkey = None
 
+            if self._global_build_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_build_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering build hotkey: {e}")
+                finally:
+                    self._global_build_hotkey = None
         except Exception as e:
             print(f"Error in unregister_all: {e}")
             try:
@@ -445,3 +469,11 @@ class HotkeyController:
                 self.parent.after(0, self.parent.on_hunt_stop)
             else:
                 self.parent.on_hunt_stop()
+
+
+    def on_build_manager(self, *_args) -> None:
+        if hasattr(self.parent, "switch_view"):
+            if hasattr(self.parent, "after"):
+                self.parent.after(0, lambda: self.parent.switch_view("build_manager"))
+            else:
+                self.parent.switch_view("build_manager")

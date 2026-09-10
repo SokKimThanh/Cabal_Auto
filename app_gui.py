@@ -637,6 +637,7 @@ class App(tk.Tk):
         )
 
         # Keyboard shortcuts (Window-focused only)
+        self.bind("<Control-b>", lambda e: self.switch_view("build_manager"))
         self.bind("<Control-m>", lambda e: self.switch_view("monster_manager"))
         self.bind("<Control-k>", lambda e: self.switch_view("skill_manager"))
 
@@ -734,6 +735,13 @@ class App(tk.Tk):
                 UI.FONT_SECTION,
                 "setup",
                 "⚙️",
+            ),
+            (
+                "btn_build_manager",
+                lambda: self.switch_view("build_manager"),
+                UI.FONT_SECTION,
+                "build_manager",
+                "🛠️",
             ),
             (
                 "btn_skill_manager",
@@ -1047,6 +1055,8 @@ class App(tk.Tk):
         self._views["logs"] = ActivityLogsFrame(self.shell_zone_b, self)
         from ui.views.monster_manager_frame import MonsterManagerFrame
         from ui.views.skill_manager_frame import SkillManagerFrame
+        from ui.views.build_manager_frame import BuildManagerFrame
+        self._views["build_manager"] = BuildManagerFrame(self.shell_zone_b, self)
         self._views["monster_manager"] = MonsterManagerFrame(self.shell_zone_b, self)
         self._views["skill_manager"] = SkillManagerFrame(self.shell_zone_b, self)
 
@@ -2530,6 +2540,7 @@ class App(tk.Tk):
                     hk.get("library_manager_key"),
                     hk.get("vision_wizard_key"),
                     hk.get("monster_editor_key"),
+                    hk.get("build_manager_key"),
                 ]
                 # Filter out empty or None hotkeys
                 all_keys = [k for k in all_keys if k]
