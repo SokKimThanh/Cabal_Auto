@@ -123,8 +123,18 @@ def load_from_db() -> None:
     """Load all translations from the database and feed them into the registry."""
     try:
         from lib.db.services.translation_service import TranslationService
-
         service = TranslationService()
+
+        # 1. Sync in-memory self-registered dictionaries to DB first (Upsert)
+        synced_namespaces = 0
+        for namespace, translations in _REGISTRY.items():
+            if service.bulk_upsert(namespace, translations):
+                synced_namespaces += 1
+
+        if synced_namespaces > 0:
+            logger.info(f"[i18n] Auto-synced {synced_namespaces} namespaces to the database.")
+
+        # 2. Hydrate registry from DB
         rows = service.get_all()
         for row in rows:
             register(row["namespace"], row["lang"], {row["key"]: row["text"]})
@@ -133,5 +143,5 @@ def load_from_db() -> None:
         )
     except Exception as e:
         logger.error(
-            f"[i18n] Failed to hydrate from database: {e}. Falling back to dictionary-based self-registration."
+            f"[i18n] Failed to sync/hydrate from database: {e}. Falling back to dictionary-based self-registration."
         )
