@@ -941,7 +941,7 @@ class MonsterEditDialog(tk.Toplevel):
             form_frame,
             icon_name="dungeon",
             text=i18n_t(
-                "monster_dungeon_label", ns="monster_editor", default="Dungeon:"
+                "monster_dungeon_label", ns="monster_editor", default="Habitat:"
             ),
             icon_fallback="🏰",
             font=UI.FONT_LABEL,
