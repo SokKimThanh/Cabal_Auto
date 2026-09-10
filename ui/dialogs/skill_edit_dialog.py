@@ -151,8 +151,9 @@ class SkillEditDialog(tk.Toplevel):
                 extracted_id = int(class_selection.split(" - ")[0])
                 if extracted_id > 0:
                     class_id = extracted_id
-            except ValueError:
-                pass
+            except (ValueError, IndexError):
+                # Safely fallback to None without crashing
+                class_id = None
 
         data = {
             "name": name,
