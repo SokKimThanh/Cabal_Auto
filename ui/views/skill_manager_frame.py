@@ -14,14 +14,14 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         # Pagination state
         self.current_page = 1
-        self.items_per_page = 20
+        self.items_per_page = 25
         self.total_pages = 1
         self.total_items = 0
 
         # Filter state variables
         self.search_var = tk.StringVar()
-        self.class_filter_var = tk.StringVar()
-        self.type_filter_var = tk.StringVar()
+        self.class_filter_var = tk.StringVar(value="All")
+        self.type_filter_var = tk.StringVar(value="All")
         self.classes_map = {}
 
         self._setup_ui()
@@ -41,11 +41,11 @@ class SkillManagerFrame(ResponsiveGridBase):
         title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
 
         # Filters Area
-        filter_frame = tk.Frame(content_frame, bg=UIStyle.THEME_BG_APP)
+        filter_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
         filter_frame.pack(fill="x", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8))
 
         # Search
-        search_lbl = tk.Label(filter_frame, text=self.app._t("lbl_search", default="Tìm kiếm:"), bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_FG_TEXT if hasattr(UIStyle, "THEME_FG_TEXT") else UIStyle.TEXT_PRIMARY)
+        search_lbl = tk.Label(filter_frame, text=self.app._t("lbl_search", default="Tìm kiếm:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
         search_lbl.pack(side="left", padx=(0, 5))
         self.search_entry = ttk.Entry(filter_frame, textvariable=self.search_var, width=20)
         self.search_entry.pack(side="left", padx=(0, 15))
@@ -53,25 +53,33 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.search_entry.bind("<Escape>", self._on_clear_search)
 
         # Class Filter
-        class_lbl = tk.Label(filter_frame, text=self.app._t("lbl_class", default="Class:"), bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_FG_TEXT if hasattr(UIStyle, "THEME_FG_TEXT") else UIStyle.TEXT_PRIMARY)
+        class_lbl = tk.Label(filter_frame, text=self.app._t("lbl_class", default="Class:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
         class_lbl.pack(side="left", padx=(0, 5))
         self.class_combo = ttk.Combobox(filter_frame, textvariable=self.class_filter_var, state="readonly", width=15)
-        self.class_combo.pack(side="left", padx=(0, 15))
+        self.class_combo.grid(row=0, column=2, sticky="ew", padx=(0, 5), pady=5)
         self.class_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
         self._load_classes()
 
         # Type Filter
-        type_lbl = tk.Label(filter_frame, text=self.app._t("lbl_type", default="Loại:"), bg=UIStyle.THEME_BG_APP, fg=UIStyle.THEME_FG_TEXT if hasattr(UIStyle, "THEME_FG_TEXT") else UIStyle.TEXT_PRIMARY)
+        type_lbl = tk.Label(filter_frame, text=self.app._t("lbl_type", default="Loại:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
         type_lbl.pack(side="left", padx=(0, 5))
         self.type_combo = ttk.Combobox(filter_frame, textvariable=self.type_filter_var, state="readonly", width=15,
                                        values=["All", "Attack", "Buff", "Dash", "Blink", "Passive", "GM"])
         self.type_combo.current(0)
-        self.type_combo.pack(side="left", padx=(0, 15))
+        self.type_combo.grid(row=0, column=3, sticky="ew", padx=(0, 5), pady=5)
         self.type_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
+
+        # Page size
+        self.page_size_var = tk.StringVar(value="25")
+        self.page_size_box = ttk.Combobox(filter_frame, textvariable=self.page_size_var, state="readonly", width=5, values=["25", "50", "100", "200"])
+        self.page_size_box.grid(row=0, column=4, sticky="ew", padx=(0, 5), pady=5)
+        self.page_size_box.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
+
+        filter_frame.columnconfigure(1, weight=1)
 
         # Treeview Area
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=False, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
 
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
         self.tree_scroll_y.pack(side="right", fill="y")
@@ -109,7 +117,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.tree.heading("Alias", text=self.app._t("col_skill_alias", default="Alias"))
         self.tree.column("Alias", width=120, anchor="w")
 
-        self.tree.pack(fill="both", expand=False)
+        self.tree.pack(fill="both", expand=True)
 
         # Bottom Bar for Actions
         bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)
@@ -152,7 +160,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             bottom_bar,
             text=self.app._t("btn_next", default="Sau >"),
             command=self._next_page,
-            bg=UIStyle.THEME_BG_APP,
+            bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,
             relief="flat"
         )
@@ -161,7 +169,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.page_lbl = tk.Label(
             bottom_bar,
             text="1 / 1",
-            bg=UIStyle.THEME_BG_PANEL,
+            bg=UIStyle.BG_SURFACE,
             fg=UIStyle.TEXT_PRIMARY
         )
         self.page_lbl.pack(side="right", padx=(0, 10))
@@ -170,7 +178,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             bottom_bar,
             text=self.app._t("btn_prev", default="< Trước"),
             command=self._prev_page,
-            bg=UIStyle.THEME_BG_APP,
+            bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,
             relief="flat"
         )
@@ -209,6 +217,10 @@ class SkillManagerFrame(ResponsiveGridBase):
         self._load_skills()
 
     def _on_filter_changed(self):
+        try:
+            self.items_per_page = int(self.page_size_var.get())
+        except ValueError:
+            self.items_per_page = 25
         self.current_page = 1
         self._load_skills()
 
