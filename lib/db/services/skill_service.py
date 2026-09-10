@@ -168,31 +168,57 @@ class SkillService:
                 if not cursor.fetchone():
                     raise ValueError(f"class_id {class_id} does not exist.")
 
-            cursor.execute(
-                """
-                UPDATE skills
-                SET name = COALESCE(:name, name),
-                    alias = COALESCE(:alias, alias),
-                    icon_x = COALESCE(:icon_x, icon_x),
-                    icon_y = COALESCE(:icon_y, icon_y),
-                    icon_w = COALESCE(:icon_w, icon_w),
-                    icon_h = COALESCE(:icon_h, icon_h),
-                    class_id = COALESCE(:class_id, class_id),
-                    type = COALESCE(:type, type)
-                WHERE skill_id = :skill_id
-                """,
-                {
-                    "skill_id": skill_id,
-                    "name": data.get("name"),
-                    "alias": data.get("alias"),
-                    "icon_x": data.get("icon_x"),
-                    "icon_y": data.get("icon_y"),
-                    "icon_w": data.get("icon_w"),
-                    "icon_h": data.get("icon_h"),
-                    "class_id": class_id,
-                    "type": data.get("type"),
-                },
-            )
+            # Allow setting class_id to NULL explicitly if it's provided in data
+            if "class_id" in data:
+                cursor.execute(
+                    """
+                    UPDATE skills
+                    SET name = COALESCE(:name, name),
+                        alias = COALESCE(:alias, alias),
+                        icon_x = COALESCE(:icon_x, icon_x),
+                        icon_y = COALESCE(:icon_y, icon_y),
+                        icon_w = COALESCE(:icon_w, icon_w),
+                        icon_h = COALESCE(:icon_h, icon_h),
+                        class_id = :class_id,
+                        type = COALESCE(:type, type)
+                    WHERE skill_id = :skill_id
+                    """,
+                    {
+                        "skill_id": skill_id,
+                        "name": data.get("name"),
+                        "alias": data.get("alias"),
+                        "icon_x": data.get("icon_x"),
+                        "icon_y": data.get("icon_y"),
+                        "icon_w": data.get("icon_w"),
+                        "icon_h": data.get("icon_h"),
+                        "class_id": class_id,
+                        "type": data.get("type"),
+                    },
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE skills
+                    SET name = COALESCE(:name, name),
+                        alias = COALESCE(:alias, alias),
+                        icon_x = COALESCE(:icon_x, icon_x),
+                        icon_y = COALESCE(:icon_y, icon_y),
+                        icon_w = COALESCE(:icon_w, icon_w),
+                        icon_h = COALESCE(:icon_h, icon_h),
+                        type = COALESCE(:type, type)
+                    WHERE skill_id = :skill_id
+                    """,
+                    {
+                        "skill_id": skill_id,
+                        "name": data.get("name"),
+                        "alias": data.get("alias"),
+                        "icon_x": data.get("icon_x"),
+                        "icon_y": data.get("icon_y"),
+                        "icon_w": data.get("icon_w"),
+                        "icon_h": data.get("icon_h"),
+                        "type": data.get("type"),
+                    },
+                )
             updated = cursor.rowcount > 0
             conn.commit()
             return updated
