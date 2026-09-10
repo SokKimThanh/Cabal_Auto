@@ -145,14 +145,14 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
 
     def _create_search_bar(self, parent) -> None:
-        search_frame = tk.Frame(parent, bg=UIStyle.BG_SURFACE)
+        search_frame = tk.Frame(parent, bg=UIStyle.BG_BASE)
         search_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_SM, 0))
 
         # Keyword Search
-        lbl_search = tk.Label(search_frame, text=self.app._t("search_label", default="Tìm kiếm:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
+        lbl_search = tk.Label(search_frame, text=self.app._t("search_label", default="Tìm kiếm:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
         lbl_search.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
 
-        self.search_entry = tk.Entry(search_frame, font=(UIStyle.resolve_font_family("text"), 10))
+        self.search_entry = ttk.Entry(search_frame)
         self.search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=5)
         self.search_entry.bind("<KeyRelease>", self._on_search_changed)
         self.search_entry.bind("<Escape>", self._on_clear_search)

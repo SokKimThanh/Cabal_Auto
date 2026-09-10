@@ -41,24 +41,27 @@ class SkillManagerFrame(ResponsiveGridBase):
         title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
 
         # Filters Area
-        filter_frame = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE)
+        filter_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
         filter_frame.pack(fill="x", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8))
 
         # Search
-        search_lbl = tk.Label(filter_frame, text=self.app._t("lbl_search", default="Tìm kiếm:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
-        search_lbl.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
-
-        self.search_entry = ttk.Entry(filter_frame, textvariable=self.search_var, font=(UIStyle.resolve_font_family("text") if hasattr(UIStyle, "resolve_font_family") else "IBM Plex Sans", 10))
-        self.search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=5)
+        search_lbl = tk.Label(filter_frame, text=self.app._t("lbl_search", default="Tìm kiếm:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
+        search_lbl.pack(side="left", padx=(0, 5))
+        self.search_entry = ttk.Entry(filter_frame, textvariable=self.search_var, width=20)
+        self.search_entry.pack(side="left", padx=(0, 15))
         self.search_entry.bind("<Return>", lambda e: self._on_filter_changed())
 
         # Class Filter
+        class_lbl = tk.Label(filter_frame, text=self.app._t("lbl_class", default="Class:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
+        class_lbl.pack(side="left", padx=(0, 5))
         self.class_combo = ttk.Combobox(filter_frame, textvariable=self.class_filter_var, state="readonly", width=15)
         self.class_combo.grid(row=0, column=2, sticky="ew", padx=(0, 5), pady=5)
         self.class_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
         self._load_classes()
 
         # Type Filter
+        type_lbl = tk.Label(filter_frame, text=self.app._t("lbl_type", default="Loại:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
+        type_lbl.pack(side="left", padx=(0, 5))
         self.type_combo = ttk.Combobox(filter_frame, textvariable=self.type_filter_var, state="readonly", width=15,
                                        values=["All", "Attack", "Buff", "Dash", "Blink", "Passive", "GM"])
         self.type_combo.current(0)
