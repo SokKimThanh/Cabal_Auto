@@ -60,7 +60,7 @@ class SkillPanel(ttk.LabelFrame):
         ).pack(side="left")
 
         self.widgets["preset_indicator"] = tk.Label(
-            header_frame, text=self.app._t("skill_panel.preset_default"), bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY
+            header_frame, text=self.app_state._t("skill_panel.preset_default"), bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY
         )
         self.widgets["preset_indicator"].pack(side="left", padx=(10, 0))
 
@@ -219,13 +219,13 @@ class SkillPanel(ttk.LabelFrame):
         self.widgets["combo_indicator_dot"].pack(side="left", padx=(10, 5), pady=10)
 
         self.widgets["combo_indicator_text"] = tk.Label(
-            controls_frame, text=self.app._t("skill_panel.combo_inactive"), bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED
+            controls_frame, text=self.app_state._t("skill_panel.combo_inactive"), bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED
         )
         self.widgets["combo_indicator_text"].pack(side="left", pady=10)
 
         self.widgets["btn_start_combo"] = tk.Button(
             controls_frame,
-            text=self.app._t("skill_panel.combo_start"),
+            text=self.app_state._t("skill_panel.combo_start"),
             command=self.on_start_combo,
             bg=UI.ACCENT_GREEN_BG,
             fg=UI.ACCENT_GREEN,
@@ -236,7 +236,7 @@ class SkillPanel(ttk.LabelFrame):
 
         self.widgets["btn_stop_combo"] = tk.Button(
             controls_frame,
-            text=self.app._t("skill_panel.combo_stop"),
+            text=self.app_state._t("skill_panel.combo_stop"),
             command=self.on_stop_combo,
             bg=UI.DANGER,
             fg=UI.TEXT_PRIMARY,
@@ -264,7 +264,7 @@ class SkillPanel(ttk.LabelFrame):
             header.pack(fill="x", padx=8, pady=(8, 2))
             tk.Label(
                 header,
-                text=self.app._t("skill_panel.buff_lane").format(num=i+1),
+                text=self.app_state._t("skill_panel.buff_lane").format(num=i+1),
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
@@ -317,7 +317,7 @@ class SkillPanel(ttk.LabelFrame):
             self.widgets["buff_stats"].append((cast_lbl, cd_lbl))
     def on_start_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🟢")
-        self.widgets["combo_indicator_text"].config(text=self.app._t("skill_panel.combo_active"), fg=UI.ACCENT_GREEN)
+        self.widgets["combo_indicator_text"].config(text=self.app_state._t("skill_panel.combo_active"), fg=UI.ACCENT_GREEN)
         self.widgets["btn_start_combo"].pack_forget()
         self.widgets["btn_stop_combo"].pack(side="right", padx=10, pady=10)
 
@@ -327,7 +327,7 @@ class SkillPanel(ttk.LabelFrame):
 
     def on_stop_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🔴")
-        self.widgets["combo_indicator_text"].config(text=self.app._t("skill_panel.combo_inactive"), fg=UI.TEXT_MUTED)
+        self.widgets["combo_indicator_text"].config(text=self.app_state._t("skill_panel.combo_inactive"), fg=UI.TEXT_MUTED)
         self.widgets["btn_stop_combo"].pack_forget()
         self.widgets["btn_start_combo"].pack(side="right", padx=10, pady=10)
 
@@ -409,9 +409,9 @@ class SkillPanel(ttk.LabelFrame):
         # Update preset indicator
         preset_mode = getattr(self.app_state, "_preset_mode", "default")
         if preset_mode == "default":
-            self.widgets["preset_indicator"].config(text=self.app._t("skill_panel.preset_default"))
+            self.widgets["preset_indicator"].config(text=self.app_state._t("skill_panel.preset_default"))
         else:
-            self.widgets["preset_indicator"].config(text=self.app._t("skill_panel.preset_custom"))
+            self.widgets["preset_indicator"].config(text=self.app_state._t("skill_panel.preset_custom"))
 
     def _on_skill_changed(self, event, lane, position_idx):
         """Logic extracted from HuntTab"""
