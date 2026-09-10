@@ -21,26 +21,38 @@ class SkillRepository:
                     pass
 
     def list_skills(
-        self, class_id: Optional[int] = None, type_filter: Optional[str] = None
+        self, class_id: Optional[int] = None, type_filter: Optional[str] = None, include_all: bool = False
     ) -> List[Dict[str, Any]]:
         conn, is_local = get_connection()
         if not conn:
             return []
         try:
             cursor = conn.cursor()
-            query = "SELECT * FROM skills"
             params = []
             conditions = []
 
-            if class_id is not None:
-                conditions.append("class_id = ?")
+            if not include_all and class_id is not None:
+                # Filter by class_id using the class_skill_assignments table
+                query = "SELECT s.* FROM skills s JOIN class_skill_assignments csa ON s.skill_id = csa.skill_id"
+                conditions.append("csa.class_id = ?")
                 params.append(class_id)
+            else:
+                # Get all skills (ignoring class_id)
+                query = "SELECT * FROM skills"
+
             if type_filter is not None:
-                conditions.append("type = ?")
+                if "JOIN" in query:
+                    conditions.append("s.type = ?")
+                else:
+                    conditions.append("type = ?")
                 params.append(type_filter)
 
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
+
+            # Deduplicate just in case the JOIN returns multiple rows for the same skill
+            if "JOIN" in query:
+                query += " GROUP BY s.skill_id"
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
