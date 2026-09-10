@@ -22,7 +22,10 @@ class SkillEditDialog(tk.Toplevel):
         # Keep references to input variables
         self.var_name = tk.StringVar(value=self.skill_data.get("name", ""))
         self.var_type = tk.StringVar(value=self.skill_data.get("type", "Attack"))
-        self.var_class_id = tk.IntVar(value=self.skill_data.get("class_id", 0))
+
+        # Need a string var for combobox selection
+        self.var_class_id_str = tk.StringVar()
+
         self.var_alias = tk.StringVar(value=self.skill_data.get("alias", ""))
 
         self.var_icon_x = tk.IntVar(value=self.skill_data.get("icon_x", 0))
@@ -67,16 +70,35 @@ class SkillEditDialog(tk.Toplevel):
         tk.Label(class_frame, text="Class ID:", bg=UIStyle.THEME_BG_APP, fg=UIStyle.TEXT_PRIMARY, width=15, anchor="w").pack(side="left")
 
         # Load classes if we can
-        class_values = []
-        if hasattr(self.app, "db_skill_service"):
+        class_values = ["0 - None"]
+        if hasattr(self.app, "db_class_service"):
             try:
-                # We don't have a direct class service attached in the app by default for classes list,
-                # But we can query the db. We'll just use a spinbox for now since we just need an ID
-                tk.Spinbox(class_frame, from_=0, to=999, textvariable=self.var_class_id).pack(side="left", fill="x", expand=True)
-            except Exception:
-                tk.Spinbox(class_frame, from_=0, to=999, textvariable=self.var_class_id).pack(side="left", fill="x", expand=True)
-        else:
-            tk.Spinbox(class_frame, from_=0, to=999, textvariable=self.var_class_id).pack(side="left", fill="x", expand=True)
+                classes = self.app.db_class_service.get_all_classes()
+                for c in classes:
+                    class_values.append(f"{c.get('class_id')} - {c.get('name')}")
+            except Exception as e:
+                print(f"[SkillEditDialog] Error loading classes: {e}")
+
+        # Combobox for classes
+        class_combo = ttk.Combobox(class_frame, textvariable=self.var_class_id_str, values=class_values, state="readonly")
+        class_combo.pack(side="left", fill="x", expand=True)
+
+        # Set default selection based on current skill_data
+        current_class_id = self.skill_data.get("class_id")
+
+        # Determine the initial value based on skill data
+        initial_value = "0 - None"
+        if current_class_id:
+            # Find the string matching this class_id
+            for val in class_values:
+                try:
+                    if int(val.split(" - ")[0]) == current_class_id:
+                        initial_value = val
+                        break
+                except ValueError:
+                    continue
+
+        self.var_class_id_str.set(initial_value)
 
         # ----- Advanced Information -----
         adv_frame = tk.LabelFrame(main_frame, text="Advanced Information", bg=UIStyle.THEME_BG_APP, fg=UIStyle.TEXT_PRIMARY)
@@ -121,13 +143,16 @@ class SkillEditDialog(tk.Toplevel):
             messagebox.showerror("Validation Error", "Name is required.", parent=self)
             return
 
-        try:
-            class_id = self.var_class_id.get()
-            # If 0, we treat it as None for the DB since classes might start at 1
-            if class_id == 0:
-                class_id = None
-        except ValueError:
-            class_id = None
+        class_id = None
+        class_selection = self.var_class_id_str.get()
+        if class_selection and class_selection != "0 - None":
+            try:
+                # Extract the ID from "ID - Name"
+                extracted_id = int(class_selection.split(" - ")[0])
+                if extracted_id > 0:
+                    class_id = extracted_id
+            except ValueError:
+                pass
 
         data = {
             "name": name,
