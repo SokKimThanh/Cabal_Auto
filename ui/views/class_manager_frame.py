@@ -330,7 +330,9 @@ class ClassManagerFrame(ResponsiveGridBase):
                 c.get("int_base", 0),
                 c.get("dex_base", 0)
             )
-            self.tree.insert("", "end", iid=str(c.get("id", "")), values=values)
+            item_id = str(c.get("id", ""))
+            if not self.tree.exists(item_id):
+                self.tree.insert("", "end", iid=item_id, values=values)
 
     def _update_page_ui(self):
         if self.total_items == 0:
