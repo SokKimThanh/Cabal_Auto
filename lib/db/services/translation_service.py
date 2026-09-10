@@ -1,4 +1,3 @@
-import sqlite3
 import datetime
 from typing import List, Dict, Any, Optional
 from lib.db.connection import get_connection
@@ -31,7 +30,7 @@ class TranslationService:
             if is_local and conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
 
     def upsert(self, namespace: str, key: str, lang: str, text: str) -> bool:
@@ -48,9 +47,7 @@ class TranslationService:
                 """
                 INSERT INTO translations (namespace, key, lang, text, updated_at)
                 VALUES (:namespace, :key, :lang, :text, :updated_at)
-                ON CONFLICT(namespace, key, lang) DO UPDATE SET
-                    text = excluded.text,
-                    updated_at = excluded.updated_at
+                ON CONFLICT(namespace, key, lang) DO NOTHING
                 """,
                 {
                     "namespace": namespace,
@@ -65,7 +62,7 @@ class TranslationService:
         except Exception as e:
             try:
                 conn.rollback()
-            except:
+            except Exception:
                 pass
             print(f"[TranslationService] Upsert error: {e}")
             return False
@@ -73,7 +70,7 @@ class TranslationService:
             if is_local and conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
 
     def bulk_upsert(
@@ -97,9 +94,7 @@ class TranslationService:
                         """
                         INSERT INTO translations (namespace, key, lang, text, updated_at)
                         VALUES (:namespace, :key, :lang, :text, :updated_at)
-                        ON CONFLICT(namespace, key, lang) DO UPDATE SET
-                            text = excluded.text,
-                            updated_at = excluded.updated_at
+                        ON CONFLICT(namespace, key, lang) DO NOTHING
                         """,
                         {
                             "namespace": namespace,
@@ -114,7 +109,7 @@ class TranslationService:
         except Exception as e:
             try:
                 conn.rollback()
-            except:
+            except Exception:
                 pass
             print(f"[TranslationService] Bulk upsert error: {e}")
             return False
@@ -122,5 +117,5 @@ class TranslationService:
             if is_local and conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass

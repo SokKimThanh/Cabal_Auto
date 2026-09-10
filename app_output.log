@@ -1,0 +1,26 @@
+2026-09-10 13:11:11 | root | INFO     | ============================================================
+2026-09-10 13:11:11 | root | INFO     | Logging system initialized
+2026-09-10 13:11:11 | root | INFO     | Log directory: /app/logs
+2026-09-10 13:11:11 | root | INFO     | Log level: INFO
+2026-09-10 13:11:11 | root | INFO     | ============================================================
+2026-09-10 13:11:11 | lib.i18n | INFO     | [i18n] Successfully hydrated 1960 translations from database.
+[Vision Menu] Created successfully
+2026-09-10 13:11:11 | lib.system.window_manager | INFO     | WindowManager initialized
+2026-09-10 13:11:11 | lib.system.window_manager | ERROR    | EnumWindows failed: name 'e' is not defined
+[App._build_ui] ✓ UI build complete, main_shell gridded
+2026-09-10 13:11:11 | lib.vision.template_loader | INFO     | Loaded 4 templates from config
+2026-09-10 13:11:11 | lib.vision.vision_engine | INFO     | VisionEngine initialized with 4 templates
+2026-09-10 13:11:11 | lib.system.bot_manager | INFO     | [BotManager] Initialized
+2026-09-10 13:11:11 | INFO | ================================================================================
+Failed to register start hotkey 'ctrl+shift+r': You must be root to use this library on linux.
+Failed to register stop hotkey 'ctrl+shift+e': You must be root to use this library on linux.
+Failed to register library hotkey 'ctrl+shift+l': You must be root to use this library on linux.
+Failed to register vision hotkey 'ctrl+shift+v': You must be root to use this library on linux.
+Failed to register monster editor hotkey 'ctrl+shift+m': You must be root to use this library on linux.
+Some hotkeys failed to register: {'ctrl+shift+r': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+e': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+l': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+v': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+m': "ImportError('You must be root to use this library on linux.')"}
+[Main] Tkinter window initialized and mainloop starting...
+2026-09-10 13:11:11 | HuntLogger | INFO     | ================================================================================
+2026-09-10 13:11:11 | INFO | Hunt Session Started: 2026-09-10 13:11:11
+2026-09-10 13:11:11 | HuntLogger | INFO     | Hunt Session Started: 2026-09-10 13:11:11
+2026-09-10 13:11:11 | INFO | ================================================================================
+2026-09-10 13:11:11 | HuntLogger | INFO     | ================================================================================

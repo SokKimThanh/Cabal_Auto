@@ -1,7 +1,6 @@
 import pytest
 import sqlite3
-import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from lib.db.services.translation_service import TranslationService
 
@@ -59,13 +58,13 @@ def test_upsert_new_and_existing(mock_get_connection):
     assert results[0]["lang"] == "en"
     assert results[0]["text"] == "Hello"
 
-    # Update existing
+    # Update existing (Should DO NOTHING due to change in prompt 01)
     success = service.upsert("ns1", "key1", "en", "Hello World")
     assert success is True
 
     results = service.get_all()
     assert len(results) == 1
-    assert results[0]["text"] == "Hello World"
+    assert results[0]["text"] == "Hello"  # Verify it wasn't updated
 
 
 def test_bulk_upsert_transaction(mock_get_connection):
@@ -82,15 +81,15 @@ def test_bulk_upsert_transaction(mock_get_connection):
     results = service.get_all("ns2")
     assert len(results) == 4
 
-    # Check that update works properly
+    # Check that update works properly (Should DO NOTHING due to change in prompt 01)
     translations_update = {"en": {"key1": "Hello!"}}
     success = service.bulk_upsert("ns2", translations_update)
     assert success is True
 
     results = service.get_all("ns2")
-    # Length should still be 4, as we updated an existing row
+    # Length should still be 4, as we did not insert a new row
     assert len(results) == 4
 
-    # Find the updated row
+    # Find the row, should still have the old text
     updated_row = next(r for r in results if r["key"] == "key1" and r["lang"] == "en")
-    assert updated_row["text"] == "Hello!"
+    assert updated_row["text"] == "Hello"  # Verify it wasn't updated
