@@ -3,6 +3,12 @@
 
 GLOBAL_TRANSLATIONS = {
     'en': {
+        'help_hunt_title': '1. Hunt Screen Reminders',
+        'help_hunt_desc': '• Select Window: Remember to select the correct game window from the Top Bar before starting.\n• Target Check: Ensure the target template is correct. If detection is slow or inaccurate, reduce the search region.\n• Start Hunt: Check skill configurations and timings before clicking Start Hunt.',
+        'help_setup_title': '2. Setup Screen Reminders',
+        'help_setup_desc': '• Skill Config: Make sure to save your skill assignments.\n• Timing: Verify cast times and cooldowns to prevent the bot from getting stuck waiting for skills.\n• Auto Repair/HP: Check these options if you need out-of-combat assistance.',
+        'help_stats_title': '3. Stats & Logs Reminders',
+        'help_stats_desc': '• Monitoring: Check the logs to understand why the bot stopped (e.g., lost target, stuck skills).',
         'add_button': 'Add',
         'all_saved': 'All changes saved',
         'alpha_label': 'Alpha',
@@ -662,6 +668,12 @@ GLOBAL_TRANSLATIONS = {
 
     },
     'vi': {
+        'help_hunt_title': '1. Nhắc nhở Màn hình Hunt',
+        'help_hunt_desc': '• Chọn Cửa sổ: Nhớ chọn đúng cửa sổ game ở thanh trên cùng (Top Bar) trước khi bắt đầu.\n• Kiểm tra Mục tiêu: Đảm bảo ảnh mẫu mục tiêu (target template) chính xác. Nếu nhận diện chậm/sai, hãy thu hẹp vùng chọn.\n• Bắt đầu: Kiểm tra cấu hình kĩ năng và thời gian trước khi nhấn Bắt đầu (Start Hunt).',
+        'help_setup_title': '2. Nhắc nhở Màn hình Thiết lập',
+        'help_setup_desc': '• Cấu hình Kĩ năng: Đảm bảo đã lưu các thiết lập kĩ năng.\n• Thời gian (Timing): Kiểm tra thời gian cast và hồi chiêu để tránh tình trạng treo bot do chờ kĩ năng.\n• Tự động Sửa đồ/HP: Đánh dấu nếu bạn cần bot hỗ trợ khi ngoài giao tranh.',
+        'help_stats_title': '3. Nhắc nhở Màn hình Stats & Logs',
+        'help_stats_desc': '• Theo dõi: Kiểm tra log để biết nguyên nhân bot bị dừng (do mất mục tiêu, kẹt kĩ năng).',
         'add_button': 'Thêm',
         'all_saved': 'Đã lưu tất cả thay đổi',
         'alpha_label': 'Độ trong suốt',
