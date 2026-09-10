@@ -167,8 +167,7 @@ class ClassManagerFrame(ResponsiveGridBase):
 
     def _setup_ui(self):
         content_frame = self.get_content_frame()
-
-        # Title
+        # Title Label
         title_lbl = tk.Label(
             content_frame,
             font=(UIStyle.resolve_font_family("title"), 16, "bold"),
@@ -181,28 +180,18 @@ class ClassManagerFrame(ResponsiveGridBase):
             title_lbl.config(text=self.app._t("class_manager_title", default="Quản Lý Hệ Phái"))
         title_lbl.pack(pady=UIStyle.SPACE_MD)
 
-        # Search Bar
-        search_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        search_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_SM, 0))
+        self._create_search_bar(content_frame)
 
-        lbl_search = tk.Label(search_frame, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
-        if hasattr(self.app, "bind_text"):
-            self.app.bind_text(lbl_search, "search_label")
-        else:
-            lbl_search.config(text=self.app._t("search_label", default="Tìm kiếm:"))
-        lbl_search.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
-
-        self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var)
-        self.search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=5)
-        search_frame.columnconfigure(1, weight=1)
-        self.search_entry.bind("<KeyRelease>", self._on_search_changed)
-
-        # Treeview
+        # Treeview Area
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
         table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
 
+        # Cấu hình grid cho table_frame để thanh cuộn tự động ẩn/hiện mượt mà
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
-        self.tree_scroll_y.pack(side="right", fill="y")
+        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
 
         self.columns = ("ID", "Name", "Description", "STR", "INT", "DEX")
         self.tree = ttk.Treeview(
@@ -211,9 +200,12 @@ class ClassManagerFrame(ResponsiveGridBase):
             show="headings",
             selectmode="browse",
             height=20,
-            yscrollcommand=self.tree_scroll_y.set
+            yscrollcommand=self._autoscroll_y,
+            xscrollcommand=self._autoscroll_x
         )
+
         self.tree_scroll_y.config(command=self.tree.yview)
+        self.tree_scroll_x.config(command=self.tree.xview)
 
         for col in self.columns:
             self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col))
@@ -222,10 +214,12 @@ class ClassManagerFrame(ResponsiveGridBase):
                 width = 250
             self.tree.column(col, width=width, minwidth=50)
 
-        self.tree.pack(fill="both", expand=True)
+        # Đặt treeview và scrollbars bằng grid
+        self.tree.grid(row=0, column=0, sticky="nsew")
+
         self.tree.bind("<Double-1>", lambda e: self._edit_class())
 
-        # Bottom Action Bar
+        # Bottom Bar for Actions
         bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
@@ -253,32 +247,82 @@ class ClassManagerFrame(ResponsiveGridBase):
         )
         del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        # Pagination inside bottom bar
-        page_frame = tk.Frame(bottom_bar, bg=UIStyle.BG_SURFACE)
-        page_frame.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
-
-        self.btn_prev_page = tk.Button(
-            page_frame, text="<", command=self._prev_page, width=3,
-            **UIStyle.get_button_style("secondary")
-        )
-        self.btn_prev_page.pack(side="left", padx=UIStyle.SPACE_XS)
-
-        self.lbl_page_info = tk.Label(page_frame, text="1 / 1", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
-        self.lbl_page_info.pack(side="left", padx=UIStyle.SPACE_SM)
-
-        self.btn_next_page = tk.Button(
-            page_frame, text=">", command=self._next_page, width=3,
-            **UIStyle.get_button_style("secondary")
-        )
-        self.btn_next_page.pack(side="left", padx=UIStyle.SPACE_XS)
-
         ref_btn = tk.Button(
             bottom_bar,
             text=self.app._t("btn_refresh", default=" Làm mới"),
-            command=self._load_classes,
+            command=self._on_refresh,
             **UIStyle.get_button_style("secondary")
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        # Pagination controls in bottom bar
+        self.btn_next_page = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_next", default="Sau >"),
+            command=self._next_page,
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
+        )
+        self.btn_next_page.pack(side="right", padx=(0, UIStyle.SPACE_MD), pady=UIStyle.SPACE_SM)
+
+        self.lbl_page_info = tk.Label(
+            bottom_bar,
+            text="1 / 1",
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        self.lbl_page_info.pack(side="right", padx=(0, 10))
+
+        self.btn_prev_page = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_prev", default="< Trước"),
+            command=self._prev_page,
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
+        )
+        self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
+
+    def _autoscroll_y(self, first, last):
+        self.tree_scroll_y.set(first, last)
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self.tree_scroll_y.grid_remove()
+        else:
+            self.tree_scroll_y.grid(row=0, column=1, sticky="ns")
+
+    def _autoscroll_x(self, first, last):
+        self.tree_scroll_x.set(first, last)
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self.tree_scroll_x.grid_remove()
+        else:
+            self.tree_scroll_x.grid(row=1, column=0, sticky="ew")
+
+    def _create_search_bar(self, parent) -> None:
+        search_frame = tk.Frame(parent, bg=UIStyle.BG_BASE)
+        search_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_SM, 0))
+
+        lbl_search = tk.Label(search_frame, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(lbl_search, "search_label")
+        else:
+            lbl_search.config(text=self.app._t("search_label", default="Tìm kiếm:"))
+        lbl_search.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
+
+        self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var)
+        self.search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=5)
+        search_frame.columnconfigure(1, weight=1)
+        self.search_entry.bind("<KeyRelease>", self._on_search_changed)
+        self.search_entry.bind("<Escape>", self._on_clear_search)
+
+    def _on_clear_search(self, event=None) -> None:
+        self.search_var.set("")
+        self._apply_filters()
+
+    def _on_refresh(self) -> None:
+        self.search_var.set("")
+        self.current_page = 1
+        self._load_classes()
 
 
     def _load_classes(self):
@@ -289,8 +333,9 @@ class ClassManagerFrame(ResponsiveGridBase):
         self._apply_filters()
 
     def _on_search_changed(self, event=None):
-        # Debounce logic if needed, but for local memory simple update is fine
-        self._apply_filters()
+        if hasattr(self, "_search_timer"):
+            self.after_cancel(self._search_timer)
+        self._search_timer = self.after(500, self._apply_filters)
 
     def _apply_filters(self):
         keyword = self.search_var.get().lower().strip()

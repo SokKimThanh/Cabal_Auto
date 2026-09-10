@@ -49,13 +49,13 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         # Treeview Area
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=False, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
 
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
-        self.tree_scroll_y.pack(side="right", fill="y")
-
         self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
-        self.tree_scroll_x.pack(side="bottom", fill="x")
 
         self.columns = ("ID", "Name", "Level", "HP", "Defense", "Type", "Dungeon")
         self.tree = ttk.Treeview(
@@ -64,8 +64,8 @@ class MonsterManagerFrame(ResponsiveGridBase):
             show="headings",
             selectmode="browse",
             height=20,
-            yscrollcommand=self.tree_scroll_y.set,
-            xscrollcommand=self.tree_scroll_x.set
+            yscrollcommand=self._autoscroll_y,
+            xscrollcommand=self._autoscroll_x
         )
 
         self.tree_scroll_y.config(command=self.tree.yview)
@@ -75,7 +75,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
             self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col), command=lambda c=col: self._sort_treeview(c, False))
             self.tree.column(col, width=100, minwidth=80)
 
-        self.tree.pack(fill="both", expand=False)
+        self.tree.grid(row=0, column=0, sticky="nsew")
 
         self.tree.bind("<Double-1>", lambda e: self._edit_monster())
 
@@ -146,6 +146,20 @@ class MonsterManagerFrame(ResponsiveGridBase):
         )
         self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
 
+
+    def _autoscroll_y(self, first, last):
+        self.tree_scroll_y.set(first, last)
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self.tree_scroll_y.grid_remove()
+        else:
+            self.tree_scroll_y.grid(row=0, column=1, sticky="ns")
+
+    def _autoscroll_x(self, first, last):
+        self.tree_scroll_x.set(first, last)
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self.tree_scroll_x.grid_remove()
+        else:
+            self.tree_scroll_x.grid(row=1, column=0, sticky="ew")
 
     def _create_search_bar(self, parent) -> None:
         search_frame = tk.Frame(parent, bg=UIStyle.BG_BASE)
