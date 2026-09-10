@@ -568,6 +568,9 @@ GLOBAL_TRANSLATIONS = {
 
     },
     'vi': {
+        'apply_all_settings_unsaved': 'Có thay đổi cần lưu',
+        'apply_all_settings_saved': 'Không có thay đổi gì',
+        'window_status_label': 'Trạng thái cửa sổ',
         'target_status.no_target': 'Chưa có mục tiêu',
         'target_status.no_target_submessage': 'Bắt đầu săn để hiển thị thông tin mục tiêu ở đây.',
         'target_status.level': 'CẤP',
