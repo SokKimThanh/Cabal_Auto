@@ -125,7 +125,7 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         add_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_add_skill", default=" Thêm"),
+            text=self.app._t("btn_add", default="Thêm"),
             command=self._add_skill,
             **UIStyle.get_button_style("primary")
         )
@@ -133,7 +133,7 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         edit_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_edit_skill", default=" Sửa"),
+            text=self.app._t("btn_edit", default="Sửa"),
             command=self._edit_skill,
             **UIStyle.get_button_style("primary")
         )
@@ -141,7 +141,7 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         del_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_del_skill", default=" Xóa"),
+            text=self.app._t("btn_delete", default="Xóa"),
             command=self._delete_skill,
             **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
         )
@@ -149,7 +149,7 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         ref_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_refresh_skill", default=" Làm mới"),
+            text=self.app._t("btn_refresh", default="Làm mới"),
             command=self._load_skills,
             **UIStyle.get_button_style("secondary")
         )
@@ -158,7 +158,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         # Pagination controls in bottom bar
         self.next_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_next", default="Sau >"),
+            text=self.app._t("btn_next", default="Sau"),
             command=self._next_page,
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,
@@ -176,7 +176,7 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         self.prev_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_prev", default="< Trước"),
+            text=self.app._t("btn_prev", default="Trước"),
             command=self._prev_page,
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,

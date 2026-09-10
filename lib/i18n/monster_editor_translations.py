@@ -10,6 +10,15 @@ Created: 2025-10-24
 
 MONSTER_EDITOR_TRANSLATIONS = {
     "vi": {
+        "btn_add": "Thêm",
+        "btn_edit": "Sửa",
+        "btn_delete": "Xóa",
+        "btn_refresh": "Làm mới",
+        "btn_save": "Lưu",
+        "btn_cancel": "Hủy",
+        "btn_prev": "Trước",
+        "btn_next": "Sau",
+
         # Menu items
         "menu_open_monster_editor": "Mở Quản Lý Quái Vật",
         "menu_monster_editor_settings": "Cài Đặt Quái Vật",
@@ -23,16 +32,9 @@ MONSTER_EDITOR_TRANSLATIONS = {
         "monster_threshold_label": "Ngưỡng nhận diện:",
         "template_list_label": "Danh sách Template:",
         # Buttons
-        "btn_save": "Lưu",
-        "btn_cancel": "Hủy",
         "btn_capture": "Chụp Vùng",
         "btn_test": "Test Nhận Diện",
-        "btn_add_template": "Thêm Template",
-        "btn_remove_template": "Xóa",
         "btn_new_monster": "Tạo Mới",
-        "btn_edit_monster": "Sửa",
-        "btn_delete_monster": "Xóa",
-        "btn_edit": "Sửa",
         "btn_save_changes": "Lưu",
         # Tooltips
         "tooltip_capture": "Chụp vùng màn hình để tạo template",
@@ -147,14 +149,11 @@ MONSTER_EDITOR_TRANSLATIONS = {
         "preview_label": "Xem trước",
         # Additional buttons
         "btn_save_all": "Lưu Tất Cả",
-        "btn_close": "Đóng",
-        "btn_add_monster": "Thêm Quái",
+                "btn_close": "Đóng",
+        "tooltip_delete_template": "Xóa template",
         "btn_browse": "Chọn File",
-        "btn_delete_template": "Xóa Template",
-        "btn_delete": "Xóa",
         "btn_open_folder": "Mở Thư Mục",
         "btn_confirm": "✔ Đồng ý",
-        "btn_cancel_confirm": "✖ Hủy",
         # Search and settings
         "search_label": "Tìm kiếm:",
         "search_placeholder": "Nhập tên hoặc cấp quái vật...",
@@ -179,6 +178,15 @@ MONSTER_EDITOR_TRANSLATIONS = {
         "confirm_delete_monster": "Bạn có chắc muốn xóa '{}' không?",
     },
     "en": {
+        "btn_add": "Add",
+        "btn_edit": "Edit",
+        "btn_delete": "Delete",
+        "btn_refresh": "Refresh",
+        "btn_save": "Save",
+        "btn_cancel": "Cancel",
+        "btn_prev": "Prev",
+        "btn_next": "Next",
+
         # Menu items
         "menu_open_monster_editor": "Open Monster Manager",
         "menu_monster_editor_settings": "Monster Settings",
@@ -192,16 +200,9 @@ MONSTER_EDITOR_TRANSLATIONS = {
         "monster_threshold_label": "Recognition threshold:",
         "template_list_label": "Template List:",
         # Buttons
-        "btn_save": "Save",
-        "btn_cancel": "Cancel",
         "btn_capture": "Capture Region",
         "btn_test": "Test Recognition",
-        "btn_add_template": "Add Template",
-        "btn_remove_template": "Remove",
         "btn_new_monster": "New",
-        "btn_edit_monster": "Edit",
-        "btn_delete_monster": "Delete",
-        "btn_edit": "Edit",
         "btn_save_changes": "Save",
         # Tooltips
         "tooltip_capture": "Capture screen region to create template",
@@ -316,14 +317,11 @@ MONSTER_EDITOR_TRANSLATIONS = {
         "preview_label": "Preview",
         # Additional buttons
         "btn_save_all": "Save All",
-        "btn_close": "Close",
-        "btn_add_monster": "Add Monster",
+                "btn_close": "Close",
+        "tooltip_delete_template": "Delete template",
         "btn_browse": "Browse",
-        "btn_delete_template": "Delete Template",
-        "btn_delete": "Delete",
         "btn_open_folder": "Open Folder",
         "btn_confirm": "✔ Confirm",
-        "btn_cancel_confirm": "✖ Cancel",
         # Search and settings
         "search_label": "Search:",
         "search_placeholder": "Enter monster name or level...",
