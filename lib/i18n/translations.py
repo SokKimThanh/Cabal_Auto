@@ -543,7 +543,6 @@ GLOBAL_TRANSLATIONS = {
         "bounds_state_invalid": "Invalid window/bounds. Reselect/Restore.",
         "bounds_state_minimized": "Window minimized. Restore it.",
         "bounds_state_failed": "Cannot restore window. Please manually Alt+Tab or click the game window.",
-    },
         'target_status.no_target': 'No target',
         'target_status.no_target_submessage': 'Start hunting to show target information here.',
         'target_status.level': 'LEVEL',
@@ -567,6 +566,7 @@ GLOBAL_TRANSLATIONS = {
         'screen_state.tracking': '⏳ Tracking...',
         'screen_state.location_unknown': '📍 Unknown',
 
+    },
     'vi': {
         'target_status.no_target': 'Chưa có mục tiêu',
         'target_status.no_target_submessage': 'Bắt đầu săn để hiển thị thông tin mục tiêu ở đây.',
@@ -1548,4 +1548,5 @@ _register_bulk(_GLOBAL_NS, {
         'apply_all_settings_unsaved': 'Changes need saving',
         'apply_all_settings_saved': 'All settings saved',
         'window_status_label': 'Window Status',
-    },
+    }
+})
