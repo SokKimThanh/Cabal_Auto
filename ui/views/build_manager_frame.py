@@ -138,43 +138,37 @@ class BuildManagerFrame(ResponsiveGridBase):
 
     def _build_ui(self):
         content = self.get_content_frame()
-        content.columnconfigure(0, weight=1)
-        content.rowconfigure(1, weight=1)
-
-        # Top Bar
-        top_bar = tk.Frame(content, bg=UIStyle.BG_BASE)
-        top_bar.grid(row=0, column=0, sticky="ew", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
-
-        # Add Button
-        add_btn = tk.Button(
-            top_bar,
-            text=self.app._t("btn_add_build", default="➕ Thêm Build"),
-            command=self._add_build,
-            **UIStyle.get_button_style("primary")
+        # Title Label
+        title_lbl = tk.Label(
+            content,
+            font=(UIStyle.resolve_font_family("title"), 16, "bold"),
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY
         )
-        add_btn.pack(side="left", padx=(0, UIStyle.SPACE_MD))
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(title_lbl, "build_manager_title")
+        else:
+            title_lbl.config(text=self.app._t("build_manager_title", default="Quản Lý Build"))
+        title_lbl.pack(pady=UIStyle.SPACE_MD)
 
-        # Class Filter
-        tk.Label(top_bar, text="Filter Class:", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).pack(side="left", padx=(UIStyle.SPACE_MD, UIStyle.SPACE_XS))
-        self.filter_class_var = tk.StringVar()
-        self.filter_class_cb = ttk.Combobox(top_bar, textvariable=self.filter_class_var, state="readonly", width=25)
-        self.filter_class_cb.pack(side="left", padx=UIStyle.SPACE_XS)
-        self.filter_class_cb.bind("<<ComboboxSelected>>", self._on_filter_changed)
-
-        # Search Bar
-        tk.Label(top_bar, text="Search:", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).pack(side="left", padx=(UIStyle.SPACE_MD, UIStyle.SPACE_XS))
-        self.search_var = tk.StringVar()
-        search_entry = ttk.Entry(top_bar, textvariable=self.search_var, width=30)
-        search_entry.pack(side="left")
-        search_entry.bind("<KeyRelease>", self._on_search_delayed)
-        self._search_timer = None
+        self._create_search_bar(content)
 
         # Table
         table_frame = tk.Frame(content, bg=UIStyle.BG_BASE)
-        table_frame.grid(row=1, column=0, sticky="nsew", padx=UIStyle.SPACE_MD)
+        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
+        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
 
         columns = ("ID", "Class Name", "Author", "Description", "Upvotes")
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", style="Custom.Treeview")
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", style="Custom.Treeview",
+                                 yscrollcommand=self._autoscroll_y, xscrollcommand=self._autoscroll_x)
+
+        self.tree_scroll_y.config(command=self.tree.yview)
+        self.tree_scroll_x.config(command=self.tree.xview)
 
         self.tree.heading("ID", text="Build ID")
         self.tree.heading("Class Name", text="Class Name")
@@ -182,51 +176,129 @@ class BuildManagerFrame(ResponsiveGridBase):
         self.tree.heading("Description", text="Description")
         self.tree.heading("Upvotes", text="Upvotes")
 
-        self.tree.column("ID", width=60, anchor="center")
-        self.tree.column("Class Name", width=150, anchor="w")
-        self.tree.column("Author", width=120, anchor="w")
-        self.tree.column("Description", width=300, anchor="w")
-        self.tree.column("Upvotes", width=80, anchor="center")
+        self.tree.column("ID", width=60, anchor="center", minwidth=50)
+        self.tree.column("Class Name", width=150, anchor="w", minwidth=100)
+        self.tree.column("Author", width=120, anchor="w", minwidth=80)
+        self.tree.column("Description", width=300, anchor="w", minwidth=150)
+        self.tree.column("Upvotes", width=80, anchor="center", minwidth=50)
 
-        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=vsb.set)
-
-        self.tree.pack(side="left", fill="both", expand=True)
-        vsb.pack(side="right", fill="y")
+        self.tree.grid(row=0, column=0, sticky="nsew")
 
         self.tree.bind("<Double-1>", lambda e: self._edit_build())
 
         # Action Bar (Bottom)
-        bottom_bar = tk.Frame(content, bg=UIStyle.BG_BASE)
-        bottom_bar.grid(row=2, column=0, sticky="ew", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+        bottom_bar = tk.Frame(content, bg=UIStyle.BG_SURFACE, height=50)
+        bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
-        action_frame = tk.Frame(bottom_bar, bg=UIStyle.BG_BASE)
-        action_frame.pack(side="left")
+        add_btn = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_add_build", default=" Thêm"),
+            command=self._add_build,
+            **UIStyle.get_button_style("primary")
+        )
+        add_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        edit_btn = tk.Button(action_frame, text=self.app._t("btn_edit", default=" Sửa"), command=self._edit_build, **UIStyle.get_button_style("secondary"))
-        edit_btn.pack(side="left", padx=(0, UIStyle.SPACE_XS))
+        edit_btn = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_edit", default=" Sửa"),
+            command=self._edit_build,
+            **UIStyle.get_button_style("primary")
+        )
+        edit_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        del_btn = tk.Button(action_frame, text=self.app._t("btn_delete", default=" Xóa"), command=self._delete_build, **UIStyle.get_button_style("danger"))
-        del_btn.pack(side="left", padx=UIStyle.SPACE_XS)
+        del_btn = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_delete", default=" Xóa"),
+            command=self._delete_build,
+            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
+        )
+        del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        # Pagination
-        page_frame = tk.Frame(bottom_bar, bg=UIStyle.BG_BASE)
-        page_frame.pack(side="right")
+        ref_btn = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_refresh", default=" Làm mới"),
+            command=self._on_refresh,
+            **UIStyle.get_button_style("secondary")
+        )
+        ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        # Pagination controls in bottom bar
+        self.btn_next_page = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_next", default="Sau >"),
+            command=self._next_page,
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
+        )
+        self.btn_next_page.pack(side="right", padx=(0, UIStyle.SPACE_MD), pady=UIStyle.SPACE_SM)
+
+        self.lbl_page_info = tk.Label(
+            bottom_bar,
+            text="1 / 1",
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        self.lbl_page_info.pack(side="right", padx=(0, 10))
 
         self.btn_prev_page = tk.Button(
-            page_frame, text="<", command=self._prev_page, width=3,
-            **UIStyle.get_button_style("secondary")
+            bottom_bar,
+            text=self.app._t("btn_prev", default="< Trước"),
+            command=self._prev_page,
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
         )
-        self.btn_prev_page.pack(side="left", padx=UIStyle.SPACE_XS)
+        self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
 
-        self.lbl_page_info = tk.Label(page_frame, text="1 / 1", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
-        self.lbl_page_info.pack(side="left", padx=UIStyle.SPACE_SM)
+    def _autoscroll_y(self, first, last):
+        self.tree_scroll_y.set(first, last)
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self.tree_scroll_y.grid_remove()
+        else:
+            self.tree_scroll_y.grid(row=0, column=1, sticky="ns")
 
-        self.btn_next_page = tk.Button(
-            page_frame, text=">", command=self._next_page, width=3,
-            **UIStyle.get_button_style("secondary")
-        )
-        self.btn_next_page.pack(side="left", padx=UIStyle.SPACE_XS)
+    def _autoscroll_x(self, first, last):
+        self.tree_scroll_x.set(first, last)
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self.tree_scroll_x.grid_remove()
+        else:
+            self.tree_scroll_x.grid(row=1, column=0, sticky="ew")
+
+    def _create_search_bar(self, parent) -> None:
+        search_frame = tk.Frame(parent, bg=UIStyle.BG_BASE)
+        search_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_SM, 0))
+
+        lbl_search = tk.Label(search_frame, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(lbl_search, "search_label")
+        else:
+            lbl_search.config(text=self.app._t("search_label", default="Tìm kiếm:"))
+        lbl_search.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
+
+        self.search_var = tk.StringVar()
+        self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var)
+        self.search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=5)
+        self.search_entry.bind("<KeyRelease>", self._on_search_delayed)
+        self.search_entry.bind("<Escape>", self._on_clear_search)
+        self._search_timer = None
+
+        self.filter_class_var = tk.StringVar()
+        self.filter_class_cb = ttk.Combobox(search_frame, textvariable=self.filter_class_var, state="readonly", width=25)
+        self.filter_class_cb.grid(row=0, column=2, sticky="ew", padx=(0, 5), pady=5)
+        self.filter_class_cb.bind("<<ComboboxSelected>>", self._on_filter_changed)
+
+        search_frame.columnconfigure(1, weight=1)
+
+    def _on_clear_search(self, event=None) -> None:
+        self.search_var.set("")
+        self._apply_filters()
+
+    def _on_refresh(self) -> None:
+        self.search_var.set("")
+        self.filter_class_var.set("All Classes")
+        self.current_page = 1
+        self._load_classes_and_builds()
 
     def on_view_shown(self):
         """Called when this view becomes active in the shell."""
