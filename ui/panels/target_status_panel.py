@@ -184,13 +184,17 @@ class TargetStatusPanel(ttk.LabelFrame):
         empty_canvas.create_oval(2, 2, 30, 30, outline=UI.BORDER_PRIMARY, width=1, dash=(4, 4))
         empty_canvas.create_oval(14, 14, 18, 18, outline=UI.BORDER_PRIMARY, width=1) # center dot
 
-        tk.Label(
+        no_target_lbl = tk.Label(
             self.empty_identity_frame,
-            text=self.app._t("target_status.no_target"),
             font=(self.font_mono, UI.SIZE_SMALL),
             fg=UI.TEXT_MUTED,
             bg=UI.BG_SURFACE
-        ).pack()
+        )
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(no_target_lbl, "target_status.no_target")
+        else:
+            no_target_lbl.config(text=self.app._t("target_status.no_target"))
+        no_target_lbl.pack()
 
         from ui.components.empty_state import EmptyState
         self.empty_state_comp = EmptyState(
@@ -199,6 +203,11 @@ class TargetStatusPanel(ttk.LabelFrame):
             message=self.app._t("target_status.no_target"),
             submessage=self.app._t("target_status.no_target_submessage")
         )
+        if hasattr(self.app, "bind_text"):
+            if hasattr(self.empty_state_comp, "message_label"):
+                self.app.bind_text(self.empty_state_comp.message_label, "target_status.no_target")
+            if hasattr(self.empty_state_comp, "submessage_label"):
+                self.app.bind_text(self.empty_state_comp.submessage_label, "target_status.no_target_submessage")
         self.empty_state_comp.pack(fill="both", expand=True)
 
         # Active state container
@@ -229,14 +238,18 @@ class TargetStatusPanel(ttk.LabelFrame):
         right_col = tk.Frame(self.active_identity_frame, bg=UI.BG_SURFACE)
         right_col.grid(row=0, column=1, sticky="e")
 
-        tk.Label(
+        lvl_lbl = tk.Label(
             right_col,
-            text=self.app._t("target_status.level"),
             font=(self.font_mono, UI.SIZE_TINY),
             fg=UI.TEXT_MUTED,
             bg=UI.BG_SURFACE,
             anchor="e"
-        ).pack(anchor="e")
+        )
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(lvl_lbl, "target_status.level")
+        else:
+            lvl_lbl.config(text=self.app._t("target_status.level"))
+        lvl_lbl.pack(anchor="e")
 
         self.target_level_disp = tk.Label(
             right_col,
@@ -269,9 +282,9 @@ class TargetStatusPanel(ttk.LabelFrame):
         stats_row.grid_columnconfigure(1, weight=1)
         stats_row.grid_columnconfigure(2, weight=1)
 
-        self.def_val_lbl = self._make_stat_pill(stats_row, self.app._t("target_status.defense"), 0)
-        self.type_val_lbl = self._make_stat_pill(stats_row, self.app._t("target_status.type"), 1)
-        self.drop_val_lbl = self._make_stat_pill(stats_row, self.app._t("target_status.drop"), 2)
+        self.def_val_lbl = self._make_stat_pill(stats_row, "target_status.defense", 0, is_key=True)
+        self.type_val_lbl = self._make_stat_pill(stats_row, "target_status.type", 1, is_key=True)
+        self.drop_val_lbl = self._make_stat_pill(stats_row, "target_status.drop", 2, is_key=True)
 
         # Set initial state
         self.update_target(TargetInfo())
@@ -328,7 +341,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         return val_lbl, canvas, fill_rect
 
-    def _make_stat_pill(self, parent, label_text, col):
+    def _make_stat_pill(self, parent, label_text_or_key, col, is_key=False):
         pill = tk.Frame(
             parent,
             bg=UI.BG_ELEVATED,
@@ -339,14 +352,20 @@ class TargetStatusPanel(ttk.LabelFrame):
         )
         pill.grid(row=0, column=col, sticky="nsew", padx=2)
 
-        tk.Label(
+        lbl = tk.Label(
             pill,
-            text=label_text,
             font=(self.font_mono, 9),
             fg=UI.TEXT_SUBTLE,
             bg=UI.BG_ELEVATED,
             anchor="w"
-        ).pack(anchor="w")
+        )
+        if is_key and hasattr(self.app, "bind_text"):
+            self.app.bind_text(lbl, label_text_or_key)
+        elif is_key:
+            lbl.config(text=self.app._t(label_text_or_key))
+        else:
+            lbl.config(text=label_text_or_key)
+        lbl.pack(anchor="w")
 
         val_lbl = tk.Label(
             pill,

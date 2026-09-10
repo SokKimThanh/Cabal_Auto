@@ -44,12 +44,28 @@ class SkillStatsPanel(ResponsiveGridBase):
             "cooldown": ("cooldown_col", int(80 * self.scale_factor)),
             "success": ("success_rate_col", int(80 * self.scale_factor)),
         }
-        for col, (i18n_key, width) in stats_headings.items():
-            self.app.skill_stats_tree.heading(col, text=self.app._t(i18n_key))
-            # Let the skill name column absorb extra width on wider windows; keep the rest fixed.
-            self.app.skill_stats_tree.column(
-                col, width=width, anchor="center", stretch=(col == "skill")
-            )
+        if hasattr(self.app, "bind_text"):
+            class TreeviewHeadingBinder:
+                def __init__(self, tree, column):
+                    self.tree = tree
+                    self.column = column
+                def set_text(self, text):
+                    try:
+                        self.tree.heading(self.column, text=text)
+                    except Exception:
+                        pass
+
+            for col, (i18n_key, width) in stats_headings.items():
+                self.app.bind_text(TreeviewHeadingBinder(self.app.skill_stats_tree, col), i18n_key)
+                self.app.skill_stats_tree.column(
+                    col, width=width, anchor="center", stretch=(col == "skill")
+                )
+        else:
+            for col, (i18n_key, width) in stats_headings.items():
+                self.app.skill_stats_tree.heading(col, text=self.app._t(i18n_key))
+                self.app.skill_stats_tree.column(
+                    col, width=width, anchor="center", stretch=(col == "skill")
+                )
 
         stats_scroll = ttk.Scrollbar(
             tree_container,

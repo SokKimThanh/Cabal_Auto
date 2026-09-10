@@ -19,6 +19,7 @@ from lib.features.hunt.hunt_config import (
     save_hunt_config,
         )
 from ui.helpers.tooltip import attach_i18n_tooltip
+from ui.helpers.translation_binder import TranslationBinder
 from lib.i18n import t as i18n_t
 from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
@@ -177,6 +178,23 @@ class App(tk.Tk):
         kwargs.pop("ns", None)
         return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
 
+    def bind_text(self, widget, key: str, **kwargs):
+        """Binds a widget to a translation key and sets its initial text."""
+        initial_text = self._t(key, **kwargs)
+        if isinstance(widget, tk.Variable):
+            widget.set(initial_text)
+            self.translation_binder.bind_var(widget, key, **kwargs)
+        else:
+            try:
+                if hasattr(widget, 'set_text'):
+                    widget.set_text(initial_text)
+                else:
+                    widget.config(text=initial_text)
+            except Exception:
+                pass
+            self.translation_binder.bind(widget, key, **kwargs)
+        return widget
+
     def __init__(self):
         self.has_unsaved_changes = False
         self._btn_scan_ref = None
@@ -185,6 +203,7 @@ class App(tk.Tk):
         self.monster_selected_index = None
         self._icon_cache = {}
         self._tooltips = {}
+        self.translation_binder = TranslationBinder()
 
         try:
             super().__init__()
@@ -1337,6 +1356,10 @@ class App(tk.Tk):
         # Dynamically update text on widgets without rebuilding
         # _create_icon_btn_component returns a wrapper with set_text/set_tooltip if it's our custom component
         # But if it returns standard button, we config directly.
+
+        if hasattr(self, "translation_binder"):
+            self.translation_binder.refresh_all(self._t)
+
         self._refresh_start_stop_visual()
         self._update_unsaved_indicator()
 

@@ -60,8 +60,12 @@ class SkillPanel(ttk.LabelFrame):
         ).pack(side="left")
 
         self.widgets["preset_indicator"] = tk.Label(
-            header_frame, text=self.app_state._t("skill_panel.preset_default"), bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY
+            header_frame, bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY
         )
+        if hasattr(self.app_state, "bind_text"):
+            self.app_state.bind_text(self.widgets["preset_indicator"], "skill_panel.preset_default")
+        else:
+            self.widgets["preset_indicator"].config(text=self.app_state._t("skill_panel.preset_default"))
         self.widgets["preset_indicator"].pack(side="left", padx=(10, 0))
 
         btn_frame = tk.Frame(header_frame, bg=UI.BG_ELEVATED)
@@ -219,8 +223,12 @@ class SkillPanel(ttk.LabelFrame):
         self.widgets["combo_indicator_dot"].pack(side="left", padx=(10, 5), pady=10)
 
         self.widgets["combo_indicator_text"] = tk.Label(
-            controls_frame, text=self.app_state._t("skill_panel.combo_inactive"), bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED
+            controls_frame, bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED
         )
+        if hasattr(self.app_state, "bind_text"):
+            self.app_state.bind_text(self.widgets["combo_indicator_text"], "skill_panel.combo_inactive")
+        else:
+            self.widgets["combo_indicator_text"].config(text=self.app_state._t("skill_panel.combo_inactive"))
         self.widgets["combo_indicator_text"].pack(side="left", pady=10)
 
         self.widgets["btn_start_combo"] = tk.Button(

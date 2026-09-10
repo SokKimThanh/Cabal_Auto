@@ -17,16 +17,18 @@ class ActivityLogsFrame(tk.Frame):
 
         self.title_label = tk.Label(
             self.header_frame,
-            text=self.app._t("logs_title"),
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_PRIMARY,
             font=UI.FONT_TITLE,
         )
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(self.title_label, "logs_title")
+        else:
+            self.title_label.config(text=self.app._t("logs_title"))
         self.title_label.pack(side="left", padx=12)
 
         self.clear_btn = tk.Button(
             self.header_frame,
-            text=self.app._t("logs_clear"),
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_PRIMARY,
             font=UI.FONT_BODY,
@@ -36,6 +38,10 @@ class ActivityLogsFrame(tk.Frame):
             cursor="hand2",
             command=self.clear,
         )
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(self.clear_btn, "logs_clear")
+        else:
+            self.clear_btn.config(text=self.app._t("logs_clear"))
         self.clear_btn.pack(side="right", padx=12)
 
         # Content container

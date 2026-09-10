@@ -35,11 +35,14 @@ class MonsterManagerFrame(ResponsiveGridBase):
         # Title Label
         title_lbl = tk.Label(
             content_frame,
-            text=self.app._t("monster_manager_title", default="Quản lý Quái vật"),
             font=(UIStyle.resolve_font_family("title"), 16, "bold"),
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY
         )
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(title_lbl, "monster_manager_title")
+        else:
+            title_lbl.config(text=self.app._t("monster_manager_title", default="Quản lý Quái vật"))
         title_lbl.pack(pady=UIStyle.SPACE_MD)
 
         self._create_search_bar(content_frame)
@@ -148,7 +151,11 @@ class MonsterManagerFrame(ResponsiveGridBase):
         search_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_SM, 0))
 
         # Keyword Search
-        lbl_search = tk.Label(search_frame, text=self.app._t("search_label", default="Tìm kiếm:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
+        lbl_search = tk.Label(search_frame, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
+        if hasattr(self.app, "bind_text"):
+            self.app.bind_text(lbl_search, "search_label")
+        else:
+            lbl_search.config(text=self.app._t("search_label", default="Tìm kiếm:"))
         lbl_search.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
 
         self.search_entry = tk.Entry(search_frame, font=(UIStyle.resolve_font_family("text"), 10))
