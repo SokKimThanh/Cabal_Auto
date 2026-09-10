@@ -23,8 +23,8 @@ class MonsterManagerFrame(ResponsiveGridBase):
         self.total_pages = 1
         self.total_records = 0
         self.keyword = ""
-        self.monster_type_filter = "All Monsters"
-        self.dungeon_filter = "All Locations"
+        self.monster_type_filter = self.app._t("all_monsters", default="All Monsters") if self.app else "All Monsters"
+        self.dungeon_filter = self.app._t("all_locations", default="All Habitats") if self.app else "All Locations"
 
         self._setup_ui()
         self._load_reference_data()
@@ -158,13 +158,13 @@ class MonsterManagerFrame(ResponsiveGridBase):
         self.search_entry.bind("<Escape>", self._on_clear_search)
 
         # Monster Type
-        self.monster_type_var = tk.StringVar(value="All Monsters")
+        self.monster_type_var = tk.StringVar(value=self.monster_type_filter)
         self.monster_type_box = ttk.Combobox(search_frame, textvariable=self.monster_type_var, state="readonly", width=15)
         self.monster_type_box.grid(row=0, column=2, sticky="ew", padx=(0, 5), pady=5)
         self.monster_type_box.bind("<<ComboboxSelected>>", self._on_filter_changed)
 
         # Location / Dungeon
-        self.location_var = tk.StringVar(value="All Locations")
+        self.location_var = tk.StringVar(value=self.dungeon_filter)
         self.location_box = ttk.Combobox(search_frame, textvariable=self.location_var, state="readonly", width=15)
         self.location_box.grid(row=0, column=3, sticky="ew", padx=(0, 5), pady=5)
         self.location_box.bind("<<ComboboxSelected>>", self._on_filter_changed)
@@ -209,11 +209,11 @@ class MonsterManagerFrame(ResponsiveGridBase):
     def _on_refresh(self) -> None:
         self.search_entry.delete(0, tk.END)
         self.keyword = ""
-        self.monster_type_var.set("All Monsters")
-        self.location_var.set("All Locations")
+        self.monster_type_var.set(self.app._t("all_monsters", default="All Monsters") if self.app else "All Monsters")
+        self.location_var.set(self.app._t("all_locations", default="All Habitats") if self.app else "All Locations")
         self.page_size_var.set("25")
-        self.monster_type_filter = "All Monsters"
-        self.dungeon_filter = "All Locations"
+        self.monster_type_filter = self.app._t("all_monsters", default="All Monsters") if self.app else "All Monsters"
+        self.dungeon_filter = self.app._t("all_locations", default="All Habitats") if self.app else "All Locations"
         self.page_size = 25
         self.current_page = 1
         self._load_monsters()
@@ -253,13 +253,13 @@ class MonsterManagerFrame(ResponsiveGridBase):
         try:
             type_list = self.db.get_monster_type_list() if hasattr(self.db, "get_monster_type_list") else []
             self.type_map = {str(t['value']): t['label'] for t in type_list}
-            type_values = ["All Monsters"] + [t['label'] for t in type_list]
+            type_values = [self.app._t("all_monsters", default="All Monsters") if self.app else "All Monsters"] + [t['label'] for t in type_list]
             if hasattr(self, "monster_type_box"):
                 self.monster_type_box.config(values=type_values)
 
             dungeon_list = self.db.get_dungeon_list() if hasattr(self.db, "get_dungeon_list") else []
             self.dungeon_map = {str(d['id']): d['name'] for d in dungeon_list}
-            dungeon_values = ["All Locations"] + [d['name'] for d in dungeon_list]
+            dungeon_values = [self.app._t("all_locations", default="All Habitats") if self.app else "All Locations"] + [d['name'] for d in dungeon_list]
             if hasattr(self, "location_box"):
                 self.location_box.config(values=dungeon_values)
 
@@ -268,8 +268,8 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
     def _load_monsters(self):
         try:
-            m_type = self.monster_type_filter if self.monster_type_filter != "All Monsters" else None
-            d_id = self.dungeon_filter if self.dungeon_filter != "All Locations" else None
+            m_type = self.monster_type_filter if self.monster_type_filter != (self.app._t("all_monsters", default="All Monsters") if self.app else "All Monsters") else None
+            d_id = self.dungeon_filter if self.dungeon_filter != (self.app._t("all_locations", default="All Habitats") if self.app else "All Locations") else None
 
             # Map values back to IDs for the database query
             if m_type:
