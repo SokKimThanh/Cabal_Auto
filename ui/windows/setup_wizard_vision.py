@@ -863,7 +863,7 @@ class VisionWizard(tk.Toplevel):
         btn_add = ttk.Button(
             left_buttons,
             text=i18n_t(
-                "btn_add_template", ns="vision_wizard", default="Thêm Template"
+                "btn_add", ns="vision_wizard", default="Thêm Template"
             ),
             command=self.add_template,
         )
@@ -874,7 +874,7 @@ class VisionWizard(tk.Toplevel):
 
         btn_remove = ttk.Button(
             left_buttons,
-            text=i18n_t("btn_remove_template", ns="vision_wizard", default="Xóa"),
+            text=i18n_t("btn_delete", ns="vision_wizard", default="Xóa"),
             command=self.remove_template,
         )
         btn_remove.pack(side="left", padx=5)
@@ -1865,7 +1865,7 @@ class VisionWizard(tk.Toplevel):
         file_path = filedialog.askopenfilename(
             parent=self,
             title=i18n_t(
-                "btn_add_template", ns="vision_wizard", default="Thêm Template"
+                "btn_add", ns="vision_wizard", default="Thêm Template"
             ),
             filetypes=filetypes,
         )

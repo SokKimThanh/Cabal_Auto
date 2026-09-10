@@ -570,7 +570,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             command=lambda: None,
             text="Delete",
             padding={"padx": 12, "pady": 6},
-            tooltip_key="btn_delete_template",
+            tooltip_key="tooltip_delete_template",
             tooltip_ns="monster_editor",
         )
         self.test_template_button = create_icon_button(
@@ -1221,10 +1221,10 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.btn_cancel_delete = create_cancel_button(
             btn_box,
             command=self._hide_confirmation_banner,
-            text=i18n_t("btn_cancel_confirm", ns="monster_editor", default="✖ Hủy"),
+            text=i18n_t("btn_cancel", ns="monster_editor", default="Hủy"),
             padding={"padx": 12, "pady": 6},
             tooltip_text=i18n_t(
-                "btn_cancel_confirm", ns="monster_editor", default="✖ Hủy"
+                "btn_cancel", ns="monster_editor", default="Hủy"
             ),
         )
         self.btn_cancel_delete.pack(side="right", padx=3)
@@ -1288,7 +1288,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.add_monster_button = create_add_button(
             self.bottom_bar_frame,
             command=self._on_add_monster,
-            text=i18n_t("btn_add_monster", ns="monster_editor", default=" Thêm Quái"),
+            text=i18n_t("btn_add", ns="monster_editor", default="Thêm Quái"),
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_add_monster",
             tooltip_ns="monster_editor",
@@ -1299,7 +1299,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.edit_btn = create_icon_button(
             self.bottom_bar_frame,
             icon_name="edit",
-            text=i18n_t("btn_edit_monster", ns="monster_editor", default=" Sửa"),
+            text=i18n_t("btn_edit", ns="monster_editor", default="Sửa"),
             icon_fallback="✏️",
             command=self._on_edit_monster_selected,
             button_type="blue",
@@ -1313,7 +1313,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.delete_monster_button = create_delete_button(
             self.bottom_bar_frame,
             command=self._on_delete_monster,
-            text=i18n_t("btn_delete_monster", ns="monster_editor", default=" Xóa"),
+            text=i18n_t("btn_delete", ns="monster_editor", default="Xóa"),
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_delete_monster",
             tooltip_ns="monster_editor",
