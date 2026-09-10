@@ -49,7 +49,15 @@ class TranslationBinder:
             if widget is not None:
                 try:
                     new_text = translator_func(key, **kwargs)
-                    if isinstance(widget, (tk.Label, ttk.Label, tk.Button, ttk.Button, tk.Checkbutton, ttk.Checkbutton, tk.Radiobutton, ttk.Radiobutton)):
+                    if isinstance(widget, (
+                        tk.Label, ttk.Label,
+                        tk.Button, ttk.Button,
+                        tk.Checkbutton, ttk.Checkbutton,
+                        tk.Radiobutton, ttk.Radiobutton,
+                        tk.LabelFrame, ttk.LabelFrame,
+                        tk.Menubutton, ttk.Menubutton,
+                        tk.Message
+                    )):
                         widget.config(text=new_text)
                     # Support for our custom icon button wrapper which might have set_text
                     elif hasattr(widget, 'set_text'):
