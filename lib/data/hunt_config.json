@@ -32,7 +32,8 @@
         "stop_key": "ctrl+shift+e",
         "library_manager_key": "ctrl+shift+l",
         "vision_wizard_key": "ctrl+shift+v",
-        "monster_editor_key": "ctrl+shift+m"
+        "monster_editor_key": "ctrl+shift+m",
+        "build_manager_key": "ctrl+b"
     },
     "is_configured": true,
     "target_key": "TAB",
