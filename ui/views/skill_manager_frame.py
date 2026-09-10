@@ -56,7 +56,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         class_lbl = tk.Label(filter_frame, text=self.app._t("lbl_class", default="Class:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
         class_lbl.pack(side="left", padx=(0, 5))
         self.class_combo = ttk.Combobox(filter_frame, textvariable=self.class_filter_var, state="readonly", width=15)
-        self.class_combo.grid(row=0, column=2, sticky="ew", padx=(0, 5), pady=5)
+        self.class_combo.pack(side="left", padx=(0, 15))
         self.class_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
         self._load_classes()
 
@@ -66,16 +66,16 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.type_combo = ttk.Combobox(filter_frame, textvariable=self.type_filter_var, state="readonly", width=15,
                                        values=["All", "Attack", "Buff", "Dash", "Blink", "Passive", "GM"])
         self.type_combo.current(0)
-        self.type_combo.grid(row=0, column=3, sticky="ew", padx=(0, 5), pady=5)
+        self.type_combo.pack(side="left", padx=(0, 15))
         self.type_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
 
         # Page size
+        page_size_lbl = tk.Label(filter_frame, text=self.app._t("lbl_page_size", default="Page size:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
+        page_size_lbl.pack(side="left", padx=(0, 5))
         self.page_size_var = tk.StringVar(value="25")
         self.page_size_box = ttk.Combobox(filter_frame, textvariable=self.page_size_var, state="readonly", width=5, values=["25", "50", "100", "200"])
-        self.page_size_box.grid(row=0, column=4, sticky="ew", padx=(0, 5), pady=5)
+        self.page_size_box.pack(side="left", padx=(0, 5))
         self.page_size_box.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
-
-        filter_frame.columnconfigure(1, weight=1)
 
         # Treeview Area
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
