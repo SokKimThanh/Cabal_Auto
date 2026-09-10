@@ -749,6 +749,13 @@ class App(tk.Tk):
                 "monster_manager",
                 "🐉",
             ),
+            (
+                "btn_class_manager",
+                lambda: self.switch_view("class_manager"),
+                UI.FONT_SECTION,
+                "class_manager",
+                "shield",
+            ),
 
             (
                 "sidebar_activity_logs",
@@ -793,18 +800,33 @@ class App(tk.Tk):
             button.bind("<Enter>", on_enter)
             button.bind("<Leave>", on_leave)
 
+        from ui.helpers.icon_helper import get_icon_helper
+        icon_helper = get_icon_helper()
+
         for _item_idx, item in enumerate(sidebar_items):
             key, command, font, view_target, icon = item
+
+            # Resolve icon: Use PhotoImage if it's a known non-emoji string, otherwise treat as emoji/text
+            is_image_icon = False
+            icon_img = None
+            if isinstance(icon, str) and len(icon) > 2 and hasattr(icon_helper, "has_icon_file") and icon_helper.has_icon_file(icon):
+                is_image_icon = True
+                icon_img = icon_helper.get_icon(icon, size=24)
+
             if command is None:
                 # Section label (not used in current items but keep logic for safety)
                 lbl = tk.Label(
                     self.shell_zone_c1.get_content_frame(),
-                    text=f"{icon}",
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_SECONDARY,
                     font=font,
                     anchor="w",
                 )
+                if is_image_icon and icon_img and not isinstance(icon_img, str):
+                    lbl.config(image=icon_img)
+                    lbl.image = icon_img
+                else:
+                    lbl.config(text=f"{icon}")
                 lbl.pack(fill="x", pady=(10, 4))
                 self._sidebar_widgets.append(SidebarWidgetDef(widget=lbl, key=key, view_target=view_target, icon=icon))
             else:
@@ -819,7 +841,6 @@ class App(tk.Tk):
 
                 btn = tk.Button(
                     menu_cell,
-                    text=f" {icon} ",
                     command=command,
                     bg=UI.BG_ELEVATED,
                     fg=UI.TEXT_PRIMARY,
@@ -830,6 +851,12 @@ class App(tk.Tk):
                     relief="flat",
                     cursor="hand2",
                 )
+
+                if is_image_icon and icon_img and not isinstance(icon_img, str):
+                    btn.config(image=icon_img)
+                    btn.image = icon_img
+                else:
+                    btn.config(text=f" {icon} ")
 
                 apply_button_hover_effects(
                     btn, hover_color=UI.BG_SURFACE
@@ -1047,8 +1074,10 @@ class App(tk.Tk):
         self._views["logs"] = ActivityLogsFrame(self.shell_zone_b, self)
         from ui.views.monster_manager_frame import MonsterManagerFrame
         from ui.views.skill_manager_frame import SkillManagerFrame
+        from ui.views.class_manager_frame import ClassManagerFrame
         self._views["monster_manager"] = MonsterManagerFrame(self.shell_zone_b, self)
         self._views["skill_manager"] = SkillManagerFrame(self.shell_zone_b, self)
+        self._views["class_manager"] = ClassManagerFrame(self.shell_zone_b, self)
 
         self.logs_text_widget = self._views["logs"].text_widget
 
@@ -1241,20 +1270,25 @@ class App(tk.Tk):
             for item in self._sidebar_widgets:
                 if isinstance(item.widget, tk.Button):
                     _original_text = self._t(item.key)
+
+                    is_image = hasattr(item.widget, "image")
+
                     if item.view_target == view_key:
                         item.widget._sidebar_active = True
                         item.widget.config(
                             bg=UI.BG_SURFACE,
                             fg=UI.ACCENT_GREEN,
-                            text=f" {item.icon} ",
                         )
+                        if not is_image:
+                            item.widget.config(text=f" {item.icon} ")
                     else:
                         item.widget._sidebar_active = False
                         item.widget.config(
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
-                            text=f" {item.icon} ",
                         )
+                        if not is_image:
+                            item.widget.config(text=f" {item.icon} ")
 
         if hasattr(target_view, "on_view_shown"):
             target_view.on_view_shown()
