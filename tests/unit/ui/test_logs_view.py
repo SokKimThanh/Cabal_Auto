@@ -32,8 +32,8 @@ def test_logger_queue_cap():
 
 @pytest.fixture
 def app():
-    with patch("app_gui.pyautogui", MagicMock()), patch(
-        "app_gui.keyboard", MagicMock()
+    with patch("app_gui.pyautogui", MagicMock(), create=True), patch(
+        "app_gui.keyboard", MagicMock(), create=True
     ), patch.dict(
         sys.modules,
         {
