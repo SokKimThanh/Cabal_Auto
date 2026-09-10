@@ -5,7 +5,6 @@ from lib.features.skills.skill_preset_service import SkillPresetService
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 
 
-
 class SkillPanel(ttk.LabelFrame):
     """Full panel with both widgets AND logic"""
 
@@ -18,7 +17,7 @@ class SkillPanel(ttk.LabelFrame):
         self.hunt_tab = hunt_tab
         self.skill_service = SkillPresetService()
         self.widgets = {}
-        self.frame = self # Alias for backwards compatibility
+        self.frame = self  # Alias for backwards compatibility
         self._build()
 
         # Register for app state changes
@@ -102,6 +101,17 @@ class SkillPanel(ttk.LabelFrame):
         )
         self.widgets["btn_reset"].pack(side="left", padx=2)
 
+        self.widgets["btn_save_preset"] = tk.Button(
+            btn_frame,
+            text="[💾 Save Preset]",
+            command=self._on_save_preset_click,
+            bg=UI.BG_ELEVATED,
+            fg=UI.ACCENT_BLUE,
+            relief="flat",
+            bd=0,
+        )
+        self.widgets["btn_save_preset"].pack(side="left", padx=2)
+
         # Load available skills for combobox values
         class_id = getattr(self.app_state, "_current_class_id", 1)
         skills = self.skill_service.skill_repo.list_skills(class_id=class_id)
@@ -117,7 +127,6 @@ class SkillPanel(ttk.LabelFrame):
         combo_frame.columnconfigure(1, weight=1)
         combo_frame.columnconfigure(2, weight=1)
         combo_frame.columnconfigure(3, weight=1)
-
 
         self.widgets["combo_dropdowns"] = []
         self.widgets["combo_hotkeys"] = []
@@ -137,7 +146,7 @@ class SkillPanel(ttk.LabelFrame):
             header.pack(fill="x", padx=8, pady=(8, 2))
             tk.Label(
                 header,
-                text=f"{getattr(self.app_state, '_t', lambda x: x)('skill_strip.combo_lane')} {i+1}",
+                text=f"{getattr(self.app_state, '_t', lambda x: x)('skill_strip.combo_lane')} {i + 1}",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
@@ -253,8 +262,6 @@ class SkillPanel(ttk.LabelFrame):
         )
         # Initially hidden
 
-
-
         self.widgets["buff_dropdowns"] = []
         self.widgets["buff_hotkeys"] = []
         self.widgets["buff_stats"] = []
@@ -272,7 +279,7 @@ class SkillPanel(ttk.LabelFrame):
             header.pack(fill="x", padx=8, pady=(8, 2))
             tk.Label(
                 header,
-                text=self.app_state._t("skill_panel.buff_lane").format(num=i+1),
+                text=self.app_state._t("skill_panel.buff_lane").format(num=i + 1),
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,
@@ -291,7 +298,6 @@ class SkillPanel(ttk.LabelFrame):
             hk_entry.bind("<FocusOut>", lambda e, idx=i: self._on_hotkey_changed(e, "buff_lane", idx))
             hk_entry.bind("<Return>", lambda e, idx=i: self._on_hotkey_changed(e, "buff_lane", idx))
             self.widgets["buff_hotkeys"].append(hk_entry)
-
 
             dd_var = tk.StringVar()
             dd = ttk.Combobox(
@@ -323,6 +329,7 @@ class SkillPanel(ttk.LabelFrame):
             )
             cd_lbl.pack(side="right")
             self.widgets["buff_stats"].append((cast_lbl, cd_lbl))
+
     def on_start_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🟢")
         self.widgets["combo_indicator_text"].config(text=self.app_state._t("skill_panel.combo_active"), fg=UI.ACCENT_GREEN)
@@ -395,24 +402,32 @@ class SkillPanel(ttk.LabelFrame):
 
                         # Update Stats
                         if runtime_info:
-                            if cast_lbl: cast_lbl.config(text=f"⏱ {runtime_info.get('cast_time', 0)}s")
-                            if cd_lbl: cd_lbl.config(text=f"🔄 {runtime_info.get('cooldown', 0)}s")
+                            if cast_lbl:
+                                cast_lbl.config(text=f"⏱ {runtime_info.get('cast_time', 0)}s")
+                            if cd_lbl:
+                                cd_lbl.config(text=f"🔄 {runtime_info.get('cooldown', 0)}s")
                         else:
-                            if cast_lbl: cast_lbl.config(text="⏱ -")
-                            if cd_lbl: cd_lbl.config(text="🔄 -")
+                            if cast_lbl:
+                                cast_lbl.config(text="⏱ -")
+                            if cd_lbl:
+                                cd_lbl.config(text="🔄 -")
 
                     else:
                         dd.set("")
                         if hk_entry:
                             hk_entry.delete(0, 'end')
-                        if cast_lbl: cast_lbl.config(text="⏱ -")
-                        if cd_lbl: cd_lbl.config(text="🔄 -")
+                        if cast_lbl:
+                            cast_lbl.config(text="⏱ -")
+                        if cd_lbl:
+                            cd_lbl.config(text="🔄 -")
                 else:
                     dd.set("")
                     if hk_entry:
                         hk_entry.delete(0, 'end')
-                    if cast_lbl: cast_lbl.config(text="⏱ -")
-                    if cd_lbl: cd_lbl.config(text="🔄 -")
+                    if cast_lbl:
+                        cast_lbl.config(text="⏱ -")
+                    if cd_lbl:
+                        cd_lbl.config(text="🔄 -")
 
         # Update preset indicator
         preset_mode = getattr(self.app_state, "_preset_mode", "default")
@@ -450,6 +465,62 @@ class SkillPanel(ttk.LabelFrame):
         class_id = getattr(self.app_state, "_current_class_id", 1)
         if hasattr(self.app_state, "apply_default_preset"):
             self.app_state.apply_default_preset(class_id)
+
+    def _on_save_preset_click(self):
+        from ui.dialogs.create_preset_dialog import CreatePresetDialog
+        import tkinter.messagebox as messagebox
+
+        # Disable button to prevent multiple clicks
+        self.widgets["btn_save_preset"].config(state="disabled")
+
+        class_id = getattr(self.app_state, "_current_class_id", 1)
+
+        # Prepare skill summary
+        skill_slots = getattr(self.app_state, "skill_slots", {"attack_combo": [], "buff_lane": []})
+        skill_summary = {}
+        for lane, skills in skill_slots.items():
+            lane_names = []
+            for slot_data in skills:
+                if not slot_data:
+                    continue
+                skill_id = slot_data.get("skill_id") if isinstance(slot_data, dict) else slot_data
+                if skill_id is not None:
+                    skill = self.skill_service.skill_repo.get_skill(skill_id)
+                    if skill:
+                        lane_names.append(skill.get("name", f"Unknown ID {skill_id}"))
+            skill_summary[lane] = lane_names
+
+        def _on_save(preset_name):
+            parsed_slots = {}
+            for lane, skills in skill_slots.items():
+                parsed_lane = []
+                for slot_data in skills:
+                    if not slot_data:
+                        continue
+                    skill_id = slot_data.get("skill_id") if isinstance(slot_data, dict) else slot_data
+                    if skill_id is not None:
+                        parsed_lane.append(skill_id)
+                parsed_slots[lane] = parsed_lane
+
+            res = self.skill_service.create_custom_preset(class_id, preset_name, parsed_slots)
+            if res.get("success"):
+                messagebox.showinfo("Success", f"Đã lưu preset '{preset_name}' thành công!", parent=self.frame)
+                # Refresh indicator
+                self.on_skill_slots_changed(skill_slots)
+            else:
+                messagebox.showerror("Error", f"Lỗi khi lưu preset: {res.get('error')}", parent=self.frame)
+
+        dialog = CreatePresetDialog(
+            parent=self.winfo_toplevel(),
+            class_id=class_id,
+            skill_summary=skill_summary,
+            on_save_callback=_on_save
+        )
+        self.wait_window(dialog)
+
+        # Safely re-enable button
+        if self.winfo_exists() and "btn_save_preset" in self.widgets:
+            self.widgets["btn_save_preset"].config(state="normal")
 
     def get_frame(self):
         return self.frame
