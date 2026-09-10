@@ -122,11 +122,11 @@ def test_switch_view_updates_sidebar_visual_state(monkeypatch):
         # Find the setup button and check its color
         setup_btn = None
         hunt_btn = None
-        for widget, key, view_target, icon in app._sidebar_widgets:
-            if view_target == 'setup':
-                setup_btn = widget
-            elif view_target == "hunt":
-                hunt_btn = widget
+        for item in app._sidebar_widgets:
+            if item.view_target == 'setup':
+                setup_btn = item.widget
+            elif item.view_target == "hunt":
+                hunt_btn = item.widget
 
         assert setup_btn is not None
         assert setup_btn.cget('bg') in (UIStyleV2.BG_SURFACE, UIStyleV2.ACCENT_GREEN_BG)
