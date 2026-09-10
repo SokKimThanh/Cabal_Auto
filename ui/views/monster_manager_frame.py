@@ -2,14 +2,15 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Dict, Any, List
 
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from database import get_db, get_all_monsters_api
 from dialogs.monster_edit import MonsterEditDialog
 
-class MonsterManagerFrame(tk.Frame):
+class MonsterManagerFrame(ResponsiveGridBase):
 
-    def __init__(self, parent, app):
-        super().__init__(parent, bg=UIStyle.THEME_BG_APP)
+    def __init__(self, parent, app=None, *args, **kwargs):
+        super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app
         self.monsters = []
         self.db = get_db()
@@ -30,20 +31,21 @@ class MonsterManagerFrame(tk.Frame):
         self._load_monsters()
 
     def _setup_ui(self):
+        content_frame = self.get_content_frame()
         # Title Label
         title_lbl = tk.Label(
-            self,
+            content_frame,
             text=self.app._t("monster_manager_title", default="Quản lý Quái vật"),
             font=(UIStyle.resolve_font_family("title"), 16, "bold"),
-            bg=UIStyle.THEME_BG_APP,
+            bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY
         )
         title_lbl.pack(pady=UIStyle.SPACE_MD)
 
-        self._create_search_bar()
+        self._create_search_bar(content_frame)
 
         # Treeview Area
-        table_frame = tk.Frame(self, bg=UIStyle.THEME_BG_APP)
+        table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
         table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
 
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
@@ -73,19 +75,17 @@ class MonsterManagerFrame(tk.Frame):
 
         self.tree.bind("<Double-1>", lambda e: self._edit_monster())
 
-        self._create_pagination_bar()
+        # Pagination bar removed
 
         # Bottom Bar for Actions
-        bottom_bar = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL, height=50)
+        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
         add_btn = tk.Button(
             bottom_bar,
             text=self.app._t("btn_add_monster", default=" Thêm"),
             command=self._add_monster,
-            bg=UIStyle.ACCENT_GREEN,
-            fg="white",
-            relief="flat"
+            **UIStyle.get_button_style("primary")
         )
         add_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
@@ -93,9 +93,7 @@ class MonsterManagerFrame(tk.Frame):
             bottom_bar,
             text=self.app._t("btn_edit_monster", default=" Sửa"),
             command=self._edit_monster,
-            bg=UIStyle.ACCENT_GREEN,
-            fg="white",
-            relief="flat"
+            **UIStyle.get_button_style("primary")
         )
         edit_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
@@ -103,9 +101,7 @@ class MonsterManagerFrame(tk.Frame):
             bottom_bar,
             text=self.app._t("btn_del_monster", default=" Xóa"),
             command=self._delete_monster,
-            bg="#dc3545",
-            fg="white",
-            relief="flat"
+            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
         )
         del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
@@ -113,18 +109,46 @@ class MonsterManagerFrame(tk.Frame):
             bottom_bar,
             text=self.app._t("btn_refresh_monster", default=" Làm mới"),
             command=self._on_refresh,
-            bg=UIStyle.BG_ELEVATED,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            **UIStyle.get_button_style("secondary")
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-    def _create_search_bar(self) -> None:
-        search_frame = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL)
+        # Pagination controls in bottom bar
+        self.btn_next_page = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_next", default="Sau >"),
+            command=self._on_next_page,
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
+        )
+        self.btn_next_page.pack(side="right", padx=(0, UIStyle.SPACE_MD), pady=UIStyle.SPACE_SM)
+
+        self.stats_label = tk.Label(
+            bottom_bar,
+            text="1 / 1",
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        self.stats_label.pack(side="right", padx=(0, 10))
+
+        self.btn_prev_page = tk.Button(
+            bottom_bar,
+            text=self.app._t("btn_prev", default="< Trước"),
+            command=self._on_prev_page,
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY,
+            relief="flat"
+        )
+        self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
+
+
+    def _create_search_bar(self, parent) -> None:
+        search_frame = tk.Frame(parent, bg=UIStyle.BG_SURFACE)
         search_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_SM, 0))
 
         # Keyword Search
-        lbl_search = tk.Label(search_frame, text=self.app._t("search_label", default="Tìm kiếm:"), bg=UIStyle.THEME_BG_PANEL, fg=UIStyle.TEXT_PRIMARY)
+        lbl_search = tk.Label(search_frame, text=self.app._t("search_label", default="Tìm kiếm:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
         lbl_search.grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
 
         self.search_entry = tk.Entry(search_frame, font=(UIStyle.resolve_font_family("text"), 10))
@@ -151,27 +175,6 @@ class MonsterManagerFrame(tk.Frame):
         self.page_size_box.bind("<<ComboboxSelected>>", self._on_filter_changed)
 
         search_frame.columnconfigure(1, weight=1)
-
-    def _create_pagination_bar(self) -> None:
-        page_frame = tk.Frame(self, bg=UIStyle.THEME_BG_PANEL)
-        page_frame.pack(fill="x", padx=UIStyle.SPACE_MD, pady=(0, UIStyle.SPACE_SM))
-
-        self.stats_label = tk.Label(page_frame, text="", bg=UIStyle.THEME_BG_PANEL, fg=UIStyle.TEXT_SECONDARY)
-        self.stats_label.pack(side="left", padx=5, pady=5)
-
-        # Controls on right
-        controls_frame = tk.Frame(page_frame, bg=UIStyle.THEME_BG_PANEL)
-        controls_frame.pack(side="right", padx=5)
-
-        self.btn_prev_page = tk.Button(controls_frame, text="<", command=self._on_prev_page, bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
-        self.btn_prev_page.pack(side="left", padx=2)
-
-        self.page_entry = tk.Entry(controls_frame, width=4, justify="center")
-        self.page_entry.pack(side="left", padx=2)
-        self.page_entry.bind("<Return>", lambda e: self._go_to_page_from_entry())
-
-        self.btn_next_page = tk.Button(controls_frame, text=">", command=self._on_next_page, bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
-        self.btn_next_page.pack(side="left", padx=2)
 
     def _sort_treeview(self, col, reverse):
         l = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
@@ -231,31 +234,19 @@ class MonsterManagerFrame(tk.Frame):
             self.current_page += 1
             self._load_monsters()
 
-    def _go_to_page_from_entry(self) -> None:
-        try:
-            page = int(self.page_entry.get().strip())
-            if page < 1:
-                page = 1
-            elif page > self.total_pages:
-                page = self.total_pages
-            if page != self.current_page:
-                self.current_page = page
-                self._load_monsters()
-            else:
-                self._update_page_ui()
-        except ValueError:
-            self._update_page_ui()
-
     def _update_page_ui(self) -> None:
-        self.page_entry.delete(0, tk.END)
-        self.page_entry.insert(0, str(self.current_page))
-
-        displayed = len(self.monsters)
-        stats_text = f"Hiển thị {displayed} / {self.total_records} (Trang {self.current_page}/{self.total_pages})"
+        stats_text = f"{self.current_page} / {max(1, self.total_pages)}"
         self.stats_label.config(text=stats_text)
 
-        self.btn_prev_page.config(state="normal" if self.current_page > 1 else "disabled")
-        self.btn_next_page.config(state="normal" if self.current_page < self.total_pages else "disabled")
+        if self.current_page <= 1:
+            self.btn_prev_page.config(state="disabled")
+        else:
+            self.btn_prev_page.config(state="normal")
+
+        if self.current_page >= self.total_pages:
+            self.btn_next_page.config(state="disabled")
+        else:
+            self.btn_next_page.config(state="normal")
 
     def _load_reference_data(self):
         try:
