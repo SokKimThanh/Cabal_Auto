@@ -802,6 +802,7 @@ class App(tk.Tk):
 
         from ui.helpers.icon_helper import get_icon_helper
         icon_helper = get_icon_helper()
+        self.icon_helper = icon_helper
 
         for _item_idx, item in enumerate(sidebar_items):
             key, command, font, view_target, icon = item
@@ -811,7 +812,7 @@ class App(tk.Tk):
             icon_img = None
             if isinstance(icon, str) and len(icon) > 2 and hasattr(icon_helper, "has_icon_file") and icon_helper.has_icon_file(icon):
                 is_image_icon = True
-                icon_img = icon_helper.get_icon(icon, size=24)
+                icon_img = icon_helper.get_icon(icon, size=24, color=UI.TEXT_PRIMARY)
 
             if command is None:
                 # Section label (not used in current items but keep logic for safety)
@@ -855,6 +856,7 @@ class App(tk.Tk):
                 if is_image_icon and icon_img and not isinstance(icon_img, str):
                     btn.config(image=icon_img)
                     btn.image = icon_img
+                    btn._icon_name = icon
                 else:
                     btn.config(text=f" {icon} ")
 
@@ -1279,7 +1281,11 @@ class App(tk.Tk):
                             bg=UI.BG_SURFACE,
                             fg=UI.ACCENT_GREEN,
                         )
-                        if not is_image:
+                        if is_image and hasattr(item.widget, "_icon_name") and hasattr(self, "icon_helper"):
+                            new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=UI.ACCENT_GREEN)
+                            item.widget.config(image=new_icon)
+                            item.widget.image = new_icon
+                        elif not is_image:
                             item.widget.config(text=f" {item.icon} ")
                     else:
                         item.widget._sidebar_active = False
@@ -1287,7 +1293,11 @@ class App(tk.Tk):
                             bg=UI.BG_ELEVATED,
                             fg=UI.TEXT_PRIMARY,
                         )
-                        if not is_image:
+                        if is_image and hasattr(item.widget, "_icon_name") and hasattr(self, "icon_helper"):
+                            new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=UI.TEXT_PRIMARY)
+                            item.widget.config(image=new_icon)
+                            item.widget.image = new_icon
+                        elif not is_image:
                             item.widget.config(text=f" {item.icon} ")
 
         if hasattr(target_view, "on_view_shown"):
