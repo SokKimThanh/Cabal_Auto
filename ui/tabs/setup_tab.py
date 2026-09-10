@@ -110,11 +110,10 @@ class SetupTab(ResponsiveGridBase):
         btn.pack(side="left")
 
         if desc_key:
-            desc_label = ttk.Label(
+            desc_label = self.app.bind_text(ttk.Label(
                 header_frame,
-                text=self._t(desc_key),
                 cursor="hand2",
-            )
+            ), desc_key)
             desc_label.bind("<Button-1>", toggle)
             desc_label.pack(side="left", padx=(8, 0))
 
@@ -137,13 +136,13 @@ class SetupTab(ResponsiveGridBase):
         )
         self.app.global_hotkey_enabled_var.trace_add("write", self._on_setting_changed)
 
-        enable_text = self._t("enable_global_hotkeys")
-        ttk.Checkbutton(
+        chk = ttk.Checkbutton(
             frame,
-            text=enable_text,
             variable=self.app.global_hotkey_enabled_var,
             command=self._on_global_hotkey_toggle,
-        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
+        )
+        self.app.bind_text(chk, "enable_global_hotkeys")
+        chk.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
 
         hotkey_options = [
             "ctrl+shift+r",
@@ -157,10 +156,7 @@ class SetupTab(ResponsiveGridBase):
             "f12",
         ]
 
-        ttk.Label(
-            frame,
-            text=self._t("start_stop_hotkeys"),
-        ).grid(row=1, column=0, sticky="e", padx=(0, 8), pady=4)
+        self.app.bind_text(ttk.Label(frame), "start_stop_hotkeys").grid(row=1, column=0, sticky="e", padx=(0, 8), pady=4)
         self.app.global_hotkey_start_var = tk.StringVar(
             value=hotkey_cfg.get("start_key", "ctrl+shift+r")
         )
@@ -207,7 +203,7 @@ class SetupTab(ResponsiveGridBase):
         self, frame, row, label_key, var_obj, col_offset=0, width=8,
         validate=False, from_=0, to=100, increment=1, is_float=False
     ):
-        ttk.Label(frame, text=self._t(label_key)).grid(
+        self.app.bind_text(ttk.Label(frame), label_key).grid(
             row=row,
             column=0 + col_offset,
             sticky="e",
@@ -347,7 +343,7 @@ class SetupTab(ResponsiveGridBase):
         )
 
     def _build_window_content(self, frame):
-        ttk.Label(frame, text=self._t("template")).grid(
+        self.app.bind_text(ttk.Label(frame), "template").grid(
             row=0, column=0, sticky="e", pady=4
         )
         self.app.setup_template_var = tk.StringVar(
@@ -359,7 +355,8 @@ class SetupTab(ResponsiveGridBase):
         ttk.Entry(frame, textvariable=self.app.setup_template_var, width=30).grid(
             row=0, column=1, columnspan=2, sticky="ew", pady=4
         )
-        self.browse_btn = ttk.Button(frame, text=self._t("browse"), command=self._browse_template)
+        self.browse_btn = ttk.Button(frame, command=self._browse_template)
+        self.app.bind_text(self.browse_btn, "browse")
         self.browse_btn.grid(row=0, column=3, padx=(4, 0), pady=4)
 
     def _build_ui(self):

@@ -14,13 +14,22 @@ class StatsTab(ttk.Frame):
             self, columns=columns, show="headings", style="Treeview"
         )
 
-        self.tree.heading(
-            "stat", text=self.app._t("stat_name") if hasattr(self.app, "_t") else "Stat"
-        )
-        self.tree.heading(
-            "value",
-            text=self.app._t("stat_value") if hasattr(self.app, "_t") else "Value",
-        )
+        if hasattr(self.app, "bind_text"):
+            class TreeviewHeadingBinder:
+                def __init__(self, tree, column):
+                    self.tree = tree
+                    self.column = column
+                def set_text(self, text):
+                    try:
+                        self.tree.heading(self.column, text=text)
+                    except Exception:
+                        pass
+
+            self.app.bind_text(TreeviewHeadingBinder(self.tree, "stat"), "stat_name")
+            self.app.bind_text(TreeviewHeadingBinder(self.tree, "value"), "stat_value")
+        else:
+            self.tree.heading("stat", text="Stat")
+            self.tree.heading("value", text="Value")
 
         self.tree.column("stat", width=200, anchor="w")
         self.tree.column("value", width=100, anchor="e")
