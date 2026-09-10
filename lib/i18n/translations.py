@@ -1286,5 +1286,5 @@ GLOBAL_TRANSLATIONS = {
     }
 }
 
-from lib.i18n.translation_registry import _register_bulk, _GLOBAL_NS
+from lib.i18n import register_bulk as _register_bulk, GLOBAL_NS as _GLOBAL_NS
 _register_bulk(_GLOBAL_NS, GLOBAL_TRANSLATIONS)
