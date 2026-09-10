@@ -1242,7 +1242,8 @@ class App(tk.Tk):
                             msg = record.getMessage()
 
                         if "logs" in getattr(self, "_views", {}):
-                            self._views["logs"].append_message(msg)
+                            # Pass both formatted string and record level name for filtering
+                            self._views["logs"].append_message(msg, record.levelname)
                         lines_processed += 1
                     except queue.Empty:
                         break
