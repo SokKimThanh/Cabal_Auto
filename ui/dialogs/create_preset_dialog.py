@@ -40,7 +40,7 @@ class CreatePresetDialog(tk.Toplevel):
         header_lbl = tk.Label(
             main_frame,
             text="Lưu cấu hình kỹ năng (Preset)",
-            font=UI.FONT_LARGE,
+            font=UI.FONT_TITLE,
             bg=UI.BG_BASE,
             fg=UI.TEXT_PRIMARY
         )
@@ -56,7 +56,7 @@ class CreatePresetDialog(tk.Toplevel):
             text="Class ID:",
             bg=UI.BG_SURFACE,
             fg=UI.TEXT_MUTED,
-            font=UI.FONT_NORMAL
+            font=UI.FONT_BODY
         ).grid(row=0, column=0, sticky="w", padx=10, pady=10)
 
         class_lbl = tk.Label(
@@ -64,7 +64,7 @@ class CreatePresetDialog(tk.Toplevel):
             text=str(self.class_id),
             bg=UI.BG_SURFACE,
             fg=UI.TEXT_PRIMARY,
-            font=UI.FONT_BOLD
+            font=UI.FONT_HEADER
         )
         class_lbl.grid(row=0, column=1, sticky="w", padx=10, pady=10)
 
@@ -74,7 +74,7 @@ class CreatePresetDialog(tk.Toplevel):
             text="Tên Preset (*):",
             bg=UI.BG_SURFACE,
             fg=UI.TEXT_MUTED,
-            font=UI.FONT_NORMAL
+            font=UI.FONT_BODY
         ).grid(row=1, column=0, sticky="w", padx=10, pady=10)
 
         self.name_var = tk.StringVar()
@@ -90,7 +90,7 @@ class CreatePresetDialog(tk.Toplevel):
         summary_lbl = tk.Label(
             main_frame,
             text="Tóm tắt Kỹ năng (Sẽ được lưu):",
-            font=UI.FONT_NORMAL,
+            font=UI.FONT_BODY,
             bg=UI.BG_BASE,
             fg=UI.TEXT_PRIMARY
         )
@@ -150,7 +150,7 @@ class CreatePresetDialog(tk.Toplevel):
                     text=f"• {lane_display}:",
                     bg=UI.BG_SURFACE,
                     fg=UI.ACCENT_GREEN,
-                    font=UI.FONT_BOLD
+                    font=UI.FONT_HEADER
                 ).pack(anchor="w", padx=10, pady=(10, 2))
 
                 if not skills:
