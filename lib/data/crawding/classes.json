@@ -1,0 +1,83 @@
+[
+    {
+        "class_id": 1,
+        "name": "Warrior",
+        "description": "The best melee fighter who possesses powerful fencing skills.",
+        "icon_path": "warrior.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 2,
+        "name": "Blader",
+        "description": "The deadly blade dancer, the fastest dual sword user.",
+        "icon_path": "blader.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 3,
+        "name": "Wizard",
+        "description": "The ultimate destroyer, the Ruler of the Force.",
+        "icon_path": "wizard.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 4,
+        "name": "Force Archer",
+        "description": "The sniper that fire deadly force shots that cuts through the wind.",
+        "icon_path": "force_archer.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 5,
+        "name": "Force Blader",
+        "description": "Swordsman whose blade flares with the force.",
+        "icon_path": "force_blader.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 6,
+        "name": "Force Shielder",
+        "description": "The faithful warrior that uses the force to shield others.",
+        "icon_path": "force_shielder.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 7,
+        "name": "Gladiator",
+        "description": "Gladiator uses the Rage system to deal heavy damage.",
+        "icon_path": "gladiator.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 8,
+        "name": "Force Gunner",
+        "description": "Sniper who shoots force energy.",
+        "icon_path": "force_gunner.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    },
+    {
+        "class_id": 9,
+        "name": "Dark Mage",
+        "description": "A mage that commands darkness.",
+        "icon_path": "dark_mage.png",
+        "str_base": 0,
+        "int_base": 0,
+        "dex_base": 0
+    }
+]
