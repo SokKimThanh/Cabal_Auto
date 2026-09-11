@@ -116,8 +116,10 @@ Màn hình được chia làm 3 khu vực chính:
     *   Nhóm thao tác dữ liệu: `btn_add` (Thêm mới), `btn_edit` (Chỉnh sửa), `btn_delete` (Xóa).
     *   Nhóm thao tác hệ thống: `btn_refresh` (Tải lại), `btn_sync` (Đồng bộ JSON).
 
-**6.2. Tích hợp Sidebar:**
+**6.2. Tích hợp Sidebar (Nghịch Lý Tự Quản Lý):**
 *   Thêm một menu item trong App Sidebar: `SidebarWidgetDef(..., key="btn_icon_manager", view_target="IconManagerFrame", icon="icon_image.png")`.
+*   **Vấn đề Nghịch lý (Self-Management Paradox):** Bản thân module Icon Manager được hiển thị thông qua một icon trên Sidebar (key `btn_icon_manager`). Hệ thống cần phải "tự nhận thức" (self-aware) được chính icon đại diện cho nó.
+*   **Giải pháp:** Icon `btn_icon_manager` phải được khai báo như mọi icon thông thường khác trong bảng `icons` (với file ảnh hoặc emoji fallback) và phải có một dòng theo dõi (tracking) trong bảng `icon_usages` (module: `App`, component: `sidebar_button`, element: `btn_icon_manager`). Khi người dùng thay đổi chính icon của Icon Manager thông qua giao diện của nó, sự kiện `IconUpdatedEvent` sẽ được phát ra, và Sidebar sẽ lập tức tự động cập nhật lại icon của công cụ quản lý này mà không cần tải lại app.
 
 ---
 
