@@ -1,6 +1,7 @@
 import sqlite3
 import logging
 from typing import List, Dict, Optional
+from lib.events.event_bus import EventBus, IconUpdatedEvent, IconManagerSyncEvent
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,9 @@ class IconService:
             return None
         return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
 
-    def get_all_icons(self, search_term: str = "", category: str = "", status_filter: str = "") -> List[Dict]:
+    def get_all_icons(
+        self, search_term: str = "", category: str = "", status_filter: str = ""
+    ) -> List[Dict]:
         try:
             cursor = self.conn.cursor()
             query = "SELECT * FROM icons WHERE 1=1"
@@ -36,6 +39,43 @@ class IconService:
             logger.error(f"Error in get_all_icons: {e}")
             return []
 
+    def insert_ignore_icon(self, icon_data: Dict) -> bool:
+        """Thêm icon mới, bỏ qua nếu đã tồn tại."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO icons (
+                    icon_key, name, filepath, fallback_emoji,
+                    tooltip_translation_key, category, description
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(icon_key) DO NOTHING
+            """,
+                (
+                    icon_data.get("icon_key"),
+                    icon_data.get("name"),
+                    icon_data.get("filepath"),
+                    icon_data.get("fallback_emoji"),
+                    icon_data.get("tooltip_translation_key"),
+                    icon_data.get("category", "General"),
+                    icon_data.get("description"),
+                ),
+            )
+            inserted = cursor.rowcount > 0
+            self.conn.commit()
+
+            if inserted:
+                # Lúc nạp từ file JSON, không cần thiết phải kích hoạt sync ngược, nhưng có thể cần refresh UI
+                icon_key = icon_data.get("icon_key")
+                if icon_key:
+                    EventBus.trigger(IconUpdatedEvent(icon_key=icon_key))
+
+            return True
+        except sqlite3.Error as e:
+            logger.error(f"Error in insert_ignore_icon: {e}")
+            self.conn.rollback()
+            return False
+
     def get_icon_by_key(self, icon_key: str) -> Optional[Dict]:
         try:
             cursor = self.conn.cursor()
@@ -52,7 +92,8 @@ class IconService:
         try:
             cursor = self.conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO icons (
                     icon_key, name, filepath, fallback_emoji,
                     tooltip_translation_key, category, description
@@ -64,16 +105,25 @@ class IconService:
                     tooltip_translation_key = excluded.tooltip_translation_key,
                     category = excluded.category,
                     description = excluded.description
-            """, (
-                icon_data.get('icon_key'),
-                icon_data.get('name'),
-                icon_data.get('filepath'),
-                icon_data.get('fallback_emoji'),
-                icon_data.get('tooltip_translation_key'),
-                icon_data.get('category', 'General'),
-                icon_data.get('description')
-            ))
+            """,
+                (
+                    icon_data.get("icon_key"),
+                    icon_data.get("name"),
+                    icon_data.get("filepath"),
+                    icon_data.get("fallback_emoji"),
+                    icon_data.get("tooltip_translation_key"),
+                    icon_data.get("category", "General"),
+                    icon_data.get("description"),
+                ),
+            )
             self.conn.commit()
+
+            # Kích hoạt sự kiện để đồng bộ hóa và làm mới giao diện
+            icon_key = icon_data.get("icon_key")
+            if icon_key:
+                EventBus.trigger(IconUpdatedEvent(icon_key=icon_key))
+                EventBus.trigger(IconManagerSyncEvent())
+
             return True
         except sqlite3.Error as e:
             logger.error(f"Error in upsert_icon: {e}")
@@ -84,20 +134,30 @@ class IconService:
         try:
             cursor = self.conn.cursor()
             cursor.execute("DELETE FROM icons WHERE icon_key = ?", (icon_key,))
+            deleted = cursor.rowcount > 0
             self.conn.commit()
-            return cursor.rowcount > 0
+
+            if deleted:
+                EventBus.trigger(IconManagerSyncEvent())
+
+            return deleted
         except sqlite3.Error as e:
             logger.error(f"Error in delete_icon: {e}")
             self.conn.rollback()
             return False
 
-    def register_usage(self, icon_key: str, module_name: str, component_type: str, element_id: str) -> bool:
+    def register_usage(
+        self, icon_key: str, module_name: str, component_type: str, element_id: str
+    ) -> bool:
         try:
             cursor = self.conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO icon_usages (icon_key, module_name, ui_component_type, ui_element_id)
                 VALUES (?, ?, ?, ?)
-            """, (icon_key, module_name, component_type, element_id))
+            """,
+                (icon_key, module_name, component_type, element_id),
+            )
             self.conn.commit()
             return True
         except sqlite3.Error as e:
