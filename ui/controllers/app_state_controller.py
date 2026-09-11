@@ -156,6 +156,31 @@ class AppStateController:
                 except Exception:
                     logger.exception("Error in callback for %s", event)
 
+
+    def set_current_class(self, class_id: int) -> bool:
+        """
+        Safely changes the current class, prompting for unsaved changes if necessary.
+        Returns True if the class was changed, False if the user cancelled.
+        """
+        import tkinter.messagebox as messagebox
+
+        if getattr(self.root, "has_unsaved_changes", False):
+            title = i18n_t("warning_title", ns=I18N_GLOBAL)
+            msg = i18n_t("msg_unsaved_class_change", ns=I18N_GLOBAL)
+
+            if not messagebox.askyesno(title, msg, parent=self.root):
+                return False
+
+        self.root._current_class_id = class_id
+
+        # Clear unsaved changes since we are loading a fresh preset from DB
+        self._clear_unsaved_changes()
+
+        # Auto load preset for the new class
+        self.load_preset_for_class(class_id)
+
+        return True
+
     def load_preset_for_class(
         self, class_id: int, preset_id: Optional[int] = None
     ) -> None:
