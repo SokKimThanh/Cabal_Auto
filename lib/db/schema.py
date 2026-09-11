@@ -168,3 +168,36 @@ def setup_skills_schema(conn: sqlite3.Connection):
     """)
 
     conn.commit()
+
+def setup_icons_schema(conn: sqlite3.Connection):
+    """Thiết lập schema cho hệ thống quản lý Icon"""
+    cursor = conn.cursor()
+
+    # Bảng icons - Lưu định nghĩa và thông tin của Icon
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS icons (
+            icon_key TEXT PRIMARY KEY UNIQUE NOT NULL,
+            name TEXT,
+            filepath TEXT,
+            fallback_emoji TEXT,
+            tooltip_translation_key TEXT,
+            category TEXT NOT NULL DEFAULT 'General',
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Bảng icon_usages - Lưu lịch sử/vị trí sử dụng của Icon
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS icon_usages (
+            usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            icon_key TEXT NOT NULL,
+            module_name TEXT,
+            ui_component_type TEXT,
+            ui_element_id TEXT,
+            description TEXT,
+            FOREIGN KEY(icon_key) REFERENCES icons(icon_key) ON DELETE CASCADE
+        )
+    """)
+
+    conn.commit()
