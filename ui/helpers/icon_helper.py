@@ -24,7 +24,7 @@ try:
 except Exception:
     Image = None  # type: ignore
     ImageTk = None  # type: ignore
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Tuple
 
 
 class IconHelper:
@@ -215,7 +215,7 @@ class IconHelper:
         self,
         name: str,
         fallback: Optional[str] = None,
-        size: int = 24,
+        size: Union[int, Tuple[int, int]] = 24,
         color: Optional[str] = None,
     ) -> Union[Any, str]:
         """
@@ -224,7 +224,7 @@ class IconHelper:
         Args:
             name: Icon name (e.g., 'add', 'edit', 'delete')
             fallback: Fallback emoji character (optional)
-            size: Icon size in pixels (default: 24)
+            size: Icon size in pixels (int for square, tuple for width/height) (default: 24)
             color: Hex color to tint icon (e.g., '#FFFFFF' for white). Only works with PIL installed.
 
         Returns:
@@ -287,8 +287,11 @@ class IconHelper:
         # Try to load icon file
         try:
             if icon_path and icon_path.exists():
+                # Extract target width and height
+                target_w, target_h = size if isinstance(size, tuple) else (size, size)
+
                 # Prefer PIL resize if available for crisp icons
-                if Image is not None and ImageTk is not None and size > 0:
+                if Image is not None and ImageTk is not None and target_w > 0 and target_h > 0:
                     try:
                         img = Image.open(icon_path)
 
@@ -301,7 +304,7 @@ class IconHelper:
                             img = self._apply_color_tint(img, color)
 
                         # Resize if needed
-                        if img.width != size or img.height != size:
+                        if img.width != target_w or img.height != target_h:
                             # Handle PIL v10+ and older
                             resampling = None
                             try:
@@ -312,9 +315,9 @@ class IconHelper:
                                     Image, "LANCZOS", getattr(Image, "ANTIALIAS", None)
                                 )
                             if resampling is not None:
-                                img = img.resize((size, size), resampling)
+                                img = img.resize((target_w, target_h), resampling)
                             else:
-                                img = img.resize((size, size))
+                                img = img.resize((target_w, target_h))
 
                         icon = ImageTk.PhotoImage(img)
                         self._cache[cache_key] = icon
