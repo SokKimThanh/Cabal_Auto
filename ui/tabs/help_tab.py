@@ -49,7 +49,7 @@ class HelpTab(ttk.Frame):
         title_btn = tk.Button(
             top_bar,
             text=f"▶ {title_text}",
-            font=UI.FONT_BOLD,
+            font=UI.FONT_HEADER,
             anchor="w",
             padx=UI.SPACE_MD,
             pady=UI.SPACE_SM,
