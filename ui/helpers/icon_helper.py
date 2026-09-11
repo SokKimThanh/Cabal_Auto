@@ -133,6 +133,8 @@ class IconHelper:
             "settings": ["setting", "⚙️"],
             "hotkey": ["hotkey", "⌨️"],
             "forbidden": ["prohibition", "🚫"],
+            "on-button": ["on-button", "🟢"],
+            "off-button": ["off-button", "🔴"],
         }
 
     def _apply_color_tint(self, img: Any, hex_color: str) -> Any:

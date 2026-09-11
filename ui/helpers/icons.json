@@ -202,5 +202,13 @@
     "forbidden": [
         "prohibition",
         "🚫"
+    ],
+    "on-button": [
+        "on-button",
+        "🟢"
+    ],
+    "off-button": [
+        "off-button",
+        "🔴"
     ]
 }

@@ -360,10 +360,10 @@ class SkillPanel(ttk.LabelFrame):
         if not btn:
             return
 
-        icon_name = "off-button.png" if self._show_all_skills else "on-button.png"
+        icon_name = "off-button" if self._show_all_skills else "on-button"
         icon_img = self._icon_helper.get_icon(icon_name, size=(32, 16))
 
-        if icon_img:
+        if icon_img and not isinstance(icon_img, str):
             btn.config(image=icon_img, text="")
             btn.image = icon_img
         else:
