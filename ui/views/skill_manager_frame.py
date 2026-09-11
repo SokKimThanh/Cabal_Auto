@@ -189,7 +189,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             if hasattr(self.app, "db_class_service"):
                 svc = self.app.db_class_service
                 classes = svc.get_all_classes()
-                self.classes_map = {str(c.get("class_id")): c.get("name") for c in classes}
+                self.classes_map = {str(c.get("id") or c.get("class_id", "")): c.get("name") for c in classes}
                 values = ["All"] + [f"{c_id} - {name}" for c_id, name in self.classes_map.items()]
                 self.class_combo['values'] = values
                 if values:

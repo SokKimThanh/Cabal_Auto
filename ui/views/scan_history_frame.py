@@ -175,7 +175,8 @@ class ScanHistoryFrame(ResponsiveGridBase):
         classes = self.app.db_class_service.get_all_classes()
         class_values = ["0 - None"]
         for c in classes:
-            class_values.append(f"{c['class_id']} - {c['name']}")
+            class_id = c.get('id') or c.get('class_id', '')
+            class_values.append(f"{class_id} - {c.get('name', '')}")
 
         current_class = self.class_var.get()
         self.class_cb['values'] = class_values
