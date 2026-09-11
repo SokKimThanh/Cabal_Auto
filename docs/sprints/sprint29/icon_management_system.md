@@ -85,19 +85,62 @@ Trên giao diện quản lý, để giúp người dùng nhận biết ngay tìn
 
 ## 6. Thiết Kế Giao Diện (UI - IconManagerFrame)
 
-Màn hình `IconManagerFrame` được thiết kế kế thừa Layout của màn hình `MonsterManagerFrame` để đảm bảo tính nhất quán (Consistent UX), được nhúng thẳng vào Workspace Panel.
+Màn hình `IconManagerFrame` được thiết kế nhằm cung cấp không gian làm việc tối ưu, phân chia rõ ràng các khu vực chức năng, giúp người dùng dễ dàng định vị và thao tác. Màn hình được nhúng thẳng vào Workspace Panel.
 
-**6.1. Bố cục chính:**
-*   **Sidebar trái (Master List):**
-    *   Danh sách dạng Treeview các Icon.
-    *   Cột hiển thị: ID, Icon Key, Phân loại (Category), Trạng Thái (Status - Mã màu).
-    *   Thanh tìm kiếm (Search Box) phía trên hỗ trợ **auto-filter** với 500ms debounce (Không dùng nút lọc thủ công).
-*   **Khu vực phải (Detail & Preview Zone):**
-    *   Hiển thị chi tiết thông tin của Icon được chọn.
-    *   Có form để sửa các trường: Tên, Phân loại, Mô tả, Translation Tooltip Key.
-    *   **Khung Preview Khổng Lồ:** Hiển thị hình ảnh thực tế của icon. Tại đây, khi người dùng rê chuột (hover) vào hình ảnh, hệ thống sẽ gọi hệ thống đa ngôn ngữ để render chữ từ `tooltip_translation_key`, giúp người quản trị dễ dàng test xem chuỗi dịch có hoạt động đúng không.
-*   **Khu vực Action (Bottom Bar):**
-    *   Chứa các nút hành động đồng nhất: `btn_add`, `btn_edit`, `btn_delete`, `btn_refresh`.
+**6.1. Bố cục không gian làm việc (Workspace Layout):**
+
+Màn hình được chia làm 3 khu vực chính:
+
+*   **Khu vực trên cùng (Top Filter Bar - Nhóm Lọc & Tìm Kiếm):**
+    *   Thanh tìm kiếm (Search Box) ở vị trí trung tâm, hỗ trợ **auto-filter** với 500ms debounce (tìm theo Tên hoặc Icon Key).
+    *   Dropdown "Lọc theo Trạng Thái": Hỗ trợ lọc nhanh các icon 🔴 Lỗi thất lạc file, 🟡 Đang dùng Fallback, 🟢 Hoạt động tốt.
+    *   Dropdown "Lọc theo Phân Loại": Lọc icon theo category (VD: Vũ khí, Giao diện, Quái vật).
+
+*   **Khu vực bên trái (Master List Sidebar - Nhóm Danh Sách):**
+    *   Danh sách các Icon được hiển thị dưới dạng Treeview.
+    *   **Gom nhóm (Group by Category):** Danh sách không hiển thị phẳng (flat list) mà được tổ chức thành dạng cây thư mục theo `category`. Ví dụ:
+        *   📁 `ui` (Giao diện)
+            *   📄 `btn_save` (Nút Lưu)
+            *   📄 `btn_delete` (Nút Xóa)
+        *   📁 `skill` (Kỹ năng)
+            *   📄 `icon_fireball` (Cầu Lửa)
+    *   Cột hiển thị: ID, Icon Key, Trạng Thái (Status - mã màu).
+
+*   **Khu vực bên phải (Detail & Preview Zone - Nhóm Chi Tiết):**
+    *   Hiển thị thông tin chi tiết của Icon đang được chọn từ Master List.
+    *   **Khung Preview Khổng Lồ:** Nằm nổi bật ở nửa trên khu vực. Hiển thị hình ảnh thực tế của icon ở kích thước lớn. Khi rê chuột (hover) vào hình ảnh, hệ thống gọi hệ thống đa ngôn ngữ để render chữ từ `tooltip_translation_key` để test trực quan.
+    *   **Form thông tin:** Các trường nhập liệu (Tên, Phân loại, Mô tả, Tooltip Key, Filepath, Fallback Emoji).
+
+*   **Khu vực Action (Bottom Bar - Nhóm Thao Tác Thống Nhất):**
+    *   Chứa các nút hành động hệ thống. Nhóm này được cố định ở dưới cùng màn hình.
+    *   Nhóm thao tác dữ liệu: `btn_add` (Thêm mới), `btn_edit` (Chỉnh sửa), `btn_delete` (Xóa).
+    *   Nhóm thao tác hệ thống: `btn_refresh` (Tải lại), `btn_sync` (Đồng bộ JSON).
 
 **6.2. Tích hợp Sidebar:**
 *   Thêm một menu item trong App Sidebar: `SidebarWidgetDef(..., key="btn_icon_manager", view_target="IconManagerFrame", icon="icon_image.png")`.
+
+---
+
+## 7. Các Luồng Thao Tác Người Dùng (Workflows)
+
+Phần này mô tả chi tiết các bước thao tác (Use Cases) trên giao diện quản lý giúp người dùng dễ dàng tiếp cận hệ thống.
+
+**7.1. Luồng Thêm Icon Mới Từ Máy Tính (Import New Icon):**
+*   **Bước 1:** Tại màn hình quản lý, người dùng nhấn nút **Thêm mới (`btn_add`)** ở Bottom Bar. Mở ra form nhập liệu trống ở khu vực chi tiết.
+*   **Bước 2:** Người dùng điền các thông tin bắt buộc: `icon_key`, `name`, chọn `category`, và `fallback_emoji`.
+*   **Bước 3:** Tại mục `filepath`, người dùng nhấn nút **"Chọn file từ máy"**. Một hộp thoại File Dialog hiện ra cho phép chọn file `.png` hoặc `.ico`.
+*   **Bước 4:** Sau khi chọn file, hệ thống **tự động copy** file hình ảnh đó vào thư mục `assets/images/icon/` và tự động điền tên file vào ô `filepath`. Hình ảnh vừa chọn lập tức hiển thị trên Khung Preview Khổng Lồ.
+*   **Bước 5:** Người dùng nhấn nút **Lưu**. Trạng thái icon chuyển sang 🟢 Xanh.
+
+**7.2. Luồng Sửa/Cập Nhật Ảnh Cho Icon (Update Existing Icon):**
+*   **Bước 1:** Trong danh sách Master List, người dùng mở thư mục Category và chọn một Icon đang cần đổi ảnh (Ví dụ icon đang ở trạng thái 🟡 Vàng, dùng emoji).
+*   **Bước 2:** Các thông tin hiện tại của Icon tải lên khu vực chi tiết. Người dùng nhấn nút **Chỉnh sửa (`btn_edit`)**.
+*   **Bước 3:** Tương tự luồng thêm mới, người dùng nhấn "Chọn file từ máy" và chọn hình ảnh thiết kế mới.
+*   **Bước 4:** Nhấn **Lưu**. Hệ thống sẽ copy file mới, thay thế file cũ (nếu có), phát sự kiện `IconUpdatedEvent` để toàn bộ giao diện ứng dụng tự động cập nhật từ emoji sang hình ảnh mới mà không cần khởi động lại.
+
+**7.3. Luồng Xử Lý Lỗi Icon Bị Mất Hình (Fix Missing File Error):**
+*   **Bước 1:** Người dùng chọn bộ lọc "Trạng thái: 🔴 Lỗi thất lạc file" ở Top Filter Bar. Hệ thống lọc ra danh sách các icon đang lỗi.
+*   **Bước 2:** Chọn một icon lỗi trong danh sách. Khung Preview hiện tại đang hiển thị Fallback Emoji do không tìm thấy file vật lý được khai báo ở `filepath`.
+*   **Bước 3:** Người dùng nhấn **Chỉnh sửa (`btn_edit`)** và có hai hướng xử lý:
+    *   **Hướng 1 (Khôi phục file):** Nhấn "Chọn file từ máy" để upload lại đúng file hình đã mất. Trạng thái sau khi lưu sẽ chuyển từ 🔴 Đỏ sang 🟢 Xanh.
+    *   **Hướng 2 (Chuyển sang Fallback):** Xóa trắng trường `filepath` để hệ thống hiểu rằng việc dùng Emoji là có chủ đích. Trạng thái sau khi lưu sẽ chuyển từ 🔴 Đỏ sang 🟡 Vàng.
