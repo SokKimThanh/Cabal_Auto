@@ -3,6 +3,7 @@ from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.features.skills.skill_preset_service import SkillPresetService
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
+from ui.helpers.icon_helper import IconHelper
 
 
 class SkillPanel(ttk.LabelFrame):
@@ -18,6 +19,8 @@ class SkillPanel(ttk.LabelFrame):
         self.skill_service = SkillPresetService()
         self.widgets = {}
         self.frame = self  # Alias for backwards compatibility
+        self._show_all_skills = False
+        self._icon_helper = IconHelper()
         self._build()
 
         # Register for app state changes
@@ -70,6 +73,18 @@ class SkillPanel(ttk.LabelFrame):
         btn_frame = tk.Frame(header_frame, bg=UI.BG_ELEVATED)
         btn_frame.pack(side="right", padx=12)
 
+        self.widgets["btn_toggle_skills"] = tk.Button(
+            btn_frame,
+            command=self._on_toggle_skills,
+            bg=UI.BG_ELEVATED,
+            fg=UI.TEXT_MUTED,
+            relief="flat",
+            bd=0,
+            cursor="hand2"
+        )
+        self._update_toggle_button_visuals()
+        self.widgets["btn_toggle_skills"].pack(side="left", padx=10)
+
         self.widgets["btn_build"] = tk.Button(
             btn_frame,
             text="[⚙️ Build]",
@@ -114,8 +129,8 @@ class SkillPanel(ttk.LabelFrame):
 
         # Load available skills for combobox values
         class_id = getattr(self.app_state, "_current_class_id", 1)
-        skills = self.skill_service.skill_repo.list_skills(class_id=class_id)
-        skill_names = [s.get("name") for s in skills if s.get("name")]
+        skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=self._show_all_skills)
+        self.skill_names = [s.get("name") for s in skills if s.get("name")]
 
         content_frame = tk.Frame(self.frame, bg=UI.BG_BASE)
         content_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -168,7 +183,7 @@ class SkillPanel(ttk.LabelFrame):
 
             dd_var = tk.StringVar()
             dd = ttk.Combobox(
-                card, textvariable=dd_var, state="readonly", values=skill_names
+                card, textvariable=dd_var, state="readonly", values=self.skill_names
             )
             dd.pack(fill="x", padx=8, pady=8)
             dd.bind(
@@ -340,6 +355,35 @@ class SkillPanel(ttk.LabelFrame):
         for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
             dd.config(state="disabled")
 
+    def _update_toggle_button_visuals(self):
+        btn = self.widgets.get("btn_toggle_skills")
+        if not btn:
+            return
+
+        icon_name = "off-button.png" if self._show_all_skills else "on-button.png"
+        icon_img = self._icon_helper.get_icon(icon_name, size=(32, 16))
+
+        if icon_img:
+            btn.config(image=icon_img, text="")
+            btn.image = icon_img
+        else:
+            # Fallback to text if image not found
+            text = "[🌐 All Skills]" if self._show_all_skills else "[🎯 Class Skills]"
+            btn.config(text=text, image="")
+
+    def _on_toggle_skills(self):
+        self._show_all_skills = not self._show_all_skills
+        self._update_toggle_button_visuals()
+
+        # Refresh skill list based on new mode
+        class_id = getattr(self.app_state, "_current_class_id", 1)
+        skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=self._show_all_skills)
+        self.skill_names = [s.get("name") for s in skills if s.get("name")]
+
+        # Update comboboxes
+        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
+            dd.config(values=self.skill_names)
+
     def on_stop_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🔴")
         self.widgets["combo_indicator_text"].config(text=self.app_state._t("skill_panel.combo_inactive"), fg=UI.TEXT_MUTED)
@@ -440,7 +484,8 @@ class SkillPanel(ttk.LabelFrame):
         """Logic extracted from HuntTab"""
         dropdown = event.widget
         skill_name = dropdown.get()
-        skills = self.skill_service.skill_repo.list_skills()
+        # Ensure we search across all skills when updating the DB
+        skills = self.skill_service.skill_repo.list_skills(include_all=True)
         skill_id = None
         for s in skills:
             if s.get("name") == skill_name:
