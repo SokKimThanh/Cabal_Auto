@@ -47,3 +47,29 @@ Trong tab Hunt, phần hiển thị và sắp xếp dữ liệu kỹ năng trên
 3. Tạo phương thức xử lý sự kiện khi thay đổi class trong dropdown để gọi hàm `load_preset_for_class` của `AppStateController`.
 4. Viết test case (nếu có thể) cho việc thay đổi class chủ động ảnh hưởng tới combobox kỹ năng của 2 lane.
 5. Cập nhật cấu hình lưu trữ (`hunt_cfg`) để ghi nhớ `class_id` cuối cùng người dùng đã chọn để lần sau mở app không bị reset về 1.
+
+## 6. Các rủi ro và điểm yếu cần tránh (Pitfalls & Weaknesses to Avoid)
+
+Để đảm bảo tính năng "Chọn Class Chủ động" hoạt động ổn định và không phá vỡ trải nghiệm người dùng, quá trình triển khai cần tuyệt đối tránh các điểm yếu và xử lý các vấn đề còn thiếu sau:
+
+1. **Rủi ro mất dữ liệu chưa lưu (Unsaved Changes)**
+   - **Vấn đề:** Người dùng đang tinh chỉnh combo kỹ năng cho Class A (nhưng chưa lưu), sau đó vô tình chọn sang Class B ở dropdown. Nếu ứng dụng lập tức load preset của Class B, toàn bộ thay đổi của Class A sẽ bị mất trắng.
+   - **Cách giải quyết:** Cần kiểm tra cờ "unsaved changes" trước khi thực hiện đổi class. Nếu có thay đổi chưa lưu, phải hiển thị một hộp thoại xác nhận (Prompt) yêu cầu người dùng lưu lại hoặc đồng ý hủy bỏ các thay đổi trước khi chuyển đổi.
+
+2. **Xử lý kỹ năng "mồ côi" trên UI (Orphaned/Mismatched Skills)**
+   - **Vấn đề:** Khi đổi class, các ô kỹ năng đang được chọn (đã render trên giao diện) thuộc về class cũ. Việc không dọn dẹp hoặc dọn dẹp sai cách có thể dẫn đến lỗi ngoại lệ (như cố gắng cast skill không hợp lệ) hoặc lỗi hiển thị trên Tkinter.
+   - **Cách giải quyết:** Khi chuyển sang class mới, phải làm sạch (clear) toàn bộ các lựa chọn kỹ năng hiện tại trên các lane (hoặc fallback về các kỹ năng mặc định/cơ bản của class mới). Đồng thời, danh sách các dropdown của từng ô kỹ năng (Combobox) phải được nạp lại tức thì chỉ với kỹ năng của class vừa chọn.
+
+3. **Xung đột State với Auto-Scan đang chạy (Concurrency & State Conflict)**
+   - **Vấn đề:** Trong quá trình auto-bot (nhân vật đang đánh quái), hệ thống scan liên tục quét màn hình. Nếu hệ thống scan bất ngờ nhận diện ra một class khác với class người dùng đang set thủ công (hoặc ngược lại, người dùng cố đổi class trong lúc bot đang chạy), sẽ gây xung đột luồng xử lý và có thể làm crash bot.
+   - **Cách giải quyết:**
+     - Khóa (Disable) dropdown chọn class nếu Bot/Auto-hunt đang ở trạng thái chạy (Active).
+     - Chỉ cập nhật `class_id` từ hệ thống auto-scan nếu bot chưa chạy, hoặc đưa ra cảnh báo (Soft warning) trên UI thay vì âm thầm ghi đè dữ liệu người dùng đang cấu hình.
+
+4. **Thiếu tiêu chuẩn Quốc tế hóa (i18n) và Styling (UIStyleV2)**
+   - **Vấn đề:** Nếu các nhãn (Label như "Class:"), thông báo lỗi, hoặc cảnh báo đổi class bị hardcode bằng string, ứng dụng sẽ lỗi hiển thị khi chuyển đổi ngôn ngữ. Ngoài ra, việc lạm dụng config màu cứng sẽ vi phạm tiêu chuẩn thiết kế.
+   - **Cách giải quyết:** Bắt buộc phải khai báo và sử dụng translation keys (ví dụ: `lbl_class_select`, `msg_unsaved_class_change`) theo chuẩn của `lib/i18n`. Sử dụng `UIStyleV2` thay cho các token font/color cũ.
+
+5. **Trải nghiệm giao diện bị giật, nháy (UI Flickering)**
+   - **Vấn đề:** Việc gọi sự kiện update làm render lại toàn bộ hàng loạt các widget kỹ năng ở lane 1 và lane 2 cùng lúc có thể khiến màn hình bị giật (flickering).
+   - **Cách giải quyết:** Tối ưu luồng render: chỉ xóa và cập nhật `values` của các Combobox thay vì phá hủy (`destroy`) và tạo lại toàn bộ các frame kỹ năng từ đầu (chỉ update state thay vì recreate widget).
