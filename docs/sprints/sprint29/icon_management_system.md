@@ -28,6 +28,19 @@ Hệ thống sẽ lưu trữ toàn bộ dữ liệu cấu hình Icon làm "Singl
 | `description` | TEXT | | Mô tả chi tiết (Tùy chọn). |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Thời gian tạo. |
 
+**Bảng `icon_usages` (Theo dõi vị trí sử dụng):**
+
+Bảng này lưu trữ mối liên hệ giữa các icon và vị trí sử dụng của chúng trên toàn bộ ứng dụng. Điều này cho phép hệ thống theo dõi chính xác những thành phần UI nào (như button, label, shell zone...) đang sử dụng icon nào để thực hiện cập nhật theo thời gian thực khi có thay đổi (ví dụ: chuyển từ emoji sang ảnh thực tế).
+
+| Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | Khóa chính |
+| `icon_key` | TEXT | FOREIGN KEY, NOT NULL | Liên kết tới `icons.icon_key`. Xác định icon đang được sử dụng. |
+| `module_name` | TEXT | NOT NULL | Tên module, frame hoặc màn hình chứa icon (VD: `WorkspacePanel`, `SkillManagerFrame`, `Dialog_MonsterEdit`). |
+| `ui_component_type` | TEXT | NOT NULL | Loại thành phần giao diện (VD: `button`, `label`, `shell_zone`, `treeview_column`). |
+| `ui_element_id` | TEXT | NOT NULL | Tên biến hoặc định danh duy nhất của thành phần UI trong code (VD: `btn_save`, `lbl_monster_icon`). |
+| `description` | TEXT | | Mô tả chi tiết về vị trí và mục đích sử dụng (Tùy chọn). |
+
 ---
 
 ## 3. Cơ Chế Hiển Thị & Thứ Tự Ưu Tiên (Fallback Priority)
@@ -62,6 +75,11 @@ Trên giao diện quản lý, để giúp người dùng nhận biết ngay tìn
     *   Không yêu cầu người dùng phải tự mở thư mục và copy tay.
 3.  **Xuất dữ liệu lúc Lưu (CRUD Sync):**
     *   Mỗi khi người dùng Thêm/Sửa/Xóa Icon trên UI (thực hiện gọi lệnh cập nhật Database), hệ thống lập tức gọi trigger (ví dụ `IconService.export_to_json()`) để xuất dữ liệu mới nhất đè lên file JSON. Đảm bảo Database luôn là Source of Truth.
+4.  **Tự động cập nhật giao diện (Real-time UI Refresh):**
+    *   Khi thông tin hoặc trạng thái của một Icon thay đổi (ví dụ: người dùng mới thêm một file ảnh design thay thế cho Emoji trước đó), hệ thống cần cập nhật giao diện ngay lập tức mà không yêu cầu khởi động lại ứng dụng.
+    *   Sử dụng cơ chế Publish-Subscribe (Event Bus/Observer Pattern): Sau khi lưu Icon thành công, `IconService` phát ra một sự kiện (ví dụ: `IconUpdatedEvent(icon_key)`).
+    *   Căn cứ vào bảng `icon_usages`, hệ thống xác định các module/thành phần giao diện đang active (có sử dụng `icon_key` này).
+    *   Các Controller hoặc Frame tương ứng bắt sự kiện và gọi hàm refresh (VD: cấu hình lại thuộc tính `image` của widget bằng `IconHelper` mới) cho các `ui_element_id` đó, giúp chuyển đổi mượt mà từ Fallback Emoji sang ảnh vật lý mới tại mọi vị trí đang sử dụng trên app.
 
 ---
 
