@@ -1,22 +1,46 @@
 import re
 
-def update_file(filename):
-    with open(filename, 'r', encoding='utf-8') as f:
-        content = f.read()
+with open("ui/panels/skill_panel.py", "r") as f:
+    content = f.read()
 
-    # Replaces
-    content = content.replace('text="COMBO MODE: INACTIVE"', 'text=self.app._t("skill_panel.combo_inactive")')
-    content = content.replace('text="▶️ START COMBO MODE"', 'text=self.app._t("skill_panel.combo_start")')
-    content = content.replace('text="⏹️ STOP COMBO MODE"', 'text=self.app._t("skill_panel.combo_stop")')
+# Add DbClassService import
+import_str = "from lib.features.skills.skill_runtime_service import SkillRuntimeService\nfrom lib.db.services.class_service import ClassService"
+content = content.replace("from lib.features.skills.skill_runtime_service import SkillRuntimeService", import_str)
 
-    # We need to handle `text=f"BUFF LANE {i+1}"` carefully
-    content = content.replace('text=f"BUFF LANE {i+1}"', 'text=self.app._t("skill_panel.buff_lane").format(num=i+1)')
+# In _build, add the combobox before auto_combo_var
+build_search = """        header_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
+        header_frame.pack(fill="x", pady=0)
 
-    content = content.replace('text="COMBO MODE: ACTIVE"', 'text=self.app._t("skill_panel.combo_active")')
-    content = content.replace('text="⭐ Default"', 'text=self.app._t("skill_panel.preset_default")')
-    content = content.replace('text="✏️ Custom"', 'text=self.app._t("skill_panel.preset_custom")')
+        # Combo header with custom checkbox"""
 
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(content)
+build_replace = """        header_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
+        header_frame.pack(fill="x", pady=0)
 
-update_file('ui/panels/skill_panel.py')
+        # Class selector
+        class_frame = tk.Frame(header_frame, bg=UI.BG_ELEVATED)
+        class_frame.pack(side="left", padx=(10, 0))
+
+        lbl_class = tk.Label(class_frame, bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY)
+        if hasattr(self.app_state, "bind_text"):
+            self.app_state.bind_text(lbl_class, "lbl_class_select")
+        else:
+            lbl_class.config(text=self.app_state._t("lbl_class_select"))
+        lbl_class.pack(side="left")
+
+        self.widgets["cb_class"] = ttk.Combobox(
+            class_frame,
+            state="readonly",
+            width=15,
+            font=UI.FONT_BODY
+        )
+        self.widgets["cb_class"].pack(side="left", padx=5)
+        self.widgets["cb_class"].bind("<<ComboboxSelected>>", self._on_class_selected)
+
+        # Combo header with custom checkbox"""
+
+content = content.replace(build_search, build_replace)
+
+
+with open("ui/panels/skill_panel.py", "w") as f:
+    f.write(content)
+

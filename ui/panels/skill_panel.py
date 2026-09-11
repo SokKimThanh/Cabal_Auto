@@ -3,6 +3,7 @@ from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.features.skills.skill_preset_service import SkillPresetService
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
+from lib.db.services.class_service import ClassService
 from ui.helpers.icon_helper import IconHelper
 
 
@@ -33,6 +34,28 @@ class SkillPanel(ttk.LabelFrame):
         """Build all widgets for skill panel"""
         header_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
         header_frame.pack(fill="x", pady=0)
+
+        # Class selector
+        class_frame = tk.Frame(header_frame, bg=UI.BG_ELEVATED)
+        class_frame.pack(side="left", padx=(10, 0))
+
+        lbl_class = tk.Label(class_frame, bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY)
+        if hasattr(self.app_state, "bind_text"):
+            self.app_state.bind_text(lbl_class, "lbl_class_select")
+        else:
+            lbl_class.config(text=self.app_state._t("lbl_class_select"))
+        lbl_class.pack(side="left")
+
+        self.widgets["cb_class"] = ttk.Combobox(
+            class_frame,
+            state="readonly",
+            width=15,
+            font=UI.FONT_BODY
+        )
+        self.widgets["cb_class"].pack(side="left", padx=5)
+        self.widgets["cb_class"].bind("<<ComboboxSelected>>", self._on_class_selected)
+
+        self._load_classes()
 
         # Combo header with custom checkbox
         cb_var = tk.BooleanVar(value=True)
@@ -345,6 +368,56 @@ class SkillPanel(ttk.LabelFrame):
             cd_lbl.pack(side="right")
             self.widgets["buff_stats"].append((cast_lbl, cd_lbl))
 
+    def _load_classes(self):
+        class_service = ClassService()
+        classes = class_service.get_all_classes()
+        self._class_list = classes
+
+        values = []
+        default_val = ""
+        current_class_id = getattr(self.app_state.root if hasattr(self.app_state, "root") else self.app_state, "_current_class_id", 1)
+
+        for c in classes:
+            val = f"{c['id']} - {c['name']}"
+            values.append(val)
+            if c['id'] == current_class_id:
+                default_val = val
+
+        self.widgets["cb_class"].config(values=values)
+        if default_val:
+            self.widgets["cb_class"].set(default_val)
+            self._last_selected_class = default_val
+        elif values:
+            self.widgets["cb_class"].set(values[0])
+            self._last_selected_class = values[0]
+
+    def _on_class_selected(self, event):
+        selected_val = self.widgets["cb_class"].get()
+        if not selected_val:
+            return
+
+        try:
+            class_id = int(selected_val.split(" - ")[0])
+        except (ValueError, IndexError):
+            self.widgets["cb_class"].set(getattr(self, "_last_selected_class", ""))
+            return
+
+        if hasattr(self.app_state, "set_current_class"):
+            success = self.app_state.set_current_class(class_id)
+            if not success:
+                self.widgets["cb_class"].set(getattr(self, "_last_selected_class", ""))
+            else:
+                self._last_selected_class = selected_val
+                # Reload skills for dropdowns
+                self._show_all_skills = False
+                self._update_toggle_button_visuals()
+
+                skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=self._show_all_skills)
+                self.skill_names = [s.get("name") for s in skills if s.get("name")]
+
+                for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
+                    dd.config(values=self.skill_names)
+
     def on_start_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🟢")
         self.widgets["combo_indicator_text"].config(text=self.app_state._t("skill_panel.combo_active"), fg=UI.ACCENT_GREEN)
@@ -503,7 +576,7 @@ class SkillPanel(ttk.LabelFrame):
         """Open preset dialog"""
         from ui.dialogs.preset_dialog import PresetDialog
 
-        dialog = PresetDialog(self.frame, self.app_state)
+        PresetDialog(self.frame, self.app_state)
 
     def on_reset(self):
         """Revert to default preset"""
