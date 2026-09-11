@@ -27,7 +27,8 @@ class AppStateController:
         app._skip_auto_bring = False  # Flag to prevent double bring-to-front
 
         # Character class selection for presets
-        app._current_class_id = 1  # Default to first character class
+        hunt_settings = getattr(app, "hunt_cfg", {})
+        app._current_class_id = hunt_settings.get("last_active_class_id", 1)
 
         # Global hotkeys - registered after config load
         app._global_start_hotkey = None
@@ -173,6 +174,12 @@ class AppStateController:
 
         self.root._current_class_id = class_id
 
+        # Save to hunt_cfg
+        if hasattr(self.root, "hunt_cfg"):
+            self.root.hunt_cfg["last_active_class_id"] = class_id
+            from lib.features.hunt.hunt_config import save_hunt_config
+            save_hunt_config(self.root.hunt_cfg)
+
         # Clear unsaved changes since we are loading a fresh preset from DB
         self._clear_unsaved_changes()
 
@@ -289,6 +296,11 @@ class AppStateController:
         return (
             "active" if getattr(self.root, "_combo_mode_active", False) else "inactive"
         )
+
+    def is_bot_running(self) -> bool:
+        if hasattr(self.root, "hunt_orchestrator"):
+            return getattr(self.root.hunt_orchestrator, "hunt_running", False)
+        return False
 
     def set_skill_slot(self, lane: str, position: int, skill_id: int) -> None:
         if lane not in self.root.skill_slots:
