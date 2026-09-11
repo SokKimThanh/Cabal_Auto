@@ -70,7 +70,7 @@ class ClassService:
             return []
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM classes ORDER BY name ASC")
+            cursor.execute("SELECT class_id as id, name FROM classes ORDER BY class_id ASC")
             return [dict(row) for row in cursor.fetchall()]
         except Exception as e:
             print(f"[ClassService] Read all error: {e}")
