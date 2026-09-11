@@ -30,7 +30,7 @@ class MonsterDatabase:
         Path(__file__).parent / "lib" / "data" / "type-monster-db-cabal.txt"
     )
 
-    REQUIRED_TABLES = ["monsters", "dungeons", "monster_type", "classes", "skills", "synergies", "synergy_effects", "class_skill_assignments", "scans", "builds", "skill_presets", "preset_skills", "user_preset_state", "translations"]
+    REQUIRED_TABLES = ["monsters", "dungeons", "monster_type", "classes", "skills", "synergies", "synergy_effects", "class_skill_assignments", "scans", "builds", "skill_presets", "preset_skills", "user_preset_state", "translations", "icons", "icon_usages"]
 
     MONSTER_COLUMNS = [
         "id",
@@ -83,11 +83,16 @@ class MonsterDatabase:
         cursor = self.conn.cursor()
 
         try:
-            from lib.db.schema import setup_skills_schema
+            from lib.db.schema import setup_skills_schema, setup_icons_schema
 
             setup_skills_schema(self.conn)
+            setup_icons_schema(self.conn)
         except ImportError as e:
-            print(f"[DB] Could not setup skills schema: {e}")
+            print(f"[DB] Could not import schema modules: {e}")
+        except sqlite3.Error as e:
+            print(f"[DB] Lỗi SQLite khi khởi tạo schema: {e}")
+        except Exception as e:
+            print(f"[DB] Lỗi không xác định khi khởi tạo schema: {e}")
 
         # Bảng translations
         cursor.execute("""
