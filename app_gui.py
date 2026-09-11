@@ -1380,6 +1380,28 @@ class App(tk.Tk):
             if "class" in results and results["class"] != "Unknown":
                 state["character_class"] = results["class"]
 
+                scanned_class_name = results["class"]
+                scanned_class_id = None
+
+                from lib.db.services.class_service import ClassService
+                try:
+                    classes = ClassService().get_all_classes()
+                    for c in classes:
+                        if scanned_class_name.lower() in c["name"].lower() or c["name"].lower() in scanned_class_name.lower():
+                            scanned_class_id = c["id"]
+                            break
+                except Exception:
+                    pass
+
+                if scanned_class_id is not None:
+                    current_class_id = getattr(self.state_controller.root, "_current_class_id", 1)
+                    if scanned_class_id != current_class_id:
+                        import tkinter.messagebox as messagebox
+                        msg = self._t("msg_class_scan_mismatch") if hasattr(self, "_t") else "Scanned class differs from selected class. Update?"
+                        if messagebox.askyesno("Warning", msg, parent=self):
+                            if hasattr(self.state_controller, "set_current_class"):
+                                self.state_controller.set_current_class(scanned_class_id)
+
             self.screen_state_panel.update_from_scan(state)
 
             if "thumbnail" in results:
@@ -1719,6 +1741,9 @@ class App(tk.Tk):
                 self.tab_hunt, "update_hunt_status_color"
             ):
                 self.tab_hunt.update_hunt_status_color(state)
+
+        if hasattr(self.state_controller, "_emit_event"):
+            self.state_controller._emit_event("on_bot_state_changed", state)
 
         self._refresh_start_stop_visual()
 

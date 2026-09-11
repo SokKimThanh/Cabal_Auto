@@ -29,6 +29,9 @@ class SkillPanel(ttk.LabelFrame):
             self.app_state.register_callback(
                 "on_skill_slots_changed", self.on_skill_slots_changed
             )
+            self.app_state.register_callback(
+                "on_bot_state_changed", self.on_bot_state_changed
+            )
 
     def _build(self):
         """Build all widgets for skill panel"""
@@ -367,6 +370,20 @@ class SkillPanel(ttk.LabelFrame):
             )
             cd_lbl.pack(side="right")
             self.widgets["buff_stats"].append((cast_lbl, cd_lbl))
+
+    def on_bot_state_changed(self, state: str):
+        if not hasattr(self, "widgets") or "cb_class" not in self.widgets:
+            return
+
+        is_running = state == "running"
+        # Also double check with controller just in case
+        if hasattr(self.app_state, "is_bot_running") and self.app_state.is_bot_running():
+            is_running = True
+
+        if is_running:
+            self.widgets["cb_class"].config(state="disabled")
+        else:
+            self.widgets["cb_class"].config(state="readonly")
 
     def _load_classes(self):
         class_service = ClassService()
