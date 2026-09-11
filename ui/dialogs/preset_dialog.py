@@ -66,7 +66,7 @@ class PresetDialog(tk.Toplevel):
             icon = "⭐" if preset["is_default"] else "✏️"
             name = preset['name']
             if preset["preset_id"] == active_preset_id:
-                name = f"{name} [ACTIVE]"
+                name = f"{name} [Active]"
             self.listbox.insert(tk.END, f"{icon} {name}")
 
         self._update_buttons()
