@@ -12,7 +12,6 @@ Usage:
     add_icon = icon_helper.get_icon('add', fallback='➕')
 """
 
-import os
 import sys
 import json
 import logging
@@ -24,7 +23,7 @@ try:
 except Exception:
     Image = None  # type: ignore
     ImageTk = None  # type: ignore
-from typing import Optional, Union, Any, Tuple
+from typing import Optional, Union, Any, Tuple, Dict
 
 
 class IconHelper:
@@ -171,7 +170,6 @@ class IconHelper:
         data = list(img.getdata())
 
         # Check if the icon is full-color by measuring color variance
-        is_full_color = False
         color_pixels = 0
         total_opaque_pixels = 0
 
@@ -384,6 +382,75 @@ class IconHelper:
                 if p.exists():
                     return True
         return False
+
+    def resolve_icon_display(self, icon_data: Dict) -> Tuple[str, str, bool]:
+        """
+        Resolve the icon display path and resource type based on fallback priority.
+        Priority: .png > .ico > fallback_emoji
+
+        Args:
+            icon_data: Dictionary containing 'filepath' and 'fallback_emoji'
+
+        Returns:
+            Tuple of (resolved_path_or_emoji, resource_type, success)
+            - resource_type is "image" or "text"
+            - success is True if physical file (.png/.ico) was found, False if fallback was used.
+        """
+        filepath = icon_data.get('filepath') or ''
+        fallback_emoji = icon_data.get('fallback_emoji') or '❓'
+
+        if filepath:
+            # Strip extension
+            icon_stem = Path(filepath).stem
+
+            extensions = ['.png', '.ico']
+            for ext in extensions:
+                for d in self.icon_dirs:
+                    p = d / f"{icon_stem}{ext}"
+                    if p.exists():
+                        return (str(p), "image", True)
+
+        return (fallback_emoji, "text", False)
+
+    def evaluate_icon_status(self, icon_data: Dict) -> str:
+        """
+        Evaluate the health status of an icon configuration.
+
+        Args:
+            icon_data: Dictionary containing 'filepath' and 'fallback_emoji'
+
+        Returns:
+            "GREEN": filepath exists and physical file exists.
+            "YELLOW": filepath is empty, but fallback_emoji exists (intentional fallback).
+            "RED": filepath exists but physical file is missing, OR both are empty.
+        """
+        filepath = icon_data.get('filepath') or ''
+        fallback_emoji = icon_data.get('fallback_emoji') or ''
+
+        if filepath:
+            # Check if physical file exists
+            icon_stem = Path(filepath).stem
+            file_exists = False
+            for ext in ['.png', '.ico']:
+                for d in self.icon_dirs:
+                    p = d / f"{icon_stem}{ext}"
+                    if p.exists():
+                        file_exists = True
+                        break
+                if file_exists:
+                    break
+
+            if file_exists:
+                return "GREEN"
+            else:
+                return "RED"
+
+        # filepath is empty
+        if fallback_emoji:
+            return "YELLOW"
+
+        # Both are empty
+        return "RED"
 
 
 # Global instance
