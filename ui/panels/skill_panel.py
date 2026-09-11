@@ -316,7 +316,7 @@ class SkillPanel(ttk.LabelFrame):
 
             dd_var = tk.StringVar()
             dd = ttk.Combobox(
-                card, textvariable=dd_var, state="readonly", values=skill_names
+                card, textvariable=dd_var, state="readonly", values=self.skill_names
             )
             dd.pack(fill="x", padx=8, pady=8)
             dd.bind(
