@@ -75,7 +75,8 @@ class SkillEditDialog(tk.Toplevel):
             try:
                 classes = self.app.db_class_service.get_all_classes()
                 for c in classes:
-                    class_values.append(f"{c.get('class_id')} - {c.get('name')}")
+                    class_id = c.get('id') or c.get('class_id', '')
+                    class_values.append(f"{class_id} - {c.get('name', '')}")
             except Exception as e:
                 print(f"[SkillEditDialog] Error loading classes: {e}")
 
