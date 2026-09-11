@@ -767,6 +767,13 @@ class App(tk.Tk):
                 "shield",
             ),
             (
+                "btn_icon_manager",
+                lambda: self.switch_view("icon_manager"),
+                UI.FONT_SECTION,
+                "icon_manager",
+                "📁",
+            ),
+            (
                 "btn_scan_history",
                 lambda: self.switch_view("scan_history"),
                 UI.FONT_SECTION,
@@ -1099,6 +1106,8 @@ class App(tk.Tk):
         self._views["monster_manager"] = MonsterManagerFrame(self.shell_zone_b, self)
         self._views["skill_manager"] = SkillManagerFrame(self.shell_zone_b, self)
         self._views["class_manager"] = ClassManagerFrame(self.shell_zone_b, self)
+        from ui.views.icon_manager_frame import IconManagerFrame
+        self._views["icon_manager"] = IconManagerFrame(self.shell_zone_b, self)
         from ui.views.scan_history_frame import ScanHistoryFrame
         self._views["scan_history"] = ScanHistoryFrame(self.shell_zone_b, self)
 
