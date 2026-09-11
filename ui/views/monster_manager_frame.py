@@ -87,7 +87,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         add_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_add_monster", default=" Thêm"),
+            text=self.app._t("btn_add", default="Thêm"),
             command=self._add_monster,
             **UIStyle.get_button_style("primary")
         )
@@ -95,7 +95,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         edit_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_edit_monster", default=" Sửa"),
+            text=self.app._t("btn_edit", default="Sửa"),
             command=self._edit_monster,
             **UIStyle.get_button_style("primary")
         )
@@ -103,7 +103,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         del_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_del_monster", default=" Xóa"),
+            text=self.app._t("btn_delete", default="Xóa"),
             command=self._delete_monster,
             **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
         )
@@ -111,7 +111,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         ref_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_refresh_monster", default=" Làm mới"),
+            text=self.app._t("btn_refresh", default="Làm mới"),
             command=self._on_refresh,
             **UIStyle.get_button_style("secondary")
         )
@@ -120,7 +120,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
         # Pagination controls in bottom bar
         self.btn_next_page = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_next", default="Sau >"),
+            text=self.app._t("btn_next", default="Sau"),
             command=self._on_next_page,
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,
@@ -138,7 +138,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         self.btn_prev_page = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_prev", default="< Trước"),
+            text=self.app._t("btn_prev", default="Trước"),
             command=self._on_prev_page,
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,

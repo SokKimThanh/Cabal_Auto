@@ -149,7 +149,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
-        self.app.btn_add_monster = tk.Button(
+        self.app.btn_add = tk.Button(
             btn_container,
             text="➕",
             command=self.app._on_monster_add_smart,
@@ -161,9 +161,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
             pady=4,
             cursor="hand2"
         )
-        self.app.btn_add_monster.pack(pady=(0, 4))
+        self.app.btn_add.pack(pady=(0, 4))
         self.app._create_tooltip(
-            self.app.btn_add_monster, self.app._t("monster_rotation_add")
+            self.app.btn_add, self.app._t("monster_rotation_add")
         )
 
         self.app.btn_move_up = tk.Button(

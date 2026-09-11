@@ -60,10 +60,14 @@ class PresetDialog(tk.Toplevel):
 
     def _load_presets(self):
         self.presets = self.service.list_presets_by_class(self.class_id)
+        active_preset_id = self.service.state_manager.get_active_preset(self.class_id)
         self.listbox.delete(0, tk.END)
         for preset in self.presets:
             icon = "⭐" if preset["is_default"] else "✏️"
-            self.listbox.insert(tk.END, f"{icon} {preset['name']}")
+            name = preset['name']
+            if preset["preset_id"] == active_preset_id:
+                name = f"{name} [ACTIVE]"
+            self.listbox.insert(tk.END, f"{icon} {name}")
 
         self._update_buttons()
 
