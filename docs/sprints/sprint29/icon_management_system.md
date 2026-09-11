@@ -146,3 +146,38 @@ Phần này mô tả chi tiết các bước thao tác (Use Cases) trên giao di
 *   **Bước 3:** Người dùng nhấn **Chỉnh sửa (`btn_edit`)** và có hai hướng xử lý:
     *   **Hướng 1 (Khôi phục file):** Nhấn "Chọn file từ máy" để upload lại đúng file hình đã mất. Trạng thái sau khi lưu sẽ chuyển từ 🔴 Đỏ sang 🟢 Xanh.
     *   **Hướng 2 (Chuyển sang Fallback):** Xóa trắng trường `filepath` để hệ thống hiểu rằng việc dùng Emoji là có chủ đích. Trạng thái sau khi lưu sẽ chuyển từ 🔴 Đỏ sang 🟡 Vàng.
+
+---
+
+## 8. Các Vấn Đề Còn Tồn Đọng & Rủi Ro Hệ Thống (Known Issues & System Weaknesses)
+
+Trong quá trình phân tích thiết kế, hệ thống hiện vẫn còn một số điểm yếu và các tình huống (edge cases) chưa được bao phủ hoàn toàn. Dưới đây là danh sách các vấn đề và đề xuất hướng xử lý:
+
+**8.1. Rác dữ liệu file vật lý (Orphaned Files)**
+*   **Vấn đề:** Luồng thao tác hiện tại chỉ đề cập đến việc "Tự động copy file" khi thêm/sửa, nhưng không đề cập đến việc **xóa file vật lý** khi người dùng xóa một Icon khỏi database (hoặc khi đổi sang một file hình ảnh khác). Điều này theo thời gian sẽ tạo ra rác dữ liệu trong thư mục `assets/images/icon/`.
+*   **Hướng giải quyết đề xuất:**
+    *   Khi thực hiện thao tác Xóa (Delete) hoặc Cập nhật ảnh (Update), hệ thống cần kiểm tra xem file vật lý cũ có đang được một `icon_key` nào khác tái sử dụng hay không.
+    *   Nếu không có ai dùng, hệ thống nên hiện prompt hỏi người dùng có muốn xóa luôn file vật lý không, hoặc tự động dọn dẹp file cũ để tiết kiệm dung lượng.
+
+**8.2. Xung đột trùng lặp tên file (File Name Collision)**
+*   **Vấn đề:** Khi người dùng Import một file hình ảnh mới có tên trùng với một file đã tồn tại trong thư mục `assets/images/icon/` (nhưng thuộc về một Icon khác), hệ thống tự động copy có thể ghi đè file cũ, làm hỏng hình ảnh của Icon hiện tại.
+*   **Hướng giải quyết đề xuất:**
+    *   Trước khi copy, hệ thống cần kiểm tra sự tồn tại của file đích.
+    *   Nếu trùng, hệ thống tự động sinh thêm hậu tố vào tên file mới (ví dụ: `sword_1.png`) và lưu tên file mới này vào database `filepath`.
+
+**8.3. Không kiểm soát kích thước & dung lượng ảnh (Uncontrolled Image Dimensions)**
+*   **Vấn đề:** Không có cơ chế ràng buộc hoặc cảnh báo khi người dùng import một file ảnh có kích thước quá lớn (VD: 1920x1080) hoặc dung lượng quá nặng vào hệ thống Icon. Điều này có thể làm vỡ layout giao diện (như Treeview) và tiêu tốn nhiều RAM khi render.
+*   **Hướng giải quyết đề xuất:**
+    *   Bổ sung cơ chế tự động Resize (thu phóng) ảnh về một kích thước chuẩn (VD: tối đa 64x64 hoặc 128x128 pixel) ngay trong lúc Import.
+    *   Hoặc hiện cảnh báo chặn người dùng nếu file lớn hơn dung lượng cho phép (VD: > 100KB).
+
+**8.4. Ràng buộc toàn vẹn dữ liệu khi Xóa (Referential Integrity on Delete)**
+*   **Vấn đề:** Khi người dùng nhấn nút Xóa (`btn_delete`) một Icon, nếu icon này đang được khai báo sử dụng nhiều nơi (trong bảng `icon_usages`), việc xóa đột ngột sẽ khiến giao diện ở các nơi đó rơi vào trạng thái lỗi hoặc mất hiển thị.
+*   **Hướng giải quyết đề xuất:**
+    *   Trước khi Xóa, kiểm tra số lượng references trong `icon_usages`.
+    *   Nếu lớn hơn 0, hiển thị cảnh báo chặn việc xóa, yêu cầu người dùng phải gỡ icon này ở các UI component khác trước (hoặc tự động fallback sang Emoji cho các UI element đó rồi mới cho phép xóa).
+
+**8.5. Thiếu kiểm chứng chuỗi Đa ngôn ngữ (i18n Translation Validation)**
+*   **Vấn đề:** Hệ thống mã màu (Xanh, Vàng, Đỏ) hiện chỉ tập trung đánh giá trạng thái của file vật lý. Tuy nhiên, nếu trường `tooltip_translation_key` được nhập nhưng key này không tồn tại trong hệ thống i18n, khi hover sẽ hiện lỗi hoặc hiển thị chuỗi raw.
+*   **Hướng giải quyết đề xuất:**
+    *   Bổ sung thêm một cờ cảnh báo (ví dụ: Icon cảnh báo nhỏ bên cạnh trạng thái màu) hoặc một trạng thái màu phụ để báo hiệu cho người dùng biết rằng `tooltip_translation_key` khai báo không hợp lệ so với từ điển i18n hiện tại.
