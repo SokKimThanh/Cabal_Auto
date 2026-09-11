@@ -14,7 +14,7 @@ Tạo giao diện hiển thị lịch sử quét (Scans) từ bảng `scans`, đ
 - Kế thừa `ui.components.base.responsive_grid_base.ResponsiveGridBase`. Truyền `bg=UI.BG_BASE` khi gọi `super().__init__`.
 - **Top Bar (Filter Zone)**: Chứa các bộ lọc:
   - Dropdown chọn Class (Combobox) lấy dữ liệu thông qua `self.app.db_class_service.get_all_classes()`. Format hiển thị: `ID - Name`. Fallback "0 - None".
-  - Dropdown chọn Monster (Combobox). Để tối ưu hiệu năng, danh sách này chỉ nên chứa các Monster đã từng xuất hiện trong lịch sử scan (lấy thông qua hàm trong `ScanService`). Format hiển thị tương tự: `ID - Name` (lưu ý: `monster_id` là kiểu `TEXT`).
+  - Dropdown chọn Monster (Combobox). Để tối ưu hiệu năng, danh sách này chỉ nên chứa các Monster đã từng xuất hiện trong lịch sử scan (lấy thông qua hàm trong `ScanService`). Format hiển thị: `ID - Name` (lưu ý: `monster_id` là kiểu `TEXT`). Fallback " - All".
   - Nút "Refresh" (Sử dụng `btn_refresh` translation key).
 - **Body**: `ttk.Treeview` hiển thị các cột: `Scan ID`, `Thời gian` (Timestamp), `Tên Class`, `Tên Kỹ Năng` (Skill), `Tên Quái` (Monster), `Status`.
   - Cấu hình grid cho Treeview và sử dụng thanh cuộn x, y tự động ẩn hiện (dùng `grid_remove()` và `grid()` dựa trên view range, không dùng `pack`).
@@ -22,7 +22,7 @@ Tạo giao diện hiển thị lịch sử quét (Scans) từ bảng `scans`, đ
 - **Footer**: Thanh phân trang (Prev / Next) cùng nhãn hiển thị số trang hiện tại.
 
 ### 2. Truy vấn Dữ liệu (JOIN) (`lib/db/services/scan_service.py`)
-- Viết thêm method `get_scans_with_details(class_id, monster_id, page, page_size)` trong `ScanService`.
+- Viết thêm method `get_scans_with_details(class_id, monster_id, page, page_size)` trong `ScanService`. Hàm này cần trả về tuple `(records, total_count)` để phục vụ phân trang và Empty State.
 - Query cần thực hiện **LEFT JOIN** với các bảng `classes`, `skills`, và `monsters` để lấy ra `class_name`, `skill_name`, `monster_name` phục vụ cho Treeview.
 - Viết thêm method `get_distinct_scanned_monsters()` để trả về danh sách các quái vật (ID và Name) đã có trong bảng `scans`, phục vụ cho Dropdown Monster Filter mà không cần load toàn bộ database quái vật.
 
@@ -40,7 +40,7 @@ Tạo giao diện hiển thị lịch sử quét (Scans) từ bảng `scans`, đ
 - Khởi tạo ScanService: Khai báo `self.db_scan_service = ScanService()` cùng với các db_service khác.
 - Thêm View: Instantiate `ScanHistoryFrame` và thêm vào từ điển `self._views["scan_history"]`.
 - Sidebar Navigation: Thêm một `SidebarWidgetDef` vào danh sách sidebar (trong hàm `_build_sidebar` hoặc danh sách `sidebar_items`), đặt ngay bên dưới "Class Manager".
-  - Sử dụng translation key: `btn_scan_history` (cần thêm vào dictionaries hoặc fallback).
+  - Sử dụng translation key: `btn_scan_history` (cần thêm vào dictionaries trong `lib/i18n/translations.py` với nội dung "Scan History" | "Lịch sử quét").
   - Icon fallback: `🕒`
   - Command gọi `self.switch_view("scan_history")`.
 

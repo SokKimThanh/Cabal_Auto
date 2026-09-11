@@ -311,6 +311,8 @@ class App(tk.Tk):
         self.skill_service = SkillRuntimeService()
         self.db_skill_service = DbSkillService()
         self.db_class_service = DbClassService()
+        from lib.db.services.scan_service import ScanService
+        self.db_scan_service = ScanService()
         self.overlay_controller = AppOverlayController(self)
         self.state_controller = AppStateController(self)
         self.window_controller = AppWindowController(self)
@@ -764,6 +766,13 @@ class App(tk.Tk):
                 "class_manager",
                 "shield",
             ),
+            (
+                "btn_scan_history",
+                lambda: self.switch_view("scan_history"),
+                UI.FONT_SECTION,
+                "scan_history",
+                "🕒",
+            ),
 
             (
                 "sidebar_activity_logs",
@@ -1090,6 +1099,8 @@ class App(tk.Tk):
         self._views["monster_manager"] = MonsterManagerFrame(self.shell_zone_b, self)
         self._views["skill_manager"] = SkillManagerFrame(self.shell_zone_b, self)
         self._views["class_manager"] = ClassManagerFrame(self.shell_zone_b, self)
+        from ui.views.scan_history_frame import ScanHistoryFrame
+        self._views["scan_history"] = ScanHistoryFrame(self.shell_zone_b, self)
 
         self.logs_text_widget = self._views["logs"].text_widget
 
