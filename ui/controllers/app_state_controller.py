@@ -15,7 +15,7 @@ class AppStateController:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        app = root
+
 
 
 
@@ -31,7 +31,7 @@ class AppStateController:
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
 
         # Character class selection for presets
-        hunt_settings = getattr(app, "hunt_cfg", {})
+        hunt_settings = getattr(self.root, "hunt_cfg", {})
         self._current_class_id = hunt_settings.get("last_active_class_id", 1)
 
         # Global hotkeys - registered after config load
@@ -102,7 +102,7 @@ class AppStateController:
 
             "window_bounds_display": tk.StringVar(master=root, value=""),
             "hunt_status": tk.StringVar(master=root),
-            "hunt_target_info": tk.StringVar(master=root, value=app._t("target_card.target_none") if hasattr(app, '_t') else ""),
+            "hunt_target_info": tk.StringVar(master=root, value=i18n_t("target_card.target_none")),
             "target_policy": tk.StringVar(master=root),
             "setup_template": tk.StringVar(master=root),
             "setup_target_key": tk.StringVar(master=root),
@@ -385,10 +385,10 @@ class AppStateController:
         )
 
     def build_hunt_config_from_state(self) -> Dict[str, Any]:
-        app = self.root
+
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
-        cfg = copy.deepcopy(getattr(app, "hunt_cfg", {}))
+        cfg = copy.deepcopy(getattr(self.root, "hunt_cfg", {}))
         if not isinstance(cfg.get("skill_slots"), list):
             cfg["skill_slots"] = []
 
@@ -441,7 +441,7 @@ class AppStateController:
             self.ui_vars["bring_front"].get() if "bring_front" in self.ui_vars and self.ui_vars["bring_front"].get() else False
         )
         cfg["skill_slots"] = []
-        if hasattr(app, "_collect_skill_slots"):
+        if hasattr(self, "_collect_skill_slots_func") and callable(self._collect_skill_slots_func):
             collected = self._collect_skill_slots_func()
             if isinstance(collected, list):
                 for s in collected:
@@ -519,8 +519,8 @@ class AppStateController:
         return attack_min, lost_timeout
 
     def _update_monster_estimate_label(self, monster: Optional[Dict[str, Any]]) -> None:
-        app = self.root
-        if not hasattr(app, "monster_estimate_var"):
+
+        if "monster_estimate" not in self.ui_vars:
             return
         if not monster:
             self.ui_vars["monster_estimate"].set("")
@@ -532,7 +532,7 @@ class AppStateController:
         )
 
     def _apply_monster_to_hunt_quick(self, monster: Optional[Dict[str, Any]]) -> None:
-        app = self.root
+
         if not monster:
             return
 
@@ -551,25 +551,25 @@ class AppStateController:
             self.hunt_cfg["templates"] = copy.deepcopy(templates)
             if templates:
                 first_path = str(templates[0].get("path", "") or "").strip()
-                if first_path and hasattr(app, "template_var"):
+                if first_path and "template" in self.ui_vars:
                     self.ui_vars['template'].set(first_path)
                     self.hunt_cfg["template_path"] = first_path
 
         stats = self._calculate_monster_estimate(monster)
         attack_min, lost_timeout = self._recommend_attack_settings(stats)
-        if hasattr(app, "attack_duration_var"):
+        if "attack_duration" in self.ui_vars:
             self.ui_vars['attack_duration'].set(f"{attack_min:.2f}")
-        if hasattr(app, "lost_timeout_var"):
+        if "lost_timeout" in self.ui_vars:
             self.ui_vars['lost_timeout'].set(f"{lost_timeout:.2f}")
         self._update_monster_estimate_label(monster)
 
     def _refresh_slot_key_labels(self) -> None:
-        app = self.root
+
         labels = getattr(self, "skill_slot_key_labels", [])
         vars_ = getattr(self, "skill_slot_vars", [])
         skills_by_name = {
             skill.get("name"): skill
-            for skill in getattr(app, "skills", [])
+            for skill in getattr(self.root, "skills", [])
             if isinstance(skill, dict) and skill.get("name")
         }
         for idx, label in enumerate(labels):
@@ -580,12 +580,12 @@ class AppStateController:
             label.config(text=key.upper() if key else "", fg="#333333")
 
     def _validate_slot_key_duplicates(self) -> None:
-        app = self.root
+
         labels = getattr(self, "skill_slot_key_labels", [])
         vars_ = getattr(self, "skill_slot_vars", [])
         skills_by_name = {
             skill.get("name"): skill
-            for skill in getattr(app, "skills", [])
+            for skill in getattr(self.root, "skills", [])
             if isinstance(skill, dict) and skill.get("name")
         }
         seen: Dict[str, int] = {}
@@ -609,21 +609,21 @@ class AppStateController:
         return
 
     def _clear_unsaved_changes(self) -> None:
-        app = self.root
+
         self.has_unsaved_changes = False
-        if hasattr(app, "_update_unsaved_indicator"):
+        if "unsaved_indicator_func" in self.ui_widgets:
             if callable(self.ui_widgets.get("unsaved_indicator_func")): self.ui_widgets["unsaved_indicator_func"]()
 
     def _update_window_bounds_display(self) -> None:
-        app = self.root
-        if not hasattr(app, "window_bounds_display_var"):
+
+        if "window_bounds_display" not in self.ui_vars:
             return
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
         from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
         bounds = WindowSelectionService.resolve_bounds(
-            getattr(app, "hunt_cfg", {}), getattr(self, "current_window_bounds", None)
+            getattr(self.root, "hunt_cfg", {}), getattr(self, "current_window_bounds", None)
         )
         if bounds:
             self.ui_vars["window_bounds_display"].set(
@@ -632,20 +632,20 @@ class AppStateController:
         else:
             self.ui_vars["window_bounds_display"].set("")
 
-        if hasattr(app, "bounds_status_var") and hasattr(app, "bounds_readiness_label"):
+        if "bounds_status" in self.ui_vars and "bounds_readiness_label" in self.ui_widgets:
             selected_window = (
-                self.ui_vars["win_combo"].get() if hasattr(app, "win_combo_var") else None
+                self.ui_vars["win_combo"].get() if "win_combo" in self.ui_vars else None
             )
 
             is_minimized = False
             if (
                 selected_window
-                and hasattr(app, "win_items")
+                and getattr(self, "win_items", None) is not None
                 and isinstance(self.win_items, list)
             ):
                 selected_hwnd = (
                     self.hunt_selected.get("hwnd")
-                    if hasattr(app, "hunt_selected")
+                    if getattr(self, "hunt_selected", None) is not None
                     and isinstance(self.hunt_selected, dict)
                     else None
                 )
@@ -657,12 +657,12 @@ class AppStateController:
                         is_minimized = item.get("is_minimized", False)
                         break
 
-            compact = getattr(app, "_bounds_compact_mode", False)
+            compact = getattr(self.root, "_bounds_compact_mode", False)
             if not selected_window:
                 text = "[!]" if compact else i18n_t("bounds_state_select")
                 self.ui_vars["hunt_status"].set(text)
                 if self.ui_widgets.get('bounds_readiness_label'): self.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_WARNING)
-            elif getattr(app, "bounds_recovery_failed", False):
+            elif getattr(self.root, "bounds_recovery_failed", False):
                 text = "[!]" if compact else i18n_t("bounds_state_failed")
                 self.ui_vars["hunt_status"].set(text)
                 if self.ui_widgets.get('bounds_readiness_label'): self.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_DANGER)
