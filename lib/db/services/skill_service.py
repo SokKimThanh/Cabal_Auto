@@ -36,9 +36,19 @@ class SkillService:
                     "icon_h": data.get("icon_h", 0),
                     "class_id": class_id,
                     "type": data.get("type"),
-                },
+                }
             )
             skill_id = cursor.lastrowid
+
+            if class_id is not None:
+                cursor.execute(
+                    """
+                    INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, source_ref, is_recommended)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (class_id, skill_id, data.get("type", "Attack"), "user_added", 0)
+                )
+
             conn.commit()
             return skill_id
         except Exception as e:
@@ -87,20 +97,38 @@ class SkillService:
             return []
         try:
             cursor = conn.cursor()
-            query = "SELECT * FROM skills WHERE 1=1"
+
+            if class_id is not None:
+                query = "SELECT skills.* FROM skills JOIN class_skill_assignments csa ON skills.skill_id = csa.skill_id WHERE 1=1"
+            else:
+                query = "SELECT * FROM skills WHERE 1=1"
+
             params = []
 
             if class_id is not None:
-                query += " AND class_id = ?"
+                query += " AND csa.class_id = ?"
                 params.append(class_id)
             if skill_type:
-                query += " AND type = ?"
+                if class_id is not None:
+                    query += " AND skills.type = ?"
+                else:
+                    query += " AND type = ?"
                 params.append(skill_type)
             if search_text:
-                query += " AND (name LIKE ? OR alias LIKE ?)"
+                if class_id is not None:
+                    query += " AND (skills.name LIKE ? OR skills.alias LIKE ?)"
+                else:
+                    query += " AND (name LIKE ? OR alias LIKE ?)"
                 params.extend([f"%{search_text}%", f"%{search_text}%"])
 
-            query += " ORDER BY name ASC"
+            if class_id is not None:
+                query += " GROUP BY skills.skill_id"
+
+            if class_id is not None:
+                query += " ORDER BY skills.name ASC"
+            else:
+                query += " ORDER BY name ASC"
+
             query += " LIMIT ? OFFSET ?"
             params.extend([limit, offset])
 
@@ -127,17 +155,28 @@ class SkillService:
             return 0
         try:
             cursor = conn.cursor()
-            query = "SELECT COUNT(*) FROM skills WHERE 1=1"
+
+            if class_id is not None:
+                query = "SELECT COUNT(DISTINCT skills.skill_id) FROM skills JOIN class_skill_assignments csa ON skills.skill_id = csa.skill_id WHERE 1=1"
+            else:
+                query = "SELECT COUNT(*) FROM skills WHERE 1=1"
+
             params = []
 
             if class_id is not None:
-                query += " AND class_id = ?"
+                query += " AND csa.class_id = ?"
                 params.append(class_id)
             if skill_type:
-                query += " AND type = ?"
+                if class_id is not None:
+                    query += " AND skills.type = ?"
+                else:
+                    query += " AND type = ?"
                 params.append(skill_type)
             if search_text:
-                query += " AND (name LIKE ? OR alias LIKE ?)"
+                if class_id is not None:
+                    query += " AND (skills.name LIKE ? OR skills.alias LIKE ?)"
+                else:
+                    query += " AND (name LIKE ? OR alias LIKE ?)"
                 params.extend([f"%{search_text}%", f"%{search_text}%"])
 
             cursor.execute(query, params)
@@ -195,6 +234,22 @@ class SkillService:
                         "type": data.get("type"),
                     },
                 )
+
+                # Also update class_skill_assignments
+                if class_id is None:
+                    # Usually we shouldn't wipe all class assignments just because class_id is set to None.
+                    # But if we must respect the UI's 'None' value, we can remove any assignment that was explicitly created by the user here,
+                    # or perhaps leave it alone. Let's just leave it alone to avoid data loss on multi-class skills.
+                    pass
+                else:
+                    # Insert or ignore the new class assignment so we don't wipe out other class assignments
+                    cursor.execute(
+                        """
+                        INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, source_ref, is_recommended)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (class_id, skill_id, data.get("type", "Attack"), "user_updated", 0)
+                    )
             else:
                 cursor.execute(
                     """
