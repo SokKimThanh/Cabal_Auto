@@ -130,7 +130,7 @@ class SetupTab(ResponsiveGridBase):
         return group_frame, is_visible_var, toggle
 
     def _build_hotkeys_content(self, frame):
-        hotkey_cfg = self.app.hunt_cfg.get("global_hotkeys", {})
+        hotkey_cfg = self.app.state_controller.hunt_cfg.get("global_hotkeys", {})
         self.app.global_hotkey_enabled_var = tk.BooleanVar(
             value=hotkey_cfg.get("enabled", True)
         )
@@ -262,37 +262,37 @@ class SetupTab(ResponsiveGridBase):
 
     def _build_advanced_content(self, frame):
         self.app.setup_target_key_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("target_key", "TAB"))
+            value=str(self.app.state_controller.hunt_cfg.get("target_key", "TAB"))
         )
         self.app.setup_target_key_var.trace_add("write", self._on_setting_changed)
 
         self.app.setup_press_ms_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("attack_press_ms", 60))
+            value=str(self.app.state_controller.hunt_cfg.get("attack_press_ms", 60))
         )
         self.app.setup_press_ms_var.trace_add("write", self._on_setting_changed)
 
         self.app.setup_target_cycle_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("target_cycle_delay", 0.2))
+            value=str(self.app.state_controller.hunt_cfg.get("target_cycle_delay", 0.2))
         )
         self.app.setup_target_cycle_var.trace_add("write", self._on_setting_changed)
 
         self.app.setup_search_interval_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("search_interval", 0.25))
+            value=str(self.app.state_controller.hunt_cfg.get("search_interval", 0.25))
         )
         self.app.setup_search_interval_var.trace_add("write", self._on_setting_changed)
 
         self.app.setup_attack_interval_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("attack_interval", 0.15))
+            value=str(self.app.state_controller.hunt_cfg.get("attack_interval", 0.15))
         )
         self.app.setup_attack_interval_var.trace_add("write", self._on_setting_changed)
 
         self.app.setup_lost_timeout_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("lost_timeout_sec", 1.2))
+            value=str(self.app.state_controller.hunt_cfg.get("lost_timeout_sec", 1.2))
         )
         self.app.setup_lost_timeout_var.trace_add("write", self._on_setting_changed)
 
         self.app.setup_attack_duration_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("attack_min_duration_sec", 1.5))
+            value=str(self.app.state_controller.hunt_cfg.get("attack_min_duration_sec", 1.5))
         )
         self.app.setup_attack_duration_var.trace_add("write", self._on_setting_changed)
 
@@ -348,7 +348,7 @@ class SetupTab(ResponsiveGridBase):
         )
         self.app.setup_template_var = tk.StringVar(
             value=str(
-                self.app.hunt_cfg.get("template_path", "assets/images/target_frame.png")
+                self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")
             )
         )
         self.app.setup_template_var.trace_add("write", self._on_setting_changed)

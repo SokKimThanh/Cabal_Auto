@@ -18,7 +18,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         return max(8, int(base_size * self.scale_factor))
 
     def _update_target_policy_layout(self):
-        policy = self.app.state_controller.ui_vars['target_policy'].get()
+        policy = self.app.state_controller.get_ui_var('target_policy')
         # Hide all containers
         self.configured_container.pack_forget()
         self.detected_container.pack_forget()
@@ -42,26 +42,26 @@ class MonsterTargetPanel(ttk.LabelFrame):
         mode_bar.pack(fill="x", padx=10, pady=(0, 8))
 
         self.app.state_controller.ui_vars['target_policy'] = tk.StringVar(
-            value=self.app.hunt_cfg.get("target_policy", "configured_only")
+            value=self.app.state_controller.hunt_cfg.get("target_policy", "configured_only")
         )
 
         def _on_policy_change(*args):
             if getattr(self.app, "click_running", False):
-                self.app.state_controller.ui_vars['target_policy'].set(
-                    self.app.hunt_cfg.get("target_policy", "configured_only")
+                self.app.state_controller.set_ui_var('target_policy',
+                    self.app.state_controller.hunt_cfg.get("target_policy", "configured_only")
                 )
                 return
-            new_policy = self.app.state_controller.ui_vars['target_policy'].get()
+            new_policy = self.app.state_controller.get_ui_var('target_policy')
             if new_policy not in ["configured_only", "all_resolved", "any_target"]:
                 new_policy = "configured_only"
-                self.app.state_controller.ui_vars['target_policy'].set(new_policy)
-            self.app.hunt_cfg["target_policy"] = new_policy
-            self.app.has_unsaved_changes = True
+                self.app.state_controller.set_ui_var('target_policy', new_policy)
+            self.app.state_controller.hunt_cfg["target_policy"] = new_policy
+            self.app.state_controller.has_unsaved_changes = True
             if hasattr(self.app, "_update_unsaved_indicator"):
                 self.app._update_unsaved_indicator()
             self._update_target_policy_layout()
 
-        if hasattr(self.app.state_controller.ui_vars['target_policy'], "trace_add"):
+        if hasattr(self.app.state_controller.ui_vars.get('target_policy'), "trace_add"):
             self.app.state_controller.ui_vars['target_policy'].trace_add("write", _on_policy_change)
 
         policies = [

@@ -112,7 +112,7 @@ class CompactWindowSelector:
     ):
         """Update UI with fetched windows (Main Thread only)."""
         self.win_items = windows
-        self.root.win_items = windows
+        self.root.state_controller.win_items = windows
 
         if not windows:
             self.selected_window = None
@@ -128,7 +128,7 @@ class CompactWindowSelector:
         logger.error("Failed to refresh Cabal windows: %s", error)
         self.win_items = []
         self.selected_window = None
-        self.root.win_items = []
+        self.root.state_controller.win_items = []
         message = f"Không thể tìm cửa sổ Cabal: {error}"
         self._set_entry_status(message, UI.DANGER, UI.BG_SURFACE)
         self._set_loading_state(False)

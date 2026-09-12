@@ -94,10 +94,8 @@ class AppWindowController:
         else:
             logger.error("All restore attempts failed.")
             self.root.state_controller.bounds_recovery_failed = True
-            if hasattr(self.root, "state_controller") and hasattr(
-                self.root.state_controller, "_update_window_bounds_display"
-            ):
-                self.root.state_controller._update_window_bounds_display()
+            if hasattr(self.root, "state_controller"):
+                self.update_window_bounds_display()
 
     def on_hunt_refresh_windows(self, *_args) -> None:
         logger.debug("on_hunt_refresh_windows() called")
@@ -149,8 +147,7 @@ class AppWindowController:
             self.root.state_controller.win_items = []
             if ("win_combo" in self.root.state_controller.ui_widgets):
                 self.root.state_controller.ui_widgets['win_combo']["values"] = []
-            if ("hunt_status" in self.root.state_controller.ui_vars):
-                self.root.state_controller.ui_vars['hunt_status'].set(f"Window scan failed: {exc}")
+            self.root.state_controller.set_ui_var('hunt_status', f"Window scan failed: {exc}")
             return
 
         self.root.state_controller.win_items = items
@@ -168,11 +165,10 @@ class AppWindowController:
             logger.warning("  win_combo not found on root!")
 
         # Update status to show how many windows found
-        if ("hunt_status" in self.root.state_controller.ui_vars):
             if items:
-                self.root.state_controller.ui_vars['hunt_status'].set(f"Found {len(items)} window(s). Select and click Start.")
+                self.root.state_controller.set_ui_var('hunt_status', f"Found {len(items)} window(s). Select and click Start.")
             else:
-                self.root.state_controller.ui_vars['hunt_status'].set("No Cabal windows found. Launch game and try again.")
+                self.root.state_controller.set_ui_var('hunt_status', "No Cabal windows found. Launch game and try again.")
 
     def on_window_combo_selected(self, _evt=None) -> None:
         logger.debug("on_window_combo_selected() called")
@@ -192,9 +188,8 @@ class AppWindowController:
         except Exception as e:
             logger.debug(f"  Failed to get combobox index: {e}")
             selected_title = (
-                self.root.state_controller.ui_vars['win_combo'].get().strip()
-                if ("win_combo" in self.root.state_controller.ui_vars)
-                else ""
+                self.root.state_controller.get_ui_var('win_combo').strip()
+                if True else ""
             )
             logger.debug(f"  Trying to find by title: {selected_title}")
             for idx, item in enumerate(self.root.state_controller.win_items):
@@ -236,8 +231,7 @@ class AppWindowController:
         validation = validate_selected_cabal_window(selected, self.root.state_controller.win_items)
         if not validation.is_valid:
             logger.warning(f"  Window validation failed: {validation.code}")
-            if ("hunt_status" in self.root.state_controller.ui_vars):
-                self.root.state_controller.ui_vars['hunt_status'].set(
+            self.root.state_controller.set_ui_var('hunt_status',
                     f"Selected window is invalid: {validation.code}"
                 )
             return
@@ -262,11 +256,9 @@ class AppWindowController:
         hunt_area = self.root.state_controller.hunt_cfg.get("hunt_area")
         if isinstance(hunt_area, dict):
             hunt_area["window_title"] = selected["title"]
-        if hasattr(self.root, "_update_window_bounds_display"):
-            self.root.state_controller._update_window_bounds_display()
+        self.update_window_bounds_display()
         save_hunt_config(self.root.state_controller.hunt_cfg)
-        if ("hunt_status" in self.root.state_controller.ui_vars):
-            self.root.state_controller.ui_vars['hunt_status'].set(f"Window selected: {selected['title']}")
+        self.root.state_controller.set_ui_var('hunt_status', f"Window selected: {selected['title']}")
         logger.debug(f"  on_window_combo_selected() completed successfully")
 
     def _auto_detect_and_save_cabal_window(self) -> None:
@@ -291,8 +283,7 @@ class AppWindowController:
                 if valid_index >= 0:
                     if ("win_combo" in self.root.state_controller.ui_widgets):
                         self.root.state_controller.ui_widgets['win_combo'].current(valid_index)
-                    if ("win_combo" in self.root.state_controller.ui_vars):
-                        self.root.state_controller.ui_vars['win_combo'].set(items[valid_index]["title"])
+                    self.root.state_controller.set_ui_var('win_combo', items[valid_index]["title"])
                     self.on_window_combo_selected()
         except Exception as e:
             logger.error(f"Exception during operation: {e}")
@@ -354,7 +345,59 @@ class AppWindowController:
         from ui.windows.timing_calc_dialog import TimingCalcDialog
 
         def _apply_time(t):
-            if ("setup_lost_timeout" in self.root.state_controller.ui_vars):
-                self.root.state_controller.ui_vars['setup_lost_timeout'].set(str(t))
+            self.root.state_controller.set_ui_var('setup_lost_timeout', str(t))
 
         TimingCalcDialog(self.root, self.root, on_apply=_apply_time)
+
+
+    def update_window_bounds_display(self) -> None:
+        if self.root.state_controller.get_ui_var("window_bounds_display") is None:
+            return
+
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+        from lib.ui_style_v2 import UIStyleV2 as UIStyle
+        from lib.i18n import t as i18n_t
+
+        bounds = WindowSelectionService.resolve_bounds(
+            self.root.state_controller.hunt_cfg, self.root.state_controller.current_window_bounds
+        )
+        if bounds:
+            self.root.state_controller.set_ui_var("window_bounds_display", f"{bounds[0]}, {bounds[1]}, {bounds[2]}, {bounds[3]}")
+        else:
+            self.root.state_controller.set_ui_var("window_bounds_display", "")
+
+        if self.root.state_controller.get_ui_var("bounds_status") is not None and "bounds_readiness_label" in self.root.state_controller.ui_widgets:
+            selected_window = self.root.state_controller.get_ui_var("win_combo")
+
+            is_minimized = False
+            if selected_window and self.root.state_controller.win_items:
+                selected_hwnd = self.root.state_controller.hunt_selected.get("hwnd") if self.root.state_controller.hunt_selected else None
+                for item in self.root.state_controller.win_items:
+                    if selected_hwnd and item.get("hwnd") == selected_hwnd:
+                        is_minimized = item.get("is_minimized", False)
+                        break
+                    elif item.get("title") == selected_window:
+                        is_minimized = item.get("is_minimized", False)
+                        break
+
+            compact = getattr(self.root, "_bounds_compact_mode", False)
+            if not selected_window:
+                text = "[!]" if compact else i18n_t("bounds_state_select")
+                self.root.state_controller.set_ui_var("hunt_status", text)
+                if self.root.state_controller.ui_widgets.get('bounds_readiness_label'): self.root.state_controller.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_WARNING)
+            elif self.root.state_controller.bounds_recovery_failed:
+                text = "[!]" if compact else i18n_t("bounds_state_failed")
+                self.root.state_controller.set_ui_var("hunt_status", text)
+                if self.root.state_controller.ui_widgets.get('bounds_readiness_label'): self.root.state_controller.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_DANGER)
+            elif is_minimized or (bounds and (bounds[0] <= -32000 or bounds[1] <= -32000)):
+                text = "[!]" if compact else i18n_t("bounds_state_minimized")
+                self.root.state_controller.set_ui_var("hunt_status", text)
+                if self.root.state_controller.ui_widgets.get('bounds_readiness_label'): self.root.state_controller.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_DANGER)
+            elif not bounds:
+                text = "[!]" if compact else i18n_t("bounds_state_invalid")
+                self.root.state_controller.set_ui_var("hunt_status", text)
+                if self.root.state_controller.ui_widgets.get('bounds_readiness_label'): self.root.state_controller.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_WARNING)
+            else:
+                text = "[✓]" if compact else i18n_t("bounds_state_ready").format(title=f"{bounds[2]}x{bounds[3]}")
+                self.root.state_controller.set_ui_var("hunt_status", text)
+                if self.root.state_controller.ui_widgets.get('bounds_readiness_label'): self.root.state_controller.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_ACCENT)

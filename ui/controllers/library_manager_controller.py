@@ -29,8 +29,8 @@ class LibraryManagerController:
             try:
                 hunt_cfg = changes.get("hunt_cfg")
                 if isinstance(hunt_cfg, dict):
-                    self.app.hunt_cfg.update(hunt_cfg)
-                    save_hunt_config(self.app.hunt_cfg)
+                    self.app.state_controller.hunt_cfg.update(hunt_cfg)
+                    save_hunt_config(self.app.state_controller.hunt_cfg)
                 monsters = changes.get("monsters")
                 if monsters is not None:
                     if hasattr(self.app, "skill_service") and hasattr(
@@ -75,7 +75,7 @@ class LibraryManagerController:
         try:
             self.app.library_manager_win = LibraryManagerWindow(
                 parent=self.app,
-                hunt_cfg=self.app.hunt_cfg,
+                hunt_cfg=self.app.state_controller.hunt_cfg,
                 monsters=self.app.monsters,
                 skills=self.app.skills,
                 lang=getattr(self.app, "lang", "vi"),

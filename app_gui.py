@@ -541,7 +541,7 @@ class App(tk.Tk):
                         except Exception:
                             pass
                         # also set a short hunt status message
-                        self.state_controller.ui_vars['hunt_status'].set(self._t("migration_mapped_slots_short"))
+                        self.state_controller.set_ui_var('hunt_status', self._t("migration_mapped_slots_short"))
                     except Exception:
                         # non-fatal
                         pass
@@ -595,12 +595,10 @@ class App(tk.Tk):
         self.hunt_runner = HuntRunner(
             hunt_cfg=self.hunt_cfg,
             set_status=(
-                self.state_controller.ui_vars['hunt_status'].set if ("hunt_status" in self.state_controller.ui_vars) else lambda _: None
+                lambda v: self.state_controller.set_ui_var('hunt_status', v)
             ),
             set_target_info=(
-                self.state_controller.ui_vars['hunt_target_info'].set
-                if ("hunt_target_info" in self.state_controller.ui_vars)
-                else lambda _: None
+                lambda v: self.state_controller.set_ui_var('hunt_target_info', v)
             ),
             get_overlay_ctrl=lambda: getattr(self, "overlay_ctrl", None),
             get_notebook=lambda: getattr(self, "notebook", None),
@@ -613,11 +611,11 @@ class App(tk.Tk):
 
         self.hunt_orchestrator = HuntOrchestrator(
             on_status_update=(
-                self.state_controller.ui_vars['hunt_status'].set if ("hunt_status" in self.state_controller.ui_vars) else lambda _: None
+                lambda v: self.state_controller.set_ui_var('hunt_status', v)
             ),
             on_state_change=self._on_orchestrator_state_change,
             locate_target=TargetLocatorService.locate_target,
-            prepare_skill_runtime=self.state_controller._prepare_skill_runtime,
+            prepare_skill_runtime=self.skill_caster_service.prepare_skill_runtime,
             try_cast_skills=self.skill_caster_service.try_cast_skills,
             bring_window_to_front=self.window_controller._bring_window_to_front,
             bring_window_to_front_by_hwnd=self.window_controller._bring_window_to_front_by_hwnd,
@@ -970,7 +968,7 @@ class App(tk.Tk):
                 # Update bounds display
                 if hasattr(self, "state_controller"):
                     self.state_controller._update_window_bounds_display()
-                self.state_controller.ui_vars['hunt_status'].set(f"✓ Selected: {window_dict['title']}")
+                self.state_controller.set_ui_var('hunt_status', f"✓ Selected: {window_dict['title']}")
             except Exception:
                 logger.error("Error selecting window")
 
@@ -1351,11 +1349,11 @@ class App(tk.Tk):
     def _set_db_status(self, msg: str, ok: bool = True):
         """Called by AppLifecycleController to display DB health status."""
         if ("hunt_status" in self.state_controller.ui_vars):
-            self.after(0, lambda: self.state_controller.ui_vars['hunt_status'].set(msg))
+            self.after(0, lambda: self.state_controller.set_ui_var('hunt_status', msg))
 
     def _update_scan_status_text(self, text):
         if ("hunt_status" in self.state_controller.ui_vars):
-            self.after(0, lambda: self.state_controller.ui_vars['hunt_status'].set(text))
+            self.after(0, lambda: self.state_controller.set_ui_var('hunt_status', text))
 
     def _update_scan_status_icon(self, icon_name):
         if hasattr(self, "btn_manual_scan") and self.btn_manual_scan:
@@ -1568,7 +1566,7 @@ class App(tk.Tk):
                     tab_name = tab_names[tab_index]
                     shortcut = f"Alt+{tab_index + 1}"
                     if ("hunt_status" in self.state_controller.ui_vars):
-                        self.state_controller.ui_vars['hunt_status'].set(f"{shortcut}: Switched to {tab_name} tab")
+                        self.state_controller.set_ui_var('hunt_status', f"{shortcut}: Switched to {tab_name} tab")
         except Exception as e:
             print(f"Tab switch error: {e}")
 
@@ -1793,14 +1791,14 @@ class App(tk.Tk):
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
             if ("hunt_status" in self.state_controller.ui_vars):
-                self.state_controller.ui_vars['hunt_status'].set(self._t("hunt_running"))
+                self.state_controller.set_ui_var('hunt_status', self._t("hunt_running"))
             if hasattr(self, "tab_hunt") and hasattr(
                 self.tab_hunt, "update_hunt_status_color"
             ):
                 self.tab_hunt.update_hunt_status_color("running")
         elif state in ["idle", "error", "stopped"]:
             if state == "idle" and ("hunt_status" in self.state_controller.ui_vars):
-                self.state_controller.ui_vars['hunt_status'].set(
+                self.state_controller.set_ui_var('hunt_status',
                     self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
                 )
             if hasattr(self, "tab_hunt") and hasattr(
@@ -1819,7 +1817,7 @@ class App(tk.Tk):
         ):
             return
 
-        validation_error = WindowSelectionService.validate_prerequisites(self.state_controller.hunt_selected, self.state_controller.win_items, getattr(self, 'hunt_cfg', {}), getattr(self, 'current_window_bounds', None))
+        validation_error = WindowSelectionService.validate_prerequisites(self.state_controller.hunt_selected, self.state_controller.win_items, self.state_controller.hunt_cfg, self.state_controller.current_window_bounds)
         if validation_error:
             messagebox.showerror(self._t("error_title"), validation_error, parent=self)
             return
@@ -1916,7 +1914,7 @@ class App(tk.Tk):
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
-        display_mode = self.state_controller.ui_vars['rotation_mode'].get()
+        display_mode = self.state_controller.get_ui_var('rotation_mode')
         if hasattr(self, "rotation_mode_map"):
             mode = self.rotation_mode_map.get(display_mode, display_mode)
         else:
@@ -1925,9 +1923,10 @@ class App(tk.Tk):
         if mode not in {"sequence", "priority"}:
             mode = "sequence"
 
-        self.hunt_cfg["rotation_mode"] = mode
+        self.state_controller.hunt_cfg["rotation_mode"] = mode
         self._refresh_monster_rotation_list()
-        self.state_controller.ui_vars['hunt_status'].set(f"Rotation mode: {mode}")
+        self.state_controller.set_ui_var('hunt_status', f"Rotation mode: {mode}")
+
 
     def promote_detected_monster(self, selection):
         if not selection:
@@ -2286,7 +2285,8 @@ class App(tk.Tk):
             monster = self.monsters[idx]
             self.state_controller._update_monster_estimate_label(monster)
             # Auto-apply monster config (templates, window_bounds, timing recommendations)
-            self.state_controller._apply_monster_to_hunt_quick(monster)
+            from lib.features.hunt.hunt_setup_service import HuntSetupService
+            HuntSetupService.apply_monster_to_hunt_quick(monster, self.state_controller)
         elif hasattr(self, "monster_estimate_var"):
             self.state_controller.ui_vars['monster_estimate'].set("")
 
@@ -2454,7 +2454,7 @@ class App(tk.Tk):
             base=base, attack=attack_min, lost=lost_timeout
         )
         self.state_controller.ui_vars['monster_estimate'].set(detail)
-        self.state_controller.ui_vars['hunt_status'].set(self._t("monster_applied"))
+        self.state_controller.set_ui_var('hunt_status', self._t("monster_applied"))
 
     # -----------------
     # Skill library helpers
@@ -2715,7 +2715,7 @@ class App(tk.Tk):
             self.state_controller._clear_unsaved_changes()
 
             # 5. Update status
-            self.state_controller.ui_vars['hunt_status'].set(self._t("all_saved"))
+            self.state_controller.set_ui_var('hunt_status', self._t("all_saved"))
 
             # 6. Show success message
             messagebox.showinfo(
