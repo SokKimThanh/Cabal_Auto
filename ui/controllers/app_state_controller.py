@@ -31,7 +31,7 @@ class AppStateController:
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
 
         # Character class selection for presets
-        hunt_settings = getattr(self.root, "hunt_cfg", {})
+        hunt_settings = getattr(self, "hunt_cfg", {})
         self._current_class_id = hunt_settings.get("last_active_class_id", 1)
 
         # Global hotkeys - registered after config load
@@ -185,7 +185,7 @@ class AppStateController:
         """
         import tkinter.messagebox as messagebox
 
-        if getattr(self.root, "has_unsaved_changes", False):
+        if getattr(self, "has_unsaved_changes", False):
             title = i18n_t("warning_title", ns=I18N_GLOBAL)
             msg = i18n_t("msg_unsaved_class_change", ns=I18N_GLOBAL)
 
@@ -196,9 +196,9 @@ class AppStateController:
 
         # Save to hunt_cfg
         if hasattr(self.root, "hunt_cfg"):
-            self.root.hunt_cfg["last_active_class_id"] = class_id
+            self.hunt_cfg["last_active_class_id"] = class_id
             from lib.features.hunt.hunt_config import save_hunt_config
-            save_hunt_config(self.root.hunt_cfg)
+            save_hunt_config(self.hunt_cfg)
 
         # Clear unsaved changes since we are loading a fresh preset from DB
         self._clear_unsaved_changes()
@@ -380,7 +380,7 @@ class AppStateController:
         return WindowSelectionService.validate_prerequisites(
             self.hunt_selected,
             self.win_items,
-            self.root.hunt_cfg if hasattr(self.root, "hunt_cfg") else {},
+            getattr(self, "hunt_cfg", {}),
             getattr(self, "current_window_bounds", None)
         )
 
@@ -388,7 +388,7 @@ class AppStateController:
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
-        cfg = copy.deepcopy(getattr(self.root, "hunt_cfg", {}))
+        cfg = copy.deepcopy(getattr(self, "hunt_cfg", {}))
         if not isinstance(cfg.get("skill_slots"), list):
             cfg["skill_slots"] = []
 
@@ -623,7 +623,7 @@ class AppStateController:
         from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
         bounds = WindowSelectionService.resolve_bounds(
-            getattr(self.root, "hunt_cfg", {}), getattr(self, "current_window_bounds", None)
+            getattr(self, "hunt_cfg", {}), getattr(self, "current_window_bounds", None)
         )
         if bounds:
             self.ui_vars["window_bounds_display"].set(
