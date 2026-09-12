@@ -36,7 +36,7 @@ class SkillManagerController:
         """Callback to safely clean up references when the window closes."""
         self._window = None
         if getattr(self.root, "skill_manager_win", None) is not None:
-            self.root.skill_manager_win = None
+            self.root.state_controller.ui_widgets['skill_manager_win'] = None
 
         # Trigger an update of skill data
         if hasattr(self.root, "skill_service"):

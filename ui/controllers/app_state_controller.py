@@ -96,7 +96,6 @@ class AppStateController:
 
             "window_bounds_display": tk.StringVar(master=root, value=""),
             "hunt_status": tk.StringVar(master=root, value=idle_text),
-            "hunt_target_info": tk.StringVar(master=root, value=app._t("target_card.target_none")),
             "target_policy": tk.StringVar(master=root),
             "setup_template": tk.StringVar(master=root),
             "setup_target_key": tk.StringVar(master=root),
@@ -112,7 +111,21 @@ class AppStateController:
             "global_hotkey_stop": tk.StringVar(master=root),
             "global_hotkey_library": tk.StringVar(master=root),
             "global_hotkey_vision": tk.StringVar(master=root),
-            "global_hotkey_monster": tk.StringVar(master=root)
+            "global_hotkey_monster": tk.StringVar(master=root),
+            "monster_status": tk.StringVar(master=root),
+            "training_mode": tk.BooleanVar(master=root, value=False),
+            "global_hotkeys_enabled_legacy": tk.BooleanVar(master=root, value=True),
+            "lang": tk.StringVar(master=root, value="vi"),
+            "db_status": tk.StringVar(master=root, value="⠋ Đang kiểm tra CSDL..."),
+            "hotkey_status": tk.StringVar(master=root),
+            "hotkey_status_detail": tk.StringVar(master=root),
+            "bounds_status": tk.StringVar(master=root),
+            "win_combo": tk.StringVar(master=root),
+            "template": tk.StringVar(master=root),
+            "attack_duration": tk.StringVar(master=root),
+            "lost_timeout": tk.StringVar(master=root),
+            "rotation_mode": tk.StringVar(master=root, value="cycle"),
+            "rotation_desc": tk.StringVar(master=root)
         }
 
         self.ui_widgets = {
@@ -142,8 +155,6 @@ class AppStateController:
             "height": tk.StringVar(master=root),
         }
 
-            master=root, value=app._t("target_card.target_none")
-        )
 
     def register_callback(self, event: str, handler) -> None:
         if event not in self._callbacks:
@@ -424,7 +435,7 @@ class AppStateController:
         )
         cfg["skill_slots"] = []
         if hasattr(app, "_collect_skill_slots"):
-            collected = app._collect_skill_slots()
+            collected = self._collect_skill_slots_func()
             if isinstance(collected, list):
                 for s in collected:
                     if isinstance(s, dict):
@@ -523,26 +534,26 @@ class AppStateController:
 
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
         if bounds:
-            app.current_window_bounds = bounds
-            WindowSelectionService.update_bounds(app.hunt_cfg, bounds)
-            if hasattr(app.state_controller, "_update_window_bounds_display"):
-                app.state_controller._update_window_bounds_display()
+            self.current_window_bounds = bounds
+            WindowSelectionService.update_bounds(self.hunt_cfg, bounds)
+            if hasattr(self, "_update_window_bounds_display"):
+                self._update_window_bounds_display()
 
         templates = monster.get("templates") or []
         if isinstance(templates, list):
-            app.hunt_cfg["templates"] = copy.deepcopy(templates)
+            self.hunt_cfg["templates"] = copy.deepcopy(templates)
             if templates:
                 first_path = str(templates[0].get("path", "") or "").strip()
                 if first_path and hasattr(app, "template_var"):
-                    app.template_var.set(first_path)
-                    app.hunt_cfg["template_path"] = first_path
+                    self.ui_vars['template'].set(first_path)
+                    self.hunt_cfg["template_path"] = first_path
 
         stats = self._calculate_monster_estimate(monster)
         attack_min, lost_timeout = self._recommend_attack_settings(stats)
         if hasattr(app, "attack_duration_var"):
-            app.attack_duration_var.set(f"{attack_min:.2f}")
+            self.ui_vars['attack_duration'].set(f"{attack_min:.2f}")
         if hasattr(app, "lost_timeout_var"):
-            app.lost_timeout_var.set(f"{lost_timeout:.2f}")
+            self.ui_vars['lost_timeout'].set(f"{lost_timeout:.2f}")
         self._update_monster_estimate_label(monster)
 
     def _refresh_slot_key_labels(self) -> None:
@@ -592,9 +603,9 @@ class AppStateController:
 
     def _clear_unsaved_changes(self) -> None:
         app = self.root
-        app.has_unsaved_changes = False
+        self.has_unsaved_changes = False
         if hasattr(app, "_update_unsaved_indicator"):
-            app._update_unsaved_indicator()
+            if callable(self.ui_widgets.get("unsaved_indicator_func")): self.ui_widgets["unsaved_indicator_func"]()
 
     def _update_window_bounds_display(self) -> None:
         app = self.root
@@ -616,7 +627,7 @@ class AppStateController:
 
         if hasattr(app, "bounds_status_var") and hasattr(app, "bounds_readiness_label"):
             selected_window = (
-                app.win_combo_var.get() if hasattr(app, "win_combo_var") else None
+                self.ui_vars["win_combo"].get() if hasattr(app, "win_combo_var") else None
             )
 
             is_minimized = False
@@ -641,32 +652,32 @@ class AppStateController:
 
             compact = getattr(app, "_bounds_compact_mode", False)
             if not selected_window:
-                text = "[!]" if compact else app._t("bounds_state_select")
+                text = "[!]" if compact else i18n_t("bounds_state_select")
                 self.ui_vars["hunt_status"].set(text)
-                app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
+                if self.ui_widgets.get('bounds_readiness_label'): self.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_WARNING)
             elif getattr(app, "bounds_recovery_failed", False):
-                text = "[!]" if compact else app._t("bounds_state_failed")
+                text = "[!]" if compact else i18n_t("bounds_state_failed")
                 self.ui_vars["hunt_status"].set(text)
-                app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
+                if self.ui_widgets.get('bounds_readiness_label'): self.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_DANGER)
             elif is_minimized or (
                 bounds and (bounds[0] <= -32000 or bounds[1] <= -32000)
             ):
-                text = "[!]" if compact else app._t("bounds_state_minimized")
+                text = "[!]" if compact else i18n_t("bounds_state_minimized")
                 self.ui_vars["hunt_status"].set(text)
-                app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
+                if self.ui_widgets.get('bounds_readiness_label'): self.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_DANGER)
             elif not bounds:
-                text = "[!]" if compact else app._t("bounds_state_invalid")
+                text = "[!]" if compact else i18n_t("bounds_state_invalid")
                 self.ui_vars["hunt_status"].set(text)
-                app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
+                if self.ui_widgets.get('bounds_readiness_label'): self.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_WARNING)
             else:
                 # title handled natively
                 text = (
                     "[✓]"
                     if compact
-                    else app._t("bounds_state_ready").format(
+                    else i18n_t("bounds_state_ready").format(
                         title=f"{bounds[2]}x{bounds[3]}"
                     )
                 )
                 self.ui_vars["hunt_status"].set(text)
-                app.bounds_readiness_label.config(fg=UIStyle.COLOR_ACCENT)
+                if self.ui_widgets.get('bounds_readiness_label'): self.ui_widgets['bounds_readiness_label'].config(fg=UIStyle.COLOR_ACCENT)
 

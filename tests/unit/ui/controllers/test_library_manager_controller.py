@@ -16,6 +16,7 @@ with patch.dict(
     },
 ):
     from ui.controllers.library_manager_controller import LibraryManagerController
+    import ui.windows.library_manager
 
 
 @patch("ui.windows.library_manager.LibraryManagerWindow")
