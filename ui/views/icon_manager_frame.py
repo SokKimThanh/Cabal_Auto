@@ -21,6 +21,16 @@ class IconManagerFrame(ResponsiveGridBase):
         self._setup_ui()
         self.load_tree_data()
 
+    def i18n_t(self, key: str, **kwargs) -> str:
+        """Helper to get translations dynamically based on current app language"""
+        if hasattr(self.app, 'i18n_t'):
+            return self.app.i18n_t(key, **kwargs)
+
+        # Fallback to direct import if app doesn't have it
+        from lib.i18n import t as fallback_t
+        lang = getattr(self.app, 'lang', 'vi')
+        return fallback_t(key, lang=lang, **kwargs)
+
     def _setup_ui(self):
         content_frame = self.get_content_frame()
         # Row 0: Top Filter Bar
@@ -152,6 +162,83 @@ class IconManagerFrame(ResponsiveGridBase):
         # Build Action Buttons
         self._build_action_bar()
 
+    def _build_preview_zone(self):
+        self.preview_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
+        self.preview_frame.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
+        self.preview_frame.grid_rowconfigure(0, weight=1)
+        self.preview_frame.grid_columnconfigure(0, weight=1)
+
+        self.lbl_preview = tk.Label(
+            self.preview_frame,
+            bg=UIStyle.BG_ELEVATED,
+            text="No Icon Selected",
+            font=UIStyle.get_font("body"),
+            width=20,
+            height=5,
+            relief="groove"
+        )
+        self.lbl_preview.grid(row=0, column=0, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+    def _build_detail_form(self):
+        self.form_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
+        self.form_frame.grid(row=1, column=0, sticky="nsew")
+
+        # Configure columns for form labels and entries
+        self.form_frame.grid_columnconfigure(0, weight=0, minsize=100)
+        self.form_frame.grid_columnconfigure(1, weight=1)
+
+        # StringVars
+        self.var_id = tk.StringVar()
+        self.var_name = tk.StringVar()
+        self.var_icon_key = tk.StringVar()
+        self.var_category = tk.StringVar()
+        self.var_fallback_emoji = tk.StringVar()
+        self.var_tooltip_key = tk.StringVar()
+        self.var_filepath = tk.StringVar()
+
+        # 1. ID (Read-only)
+        tk.Label(self.form_frame, text="ID:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="e", padx=5, pady=2)
+        self.entry_id = ttk.Entry(self.form_frame, textvariable=self.var_id, state="disabled")
+        self.entry_id.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
+
+        # 2. Name
+        tk.Label(self.form_frame, text="Name:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
+        self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name)
+        self.entry_name.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+
+        # 3. Icon Key
+        tk.Label(self.form_frame, text="Icon Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=2, column=0, sticky="e", padx=5, pady=2)
+        self.entry_icon_key = ttk.Entry(self.form_frame, textvariable=self.var_icon_key)
+        self.entry_icon_key.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
+
+        # 4. Category
+        tk.Label(self.form_frame, text="Category:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
+        self.combo_category = ttk.Combobox(self.form_frame, textvariable=self.var_category, state="readonly")
+        self.combo_category.grid(row=3, column=1, sticky="ew", padx=5, pady=2)
+
+        # 5. Fallback Emoji
+        tk.Label(self.form_frame, text="Fallback Emoji:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=4, column=0, sticky="e", padx=5, pady=2)
+        self.entry_fallback = ttk.Entry(self.form_frame, textvariable=self.var_fallback_emoji)
+        self.entry_fallback.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
+
+        # 6. Tooltip Key
+        tk.Label(self.form_frame, text="Tooltip Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
+        self.entry_tooltip = ttk.Entry(self.form_frame, textvariable=self.var_tooltip_key)
+        self.entry_tooltip.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
+
+        # 7. Filepath (with Browse button)
+        tk.Label(self.form_frame, text="Filepath:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=6, column=0, sticky="e", padx=5, pady=2)
+
+        filepath_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
+        filepath_frame.grid(row=6, column=1, sticky="ew", padx=5, pady=2)
+        filepath_frame.grid_columnconfigure(0, weight=1)
+
+        self.entry_filepath = ttk.Entry(filepath_frame, textvariable=self.var_filepath, state="disabled")
+        self.entry_filepath.grid(row=0, column=0, sticky="ew")
+
+        self.btn_browse = tk.Button(filepath_frame, text="...", command=self._on_browse_clicked, **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_browse.grid(row=0, column=1, padx=(5, 0))
+
     def _render_preview(self, icon_data):
         if not icon_data:
             self.lbl_preview.config(image='', text="No Icon Selected", font=UIStyle.get_font("body"))
@@ -209,12 +296,18 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add"), command=self._on_add, **UIStyle.get_button_style("primary"))
         self.btn_add.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_add, "btn_add")
 
         self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
         self.btn_edit.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_edit, "btn_edit")
 
         self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete"), command=self._on_delete, **UIStyle.get_button_style("danger" if hasattr(UIStyle, 'get_button_style') and 'danger' in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)] else "secondary"))
         self.btn_delete.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_delete, "btn_delete")
 
         # Override danger if needed (Tkinter style compatibility)
         if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
@@ -222,15 +315,23 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.btn_refresh = tk.Button(right_frame, text=self.i18n_t("btn_refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
         self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_refresh, "btn_refresh")
 
         self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("secondary"))
         self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_sync, "btn_sync", default="Đồng bộ")
 
         self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
         self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_save, "btn_save")
 
         self.btn_cancel = tk.Button(right_frame, text=self.i18n_t("btn_cancel"), command=self._on_cancel, **UIStyle.get_button_style("secondary"))
         self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_cancel, "btn_cancel")
 
         self.set_form_state("VIEW")
 
