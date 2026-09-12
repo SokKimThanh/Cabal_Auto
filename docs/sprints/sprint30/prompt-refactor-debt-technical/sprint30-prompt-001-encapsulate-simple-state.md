@@ -54,3 +54,14 @@ Inside the `AppStateController` class methods (e.g., `set_current_class`, `load_
 - [ ] No primitive state variables are attached to `app` or `self.root` in the `__init__` block (except UI Widgets/StringVars).
 - [ ] Methods inside `AppStateController` correctly access `self.variable_name`.
 - [ ] The app boots without crashing regarding these variables.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- `app_state_controller.py` currently binds numerous primitive states (like `app.click_running`, `app.hunt_thread`, `app.win_items`, `app._current_class_id`, etc.) directly to the `root` (aliased as `app`) object in its `__init__` method.
+- It also manages preset state (`_active_preset_id`, `_preset_mode`, `skill_slots`) and hotkey states.
+
+**Identified Risks & Pitfalls:**
+- **State Shadowing:** Be careful with `app._current_class_id` as it is initialized twice in the current `__init__` (once from `hunt_settings` and then hardcoded to `1` later). Ensure the correct initialization logic is preserved when converting to `self._current_class_id`.
+- **Event Callbacks:** Changing `app._callbacks` to `self._callbacks` requires ensuring that methods like `register_callback` and `_emit_event` are correctly updated to use `self`. If other modules access `app._callbacks` directly (which is an anti-pattern), they will break unless refactored.
+- **Global Imports:** The `i18n_t` import is currently used in a `try...except` block in `__init__`. The prompt advises not touching Tkinter vars yet, but note that the current file has this block.
+- **Bot Manager & Vision Engine:** Variables like `app._bot_manager` and `app._overlay_controller` might be accessed by existing UI logic or Orchestrator threads. Ensure their encapsulation does not sever the link between the UI and the running bot.

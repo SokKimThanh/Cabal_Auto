@@ -41,3 +41,12 @@ In the `App.on_closing` method (or equivalent window destroy protocol), call `se
 - [ ] A `TaskScheduler` or `TimerManager` class is implemented.
 - [ ] `app_gui.py` uses the scheduler instead of calling `.after` directly.
 - [ ] The app closes cleanly without "RuntimeError: main thread is not in main loop" or zombie timer exceptions.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- `app_gui.py` uses raw `self.root.after(...)` calls for updating system status, hunt status, and timers.
+
+**Identified Risks & Pitfalls:**
+- **Double Registration:** The standard pattern for `after` loops is `def loop(): ... self.after(100, loop)`. When porting to `TaskScheduler`, ensure the scheduler doesn't append duplicate tracker IDs endlessly, leading to memory leaks within the tracker dictionary itself. A recurring task wrapper is safer.
+- **Teardown Exceptions:** Canceling a task that has already fired or canceling during an active shutdown sequence can throw Tkinter TclErrors. The `TaskScheduler.cancel_all()` method must catch and safely swallow these specific errors to ensure clean application exit.
+- **Thread Daemonization:** If `TaskScheduler` is extended to manage Threads as suggested, ensure all threads are explicitly marked as `daemon=True` so they do not block the application from closing if `cancel_all` fails.

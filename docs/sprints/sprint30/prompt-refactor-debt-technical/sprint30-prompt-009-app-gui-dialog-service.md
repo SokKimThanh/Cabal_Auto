@@ -51,3 +51,11 @@ If the service needs the `app.root` as a default parent to avoid passing `parent
 ## 6. Acceptance Criteria
 - [ ] `tkinter.messagebox` is no longer imported or called directly inside `app_gui.py`.
 - [ ] All info, error, and confirmation popups function correctly via the `DialogService`.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- There are multiple hardcoded calls to `tkinter.messagebox` across `app_gui.py` and potentially nested controllers.
+
+**Identified Risks & Pitfalls:**
+- **Lost Thread Safety:** If `messagebox` is called from a background thread (e.g., inside a scan or hunt loop), standard Tkinter crashes. The new `DialogService` should ideally route dialog calls through the main Tkinter event loop (using `.after(0, ...)`) if called off-thread, or at least document that it expects to be called from the main thread.
+- **Parent Window Focus:** Explicitly passing `parent=self.root` is crucial in the current implementation to prevent popups from appearing underneath the main game window. `DialogService` must have a mechanism to reliably obtain the main window reference to use as the default parent.

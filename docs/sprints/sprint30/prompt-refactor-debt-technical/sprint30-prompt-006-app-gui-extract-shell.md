@@ -43,3 +43,12 @@ self.main_content_frame = self.shell.main_content_frame
 - [ ] `AppShell` successfully encapsulates `root.geometry`, `root.title`, and `UIStyle` initialization.
 - [ ] The grid definitions (`grid_rowconfigure`, `grid_columnconfigure`) are moved to `AppShell`.
 - [ ] `app_gui.py` instantiates `AppShell` and no longer configures the raw `root` window layout itself.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- `app_gui.py` contains over 3000 lines. The `__init__` and `_build` methods establish `tk.Tk()` configuration, layout grids (zones A, B, C), and theme applications directly on `self.root`.
+
+**Identified Risks & Pitfalls:**
+- **Grid Geometry Conflicts:** The current app uses complex `grid_rowconfigure` and `grid_columnconfigure` logic on the root window. When moving this to `AppShell`, you must ensure that `AppShell` itself is correctly packed/gridded into the actual Tkinter `root` window so that resizing behavior is preserved.
+- **Theme Initialization Timing:** `UIStyleV2.apply(...)` is called during app startup. If this is moved into `AppShell`, ensure it runs *before* any child UI components or views are instantiated, otherwise they might render with default unstyled Tkinter looks.
+- **Dangling References:** Many existing views expect the main layout frames to be at `app.sidebar_frame` or `app.main_content_frame`. If these are moved inside `AppShell`, you must update the parent references for all views to `app.shell.main_content_frame` to prevent them from attaching to the wrong UI layer.

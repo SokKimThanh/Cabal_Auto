@@ -87,3 +87,13 @@ For example, inside `_update_monster_estimate_label`, change `app.monster_estima
 - [ ] No `tk.StringVar` or widget references are attached directly to `app`.
 - [ ] Controller methods reference the structured `self.ui_vars` or `self.ui_widgets`.
 - [ ] The `try..except` block around `i18n_t("skill_type_attack")` is removed in favor of direct execution.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- `app_state_controller.py` creates many `tk.StringVar` instances (e.g., `app.monster_select_var`, `app.skill_name_var`) and attaches them to `app` (the root window).
+- It also assigns numerous UI widgets (like `app.monster_manager_win`, `app.monster_listbox`, `app.monster_select_combo`) as properties of `app`.
+
+**Identified Risks & Pitfalls:**
+- **Incomplete Variable Grouping:** The current `__init__` has over 40 variables. Missing even one when moving them to dictionaries like `self.ui_vars` or `self.ui_widgets` will result in silent UI failures or `AttributeError` exceptions when views try to read/write them.
+- **Reference Updates:** `AppStateController` contains methods (like `_update_monster_estimate_label`) that actively use these variables. All internal method references must be updated simultaneously with the `__init__` changes.
+- **i18n Try-Except Block:** As per memory rules, the `try...except Exception` block around `i18n_t` (used for `skill_type_default`) must be removed, relying on the translation module's native error handling. The prompt correctly notes this, but it requires careful execution to avoid startup crashes if the translation key is missing.

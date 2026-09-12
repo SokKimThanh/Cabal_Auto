@@ -40,3 +40,10 @@ The current controller violates the "Single Responsibility Principle" by leaking
 10. **`sprint30-prompt-010-app-gui-task-scheduler.md`**: Implement `TaskScheduler` / `TimerManager` to prevent memory leaks from unmanaged `self.after` and `Thread` calls.
 
 All prompts are located in `docs/sprints/sprint30/prompt-refactor-debt-technical/`.
+
+## Risk Mitigation Summary (Auto-Updated)
+Based on a thorough review of the current application state against the refactoring prompts, the following key risk areas have been identified and documented inside the individual prompts:
+1. **State Preservation:** Heavy dynamic variable usage requires careful translation to dictionaries (e.g. `self.ui_vars`) and maintaining initialization order so downstream consumers do not crash.
+2. **God Class Entanglement:** Business logic currently relies on direct UI variables or `app._t()` for translation. Breaking this requires injecting `i18n_t` and passing simple configurations instead of full `app` references.
+3. **Tkinter Lifecycle:** Extracting UI components (`AppShell`, `SidebarComponent`, `DialogService`) carries risks related to garbage collection of images (icons), thread-safety for dialogs, and preserving grid layout geometries.
+4. **Execution Blast Radius:** Updating downstream consumers (Prompt 005) is highly sensitive. Thorough `grep` validations are mandatory.

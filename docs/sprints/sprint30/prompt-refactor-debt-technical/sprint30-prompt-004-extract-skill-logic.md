@@ -42,3 +42,13 @@ Delete these methods entirely from `AppStateController`. The caller (likely `Hun
 - [ ] `_try_cast_skills`, `_prepare_skill_runtime`, and `_get_skill_runtime_object` are removed from `AppStateController`.
 - [ ] A dedicated service now handles skill casting without referencing `app` or `AppStateController`.
 - [ ] No combo detector state (`self.combo_detector`) is stored in the UI State Controller.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- `AppStateController` contains `_try_cast_skills`, `_prepare_skill_runtime`, and `_get_skill_runtime_object`.
+- `_try_cast_skills` instantiates and stores `self.combo_detector` and heavily interacts with backend hardware APIs (`backend.tap` or `tap`).
+
+**Identified Risks & Pitfalls:**
+- **Lost Internal State:** `_try_cast_skills` dynamically stores `self.skill_runtime_obj` and `self._last_combo_mode` on the UI controller. When moving this to `SkillCasterService`, these states must be properly encapsulated as class variables of the new service, initialized in its constructor.
+- **Hardware Integration Coupling:** The extracted `SkillCasterService` needs to properly receive or import the `backend` or `tap` inputs. The current UI controller relies on `app.bot_manager.screen_capture` for combo detection; this coupling needs to be untangled by injecting `bot_manager` or `screen_capture` via arguments to the service rather than accessing `app`.
+- **Legacy Compatibility:** The current logic updates legacy dictionaries (e.g., `s["_last_cast"] = now`). Maintain this compatibility in the new service or clearly document why it is removed to prevent downstream hunt loops from breaking.

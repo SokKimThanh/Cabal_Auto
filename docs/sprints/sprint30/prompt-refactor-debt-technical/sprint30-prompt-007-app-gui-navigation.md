@@ -48,3 +48,12 @@ In `app_gui.py`:
 - [ ] `self._views` and `show_frame` no longer exist in `app_gui.py`.
 - [ ] Navigation is handled entirely by `NavigationController`.
 - [ ] Clicking sidebar items correctly switches views without crashing.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- `app_gui.py` hardcodes view creation in `self._views` and switches them via `show_frame`.
+
+**Identified Risks & Pitfalls:**
+- **Circular Imports:** Moving view instantiation to `NavigationController` might cause circular import issues if views import `NavigationController` or if `NavigationController` needs to know about every view up front. Use local imports inside the `register_views` method or a factory pattern if necessary.
+- **Lost App Context:** Views currently rely on the `app` instance passed via `app=self`. The `NavigationController` must seamlessly forward the main app instance to every view it instantiates.
+- **View Reset Logic:** `show_frame` sometimes triggers reset or update logic (e.g., `view.on_show()`). Make sure `NavigationController.navigate_to` preserves these lifecycle hooks when switching active frames.

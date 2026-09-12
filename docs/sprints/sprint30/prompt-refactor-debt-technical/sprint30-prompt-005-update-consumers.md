@@ -43,3 +43,12 @@ Ensure that background threads or the `HuntOrchestrator` are now calling the new
 - [ ] Codebase search for `app\.monster_select_var` and similar old bindings yields zero results.
 - [ ] `app_gui.py` boots without crashing and successfully constructs the UI using the new encapsulated variables.
 - [ ] Hunt functionalities function correctly with the new Service imports.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- UI components throughout the app (especially in `app_gui.py` and potentially in `ui/views/`) expect `app.xxx_var` or `app.xxx_listbox` to be available.
+
+**Identified Risks & Pitfalls:**
+- **Massive Blast Radius:** This prompt involves sweeping changes across many files. A single missed `app.monster_select_var` can crash the UI on a specific action (like clicking a list item). The execution must heavily rely on robust `grep` checks before considering the prompt complete.
+- **Dynamic Attribute Access:** Some code might use `getattr(app, 'monster_select_var')`. A simple string replacement (`app.monster_select_var` -> `app.state_controller.ui_vars["monster_select"]`) will miss these. Instructions should explicitly warn about checking for `hasattr` and `getattr` usage.
+- **Timing/Load Order:** Ensure that the consumers are updated to wait until `AppStateController` is fully initialized before trying to access `app.state_controller`.

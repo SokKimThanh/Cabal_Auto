@@ -43,3 +43,13 @@ This method constructs a massive `cfg` dictionary by querying UI variables.
 - [ ] `_hunt_locate_target` is moved to a Target/Vision Service.
 - [ ] `_hunt_from_ui` no longer uses `getattr(app, ...)` and reads from `self.ui_vars` cleanly.
 - [ ] Imports are cleaned up in `app_state_controller.py`.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- Methods like `_validate_hunt_prerequisites` and `_hunt_locate_target` contain heavy business logic (e.g., verifying bounding boxes, calling `locate_template` via OpenCV) directly within `AppStateController`.
+- `_hunt_from_ui` dynamically builds the hunt configuration dictionary from UI variables.
+
+**Identified Risks & Pitfalls:**
+- **Circular Dependencies:** When moving `_validate_hunt_prerequisites` to `WindowSelectionService`, you must avoid passing `app` or the controller itself. Extract only the necessary primitive data (like `app.hunt_selected`, `app.win_items`) to pass as arguments.
+- **Translation (`i18n_t`) Dependencies:** `_validate_hunt_prerequisites` relies heavily on `app._t()` to generate status messages (e.g., `bounds_state_select`, `bounds_state_ready`). If this method is moved to a background service, it cannot easily access `app._t()`. The prompt should explicitly instruct using the global `i18n_t` with `I18N_GLOBAL` namespace instead of `app._t()`.
+- **UI Label Updates:** `_validate_hunt_prerequisites` directly updates UI labels (`app.bounds_readiness_label.config(fg=...)`). Moving this logic to a service means the service should return a status object (message + status code), and the controller should handle the UI updates based on that returned object.

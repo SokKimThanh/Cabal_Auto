@@ -45,3 +45,11 @@ self.sidebar = SidebarComponent(
 - [ ] `_build_sidebar` is completely removed from `app_gui.py`.
 - [ ] The `SidebarComponent` renders correctly in the left pane.
 - [ ] Clicking sidebar buttons routes successfully through the `NavigationController`.
+
+## 7. Identified Risks & Current State Assessment (Auto-Updated)
+**Current State Analysis:**
+- The `_build_sidebar` method in `app_gui.py` handles complex visual states (active/hover styling) and uses `IconHelper` to attach images to buttons.
+
+**Identified Risks & Pitfalls:**
+- **Garbage Collection of Icons:** `IconHelper` or `tk.PhotoImage` objects must be kept alive by retaining a reference to them (e.g., `self._image_refs` in the current `app_gui.py`). When moving to `SidebarComponent`, ensure it maintains its own image reference list, otherwise sidebar icons will appear blank due to Python garbage collection.
+- **Active State Desync:** The sidebar buttons change visual styling depending on the currently active view. The `SidebarComponent` must expose a method (e.g., `set_active_tab`) that the `NavigationController` calls, so the UI updates correctly when navigation occurs programmatically (not just from user clicks).
