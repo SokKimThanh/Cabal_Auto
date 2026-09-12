@@ -420,20 +420,22 @@ class SkillPanel(ttk.LabelFrame):
             return
 
         if hasattr(self.app_state, "set_current_class"):
+            # Update skill_names and toggle before changing state so on_skill_slots_changed has correct lists
+            self._show_all_skills = False
+            self._update_toggle_button_visuals()
+            skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=self._show_all_skills)
+            self.skill_names = [s.get("name") for s in skills if s.get("name")]
+
+            # Change state (this will trigger on_skill_slots_changed)
             success = self.app_state.set_current_class(class_id)
             if not success:
                 self.widgets["cb_class"].set(getattr(self, "_last_selected_class", ""))
+                # Revert if failed
+                old_id = int(getattr(self, "_last_selected_class", "1").split(" - ")[0])
+                skills = self.skill_service.skill_repo.list_skills(class_id=old_id, include_all=self._show_all_skills)
+                self.skill_names = [s.get("name") for s in skills if s.get("name")]
             else:
                 self._last_selected_class = selected_val
-                # Reload skills for dropdowns
-                self._show_all_skills = False
-                self._update_toggle_button_visuals()
-
-                skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=self._show_all_skills)
-                self.skill_names = [s.get("name") for s in skills if s.get("name")]
-
-                for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-                    dd.config(values=self.skill_names)
 
     def on_start_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🟢")
@@ -502,6 +504,10 @@ class SkillPanel(ttk.LabelFrame):
 
         runtime_srv = SkillRuntimeService()
         all_runtime_skills = runtime_srv.get_all_skills()
+
+        # First, ensure combobox values are up to date
+        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
+            dd.config(values=getattr(self, "skill_names", []))
 
         # Update dropdowns, hotkeys, and stats
         for lane_key, dropdown_list, hotkeys_list, stats_list in [
