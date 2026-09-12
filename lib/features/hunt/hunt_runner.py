@@ -55,6 +55,7 @@ class HuntRunner:
 
     def _hunt_locate_target(self):
         """Locates a target based on the current configuration."""
+        from lib.features.hunt.target_locator import TargetLocatorService
         from lib.features.hunt.config_validator import get_valid_hunt_area
 
         cfg = self.hunt_cfg
@@ -62,6 +63,23 @@ class HuntRunner:
         bounds = safe_area.get("window_bounds")
         if not bounds:
             return None, 0, ""
+
+        if ScreenCapture is None:
+            print("[HuntRunner] ScreenCapture unavailable; cannot locate targets.")
+            return None, 0, ""
+
+        box, info = TargetLocatorService.locate_target(cfg, current_window_bounds=bounds)
+        if box and info:
+            left, top, w, h = box
+            best_pt = (
+                int(left - bounds[0] + w / 2),
+                int(top - bounds[1] + h / 2),
+            )
+            best_val = info.get("confidence", 0)
+            best_name = info.get("monster_name", info.get("name", ""))
+            return best_pt, best_val, best_name
+
+
 
         if ScreenCapture is None:
             print("[HuntRunner] ScreenCapture unavailable; cannot locate targets.")
