@@ -12,7 +12,7 @@ from ui.helpers.tooltip import attach_i18n_tooltip
 
 
 class IconManagerFrame(ResponsiveGridBase):
-    def __init__(self, parent, *args, app=None, **kwargs):
+    def __init__(self, parent, app=None, *args, **kwargs):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app
         self.db = get_db()
@@ -339,7 +339,12 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.lbl_tooltip_warning.config(text="⚠️")
                 import ui.helpers.tooltip as tt
                 # Tooltip báo lỗi cho icon cảnh báo
-                tt.attach_i18n_tooltip(self.lbl_tooltip_warning, key="msg_i18n_key_not_found", default="Key chưa được khai báo trong từ điển i18n")
+                tt.attach_i18n_tooltip(
+                    self.lbl_tooltip_warning,
+                    key="msg_i18n_key_not_found",
+                    ns=None,
+                    lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi'
+                )
             else:
                 self.lbl_tooltip_warning.config(text="")
                 if hasattr(self.lbl_tooltip_warning, "_i18n_tooltip"):
