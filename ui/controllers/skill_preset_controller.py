@@ -8,8 +8,8 @@ class SkillPresetController:
 
     def on_presets(self):
         """Opens preset dialog."""
-        from ui.dialogs.preset_dialog import PresetDialog
-        PresetDialog(self.parent_frame, self.app_state)
+        from ui.services.dialog_service import DialogService
+        DialogService.open_preset_dialog(self.parent_frame, self.app_state)
 
     def on_reset(self, class_id):
         """Reverts to default preset."""
@@ -48,8 +48,7 @@ class SkillPresetController:
 
     def on_save_preset_click(self, class_id, btn_widget, on_slots_changed_callback):
         """Handles the save preset click flow."""
-        from ui.dialogs.create_preset_dialog import CreatePresetDialog
-        import tkinter.messagebox as messagebox
+        from ui.services.dialog_service import DialogService
 
         # Disable button to prevent multiple clicks
         if btn_widget:
@@ -63,36 +62,25 @@ class SkillPresetController:
 
             res = self.skill_service.create_custom_preset(class_id, preset_name, parsed_slots)
             if res.get("success"):
-                messagebox.showinfo("Success", f"Đã lưu preset '{preset_name}' thành công!", parent=self.parent_frame)
+                DialogService.show_info("Success", f"Đã lưu preset '{preset_name}' thành công!", parent=self.parent_frame)
 
-                # Update root state with new preset ID and mode
+                # Update root state with new preset ID and mode via app_state
                 new_preset_id = res.get("preset_id")
-                if new_preset_id and hasattr(self.app_state, "root"):
-                    self.app_state.root._active_preset_id = new_preset_id
-                    self.app_state.root._preset_mode = "custom"
+                if new_preset_id and hasattr(self.app_state, "update_preset_state"):
+                    self.app_state.update_preset_state(new_preset_id, "custom")
 
                 # Refresh indicator
                 if on_slots_changed_callback:
                     on_slots_changed_callback(skill_slots)
             else:
-                messagebox.showerror("Error", f"Lỗi khi lưu preset: {res.get('error')}", parent=self.parent_frame)
+                DialogService.show_error("Error", f"Lỗi khi lưu preset: {res.get('error')}", parent=self.parent_frame)
 
-        # Assuming winfo_toplevel is available on parent_frame
-        try:
-            toplevel = self.parent_frame.winfo_toplevel()
-        except AttributeError:
-            toplevel = self.parent_frame
-
-        dialog = CreatePresetDialog(
-            parent=toplevel,
+        DialogService.open_create_preset_dialog(
+            parent=self.parent_frame,
             class_id=class_id,
             skill_summary=skill_summary,
             on_save_callback=_on_save
         )
-
-        # Need a way to wait for the dialog. If parent_frame is a widget:
-        if hasattr(self.parent_frame, "wait_window"):
-            self.parent_frame.wait_window(dialog)
 
         # Safely re-enable button
         if btn_widget and hasattr(btn_widget, "winfo_exists") and btn_widget.winfo_exists():

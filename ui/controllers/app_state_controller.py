@@ -244,6 +244,12 @@ class AppStateController:
         self.root._preset_mode = "custom"
         self._emit_event("on_preset_changed")
 
+    def update_preset_state(self, preset_id: int, mode: str) -> None:
+        """Encapsulates preset state updates."""
+        self.root._active_preset_id = preset_id
+        self.root._preset_mode = mode
+        self._emit_event("on_preset_changed")
+
     def save_custom_preset(self, preset_name: str) -> None:
         from lib.features.skills.skill_preset_service import SkillPresetService
 
