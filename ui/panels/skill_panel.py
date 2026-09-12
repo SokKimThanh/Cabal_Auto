@@ -646,6 +646,13 @@ class SkillPanel(ttk.LabelFrame):
             res = self.skill_service.create_custom_preset(class_id, preset_name, parsed_slots)
             if res.get("success"):
                 messagebox.showinfo("Success", f"Đã lưu preset '{preset_name}' thành công!", parent=self.frame)
+
+                # Update root state with new preset ID and mode
+                new_preset_id = res.get("preset_id")
+                if new_preset_id and hasattr(self.app_state, "root"):
+                    self.app_state.root._active_preset_id = new_preset_id
+                    self.app_state.root._preset_mode = "custom"
+
                 # Refresh indicator
                 self.on_skill_slots_changed(skill_slots)
             else:
