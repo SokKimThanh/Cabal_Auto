@@ -1,15 +1,16 @@
+import logging
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from lib.features.hunt.config_validator import normalize_window_bounds_value
 from lib.system.window_manager import WindowManager
-
+from lib.i18n import t as i18n_t
+from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 
 @dataclass
 class WindowValidationResult:
     is_valid: bool
     code: str
     window: Optional[Dict[str, Any]] = None
-
 
 def validate_selected_cabal_window(
     selected: Any,
@@ -40,12 +41,10 @@ def validate_selected_cabal_window(
     ):
         return WindowValidationResult(False, "window_unavailable")
 
-    # Valid known items check (make sure it's in the currently scanned list if known_items is provided)
     if known_items:
         if hwnd not in {item["hwnd"] for item in known_items}:
             return WindowValidationResult(False, "window_changed")
 
-    # Need to output dict format matching UI's expected 'hunt_selected' format
     win_dict = {
         "hwnd": int(info.hwnd),
         "pid": int(info.pid),
@@ -56,11 +55,8 @@ def validate_selected_cabal_window(
     }
     return WindowValidationResult(True, "ok", win_dict)
 
-
 class WindowRecoveryController:
-    """Shared retry logic for window recovery (UX1 + UX5.2)."""
-
-    _instance = None  # Singleton
+    _instance = None
 
     def __init__(self):
         self._retry_in_progress = False
@@ -84,9 +80,8 @@ class WindowRecoveryController:
         on_failure=None,
         delay_ms: int = 500,
     ):
-        """Start recovery retries without blocking the UI thread (caller provides scheduler)."""
         if self._retry_in_progress:
-            return  # Lock: already retrying
+            return
 
         self._retry_in_progress = True
         self._retry_step = 0
@@ -99,13 +94,11 @@ class WindowRecoveryController:
         self._execute_retry_step()
 
     def _execute_retry_step(self):
-        """Execute one retry step."""
         self._retry_step += 1
 
         if self._on_progress:
             self._on_progress(self._retry_step)
 
-        # Attempt restore
         wm = WindowManager()
         success = wm.restore(self._hwnd) and wm.set_foreground(self._hwnd)
 
@@ -124,25 +117,15 @@ class WindowRecoveryController:
                 getattr(self, "_delay_ms", 500), self._execute_retry_step
             )
         else:
-            # No scheduler provided; avoid permanent lock-out and fail fast.
             self._retry_in_progress = False
             if self._on_failure:
                 self._on_failure()
 
-
 class WindowSelectionService:
-    """Service for target window and bounds validation logic used by hunt setup/runtime."""
-
     @staticmethod
     def resolve_bounds(
         config: Any, current_bounds: Optional[List[int]] = None
     ) -> Optional[List[int]]:
-        """Resolve the active window bounds from the config or current bounds.
-
-        Checks current_bounds first, then hunt_area.window_bounds, then root window_bounds.
-        Normalizes and returns the first valid bounds found.
-        """
-        # 1. Prefer current active bounds if valid
         bounds = normalize_window_bounds_value(current_bounds)
         if bounds is not None:
             return bounds
@@ -150,31 +133,22 @@ class WindowSelectionService:
         if not isinstance(config, dict):
             return None
 
-        # 2. Check hunt_area.window_bounds
         hunt_area = config.get("hunt_area")
         if isinstance(hunt_area, dict):
             bounds = normalize_window_bounds_value(hunt_area.get("window_bounds"))
             if bounds is not None:
                 return bounds
 
-        # 3. Check legacy root window_bounds
         return normalize_window_bounds_value(config.get("window_bounds"))
 
     @staticmethod
     def update_bounds(config: Any, bounds: Any) -> Optional[List[int]]:
-        """Normalize the bounds and safely update both root and hunt_area locations in the config.
-
-        Returns the normalized bounds if successful, or None if malformed.
-        """
         if not isinstance(config, dict):
             return None
 
         normalized = normalize_window_bounds_value(bounds)
-
-        # Always update root config for compatibility
         config["window_bounds"] = normalized
 
-        # Ensure hunt_area exists and update it
         hunt_area = config.get("hunt_area")
         if not isinstance(hunt_area, dict):
             hunt_area = {}
@@ -182,3 +156,59 @@ class WindowSelectionService:
 
         hunt_area["window_bounds"] = normalized
         return normalized
+
+    @staticmethod
+    def validate_prerequisites(hunt_selected: Any, win_items: List[Dict[str, Any]], hunt_cfg: Dict[str, Any], current_window_bounds: Optional[List[int]] = None) -> Optional[str]:
+        logger = logging.getLogger(__name__)
+
+        if not isinstance(hunt_selected, dict):
+            logger.warning("Validation failed: no_window_selected")
+            return i18n_t("error_no_window_selected", ns=I18N_GLOBAL)
+
+        validation = validate_selected_cabal_window(hunt_selected, win_items)
+        if not validation.is_valid:
+            if validation.code == "no_window_selected":
+                logger.warning("Validation failed: no_window_selected")
+                return i18n_t("error_no_window_selected", ns=I18N_GLOBAL)
+            elif validation.code == "window_unavailable":
+                logger.warning("Validation failed: window_unavailable")
+                return i18n_t("error_window_unavailable", ns=I18N_GLOBAL)
+            elif validation.code == "window_changed":
+                logger.warning("Validation failed: window_changed")
+                return i18n_t("error_window_changed", ns=I18N_GLOBAL)
+            elif validation.code == "no_cabal_window":
+                logger.warning("Validation failed: no_cabal_window")
+                return i18n_t("error_no_cabal_window", ns=I18N_GLOBAL)
+            else:
+                logger.warning("Validation failed: no_cabal_window")
+                return i18n_t("error_no_cabal_window", ns=I18N_GLOBAL)
+
+        bounds = WindowSelectionService.resolve_bounds(hunt_cfg, current_window_bounds)
+        if not bounds:
+            logger.warning("Validation failed: window_unavailable")
+            return i18n_t("error_window_unavailable", ns=I18N_GLOBAL)
+
+        templates = hunt_cfg.get("templates") or []
+        template_path = str(hunt_cfg.get("template_path", "") or "").strip()
+        if not templates and not template_path:
+            logger.warning("Validation failed: no_templates")
+            return i18n_t("error_no_templates", ns=I18N_GLOBAL)
+
+        import os
+
+        has_valid_template = False
+        if templates:
+            for t in templates:
+                if isinstance(t, dict):
+                    path = t.get("path")
+                    if path and os.path.exists(path):
+                        has_valid_template = True
+                        break
+        if not has_valid_template and template_path and os.path.exists(template_path):
+            has_valid_template = True
+
+        if not has_valid_template:
+            logger.warning("Validation failed: invalid_template")
+            return i18n_t("error_invalid_template", ns=I18N_GLOBAL)
+
+        return None
