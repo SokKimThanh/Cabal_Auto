@@ -381,9 +381,41 @@ class SkillPanel(ttk.LabelFrame):
             is_running = True
 
         if is_running:
+            # Enforce safe state during runtime
+            if not hasattr(self, "_previous_show_all_skills"):
+                self._previous_show_all_skills = self._show_all_skills
+            self._show_all_skills = False
+            self._update_toggle_button_visuals()
             self.widgets["cb_class"].config(state="disabled")
+
+            # Ensure the correct class is set and loaded
+            class_id = getattr(self.app_state, "_current_class_id", 1)
+            # Find the corresponding class label for cb_class
+            for val in self.widgets["cb_class"]["values"]:
+                if val.startswith(f"{class_id} -"):
+                    self.widgets["cb_class"].set(val)
+                    self._last_selected_class = val
+                    break
+
+            # Reload skill dropdowns for this class
+            skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=False)
+            self.skill_names = [s.get("name") for s in skills if s.get("name")]
+            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
+                dd.config(values=self.skill_names)
         else:
-            self.widgets["cb_class"].config(state="readonly")
+            # Restore state based on the current mode
+            if hasattr(self, "_previous_show_all_skills"):
+                self._show_all_skills = self._previous_show_all_skills
+                del self._previous_show_all_skills
+                self._update_toggle_button_visuals()
+
+            if self._show_all_skills:
+                self.widgets["cb_class"].config(state="disabled")
+                self.widgets["cb_class"].set("---")
+            else:
+                self.widgets["cb_class"].config(state="readonly")
+                if hasattr(self, "_last_selected_class"):
+                    self.widgets["cb_class"].set(self._last_selected_class)
 
     def _load_classes(self):
         class_service = ClassService()
@@ -410,7 +442,7 @@ class SkillPanel(ttk.LabelFrame):
 
     def _on_class_selected(self, event):
         selected_val = self.widgets["cb_class"].get()
-        if not selected_val:
+        if not selected_val or selected_val == "---":
             return
 
         try:
@@ -420,10 +452,8 @@ class SkillPanel(ttk.LabelFrame):
             return
 
         if hasattr(self.app_state, "set_current_class"):
-            # Update skill_names and toggle before changing state so on_skill_slots_changed has correct lists
-            self._show_all_skills = False
-            self._update_toggle_button_visuals()
-            skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=self._show_all_skills)
+            # Prepare skills for the newly selected class
+            skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=False)
             self.skill_names = [s.get("name") for s in skills if s.get("name")]
 
             # Change state (this will trigger on_skill_slots_changed)
@@ -432,7 +462,7 @@ class SkillPanel(ttk.LabelFrame):
                 self.widgets["cb_class"].set(getattr(self, "_last_selected_class", ""))
                 # Revert if failed
                 old_id = int(getattr(self, "_last_selected_class", "1").split(" - ")[0])
-                skills = self.skill_service.skill_repo.list_skills(class_id=old_id, include_all=self._show_all_skills)
+                skills = self.skill_service.skill_repo.list_skills(class_id=old_id, include_all=False)
                 self.skill_names = [s.get("name") for s in skills if s.get("name")]
             else:
                 self._last_selected_class = selected_val
@@ -467,9 +497,19 @@ class SkillPanel(ttk.LabelFrame):
         self._show_all_skills = not self._show_all_skills
         self._update_toggle_button_visuals()
 
-        # Refresh skill list based on new mode
-        class_id = getattr(self.app_state, "_current_class_id", 1)
-        skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=self._show_all_skills)
+        if self._show_all_skills:
+            # Mode ON (All Skills): Disable Class Dropdown, set to '---'
+            self.widgets["cb_class"].set("---")
+            self.widgets["cb_class"].config(state="disabled")
+            skills = self.skill_service.skill_repo.list_skills(include_all=True)
+        else:
+            # Mode OFF (Class Skills): Enable Class Dropdown, restore value
+            self.widgets["cb_class"].config(state="readonly")
+            if hasattr(self, "_last_selected_class"):
+                self.widgets["cb_class"].set(self._last_selected_class)
+            class_id = getattr(self.app_state, "_current_class_id", 1)
+            skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=False)
+
         self.skill_names = [s.get("name") for s in skills if s.get("name")]
 
         # Update comboboxes
