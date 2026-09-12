@@ -17,145 +17,143 @@ class AppStateController:
         self.root = root
         app = root
 
-        self.skill_runtime_obj = None
-        self._last_combo_mode = None
-        self.combo_detector = None
+
+
+
 
         # State
-        app.click_running = False
-        app.click_thread = None
+        self.click_running = False
+        self.click_thread = None
 
-        app.hunt_thread = None
-        app.win_items = []  # list of {'hwnd','pid','title','proc'}
-        app.hunt_selected = None  # currently selected window info
-        app._skip_auto_bring = False  # Flag to prevent double bring-to-front
+        self.hunt_thread = None
+        self.win_items = []  # list of {'hwnd','pid','title','proc'}
+        self.hunt_selected = None  # currently selected window info
+        self._skip_auto_bring = False  # Flag to prevent double bring-to-front
 
         # Character class selection for presets
         hunt_settings = getattr(app, "hunt_cfg", {})
-        app._current_class_id = hunt_settings.get("last_active_class_id", 1)
+        self._current_class_id = hunt_settings.get("last_active_class_id", 1)
 
         # Global hotkeys - registered after config load
-        app._global_start_hotkey = None
-        app._global_stop_hotkey = None
-        app._global_library_hotkey = None
-        app._global_vision_hotkey = None
-        app._global_monster_hotkey = None
+        self._global_start_hotkey = None
+        self._global_stop_hotkey = None
+        self._global_library_hotkey = None
+        self._global_vision_hotkey = None
+        self._global_monster_hotkey = None
 
-        app._hotkey_fallback_bound = []
-        app._hotkey_import_diag = ""
+        self._hotkey_fallback_bound = []
+        self._hotkey_import_diag = ""
 
         # Phase 5: Overlay window for vision detection
-        app._overlay_window = None
-        app._overlay_enabled = False
-        app._overlay_update_thread = None
-        app._overlay_stop_event = threading.Event()
+        self._overlay_window = None
+        self._overlay_enabled = False
+        self._overlay_update_thread = None
+        self._overlay_stop_event = threading.Event()
 
         # Phase 7: Monster tracking integration
-        app._vision_engine = None
-        app._screen_capture = None
-        app._bot_manager = None
-        app._overlay_controller = None
+        self._vision_engine = None
+        self._screen_capture = None
+        self._bot_manager = None
+        self._overlay_controller = None
 
-        app.monster_selected_index = None
+        self.monster_selected_index = None
 
-        app.skill_selected_index = None
-        app.skill_preview_image = None
+        self.skill_selected_index = None
+        self.skill_preview_image = None
 
         # Preset State
-        app._current_class_id = 1
-        app._active_preset_id = None
-        app._preset_mode = "default"
-        app.skill_slots = {"attack_combo": [], "buff_lane": []}
-        app._callbacks = {}
-        app._combo_mode_active = False
+        self._current_class_id = 1
+        self._active_preset_id = None
+        self._preset_mode = "default"
+        self.skill_slots = {"attack_combo": [], "buff_lane": []}
+        self._callbacks = {}
+        self._combo_mode_active = False
 
-        app.skill_slot_vars = []
-        app.skill_slot_boxes = []
-        app.skill_slot_count = 6
+        self.skill_slot_vars = []
+        self.skill_slot_boxes = []
+        self.skill_slot_count = 6
 
-        app.monster_manager_win = None
-        app.skill_manager_win = None
-        app.monster_listbox = None
+        self.ui_vars = {
+            "monster_select": tk.StringVar(master=root),
+            "monster_name": tk.StringVar(master=root),
+            "monster_hp": tk.StringVar(master=root),
+            "monster_damage": tk.StringVar(master=root),
+            "monster_template": tk.StringVar(master=root),
+            "monster_estimate": tk.StringVar(master=root, value=""),
 
-        # Declare monster quick-select attributes
-        app.monster_select_var = tk.StringVar(master=root)
-        app.monster_select_combo = None
-        app.monster_name_var = tk.StringVar(master=root)
-        app.monster_hp_var = tk.StringVar(master=root)
-        app.monster_damage_var = tk.StringVar(master=root)
-        app.monster_template_var = tk.StringVar(master=root)
-        app.monster_estimate_var = tk.StringVar(master=root, value="")
+            "skill_name": tk.StringVar(master=root),
+            "skill_key": tk.StringVar(master=root),
+            "skill_type": tk.StringVar(master=root, value=skill_type_default),
+            "skill_cooldown": tk.StringVar(master=root),
+            "skill_cast_time": tk.StringVar(master=root),
+            "skill_duration": tk.StringVar(master=root),
+            "skill_pre_refresh": tk.StringVar(master=root),
+            "skill_image": tk.StringVar(master=root),
 
-        app.skill_listbox = None
-        app.skill_name_var = tk.StringVar(master=root)
-        app.skill_key_var = tk.StringVar(master=root)
+            "monster_template_name": tk.StringVar(master=root),
+            "monster_template_path": tk.StringVar(master=root),
+            "monster_template_threshold": tk.StringVar(master=root, value="0.85"),
 
-        try:
-            skill_type_default = i18n_t("skill_type_attack", ns=I18N_GLOBAL)
-        except Exception:
-            skill_type_default = "Attack"
+            "window_bounds_display": tk.StringVar(master=root, value=""),
+            "hunt_status": tk.StringVar(master=root, value=idle_text),
+            "hunt_target_info": tk.StringVar(master=root, value=app._t("target_card.target_none")),
+            "target_policy": tk.StringVar(master=root),
+            "setup_template": tk.StringVar(master=root),
+            "setup_target_key": tk.StringVar(master=root),
+            "setup_target_cycle": tk.StringVar(master=root),
+            "setup_search_interval": tk.StringVar(master=root),
+            "setup_attack_interval": tk.StringVar(master=root),
+            "setup_lost_timeout": tk.StringVar(master=root),
+            "setup_attack_duration": tk.StringVar(master=root),
+            "setup_press_ms": tk.StringVar(master=root),
+            "bring_front": tk.StringVar(master=root),
+            "global_hotkey_enabled": tk.BooleanVar(master=root),
+            "global_hotkey_start": tk.StringVar(master=root),
+            "global_hotkey_stop": tk.StringVar(master=root),
+            "global_hotkey_library": tk.StringVar(master=root),
+            "global_hotkey_vision": tk.StringVar(master=root),
+            "global_hotkey_monster": tk.StringVar(master=root)
+        }
 
-        app.skill_type_var = tk.StringVar(master=root, value=skill_type_default)
-        app.skill_cooldown_var = tk.StringVar(master=root)
-        app.skill_cast_time_var = tk.StringVar(master=root)
-        app.skill_duration_var = tk.StringVar(master=root)
+        self.ui_widgets = {
+            "monster_select_combo": None,
+            "monster_manager_win": None,
+            "skill_manager_win": None,
+            "monster_listbox": None,
+            "skill_listbox": None,
+            "skill_preview_label": None,
+            "monster_description_text": None,
+            "monster_template_listbox": None,
+            "monster_template_preview_label": None,
+            "monster_template_preview_image": None
+        }
 
-        app._image_refs = []
-        app._tooltips = {}
-        app.skill_pre_refresh_var = tk.StringVar(master=root)
-        app.skill_image_var = tk.StringVar(master=root)
-        app.skill_preview_label = None
-        app._skill_image_trace = None
-
-        app.monster_description_text = None
-        app.monster_template_working = []
-        app.monster_template_selected_index = None
-        app.monster_template_listbox = None
-        app.monster_template_name_var = tk.StringVar(master=root)
-        app.monster_template_path_var = tk.StringVar(master=root)
-        app.monster_template_threshold_var = tk.StringVar(master=root, value="0.85")
-        app.monster_template_region_vars = {
+        self.monster_template_region_vars = {
             "left": tk.StringVar(master=root),
             "top": tk.StringVar(master=root),
             "width": tk.StringVar(master=root),
             "height": tk.StringVar(master=root),
         }
-        app.monster_template_preview_label = None
-        app.monster_template_preview_image = None
-        app._monster_template_path_trace = None
-        app._thumbnail_cache = {}
 
-        app.monster_bounds_vars = {
+        self.monster_bounds_vars = {
             "left": tk.StringVar(master=root),
             "top": tk.StringVar(master=root),
             "width": tk.StringVar(master=root),
             "height": tk.StringVar(master=root),
         }
 
-        app.window_bounds_display_var = tk.StringVar(master=root, value="")
-
-        app.hunt_intermediate_widgets = []
-        app.hunt_advanced_widgets = []
-
-        try:
-            idle_text = i18n_t("hunt_idle", ns=I18N_GLOBAL)
-        except Exception:
-            idle_text = "Idle"
-
-        app.hunt_status = tk.StringVar(master=root, value=idle_text)
-        app.hunt_target_info = tk.StringVar(
             master=root, value=app._t("target_card.target_none")
         )
 
     def register_callback(self, event: str, handler) -> None:
-        if event not in self.root._callbacks:
-            self.root._callbacks[event] = []
-        if handler not in self.root._callbacks[event]:
-            self.root._callbacks[event].append(handler)
+        if event not in self._callbacks:
+            self._callbacks[event] = []
+        if handler not in self._callbacks[event]:
+            self._callbacks[event].append(handler)
 
     def _emit_event(self, event: str, *args, **kwargs) -> None:
-        if event in self.root._callbacks:
-            for handler in self.root._callbacks[event]:
+        if event in self._callbacks:
+            for handler in self._callbacks[event]:
                 try:
                     handler(*args, **kwargs)
                 except Exception:
@@ -176,7 +174,7 @@ class AppStateController:
             if not messagebox.askyesno(title, msg, parent=self.root):
                 return False
 
-        self.root._current_class_id = class_id
+        self._current_class_id = class_id
 
         # Save to hunt_cfg
         if hasattr(self.root, "hunt_cfg"):
@@ -195,7 +193,7 @@ class AppStateController:
     def load_preset_for_class(
         self, class_id: int, preset_id: Optional[int] = None
     ) -> None:
-        self.root._current_class_id = class_id
+        self._current_class_id = class_id
         from lib.features.skills.skill_preset_service import SkillPresetService
 
         service = SkillPresetService()
@@ -211,15 +209,15 @@ class AppStateController:
         if preset_id is not None:
             result = service.apply_preset(preset_id, class_id)
             if result.get("success"):
-                self.root._active_preset_id = preset_id
+                self._active_preset_id = preset_id
                 mode = "default" if result["preset"].get("is_default") else "custom"
-                self.root._preset_mode = mode
+                self._preset_mode = mode
 
                 # Transform to app state structure
-                self.root.skill_slots = {"attack_combo": [], "buff_lane": []}
+                self.skill_slots = {"attack_combo": [], "buff_lane": []}
                 for lane, skill_ids in result.get("skill_slots", {}).items():
                     for idx, skill_id in enumerate(skill_ids):
-                        self.root.skill_slots[lane].append(
+                        self.skill_slots[lane].append(
                             {
                                 "position": idx,
                                 "lane_type": lane,
@@ -235,9 +233,9 @@ class AppStateController:
                 self._emit_event("on_skill_slots_changed")
         else:
             # When the class has no presets at all, clear the skill slots
-            self.root._active_preset_id = None
-            self.root._preset_mode = "custom"
-            self.root.skill_slots = {"attack_combo": [], "buff_lane": []}
+            self._active_preset_id = None
+            self._preset_mode = "custom"
+            self.skill_slots = {"attack_combo": [], "buff_lane": []}
             self._emit_event("on_preset_changed")
             self._emit_event("on_skill_slots_changed")
 
@@ -245,53 +243,53 @@ class AppStateController:
         self.load_preset_for_class(class_id)
 
     def set_custom_mode(self) -> None:
-        self.root._preset_mode = "custom"
+        self._preset_mode = "custom"
         self._emit_event("on_preset_changed")
 
     def update_preset_state(self, preset_id: int, mode: str) -> None:
         """Encapsulates preset state updates."""
-        self.root._active_preset_id = preset_id
-        self.root._preset_mode = mode
+        self._active_preset_id = preset_id
+        self._preset_mode = mode
         self._emit_event("on_preset_changed")
 
     def save_custom_preset(self, preset_name: str) -> None:
         from lib.features.skills.skill_preset_service import SkillPresetService
 
-        if self.root._preset_mode == "custom" and self.root._active_preset_id:
+        if self._preset_mode == "custom" and self._active_preset_id:
             service = SkillPresetService()
-            preset = service.preset_repo.get_preset(self.root._active_preset_id)
+            preset = service.preset_repo.get_preset(self._active_preset_id)
             if preset and not preset.get("is_default"):
                 skill_slots_for_db = {
-                    lane: [s["skill_id"] for s in self.root.skill_slots.get(lane, [])]
-                    for lane in self.root.skill_slots
+                    lane: [s["skill_id"] for s in self.skill_slots.get(lane, [])]
+                    for lane in self.skill_slots
                 }
                 service.update_custom_preset(
-                    self.root._active_preset_id, skill_slots_for_db
+                    self._active_preset_id, skill_slots_for_db
                 )
             else:
                 # Need to create new custom preset
                 skill_slots_for_db = {
-                    lane: [s["skill_id"] for s in self.root.skill_slots.get(lane, [])]
-                    for lane in self.root.skill_slots
+                    lane: [s["skill_id"] for s in self.skill_slots.get(lane, [])]
+                    for lane in self.skill_slots
                 }
                 res = service.create_custom_preset(
-                    self.root._current_class_id, preset_name, skill_slots_for_db
+                    self._current_class_id, preset_name, skill_slots_for_db
                 )
                 if res.get("success"):
-                    self.root._active_preset_id = res.get("preset_id")
+                    self._active_preset_id = res.get("preset_id")
         else:
             # Need to create new custom preset
             service = SkillPresetService()
             skill_slots_for_db = {
-                lane: [s["skill_id"] for s in self.root.skill_slots.get(lane, [])]
-                for lane in self.root.skill_slots
+                lane: [s["skill_id"] for s in self.skill_slots.get(lane, [])]
+                for lane in self.skill_slots
             }
             res = service.create_custom_preset(
-                self.root._current_class_id, preset_name, skill_slots_for_db
+                self._current_class_id, preset_name, skill_slots_for_db
             )
             if res.get("success"):
-                self.root._active_preset_id = res.get("preset_id")
-                self.root._preset_mode = "custom"
+                self._active_preset_id = res.get("preset_id")
+                self._preset_mode = "custom"
 
         self._emit_event("on_preset_changed")
 
@@ -302,11 +300,11 @@ class AppStateController:
         return service.list_presets_by_class(class_id)
 
     def activate_combo_mode(self) -> None:
-        self.root._combo_mode_active = True
+        self._combo_mode_active = True
         self._emit_event("on_combo_mode_activated")
 
     def deactivate_combo_mode(self) -> None:
-        self.root._combo_mode_active = False
+        self._combo_mode_active = False
         self._emit_event("on_combo_mode_deactivated")
 
     def get_combo_mode_status(self) -> str:
@@ -320,12 +318,12 @@ class AppStateController:
         return False
 
     def set_skill_slot(self, lane: str, position: int, skill_id: int) -> None:
-        if lane not in self.root.skill_slots:
-            self.root.skill_slots[lane] = []
-        while len(self.root.skill_slots[lane]) <= position:
-            self.root.skill_slots[lane].append(
+        if lane not in self.skill_slots:
+            self.skill_slots[lane] = []
+        while len(self.skill_slots[lane]) <= position:
+            self.skill_slots[lane].append(
                 {
-                    "position": len(self.root.skill_slots[lane]),
+                    "position": len(self.skill_slots[lane]),
                     "lane_type": lane,
                     "skill_id": None,
                     "skill_name": "",
@@ -335,99 +333,40 @@ class AppStateController:
                     "cooldown_remaining": 0.0,
                 }
             )
-        self.root.skill_slots[lane][position]["skill_id"] = skill_id
-        self.root.skill_slots[lane][position]["assigned"] = skill_id is not None
+        self.skill_slots[lane][position]["skill_id"] = skill_id
+        self.skill_slots[lane][position]["assigned"] = skill_id is not None
 
         # If changing a slot in default mode, automatically switch to custom mode
-        if self.root._preset_mode == "default":
+        if self._preset_mode == "default":
             self.set_custom_mode()
 
         self._emit_event("on_skill_slots_changed")
 
     def set_skill_hotkey(self, lane: str, position: int, hotkey: str) -> None:
-        if lane in self.root.skill_slots and position < len(
-            self.root.skill_slots[lane]
+        if lane in self.skill_slots and position < len(
+            self.skill_slots[lane]
         ):
-            self.root.skill_slots[lane][position]["user_hotkey"] = hotkey
+            self.skill_slots[lane][position]["user_hotkey"] = hotkey
             self._emit_event("on_hotkey_changed")
 
     def update_skill_cooldown(self, lane: str, position: int, remaining: float) -> None:
-        if lane in self.root.skill_slots and position < len(
-            self.root.skill_slots[lane]
+        if lane in self.skill_slots and position < len(
+            self.skill_slots[lane]
         ):
-            self.root.skill_slots[lane][position]["cooldown_remaining"] = remaining
-            self.root.skill_slots[lane][position]["is_ready"] = remaining <= 0.0
+            self.skill_slots[lane][position]["cooldown_remaining"] = remaining
+            self.skill_slots[lane][position]["is_ready"] = remaining <= 0.0
             self._emit_event("on_cooldown_updated")
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
-        app = self.root
-
-        logger = logging.getLogger(__name__)
-
-        from lib.features.hunt.window_selection_service import (
-            WindowSelectionService,
-            validate_selected_cabal_window,
+        from lib.features.hunt.window_selection_service import WindowSelectionService
+        return WindowSelectionService.validate_prerequisites(
+            self.hunt_selected,
+            self.win_items,
+            self.root.hunt_cfg if hasattr(self.root, "hunt_cfg") else {},
+            getattr(self.root, "current_window_bounds", None)
         )
 
-        selected = getattr(app, "hunt_selected", None)
-        if not isinstance(selected, dict):
-            logger.warning("Validation failed: no_window_selected")
-            return app._t("error_no_window_selected")
-
-        known_items = getattr(app, "win_items", [])
-
-        validation = validate_selected_cabal_window(selected, known_items)
-        if not validation.is_valid:
-            if validation.code == "no_window_selected":
-                logger.warning("Validation failed: no_window_selected")
-                return app._t("error_no_window_selected")
-            elif validation.code == "window_unavailable":
-                logger.warning("Validation failed: window_unavailable")
-                return app._t("error_window_unavailable")
-            elif validation.code == "window_changed":
-                logger.warning("Validation failed: window_changed")
-                return app._t("error_window_changed")
-            elif validation.code == "no_cabal_window":
-                logger.warning("Validation failed: no_cabal_window")
-                return app._t("error_no_cabal_window")
-            else:
-                logger.warning("Validation failed: no_cabal_window")
-                return app._t("error_no_cabal_window")  # Fallback
-
-        bounds = WindowSelectionService.resolve_bounds(
-            app.hunt_cfg, getattr(app, "current_window_bounds", None)
-        )
-        if not bounds:
-            logger.warning("Validation failed: window_unavailable")
-            return app._t("error_window_unavailable")
-
-        templates = app.hunt_cfg.get("templates") or []
-        template_path = str(app.hunt_cfg.get("template_path", "") or "").strip()
-        if not templates and not template_path:
-            logger.warning("Validation failed: no_templates")
-            return app._t("error_no_templates")
-
-        # Validate that templates exist on disk
-        import os
-
-        has_valid_template = False
-        if templates:
-            for t in templates:
-                if isinstance(t, dict):
-                    path = t.get("path")
-                    if path and os.path.exists(path):
-                        has_valid_template = True
-                        break
-        if not has_valid_template and template_path and os.path.exists(template_path):
-            has_valid_template = True
-
-        if not has_valid_template:
-            logger.warning("Validation failed: invalid_template")
-            return app._t("error_invalid_template")
-
-        return None
-
-    def _hunt_from_ui(self) -> Dict[str, Any]:
+    def build_hunt_config_from_state(self) -> Dict[str, Any]:
         app = self.root
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
@@ -435,10 +374,10 @@ class AppStateController:
         if not isinstance(cfg.get("skill_slots"), list):
             cfg["skill_slots"] = []
 
-        if isinstance(getattr(app, "hunt_selected", None), dict):
-            cfg["window_title"] = app.hunt_selected.get("title", "")
-            cfg["window_pid"] = app.hunt_selected.get("pid")
-            cfg["window_hwnd"] = app.hunt_selected.get("hwnd")
+        if isinstance(getattr(self, "hunt_selected", None), dict):
+            cfg["window_title"] = self.hunt_selected.get("title", "")
+            cfg["window_pid"] = self.hunt_selected.get("pid")
+            cfg["window_hwnd"] = self.hunt_selected.get("hwnd")
 
         bounds = WindowSelectionService.resolve_bounds(
             cfg, getattr(app, "current_window_bounds", None)
@@ -449,8 +388,8 @@ class AppStateController:
         if isinstance(hunt_area, dict):
             hunt_area["window_title"] = cfg.get("window_title", "")
 
-        if hasattr(app, "target_policy_var"):
-            cfg["target_policy"] = app.target_policy_var.get()
+        if "target_policy" in self.ui_vars:
+            cfg["target_policy"] = self.ui_vars["target_policy"].get()
 
         simple_vars = {
             "target_key": ("setup_target_key_var", "TAB"),
@@ -462,14 +401,13 @@ class AppStateController:
             "attack_press_ms": ("setup_press_ms_var", 60),
         }
 
-        # Force advanced mode since mode selection is removed
         cfg["ui_mode"] = "advanced"
 
-        if hasattr(app, "setup_template_var"):
-            cfg["template_path"] = app.setup_template_var.get()
+        if "setup_template" in self.ui_vars:
+            cfg["template_path"] = self.ui_vars["setup_template"].get()
 
         for key, (attr_name, default) in simple_vars.items():
-            var = getattr(app, attr_name, None)
+            var = self.ui_vars.get(attr_name.replace("_var", ""))
             if var is None:
                 cfg.setdefault(key, default)
                 continue
@@ -482,7 +420,7 @@ class AppStateController:
                 cfg[key] = raw_value or default
 
         cfg["bring_to_front_each_cycle"] = bool(
-            getattr(getattr(app, "bring_front_var", None), "get", lambda: False)()
+            self.ui_vars["bring_front"].get() if "bring_front" in self.ui_vars and self.ui_vars["bring_front"].get() else False
         )
         cfg["skill_slots"] = []
         if hasattr(app, "_collect_skill_slots"):
@@ -517,13 +455,12 @@ class AppStateController:
 
         cfg.setdefault("templates", [])
 
-        # Extract hotkey settings if they are available on the app object
-        if hasattr(app, "global_hotkey_enabled_var"):
-            enabled = app.global_hotkey_enabled_var.get()
+        if "global_hotkey_enabled" in self.ui_vars:
+            enabled = self.ui_vars["global_hotkey_enabled"].get()
             hotkeys = cfg.get("global_hotkeys", {})
 
             def _hotkey_value(attr_name, config_name, default):
-                variable = getattr(app, attr_name, None)
+                variable = self.ui_vars.get(attr_name.replace("_var", ""))
                 return (
                     variable.get()
                     if variable is not None
@@ -568,11 +505,11 @@ class AppStateController:
         if not hasattr(app, "monster_estimate_var"):
             return
         if not monster:
-            app.monster_estimate_var.set("")
+            self.ui_vars["monster_estimate"].set("")
             return
         stats = self._calculate_monster_estimate(monster)
         attack_min, lost_timeout = self._recommend_attack_settings(stats)
-        app.monster_estimate_var.set(
+        self.ui_vars["monster_estimate"].set(
             f"ETA {stats['kill_time']:.2f}s | DPS {stats['dps']} | atk {attack_min:.2f}s | lost {lost_timeout:.2f}s"
         )
 
@@ -671,11 +608,11 @@ class AppStateController:
             getattr(app, "hunt_cfg", {}), getattr(app, "current_window_bounds", None)
         )
         if bounds:
-            app.window_bounds_display_var.set(
+            self.ui_vars["window_bounds_display"].set(
                 f"{bounds[0]}, {bounds[1]}, {bounds[2]}, {bounds[3]}"
             )
         else:
-            app.window_bounds_display_var.set("")
+            self.ui_vars["window_bounds_display"].set("")
 
         if hasattr(app, "bounds_status_var") and hasattr(app, "bounds_readiness_label"):
             selected_window = (
@@ -686,15 +623,15 @@ class AppStateController:
             if (
                 selected_window
                 and hasattr(app, "win_items")
-                and isinstance(app.win_items, list)
+                and isinstance(self.win_items, list)
             ):
                 selected_hwnd = (
-                    app.hunt_selected.get("hwnd")
+                    self.hunt_selected.get("hwnd")
                     if hasattr(app, "hunt_selected")
-                    and isinstance(app.hunt_selected, dict)
+                    and isinstance(self.hunt_selected, dict)
                     else None
                 )
-                for item in app.win_items:
+                for item in self.win_items:
                     if selected_hwnd and item.get("hwnd") == selected_hwnd:
                         is_minimized = item.get("is_minimized", False)
                         break
@@ -705,21 +642,21 @@ class AppStateController:
             compact = getattr(app, "_bounds_compact_mode", False)
             if not selected_window:
                 text = "[!]" if compact else app._t("bounds_state_select")
-                app.bounds_status_var.set(text)
+                self.ui_vars["hunt_status"].set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             elif getattr(app, "bounds_recovery_failed", False):
                 text = "[!]" if compact else app._t("bounds_state_failed")
-                app.bounds_status_var.set(text)
+                self.ui_vars["hunt_status"].set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
             elif is_minimized or (
                 bounds and (bounds[0] <= -32000 or bounds[1] <= -32000)
             ):
                 text = "[!]" if compact else app._t("bounds_state_minimized")
-                app.bounds_status_var.set(text)
+                self.ui_vars["hunt_status"].set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_DANGER)
             elif not bounds:
                 text = "[!]" if compact else app._t("bounds_state_invalid")
-                app.bounds_status_var.set(text)
+                self.ui_vars["hunt_status"].set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_WARNING)
             else:
                 # title handled natively
@@ -730,209 +667,6 @@ class AppStateController:
                         title=f"{bounds[2]}x{bounds[3]}"
                     )
                 )
-                app.bounds_status_var.set(text)
+                self.ui_vars["hunt_status"].set(text)
                 app.bounds_readiness_label.config(fg=UIStyle.COLOR_ACCENT)
 
-    def _hunt_locate_target(self, cfg: Dict[str, Any]):
-        app = self.root
-        _ = app
-        from lib.features.hunt.window_selection_service import WindowSelectionService
-        from lib.vision.template_matcher import locate_template
-        from pathlib import Path
-
-        bounds = WindowSelectionService.resolve_bounds(cfg)
-        if not bounds:
-            return None, None
-
-        templates = []
-        raw_templates = cfg.get("templates") or []
-        if isinstance(raw_templates, list):
-            templates.extend(t for t in raw_templates if isinstance(t, dict))
-        template_path = str(cfg.get("template_path", "") or "").strip()
-        if template_path and not templates:
-            templates.append(
-                {
-                    "path": template_path,
-                    "name": Path(template_path).stem,
-                    "threshold": float(cfg.get("template_threshold", 0.8)),
-                    "monster_name": cfg.get("monster_selected_name", ""),
-                }
-            )
-
-        best_box = None
-        best_info = None
-        best_score = -1.0
-        for template in templates:
-            path = str(template.get("path", "") or "").strip()
-            if not path:
-                continue
-            threshold = float(
-                template.get("threshold", cfg.get("template_threshold", 0.8))
-            )
-            box, confidence = locate_template(
-                path, region=tuple(bounds), threshold=threshold
-            )
-            if box is None or confidence < best_score:
-                continue
-            best_box = box
-            best_score = confidence
-            best_info = {
-                "path": path,
-                "name": template.get("name") or Path(path).stem,
-                "threshold": threshold,
-                "confidence": confidence,
-                "monster_name": template.get("monster_name")
-                or cfg.get("monster_selected_name", ""),
-            }
-        return best_box, best_info
-
-    def _get_skill_runtime_object(self, cfg):
-        from lib.features.skills.runtime import SkillRuntime
-
-        return SkillRuntime(cfg.get("skill_slots", []))
-
-    def _prepare_skill_runtime(self, cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
-        runtime: List[Dict[str, Any]] = []
-        for slot in cfg.get("skill_slots", []) or []:
-            if not isinstance(slot, dict):
-                continue
-            runtime.append(
-                {
-                    "id": slot.get("id", slot.get("name", "")),
-                    "name": slot.get("name", ""),
-                    "key": slot.get("key", ""),
-                    "type": slot.get("type", "attack"),
-                    "cooldown": float(slot.get("cooldown", 0.0)),
-                    "cast_time": float(slot.get("cast_time", 0.0)),
-                    "_last_cast": 0.0,
-                }
-            )
-        return runtime
-
-    def _try_cast_skills(
-        self,
-        skill_runtime,
-        now: float,
-        target_active: bool,
-        attack_phase: bool = False,
-        skill_stats=None,
-        backend=None,
-    ) -> None:
-        app = self.root
-        from lib.system.win_input import tap
-        import time
-        from lib.features.skills.cast_delivery import CastOutcome
-
-        combo_enabled = app.hunt_cfg.get("combo", {}).get("enabled", False)
-
-        # NOTE: CastDeliveryManager integration is handled by SkillRuntime reservations; remove unused manager.
-
-        # Get next skill from SkillRuntime object
-        if not hasattr(self, "skill_runtime_obj") or self.skill_runtime_obj is None:
-            self.skill_runtime_obj = self._get_skill_runtime_object(app.hunt_cfg)
-
-        # Sync pointer if mode changed
-        last_combo_mode = getattr(self, "_last_combo_mode", combo_enabled)
-        if combo_enabled != last_combo_mode:
-            self.skill_runtime_obj.sync_combo_pointer(to_combo=combo_enabled)
-            self._last_combo_mode = combo_enabled
-
-        if not attack_phase:
-            buff_key = self.skill_runtime_obj.get_buff_to_cast(now)
-            if buff_key:
-                if backend:
-                    backend.tap(buff_key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-                else:
-                    tap(buff_key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-                self.skill_runtime_obj.mark_cast(buff_key, now)
-
-                # Also update old dict for legacy compatibility
-                for s in skill_runtime:
-                    if s.get("key") == buff_key:
-                        s["_last_cast"] = now
-                        cast_time = float(s.get("cast_time", 0.0))
-                        if cast_time > 0:
-                            time.sleep(cast_time)
-            return
-
-        if not target_active:
-            return
-
-        next_skill = (
-            self.skill_runtime_obj.get_attack_to_cast(now)
-            if not combo_enabled
-            else self.skill_runtime_obj.get_next_combo_skill(now)
-        )
-
-        if not next_skill:
-            return
-
-        # Reserve the skill
-        res = self.skill_runtime_obj.reserve_next_skill(
-            "attack", now, is_combo=combo_enabled
-        )
-        if not res:
-            return
-
-        outcome = CastOutcome.ACCEPTED
-
-        if combo_enabled:
-            from lib.features.combo.combo_timing_detector import CabalComboDetector
-
-            # Create or reuse detector
-            if not hasattr(self, "combo_detector"):
-                hunt_selected = getattr(app, "hunt_selected", {})
-                hwnd = int(hunt_selected.get("hwnd", 0)) if hunt_selected else 0
-                self.combo_detector = CabalComboDetector(hwnd=hwnd)
-
-            def do_press():
-                if backend:
-                    backend.tap(res.key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-                else:
-                    tap(res.key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-
-            self.combo_detector.key_press_callback = do_press
-
-            bot_mgr = getattr(app, "bot_manager", None)
-            if bot_mgr and getattr(bot_mgr, "screen_capture", None):
-                timeout_sec = float(
-                    app.hunt_cfg.get("combo", {}).get("hit_zone_timeout_sec", 2.0)
-                )
-                detected = self.combo_detector.wait_for_hit_zone(
-                    bot_mgr.screen_capture, timeout_sec=timeout_sec
-                )
-                if not detected:
-                    logging.getLogger(__name__).warning(
-                        "Combo timeout reached. Falling back to static cast."
-                    )
-                    do_press()
-            else:
-                do_press()
-        else:
-            if backend:
-                backend.tap(res.key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-            else:
-                tap(res.key, int(app.hunt_cfg.get("attack_press_ms", 60)))
-
-        cast_ts = time.time()
-
-        # Commit cast
-        self.skill_runtime_obj.commit_cast(res.token, outcome, cast_ts)
-
-        # Record stats
-        if skill_stats:
-            try:
-                skill_stats.record_cast(
-                    res.skill_name or res.key, success=True, timestamp=cast_ts
-                )
-            except Exception:
-                pass
-
-        # Also update old dict
-        for s in skill_runtime:
-            if s.get("key") == res.key:
-                s["_last_cast"] = cast_ts
-                cast_time = float(s.get("cast_time", 0.0))
-                if cast_time > 0 and not combo_enabled:
-                    time.sleep(cast_time)
-                break
