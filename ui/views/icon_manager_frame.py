@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import ttk
 
+from ui.components.empty_state import EmptyState
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from lib.db.services.icon_service import IconService
@@ -12,12 +12,44 @@ from ui.helpers.tooltip import attach_i18n_tooltip
 
 
 class IconManagerFrame(ResponsiveGridBase):
-    def __init__(self, parent, app=None, *args, **kwargs):
+    def __init__(self, parent, *args, app=None, **kwargs):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app
         self.db = get_db()
         self.icon_service = IconService(self.db.conn)
         self.icon_helper = get_icon_helper()
+
+        self.preview_frame = None
+        self.lbl_preview = None
+        self.empty_preview = None
+        self.form_frame = None
+        self.var_id = None
+        self.var_name = None
+        self.var_icon_key = None
+        self.var_category = None
+        self.var_fallback_emoji = None
+        self.var_tooltip_key = None
+        self.var_filepath = None
+        self.entry_id = None
+        self.entry_name = None
+        self.entry_icon_key = None
+        self.combo_category = None
+        self.entry_fallback = None
+        self.entry_tooltip = None
+        self.lbl_tooltip_warning = None
+        self.entry_filepath = None
+        self.btn_browse = None
+        self._available_keys = []
+        self.btn_add = None
+        self.btn_edit = None
+        self.btn_delete = None
+        self.btn_refresh = None
+        self.btn_sync = None
+        self.btn_save = None
+        self.btn_cancel = None
+        self._current_state = None
+        self._search_after_id = None
+        self._categories_loaded = False
 
         self._setup_ui()
         self.load_tree_data()
@@ -168,17 +200,27 @@ class IconManagerFrame(ResponsiveGridBase):
         self.preview_frame.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
         self.preview_frame.grid_rowconfigure(0, weight=1)
         self.preview_frame.grid_columnconfigure(0, weight=1)
+        self.preview_frame.grid_propagate(False) # Keep the height stable
+        self.preview_frame.config(height=200)
 
+        # Empty State
+        self.empty_preview = EmptyState(
+            self.preview_frame,
+            icon="🖼️",
+            message=self.i18n_t("msg_no_icon_selected", default="Chưa tìm thấy icon nào trong thư mục hệ thống"),
+            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết")
+        )
+        self.empty_preview.grid(row=0, column=0, sticky="nsew")
+
+        # Preview Label (Hidden by default)
         self.lbl_preview = tk.Label(
             self.preview_frame,
             bg=UIStyle.BG_ELEVATED,
-            text="No Icon Selected",
+            text="",
             font=UIStyle.get_font("body"),
-            width=20,
-            height=5,
             relief="groove"
         )
-        self.lbl_preview.grid(row=0, column=0, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+        # We don't grid it initially, _render_preview will toggle them
 
     def _build_detail_form(self):
         self.form_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
@@ -264,8 +306,8 @@ class IconManagerFrame(ResponsiveGridBase):
             # Fallback to direct import if app doesn't have it
             from lib.i18n import _REGISTRY
             keys_set = set()
-            for ns, langs in _REGISTRY.items():
-                for lang, mapping in langs.items():
+            for _, langs in _REGISTRY.items():
+                for _, mapping in langs.items():
                     keys_set.update(mapping.keys())
             self._available_keys = sorted(list(keys_set))
         except Exception:
@@ -292,7 +334,7 @@ class IconManagerFrame(ResponsiveGridBase):
             from lib.i18n import t
             # Tự đặt 1 chuỗi ngẫu nhiên không có khả năng bị trùng để test default
             test_missing = "___MISSING___"
-            val = t(key, default=test_missing)
+            val = t(key, default=test_missing, ns=None, lang=None)
             if val == test_missing:
                 self.lbl_tooltip_warning.config(text="⚠️")
                 import ui.helpers.tooltip as tt
@@ -321,9 +363,14 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _render_preview(self, icon_data):
         if not icon_data:
-            self.lbl_preview.config(image='', text="No Icon Selected", font=UIStyle.get_font("body"))
+            self.lbl_preview.grid_remove()
+            self.empty_preview.grid(row=0, column=0, sticky="nsew")
+            self.lbl_preview.config(image='', text="")
             self.lbl_preview.image = None
             return
+
+        self.empty_preview.grid_remove()
+        self.lbl_preview.grid(row=0, column=0, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD, sticky="nsew")
 
         icon_key = icon_data.get("icon_key", "")
         fallback_emoji = icon_data.get("fallback_emoji", "")
@@ -379,12 +426,7 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.var_filepath.set(filename)
 
                 # Update Preview
-                temp_data = {
-                    "icon_key": self.var_icon_key.get() or "preview_temp",
-                    "filepath": filename,
-                    "fallback_emoji": self.var_fallback_emoji.get(),
-                    "tooltip_translation_key": self.var_tooltip_key.get()
-                }
+
 
                 # We need to temporarily add this to helper so it can find it without DB
                 self.icon_helper._icon_cache = getattr(self.icon_helper, "_icon_cache", {})
@@ -753,12 +795,3 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.set_form_state("VIEW")
 
-    def _on_search_key_release(self, event):
-        # Cancel any previous timer
-        if hasattr(self, '_search_after_id') and self._search_after_id:
-            self.after_cancel(self._search_after_id)
-        # Set new timer for debounce (500ms)
-        self._search_after_id = self.after(500, self.apply_filters)
-
-    def apply_filters(self):
-        pass
