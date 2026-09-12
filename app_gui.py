@@ -617,7 +617,7 @@ class App(tk.Tk):
             ),
             on_state_change=self._on_orchestrator_state_change,
             locate_target=TargetLocatorService.locate_target,
-            prepare_skill_runtime=self.state_controller._prepare_skill_runtime,
+            prepare_skill_runtime=self.skill_caster_service.prepare_skill_runtime,
             try_cast_skills=self.skill_caster_service.try_cast_skills,
             bring_window_to_front=self.window_controller._bring_window_to_front,
             bring_window_to_front_by_hwnd=self.window_controller._bring_window_to_front_by_hwnd,
