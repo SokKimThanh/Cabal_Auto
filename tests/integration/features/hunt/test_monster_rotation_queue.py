@@ -191,10 +191,13 @@ def test_metadata_not_persisted(mock_app):
 
 def test_rotation_mode_boundary(mock_app):
     # Verify we only toggle UI mode and don't mutate UX3B runtime policy
+    mock_app.state_controller = MagicMock()
+    mock_app.state_controller.ui_vars = {'rotation_mode': MagicMock()}
+    mock_app.state_controller.ui_vars['rotation_mode'].get.return_value = 'Priority'
     mock_app.rotation_mode_var = MagicMock()
     mock_app.rotation_mode_var.get.return_value = "Priority"
     mock_app.rotation_mode_map = {"Priority": "priority"}
-    mock_app.hunt_cfg = {}
+    mock_app.state_controller.hunt_cfg = {}
     mock_app.hunt_status = MagicMock()
 
     # Needs a mock for _on_rotation_mode_changed
@@ -206,5 +209,5 @@ def test_rotation_mode_boundary(mock_app):
 
     mock_app._on_rotation_mode_changed()
 
-    assert mock_app.hunt_cfg["rotation_mode"] == "priority"
+    assert mock_app.state_controller.hunt_cfg["rotation_mode"] == "priority"
     assert "target_policy" not in mock_app.hunt_cfg

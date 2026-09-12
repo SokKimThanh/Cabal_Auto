@@ -66,7 +66,7 @@ class HuntTab(ttk.Frame):
         if not hasattr(self, "app") or not hasattr(self.app, "hunt_cfg"):
             return
 
-        hwnd = self.app.hunt_cfg.get("window_hwnd")
+        hwnd = self.app.state_controller.hunt_cfg.get("window_hwnd")
         if not hwnd:
             return
 
@@ -301,46 +301,46 @@ class HuntTab(ttk.Frame):
 
         # Initialize mode var for compatibility (actual mode selector is in Setup tab)
         self.app.hunt_mode_var = tk.StringVar(
-            value=self.app.hunt_cfg.get("ui_mode", "beginner")
+            value=self.app.state_controller.hunt_cfg.get("ui_mode", "beginner")
         )
 
         # Initialize vars for compatibility with hunt loop (values read from hunt_cfg)
         self.app.target_key_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("target_key", "TAB"))
+            value=str(self.app.state_controller.hunt_cfg.get("target_key", "TAB"))
         )
         # attack_keys removed: per-skill keys from skill_slots are used instead
         self.app.attack_press_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("attack_press_ms", 60))
+            value=str(self.app.state_controller.hunt_cfg.get("attack_press_ms", 60))
         )
         self.app.target_cycle_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("target_cycle_delay", 0.2))
+            value=str(self.app.state_controller.hunt_cfg.get("target_cycle_delay", 0.2))
         )
         self.app.search_interval_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("search_interval", 0.25))
+            value=str(self.app.state_controller.hunt_cfg.get("search_interval", 0.25))
         )
         self.app.attack_interval_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("attack_interval", 0.15))
+            value=str(self.app.state_controller.hunt_cfg.get("attack_interval", 0.15))
         )
         self.app.lost_timeout_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("lost_timeout_sec", 1.2))
+            value=str(self.app.state_controller.hunt_cfg.get("lost_timeout_sec", 1.2))
         )
         self.app.attack_duration_var = tk.StringVar(
-            value=str(self.app.hunt_cfg.get("attack_min_duration_sec", 1.5))
+            value=str(self.app.state_controller.hunt_cfg.get("attack_min_duration_sec", 1.5))
         )
         self.app.template_var = tk.StringVar(
             value=str(
-                self.app.hunt_cfg.get("template_path", "assets/images/target_frame.png")
+                self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")
             )
         )
 
-        region = self.app.hunt_cfg.get("region") or ["", "", "", ""]
+        region = self.app.state_controller.hunt_cfg.get("region") or ["", "", "", ""]
         self.app.reg_l = tk.StringVar(value=str(region[0]) if region[0] != "" else "")
         self.app.reg_t = tk.StringVar(value=str(region[1]) if region[1] != "" else "")
         self.app.reg_w = tk.StringVar(value=str(region[2]) if region[2] != "" else "")
         self.app.reg_h = tk.StringVar(value=str(region[3]) if region[3] != "" else "")
 
         self.app.bring_front_var = tk.BooleanVar(
-            value=bool(self.app.hunt_cfg.get("bring_to_front_each_cycle", False))
+            value=bool(self.app.state_controller.hunt_cfg.get("bring_to_front_each_cycle", False))
         )
 
         # Layout: 4-Panel Workspace Redesign (ResponsiveGridBase Version)
