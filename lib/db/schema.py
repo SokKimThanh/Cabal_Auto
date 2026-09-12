@@ -200,4 +200,22 @@ def setup_icons_schema(conn: sqlite3.Connection):
         )
     """)
 
+    # Seed data for icon_manager specifically to handle Self-Management Paradox
+    cursor.execute("""
+        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, category, description)
+        VALUES ('icon_manager', 'Icon Manager', '📁', 'ui', 'Icon for the Icon Manager sidebar button')
+    """)
+
+    # We shouldn't use INSERT OR IGNORE for usages if there's no unique constraint,
+    # so we first check if it exists.
+    cursor.execute("""
+        SELECT COUNT(*) FROM icon_usages
+        WHERE icon_key = 'icon_manager' AND ui_element_id = 'btn_icon_manager'
+    """)
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("""
+            INSERT INTO icon_usages (icon_key, module_name, ui_component_type, ui_element_id, description)
+            VALUES ('icon_manager', 'App', 'sidebar_button', 'btn_icon_manager', 'Sidebar tracking for self-management paradox')
+        """)
+
     conn.commit()

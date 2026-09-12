@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import ttk
 
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
@@ -283,8 +284,52 @@ class IconManagerFrame(ResponsiveGridBase):
             setattr(self.lbl_preview, "_i18n_tooltip", None)
 
     def _on_browse_clicked(self):
-        # Stub for Prompt 8
-        pass
+        from tkinter import filedialog
+        from lib.managers.icon_file_manager import import_icon_file
+
+        file_path = filedialog.askopenfilename(
+            title=self.i18n_t("select_icon_file", default="Select Icon File"),
+            filetypes=[("Image files", "*.png *.ico")]
+        )
+
+        if file_path:
+            try:
+                # Import icon into assets directory
+                filename = import_icon_file(file_path)
+                # Update filepath entry
+                self.var_filepath.set(filename)
+
+                # Update Preview
+                temp_data = {
+                    "icon_key": self.var_icon_key.get() or "preview_temp",
+                    "filepath": filename,
+                    "fallback_emoji": self.var_fallback_emoji.get(),
+                    "tooltip_translation_key": self.var_tooltip_key.get()
+                }
+
+                # We need to temporarily add this to helper so it can find it without DB
+                self.icon_helper._icon_cache = getattr(self.icon_helper, "_icon_cache", {})
+
+                # Normally get_icon looks in DB or config.
+                # Let's bypass and just use evaluate_icon_status or we can just load the image directly.
+                from PIL import Image, ImageTk
+                from lib.managers.icon_file_manager import get_icons_directory
+
+                icons_dir = get_icons_directory()
+                target_path = icons_dir / filename
+
+                if target_path.exists():
+                    try:
+                        img = Image.open(target_path)
+                        img = img.resize((128, 128), Image.Resampling.LANCZOS)
+                        photo_img = ImageTk.PhotoImage(img)
+                        self.lbl_preview.config(image=photo_img, text="")
+                        self.lbl_preview.image = photo_img
+                    except Exception as e:
+                        print(f"Error loading preview image: {e}")
+            except Exception as e:
+                from tkinter import messagebox
+                messagebox.showerror("Error", f"Could not import file:\n{str(e)}")
 
     def _build_action_bar(self):
         # We place Add, Edit, Delete on the left, and Refresh, Sync, Save, Cancel on the right.
@@ -397,8 +442,35 @@ class IconManagerFrame(ResponsiveGridBase):
         self.set_form_state("EDIT")
 
     def _on_delete(self):
-        # Stub for next prompts
-        pass
+        icon_key = self.var_icon_key.get()
+        if not icon_key:
+            return
+
+        from tkinter import messagebox
+        confirm = messagebox.askyesno(
+            "Confirm Delete",
+            f"Are you sure you want to delete the icon '{icon_key}'?",
+            icon='warning'
+        )
+
+        if confirm:
+            success = self.icon_service.delete_icon(icon_key)
+            if success:
+                # Clear form
+                self.var_id.set("")
+                self.var_name.set("")
+                self.var_icon_key.set("")
+                self.var_category.set("")
+                self.var_fallback_emoji.set("")
+                self.var_tooltip_key.set("")
+                self.var_filepath.set("")
+                self._render_preview({})
+
+                # Reload tree
+                self.load_tree_data()
+                self.set_form_state("VIEW")
+            else:
+                messagebox.showerror("Error", f"Failed to delete icon '{icon_key}'.")
 
     def _on_refresh(self):
         self.apply_filters()
@@ -408,8 +480,39 @@ class IconManagerFrame(ResponsiveGridBase):
         pass
 
     def _on_save(self):
-        # Stub for next prompts
-        self.set_form_state("VIEW")
+        icon_key = self.var_icon_key.get().strip()
+        if not icon_key:
+            from tkinter import messagebox
+            messagebox.showerror("Error", "Icon Key is required.")
+            return
+
+        icon_data = {
+            "icon_key": icon_key,
+            "name": self.var_name.get().strip(),
+            "filepath": self.var_filepath.get().strip(),
+            "fallback_emoji": self.var_fallback_emoji.get().strip(),
+            "tooltip_translation_key": self.var_tooltip_key.get().strip(),
+            "category": self.var_category.get().strip() or "General",
+            "description": ""
+        }
+
+        success = self.icon_service.upsert_icon(icon_data)
+        if success:
+            self.load_tree_data()
+
+            # Re-select the saved item
+            for item in self.tree.get_children():
+                if item.startswith('cat_'):
+                    for child in self.tree.get_children(item):
+                        if child == icon_key:
+                            self.tree.selection_set(child)
+                            self.tree.see(child)
+                            break
+
+            self.set_form_state("VIEW")
+        else:
+            from tkinter import messagebox
+            messagebox.showerror("Error", "Failed to save icon data.")
 
     def _on_cancel(self):
         self._on_tree_select(None)
@@ -561,3 +664,13 @@ class IconManagerFrame(ResponsiveGridBase):
             self._render_preview(icon_data)
 
         self.set_form_state("VIEW")
+
+    def _on_search_key_release(self, event):
+        # Cancel any previous timer
+        if hasattr(self, '_search_after_id') and self._search_after_id:
+            self.after_cancel(self._search_after_id)
+        # Set new timer for debounce (500ms)
+        self._search_after_id = self.after(500, self.apply_filters)
+
+    def apply_filters(self):
+        pass

@@ -24,6 +24,7 @@ from lib.i18n import t as i18n_t
 from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
+from lib.events.event_bus import EventBus, IconUpdatedEvent
 from tkinter import filedialog, messagebox, ttk
 import tkinter as tk
 import sys
@@ -241,6 +242,8 @@ class App(tk.Tk):
                 register_icons(self.icon_helper)
             except Exception:
                 self.icon_helper = None
+
+            EventBus.bind(IconUpdatedEvent, self.on_icon_updated)
 
             # Create config manager for wizard
             self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
@@ -771,7 +774,7 @@ class App(tk.Tk):
                 lambda: self.switch_view("icon_manager"),
                 UI.FONT_SECTION,
                 "icon_manager",
-                "📁",
+                "icon_manager",
             ),
             (
                 "btn_scan_history",
@@ -1459,6 +1462,54 @@ class App(tk.Tk):
             if hasattr(self, "hunt_selected") and isinstance(self.hunt_selected, dict):
                 saved_title = self.hunt_selected.get("title", "")
                 self.compact_window_selector.set_search_text(saved_title)
+
+    def on_icon_updated(self, event: IconUpdatedEvent):
+        # We need to query icon_usages from IconService
+        from lib.db.services.icon_service import IconService
+        from database import get_db
+        db = get_db()
+        icon_service = IconService(db.conn)
+
+        usages = icon_service.get_usages(event.icon_key)
+
+        # Get new image
+        icon_data = icon_service.get_icon_by_key(event.icon_key)
+        if not icon_data:
+            return
+
+        fallback = icon_data.get("fallback_emoji", "")
+        # Force a refresh in cache by passing something that bypasses it or clears it
+        if hasattr(self.icon_helper, "_icon_cache"):
+            # Clear cache for this icon key
+            keys_to_remove = [k for k in self.icon_helper._icon_cache.keys() if k.startswith(f"{event.icon_key}_")]
+            for k in keys_to_remove:
+                del self.icon_helper._icon_cache[k]
+
+        # Resolve icon
+        giant_icon = self.icon_helper.get_icon(event.icon_key, fallback=fallback, size=24)
+
+        for usage in usages:
+            # Check module and element ID
+            # For now, we mainly support Sidebar updates
+            module = usage.get("module_name")
+            element_id = usage.get("ui_element_id")
+
+            if element_id and hasattr(self, "_sidebar_widgets"):
+                for item in self._sidebar_widgets:
+                    if item.key == element_id:
+                        widget = item.widget
+                        if giant_icon and not isinstance(giant_icon, str):
+                            widget.config(image=giant_icon, text="")
+                            widget.image = giant_icon # Strong reference
+                        else:
+                            emoji_text = giant_icon if giant_icon else fallback
+                            if hasattr(widget, "_icon_name"):
+                                # It's a button
+                                widget.config(image='', text=f" {emoji_text} ")
+                            else:
+                                # It's a label
+                                widget.config(image='', text=f"{emoji_text}")
+                            widget.image = None
 
     def refresh_translations(self):
         # Dynamically update text on widgets without rebuilding
