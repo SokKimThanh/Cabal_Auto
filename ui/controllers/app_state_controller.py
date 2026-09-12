@@ -17,6 +17,10 @@ class AppStateController:
         self.root = root
         app = root
 
+        self.skill_runtime_obj = None
+        self._last_combo_mode = None
+        self.combo_detector = None
+
         # State
         app.click_running = False
         app.click_thread = None
@@ -357,7 +361,6 @@ class AppStateController:
 
     def _validate_hunt_prerequisites(self) -> Optional[str]:
         app = self.root
-        import logging
 
         logger = logging.getLogger(__name__)
 
@@ -541,7 +544,7 @@ class AppStateController:
     def _calculate_monster_estimate(
         self, monster: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        from lib.utils.math_utils import calculate_monster_estimate
+        from lib.features.monsters.monster_repo import calculate_monster_estimate
 
         stats = calculate_monster_estimate(monster) or {}
         kill_time = float(stats.get("estimated_time_sec", 0.0))
@@ -899,8 +902,6 @@ class AppStateController:
                     bot_mgr.screen_capture, timeout_sec=timeout_sec
                 )
                 if not detected:
-                    import logging
-
                     logging.getLogger(__name__).warning(
                         "Combo timeout reached. Falling back to static cast."
                     )
