@@ -1,79 +1,66 @@
 # UI Architecture Review & Technical Debt Report
 
-## 1. State Management (Quản lý trạng thái UI)
+*Đánh giá tổng quan: Dự án có nền tảng kiến trúc khá (đã chia Controller, View, Service, có i18n), nhưng đang xuất hiện các dấu hiệu "phình to". Nếu tiếp tục thêm tính năng theo cách hiện tại thì việc bảo trì sẽ ngày càng khó khăn. Điểm đánh giá: 7.5/10 (Dự án cá nhân) / 6.5/10 (Thương mại).*
 
-**Thực trạng:**
-- Trạng thái hiện đang bị phân tán giữa `app_gui.py`, `AppStateController`, và bên trong các Panel/Frame.
-- `AppStateController` hiện nay không thực sự bao bọc (encapsulate) State mà lại trực tiếp gán thuộc tính vào đối tượng `root` (ví dụ `app.click_running = False`, `app.win_items = []`).
-- Nhiều Panel (như `SkillPanel`, `MonsterTargetPanel`, `TargetStatusPanel`) vẫn tự quản lý trạng thái hiển thị riêng rẽ và trực tiếp gọi các Service database từ trong UI thay vì thông qua một Controller/Manager thống nhất.
-- Sự phụ thuộc mật thiết giữa UI và Business Logic, khiến việc tái sử dụng component hoặc unit test gặp nhiều khó khăn.
+## 1. God Class (Lớp App) - Ưu tiên hàng đầu (🔴 Rất cao)
 
-**Đề xuất kiến trúc mục tiêu:**
-- **Tách bạch State Store:** Xây dựng một cơ chế Store riêng biệt. UI chỉ "observe" và cập nhật khi State thay đổi.
-- Không để các UI Frame tự ý gọi DbService hoặc thao tác lưu file cấu hình trực tiếp mà phải thông qua một Event/Action gửi tới Controller/Service layer.
+**Thực trạng:** Lớp `App` trong `app_gui.py` dài hơn 3000 dòng.
+Nó đang đóng vai trò như một nhân viên phải làm đủ mọi việc: Lễ tân, Kế toán, Bảo vệ, Tài xế, Giám đốc, Nhân viên IT... Lớp `App` hiện đang ôm đồm: quản lý window, state, tạo UI, điều hướng view, xử lý monster, skill, hunt, scan, dialog, i18n, icon cache.
 
-## 2. Code Smells và Các Vấn Đề Nghiêm Trọng Khác
+**Hậu quả:** Bất cứ khi nào muốn sửa giao diện, sửa Hunt, sửa Monster hay Language, đều phải mở file `App`. Mọi thứ dồn về một chỗ khiến rủi ro khi sửa đổi là cực kỳ cao.
 
-**God Class (Lớp App trong app_gui.py)**
-- Lớp `App` đang ôm đồm quá nhiều vai trò: quản lý window, quản lý state, tạo UI, điều hướng view, xử lý monster, skill, hunt, scan, dialog, i18n, icon cache... Nó đã vượt xa vai trò của một root window thông thường.
-- Việc tập trung mọi thứ vào `App` khiến độ coupling cao và rất khó mở rộng.
+**Đề xuất:** Đây là vấn đề lớn nhất. Phải chia nhỏ lớp `App` xuống dưới 1000 dòng bằng cách tách thành các phần tử chuyên trách (`AppShell`, `NavigationController`, `WindowStatusController`, v.v.). Khi App nhỏ lại, 50% các vấn đề khác sẽ tự động dễ giải quyết.
 
-**View Registry bị "Hardcoded"**
-- Trong `_build_ui()`, tất cả các view đều được load và gán trực tiếp: `self._views["hunt"] = ...`.
-- Hệ quả là `App` biết mọi View, Controller, Service, và State. Thiếu một `ViewRegistry` hoặc `NavigationService` để làm giảm độ kết dính (coupling).
+## 2. Timer/after phân tán (🔴 Rất cao)
 
-**Service Locator Anti-Pattern (Lạm dụng hasattr/getattr)**
-- Code chứa quá nhiều lời gọi `if hasattr(self, ...)` và `getattr(self, ...)`. Ví dụ: `if hasattr(self, "skill_service")`, `getattr(self, "hunt_selected", {})`.
-- Điều này cho thấy "Object Contract" không rõ ràng; code không chắc chắn đối tượng đang giữ thuộc tính gì. Khi số lượng này tăng cao, đây là dấu hiệu kiến trúc đang mất kiểm soát và tiềm ẩn lỗi ngầm.
+**Thực trạng:** Hàng chục lời gọi `self.after(100, ...)` và `Thread()` nằm rải rác.
+Giống như việc thuê rất nhiều đồng hồ báo thức rồi để khắp nhà. Ít thì không sao, nhưng nhiều thì quên tắt, chuông reo liên tục.
 
-## 3. Error Handling, Timers & Services
+**Hậu quả:** Frame bị đóng nhưng Timer vẫn chạy, dẫn đến rò rỉ bộ nhớ (memory leak), timer orphan, hoặc lỗi luồng (race condition).
 
-**Thực trạng:**
-- **Timers phân tán:** Hàng chục lời gọi `self.after(...)` (như `self.after(100, self._poll_log_queue)`) và `Thread()` nằm rải rác trong các Frame. Các hàm này tự đăng ký lại chính nó, dẫn đến nguy cơ lớn về timer orphan, memory leak, race condition hoặc chạy sau khi frame đã chết.
-- **Dialog & Notification:** Gần 180 chỗ gọi trực tiếp `messagebox.showinfo` / `showerror` trong logic xử lý, làm UI bị "khóa cứng" vào hộp thoại OS và khó làm Unit Test.
-- **Error Handling (Try/Except):** Rất nhiều block `try...except Exception:` che giấu (swallow) lỗi thực sự, trộn lẫn xử lý lỗi với UI logic.
+**Đề xuất:** Xây dựng `TimerManager`, `TaskScheduler` tập trung thay vì để các Frame tự quản lý.
 
-**Đề xuất:**
-- Tách ngay Timer và Task management thành các Manager (`TimerManager`, `TaskScheduler`) độc lập không phụ thuộc vào UI Frame.
-- Đóng gói Dialog/Notification thành các interface thay vì gọi cứng thư viện OS.
+## 3. Service Locator Anti-Pattern (Lạm dụng hasattr/getattr) (🔴 Rất cao)
 
-## 4. Component Lifecycle (Vòng đời đối tượng và __init__)
+**Thực trạng:** Code chứa rất nhiều `if hasattr(self, "skill_service")` hoặc `getattr(self, "hunt_selected", {})`.
 
-**Thực trạng:**
-- Có rất nhiều thuộc tính được tạo động bên ngoài `__init__`. Mặc dù gây ra lỗi pylint (`attribute-defined-outside-init`), đây là vấn đề ít nghiêm trọng hơn so với Timer rò rỉ hay God Class, nhưng vẫn tạo rủi ro truy cập thuộc tính trước khi nó tồn tại.
+**Hậu quả:** Code đang nói rằng "Tôi không chắc đối tượng này có skill_service hay không", hoặc "Tôi không biết thuộc tính này có tồn tại không". Đây là dấu hiệu "Object Contract" không rõ ràng, kiến trúc đang mất kiểm soát.
 
-**Đề xuất:**
-- Khai báo rõ ràng mọi thuộc tính (`self.xxx = None`) trong `__init__` để dễ dàng bảo trì và tránh bất ngờ.
+## 4. Hardcoded View Registry (🟠 Cao)
 
----
+**Thực trạng:** `App` phải ghi nhớ mọi View (HuntView, SetupView, StatsView...).
+Giống như một ông giám đốc phải nhớ tên toàn bộ 100 nhân viên trong công ty.
 
-## 5. Bảng Đánh Giá Mức Độ Nghiêm Trọng (Severity)
+**Đề xuất:** Cần một `ViewRegistry` hoặc `NavigationService` để đứng giữa, giảm độ kết dính (coupling).
 
-| Vấn đề | Mức độ | Nhận xét |
-|---|---|---|
-| **God Class App** | 🔴 Rất cao | Phải chia nhỏ để tránh phình to không kiểm soát. |
-| **Timer/after phân tán** | 🔴 Rất cao | Nguy cơ memory leak, timer orphan và rủi ro luồng (race condition) cực cao. |
-| **Service Locator Anti-Pattern** | 🔴 Rất cao | (hasattr/getattr) Phá vỡ contract, hệ thống mất kiểm soát. |
-| **Hardcoded View Registry** | 🟠 Cao | Coupling cao, khó tái sử dụng hoặc mở rộng View mới. |
-| **UI gọi Service trực tiếp** | 🟠 Cao | Mix logic và UI. |
-| **State phân tán** | 🟠 Cao | Quản lý state chưa tốt, dễ sai lệch dữ liệu. |
-| **Lifecycle (init)** | 🟡 Trung bình | Pylint issues; dễ sửa nhất nhưng không phải nguồn cơn gốc rễ. |
+## 5. State Management (Quản lý trạng thái UI) (🟠 Cao)
+
+**Thực trạng:** Trạng thái đang bị phân tán: `App` giữ state, `Controller` giữ state, `Frame` giữ state.
+Giống như tiền để trong ví, trong túi áo, trong balo, trong ngăn kéo. Muốn biết còn bao nhiêu tiền phải đi kiểm tra khắp nơi.
+
+**Hậu quả:** Sửa một chỗ có thể hỏng chỗ khác, cập nhật state này quên cập nhật state kia.
+**Đề xuất:** Gom State về một kho lưu trữ (Store) duy nhất.
+
+## 6. Dialog Service (🟠 Cao)
+
+**Thực trạng:** `messagebox.showinfo()` nằm khắp nơi trong logic.
+Giống như mỗi phòng tự mua loa riêng để thông báo. Sau này muốn đổi loa mới (Toast/Popup), phải sửa hàng trăm chỗ.
+
+**Đề xuất:** Đóng gói thành `DialogService`.
+
+## 7. Component Lifecycle (Vòng đời đối tượng và __init__) (🟡 Trung bình)
+
+**Thực trạng:** Tạo thuộc tính (`self.b = []`) bên ngoài `__init__`.
+Giống như mua xe rồi mới nhớ ra quên lắp bánh.
+
+**Đề xuất:** Gán trước giá trị (`self.b = None`) trong `__init__`. Đây là lỗi Pylint dễ sửa nhưng không nên ưu tiên bằng các vấn đề kiến trúc phía trên.
 
 ---
 
-## 6. Kế Hoạch Hành Động Đề Xuất (Action Plan)
+## Lộ Trình Hành Động (Action Plan) Tóm Tắt
 
-**Giai đoạn 1: God Class Decomposition (Ưu tiên số 1)**
-- Tách `App` thành các phần tử chuyên trách: `AppShell`, `NavigationController`, `WindowStatusController`, `HuntWorkspaceController`, `ScanController`.
-- Áp dụng `ViewRegistry` hoặc `NavigationService` để tháo gỡ việc hardcode các view.
-
-**Giai đoạn 2: Timer/Task Management (Ưu tiên số 2)**
-- Xây dựng `TimerManager`, `TaskScheduler`, và `WorkerQueue` tập trung.
-- Thay thế toàn bộ các lời gọi `self.after(...)` và `Thread()` trực tiếp trong UI bằng các Service này, đảm bảo tự dọn dẹp khi UI bị destroy.
-
-**Giai đoạn 3: State Management & Service Abstraction (Ưu tiên số 3)**
-- Rút dần State (trạng thái) ra khỏi `App` gốc, đưa về State Store.
-- Tách Dialog, Notification, và Logging thành các Service độc lập có thể inject. Loại bỏ Anti-pattern gọi `getattr/hasattr`.
-
-**Giai đoạn 4: Lifecycle Cleanup (Ưu tiên số 4)**
-- Rà soát toàn bộ project, chuyển các khởi tạo tạo động (dynamically defined attributes) về hàm `__init__` (gán `None` hoặc giá trị mặc định) để sạch Pylint và đảm bảo Object Contract.
+1. **Tách nhỏ God Class (App):** Mục tiêu tối thượng là giảm App xuống < 1000 dòng.
+2. **Quản lý Timer/Task tập trung:** Chặn đứng rò rỉ bộ nhớ.
+3. **Làm rõ Object Contract:** Loại bỏ `hasattr/getattr` bừa bãi.
+4. **Tách View Registry & State:** Tách State và Navigation ra khỏi UI.
+5. **Dọn dẹp Lifecycle:** Khởi tạo mọi thứ trong `__init__`.
