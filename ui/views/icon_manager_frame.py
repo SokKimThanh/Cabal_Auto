@@ -7,6 +7,8 @@ from lib.db.services.icon_service import IconService
 from ui.helpers.icon_helper import get_icon_helper
 from database import get_db
 
+from ui.helpers.tooltip import attach_i18n_tooltip
+
 
 class IconManagerFrame(ResponsiveGridBase):
     def __init__(self, parent, app=None, *args, **kwargs):
@@ -134,13 +136,183 @@ class IconManagerFrame(ResponsiveGridBase):
         # Right Detail Frame
         self.right_detail_frame = tk.Frame(self.main_content_frame, bg=UIStyle.BG_SURFACE)
         self.right_detail_frame.grid(row=0, column=1, sticky="nsew", padx=(UIStyle.SPACE_SM, 0))
-        tk.Label(self.right_detail_frame, text="Detail & Form Area", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(expand=True)
+
+        self.right_detail_frame.grid_rowconfigure(0, weight=1)  # Preview
+        self.right_detail_frame.grid_rowconfigure(1, weight=1)  # Form
+        self.right_detail_frame.grid_columnconfigure(0, weight=1)
+
+        self._build_preview_zone()
+        self._build_detail_form()
 
         # 3. Bottom Action Bar
         self.bottom_action_frame = tk.Frame(content_frame, bg=UIStyle.BG_SUBTLE, height=60)
         self.bottom_action_frame.grid(row=2, column=0, sticky="ew")
         self.bottom_action_frame.grid_propagate(False)
-        tk.Label(self.bottom_action_frame, text="Bottom Action Bar Area", bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(pady=20)
+
+        # Build Action Buttons
+        self._build_action_bar()
+
+    def _render_preview(self, icon_data):
+        if not icon_data:
+            self.lbl_preview.config(image='', text="No Icon Selected", font=UIStyle.get_font("body"))
+            self.lbl_preview.image = None
+            return
+
+        icon_key = icon_data.get("icon_key", "")
+        fallback_emoji = icon_data.get("fallback_emoji", "")
+
+        # We need a large icon. Let's try 128x128
+        giant_icon = self.icon_helper.get_icon(icon_key, fallback=fallback_emoji, size=128)
+
+        if giant_icon and not isinstance(giant_icon, str):
+            self.lbl_preview.config(image=giant_icon, text="")
+            self.lbl_preview.image = giant_icon
+        else:
+            # Fallback to emoji text
+            emoji_text = giant_icon if giant_icon else fallback_emoji
+            self.lbl_preview.config(image='', text=emoji_text, font=(UIStyle.FONT_FAMILY_UI, 72))
+            self.lbl_preview.image = None
+
+        # Re-attach tooltip
+        tooltip_key = icon_data.get("tooltip_translation_key", "")
+
+        # Clear old tooltip by unbinding Enter/Leave if needed, or by redefining
+        if hasattr(self.lbl_preview, "_i18n_tooltip") and getattr(self.lbl_preview, "_i18n_tooltip"):
+            old_tip = getattr(self.lbl_preview, "_i18n_tooltip")
+            if hasattr(old_tip, "_hide"):
+                old_tip._hide()
+            self.lbl_preview.unbind("<Enter>")
+            self.lbl_preview.unbind("<Leave>")
+            self.lbl_preview.unbind("<ButtonPress>")
+
+        if tooltip_key:
+            attach_i18n_tooltip(
+                self.lbl_preview,
+                key=tooltip_key,
+                ns=None,  # Adjust if tooltip namespace is needed
+                lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi'
+            )
+        else:
+            setattr(self.lbl_preview, "_i18n_tooltip", None)
+
+    def _on_browse_clicked(self):
+        # Stub for Prompt 8
+        pass
+
+    def _build_action_bar(self):
+        # We place Add, Edit, Delete on the left, and Refresh, Sync, Save, Cancel on the right.
+        left_frame = tk.Frame(self.bottom_action_frame, bg=UIStyle.BG_SUBTLE)
+        left_frame.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        right_frame = tk.Frame(self.bottom_action_frame, bg=UIStyle.BG_SUBTLE)
+        right_frame.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add"), command=self._on_add, **UIStyle.get_button_style("primary"))
+        self.btn_add.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
+        self.btn_edit.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete"), command=self._on_delete, **UIStyle.get_button_style("danger" if hasattr(UIStyle, 'get_button_style') and 'danger' in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)] else "secondary"))
+        self.btn_delete.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        # Override danger if needed (Tkinter style compatibility)
+        if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
+            self.btn_delete.configure(bg=UIStyle.DANGER, fg="white")
+
+        self.btn_refresh = tk.Button(right_frame, text=self.i18n_t("btn_refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
+        self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("secondary"))
+        self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
+        self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        self.btn_cancel = tk.Button(right_frame, text=self.i18n_t("btn_cancel"), command=self._on_cancel, **UIStyle.get_button_style("secondary"))
+        self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        self.set_form_state("VIEW")
+
+    def set_form_state(self, state):
+        self._current_state = state
+
+        # Enable/Disable form entries
+        entry_state = "normal" if state in ("ADD", "EDIT") else "disabled"
+        cb_state = "readonly" if state in ("ADD", "EDIT") else "disabled"
+
+        # Keep ID always readonly or disabled
+        self.entry_id.config(state="disabled")
+
+        self.entry_name.config(state=entry_state)
+        self.entry_icon_key.config(state=entry_state)
+        self.combo_category.config(state=cb_state)
+        self.entry_fallback.config(state=entry_state)
+        self.entry_tooltip.config(state=entry_state)
+        # Filepath is visually selected via button
+        self.entry_filepath.config(state="disabled")
+        self.btn_browse.config(state="normal" if state in ("ADD", "EDIT") else "disabled")
+
+        # Handle buttons
+        if state == "VIEW":
+            self.btn_add.config(state="normal")
+
+            # Edit/Delete depends on selection
+            has_selection = bool(self.tree.selection())
+            self.btn_edit.config(state="normal" if has_selection else "disabled")
+            self.btn_delete.config(state="normal" if has_selection else "disabled")
+
+            self.btn_save.pack_forget()
+            self.btn_cancel.pack_forget()
+
+            self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
+            self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
+
+        elif state in ("ADD", "EDIT"):
+            self.btn_add.config(state="disabled")
+            self.btn_edit.config(state="disabled")
+            self.btn_delete.config(state="disabled")
+
+            self.btn_refresh.pack_forget()
+            self.btn_sync.pack_forget()
+
+            self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
+            self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
+
+    def _on_add(self):
+        # Clear form variables
+        self.var_id.set("")
+        self.var_name.set("")
+        self.var_icon_key.set("")
+        self.var_category.set("")
+        self.var_fallback_emoji.set("")
+        self.var_tooltip_key.set("")
+        self.var_filepath.set("")
+
+        self._render_preview({})
+        self.set_form_state("ADD")
+
+    def _on_edit(self):
+        self.set_form_state("EDIT")
+
+    def _on_delete(self):
+        # Stub for next prompts
+        pass
+
+    def _on_refresh(self):
+        self.apply_filters()
+
+    def _on_sync(self):
+        # Stub for next prompts
+        pass
+
+    def _on_save(self):
+        # Stub for next prompts
+        self.set_form_state("VIEW")
+
+    def _on_cancel(self):
+        self._on_tree_select(None)
+        self.set_form_state("VIEW")
 
     def _on_search_key_release(self, event):
         # Cancel any previous timer
@@ -255,6 +427,16 @@ class IconManagerFrame(ResponsiveGridBase):
     def _on_tree_select(self, event):
         selection = self.tree.selection()
         if not selection:
+            # Clear form
+            self.var_id.set("")
+            self.var_name.set("")
+            self.var_icon_key.set("")
+            self.var_category.set("")
+            self.var_fallback_emoji.set("")
+            self.var_tooltip_key.set("")
+            self.var_filepath.set("")
+            self._render_preview({})
+            self.set_form_state("VIEW")
             return
 
         item_id = selection[0]
@@ -262,5 +444,19 @@ class IconManagerFrame(ResponsiveGridBase):
         if item_id.startswith('cat_'):
             return
 
-        # Handle icon selection...
-        pass
+        # Handle icon selection
+        icon_key = item_id
+        icon_data = self.icon_service.get_icon_by_key(icon_key)
+
+        if icon_data:
+            self.var_id.set(str(icon_data.get("id", "")))
+            self.var_name.set(icon_data.get("name", ""))
+            self.var_icon_key.set(icon_data.get("icon_key", ""))
+            self.var_category.set(icon_data.get("category", ""))
+            self.var_fallback_emoji.set(icon_data.get("fallback_emoji", ""))
+            self.var_tooltip_key.set(icon_data.get("tooltip_translation_key", ""))
+            self.var_filepath.set(icon_data.get("filepath", ""))
+
+            self._render_preview(icon_data)
+
+        self.set_form_state("VIEW")
