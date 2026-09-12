@@ -322,14 +322,16 @@ class App(tk.Tk):
         self.overlay_controller = AppOverlayController(self)
         self.skill_caster_service = SkillCasterService()
         self.state_controller = AppStateController(self)
+        self.state_controller._collect_skill_slots_func = getattr(self, '_collect_skill_slots', None)
+        self.state_controller.ui_widgets['unsaved_indicator_func'] = getattr(self, '_update_unsaved_indicator', None)
         self.window_controller = AppWindowController(self)
         self.window_tracker_controller = WindowTrackerController(self)
         self.overlay_ctrl = None
         self.state_controller.ui_vars['hunt_status'] = tk.StringVar()
         self.state_controller.ui_vars['hunt_target_info'] = tk.StringVar()
-        self.monster_status_var = tk.StringVar()
+        self.state_controller.ui_vars['monster_status'] = tk.StringVar(master=self)
         self.state_controller.ui_vars['monster_estimate'] = tk.StringVar()
-        self.training_mode_var = tk.BooleanVar(value=False)
+        self.state_controller.ui_vars['training_mode'] = tk.BooleanVar(master=self, value=False)
         self.state_controller.ui_vars['global_hotkey_enabled'] = tk.BooleanVar(value=True)
         self._detected_snapshot_items = []
         self._last_snapshot = None
@@ -350,12 +352,12 @@ class App(tk.Tk):
             settings_menu = tk.Menu(menubar, tearoff=0)
             # BooleanVar reflects hunt_cfg setting
             gh_cfg = self.hunt_cfg.get("global_hotkeys", {})
-            self._global_hotkeys_var = tk.BooleanVar(
+            self.state_controller.ui_vars['global_hotkeys_enabled_legacy'] = tk.BooleanVar(
                 value=bool(gh_cfg.get("enabled", True))
             )
 
             def _on_toggle_global_hotkeys():
-                enabled = bool(self._global_hotkeys_var.get())
+                enabled = bool(self.state_controller.ui_vars['global_hotkeys_enabled_legacy'].get())
                 # Persist setting
                 self.hunt_cfg.setdefault("global_hotkeys", {})["enabled"] = enabled
                 try:
@@ -378,7 +380,7 @@ class App(tk.Tk):
 
             settings_menu.add_checkbutton(
                 label=self._t("help_shortcuts"),
-                variable=self._global_hotkeys_var,
+                variable=self.state_controller.ui_vars['global_hotkeys_enabled_legacy'],
                 command=_on_toggle_global_hotkeys,
             )
             settings_menu.add_separator()
@@ -1082,9 +1084,9 @@ class App(tk.Tk):
         self.start_stop_btn.pack(side="left", padx=(0, 12))
 
         # Language Selector
-        self.lang_var = tk.StringVar(value=self.lang)
+        self.state_controller.ui_vars['lang'] = tk.StringVar(master=self, value=self.lang)
         self.lang_cmb = ttk.Combobox(
-            col2_frame, textvariable=self.lang_var, state="readonly", width=4
+            col2_frame, textvariable=self.state_controller.ui_vars['lang'], state="readonly", width=4
         )
         self.lang_cmb["values"] = ("en", "vi")
         self.lang_cmb.pack(side="left")
@@ -1161,10 +1163,10 @@ class App(tk.Tk):
         self.status_bar_frame.grid(row=1, column=0, columnspan=7, sticky="ew")
         self.status_bar_frame.pack_propagate(False)
 
-        self._db_status_var = tk.StringVar(value="⠋ Đang kiểm tra CSDL...")
+        self.state_controller.ui_vars['db_status'] = tk.StringVar(master=self, value="⠋ Đang kiểm tra CSDL...")
         self._db_status_bar = tk.Label(
             self.status_bar_frame,
-            textvariable=self._db_status_var,
+            textvariable=self.state_controller.ui_vars['db_status'],
             anchor="w",
             padx=12,
             font=UI.FONT_SMALL,
@@ -1445,7 +1447,7 @@ class App(tk.Tk):
         ):
             saved_hwnd = self.state_controller.hunt_selected.get("hwnd")
 
-        self.lang = self.lang_var.get()
+        self.lang = self.state_controller.ui_vars['lang'].get()
         self.cfg.setdefault("ui", {})
         self.cfg["ui"]["language"] = self.lang
         save_config(self.cfg)
@@ -1629,7 +1631,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else "Tất cả phím tắt đã đăng ký thành công"
                 )
-                self._hotkey_status_var.set(f"✅ {success_text}")
+                self.state_controller.ui_vars['hotkey_status'].set(f"✅ {success_text}")
                 self._hotkey_status_label.config(fg=UI.ACCENT_GREEN)  # Green
 
                 # Show count and active hotkeys list
@@ -1640,7 +1642,7 @@ class App(tk.Tk):
                 )
                 if hotkey_details:
                     detail_text += f": {', '.join(hotkey_details)}"
-                self._hotkey_status_detail_var.set(f"   {detail_text}")
+                self.state_controller.ui_vars['hotkey_status_detail'].set(f"   {detail_text}")
 
                 # Hide action buttons (not needed)
                 if hasattr(self, "_hotkey_retry_btn"):
@@ -1657,7 +1659,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else f"{failed_count} phím tắt đăng ký thất bại"
                 )
-                self._hotkey_status_var.set(f"⚠️ {warning_text}")
+                self.state_controller.ui_vars['hotkey_status'].set(f"⚠️ {warning_text}")
                 self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)  # Orange
 
                 # Show guidance
@@ -1666,7 +1668,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
                 )
-                self._hotkey_status_detail_var.set(f"   {guidance}")
+                self.state_controller.ui_vars['hotkey_status_detail'].set(f"   {guidance}")
 
                 # Show retry button only
                 if hasattr(self, "_hotkey_retry_btn"):
@@ -1688,7 +1690,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else "Phím tắt không khả dụng"
                 )
-                self._hotkey_status_var.set(f"❌ {error_text}")
+                self.state_controller.ui_vars['hotkey_status'].set(f"❌ {error_text}")
                 self._hotkey_status_label.config(fg=UI.DANGER)  # Red
 
                 # Show explanation
@@ -1704,7 +1706,7 @@ class App(tk.Tk):
                         if self.lang == "en"
                         else "Không thể đăng ký phím tắt toàn cục."
                     )
-                self._hotkey_status_detail_var.set(f"   {explanation}")
+                self.state_controller.ui_vars['hotkey_status_detail'].set(f"   {explanation}")
 
                 # Show both buttons
                 if hasattr(self, "_hotkey_details_btn"):
@@ -1727,7 +1729,7 @@ class App(tk.Tk):
         except Exception as e:
             # Fallback: show basic error
             try:
-                self._hotkey_status_var.set(f"⚠️ Error updating status: {e}")
+                self.state_controller.ui_vars['hotkey_status'].set(f"⚠️ Error updating status: {e}")
                 self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)
             except Exception:
                 pass
@@ -1914,7 +1916,7 @@ class App(tk.Tk):
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
-        display_mode = self.rotation_mode_var.get()
+        display_mode = self.state_controller.ui_vars['rotation_mode'].get()
         if hasattr(self, "rotation_mode_map"):
             mode = self.rotation_mode_map.get(display_mode, display_mode)
         else:
@@ -2225,13 +2227,13 @@ class App(tk.Tk):
             return
 
         if not self.monster_rotation:
-            self.monster_status_var.set(self._t("monster_none_selected"))
+            self.state_controller.ui_vars['monster_status'].set(self._t("monster_none_selected"))
             return
 
         mode = self.hunt_cfg.get("rotation_mode", "sequence")
 
         if mode == "sequence":
-            self.monster_status_var.set(
+            self.state_controller.ui_vars['monster_status'].set(
                 f"Sequence: {len(self.monster_rotation)} monsters"
             )
         else:
@@ -2239,7 +2241,7 @@ class App(tk.Tk):
                 self.monster_rotation, key=lambda m: m.get("priority", 1)
             )
             current = sorted_monsters[0]
-            self.monster_status_var.set(
+            self.state_controller.ui_vars['monster_status'].set(
                 f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation)} total"
             )
 
@@ -2381,10 +2383,10 @@ class App(tk.Tk):
             if skill_type == "buff":
                 duration = 300
                 if hasattr(self, "skill_slot_duration_vars") and i < len(
-                    self.skill_slot_duration_vars
+                    self.state_controller.skill_slot_duration_vars
                 ):
                     try:
-                        duration = int(self.skill_slot_duration_vars[i].get())
+                        duration = int(self.state_controller.skill_slot_duration_vars[i].get())
                     except ValueError:
                         pass
                 slot_data["duration_sec"] = duration
@@ -2422,13 +2424,13 @@ class App(tk.Tk):
             try:
                 first_path = templates[0].get("path")
                 if first_path:
-                    self.template_var.set(first_path)
+                    self.state_controller.ui_vars['template'].set(first_path)
                     self.hunt_cfg["template_path"] = first_path
             except Exception:
                 pass
         elif monster.get("template"):
             # Fallback to old single template field
-            self.template_var.set(monster["template"])
+            self.state_controller.ui_vars['template'].set(monster["template"])
             self.hunt_cfg["template_path"] = monster["template"]
             self.hunt_cfg["templates"] = []
 
@@ -2443,8 +2445,8 @@ class App(tk.Tk):
         attack_min, lost_timeout = self.state_controller._recommend_attack_settings(
             stats
         )
-        self.attack_duration_var.set(f"{attack_min:.2f}")
-        self.lost_timeout_var.set(f"{lost_timeout:.2f}")
+        self.state_controller.ui_vars['attack_duration'].set(f"{attack_min:.2f}")
+        self.state_controller.ui_vars['lost_timeout'].set(f"{lost_timeout:.2f}")
         base = self._t("monster_estimate_result").format(
             time=kill_time, dps=stats["dps"]
         )
@@ -2462,11 +2464,11 @@ class App(tk.Tk):
         if not hasattr(self, "rotation_desc_var"):
             return
 
-        mode = self.rotation_mode_var.get()
+        mode = self.state_controller.ui_vars['rotation_mode'].get()
         if mode == "sequence":
-            self.rotation_desc_var.set("Hunt monsters in order, cycle through list")
+            self.state_controller.ui_vars['rotation_desc'].set("Hunt monsters in order, cycle through list")
         elif mode == "priority":
-            self.rotation_desc_var.set("Always hunt highest priority (lowest number)")
+            self.state_controller.ui_vars['rotation_desc'].set("Always hunt highest priority (lowest number)")
 
     def _update_training_mode_buttons(self):
         """Update monster control buttons based on training mode state.
@@ -2484,7 +2486,7 @@ class App(tk.Tk):
         if not hasattr(self, "btn_add_monster"):
             return
 
-        is_training = self.training_mode_var.get()
+        is_training = self.state_controller.ui_vars['training_mode'].get()
         has_training_dummy = any(
             m.get("training_mode", False) for m in self.monster_rotation
         )

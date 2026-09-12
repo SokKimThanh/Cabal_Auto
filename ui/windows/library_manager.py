@@ -15,7 +15,6 @@ import tkinter as tk
 from lib.i18n import t as i18n_t
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from lib.ui_style_v2 import UIStyleV2 as UI
-from lib.i18n.translations import LIBRARY_MANAGER_TRANSLATIONS
 from tkinter import ttk, messagebox, filedialog
 from typing import Callable, Optional, Dict, Any
 import json

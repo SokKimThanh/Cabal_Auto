@@ -83,7 +83,7 @@ class AppWindowController:
 
         if success:
             logger.info("Window successfully restored.")
-            self.root.bounds_recovery_failed = False
+            self.root.state_controller.bounds_recovery_failed = False
             self.on_hunt_find_windows()
             return
 
@@ -93,7 +93,7 @@ class AppWindowController:
             self.root.after(300, self._retry_resolve_bounds, hwnd, attempt + 1)
         else:
             logger.error("All restore attempts failed.")
-            self.root.bounds_recovery_failed = True
+            self.root.state_controller.bounds_recovery_failed = True
             if hasattr(self.root, "state_controller") and hasattr(
                 self.root.state_controller, "_update_window_bounds_display"
             ):
@@ -123,13 +123,13 @@ class AppWindowController:
                     # Schedule restoration and window refresh (don't return early!)
                     self.root.after(300, self._retry_resolve_bounds, hwnd, 0)
                     # Continue to scan windows anyway
-                    self.root.bounds_recovery_failed = False
+                    self.root.state_controller.bounds_recovery_failed = False
                     logger.debug("  Calling on_hunt_find_windows() after scheduling restore")
                     self.on_hunt_find_windows()
                     return
 
         # Scan windows to update bounds in UI
-        self.root.bounds_recovery_failed = False
+        self.root.state_controller.bounds_recovery_failed = False
         logger.debug("  Calling on_hunt_find_windows()")
         self.on_hunt_find_windows()
 
@@ -146,40 +146,40 @@ class AppWindowController:
             logger.debug(f"  _list_windows() returned {len(items)} items")
         except Exception as exc:
             logger.error(f"  _list_windows() failed: {exc}")
-            self.root.win_items = []
-            if hasattr(self.root, "win_combo"):
-                self.root.win_combo["values"] = []
-            if hasattr(self.root, "hunt_status"):
-                self.root.hunt_status.set(f"Window scan failed: {exc}")
+            self.root.state_controller.win_items = []
+            if ("win_combo" in self.root.state_controller.ui_widgets):
+                self.root.state_controller.ui_widgets['win_combo']["values"] = []
+            if ("hunt_status" in self.root.state_controller.ui_vars):
+                self.root.state_controller.ui_vars['hunt_status'].set(f"Window scan failed: {exc}")
             return
 
-        self.root.win_items = items
+        self.root.state_controller.win_items = items
 
         # Build dictionary mapping hwnd to display names
-        self.root.win_items_map = {
+        self.root.state_controller.win_items_map = {
             item.get("hwnd"): item.get("title") for item in items
         }
         values = [item["title"] for item in items]
         logger.debug(f"  Setting combobox values: {values}")
-        if hasattr(self.root, "win_combo"):
-            self.root.win_combo["values"] = values
-            logger.debug(f"  Combobox values set. Current: {self.root.win_combo['values']}")
+        if ("win_combo" in self.root.state_controller.ui_widgets):
+            self.root.state_controller.ui_widgets['win_combo']["values"] = values
+            logger.debug(f"  Combobox values set. Current: {self.root.state_controller.ui_widgets['win_combo']['values']}")
         else:
             logger.warning("  win_combo not found on root!")
 
         # Update status to show how many windows found
-        if hasattr(self.root, "hunt_status"):
+        if ("hunt_status" in self.root.state_controller.ui_vars):
             if items:
-                self.root.hunt_status.set(f"Found {len(items)} window(s). Select and click Start.")
+                self.root.state_controller.ui_vars['hunt_status'].set(f"Found {len(items)} window(s). Select and click Start.")
             else:
-                self.root.hunt_status.set("No Cabal windows found. Launch game and try again.")
+                self.root.state_controller.ui_vars['hunt_status'].set("No Cabal windows found. Launch game and try again.")
 
     def on_window_combo_selected(self, _evt=None) -> None:
         logger.debug("on_window_combo_selected() called")
 
         if not getattr(self.root, "win_items", None):
             logger.debug("  win_items is empty, setting hunt_selected = None")
-            self.root.hunt_selected = None
+            self.root.state_controller.hunt_selected = None
             return
 
         from lib.features.hunt.config_validator import normalize_window_bounds_value
@@ -187,27 +187,27 @@ class AppWindowController:
 
         index = 0
         try:
-            index = int(self.root.win_combo.current())
+            index = int(self.root.state_controller.ui_widgets['win_combo'].current())
             logger.debug(f"  Combobox current index: {index}")
         except Exception as e:
             logger.debug(f"  Failed to get combobox index: {e}")
             selected_title = (
-                self.root.win_combo_var.get().strip()
-                if hasattr(self.root, "win_combo_var")
+                self.root.state_controller.ui_vars['win_combo'].get().strip()
+                if ("win_combo" in self.root.state_controller.ui_vars)
                 else ""
             )
             logger.debug(f"  Trying to find by title: {selected_title}")
-            for idx, item in enumerate(self.root.win_items):
+            for idx, item in enumerate(self.root.state_controller.win_items):
                 if item["title"] == selected_title:
                     index = idx
                     logger.debug(f"  Found at index {idx}")
                     break
 
-        if index < 0 or index >= len(self.root.win_items):
+        if index < 0 or index >= len(self.root.state_controller.win_items):
             logger.debug(f"  Index {index} out of bounds, resetting to 0")
             index = 0
 
-        selected = dict(self.root.win_items[index])
+        selected = dict(self.root.state_controller.win_items[index])
         logger.debug(f"  Selected window: {selected['title']} (hwnd={selected['hwnd']})")
 
         # RESTORE WINDOW FIRST if minimized (important for new selections)
@@ -233,11 +233,11 @@ class AppWindowController:
             validate_selected_cabal_window,
         )
 
-        validation = validate_selected_cabal_window(selected, self.root.win_items)
+        validation = validate_selected_cabal_window(selected, self.root.state_controller.win_items)
         if not validation.is_valid:
             logger.warning(f"  Window validation failed: {validation.code}")
-            if hasattr(self.root, "hunt_status"):
-                self.root.hunt_status.set(
+            if ("hunt_status" in self.root.state_controller.ui_vars):
+                self.root.state_controller.ui_vars['hunt_status'].set(
                     f"Selected window is invalid: {validation.code}"
                 )
             return
@@ -248,25 +248,25 @@ class AppWindowController:
 
         # Re-enable UI if it was locked
         if hasattr(self.root, "start_stop_btn"):
-            self.root.start_stop_btn.config(state="normal")
-        self.root.hunt_selected = selected
-        self.root.current_window_bounds = bounds
-        logger.debug(f"  hunt_selected set: {self.root.hunt_selected}")
+            if hasattr(self.root, 'start_stop_btn'): self.root.start_stop_btn.config(state="normal")
+        self.root.state_controller.hunt_selected = selected
+        self.root.state_controller.current_window_bounds = bounds
+        logger.debug(f"  hunt_selected set: {self.root.state_controller.hunt_selected}")
 
-        self.root.hunt_cfg["window_title"] = selected["title"]
-        self.root.hunt_cfg["window_pid"] = selected["pid"]
-        self.root.hunt_cfg["window_hwnd"] = selected["hwnd"]
+        self.root.state_controller.hunt_cfg["window_title"] = selected["title"]
+        self.root.state_controller.hunt_cfg["window_pid"] = selected["pid"]
+        self.root.state_controller.hunt_cfg["window_hwnd"] = selected["hwnd"]
 
-        WindowSelectionService.update_bounds(self.root.hunt_cfg, bounds)
+        WindowSelectionService.update_bounds(self.root.state_controller.hunt_cfg, bounds)
 
-        hunt_area = self.root.hunt_cfg.get("hunt_area")
+        hunt_area = self.root.state_controller.hunt_cfg.get("hunt_area")
         if isinstance(hunt_area, dict):
             hunt_area["window_title"] = selected["title"]
         if hasattr(self.root, "_update_window_bounds_display"):
-            self.root._update_window_bounds_display()
-        save_hunt_config(self.root.hunt_cfg)
-        if hasattr(self.root, "hunt_status"):
-            self.root.hunt_status.set(f"Window selected: {selected['title']}")
+            self.root.state_controller._update_window_bounds_display()
+        save_hunt_config(self.root.state_controller.hunt_cfg)
+        if ("hunt_status" in self.root.state_controller.ui_vars):
+            self.root.state_controller.ui_vars['hunt_status'].set(f"Window selected: {selected['title']}")
         logger.debug(f"  on_window_combo_selected() completed successfully")
 
     def _auto_detect_and_save_cabal_window(self) -> None:
@@ -280,8 +280,8 @@ class AppWindowController:
 
             self.on_hunt_find_windows()
 
-            if hasattr(self.root, "win_items") and self.root.win_items:
-                items = self.root.win_items
+            if hasattr(self.root.state_controller, "win_items") and self.root.state_controller.win_items:
+                items = self.root.state_controller.win_items
                 valid_index = -1
                 for i, item in enumerate(items):
                     if item["hwnd"] == best_window["hwnd"]:
@@ -289,10 +289,10 @@ class AppWindowController:
                         break
 
                 if valid_index >= 0:
-                    if hasattr(self.root, "win_combo"):
-                        self.root.win_combo.current(valid_index)
-                    if hasattr(self.root, "win_combo_var"):
-                        self.root.win_combo_var.set(items[valid_index]["title"])
+                    if ("win_combo" in self.root.state_controller.ui_widgets):
+                        self.root.state_controller.ui_widgets['win_combo'].current(valid_index)
+                    if ("win_combo" in self.root.state_controller.ui_vars):
+                        self.root.state_controller.ui_vars['win_combo'].set(items[valid_index]["title"])
                     self.on_window_combo_selected()
         except Exception as e:
             logger.error(f"Exception during operation: {e}")
@@ -354,7 +354,7 @@ class AppWindowController:
         from ui.windows.timing_calc_dialog import TimingCalcDialog
 
         def _apply_time(t):
-            if hasattr(self.root, "monster_cfg_wait"):
-                self.root.monster_cfg_wait.set(str(t))
+            if ("setup_lost_timeout" in self.root.state_controller.ui_vars):
+                self.root.state_controller.ui_vars['setup_lost_timeout'].set(str(t))
 
         TimingCalcDialog(self.root, self.root, on_apply=_apply_time)
