@@ -1,3 +1,4 @@
+import pytest
 import tkinter as tk
 from ui.panels.skill_panel import SkillPanel
 
@@ -14,7 +15,9 @@ class MockApp:
     def register_callback(self, *args, **kwargs):
         pass
 
-root = tk.Tk()
-app = MockApp()
-panel = SkillPanel(root, app)
-print("SkillPanel loaded successfully")
+def test_skill_panel_init():
+    root = tk.Tk()
+    app = MockApp()
+    panel = SkillPanel(root, app)
+    assert panel is not None
+    root.destroy()
