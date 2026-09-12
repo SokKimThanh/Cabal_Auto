@@ -37,17 +37,34 @@ def seed_skills():
     cursor = conn.cursor()
 
     for s in skills:
-        # Avoid duplicate skill names for the same class
-        cursor.execute('SELECT skill_id FROM skills WHERE class_id = ? AND name = ?', (s['class_id'], s['name']))
+        # Avoid duplicate skill names using normalized names
+        normalized_name = s['name'].lower().replace(" ", "_")
+
+        cursor.execute('''
+            SELECT skill_id FROM skills
+            WHERE LOWER(REPLACE(name, ' ', '_')) = ?
+        ''', (normalized_name,))
         row = cursor.fetchone()
 
         if row:
             skill_id = row[0]
+            # Since we just found a match, update the class_id and capitalization (name)
+            # as well as the other fields, but avoid overwriting existing non-zero icon coords with 0.
             cursor.execute('''
                 UPDATE skills
-                SET alias=?, icon_x=?, icon_y=?, icon_w=?, icon_h=?, type=?
+                SET name=?, alias=?,
+                    icon_x=CASE WHEN ? = 0 THEN icon_x ELSE ? END,
+                    icon_y=CASE WHEN ? = 0 THEN icon_y ELSE ? END,
+                    icon_w=CASE WHEN ? = 0 THEN icon_w ELSE ? END,
+                    icon_h=CASE WHEN ? = 0 THEN icon_h ELSE ? END,
+                    type=?, class_id=?
                 WHERE skill_id=?
-            ''', (s['alias'], s['icon_x'], s['icon_y'], s['icon_w'], s['icon_h'], s['type'], skill_id))
+            ''', (s['name'], s['alias'],
+                  s['icon_x'], s['icon_x'],
+                  s['icon_y'], s['icon_y'],
+                  s['icon_w'], s['icon_w'],
+                  s['icon_h'], s['icon_h'],
+                  s['type'], s['class_id'], skill_id))
         else:
             cursor.execute('''
                 INSERT INTO skills (name, alias, icon_x, icon_y, icon_w, icon_h, class_id, type)
