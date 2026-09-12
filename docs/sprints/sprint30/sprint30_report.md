@@ -3,7 +3,11 @@
 ## Overall Status
 The refactoring efforts for Prompts 1 through 5 have been significantly advanced. Major architectural debts have been paid down by strictly enforcing encapsulation, decoupling UI logic from business rules, and fixing critical regressions.
 
-## Detailed Breakdown
+The system is currently in a fractured state with dangling references that will cause runtime crashes, violating the strict mandate that Phase 1 must be fully stabilized before starting Phase 2.
+
+---
+
+## Phase 1: State Encapsulation (Prompts 1-5)
 
 ### Prompt 1: Encapsulate Simple State
 **Status:** Complete.
@@ -39,3 +43,46 @@ The refactoring efforts for Prompts 1 through 5 have been significantly advanced
 
 ## Conclusion
 The heavy technical debt associated with the God Class (`AppStateController` and `app`) has been resolved. The remaining step is for the team to review the architectural boundaries and polish integration test mocks to reflect the newly encapsulated API.
+**Status:** Incomplete (Critical Failure Point).
+**Findings:**
+- The system is currently in a fractured state.
+- `app_gui.py` still contains numerous references manually indexing into `self.state_controller.ui_vars[...]`.
+- Controllers like `app_window_controller.py` and `skill_manager_controller.py` are severely outdated. They bypass encapsulation completely, interacting with `self.root` to get and set state, manually setting variables like `self.root.state_controller.bounds_recovery_failed`, `self.root.state_controller.win_items`, and `self.root.state_controller.hunt_selected`.
+
+---
+
+## Phase 2: Decomposing the God Class (Prompts 6-10)
+
+**Overall Status for Phase 2:** Not Started / Blocked.
+*According to `sprint30_plan.md`, Phase 2 must not be started until Phase 1 is fully complete and verified. Given the critical failures in Phase 1 (especially Prompt 4 and 5), Phase 2 execution is currently blocked.*
+
+### Prompt 6: App GUI Extract Shell
+**Status:** Not Started.
+**Findings:**
+- `app_gui.py` still acts as the God Class, manually handling window dimensions, title, UI grids, and Shell Zones. `AppShell` has not been implemented.
+
+### Prompt 7: App GUI Navigation
+**Status:** Not Started.
+**Findings:**
+- `NavigationController` has not been created. `app_gui.py` still hardcodes its view registry and manages transitions directly.
+
+### Prompt 8: App GUI Sidebar
+**Status:** Not Started.
+**Findings:**
+- `SidebarComponent` does not exist. `app_gui.py` still contains the full logic for building the sidebar.
+
+### Prompt 9: App GUI Dialog Service
+**Status:** Not Started.
+**Findings:**
+- `tkinter.messagebox` is still heavily imported and directly used throughout controllers like `app_state_controller.py`. `DialogService` has not been implemented.
+
+### Prompt 10: App GUI Task Scheduler
+**Status:** Not Started.
+**Findings:**
+- Unmanaged `self.root.after` calls are still scattered throughout `app_window_controller.py` and `app_gui.py`. `TaskScheduler` has not been implemented.
+
+## Conclusion & Next Steps
+Before proceeding to any Phase 2 decomposition tasks, **Phase 1 must be stabilized**.
+1. **Immediate Fix:** The dangling reference to `_prepare_skill_runtime` in `app_gui.py` must be resolved to prevent immediate crashes.
+2. **Comprehensive Sweep:** Eliminate all remaining `self.root.XXX` accesses across controllers (`app_window_controller.py`, `skill_manager_controller.py`).
+3. **Encapsulation Enforcement:** Update consumers to strictly read/write to `AppStateController` properties using safe getter/setter methods, rather than directly mutating `ui_vars`.
