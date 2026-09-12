@@ -62,7 +62,6 @@ class AppStateController:
         self.skill_preview_image = None
 
         # Preset State
-        self._current_class_id = 1
         self._active_preset_id = None
         self._preset_mode = "default"
         self.skill_slots = {"attack_combo": [], "buff_lane": []}
@@ -72,6 +71,13 @@ class AppStateController:
         self.skill_slot_vars = []
         self.skill_slot_boxes = []
         self.skill_slot_count = 6
+        self._image_refs = []
+        self._tooltips = {}
+        self.monster_template_working = None
+        self.monster_template_selected_index = None
+        self._thumbnail_cache = {}
+        self.monster_rotation = []
+        self.current_window_bounds = None
 
         self.ui_vars = {
             "monster_select": tk.StringVar(master=root),
@@ -321,7 +327,7 @@ class AppStateController:
 
     def get_combo_mode_status(self) -> str:
         return (
-            "active" if getattr(self.root, "_combo_mode_active", False) else "inactive"
+            "active" if self._combo_mode_active else "inactive"
         )
 
     def is_bot_running(self) -> bool:
@@ -375,7 +381,7 @@ class AppStateController:
             self.hunt_selected,
             self.win_items,
             self.root.hunt_cfg if hasattr(self.root, "hunt_cfg") else {},
-            getattr(self.root, "current_window_bounds", None)
+            getattr(self, "current_window_bounds", None)
         )
 
     def build_hunt_config_from_state(self) -> Dict[str, Any]:
@@ -392,7 +398,7 @@ class AppStateController:
             cfg["window_hwnd"] = self.hunt_selected.get("hwnd")
 
         bounds = WindowSelectionService.resolve_bounds(
-            cfg, getattr(app, "current_window_bounds", None)
+            cfg, getattr(self, "current_window_bounds", None)
         )
         WindowSelectionService.update_bounds(cfg, bounds)
 
@@ -452,7 +458,7 @@ class AppStateController:
                         )
 
         cfg["monster_rotation"] = []
-        rotation = getattr(app, "monster_rotation", [])
+        rotation = getattr(self, "monster_rotation", [])
         if isinstance(rotation, list):
             for i, m in enumerate(rotation):
                 if isinstance(m, dict):
@@ -559,8 +565,8 @@ class AppStateController:
 
     def _refresh_slot_key_labels(self) -> None:
         app = self.root
-        labels = getattr(app, "skill_slot_key_labels", [])
-        vars_ = getattr(app, "skill_slot_vars", [])
+        labels = getattr(self, "skill_slot_key_labels", [])
+        vars_ = getattr(self, "skill_slot_vars", [])
         skills_by_name = {
             skill.get("name"): skill
             for skill in getattr(app, "skills", [])
@@ -575,8 +581,8 @@ class AppStateController:
 
     def _validate_slot_key_duplicates(self) -> None:
         app = self.root
-        labels = getattr(app, "skill_slot_key_labels", [])
-        vars_ = getattr(app, "skill_slot_vars", [])
+        labels = getattr(self, "skill_slot_key_labels", [])
+        vars_ = getattr(self, "skill_slot_vars", [])
         skills_by_name = {
             skill.get("name"): skill
             for skill in getattr(app, "skills", [])
@@ -617,7 +623,7 @@ class AppStateController:
         from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
         bounds = WindowSelectionService.resolve_bounds(
-            getattr(app, "hunt_cfg", {}), getattr(app, "current_window_bounds", None)
+            getattr(app, "hunt_cfg", {}), getattr(self, "current_window_bounds", None)
         )
         if bounds:
             self.ui_vars["window_bounds_display"].set(
