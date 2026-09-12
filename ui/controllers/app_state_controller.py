@@ -229,6 +229,13 @@ class AppStateController:
                         )
                 self._emit_event("on_preset_changed")
                 self._emit_event("on_skill_slots_changed")
+        else:
+            # When the class has no presets at all, clear the skill slots
+            self.root._active_preset_id = None
+            self.root._preset_mode = "custom"
+            self.root.skill_slots = {"attack_combo": [], "buff_lane": []}
+            self._emit_event("on_preset_changed")
+            self._emit_event("on_skill_slots_changed")
 
     def apply_default_preset(self, class_id: int) -> None:
         self.load_preset_for_class(class_id)
