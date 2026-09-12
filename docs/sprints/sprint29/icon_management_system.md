@@ -116,10 +116,28 @@ Màn hình được chia làm 3 khu vực chính:
     *   Nhóm thao tác dữ liệu: `btn_add` (Thêm mới), `btn_edit` (Chỉnh sửa), `btn_delete` (Xóa).
     *   Nhóm thao tác hệ thống: `btn_refresh` (Tải lại), `btn_sync` (Đồng bộ JSON).
 
-**6.2. Tích hợp Sidebar (Nghịch Lý Tự Quản Lý):**
-*   Thêm một menu item trong App Sidebar: `SidebarWidgetDef(..., key="btn_icon_manager", view_target="IconManagerFrame", icon="icon_image.png")`.
-*   **Vấn đề Nghịch lý (Self-Management Paradox):** Bản thân module Icon Manager được hiển thị thông qua một icon trên Sidebar (key `btn_icon_manager`). Hệ thống cần phải "tự nhận thức" (self-aware) được chính icon đại diện cho nó.
-*   **Giải pháp:** Icon `btn_icon_manager` phải được khai báo như mọi icon thông thường khác trong bảng `icons` (với file ảnh hoặc emoji fallback) và phải có một dòng theo dõi (tracking) trong bảng `icon_usages` (module: `App`, component: `sidebar_button`, element: `btn_icon_manager`). Khi người dùng thay đổi chính icon của Icon Manager thông qua giao diện của nó, sự kiện `IconUpdatedEvent` sẽ được phát ra, và Sidebar sẽ lập tức tự động cập nhật lại icon của công cụ quản lý này mà không cần tải lại app.
+**6.2. Nghịch Lý Tự Quản Lý (The Self-Management Paradox) & Tích Hợp Sidebar:**
+
+Một trong những thách thức thú vị về mặt kiến trúc của hệ thống này là **Nghịch lý tự quản lý (Self-Management Paradox)**.
+- **Định nghĩa Nghịch lý:** Bản thân module `IconManagerFrame` được truy cập thông qua một nút bấm trên thanh Sidebar của ứng dụng (VD: nút có key là `btn_icon_manager`). Nếu quản trị viên sử dụng *chính* giao diện Icon Manager để thay đổi hình ảnh đại diện cho nút `btn_icon_manager` này, làm thế nào để ứng dụng có thể "tự nhận thức" sự thay đổi và lập tức cập nhật giao diện của chính nút bấm dẫn vào công cụ này mà không cần khởi động lại toàn bộ app? Việc không xử lý được nghịch lý này sẽ làm phá vỡ triết lý "Real-time UI Refresh" (Cập nhật thời gian thực) cốt lõi.
+
+**Giải pháp Kiến trúc:**
+Để giải quyết nghịch lý này một cách triệt để và tuân thủ mô hình phân chia trách nhiệm riêng biệt, hệ thống sẽ được kiến trúc như sau:
+
+1.  **Dữ liệu hóa (Datafication) Icon của Sidebar:**
+    *   Icon của nút Icon Manager trên Sidebar (`btn_icon_manager`) tuyệt đối không được code "cứng" (hard-code) bằng các ký tự emoji tĩnh trong file `app_gui.py` (như `"📁"`).
+    *   Thay vào đó, nó phải được khai báo như mọi icon thông thường khác trong bảng `icons` của cơ sở dữ liệu (VD: `icon_key="btn_icon_manager", fallback_emoji="📁", filepath="icon_manager.png"`).
+2.  **Đăng ký Giám sát (Usage Tracking):**
+    *   Khi ứng dụng khởi động và vẽ Sidebar, thành phần Sidebar phải tạo một bản ghi theo dõi trong bảng `icon_usages` (VD: `module_name='App_Sidebar'`, `ui_component_type='sidebar_button'`, `ui_element_id='btn_icon_manager'`). Điều này thông báo cho hệ thống biết rằng "Sidebar đang lắng nghe và phụ thuộc vào icon này".
+3.  **Hệ thống Báo hiệu (Event Bus / Pub-Sub):**
+    *   Khi người dùng lưu sự thay đổi ảnh của `btn_icon_manager` thông qua Form CRUD của Icon Manager, tầng `IconService` sẽ phát ra một sự kiện toàn cục: `event_bus.publish(IconUpdatedEvent(icon_key="btn_icon_manager"))`.
+4.  **Cập nhật Động (Dynamic Re-rendering):**
+    *   Trong `app_gui.py` (nơi quản lý Sidebar), một Listener phải được thiết lập để bắt sự kiện `IconUpdatedEvent`.
+    *   Khi bắt được sự kiện và xác nhận khớp `icon_key`, Listener sẽ không destroy và tạo lại toàn bộ Sidebar (tránh giật hình/flickering). Thay vào đó, nó gọi `IconHelper` để lấy ảnh (PhotoImage) mới nhất.
+    *   Sau đó gọi lệnh `.config(image=new_image, text=new_text)` trực tiếp trên widget `tk.Button` hoặc `tk.Label` tương ứng.
+    *   **Lưu ý cực kỳ quan trọng về Garbage Collection (GC):** Tkinter sẽ tự động xóa hình ảnh khỏi bộ nhớ nếu không có tham chiếu mạnh (strong reference) giữ lại nó. Listener bắt buộc phải gán `button_widget.image = new_image` trước khi gọi `.config()` để ảnh mới không bị biến mất thành một ô trắng.
+
+Giải pháp này biến Icon Manager thành một hệ thống độc lập, không cần biết (và không nên biết) nó đang nằm ở đâu trên UI, nhưng vẫn có thể gián tiếp chỉ đạo Sidebar tự làm mới chính nó thông qua Event Bus.
 
 ---
 
