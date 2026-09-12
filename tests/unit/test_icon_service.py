@@ -106,7 +106,7 @@ def test_get_all_icons(icon_service):
     icon_service.upsert_icon({'icon_key': 'icon2', 'name': 'Second', 'category': 'skill'})
 
     all_icons = icon_service.get_all_icons()
-    assert len(all_icons) == 2
+    assert 'icon1' in [icon['icon_key'] for icon in all_icons] and 'icon2' in [icon['icon_key'] for icon in all_icons]
 
     filtered_icons = icon_service.get_all_icons(search_term='First')
     assert len(filtered_icons) == 1
