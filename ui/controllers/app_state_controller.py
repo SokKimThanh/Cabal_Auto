@@ -83,7 +83,7 @@ class AppStateController:
 
             "skill_name": tk.StringVar(master=root),
             "skill_key": tk.StringVar(master=root),
-            "skill_type": tk.StringVar(master=root, value=skill_type_default),
+            "skill_type": tk.StringVar(master=root),
             "skill_cooldown": tk.StringVar(master=root),
             "skill_cast_time": tk.StringVar(master=root),
             "skill_duration": tk.StringVar(master=root),
@@ -95,8 +95,8 @@ class AppStateController:
             "monster_template_threshold": tk.StringVar(master=root, value="0.85"),
 
             "window_bounds_display": tk.StringVar(master=root, value=""),
-            "hunt_status": tk.StringVar(master=root, value=idle_text),
-            "hunt_target_info": tk.StringVar(master=root, value=app._t("target_card.target_none")),
+            "hunt_status": tk.StringVar(master=root),
+            "hunt_target_info": tk.StringVar(master=root, value=app._t("target_card.target_none") if hasattr(app, '_t') else ""),
             "target_policy": tk.StringVar(master=root),
             "setup_template": tk.StringVar(master=root),
             "setup_target_key": tk.StringVar(master=root),
@@ -142,8 +142,6 @@ class AppStateController:
             "height": tk.StringVar(master=root),
         }
 
-            master=root, value=app._t("target_card.target_none")
-        )
 
     def register_callback(self, event: str, handler) -> None:
         if event not in self._callbacks:
