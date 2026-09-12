@@ -8,7 +8,6 @@ from ui.helpers.icon_helper import get_icon_helper
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
-from lib.i18n import t as i18n_t
 
 
 class IconManagerFrame(ResponsiveGridBase):
@@ -21,6 +20,16 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self._setup_ui()
         self.load_tree_data()
+
+    def i18n_t(self, key: str, **kwargs) -> str:
+        """Helper to get translations dynamically based on current app language"""
+        if hasattr(self.app, 'i18n_t'):
+            return self.app.i18n_t(key, **kwargs)
+
+        # Fallback to direct import if app doesn't have it
+        from lib.i18n import t as fallback_t
+        lang = getattr(self.app, 'lang', 'vi')
+        return fallback_t(key, lang=lang, **kwargs)
 
     def _setup_ui(self):
         content_frame = self.get_content_frame()
@@ -285,30 +294,44 @@ class IconManagerFrame(ResponsiveGridBase):
         right_frame = tk.Frame(self.bottom_action_frame, bg=UIStyle.BG_SUBTLE)
         right_frame.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        self.btn_add = tk.Button(left_frame, text=i18n_t("btn_add"), command=self._on_add, **UIStyle.get_button_style("primary"))
+        self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add"), command=self._on_add, **UIStyle.get_button_style("primary"))
         self.btn_add.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_add, "btn_add")
 
-        self.btn_edit = tk.Button(left_frame, text=i18n_t("btn_edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
+        self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
         self.btn_edit.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_edit, "btn_edit")
 
-        self.btn_delete = tk.Button(left_frame, text=i18n_t("btn_delete"), command=self._on_delete, **UIStyle.get_button_style("danger" if hasattr(UIStyle, 'get_button_style') and 'danger' in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)] else "secondary"))
+        self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete"), command=self._on_delete, **UIStyle.get_button_style("danger" if hasattr(UIStyle, 'get_button_style') and 'danger' in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)] else "secondary"))
         self.btn_delete.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_delete, "btn_delete")
 
         # Override danger if needed (Tkinter style compatibility)
         if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
             self.btn_delete.configure(bg=UIStyle.DANGER, fg="white")
 
-        self.btn_refresh = tk.Button(right_frame, text=i18n_t("btn_refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
+        self.btn_refresh = tk.Button(right_frame, text=self.i18n_t("btn_refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
         self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_refresh, "btn_refresh")
 
-        self.btn_sync = tk.Button(right_frame, text=i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("secondary"))
+        self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("secondary"))
         self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_sync, "btn_sync", default="Đồng bộ")
 
-        self.btn_save = tk.Button(right_frame, text=i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
+        self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
         self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_save, "btn_save")
 
-        self.btn_cancel = tk.Button(right_frame, text=i18n_t("btn_cancel"), command=self._on_cancel, **UIStyle.get_button_style("secondary"))
+        self.btn_cancel = tk.Button(right_frame, text=self.i18n_t("btn_cancel"), command=self._on_cancel, **UIStyle.get_button_style("secondary"))
         self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
+        if hasattr(self.app, 'bind_translation'):
+            self.app.bind_translation(self.btn_cancel, "btn_cancel")
 
         self.set_form_state("VIEW")
 
