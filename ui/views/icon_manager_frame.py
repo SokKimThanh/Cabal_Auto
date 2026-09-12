@@ -224,8 +224,25 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # 6. Tooltip Key
         tk.Label(self.form_frame, text="Tooltip Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
-        self.entry_tooltip = ttk.Entry(self.form_frame, textvariable=self.var_tooltip_key)
-        self.entry_tooltip.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
+
+        tooltip_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
+        tooltip_frame.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
+        tooltip_frame.grid_columnconfigure(0, weight=1)
+        tooltip_frame.grid_columnconfigure(1, weight=0)
+
+        self.entry_tooltip = ttk.Combobox(tooltip_frame, textvariable=self.var_tooltip_key)
+        self.entry_tooltip.grid(row=0, column=0, sticky="ew")
+
+        self.lbl_tooltip_warning = tk.Label(tooltip_frame, text="", bg=UIStyle.BG_SURFACE, fg="red", font=(UIStyle.FONT_FAMILY_UI, 12))
+        self.lbl_tooltip_warning.grid(row=0, column=1, padx=(5, 0))
+
+        # Validation bindings
+        if hasattr(self.var_tooltip_key, 'trace_add'):
+            self.var_tooltip_key.trace_add('write', self._validate_tooltip_key)
+        self.entry_tooltip.bind('<KeyRelease>', self._autocomplete_tooltip)
+
+        # Load keys
+        self._load_i18n_keys()
 
         # 7. Filepath (with Browse button)
         tk.Label(self.form_frame, text="Filepath:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=6, column=0, sticky="e", padx=5, pady=2)
@@ -239,6 +256,68 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.btn_browse = tk.Button(filepath_frame, text="...", command=self._on_browse_clicked, **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {}))
         self.btn_browse.grid(row=0, column=1, padx=(5, 0))
+
+
+    def _load_i18n_keys(self):
+        self._available_keys = []
+        try:
+            # Fallback to direct import if app doesn't have it
+            from lib.i18n import _REGISTRY
+            keys_set = set()
+            for ns, langs in _REGISTRY.items():
+                for lang, mapping in langs.items():
+                    keys_set.update(mapping.keys())
+            self._available_keys = sorted(list(keys_set))
+        except Exception:
+            pass
+        self.entry_tooltip['values'] = self._available_keys
+
+    def _validate_tooltip_key(self, *args):
+        key = self.var_tooltip_key.get().strip()
+        if not key:
+            self.lbl_tooltip_warning.config(text="")
+            # Xoá tooltip của label preview
+            if hasattr(self, 'lbl_preview'):
+                if hasattr(self.lbl_preview, "_i18n_tooltip") and getattr(self.lbl_preview, "_i18n_tooltip"):
+                    old_tip = getattr(self.lbl_preview, "_i18n_tooltip")
+                    if hasattr(old_tip, "_hide"):
+                        old_tip._hide()
+                    self.lbl_preview.unbind("<Enter>")
+                    self.lbl_preview.unbind("<Leave>")
+                    self.lbl_preview.unbind("<ButtonPress>")
+                setattr(self.lbl_preview, "_i18n_tooltip", None)
+            return
+
+        try:
+            from lib.i18n import t
+            # Tự đặt 1 chuỗi ngẫu nhiên không có khả năng bị trùng để test default
+            test_missing = "___MISSING___"
+            val = t(key, default=test_missing)
+            if val == test_missing:
+                self.lbl_tooltip_warning.config(text="⚠️")
+                import ui.helpers.tooltip as tt
+                # Tooltip báo lỗi cho icon cảnh báo
+                tt.attach_i18n_tooltip(self.lbl_tooltip_warning, key="msg_i18n_key_not_found", default="Key chưa được khai báo trong từ điển i18n")
+            else:
+                self.lbl_tooltip_warning.config(text="")
+                if hasattr(self.lbl_tooltip_warning, "_i18n_tooltip"):
+                    self.lbl_tooltip_warning.unbind("<Enter>")
+                    self.lbl_tooltip_warning.unbind("<Leave>")
+                    self.lbl_tooltip_warning.unbind("<ButtonPress>")
+        except Exception:
+            pass
+
+    def _autocomplete_tooltip(self, event):
+        # Only process printable characters and backspace
+        if event.keysym not in ['BackSpace', 'Delete', 'Return', 'Tab'] and not event.char:
+            return
+
+        typed = self.entry_tooltip.get()
+        if typed == '':
+            self.entry_tooltip['values'] = self._available_keys
+        else:
+            hits = [item for item in self._available_keys if typed.lower() in item.lower()]
+            self.entry_tooltip['values'] = hits
 
     def _render_preview(self, icon_data):
         if not icon_data:
@@ -394,7 +473,8 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_icon_key.config(state=entry_state)
         self.combo_category.config(state=cb_state)
         self.entry_fallback.config(state=entry_state)
-        self.entry_tooltip.config(state=entry_state)
+        if hasattr(self, 'entry_tooltip'):
+            self.entry_tooltip.config(state='normal' if state in ('ADD', 'EDIT') else 'disabled')
         # Filepath is visually selected via button
         self.entry_filepath.config(state="disabled")
         self.btn_browse.config(state="normal" if state in ("ADD", "EDIT") else "disabled")
@@ -454,23 +534,31 @@ class IconManagerFrame(ResponsiveGridBase):
         )
 
         if confirm:
-            success = self.icon_service.delete_icon(icon_key)
-            if success:
-                # Clear form
-                self.var_id.set("")
-                self.var_name.set("")
-                self.var_icon_key.set("")
-                self.var_category.set("")
-                self.var_fallback_emoji.set("")
-                self.var_tooltip_key.set("")
-                self.var_filepath.set("")
-                self._render_preview({})
+            try:
+                success = self.icon_service.delete_icon(icon_key)
+                if success:
+                    # Clear form
+                    self.var_id.set("")
+                    self.var_name.set("")
+                    self.var_icon_key.set("")
+                    self.var_category.set("")
+                    self.var_fallback_emoji.set("")
+                    self.var_tooltip_key.set("")
+                    self.var_filepath.set("")
+                    self._render_preview({})
 
-                # Reload tree
-                self.load_tree_data()
-                self.set_form_state("VIEW")
-            else:
-                messagebox.showerror("Error", f"Failed to delete icon '{icon_key}'.")
+                    # Reload tree
+                    self.load_tree_data()
+                    self.set_form_state("VIEW")
+                else:
+                    messagebox.showerror("Error", f"Failed to delete icon '{icon_key}'.")
+            except ValueError as e:
+                if str(e) == "icon_in_use_error":
+                    usages = self.icon_service.get_usages(icon_key)
+                    msg = self.i18n_t("msg_icon_in_use", default=f"Icon '{icon_key}' đang được sử dụng ở {len(usages)} nơi. Vui lòng gỡ bỏ trước khi xóa.", count=len(usages), icon_key=icon_key)
+                    messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), msg)
+                else:
+                    messagebox.showerror("Error", str(e))
 
     def _on_refresh(self):
         self.apply_filters()
@@ -534,7 +622,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.tree.delete(item)
 
         # Get filter values
-        search_term = self.search_var.get().strip().lower()
+        search_term = (self.search_var.get() or '').strip().lower()
         selected_category = self.category_var.get()
         if selected_category == "All":
             selected_category = ""

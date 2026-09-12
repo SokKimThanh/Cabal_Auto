@@ -21,6 +21,7 @@ def get_icons_directory() -> Path:
 def import_icon_file(source_path: str, target_filename: Optional[str] = None) -> str:
     """
     Import an icon file by copying it to the assets/images/icons/ directory.
+    Handles filename collision and resizes large images (>128px) down to 128x128.
 
     Args:
         source_path: The source file path.
@@ -46,7 +47,31 @@ def import_icon_file(source_path: str, target_filename: Optional[str] = None) ->
     icons_dir = get_icons_directory()
     target_path = icons_dir / target_filename
 
+    # Xử lý File Name Collision
+    if target_path.exists():
+        name = target_path.stem
+        ext = target_path.suffix
+        counter = 1
+        while target_path.exists():
+            target_filename = f"{name}_{counter}{ext}"
+            target_path = icons_dir / target_filename
+            counter += 1
+
     shutil.copy2(source_path, target_path)
+
+    # Xử lý Image Dimensions (Resize)
+    try:
+        from PIL import Image
+        with Image.open(target_path) as img:
+            width, height = img.size
+            if max(width, height) > 128:
+                # Dùng thumbnail giữ nguyên tỉ lệ và không làm phình size
+                img.thumbnail((128, 128), Image.Resampling.LANCZOS)
+                img.save(target_path)
+    except Exception as e:
+        # Nếu không có PIL hoặc lỗi open, bỏ qua (không bắt buộc)
+        import logging
+        logging.getLogger(__name__).warning(f"Could not resize imported image {target_filename}: {e}")
 
     return target_filename
 
