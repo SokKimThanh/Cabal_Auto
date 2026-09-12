@@ -66,10 +66,14 @@ A modal `Toplevel` window to manage a single translation entry.
 - Edit `ui/app_gui.py` to import `LanguageManagerFrame`.
 - Add a sidebar button referencing `btn_language_manager` (requires adding this key to translations first!).
 
-## 6. Pitfalls & Notes
-- **Chicken and Egg Problem:** The Language Manager's own UI text (buttons, labels) needs translation keys. We must define its keys in `lib/i18n/` first so it doesn't crash before the user can even edit them.
+## 6. Known Issues, Risks & System Weaknesses
+- **SSoT Conflict (Manual Import/Export vs. Startup Auto-seed):** If the application continues to automatically seed data from static Python files (`.py`) on startup, it will silently overwrite any manual updates or newly imported JSON data stored in the database. A priority fallback mechanism must be established to prevent this architectural conflict.
+- **Unsaved Changes & Diff Checking:** There is a risk of data loss if the user exits the application (or switches views) without exporting their manual edits, as there is currently no unsaved changes warning prompt. Furthermore, the sync/export operation may cause performance issues or file bloating if it blindly dumps the entire database instead of comparing and exporting only the changed differences (diffs).
+- **Tkinter UI Thread Blocking:** Loading thousands of translation keys into a `Treeview` or performing heavy file I/O operations (such as importing/exporting large JSON files) on the main thread will cause the UI to freeze.
+- **Duplicate Modal Instances:** Users rapidly double-clicking a row in the Treeview may unintentionally open multiple, duplicate `TranslationDialog` windows. This must be mitigated using `wait_window()` to block the parent.
+- **Encoding Issues:** Corruptions of non-ASCII characters (e.g., Vietnamese diacritics) will occur if file read/write operations for JSON or Python files do not strictly enforce `encoding='utf-8'`.
+- **The Chicken and Egg Problem:** The Language Manager's own UI text (buttons, labels) needs translation keys to render itself. We must define its keys in `lib/i18n/` first so it doesn't crash before the user can edit them.
 - **Live Updating:** If a user edits a translation that is currently visible on the screen, should it update immediately? For MVP, a simple app restart or a `AppStateController.emit('i18n_updated')` might be needed.
-- **Sync Safety:** Ensure the Sync operation creates backups of the existing JSON/dict files before overwriting them, preventing accidental data loss.
 
 ## 7. Acceptance Criteria
 - [ ] Sidebar contains a working Language Manager button.
