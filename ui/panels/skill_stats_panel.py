@@ -31,7 +31,7 @@ class SkillStatsPanel(ResponsiveGridBase):
         tree_container.pack(fill="both", expand=True, padx=UI.SPACE_LG, pady=UI.SPACE_LG)
 
         stats_columns = ("skill", "casts", "last_cast", "cooldown", "success")
-        self.app.skill_stats_tree = ttk.Treeview(
+        self.skill_stats_tree = ttk.Treeview(
             tree_container,
             columns=stats_columns,
             show="headings",
@@ -56,35 +56,35 @@ class SkillStatsPanel(ResponsiveGridBase):
                         pass
 
             for col, (i18n_key, width) in stats_headings.items():
-                self.app.bind_text(TreeviewHeadingBinder(self.app.skill_stats_tree, col), i18n_key)
-                self.app.skill_stats_tree.column(
+                self.app.bind_text(TreeviewHeadingBinder(self.skill_stats_tree, col), i18n_key)
+                self.skill_stats_tree.column(
                     col, width=width, anchor="center", stretch=(col == "skill")
                 )
         else:
             for col, (i18n_key, width) in stats_headings.items():
-                self.app.skill_stats_tree.heading(col, text=self.app._t(i18n_key))
-                self.app.skill_stats_tree.column(
+                self.skill_stats_tree.heading(col, text=self.app._t(i18n_key))
+                self.skill_stats_tree.column(
                     col, width=width, anchor="center", stretch=(col == "skill")
                 )
 
         stats_scroll = ttk.Scrollbar(
             tree_container,
             orient="vertical",
-            command=self.app.skill_stats_tree.yview,
+            command=self.skill_stats_tree.yview,
         )
-        self.app.skill_stats_tree.config(yscrollcommand=stats_scroll.set)
-        self.app.skill_stats_tree.pack(side="left", fill="both", expand=True)
+        self.skill_stats_tree.config(yscrollcommand=stats_scroll.set)
+        self.skill_stats_tree.pack(side="left", fill="both", expand=True)
         stats_scroll.pack(side="right", fill="y")
 
-        self.app.skill_stats_tree.tag_configure(
+        self.skill_stats_tree.tag_configure(
             "striped_even", background=UI.BG_ELEVATED, foreground=UI.TEXT_PRIMARY
         )
-        self.app.skill_stats_tree.tag_configure(
+        self.skill_stats_tree.tag_configure(
             "striped_odd", background=UI.BG_BASE, foreground=UI.TEXT_PRIMARY
         )
-        self.app.skill_stats_tree.tag_configure("excellent", foreground=UI.ACCENT_GREEN)
-        self.app.skill_stats_tree.tag_configure("good", foreground=UI.ACCENT_AMBER)
-        self.app.skill_stats_tree.tag_configure("poor", foreground=UI.DANGER)
+        self.skill_stats_tree.tag_configure("excellent", foreground=UI.ACCENT_GREEN)
+        self.skill_stats_tree.tag_configure("good", foreground=UI.ACCENT_AMBER)
+        self.skill_stats_tree.tag_configure("poor", foreground=UI.DANGER)
 
         if getattr(self, "hunt_tab", None):
             for prop in ["target_image_label", "target_name_label", "status_label",

@@ -129,7 +129,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         self.monster_rotation_listbox.pack(side="left", fill="both", expand=True)
         # Register in app for legacy controller access for now, but not in UI state widgets
-        self.app.monster_rotation_listbox = self.monster_rotation_listbox
+        self.app.state_controller.ui_widgets["monster_rotation_listbox"] = self.monster_rotation_listbox
 
         monster_scroll = ttk.Scrollbar(
             listbox_frame,
@@ -233,7 +233,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             relief="flat",
         )
         self.detected_monsters_listbox.pack(side="left", fill="both", expand=True)
-        self.app.detected_monsters_listbox = self.detected_monsters_listbox
+        self.app.state_controller.ui_widgets["detected_monsters_listbox"] = self.detected_monsters_listbox
 
         detected_scroll = ttk.Scrollbar(
             detected_listbox_frame, command=self.detected_monsters_listbox.yview
@@ -359,15 +359,15 @@ class MonsterTargetPanel(ttk.LabelFrame):
             "<BackSpace>", self.app._on_monster_delete_from_list
         )
 
-        self.app.monster_context_menu = tk.Menu(
+        self.monster_context_menu = tk.Menu(
             self.monster_rotation_listbox, tearoff=0
         )
-        self.app.monster_context_menu.add_command(
+        self.monster_context_menu.add_command(
             label=self.app._t("monster_delete"),
             command=self.app._on_monster_delete_from_list,
         )
         self.app._create_tooltip(
-            self.app.monster_context_menu,
+            self.monster_context_menu,
             self.app._t("monster_rotation_delete_hint"),
         )
 
@@ -377,9 +377,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
                 self.monster_rotation_listbox.selection_set(
                     self.monster_rotation_listbox.nearest(event.y)
                 )
-                self.app.monster_context_menu.tk_popup(event.x_root, event.y_root)
+                self.monster_context_menu.tk_popup(event.x_root, event.y_root)
             finally:
-                self.app.monster_context_menu.grab_release()
+                self.monster_context_menu.grab_release()
 
         def _select_all_monsters(event):
             self.monster_rotation_listbox.selection_set(0, tk.END)
@@ -414,7 +414,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         self.after(100, _poll_configured_empty_state)
 
 
-        self.app.training_mode_hint_label = tk.Label(
+        self.training_mode_hint_label = tk.Label(
             self.monster_frame,
             textvariable=self.app.state_controller.ui_vars['training_mode_hint'],
             fg=UI.ACCENT_AMBER,
@@ -423,7 +423,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             wraplength=400,
             justify="left",
         )
-        self.app.training_mode_hint_label.pack(fill="x", pady=(4, 0), padx=10)
+        self.training_mode_hint_label.pack(fill="x", pady=(4, 0), padx=10)
 
         # Legacy wiring to HuntTab is applied after refreshing the rotation list below.
         if hasattr(self.app, "_refresh_monster_rotation_list"):
