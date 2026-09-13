@@ -208,7 +208,7 @@ class App(tk.Tk):
     def __init__(self):
         self.has_unsaved_changes = False
         self._btn_scan_ref = None
-        self._action_locked = {}
+        self._action_locked = False
         self._monster_metadata_cache = {}
         self.monster_selected_index = None
         self._icon_cache = {}
@@ -224,7 +224,7 @@ class App(tk.Tk):
             self._last_height_under_900 = False
             # Load config and language
             self.cfg = load_config()
-            self.hunt_cfg = load_hunt_config()
+            self.state_controller.hunt_cfg = load_hunt_config()
             self.lang = str(self.cfg.get("ui", {}).get("language", "vi"))
             try:
                 i18n_set_lang(self.lang)
@@ -235,7 +235,7 @@ class App(tk.Tk):
             except Exception:
                 pass
 
-            self.hotkey_controller = HotkeyController(self, self.hunt_cfg)
+            self.hotkey_controller = HotkeyController(self, self.state_controller.hunt_cfg)
             # Centralized icon helper
             try:
                 from ui.helpers.icon_helper import get_icon_helper
@@ -249,7 +249,7 @@ class App(tk.Tk):
             EventBus.bind(IconUpdatedEvent, self.on_icon_updated)
 
             # Create config manager for wizard
-            self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
+            self.config_mgr = ConfigManager(self.cfg, self.state_controller.hunt_cfg)
 
             from ui.components.app_shell import AppShell
             self.shell = AppShell(root=self, app=self)
@@ -322,15 +322,15 @@ class App(tk.Tk):
             menubar = tk.Menu(self)
             settings_menu = tk.Menu(menubar, tearoff=0)
             # BooleanVar reflects hunt_cfg setting
-            gh_cfg = self.hunt_cfg.get("global_hotkeys", {})
+            gh_cfg = self.state_controller.hunt_cfg.get("global_hotkeys", {})
             self.state_controller.ui_vars['global_hotkeys_enabled_legacy'] = tk.BooleanVar(value=bool(gh_cfg.get("enabled", True)))
 
             def _on_toggle_global_hotkeys():
                 enabled = bool(self.state_controller.get_ui_var('global_hotkeys_enabled_legacy'))
                 # Persist setting
-                self.hunt_cfg.setdefault("global_hotkeys", {})["enabled"] = enabled
+                self.state_controller.hunt_cfg.setdefault("global_hotkeys", {})["enabled"] = enabled
                 try:
-                    save_hunt_config(self.hunt_cfg)
+                    save_hunt_config(self.state_controller.hunt_cfg)
                 except Exception:
                     pass
                 # Apply immediately
@@ -441,7 +441,7 @@ class App(tk.Tk):
         if hasattr(self, "skill_service"):
             self.monsters = self.skill_service._normalize_library_items(self.monsters)
 
-        self.monster_selected_name = self.monsters[0]["name"] if self.monsters else None
+        self.monster_selected_name = self.monsters[0].get("name", "Unknown") if self.monsters else None
 
         # Phase 3: Multi-Monster Support
         self.monster_rotation = []
@@ -450,7 +450,7 @@ class App(tk.Tk):
         # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
         # try to map them to actual attack skills from the skill library for a better UX.
         try:
-            slots = self.hunt_cfg.get("skill_slots", [])
+            slots = self.state_controller.hunt_cfg.get("skill_slots", [])
             # find anonymous slots (name is empty but key present)
             anon_indices = [
                 i
@@ -476,7 +476,7 @@ class App(tk.Tk):
                     if isinstance(s, dict) and s.get("name")
                 }
                 attack_names = [
-                    sk["name"]
+                    sk.get("name", "Unknown")
                     for sk in self.skills
                     if sk.get("type", "attack") == "attack"
                     and sk.get("name")
@@ -491,9 +491,9 @@ class App(tk.Tk):
                     changed = True
                 if changed:
                     # persist mapping
-                    self.hunt_cfg["skill_slots"] = slots
+                    self.state_controller.hunt_cfg["skill_slots"] = slots
                     try:
-                        save_hunt_config(self.hunt_cfg)
+                        save_hunt_config(self.state_controller.hunt_cfg)
                         try:
                             # show auto-mapped details if available
                             mapped = ", ".join(
@@ -516,10 +516,10 @@ class App(tk.Tk):
                         pass
         except Exception:
             pass
-        self.skill_selected_name = self.skills[0]["name"] if self.skills else None
+        self.skill_selected_name = self.skills[0].get("name", "Unknown") if self.skills else None
         self.skill_slot_saved_names = [
             slot.get("name", "")
-            for slot in self.hunt_cfg.get("skill_slots", [])
+            for slot in self.state_controller.hunt_cfg.get("skill_slots", [])
             if isinstance(slot, dict) and slot.get("name")
         ]
         self.monster_template_working = []
@@ -545,10 +545,10 @@ class App(tk.Tk):
         # Configuration is already migrated during load_hunt_config
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
-        safe_area = get_valid_hunt_area(self.hunt_cfg)
-        self.hunt_cfg["hunt_area"] = safe_area
-        self.current_window_bounds = safe_area.get("window_bounds")
-        WindowSelectionService.update_bounds(self.hunt_cfg, self.current_window_bounds)
+        safe_area = get_valid_hunt_area(self.state_controller.hunt_cfg)
+        self.state_controller.hunt_cfg["hunt_area"] = safe_area
+        self.state_controller.current_window_bounds = safe_area.get("window_bounds")
+        WindowSelectionService.update_bounds(self.state_controller.hunt_cfg, self.state_controller.current_window_bounds)
 
         if pyautogui is not None:
             pyautogui.FAILSAFE = bool(self.cfg.get("safety", {}).get("failsafe", True))
@@ -559,7 +559,7 @@ class App(tk.Tk):
 
         self._build_ui()
         self.hunt_runner = HuntRunner(
-            hunt_cfg=self.hunt_cfg,
+            hunt_cfg=self.state_controller.hunt_cfg,
             set_status=(
                 lambda v: self.state_controller.set_ui_var('hunt_status', v)
             ),
@@ -590,7 +590,7 @@ class App(tk.Tk):
             update_skill_stats_display=getattr(
                 self, "update_skill_stats_display", lambda _: None
             ),
-            get_hunt_selected=lambda: getattr(self, "hunt_selected", {}),
+            get_hunt_selected=lambda: self.state_controller.hunt_selected,
             schedule_ui_task=lambda fn: (
                 self.task_scheduler.schedule_task(None, 0, fn) if hasattr(self, "task_scheduler") else (self.after(0, fn) if hasattr(self, "after") else fn())
             ),
@@ -648,27 +648,31 @@ class App(tk.Tk):
         self.navigation = NavigationController(self.shell_zone_b, on_view_changed=self._update_sidebar_state)
         self.navigation.register_views(self)
 
-        self.logs_text_widget = self.navigation.views["logs"].text_widget
+        self.logs_text_widget = (
+            self.navigation.views.get("logs").text_widget
+            if "logs" in self.navigation.views and hasattr(self.navigation.views["logs"], "text_widget")
+            else None
+        )
 
         # Retain tab references for backward compatibility with orchestrators/runners
         self.tab_hunt = (
             self.navigation.views["hunt"].hunt_tab
-            if hasattr(self.navigation.views["hunt"], "hunt_tab")
+            if "hunt" in getattr(self.navigation, "views", {}) and hasattr(self.navigation.views["hunt"], "hunt_tab")
             else None
         )
         self.tab_setup = (
             self.navigation.views["setup"].setup_tab
-            if hasattr(self.navigation.views["setup"], "setup_tab")
+            if "setup" in getattr(self.navigation, "views", {}) and hasattr(self.navigation.views["setup"], "setup_tab")
             else None
         )
         self.tab_stats = (
             self.navigation.views["stats"].stats_tab
-            if hasattr(self.navigation.views["stats"], "stats_tab")
+            if "stats" in getattr(self.navigation, "views", {}) and hasattr(self.navigation.views["stats"], "stats_tab")
             else None
         )
         self.tab_help = (
             self.navigation.views["help"].help_tab
-            if hasattr(self.navigation.views["help"], "help_tab")
+            if "help" in getattr(self.navigation, "views", {}) and hasattr(self.navigation.views["help"], "help_tab")
             else None
         )
         self.notebook = None
@@ -736,10 +740,10 @@ class App(tk.Tk):
                     "bounds": window_dict.get("bounds"),
                 }
                 # Save to config
-                self.hunt_cfg["window_pid"] = window_dict.get("pid")
-                self.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
-                self.hunt_cfg["window_title"] = window_dict.get("title")
-                save_hunt_config(self.hunt_cfg)
+                self.state_controller.hunt_cfg["window_pid"] = window_dict.get("pid")
+                self.state_controller.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
+                self.state_controller.hunt_cfg["window_title"] = window_dict.get("title")
+                save_hunt_config(self.state_controller.hunt_cfg)
                 # Update bounds display
                 if hasattr(self, "state_controller"):
                     self.state_controller._update_window_bounds_display()
@@ -939,9 +943,10 @@ class App(tk.Tk):
             # In real system, we hook into VisionEngine or main orchestrator stats
 
             # Since VisionEngine stats are inside its instance, let's just make it generic or try to extract from global
-            self.logs_metrics_label.config(
-                text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}"
-            )
+            if hasattr(self, "logs_metrics_label") and self.logs_metrics_label:
+                self.logs_metrics_label.config(
+                    text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}"
+                )
 
         except Exception:
             pass
@@ -1056,7 +1061,7 @@ class App(tk.Tk):
                 try:
                     classes = ClassService().get_all_classes()
                     for c in classes:
-                        if scanned_class_name.lower() in c["name"].lower() or c["name"].lower() in scanned_class_name.lower():
+                        if scanned_class_name.lower() in c.get("name", "Unknown").lower() or c.get("name", "Unknown").lower() in scanned_class_name.lower():
                             scanned_class_id = c["id"]
                             break
                 except Exception:
@@ -1076,7 +1081,7 @@ class App(tk.Tk):
                 self.screen_state_panel.update_thumbnail(results["thumbnail"])
 
     def _load_monster_rotation_list(self):
-        saved_list = self.hunt_cfg.get("monster_rotation", [])
+        saved_list = self.state_controller.hunt_cfg.get("monster_rotation", [])
         self.monster_rotation = []
         for item in saved_list:
             if isinstance(item, dict):
@@ -1115,11 +1120,14 @@ class App(tk.Tk):
         # Re-apply window selection robustly by hwnd
         if saved_hwnd and hasattr(self, "compact_window_selector"):
             # Refresh windows and set search text to the saved window title
-            if hasattr(self, "hunt_selected") and isinstance(self.state_controller.hunt_selected, dict):
+            if isinstance(self.state_controller.hunt_selected, dict):
                 saved_title = self.state_controller.hunt_selected.get("title", "")
                 self.compact_window_selector.set_search_text(saved_title)
 
     def on_icon_updated(self, event: IconUpdatedEvent):
+        if self.icon_helper is None:
+            return
+
         # We need to query icon_usages from IconService
         from lib.db.services.icon_service import IconService
         from database import get_db
@@ -1205,7 +1213,7 @@ class App(tk.Tk):
         """Switch to specified tab via keyboard shortcut."""
         try:
             tab_map = {0: "hunt", 1: "setup", 2: "stats", 3: "help"}
-            if tab_index in tab_map:
+            if tab_index in tab_map and hasattr(self, "navigation") and self.navigation:
                 self.navigation.navigate_to(tab_map[tab_index])
                 # Update status with shortcut indicator
                 tab_names = ["Hunt", "Setup", "Stats", "Help"]
@@ -1226,7 +1234,7 @@ class App(tk.Tk):
         """Update hotkey state.
         Called when Global hotkeys are re-registered.
         """
-        if hasattr(self, "hunt_cfg"):
+        if hasattr(self.state_controller, "hunt_cfg"):
             self.hotkey_controller.register_all()
 
     # --- Helpers to attempt closing other windows while respecting unsaved changes ---
@@ -1277,7 +1285,7 @@ class App(tk.Tk):
                     else "Tất cả phím tắt đã đăng ký thành công"
                 )
                 self.state_controller.set_ui_var('hotkey_status', f"✅ {success_text}")
-                self._hotkey_status_label.config(fg=UI.ACCENT_GREEN)  # Green
+                if hasattr(self, "_hotkey_status_label") and self._hotkey_status_label: self._hotkey_status_label.config(fg=UI.ACCENT_GREEN)  # Green
 
                 # Show count and active hotkeys list
                 detail_text = (
@@ -1305,7 +1313,7 @@ class App(tk.Tk):
                     else f"{failed_count} phím tắt đăng ký thất bại"
                 )
                 self.state_controller.set_ui_var('hotkey_status', f"⚠️ {warning_text}")
-                self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)  # Orange
+                if hasattr(self, "_hotkey_status_label") and self._hotkey_status_label: self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)  # Orange
 
                 # Show guidance
                 guidance = (
@@ -1336,7 +1344,7 @@ class App(tk.Tk):
                     else "Phím tắt không khả dụng"
                 )
                 self.state_controller.set_ui_var('hotkey_status', f"❌ {error_text}")
-                self._hotkey_status_label.config(fg=UI.DANGER)  # Red
+                if hasattr(self, "_hotkey_status_label") and self._hotkey_status_label: self._hotkey_status_label.config(fg=UI.DANGER)  # Red
 
                 # Show explanation
                 if has_import_error:
@@ -1375,7 +1383,7 @@ class App(tk.Tk):
             # Fallback: show basic error
             try:
                 self.state_controller.set_ui_var('hotkey_status', f"⚠️ Error updating status: {e}")
-                self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)
+                if hasattr(self, "_hotkey_status_label") and self._hotkey_status_label: self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)
             except Exception:
                 pass
 
@@ -1404,7 +1412,7 @@ class App(tk.Tk):
             self.start_stop_btn.config(text=text, bg=bg_color)
 
     def on_start_stop_clicked(self):
-        if getattr(self, "_action_locked", False):
+        if self._action_locked:
             return
 
         self._action_locked = True
@@ -1473,9 +1481,9 @@ class App(tk.Tk):
             )
             return
         save_hunt_config(cfg)
-        self.hunt_cfg = cfg
+        self.state_controller.hunt_cfg = cfg
 
-        self.hunt_orchestrator.start_hunt(self.hunt_cfg)
+        self.hunt_orchestrator.start_hunt(self.state_controller.hunt_cfg)
 
     def _request_stop_hunt(self):
         if hasattr(self, "hunt_orchestrator"):
@@ -1636,7 +1644,7 @@ class App(tk.Tk):
     def on_scene_monsters_detected(self, snapshot):
         # Throttle/ensure running on main thread is done by HuntOrchestrator
         self._last_snapshot = snapshot
-        if self.hunt_cfg.get("target_policy", "configured_only") == "all_resolved":
+        if self.state_controller.hunt_cfg.get("target_policy", "configured_only") == "all_resolved":
             self._update_detected_monsters_list(snapshot)
 
     def _update_detected_monsters_list(self, snapshot):
@@ -1690,10 +1698,10 @@ class App(tk.Tk):
 
     def _refresh_monster_rotation_list(self):
         """Refresh the configured monster rotation UI queue."""
-        if "monster_rotation_listbox" not in self.state_controller.ui_widgets:
+        if "monster_rotation_listbox" not in self.state_controller.ui_widgets or not self.state_controller.ui_widgets["monster_rotation_listbox"]:
             return
 
-        self.monster_rotation_listbox.delete(0, tk.END)
+        self.state_controller.ui_widgets["monster_rotation_listbox"].delete(0, tk.END)
 
         from database import get_monster_by_id_api, find_monster_by_name_api
 
@@ -1816,7 +1824,7 @@ class App(tk.Tk):
                 ):
                     DialogService.show_info(
                         self._t("info_title", ns="ui"),
-                        self._t("monster_already_in_list").format(name=record["name"]),
+                        self._t("monster_already_in_list").format(name=record.get("name", "Unknown")),
                         parent=self,
                     )
                     return
@@ -1825,7 +1833,7 @@ class App(tk.Tk):
             new_priority = len(self.monster_rotation) + 1
             new_entry = {
                 "monster_id": monster_id,
-                "name": record["name"],
+                "name": record.get("name", "Unknown"),
                 "priority": new_priority,
                 "dungeon_id": dungeon_id,
             }
@@ -1872,7 +1880,7 @@ class App(tk.Tk):
             self.state_controller.set_ui_var('monster_status', self._t("monster_none_selected"))
             return
 
-        mode = self.hunt_cfg.get("rotation_mode", "sequence")
+        mode = self.state_controller.hunt_cfg.get("rotation_mode", "sequence")
 
         if mode == "sequence":
             self.state_controller.set_ui_var('monster_status', f"Sequence: {len(self.monster_rotation)} monsters")
@@ -1886,7 +1894,7 @@ class App(tk.Tk):
     def _refresh_monster_select_options(self, select_name: Optional[str] = None):
         if select_name is not None:
             self.monster_selected_name = select_name
-        names = [monster["name"] for monster in self.monsters]
+        names = [monster.get("name", "Unknown") for monster in self.monsters]
         combo = getattr(self, "monster_select_combo", None)
         select_var = getattr(self, "monster_select_var", None)
         if combo is not None:
@@ -1914,7 +1922,7 @@ class App(tk.Tk):
         name = value.strip()
         idx = None
         for i, monster in enumerate(self.monsters):
-            if monster["name"] == name:
+            if monster.get("name", "Unknown") == name:
                 idx = i
                 break
         self.monster_selected_index = idx if idx is not None else None
@@ -1940,7 +1948,7 @@ class App(tk.Tk):
             return
         idx = None
         for i, monster in enumerate(self.monsters):
-            if monster["name"] == name:
+            if monster.get("name", "Unknown") == name:
                 idx = i
                 break
         if idx is None:
@@ -1958,8 +1966,8 @@ class App(tk.Tk):
             return
         names = []
         for skill in self.skills:
-            if skill["name"] not in names:
-                names.append(skill["name"])
+            if skill.get("name", "Unknown") not in names:
+                names.append(skill.get("name", "Unknown"))
         for saved in getattr(self, "skill_slot_saved_names", []):
             if saved and saved not in names:
                 names.append(saved)
@@ -1987,7 +1995,7 @@ class App(tk.Tk):
         if not hasattr(self, "skill_slot_vars") or not self.state_controller.skill_slot_vars:
             self.skill_slot_saved_names = []
             return [], []
-        mapping = {skill["name"]: skill for skill in getattr(self, "skills", [])}
+        mapping = {skill.get("name", "Unknown"): skill for skill in getattr(self, "skills", [])}
         skill_slots = []
         buff_slots = []
         saved_names = []
@@ -2011,8 +2019,8 @@ class App(tk.Tk):
                 skill_type = "buff"
 
             slot_data = {
-                "name": skill["name"],
-                "key": skill["key"],
+                "name": skill.get("name", "Unknown"),
+                "key": skill.get("key", ""),
                 "type": skill_type,
                 "cooldown": float(skill.get("cooldown", 0.0)),
                 "cast_time": float(skill.get("cast_time", 0.0)),
@@ -2051,27 +2059,27 @@ class App(tk.Tk):
 
         # Apply window_bounds
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
-        self.current_window_bounds = bounds
-        WindowSelectionService.update_bounds(self.hunt_cfg, bounds)
+        self.state_controller.current_window_bounds = bounds
+        WindowSelectionService.update_bounds(self.state_controller.hunt_cfg, bounds)
         self.state_controller._update_window_bounds_display()
 
         # Apply templates[] array to config
         templates = _sanitize_templates(monster.get("templates"))
         if templates:
-            self.hunt_cfg["templates"] = templates
+            self.state_controller.hunt_cfg["templates"] = templates
             # Also set legacy template_path to first template for backward compat
             try:
                 first_path = templates[0].get("path")
                 if first_path:
                     self.state_controller.set_ui_var('template', first_path)
-                    self.hunt_cfg["template_path"] = first_path
+                    self.state_controller.hunt_cfg["template_path"] = first_path
             except Exception:
                 pass
         elif monster.get("template"):
             # Fallback to old single template field
             self.state_controller.set_ui_var('template', monster["template"])
-            self.hunt_cfg["template_path"] = monster["template"]
-            self.hunt_cfg["templates"] = []
+            self.state_controller.hunt_cfg["template_path"] = monster["template"]
+            self.state_controller.hunt_cfg["templates"] = []
 
         try:
             stats = self.state_controller._calculate_monster_estimate(monster)
@@ -2307,8 +2315,8 @@ class App(tk.Tk):
         """
         try:
             # Ensure canonical schemas
-            self.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation", [])
-            self.hunt_cfg["skill_slots"] = self.hunt_cfg.get("skill_slots", [])
+            self.state_controller.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation", [])
+            self.state_controller.hunt_cfg["skill_slots"] = self.state_controller.hunt_cfg.get("skill_slots", [])
             # 1. Apply legacy setup settings when the compatibility method exists.
             apply_setup_settings = getattr(self, "_apply_setup_settings", None)
             if callable(apply_setup_settings):
@@ -2341,14 +2349,14 @@ class App(tk.Tk):
                     )
                     return
 
-                self.hunt_cfg = cfg  # Update instance config first
+                self.state_controller.hunt_cfg = cfg  # Update instance config first
                 self.hotkey_controller.unregister_all()
                 self.hotkey_controller.register_all()
 
             # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
             if not save_hunt_config(cfg):
                 raise RuntimeError("Could not save hunt configuration")
-            self.hunt_cfg = cfg
+            self.state_controller.hunt_cfg = cfg
 
             # 4. Clear unsaved changes indicator
             self.state_controller._clear_unsaved_changes()
@@ -2369,20 +2377,20 @@ class App(tk.Tk):
         """Reload Advanced Settings values in Setup tab after timing changes."""
         # Update variables with new values from hunt_cfg
         if self.state_controller.get_ui_var('setup_search_interval') is not None:
-            self.state_controller.set_ui_var('setup_search_interval', f"{self.hunt_cfg.get('search_interval', 0.25):.2f}")
+            self.state_controller.set_ui_var('setup_search_interval', f"{self.state_controller.hunt_cfg.get('search_interval', 0.25):.2f}")
         if self.state_controller.get_ui_var('setup_attack_interval') is not None:
-            self.state_controller.set_ui_var('setup_attack_interval', f"{self.hunt_cfg.get('attack_interval', 0.15):.2f}")
+            self.state_controller.set_ui_var('setup_attack_interval', f"{self.state_controller.hunt_cfg.get('attack_interval', 0.15):.2f}")
         if self.state_controller.get_ui_var('setup_lost_timeout') is not None:
-            self.state_controller.set_ui_var('setup_lost_timeout', f"{self.hunt_cfg.get('lost_timeout_sec', 0.5):.2f}")
+            self.state_controller.set_ui_var('setup_lost_timeout', f"{self.state_controller.hunt_cfg.get('lost_timeout_sec', 0.5):.2f}")
         if self.state_controller.get_ui_var('setup_attack_duration') is not None:
-            self.state_controller.set_ui_var('setup_attack_duration', f"{self.hunt_cfg.get('attack_min_duration_sec', 5.0):.2f}")
+            self.state_controller.set_ui_var('setup_attack_duration', f"{self.state_controller.hunt_cfg.get('attack_min_duration_sec', 5.0):.2f}")
 
     def _populate_hunt_ui_from_config(self):
         """Populate Hunt tab UI elements from hunt_config.json data."""
         # 1. Window selection
-        window_title = self.hunt_cfg.get("window_title", "").strip()
-        window_pid = self.hunt_cfg.get("window_pid")
-        window_hwnd = self.hunt_cfg.get("window_hwnd")
+        window_title = self.state_controller.hunt_cfg.get("window_title", "").strip()
+        window_pid = self.state_controller.hunt_cfg.get("window_pid")
+        window_hwnd = self.state_controller.hunt_cfg.get("window_hwnd")
 
         if window_title:
             # If we have PID/HWND, create hunt_selected object
@@ -2400,8 +2408,8 @@ class App(tk.Tk):
                     self.state_controller.win_items = [self.state_controller.hunt_selected]
 
         # 2. Monster template (if exists)
-        monster_name = self.hunt_cfg.get("monster_selected_name", "").strip()
-        _template_path = self.hunt_cfg.get("template_path", "").strip()
+        monster_name = self.state_controller.hunt_cfg.get("monster_selected_name", "").strip()
+        _template_path = self.state_controller.hunt_cfg.get("template_path", "").strip()
 
         if monster_name:
             # Update monster name display (assuming you have a monster_name variable)
@@ -2409,7 +2417,7 @@ class App(tk.Tk):
             pass
 
         # 3. Skill slots
-        skill_slots = self.hunt_cfg.get("skill_slots", [])
+        skill_slots = self.state_controller.hunt_cfg.get("skill_slots", [])
         if skill_slots:
             # Update skill UI (assuming skill slot UI variables exist)
             # This will populate skill comboboxes when skill UI is ready
