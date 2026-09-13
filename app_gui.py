@@ -642,14 +642,48 @@ class App(tk.Tk):
         self.shell_zone_c1 = self.shell.shell_zone_c1
         self.status_bar_frame = self.shell.status_bar_frame
 
+        # Move NavigationController initialization up so Sidebar can use it
+        # UX2: View Manager for Zone B
+        from ui.controllers.navigation_controller import NavigationController
+        self.navigation = NavigationController(self.shell_zone_b, on_view_changed=self._update_sidebar_state)
+        self.navigation.register_views(self)
+
+        self.logs_text_widget = self.navigation.views["logs"].text_widget
+
+        # Retain tab references for backward compatibility with orchestrators/runners
+        self.tab_hunt = (
+            self.navigation.views["hunt"].hunt_tab
+            if hasattr(self.navigation.views["hunt"], "hunt_tab")
+            else None
+        )
+        self.tab_setup = (
+            self.navigation.views["setup"].setup_tab
+            if hasattr(self.navigation.views["setup"], "setup_tab")
+            else None
+        )
+        self.tab_stats = (
+            self.navigation.views["stats"].stats_tab
+            if hasattr(self.navigation.views["stats"], "stats_tab")
+            else None
+        )
+        self.tab_help = (
+            self.navigation.views["help"].help_tab
+            if hasattr(self.navigation.views["help"], "help_tab")
+            else None
+        )
+        self.notebook = None
+
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         from ui.components.sidebar_component import SidebarComponent
         self.sidebar = SidebarComponent(
             parent=self.shell_zone_c1.get_content_frame(),
             app=self,
-            on_navigate_callback=self.switch_view
+            on_navigate_callback=self.navigation.navigate_to
         )
         self.sidebar.pack(fill="both", expand=True)
+
+        # Display default view
+        self.navigation.navigate_to("hunt")
 
         self.task_scheduler.schedule_recurring_task("poll_log_queue", 100, self._poll_log_queue)
         self.task_scheduler.schedule_recurring_task("update_logs_metrics", 1000, self._update_logs_metrics)
@@ -830,39 +864,6 @@ class App(tk.Tk):
         self.lang_cmb["values"] = ("en", "vi")
         self.lang_cmb.pack(side="left")
         self.lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
-
-        # UX2: View Manager for Zone B
-        from ui.controllers.navigation_controller import NavigationController
-        self.navigation = NavigationController(self.shell_zone_b, on_view_changed=self._update_sidebar_state)
-        self.navigation.register_views(self)
-
-        self.logs_text_widget = self.navigation.views["logs"].text_widget
-
-        # Retain tab references for backward compatibility with orchestrators/runners
-        self.tab_hunt = (
-            self.navigation.views["hunt"].hunt_tab
-            if hasattr(self.navigation.views["hunt"], "hunt_tab")
-            else None
-        )
-        self.tab_setup = (
-            self.navigation.views["setup"].setup_tab
-            if hasattr(self.navigation.views["setup"], "setup_tab")
-            else None
-        )
-        self.tab_stats = (
-            self.navigation.views["stats"].stats_tab
-            if hasattr(self.navigation.views["stats"], "stats_tab")
-            else None
-        )
-        self.tab_help = (
-            self.navigation.views["help"].help_tab
-            if hasattr(self.navigation.views["help"], "help_tab")
-            else None
-        )
-        self.notebook = None
-
-        # Display default view
-        self.navigation.navigate_to("hunt")
 
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
