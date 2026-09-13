@@ -25,7 +25,7 @@ class DummyApp:
         self.hunt_cfg = {}
         self.hunt_status = tk.StringVar()
         self.hunt_target_info = tk.StringVar()
-        self.click_running = False
+        self.state_controller.click_running = False
 
     def _t(self, key):
         return key

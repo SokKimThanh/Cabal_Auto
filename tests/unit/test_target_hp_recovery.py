@@ -46,7 +46,7 @@ class MockApp:
         self.monster_rotation = []
         self.auto_combo_var = tk.BooleanVar()
         self.combo_start_key_cmb = MagicMock()
-        self.click_running = False
+        self.state_controller.click_running = False
         self.monster_estimate_var = tk.StringVar()
         self.skill_slot_count = 8
         self.skill_stats_tree = MagicMock()
