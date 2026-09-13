@@ -327,12 +327,6 @@ class App(tk.Tk):
         self.window_controller = AppWindowController(self)
         self.window_tracker_controller = WindowTrackerController(self)
         self.overlay_ctrl = None
-        self.state_controller.ui_vars['hunt_status'] = tk.StringVar()
-        self.state_controller.ui_vars['hunt_target_info'] = tk.StringVar()
-        self.state_controller.ui_vars['monster_status'] = tk.StringVar(master=self)
-        self.state_controller.ui_vars['monster_estimate'] = tk.StringVar()
-        self.state_controller.ui_vars['training_mode'] = tk.BooleanVar(master=self, value=False)
-        self.state_controller.ui_vars['global_hotkey_enabled'] = tk.BooleanVar(value=True)
         self._detected_snapshot_items = []
         self._last_snapshot = None
         self.state_controller.hunt_selected = {}
@@ -352,12 +346,10 @@ class App(tk.Tk):
             settings_menu = tk.Menu(menubar, tearoff=0)
             # BooleanVar reflects hunt_cfg setting
             gh_cfg = self.hunt_cfg.get("global_hotkeys", {})
-            self.state_controller.ui_vars['global_hotkeys_enabled_legacy'] = tk.BooleanVar(
-                value=bool(gh_cfg.get("enabled", True))
-            )
+            self.state_controller.ui_vars['global_hotkeys_enabled_legacy'] = tk.BooleanVar(value=bool(gh_cfg.get("enabled", True)))
 
             def _on_toggle_global_hotkeys():
-                enabled = bool(self.state_controller.ui_vars['global_hotkeys_enabled_legacy'].get())
+                enabled = bool(self.state_controller.get_ui_var('global_hotkeys_enabled_legacy'))
                 # Persist setting
                 self.hunt_cfg.setdefault("global_hotkeys", {})["enabled"] = enabled
                 try:
@@ -556,9 +548,6 @@ class App(tk.Tk):
         self.monster_template_working = []
         self.monster_template_selected_index = None
         self.state_controller.ui_widgets['monster_template_listbox'] = None
-        self.state_controller.ui_vars['monster_template_name'] = tk.StringVar()
-        self.state_controller.ui_vars['monster_template_path'] = tk.StringVar()
-        self.state_controller.ui_vars['monster_template_threshold'] = tk.StringVar(value="0.85")
         self.state_controller.monster_template_region_vars = {
             "left": tk.StringVar(),
             "top": tk.StringVar(),
@@ -1161,7 +1150,6 @@ class App(tk.Tk):
         self.status_bar_frame.grid(row=1, column=0, columnspan=7, sticky="ew")
         self.status_bar_frame.pack_propagate(False)
 
-        self.state_controller.ui_vars['db_status'] = tk.StringVar(master=self, value="⠋ Đang kiểm tra CSDL...")
         self._db_status_bar = tk.Label(
             self.status_bar_frame,
             textvariable=self.state_controller.ui_vars['db_status'],
@@ -1348,11 +1336,11 @@ class App(tk.Tk):
 
     def _set_db_status(self, msg: str, ok: bool = True):
         """Called by AppLifecycleController to display DB health status."""
-        if ("hunt_status" in self.state_controller.ui_vars):
+        if self.state_controller.get_ui_var('hunt_status') is not None:
             self.after(0, lambda: self.state_controller.set_ui_var('hunt_status', msg))
 
     def _update_scan_status_text(self, text):
-        if ("hunt_status" in self.state_controller.ui_vars):
+        if self.state_controller.get_ui_var('hunt_status') is not None:
             self.after(0, lambda: self.state_controller.set_ui_var('hunt_status', text))
 
     def _update_scan_status_icon(self, icon_name):
@@ -1445,7 +1433,7 @@ class App(tk.Tk):
         ):
             saved_hwnd = self.state_controller.hunt_selected.get("hwnd")
 
-        self.lang = self.state_controller.ui_vars['lang'].get()
+        self.lang = self.state_controller.get_ui_var('lang')
         self.cfg.setdefault("ui", {})
         self.cfg["ui"]["language"] = self.lang
         save_config(self.cfg)
@@ -1565,7 +1553,7 @@ class App(tk.Tk):
                 if 0 <= tab_index < len(tab_names):
                     tab_name = tab_names[tab_index]
                     shortcut = f"Alt+{tab_index + 1}"
-                    if ("hunt_status" in self.state_controller.ui_vars):
+                    if self.state_controller.get_ui_var('hunt_status') is not None:
                         self.state_controller.set_ui_var('hunt_status', f"{shortcut}: Switched to {tab_name} tab")
         except Exception as e:
             print(f"Tab switch error: {e}")
@@ -1629,7 +1617,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else "Tất cả phím tắt đã đăng ký thành công"
                 )
-                self.state_controller.ui_vars['hotkey_status'].set(f"✅ {success_text}")
+                self.state_controller.set_ui_var('hotkey_status', f"✅ {success_text}")
                 self._hotkey_status_label.config(fg=UI.ACCENT_GREEN)  # Green
 
                 # Show count and active hotkeys list
@@ -1640,7 +1628,7 @@ class App(tk.Tk):
                 )
                 if hotkey_details:
                     detail_text += f": {', '.join(hotkey_details)}"
-                self.state_controller.ui_vars['hotkey_status_detail'].set(f"   {detail_text}")
+                self.state_controller.set_ui_var('hotkey_status_detail', f"   {detail_text}")
 
                 # Hide action buttons (not needed)
                 if hasattr(self, "_hotkey_retry_btn"):
@@ -1657,7 +1645,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else f"{failed_count} phím tắt đăng ký thất bại"
                 )
-                self.state_controller.ui_vars['hotkey_status'].set(f"⚠️ {warning_text}")
+                self.state_controller.set_ui_var('hotkey_status', f"⚠️ {warning_text}")
                 self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)  # Orange
 
                 # Show guidance
@@ -1666,7 +1654,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
                 )
-                self.state_controller.ui_vars['hotkey_status_detail'].set(f"   {guidance}")
+                self.state_controller.set_ui_var('hotkey_status_detail', f"   {guidance}")
 
                 # Show retry button only
                 if hasattr(self, "_hotkey_retry_btn"):
@@ -1688,7 +1676,7 @@ class App(tk.Tk):
                     if self.lang == "en"
                     else "Phím tắt không khả dụng"
                 )
-                self.state_controller.ui_vars['hotkey_status'].set(f"❌ {error_text}")
+                self.state_controller.set_ui_var('hotkey_status', f"❌ {error_text}")
                 self._hotkey_status_label.config(fg=UI.DANGER)  # Red
 
                 # Show explanation
@@ -1704,7 +1692,7 @@ class App(tk.Tk):
                         if self.lang == "en"
                         else "Không thể đăng ký phím tắt toàn cục."
                     )
-                self.state_controller.ui_vars['hotkey_status_detail'].set(f"   {explanation}")
+                self.state_controller.set_ui_var('hotkey_status_detail', f"   {explanation}")
 
                 # Show both buttons
                 if hasattr(self, "_hotkey_details_btn"):
@@ -1727,7 +1715,7 @@ class App(tk.Tk):
         except Exception as e:
             # Fallback: show basic error
             try:
-                self.state_controller.ui_vars['hotkey_status'].set(f"⚠️ Error updating status: {e}")
+                self.state_controller.set_ui_var('hotkey_status', f"⚠️ Error updating status: {e}")
                 self._hotkey_status_label.config(fg=UI.ACCENT_AMBER)
             except Exception:
                 pass
@@ -1790,14 +1778,14 @@ class App(tk.Tk):
 
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
-            if ("hunt_status" in self.state_controller.ui_vars):
+            if self.state_controller.get_ui_var('hunt_status') is not None:
                 self.state_controller.set_ui_var('hunt_status', self._t("hunt_running"))
             if hasattr(self, "tab_hunt") and hasattr(
                 self.tab_hunt, "update_hunt_status_color"
             ):
                 self.tab_hunt.update_hunt_status_color("running")
         elif state in ["idle", "error", "stopped"]:
-            if state == "idle" and ("hunt_status" in self.state_controller.ui_vars):
+            if state == "idle" and self.state_controller.get_ui_var('hunt_status') is not None:
                 self.state_controller.set_ui_var('hunt_status',
                     self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
                 )
@@ -2226,23 +2214,19 @@ class App(tk.Tk):
             return
 
         if not self.monster_rotation:
-            self.state_controller.ui_vars['monster_status'].set(self._t("monster_none_selected"))
+            self.state_controller.set_ui_var('monster_status', self._t("monster_none_selected"))
             return
 
         mode = self.hunt_cfg.get("rotation_mode", "sequence")
 
         if mode == "sequence":
-            self.state_controller.ui_vars['monster_status'].set(
-                f"Sequence: {len(self.monster_rotation)} monsters"
-            )
+            self.state_controller.set_ui_var('monster_status', f"Sequence: {len(self.monster_rotation)} monsters")
         else:
             sorted_monsters = sorted(
                 self.monster_rotation, key=lambda m: m.get("priority", 1)
             )
             current = sorted_monsters[0]
-            self.state_controller.ui_vars['monster_status'].set(
-                f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation)} total"
-            )
+            self.state_controller.set_ui_var('monster_status', f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.monster_rotation)} total")
 
     def _refresh_monster_select_options(self, select_name: Optional[str] = None):
         if select_name is not None:
@@ -2288,12 +2272,12 @@ class App(tk.Tk):
             from lib.features.hunt.hunt_setup_service import HuntSetupService
             HuntSetupService.apply_monster_to_hunt_quick(monster, self.state_controller)
         elif hasattr(self, "monster_estimate_var"):
-            self.state_controller.ui_vars['monster_estimate'].set("")
+            self.state_controller.set_ui_var('monster_estimate', "")
 
     def on_monster_apply_from_select(self):
         if not hasattr(self, "monster_select_var"):
             return
-        name = self.state_controller.ui_vars['monster_select'].get().strip()
+        name = self.state_controller.get_ui_var('monster_select').strip()
         if not name:
             messagebox.showinfo(
                 self._t("monster_section"), self._t("monster_not_selected")
@@ -2424,13 +2408,13 @@ class App(tk.Tk):
             try:
                 first_path = templates[0].get("path")
                 if first_path:
-                    self.state_controller.ui_vars['template'].set(first_path)
+                    self.state_controller.set_ui_var('template', first_path)
                     self.hunt_cfg["template_path"] = first_path
             except Exception:
                 pass
         elif monster.get("template"):
             # Fallback to old single template field
-            self.state_controller.ui_vars['template'].set(monster["template"])
+            self.state_controller.set_ui_var('template', monster["template"])
             self.hunt_cfg["template_path"] = monster["template"]
             self.hunt_cfg["templates"] = []
 
@@ -2445,15 +2429,15 @@ class App(tk.Tk):
         attack_min, lost_timeout = self.state_controller._recommend_attack_settings(
             stats
         )
-        self.state_controller.ui_vars['attack_duration'].set(f"{attack_min:.2f}")
-        self.state_controller.ui_vars['lost_timeout'].set(f"{lost_timeout:.2f}")
+        self.state_controller.set_ui_var('attack_duration', f"{attack_min:.2f}")
+        self.state_controller.set_ui_var('lost_timeout', f"{lost_timeout:.2f}")
         base = self._t("monster_estimate_result").format(
             time=kill_time, dps=stats["dps"]
         )
         detail = self._t("monster_estimate_detail").format(
             base=base, attack=attack_min, lost=lost_timeout
         )
-        self.state_controller.ui_vars['monster_estimate'].set(detail)
+        self.state_controller.set_ui_var('monster_estimate', detail)
         self.state_controller.set_ui_var('hunt_status', self._t("monster_applied"))
 
     # -----------------
@@ -2464,11 +2448,11 @@ class App(tk.Tk):
         if not hasattr(self, "rotation_desc_var"):
             return
 
-        mode = self.state_controller.ui_vars['rotation_mode'].get()
+        mode = self.state_controller.get_ui_var('rotation_mode')
         if mode == "sequence":
-            self.state_controller.ui_vars['rotation_desc'].set("Hunt monsters in order, cycle through list")
+            self.state_controller.set_ui_var('rotation_desc', "Hunt monsters in order, cycle through list")
         elif mode == "priority":
-            self.state_controller.ui_vars['rotation_desc'].set("Always hunt highest priority (lowest number)")
+            self.state_controller.set_ui_var('rotation_desc', "Always hunt highest priority (lowest number)")
 
     def _update_training_mode_buttons(self):
         """Update monster control buttons based on training mode state.
@@ -2486,7 +2470,7 @@ class App(tk.Tk):
         if not hasattr(self, "btn_add_monster"):
             return
 
-        is_training = self.state_controller.ui_vars['training_mode'].get()
+        is_training = self.state_controller.get_ui_var('training_mode')
         has_training_dummy = any(
             m.get("training_mode", False) for m in self.monster_rotation
         )
@@ -2729,22 +2713,14 @@ class App(tk.Tk):
     def _reload_setup_advanced_settings(self):
         """Reload Advanced Settings values in Setup tab after timing changes."""
         # Update variables with new values from hunt_cfg
-        if "setup_search_interval" in self.state_controller.ui_vars:
-            self.state_controller.ui_vars['setup_search_interval'].set(
-                f"{self.hunt_cfg.get('search_interval', 0.25):.2f}"
-            )
-        if "setup_attack_interval" in self.state_controller.ui_vars:
-            self.state_controller.ui_vars['setup_attack_interval'].set(
-                f"{self.hunt_cfg.get('attack_interval', 0.15):.2f}"
-            )
-        if "setup_lost_timeout" in self.state_controller.ui_vars:
-            self.state_controller.ui_vars['setup_lost_timeout'].set(
-                f"{self.hunt_cfg.get('lost_timeout_sec', 0.5):.2f}"
-            )
-        if "setup_attack_duration" in self.state_controller.ui_vars:
-            self.state_controller.ui_vars['setup_attack_duration'].set(
-                f"{self.hunt_cfg.get('attack_min_duration_sec', 5.0):.2f}"
-            )
+        if self.state_controller.get_ui_var('setup_search_interval') is not None:
+            self.state_controller.set_ui_var('setup_search_interval', f"{self.hunt_cfg.get('search_interval', 0.25):.2f}")
+        if self.state_controller.get_ui_var('setup_attack_interval') is not None:
+            self.state_controller.set_ui_var('setup_attack_interval', f"{self.hunt_cfg.get('attack_interval', 0.15):.2f}")
+        if self.state_controller.get_ui_var('setup_lost_timeout') is not None:
+            self.state_controller.set_ui_var('setup_lost_timeout', f"{self.hunt_cfg.get('lost_timeout_sec', 0.5):.2f}")
+        if self.state_controller.get_ui_var('setup_attack_duration') is not None:
+            self.state_controller.set_ui_var('setup_attack_duration', f"{self.hunt_cfg.get('attack_min_duration_sec', 5.0):.2f}")
 
     def _populate_hunt_ui_from_config(self):
         """Populate Hunt tab UI elements from hunt_config.json data."""
@@ -2817,8 +2793,8 @@ class App(tk.Tk):
     def clear_target_ui(self, delay_ms=0):
         if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "clear_target_card"):
             self.hunt_tab.clear_target_card(delay_ms)
-        if ("hunt_target_info" in self.state_controller.ui_vars):
-            self.state_controller.ui_vars['hunt_target_info'].set(self._t("target_card.target_none"))
+        if self.state_controller.get_ui_var('hunt_target_info') is not None:
+            self.state_controller.set_ui_var('hunt_target_info', self._t("target_card.target_none"))
         if hasattr(self, "monster_rotation_listbox"):
             try:
                 self.monster_rotation_listbox.selection_clear(0, tk.END)
