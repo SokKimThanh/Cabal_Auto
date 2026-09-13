@@ -606,13 +606,13 @@ class App(tk.Tk):
         )
 
         # Keyboard shortcuts (Window-focused only)
-        self.bind("<Control-b>", lambda e: self.switch_view("build_manager"))
-        self.bind("<Control-m>", lambda e: self.switch_view("monster_manager"))
-        self.bind("<Control-k>", lambda e: self.switch_view("skill_manager"))
+        self.bind("<Control-b>", lambda e: self.navigation.navigate_to("build_manager"))
+        self.bind("<Control-m>", lambda e: self.navigation.navigate_to("monster_manager"))
+        self.bind("<Control-k>", lambda e: self.navigation.navigate_to("skill_manager"))
 
-        self.bind("<Alt-Key-1>", lambda e: self.switch_view("hunt"))  # Alt+1: Hunt tab
+        self.bind("<Alt-Key-1>", lambda e: self.navigation.navigate_to("hunt"))  # Alt+1: Hunt tab
         self.bind(
-            "<Alt-Key-2>", lambda e: self.switch_view("setup")
+            "<Alt-Key-2>", lambda e: self.navigation.navigate_to("setup")
         )  # Alt+2: Setup tab
 
         # Responsive layout bindings
@@ -826,60 +826,37 @@ class App(tk.Tk):
         self.lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
 
         # UX2: View Manager for Zone B
-        self._current_view = None
-        self._views = {}
+        from ui.controllers.navigation_controller import NavigationController
+        self.navigation = NavigationController(self.shell_zone_b, on_view_changed=self._update_sidebar_state)
+        self.navigation.register_views(self)
 
-        from ui.views.hunt_workspace_frame import HuntWorkspaceFrame
-        from ui.views.setup_content_frame import SetupContentFrame
-        from ui.views.help_support_frame import HelpSupportFrame
-        from ui.views.stats_content_frame import StatsContentFrame
-        from ui.views.activity_logs_frame import ActivityLogsFrame
-
-        self._views["hunt"] = HuntWorkspaceFrame(self.shell_zone_b, self)
-        self._views["setup"] = SetupContentFrame(self.shell_zone_b, self)
-        self._views["help"] = HelpSupportFrame(self.shell_zone_b, self)
-        self._views["stats"] = StatsContentFrame(self.shell_zone_b, self)
-        self._views["logs"] = ActivityLogsFrame(self.shell_zone_b, self)
-        from ui.views.monster_manager_frame import MonsterManagerFrame
-        from ui.views.skill_manager_frame import SkillManagerFrame
-        from ui.views.build_manager_frame import BuildManagerFrame
-        from ui.views.class_manager_frame import ClassManagerFrame
-        self._views["build_manager"] = BuildManagerFrame(self.shell_zone_b, self)
-        self._views["monster_manager"] = MonsterManagerFrame(self.shell_zone_b, self)
-        self._views["skill_manager"] = SkillManagerFrame(self.shell_zone_b, self)
-        self._views["class_manager"] = ClassManagerFrame(self.shell_zone_b, self)
-        from ui.views.icon_manager_frame import IconManagerFrame
-        self._views["icon_manager"] = IconManagerFrame(self.shell_zone_b, self)
-        from ui.views.scan_history_frame import ScanHistoryFrame
-        self._views["scan_history"] = ScanHistoryFrame(self.shell_zone_b, self)
-
-        self.logs_text_widget = self._views["logs"].text_widget
+        self.logs_text_widget = self.navigation.views["logs"].text_widget
 
         # Retain tab references for backward compatibility with orchestrators/runners
         self.tab_hunt = (
-            self._views["hunt"].hunt_tab
-            if hasattr(self._views["hunt"], "hunt_tab")
+            self.navigation.views["hunt"].hunt_tab
+            if hasattr(self.navigation.views["hunt"], "hunt_tab")
             else None
         )
         self.tab_setup = (
-            self._views["setup"].setup_tab
-            if hasattr(self._views["setup"], "setup_tab")
+            self.navigation.views["setup"].setup_tab
+            if hasattr(self.navigation.views["setup"], "setup_tab")
             else None
         )
         self.tab_stats = (
-            self._views["stats"].stats_tab
-            if hasattr(self._views["stats"], "stats_tab")
+            self.navigation.views["stats"].stats_tab
+            if hasattr(self.navigation.views["stats"], "stats_tab")
             else None
         )
         self.tab_help = (
-            self._views["help"].help_tab
-            if hasattr(self._views["help"], "help_tab")
+            self.navigation.views["help"].help_tab
+            if hasattr(self.navigation.views["help"], "help_tab")
             else None
         )
         self.notebook = None
 
         # Display default view
-        self.switch_view("hunt")
+        self.navigation.navigate_to("hunt")
 
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
@@ -976,8 +953,8 @@ class App(tk.Tk):
                     dropped = logger.dropped_log_count
                     logger.dropped_log_count = 0
                     warn_msg = f"[!] Đã bỏ qua {dropped} dòng log do quá tải"
-                    if "logs" in getattr(self, "_views", {}):
-                        self._views["logs"].append_message(warn_msg)
+                    if "logs" in getattr(self.navigation, "views", {}):
+                        self.navigation.views["logs"].append_message(warn_msg)
 
                 lines_processed = 0
                 while lines_processed < 50:
@@ -989,15 +966,15 @@ class App(tk.Tk):
                         else:
                             msg = record.getMessage()
 
-                        if "logs" in getattr(self, "_views", {}):
+                        if "logs" in getattr(self.navigation, "views", {}):
                             # Pass both formatted string and record level name for filtering
-                            self._views["logs"].append_message(msg, record.levelname)
+                            self.navigation.views["logs"].append_message(msg, record.levelname)
                         lines_processed += 1
                     except queue.Empty:
                         break
 
-                if lines_processed > 0 and "logs" in getattr(self, "_views", {}):
-                    self._views["logs"].trim_to_limit(1000)
+                if lines_processed > 0 and "logs" in getattr(self.navigation, "views", {}):
+                    self.navigation.views["logs"].trim_to_limit(1000)
 
         except Exception as e:
             print(f"Error polling logs: {e}")
@@ -1005,33 +982,10 @@ class App(tk.Tk):
         # Flush frequently
         self.after(100, self._poll_log_queue)
 
-    def switch_view(self, view_key: str):
-        if not hasattr(self, "_views") or view_key not in self._views:
-            return
-
-        # Hide current view
-        if hasattr(self, "_current_view") and self._current_view:
-            self._current_view.grid_remove()
-            if hasattr(self._current_view, "on_view_hidden"):
-                self._current_view.on_view_hidden()
-
-        # Show new view
-        target_view = self._views[view_key]
-        target_view.grid(row=0, column=0, sticky="nsew")
-
-        # Zone B needs grid row/col configs
-        self.shell_zone_b.columnconfigure(0, weight=1)
-        self.shell_zone_b.rowconfigure(0, weight=1)
-
-        self._current_view = target_view
-        self.current_view_key = view_key
-
+    def _update_sidebar_state(self, view_key: str):
         # Update sidebar selected state
         if hasattr(self, "sidebar"):
             self.sidebar.set_active_tab(view_key)
-
-        if hasattr(target_view, "on_view_shown"):
-            target_view.on_view_shown()
 
     # Click Tab removed
 
@@ -1246,7 +1200,7 @@ class App(tk.Tk):
         try:
             tab_map = {0: "hunt", 1: "setup", 2: "stats", 3: "help"}
             if tab_index in tab_map:
-                self.switch_view(tab_map[tab_index])
+                self.navigation.navigate_to(tab_map[tab_index])
                 # Update status with shortcut indicator
                 tab_names = ["Hunt", "Setup", "Stats", "Help"]
                 if 0 <= tab_index < len(tab_names):
@@ -1733,7 +1687,7 @@ class App(tk.Tk):
         if "monster_rotation_listbox" not in self.state_controller.ui_widgets:
             return
 
-        self.state_controller.ui_widgets['monster_rotation_listbox'].delete(0, tk.END)
+        self.monster_rotation_listbox.delete(0, tk.END)
 
         from database import get_monster_by_id_api, find_monster_by_name_api
 
