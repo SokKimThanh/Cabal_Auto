@@ -201,8 +201,8 @@ class HuntTab(ttk.Frame):
         if hasattr(self, "hp_progressbar"):
             self.hp_progressbar.config(value=0)
         self.update_status(self.app._t("target_card.status_idle"))
-        if hasattr(self.app, "hunt_target_info"):
-            self.app.hunt_target_info.set("")
+        if "hunt_target_info" in self.app.state_controller.ui_vars:
+            self.app.state_controller.ui_vars['hunt_target_info'].set("")
 
     def update_target_card(self, name_or_id: str):
         if hasattr(self, "_pending_clear_id") and self._pending_clear_id:
@@ -215,8 +215,8 @@ class HuntTab(ttk.Frame):
         self.target_hp_label.config(text=str(info["hp"]))
         self.target_def_label.config(text=str(info["defense"]))
 
-        if hasattr(self.app, "hunt_target_info"):
-            self.app.hunt_target_info.set(f"Target: #{info['id']}")
+        if "hunt_target_info" in self.app.state_controller.ui_vars:
+            self.app.state_controller.ui_vars['hunt_target_info'].set(f"Target: #{info['id']}")
 
         if info.get("is_placeholder"):
             if isinstance(self.hunt_status_label, tk.Label): self.hunt_status_label.config(fg=UI.ACCENT_AMBER)
@@ -287,8 +287,8 @@ class HuntTab(ttk.Frame):
 
     def _select_all_monsters(self, _event=None):
         """Select every configured rotation row for bulk deletion."""
-        if self.app.monster_rotation_listbox.size():
-            self.app.monster_rotation_listbox.selection_set(0, tk.END)
+        if self.app.state_controller.ui_widgets['monster_rotation_listbox'].size():
+            self.app.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(0, tk.END)
         return "break"
 
 
@@ -300,48 +300,26 @@ class HuntTab(ttk.Frame):
         """
 
         # Initialize mode var for compatibility (actual mode selector is in Setup tab)
-        self.app.hunt_mode_var = tk.StringVar(
-            value=self.app.state_controller.hunt_cfg.get("ui_mode", "beginner")
-        )
+        self.app.state_controller.set_ui_var('hunt_mode', self.app.state_controller.hunt_cfg.get("ui_mode", "beginner"))
 
         # Initialize vars for compatibility with hunt loop (values read from hunt_cfg)
-        self.app.target_key_var = tk.StringVar(
-            value=str(self.app.state_controller.hunt_cfg.get("target_key", "TAB"))
-        )
+        self.app.state_controller.set_ui_var('target_key', str(self.app.state_controller.hunt_cfg.get("target_key", "TAB")))
         # attack_keys removed: per-skill keys from skill_slots are used instead
-        self.app.attack_press_var = tk.StringVar(
-            value=str(self.app.state_controller.hunt_cfg.get("attack_press_ms", 60))
-        )
-        self.app.target_cycle_var = tk.StringVar(
-            value=str(self.app.state_controller.hunt_cfg.get("target_cycle_delay", 0.2))
-        )
-        self.app.search_interval_var = tk.StringVar(
-            value=str(self.app.state_controller.hunt_cfg.get("search_interval", 0.25))
-        )
-        self.app.attack_interval_var = tk.StringVar(
-            value=str(self.app.state_controller.hunt_cfg.get("attack_interval", 0.15))
-        )
-        self.app.lost_timeout_var = tk.StringVar(
-            value=str(self.app.state_controller.hunt_cfg.get("lost_timeout_sec", 1.2))
-        )
-        self.app.attack_duration_var = tk.StringVar(
-            value=str(self.app.state_controller.hunt_cfg.get("attack_min_duration_sec", 1.5))
-        )
-        self.app.template_var = tk.StringVar(
-            value=str(
-                self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")
-            )
-        )
+        self.app.state_controller.set_ui_var('attack_press', str(self.app.state_controller.hunt_cfg.get("attack_press_ms", 60)))
+        self.app.state_controller.set_ui_var('target_cycle', str(self.app.state_controller.hunt_cfg.get("target_cycle_delay", 0.2)))
+        self.app.state_controller.set_ui_var('search_interval', str(self.app.state_controller.hunt_cfg.get("search_interval", 0.25)))
+        self.app.state_controller.set_ui_var('attack_interval', str(self.app.state_controller.hunt_cfg.get("attack_interval", 0.15)))
+        self.app.state_controller.set_ui_var('lost_timeout', str(self.app.state_controller.hunt_cfg.get("lost_timeout_sec", 1.2)))
+        self.app.state_controller.set_ui_var('attack_duration', str(self.app.state_controller.hunt_cfg.get("attack_min_duration_sec", 1.5)))
+        self.app.state_controller.set_ui_var('template', str(self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")))
 
         region = self.app.state_controller.hunt_cfg.get("region") or ["", "", "", ""]
-        self.app.reg_l = tk.StringVar(value=str(region[0]) if region[0] != "" else "")
-        self.app.reg_t = tk.StringVar(value=str(region[1]) if region[1] != "" else "")
-        self.app.reg_w = tk.StringVar(value=str(region[2]) if region[2] != "" else "")
-        self.app.reg_h = tk.StringVar(value=str(region[3]) if region[3] != "" else "")
+        self.app.state_controller.ui_vars['reg_l'] = tk.StringVar(value=str(region[0]) if region[0] != "" else "")
+        self.app.state_controller.ui_vars['reg_t'] = tk.StringVar(value=str(region[1]) if region[1] != "" else "")
+        self.app.state_controller.ui_vars['reg_w'] = tk.StringVar(value=str(region[2]) if region[2] != "" else "")
+        self.app.state_controller.ui_vars['reg_h'] = tk.StringVar(value=str(region[3]) if region[3] != "" else "")
 
-        self.app.bring_front_var = tk.BooleanVar(
-            value=bool(self.app.state_controller.hunt_cfg.get("bring_to_front_each_cycle", False))
-        )
+        self.app.state_controller.set_ui_var('bring_front', bool(self.app.state_controller.hunt_cfg.get("bring_to_front_each_cycle", False)))
 
         # Layout: 4-Panel Workspace Redesign (ResponsiveGridBase Version)
 
