@@ -1947,7 +1947,7 @@ class App(tk.Tk):
 
     def _refresh_monster_rotation_list(self):
         """Refresh the configured monster rotation UI queue."""
-        if not hasattr(self, "monster_rotation_listbox"):
+        if "monster_rotation_listbox" not in self.state_controller.ui_widgets:
             return
 
         self.state_controller.ui_widgets['monster_rotation_listbox'].delete(0, tk.END)

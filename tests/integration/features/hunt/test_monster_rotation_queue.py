@@ -15,7 +15,7 @@ def mock_app():
     app._monster_metadata_cache = {}
 
     app._t = lambda key, **kwargs: key
-    app.monster_rotation_listbox = MagicMock()
+    app.state_controller = type("MockSC", (), {"ui_widgets": {"monster_rotation_listbox": MagicMock()}})()
 
     app._mark_unsaved = MagicMock()
 
@@ -54,7 +54,7 @@ def test_refresh_monster_rotation_list_caches_db_calls(mock_app):
         assert mock_by_id.call_count == 2
         assert mock_by_name.call_count == 1
 
-        calls = mock_app.monster_rotation_listbox.insert.call_args_list
+        calls = mock_app.state_controller.ui_widgets["monster_rotation_listbox"].insert.call_args_list
         assert calls[0][0][1] == "[#1] Monster1 - Lv.5 | HP: 50"
         assert calls[1][0][1] == "[#2] Monster2 - Lv.10 | HP: 200"
 
@@ -80,7 +80,7 @@ def test_refresh_handles_unknown_monsters(mock_app):
 
         mock_app._refresh_monster_rotation_list()
 
-        mock_app.monster_rotation_listbox.insert.assert_called_with(
+        mock_app.state_controller.ui_widgets["monster_rotation_listbox"].insert.assert_called_with(
             "end", "[monster_rotation_unknown] Missing - Lv.-- | HP: --"
         )
 
@@ -93,7 +93,7 @@ def test_reorder_normalizes_priority(mock_app):
     ]
 
     # Select index 1 (M2) and move down
-    mock_app.monster_rotation_listbox.curselection.return_value = (1,)
+    mock_app.state_controller.ui_widgets["monster_rotation_listbox"].curselection.return_value = (1,)
 
     mock_app._on_monster_move_down()
 
@@ -107,7 +107,7 @@ def test_reorder_normalizes_priority(mock_app):
     assert mock_app.monster_rotation[2]["priority"] == 3
 
     mock_app._mark_unsaved.assert_called_once()
-    mock_app.monster_rotation_listbox.selection_set.assert_called_with(2)
+    mock_app.state_controller.ui_widgets["monster_rotation_listbox"].selection_set.assert_called_with(2)
 
 
 def test_delete_normalizes_priority(mock_app):
@@ -118,7 +118,7 @@ def test_delete_normalizes_priority(mock_app):
     ]
 
     # Select index 1 (M2) and delete
-    mock_app.monster_rotation_listbox.curselection.return_value = (1,)
+    mock_app.state_controller.ui_widgets["monster_rotation_listbox"].curselection.return_value = (1,)
 
     mock_app._on_monster_delete_from_list()
 

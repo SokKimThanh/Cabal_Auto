@@ -33,23 +33,23 @@ class TargetStatusPanel(ttk.LabelFrame):
 
     def _setup_legacy_wrappers(self):
         """Creates dummy objects for legacy code that expects standard tkinter widgets"""
-        self.app.hp_canvas = tk.Canvas(self)
-        self.app.hp_percent_label = tk.Label(self)
-        self.app.target_image_label = tk.Label(self)
-        self.app.target_name_label = tk.Label(self)
-        self.app.status_label = tk.Label(self)
-        self.app.target_level_label = tk.Label(self)
-        self.app.target_hp_label = tk.Label(self)
-        self.app.target_def_label = tk.Label(self)
-        self.app.recovery_frame = tk.Frame(self)
-        self.app.hp_bg = self.app.hp_canvas.create_rectangle(0,0,1,1)
-        self.app.hp_fill = self.app.hp_canvas.create_rectangle(0,0,1,1)
-        self.app.hp_text = self.app.hp_canvas.create_text(0,0)
+        self.hp_canvas = tk.Canvas(self)
+        self.hp_percent_label = tk.Label(self)
+        self.target_image_label = tk.Label(self)
+        self.target_name_label = tk.Label(self)
+        self.status_label = tk.Label(self)
+        self.target_level_label = tk.Label(self)
+        self.target_hp_label = tk.Label(self)
+        self.target_def_label = tk.Label(self)
+        self.recovery_frame = tk.Frame(self)
+        self.hp_bg = self.hp_canvas.create_rectangle(0,0,1,1)
+        self.hp_fill = self.hp_canvas.create_rectangle(0,0,1,1)
+        self.hp_text = self.hp_canvas.create_text(0,0)
 
-        self.app.hunt_status_badge = StatusBadge(self, status="waiting")
-        self.app.hunt_status_label = self.app.hunt_status_badge
-        self.app.hunt_target_info = tk.StringVar(value="")
-        self.app.hunt_target_info_label = tk.Label(self, textvariable=self.app.hunt_target_info)
+        self.hunt_status_badge = StatusBadge(self, status="waiting")
+        self.hunt_status_label = self.hunt_status_badge
+        self.hunt_target_info = self.app.state_controller.ui_vars.get("hunt_target_info", tk.StringVar(value=""))
+        self.hunt_target_info_label = tk.Label(self, textvariable=self.hunt_target_info)
 
         self._current_info = TargetInfo()
 
@@ -69,16 +69,16 @@ class TargetStatusPanel(ttk.LabelFrame):
                 elif not self._current_info.name or self._current_info.name == "UnknownMob":
                     self._current_info.state = "waiting"
                 self.update_target(self._current_info)
-            return tk.Label.config(self.app.target_name_label, *args, **kwargs)
-        self.app.target_name_label.config = intercept_name
+            return tk.Label.config(self.target_name_label, *args, **kwargs)
+        self.target_name_label.config = intercept_name
 
         def intercept_level(*args, **kwargs):
             if "text" in kwargs:
                 try: self._current_info.level = int(kwargs["text"])
                 except: pass
                 self.update_target(self._current_info)
-            return tk.Label.config(self.app.target_level_label, *args, **kwargs)
-        self.app.target_level_label.config = intercept_level
+            return tk.Label.config(self.target_level_label, *args, **kwargs)
+        self.target_level_label.config = intercept_level
 
         def intercept_max_hp(*args, **kwargs):
             if "text" in kwargs:
@@ -88,16 +88,16 @@ class TargetStatusPanel(ttk.LabelFrame):
                         self._current_info.hp = self._current_info.max_hp # initialize full
                 except: pass
                 self.update_target(self._current_info)
-            return tk.Label.config(self.app.target_hp_label, *args, **kwargs)
-        self.app.target_hp_label.config = intercept_max_hp
+            return tk.Label.config(self.target_hp_label, *args, **kwargs)
+        self.target_hp_label.config = intercept_max_hp
 
         def intercept_def(*args, **kwargs):
             if "text" in kwargs:
                 try: self._current_info.defense = int(kwargs["text"])
                 except: pass
                 self.update_target(self._current_info)
-            return tk.Label.config(self.app.target_def_label, *args, **kwargs)
-        self.app.target_def_label.config = intercept_def
+            return tk.Label.config(self.target_def_label, *args, **kwargs)
+        self.target_def_label.config = intercept_def
 
         def intercept_status(*args, **kwargs):
             if "status" in kwargs:
@@ -105,13 +105,13 @@ class TargetStatusPanel(ttk.LabelFrame):
                 elif kwargs["status"] == "waiting": self._current_info.state = "waiting"
                 else: self._current_info.state = "ready"
                 self.update_target(self._current_info)
-            return tk.Label.config(self.app.status_label, *args, **kwargs)
-        self.app.status_label.config = intercept_status
+            return tk.Label.config(self.status_label, *args, **kwargs)
+        self.status_label.config = intercept_status
 
         # Intercept hp_canvas itemconfig for HP updates
-        orig_itemconfig = self.app.hp_canvas.itemconfig
+        orig_itemconfig = self.hp_canvas.itemconfig
         def intercept_hp_canvas_itemconfig(tagOrId, **kwargs):
-            if tagOrId == self.app.hp_fill and "fill" in kwargs:
+            if tagOrId == self.hp_fill and "fill" in kwargs:
                 color = kwargs["fill"]
                 if color == "#52525B": # dead
                     self._current_info.hp = 0
@@ -121,21 +121,21 @@ class TargetStatusPanel(ttk.LabelFrame):
                     self._current_info.state = "hunting"
                     self.update_target(self._current_info)
             return orig_itemconfig(tagOrId, **kwargs)
-        self.app.hp_canvas.itemconfig = intercept_hp_canvas_itemconfig
+        self.hp_canvas.itemconfig = intercept_hp_canvas_itemconfig
 
         # Intercept coords to update HP ratio
-        orig_coords = self.app.hp_canvas.coords
+        orig_coords = self.hp_canvas.coords
         def intercept_hp_canvas_coords(tagOrId, *args):
-            if tagOrId == self.app.hp_fill and len(args) == 4:
+            if tagOrId == self.hp_fill and len(args) == 4:
                 # args are x1, y1, x2, y2
                 width = args[2] - args[0]
-                total_width = self.app.hp_canvas.winfo_width()
+                total_width = self.hp_canvas.winfo_width()
                 if total_width > 0:
                     ratio = width / total_width
                     self._current_info.hp = int(self._current_info.max_hp * ratio)
                     self.update_target(self._current_info)
             return orig_coords(tagOrId, *args)
-        self.app.hp_canvas.coords = intercept_hp_canvas_coords
+        self.hp_canvas.coords = intercept_hp_canvas_coords
 
 
     def _build_ui(self):
