@@ -165,12 +165,6 @@ except Exception:
 # =====================================================================
 
 
-@dataclass
-class SidebarWidgetDef:
-    widget: Any
-    key: str
-    view_target: str
-    icon: str
 
 
 class App(tk.Tk):
@@ -643,190 +637,13 @@ class App(tk.Tk):
         self.status_bar_frame = self.shell.status_bar_frame
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
-        try:
-            dpi_percent = self.tk.call("tk", "scaling") * 72
-            scale_factor = dpi_percent / 100.0
-        except Exception:
-            scale_factor = 1.0
-
-        sidebar_menu_size = int(56 * scale_factor)
-
-        # Build Sidebar Navigation
-        sidebar_items = [
-            (
-                "tab_hunt",
-                lambda: self.navigation.navigate_to("hunt"),
-                UI.FONT_SECTION,
-                "hunt",
-                "🎯",
-            ),
-            (
-                "tab_setup",
-                lambda: self.navigation.navigate_to("setup"),
-                UI.FONT_SECTION,
-                "setup",
-                "⚙️",
-            ),
-            (
-                "btn_build_manager",
-                lambda: self.navigation.navigate_to("build_manager"),
-                UI.FONT_SECTION,
-                "build_manager",
-                "🛠️",
-            ),
-            (
-                "btn_skill_manager",
-                lambda: self.navigation.navigate_to("skill_manager"),
-                UI.FONT_SECTION,
-                "skill_manager",
-                "⚔️",
-            ),
-            (
-                "btn_monster_manager",
-                lambda: self.navigation.navigate_to("monster_manager"),
-                UI.FONT_SECTION,
-                "monster_manager",
-                "🐉",
-            ),
-            (
-                "btn_class_manager",
-                lambda: self.navigation.navigate_to("class_manager"),
-                UI.FONT_SECTION,
-                "class_manager",
-                "shield",
-            ),
-            (
-                "btn_icon_manager",
-                lambda: self.navigation.navigate_to("icon_manager"),
-                UI.FONT_SECTION,
-                "icon_manager",
-                "icon_manager",
-            ),
-            (
-                "btn_scan_history",
-                lambda: self.navigation.navigate_to("scan_history"),
-                UI.FONT_SECTION,
-                "scan_history",
-                "🕒",
-            ),
-
-            (
-                "sidebar_activity_logs",
-                lambda: self.navigation.navigate_to("logs"),
-                UI.FONT_SECTION,
-                "logs",
-                "📋",
-            ),
-            (
-                "tab_stats",
-                lambda: self.navigation.navigate_to("stats"),
-                UI.FONT_SECTION,
-                "stats",
-                "📊",
-            ),
-            (
-                "sidebar_support",
-                lambda: self.navigation.navigate_to("help"),
-                UI.FONT_SECTION,
-                "help",
-                "❓",
-            ),
-        ]
-        self._sidebar_widgets = []
-
-        def apply_button_hover_effects(button, hover_color=None):
-            """Apply hover effects to a Tkinter button"""
-            default_bg = button.cget("bg")
-            default_fg = button.cget("fg")
-
-            hover_bg = hover_color or UI.BORDER_PRIMARY
-            hover_fg = UI.TEXT_PRIMARY if hover_color else default_fg
-
-            def on_enter(event):
-                if not getattr(button, "_sidebar_active", False):
-                    button.config(bg=hover_bg, fg=hover_fg, relief="flat")
-
-            def on_leave(event):
-                if not getattr(button, "_sidebar_active", False):
-                    button.config(bg=default_bg, fg=default_fg, relief="flat")
-
-            button.bind("<Enter>", on_enter)
-            button.bind("<Leave>", on_leave)
-
-        from ui.helpers.icon_helper import get_icon_helper
-        icon_helper = get_icon_helper()
-        self.icon_helper = icon_helper
-
-        for _item_idx, item in enumerate(sidebar_items):
-            key, command, font, view_target, icon = item
-
-            # Resolve icon: Use PhotoImage if it's a known non-emoji string, otherwise treat as emoji/text
-            is_image_icon = False
-            icon_img = None
-            if isinstance(icon, str) and len(icon) > 2 and hasattr(icon_helper, "has_icon_file") and icon_helper.has_icon_file(icon):
-                is_image_icon = True
-                icon_img = icon_helper.get_icon(icon, size=24, color=UI.TEXT_PRIMARY)
-
-            if command is None:
-                # Section label (not used in current items but keep logic for safety)
-                lbl = tk.Label(
-                    self.shell_zone_c1.get_content_frame(),
-                    bg=UI.BG_ELEVATED,
-                    fg=UI.TEXT_SECONDARY,
-                    font=font,
-                    anchor="w",
-                )
-                if is_image_icon and icon_img and not isinstance(icon_img, str):
-                    lbl.config(image=icon_img)
-                    lbl.image = icon_img
-                else:
-                    lbl.config(text=f"{icon}")
-                lbl.pack(fill="x", pady=(10, 4))
-                self._sidebar_widgets.append(SidebarWidgetDef(widget=lbl, key=key, view_target=view_target, icon=icon))
-            else:
-                menu_cell = tk.Frame(
-                    self.shell_zone_c1.get_content_frame(),
-                    bg=UI.BG_ELEVATED,
-                    width=sidebar_menu_size,
-                    height=sidebar_menu_size,
-                )
-                menu_cell.pack(pady=2)
-                menu_cell.pack_propagate(False)
-
-                btn = tk.Button(
-                    menu_cell,
-                    command=command,
-                    bg=UI.BG_ELEVATED,
-                    fg=UI.TEXT_PRIMARY,
-                    font=UI.FONT_TITLE,
-                    anchor="center",
-                    padx=0,
-                    pady=0,
-                    relief="flat",
-                    cursor="hand2",
-                )
-
-                if is_image_icon and icon_img and not isinstance(icon_img, str):
-                    btn.config(image=icon_img)
-                    btn.image = icon_img
-                    btn._icon_name = icon
-                else:
-                    btn.config(text=f" {icon} ")
-
-                apply_button_hover_effects(
-                    btn, hover_color=UI.BG_SURFACE
-                )
-
-                btn.pack(fill="both", expand=True)
-                self._sidebar_widgets.append(SidebarWidgetDef(widget=btn, key=key, view_target=view_target, icon=icon))
-
-                # Add tooltip
-                attach_i18n_tooltip(
-                    btn,
-                    key=key,
-                    ns="global",
-                    lang_provider=lambda: getattr(self, "lang", "en"),
-                )
+        from ui.components.sidebar_component import SidebarComponent
+        self.sidebar = SidebarComponent(
+            parent=self.shell_zone_c1.get_content_frame(),
+            app=self,
+            on_navigate_callback=self.switch_view
+        )
+        self.sidebar.pack(fill="both", expand=True)
 
         self.after(100, self._poll_log_queue)
         self.after(1000, self._update_logs_metrics)
@@ -1167,37 +984,8 @@ class App(tk.Tk):
 
     def _update_sidebar_state(self, view_key: str):
         # Update sidebar selected state
-        if hasattr(self, "_sidebar_widgets"):
-            for item in self._sidebar_widgets:
-                if isinstance(item.widget, tk.Button):
-                    _original_text = self._t(item.key)
-
-                    is_image = hasattr(item.widget, "image")
-
-                    if item.view_target == view_key:
-                        item.widget._sidebar_active = True
-                        item.widget.config(
-                            bg=UI.BG_SURFACE,
-                            fg=UI.ACCENT_GREEN,
-                        )
-                        if is_image and hasattr(item.widget, "_icon_name") and hasattr(self, "icon_helper"):
-                            new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=UI.ACCENT_GREEN)
-                            item.widget.config(image=new_icon)
-                            item.widget.image = new_icon
-                        elif not is_image:
-                            item.widget.config(text=f" {item.icon} ")
-                    else:
-                        item.widget._sidebar_active = False
-                        item.widget.config(
-                            bg=UI.BG_ELEVATED,
-                            fg=UI.TEXT_PRIMARY,
-                        )
-                        if is_image and hasattr(item.widget, "_icon_name") and hasattr(self, "icon_helper"):
-                            new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=UI.TEXT_PRIMARY)
-                            item.widget.config(image=new_icon)
-                            item.widget.image = new_icon
-                        elif not is_image:
-                            item.widget.config(text=f" {item.icon} ")
+        if hasattr(self, "sidebar"):
+            self.sidebar.set_active_tab(view_key)
 
     # Click Tab removed
 
@@ -1356,8 +1144,8 @@ class App(tk.Tk):
             module = usage.get("module_name")
             element_id = usage.get("ui_element_id")
 
-            if element_id and hasattr(self, "_sidebar_widgets"):
-                for item in self._sidebar_widgets:
+            if element_id and hasattr(self, "sidebar") and hasattr(self.sidebar, "_sidebar_widgets"):
+                for item in self.sidebar._sidebar_widgets:
                     if item.key == element_id:
                         widget = item.widget
                         if giant_icon and not isinstance(giant_icon, str):
@@ -1403,13 +1191,8 @@ class App(tk.Tk):
 
     def update_shell_translations(self):
         """Update i18n text for shell elements like sidebar."""
-        if hasattr(self, "_sidebar_widgets"):
-            for item in self._sidebar_widgets:
-                try:
-                    if isinstance(item.widget, tk.Label) or isinstance(item.widget, tk.Button):
-                        pass # Translations for sidebar now handled by tooltips
-                except Exception:
-                    pass
+        if hasattr(self, "sidebar"):
+            self.sidebar.update_translations()
 
 
     def _switch_to_tab(self, tab_index: int):
@@ -1901,7 +1684,7 @@ class App(tk.Tk):
 
     def _refresh_monster_rotation_list(self):
         """Refresh the configured monster rotation UI queue."""
-        if not hasattr(self, "monster_rotation_listbox"):
+        if "monster_rotation_listbox" not in self.state_controller.ui_widgets:
             return
 
         self.monster_rotation_listbox.delete(0, tk.END)
