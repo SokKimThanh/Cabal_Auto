@@ -1,5 +1,3 @@
-from lib.features.skills.skill_caster_service import SkillCasterService
-from lib.features.hunt.target_locator import TargetLocatorService
 from lib.features.hunt.window_selection_service import WindowSelectionService
 from dialogs.monster_picker import MonsterPickerDialog
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
@@ -11,8 +9,6 @@ from ui.controllers.hotkey_controller import HotkeyController
 
 
 
-from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
-from lib.features.hunt.hunt_runner import HuntRunner
 from lib.features.hunt.hunt_config import (
     ConfigManager,
     _sanitize_templates,
@@ -21,7 +17,6 @@ from lib.features.hunt.hunt_config import (
     save_config,
     save_hunt_config,
         )
-from ui.helpers.tooltip import attach_i18n_tooltip
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from ui.helpers.translation_binder import TranslationBinder
 from lib.i18n import t as i18n_t
@@ -37,8 +32,7 @@ from lib.ui.dialog_service import DialogService
 from datetime import datetime
 from pathlib import Path
 import queue
-from typing import Optional, Any
-from dataclasses import dataclass
+from typing import Optional
 
 # Add parent directory to path for lib imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -219,7 +213,6 @@ class App(tk.Tk):
             super().__init__()
             self._is_destroyed = False
 
-            from lib.ui.dialog_service import DialogService
             DialogService.set_default_parent(self)
             self._last_height_under_900 = False
 
@@ -266,28 +259,13 @@ class App(tk.Tk):
             raise
 
         # Initialize ScanController
-        from lib.features.hunt.scan_controller import ScanController
-        from ui.icon_library import Icons
 
-        def getter():
-            if hasattr(self, "_vision_engine") and self._vision_engine:
-                return self._vision_engine
-            from lib.vision.vision_engine import get_vision_engine
 
-            return get_vision_engine()
 
-        self.scan_controller = di_container.scan_controller if di_container else None
 
         # State Bookkeeping Extracted
         from ui.controllers.app_window_controller import AppWindowController
-        from ui.controllers.overlay_controller import (
-            OverlayController as AppOverlayController,
-        )
         from ui.controllers.window_tracker_controller import WindowTrackerController
-        from lib.features.monsters.monster_library_service import MonsterLibraryService
-        from lib.features.skills.skill_runtime_service import SkillRuntimeService
-        from lib.db.services.skill_service import SkillService as DbSkillService
-        from lib.db.services.class_service import ClassService as DbClassService
 
         if di_container:
             self.monster_library_service = di_container.monster_library_service
@@ -417,7 +395,7 @@ class App(tk.Tk):
             vision_menu.add_command(
                 label=self._t("vision_toggle_overlay"),
                 accelerator="Ctrl+Shift+O",
-                command=self.overlay_controller.toggle_overlay,
+                command=lambda: getattr(self, "overlay_controller").toggle_overlay() if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller") else None,
             )
 
             # Overlay Settings - using translations
@@ -426,7 +404,7 @@ class App(tk.Tk):
             )
             vision_menu.add_command(
                 label=overlay_settings_label,
-                command=self.overlay_controller.open_settings,
+                command=lambda: getattr(self, "overlay_controller").open_settings() if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller") else None,
             )
 
             menubar.add_cascade(label="Vision", menu=vision_menu)
@@ -445,8 +423,12 @@ class App(tk.Tk):
             Image is not None and ImageTk is not None and ImageDraw is not None
         )
 
-        self.monsters = self.monster_library_service.load_monsters()
-        if hasattr(self, "skill_service"):
+        if hasattr(self, "monster_library_service") and self.monster_library_service:
+            self.monsters = self.monster_library_service.load_monsters()
+        else:
+            self.monsters = []
+
+        if hasattr(self, "skill_service") and self.skill_service:
             self.monsters = self.skill_service._normalize_library_items(self.monsters)
 
         self.monster_selected_name = self.monsters[0].get("name", "Unknown") if self.monsters else None
@@ -551,7 +533,6 @@ class App(tk.Tk):
         }
 
         # Configuration is already migrated during load_hunt_config
-        from lib.features.hunt.window_selection_service import WindowSelectionService
 
         safe_area = get_valid_hunt_area(self.state_controller.hunt_cfg)
         self.state_controller.hunt_cfg["hunt_area"] = safe_area
@@ -705,7 +686,7 @@ class App(tk.Tk):
                 save_hunt_config(self.state_controller.hunt_cfg)
                 # Update bounds display
                 if hasattr(self, "state_controller"):
-                    self.state_controller._update_window_bounds_display()
+                    self.window_controller.update_window_bounds_display()
                 self.state_controller.set_ui_var('hunt_status', f"✓ Selected: {window_dict['title']}")
             except Exception:
                 logger.error("Error selecting window")
@@ -1104,9 +1085,9 @@ class App(tk.Tk):
         # Force a refresh in cache by passing something that bypasses it or clears it
         if hasattr(self.icon_helper, "_icon_cache"):
             # Clear cache for this icon key
-            keys_to_remove = [k for k in self.icon_helper._icon_cache.keys() if k.startswith(f"{event.icon_key}_")]
+            keys_to_remove = [k for k in self.icon_helper._cache.keys() if k.startswith(f"{event.icon_key}_")]
             for k in keys_to_remove:
-                del self.icon_helper._icon_cache[k]
+                del self.icon_helper._cache[k]
 
         # Resolve icon
         giant_icon = self.icon_helper.get_icon(event.icon_key, fallback=fallback, size=24)
@@ -1114,7 +1095,6 @@ class App(tk.Tk):
         for usage in usages:
             # Check module and element ID
             # For now, we mainly support Sidebar updates
-            module = usage.get("module_name")
             element_id = usage.get("ui_element_id")
 
             if element_id and hasattr(self, "sidebar") and hasattr(self.sidebar, "_sidebar_widgets"):
@@ -1154,7 +1134,7 @@ class App(tk.Tk):
         if hasattr(self, "state_controller") and hasattr(
             self.state_controller, "_update_window_bounds_display"
         ):
-            self.state_controller._update_window_bounds_display()
+            self.window_controller.update_window_bounds_display()
 
         # Optionally update tabs here, though the prompt primarily requests
         # Zone A widgets to change immediately without losing state.
@@ -1887,7 +1867,6 @@ class App(tk.Tk):
 
         if idx is not None:
             monster = self.monsters[idx]
-            self.state_controller._update_monster_estimate_label(monster)
             # Auto-apply monster config (templates, window_bounds, timing recommendations)
             from lib.features.hunt.hunt_setup_service import HuntSetupService
             HuntSetupService.apply_monster_to_hunt_quick(monster, self.state_controller)
@@ -1915,7 +1894,6 @@ class App(tk.Tk):
             return
         self.monster_selected_index = idx
         self.monster_selected_name = name
-        self.state_controller._update_monster_estimate_label(self.monsters[idx])
         self.on_monster_use_for_hunt()
 
     def _refresh_skill_slots_options(self):
@@ -1986,13 +1964,6 @@ class App(tk.Tk):
 
             if skill_type == "buff":
                 duration = 300
-                if hasattr(self, "skill_slot_duration_vars") and i < len(
-                    self.state_controller.skill_slot_duration_vars
-                ):
-                    try:
-                        duration = int(self.state_controller.skill_slot_duration_vars[i].get())
-                    except ValueError:
-                        pass
                 slot_data["duration_sec"] = duration
                 buff_slots.append(slot_data)
             else:
@@ -2012,13 +1983,12 @@ class App(tk.Tk):
         monster = self.monsters[self.monster_selected_index]
 
         from lib.features.hunt.config_validator import normalize_window_bounds_value
-        from lib.features.hunt.window_selection_service import WindowSelectionService
 
         # Apply window_bounds
         bounds = normalize_window_bounds_value(monster.get("window_bounds"))
         self.state_controller.current_window_bounds = bounds
         WindowSelectionService.update_bounds(self.state_controller.hunt_cfg, bounds)
-        self.state_controller._update_window_bounds_display()
+        self.window_controller.update_window_bounds_display()
 
         # Apply templates[] array to config
         templates = _sanitize_templates(monster.get("templates"))
@@ -2039,14 +2009,16 @@ class App(tk.Tk):
             self.state_controller.hunt_cfg["templates"] = []
 
         try:
-            stats = self.state_controller._calculate_monster_estimate(monster)
+            from lib.features.hunt.hunt_setup_service import HuntSetupService
+            stats = HuntSetupService.calculate_monster_estimate(monster)
         except Exception as e:
             DialogService.show_error(
                 self._t("monster_section"), self._t("monster_invalid").format(e=e)
             )
             return
         kill_time = stats["kill_time"]
-        attack_min, lost_timeout = self.state_controller._recommend_attack_settings(
+        from lib.features.hunt.hunt_setup_service import HuntSetupService
+        attack_min, lost_timeout = HuntSetupService.recommend_attack_settings(
             stats
         )
         self.state_controller.set_ui_var('attack_duration', f"{attack_min:.2f}")
@@ -2761,6 +2733,15 @@ def main():
                 # Setup DI Container
         from lib.core.app_container import AppContainer
         from lib.features.hunt.scan_controller import ScanController
+        from lib.features.monsters.monster_library_service import MonsterLibraryService
+        from lib.features.skills.skill_runtime_service import SkillRuntimeService
+        from lib.db.services.skill_service import SkillService as DbSkillService
+        from lib.db.services.class_service import ClassService as DbClassService
+        from lib.db.services.scan_service import ScanService
+        from ui.controllers.overlay_controller import OverlayController as AppOverlayController
+
+        from lib.core.app_container import AppContainer
+        from lib.features.hunt.scan_controller import ScanController
         from lib.features.hunt.hunt_runner import HuntRunner
         from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
         from lib.features.monsters.monster_library_service import MonsterLibraryService
@@ -2772,30 +2753,23 @@ def main():
         from lib.features.skills.skill_caster_service import SkillCasterService
         from lib.features.hunt.target_locator import TargetLocatorService
         from ui.icon_library import Icons
-        import tkinter as tk
         from lib.vision.vision_engine import get_vision_engine
 
-        # Initialize base app to pass to services that need it
-        app = App()
-
-        # Instantiate services
+        # Instantiate base services
         container = AppContainer()
         container.monster_library_service = MonsterLibraryService()
         container.skill_service = SkillRuntimeService()
         container.db_skill_service = DbSkillService()
         container.db_class_service = DbClassService()
         container.db_scan_service = ScanService()
-        container.overlay_controller = AppOverlayController(app)
         container.skill_caster_service = SkillCasterService()
 
-        # Inject container into app for intermediate use
-        app.monster_library_service = container.monster_library_service
-        app.skill_service = container.skill_service
-        app.db_skill_service = container.db_skill_service
-        app.db_class_service = container.db_class_service
-        app.db_scan_service = container.db_scan_service
+        # Initialize base app with DI container
+        app = App(di_container=container)
+
+        # Inject services that require app instance
+        container.overlay_controller = AppOverlayController(app)
         app.overlay_controller = container.overlay_controller
-        app.skill_caster_service = container.skill_caster_service
 
         container.scan_controller = ScanController(
             vision_engine_getter=lambda: getattr(app, "_vision_engine", None) or get_vision_engine(),
@@ -2804,6 +2778,7 @@ def main():
             show_results=app._show_scan_results,
             icons=Icons,
         )
+        # pylint: disable=attribute-defined-outside-init
         app.scan_controller = container.scan_controller
 
         container.hunt_runner = HuntRunner(
