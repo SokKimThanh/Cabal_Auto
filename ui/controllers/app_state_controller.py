@@ -5,6 +5,8 @@ import tkinter as tk
 from typing import Any, Dict, List, Optional
 import threading
 import copy
+from lib.features.skills.skill_runtime_service import SkillRuntimeService
+
 
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.i18n import t as i18n_t
@@ -188,6 +190,7 @@ class AppStateController:
             "global_hotkey_vision": tk.StringVar(master=root),
             "global_hotkey_monster": tk.StringVar(master=root),
             "monster_status": tk.StringVar(master=root),
+            "is_hunting": tk.BooleanVar(master=root, value=False),
             "training_mode": tk.BooleanVar(master=root, value=False),
             "global_hotkeys_enabled_legacy": tk.BooleanVar(master=root, value=True),
             "lang": tk.StringVar(master=root, value="vi"),
@@ -408,9 +411,7 @@ class AppStateController:
         )
 
     def is_bot_running(self) -> bool:
-        if hasattr(self.root, "hunt_orchestrator"):
-            return getattr(self.root.hunt_orchestrator, "hunt_running", False)
-        return False
+        return bool(self.get_ui_var("is_hunting"))
 
     def set_skill_slot(self, lane: str, position: int, skill_id: int) -> None:
         if lane not in self.skill_slots:
@@ -566,9 +567,10 @@ class AppStateController:
 
         labels = getattr(self, "skill_slot_key_labels", [])
         vars_ = getattr(self, "skill_slot_vars", [])
+        service = SkillRuntimeService()
         skills_by_name = {
             skill.get("name"): skill
-            for skill in getattr(self.root, "skills", [])
+            for skill in service.get_all_skills()
             if isinstance(skill, dict) and skill.get("name")
         }
         for idx, label in enumerate(labels):
@@ -582,9 +584,10 @@ class AppStateController:
 
         labels = getattr(self, "skill_slot_key_labels", [])
         vars_ = getattr(self, "skill_slot_vars", [])
+        service = SkillRuntimeService()
         skills_by_name = {
             skill.get("name"): skill
-            for skill in getattr(self.root, "skills", [])
+            for skill in service.get_all_skills()
             if isinstance(skill, dict) and skill.get("name")
         }
         seen: Dict[str, int] = {}

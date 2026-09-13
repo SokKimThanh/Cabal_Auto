@@ -1636,9 +1636,7 @@ class App(tk.Tk):
                 pass
 
     def _refresh_start_stop_visual(self):
-        is_running = hasattr(self, "hunt_orchestrator") and getattr(
-            self.hunt_orchestrator, "hunt_running", False
-        )
+        is_running = self.state_controller.is_bot_running()
 
         if is_running:
             text = self._t("stop_hunt")
@@ -1673,9 +1671,7 @@ class App(tk.Tk):
         elif hasattr(self.start_stop_btn, "config"):
             self.start_stop_btn.config(state="disabled")
 
-        is_running = hasattr(self, "hunt_orchestrator") and getattr(
-            self.hunt_orchestrator, "hunt_running", False
-        )
+        is_running = self.state_controller.is_bot_running()
         if is_running:
             self._request_stop_hunt()
         else:
@@ -1693,6 +1689,7 @@ class App(tk.Tk):
 
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
+            self.state_controller.set_ui_var('is_hunting', True)
             if self.state_controller.get_ui_var('hunt_status') is not None:
                 self.state_controller.set_ui_var('hunt_status', self._t("hunt_running"))
             if hasattr(self, "tab_hunt") and hasattr(
@@ -1700,6 +1697,7 @@ class App(tk.Tk):
             ):
                 self.tab_hunt.update_hunt_status_color("running")
         elif state in ["idle", "error", "stopped"]:
+            self.state_controller.set_ui_var('is_hunting', False)
             if state == "idle" and self.state_controller.get_ui_var('hunt_status') is not None:
                 self.state_controller.set_ui_var('hunt_status',
                     self._t("hunt_idle") if hasattr(self, "_t") else "Idle"
@@ -1715,9 +1713,7 @@ class App(tk.Tk):
         self._refresh_start_stop_visual()
 
     def _request_start_hunt(self):
-        if hasattr(self, "hunt_orchestrator") and getattr(
-            self.hunt_orchestrator, "hunt_running", False
-        ):
+        if self.state_controller.is_bot_running():
             return
 
         validation_error = WindowSelectionService.validate_prerequisites(self.state_controller.hunt_selected, self.state_controller.win_items, self.state_controller.hunt_cfg, self.state_controller.current_window_bounds)
