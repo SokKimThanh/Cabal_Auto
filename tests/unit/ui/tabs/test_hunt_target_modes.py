@@ -20,7 +20,7 @@ def mock_app(root):
     app.state_controller = MagicMock()
     app.state_controller.ui_vars = {}
     app.hunt_cfg = {}
-    app.click_running = False
+    app.state_controller.click_running = False
     app.monster_rotation = []
     app._t = lambda key, **kwargs: key
     app.on_skill_slot_changed = lambda e: None
