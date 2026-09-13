@@ -55,9 +55,11 @@ The heavy technical debt associated with the God Class (`AppStateController` and
 *According to `sprint30_plan.md`, Phase 2 could not be started until Phase 1 was fully complete and verified. Given that Phase 1 is now stable and all prompts 1-5 are completed, Phase 2 execution is unblocked.*
 
 ### Prompt 6: App GUI Extract Shell
-**Status:** Not Started.
+**Status:** Complete.
 **Findings:**
-- `app_gui.py` still acts as the God Class, manually handling window dimensions, title, UI grids, and Shell Zones. `AppShell` has not been implemented.
+- The root Tkinter window geometry, dimension limits, and grid layout setups have been successfully extracted into a dedicated `AppShell` component inside `ui/components/app_shell.py`.
+- `AppShell` provides properties for `main_shell`, `shell_zone_a`, `shell_zone_b`, `shell_zone_c1`, and `status_bar_frame`.
+- `app_gui.py` was refactored to instantiate `AppShell` during its initialization, reducing its direct responsibility for configuring the top-level Tk window and building basic layout partitions.
 
 ### Prompt 7: App GUI Navigation
 **Status:** Not Started.
@@ -80,4 +82,4 @@ The heavy technical debt associated with the God Class (`AppStateController` and
 - Unmanaged `self.root.after` calls are still scattered throughout `app_window_controller.py` and `app_gui.py`. `TaskScheduler` has not been implemented.
 
 ## Conclusion & Next Steps
-With Phase 1 state encapsulation completed and verified, the next sprint task should focus on executing Prompt 6: **App GUI Extract Shell**. This will begin the process of breaking down `app_gui.py` by centralizing the root window setup and shell zone configuration into an `AppShell` component.
+With Phase 1 completed, Phase 2 execution has begun. Prompt 6 was fully verified as `app_gui.py` successfully utilizes `AppShell` for root setup and core layout boundaries without regressions. The next logical step is to address Prompt 7: **App GUI Navigation**, to strip out the hardcoded `_views` management from `App` and transition it to a standalone `NavigationController`.

@@ -251,31 +251,9 @@ class App(tk.Tk):
             # Create config manager for wizard
             self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
 
-            self.title(self._t("app_title"))
-            self.resizable(True, True)
-
-            # Calculate scale factor for layout limits
-            try:
-                dpi_percent = self.tk.call("tk", "scaling") * 72
-                scale_factor = dpi_percent / 100.0
-            except Exception:
-                scale_factor = 1.0
-
-            self.minsize(int(1220 * scale_factor), int(656 * scale_factor))
-
-            screen_w = self.winfo_screenwidth()
-            screen_h = self.winfo_screenheight()
-
-            # Limit initial geometry to not cover taskbar/titlebar
-            max_init_w = screen_w - 20
-            max_init_h = screen_h - 80
-
-            w = min(1920, max_init_w)
-            h = min(1080, max_init_h)
-
-            x = max((screen_w - w) // 2, 0)
-            y = max((screen_h - h) // 2, 0)
-            self.geometry(f"{w}x{h}+{x}+{y}")
+            from ui.components.app_shell import AppShell
+            self.shell = AppShell(self)
+            self.shell.build()
         except Exception as e:
             print(f"[App.__init__] Error in early init: {e}")
             import traceback
@@ -657,17 +635,13 @@ class App(tk.Tk):
 
     # -----------------
     def _build_ui(self):
-        # Clear (for language rebuild)
-        for w in self.winfo_children():
-            w.destroy()
-
-        # Configure root grid weights
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # --- UX2.1: Core Grid Construction ---
-        # Isolated main container for the upcoming UI redesign
-        self.main_shell = tk.Frame(self, bg=UI.BG_BASE)
+        # We rebuild the shell layout first
+        self.shell.build()
+        self.main_shell = self.shell.main_shell
+        self.shell_zone_a = self.shell.shell_zone_a
+        self.shell_zone_b = self.shell.shell_zone_b
+        self.shell_zone_c1 = self.shell.shell_zone_c1
+        self.status_bar_frame = self.shell.status_bar_frame
 
         # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         try:
@@ -676,47 +650,7 @@ class App(tk.Tk):
         except Exception:
             scale_factor = 1.0
 
-        # Grid Configuration for main_shell (Explicit minsize & DPI Guard)
-        sidebar_width = int(64 * scale_factor)
         sidebar_menu_size = int(56 * scale_factor)
-        self.main_shell.columnconfigure(
-            0, minsize=sidebar_width, weight=0
-        )  # Vùng C1 - Sidebar
-        self.main_shell.columnconfigure(
-            1, minsize=int(960 * scale_factor), weight=1
-        )  # Vùng B - Workspace
-
-        self.main_shell.rowconfigure(
-            0, minsize=int(96 * scale_factor), weight=0
-        )  # Vùng A - Action Bar
-        self.main_shell.rowconfigure(
-            1, minsize=int(540 * scale_factor), weight=1
-        )  # Vùng B - Workspace
-
-        # Ensure main_shell fills root window
-        self.main_shell.grid_rowconfigure(1, weight=1)
-        self.main_shell.grid_columnconfigure(0, minsize=sidebar_width, weight=0)
-        self.main_shell.grid_columnconfigure(1, weight=1)
-
-        self.main_shell.rowconfigure(
-            2, minsize=int(36 * scale_factor), weight=0
-        )  # Vùng C2 - Logs, footer full-width
-
-        # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(96 * scale_factor))
-        self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
-        self.shell_zone_a.grid_propagate(False)
-
-        # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
-        from ui.components.base.responsive_grid_base import ResponsiveGridBase
-        self.shell_zone_c1 = ResponsiveGridBase(
-            self.main_shell, bg=UI.BG_ELEVATED, width=sidebar_width
-        )
-        self.shell_zone_c1.grid(row=1, column=0, rowspan=2, sticky="nsew")
-        # configure is not robust for ResponsiveGridBase directly due to canvas/frame layers
-        # so padding is applied to the inner frame instead if needed.
-        self.shell_zone_c1.get_content_frame().configure(padx=4, pady=12, bg=UI.BG_ELEVATED)
-        self.shell_zone_c1.grid_propagate(False)
 
         # Build Sidebar Navigation
         sidebar_items = [
@@ -894,10 +828,6 @@ class App(tk.Tk):
                     ns="global",
                     lang_provider=lambda: getattr(self, "lang", "en"),
                 )
-
-        # Vùng B: Active Hunt Workspace
-        self.shell_zone_b = tk.Frame(self.main_shell, bg=UI.BG_BASE)
-        self.shell_zone_b.grid(row=1, column=1, sticky="nsew")
 
         self.after(100, self._poll_log_queue)
         self.after(1000, self._update_logs_metrics)
@@ -1138,18 +1068,6 @@ class App(tk.Tk):
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
 
-        # DB Status Bar (bottom of window)
-        self.status_bar_frame = tk.Frame(
-            self,
-            bg=UI.BG_SUBTLE,
-            height=24,
-            bd=0,
-            highlightbackground=UI.BORDER_SUBTLE,
-            highlightthickness=1,
-        )
-        self.status_bar_frame.grid(row=1, column=0, columnspan=7, sticky="ew")
-        self.status_bar_frame.pack_propagate(False)
-
         self._db_status_bar = tk.Label(
             self.status_bar_frame,
             textvariable=self.state_controller.ui_vars['db_status'],
@@ -1175,8 +1093,7 @@ class App(tk.Tk):
         )
         self.right_status.pack(side="right", fill="y")
 
-        self.main_shell.grid(row=0, column=0, columnspan=7, sticky="nsew", pady=(10, 0))
-        print("[App._build_ui] ✓ UI build complete, main_shell gridded")
+        print("[App._build_ui] ✓ UI build complete, main_shell gridded via AppShell")
 
     def _build_global_apply_section(self):
         """Deprecated: Handled in Action Bar (shell_zone_a)."""
