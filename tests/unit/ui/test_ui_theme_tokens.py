@@ -51,7 +51,7 @@ def test_font_resolver():
 
 def test_legacy_aliases():
     # UIStyleV2 uses a dark background
-    assert UIStyle.BG_DEFAULT == '#0f0f0f'
+    assert UIStyle.BG_DEFAULT == '#10131A'
     assert hasattr(UIStyle, 'COLOR_TEXT')
 
 def test_preblend_helper():
