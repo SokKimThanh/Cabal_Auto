@@ -1,3 +1,4 @@
+from lib.events.event_bus import EventBus, HuntStatusUpdatedEvent
 import time
 import threading
 
@@ -21,25 +22,12 @@ from lib.system.hunt_logger import get_hunt_logger
 
 
 class HuntRunner:
-    def __init__(
-        self,
-        hunt_cfg: dict,
-        set_status: callable,
-        set_target_info: callable,
-        get_overlay_ctrl: callable,
-        get_notebook: callable,
-        tab_setup,
-        tab_hunt,
-        schedule_ui_task: callable,
-    ):
+    def __init__(self, hunt_cfg: dict, get_overlay_ctrl: callable, get_notebook: callable, tab_setup, tab_hunt):
         self.hunt_cfg = hunt_cfg
-        self.set_status = set_status
-        self.set_target_info = set_target_info
         self.get_overlay_ctrl = get_overlay_ctrl
         self.get_notebook = get_notebook
         self.tab_setup = tab_setup
         self.tab_hunt = tab_hunt
-        self.schedule_ui_task = schedule_ui_task
 
         # Vision engine
         self.vision_engine = VisionEngine()
@@ -135,4 +123,4 @@ class HuntRunner:
         return None, 0, ""
 
     def _update_status(self, text: str) -> None:
-        self.schedule_ui_task(lambda: self.set_status(text))
+        EventBus.trigger(HuntStatusUpdatedEvent(text))

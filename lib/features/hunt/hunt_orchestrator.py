@@ -1,4 +1,15 @@
 from lib.vision.target_bar_detector import TargetBarDetector
+from lib.events.event_bus import (
+    EventBus,
+    HuntStatusUpdatedEvent,
+    HuntStateChangedEvent,
+    TargetHpUpdatedEvent,
+    TargetStatusUpdatedEvent,
+    TargetInfoUpdatedEvent,
+    ClearTargetUIEvent,
+    SkillStatsUpdatedEvent
+)
+
 import time
 import threading
 from pathlib import Path
@@ -20,8 +31,6 @@ from database import find_monster_by_name_api
 class HuntOrchestrator:
     def __init__(
         self,
-        on_status_update: Callable[[str], None],
-        on_state_change: Callable[[str], None],  # "running", "idle", "error"
         locate_target: Callable[[Dict[str, Any]], tuple],  # (box, match_info)
         prepare_skill_runtime: Callable[[Dict[str, Any]], list],
         try_cast_skills: Callable,
@@ -29,33 +38,18 @@ class HuntOrchestrator:
         bring_window_to_front_by_hwnd: Callable[[int], bool],
         bring_window_to_front_by_pid: Callable[[int], bool],
         iconify_app: Callable[[], None],
-        update_skill_stats_display: Callable[[dict], None],
         get_hunt_selected: Callable[[], Dict[str, Any]],
-        schedule_ui_task: Callable[[Callable], None],
-        clear_target_ui: Callable[..., None] = None,
-        set_target_info: Callable[[str], None] = None,
         on_scene_monsters_detected: Callable[[tuple], None] = None,
-        update_target_status: Callable[[str], None] = None,
-        update_target_hp: Callable[[float], None] = None,
     ):
-        self.clear_target_ui = clear_target_ui
         self.on_scene_monsters_detected = on_scene_monsters_detected
-        self.set_target_info = set_target_info
-        self.update_target_status = update_target_status
-        self.update_target_hp = update_target_hp
-        self.on_status_update = on_status_update
-        self.on_state_change = on_state_change
         self.locate_target = locate_target
         self.prepare_skill_runtime = prepare_skill_runtime
         self.try_cast_skills = try_cast_skills
-
         self.bring_window_to_front = bring_window_to_front
         self.bring_window_to_front_by_hwnd = bring_window_to_front_by_hwnd
         self.bring_window_to_front_by_pid = bring_window_to_front_by_pid
         self.iconify_app = iconify_app
-        self.update_skill_stats_display = update_skill_stats_display
         self.get_hunt_selected = get_hunt_selected
-        self.schedule_ui_task = schedule_ui_task
 
         self.hunt_running = False
         self.hunt_thread = None
@@ -89,12 +83,8 @@ class HuntOrchestrator:
                         "input_capability",
                         "Background mode requested but no HWND found. Stopped.",
                     )
-                    self.schedule_ui_task(
-                        lambda: self.on_status_update(
-                            "Error: Background input unsupported (no HWND). Stopped."
-                        )
-                    )
-                    self.schedule_ui_task(lambda: self.on_state_change("error"))
+                    EventBus.trigger(HuntStatusUpdatedEvent('Error: Background input unsupported (no HWND). Stopped.'))
+                    EventBus.trigger(HuntStateChangedEvent("error"))
                     return
                 else:
                     logger.log_error(
@@ -116,12 +106,10 @@ class HuntOrchestrator:
                             "input_capability",
                             f"Background input capability is {state.value}. Fallback disabled. Hunt aborted.",
                         )
-                        self.schedule_ui_task(
-                            lambda: self.on_status_update(
+                        EventBus.trigger(HuntStatusUpdatedEvent(
                                 f"Error: Background input {state.value}. Stopped."
-                            )
-                        )
-                        self.schedule_ui_task(lambda: self.on_state_change("error"))
+                            ))
+                        EventBus.trigger(HuntStateChangedEvent("error"))
                         return
                     else:
                         logger.log_error(
@@ -135,7 +123,7 @@ class HuntOrchestrator:
             self.input_backend = ForegroundSendInputBackend()
 
         self.hunt_running = True
-        self.schedule_ui_task(lambda: self.on_state_change("running"))
+        EventBus.trigger(HuntStateChangedEvent("running"))
 
         def worker():
 
@@ -184,13 +172,11 @@ class HuntOrchestrator:
                 logger.log_error(
                     "hunt_loop", "Invalid rotation or empty rotation for policy."
                 )
-                self.schedule_ui_task(
-                    lambda: self.on_status_update(
+                EventBus.trigger(HuntStatusUpdatedEvent(
                         "Error: Invalid rotation or empty rotation for policy."
-                    )
-                )
+                    ))
                 self.hunt_running = False
-                self.schedule_ui_task(lambda: self.on_state_change("error"))
+                EventBus.trigger(HuntStateChangedEvent("error"))
                 return
 
             cycle_attempts = 0
@@ -273,7 +259,7 @@ class HuntOrchestrator:
                                 f"Validation failed: {validation.code}",
                             )
                             self.hunt_running = False
-                            self.schedule_ui_task(lambda: self.on_state_change("error"))
+                            EventBus.trigger(HuntStateChangedEvent("error"))
                             break
                     if (
                         cfg.get("bring_to_front_each_cycle")
@@ -324,7 +310,7 @@ class HuntOrchestrator:
                     # Process scene monsters
                     if frame is not None and scene_detector is not None:
                         scene_detector.process_frame(frame)
-                        runtime_queue.maybe_publish(self.schedule_ui_task)
+                        runtime_queue.maybe_publish(lambda func: EventBus.trigger(Event()))
 
                     # Expose attack queue for other services (CB2C)
                     # Use 'configured_only' as default, pulling configured IDs from cfg
@@ -357,21 +343,12 @@ class HuntOrchestrator:
                             hp_percent = target_hp_reader.calculate_target_hp_percent(
                                 frame
                             )
-                            if getattr(self, "update_target_hp", None):
-                                self.schedule_ui_task(
-                                    lambda hp=hp_percent: self.update_target_hp(hp)
-                                )
+                            EventBus.trigger(TargetHpUpdatedEvent(hp_percent))
 
                             if mode == "search":
-                                if getattr(self, "update_target_status", None):
-                                    self.schedule_ui_task(
-                                        lambda: self.update_target_status("APPROACHING")
-                                    )
+                                EventBus.trigger(TargetStatusUpdatedEvent("APPROACHING"))
                             elif mode == "attack":
-                                if getattr(self, "update_target_status", None):
-                                    self.schedule_ui_task(
-                                        lambda: self.update_target_status("ATTACKING")
-                                    )
+                                EventBus.trigger(TargetStatusUpdatedEvent("ATTACKING"))
 
                             if not have_target or (now - last_ocr_time) > 2.0:
                                 last_ocr_time = now
@@ -402,12 +379,7 @@ class HuntOrchestrator:
                                         m_hp = monster.get("hp", "Unknown")
                                         fmt = f"[ID: #{m_id}] {m_name} (HP: {m_hp})"
 
-                                        if getattr(self, "set_target_info", None):
-                                            self.schedule_ui_task(
-                                                lambda text=fmt: self.set_target_info(
-                                                    text
-                                                )
-                                            )
+                                        EventBus.trigger(TargetInfoUpdatedEvent(fmt))
 
                             have_target = True
                             last_seen = now
@@ -420,8 +392,7 @@ class HuntOrchestrator:
                                 have_target = False
                                 cached_target_id = None
                                 cached_target_name = None
-                                if getattr(self, "clear_target_ui", None):
-                                    self.schedule_ui_task(self.clear_target_ui)
+                                EventBus.trigger(ClearTargetUIEvent())
                     else:
                         consecutive_false_readings += 1
                         if consecutive_false_readings >= int(
@@ -430,8 +401,7 @@ class HuntOrchestrator:
                             have_target = False
                             cached_target_id = None
                             cached_target_name = None
-                            if getattr(self, "clear_target_ui", None):
-                                self.schedule_ui_task(self.clear_target_ui)
+                            EventBus.trigger(ClearTargetUIEvent())
 
                     if hasattr(self, "runtime_attack_queue"):
                         target_coordinator.update_runtime_queue(
@@ -443,11 +413,7 @@ class HuntOrchestrator:
                     ):
                         try:
                             all_stats = skill_stats.get_all_stats()
-                            self.schedule_ui_task(
-                                lambda stats=all_stats: self.update_skill_stats_display(
-                                    stats
-                                )
-                            )
+                            EventBus.trigger(SkillStatsUpdatedEvent(all_stats))
                             last_stats_update = now
                         except Exception:
                             pass
@@ -468,11 +434,9 @@ class HuntOrchestrator:
                                 "hunt_loop",
                                 f"Target acquire timeout ({target_acquire_timeout_sec}s). Backing off.",
                             )
-                            self.schedule_ui_task(
-                                lambda: self.on_status_update(
+                            EventBus.trigger(HuntStatusUpdatedEvent(
                                     f"Target acquire timeout. Retrying..."
-                                )
-                            )
+                                ))
                             search_started = now
                             backoff_wait = 1.0
                             while backoff_wait > 0 and self.hunt_running:
@@ -514,11 +478,7 @@ class HuntOrchestrator:
                                             "hunt_loop",
                                             f"Max cycle attempts reached ({target_cycle_max_attempts}). Backing off.",
                                         )
-                                        self.schedule_ui_task(
-                                            lambda: self.on_status_update(
-                                                f"Max cycle attempts ({target_cycle_max_attempts}). Retrying..."
-                                            )
-                                        )
+                                        EventBus.trigger(HuntStatusUpdatedEvent(f'Max cycle attempts ({target_cycle_max_attempts}). Retrying...'))
                                         backoff_wait = 1.0
                                         while backoff_wait > 0 and self.hunt_running:
                                             time.sleep(0.1)
@@ -616,12 +576,8 @@ class HuntOrchestrator:
                         mode = "search"
                         search_started = now
 
-                        if getattr(self, "update_target_status", None):
-                            self.schedule_ui_task(
-                                lambda: self.update_target_status("TARGET_DEAD")
-                            )
-                        if getattr(self, "update_target_hp", None):
-                            self.schedule_ui_task(lambda: self.update_target_hp(0.0))
+                        EventBus.trigger(TargetStatusUpdatedEvent("TARGET_DEAD"))
+                        EventBus.trigger(TargetHpUpdatedEvent(0.0))
 
                         # Clear UI cache on advance
                         cached_target_id = None
@@ -636,14 +592,14 @@ class HuntOrchestrator:
                                 except TypeError:
                                     self.clear_target_ui()
 
-                            self.schedule_ui_task(_safe_clear)
+                            EventBus.trigger(ClearTargetUIEvent())
 
                         time.sleep(0.05)
                     time.sleep(0.02)
             except Exception as e:
                 logger.log_error("hunt_loop", f"Hunt error: {str(e)}", e)
                 logger.log_hunt_stop("error")
-                self.schedule_ui_task(lambda: self.on_state_change("error"))
+                EventBus.trigger(HuntStateChangedEvent("error"))
             finally:
                 if getattr(self, "input_backend", None):
                     try:
@@ -662,7 +618,7 @@ class HuntOrchestrator:
                     except Exception:
                         pass
                 self.hunt_running = False
-                self.schedule_ui_task(lambda: self.on_state_change("idle"))
+                EventBus.trigger(HuntStateChangedEvent("idle"))
 
         self.hunt_thread = threading.Thread(target=worker, daemon=True)
         self.hunt_thread.start()

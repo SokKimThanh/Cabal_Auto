@@ -14,6 +14,34 @@ class IconManagerSyncEvent(Event):
     pass
 
 
+
+class HuntStatusUpdatedEvent(Event):
+    def __init__(self, status: str):
+        self.status = status
+
+class HuntStateChangedEvent(Event):
+    def __init__(self, state: str):
+        self.state = state
+
+class TargetHpUpdatedEvent(Event):
+    def __init__(self, hp_percent: float):
+        self.hp_percent = hp_percent
+
+class TargetStatusUpdatedEvent(Event):
+    def __init__(self, status: str):
+        self.status = status
+
+class TargetInfoUpdatedEvent(Event):
+    def __init__(self, info: str):
+        self.info = info
+
+class ClearTargetUIEvent(Event):
+    pass
+
+class SkillStatsUpdatedEvent(Event):
+    def __init__(self, stats: dict):
+        self.stats = stats
+
 class EventBus:
     _listeners: Dict[Type[Event], List[Callable[[Event], None]]] = {}
 
