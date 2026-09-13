@@ -310,8 +310,6 @@ class App(tk.Tk):
         self.state_controller.hunt_selected = {}
 
         # Safe fallback initializations to prevent AttributeError during startup
-        self.monster_rotation_listbox = None
-        self.detected_monsters_listbox = None
         self.btn_add_monster = None
         self.btn_move_up = None
         self.btn_move_down = None
@@ -1905,13 +1903,13 @@ class App(tk.Tk):
         if not hasattr(self, "detected_monsters_listbox"):
             return
 
-        current_selection = self.detected_monsters_listbox.curselection()
+        current_selection = self.state_controller.ui_widgets['detected_monsters_listbox'].curselection()
         selected_idx = current_selection[0] if current_selection else None
 
         # We need to maintain scroll position if possible
-        yview = self.detected_monsters_listbox.yview()
+        yview = self.state_controller.ui_widgets['detected_monsters_listbox'].yview()
 
-        self.detected_monsters_listbox.delete(0, tk.END)
+        self.state_controller.ui_widgets['detected_monsters_listbox'].delete(0, tk.END)
         self._detected_snapshot_items = []
 
         configured_keys = {
@@ -1941,21 +1939,21 @@ class App(tk.Tk):
             else:
                 display_text = f"❓ {self._t('monster_unidentified')} ({item.get('template_label', '')})"
 
-            self.detected_monsters_listbox.insert(tk.END, display_text)
+            self.state_controller.ui_widgets['detected_monsters_listbox'].insert(tk.END, display_text)
 
         if selected_idx is not None and selected_idx < len(
             self._detected_snapshot_items
         ):
-            self.detected_monsters_listbox.selection_set(selected_idx)
+            self.state_controller.ui_widgets['detected_monsters_listbox'].selection_set(selected_idx)
 
-        self.detected_monsters_listbox.yview_moveto(yview[0])
+        self.state_controller.ui_widgets['detected_monsters_listbox'].yview_moveto(yview[0])
 
     def _refresh_monster_rotation_list(self):
         """Refresh the configured monster rotation UI queue."""
         if not hasattr(self, "monster_rotation_listbox"):
             return
 
-        self.monster_rotation_listbox.delete(0, tk.END)
+        self.state_controller.ui_widgets['monster_rotation_listbox'].delete(0, tk.END)
 
         from database import get_monster_by_id_api, find_monster_by_name_api
 
@@ -1996,10 +1994,10 @@ class App(tk.Tk):
                     f"[{self._t('monster_rotation_unknown')}] {name} - Lv.-- | HP: --"
                 )
 
-            self.monster_rotation_listbox.insert(tk.END, display_str)
+            self.state_controller.ui_widgets['monster_rotation_listbox'].insert(tk.END, display_str)
 
     def _on_monster_move_up(self):
-        selection = self.monster_rotation_listbox.curselection()
+        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
         if not selection or selection[0] == 0:
             return
 
@@ -2016,10 +2014,10 @@ class App(tk.Tk):
 
         self._mark_unsaved()
         self._refresh_monster_rotation_list()
-        self.monster_rotation_listbox.selection_set(idx - 1)
+        self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(idx - 1)
 
     def _on_monster_move_down(self):
-        selection = self.monster_rotation_listbox.curselection()
+        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
         if not selection or selection[0] == len(self.monster_rotation) - 1:
             return
 
@@ -2036,10 +2034,10 @@ class App(tk.Tk):
 
         self._mark_unsaved()
         self._refresh_monster_rotation_list()
-        self.monster_rotation_listbox.selection_set(idx + 1)
+        self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(idx + 1)
 
     def _on_monster_delete_from_list(self, _evt=None):
-        selection = self.monster_rotation_listbox.curselection()
+        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
         if not selection:
             return
 
@@ -2062,7 +2060,7 @@ class App(tk.Tk):
 
         if len(self.monster_rotation) > 0:
             new_sel = min(first_deleted_index, len(self.monster_rotation) - 1)
-            self.monster_rotation_listbox.selection_set(new_sel)
+            self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(new_sel)
 
     def _on_monster_add_smart(self):
         def on_monster_selected(record):
@@ -2120,8 +2118,8 @@ class App(tk.Tk):
         title = self._t("hunt_monsters")
 
         # Reset listbox background to default
-        if hasattr(self, "monster_rotation_listbox"):
-            self.monster_rotation_listbox.config(bg="white")
+        if "monster_rotation_listbox" in self.state_controller.ui_widgets and self.state_controller.ui_widgets["monster_rotation_listbox"]:
+            self.state_controller.ui_widgets['monster_rotation_listbox'].config(bg="white")
 
         self.monster_frame.config(text=title)
 
@@ -2712,9 +2710,9 @@ class App(tk.Tk):
             self.hunt_tab.clear_target_card(delay_ms)
         if self.state_controller.get_ui_var('hunt_target_info') is not None:
             self.state_controller.set_ui_var('hunt_target_info', self._t("target_card.target_none"))
-        if hasattr(self, "monster_rotation_listbox"):
+        if "monster_rotation_listbox" in self.state_controller.ui_widgets and self.state_controller.ui_widgets["monster_rotation_listbox"]:
             try:
-                self.monster_rotation_listbox.selection_clear(0, tk.END)
+                self.state_controller.ui_widgets['monster_rotation_listbox'].selection_clear(0, tk.END)
             except Exception as e:
 
                 logging.debug(f"Failed to clear monster rotation listbox: {e}")
