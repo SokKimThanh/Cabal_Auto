@@ -1,6 +1,5 @@
 import copy
 import time
-import tkinter as tk
 from tkinter import messagebox
 from typing import Any, Dict
 
@@ -102,7 +101,7 @@ class OverlayController:
 
                             # Handle minimized window
                             if current_window.is_minimized:
-                                print(f"[Overlay] ⚠️ Game is minimized, restoring...")
+                                print("[Overlay] ⚠️ Game is minimized, restoring...")
                                 wm.restore(target_hwnd)
                                 time.sleep(0.3)
 
@@ -176,7 +175,7 @@ class OverlayController:
                             # Bring game window to foreground FIRST if minimized/hidden
                             try:
                                 if cabal_window.is_minimized:
-                                    print(f"[Overlay] Game is minimized, restoring...")
+                                    print("[Overlay] Game is minimized, restoring...")
                                     wm.restore(cabal_window.hwnd)
                                     time.sleep(0.3)  # Wait for window to restore
 
@@ -191,15 +190,15 @@ class OverlayController:
                                         )
                                     else:
                                         print(
-                                            f"[Overlay] ⚠️ Could not get window info after restore"
+                                            "[Overlay] ⚠️ Could not get window info after restore"
                                         )
 
                                 if not cabal_window.is_foreground:
                                     print(
-                                        f"[Overlay] Bringing game window to foreground..."
+                                        "[Overlay] Bringing game window to foreground..."
                                     )
                                     wm.set_foreground(cabal_window.hwnd)
-                                    print(f"[Overlay] ✅ Game window focused")
+                                    print("[Overlay] ✅ Game window focused")
                             except Exception as e:
                                 print(
                                     f"[Overlay] Failed to restore/foreground window: {e}"
@@ -442,7 +441,7 @@ class OverlayController:
                     ),
                 ]
                 self.parent._overlay_window.update_detections(test_boxes)
-                print(f"[Overlay] Test detection boxes updated")
+                print("[Overlay] Test detection boxes updated")
 
                 # Update menu/config
                 self.parent.hunt_cfg.setdefault("overlay", {})["enabled"] = True
