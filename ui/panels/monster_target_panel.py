@@ -243,12 +243,21 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         detected_btn_container = tk.Frame(self.detected_container, bg=UI.BG_SURFACE)
         detected_btn_container.pack(side="right", fill="y", padx=(8, 0))
+        def promote_current_selection():
+            selection = self.detected_monsters_listbox.curselection()
+            if not selection:
+                return
+            idx = selection[0]
+            if not hasattr(self.app, "_detected_snapshot_items") or idx >= len(self.app._detected_snapshot_items):
+                return
+            runtime_item = self.app._detected_snapshot_items[idx]
+            if hasattr(self.app, "monster_rotation_controller"):
+                self.app.monster_rotation_controller.promote_detected_monster(runtime_item)
+
         self.btn_promote_monster = tk.Button(
             detected_btn_container,
             text="➕",
-            command=lambda: getattr(
-                self.app, "promote_detected_monster", lambda x: None
-            )(self.detected_monsters_listbox.curselection()),
+            command=promote_current_selection,
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_PRIMARY,
             relief="flat",
@@ -262,18 +271,8 @@ class MonsterTargetPanel(ttk.LabelFrame):
             self.btn_promote_monster, self.app._t("monster_promote")
         )
 
-        self.detected_monsters_listbox.bind(
-            "<Double-1>",
-            lambda e: getattr(self.app, "promote_detected_monster", lambda x: None)(
-                self.detected_monsters_listbox.curselection()
-            ),
-        )
-        self.detected_monsters_listbox.bind(
-            "<Return>",
-            lambda e: getattr(self.app, "promote_detected_monster", lambda x: None)(
-                self.detected_monsters_listbox.curselection()
-            ),
-        )
+        self.detected_monsters_listbox.bind("<Double-1>", lambda e: promote_current_selection())
+        self.detected_monsters_listbox.bind("<Return>", lambda e: promote_current_selection())
 
         def on_drag_start(event):
             listbox = event.widget
@@ -317,9 +316,11 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     0 <= target_y <= target.winfo_height()
                     and 0 <= target_x <= target.winfo_width()
                 ):
-                    promote_fn = getattr(self.app, "promote_detected_monster", None)
-                    if promote_fn:
-                        promote_fn((event.widget.drag_data["source_idx"],))
+                    idx = event.widget.drag_data["source_idx"]
+                    if hasattr(self.app, "_detected_snapshot_items") and idx < len(self.app._detected_snapshot_items):
+                        runtime_item = self.app._detected_snapshot_items[idx]
+                        if hasattr(self.app, "monster_rotation_controller"):
+                            self.app.monster_rotation_controller.promote_detected_monster(runtime_item)
                 target.selection_clear(0, tk.END)
             del event.widget.drag_data
 
