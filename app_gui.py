@@ -29,7 +29,7 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
-from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent
+from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent
 from tkinter import filedialog, ttk
 import tkinter as tk
 import sys
@@ -315,6 +315,7 @@ class App(tk.Tk):
         EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
+        EventBus.bind(MonsterRotationUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._on_monster_rotation_updated))
 
         self.state_controller.hunt_selected = {}
 
@@ -1384,9 +1385,9 @@ class App(tk.Tk):
 
         is_running = self.state_controller.is_bot_running()
         if is_running:
-            self._request_stop_hunt()
+            self.hunt_controller.request_stop_hunt()
         else:
-            self._request_start_hunt()
+            self.hunt_controller.request_start_hunt()
 
         self.task_scheduler.schedule_task("reenable_start_stop_btn", 500, self._reenable_start_stop_btn, recurring=False)
 
@@ -1423,30 +1424,6 @@ class App(tk.Tk):
 
         self._refresh_start_stop_visual()
 
-    def _request_start_hunt(self):
-        if self.state_controller.is_bot_running():
-            return
-
-        validation_error = WindowSelectionService.validate_prerequisites(self.state_controller.hunt_selected, self.state_controller.win_items, self.state_controller.hunt_cfg, self.state_controller.current_window_bounds)
-        if validation_error:
-            DialogService.show_error(self._t("error_title"), validation_error, parent=self)
-            return
-
-        try:
-            cfg = self.state_controller.build_hunt_config_from_state()
-        except Exception as e:
-            DialogService.show_error(
-                self._t("error_title"), self._t("invalid_hunt").format(e=e)
-            )
-            return
-        save_hunt_config(cfg)
-        self.state_controller.hunt_cfg = cfg
-
-        self.hunt_orchestrator.start_hunt(self.state_controller.hunt_cfg)
-
-    def _request_stop_hunt(self):
-        if hasattr(self, "hunt_orchestrator"):
-            self.hunt_orchestrator.stop_hunt()
 
     # -----------------
     # Close
@@ -1538,73 +1515,19 @@ class App(tk.Tk):
         self.state_controller.set_ui_var('hunt_status', f"Rotation mode: {mode}")
 
 
-    def promote_detected_monster(self, selection):
-        if not selection:
-            return
-
-        idx = selection[0]
-        if not hasattr(self, "_detected_snapshot_items") or idx >= len(
-            self._detected_snapshot_items
-        ):
-            return
-
-        runtime_item = self._detected_snapshot_items[idx]
-
-        # Only db_match items with valid monster_id can be promoted
-        if runtime_item.get("resolution_state") != "db_match" or not runtime_item.get(
-            "monster_id"
-        ):
-            return
-
-        monster_id = runtime_item["monster_id"]
-        dungeon_id = runtime_item.get("dungeon_id")
-
-        # Check for duplicates
-        for existing in self.state_controller.monster_rotation:
-            if (
-                existing.get("monster_id") == monster_id
-                and existing.get("dungeon_id") == dungeon_id
-            ):
-                # Already exists
-                return
-
-        # Calculate new priority
-        max_priority = 0
-        for m in self.state_controller.monster_rotation:
-            if m.get("priority", 0) > max_priority:
-                max_priority = m.get("priority", 0)
-
-        new_priority = max_priority + 1
-
-        # Add to rotation
-        new_entry = {
-            "monster_id": monster_id,
-            "name": runtime_item.get("name", "Unknown"),
-            "priority": new_priority,
-            "dungeon_id": dungeon_id,
-        }
-        self.state_controller.monster_rotation.append(new_entry)
-
-        # Normalize priorities 1..N
-        self.state_controller.monster_rotation.sort(key=lambda x: x.get("priority", 999))
-        for i, m in enumerate(self.state_controller.monster_rotation, 1):
-            m["priority"] = i
-
-        self.has_unsaved_changes = True
-        if hasattr(self, "_update_unsaved_indicator"):
-            self._update_unsaved_indicator()
-
-        self._refresh_monster_rotation_list()
-
-        # We also need to refresh the detected list to show the 'Added' status
-        if hasattr(self, "_last_snapshot"):
-            self._update_detected_monsters_list(self._last_snapshot)
 
     def on_scene_monsters_detected(self, snapshot):
         # Throttle/ensure running on main thread is done by HuntOrchestrator
         self._last_snapshot = snapshot
         if self.state_controller.hunt_cfg.get("target_policy", "configured_only") == "all_resolved":
             self._update_detected_monsters_list(snapshot)
+
+    def _on_monster_rotation_updated(self):
+        if hasattr(self, "_update_unsaved_indicator"):
+            self._update_unsaved_indicator()
+        self._refresh_monster_rotation_list()
+        if hasattr(self, "_last_snapshot"):
+            self._update_detected_monsters_list(self._last_snapshot)
 
     def _update_detected_monsters_list(self, snapshot):
         if not hasattr(self, "detected_monsters_listbox"):
@@ -2826,6 +2749,21 @@ def main():
             get_hunt_selected=lambda: app.state_controller.hunt_selected,
         )
         app.hunt_orchestrator = container.hunt_orchestrator
+
+        from lib.ui.controllers.hunt_controller import HuntController
+        from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
+
+        container.hunt_controller = HuntController(
+            state_controller=app.state_controller,
+            hunt_orchestrator=app.hunt_orchestrator,
+            app_root=app
+        )
+        app.hunt_controller = container.hunt_controller
+
+        container.monster_rotation_controller = MonsterRotationController(
+            state_controller=app.state_controller
+        )
+        app.monster_rotation_controller = container.monster_rotation_controller
 
         app.protocol("WM_DELETE_WINDOW", app.on_close)
         print("[Main] Tkinter window initialized and mainloop starting...")

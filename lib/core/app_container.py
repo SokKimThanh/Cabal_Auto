@@ -16,3 +16,5 @@ class AppContainer:
     window_tracker_controller: Any = None
     hunt_runner: Any = None
     hunt_orchestrator: Any = None
+    hunt_controller: Any = None
+    monster_rotation_controller: Any = None
