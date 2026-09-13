@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 import threading
 import copy
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
+from lib.ui.stores.hunt_config_store import HuntConfigStore
+from lib.ui.stores.monster_session_manager import MonsterSessionManager
 
 
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
@@ -17,11 +19,15 @@ class AppStateController:
 
     @property
     def hunt_cfg(self) -> Dict[str, Any]:
-        return getattr(self, "_hunt_cfg", {})
+        if not hasattr(self, "_config_store"):
+            return {}
+        return self._config_store.get_config()
 
     @hunt_cfg.setter
     def hunt_cfg(self, value: Dict[str, Any]) -> None:
-        self._hunt_cfg = value
+        if not hasattr(self, "_config_store"):
+            self._config_store = HuntConfigStore()
+        self._config_store.set_config(value)
 
     @property
     def has_unsaved_changes(self) -> bool:
@@ -102,6 +108,10 @@ class AppStateController:
         self._overlay_update_thread = None
         self._overlay_stop_event = threading.Event()
 
+        # Stores
+        self._config_store = HuntConfigStore()
+        self._monster_session_manager = MonsterSessionManager()
+
         # Phase 7: Monster tracking integration
         self._vision_engine = None
         self._screen_capture = None
@@ -128,7 +138,6 @@ class AppStateController:
         self.monster_template_working = None
         self.monster_template_selected_index = None
         self._thumbnail_cache = {}
-        self.monster_rotation = []
         self.current_window_bounds = None
 
         self.ui_vars = {}
@@ -449,11 +458,23 @@ class AppStateController:
             self.skill_slots[lane][position]["is_ready"] = remaining <= 0.0
             self._emit_event("on_cooldown_updated")
 
+    @property
+    def monster_rotation(self):
+        if not hasattr(self, "_monster_session_manager"):
+            return []
+        return self._monster_session_manager.get_rotation()
+
+    @monster_rotation.setter
+    def monster_rotation(self, value):
+        if not hasattr(self, "_monster_session_manager"):
+            self._monster_session_manager = MonsterSessionManager()
+        self._monster_session_manager.set_rotation(value)
+
     def build_hunt_config_from_state(self) -> Dict[str, Any]:
 
         from lib.features.hunt.window_selection_service import WindowSelectionService
 
-        cfg = copy.deepcopy(getattr(self, "hunt_cfg", {}))
+        cfg = copy.deepcopy(self.hunt_cfg)
         if not isinstance(cfg.get("skill_slots"), list):
             cfg["skill_slots"] = []
 
