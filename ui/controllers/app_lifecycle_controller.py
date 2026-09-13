@@ -1,4 +1,3 @@
-import time
 from tkinter import messagebox
 
 from lib.features.hunt.hunt_config import save_hunt_config
@@ -69,9 +68,6 @@ class AppLifecycleController:
             f"[First-time check] window={has_window}, monster={has_monster}, skills={has_skills}, is_new={is_new_user}"
         )
 
-        # Track user response for persistence logic
-        user_skipped_wizard = False
-
         if is_new_user:
             print(
                 "[First-time check] Attempting auto window detection..."
@@ -115,7 +111,7 @@ class AppLifecycleController:
             if not hasattr(self.app, "hunt_selected") or not self.app.state_controller.hunt_selected:
                 print("[Auto Bring] No saved window to bring to front")
                 print(f"[Auto Bring] Window state: {self.app.state()}")
-                print(f"[Auto Bring] Calling deiconify()...")
+                print("[Auto Bring] Calling deiconify()...")
                 # Ensure app deiconifies even if there's no window to bring to front
                 if hasattr(self.app, "deiconify"):
                     self.app.deiconify()
@@ -210,8 +206,8 @@ class AppLifecycleController:
                 print(f"[DB] {bar_msg}")
 
                 detail = (
-                    f"CSDL monsters.db chưa hoàn chỉnh!\n\n"
-                    f"Các bảng bị thiếu:\n• " + "\n• ".join(missing)
+                    "CSDL monsters.db chưa hoàn chỉnh!\n\n"
+                    "Các bảng bị thiếu:\n• " + "\n• ".join(missing)
                 )
                 if result.get("error"):
                     detail = f"Lỗi kết nối CSDL:\n{result['error']}"

@@ -139,6 +139,7 @@ class AppStateController:
         self.monster_template_selected_index = None
         self._thumbnail_cache = {}
         self.current_window_bounds = None
+        self._collect_skill_slots_func: Any = None
 
         self.ui_vars = {}
         self.ui_widgets = {
@@ -209,17 +210,13 @@ class AppStateController:
             "template": tk.StringVar(master=root),
             "monster_status": tk.StringVar(master=root),
             "training_mode_hint": tk.StringVar(master=root),
-            "global_hotkey_library": tk.StringVar(master=root),
             "reg_l": tk.StringVar(master=root),
             "reg_t": tk.StringVar(master=root),
             "reg_w": tk.StringVar(master=root),
             "reg_h": tk.StringVar(master=root),
-            "global_hotkey_start": tk.StringVar(master=root),
-            "global_hotkey_stop": tk.StringVar(master=root),
             "global_hotkey_library": tk.StringVar(master=root),
             "global_hotkey_vision": tk.StringVar(master=root),
             "global_hotkey_monster": tk.StringVar(master=root),
-            "monster_status": tk.StringVar(master=root),
             "is_hunting": tk.BooleanVar(master=root, value=False),
             "training_mode": tk.BooleanVar(master=root, value=False),
             "global_hotkeys_enabled_legacy": tk.BooleanVar(master=root, value=True),
@@ -525,8 +522,9 @@ class AppStateController:
 
         cfg["bring_to_front_each_cycle"] = bool(self.get_ui_var("bring_front"))
         cfg["skill_slots"] = []
-        if hasattr(self, "_collect_skill_slots_func") and callable(self._collect_skill_slots_func):
-            collected = self._collect_skill_slots_func()
+        _collect_func = getattr(self, "_collect_skill_slots_func", None)
+        if _collect_func is not None and callable(_collect_func):
+            collected = _collect_func()  # pylint: disable=not-callable
             if isinstance(collected, list):
                 for s in collected:
                     if isinstance(s, dict):

@@ -1,10 +1,8 @@
 from typing import Any, Dict, List, Optional
 import tkinter as tk
 from tkinter import messagebox
-from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
-
-
 import logging
+from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +14,7 @@ class AppWindowController:
 
     def __init__(self, root: tk.Tk):
         self.root = root
+        self._refresh_locked = False
 
     def _list_windows(
         self, title_contains: Optional[str] = None
@@ -37,12 +36,12 @@ class AppWindowController:
 
         allowed_processes = ["cabal.exe", "cabalmain.exe"]
 
-        for info in windows:
-            title = (info.title or "").strip()
-            proc_name_lower = info.process_name.lower()
+        for window_info in windows:
+            title = (window_info.title or "").strip()
+            proc_name_lower = window_info.process_name.lower()
             
             if not title or title == own_title:
-                logger.debug(f"Skipped window: empty title or is own window")
+                logger.debug("Skipped window: empty title or is own window")
                 continue
 
             if proc_name_lower not in allowed_processes:
@@ -50,12 +49,12 @@ class AppWindowController:
                 continue
             results.append(
                 {
-                    "hwnd": int(info.hwnd),
-                    "pid": int(info.pid),
+                    "hwnd": int(window_info.hwnd),
+                    "pid": int(window_info.pid),
                     "title": title,
-                    "proc": info.process_name,
-                    "bounds": normalize_window_bounds_value(info.rect),
-                    "is_minimized": info.is_minimized,
+                    "proc": window_info.process_name,
+                    "bounds": normalize_window_bounds_value(window_info.rect),
+                    "is_minimized": window_info.is_minimized,
                 }
             )
 
@@ -74,9 +73,6 @@ class AppWindowController:
 
     def _retry_resolve_bounds(self, hwnd, attempt):
         from lib.features.hunt.window_detection_service import WindowDetectionService
-        import logging
-
-        logger = logging.getLogger(__name__)
 
         service = WindowDetectionService()
         success = service.restore_window_if_minimized(hwnd)
@@ -106,17 +102,17 @@ class AppWindowController:
         if hasattr(self, "root") and hasattr(self.root, "after"):
             self.root.after(500, lambda: setattr(self, "_refresh_locked", False))
 
-        from lib.features.hunt.window_detection_service import WindowDetectionService
+        from lib.system.window_manager import WindowManager
 
         selected = getattr(self.root, "hunt_selected", None)
         if selected and isinstance(selected, dict):
             hwnd = selected.get("hwnd")
             if hwnd:
-                service = WindowDetectionService()
-                bounds = service.get_window_bounds(hwnd)
+                wm = WindowManager()
+                window_info = wm.get_window_info(hwnd)
 
                 # Check if minimized or off-screen
-                if info and (info.is_minimized or info.is_offscreen):
+                if window_info and (window_info.is_minimized or window_info.is_offscreen):
                     logger.info(f"Window {hwnd} is minimized, attempting recovery...")
                     # Schedule restoration and window refresh (don't return early!)
                     self.root.after(300, self._retry_resolve_bounds, hwnd, 0)
@@ -187,10 +183,7 @@ class AppWindowController:
             logger.debug(f"  Combobox current index: {index}")
         except Exception as e:
             logger.debug(f"  Failed to get combobox index: {e}")
-            selected_title = (
-                self.root.state_controller.get_ui_var('win_combo').strip()
-                if True else ""
-            )
+            selected_title = self.root.state_controller.get_ui_var('win_combo').strip()
             logger.debug(f"  Trying to find by title: {selected_title}")
             for idx, item in enumerate(self.root.state_controller.win_items):
                 if item["title"] == selected_title:
@@ -238,7 +231,7 @@ class AppWindowController:
 
         selected = validation.window
         bounds = normalize_window_bounds_value(selected.get("bounds"))
-        logger.debug(f"  Validation passed, setting hunt_selected")
+        logger.debug("  Validation passed, setting hunt_selected")
 
         # Re-enable UI if it was locked
         if hasattr(self.root, "start_stop_btn"):
@@ -259,7 +252,7 @@ class AppWindowController:
         self.update_window_bounds_display()
         save_hunt_config(self.root.state_controller.hunt_cfg)
         self.root.state_controller.set_ui_var('hunt_status', f"Window selected: {selected['title']}")
-        logger.debug(f"  on_window_combo_selected() completed successfully")
+        logger.debug("  on_window_combo_selected() completed successfully")
 
     def _auto_detect_and_save_cabal_window(self) -> None:
         try:
@@ -332,9 +325,9 @@ class AppWindowController:
                 config_path=str(CONFIG_PATH),
                 on_close=getattr(self.root, "_on_vision_wizard_closed", lambda: None),
             )
-            print(f"[Vision] Wizard opened/focused: {wizard}")
+            print("[Vision] Wizard opened/focused:", wizard)
         except Exception as e:
-            print(f"[Vision] Error opening wizard: {e}")
+            print("[Vision] Error opening wizard:", e)
             import traceback
 
             traceback.print_exc()
