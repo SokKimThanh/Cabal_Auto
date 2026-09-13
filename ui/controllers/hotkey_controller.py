@@ -31,7 +31,11 @@ class HotkeyController:
 
     def register_all(self) -> None:
         """Registers all global hotkeys from config. Fallbacks to Tkinter bindings if keyboard module missing."""
-        hotkey_cfg = self.parent.hunt_cfg.get("global_hotkeys", {})
+        if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
+            hotkey_cfg = self.parent.state_controller.hunt_cfg.get("global_hotkeys", {})
+        else:
+            hotkey_cfg = getattr(self.parent, "hunt_cfg", {}).get("global_hotkeys", {})
+
         if not hotkey_cfg.get("enabled", True):
             print("[Hotkeys] Global hotkeys disabled by user")
             self._hotkeys_registered_ok = False
@@ -358,7 +362,11 @@ class HotkeyController:
     def on_setup_wizard(self, *_args) -> None:
         try:
             print("[Hotkeys] Setup Wizard hotkey pressed")
-            current_mode = self.parent.hunt_cfg.get("ui_mode", "beginner")
+            if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
+                current_mode = self.parent.state_controller.hunt_cfg.get("ui_mode", "beginner")
+            else:
+                current_mode = getattr(self.parent, "hunt_cfg", {}).get("ui_mode", "beginner")
+
             if current_mode != "beginner":
                 print(f"[Hotkeys] Setup Wizard blocked - current mode: {current_mode}")
                 return
