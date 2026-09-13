@@ -29,7 +29,7 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
-from lib.events.event_bus import EventBus, IconUpdatedEvent
+from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent
 from tkinter import filedialog, ttk
 import tkinter as tk
 import sys
@@ -306,6 +306,16 @@ class App(tk.Tk):
         self._detected_snapshot_items = []
         self._last_snapshot = None
         self.task_scheduler = TaskScheduler(self)
+
+        # --- Event Bus Bindings ---
+        EventBus.bind(HuntStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', e.status)))
+        EventBus.bind(HuntStateChangedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self._on_orchestrator_state_change(e.state)))
+        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.hunt_tab.update_hp_display(e.hp_percent) if hasattr(self, 'hunt_tab') else None))
+        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.hunt_tab.update_status(e.status) if hasattr(self, 'hunt_tab') else None))
+        EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
+        EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
+        EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
+
         self.state_controller.hunt_selected = {}
 
         # Safe fallback initializations to prevent AttributeError during startup
@@ -2798,19 +2808,14 @@ def main():
 
         container.hunt_runner = HuntRunner(
             hunt_cfg=app.state_controller.hunt_cfg,
-            set_status=lambda v: app.state_controller.set_ui_var('hunt_status', v),
-            set_target_info=lambda v: app.state_controller.set_ui_var('hunt_target_info', v),
             get_overlay_ctrl=lambda: getattr(app, "overlay_ctrl", None),
             get_notebook=lambda: getattr(app, "notebook", None),
             tab_setup=getattr(app, "tab_setup", None),
             tab_hunt=getattr(app, "tab_hunt", None),
-            schedule_ui_task=lambda fn: app.task_scheduler.schedule_task(None, 0, fn) if hasattr(app, "task_scheduler") else (app.after(0, fn) if hasattr(app, "after") else fn())
         )
         app.hunt_runner = container.hunt_runner
 
         container.hunt_orchestrator = HuntOrchestrator(
-            on_status_update=lambda v: app.state_controller.set_ui_var('hunt_status', v),
-            on_state_change=app._on_orchestrator_state_change,
             locate_target=TargetLocatorService.locate_target,
             prepare_skill_runtime=app.skill_caster_service.prepare_skill_runtime,
             try_cast_skills=app.skill_caster_service.try_cast_skills,
@@ -2818,13 +2823,7 @@ def main():
             bring_window_to_front_by_hwnd=app.window_controller._bring_window_to_front_by_hwnd,
             bring_window_to_front_by_pid=app.window_controller._bring_window_to_front_by_pid,
             iconify_app=app.iconify,
-            update_skill_stats_display=getattr(app, "update_skill_stats_display", lambda _: None),
             get_hunt_selected=lambda: app.state_controller.hunt_selected,
-            schedule_ui_task=lambda fn: app.task_scheduler.schedule_task(None, 0, fn) if hasattr(app, "task_scheduler") else (app.after(0, fn) if hasattr(app, "after") else fn()),
-            clear_target_ui=app.clear_target_ui,
-            set_target_info=lambda txt: getattr(app, "hunt_target_info", tk.StringVar()).set(txt),
-            update_target_status=lambda txt: (app.hunt_tab.update_status(txt) if hasattr(app, "hunt_tab") and hasattr(app.hunt_tab, "update_status") else None),
-            update_target_hp=lambda hp: (app.hunt_tab.update_hp_display(hp) if hasattr(app, "hunt_tab") and hasattr(app.hunt_tab, "update_hp_display") else None),
         )
         app.hunt_orchestrator = container.hunt_orchestrator
 
