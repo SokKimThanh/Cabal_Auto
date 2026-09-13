@@ -42,6 +42,13 @@ class SkillStatsUpdatedEvent(Event):
     def __init__(self, stats: dict):
         self.stats = stats
 
+class SceneMonstersDetectedEvent(Event):
+    def __init__(self, snapshot):
+        self.snapshot = snapshot
+
+class MonsterRotationUpdatedEvent(Event):
+    pass
+
 class EventBus:
     _listeners: Dict[Type[Event], List[Callable[[Event], None]]] = {}
 
@@ -50,6 +57,14 @@ class EventBus:
         if event_type not in cls._listeners:
             cls._listeners[event_type] = []
         cls._listeners[event_type].append(listener)
+
+    @classmethod
+    def unbind(cls, event_type: Type[Event], listener: Callable[[Event], None]) -> None:
+        if event_type in cls._listeners:
+            try:
+                cls._listeners[event_type].remove(listener)
+            except ValueError:
+                pass
 
     @classmethod
     def trigger(cls, event: Event) -> None:
