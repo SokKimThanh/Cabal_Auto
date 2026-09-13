@@ -129,6 +129,27 @@ class AppStateController:
         self.monster_rotation = []
         self.current_window_bounds = None
 
+        self.ui_vars = {}
+        self.ui_widgets = {
+            "monster_select_combo": None,
+            "monster_manager_win": None,
+            "skill_manager_win": None,
+            "monster_listbox": None,
+            "skill_listbox": None,
+            "skill_preview_label": None,
+            "monster_description_text": None,
+            "monster_template_listbox": None,
+            "monster_template_preview_label": None,
+            "monster_template_preview_image": None,
+        }
+        self.monster_template_region_vars = {}
+        self.monster_bounds_vars = {}
+
+        self.init_tkinter_vars(root)
+
+
+    def init_tkinter_vars(self, root: tk.Tk) -> None:
+        """Initializes all Tkinter variables securely within the controller lifecycle."""
         self.ui_vars = {
             "monster_select": tk.StringVar(master=root),
             "monster_name": tk.StringVar(master=root),
@@ -162,7 +183,7 @@ class AppStateController:
             "setup_lost_timeout": tk.StringVar(master=root),
             "setup_attack_duration": tk.StringVar(master=root),
             "setup_press_ms": tk.StringVar(master=root),
-                        "bring_front": tk.StringVar(master=root),
+            "bring_front": tk.StringVar(master=root),
             "global_hotkey_enabled": tk.BooleanVar(master=root),
             "global_hotkey_start": tk.StringVar(master=root),
             "global_hotkey_stop": tk.StringVar(master=root),
@@ -196,33 +217,8 @@ class AppStateController:
             "hotkey_status_detail": tk.StringVar(master=root),
             "bounds_status": tk.StringVar(master=root),
             "win_combo": tk.StringVar(master=root),
-            "template": tk.StringVar(master=root),
-            "attack_duration": tk.StringVar(master=root),
-            "lost_timeout": tk.StringVar(master=root),
             "rotation_mode": tk.StringVar(master=root, value="cycle"),
             "rotation_desc": tk.StringVar(master=root)
-        }
-
-        self.ui_widgets = {
-            "monster_select_combo": None,
-            "monster_manager_win": None,
-            "skill_manager_win": None,
-            "monster_listbox": None,
-            "skill_listbox": None,
-            "skill_preview_label": None,
-            "monster_description_text": None,
-            "monster_template_listbox": None,
-            "monster_template_preview_label": None,
-                        "monster_template_preview_image": None,
-            "monster_rotation_listbox": None,
-            "detected_monsters_listbox": None,
-            "monster_frame_panel": None,
-            "monster_frame": None,
-            "btn_add": None,
-            "btn_move_up": None,
-            "btn_move_down": None,
-            "btn_promote_monster": None,
-            "btn_remove_monster": None
         }
 
         self.monster_template_region_vars = {

@@ -44,6 +44,18 @@ class TestWindowDetectionRefreshFix(unittest.TestCase):
         self.root.current_window_bounds = None
         self.root.hunt_selected = None
         
+        win_combo_ref = self.win_combo
+
+        class MockStateController:
+            def __init__(self):
+                self.win_items = []
+                self.ui_widgets = {"win_combo": win_combo_ref}
+                self.ui_vars = {}
+            def get_ui_var(self, name): return None
+            def set_ui_var(self, name, value): pass
+
+        self.root.state_controller = MockStateController()
+
         # Import after root exists
         from ui.controllers.app_window_controller import AppWindowController
         self.controller = AppWindowController(self.root)
@@ -91,12 +103,12 @@ class TestWindowDetectionRefreshFix(unittest.TestCase):
         print(f"   Combobox values: {new_values}")
         
         # Verify win_items was set
-        self.assertTrue(hasattr(self.root, 'win_items'))
-        print(f"   win_items set: {len(self.root.win_items)} windows")
+        self.assertTrue(hasattr(self.root.state_controller, 'win_items'))
+        print(f"   win_items set: {len(self.root.state_controller.win_items)} windows")
         
         # If windows were found, they should appear in combobox
-        if self.root.win_items:
-            titles = [item['title'] for item in self.root.win_items]
+        if self.root.state_controller.win_items:
+            titles = [item['title'] for item in self.root.state_controller.win_items]
             self.assertEqual(list(new_values), titles)
             print(f"   ✅ Combobox values match win_items")
             
