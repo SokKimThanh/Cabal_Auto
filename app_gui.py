@@ -222,6 +222,11 @@ class App(tk.Tk):
             from lib.ui.dialog_service import DialogService
             DialogService.set_default_parent(self)
             self._last_height_under_900 = False
+
+            # Initialize State Controller early
+            from ui.controllers.app_state_controller import AppStateController
+            self.state_controller = AppStateController(self)
+
             # Load config and language
             self.cfg = load_config()
             self.state_controller.hunt_cfg = load_hunt_config()
@@ -287,7 +292,6 @@ class App(tk.Tk):
         from ui.controllers.window_tracker_controller import WindowTrackerController
         from lib.features.monsters.monster_library_service import MonsterLibraryService
         from lib.features.skills.skill_runtime_service import SkillRuntimeService
-        from ui.controllers.app_state_controller import AppStateController
         from lib.db.services.skill_service import SkillService as DbSkillService
         from lib.db.services.class_service import ClassService as DbClassService
 
@@ -299,7 +303,7 @@ class App(tk.Tk):
         self.db_scan_service = ScanService()
         self.overlay_controller = AppOverlayController(self)
         self.skill_caster_service = SkillCasterService()
-        self.state_controller = AppStateController(self)
+
         self.state_controller._collect_skill_slots_func = getattr(self, '_collect_skill_slots', None)
         self.state_controller.ui_widgets['unsaved_indicator_func'] = getattr(self, '_update_unsaved_indicator', None)
         self.window_controller = AppWindowController(self)

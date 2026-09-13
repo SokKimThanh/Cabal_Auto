@@ -27,6 +27,8 @@ def test_hotkey_controller_register_all(mock_keyboard):
 
     parent = MagicMock()
     parent.hunt_cfg = hunt_cfg
+    parent.state_controller = MagicMock()
+    parent.state_controller.hunt_cfg = hunt_cfg
 
     controller = HotkeyController(parent, hunt_cfg)
     controller.register_all()
@@ -57,6 +59,8 @@ def test_hotkey_controller_unregister_all(mock_keyboard):
 
     parent = MagicMock()
     parent.hunt_cfg = hunt_cfg
+    parent.state_controller = MagicMock()
+    parent.state_controller.hunt_cfg = hunt_cfg
 
     controller = HotkeyController(parent, hunt_cfg)
 
@@ -76,6 +80,8 @@ def test_hotkey_controller_on_setup_wizard():
 
     parent = MagicMock()
     parent.hunt_cfg = hunt_cfg
+    parent.state_controller = MagicMock()
+    parent.state_controller.hunt_cfg = hunt_cfg
     parent._setup_wizard_win = None
     parent.setup_wizard_win = None
     parent._setup_wizard = None
