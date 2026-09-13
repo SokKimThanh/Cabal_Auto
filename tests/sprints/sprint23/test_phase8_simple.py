@@ -22,7 +22,7 @@ def test_imports_work_on_windows():
         from lib.system import screen_capture, window_manager
 
         print("✓ Imports successful")
-        assert True
+        assert "screen_capture" in locals() and "window_manager" in locals()
     except ImportError as e:
         print(f"✗ Import failed: {e}")
         assert False, f"Import error: {e}"

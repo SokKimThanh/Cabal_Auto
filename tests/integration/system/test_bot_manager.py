@@ -324,7 +324,7 @@ class TestThreadSafety:
 
         # Should not crash (thread-safe)
         # Final state depends on timing, just verify no exceptions
-        assert True
+        assert not t1.is_alive() and not t2.is_alive()
 
     def test_concurrent_state_access(self, manager):
         """Test concurrent state access is thread-safe"""
