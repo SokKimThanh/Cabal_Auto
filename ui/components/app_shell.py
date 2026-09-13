@@ -3,9 +3,9 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 
 class AppShell:
-    def __init__(self, root, app=None):
+    def __init__(self, root, app):
         self.root = root
-        self.app = app if app is not None else root
+        self.app = app
 
         # UI Zones
         self.main_shell = None
@@ -14,12 +14,16 @@ class AppShell:
         self.shell_zone_c1 = None
         self.status_bar_frame = None
 
-    def build(self):
-        # --- Window Configuration ---
+    def update_title(self):
+        """Updates the root window title based on current language translation."""
         if hasattr(self.app, "_t"):
             self.root.title(self.app._t("app_title"))
         else:
             self.root.title("AutoHunt")
+
+    def build(self):
+        # --- Window Configuration ---
+        self.update_title()
 
         self.root.resizable(True, True)
 
@@ -47,9 +51,9 @@ class AppShell:
         self.root.geometry(f"{w}x{h}+{x}+{y}")
 
         # --- Theme Initialization ---
-        # Note: UIStyleV2.apply is typically called before or during this phase.
-        # For safety we just let the parent handle the style application if it does,
-        # or it will be done here. Usually in UIStyleV2, we might not need to call a method unless defined.
+        # Note: UIStyleV2 acts strictly as a namespace for global UI style constants
+        # and does not contain an `.apply()` method. We apply the base window background here.
+        self.root.configure(bg=UI.BG_BASE)
 
         # --- Grid Configuration ---
         # Clear (for language rebuild)

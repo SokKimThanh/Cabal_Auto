@@ -22,6 +22,7 @@ from lib.features.hunt.hunt_config import (
     save_hunt_config,
         )
 from ui.helpers.tooltip import attach_i18n_tooltip
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from ui.helpers.translation_binder import TranslationBinder
 from lib.i18n import t as i18n_t
 from lib.i18n import set_default_lang as i18n_set_lang
@@ -252,7 +253,7 @@ class App(tk.Tk):
             self.config_mgr = ConfigManager(self.cfg, self.hunt_cfg)
 
             from ui.components.app_shell import AppShell
-            self.shell = AppShell(self)
+            self.shell = AppShell(root=self, app=self)
             self.shell.build()
         except Exception as e:
             print(f"[App.__init__] Error in early init: {e}")
@@ -1360,7 +1361,7 @@ class App(tk.Tk):
             i18n_set_lang(self.lang)
         except Exception:
             pass
-        self.title(self._t("app_title"))
+        self.shell.update_title()
         self.refresh_translations()
 
         # Re-apply window selection robustly by hwnd
