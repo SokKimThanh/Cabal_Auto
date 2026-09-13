@@ -184,14 +184,9 @@ def test_old_imports():
     print("\nTesting removed imports...")
     print("=" * 60)
 
-    # Test that lib.ui is cleanly removed
-    print("\n7. Testing lib.ui removal...")
-    try:
-        import lib.ui
-
-        assert False, "lib.ui is still accessible - removal incomplete!"
-    except ImportError:
-        print("   ✅ lib.ui removed (clean)")
+    # lib.ui has been repurposed for new services (like DialogService).
+    # We no longer assert that it's removed.
+    print("\n7. Testing lib.ui removal... (Skipped due to repurposed lib/ui)")
 
     print("\n" + "=" * 60)
 

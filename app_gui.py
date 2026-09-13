@@ -29,9 +29,10 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.events.event_bus import EventBus, IconUpdatedEvent
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, ttk
 import tkinter as tk
 import sys
+from lib.ui.dialog_service import DialogService
 from datetime import datetime
 from pathlib import Path
 import queue
@@ -222,6 +223,9 @@ class App(tk.Tk):
         try:
             super().__init__()
             self._is_destroyed = False
+
+            from lib.ui.dialog_service import DialogService
+            DialogService.set_default_parent(self)
             self._last_height_under_900 = False
             # Load config and language
             self.cfg = load_config()
@@ -461,7 +465,7 @@ class App(tk.Tk):
                 # Inform the user that a legacy migration occurred (attack_keys -> skill_slots)
                 try:
                     # Show a gentle migration notice (one-time modal)
-                    messagebox.showinfo(
+                    DialogService.show_info(
                         self._t("migration_legacy_attack_keys_title"),
                         self._t("migration_legacy_attack_keys_message"),
                     )
@@ -506,7 +510,7 @@ class App(tk.Tk):
                             info_msg = self._t(
                                 "migration_legacy_attack_keys_auto_mapped"
                             ).format(mapped=mapped)
-                            messagebox.showinfo(self._t("skill_section"), info_msg)
+                            DialogService.show_info(self._t("skill_section"), info_msg)
                         except Exception:
                             pass
                         # also set a short hunt status message
@@ -1316,9 +1320,8 @@ class App(tk.Tk):
                 if scanned_class_id is not None:
                     current_class_id = getattr(self.state_controller.root, "_current_class_id", 1)
                     if scanned_class_id != current_class_id:
-                        import tkinter.messagebox as messagebox
                         msg = self._t("msg_class_scan_mismatch") if hasattr(self, "_t") else "Scanned class differs from selected class. Update?"
-                        if messagebox.askyesno("Warning", msg, parent=self):
+                        if DialogService.ask_yes_no("Warning", msg, parent=self):
                             if hasattr(self.state_controller, "set_current_class"):
                                 self.state_controller.set_current_class(scanned_class_id)
 
@@ -1719,13 +1722,13 @@ class App(tk.Tk):
 
         validation_error = WindowSelectionService.validate_prerequisites(self.state_controller.hunt_selected, self.state_controller.win_items, self.state_controller.hunt_cfg, self.state_controller.current_window_bounds)
         if validation_error:
-            messagebox.showerror(self._t("error_title"), validation_error, parent=self)
+            DialogService.show_error(self._t("error_title"), validation_error, parent=self)
             return
 
         try:
             cfg = self.state_controller.build_hunt_config_from_state()
         except Exception as e:
-            messagebox.showerror(
+            DialogService.show_error(
                 self._t("error_title"), self._t("invalid_hunt").format(e=e)
             )
             return
@@ -1750,7 +1753,7 @@ class App(tk.Tk):
         TODO Phase 2: Implement region scanning with overlay.
         """
         print("[Vision] Scan region - TODO Phase 2")
-        messagebox.showinfo(
+        DialogService.show_info(
             "Vision - Scan Region",
             "Scan Region feature will be available in Phase 2.\n\n"
             "This will allow you to:\n"
@@ -1790,7 +1793,7 @@ class App(tk.Tk):
 
                 # TODO Phase 2: Add to config
                 # For now, just show success message
-                messagebox.showinfo(
+                DialogService.show_info(
                     "Vision - Add Template",
                     f"Template selected:\n{file_path}\n\n"
                     "Full integration will be available in Phase 2.\n"
@@ -1799,7 +1802,7 @@ class App(tk.Tk):
 
         except Exception as e:
             print(f"[Vision] Error adding template: {e}")
-            messagebox.showerror(
+            DialogService.show_error(
                 self._t("error") if hasattr(self, "_t") else "Error",
                 f"Cannot add template:\n{e}",
             )
@@ -2071,7 +2074,7 @@ class App(tk.Tk):
                     entry.get("monster_id") == monster_id
                     and entry.get("dungeon_id") == dungeon_id
                 ):
-                    messagebox.showinfo(
+                    DialogService.show_info(
                         self._t("info_title", ns="ui"),
                         self._t("monster_already_in_list").format(name=record["name"]),
                         parent=self,
@@ -2191,7 +2194,7 @@ class App(tk.Tk):
             return
         name = self.state_controller.get_ui_var('monster_select').strip()
         if not name:
-            messagebox.showinfo(
+            DialogService.show_info(
                 self._t("monster_section"), self._t("monster_not_selected")
             )
             return
@@ -2201,7 +2204,7 @@ class App(tk.Tk):
                 idx = i
                 break
         if idx is None:
-            messagebox.showinfo(
+            DialogService.show_info(
                 self._t("monster_section"), self._t("monster_not_selected")
             )
             return
@@ -2297,7 +2300,7 @@ class App(tk.Tk):
         if self.monster_selected_index is None or self.monster_selected_index >= len(
             self.monsters
         ):
-            messagebox.showinfo(
+            DialogService.show_info(
                 self._t("monster_section"), self._t("monster_not_selected")
             )
             return
@@ -2333,7 +2336,7 @@ class App(tk.Tk):
         try:
             stats = self.state_controller._calculate_monster_estimate(monster)
         except Exception as e:
-            messagebox.showerror(
+            DialogService.show_error(
                 self._t("monster_section"), self._t("monster_invalid").format(e=e)
             )
             return
@@ -2588,7 +2591,7 @@ class App(tk.Tk):
                 # Filter out empty or None hotkeys
                 all_keys = [k for k in all_keys if k]
                 if len(all_keys) != len(set(all_keys)):
-                    messagebox.showerror(
+                    DialogService.show_error(
                         self._t("error_title"),
                         (
                             "All hotkeys must be different!"
@@ -2614,11 +2617,11 @@ class App(tk.Tk):
             self.state_controller.set_ui_var('hunt_status', self._t("all_saved"))
 
             # 6. Show success message
-            messagebox.showinfo(
+            DialogService.show_info(
                 self._t("success_title"), self._t("settings_applied_message")
             )
         except Exception as e:
-            messagebox.showerror(
+            DialogService.show_error(
                 self._t("error_title"), f"Failed to apply settings: {e}"
             )
 
@@ -3014,7 +3017,7 @@ def main():
         root = tk.Tk()
         root.withdraw()  # Hide main window
 
-        messagebox.showerror(
+        DialogService.show_error(
             "⚠️ Application Already Running | Ứng dụng đã chạy",
             "❌ CANNOT START: Another instance is already running!\n\n"
             "📌 Only ONE instance can run at a time.\n"
