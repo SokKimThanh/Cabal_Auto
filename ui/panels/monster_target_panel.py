@@ -34,11 +34,11 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
     def _build_ui(self):
         # We also maintain monster frame panel properties if needed for backward compatibility
-        self.app.state_controller.ui_widgets['monster_frame_panel'] = StyledPanel(self, show_border=False)
-        self.app.state_controller.ui_widgets['monster_frame'] = self.app.state_controller.ui_widgets['monster_frame_panel'].get_content_frame()
-        self.app.state_controller.ui_widgets['monster_frame'].pack(fill="both", expand=True)
+        self.monster_frame_panel = StyledPanel(self, show_border=False)
+        self.monster_frame = self.monster_frame_panel.get_content_frame()
+        self.monster_frame.pack(fill="both", expand=True)
 
-        mode_bar = tk.Frame(self.app.state_controller.ui_widgets['monster_frame'], bg=UI.BG_SURFACE)
+        mode_bar = tk.Frame(self.monster_frame, bg=UI.BG_SURFACE)
         mode_bar.pack(fill="x", padx=10, pady=(0, 8))
 
         self.app.state_controller.set_ui_var('target_policy', self.app.state_controller.hunt_cfg.get("target_policy", "configured_only"))
@@ -90,7 +90,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             rb.pack(side="left", padx=2, pady=4)
             self.policy_radios.append(rb)
 
-        self.policy_content_frame = tk.Frame(self.app.state_controller.ui_widgets['monster_frame'], bg=UI.BG_SURFACE)
+        self.policy_content_frame = tk.Frame(self.monster_frame, bg=UI.BG_SURFACE)
         self.policy_content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         self.configured_container = tk.Frame(self.policy_content_frame, bg=UI.BG_SURFACE)
@@ -114,7 +114,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         listbox_frame = tk.Frame(list_container, bg=UI.BG_SURFACE)
         listbox_frame.pack(side="left", fill="both", expand=True)
 
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'] = tk.Listbox(
+        self.monster_rotation_listbox = tk.Listbox(
             listbox_frame,
             height=5,
             exportselection=False,
@@ -127,15 +127,17 @@ class MonsterTargetPanel(ttk.LabelFrame):
             highlightthickness=0,
             relief="flat",
         )
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'].pack(side="left", fill="both", expand=True)
+        self.monster_rotation_listbox.pack(side="left", fill="both", expand=True)
+        # Register in app for legacy controller access for now, but not in UI state widgets
+        self.app.monster_rotation_listbox = self.monster_rotation_listbox
 
         monster_scroll = ttk.Scrollbar(
             listbox_frame,
             orient="vertical",
-            command=self.app.state_controller.ui_widgets['monster_rotation_listbox'].yview,
+            command=self.monster_rotation_listbox.yview,
         )
         monster_scroll.pack(side="right", fill="y")
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'].config(yscrollcommand=monster_scroll.set)
+        self.monster_rotation_listbox.config(yscrollcommand=monster_scroll.set)
 
         # Create a toolbar frame with a subtle background and rounded-like appearance
         btn_container = tk.Frame(
@@ -147,7 +149,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
-        self.app.state_controller.ui_widgets['btn_add'] = tk.Button(
+        self.btn_add = tk.Button(
             btn_container,
             text="➕",
             command=self.app._on_monster_add_smart,
@@ -159,12 +161,12 @@ class MonsterTargetPanel(ttk.LabelFrame):
             pady=4,
             cursor="hand2"
         )
-        self.app.state_controller.ui_widgets['btn_add'].pack(pady=(0, 4))
+        self.btn_add.pack(pady=(0, 4))
         self.app._create_tooltip(
-            self.app.state_controller.ui_widgets['btn_add'], self.app._t("monster_rotation_add")
+            self.btn_add, self.app._t("monster_rotation_add")
         )
 
-        self.app.state_controller.ui_widgets['btn_move_up'] = tk.Button(
+        self.btn_move_up = tk.Button(
             btn_container,
             text="↑",
             command=self.app._on_monster_move_up,
@@ -176,9 +178,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
             pady=4,
             cursor="hand2"
         )
-        self.app.state_controller.ui_widgets['btn_move_up'].pack(pady=(0, 4))
+        self.btn_move_up.pack(pady=(0, 4))
 
-        self.app.state_controller.ui_widgets['btn_move_down'] = tk.Button(
+        self.btn_move_down = tk.Button(
             btn_container,
             text="↓",
             command=self.app._on_monster_move_down,
@@ -190,9 +192,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
             pady=4,
             cursor="hand2"
         )
-        self.app.state_controller.ui_widgets['btn_move_down'].pack(pady=(0, 12))
+        self.btn_move_down.pack(pady=(0, 12))
 
-        self.app.state_controller.ui_widgets['btn_remove_monster'] = self.app._create_icon_button(
+        self.btn_remove_monster = self.app._create_icon_button(
             btn_container,
             icon_emoji="✖",
             command=self.app._on_monster_delete_from_list,
@@ -200,9 +202,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
             bg_color=UI.DANGER,
             hover_color=UI.ACCENT_AMBER,
         )
-        self.app.state_controller.ui_widgets['btn_remove_monster'].pack()
+        self.btn_remove_monster.pack()
         self.app._create_tooltip(
-            self.app.state_controller.ui_widgets['btn_remove_monster'], self.app._t("monster_rotation_remove")
+            self.btn_remove_monster, self.app._t("monster_rotation_remove")
         )
 
 
@@ -217,7 +219,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         detected_listbox_frame = tk.Frame(self.detected_container, bg=UI.BG_SURFACE)
         detected_listbox_frame.pack(fill="both", expand=True)
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'] = tk.Listbox(
+        self.detected_monsters_listbox = tk.Listbox(
             detected_listbox_frame,
             height=5,
             exportselection=False,
@@ -230,22 +232,23 @@ class MonsterTargetPanel(ttk.LabelFrame):
             highlightthickness=0,
             relief="flat",
         )
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'].pack(side="left", fill="both", expand=True)
+        self.detected_monsters_listbox.pack(side="left", fill="both", expand=True)
+        self.app.detected_monsters_listbox = self.detected_monsters_listbox
 
         detected_scroll = ttk.Scrollbar(
-            detected_listbox_frame, command=self.app.state_controller.ui_widgets['detected_monsters_listbox'].yview
+            detected_listbox_frame, command=self.detected_monsters_listbox.yview
         )
         detected_scroll.pack(side="right", fill="y")
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'].config(yscrollcommand=detected_scroll.set)
+        self.detected_monsters_listbox.config(yscrollcommand=detected_scroll.set)
 
         detected_btn_container = tk.Frame(self.detected_container, bg=UI.BG_SURFACE)
         detected_btn_container.pack(side="right", fill="y", padx=(8, 0))
-        self.app.state_controller.ui_widgets['btn_promote_monster'] = tk.Button(
+        self.btn_promote_monster = tk.Button(
             detected_btn_container,
             text="➕",
             command=lambda: getattr(
                 self.app, "promote_detected_monster", lambda x: None
-            )(self.app.state_controller.ui_widgets['detected_monsters_listbox'].curselection()),
+            )(self.detected_monsters_listbox.curselection()),
             bg=UI.BG_ELEVATED,
             fg=UI.TEXT_PRIMARY,
             relief="flat",
@@ -254,21 +257,21 @@ class MonsterTargetPanel(ttk.LabelFrame):
             pady=4,
             cursor="hand2"
         )
-        self.app.state_controller.ui_widgets['btn_promote_monster'].pack(pady=(0, 4))
+        self.btn_promote_monster.pack(pady=(0, 4))
         self.app._create_tooltip(
-            self.app.state_controller.ui_widgets['btn_promote_monster'], self.app._t("monster_promote")
+            self.btn_promote_monster, self.app._t("monster_promote")
         )
 
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'].bind(
+        self.detected_monsters_listbox.bind(
             "<Double-1>",
             lambda e: getattr(self.app, "promote_detected_monster", lambda x: None)(
-                self.app.state_controller.ui_widgets['detected_monsters_listbox'].curselection()
+                self.detected_monsters_listbox.curselection()
             ),
         )
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'].bind(
+        self.detected_monsters_listbox.bind(
             "<Return>",
             lambda e: getattr(self.app, "promote_detected_monster", lambda x: None)(
-                self.app.state_controller.ui_widgets['detected_monsters_listbox'].curselection()
+                self.detected_monsters_listbox.curselection()
             ),
         )
 
@@ -321,9 +324,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
             del event.widget.drag_data
 
         # Apply drag bindings
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'].bind("<ButtonPress-1>", on_drag_start)
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'].bind("<B1-Motion>", on_drag_motion)
-        self.app.state_controller.ui_widgets['detected_monsters_listbox'].bind("<ButtonRelease-1>", on_drop)
+        self.detected_monsters_listbox.bind("<ButtonPress-1>", on_drag_start)
+        self.detected_monsters_listbox.bind("<B1-Motion>", on_drag_motion)
+        self.detected_monsters_listbox.bind("<ButtonRelease-1>", on_drop)
 
         # 3. Any Target view
         self.any_target_empty = EmptyState(
@@ -337,10 +340,8 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         self.any_target_empty.pack(fill="both", expand=True)
 
-
-        self.app.state_controller.ui_vars['monster_status'] = tk.StringVar()
         tk.Label(
-            self.app.state_controller.ui_widgets['monster_frame'],
+            self.monster_frame,
             textvariable=self.app.state_controller.ui_vars['monster_status'],
             fg=UI.TEXT_PRIMARY,
             bg=UI.BG_SURFACE,
@@ -348,18 +349,18 @@ class MonsterTargetPanel(ttk.LabelFrame):
         ).pack(fill="x", pady=(8, 0), padx=10)
 
         if hasattr(self.app, "_on_monster_list_select"):
-            self.app.state_controller.ui_widgets['monster_rotation_listbox'].bind(
+            self.monster_rotation_listbox.bind(
                 "<<ListboxSelect>>", self.app._on_monster_list_select
             )
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'].bind(
+        self.monster_rotation_listbox.bind(
             "<Delete>", self.app._on_monster_delete_from_list
         )
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'].bind(
+        self.monster_rotation_listbox.bind(
             "<BackSpace>", self.app._on_monster_delete_from_list
         )
 
         self.app.monster_context_menu = tk.Menu(
-            self.app.state_controller.ui_widgets['monster_rotation_listbox'], tearoff=0
+            self.monster_rotation_listbox, tearoff=0
         )
         self.app.monster_context_menu.add_command(
             label=self.app._t("monster_delete"),
@@ -372,23 +373,23 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         def _show_monster_context_menu(event):
             try:
-                self.app.state_controller.ui_widgets['monster_rotation_listbox'].selection_clear(0, tk.END)
-                self.app.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(
-                    self.app.state_controller.ui_widgets['monster_rotation_listbox'].nearest(event.y)
+                self.monster_rotation_listbox.selection_clear(0, tk.END)
+                self.monster_rotation_listbox.selection_set(
+                    self.monster_rotation_listbox.nearest(event.y)
                 )
                 self.app.monster_context_menu.tk_popup(event.x_root, event.y_root)
             finally:
                 self.app.monster_context_menu.grab_release()
 
         def _select_all_monsters(event):
-            self.app.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(0, tk.END)
+            self.monster_rotation_listbox.selection_set(0, tk.END)
             return "break"
 
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'].bind(
+        self.monster_rotation_listbox.bind(
             "<Button-3>", _show_monster_context_menu
         )
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'].bind("<Control-a>", _select_all_monsters)
-        self.app.state_controller.ui_widgets['monster_rotation_listbox'].bind("<Control-A>", _select_all_monsters)
+        self.monster_rotation_listbox.bind("<Control-a>", _select_all_monsters)
+        self.monster_rotation_listbox.bind("<Control-A>", _select_all_monsters)
 
         self.configured_empty = EmptyState(
             self.configured_container,
@@ -399,8 +400,8 @@ class MonsterTargetPanel(ttk.LabelFrame):
         self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
 
         def _update_configured_empty_state(*args):
-            if "monster_rotation_listbox" in self.app.state_controller.ui_widgets and self.app.state_controller.ui_widgets["monster_rotation_listbox"]:
-                if self.app.state_controller.ui_widgets['monster_rotation_listbox'].size() > 0:
+            if hasattr(self, "monster_rotation_listbox") and self.monster_rotation_listbox:
+                if self.monster_rotation_listbox.size() > 0:
                     self.configured_empty.pack_forget()
                 else:
                     self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
@@ -413,9 +414,8 @@ class MonsterTargetPanel(ttk.LabelFrame):
         self.after(100, _poll_configured_empty_state)
 
 
-        self.app.state_controller.ui_vars['training_mode_hint'] = tk.StringVar()
         self.app.training_mode_hint_label = tk.Label(
-            self.app.state_controller.ui_widgets['monster_frame'],
+            self.monster_frame,
             textvariable=self.app.state_controller.ui_vars['training_mode_hint'],
             fg=UI.ACCENT_AMBER,
             bg=UI.BG_SURFACE,

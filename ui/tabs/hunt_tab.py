@@ -287,8 +287,8 @@ class HuntTab(ttk.Frame):
 
     def _select_all_monsters(self, _event=None):
         """Select every configured rotation row for bulk deletion."""
-        if self.app.state_controller.ui_widgets['monster_rotation_listbox'].size():
-            self.app.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(0, tk.END)
+        if hasattr(self.app, "monster_rotation_listbox") and self.app.monster_rotation_listbox.size():
+            self.app.monster_rotation_listbox.selection_set(0, tk.END)
         return "break"
 
 
@@ -314,10 +314,10 @@ class HuntTab(ttk.Frame):
         self.app.state_controller.set_ui_var('template', str(self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")))
 
         region = self.app.state_controller.hunt_cfg.get("region") or ["", "", "", ""]
-        self.app.state_controller.ui_vars['reg_l'] = tk.StringVar(value=str(region[0]) if region[0] != "" else "")
-        self.app.state_controller.ui_vars['reg_t'] = tk.StringVar(value=str(region[1]) if region[1] != "" else "")
-        self.app.state_controller.ui_vars['reg_w'] = tk.StringVar(value=str(region[2]) if region[2] != "" else "")
-        self.app.state_controller.ui_vars['reg_h'] = tk.StringVar(value=str(region[3]) if region[3] != "" else "")
+        self.app.state_controller.ui_vars['reg_l'].set(str(region[0]) if region[0] != "" else "")
+        self.app.state_controller.ui_vars['reg_t'].set(str(region[1]) if region[1] != "" else "")
+        self.app.state_controller.ui_vars['reg_w'].set(str(region[2]) if region[2] != "" else "")
+        self.app.state_controller.ui_vars['reg_h'].set(str(region[3]) if region[3] != "" else "")
 
         self.app.state_controller.set_ui_var('bring_front', bool(self.app.state_controller.hunt_cfg.get("bring_to_front_each_cycle", False)))
 
