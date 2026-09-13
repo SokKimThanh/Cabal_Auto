@@ -173,7 +173,7 @@ class AppWindowController:
     def on_window_combo_selected(self, _evt=None) -> None:
         logger.debug("on_window_combo_selected() called")
 
-        if not getattr(self.root, "win_items", None):
+        if not getattr(self.root.state_controller, "win_items", None):
             logger.debug("  win_items is empty, setting hunt_selected = None")
             self.root.state_controller.hunt_selected = None
             return
