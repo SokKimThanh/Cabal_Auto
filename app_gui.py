@@ -28,6 +28,7 @@ from lib.i18n import t as i18n_t
 from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
+from lib.system.task_scheduler import TaskScheduler
 from lib.events.event_bus import EventBus, IconUpdatedEvent
 from tkinter import filedialog, ttk
 import tkinter as tk
@@ -306,6 +307,7 @@ class App(tk.Tk):
         self.overlay_ctrl = None
         self._detected_snapshot_items = []
         self._last_snapshot = None
+        self.task_scheduler = TaskScheduler(self)
         self.state_controller.hunt_selected = {}
 
         # Safe fallback initializations to prevent AttributeError during startup
@@ -569,7 +571,7 @@ class App(tk.Tk):
             tab_setup=getattr(self, "tab_setup", None),
             tab_hunt=getattr(self, "tab_hunt", None),
             schedule_ui_task=lambda fn: (
-                self.after(0, fn) if hasattr(self, "after") else fn()
+                self.task_scheduler.schedule_task(None, 0, fn) if hasattr(self, "task_scheduler") else (self.after(0, fn) if hasattr(self, "after") else fn())
             ),
         )
 
@@ -590,7 +592,7 @@ class App(tk.Tk):
             ),
             get_hunt_selected=lambda: getattr(self, "hunt_selected", {}),
             schedule_ui_task=lambda fn: (
-                self.after(0, fn) if hasattr(self, "after") else fn()
+                self.task_scheduler.schedule_task(None, 0, fn) if hasattr(self, "task_scheduler") else (self.after(0, fn) if hasattr(self, "after") else fn())
             ),
             clear_target_ui=self.clear_target_ui,
             set_target_info=lambda txt: getattr(
@@ -649,8 +651,8 @@ class App(tk.Tk):
         )
         self.sidebar.pack(fill="both", expand=True)
 
-        self.after(100, self._poll_log_queue)
-        self.after(1000, self._update_logs_metrics)
+        self.task_scheduler.schedule_recurring_task("poll_log_queue", 100, self._poll_log_queue)
+        self.task_scheduler.schedule_recurring_task("update_logs_metrics", 1000, self._update_logs_metrics)
 
         # Vùng A: Quick Action Bar
 
@@ -943,7 +945,7 @@ class App(tk.Tk):
         except Exception:
             pass
 
-        self.after(1000, self._update_logs_metrics)
+        # self.after(1000, self._update_logs_metrics) - Handled by TaskScheduler
 
     def _poll_log_queue(self):
         """Poll log messages from HuntLogger and append to UI (UX4B.2)."""
@@ -984,7 +986,7 @@ class App(tk.Tk):
             print(f"Error polling logs: {e}")
 
         # Flush frequently
-        self.after(100, self._poll_log_queue)
+        # self.after(100, self._poll_log_queue) - Handled by TaskScheduler
 
     def _update_sidebar_state(self, view_key: str):
         # Update sidebar selected state
@@ -999,11 +1001,11 @@ class App(tk.Tk):
     def _set_db_status(self, msg: str, ok: bool = True):
         """Called by AppLifecycleController to display DB health status."""
         if self.state_controller.get_ui_var('hunt_status') is not None:
-            self.after(0, lambda: self.state_controller.set_ui_var('hunt_status', msg))
+            self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', msg))
 
     def _update_scan_status_text(self, text):
         if self.state_controller.get_ui_var('hunt_status') is not None:
-            self.after(0, lambda: self.state_controller.set_ui_var('hunt_status', text))
+            self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', text))
 
     def _update_scan_status_icon(self, icon_name):
         if hasattr(self, "btn_manual_scan") and self.btn_manual_scan:
@@ -1022,7 +1024,7 @@ class App(tk.Tk):
                             img  # Store a single reference to avoid memory leak
                         )
 
-                self.after(0, update)
+                self.task_scheduler.schedule_task(None, 0, update)
             except Exception as e:
                 print(f"[UI] Error updating scan status icon: {e}")
 
@@ -1418,7 +1420,7 @@ class App(tk.Tk):
         else:
             self._request_start_hunt()
 
-        self.after(500, self._reenable_start_stop_btn)
+        self.task_scheduler.schedule_task("reenable_start_stop_btn", 500, self._reenable_start_stop_btn, recurring=False)
 
     def _reenable_start_stop_btn(self):
         self._action_locked = False
@@ -2460,6 +2462,8 @@ class App(tk.Tk):
     def destroy(self):
         self._is_destroyed = True
         self.lifecycle_controller.cleanup_before_destroy()
+        if hasattr(self, "task_scheduler"):
+            self.task_scheduler.cancel_all()
         super().destroy()
 
     def _icon(
