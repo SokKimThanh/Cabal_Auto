@@ -215,12 +215,6 @@ class App(tk.Tk):
 
         self.state_controller.hunt_selected = {}
 
-        # Safe fallback initializations to prevent AttributeError during startup
-        self.btn_move_up = None
-        self.btn_move_down = None
-        self.btn_remove_monster = None
-        self.btn_promote_monster = None
-
         # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
         try:
             menubar = tk.Menu(self)
@@ -769,7 +763,7 @@ class App(tk.Tk):
                         msg = self._t("msg_class_scan_mismatch") if hasattr(self, "_t") else "Scanned class differs from selected class. Update?"
                         if DialogService.ask_yes_no("Warning", msg, parent=self):
                             if hasattr(self.state_controller, "set_current_class"):
-                                self.state_controller.set_current_class(scanned_class_id)
+                                self.skill_panel.controller.preset_controller.set_current_class(scanned_class_id)
 
             self.screen_state_panel.update_from_scan(state)
 

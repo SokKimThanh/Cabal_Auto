@@ -428,6 +428,15 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         self.training_mode_hint_label.pack(fill="x", pady=(4, 0), padx=10)
 
+        # Bind training mode state changes
+        if hasattr(self.app.state_controller.ui_vars.get('training_mode'), "trace_add"):
+            self.app.state_controller.ui_vars['training_mode'].trace_add(
+                "write", self.update_training_mode_buttons
+            )
+
+        # Initial call to set correct state
+        self.update_training_mode_buttons()
+
         # Legacy wiring to HuntTab is applied after refreshing the rotation list below.
         if hasattr(self.app, "_refresh_monster_rotation_list"):
             self.app._refresh_monster_rotation_list()

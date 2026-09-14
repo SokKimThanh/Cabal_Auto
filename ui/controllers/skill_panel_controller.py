@@ -8,6 +8,8 @@ class SkillPanelController:
         self.app_state = app_state
         self.skill_service = SkillPresetService()
         self.class_service = ClassService()
+        from ui.controllers.skill_preset_controller import SkillPresetController
+        self.preset_controller = SkillPresetController(None, self.app_state)
 
         # Business states
         self.show_all_skills = False
@@ -59,13 +61,13 @@ class SkillPanelController:
         except (ValueError, IndexError):
             return False, self.last_selected_class, self.skill_names
 
-        if hasattr(self.app_state, "set_current_class"):
+        if hasattr(self.preset_controller, "set_current_class"):
             # Prepare skills for the newly selected class
             skills = self.skill_service.skill_repo.list_skills(class_id=class_id, include_all=False)
             new_skill_names = [s.get("name") for s in skills if s.get("name")]
 
             # Change state
-            success = self.app_state.set_current_class(class_id)
+            success = self.preset_controller.set_current_class(class_id)
             if not success:
                 # Revert if failed
                 old_id = int(self.last_selected_class.split(" - ")[0]) if self.last_selected_class else 1
