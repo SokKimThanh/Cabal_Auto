@@ -23,8 +23,7 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
-from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent, VisionScanRegionEvent, VisionAddTemplateEvent, VisionManageTemplatesEvent
-from tkinter import filedialog
+from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent
 import tkinter as tk
 import sys
 from lib.ui.dialog_service import DialogService
@@ -212,14 +211,12 @@ class App(tk.Tk):
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
         EventBus.bind(MonsterRotationUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._on_monster_rotation_updated))
-        EventBus.bind(VisionScanRegionEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._scan_region))
-        EventBus.bind(VisionAddTemplateEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._add_template))
-        EventBus.bind(VisionManageTemplatesEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._manage_templates))
+
+        # Instantiate the MenuVisionController to handle vision menu events
+        from lib.ui.controllers.menu_vision_controller import MenuVisionController
+        self.menu_vision_controller = MenuVisionController(app=self, window_controller=self.window_controller)
 
         self.state_controller.hunt_selected = {}
-
-        # --- Main Menu Construction Extracted ---
-        self._setup_main_menu()
 
         # Check PIL availability (for image preview features)
         self.pil_available = (
@@ -380,24 +377,6 @@ class App(tk.Tk):
             self.state_controller.register_callback("on_skill_keys_updated", self._update_skill_keys)
             self.state_controller.register_callback("on_skill_key_duplicates_detected", self._update_duplicate_colors)
 
-    def _setup_main_menu(self):
-        try:
-            from lib.ui.components.main_menu_bar import MainMenuBar
-            self.main_menu = MainMenuBar(
-                parent=self,
-                app=self,
-                state_controller=self.state_controller,
-                hotkey_controller=self.hotkey_controller,
-                window_controller=self.window_controller
-            )
-            try:
-                self.config(menu=self.main_menu)
-            except Exception:
-                # Some environments may not support menu on top-level; ignore
-                pass
-        except Exception as e:
-            print(f"[Menu] Error creating menubar: {e}")
-
     # -----------------
     def _update_skill_keys(self, keys_list):
         if hasattr(self, "skill_slot_key_labels"):
@@ -414,6 +393,26 @@ class App(tk.Tk):
     def _build_ui(self):
         # We rebuild the shell layout first
         self.shell.build()
+
+        # --- Main Menu Construction ---
+        try:
+            from lib.ui.components.main_menu_bar import MainMenuBar
+            self.main_menu = MainMenuBar(
+                parent=self,
+                app=self,
+                state_controller=self.state_controller,
+                hotkey_controller=self.hotkey_controller,
+                window_controller=self.window_controller,
+                overlay_controller=self.overlay_controller
+            )
+            try:
+                self.config(menu=self.main_menu)
+            except Exception:
+                # Some environments may not support menu on top-level; ignore
+                pass
+        except Exception as e:
+            print(f"[Menu] Error creating menubar: {e}")
+
         self.main_shell = self.shell.main_shell
         self.shell_zone_a = self.shell.shell_zone_a
         self.shell_zone_b = self.shell.shell_zone_b
@@ -918,74 +917,6 @@ class App(tk.Tk):
     # Close
     # -----------------
     def _open_vision_wizard(self):
-        self.window_controller.open_vision_wizard()
-
-    def _scan_region(self):
-        """
-        Scan region for template matching (Ctrl+Alt+S).
-        TODO Phase 2: Implement region scanning with overlay.
-        """
-        print("[Vision] Scan region - TODO Phase 2")
-        DialogService.show_info(
-            "Vision - Scan Region",
-            "Scan Region feature will be available in Phase 2.\n\n"
-            "This will allow you to:\n"
-            "• Select a region on screen\n"
-            "• Scan for templates in real-time\n"
-            "• Save ROI coordinates",
-        )
-
-    def _add_template(self):
-        """
-        Quick add template (Ctrl+T).
-        Opens file dialog to select template image.
-        TODO Phase 2: Add to config and Vision Wizard list.
-        """
-        print("[Vision] Add template")
-
-        try:
-            filetypes = [
-                ("Image files", "*.png *.jpg *.jpeg *.bmp"),
-                ("PNG files", "*.png"),
-                ("JPEG files", "*.jpg *.jpeg"),
-                ("All files", "*.*"),
-            ]
-
-            file_path = filedialog.askopenfilename(
-                parent=self,
-                title=(
-                    self._t("vision_add_template")
-                    if hasattr(self, "_t")
-                    else "Add Template"
-                ),
-                filetypes=filetypes,
-            )
-
-            if file_path:
-                print(f"[Vision] Selected template: {file_path}")
-
-                # TODO Phase 2: Add to config
-                # For now, just show success message
-                DialogService.show_info(
-                    "Vision - Add Template",
-                    f"Template selected:\n{file_path}\n\n"
-                    "Full integration will be available in Phase 2.\n"
-                    "Use Vision Wizard (Ctrl+Shift+V) to manage templates.",
-                )
-
-        except Exception as e:
-            print(f"[Vision] Error adding template: {e}")
-            DialogService.show_error(
-                self._t("error") if hasattr(self, "_t") else "Error",
-                f"Cannot add template:\n{e}",
-            )
-
-    def _manage_templates(self):
-        """
-        Open template management (Ctrl+Shift+T).
-        Shortcut to Vision Wizard.
-        """
-        print("[Vision] Manage templates - opening wizard")
         self.window_controller.open_vision_wizard()
 
     def _on_rotation_mode_changed(self, event=None):

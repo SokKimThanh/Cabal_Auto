@@ -8,22 +8,24 @@ class MainMenuBar(tk.Menu):
     Extracts the menu construction logic out of the app God Class.
     """
 
-    def __init__(self, parent, app, state_controller, hotkey_controller, window_controller):
+    def __init__(self, parent, app, state_controller, hotkey_controller, window_controller, overlay_controller):
         """
         Initialize the main menu bar.
 
         Args:
             parent: The parent Tk/Toplevel window.
-            app: Reference to the main App class (used for lazy access to controllers and _t).
+            app: Reference to the main App class (used for lazy access to _t).
             state_controller: AppStateController instance.
             hotkey_controller: HotkeyController instance.
             window_controller: AppWindowController instance.
+            overlay_controller: AppOverlayController instance.
         """
         super().__init__(parent)
         self.app = app
         self.state_controller = state_controller
         self.hotkey_controller = hotkey_controller
         self.window_controller = window_controller
+        self.overlay_controller = overlay_controller
         self.lang = getattr(self.app, "lang", "vi")
 
         # Re-fetch translation helper
@@ -148,9 +150,9 @@ class MainMenuBar(tk.Menu):
         EventBus.trigger(VisionManageTemplatesEvent())
 
     def _toggle_overlay(self):
-        if hasattr(self.app, "overlay_controller") and self.app.overlay_controller:
-            self.app.overlay_controller.toggle_overlay()
+        if self.overlay_controller:
+            self.overlay_controller.toggle_overlay()
 
     def _open_overlay_settings(self):
-        if hasattr(self.app, "overlay_controller") and self.app.overlay_controller:
-            self.app.overlay_controller.open_settings()
+        if self.overlay_controller:
+            self.overlay_controller.open_settings()
