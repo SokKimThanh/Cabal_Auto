@@ -26,7 +26,37 @@ Tài liệu này tổng hợp tất cả các lỗi, rủi ro, nợ kỹ thuật
 *   Khai báo và khởi tạo tất cả các biến này vào ngay trong hàm `__init__` của `AppStateController`.
 *   Tại các view, dùng hàm `self.state_controller.get_ui_var(...)` hoặc truy xuất an toàn `self.state_controller.ui_widgets[...]` thay vì dùng `self.app.xxx`.
 
-## 2. Các lỗi liên quan đến AppShell và Cấu hình cửa sổ chính (UI Layout)
+## 2. Rò rỉ UI Logic (UI Leak) trong AppStateController - Cần tách bạch ngay (Mới phát hiện)
+*Báo cáo liên quan: Prompt 018*
+
+**Vấn đề:** Các hàm `_refresh_slot_key_labels` và `_validate_slot_key_duplicates` bên trong `AppStateController` đang thao tác trực tiếp trên UI Widgets thông qua hàm `.config(text=...)` và `.config(fg=...)`. Data Controller không được quyền chạm vào View.
+
+**Giải pháp đề xuất (Prompt 018):**
+* Chuyển đổi logic 2 hàm trên thành việc phân tích và emit các Event (ví dụ: `on_skill_key_duplicates_detected`). Cập nhật View lắng nghe event này để tự `.config()`.
+
+## 3. Cấu hình Hunt bị "hardcode" trong State Controller (Mới phát hiện)
+*Báo cáo liên quan: Prompt 016*
+
+**Vấn đề:** Hàm `build_hunt_config_from_state` quá lớn, đang nằm cứng trong `AppStateController` và chứa vô số giá trị cài đặt mặc định hardcode, vi phạm Nguyên lý SRP.
+
+**Giải pháp đề xuất (Prompt 016):**
+* Rút hàm tạo config này ra file `HuntConfigController` và chuyển đổi hardcode thành hằng số (Constants).
+
+## 4. Quá tải Logic về Preset trong AppStateController (Mới phát hiện)
+*Báo cáo liên quan: Prompt 017*
+
+**Vấn đề:** `AppStateController` đang phải lo luôn việc quản lý (lưu, tải, đổi slot) Preset kỹ năng.
+
+**Giải pháp đề xuất (Prompt 017):**
+* Chuyển hết mớ logic này sang class có sẵn `SkillPresetController`, và chỉ dùng `AppStateController` làm kho lưu data.
+
+## 5. Dọn dẹp __init__ của AppStateController (Mới phát hiện)
+*Báo cáo liên quan: Prompt 015*
+
+**Vấn đề:** Class sử dụng `getattr` với chính `self` của nó rất nhiều lần, vòng đời thuộc tính không rõ ràng.
+**Giải pháp:** Khởi tạo tất cả trong `__init__` (như `self.skill_slot_key_labels = []`).
+
+## 6. Các lỗi liên quan đến AppShell và Cấu hình cửa sổ chính (UI Layout)
 *Báo cáo liên quan: Prompt 006*
 
 **Vấn đề 1: Đổi tiêu đề khi đổi ngôn ngữ bị sót**
@@ -38,7 +68,7 @@ Tài liệu này tổng hợp tất cả các lỗi, rủi ro, nợ kỹ thuật
 **Vấn đề 3: Sai logic truyền tham số Khởi tạo**
 *   Code hiện tại gọi `self.shell = AppShell(self)` (vì `App` kế thừa từ `tk.Tk`, nên `self` chính là cửa sổ gốc). Trong `AppShell.__init__` có một đoạn gán phức tạp `self.app = app if app is not None else root`. Cần sửa cho rõ ràng.
 
-## 3. Mã kiểm thử tự động bị hỏng (Broken Integration Tests)
+## 7. Mã kiểm thử tự động bị hỏng (Broken Integration Tests)
 *Báo cáo liên quan: Prompt 004*
 
 **Vấn đề:** Mã kiểm thử vòng lặp Hunt (`test_orchestrator_loop.py`) đang bị viết dạng đối phó và môi trường kiểm thử bị thiếu thư viện.
@@ -50,7 +80,7 @@ Tài liệu này tổng hợp tất cả các lỗi, rủi ro, nợ kỹ thuật
 *   Cài đặt đầy đủ `opencv-python` cho môi trường test.
 *   Bỏ `assert True`, viết lại các đoạn mã kiểm tra (assert) dựa vào việc theo dõi số lần hàm giả lập (mock callback) như `try_cast_skills` được gọi, độ tin cậy sẽ cao hơn.
 
-## 4. Các điểm rò rỉ phụ của AppStateController
+## 8. Các điểm rò rỉ phụ của AppStateController
 *Báo cáo liên quan: Prompt 001*
 
 **Vấn đề:** Vẫn còn sót vài chỗ mà lớp quản lý trạng thái (`AppStateController`) tự với tay lấy dữ liệu từ ngoài vào, thay vì lấy qua kênh nội bộ, bao gồm:
