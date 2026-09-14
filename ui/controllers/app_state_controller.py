@@ -4,7 +4,6 @@ logger = logging.getLogger(__name__)
 import tkinter as tk
 from typing import Any, Dict, List, Optional
 import threading
-import copy
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
 from lib.events.event_dispatcher import EventDispatcher
 from lib.system.config.config_repository import ConfigRepository
@@ -25,7 +24,7 @@ class AppStateController:
 
     @hunt_cfg.setter
     def hunt_cfg(self, value: Dict[str, Any]) -> None:
-        self._config_store.set_config(value)
+        self.config_repository.set_config(value)
 
     @property
     def has_unsaved_changes(self) -> bool:
@@ -281,7 +280,7 @@ class AppStateController:
             if isinstance(skill, dict) and skill.get("name")
         }
         keys_list = []
-        for idx, var in enumerate(vars_):
+        for var in vars_:
             skill_name = var.get().strip()
             key = ""
             if skill_name:
