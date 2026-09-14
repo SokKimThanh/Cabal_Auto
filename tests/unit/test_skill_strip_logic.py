@@ -63,7 +63,9 @@ class TestSkillStripLogic(unittest.TestCase):
 
         controller = AppStateController(root)
         controller.root = root
-        controller._validate_slot_key_duplicates()
+        controller._callbacks = {}
+        with patch('lib.features.skills.skill_runtime_service.SkillRuntimeService.get_all_skills', return_value=root.skills):
+            controller._validate_slot_key_duplicates()
 
         # Test passed visually if error handled
 
@@ -108,16 +110,35 @@ class TestSkillStripLogic(unittest.TestCase):
         app.skill_slot_vars[1].set("Skill2")
         app.skill_slot_vars[2].set("Skill3")
 
+        # Add keys to the skills in the mock so they will be detected as duplicates
+        app.skills = [
+            {"name": "Skill1", "key": "1", "type": "attack"},
+            {"name": "Skill2", "key": "1", "type": "attack"},
+            {"name": "Skill3", "key": "1", "type": "attack"},
+        ]
+
+        emitted_indices = None
+        def mock_emit_event(event_name, data):
+            nonlocal emitted_indices
+            if event_name == "on_skill_key_duplicates_detected":
+                emitted_indices = data
+
         # Call validation
         from ui.controllers.app_state_controller import AppStateController
 
         validator = AppStateController(app)
-        app.state_controller = validator
-        validator._validate_slot_key_duplicates()
+        validator._emit_event = mock_emit_event
+        validator.skill_slot_vars = app.skill_slot_vars
+        # mock skill runtime service via DI or monkeypatch in test
+        # We need _validate_slot_key_duplicates to read these skills. It calls SkillRuntimeService().get_all_skills().
+        with patch('lib.features.skills.skill_runtime_service.SkillRuntimeService.get_all_skills', return_value=app.skills):
+            validator._validate_slot_key_duplicates()
 
-        # Assert: All 3 boxes should have warning border
-        for i in range(3):
-            pass
+        # Assert: Duplicate indices were emitted
+        self.assertIsNotNone(emitted_indices)
+        self.assertIn(0, emitted_indices)
+        self.assertIn(1, emitted_indices)
+        self.assertIn(2, emitted_indices)
 
         root.destroy()
 
@@ -160,8 +181,10 @@ class TestSkillStripLogic(unittest.TestCase):
         from ui.controllers.app_state_controller import AppStateController
 
         validator = AppStateController(app)
+        validator._callbacks = {}
         app.state_controller = validator
-        validator._validate_slot_key_duplicates()
+        with patch('lib.features.skills.skill_runtime_service.SkillRuntimeService.get_all_skills', return_value=app.skills):
+            validator._validate_slot_key_duplicates()
 
         # Assert: Tooltip contains "Combo Start Key"
         found_combo_conflict_tooltip = False
