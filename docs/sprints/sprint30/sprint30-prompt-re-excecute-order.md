@@ -103,3 +103,12 @@ If issues are found during the review phase of the new cleanup prompts (019-021)
    - **Risk:** `MonsterTargetPanel` crashing on initialization if `self.btn_add` doesn't exist yet when the state callback fires.
    - **Action:** Ensure the UI variables are traced *after* all widgets are built in `_build_ui()`.
 *   Gọi `getattr(self.root, "skills", [])`: Vẫn lấy thông tin danh sách kỹ năng từ `root`. Cần tách việc lưu thông tin này vào một chỗ chuẩn hơn.
+
+# Phase 4 (God Class Final Decomposition)
+docs/sprints/sprint30/prompt-god-class-decomposition/sprint30-prompt-022-extract-main-menu.md
+docs/sprints/sprint30/prompt-god-class-decomposition/sprint30-prompt-023-decouple-action-and-status-bars.md
+docs/sprints/sprint30/prompt-god-class-decomposition/sprint30-prompt-024-extract-vision-ui-handlers.md
+docs/sprints/sprint30/prompt-god-class-decomposition/sprint30-prompt-025-extract-monster-rotation-logic.md
+docs/sprints/sprint30/prompt-god-class-decomposition/sprint30-prompt-026-extract-skill-configuration-logic.md
+docs/sprints/sprint30/prompt-god-class-decomposition/sprint30-prompt-027-extract-logging-and-helpers.md
+docs/sprints/sprint30/prompt-god-class-decomposition/sprint30-prompt-028-finalize-app-class.md

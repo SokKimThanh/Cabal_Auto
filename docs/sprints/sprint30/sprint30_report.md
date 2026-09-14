@@ -119,5 +119,21 @@ Dựa trên đợt review mới nhất, chúng ta đã phát hiện thêm một 
 **Giải pháp:** Thay vì chỉnh sửa widget trực tiếp, Controller sẽ tính toán và phát sinh sự kiện (emit Event). View (giao diện) sẽ lắng nghe và tự vẽ lại màn hình.
 **Trạng thái:** Đã tạo prompt và file review. Chờ thực thi.
 
+## Phase 4: Finalizing God Class Decomposition (Prompts 22-28)
+
+**Overall Status for Phase 4:** Planned.
+
+During the execution of earlier phases, it was identified that `app_gui.py` still contains approximately 2100 lines of code, primarily UI logic related to Monster Rotation, Skill Slots, Vision Overlays, and main application menus.
+
+To achieve the acceptance criteria of bringing the `App` class down to `< 30` methods (acting purely as a bootstrapper), the following tasks have been broken down and documented in `sprint30-phase4-god-class-decomposition.md`:
+
+- **Prompt 022:** Extract Main Menu (`tk.Menu`) into a dedicated `MenuController`.
+- **Prompt 023:** Decouple `ActionBarView` and `StatusBarView` from the God Class `app`.
+- **Prompt 024:** Extract Vision/Template UI shortcuts to `VisionUIController` or `OverlayController`.
+- **Prompt 025:** Extract Monster Rotation UI logic (add, remove, move) into `MonsterRotationView`.
+- **Prompt 026:** Extract Skill Configuration (slots) and Global Apply logic into dedicated controllers.
+- **Prompt 027:** Clean up Global Logging loops and UI Helpers (tooltips, icons).
+- **Prompt 028:** Finalize `app_gui.py` by purging leftover references and verifying it acts solely as a bootstrapper for `tk.Tk` and `AppLifecycleController`.
+
 ## Conclusion & Next Steps
-Nhóm nợ kỹ thuật liên quan đến `AppStateController` đã được bóc tách và phân loại thành các prompt thực thi chi tiết. Bước tiếp theo là đưa các prompt này cho Dev (hoặc AI Agent) thực thi lần lượt để hoàn thành dứt điểm việc tái cấu trúc "Trái tim" của ứng dụng.
+Nhóm nợ kỹ thuật liên quan đến `AppStateController` đã được bóc tách và phân loại thành các prompt thực thi chi tiết. Bước tiếp theo là đưa các prompt này cho Dev (hoặc AI Agent) thực thi lần lượt để hoàn thành dứt điểm việc tái cấu trúc "Trái tim" của ứng dụng. Phase 4 will officially conclude the God Class Decomposition sprint.
