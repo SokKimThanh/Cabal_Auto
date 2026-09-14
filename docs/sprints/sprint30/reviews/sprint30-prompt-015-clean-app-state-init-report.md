@@ -14,5 +14,11 @@
 5. Nếu bất kỳ lỗi nào trên xảy ra, hãy ghi chú lại và yêu cầu chạy lại (re-execute) file prompt.
 
 **Status / Feedback:**
-- [ ] PASS: Không tìm thấy `getattr` hay `hasattr` trên `self`, vòng đời thuộc tính hoàn toàn trong suốt.
+- [x] PASS: Không tìm thấy `getattr` hay `hasattr` trên `self`, vòng đời thuộc tính hoàn toàn trong suốt.
 - [ ] FAIL (Cần ghi rõ lỗi và đề xuất chạy lại).
+
+**Notes:**
+- `__init__` now securely initializes all states.
+- No `getattr(self, ...)` or `hasattr(self, ...)` were found.
+- `hunt_cfg` is correctly backed by `self._config_store`.
+- `monster_rotation` is correctly backed by `self._monster_session_manager`.
