@@ -2,16 +2,16 @@ import tkinter as tk
 from lib.ui_style_v2 import UIStyleV2 as UI
 
 class StatusBarView(tk.Frame):
-    def __init__(self, parent, app, *args, **kwargs):
+    def __init__(self, parent, state_controller, *args, **kwargs):
         super().__init__(parent, bg=UI.BG_SUBTLE, bd=0, *args, **kwargs)
-        self.app = app
+        self.state_controller = state_controller
         self._build_ui()
 
     def _build_ui(self):
         # Left Section: DB Status
         status_var = None
-        if hasattr(self.app, 'state_controller') and self.app.state_controller:
-            status_var = self.app.state_controller.ui_vars.get('db_status')
+        if self.state_controller:
+            status_var = self.state_controller.ui_vars.get('db_status')
 
         if not status_var:
             status_var = tk.StringVar(value="Đang kết nối...")
