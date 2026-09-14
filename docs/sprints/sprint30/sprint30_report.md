@@ -121,3 +121,25 @@ Dựa trên đợt review mới nhất, chúng ta đã phát hiện thêm một 
 
 ## Conclusion & Next Steps
 Nhóm nợ kỹ thuật liên quan đến `AppStateController` đã được bóc tách và phân loại thành các prompt thực thi chi tiết. Bước tiếp theo là đưa các prompt này cho Dev (hoặc AI Agent) thực thi lần lượt để hoàn thành dứt điểm việc tái cấu trúc "Trái tim" của ứng dụng.
+
+---
+
+## Phase 4: Finalizing God Class Decomposition (Prompts 22-25)
+
+Sau khi hoàn thành phần lớn việc bóc tách state và UI layout, `app_gui.py` vẫn giữ vai trò God Class với hơn 70 hàm và quản lý trực tiếp menu, vision, và action/status bars. Các tasks đã được lên kế hoạch như sau:
+
+### Prompt 022: Extract Main Menu
+**Trạng thái:** Not Started.
+**Findings:** Lên kế hoạch bóc tách toàn bộ `tk.Menu` và các toggles liên quan đến Vision/Settings ra khỏi hàm `__init__` của `App` thành `MainMenuBar`.
+
+### Prompt 023: Decouple Action and Status Bars
+**Trạng thái:** Not Started.
+**Findings:** `ActionBarView` và `StatusBarView` hiện đang nhận trực tiếp thể hiện của God Class (`self.app`). Lên kế hoạch đổi thành việc chỉ nhận `AppStateController` và tương tác thông qua `EventBus`.
+
+### Prompt 024: Extract Vision UI Handlers
+**Trạng thái:** Not Started.
+**Findings:** Logic thêm template và quét vùng ảnh (`_scan_region`, `_add_template`, `_manage_templates`) vẫn nằm trực tiếp trong `App`. Lên kế hoạch chuyển chúng sang một `VisionUIController` mới.
+
+### Prompt 025: Finalize App Class
+**Trạng thái:** Not Started.
+**Findings:** Các event handlers dư thừa (như click start/stop, đổi quái) sẽ được đẩy hoàn toàn về các domain controllers tương ứng. Đảm bảo `app_gui.App` chỉ chứa logic khởi động và tắt ứng dụng.
