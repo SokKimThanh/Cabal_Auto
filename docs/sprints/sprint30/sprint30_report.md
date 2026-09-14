@@ -84,6 +84,13 @@ The heavy technical debt associated with the God Class (`AppStateController` and
 ## Conclusion & Next Steps
 With Phase 1 completed, Phase 2 execution has begun. Prompt 6 was fully verified as `app_gui.py` successfully utilizes `AppShell` for root setup and core layout boundaries without regressions. The next logical step is to address Prompt 7: **App GUI Navigation**, to strip out the hardcoded `_views` management from `App` and transition it to a standalone `NavigationController`.
 
+## Post-Phase 1 Cleanup (Prompts 19-21)
+
+Following the completion of Phase 1, additional refactoring opportunities were identified in `app_gui.py` to further clean up the God Class surface level. The following tasks have been broken down and scheduled:
+
+- **Prompt 019:** Clean up useless `try: pass` blocks and extract the fallback `_create_icon_btn_component` function out of the global scope.
+- **Prompt 020:** Move the `_update_hotkey_diagnostics_ui` zombie code out of `app_gui.py` into its rightful place in `HotkeyController`.
+- **Prompt 021:** Move the `_update_training_mode_buttons` zombie code into `MonsterTargetPanel`, where the actual buttons (`btn_add`, `btn_move_up`) reside.
 ---
 
 ## Phase 3: Làm sạch AppStateController (Prompts 15-18)
