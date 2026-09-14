@@ -56,3 +56,18 @@ Tài liệu này tổng hợp tất cả các lỗi, rủi ro, nợ kỹ thuật
 **Vấn đề:** Vẫn còn sót vài chỗ mà lớp quản lý trạng thái (`AppStateController`) tự với tay lấy dữ liệu từ ngoài vào, thay vì lấy qua kênh nội bộ, bao gồm:
 *   Gọi `getattr(self.root.hunt_orchestrator, "hunt_running", False)`: `AppStateController` vẫn còn lén nhìn vào `hunt_orchestrator` thông qua biến gốc (root).
 *   Gọi `getattr(self.root, "skills", [])`: Vẫn lấy thông tin danh sách kỹ năng từ `root`. Cần tách việc lưu thông tin này vào một chỗ chuẩn hơn.
+
+## Post-Phase 1 Cleanup (Prompts 15-17)
+If issues are found during the review phase of the new cleanup prompts (015-017), re-execute them in the following order to ensure dependencies remain stable.
+
+1. **`sprint30-prompt-015-clean-imports-and-fallback.md`**
+   - **Risk:** Syntax errors from removing imports or `try/except` blocks incorrectly; `_create_icon_btn_component` failing to load due to cyclic imports.
+   - **Action:** Fix any syntax errors at the top of `app_gui.py` and ensure the helper file `lib/ui/helpers/fallback_components.py` is correctly imported.
+
+2. **`sprint30-prompt-016-move-hotkey-diagnostics.md`**
+   - **Risk:** Tracebacks when `AppLifecycleController` or `HotkeyController` tries to call the old method; UI not updating because state updates aren't bound correctly.
+   - **Action:** Ensure all references to `_update_hotkey_diagnostics_ui` are completely wiped and replaced with the new controller method.
+
+3. **`sprint30-prompt-017-move-training-mode-buttons.md`**
+   - **Risk:** `MonsterTargetPanel` crashing on initialization if `self.btn_add` doesn't exist yet when the state callback fires.
+   - **Action:** Ensure the UI variables are traced *after* all widgets are built in `_build_ui()`.

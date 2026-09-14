@@ -39,6 +39,14 @@ The current controller violates the "Single Responsibility Principle" by leaking
 9. **`sprint30-prompt-009-app-gui-dialog-service.md`**: Centralize scattered `messagebox` calls into a `DialogService`.
 10. **`sprint30-prompt-010-app-gui-task-scheduler.md`**: Implement `TaskScheduler` / `TimerManager` to prevent memory leaks from unmanaged `self.after` and `Thread` calls.
 
+---
+
+## Post-Phase 1 Cleanup (Prompts 15-17)
+While reviewing the initial God Class decomposition, several zombie methods and surface-level clutter were identified. These will be handled before or alongside Phase 2:
+15. **`sprint30-prompt-015-clean-imports-and-fallback.md`**: Remove useless try/excepts and extract fallback UI components.
+16. **`sprint30-prompt-016-move-hotkey-diagnostics.md`**: Move `_update_hotkey_diagnostics_ui` into `HotkeyController`.
+17. **`sprint30-prompt-017-move-training-mode-buttons.md`**: Move `_update_training_mode_buttons` into `MonsterTargetPanel`.
+
 All prompts are located in `docs/sprints/sprint30/prompt-refactor-debt-technical/`.
 
 ## Risk Mitigation Summary (Auto-Updated)
