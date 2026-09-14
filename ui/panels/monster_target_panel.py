@@ -426,6 +426,15 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         self.training_mode_hint_label.pack(fill="x", pady=(4, 0), padx=10)
 
+        # Bind training mode state changes
+        if hasattr(self.app.state_controller.ui_vars.get('training_mode'), "trace_add"):
+            self.app.state_controller.ui_vars['training_mode'].trace_add(
+                "write", self.update_training_mode_buttons
+            )
+
+        # Initial call to set correct state
+        self.update_training_mode_buttons()
+
         # Legacy wiring to HuntTab is applied after refreshing the rotation list below.
         if hasattr(self.app, "_refresh_monster_rotation_list"):
             self.app._refresh_monster_rotation_list()
@@ -437,3 +446,204 @@ class MonsterTargetPanel(ttk.LabelFrame):
                          "hunt_status_badge", "hunt_status_label", "skill_stats_tree"]:
                 if hasattr(self.app, prop):
                     setattr(self.hunt_tab, prop, getattr(self.app, prop))
+
+    def update_training_mode_buttons(self, *args):
+        """Update monster control buttons based on training mode state.
+
+        Training Mode ON:
+        - Add button: Shows finish.ico if dummy set, else add.ico with training tooltip
+        - Add button: Disabled if training dummy already in list
+        - Up/Down buttons: Disabled (no rotation needed)
+
+        Training Mode OFF:
+        - Add button: Shows add.ico with normal tooltip
+        - Add button: Always enabled
+        - Up/Down buttons: Enabled
+        """
+        if not hasattr(self, "btn_add"):
+            return
+
+        is_training = self.app.state_controller.get_ui_var('training_mode')
+        has_training_dummy = any(
+            m.get("training_mode", False) for m in self.app.state_controller.monster_rotation
+        )
+
+        if is_training:
+            # Training mode: Update add button
+            if has_training_dummy:
+                # Dummy already set - show accept icon and disable
+                try:
+                    # Use size=16 to match compact button
+                    accept_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "✓")("accept", "✓", size=16)
+                    if isinstance(accept_icon, str):
+                        self.btn_add.config(text=accept_icon, state="disabled")
+                    else:
+                        self.btn_add.config(
+                            image=accept_icon, text="", state="disabled"
+                        )
+                except Exception:
+                    self.btn_add.config(text="✓", state="disabled")
+
+                # Update tooltip for locked state
+                tooltip_text = self.app._t("tooltip_add_monster_locked")
+                tooltip = getattr(self.btn_add, "_tooltip", None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(self.btn_add, "_tooltip")
+                    except Exception:
+                        pass
+                if hasattr(self.app, "_create_tooltip"):
+                    self.app._create_tooltip(self.btn_add, tooltip_text)
+            else:
+                # No dummy yet - show add icon and enable
+                try:
+                    # Use size=16 to match compact button
+                    add_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "➕")("add", "➕", size=16)
+                    if isinstance(add_icon, str):
+                        self.btn_add.config(text=add_icon, state="normal")
+                    else:
+                        self.btn_add.config(
+                            image=add_icon, text="", state="normal"
+                        )
+                except Exception:
+                    self.btn_add.config(text="➕", state="normal")
+
+                # Update tooltip for training helper
+                tooltip_text = self.app._t("tooltip_add_monster_training")
+                tooltip = getattr(self.btn_add, "_tooltip", None)
+                if tooltip is not None:
+                    try:
+                        tooltip.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        delattr(self.btn_add, "_tooltip")
+                    except Exception:
+                        pass
+                if hasattr(self.app, "_create_tooltip"):
+                    self.app._create_tooltip(self.btn_add, tooltip_text)
+
+            # Disable priority reorder buttons with locked icon (white on gray)
+            # Use size=16 to match SMALL buttons (36px)
+            try:
+                locked_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "🔒")("locked", "🔒", size=16, color="#FFFFFF")
+                for btn in [self.btn_move_up, self.btn_move_down]:
+                    # IMPORTANT: Keep original bg colors when disabled
+                    original_bg = (
+                        UI.BG_ELEVATED if btn == self.btn_move_up else UI.BG_ELEVATED
+                    )
+                    btn.config(state="disabled", bg=original_bg)
+                    if isinstance(locked_icon, str):
+                        btn.config(text=locked_icon)
+                    else:
+                        btn.config(image=locked_icon, text="")
+            except Exception:
+                self.btn_move_up.config(state="disabled", text="🔒", bg=UI.BG_ELEVATED)
+                self.btn_move_down.config(
+                    state="disabled", text="🔒", bg=UI.BG_ELEVATED
+                )
+
+            # Update tooltips for disabled buttons
+            for btn in [self.btn_move_up, self.btn_move_down]:
+                # Safely destroy any existing tooltip then create a new one
+                try:
+                    if hasattr(self.app, "_destroy_widget_tooltip"):
+                        self.app._destroy_widget_tooltip(btn)
+                except Exception:
+                    pass
+                if hasattr(self.app, "_create_tooltip"):
+                    self.app._create_tooltip(btn, self.app._t("tooltip_reorder_locked"))
+        else:
+            # Normal mode: Restore defaults
+            try:
+                # Use size=16 to match compact button
+                add_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "➕")("add", "➕", size=16)
+                if isinstance(add_icon, str):
+                    self.btn_add.config(text=add_icon, state="normal")
+                else:
+                    self.btn_add.config(image=add_icon, text="", state="normal")
+            except Exception:
+                self.btn_add.config(text="➕", state="normal")
+
+            # Restore normal tooltip
+            try:
+                if hasattr(self.app, "_destroy_widget_tooltip"):
+                    self.app._destroy_widget_tooltip(self.btn_add)
+            except Exception:
+                pass
+            if hasattr(self.app, "_create_tooltip"):
+                self.app._create_tooltip(
+                    self.btn_add, self.app._t("tooltip_add_monster_normal")
+                )
+
+            # Enable priority reorder buttons with original icons and colors (both blue for consistency)
+            try:
+                # Use size=16 to match SMALL buttons
+                up_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "↑")("up", "↑", size=16)
+                down_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "↓")("down", "↓", size=16)
+
+                if isinstance(up_icon, str):
+                    self.btn_move_up.config(
+                        state="normal",
+                        text=up_icon,
+                        bg=UI.ACCENT_BLUE,  # Blue for consistency
+                        fg=UI.BG_BASE,
+                    )
+                else:
+                    self.btn_move_up.config(
+                        state="normal",
+                        image=up_icon,
+                        text="",
+                        bg=UI.ACCENT_BLUE,
+                        fg=UI.BG_BASE,
+                    )
+
+                if isinstance(down_icon, str):
+                    self.btn_move_down.config(
+                        state="normal",
+                        text=down_icon,
+                        bg=UI.ACCENT_BLUE,  # Blue for consistency
+                        fg=UI.BG_BASE,
+                    )
+                else:
+                    self.btn_move_down.config(
+                        state="normal",
+                        image=down_icon,
+                        text="",
+                        bg=UI.ACCENT_BLUE,
+                        fg=UI.BG_BASE,
+                    )
+            except Exception:
+                self.btn_move_up.config(
+                    state="normal",
+                    text="↑",
+                    bg=UI.ACCENT_BLUE,  # Blue for consistency
+                    fg=UI.BG_BASE,
+                )
+                self.btn_move_down.config(
+                    state="normal",
+                    text="↓",
+                    bg=UI.ACCENT_BLUE,  # Blue for consistency
+                    fg=UI.BG_BASE,
+                )
+
+            # Restore normal tooltips
+            try:
+                if hasattr(self.app, "_destroy_widget_tooltip"):
+                    self.app._destroy_widget_tooltip(self.btn_move_up)
+            except Exception:
+                pass
+            if hasattr(self.app, "_create_tooltip"):
+                self.app._create_tooltip(self.btn_move_up, self.app._t("tooltip_move_up"))
+
+            try:
+                if hasattr(self.app, "_destroy_widget_tooltip"):
+                    self.app._destroy_widget_tooltip(self.btn_move_down)
+            except Exception:
+                pass
+            if hasattr(self.app, "_create_tooltip"):
+                self.app._create_tooltip(self.btn_move_down, self.app._t("tooltip_move_down"))

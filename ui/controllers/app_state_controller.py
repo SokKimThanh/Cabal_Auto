@@ -18,19 +18,15 @@ class AppStateController:
 
     @property
     def hunt_cfg(self) -> Dict[str, Any]:
-        if not hasattr(self, "_config_store"):
-            return {}
         return self._config_store.get_config()
 
     @hunt_cfg.setter
     def hunt_cfg(self, value: Dict[str, Any]) -> None:
-        if not hasattr(self, "_config_store"):
-            self._config_store = HuntConfigStore()
         self._config_store.set_config(value)
 
     @property
     def has_unsaved_changes(self) -> bool:
-        return getattr(self, "_has_unsaved_changes", False)
+        return self._has_unsaved_changes
 
     @has_unsaved_changes.setter
     def has_unsaved_changes(self, value: bool) -> None:
@@ -38,7 +34,7 @@ class AppStateController:
 
     @property
     def bounds_recovery_failed(self) -> bool:
-        return getattr(self, "_bounds_recovery_failed", False)
+        return self._bounds_recovery_failed
 
     @bounds_recovery_failed.setter
     def bounds_recovery_failed(self, value: bool) -> None:
@@ -46,7 +42,7 @@ class AppStateController:
 
     @property
     def win_items(self) -> List[Dict[str, Any]]:
-        return getattr(self, "_win_items", [])
+        return self._win_items
 
     @win_items.setter
     def win_items(self, value: List[Dict[str, Any]]) -> None:
@@ -54,7 +50,7 @@ class AppStateController:
 
     @property
     def hunt_selected(self) -> Optional[Dict[str, Any]]:
-        return getattr(self, "_hunt_selected", None)
+        return self._hunt_selected
 
     @hunt_selected.setter
     def hunt_selected(self, value: Optional[Dict[str, Any]]) -> None:
@@ -62,7 +58,7 @@ class AppStateController:
 
     @property
     def current_window_bounds(self) -> Any:
-        return getattr(self, "_current_window_bounds", None)
+        return self._current_window_bounds
 
     @current_window_bounds.setter
     def current_window_bounds(self, value: Any) -> None:
@@ -73,22 +69,28 @@ class AppStateController:
     def __init__(self, root: tk.Tk):
         self.root = root
 
-
-
-
-
+        # Stores
+        self._config_store = HuntConfigStore()
+        self._monster_session_manager = MonsterSessionManager()
 
         # State
+        self._has_unsaved_changes = False
+        self._bounds_recovery_failed = False
+        self._win_items = []  # list of {'hwnd','pid','title','proc'}
+        self._hunt_selected = None  # currently selected window info
+        self._current_window_bounds = None
+        self.skill_slot_key_labels = []
+        self.skill_slot_vars = []
+        self._collect_skill_slots_func = None
+
         self.click_running = False
         self.click_thread = None
 
         self.hunt_thread = None
-        self._win_items = []  # list of {'hwnd','pid','title','proc'}
-        self._hunt_selected = None  # currently selected window info
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
 
         # Character class selection for presets
-        hunt_settings = getattr(self, "hunt_cfg", {})
+        hunt_settings = self._config_store.get_config()
         self._current_class_id = hunt_settings.get("last_active_class_id", 1)
 
         # Global hotkeys - registered after config load
@@ -106,10 +108,6 @@ class AppStateController:
         self._overlay_enabled = False
         self._overlay_update_thread = None
         self._overlay_stop_event = threading.Event()
-
-        # Stores
-        self._config_store = HuntConfigStore()
-        self._monster_session_manager = MonsterSessionManager()
 
         # Phase 7: Monster tracking integration
         self._vision_engine = None
@@ -129,7 +127,6 @@ class AppStateController:
         self._callbacks = {}
         self._combo_mode_active = False
 
-        self.skill_slot_vars = []
         self.skill_slot_boxes = []
         self.skill_slot_count = 6
         self._image_refs = []
@@ -138,7 +135,6 @@ class AppStateController:
         self.monster_template_selected_index = None
         self._thumbnail_cache = {}
         self.current_window_bounds = None
-        self._collect_skill_slots_func: Any = None
 
         self.ui_vars = {}
         self.ui_widgets = {
@@ -278,148 +274,36 @@ class AppStateController:
 
     @property
     def monster_rotation(self):
-        if not hasattr(self, "_monster_session_manager"):
-            return []
         return self._monster_session_manager.get_rotation()
 
     @monster_rotation.setter
     def monster_rotation(self, value):
-        if not hasattr(self, "_monster_session_manager"):
-            self._monster_session_manager = MonsterSessionManager()
         self._monster_session_manager.set_rotation(value)
-
-    def build_hunt_config_from_state(self) -> Dict[str, Any]:
-
-        from lib.features.hunt.window_selection_service import WindowSelectionService
-
-        cfg = copy.deepcopy(self.hunt_cfg)
-        if not isinstance(cfg.get("skill_slots"), list):
-            cfg["skill_slots"] = []
-
-        if isinstance(getattr(self, "hunt_selected", None), dict):
-            cfg["window_title"] = self.hunt_selected.get("title", "")
-            cfg["window_pid"] = self.hunt_selected.get("pid")
-            cfg["window_hwnd"] = self.hunt_selected.get("hwnd")
-
-        bounds = WindowSelectionService.resolve_bounds(
-            cfg, getattr(self, "current_window_bounds", None)
-        )
-        WindowSelectionService.update_bounds(cfg, bounds)
-
-        hunt_area = cfg.get("hunt_area")
-        if isinstance(hunt_area, dict):
-            hunt_area["window_title"] = cfg.get("window_title", "")
-
-        if self.get_ui_var("target_policy") is not None:
-            cfg["target_policy"] = self.get_ui_var("target_policy")
-
-        simple_vars = {
-            "target_key": ("setup_target_key_var", "TAB"),
-            "target_cycle_delay": ("setup_target_cycle_var", 0.2),
-            "search_interval": ("setup_search_interval_var", 0.25),
-            "attack_interval": ("setup_attack_interval_var", 0.15),
-            "lost_timeout_sec": ("setup_lost_timeout_var", 1.2),
-            "attack_min_duration_sec": ("setup_attack_duration_var", 1.5),
-            "attack_press_ms": ("setup_press_ms_var", 60),
-        }
-
-        cfg["ui_mode"] = "advanced"
-
-        if self.get_ui_var("setup_template") is not None:
-            cfg["template_path"] = self.get_ui_var("setup_template")
-
-        for key, (attr_name, default) in simple_vars.items():
-            var = self.get_ui_var(attr_name.replace("_var", ""))
-            if var is None:
-                cfg.setdefault(key, default)
-                continue
-            raw_value = var
-            if isinstance(default, int):
-                cfg[key] = int(raw_value or default)
-            elif isinstance(default, float):
-                cfg[key] = float(raw_value or default)
-            else:
-                cfg[key] = raw_value or default
-
-        cfg["bring_to_front_each_cycle"] = bool(self.get_ui_var("bring_front"))
-        cfg["skill_slots"] = []
-        _collect_func = getattr(self, "_collect_skill_slots_func", None)
-        if _collect_func is not None and callable(_collect_func):
-            collected = _collect_func()  # pylint: disable=not-callable
-            if isinstance(collected, list):
-                for s in collected:
-                    if isinstance(s, dict):
-                        cfg["skill_slots"].append(
-                            {
-                                "id": s.get("id", s.get("name", "")),
-                                "key": s.get("key", ""),
-                                "cast_time": float(s.get("cast_time", 0.0)),
-                                "cooldown": float(s.get("cooldown", 0.0)),
-                                "type": s.get("type", "attack"),
-                                "name": s.get("name", ""),
-                            }
-                        )
-
-        cfg["monster_rotation"] = []
-        rotation = getattr(self, "monster_rotation", [])
-        if isinstance(rotation, list):
-            for i, m in enumerate(rotation):
-                if isinstance(m, dict):
-                    cfg["monster_rotation"].append(
-                        {
-                            "monster_id": m.get("monster_id", m.get("id", 0)),
-                            "name": m.get("name", ""),
-                            "priority": m.get("priority", i + 1),
-                            "dungeon_id": m.get("dungeon_id", None),
-                        }
-                    )
-
-        cfg.setdefault("templates", [])
-
-        if self.get_ui_var("global_hotkey_enabled") is not None:
-            enabled = self.get_ui_var("global_hotkey_enabled")
-            hotkeys = cfg.get("global_hotkeys", {})
-
-            def _hotkey_value(attr_name, config_name, default):
-                variable = self.get_ui_var(attr_name.replace("_var", ""))
-                return (
-                    variable.get()
-                    if variable is not None
-                    else hotkeys.get(config_name, default)
-                )
-
-            cfg["global_hotkeys"] = {
-                "enabled": enabled,
-                "start_key": _hotkey_value("global_hotkey_start_var", "start_key", "ctrl+shift+r"),
-                "stop_key": _hotkey_value("global_hotkey_stop_var", "stop_key", "ctrl+shift+e"),
-                "library_manager_key": _hotkey_value("global_hotkey_library_var", "library_manager_key", "ctrl+shift+l"),
-                "vision_wizard_key": _hotkey_value("global_hotkey_vision_var", "vision_wizard_key", "ctrl+shift+v"),
-                "monster_editor_key": _hotkey_value("global_hotkey_monster_var", "monster_editor_key", "ctrl+shift+m"),
-            }
-
-        return cfg
 
     def _refresh_slot_key_labels(self) -> None:
 
-        labels = getattr(self, "skill_slot_key_labels", [])
-        vars_ = getattr(self, "skill_slot_vars", [])
+        labels = self.skill_slot_key_labels
+        vars_ = self.skill_slot_vars
         service = SkillRuntimeService()
         skills_by_name = {
             skill.get("name"): skill
             for skill in service.get_all_skills()
             if isinstance(skill, dict) and skill.get("name")
         }
-        for idx, label in enumerate(labels):
-            skill_name = vars_[idx].get().strip() if idx < len(vars_) else ""
+        keys_list = []
+        for idx, var in enumerate(vars_):
+            skill_name = var.get().strip()
             key = ""
             if skill_name:
                 key = str(skills_by_name.get(skill_name, {}).get("key", "") or "")
-            label.config(text=key.upper() if key else "", fg="#333333")
+            keys_list.append(key.upper() if key else "")
+
+        self._emit_event("on_skill_keys_updated", keys_list)
 
     def _validate_slot_key_duplicates(self) -> None:
 
-        labels = getattr(self, "skill_slot_key_labels", [])
-        vars_ = getattr(self, "skill_slot_vars", [])
+        labels = self.skill_slot_key_labels
+        vars_ = self.skill_slot_vars
         service = SkillRuntimeService()
         skills_by_name = {
             skill.get("name"): skill
@@ -440,8 +324,8 @@ class AppStateController:
                 duplicate_indices.add(idx)
             else:
                 seen[key] = idx
-        for idx, label in enumerate(labels):
-            label.config(fg="#C62828" if idx in duplicate_indices else "#333333")
+
+        self._emit_event("on_skill_key_duplicates_detected", duplicate_indices)
 
     def _apply_hunt_mode(self) -> None:
         return
