@@ -13,6 +13,8 @@ class MonsterTargetPanel(ttk.LabelFrame):
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
         self._build_ui()
+        if hasattr(self.app.state_controller.ui_vars.get('training_mode'), 'trace_add'):
+            self.app.state_controller.ui_vars['training_mode'].trace_add('write', self.update_training_mode_buttons)
 
     def _scale_font(self, base_size: int) -> int:
         return max(8, int(base_size * self.scale_factor))
@@ -474,7 +476,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
                 # Dummy already set - show accept icon and disable
                 try:
                     # Use size=16 to match compact button
-                    accept_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "✓")("accept", "✓", size=16)
+                    accept_icon = self.app._icon("accept", "✓", size=16)
                     if isinstance(accept_icon, str):
                         self.btn_add.config(text=accept_icon, state="disabled")
                     else:
@@ -496,13 +498,12 @@ class MonsterTargetPanel(ttk.LabelFrame):
                         delattr(self.btn_add, "_tooltip")
                     except Exception:
                         pass
-                if hasattr(self.app, "_create_tooltip"):
-                    self.app._create_tooltip(self.btn_add, tooltip_text)
+                self.app._create_tooltip(self.btn_add, tooltip_text)
             else:
                 # No dummy yet - show add icon and enable
                 try:
                     # Use size=16 to match compact button
-                    add_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "➕")("add", "➕", size=16)
+                    add_icon = self.app._icon("add", "➕", size=16)
                     if isinstance(add_icon, str):
                         self.btn_add.config(text=add_icon, state="normal")
                     else:
@@ -524,18 +525,15 @@ class MonsterTargetPanel(ttk.LabelFrame):
                         delattr(self.btn_add, "_tooltip")
                     except Exception:
                         pass
-                if hasattr(self.app, "_create_tooltip"):
-                    self.app._create_tooltip(self.btn_add, tooltip_text)
+                self.app._create_tooltip(self.btn_add, tooltip_text)
 
             # Disable priority reorder buttons with locked icon (white on gray)
             # Use size=16 to match SMALL buttons (36px)
             try:
-                locked_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "🔒")("locked", "🔒", size=16, color="#FFFFFF")
+                locked_icon = self.app._icon("locked", "🔒", size=16, color="#FFFFFF")
                 for btn in [self.btn_move_up, self.btn_move_down]:
                     # IMPORTANT: Keep original bg colors when disabled
-                    original_bg = (
-                        UI.BG_ELEVATED if btn == self.btn_move_up else UI.BG_ELEVATED
-                    )
+                    original_bg = UI.BG_ELEVATED
                     btn.config(state="disabled", bg=original_bg)
                     if isinstance(locked_icon, str):
                         btn.config(text=locked_icon)
@@ -551,17 +549,15 @@ class MonsterTargetPanel(ttk.LabelFrame):
             for btn in [self.btn_move_up, self.btn_move_down]:
                 # Safely destroy any existing tooltip then create a new one
                 try:
-                    if hasattr(self.app, "_destroy_widget_tooltip"):
-                        self.app._destroy_widget_tooltip(btn)
+                    self.app._destroy_widget_tooltip(btn)
                 except Exception:
                     pass
-                if hasattr(self.app, "_create_tooltip"):
-                    self.app._create_tooltip(btn, self.app._t("tooltip_reorder_locked"))
+                self.app._create_tooltip(btn, self.app._t("tooltip_reorder_locked"))
         else:
             # Normal mode: Restore defaults
             try:
                 # Use size=16 to match compact button
-                add_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "➕")("add", "➕", size=16)
+                add_icon = self.app._icon("add", "➕", size=16)
                 if isinstance(add_icon, str):
                     self.btn_add.config(text=add_icon, state="normal")
                 else:
@@ -571,26 +567,24 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
             # Restore normal tooltip
             try:
-                if hasattr(self.app, "_destroy_widget_tooltip"):
-                    self.app._destroy_widget_tooltip(self.btn_add)
+                self.app._destroy_widget_tooltip(self.btn_add)
             except Exception:
                 pass
-            if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(
-                    self.btn_add, self.app._t("tooltip_add_monster_normal")
-                )
+            self.app._create_tooltip(
+                self.btn_add, self.app._t("tooltip_add_monster_normal")
+            )
 
             # Enable priority reorder buttons with original icons and colors (both blue for consistency)
             try:
                 # Use size=16 to match SMALL buttons
-                up_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "↑")("up", "↑", size=16)
-                down_icon = getattr(self.app, "_icon", lambda *args, **kwargs: "↓")("down", "↓", size=16)
+                up_icon = self.app._icon("up", "↑", size=16)
+                down_icon = self.app._icon("down", "↓", size=16)
 
                 if isinstance(up_icon, str):
                     self.btn_move_up.config(
                         state="normal",
                         text=up_icon,
-                        bg=UI.ACCENT_BLUE,  # Blue for consistency
+                        bg=UI.ACCENT_BLUE,
                         fg=UI.BG_BASE,
                     )
                 else:
@@ -606,7 +600,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     self.btn_move_down.config(
                         state="normal",
                         text=down_icon,
-                        bg=UI.ACCENT_BLUE,  # Blue for consistency
+                        bg=UI.ACCENT_BLUE,
                         fg=UI.BG_BASE,
                     )
                 else:
@@ -621,29 +615,25 @@ class MonsterTargetPanel(ttk.LabelFrame):
                 self.btn_move_up.config(
                     state="normal",
                     text="↑",
-                    bg=UI.ACCENT_BLUE,  # Blue for consistency
+                    bg=UI.ACCENT_BLUE,
                     fg=UI.BG_BASE,
                 )
                 self.btn_move_down.config(
                     state="normal",
                     text="↓",
-                    bg=UI.ACCENT_BLUE,  # Blue for consistency
+                    bg=UI.ACCENT_BLUE,
                     fg=UI.BG_BASE,
                 )
 
             # Restore normal tooltips
             try:
-                if hasattr(self.app, "_destroy_widget_tooltip"):
-                    self.app._destroy_widget_tooltip(self.btn_move_up)
+                self.app._destroy_widget_tooltip(self.btn_move_up)
             except Exception:
                 pass
-            if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(self.btn_move_up, self.app._t("tooltip_move_up"))
+            self.app._create_tooltip(self.btn_move_up, self.app._t("tooltip_move_up"))
 
             try:
-                if hasattr(self.app, "_destroy_widget_tooltip"):
-                    self.app._destroy_widget_tooltip(self.btn_move_down)
+                self.app._destroy_widget_tooltip(self.btn_move_down)
             except Exception:
                 pass
-            if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(self.btn_move_down, self.app._t("tooltip_move_down"))
+            self.app._create_tooltip(self.btn_move_down, self.app._t("tooltip_move_down"))
