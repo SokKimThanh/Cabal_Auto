@@ -7,7 +7,7 @@
 4. Ensure the menu is instantiated correctly after the main `AppShell` and Tk root are initialized.
 
 ## Checklist
-- [ ] `tk.Menu` logic removed from `app_gui.py`.
-- [ ] `MenuController` or `MainMenuBar` component created.
-- [ ] Global hotkey toggle triggers EventBus or appropriate Controller methods.
-- [ ] Application launches successfully with the menu intact.
+- [x] `tk.Menu` logic removed from `app_gui.py`.
+- [x] `MenuController` or `MainMenuBar` component created.
+- [x] Global hotkey toggle triggers EventBus or appropriate Controller methods.
+- [x] Application launches successfully with the menu intact.

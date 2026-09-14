@@ -146,8 +146,8 @@ Nhóm nợ kỹ thuật liên quan đến `AppStateController` đã được bó
 Sau khi hoàn thành phần lớn việc bóc tách state và UI layout, `app_gui.py` vẫn giữ vai trò God Class với hơn 70 hàm và quản lý trực tiếp menu, vision, và action/status bars. Các tasks đã được lên kế hoạch như sau:
 
 ### Prompt 022: Extract Main Menu
-**Trạng thái:** Not Started.
-**Findings:** Lên kế hoạch bóc tách toàn bộ `tk.Menu` và các toggles liên quan đến Vision/Settings ra khỏi hàm `__init__` của `App` thành `MainMenuBar`.
+**Trạng thái:** Hoàn thành.
+**Findings:** Đã bóc tách `tk.Menu` logic vào `MainMenuBar`, di chuyển menu initialization vào `_build_ui()` (sau khi sảnh shell đã build), và đã tạo `MenuVisionController` để xử lý các event liên quan đến Vision thay vì lưu trong file `app_gui.py`.
 
 ### Prompt 023: Decouple Action and Status Bars
 **Trạng thái:** Not Started.
