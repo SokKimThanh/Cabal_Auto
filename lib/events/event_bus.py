@@ -49,6 +49,15 @@ class SceneMonstersDetectedEvent(Event):
 class MonsterRotationUpdatedEvent(Event):
     pass
 
+class VisionScanRegionEvent(Event):
+    pass
+
+class VisionAddTemplateEvent(Event):
+    pass
+
+class VisionManageTemplatesEvent(Event):
+    pass
+
 class EventBus:
     _listeners: Dict[Type[Event], List[Callable[[Event], None]]] = {}
 

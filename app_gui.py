@@ -23,7 +23,7 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
-from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent
+from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent, VisionScanRegionEvent, VisionAddTemplateEvent, VisionManageTemplatesEvent
 from tkinter import filedialog
 import tkinter as tk
 import sys
@@ -212,123 +212,14 @@ class App(tk.Tk):
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
         EventBus.bind(MonsterRotationUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._on_monster_rotation_updated))
+        EventBus.bind(VisionScanRegionEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._scan_region))
+        EventBus.bind(VisionAddTemplateEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._add_template))
+        EventBus.bind(VisionManageTemplatesEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._manage_templates))
 
         self.state_controller.hunt_selected = {}
 
-        # --- Menu: Settings (includes Global Hotkeys toggle & retry) ---
-        try:
-            menubar = tk.Menu(self)
-            settings_menu = tk.Menu(menubar, tearoff=0)
-            # BooleanVar reflects hunt_cfg setting
-            gh_cfg = self.state_controller.hunt_cfg.get("global_hotkeys", {})
-            self.state_controller.ui_vars['global_hotkeys_enabled_legacy'] = tk.BooleanVar(value=bool(gh_cfg.get("enabled", True)))
-
-            def _on_toggle_global_hotkeys():
-                enabled = bool(self.state_controller.get_ui_var('global_hotkeys_enabled_legacy'))
-                # Persist setting
-                self.state_controller.hunt_cfg.setdefault("global_hotkeys", {})["enabled"] = enabled
-                try:
-                    save_hunt_config(self.state_controller.hunt_cfg)
-                except Exception:
-                    pass
-                # Apply immediately
-                if enabled:
-                    print("[Hotkeys] User enabled global hotkeys via menu")
-                    try:
-                        self.hotkey_controller.register_all()
-                    except Exception as e:
-                        print(f"[Hotkeys] Error re-registering hotkeys: {e}")
-                else:
-                    print("[Hotkeys] User disabled global hotkeys via menu")
-                    try:
-                        self.hotkey_controller.unregister_all()
-                    except Exception as e:
-                        print(f"[Hotkeys] Error unregistering hotkeys: {e}")
-
-            settings_menu.add_checkbutton(
-                label=self._t("help_shortcuts"),
-                variable=self.state_controller.ui_vars['global_hotkeys_enabled_legacy'],
-                command=_on_toggle_global_hotkeys,
-            )
-            settings_menu.add_separator()
-
-            def _retry_hotkeys():
-                print("[Hotkeys] User requested retry registration")
-                try:
-                    self.hotkey_controller.register_all()
-                except Exception as e:
-                    print(f"[Hotkeys] Retry failed: {e}")
-
-            settings_menu.add_command(
-                label="Retry global hotkeys", command=_retry_hotkeys
-            )
-            menubar.add_cascade(label="Settings", menu=settings_menu)
-
-            # --- Menu: Vision (Sprint 22 Phase 1B) ---
-            vision_menu = tk.Menu(menubar, tearoff=0)
-
-            # Open Vision Wizard (Ctrl+Shift+V)
-            vision_label = (
-                "Open Vision Wizard" if self.lang == "en" else "Mở Trợ lý Vision"
-            )
-            vision_menu.add_command(
-                label=vision_label,
-                accelerator="Ctrl+Shift+V",
-                command=self.window_controller.open_vision_wizard,
-            )
-
-            vision_menu.add_separator()
-
-            # Scan Region (Ctrl+Alt+S)
-            scan_label = "Scan Region" if self.lang == "en" else "Quét Vùng"
-            vision_menu.add_command(
-                label=scan_label, accelerator="Ctrl+Alt+S", command=self._scan_region
-            )
-
-            # Add Template (Ctrl+T)
-            add_tmpl_label = "Add Template" if self.lang == "en" else "Thêm Template"
-            vision_menu.add_command(
-                label=add_tmpl_label, accelerator="Ctrl+T", command=self._add_template
-            )
-
-            # Manage Templates (Ctrl+Shift+T)
-            manage_tmpl_label = (
-                "Manage Templates" if self.lang == "en" else "Quản lý Templates"
-            )
-            vision_menu.add_command(
-                label=manage_tmpl_label,
-                accelerator="Ctrl+Shift+T",
-                command=self._manage_templates,
-            )
-
-            vision_menu.add_separator()
-
-            # Toggle Overlay (Ctrl+Shift+O) - using translations
-            vision_menu.add_command(
-                label=self._t("vision_toggle_overlay"),
-                accelerator="Ctrl+Shift+O",
-                command=lambda: getattr(self, "overlay_controller").toggle_overlay() if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller") else None,
-            )
-
-            # Overlay Settings - using translations
-            overlay_settings_label = (
-                "Overlay Settings..." if self.lang == "en" else "Cài Đặt Overlay..."
-            )
-            vision_menu.add_command(
-                label=overlay_settings_label,
-                command=lambda: getattr(self, "overlay_controller").open_settings() if hasattr(self, "overlay_controller") and getattr(self, "overlay_controller") else None,
-            )
-
-            menubar.add_cascade(label="Vision", menu=vision_menu)
-            print("[Vision Menu] Created successfully")
-
-            try:
-                self.config(menu=menubar)
-            except Exception:
-                # Some environments may not support menu on top-level; ignore
-                pass
-        except Exception as e:
-            print(f"[Menu] Error creating menubar: {e}")
+        # --- Main Menu Construction Extracted ---
+        self._setup_main_menu()
 
         # Check PIL availability (for image preview features)
         self.pil_available = (
@@ -488,6 +379,24 @@ class App(tk.Tk):
         if hasattr(self.state_controller, "register_callback"):
             self.state_controller.register_callback("on_skill_keys_updated", self._update_skill_keys)
             self.state_controller.register_callback("on_skill_key_duplicates_detected", self._update_duplicate_colors)
+
+    def _setup_main_menu(self):
+        try:
+            from lib.ui.components.main_menu_bar import MainMenuBar
+            self.main_menu = MainMenuBar(
+                parent=self,
+                app=self,
+                state_controller=self.state_controller,
+                hotkey_controller=self.hotkey_controller,
+                window_controller=self.window_controller
+            )
+            try:
+                self.config(menu=self.main_menu)
+            except Exception:
+                # Some environments may not support menu on top-level; ignore
+                pass
+        except Exception as e:
+            print(f"[Menu] Error creating menubar: {e}")
 
     # -----------------
     def _update_skill_keys(self, keys_list):
