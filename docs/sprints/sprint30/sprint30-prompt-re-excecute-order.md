@@ -55,6 +55,7 @@ Tài liệu này tổng hợp tất cả các lỗi, rủi ro, nợ kỹ thuật
 
 **Vấn đề:** Class sử dụng `getattr` với chính `self` của nó rất nhiều lần, vòng đời thuộc tính không rõ ràng.
 **Giải pháp:** Khởi tạo tất cả trong `__init__` (như `self.skill_slot_key_labels = []`).
+**Trạng thái:** Hoàn thành. `app_state_controller.py` đã được dọn dẹp sạch `getattr/hasattr` trên `self`, toàn bộ state variables đã được khai báo và khởi tạo trong `__init__`.
 
 ## 6. Các lỗi liên quan đến AppShell và Cấu hình cửa sổ chính (UI Layout)
 *Báo cáo liên quan: Prompt 006*

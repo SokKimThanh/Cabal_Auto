@@ -102,7 +102,7 @@ Dựa trên đợt review mới nhất, chúng ta đã phát hiện thêm một 
 ### Prompt 015: Clean App State Init
 **Vấn đề:** Khởi tạo thuộc tính thiếu sót, phải dùng `getattr` và `hasattr` để bù đắp ở runtime.
 **Giải pháp:** Đưa toàn bộ các thuộc tính như `self._has_unsaved_changes`, `self._hunt_selected` vào `__init__`. Loại bỏ `getattr/hasattr`.
-**Trạng thái:** Đã tạo prompt và file review. Chờ thực thi.
+**Trạng thái:** Hoàn thành. `app_state_controller.py` đã được kiểm tra và không còn `getattr/hasattr` trên `self`, tất cả biến được khởi tạo rõ ràng trong `__init__`.
 
 ### Prompt 016: Extract Hunt Config Controller
 **Vấn đề:** Hàm `build_hunt_config_from_state` ôm đồm việc tạo config săn quái và hardcode quá nhiều mặc định.
