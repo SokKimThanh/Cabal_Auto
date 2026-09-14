@@ -86,3 +86,13 @@ class EventBus:
     def clear(cls) -> None:
         """For testing purposes."""
         cls._listeners.clear()
+
+class LanguageChangedEvent(Event):
+    def __init__(self, lang: str):
+        self.lang = lang
+
+class GlobalApplyEvent(Event):
+    pass
+
+class StartStopHuntEvent(Event):
+    pass

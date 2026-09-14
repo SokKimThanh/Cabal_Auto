@@ -9,13 +9,18 @@ from ui.icon_library import Icons
 from app_gui import _create_icon_btn_component
 import logging
 from lib.features.hunt.hunt_config import save_hunt_config
+from lib.events.event_bus import EventBus, GlobalApplyEvent, StartStopHuntEvent, LanguageChangedEvent
+from lib.i18n import t as i18n_t
+from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 
 logger = logging.getLogger(__name__)
 
 class ActionBarView(ResponsiveGridBase):
-    def __init__(self, parent, app, *args, **kwargs):
+    def __init__(self, parent, state_controller, *args, window_controller=None, scan_controller=None, **kwargs):
         super().__init__(parent, bg=UI.BG_BASE, *args, **kwargs)
-        self.app = app
+        self.state_controller = state_controller
+        self.window_controller = window_controller
+        self.scan_controller = scan_controller
 
         self.action_bar_frame = self.get_content_frame()
         self.action_bar_frame.configure(padx=32, pady=10)
@@ -28,9 +33,7 @@ class ActionBarView(ResponsiveGridBase):
         self._build_col2_actions()
 
     def _t(self, key):
-        if hasattr(self.app, "_t"):
-            return self.app._t(key)
-        return key
+        return i18n_t(key, ns=I18N_GLOBAL)
 
     def _build_col1_window_status(self):
         col1_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_ELEVATED, bd=1, relief="solid", highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
@@ -53,29 +56,29 @@ class ActionBarView(ResponsiveGridBase):
             """Callback when user selects window from compact selector."""
             try:
                 # Set hunt_selected with window info
-                self.app.state_controller.hunt_selected = {
+                self.state_controller.hunt_selected = {
                     "hwnd": window_dict.get("hwnd"),
                     "pid": window_dict.get("pid"),
                     "title": window_dict.get("title"),
                     "bounds": window_dict.get("bounds"),
                 }
                 # Save to config
-                self.app.state_controller.hunt_cfg["window_pid"] = window_dict.get("pid")
-                self.app.state_controller.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
-                self.app.state_controller.hunt_cfg["window_title"] = window_dict.get("title")
-                save_hunt_config(self.app.state_controller.hunt_cfg)
+                self.state_controller.hunt_cfg["window_pid"] = window_dict.get("pid")
+                self.state_controller.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
+                self.state_controller.hunt_cfg["window_title"] = window_dict.get("title")
+                save_hunt_config(self.state_controller.hunt_cfg)
                 # Update bounds display
-                if hasattr(self.app, "state_controller"):
-                    self.app.window_controller.update_window_bounds_display()
-                self.app.state_controller.set_ui_var('hunt_status', f"✓ Selected: {window_dict['title']}")
+                if self.window_controller:
+                    self.window_controller.update_window_bounds_display()
+                self.state_controller.set_ui_var('hunt_status', f"✓ Selected: {window_dict['title']}")
             except Exception as e:
                 logger.error(f"Error selecting window: {e}")
 
         self.compact_window_selector = CompactWindowSelector(
             status_header,
             on_window_selected=on_window_selected_from_compact,
-            window_controller=self.app.window_controller,
-            root=self.app,
+            window_controller=self.window_controller,
+            root=self.winfo_toplevel(),
         )
         # Auto-refresh window list on startup
         self.compact_window_selector._on_refresh()
@@ -85,8 +88,8 @@ class ActionBarView(ResponsiveGridBase):
         self.scan_btn_icon_name = Icons.SCAN_SCREEN
 
         def on_scan_clicked():
-            if hasattr(self.app, "scan_controller"):
-                self.app.scan_controller.run_scan(manual=True)
+            if self.scan_controller:
+                self.scan_controller.run_scan(manual=True)
 
         self.btn_manual_scan = _create_icon_btn_component(
             parent=status_header,
@@ -144,7 +147,7 @@ class ActionBarView(ResponsiveGridBase):
         self.global_apply_btn = tk.Button(
             col2_frame,
             text=f"✓ {self._t('apply_all_settings_saved')}",
-            command=self.app.on_global_apply,
+            command=lambda: EventBus.trigger(GlobalApplyEvent()),
             padx=16,
             pady=6,
             bg=UI.ACCENT_GREEN,
@@ -164,7 +167,7 @@ class ActionBarView(ResponsiveGridBase):
             icon_size=20,
             button_size=44,
             padding={"padx": 20, "pady": 6},
-            command=self.app.on_start_stop_clicked,
+            command=lambda: EventBus.trigger(StartStopHuntEvent()),
             button_type="primary",
             bg_color=UI.ACCENT_GREEN,
             hover_color=UI.ACCENT_GREEN_BG,
@@ -177,13 +180,14 @@ class ActionBarView(ResponsiveGridBase):
 
         # Language Selector
         import tkinter.ttk as ttk
-        self.app.state_controller.ui_vars['lang'] = tk.StringVar(master=self.app, value=self.app.lang)
+        if 'lang' not in self.state_controller.ui_vars:
+            self.state_controller.ui_vars['lang'] = tk.StringVar(value=self.state_controller.get_ui_var('lang', 'en'))
         self.lang_cmb = ttk.Combobox(
-            col2_frame, textvariable=self.app.state_controller.ui_vars['lang'], state="readonly", width=4
+            col2_frame, textvariable=self.state_controller.ui_vars['lang'], state="readonly", width=4
         )
         self.lang_cmb["values"] = ("en", "vi")
         self.lang_cmb.pack(side="left", padx=(0, 12))
-        self.lang_cmb.bind("<<ComboboxSelected>>", self.app.on_language_change)
+        self.lang_cmb.bind("<<ComboboxSelected>>", lambda e: EventBus.trigger(LanguageChangedEvent(self.state_controller.get_ui_var('lang'))))
 
     def update_translations(self):
         """Update strings inside the Action Bar."""

@@ -23,7 +23,7 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
-from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent
+from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent, LanguageChangedEvent, GlobalApplyEvent, StartStopHuntEvent
 import tkinter as tk
 import sys
 from lib.ui.dialog_service import DialogService
@@ -211,6 +211,9 @@ class App(tk.Tk):
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
         EventBus.bind(MonsterRotationUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._on_monster_rotation_updated))
+        EventBus.bind(LanguageChangedEvent, self.on_language_change)
+        EventBus.bind(GlobalApplyEvent, lambda e: self.on_global_apply())
+        EventBus.bind(StartStopHuntEvent, lambda e: self.on_start_stop_clicked())
 
         # Instantiate the MenuVisionController to handle vision menu events
         from lib.ui.controllers.menu_vision_controller import MenuVisionController
@@ -471,7 +474,7 @@ class App(tk.Tk):
 
         # Vùng A: Quick Action Bar
         from ui.components.action_bar_view import ActionBarView
-        self.action_bar = ActionBarView(self.shell_zone_a, app=self)
+        self.action_bar = ActionBarView(self.shell_zone_a, state_controller=self.state_controller, window_controller=self.window_controller, scan_controller=self.scan_controller)
         self.action_bar.pack(fill="both", expand=True)
 
         # Map references that other parts of App might need
@@ -488,7 +491,7 @@ class App(tk.Tk):
 
         # DB Status Bar (bottom of window)
         from ui.components.status_bar_view import StatusBarView
-        self.status_bar = StatusBarView(self.status_bar_frame, app=self)
+        self.status_bar = StatusBarView(self.status_bar_frame, state_controller=self.state_controller)
         self.status_bar.pack(fill="both", expand=True)
 
         # Map variables for backward compatibility
