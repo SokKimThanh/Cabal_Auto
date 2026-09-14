@@ -24,7 +24,7 @@ from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
 from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent
-from tkinter import filedialog, ttk
+from tkinter import filedialog
 import tkinter as tk
 import sys
 from lib.ui.dialog_service import DialogService
@@ -2013,7 +2013,7 @@ def main():
     """Main entry point with single instance lock."""
     # Check critical dependencies (pywin32 for overlay)
     try:
-        import win32gui
+        import win32gui  # pylint: disable=unused-import
     except ImportError:
         # Show warning but don't block - overlay will show error when toggled
         print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
