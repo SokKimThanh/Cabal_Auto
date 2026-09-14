@@ -81,6 +81,25 @@ The application logic inside `app_gui.py` needs to be aggressively decoupled. Th
 
 All prompts are located in `docs/sprints/sprint30/prompt-refactor-debt-technical/` and `docs/sprints/sprint30/prompt-god-class-decomposition/`.
 
+---
+
+## Phase 4: Finalizing God Class Decomposition
+During the execution of Phase 1 and 2, it was identified that `app_gui.py` still functioned heavily as a God Class. With many methods remaining, including direct handling of menus, action/status bars, and vision capabilities, a final decomposition phase is required to strip the class down to its bare essentials (bootstrapping and shutdown).
+
+**Objectives:**
+- Extract the main menu (`tk.Menu`) out of `app_gui.py`.
+- Decouple action and status bars from the `App` instance.
+- Extract Vision UI handlers (scanning, templates) to a controller.
+- Finalize the `App` class by stripping it of remaining event handlers.
+
+**Execution Prompts (Sequential):**
+22. **`sprint30-prompt-022-extract-main-menu.md`**: Extract `tk.Menu` logic into `MenuController` / `MainMenuBar`.
+23. **`sprint30-prompt-023-decouple-action-and-status-bars.md`**: Remove `App` God Class dependencies from `ActionBarView` and `StatusBarView`.
+24. **`sprint30-prompt-024-extract-vision-ui-handlers.md`**: Move `_scan_region`, `_add_template`, and `_manage_templates` to a Vision UI controller.
+25. **`sprint30-prompt-025-finalize-app-class.md`**: Move remaining event handlers to domain controllers, leaving `App` with just bootstrapping logic.
+
+All Phase 4 prompts are located in `docs/sprints/sprint30/prompt-god-class-decomposition/`.
+
 ## Risk Mitigation Summary (Auto-Updated)
 Based on a thorough review of the current application state against the refactoring prompts, the following key risk areas have been identified and documented inside the individual prompts:
 1. **State Preservation:** Heavy dynamic variable usage requires careful translation to dictionaries (e.g. `self.ui_vars`) and maintaining initialization order so downstream consumers do not crash.
