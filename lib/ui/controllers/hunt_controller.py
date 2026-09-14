@@ -25,7 +25,8 @@ class HuntController:
             return
 
         try:
-            cfg = self.state_controller.build_hunt_config_from_state()
+            from lib.ui.controllers.hunt_config_controller import HuntConfigController
+            cfg = HuntConfigController().build_config(self.state_controller)
         except Exception as e:
             DialogService.show_error(
                 i18n_t("error_title"), i18n_t("invalid_hunt").format(e=e), parent=self.app_root
