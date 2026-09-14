@@ -581,8 +581,8 @@ class SkillPanel(ttk.LabelFrame):
 
         skill_id = self.controller.get_skill_id_by_name(skill_name)
 
-        if skill_id is not None and hasattr(self.app_state, "set_skill_slot"):
-            self.app_state.set_skill_slot(lane, position_idx, skill_id)
+        if skill_id is not None and hasattr(self.controller.preset_controller, "set_skill_slot"):
+            self.controller.preset_controller.set_skill_slot(lane, position_idx, skill_id)
 
     def on_build(self):
         """Open skill build tab"""

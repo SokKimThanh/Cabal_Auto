@@ -95,8 +95,10 @@ class PresetDialog(tk.Toplevel):
         if selection:
             idx = selection[0]
             preset = self.presets[idx]
-            if hasattr(self.app, "load_preset_for_class"):
-                self.app.load_preset_for_class(self.class_id, preset["preset_id"])
+            from ui.controllers.skill_preset_controller import SkillPresetController
+            controller = SkillPresetController(self, self.app)
+            if hasattr(controller, "load_preset_for_class"):
+                controller.load_preset_for_class(self.class_id, preset["preset_id"])
             self.destroy()
 
     def _on_delete(self):

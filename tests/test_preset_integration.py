@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from lib.features.skills.skill_preset_service import SkillPresetService
 from ui.controllers.app_state_controller import AppStateController
+from ui.controllers.skill_preset_controller import SkillPresetController
 
 
 class TestPresetIntegration(unittest.TestCase):
@@ -17,6 +18,7 @@ class TestPresetIntegration(unittest.TestCase):
         self.patcher_bool.start()
 
         self.app_state = AppStateController(self.root)
+        self.skill_controller = SkillPresetController(None, self.app_state)
         self.service = SkillPresetService()
 
     def tearDown(self):
@@ -34,7 +36,7 @@ class TestPresetIntegration(unittest.TestCase):
             "skill_slots": {"attack_combo": [1, 2], "buff_lane": [3]},
         }
 
-        self.app_state.load_preset_for_class(1, 100)
+        self.skill_controller.load_preset_for_class(1, 100)
 
         self.assertEqual(self.app_state._active_preset_id, 100)
         self.assertEqual(self.app_state._preset_mode, "default")
@@ -45,7 +47,7 @@ class TestPresetIntegration(unittest.TestCase):
         self.app_state._preset_mode = "default"
         self.app_state.skill_slots = {"attack_combo": []}
 
-        self.app_state.set_skill_slot("attack_combo", 0, 999)
+        self.skill_controller.set_skill_slot("attack_combo", 0, 999)
 
         self.assertEqual(self.app_state._preset_mode, "custom")
         self.assertEqual(self.app_state.skill_slots["attack_combo"][0]["skill_id"], 999)
@@ -60,7 +62,7 @@ class TestPresetIntegration(unittest.TestCase):
         self.app_state._current_class_id = 1
         self.app_state.skill_slots = {"attack_combo": [{"skill_id": 5}]}
 
-        self.app_state.save_custom_preset("My Custom Preset")
+        self.skill_controller.save_custom_preset("My Custom Preset")
 
         mock_create.assert_called_once()
         self.assertEqual(self.app_state._active_preset_id, 200)

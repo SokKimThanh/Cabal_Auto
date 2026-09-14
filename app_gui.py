@@ -763,7 +763,7 @@ class App(tk.Tk):
                         msg = self._t("msg_class_scan_mismatch") if hasattr(self, "_t") else "Scanned class differs from selected class. Update?"
                         if DialogService.ask_yes_no("Warning", msg, parent=self):
                             if hasattr(self.state_controller, "set_current_class"):
-                                self.state_controller.set_current_class(scanned_class_id)
+                                self.skill_panel.controller.preset_controller.set_current_class(scanned_class_id)
 
             self.screen_state_panel.update_from_scan(state)
 
