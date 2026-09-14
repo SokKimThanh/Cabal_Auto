@@ -1,9 +1,7 @@
 # Sprint 30: Technical Debt Refactoring
 
 ## Overview
-This sprint focuses on resolving critical architectural debt identified in `docs/ui_architecture_review.md`. The refactoring is split into two mandatory, sequential phases. Phase 1 stabilizes application state management to prevent regressions, while Phase 2 breaks down the central God Class (`app_gui.py`).
-
-**Important:** Phase 2 must not be started until Phase 1 is fully complete and verified.
+This sprint focuses on resolving critical architectural debt identified in `docs/ui_architecture_review.md`. The refactoring is split into multiple phases. Phase 1 stabilizes application state management to prevent regressions, Phase 2 breaks down the central God Class (`app_gui.py`), and Phase 3 deals with advanced cleanup of the `AppStateController` to strictly enforce MVC patterns.
 
 ## Phase 1: State Encapsulation (`AppStateController`)
 The current controller violates the "Single Responsibility Principle" by leaking business logic and enables the "God Class" anti-pattern by dynamically attaching dozens of attributes to the root `Tk` app instance (`self.root`).
@@ -46,6 +44,20 @@ While reviewing the initial God Class decomposition, several zombie methods and 
 19. **`sprint30-prompt-019-clean-imports-and-fallback.md`**: Remove useless try/excepts and extract fallback UI components.
 20. **`sprint30-prompt-020-move-hotkey-diagnostics.md`**: Move `_update_hotkey_diagnostics_ui` into `HotkeyController`.
 21. **`sprint30-prompt-021-move-training-mode-buttons.md`**: Move `_update_training_mode_buttons` into `MonsterTargetPanel`.
+## Phase 3: Advanced AppStateController Cleanup
+Further analysis revealed lingering code smells in the `AppStateController`, specifically around UI leaks, missing component lifecycle initialization, and God Object tendencies regarding Preset Management and Config generation.
+
+**Objectives:**
+- Enforce strict 100% attribute initialization in `__init__`.
+- Abstract hardcoded Magic Numbers/Strings into Constants and extract Hunt Config logic.
+- Extract Skill Preset business logic to its own Controller.
+- Remove all Tkinter Widget manipulation (`.config`) from the State Controller and use an Event-driven approach.
+
+**Execution Prompts (Sequential):**
+15. **`sprint30-prompt-015-clean-app-state-init.md`**: Fix Component Lifecycle by removing `getattr` and declaring all vars in `__init__`.
+16. **`sprint30-prompt-016-extract-hunt-config-controller.md`**: Extract `build_hunt_config_from_state` into a separate controller and replace hardcoded configurations with constants.
+17. **`sprint30-prompt-017-extract-skill-preset-controller.md`**: Extract preset management logic (like `load_preset_for_class`) into `SkillPresetController`.
+18. **`sprint30-prompt-018-remove-ui-code-from-state.md`**: Remove UI leakage (calls to `.config` on Tkinter labels) and replace it with Event emission to fully comply with MVC/MVVM.
 
 All prompts are located in `docs/sprints/sprint30/prompt-refactor-debt-technical/`.
 
@@ -54,4 +66,4 @@ Based on a thorough review of the current application state against the refactor
 1. **State Preservation:** Heavy dynamic variable usage requires careful translation to dictionaries (e.g. `self.ui_vars`) and maintaining initialization order so downstream consumers do not crash.
 2. **God Class Entanglement:** Business logic currently relies on direct UI variables or `app._t()` for translation. Breaking this requires injecting `i18n_t` and passing simple configurations instead of full `app` references.
 3. **Tkinter Lifecycle:** Extracting UI components (`AppShell`, `SidebarComponent`, `DialogService`) carries risks related to garbage collection of images (icons), thread-safety for dialogs, and preserving grid layout geometries.
-4. **Execution Blast Radius:** Updating downstream consumers (Prompt 005) is highly sensitive. Thorough `grep` validations are mandatory.
+4. **Execution Blast Radius:** Updating downstream consumers (Prompt 005, 018) is highly sensitive. Thorough `grep` validations are mandatory.

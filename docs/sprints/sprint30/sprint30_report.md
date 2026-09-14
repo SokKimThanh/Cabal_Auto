@@ -91,3 +91,33 @@ Following the completion of Phase 1, additional refactoring opportunities were i
 - **Prompt 019:** Clean up useless `try: pass` blocks and extract the fallback `_create_icon_btn_component` function out of the global scope.
 - **Prompt 020:** Move the `_update_hotkey_diagnostics_ui` zombie code out of `app_gui.py` into its rightful place in `HotkeyController`.
 - **Prompt 021:** Move the `_update_training_mode_buttons` zombie code into `MonsterTargetPanel`, where the actual buttons (`btn_add`, `btn_move_up`) reside.
+---
+
+## Phase 3: Làm sạch AppStateController (Prompts 15-18)
+
+Dựa trên đợt review mới nhất, chúng ta đã phát hiện thêm một số "Nợ Kỹ Thuật" mới (Technical Debts) chủ yếu nằm ở file `AppStateController.py`. Các lỗi này bao gồm việc class này tiếp tục đóng vai trò "God Class" ôm đồm quá nhiều domain, khởi tạo thuộc tính không rõ ràng (vi phạm Component Lifecycle), và bị rò rỉ (leak) logic UI vào Data Layer.
+
+Để giải quyết, 4 prompt thực thi mới (từ 015 đến 018) đã được tạo ra.
+
+### Prompt 015: Clean App State Init
+**Vấn đề:** Khởi tạo thuộc tính thiếu sót, phải dùng `getattr` và `hasattr` để bù đắp ở runtime.
+**Giải pháp:** Đưa toàn bộ các thuộc tính như `self._has_unsaved_changes`, `self._hunt_selected` vào `__init__`. Loại bỏ `getattr/hasattr`.
+**Trạng thái:** Đã tạo prompt và file review. Chờ thực thi.
+
+### Prompt 016: Extract Hunt Config Controller
+**Vấn đề:** Hàm `build_hunt_config_from_state` ôm đồm việc tạo config săn quái và hardcode quá nhiều mặc định.
+**Giải pháp:** Tách logic này ra file `HuntConfigController` và đưa các giá trị hardcode thành Constants.
+**Trạng thái:** Đã tạo prompt và file review. Chờ thực thi.
+
+### Prompt 017: Extract Skill Preset Controller
+**Vấn đề:** Các hàm liên quan tới Skill Preset như `load_preset_for_class`, `set_skill_slot` đang nằm sai chỗ trong `AppStateController`.
+**Giải pháp:** Chuyển các hàm này sang `SkillPresetController`, để `AppStateController` chỉ đóng vai trò chứa dữ liệu (Data/State).
+**Trạng thái:** Đã tạo prompt và file review. Chờ thực thi.
+
+### Prompt 018: Remove UI Code from State
+**Vấn đề:** Data Controller tự ý gọi hàm `.config(text=...)` của giao diện Tkinter. Rò rỉ UI logic cực kỳ nghiêm trọng.
+**Giải pháp:** Thay vì chỉnh sửa widget trực tiếp, Controller sẽ tính toán và phát sinh sự kiện (emit Event). View (giao diện) sẽ lắng nghe và tự vẽ lại màn hình.
+**Trạng thái:** Đã tạo prompt và file review. Chờ thực thi.
+
+## Conclusion & Next Steps
+Nhóm nợ kỹ thuật liên quan đến `AppStateController` đã được bóc tách và phân loại thành các prompt thực thi chi tiết. Bước tiếp theo là đưa các prompt này cho Dev (hoặc AI Agent) thực thi lần lượt để hoàn thành dứt điểm việc tái cấu trúc "Trái tim" của ứng dụng.
