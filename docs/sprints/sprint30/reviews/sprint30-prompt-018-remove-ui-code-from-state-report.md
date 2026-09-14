@@ -13,5 +13,5 @@
 4. Đảm bảo mảng chứa Tkinter Widgets (ví dụ `skill_slot_key_labels`) đã được gỡ bỏ khỏi Controller và chuyển thành một biến quản lý local bên trong View.
 
 **Status / Feedback:**
-- [ ] PASS: Ranh giới MVC (Model/Controller - View) được phân tách hoàn toàn sạch sẽ. Controller không dính tí UI nào.
+- [x] PASS: Ranh giới MVC (Model/Controller - View) được phân tách hoàn toàn sạch sẽ. Controller không dính tí UI nào.
 - [ ] FAIL (Cần ghi rõ lỗi và đề xuất chạy lại).

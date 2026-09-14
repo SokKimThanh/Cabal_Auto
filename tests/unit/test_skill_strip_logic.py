@@ -53,16 +53,15 @@ class TestSkillStripLogic(unittest.TestCase):
         root.skills = [{"name": "Skill1", "key": "Alt+3"}]
 
         var = tk.StringVar(value="Skill1")
-        root.skill_slot_vars = [var]
 
         lbl = tk.Label(root)
-        root.skill_slot_key_labels = [lbl]
 
         box = ttk.Combobox(root)
         root.skill_slot_boxes = [box]
 
         controller = AppStateController(root)
         controller.root = root
+        controller.skill_slot_vars = [var]
         controller._callbacks = {}
         with patch('lib.features.skills.skill_runtime_service.SkillRuntimeService.get_all_skills', return_value=root.skills):
             controller._validate_slot_key_duplicates()
@@ -91,7 +90,6 @@ class TestSkillStripLogic(unittest.TestCase):
                 for box in self.skill_slot_boxes:
                     box.master = tk.Frame(root)
 
-                self.skill_slot_key_labels = [tk.Label(root) for _ in range(6)]
                 self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
@@ -159,7 +157,6 @@ class TestSkillStripLogic(unittest.TestCase):
                 for box in self.skill_slot_boxes:
                     box.master = tk.Frame(root)
 
-                self.skill_slot_key_labels = [tk.Label(root) for _ in range(6)]
                 self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
@@ -227,7 +224,6 @@ if __name__ == "__main__":
                 self.skill_slot_vars = [tk.StringVar(self) for _ in range(6)]
                 # Mock skill_slot_boxes to not crash
                 self.skill_slot_boxes = []
-                self.skill_slot_key_labels = []
                 self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
@@ -277,7 +273,6 @@ if __name__ == "__main__":
                 tk.Tk.__init__(self)
                 self.skill_slot_vars = [tk.StringVar(self) for _ in range(6)]
                 self.skill_slot_boxes = []
-                self.skill_slot_key_labels = []
                 self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
@@ -331,7 +326,6 @@ if __name__ == "__main__":
                 tk.Tk.__init__(self)
                 self.skill_slot_vars = [tk.StringVar(self) for _ in range(6)]
                 self.skill_slot_boxes = []
-                self.skill_slot_key_labels = []
                 self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
@@ -381,7 +375,6 @@ if __name__ == "__main__":
                 tk.Tk.__init__(self)
                 self.skill_slot_vars = [tk.StringVar(self) for _ in range(6)]
                 self.skill_slot_boxes = []
-                self.skill_slot_key_labels = []
                 self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
                 self._t = lambda x: x
                 self.auto_combo_var = tk.BooleanVar()
