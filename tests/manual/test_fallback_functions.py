@@ -151,7 +151,7 @@ def test_fallback_functions():
     print("\nWindow will stay open for visual verification.")
     print("Close the window to exit.")
 
-    root.mainloop()
+    # root.mainloop()
 
 
 if __name__ == "__main__":
