@@ -1914,7 +1914,8 @@ class App(tk.Tk):
                 apply_setup_settings(save_to_file=False)
 
             # 2. Update hunt config from Hunt tab UI (in-place update)
-            cfg = self.state_controller.build_hunt_config_from_state()
+            from lib.ui.controllers.hunt_config_controller import HuntConfigController
+            cfg = HuntConfigController().build_config(self.state_controller)
 
             # Validate hotkey uniqueness before applying
             if "global_hotkeys" in cfg:
