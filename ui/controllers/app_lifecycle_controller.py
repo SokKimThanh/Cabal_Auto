@@ -24,8 +24,8 @@ class AppLifecycleController:
         self.app.after(50, self._step_diagnostics)
 
     def _step_diagnostics(self):
-        if hasattr(self.app, "_update_hotkey_diagnostics_ui"):
-            self.app._update_hotkey_diagnostics_ui()
+        if hasattr(self.app, "hotkey_controller"):
+            self.app.hotkey_controller.update_diagnostics_ui_state()
         self.app.after(50, self._step_db_connection)
 
     def _step_db_connection(self):
