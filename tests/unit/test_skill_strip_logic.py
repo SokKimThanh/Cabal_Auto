@@ -59,8 +59,12 @@ class TestSkillStripLogic(unittest.TestCase):
         box = ttk.Combobox(root)
         root.skill_slot_boxes = [box]
 
+
         controller = AppStateController(root)
+        from lib.events.event_dispatcher import EventDispatcher
+        controller.event_dispatcher = EventDispatcher()
         controller.root = root
+
         controller.skill_slot_vars = [var]
         controller._callbacks = {}
         with patch('lib.features.skills.skill_runtime_service.SkillRuntimeService.get_all_skills', return_value=root.skills):
@@ -107,6 +111,9 @@ class TestSkillStripLogic(unittest.TestCase):
         app.skill_slot_vars[0].set("Skill1")
         app.skill_slot_vars[1].set("Skill2")
         app.skill_slot_vars[2].set("Skill3")
+        app.skill_slot_vars[0].get = lambda: "Skill1"
+        app.skill_slot_vars[1].get = lambda: "Skill2"
+        app.skill_slot_vars[2].get = lambda: "Skill3"
 
         # Add keys to the skills in the mock so they will be detected as duplicates
         app.skills = [
@@ -116,7 +123,8 @@ class TestSkillStripLogic(unittest.TestCase):
         ]
 
         emitted_indices = None
-        def mock_emit_event(event_name, data):
+        def mock_emit_event(event_name, *args, **kwargs):
+            data = args[0] if args else None
             nonlocal emitted_indices
             if event_name == "on_skill_key_duplicates_detected":
                 emitted_indices = data
@@ -125,6 +133,10 @@ class TestSkillStripLogic(unittest.TestCase):
         from ui.controllers.app_state_controller import AppStateController
 
         validator = AppStateController(app)
+        class FakeDispatcher:
+            pass
+        validator.event_dispatcher = FakeDispatcher()
+        validator.event_dispatcher.emit = mock_emit_event
         validator._emit_event = mock_emit_event
         validator.skill_slot_vars = app.skill_slot_vars
         # mock skill runtime service via DI or monkeypatch in test

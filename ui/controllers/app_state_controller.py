@@ -6,7 +6,10 @@ from typing import Any, Dict, List, Optional
 import threading
 import copy
 from lib.features.skills.skill_runtime_service import SkillRuntimeService
-from lib.ui.stores.hunt_config_store import HuntConfigStore
+from lib.events.event_dispatcher import EventDispatcher
+from lib.system.config.config_repository import ConfigRepository
+from lib.system.window.window_tracker import WindowTracker
+
 from lib.ui.stores.monster_session_manager import MonsterSessionManager
 
 
@@ -18,7 +21,7 @@ class AppStateController:
 
     @property
     def hunt_cfg(self) -> Dict[str, Any]:
-        return self._config_store.get_config()
+        return self.config_repository.get_config()
 
     @hunt_cfg.setter
     def hunt_cfg(self, value: Dict[str, Any]) -> None:
@@ -34,35 +37,35 @@ class AppStateController:
 
     @property
     def bounds_recovery_failed(self) -> bool:
-        return self._bounds_recovery_failed
+        return self.window_tracker.bounds_recovery_failed
 
     @bounds_recovery_failed.setter
     def bounds_recovery_failed(self, value: bool) -> None:
-        self._bounds_recovery_failed = value
+        self.window_tracker.bounds_recovery_failed = value
 
     @property
     def win_items(self) -> List[Dict[str, Any]]:
-        return self._win_items
+        return self.window_tracker.win_items
 
     @win_items.setter
     def win_items(self, value: List[Dict[str, Any]]) -> None:
-        self._win_items = value
+        self.window_tracker.win_items = value
 
     @property
     def hunt_selected(self) -> Optional[Dict[str, Any]]:
-        return self._hunt_selected
+        return self.window_tracker.hunt_selected
 
     @hunt_selected.setter
     def hunt_selected(self, value: Optional[Dict[str, Any]]) -> None:
-        self._hunt_selected = value
+        self.window_tracker.hunt_selected = value
 
     @property
     def current_window_bounds(self) -> Any:
-        return self._current_window_bounds
+        return self.window_tracker.current_window_bounds
 
     @current_window_bounds.setter
     def current_window_bounds(self, value: Any) -> None:
-        self._current_window_bounds = value
+        self.window_tracker.current_window_bounds = value
 
 
 
@@ -70,15 +73,13 @@ class AppStateController:
         self.root = root
 
         # Stores
-        self._config_store = HuntConfigStore()
+        self.config_repository = ConfigRepository()
+        self.event_dispatcher = EventDispatcher()
+        self.window_tracker = WindowTracker()
         self._monster_session_manager = MonsterSessionManager()
 
         # State
         self._has_unsaved_changes = False
-        self._bounds_recovery_failed = False
-        self._win_items = []  # list of {'hwnd','pid','title','proc'}
-        self._hunt_selected = None  # currently selected window info
-        self._current_window_bounds = None
         self.skill_slot_vars = []
         self._collect_skill_slots_func = None
 
@@ -89,7 +90,7 @@ class AppStateController:
         self._skip_auto_bring = False  # Flag to prevent double bring-to-front
 
         # Character class selection for presets
-        hunt_settings = self._config_store.get_config()
+        hunt_settings = self.config_repository.get_config()
         self._current_class_id = hunt_settings.get("last_active_class_id", 1)
 
         # Global hotkeys - registered after config load
@@ -123,7 +124,6 @@ class AppStateController:
         self._active_preset_id = None
         self._preset_mode = "default"
         self.skill_slots = {"attack_combo": [], "buff_lane": []}
-        self._callbacks = {}
         self._combo_mode_active = False
 
         self.skill_slot_boxes = []
@@ -133,7 +133,6 @@ class AppStateController:
         self.monster_template_working = None
         self.monster_template_selected_index = None
         self._thumbnail_cache = {}
-        self.current_window_bounds = None
 
         self.ui_vars = {}
         self.ui_widgets = {
@@ -239,21 +238,14 @@ class AppStateController:
         }
 
 
+
+
+
     def register_callback(self, event: str, handler) -> None:
-        if event not in self._callbacks:
-            self._callbacks[event] = []
-        if handler not in self._callbacks[event]:
-            self._callbacks[event].append(handler)
+        self.event_dispatcher.register_callback(event, handler)
 
     def _emit_event(self, event: str, *args, **kwargs) -> None:
-        if event in self._callbacks:
-            for handler in self._callbacks[event]:
-                try:
-                    handler(*args, **kwargs)
-                except Exception:
-                    logger.exception("Error in callback for %s", event)
-
-
+        self.event_dispatcher.emit(event, *args, **kwargs)
 
     def activate_combo_mode(self) -> None:
         self._combo_mode_active = True
