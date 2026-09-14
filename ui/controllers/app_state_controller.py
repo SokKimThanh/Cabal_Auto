@@ -10,7 +10,6 @@ from lib.ui.stores.hunt_config_store import HuntConfigStore
 from lib.ui.stores.monster_session_manager import MonsterSessionManager
 
 
-from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.i18n import t as i18n_t
 
 
@@ -260,144 +259,6 @@ class AppStateController:
                     logger.exception("Error in callback for %s", event)
 
 
-    def set_current_class(self, class_id: int) -> bool:
-        """
-        Safely changes the current class, prompting for unsaved changes if necessary.
-        Returns True if the class was changed, False if the user cancelled.
-        """
-        import tkinter.messagebox as messagebox
-
-        if getattr(self, "has_unsaved_changes", False):
-            title = i18n_t("warning_title", ns=I18N_GLOBAL)
-            msg = i18n_t("msg_unsaved_class_change", ns=I18N_GLOBAL)
-
-            if not messagebox.askyesno(title, msg, parent=self.root):
-                return False
-
-        self._current_class_id = class_id
-
-        # Save to hunt_cfg
-        if hasattr(self.root, "hunt_cfg"):
-            self.hunt_cfg["last_active_class_id"] = class_id
-            from lib.features.hunt.hunt_config import save_hunt_config
-            save_hunt_config(self.hunt_cfg)
-
-        # Clear unsaved changes since we are loading a fresh preset from DB
-        self._clear_unsaved_changes()
-
-        # Auto load preset for the new class
-        self.load_preset_for_class(class_id)
-
-        return True
-
-    def load_preset_for_class(
-        self, class_id: int, preset_id: Optional[int] = None
-    ) -> None:
-        self._current_class_id = class_id
-        from lib.features.skills.skill_preset_service import SkillPresetService
-
-        service = SkillPresetService()
-        if preset_id is None:
-            # Try to load default preset
-            presets = service.list_presets_by_class(class_id)
-            default_preset = next((p for p in presets if p["is_default"]), None)
-            if default_preset:
-                preset_id = default_preset["preset_id"]
-            elif presets:
-                preset_id = presets[0]["preset_id"]
-
-        if preset_id is not None:
-            result = service.apply_preset(preset_id, class_id)
-            if result.get("success"):
-                self._active_preset_id = preset_id
-                mode = "default" if result["preset"].get("is_default") else "custom"
-                self._preset_mode = mode
-
-                # Transform to app state structure
-                self.skill_slots = {"attack_combo": [], "buff_lane": []}
-                for lane, skill_ids in result.get("skill_slots", {}).items():
-                    for idx, skill_id in enumerate(skill_ids):
-                        self.skill_slots[lane].append(
-                            {
-                                "position": idx,
-                                "lane_type": lane,
-                                "skill_id": skill_id,
-                                "skill_name": "Unknown",  # Will populate later or via UI
-                                "user_hotkey": "",
-                                "assigned": False,
-                                "is_ready": True,
-                                "cooldown_remaining": 0.0,
-                            }
-                        )
-                self._emit_event("on_preset_changed")
-                self._emit_event("on_skill_slots_changed")
-        else:
-            # When the class has no presets at all, clear the skill slots
-            self._active_preset_id = None
-            self._preset_mode = "custom"
-            self.skill_slots = {"attack_combo": [], "buff_lane": []}
-            self._emit_event("on_preset_changed")
-            self._emit_event("on_skill_slots_changed")
-
-    def apply_default_preset(self, class_id: int) -> None:
-        self.load_preset_for_class(class_id)
-
-    def set_custom_mode(self) -> None:
-        self._preset_mode = "custom"
-        self._emit_event("on_preset_changed")
-
-    def update_preset_state(self, preset_id: int, mode: str) -> None:
-        """Encapsulates preset state updates."""
-        self._active_preset_id = preset_id
-        self._preset_mode = mode
-        self._emit_event("on_preset_changed")
-
-    def save_custom_preset(self, preset_name: str) -> None:
-        from lib.features.skills.skill_preset_service import SkillPresetService
-
-        if self._preset_mode == "custom" and self._active_preset_id:
-            service = SkillPresetService()
-            preset = service.preset_repo.get_preset(self._active_preset_id)
-            if preset and not preset.get("is_default"):
-                skill_slots_for_db = {
-                    lane: [s["skill_id"] for s in self.skill_slots.get(lane, [])]
-                    for lane in self.skill_slots
-                }
-                service.update_custom_preset(
-                    self._active_preset_id, skill_slots_for_db
-                )
-            else:
-                # Need to create new custom preset
-                skill_slots_for_db = {
-                    lane: [s["skill_id"] for s in self.skill_slots.get(lane, [])]
-                    for lane in self.skill_slots
-                }
-                res = service.create_custom_preset(
-                    self._current_class_id, preset_name, skill_slots_for_db
-                )
-                if res.get("success"):
-                    self._active_preset_id = res.get("preset_id")
-        else:
-            # Need to create new custom preset
-            service = SkillPresetService()
-            skill_slots_for_db = {
-                lane: [s["skill_id"] for s in self.skill_slots.get(lane, [])]
-                for lane in self.skill_slots
-            }
-            res = service.create_custom_preset(
-                self._current_class_id, preset_name, skill_slots_for_db
-            )
-            if res.get("success"):
-                self._active_preset_id = res.get("preset_id")
-                self._preset_mode = "custom"
-
-        self._emit_event("on_preset_changed")
-
-    def get_available_presets(self, class_id: int) -> list:
-        from lib.features.skills.skill_preset_service import SkillPresetService
-
-        service = SkillPresetService()
-        return service.list_presets_by_class(class_id)
 
     def activate_combo_mode(self) -> None:
         self._combo_mode_active = True
@@ -414,46 +275,6 @@ class AppStateController:
 
     def is_bot_running(self) -> bool:
         return bool(self.get_ui_var("is_hunting"))
-
-    def set_skill_slot(self, lane: str, position: int, skill_id: int) -> None:
-        if lane not in self.skill_slots:
-            self.skill_slots[lane] = []
-        while len(self.skill_slots[lane]) <= position:
-            self.skill_slots[lane].append(
-                {
-                    "position": len(self.skill_slots[lane]),
-                    "lane_type": lane,
-                    "skill_id": None,
-                    "skill_name": "",
-                    "user_hotkey": "",
-                    "assigned": False,
-                    "is_ready": True,
-                    "cooldown_remaining": 0.0,
-                }
-            )
-        self.skill_slots[lane][position]["skill_id"] = skill_id
-        self.skill_slots[lane][position]["assigned"] = skill_id is not None
-
-        # If changing a slot in default mode, automatically switch to custom mode
-        if self._preset_mode == "default":
-            self.set_custom_mode()
-
-        self._emit_event("on_skill_slots_changed")
-
-    def set_skill_hotkey(self, lane: str, position: int, hotkey: str) -> None:
-        if lane in self.skill_slots and position < len(
-            self.skill_slots[lane]
-        ):
-            self.skill_slots[lane][position]["user_hotkey"] = hotkey
-            self._emit_event("on_hotkey_changed")
-
-    def update_skill_cooldown(self, lane: str, position: int, remaining: float) -> None:
-        if lane in self.skill_slots and position < len(
-            self.skill_slots[lane]
-        ):
-            self.skill_slots[lane][position]["cooldown_remaining"] = remaining
-            self.skill_slots[lane][position]["is_ready"] = remaining <= 0.0
-            self._emit_event("on_cooldown_updated")
 
     @property
     def monster_rotation(self):
