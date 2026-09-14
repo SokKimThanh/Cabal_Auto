@@ -468,12 +468,15 @@ class AppStateController:
             for skill in service.get_all_skills()
             if isinstance(skill, dict) and skill.get("name")
         }
-        for idx, label in enumerate(labels):
-            skill_name = vars_[idx].get().strip() if idx < len(vars_) else ""
+        keys_list = []
+        for idx, var in enumerate(vars_):
+            skill_name = var.get().strip()
             key = ""
             if skill_name:
                 key = str(skills_by_name.get(skill_name, {}).get("key", "") or "")
-            label.config(text=key.upper() if key else "", fg="#333333")
+            keys_list.append(key.upper() if key else "")
+
+        self._emit_event("on_skill_keys_updated", keys_list)
 
     def _validate_slot_key_duplicates(self) -> None:
 
@@ -499,8 +502,8 @@ class AppStateController:
                 duplicate_indices.add(idx)
             else:
                 seen[key] = idx
-        for idx, label in enumerate(labels):
-            label.config(fg="#C62828" if idx in duplicate_indices else "#333333")
+
+        self._emit_event("on_skill_key_duplicates_detected", duplicate_indices)
 
     def _apply_hunt_mode(self) -> None:
         return

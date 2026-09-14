@@ -491,7 +491,24 @@ class App(tk.Tk):
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
 
+        # Register for skill key updates
+        if hasattr(self.state_controller, "register_callback"):
+            self.state_controller.register_callback("on_skill_keys_updated", self._update_skill_keys)
+            self.state_controller.register_callback("on_skill_key_duplicates_detected", self._update_duplicate_colors)
+
     # -----------------
+    def _update_skill_keys(self, keys_list):
+        if hasattr(self, "skill_slot_key_labels"):
+            for idx, label in enumerate(self.skill_slot_key_labels):
+                if idx < len(keys_list):
+                    key = keys_list[idx]
+                    label.config(text=key, fg="#333333")
+
+    def _update_duplicate_colors(self, duplicate_indices):
+        if hasattr(self, "skill_slot_key_labels"):
+            for idx, label in enumerate(self.skill_slot_key_labels):
+                label.config(fg="#C62828" if idx in duplicate_indices else "#333333")
+
     def _build_ui(self):
         # We rebuild the shell layout first
         self.shell.build()
