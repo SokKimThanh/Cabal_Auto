@@ -59,7 +59,27 @@ Further analysis revealed lingering code smells in the `AppStateController`, spe
 17. **`sprint30-prompt-017-extract-skill-preset-controller.md`**: Extract preset management logic (like `load_preset_for_class`) into `SkillPresetController`.
 18. **`sprint30-prompt-018-remove-ui-code-from-state.md`**: Remove UI leakage (calls to `.config` on Tkinter labels) and replace it with Event emission to fully comply with MVC/MVVM.
 
-All prompts are located in `docs/sprints/sprint30/prompt-refactor-debt-technical/`.
+## Phase 4: Finalizing God Class Decomposition
+The application logic inside `app_gui.py` needs to be aggressively decoupled. This document outlines the required tasks to complete this final phase of decomposition, moving strictly towards MVC/MVVM patterns.
+
+**Objectives:**
+- Extract main menu construction logic to `MenuController`.
+- Decouple `ActionBarView` and `StatusBarView` from `App`.
+- Extract Vision UI handlers to `VisionUIController`.
+- Relocate Monster Rotation and Skill Configuration logic from `app_gui.py` to dedicated views and controllers.
+- Clean up global helpers (logging, tooltips, icons) out of `App`.
+- Reduce `App` class to purely a bootstrapper (< 30 methods).
+
+**Execution Prompts (Sequential):**
+22. **`sprint30-prompt-022-extract-main-menu.md`**: Extract the main menu construction logic out of `app_gui.py`.
+23. **`sprint30-prompt-023-decouple-action-and-status-bars.md`**: Remove strict dependencies on the `App` class from `ActionBarView` and `StatusBarView`.
+24. **`sprint30-prompt-024-extract-vision-ui-handlers.md`**: Move Vision/Template related UI logic out of `App`.
+25. **`sprint30-prompt-025-extract-monster-rotation-logic.md`**: Extract all monster rotation and selection UI logic from `app_gui.py`.
+26. **`sprint30-prompt-026-extract-skill-configuration-logic.md`**: Extract skill configuration (Skill Slots) and Global Apply logic from the God Class.
+27. **`sprint30-prompt-027-extract-logging-and-helpers.md`**: Clean up utility, logging, and helper methods.
+28. **`sprint30-prompt-028-finalize-app-class.md`**: Strip the `App` class down to its bare essentials.
+
+All prompts are located in `docs/sprints/sprint30/prompt-refactor-debt-technical/` and `docs/sprints/sprint30/prompt-god-class-decomposition/`.
 
 ---
 

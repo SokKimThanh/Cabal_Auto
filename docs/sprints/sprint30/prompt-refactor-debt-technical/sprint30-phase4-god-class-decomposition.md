@@ -31,14 +31,33 @@ The application logic inside `app_gui.py` needs to be aggressively decoupled. Th
 **Details:**
 - Move `_scan_region`, `_add_template`, `_manage_templates` out of `App` into `OverlayController` or a new `VisionUIController`.
 
-### 4. `sprint30-prompt-025-finalize-app-class.md`
+### 4. `sprint30-prompt-025-extract-monster-rotation-logic.md`
+**Goal:** Extract all monster rotation and selection UI logic from `app_gui.py`.
+**Details:**
+- Relocate functions like `_on_monster_move_up`, `_on_monster_move_down`, `_on_monster_delete_from_list`, `_on_monster_add_smart`, and `_refresh_monster_rotation_list` to a dedicated `MonsterRotationView` or existing `HuntTab`.
+- Route UI click events directly to `MonsterRotationController` using `EventBus` instead of passing them through the `App` god class.
+
+### 5. `sprint30-prompt-026-extract-skill-configuration-logic.md`
+**Goal:** Extract skill configuration (Skill Slots) and Global Apply logic from the God Class.
+**Details:**
+- Move methods such as `_collect_skill_slots`, `_clear_skill_slot`, and `_update_attack_keys_from_slots` to a dedicated `SkillConfigView` or `SetupTab`.
+- Remove the massive `on_global_apply` button handler from `App`. This global save logic should be managed by a unified `GlobalConfigController` or delegated to `HuntConfigController`.
+- Ensure all skill-related Views read/write data directly via `AppStateController`.
+
+### 6. `sprint30-prompt-027-extract-logging-and-helpers.md`
+**Goal:** Clean up utility, logging, and helper methods.
+**Details:**
+- Extract `_poll_log_queue` and `_update_logs_metrics` into a dedicated `LogConsoleView` component.
+- Move tooltip generation (`_create_tooltip`, `_destroy_widget_tooltip`) and icon caching (`_icon`) into a global utility namespace (e.g., `ui.helpers.UIHelper`) so any view can invoke them without requiring an `App` instance reference.
+
+### 7. `sprint30-prompt-028-finalize-app-class.md`
 **Goal:** Strip the `App` class down to its bare essentials.
 **Details:**
 - The `App` class should only be responsible for:
   - Initializing `tk.Tk()` (via `AppShell`).
   - Instantiating dependency injection container services.
   - Starting the `AppLifecycleController` and Tkinter main loop.
-- All other event handlers (`on_start_stop_clicked`, `on_monster_select_change`, etc.) must be moved to their respective domain controllers (`HuntController`, `MonsterRotationController`).
+- Ensure any remaining stray event handlers (`on_start_stop_clicked`, etc.) are moved to their respective domain controllers.
 
 ## Acceptance Criteria
 - `app_gui.App` contains no more than 20-30 methods, strictly related to application bootstrapping and shutdown.
