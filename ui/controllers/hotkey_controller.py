@@ -121,8 +121,7 @@ class HotkeyController:
                         f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}"
                     )
                     try:
-                        if hasattr(self.parent, "_update_hotkey_diagnostics_ui"):
-                            self.parent._update_hotkey_diagnostics_ui()
+                        self.update_diagnostics_ui_state()
                     except Exception:
                         pass
                 except Exception as _bind_e:
@@ -246,12 +245,10 @@ class HotkeyController:
 
             # Update UI
             try:
-                if hasattr(self.parent, "after") and hasattr(
-                    self.parent, "_update_hotkey_diagnostics_ui"
-                ):
-                    self.parent.after(150, self.parent._update_hotkey_diagnostics_ui)
-                elif hasattr(self.parent, "_update_hotkey_diagnostics_ui"):
-                    self.parent._update_hotkey_diagnostics_ui()
+                if hasattr(self.parent, "after"):
+                    self.parent.after(150, self.update_diagnostics_ui_state)
+                else:
+                    self.update_diagnostics_ui_state()
             except Exception:
                 pass
 
@@ -260,12 +257,10 @@ class HotkeyController:
             self._hotkeys_registered_ok = False
             # Update UI to show error state
             try:
-                if hasattr(self.parent, "after") and hasattr(
-                    self.parent, "_update_hotkey_diagnostics_ui"
-                ):
-                    self.parent.after(150, self.parent._update_hotkey_diagnostics_ui)
-                elif hasattr(self.parent, "_update_hotkey_diagnostics_ui"):
-                    self.parent._update_hotkey_diagnostics_ui()
+                if hasattr(self.parent, "after"):
+                    self.parent.after(150, self.update_diagnostics_ui_state)
+                else:
+                    self.update_diagnostics_ui_state()
             except Exception:
                 pass
 
@@ -485,3 +480,110 @@ class HotkeyController:
                 self.parent.after(0, lambda: self.parent.switch_view("build_manager"))
             else:
                 self.parent.switch_view("build_manager")
+
+
+    def update_diagnostics_ui_state(self) -> None:
+        """Update the hotkey status UI variables based on registration state."""
+        try:
+            # Determine current state
+            has_import_error = (
+                hasattr(self.parent, "_hotkey_import_diag") and self.parent._hotkey_import_diag
+            )
+            has_failed_hotkeys = bool(self._failed_hotkeys)
+            hotkeys_enabled = self._hotkeys_registered_ok
+
+            lang = getattr(self.parent, "lang", "vi")
+
+            # Count actual registered hotkeys (not bindings)
+            registered_count = 0
+            hotkey_details = []
+
+            if self._global_start_hotkey is not None:
+                registered_count += 1
+                hotkey_details.append("Start" if lang == "en" else "Bắt đầu")
+            if self._global_stop_hotkey is not None:
+                registered_count += 1
+                hotkey_details.append("Stop" if lang == "en" else "Dừng")
+            if self._global_library_hotkey is not None:
+                registered_count += 1
+                hotkey_details.append("Library" if lang == "en" else "Thư viện")
+            if self._global_vision_hotkey is not None:
+                registered_count += 1
+                hotkey_details.append("Vision" if lang == "en" else "Thị giác")
+
+            state_controller = getattr(self.parent, "state_controller", None)
+            if not state_controller:
+                return
+
+            # State 1: Success - All hotkeys registered
+            if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
+                # Green success state
+                success_text = (
+                    "All hotkeys registered successfully"
+                    if lang == "en"
+                    else "Tất cả phím tắt đã đăng ký thành công"
+                )
+                state_controller.set_ui_var('hotkey_status', f"✅ {success_text}")
+
+                # Show count and active hotkeys list
+                detail_text = (
+                    f"{registered_count} hotkeys active"
+                    if lang == "en"
+                    else f"{registered_count} phím tắt đang hoạt động"
+                )
+                if hotkey_details:
+                    detail_text += f": {', '.join(hotkey_details)}"
+                state_controller.set_ui_var('hotkey_status_detail', f"   {detail_text}")
+
+            # State 2: Partial failure - Some hotkeys failed
+            elif has_failed_hotkeys and not has_import_error:
+                # Orange warning state
+                failed_count = len(self._failed_hotkeys)
+                warning_text = (
+                    f"{failed_count} hotkey(s) failed to register"
+                    if lang == "en"
+                    else f"{failed_count} phím tắt đăng ký thất bại"
+                )
+                state_controller.set_ui_var('hotkey_status', f"⚠️ {warning_text}")
+
+                # Show guidance
+                guidance = (
+                    "Try changing the conflicting hotkey, then click Apply."
+                    if lang == "en"
+                    else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
+                )
+                state_controller.set_ui_var('hotkey_status_detail', f"   {guidance}")
+
+            # State 3: Complete failure - Import error or no hotkeys registered
+            else:
+                # Red error state
+                error_text = (
+                    "Hotkeys not available"
+                    if lang == "en"
+                    else "Phím tắt không khả dụng"
+                )
+                state_controller.set_ui_var('hotkey_status', f"❌ {error_text}")
+
+                # Show explanation
+                if has_import_error:
+                    explanation = (
+                        "The 'keyboard' package is not installed in your Python environment."
+                        if lang == "en"
+                        else "Gói 'keyboard' chưa được cài đặt trong Python của bạn."
+                    )
+                else:
+                    explanation = (
+                        "Failed to register global hotkeys."
+                        if lang == "en"
+                        else "Không thể đăng ký phím tắt toàn cục."
+                    )
+                state_controller.set_ui_var('hotkey_status_detail', f"   {explanation}")
+
+        except Exception as e:
+            # Fallback: show basic error
+            try:
+                state_controller = getattr(self.parent, "state_controller", None)
+                if state_controller:
+                    state_controller.set_ui_var('hotkey_status', f"⚠️ Error updating status: {e}")
+            except Exception:
+                pass
