@@ -17,7 +17,6 @@ from lib.features.hunt.hunt_config import (
     save_config,
     save_hunt_config,
         )
-from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from ui.helpers.translation_binder import TranslationBinder
 from lib.i18n import t as i18n_t
 from lib.i18n import set_default_lang as i18n_set_lang
@@ -634,209 +633,30 @@ class App(tk.Tk):
         self.task_scheduler.schedule_recurring_task("update_logs_metrics", 1000, self._update_logs_metrics)
 
         # Vùng A: Quick Action Bar
+        from ui.components.action_bar_view import ActionBarView
+        self.action_bar = ActionBarView(self.shell_zone_a, app=self)
+        self.action_bar.pack(fill="both", expand=True)
 
-        self.shell_zone_a.grid_columnconfigure(0, weight=1)
-        self.shell_zone_a.grid_rowconfigure(0, weight=1)
-
-        self.action_bar_scrollable = ResponsiveGridBase(self.shell_zone_a, bg=UI.BG_BASE)
-        self.action_bar_scrollable.grid(row=0, column=0, sticky="nsew")
-
-        self.action_bar_frame = self.action_bar_scrollable.get_content_frame()
-        self.action_bar_frame.configure(padx=32, pady=10)
-
-        # Configure columns for action_bar_frame (2 columns as requested)
-        self.action_bar_frame.columnconfigure(0, weight=1)  # Left (Window Status)
-        self.action_bar_frame.columnconfigure(1, weight=0)  # Right (Actions)
-
-        # ---------------------------------------------------------
-        # Column 1: Window Status Panel
-        # ---------------------------------------------------------
-        col1_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_ELEVATED, bd=1, relief="solid", highlightbackground=UI.BORDER_PRIMARY, highlightthickness=1)
-        col1_frame.grid(row=0, column=0, sticky="w")
-
-        # Header Row (Always visible)
-        status_header = tk.Frame(col1_frame, bg=UI.BG_ELEVATED)
-        status_header.pack(fill="x", padx=8, pady=6)
-
-        self.window_status_lbl = tk.Label(
-            status_header,
-            text=self._t("window_status_label"),
-            font=UI.FONT_SECTION,
-            fg=UI.TEXT_PRIMARY,
-            bg=UI.BG_ELEVATED
-        )
-        self.window_status_lbl.pack(side="left", padx=(0, 12))
-
-        # Compact Window Selector (replaces combobox + refresh button)
-        from ui.components.compact_window_selector import CompactWindowSelector
+        # Map references that other parts of App might need
+        self.btn_manual_scan = self.action_bar.btn_manual_scan
+        self.compact_window_selector = self.action_bar.compact_window_selector
+        self.screen_state_panel = self.action_bar.screen_state_panel
+        self.global_apply_btn = self.action_bar.global_apply_btn
+        self.start_stop_btn = self.action_bar.start_stop_btn
+        self.window_status_lbl = self.action_bar.window_status_lbl
+        self.lang_cmb = self.action_bar.lang_cmb
         
-        def on_window_selected_from_compact(window_dict):
-            """Callback when user selects window from compact selector."""
-            try:
-                # Set hunt_selected with window info
-                self.state_controller.hunt_selected = {
-                    "hwnd": window_dict.get("hwnd"),
-                    "pid": window_dict.get("pid"),
-                    "title": window_dict.get("title"),
-                    "bounds": window_dict.get("bounds"),
-                }
-                # Save to config
-                self.state_controller.hunt_cfg["window_pid"] = window_dict.get("pid")
-                self.state_controller.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
-                self.state_controller.hunt_cfg["window_title"] = window_dict.get("title")
-                save_hunt_config(self.state_controller.hunt_cfg)
-                # Update bounds display
-                if hasattr(self, "state_controller"):
-                    self.window_controller.update_window_bounds_display()
-                self.state_controller.set_ui_var('hunt_status', f"✓ Selected: {window_dict['title']}")
-            except Exception:
-                logger.error("Error selecting window")
-
-        self.compact_window_selector = CompactWindowSelector(
-            status_header,
-            on_window_selected=on_window_selected_from_compact,
-            window_controller=self.window_controller,
-            root=self,
-        )
-        # Auto-refresh window list on startup
-        self.compact_window_selector._on_refresh()
-        self.compact_window_selector.get_frame().pack(side="left", padx=(0, 12))
-
-        # Scan Manual Button
-        from ui.icon_library import Icons
-        self.scan_btn_icon_name = Icons.SCAN_SCREEN
-
-        def on_scan_clicked():
-            if hasattr(self, "scan_controller"):
-                self.scan_controller.run_scan(manual=True)
-
-        self.btn_manual_scan = _create_icon_btn_component(
-            parent=status_header,
-            icon_name=self.scan_btn_icon_name,
-            icon_fallback="🔍",
-            icon_size=16,
-            button_size=32,
-            command=on_scan_clicked,
-            button_type="green_light",
-            tooltip_text=self._t("scan_tooltip") if hasattr(self, "_t") else "Scan",
-            state="normal",
-            auto_hover_disabled=False,
-        )
-        self.btn_manual_scan.pack(side="left", padx=(0, 12))
-
-        # Expanded Frame (Hidden initially)
-        self.expanded_status_frame = tk.Frame(col1_frame, bg=UI.BG_BASE, highlightbackground=UI.BORDER_SUBTLE, highlightthickness=1)
-
-        # Screen State Panel (inside expanded)
-        from ui.panels.screen_state_panel import ScreenStatePanel
-        self.bounds_placeholder = tk.Frame(self.expanded_status_frame, bg=UI.BG_BASE)
-        self.bounds_placeholder.pack(side="left", fill="both", expand=True, padx=8, pady=4)
-
-        self.screen_state_panel = ScreenStatePanel(self.bounds_placeholder)
-        self.screen_state_panel.pack(side="left", fill="both", expand=True)
-
-        def close_expanded_status():
-            self.expanded_status_frame.pack_forget()
-            expand_btn.config(text="▼")
-
-        def toggle_expanded_status():
-            if self.expanded_status_frame.winfo_ismapped():
-                close_expanded_status()
-            else:
-                self.expanded_status_frame.pack(fill="x", expand=True, padx=4, pady=(0, 4))
-                expand_btn.config(text="▲")
-
-        close_btn = tk.Button(
-            self.expanded_status_frame, text="✖", font=UI.FONT_SMALL, bg=UI.BG_BASE, fg=UI.TEXT_MUTED, bd=0, command=close_expanded_status, cursor="hand2"
-        )
-        close_btn.pack(side="right", anchor="n", padx=4, pady=4)
-
-        expand_btn = tk.Button(
-            status_header, text="▼", font=UI.FONT_SMALL, bg=UI.BG_ELEVATED, fg=UI.TEXT_SECONDARY, bd=0, command=toggle_expanded_status, cursor="hand2"
-        )
-        expand_btn.pack(side="right", padx=4)
-
-        # ---------------------------------------------------------
-        # Column 2: Global Apply, Start, Lang
-        # ---------------------------------------------------------
-        col2_frame = tk.Frame(self.action_bar_frame, bg=UI.BG_BASE)
-        col2_frame.grid(row=0, column=1, sticky="e")
-
-        # Global Apply Button
-        from ui.helpers.button_styles import get_button_config
-        apply_config = get_button_config("green_light")
-        apply_kwargs = dict(apply_config)
-
-        self.global_apply_btn = tk.Button(
-            col2_frame,
-            text=f"✓ {self._t('apply_all_settings_saved')}",
-            command=self.on_global_apply,
-            padx=16,
-            pady=6,
-            bg=UI.ACCENT_GREEN,
-            activebackground=UI.ACCENT_GREEN_BG,
-            state="disabled",
-            **{k: v for k, v in apply_kwargs.items() if k not in ["bg", "activebackground"]}
-        )
-        self.global_apply_btn.pack(side="left", padx=(0, 12))
-
-        # Unified Start/Stop Button
-        start_tooltip = self._t("start_hunt") + "\n(Ctrl+F5/F6)"
-        self.start_stop_btn = _create_icon_btn_component(
-            parent=col2_frame,
-            icon_name="start",
-            icon_fallback="▶️",
-            text=self._t("start_hunt"),
-            icon_size=20,
-            button_size=44,
-            padding={"padx": 20, "pady": 6},
-            command=self.on_start_stop_clicked,
-            button_type="primary",
-            bg_color=UI.ACCENT_GREEN,
-            hover_color=UI.ACCENT_GREEN_BG,
-            tooltip_text=start_tooltip,
-            state="normal",
-            auto_hover_disabled=False,
-            width=140,
-        )
-        self.start_stop_btn.pack(side="left", padx=(0, 12))
-
-        # Language Selector
-        self.state_controller.ui_vars['lang'] = tk.StringVar(master=self, value=self.lang)
-        self.lang_cmb = ttk.Combobox(
-            col2_frame, textvariable=self.state_controller.ui_vars['lang'], state="readonly", width=4
-        )
-        self.lang_cmb["values"] = ("en", "vi")
-        self.lang_cmb.pack(side="left")
-        self.lang_cmb.bind("<<ComboboxSelected>>", self.on_language_change)
-
         # Global Apply Section (below tabs, right-aligned)
         self._build_global_apply_section()
 
-        self._db_status_bar = tk.Label(
-            self.status_bar_frame,
-            textvariable=self.state_controller.ui_vars['db_status'],
-            anchor="w",
-            padx=12,
-            font=UI.FONT_SMALL,
-            bg=UI.BG_SUBTLE,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-        )
-        self._db_status_bar.pack(side="left", fill="y")
+        # DB Status Bar (bottom of window)
+        from ui.components.status_bar_view import StatusBarView
+        self.status_bar = StatusBarView(self.status_bar_frame, app=self)
+        self.status_bar.pack(fill="both", expand=True)
 
-        # Right Section: Version and Status
-        self.right_status = tk.Label(
-            self.status_bar_frame,
-            text="v2.1.0 · CSDL: ✓ · 0 lỗi",
-            anchor="e",
-            padx=12,
-            font=UI.FONT_SMALL,
-            bg=UI.BG_SUBTLE,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-        )
-        self.right_status.pack(side="right", fill="y")
+        # Map variables for backward compatibility
+        self._db_status_bar = self.status_bar.db_status_label
+        self.right_status = self.status_bar.right_status_label
 
         print("[App._build_ui] ✓ UI build complete, main_shell gridded via AppShell")
 
