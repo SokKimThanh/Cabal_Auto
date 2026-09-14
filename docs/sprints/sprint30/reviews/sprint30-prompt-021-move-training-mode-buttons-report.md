@@ -1,4 +1,4 @@
-# Review Prompt 017: Move Training Mode UI Logic
+# Review Prompt 021: Move Training Mode UI Logic
 
 ## Verification Steps
 1. Verify `_update_training_mode_buttons` is completely gone from `app_gui.py`.

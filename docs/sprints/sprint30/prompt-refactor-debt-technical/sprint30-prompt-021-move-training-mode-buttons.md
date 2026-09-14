@@ -1,4 +1,4 @@
-# Prompt 017: Move Training Mode UI Logic
+# Prompt 021: Move Training Mode UI Logic
 
 ## Objective
 The `_update_training_mode_buttons` function in `app_gui.py` is nearly 100 lines long and manipulates UI widgets (`btn_add_monster`, `btn_move_up`, `btn_move_down`) that are actually instantiated inside `ui/panels/monster_target_panel.py`. This is zombie code that needs to be relocated to the panel.

@@ -1,4 +1,4 @@
-# Review Prompt 015: Clean Imports and Move Fallback Component
+# Review Prompt 019: Clean Imports and Move Fallback Component
 
 ## Verification Steps
 1. Open `app_gui.py` and inspect the top of the file. Ensure that blocks like `try: pass except Exception: keyboard = None` have been completely removed or replaced with proper import attempts (e.g., `try: import keyboard except ImportError: keyboard = None`).

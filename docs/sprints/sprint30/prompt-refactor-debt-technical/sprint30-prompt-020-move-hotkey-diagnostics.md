@@ -1,4 +1,4 @@
-# Prompt 016: Move Hotkey Diagnostics Logic
+# Prompt 020: Move Hotkey Diagnostics Logic
 
 ## Objective
 The function `_update_hotkey_diagnostics_ui` inside `app_gui.py` is over 100 lines long and handles logic that should belong to the `HotkeyController` and related views. Move this logic to its rightful place.

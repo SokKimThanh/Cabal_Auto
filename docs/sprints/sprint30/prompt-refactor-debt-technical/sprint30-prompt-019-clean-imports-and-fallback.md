@@ -1,4 +1,4 @@
-# Prompt 015: Clean Imports and Move Fallback Component
+# Prompt 019: Clean Imports and Move Fallback Component
 
 ## Objective
 Remove useless `try: pass except Exception:` blocks from `app_gui.py` and move the large fallback function `_create_icon_btn_component` to a dedicated helper file to reduce surface-level clutter in the God Class.

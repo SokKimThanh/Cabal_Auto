@@ -41,11 +41,11 @@ The current controller violates the "Single Responsibility Principle" by leaking
 
 ---
 
-## Post-Phase 1 Cleanup (Prompts 15-17)
+## Post-Phase 1 Cleanup (Prompts 19-21)
 While reviewing the initial God Class decomposition, several zombie methods and surface-level clutter were identified. These will be handled before or alongside Phase 2:
-15. **`sprint30-prompt-015-clean-imports-and-fallback.md`**: Remove useless try/excepts and extract fallback UI components.
-16. **`sprint30-prompt-016-move-hotkey-diagnostics.md`**: Move `_update_hotkey_diagnostics_ui` into `HotkeyController`.
-17. **`sprint30-prompt-017-move-training-mode-buttons.md`**: Move `_update_training_mode_buttons` into `MonsterTargetPanel`.
+19. **`sprint30-prompt-019-clean-imports-and-fallback.md`**: Remove useless try/excepts and extract fallback UI components.
+20. **`sprint30-prompt-020-move-hotkey-diagnostics.md`**: Move `_update_hotkey_diagnostics_ui` into `HotkeyController`.
+21. **`sprint30-prompt-021-move-training-mode-buttons.md`**: Move `_update_training_mode_buttons` into `MonsterTargetPanel`.
 
 All prompts are located in `docs/sprints/sprint30/prompt-refactor-debt-technical/`.
 

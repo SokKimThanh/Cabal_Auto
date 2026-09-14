@@ -1,4 +1,4 @@
-# Review Prompt 016: Move Hotkey Diagnostics Logic
+# Review Prompt 020: Move Hotkey Diagnostics Logic
 
 ## Verification Steps
 1. Open `app_gui.py` and confirm that `_update_hotkey_diagnostics_ui` has been deleted.
