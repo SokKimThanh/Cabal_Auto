@@ -39,12 +39,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     import pyautogui  # type: ignore
-except Exception:
+except ImportError:
     pyautogui = None  # type: ignore
 
 try:
     from PIL import Image, ImageDraw, ImageTk  # type: ignore
-except Exception:
+except ImportError:
     Image = None  # type: ignore
     ImageTk = None  # type: ignore
     ImageDraw = None  # type: ignore
@@ -2013,7 +2013,7 @@ def main():
     """Main entry point with single instance lock."""
     # Check critical dependencies (pywin32 for overlay)
     try:
-        pass
+        import win32gui
     except ImportError:
         # Show warning but don't block - overlay will show error when toggled
         print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
