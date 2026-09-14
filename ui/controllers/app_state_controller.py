@@ -80,7 +80,6 @@ class AppStateController:
         self._win_items = []  # list of {'hwnd','pid','title','proc'}
         self._hunt_selected = None  # currently selected window info
         self._current_window_bounds = None
-        self.skill_slot_key_labels = []
         self.skill_slot_vars = []
         self._collect_skill_slots_func = None
 
@@ -460,7 +459,6 @@ class AppStateController:
 
     def _refresh_slot_key_labels(self) -> None:
 
-        labels = self.skill_slot_key_labels
         vars_ = self.skill_slot_vars
         service = SkillRuntimeService()
         skills_by_name = {
@@ -480,7 +478,6 @@ class AppStateController:
 
     def _validate_slot_key_duplicates(self) -> None:
 
-        labels = self.skill_slot_key_labels
         vars_ = self.skill_slot_vars
         service = SkillRuntimeService()
         skills_by_name = {
