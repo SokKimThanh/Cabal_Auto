@@ -825,11 +825,6 @@ class App(tk.Tk):
         except Exception as e:
             print(f"Tab switch error: {e}")
 
-    def _on_vision_wizard_closed(self):
-        """Callback when Vision Wizard is closed"""
-        print("[Vision] Wizard closed")
-        # TODO Phase 2: Refresh templates or update UI if needed
-
     def _update_hotkeys_state(self):
         """Update hotkey state.
         Called when Global hotkeys are re-registered.
@@ -919,8 +914,6 @@ class App(tk.Tk):
     # -----------------
     # Close
     # -----------------
-    def _open_vision_wizard(self):
-        self.window_controller.open_vision_wizard()
 
     def _on_rotation_mode_changed(self, event=None):
         """Handle rotation mode change."""
