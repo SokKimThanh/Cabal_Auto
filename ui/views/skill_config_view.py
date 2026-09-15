@@ -86,6 +86,11 @@ class SkillConfigView:
 
             if skill_type == "buff":
                 duration = 300
+                if hasattr(self.state_controller, "skill_slot_duration_vars") and i < len(self.state_controller.skill_slot_duration_vars):
+                    try:
+                        duration = int(self.state_controller.skill_slot_duration_vars[i].get())
+                    except ValueError:
+                        duration = 300
                 slot_data["duration_sec"] = duration
                 buff_slots.append(slot_data)
             else:

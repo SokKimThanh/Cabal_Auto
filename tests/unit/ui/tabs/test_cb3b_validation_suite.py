@@ -86,8 +86,8 @@ class TestCB3BValidationSuite(unittest.TestCase):
         """Verify skill_slots/buff_slots don't cross-contaminate"""
         # Mocking the UI data collection logic for round-trip validation
         mock_app = MagicMock()
-        mock_app._current_class_id = 1
-        mock_app.skills = [
+        mock_app.state_controller._current_class_id = 1
+        mock_app.state_controller.skills = [
             {"name": "Attack1", "type": "attack", "key": "1"},
             {"name": "Buff1", "type": "buff", "key": "2"},
         ]
@@ -103,7 +103,7 @@ class TestCB3BValidationSuite(unittest.TestCase):
 
         # Combo lane: 0, 1, 2, 3
         # Buff lane: 4, 5, 6, 7
-        mock_app.skill_slot_vars = [
+        mock_app.state_controller.skill_slot_vars = [
             var_attack,
             var_empty1,
             var_empty2,
@@ -112,7 +112,7 @@ class TestCB3BValidationSuite(unittest.TestCase):
             var_empty4,
         ]
 
-        mock_app.skill_slot_duration_vars = [
+        mock_app.state_controller.skill_slot_duration_vars = [
             tk.StringVar(),
             tk.StringVar(),
             tk.StringVar(),
@@ -143,7 +143,9 @@ class TestCB3BValidationSuite(unittest.TestCase):
             spec.loader.exec_module(app_gui_module)
 
         # Extract the standalone _collect_skill_slots method to test it isolated
-        skills, buffs = app_gui_module.App._collect_skill_slots(mock_app)
+        from ui.views.skill_config_view import SkillConfigView
+        view = SkillConfigView(mock_app.state_controller)
+        skills, buffs = view._collect_skill_slots()
 
         self.assertEqual(len(skills), 1)
         self.assertEqual(skills[0]["name"], "Attack1")
@@ -157,7 +159,7 @@ class TestCB3BValidationSuite(unittest.TestCase):
     def test_i18n_round_trip(self):
         """Verify all lane headers/labels translate correctly"""
         mock_app = MagicMock()
-        mock_app._current_class_id = 1
+        mock_app.state_controller._current_class_id = 1
 
         def mock_t(key, **kwargs):
             translations = {
@@ -166,10 +168,10 @@ class TestCB3BValidationSuite(unittest.TestCase):
             }
             return translations.get(key, key)
 
-        mock_app._t = mock_t
+        mock_app.state_controller._t = mock_t
         mock_app.hunt_cfg = {"combo": {}}
-        mock_app.skill_slot_count = 8
-        mock_app.skills = []
+        mock_app.state_controller.skill_slot_count = 8
+        mock_app.state_controller.skills = []
 
         tab = HuntTab(self.root, mock_app)
         tab.pack()
