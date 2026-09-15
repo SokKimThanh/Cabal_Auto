@@ -112,6 +112,9 @@ class LanguageChangedEvent(Event):
     def __init__(self, lang: str):
         self.lang = lang
 
+class TranslationDataUpdatedEvent(Event):
+    pass
+
 class GlobalApplyEvent(Event):
     pass
 

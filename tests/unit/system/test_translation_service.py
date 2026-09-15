@@ -44,6 +44,90 @@ def test_get_all_empty(mock_get_connection):
     assert results == []
 
 
+def test_get_total_count(mock_get_connection):
+    service = TranslationService()
+    assert service.get_total_count() == 0
+
+    service.upsert("ns1", "key1", "en", "Hello")
+    assert service.get_total_count() == 1
+
+    service.upsert("ns1", "key2", "en", "World")
+    assert service.get_total_count() == 2
+
+def test_get_namespaces(mock_get_connection):
+    service = TranslationService()
+    assert service.get_namespaces() == []
+
+    service.upsert("ns1", "key1", "en", "Hello")
+    service.upsert("ns2", "key1", "en", "World")
+    service.upsert("ns1", "key2", "en", "Testing")
+
+    assert set(service.get_namespaces()) == {"ns1", "ns2"}
+
+def test_get_all_grouped(mock_get_connection):
+    service = TranslationService()
+
+    service.upsert("ns1", "key1", "en", "Hello")
+    service.upsert("ns1", "key1", "vi", "Xin chao")
+    service.upsert("ns1", "key2", "en", "World")
+    service.upsert("ns2", "key3", "vi", "The gioi")
+
+    results = service.get_all_grouped()
+
+    # 3 unique keys
+    assert len(results) == 3
+
+    # Check ns1.key1
+    key1_row = next(r for r in results if r["key"] == "key1")
+    assert key1_row["namespace"] == "ns1"
+    assert key1_row["en"] == "Hello"
+    assert key1_row["vi"] == "Xin chao"
+
+    # Check ns1.key2 (missing vi)
+    key2_row = next(r for r in results if r["key"] == "key2")
+    assert key2_row["en"] == "World"
+    assert key2_row["vi"] is None
+
+    # Check ns2.key3 (missing en)
+    key3_row = next(r for r in results if r["key"] == "key3")
+    assert key3_row["en"] is None
+    assert key3_row["vi"] == "The gioi"
+
+    # Test filtering by namespace
+    ns1_results = service.get_all_grouped("ns1")
+    assert len(ns1_results) == 2
+
+def test_update_translation(mock_get_connection):
+    service = TranslationService()
+
+    # Insert new using update_translation
+    success = service.update_translation("ns1", "key1", "en", "Initial")
+    assert success is True
+
+    # Update existing
+    success = service.update_translation("ns1", "key1", "en", "Updated")
+    assert success is True
+
+    results = service.get_all()
+    assert len(results) == 1
+    assert results[0]["text"] == "Updated"
+
+def test_delete_key(mock_get_connection):
+    service = TranslationService()
+
+    service.upsert("ns1", "key1", "en", "Hello")
+    service.upsert("ns1", "key1", "vi", "Xin chao")
+    service.upsert("ns1", "key2", "en", "World")
+
+    success = service.delete_key("ns1", "key1")
+    assert success is True
+
+    results = service.get_all()
+    # Should only have key2 left
+    assert len(results) == 1
+    assert results[0]["key"] == "key2"
+
+
 def test_upsert_new_and_existing(mock_get_connection):
     service = TranslationService()
 

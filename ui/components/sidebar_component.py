@@ -48,6 +48,7 @@ class SidebarComponent(tk.Frame):
             ("btn_scan_history", "scan_history", UI.FONT_SECTION, "scan_history", "🕒"),
             ("sidebar_activity_logs", "logs", UI.FONT_SECTION, "logs", "📋"),
             ("tab_stats", "stats", UI.FONT_SECTION, "stats", "📊"),
+            ("btn_language_manager", "language_manager", UI.FONT_SECTION, "language_manager", "🌐"),
             ("sidebar_support", "help", UI.FONT_SECTION, "help", "❓"),
         ]
 

@@ -26,6 +26,7 @@ class NavigationController:
         from ui.views.class_manager_frame import ClassManagerFrame
         from ui.views.icon_manager_frame import IconManagerFrame
         from ui.views.scan_history_frame import ScanHistoryFrame
+        from ui.views.language_manager_frame import LanguageManagerFrame
 
         # Initialize all views. Pass `app_instance` as it acts as the global state context for now.
         self.views["hunt"] = HuntWorkspaceFrame(self.container, app=app_instance)
@@ -41,6 +42,7 @@ class NavigationController:
 
         self.views["icon_manager"] = IconManagerFrame(self.container, app=app_instance)
         self.views["scan_history"] = ScanHistoryFrame(self.container, app=app_instance)
+        self.views["language_manager"] = LanguageManagerFrame(self.container, app=app_instance)
 
     def navigate_to(self, view_key: str):
         """
