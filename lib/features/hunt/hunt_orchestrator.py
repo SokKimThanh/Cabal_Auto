@@ -1,3 +1,5 @@
+
+from lib.events.event_bus import EventBus, SceneMonstersDetectedEvent
 from lib.vision.target_bar_detector import TargetBarDetector
 from lib.events.event_bus import (
     EventBus,
@@ -148,7 +150,7 @@ class HuntOrchestrator:
             # We need vision_engine. It's stored in self.bot_manager if available.
             # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
             runtime_queue = RuntimeMonsterQueue(
-                publish_callback=getattr(self, "on_scene_monsters_detected", None)
+                publish_callback=lambda s: EventBus.trigger(SceneMonstersDetectedEvent(s))
             )
             scene_detector = None
             if (

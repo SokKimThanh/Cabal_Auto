@@ -46,8 +46,29 @@ class SceneMonstersDetectedEvent(Event):
     def __init__(self, snapshot):
         self.snapshot = snapshot
 
+
 class MonsterRotationUpdatedEvent(Event):
-    pass
+    def __init__(self, selected_index: int = None):
+        self.selected_index = selected_index
+
+
+class MonsterMoveUpEvent(Event):
+    def __init__(self, index: int):
+        self.index = index
+
+class MonsterMoveDownEvent(Event):
+    def __init__(self, index: int):
+        self.index = index
+
+class MonsterDeleteEvent(Event):
+    def __init__(self, indices: List[int]):
+        self.indices = indices
+
+
+class MonsterAddSmartEvent(Event):
+    def __init__(self, record: dict):
+        self.record = record
+
 
 class VisionScanRegionEvent(Event):
     pass
