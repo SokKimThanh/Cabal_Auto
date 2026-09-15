@@ -1,9 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
-from lib.ui_style_v2 import UIStyle
+from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from lib.ui.controllers.language_manager_controller import LanguageManagerController
-from ui.components.responsive_grid import ResponsiveGridBase
-from ui.theme.ttk_theme import UI
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui.dialog_service import DialogService
 import threading
 
