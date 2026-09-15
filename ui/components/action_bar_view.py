@@ -6,7 +6,7 @@ from ui.panels.screen_state_panel import ScreenStatePanel
 from ui.helpers.button_styles import get_button_config
 
 from ui.icon_library import Icons
-from app_gui import _create_icon_btn_component
+from ui.components import create_icon_button as _create_icon_btn_component
 import logging
 from lib.features.hunt.hunt_config import save_hunt_config
 from lib.events.event_bus import EventBus, GlobalApplyEvent, StartStopHuntEvent, LanguageChangedEvent
