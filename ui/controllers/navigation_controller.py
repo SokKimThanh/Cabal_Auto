@@ -19,7 +19,7 @@ class NavigationController:
         from ui.views.setup_content_frame import SetupContentFrame
         from ui.views.help_support_frame import HelpSupportFrame
         from ui.views.stats_content_frame import StatsContentFrame
-        from ui.views.activity_logs_frame import ActivityLogsFrame
+        from ui.views.log_console_view import LogConsoleView
         from ui.views.monster_manager_frame import MonsterManagerFrame
         from ui.views.skill_manager_frame import SkillManagerFrame
         from ui.views.build_manager_frame import BuildManagerFrame
@@ -32,7 +32,7 @@ class NavigationController:
         self.views["setup"] = SetupContentFrame(self.container, app=app_instance)
         self.views["help"] = HelpSupportFrame(self.container, app=app_instance)
         self.views["stats"] = StatsContentFrame(self.container, app=app_instance)
-        self.views["logs"] = ActivityLogsFrame(self.container, app=app_instance)
+        self.views["logs"] = LogConsoleView(self.container, app=app_instance)
 
         self.views["build_manager"] = BuildManagerFrame(self.container, app=app_instance)
         self.views["monster_manager"] = MonsterManagerFrame(self.container, app=app_instance)

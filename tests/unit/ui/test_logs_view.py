@@ -32,20 +32,17 @@ def test_logger_queue_cap():
 
 @pytest.fixture
 def app():
-    with patch("app_gui.pyautogui", MagicMock(), create=True), patch(
-        "app_gui.keyboard", MagicMock(), create=True
-    ), patch.dict(
-        sys.modules,
-        {
-            "lib.system.window_manager": MagicMock(),
-            "lib.vision.vision_engine": MagicMock(),
-        },
-        clear=False,
-    ):
-
+    with patch("app_gui.pyautogui", MagicMock(), create=True), patch("app_gui.keyboard", MagicMock(), create=True), patch("app_gui.App._build_ui", MagicMock()):
         app = Application()
+        # Mock the required properties for test
+        from ui.views.log_console_view import LogConsoleView
+        import tkinter as tk
+        app._views = {'logs': LogConsoleView(app, app)}
+        app.current_view_key = 'logs'
+        app.switch_view = lambda k: setattr(app, 'current_view_key', k)
         yield app
         app.destroy()
+
 
 
 def test_circular_buffer_and_memory_cap(app):
@@ -61,11 +58,11 @@ def test_circular_buffer_and_memory_cap(app):
 
     flush_count = math.ceil(5000 / 50) + 5
     for _ in range(flush_count):
-        app._poll_log_queue()
+        app._views['logs']._poll_log_queue()
 
     # Retrieve number of lines in text widget
     # We inserted 5000 lines. The text widget cap is 1000.
-    lines = int(app.logs_text_widget.index("end-1c").split(".")[0])
+    lines = int(app._views['logs'].text_widget.index("end-1c").split(".")[0])
 
     # We might have an extra blank line at the end, so lines could be 1001 or 1000
     assert lines <= 1005
@@ -76,19 +73,19 @@ def test_batch_insert_rate_limit(app):
     while not logger.ui_queue.empty():
         logger.ui_queue.get()
 
-    app.logs_text_widget.config(state="normal")
-    app.logs_text_widget.delete("1.0", "end")
-    app.logs_text_widget.config(state="disabled")
+    app._views['logs'].text_widget.config(state="normal")
+    app._views['logs'].text_widget.delete("1.0", "end")
+    app._views['logs'].text_widget.config(state="disabled")
 
     for i in range(200):
         logger.logger.info(f"Test log {i}")
 
-    app._poll_log_queue()
+    app._views['logs']._poll_log_queue()
     app.update_idletasks()
     app.update()
     # It should have processed exactly 50 lines this tick
     # 50 lines + 1 empty line
-    lines = int(app.logs_text_widget.index("end-1c").split(".")[0])
+    lines = int(app._views['logs'].text_widget.index("end-1c").split(".")[0])
 
     # The critical check is that it didn't block and process all 200 at once (hence < 200).
     assert lines < 200
@@ -118,20 +115,20 @@ def test_log_format_duplication(app):
     while not logger.ui_queue.empty():
         logger.ui_queue.get()
 
-    app.logs_text_widget.config(state="normal")
-    app.logs_text_widget.delete("1.0", "end")
-    app.logs_text_widget.config(state="disabled")
+    app._views['logs'].text_widget.config(state="normal")
+    app._views['logs'].text_widget.delete("1.0", "end")
+    app._views['logs'].text_widget.config(state="disabled")
 
     # Log a message
     test_msg = "Duplicate check msg"
     logger.logger.info(test_msg)
 
     # Process queue
-    app._poll_log_queue()
+    app._views['logs']._poll_log_queue()
     app.update()
 
     # Check content of text widget
-    content = app.logs_text_widget.get("1.0", "end-1c").strip()
+    content = app._views['logs'].text_widget.get("1.0", "end-1c").strip()
 
     matching_lines = [line for line in content.splitlines() if test_msg in line]
     assert len(matching_lines) == 1, (
@@ -158,10 +155,10 @@ def test_view_navigation(app):
 
     # Test append_message via UI view directly
     app._views["logs"].append_message("Test navigation append")
-    content = app.logs_text_widget.get("1.0", "end-1c").strip()
+    content = app._views['logs'].text_widget.get("1.0", "end-1c").strip()
     assert "Test navigation append" in content
 
     # Test clear
     app._views["logs"].clear()
-    content = app.logs_text_widget.get("1.0", "end-1c").strip()
+    content = app._views['logs'].text_widget.get("1.0", "end-1c").strip()
     assert content == ""
