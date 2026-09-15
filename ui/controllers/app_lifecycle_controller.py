@@ -16,22 +16,22 @@ class AppLifecycleController:
 
     def start_lifecycle(self) -> None:
         """Schedules initial startup checks in a sequence."""
-        self.app.after(100, self._step_update_hotkeys)
+        self.app.root.after(100, self._step_update_hotkeys)
 
     def _step_update_hotkeys(self):
         if hasattr(self.app, "_update_hotkeys_state"):
             self.app._update_hotkeys_state()
-        self.app.after(50, self._step_diagnostics)
+        self.app.root.after(50, self._step_diagnostics)
 
     def _step_diagnostics(self):
         if hasattr(self.app, "hotkey_controller"):
             self.app.hotkey_controller.update_diagnostics_ui_state()
-        self.app.after(50, self._step_db_connection)
+        self.app.root.after(50, self._step_db_connection)
 
     def _step_db_connection(self):
         self.check_db_connection()
         # Skip first-time wizard - only need auto-find feature in selector
-        self.app.after(500, self.auto_bring_to_front_on_startup)
+        self.app.root.after(500, self.auto_bring_to_front_on_startup)
 
     def check_first_time_setup(self) -> None:
         """Check if this is first-time user and auto-launch wizard if needed."""
@@ -110,12 +110,12 @@ class AppLifecycleController:
             # Check if we have a valid hunt_selected window
             if not hasattr(self.app, "hunt_selected") or not self.app.state_controller.hunt_selected:
                 print("[Auto Bring] No saved window to bring to front")
-                print(f"[Auto Bring] Window state: {self.app.state()}")
+                print(f"[Auto Bring] Window state: {self.app.root.state()}")
                 print("[Auto Bring] Calling deiconify()...")
                 # Ensure app deiconifies even if there's no window to bring to front
                 if hasattr(self.app, "deiconify"):
-                    self.app.deiconify()
-                    print(f"[Auto Bring] After deiconify(), state: {self.app.state()}")
+                    self.app.root.deiconify()
+                    print(f"[Auto Bring] After deiconify(), state: {self.app.root.state()}")
                 return
 
             hwnd = self.app.state_controller.hunt_selected.get("hwnd")
@@ -125,7 +125,7 @@ class AppLifecycleController:
             if not hwnd:
                 print(f"[Auto Bring] No HWND for window: {title}")
                 if hasattr(self.app, "deiconify"):
-                    self.app.deiconify()
+                    self.app.root.deiconify()
                 return
 
             print(
@@ -140,13 +140,13 @@ class AppLifecycleController:
             if ok:
                 # Keep app on top of game window
                 def _lift_and_focus():
-                    self.app.lift()
-                    self.app.focus_force()
-                    self.app.attributes("-topmost", True)
-                    self.app.update_idletasks()
-                    self.app.after(100, lambda: self.app.attributes("-topmost", False))
+                    self.app.root.lift()
+                    self.app.root.focus_force()
+                    self.app.root.attributes("-topmost", True)
+                    self.app.root.update_idletasks()
+                    self.app.root.after(100, lambda: self.app.root.attributes("-topmost", False))
 
-                self.app.after(100, _lift_and_focus)
+                self.app.root.after(100, _lift_and_focus)
 
                 print(f"[Auto Bring] ✓ Window ready (below app): {title}")
                 # Update status briefly
@@ -154,7 +154,7 @@ class AppLifecycleController:
                     current_status = self.app.hunt_status.get()
                     self.app.hunt_status.set(f"✓ Game window ready: {title}")
                     # Restore previous status after 3 seconds
-                    self.app.after(
+                    self.app.root.after(
                         3000, lambda: self.app.hunt_status.set(current_status)
                     )
             else:
@@ -248,7 +248,7 @@ class AppLifecycleController:
                     pass
                 setattr(self.app, attr_name, None)
 
-        self.app.destroy()
+        self.app.root.destroy()
 
     def cleanup_before_destroy(self) -> None:
         """Centralized cleanup of external resources (bot manager, overlay, hotkeys)."""

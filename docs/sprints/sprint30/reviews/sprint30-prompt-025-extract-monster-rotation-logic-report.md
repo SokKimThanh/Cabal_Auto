@@ -7,7 +7,7 @@
 4. Ensure the view synchronizes data properly with `AppStateController` to prevent processing stale listbox states.
 
 ## Checklist
-- [ ] Monster UI handler methods deleted from `app_gui.py`.
-- [ ] Logic implemented in `MonsterRotationView` or `HuntTab`.
-- [ ] Click events use `EventBus` to notify `MonsterRotationController`.
-- [ ] Monster detection auto-mapping continues to work flawlessly.
+- [x] Monster UI handler methods deleted from `app_gui.py`.
+- [x] Logic implemented in `MonsterRotationView` or `HuntTab`.
+- [x] Click events use `EventBus` to notify `MonsterRotationController`.
+- [x] Monster detection auto-mapping continues to work flawlessly.

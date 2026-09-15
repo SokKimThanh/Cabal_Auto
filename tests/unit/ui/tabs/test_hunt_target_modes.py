@@ -24,13 +24,13 @@ def mock_app(root):
     app.monster_rotation = []
     app._t = lambda key, **kwargs: key
     app.on_skill_slot_changed = lambda e: None
-    app._clear_skill_slot = lambda v: None
+    app.skill_config_view = type('obj', (object,), {'_clear_skill_slot': lambda v: None})()
     app._refresh_monster_select_options = lambda: None
     app.skill_slot_count = 4
     app._refresh_monster_rotation_list = lambda: None
     app._on_rotation_mode_changed = lambda e: None
     app._create_icon_button = lambda *args, **kwargs: tk.Button(args[0])
-    app._create_tooltip = lambda *args, **kwargs: None
+
     return app
 
 

@@ -12,6 +12,7 @@ This is a comprehensive test showcasing the complete workflow.
 """
 
 import tkinter as tk
+from ui.helpers.ui_helper import UIHelper
 from tkinter import ttk, messagebox
 from pathlib import Path
 import sys
@@ -74,7 +75,7 @@ class TopbarEnhancementDemo(tk.Tk):
             topbar, text="ⓘ", bg="#f5f5f5", fg="#666", font=("Arial", 8)
         )
         tooltip_label.pack(side="left", padx=(0, 6))
-        self._create_tooltip(
+        UIHelper.create_tooltip(
             tooltip_label,
             "Select your Cabal game window.\n"
             "• Click 'Find Windows' to refresh list\n"

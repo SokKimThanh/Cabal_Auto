@@ -1,9 +1,7 @@
+from ui.views.skill_config_view import SkillConfigView
 from lib.features.hunt.window_selection_service import WindowSelectionService
-from dialogs.monster_picker import MonsterPickerDialog
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from lib.ui_style_v2 import UIStyleV2 as UI  # Global UI style constants
-from lib.system.instance_lock import SingleInstanceLock
-from lib.system.hunt_logger import get_hunt_logger
 from ui.controllers.hotkey_controller import HotkeyController
 
 
@@ -11,7 +9,6 @@ from ui.controllers.hotkey_controller import HotkeyController
 
 from lib.features.hunt.hunt_config import (
     ConfigManager,
-    _sanitize_templates,
     load_config,
     load_hunt_config,
     save_config,
@@ -23,14 +20,11 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
-from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, MonsterRotationUpdatedEvent, LanguageChangedEvent, GlobalApplyEvent, StartStopHuntEvent
+from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, LanguageChangedEvent, GlobalApplyEvent, StartStopHuntEvent
 import tkinter as tk
 import sys
 from lib.ui.dialog_service import DialogService
-from datetime import datetime
 from pathlib import Path
-import queue
-from typing import Optional
 
 # Add parent directory to path for lib imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -80,7 +74,7 @@ except ImportError:
 
 
 
-class App(tk.Tk):
+class App:
 
     @property
     def skills(self):
@@ -116,26 +110,33 @@ class App(tk.Tk):
             self.translation_binder.bind(widget, key, **kwargs)
         return widget
 
-    def __init__(self, di_container=None):
+    def __init__(self, root, di_container=None):
+        self.root = root
+        if di_container:
+            self.monster_library_service = getattr(di_container, "monster_library_service", None)
+            self.skill_service = getattr(di_container, "skill_service", None)
+            self.db_skill_service = getattr(di_container, "db_skill_service", None)
+            self.db_class_service = getattr(di_container, "db_class_service", None)
+            self.db_scan_service = getattr(di_container, "db_scan_service", None)
+            self.overlay_controller = getattr(di_container, "overlay_controller", None)
+            self.skill_caster_service = getattr(di_container, "skill_caster_service", None)
+            self.scan_controller = getattr(di_container, "scan_controller", None)
+
         self.has_unsaved_changes = False
         self._btn_scan_ref = None
         self._action_locked = False
 
         self.monster_selected_index = None
-        self._icon_cache = {}
-        self._tooltips = {}
         self.translation_binder = TranslationBinder()
 
         try:
-            super().__init__()
             self._is_destroyed = False
-
-            DialogService.set_default_parent(self)
+            DialogService.set_default_parent(self.root)
             self._last_height_under_900 = False
 
             # Initialize State Controller early
             from ui.controllers.app_state_controller import AppStateController
-            self.state_controller = AppStateController(self)
+            self.state_controller = AppStateController(self.root)
 
             # Load config and language
             self.cfg = load_config()
@@ -164,10 +165,10 @@ class App(tk.Tk):
             EventBus.bind(IconUpdatedEvent, self.on_icon_updated)
 
             # Create config manager for wizard
-            self.config_mgr = ConfigManager(self.cfg, self.state_controller.hunt_cfg)
+            self.root.config_mgr = ConfigManager(self.cfg, self.state_controller.hunt_cfg)
 
             from ui.components.app_shell import AppShell
-            self.shell = AppShell(root=self, app=self)
+            self.shell = AppShell(root=self.root, app=self)
             self.shell.build()
         except Exception as e:
             print(f"[App.__init__] Error in early init: {e}")
@@ -184,20 +185,15 @@ class App(tk.Tk):
         from ui.controllers.app_window_controller import AppWindowController
         from ui.controllers.window_tracker_controller import WindowTrackerController
 
-        if di_container:
-            self.monster_library_service = di_container.monster_library_service
-            self.skill_service = di_container.skill_service
-            self.db_skill_service = di_container.db_skill_service
-            self.db_class_service = di_container.db_class_service
-            self.db_scan_service = di_container.db_scan_service
-            self.overlay_controller = di_container.overlay_controller
-            self.skill_caster_service = di_container.skill_caster_service
 
-        self.state_controller._collect_skill_slots_func = getattr(self, '_collect_skill_slots', None)
+
+        self.skill_config_view = SkillConfigView(self.state_controller)
+        self.state_controller._collect_skill_slots_func = getattr(self.skill_config_view, '_collect_skill_slots', None)
         self.state_controller.ui_widgets['unsaved_indicator_func'] = getattr(self, '_update_unsaved_indicator', None)
         self.window_controller = AppWindowController(self)
         self.window_tracker_controller = WindowTrackerController(self)
         self.overlay_ctrl = None
+        self.hunt_controller = None
         self._detected_snapshot_items = []
         self._last_snapshot = None
         self.task_scheduler = TaskScheduler(self)
@@ -205,15 +201,23 @@ class App(tk.Tk):
         # --- Event Bus Bindings ---
         EventBus.bind(HuntStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', e.status)))
         EventBus.bind(HuntStateChangedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self._on_orchestrator_state_change(e.state)))
-        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.hunt_tab.update_hp_display(e.hp_percent) if hasattr(self, 'hunt_tab') else None))
-        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.hunt_tab.update_status(e.status) if hasattr(self, 'hunt_tab') else None))
+        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_hp_display(e.hp_percent) if hasattr(self, 'tab_hunt') else None))
+        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_status(e.status) if hasattr(self, 'tab_hunt') else None))
         EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
-        EventBus.bind(MonsterRotationUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._on_monster_rotation_updated))
         EventBus.bind(LanguageChangedEvent, self.on_language_change)
-        EventBus.bind(GlobalApplyEvent, lambda e: self.on_global_apply())
-        EventBus.bind(StartStopHuntEvent, lambda e: self.on_start_stop_clicked())
+        from lib.ui.controllers.global_config_controller import GlobalConfigController
+        self.global_config_controller = GlobalConfigController(self.state_controller, self.hotkey_controller, self._t, app_instance=self)
+        EventBus.bind(GlobalApplyEvent, lambda e: self.global_config_controller.apply_all_configs())
+
+        from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
+        if di_container and hasattr(di_container, "monster_rotation_controller") and di_container.monster_rotation_controller:
+            self.monster_rotation_controller = di_container.monster_rotation_controller
+        else:
+            self.monster_rotation_controller = MonsterRotationController(self.state_controller)
+        self.monster_rotation_controller.bind_events()
+        EventBus.bind(StartStopHuntEvent, lambda e: self.hunt_controller.on_start_stop_clicked())
 
         # Instantiate the MenuVisionController to handle vision menu events
         from lib.ui.controllers.menu_vision_controller import MenuVisionController
@@ -238,7 +242,8 @@ class App(tk.Tk):
 
         # Phase 3: Multi-Monster Support
         self.state_controller.monster_rotation = []
-        self._load_monster_rotation_list()
+        if hasattr(self, 'monster_rotation_controller') and self.monster_rotation_controller:
+            self.monster_rotation_controller.load_monster_rotation_list()
 
         # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
         # try to map them to actual attack skills from the skill library for a better UX.
@@ -355,43 +360,30 @@ class App(tk.Tk):
         self.hunt_orchestrator = di_container.hunt_orchestrator if di_container else None
 
         # Keyboard shortcuts (Window-focused only)
-        self.bind("<Control-b>", lambda e: self.navigation.navigate_to("build_manager"))
-        self.bind("<Control-m>", lambda e: self.navigation.navigate_to("monster_manager"))
-        self.bind("<Control-k>", lambda e: self.navigation.navigate_to("skill_manager"))
+        self.root.bind("<Control-b>", lambda e: self.navigation.navigate_to("build_manager"))
+        self.root.bind("<Control-m>", lambda e: self.navigation.navigate_to("monster_manager"))
+        self.root.bind("<Control-k>", lambda e: self.navigation.navigate_to("skill_manager"))
 
-        self.bind("<Alt-Key-1>", lambda e: self.navigation.navigate_to("hunt"))  # Alt+1: Hunt tab
-        self.bind(
+        self.root.bind("<Alt-Key-1>", lambda e: self.navigation.navigate_to("hunt"))  # Alt+1: Hunt tab
+        self.root.bind(
             "<Alt-Key-2>", lambda e: self.navigation.navigate_to("setup")
         )  # Alt+2: Setup tab
 
         # Responsive layout bindings
-        self.bind("<Configure>", self._on_window_configure)
+        self.root.bind("<Configure>", self._on_window_configure)
 
         from ui.theme.ttk_theme import configure_ttk_styles
 
-        configure_ttk_styles(self)
+        configure_ttk_styles(self.root)
 
         self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
 
         # Register for skill key updates
-        if hasattr(self.state_controller, "register_callback"):
-            self.state_controller.register_callback("on_skill_keys_updated", self._update_skill_keys)
-            self.state_controller.register_callback("on_skill_key_duplicates_detected", self._update_duplicate_colors)
 
     # -----------------
-    def _update_skill_keys(self, keys_list):
-        if hasattr(self, "skill_slot_key_labels"):
-            for idx, label in enumerate(self.skill_slot_key_labels):
-                if idx < len(keys_list):
-                    key = keys_list[idx]
-                    label.config(text=key, fg="#333333")
 
-    def _update_duplicate_colors(self, duplicate_indices):
-        if hasattr(self, "skill_slot_key_labels"):
-            for idx, label in enumerate(self.skill_slot_key_labels):
-                label.config(fg="#C62828" if idx in duplicate_indices else "#333333")
 
     def _build_ui(self):
         # We rebuild the shell layout first
@@ -409,7 +401,7 @@ class App(tk.Tk):
                 overlay_controller=self.overlay_controller
             )
             try:
-                self.config(menu=self.main_menu)
+                self.root.config(menu=self.main_menu)
             except Exception:
                 # Some environments may not support menu on top-level; ignore
                 pass
@@ -469,8 +461,6 @@ class App(tk.Tk):
         # Display default view
         self.navigation.navigate_to("hunt")
 
-        self.task_scheduler.schedule_recurring_task("poll_log_queue", 100, self._poll_log_queue)
-        self.task_scheduler.schedule_recurring_task("update_logs_metrics", 1000, self._update_logs_metrics)
 
         # Vùng A: Quick Action Bar
         from ui.components.action_bar_view import ActionBarView
@@ -510,90 +500,14 @@ class App(tk.Tk):
 
     def _check_initial_logs_state(self):
         """Check window height and auto-collapse logs if needed (UX4B.1)."""
-        self.update_idletasks()
-        current_height = self.winfo_height()
+        self.root.update_idletasks()
+        current_height = self.root.winfo_height()
         if current_height < 900:
             self._last_height_under_900 = True
             if getattr(self, "logs_expanded", False):
                 self._toggle_bottom_logs()
         else:
             self._last_height_under_900 = False
-
-    def _update_logs_metrics(self):
-        """Update metrics on the bottom logs header."""
-        if self._is_destroyed:
-            return
-
-        try:
-            fps = 0.0
-            scans = 0
-            running_time = "00:00:00"
-
-            # Here we might fetch actual metrics from app components
-            # We would need to read this from HuntLogger or VisionEngine
-            # But let's check HuntLogger session start
-            logger = get_hunt_logger()
-            if hasattr(logger, "session_start"):
-                duration = (datetime.now() - logger.session_start).total_seconds()
-                h = int(duration // 3600)
-                m = int((duration % 3600) // 60)
-                s = int(duration % 60)
-                running_time = f"{h:02d}:{m:02d}:{s:02d}"
-
-            # Basic dummy stats if actual stats not easily available
-            # In real system, we hook into VisionEngine or main orchestrator stats
-
-            # Since VisionEngine stats are inside its instance, let's just make it generic or try to extract from global
-            if hasattr(self, "logs_metrics_label") and self.logs_metrics_label:
-                self.logs_metrics_label.config(
-                    text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}"
-                )
-
-        except Exception:
-            pass
-
-        # self.after(1000, self._update_logs_metrics) - Handled by TaskScheduler
-
-    def _poll_log_queue(self):
-        """Poll log messages from HuntLogger and append to UI (UX4B.2)."""
-        if self._is_destroyed:
-            return
-
-        try:
-            logger = get_hunt_logger()
-            if hasattr(logger, "ui_queue"):
-                if getattr(logger, "dropped_log_count", 0) > 0:
-                    dropped = logger.dropped_log_count
-                    logger.dropped_log_count = 0
-                    warn_msg = f"[!] Đã bỏ qua {dropped} dòng log do quá tải"
-                    if "logs" in getattr(self.navigation, "views", {}):
-                        self.navigation.views["logs"].append_message(warn_msg)
-
-                lines_processed = 0
-                while lines_processed < 50:
-                    try:
-                        record = logger.ui_queue.get_nowait()
-                        # QueueHandler.prepare() automatically formats the message into record.message in Python 3.2+
-                        if hasattr(record, "message"):
-                            msg = record.message
-                        else:
-                            msg = record.getMessage()
-
-                        if "logs" in getattr(self.navigation, "views", {}):
-                            # Pass both formatted string and record level name for filtering
-                            self.navigation.views["logs"].append_message(msg, record.levelname)
-                        lines_processed += 1
-                    except queue.Empty:
-                        break
-
-                if lines_processed > 0 and "logs" in getattr(self.navigation, "views", {}):
-                    self.navigation.views["logs"].trim_to_limit(1000)
-
-        except Exception as e:
-            print(f"Error polling logs: {e}")
-
-        # Flush frequently
-        # self.after(100, self._poll_log_queue) - Handled by TaskScheduler
 
     def _update_sidebar_state(self, view_key: str):
         # Update sidebar selected state
@@ -681,19 +595,7 @@ class App(tk.Tk):
             if "thumbnail" in results:
                 self.screen_state_panel.update_thumbnail(results["thumbnail"])
 
-    def _load_monster_rotation_list(self):
-        saved_list = self.state_controller.hunt_cfg.get("monster_rotation", [])
-        self.state_controller.monster_rotation = []
-        for item in saved_list:
-            if isinstance(item, dict):
-                self.state_controller.monster_rotation.append(
-                    {
-                        "monster_id": item.get("monster_id", 0),
-                        "name": item.get("name", ""),
-                        "priority": item.get("priority", 1),
-                        "dungeon_id": item.get("dungeon_id", None),
-                    }
-                )
+
 
     def on_language_change(self, _evt=None):
         # Save selection based on hwnd to prevent loss on language change
@@ -783,7 +685,8 @@ class App(tk.Tk):
         if hasattr(self, "translation_binder"):
             self.translation_binder.refresh_all(self._t)
 
-        self._refresh_start_stop_visual()
+        if hasattr(self, 'hunt_controller') and self.hunt_controller:
+            self.hunt_controller.refresh_start_stop_visual()
         self._update_unsaved_indicator()
 
         if hasattr(self, "window_status_lbl"):
@@ -833,9 +736,9 @@ class App(tk.Tk):
             self.hotkey_controller.register_all()
 
     # --- Helpers to attempt closing other windows while respecting unsaved changes ---
-    def _refresh_start_stop_visual(self):
-        is_running = self.state_controller.is_bot_running()
 
+
+        is_running = self.state_controller.is_bot_running()
         if is_running:
             text = self._t("stop_hunt")
             tooltip = self._t("stop_hunt") + "\n(Ctrl+F6)"
@@ -857,9 +760,7 @@ class App(tk.Tk):
         else:
             self.start_stop_btn.config(text=text, bg=bg_color)
 
-    def on_start_stop_clicked(self):
-        if self._action_locked:
-            return
+
 
         self._action_locked = True
 
@@ -869,21 +770,11 @@ class App(tk.Tk):
         elif hasattr(self.start_stop_btn, "config"):
             self.start_stop_btn.config(state="disabled")
 
-        is_running = self.state_controller.is_bot_running()
-        if is_running:
-            self.hunt_controller.request_stop_hunt()
-        else:
-            self.hunt_controller.request_start_hunt()
 
-        self.task_scheduler.schedule_task("reenable_start_stop_btn", 500, self._reenable_start_stop_btn, recurring=False)
 
-    def _reenable_start_stop_btn(self):
-        self._action_locked = False
-        if hasattr(self.start_stop_btn, "configure"):
-            self.start_stop_btn.configure(state="normal")
-        elif hasattr(self.start_stop_btn, "config"):
-            self.start_stop_btn.config(state="normal")
-        self._refresh_start_stop_visual()
+        self.task_scheduler.schedule_task("reenable_start_stop_btn", 500, self.hunt_controller.reenable_start_stop_btn if hasattr(self, 'hunt_controller') else None, recurring=False)
+
+
 
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
@@ -908,7 +799,8 @@ class App(tk.Tk):
         if hasattr(self.state_controller, "_emit_event"):
             self.state_controller._emit_event("on_bot_state_changed", state)
 
-        self._refresh_start_stop_visual()
+        if hasattr(self, 'hunt_controller') and self.hunt_controller:
+            self.hunt_controller.refresh_start_stop_visual()
 
 
     # -----------------
@@ -927,237 +819,13 @@ class App(tk.Tk):
             mode = "sequence"
 
         self.state_controller.hunt_cfg["rotation_mode"] = mode
-        self._refresh_monster_rotation_list()
+        self.monster_rotation_controller.refresh_list()
         self.state_controller.set_ui_var('hunt_status', f"Rotation mode: {mode}")
 
 
 
-    def on_scene_monsters_detected(self, snapshot):
-        # Throttle/ensure running on main thread is done by HuntOrchestrator
-        self._last_snapshot = snapshot
-        if self.state_controller.hunt_cfg.get("target_policy", "configured_only") == "all_resolved":
-            self._update_detected_monsters_list(snapshot)
 
-    def _on_monster_rotation_updated(self):
-        if hasattr(self, "_update_unsaved_indicator"):
-            self._update_unsaved_indicator()
-        self._refresh_monster_rotation_list()
-        if hasattr(self, "_last_snapshot"):
-            self._update_detected_monsters_list(self._last_snapshot)
 
-    def _update_detected_monsters_list(self, snapshot):
-        if not hasattr(self, "detected_monsters_listbox"):
-            return
-
-        current_selection = self.state_controller.ui_widgets['detected_monsters_listbox'].curselection()
-        selected_idx = current_selection[0] if current_selection else None
-
-        # We need to maintain scroll position if possible
-        yview = self.state_controller.ui_widgets['detected_monsters_listbox'].yview()
-
-        self.state_controller.ui_widgets['detected_monsters_listbox'].delete(0, tk.END)
-        self._detected_snapshot_items = []
-
-        configured_keys = {
-            (m.get("monster_id"), m.get("dungeon_id"))
-            for m in getattr(self, "monster_rotation", [])
-            if m.get("monster_id")
-        }
-
-        for _idx, item in enumerate(snapshot):
-            self._detected_snapshot_items.append(item)
-
-            name = item.get("name", "Unknown")
-            resolution_state = item.get("resolution_state", "unmapped_visual")
-            monster_id = item.get("monster_id")
-
-            if resolution_state == "db_match":
-                status = "✓ "
-                if (monster_id, item.get("dungeon_id")) in configured_keys:
-                    status += f"[{self._t('monster_promoted')}] "
-                elif item.get("confidence", 0) > 0:
-                    status += f"({item['confidence']:.2f}) "
-                display_text = (
-                    f"{status}{name} #{monster_id} - {self._t('monster_db_match')}"
-                )
-            elif resolution_state == "db_miss":
-                display_text = f"⚠ {name} - {self._t('monster_db_missing')}"
-            else:
-                display_text = f"❓ {self._t('monster_unidentified')} ({item.get('template_label', '')})"
-
-            self.state_controller.ui_widgets['detected_monsters_listbox'].insert(tk.END, display_text)
-
-        if selected_idx is not None and selected_idx < len(
-            self._detected_snapshot_items
-        ):
-            self.state_controller.ui_widgets['detected_monsters_listbox'].selection_set(selected_idx)
-
-        self.state_controller.ui_widgets['detected_monsters_listbox'].yview_moveto(yview[0])
-
-    def _refresh_monster_rotation_list(self):
-        """Refresh the configured monster rotation UI queue."""
-        if "monster_rotation_listbox" not in self.state_controller.ui_widgets or not self.state_controller.ui_widgets["monster_rotation_listbox"]:
-            return
-
-        self.state_controller.ui_widgets["monster_rotation_listbox"].delete(0, tk.END)
-
-        from database import get_monster_by_id_api, find_monster_by_name_api
-
-        # In-memory cache for DB queries during this panel's lifetime
-
-        # Re-sort list just to be safe
-        self.state_controller.monster_rotation.sort(key=lambda x: x.get("priority", 999))
-
-        for _idx, entry in enumerate(self.state_controller.monster_rotation):
-            monster_id = entry.get("monster_id")
-            name = entry.get("name")
-            dungeon_id = entry.get("dungeon_id")
-
-            cache_key = f"{monster_id}_{name}_{dungeon_id}"
-
-            if cache_key not in self.state_controller._monster_session_manager._metadata_cache:
-                # 1. Try by ID
-                db_record = (
-                    get_monster_by_id_api(str(monster_id)) if monster_id else None
-                )
-                # 2. Try by Name fallback
-                if not db_record and name:
-                    db_record = find_monster_by_name_api(name, dungeon_id)
-                self.state_controller._monster_session_manager._metadata_cache[cache_key] = db_record
-            else:
-                db_record = self.state_controller._monster_session_manager._metadata_cache[cache_key]
-
-            if db_record:
-                # Resolved metadata
-                level = db_record.get("level", "--")
-                hp = db_record.get("hp", "--")
-                display_str = f"[#{monster_id}] {name} - Lv.{level} | HP: {hp}"
-            else:
-                # Missing metadata
-                display_str = (
-                    f"[{self._t('monster_rotation_unknown')}] {name} - Lv.-- | HP: --"
-                )
-
-            self.state_controller.ui_widgets['monster_rotation_listbox'].insert(tk.END, display_str)
-
-    def _on_monster_move_up(self):
-        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
-        if not selection or selection[0] == 0:
-            return
-
-        idx = selection[0]
-        # Swap in RAM
-        self.state_controller.monster_rotation[idx], self.state_controller.monster_rotation[idx - 1] = (
-            self.state_controller.monster_rotation[idx - 1],
-            self.state_controller.monster_rotation[idx],
-        )
-
-        # Re-assign priority to be continuous 1..N
-        for i, entry in enumerate(self.state_controller.monster_rotation):
-            entry["priority"] = i + 1
-
-        self._mark_unsaved()
-        self._refresh_monster_rotation_list()
-        self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(idx - 1)
-
-    def _on_monster_move_down(self):
-        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
-        if not selection or selection[0] == len(self.state_controller.monster_rotation) - 1:
-            return
-
-        idx = selection[0]
-        # Swap in RAM
-        self.state_controller.monster_rotation[idx], self.state_controller.monster_rotation[idx + 1] = (
-            self.state_controller.monster_rotation[idx + 1],
-            self.state_controller.monster_rotation[idx],
-        )
-
-        # Re-assign priority to be continuous 1..N
-        for i, entry in enumerate(self.state_controller.monster_rotation):
-            entry["priority"] = i + 1
-
-        self._mark_unsaved()
-        self._refresh_monster_rotation_list()
-        self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(idx + 1)
-
-    def _on_monster_delete_from_list(self, _evt=None):
-        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
-        if not selection:
-            return
-
-        selected_indices = sorted(
-            (idx for idx in selection if 0 <= idx < len(self.state_controller.monster_rotation)),
-            reverse=True,
-        )
-        if not selected_indices:
-            return
-        first_deleted_index = min(selected_indices)
-        for idx in selected_indices:
-            del self.state_controller.monster_rotation[idx]
-
-        # Re-assign priority to be continuous 1..N
-        for i, entry in enumerate(self.state_controller.monster_rotation):
-            entry["priority"] = i + 1
-
-        self._mark_unsaved()
-        self._refresh_monster_rotation_list()
-
-        if len(self.state_controller.monster_rotation) > 0:
-            new_sel = min(first_deleted_index, len(self.state_controller.monster_rotation) - 1)
-            self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(new_sel)
-
-    def _on_monster_add_smart(self):
-        def on_monster_selected(record):
-            # Check for duplicate
-            monster_id = record["monster_id"]
-            dungeon_id = record.get("dungeon_id")
-
-            # Deduplicate by (monster_id, dungeon_id)
-            for entry in self.state_controller.monster_rotation:
-                if (
-                    entry.get("monster_id") == monster_id
-                    and entry.get("dungeon_id") == dungeon_id
-                ):
-                    DialogService.show_info(
-                        self._t("info_title", ns="ui"),
-                        self._t("monster_already_in_list").format(name=record.get("name", "Unknown")),
-                        parent=self,
-                    )
-                    return
-
-            # Add with new priority
-            new_priority = len(self.state_controller.monster_rotation) + 1
-            new_entry = {
-                "monster_id": monster_id,
-                "name": record.get("name", "Unknown"),
-                "priority": new_priority,
-                "dungeon_id": dungeon_id,
-            }
-
-            self.state_controller.monster_rotation.append(new_entry)
-            self._mark_unsaved()
-
-            self._refresh_monster_rotation_list()
-
-        MonsterPickerDialog(
-            self, getattr(self, "lang", "vi"), on_monster_selected, self._t
-        )
-
-    def on_skill_slot_changed(self, _evt=None):
-        self._update_attack_keys_from_slots()
-        try:
-            self.state_controller._refresh_slot_key_labels()
-        except Exception:
-            pass
-        try:
-            self.state_controller._validate_slot_key_duplicates()
-        except Exception:
-            pass
-
-    def _update_monster_frame_title(self):
-        """Update frame title to indicate current mode."""
-        if not hasattr(self, "monster_frame"):
-            return
 
         title = self._t("hunt_monsters")
 
@@ -1165,12 +833,10 @@ class App(tk.Tk):
         if "monster_rotation_listbox" in self.state_controller.ui_widgets and self.state_controller.ui_widgets["monster_rotation_listbox"]:
             self.state_controller.ui_widgets['monster_rotation_listbox'].config(bg="white")
 
-        self.monster_frame.config(text=title)
+        if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'monster_frame') and self.tab_hunt.monster_frame:
+            self.tab_hunt.monster_frame.config(text=title)
 
-    def _update_monster_status(self):
-        """Update current monster hunting status display."""
-        if not hasattr(self, "monster_status_var"):
-            return
+
 
         if not self.state_controller.monster_rotation:
             self.state_controller.set_ui_var('monster_status', self._t("monster_none_selected"))
@@ -1187,209 +853,15 @@ class App(tk.Tk):
             current = sorted_monsters[0]
             self.state_controller.set_ui_var('monster_status', f"Priority: {current['name']} (P{current.get('priority', 1)}) | {len(self.state_controller.monster_rotation)} total")
 
-    def _refresh_monster_select_options(self, select_name: Optional[str] = None):
-        if select_name is not None:
-            self.monster_selected_name = select_name
-        names = [monster.get("name", "Unknown") for monster in self.monsters]
-        combo = getattr(self, "monster_select_combo", None)
-        select_var = getattr(self, "monster_select_var", None)
-        if combo is not None:
-            combo["values"] = names
-            target_name = self.monster_selected_name or (
-                select_name if select_name in names else None
-            )
-            current = select_var.get() if select_var is not None else ""
-            if select_var is not None:
-                if target_name and target_name in names:
-                    select_var.set(target_name)
-                elif current not in names:
-                    select_var.set(names[0] if names else "")
-        if select_var is not None:
-            self.on_monster_select_change()
 
-    def on_monster_select_change(self, _evt=None):
-        """Auto-apply monster config when selected from Hunt tab dropdown."""
-        select_var = getattr(self, "monster_select_var", None)
-        if select_var is None:
-            return
-        value = select_var.get()
-        if value is None:
-            return
-        name = value.strip()
-        idx = None
-        for i, monster in enumerate(self.monsters):
-            if monster.get("name", "Unknown") == name:
-                idx = i
-                break
-        self.monster_selected_index = idx if idx is not None else None
-        self.monster_selected_name = name if idx is not None else None
 
-        if idx is not None:
-            monster = self.monsters[idx]
-            # Auto-apply monster config (templates, window_bounds, timing recommendations)
-            from lib.features.hunt.hunt_setup_service import HuntSetupService
-            HuntSetupService.apply_monster_to_hunt_quick(monster, self.state_controller)
-        elif hasattr(self, "monster_estimate_var"):
-            self.state_controller.set_ui_var('monster_estimate', "")
 
-    def on_monster_apply_from_select(self):
-        if not hasattr(self, "monster_select_var"):
-            return
-        name = self.state_controller.get_ui_var('monster_select').strip()
-        if not name:
-            DialogService.show_info(
-                self._t("monster_section"), self._t("monster_not_selected")
-            )
-            return
-        idx = None
-        for i, monster in enumerate(self.monsters):
-            if monster.get("name", "Unknown") == name:
-                idx = i
-                break
-        if idx is None:
-            DialogService.show_info(
-                self._t("monster_section"), self._t("monster_not_selected")
-            )
-            return
-        self.monster_selected_index = idx
-        self.monster_selected_name = name
-        self.on_monster_use_for_hunt()
 
-    def _refresh_skill_slots_options(self):
-        if not hasattr(self, "skill_slot_boxes"):
-            return
-        names = []
-        for skill in self.skills:
-            if skill.get("name", "Unknown") not in names:
-                names.append(skill.get("name", "Unknown"))
-        for saved in getattr(self, "skill_slot_saved_names", []):
-            if saved and saved not in names:
-                names.append(saved)
-        values = [""] + names
-        for cmb in self.state_controller.skill_slot_boxes:
-            cmb["values"] = values
-        # Also refresh key labels next to each slot
-        try:
-            self.state_controller._refresh_slot_key_labels()
-        except Exception:
-            pass
 
-    def _clear_skill_slot(self, var):
-        var.set("")
-        self._update_attack_keys_from_slots()
 
-    def _update_attack_keys_from_slots(self):
-        # attack_keys removed: update saved slot names and refresh options
-        self.skill_slot_saved_names = [
-            v.get().strip() for v in self.state_controller.skill_slot_vars if v.get().strip()
-        ]
-        self._refresh_skill_slots_options()
 
-    def _collect_skill_slots(self):
-        if not hasattr(self, "skill_slot_vars") or not self.state_controller.skill_slot_vars:
-            self.skill_slot_saved_names = []
-            return [], []
-        mapping = {skill.get("name", "Unknown"): skill for skill in getattr(self, "skills", [])}
-        skill_slots = []
-        buff_slots = []
-        saved_names = []
-        for i, var in enumerate(self.state_controller.skill_slot_vars):
-            name = var.get().strip()
-            if not name:
-                continue
-            skill = mapping.get(name)
-            if not skill:
-                continue
-            saved_names.append(name)
 
-            # The first 4 slots are attack (combo chain), next 4 are buff
-            is_combo_lane = i < 4
 
-            # Check what lane we are in to assign type properly, or rely on skill type
-            skill_type = skill.get("type", "attack")
-            if is_combo_lane:
-                skill_type = "attack"
-            else:
-                skill_type = "buff"
-
-            slot_data = {
-                "name": skill.get("name", "Unknown"),
-                "key": skill.get("key", ""),
-                "type": skill_type,
-                "cooldown": float(skill.get("cooldown", 0.0)),
-                "cast_time": float(skill.get("cast_time", 0.0)),
-                "image": skill.get("image", ""),
-            }
-
-            if skill_type == "buff":
-                duration = 300
-                slot_data["duration_sec"] = duration
-                buff_slots.append(slot_data)
-            else:
-                skill_slots.append(slot_data)
-
-        self.skill_slot_saved_names = saved_names
-        return skill_slots, buff_slots
-
-    def on_monster_use_for_hunt(self):
-        if self.monster_selected_index is None or self.monster_selected_index >= len(
-            self.monsters
-        ):
-            DialogService.show_info(
-                self._t("monster_section"), self._t("monster_not_selected")
-            )
-            return
-        monster = self.monsters[self.monster_selected_index]
-
-        from lib.features.hunt.config_validator import normalize_window_bounds_value
-
-        # Apply window_bounds
-        bounds = normalize_window_bounds_value(monster.get("window_bounds"))
-        self.state_controller.current_window_bounds = bounds
-        WindowSelectionService.update_bounds(self.state_controller.hunt_cfg, bounds)
-        self.window_controller.update_window_bounds_display()
-
-        # Apply templates[] array to config
-        templates = _sanitize_templates(monster.get("templates"))
-        if templates:
-            self.state_controller.hunt_cfg["templates"] = templates
-            # Also set legacy template_path to first template for backward compat
-            try:
-                first_path = templates[0].get("path")
-                if first_path:
-                    self.state_controller.set_ui_var('template', first_path)
-                    self.state_controller.hunt_cfg["template_path"] = first_path
-            except Exception:
-                pass
-        elif monster.get("template"):
-            # Fallback to old single template field
-            self.state_controller.set_ui_var('template', monster["template"])
-            self.state_controller.hunt_cfg["template_path"] = monster["template"]
-            self.state_controller.hunt_cfg["templates"] = []
-
-        try:
-            from lib.features.hunt.hunt_setup_service import HuntSetupService
-            stats = HuntSetupService.calculate_monster_estimate(monster)
-        except Exception as e:
-            DialogService.show_error(
-                self._t("monster_section"), self._t("monster_invalid").format(e=e)
-            )
-            return
-        kill_time = stats["kill_time"]
-        from lib.features.hunt.hunt_setup_service import HuntSetupService
-        attack_min, lost_timeout = HuntSetupService.recommend_attack_settings(
-            stats
-        )
-        self.state_controller.set_ui_var('attack_duration', f"{attack_min:.2f}")
-        self.state_controller.set_ui_var('lost_timeout', f"{lost_timeout:.2f}")
-        base = self._t("monster_estimate_result").format(
-            time=kill_time, dps=stats["dps"]
-        )
-        detail = self._t("monster_estimate_detail").format(
-            base=base, attack=attack_min, lost=lost_timeout
-        )
-        self.state_controller.set_ui_var('monster_estimate', detail)
-        self.state_controller.set_ui_var('hunt_status', self._t("monster_applied"))
 
     # -----------------
     # Skill library helpers
@@ -1404,72 +876,6 @@ class App(tk.Tk):
             self.state_controller.set_ui_var('rotation_desc', "Hunt monsters in order, cycle through list")
         elif mode == "priority":
             self.state_controller.set_ui_var('rotation_desc', "Always hunt highest priority (lowest number)")
-
-    def on_global_apply(self):
-        """Global apply handler - saves all settings across all tabs.
-
-        NOTE: Save file only ONCE to avoid duplicate writes and preserve field order.
-        """
-        try:
-            # Ensure canonical schemas
-            self.state_controller.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation", [])
-            self.state_controller.hunt_cfg["skill_slots"] = self.state_controller.hunt_cfg.get("skill_slots", [])
-            # 1. Apply legacy setup settings when the compatibility method exists.
-            apply_setup_settings = getattr(self, "_apply_setup_settings", None)
-            if callable(apply_setup_settings):
-                apply_setup_settings(save_to_file=False)
-
-            # 2. Update hunt config from Hunt tab UI (in-place update)
-            from lib.ui.controllers.hunt_config_controller import HuntConfigController
-            cfg = HuntConfigController().build_config(self.state_controller)
-
-            # Validate hotkey uniqueness before applying
-            if "global_hotkeys" in cfg:
-                hk = cfg["global_hotkeys"]
-                all_keys = [
-                    hk.get("start_key"),
-                    hk.get("stop_key"),
-                    hk.get("library_manager_key"),
-                    hk.get("vision_wizard_key"),
-                    hk.get("monster_editor_key"),
-                    hk.get("build_manager_key"),
-                ]
-                # Filter out empty or None hotkeys
-                all_keys = [k for k in all_keys if k]
-                if len(all_keys) != len(set(all_keys)):
-                    DialogService.show_error(
-                        self._t("error_title"),
-                        (
-                            "All hotkeys must be different!"
-                            if self.lang == "en"
-                            else "Tất cả phím tắt phải khác nhau!"
-                        ),
-                    )
-                    return
-
-                self.state_controller.hunt_cfg = cfg  # Update instance config first
-                self.hotkey_controller.unregister_all()
-                self.hotkey_controller.register_all()
-
-            # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
-            if not save_hunt_config(cfg):
-                raise RuntimeError("Could not save hunt configuration")
-            self.state_controller.hunt_cfg = cfg
-
-            # 4. Clear unsaved changes indicator
-            self.state_controller._clear_unsaved_changes()
-
-            # 5. Update status
-            self.state_controller.set_ui_var('hunt_status', self._t("all_saved"))
-
-            # 6. Show success message
-            DialogService.show_info(
-                self._t("success_title"), self._t("settings_applied_message")
-            )
-        except Exception as e:
-            DialogService.show_error(
-                self._t("error_title"), f"Failed to apply settings: {e}"
-            )
 
     def _reload_setup_advanced_settings(self):
         """Reload Advanced Settings values in Setup tab after timing changes."""
@@ -1552,8 +958,8 @@ class App(tk.Tk):
             )
 
     def clear_target_ui(self, delay_ms=0):
-        if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "clear_target_card"):
-            self.hunt_tab.clear_target_card(delay_ms)
+        if hasattr(self, "tab_hunt") and hasattr(self.tab_hunt, "clear_target_card"):
+            self.tab_hunt.clear_target_card(delay_ms)
         if self.state_controller.get_ui_var('hunt_target_info') is not None:
             self.state_controller.set_ui_var('hunt_target_info', self._t("target_card.target_none"))
         if "monster_rotation_listbox" in self.state_controller.ui_widgets and self.state_controller.ui_widgets["monster_rotation_listbox"]:
@@ -1569,48 +975,12 @@ class App(tk.Tk):
     def destroy(self):
         self._is_destroyed = True
         self.lifecycle_controller.cleanup_before_destroy()
+        if hasattr(self, "monster_rotation_controller"):
+            self.monster_rotation_controller.unbind_events()
         if hasattr(self, "task_scheduler"):
             self.task_scheduler.cancel_all()
-        super().destroy()
+        self.root.destroy()
 
-    def _icon(
-        self, name: str, fallback: str, size: int = 16, color: Optional[str] = None
-    ):
-        """Fetch an icon image from icon_helper with caching.
-
-        Returns a PhotoImage (when available) or fallback string (emoji) otherwise.
-        Keep a reference on self to avoid Tk image garbage collection.
-
-        Args:
-            name: Icon name (e.g., 'add', 'locked')
-            fallback: Emoji fallback if icon not found
-            size: Icon size in pixels
-            color: Hex color to tint icon (e.g., '#FFFFFF' for white on gray background)
-        """
-        try:
-            if not hasattr(self, "_icon_cache"):
-                self._icon_cache = {}
-            key = f"{name}_{size}_{color or 'default'}"
-            if key in self._icon_cache:
-                return self._icon_cache[key]
-            helper = getattr(self, "icon_helper", None)
-            if helper is not None:
-                try:
-                    img = helper.get_icon(
-                        name, fallback=fallback, size=size, color=color
-                    )
-                except Exception:
-                    img = fallback
-            else:
-                img = fallback
-            self._icon_cache[key] = img
-            return img
-        except Exception:
-            return fallback
-
-    # -----------------
-    # Helper Methods
-    # -----------------
     def _create_icon_button(
         self,
         parent,
@@ -1746,186 +1116,43 @@ class App(tk.Tk):
 
         return tk.Button(parent, **button_config)
 
-    def _create_tooltip(self, widget, text):
-        """Create a simple tooltip for a widget."""
-
-        def on_enter(event):
-            try:
-                # Destroy existing if any
-                on_leave(event, force=True)
-                tooltip = tk.Toplevel()
-                tooltip.wm_overrideredirect(True)
-                tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
-                label = tk.Label(
-                    tooltip,
-                    text=text,
-                    background=UI.ACCENT_AMBER,
-                    relief="solid",
-                    borderwidth=1,
-                    padx=5,
-                    pady=3,
-                )
-                label.pack()
-                # Store tooltip in a central map to avoid setting dynamic attributes on widgets
-                if not hasattr(self, "_tooltips"):
-                    self._tooltips = {}
-                self._tooltips[id(widget)] = tooltip
-            except Exception:
-                # Last-resort: attach to widget (legacy)
-                try:
-                    widget._tooltip = tooltip
-                except Exception:
-                    pass
-
-        def on_leave(event, force=False):
-            try:
-                if not force:
-                    # Check if pointer is still within the widget's bounding box
-                    x, y = widget.winfo_pointerxy()
-                    wx = widget.winfo_rootx()
-                    wy = widget.winfo_rooty()
-                    ww = widget.winfo_width()
-                    wh = widget.winfo_height()
-                    if wx <= x <= wx + ww and wy <= y <= wy + wh:
-                        # Pointer is still inside the widget (e.g. over a child widget like Combobox)
-                        return
-
-                # Prefer centralized map
-                if hasattr(self, "_tooltips") and id(widget) in self._tooltips:
-                    try:
-                        self._tooltips[id(widget)].destroy()
-                    except Exception:
-                        pass
-                    try:
-                        del self._tooltips[id(widget)]
-                    except Exception:
-                        pass
-                    return
-                # Fallback to widget attribute
-                tooltip = getattr(widget, "_tooltip", None)
-                if tooltip is not None:
-                    try:
-                        tooltip.destroy()
-                    except Exception:
-                        pass
-                    try:
-                        delattr(widget, "_tooltip")
-                    except Exception:
-                        pass
-            except Exception:
-                pass
-
-        widget.bind("<Enter>", on_enter)
-        widget.bind("<Leave>", on_leave)
-
-    def _destroy_widget_tooltip(self, widget):
-        """Safely destroy a tooltip for a widget (central map or widget attribute)."""
-        try:
-            if hasattr(self, "_tooltips") and id(widget) in self._tooltips:
-                try:
-                    self._tooltips[id(widget)].destroy()
-                except Exception:
-                    pass
-                try:
-                    del self._tooltips[id(widget)]
-                except Exception:
-                    pass
-                return
-            tooltip = getattr(widget, "_tooltip", None)
-            if tooltip is not None:
-                try:
-                    tooltip.destroy()
-                except Exception:
-                    pass
-                try:
-                    delattr(widget, "_tooltip")
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
 
 def main():
-    """Main entry point with single instance lock."""
-    # Check critical dependencies (pywin32 for overlay)
-    try:
-        import win32gui  # pylint: disable=unused-import
-    except ImportError:
-        # Show warning but don't block - overlay will show error when toggled
-        print("⚠️ WARNING: pywin32 not installed - overlay feature will not work")
-        print("   Run: pip install pywin32")
-        print("   Or: python scripts/check_dependencies.py --install")
+    from lib.system.instance_lock import SingleInstanceLock
 
-    # Create single instance lock (using mutex on Windows, file lock on Unix)
     instance_lock = SingleInstanceLock("CabalAutoHunt_v1")
-
-    # Try to acquire lock
     if not instance_lock.acquire():
-        # Another instance is already running - show error in both languages
         root = tk.Tk()
-        root.withdraw()  # Hide main window
-
+        root.withdraw()
         DialogService.show_error(
-            "⚠️ Application Already Running | Ứng dụng đã chạy",
-            "❌ CANNOT START: Another instance is already running!\n\n"
-            "📌 Only ONE instance can run at a time.\n"
-            "🔄 Please close the existing application first, then try again.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "❌ KHÔNG THỂ KHỞI ĐỘNG: Ứng dụng đã đang chạy!\n\n"
-            "📌 Chỉ được phép chạy 1 ứng dụng tại một thời điểm.\n"
-            "🔄 Vui lòng tắt ứng dụng đang chạy trước, sau đó thử lại.",
+            "Application Already Running",
+            "Another instance is already running!",
             parent=root,
         )
-
         root.destroy()
-        sys.exit(1)
+        return
 
     try:
-        try:
-            from database import MonsterDatabase
-
-            MonsterDatabase().init_db()
-        except Exception as e:
-            print(f"[DB Init] Failed to initialize monsters.db: {e}")
-
-        # Hydrate i18n from database
-        try:
-            from lib.i18n import load_from_db
-
-            load_from_db()
-        except Exception as e:
-
-            logging.getLogger(__name__).error(
-                f"[i18n Init] Failed to call load_from_db: {e}"
-            )
-
-                # Setup DI Container
         from lib.core.app_container import AppContainer
-        from lib.features.hunt.scan_controller import ScanController
         from lib.features.monsters.monster_library_service import MonsterLibraryService
         from lib.features.skills.skill_runtime_service import SkillRuntimeService
         from lib.db.services.skill_service import SkillService as DbSkillService
         from lib.db.services.class_service import ClassService as DbClassService
         from lib.db.services.scan_service import ScanService
+        from lib.features.skills.skill_caster_service import SkillCasterService
         from ui.controllers.overlay_controller import OverlayController as AppOverlayController
-
-        from lib.core.app_container import AppContainer
         from lib.features.hunt.scan_controller import ScanController
+        from lib.vision.vision_engine import get_vision_engine
+        from ui.icon_library import Icons
         from lib.features.hunt.hunt_runner import HuntRunner
         from lib.features.hunt.hunt_orchestrator import HuntOrchestrator
-        from lib.features.monsters.monster_library_service import MonsterLibraryService
-        from lib.features.skills.skill_runtime_service import SkillRuntimeService
-        from lib.db.services.skill_service import SkillService as DbSkillService
-        from lib.db.services.class_service import ClassService as DbClassService
-        from lib.db.services.scan_service import ScanService
-        from ui.controllers.overlay_controller import OverlayController as AppOverlayController
-        from lib.features.skills.skill_caster_service import SkillCasterService
         from lib.features.hunt.target_locator import TargetLocatorService
-        from ui.icon_library import Icons
-        from lib.vision.vision_engine import get_vision_engine
+        from lib.ui.controllers.hunt_controller import HuntController
+        from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
 
-        # Instantiate base services
+        root = tk.Tk()
         container = AppContainer()
+
         container.monster_library_service = MonsterLibraryService()
         container.skill_service = SkillRuntimeService()
         container.db_skill_service = DbSkillService()
@@ -1933,10 +1160,8 @@ def main():
         container.db_scan_service = ScanService()
         container.skill_caster_service = SkillCasterService()
 
-        # Initialize base app with DI container
-        app = App(di_container=container)
+        app = App(root=root, di_container=container)
 
-        # Inject services that require app instance
         container.overlay_controller = AppOverlayController(app)
         app.overlay_controller = container.overlay_controller
 
@@ -1947,7 +1172,6 @@ def main():
             show_results=app._show_scan_results,
             icons=Icons,
         )
-        # pylint: disable=attribute-defined-outside-init
         app.scan_controller = container.scan_controller
 
         container.hunt_runner = HuntRunner(
@@ -1966,13 +1190,10 @@ def main():
             bring_window_to_front=app.window_controller._bring_window_to_front,
             bring_window_to_front_by_hwnd=app.window_controller._bring_window_to_front_by_hwnd,
             bring_window_to_front_by_pid=app.window_controller._bring_window_to_front_by_pid,
-            iconify_app=app.iconify,
+            iconify_app=root.iconify,
             get_hunt_selected=lambda: app.state_controller.hunt_selected,
         )
         app.hunt_orchestrator = container.hunt_orchestrator
-
-        from lib.ui.controllers.hunt_controller import HuntController
-        from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
 
         container.hunt_controller = HuntController(
             state_controller=app.state_controller,
@@ -1986,20 +1207,10 @@ def main():
         )
         app.monster_rotation_controller = container.monster_rotation_controller
 
-        app.protocol("WM_DELETE_WINDOW", app.on_close)
-        print("[Main] Tkinter window initialized and mainloop starting...")
-        try:
-            app.mainloop()
-        except KeyboardInterrupt:
-            print("\n[Exit] Application stopped by user (KeyboardInterrupt) | Ứng dụng đã bị dừng bởi người dùng (KeyboardInterrupt)")
-            try:
-                app.destroy()
-            except Exception:
-                pass
+        root.protocol("WM_DELETE_WINDOW", app.on_close)
+        root.mainloop()
     finally:
-        # Always release lock on exit
         instance_lock.release()
-
 
 if __name__ == "__main__":
     main()

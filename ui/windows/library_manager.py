@@ -12,6 +12,7 @@ Date: October 18, 2025
 """
 
 import tkinter as tk
+from ui.helpers import UIHelper
 from lib.i18n import t as i18n_t
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from lib.ui_style_v2 import UIStyleV2 as UI
@@ -90,26 +91,6 @@ except Exception:
 class LibraryManagerWindow(tk.Toplevel):
 
     # --- Small icon cache ---
-    def _icon(self, name: str, fallback: str, size: int = 16):
-        try:
-            if not hasattr(self, "_icon_cache"):
-                self._icon_cache = {}
-            key = f"{name}_{size}"
-            if key in self._icon_cache:
-                return self._icon_cache[key]
-            # If icon helper is unavailable, do not pass a text fallback to Tk 'image' option
-            if not icon_helper:
-                self._icon_cache[key] = ""
-                return ""
-            img = icon_helper.get_icon(name, fallback=fallback, size=size)
-            # Ensure we never return a text emoji for the Tk 'image' parameter
-            if isinstance(img, str):
-                img = ""
-            self._icon_cache[key] = img
-            return img
-        except Exception:
-            # On any error, return empty image name to avoid TclError
-            return ""
 
     def _make_icon_button(
         self,
@@ -126,7 +107,7 @@ class LibraryManagerWindow(tk.Toplevel):
         """
         img = None
         try:
-            img = self._icon(icon_name, fallback_text)
+            img = UIHelper.icon(icon_name, fallback_text)
         except Exception:
             img = None
         # Do not pass emoji to image param; use text only when image missing
@@ -1423,7 +1404,7 @@ Track progress at:
             highlightthickness=1,
         )
         search_container.pack(fill="x")
-        search_img = self._icon("search", "🔍")
+        search_img = UIHelper.icon("search", "🔍")
         search_txt = self._icon_text("search", "🔍")
         if search_img:
             try:
@@ -2554,7 +2535,7 @@ Track progress at:
             return
         try:
             # Get new icon
-            new_icon = self._icon(icon_name, fallback)
+            new_icon = UIHelper.icon(icon_name, fallback)
             if new_icon:
                 self.template_toggle_btn.config(image=new_icon)
                 # Keep reference
@@ -3644,7 +3625,7 @@ Track progress at:
             highlightthickness=1,
         )
         search_container.pack(fill="x")
-        search_img = self._icon("search", "🔍")
+        search_img = UIHelper.icon("search", "🔍")
         search_txt = self._icon_text("search", "🔍")
         if search_img:
             try:

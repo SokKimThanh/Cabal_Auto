@@ -7,7 +7,7 @@
 4. Confirm that the log polling loop uses `TaskScheduler` rather than blocking `Thread()` or unmanaged `self.after` calls.
 
 ## Checklist
-- [ ] Log polling loops removed from `app_gui.py`.
-- [ ] Icon caching and tooltip generation moved to `UIHelper`.
-- [ ] Child views updated to use the new helper namespace.
-- [ ] Strong references to `PhotoImage` (icon cache) are maintained.
+- [x] Log polling loops removed from `app_gui.py`.
+- [x] Icon caching and tooltip generation moved to `UIHelper`.
+- [x] Child views updated to use the new helper namespace.
+- [x] Strong references to `PhotoImage` (icon cache) are maintained.

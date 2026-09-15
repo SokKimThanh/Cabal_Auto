@@ -58,7 +58,7 @@ class TaskScheduler:
             # Reschedule itself if still running and recurring is True
             if not self._is_shutting_down and recurring:
                 try:
-                    new_timer_id = self.root.after(interval_ms, _wrapper)
+                    new_timer_id = self.root.root.after if hasattr(self.root, 'root') else self.root.after(interval_ms, _wrapper)
                     self._after_tasks[task_id] = new_timer_id
                 except Exception as e:
                     logger.error(f"[TaskScheduler] Failed to reschedule task '{task_id}': {e}")
@@ -67,7 +67,7 @@ class TaskScheduler:
                 self._after_tasks.pop(task_id, None)
 
         try:
-            timer_id = self.root.after(interval_ms, _wrapper)
+            timer_id = self.root.root.after if hasattr(self.root, 'root') else self.root.after(interval_ms, _wrapper)
             self._after_tasks[task_id] = timer_id
         except Exception as e:
             logger.error(f"[TaskScheduler] Failed to schedule task '{task_id}': {e}")
@@ -89,7 +89,7 @@ class TaskScheduler:
         timer_id = self._after_tasks.pop(task_id, None)
         if timer_id:
             try:
-                self.root.after_cancel(timer_id)
+                self.root.root.after if hasattr(self.root, 'root') else self.root.after_cancel(timer_id)
             except Exception:
                 # Swallow TclError or similar if the timer is already invalid
                 pass
@@ -103,7 +103,7 @@ class TaskScheduler:
 
         for task_id, timer_id in list(self._after_tasks.items()):
             try:
-                self.root.after_cancel(timer_id)
+                self.root.root.after if hasattr(self.root, 'root') else self.root.after_cancel(timer_id)
             except Exception:
                 pass
 
