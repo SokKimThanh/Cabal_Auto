@@ -1,5 +1,4 @@
 from lib.features.hunt.window_selection_service import WindowSelectionService
-from dialogs.monster_picker import MonsterPickerDialog
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from lib.ui_style_v2 import UIStyleV2 as UI  # Global UI style constants
 from lib.system.instance_lock import SingleInstanceLock
@@ -932,217 +931,6 @@ class App(tk.Tk):
 
 
 
-    def on_scene_monsters_detected(self, snapshot):
-        # Throttle/ensure running on main thread is done by HuntOrchestrator
-        self._last_snapshot = snapshot
-        if self.state_controller.hunt_cfg.get("target_policy", "configured_only") == "all_resolved":
-            self._update_detected_monsters_list(snapshot)
-
-    def _on_monster_rotation_updated(self):
-        if hasattr(self, "_update_unsaved_indicator"):
-            self._update_unsaved_indicator()
-        self._refresh_monster_rotation_list()
-        if hasattr(self, "_last_snapshot"):
-            self._update_detected_monsters_list(self._last_snapshot)
-
-    def _update_detected_monsters_list(self, snapshot):
-        if not hasattr(self, "detected_monsters_listbox"):
-            return
-
-        current_selection = self.state_controller.ui_widgets['detected_monsters_listbox'].curselection()
-        selected_idx = current_selection[0] if current_selection else None
-
-        # We need to maintain scroll position if possible
-        yview = self.state_controller.ui_widgets['detected_monsters_listbox'].yview()
-
-        self.state_controller.ui_widgets['detected_monsters_listbox'].delete(0, tk.END)
-        self._detected_snapshot_items = []
-
-        configured_keys = {
-            (m.get("monster_id"), m.get("dungeon_id"))
-            for m in getattr(self, "monster_rotation", [])
-            if m.get("monster_id")
-        }
-
-        for _idx, item in enumerate(snapshot):
-            self._detected_snapshot_items.append(item)
-
-            name = item.get("name", "Unknown")
-            resolution_state = item.get("resolution_state", "unmapped_visual")
-            monster_id = item.get("monster_id")
-
-            if resolution_state == "db_match":
-                status = "✓ "
-                if (monster_id, item.get("dungeon_id")) in configured_keys:
-                    status += f"[{self._t('monster_promoted')}] "
-                elif item.get("confidence", 0) > 0:
-                    status += f"({item['confidence']:.2f}) "
-                display_text = (
-                    f"{status}{name} #{monster_id} - {self._t('monster_db_match')}"
-                )
-            elif resolution_state == "db_miss":
-                display_text = f"⚠ {name} - {self._t('monster_db_missing')}"
-            else:
-                display_text = f"❓ {self._t('monster_unidentified')} ({item.get('template_label', '')})"
-
-            self.state_controller.ui_widgets['detected_monsters_listbox'].insert(tk.END, display_text)
-
-        if selected_idx is not None and selected_idx < len(
-            self._detected_snapshot_items
-        ):
-            self.state_controller.ui_widgets['detected_monsters_listbox'].selection_set(selected_idx)
-
-        self.state_controller.ui_widgets['detected_monsters_listbox'].yview_moveto(yview[0])
-
-    def _refresh_monster_rotation_list(self):
-        """Refresh the configured monster rotation UI queue."""
-        if "monster_rotation_listbox" not in self.state_controller.ui_widgets or not self.state_controller.ui_widgets["monster_rotation_listbox"]:
-            return
-
-        self.state_controller.ui_widgets["monster_rotation_listbox"].delete(0, tk.END)
-
-        from database import get_monster_by_id_api, find_monster_by_name_api
-
-        # In-memory cache for DB queries during this panel's lifetime
-
-        # Re-sort list just to be safe
-        self.state_controller.monster_rotation.sort(key=lambda x: x.get("priority", 999))
-
-        for _idx, entry in enumerate(self.state_controller.monster_rotation):
-            monster_id = entry.get("monster_id")
-            name = entry.get("name")
-            dungeon_id = entry.get("dungeon_id")
-
-            cache_key = f"{monster_id}_{name}_{dungeon_id}"
-
-            if cache_key not in self.state_controller._monster_session_manager._metadata_cache:
-                # 1. Try by ID
-                db_record = (
-                    get_monster_by_id_api(str(monster_id)) if monster_id else None
-                )
-                # 2. Try by Name fallback
-                if not db_record and name:
-                    db_record = find_monster_by_name_api(name, dungeon_id)
-                self.state_controller._monster_session_manager._metadata_cache[cache_key] = db_record
-            else:
-                db_record = self.state_controller._monster_session_manager._metadata_cache[cache_key]
-
-            if db_record:
-                # Resolved metadata
-                level = db_record.get("level", "--")
-                hp = db_record.get("hp", "--")
-                display_str = f"[#{monster_id}] {name} - Lv.{level} | HP: {hp}"
-            else:
-                # Missing metadata
-                display_str = (
-                    f"[{self._t('monster_rotation_unknown')}] {name} - Lv.-- | HP: --"
-                )
-
-            self.state_controller.ui_widgets['monster_rotation_listbox'].insert(tk.END, display_str)
-
-    def _on_monster_move_up(self):
-        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
-        if not selection or selection[0] == 0:
-            return
-
-        idx = selection[0]
-        # Swap in RAM
-        self.state_controller.monster_rotation[idx], self.state_controller.monster_rotation[idx - 1] = (
-            self.state_controller.monster_rotation[idx - 1],
-            self.state_controller.monster_rotation[idx],
-        )
-
-        # Re-assign priority to be continuous 1..N
-        for i, entry in enumerate(self.state_controller.monster_rotation):
-            entry["priority"] = i + 1
-
-        self._mark_unsaved()
-        self._refresh_monster_rotation_list()
-        self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(idx - 1)
-
-    def _on_monster_move_down(self):
-        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
-        if not selection or selection[0] == len(self.state_controller.monster_rotation) - 1:
-            return
-
-        idx = selection[0]
-        # Swap in RAM
-        self.state_controller.monster_rotation[idx], self.state_controller.monster_rotation[idx + 1] = (
-            self.state_controller.monster_rotation[idx + 1],
-            self.state_controller.monster_rotation[idx],
-        )
-
-        # Re-assign priority to be continuous 1..N
-        for i, entry in enumerate(self.state_controller.monster_rotation):
-            entry["priority"] = i + 1
-
-        self._mark_unsaved()
-        self._refresh_monster_rotation_list()
-        self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(idx + 1)
-
-    def _on_monster_delete_from_list(self, _evt=None):
-        selection = self.state_controller.ui_widgets['monster_rotation_listbox'].curselection()
-        if not selection:
-            return
-
-        selected_indices = sorted(
-            (idx for idx in selection if 0 <= idx < len(self.state_controller.monster_rotation)),
-            reverse=True,
-        )
-        if not selected_indices:
-            return
-        first_deleted_index = min(selected_indices)
-        for idx in selected_indices:
-            del self.state_controller.monster_rotation[idx]
-
-        # Re-assign priority to be continuous 1..N
-        for i, entry in enumerate(self.state_controller.monster_rotation):
-            entry["priority"] = i + 1
-
-        self._mark_unsaved()
-        self._refresh_monster_rotation_list()
-
-        if len(self.state_controller.monster_rotation) > 0:
-            new_sel = min(first_deleted_index, len(self.state_controller.monster_rotation) - 1)
-            self.state_controller.ui_widgets['monster_rotation_listbox'].selection_set(new_sel)
-
-    def _on_monster_add_smart(self):
-        def on_monster_selected(record):
-            # Check for duplicate
-            monster_id = record["monster_id"]
-            dungeon_id = record.get("dungeon_id")
-
-            # Deduplicate by (monster_id, dungeon_id)
-            for entry in self.state_controller.monster_rotation:
-                if (
-                    entry.get("monster_id") == monster_id
-                    and entry.get("dungeon_id") == dungeon_id
-                ):
-                    DialogService.show_info(
-                        self._t("info_title", ns="ui"),
-                        self._t("monster_already_in_list").format(name=record.get("name", "Unknown")),
-                        parent=self,
-                    )
-                    return
-
-            # Add with new priority
-            new_priority = len(self.state_controller.monster_rotation) + 1
-            new_entry = {
-                "monster_id": monster_id,
-                "name": record.get("name", "Unknown"),
-                "priority": new_priority,
-                "dungeon_id": dungeon_id,
-            }
-
-            self.state_controller.monster_rotation.append(new_entry)
-            self._mark_unsaved()
-
-            self._refresh_monster_rotation_list()
-
-        MonsterPickerDialog(
-            self, getattr(self, "lang", "vi"), on_monster_selected, self._t
-        )
-
     def on_skill_slot_changed(self, _evt=None):
         self._update_attack_keys_from_slots()
         try:
@@ -1981,10 +1769,13 @@ def main():
         )
         app.hunt_controller = container.hunt_controller
 
+
         container.monster_rotation_controller = MonsterRotationController(
             state_controller=app.state_controller
         )
+        container.monster_rotation_controller.bind_events()
         app.monster_rotation_controller = container.monster_rotation_controller
+
 
         app.protocol("WM_DELETE_WINDOW", app.on_close)
         print("[Main] Tkinter window initialized and mainloop starting...")
