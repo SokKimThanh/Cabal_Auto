@@ -6,7 +6,7 @@ from datetime import datetime
 from lib.system.hunt_logger import get_hunt_logger
 
 
-class ActivityLogsFrame(tk.Frame):
+class LogConsoleView(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent, bg=UI.BG_BASE)
         self.app = app

@@ -118,8 +118,6 @@ class App(tk.Tk):
         self._action_locked = False
 
         self.monster_selected_index = None
-        self._icon_cache = {}
-        self._tooltips = {}
         self.translation_binder = TranslationBinder()
 
         try:
