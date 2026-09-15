@@ -30,7 +30,7 @@ def mock_app(root):
     app._refresh_monster_rotation_list = lambda: None
     app._on_rotation_mode_changed = lambda e: None
     app._create_icon_button = lambda *args, **kwargs: tk.Button(args[0])
-    app._create_tooltip = lambda *args, **kwargs: None
+
     return app
 
 

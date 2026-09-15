@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.helpers import UIHelper
 
 from lib.features.monsters.monster_repo import get_target_monster_info
 from ui.panels.skill_panel import SkillPanel
@@ -220,14 +221,14 @@ class HuntTab(ttk.Frame):
 
         if info.get("is_placeholder"):
             if isinstance(self.hunt_status_label, tk.Label): self.hunt_status_label.config(fg=UI.ACCENT_AMBER)
-            if hasattr(self.app, "_create_tooltip"):
-                self.app._create_tooltip(
+
+            UIHelper.create_tooltip(
                     self.hunt_status_label, self.app._t("target_card.unknown_mob")
                 )
         else:
             if isinstance(self.hunt_status_label, tk.Label): self.hunt_status_label.config(fg=UI.ACCENT_GREEN)
-            if hasattr(self.app, "_destroy_widget_tooltip"):
-                self.app._destroy_widget_tooltip(self.hunt_status_label)
+
+            UIHelper.destroy_widget_tooltip(self.hunt_status_label)
             self.hunt_status_label.unbind("<Enter>")
             self.hunt_status_label.unbind("<Leave>")
 

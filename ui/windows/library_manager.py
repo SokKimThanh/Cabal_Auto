@@ -12,6 +12,7 @@ Date: October 18, 2025
 """
 
 import tkinter as tk
+from ui.helpers import UIHelper
 from lib.i18n import t as i18n_t
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from lib.ui_style_v2 import UIStyleV2 as UI
@@ -1423,7 +1424,7 @@ Track progress at:
             highlightthickness=1,
         )
         search_container.pack(fill="x")
-        search_img = self._icon("search", "🔍")
+        search_img = UIHelper.icon("search", "🔍")
         search_txt = self._icon_text("search", "🔍")
         if search_img:
             try:
@@ -3644,7 +3645,7 @@ Track progress at:
             highlightthickness=1,
         )
         search_container.pack(fill="x")
-        search_img = self._icon("search", "🔍")
+        search_img = UIHelper.icon("search", "🔍")
         search_txt = self._icon_text("search", "🔍")
         if search_img:
             try:

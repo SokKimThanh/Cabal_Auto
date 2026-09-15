@@ -61,8 +61,6 @@ class MockApp:
     def _create_icon_button(self, *args, **kwargs):
         return tk.Button(self.root)
 
-    def _create_tooltip(self, *args, **kwargs):
-        pass
 
 
 @pytest.fixture
