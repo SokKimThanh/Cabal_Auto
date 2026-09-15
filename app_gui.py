@@ -1,3 +1,4 @@
+from ui.views.skill_config_view import SkillConfigView
 from lib.features.hunt.window_selection_service import WindowSelectionService
 from ui.controllers.app_lifecycle_controller import AppLifecycleController
 from lib.ui_style_v2 import UIStyleV2 as UI  # Global UI style constants
@@ -188,7 +189,8 @@ class App(tk.Tk):
             self.overlay_controller = di_container.overlay_controller
             self.skill_caster_service = di_container.skill_caster_service
 
-        self.state_controller._collect_skill_slots_func = getattr(self, '_collect_skill_slots', None)
+        self.skill_config_view = SkillConfigView(self.state_controller)
+        self.state_controller._collect_skill_slots_func = getattr(self.skill_config_view, '_collect_skill_slots', None)
         self.state_controller.ui_widgets['unsaved_indicator_func'] = getattr(self, '_update_unsaved_indicator', None)
         self.window_controller = AppWindowController(self)
         self.window_tracker_controller = WindowTrackerController(self)
@@ -207,7 +209,9 @@ class App(tk.Tk):
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
         EventBus.bind(MonsterRotationUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._on_monster_rotation_updated))
         EventBus.bind(LanguageChangedEvent, self.on_language_change)
-        EventBus.bind(GlobalApplyEvent, lambda e: self.on_global_apply())
+        from lib.ui.controllers.global_config_controller import GlobalConfigController
+        self.global_config_controller = GlobalConfigController(self.state_controller, self.hotkey_controller, self._t, app_instance=self)
+        EventBus.bind(GlobalApplyEvent, lambda e: self.global_config_controller.apply_all_configs())
         EventBus.bind(StartStopHuntEvent, lambda e: self.on_start_stop_clicked())
 
         # Instantiate the MenuVisionController to handle vision menu events
@@ -850,7 +854,8 @@ class App(tk.Tk):
 
 
     def on_skill_slot_changed(self, _evt=None):
-        self._update_attack_keys_from_slots()
+        if hasattr(self, "skill_config_view"):
+            self.skill_config_view._update_attack_keys_from_slots()
         try:
             self.state_controller._refresh_slot_key_labels()
         except Exception:
@@ -961,82 +966,6 @@ class App(tk.Tk):
         self.monster_selected_name = name
         self.on_monster_use_for_hunt()
 
-    def _refresh_skill_slots_options(self):
-        if not hasattr(self, "skill_slot_boxes"):
-            return
-        names = []
-        for skill in self.skills:
-            if skill.get("name", "Unknown") not in names:
-                names.append(skill.get("name", "Unknown"))
-        for saved in getattr(self, "skill_slot_saved_names", []):
-            if saved and saved not in names:
-                names.append(saved)
-        values = [""] + names
-        for cmb in self.state_controller.skill_slot_boxes:
-            cmb["values"] = values
-        # Also refresh key labels next to each slot
-        try:
-            self.state_controller._refresh_slot_key_labels()
-        except Exception:
-            pass
-
-    def _clear_skill_slot(self, var):
-        var.set("")
-        self._update_attack_keys_from_slots()
-
-    def _update_attack_keys_from_slots(self):
-        # attack_keys removed: update saved slot names and refresh options
-        self.skill_slot_saved_names = [
-            v.get().strip() for v in self.state_controller.skill_slot_vars if v.get().strip()
-        ]
-        self._refresh_skill_slots_options()
-
-    def _collect_skill_slots(self):
-        if not hasattr(self, "skill_slot_vars") or not self.state_controller.skill_slot_vars:
-            self.skill_slot_saved_names = []
-            return [], []
-        mapping = {skill.get("name", "Unknown"): skill for skill in getattr(self, "skills", [])}
-        skill_slots = []
-        buff_slots = []
-        saved_names = []
-        for i, var in enumerate(self.state_controller.skill_slot_vars):
-            name = var.get().strip()
-            if not name:
-                continue
-            skill = mapping.get(name)
-            if not skill:
-                continue
-            saved_names.append(name)
-
-            # The first 4 slots are attack (combo chain), next 4 are buff
-            is_combo_lane = i < 4
-
-            # Check what lane we are in to assign type properly, or rely on skill type
-            skill_type = skill.get("type", "attack")
-            if is_combo_lane:
-                skill_type = "attack"
-            else:
-                skill_type = "buff"
-
-            slot_data = {
-                "name": skill.get("name", "Unknown"),
-                "key": skill.get("key", ""),
-                "type": skill_type,
-                "cooldown": float(skill.get("cooldown", 0.0)),
-                "cast_time": float(skill.get("cast_time", 0.0)),
-                "image": skill.get("image", ""),
-            }
-
-            if skill_type == "buff":
-                duration = 300
-                slot_data["duration_sec"] = duration
-                buff_slots.append(slot_data)
-            else:
-                skill_slots.append(slot_data)
-
-        self.skill_slot_saved_names = saved_names
-        return skill_slots, buff_slots
-
     def on_monster_use_for_hunt(self):
         if self.monster_selected_index is None or self.monster_selected_index >= len(
             self.monsters
@@ -1110,72 +1039,6 @@ class App(tk.Tk):
             self.state_controller.set_ui_var('rotation_desc', "Hunt monsters in order, cycle through list")
         elif mode == "priority":
             self.state_controller.set_ui_var('rotation_desc', "Always hunt highest priority (lowest number)")
-
-    def on_global_apply(self):
-        """Global apply handler - saves all settings across all tabs.
-
-        NOTE: Save file only ONCE to avoid duplicate writes and preserve field order.
-        """
-        try:
-            # Ensure canonical schemas
-            self.state_controller.hunt_cfg["monster_rotation"] = getattr(self, "monster_rotation", [])
-            self.state_controller.hunt_cfg["skill_slots"] = self.state_controller.hunt_cfg.get("skill_slots", [])
-            # 1. Apply legacy setup settings when the compatibility method exists.
-            apply_setup_settings = getattr(self, "_apply_setup_settings", None)
-            if callable(apply_setup_settings):
-                apply_setup_settings(save_to_file=False)
-
-            # 2. Update hunt config from Hunt tab UI (in-place update)
-            from lib.ui.controllers.hunt_config_controller import HuntConfigController
-            cfg = HuntConfigController().build_config(self.state_controller)
-
-            # Validate hotkey uniqueness before applying
-            if "global_hotkeys" in cfg:
-                hk = cfg["global_hotkeys"]
-                all_keys = [
-                    hk.get("start_key"),
-                    hk.get("stop_key"),
-                    hk.get("library_manager_key"),
-                    hk.get("vision_wizard_key"),
-                    hk.get("monster_editor_key"),
-                    hk.get("build_manager_key"),
-                ]
-                # Filter out empty or None hotkeys
-                all_keys = [k for k in all_keys if k]
-                if len(all_keys) != len(set(all_keys)):
-                    DialogService.show_error(
-                        self._t("error_title"),
-                        (
-                            "All hotkeys must be different!"
-                            if self.lang == "en"
-                            else "Tất cả phím tắt phải khác nhau!"
-                        ),
-                    )
-                    return
-
-                self.state_controller.hunt_cfg = cfg  # Update instance config first
-                self.hotkey_controller.unregister_all()
-                self.hotkey_controller.register_all()
-
-            # 3. Save to file ONCE (preserves insertion order in Python 3.7+)
-            if not save_hunt_config(cfg):
-                raise RuntimeError("Could not save hunt configuration")
-            self.state_controller.hunt_cfg = cfg
-
-            # 4. Clear unsaved changes indicator
-            self.state_controller._clear_unsaved_changes()
-
-            # 5. Update status
-            self.state_controller.set_ui_var('hunt_status', self._t("all_saved"))
-
-            # 6. Show success message
-            DialogService.show_info(
-                self._t("success_title"), self._t("settings_applied_message")
-            )
-        except Exception as e:
-            DialogService.show_error(
-                self._t("error_title"), f"Failed to apply settings: {e}"
-            )
 
     def _reload_setup_advanced_settings(self):
         """Reload Advanced Settings values in Setup tab after timing changes."""

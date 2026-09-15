@@ -43,5 +43,5 @@ class SkillManagerController:
             self.root.skill_service.reload_skills()
 
         # Repopulate skill comboboxes
-        if hasattr(self.root, "_refresh_skill_slots_options"):
-            self.root._refresh_skill_slots_options()
+        if hasattr(self.root, "skill_config_view"):
+            self.root.skill_config_view._refresh_skill_slots_options()
