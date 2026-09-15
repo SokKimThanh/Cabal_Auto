@@ -159,7 +159,7 @@ class TestCB3BValidationSuite(unittest.TestCase):
         mock_app = MagicMock()
         mock_app._current_class_id = 1
 
-        def mock_t(key):
+        def mock_t(key, **kwargs):
             translations = {
                 "skill_strip.combo_lane": "Chuỗi Combo",
                 "skill_strip.buff_lane": "Làn Buff",
