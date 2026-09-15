@@ -7,7 +7,11 @@
 4. Check that saving the configuration (Global Apply) correctly handles duplicate hotkey validations before persisting.
 
 ## Checklist
-- [ ] Skill slot management methods removed from `app_gui.py`.
-- [ ] `on_global_apply` logic extracted into a Controller.
-- [ ] Views read/write data directly via `AppStateController`.
-- [ ] Configuration persists correctly across tabs without data loss.
+- [x] Skill slot management methods removed from `app_gui.py`.
+- [x] `on_global_apply` logic extracted into a Controller.
+- [x] Views read/write data directly via `AppStateController`.
+- [x] Configuration persists correctly across tabs without data loss.
+
+## Notes
+- Removed legacy test dependencies to `App._collect_skill_slots` in `test_cb3b_validation_suite.py` by converting tests to instantiate `SkillConfigView`.
+- Headless testing crashes (Tkinter `after` and DOM `winfo_children`) bypassed gracefully through mocks.
