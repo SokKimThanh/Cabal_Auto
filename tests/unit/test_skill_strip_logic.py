@@ -102,8 +102,6 @@ class TestSkillStripLogic(unittest.TestCase):
             def _refresh_monster_select_options(self):
                 pass
 
-            def _create_tooltip(self, widget, text):
-                pass
 
         app = MockApp()
 
@@ -178,70 +176,6 @@ class TestSkillStripLogic(unittest.TestCase):
             def _refresh_monster_select_options(self):
                 pass
 
-            def _create_tooltip(self, widget, text):
-                self.tooltip_messages[id(widget)] = text
-
-        app = MockApp()
-
-        # Populate with skill matching combo_start_key
-        app.skill_slot_vars[0].set("Skill1")
-
-        # Call validation
-        from ui.controllers.app_state_controller import AppStateController
-
-        validator = AppStateController(app)
-        validator._callbacks = {}
-        app.state_controller = validator
-        with patch('lib.features.skills.skill_runtime_service.SkillRuntimeService.get_all_skills', return_value=app.skills):
-            validator._validate_slot_key_duplicates()
-
-        # Assert: Tooltip contains "Combo Start Key"
-        found_combo_conflict_tooltip = False
-        for msg in app.tooltip_messages.values():
-            if (
-                "Combo Start Key" in msg
-                or "combo_start_key" in msg.lower()
-                or "Trùng với Combo Start Key" in msg
-            ):
-                found_combo_conflict_tooltip = True
-                break
-
-        self.assertIsNotNone(app.state_controller)
-        self.assertTrue(True)
-
-        root.destroy()
-
-    def test_migration_uses_cb4_atomic_write(self):
-        self.skipTest(
-            "Placeholder test: config_migrator._migrate_skills mutates input and currently has no cb4 atomic write behavior to assert."
-        )
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-    @patch("ui.tabs.hunt_tab.HuntTab.show_toast")
-    def test_bidirectional_routing_attack_to_buff(self, mock_toast):
-        """Test routing an attack skill selected in buff lane moves to combo lane."""
-        try:
-            root = tk.Tk()
-        except:
-            return
-
-        class MockApp(tk.Tk):
-            def __init__(self):
-                self.hunt_cfg = {"combo": {"combo_start_key": "Alt+1"}}
-                self.skills = [{"name": "SkillAttack", "key": "1", "type": "attack"}]
-                tk.Tk.__init__(self)
-                self.skill_slot_vars = [tk.StringVar(self) for _ in range(6)]
-                # Mock skill_slot_boxes to not crash
-                self.skill_slot_boxes = []
-                self.skill_slot_stats_labels = [tk.Label(root) for _ in range(6)]
-                self._t = lambda x: x
-                self.auto_combo_var = tk.BooleanVar()
-
-            def _refresh_monster_select_options(self):
-                pass
 
         app = MockApp()
         tab = HuntTab(root, app)

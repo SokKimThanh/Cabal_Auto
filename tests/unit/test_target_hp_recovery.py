@@ -59,8 +59,6 @@ class MockApp:
     ):
         return tk.Button(parent, text=icon_emoji, command=command)
 
-    def _create_tooltip(self, widget, text):
-        pass
 
     def _on_monster_add_smart(self):
         pass

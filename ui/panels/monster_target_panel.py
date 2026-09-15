@@ -4,6 +4,7 @@ from lib.events.event_bus import EventBus, MonsterMoveUpEvent, MonsterMoveDownEv
 import tkinter as tk
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.helpers import UIHelper
 from ui.components.styled_panel import StyledPanel
 from ui.components.empty_state import EmptyState
 
@@ -167,7 +168,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             cursor="hand2"
         )
         self.btn_add.pack(pady=(0, 4))
-        self.app._create_tooltip(
+        UIHelper.create_tooltip(
             self.btn_add, self.app._t("monster_rotation_add")
         )
 
@@ -208,7 +209,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             hover_color=UI.ACCENT_AMBER,
         )
         self.btn_remove_monster.pack()
-        self.app._create_tooltip(
+        UIHelper.create_tooltip(
             self.btn_remove_monster, self.app._t("monster_rotation_remove")
         )
 
@@ -272,7 +273,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             cursor="hand2"
         )
         self.btn_promote_monster.pack(pady=(0, 4))
-        self.app._create_tooltip(
+        UIHelper.create_tooltip(
             self.btn_promote_monster, self.app._t("monster_promote")
         )
 
@@ -372,7 +373,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             label=self.app._t("monster_delete"),
             command=self._on_monster_delete_from_list,
         )
-        self.app._create_tooltip(
+        UIHelper.create_tooltip(
             self.monster_context_menu,
             self.app._t("monster_rotation_delete_hint"),
         )
@@ -615,7 +616,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
                 # Dummy already set - show accept icon and disable
                 try:
                     # Use size=16 to match compact button
-                    accept_icon = self.app._icon("accept", "✓", size=16)
+                    accept_icon = UIHelper.icon("accept", "✓", size=16)
                     if isinstance(accept_icon, str):
                         self.btn_add.config(text=accept_icon, state="disabled")
                     else:
@@ -637,12 +638,12 @@ class MonsterTargetPanel(ttk.LabelFrame):
                         delattr(self.btn_add, "_tooltip")
                     except Exception:
                         pass
-                self.app._create_tooltip(self.btn_add, tooltip_text)
+                UIHelper.create_tooltip(self.btn_add, tooltip_text)
             else:
                 # No dummy yet - show add icon and enable
                 try:
                     # Use size=16 to match compact button
-                    add_icon = self.app._icon("add", "➕", size=16)
+                    add_icon = UIHelper.icon("add", "➕", size=16)
                     if isinstance(add_icon, str):
                         self.btn_add.config(text=add_icon, state="normal")
                     else:
@@ -664,12 +665,12 @@ class MonsterTargetPanel(ttk.LabelFrame):
                         delattr(self.btn_add, "_tooltip")
                     except Exception:
                         pass
-                self.app._create_tooltip(self.btn_add, tooltip_text)
+                UIHelper.create_tooltip(self.btn_add, tooltip_text)
 
             # Disable priority reorder buttons with locked icon (white on gray)
             # Use size=16 to match SMALL buttons (36px)
             try:
-                locked_icon = self.app._icon("locked", "🔒", size=16, color="#FFFFFF")
+                locked_icon = UIHelper.icon("locked", "🔒", size=16, color="#FFFFFF")
                 for btn in [self.btn_move_up, self.btn_move_down]:
                     # IMPORTANT: Keep original bg colors when disabled
                     original_bg = UI.BG_ELEVATED
@@ -688,15 +689,15 @@ class MonsterTargetPanel(ttk.LabelFrame):
             for btn in [self.btn_move_up, self.btn_move_down]:
                 # Safely destroy any existing tooltip then create a new one
                 try:
-                    self.app._destroy_widget_tooltip(btn)
+                    UIHelper.destroy_widget_tooltip(btn)
                 except Exception:
                     pass
-                self.app._create_tooltip(btn, self.app._t("tooltip_reorder_locked"))
+                UIHelper.create_tooltip(btn, self.app._t("tooltip_reorder_locked"))
         else:
             # Normal mode: Restore defaults
             try:
                 # Use size=16 to match compact button
-                add_icon = self.app._icon("add", "➕", size=16)
+                add_icon = UIHelper.icon("add", "➕", size=16)
                 if isinstance(add_icon, str):
                     self.btn_add.config(text=add_icon, state="normal")
                 else:
@@ -706,18 +707,18 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
             # Restore normal tooltip
             try:
-                self.app._destroy_widget_tooltip(self.btn_add)
+                UIHelper.destroy_widget_tooltip(self.btn_add)
             except Exception:
                 pass
-            self.app._create_tooltip(
+            UIHelper.create_tooltip(
                 self.btn_add, self.app._t("tooltip_add_monster_normal")
             )
 
             # Enable priority reorder buttons with original icons and colors (both blue for consistency)
             try:
                 # Use size=16 to match SMALL buttons
-                up_icon = self.app._icon("up", "↑", size=16)
-                down_icon = self.app._icon("down", "↓", size=16)
+                up_icon = UIHelper.icon("up", "↑", size=16)
+                down_icon = UIHelper.icon("down", "↓", size=16)
 
                 if isinstance(up_icon, str):
                     self.btn_move_up.config(
@@ -766,13 +767,13 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
             # Restore normal tooltips
             try:
-                self.app._destroy_widget_tooltip(self.btn_move_up)
+                UIHelper.destroy_widget_tooltip(self.btn_move_up)
             except Exception:
                 pass
-            self.app._create_tooltip(self.btn_move_up, self.app._t("tooltip_move_up"))
+            UIHelper.create_tooltip(self.btn_move_up, self.app._t("tooltip_move_up"))
 
             try:
-                self.app._destroy_widget_tooltip(self.btn_move_down)
+                UIHelper.destroy_widget_tooltip(self.btn_move_down)
             except Exception:
                 pass
-            self.app._create_tooltip(self.btn_move_down, self.app._t("tooltip_move_down"))
+            UIHelper.create_tooltip(self.btn_move_down, self.app._t("tooltip_move_down"))
