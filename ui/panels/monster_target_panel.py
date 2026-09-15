@@ -355,10 +355,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
             font=UI.FONT_TEXT,
         ).pack(fill="x", pady=(8, 0), padx=10)
 
-        if hasattr(self.app, "_on_monster_list_select"):
-            self.monster_rotation_listbox.bind(
-                "<<ListboxSelect>>", self.app._on_monster_list_select
-            )
         self.monster_rotation_listbox.bind(
             "<Delete>", self._on_monster_delete_from_list
         )
