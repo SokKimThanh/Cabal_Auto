@@ -294,7 +294,7 @@ class SkillPanel(ttk.LabelFrame):
             header.pack(fill="x", padx=8, pady=(8, 2))
             tk.Label(
                 header,
-                text=self.app_state._t("skill_panel.buff_lane").format(num=i + 1),
+                text=f"{getattr(self.app_state, '_t', lambda x: x)('skill_strip.buff_lane')} {i + 1}",
                 font=UI.FONT_SMALL,
                 bg=UI.BG_SURFACE,
                 fg=UI.TEXT_MUTED,

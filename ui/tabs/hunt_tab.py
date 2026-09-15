@@ -369,7 +369,7 @@ class HuntTab(ttk.Frame):
         self.monster_target_panel.pack(side=tk.TOP, fill=tk.X, expand=False, pady=(0, UI.SPACE_MD))
 
         from ui.panels.skill_panel import SkillPanel
-        self.skill_panel_controller = SkillPanel(self.left_col_frame, self.app, scale_factor, hunt_tab=self)
+        self.skill_panel_controller = SkillPanel(self.left_col_frame, self.app.state_controller, scale_factor, hunt_tab=self)
         # Note: SkillPanel handles its own packing internally in some implementations,
         # but normally it needs to be packed if it's just a frame.
         if isinstance(self.skill_panel_controller, tk.Widget):
