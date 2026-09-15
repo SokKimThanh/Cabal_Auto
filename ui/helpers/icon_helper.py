@@ -267,7 +267,12 @@ class IconHelper:
             # Return fallback or generic emoji
             return fallback or "❓"
 
+        # Handle the case where fallback might not exist in mapping or we should prioritize fallback if passed
         icon_stem, emoji = self.icon_map[name]
+
+        # If fallback is provided, let's use it as the fallback emoji instead of the default mapping emoji
+        if fallback:
+            emoji = fallback
         # Resolve first existing icon path across known dirs
         # Priority: .png > .ico > emoji (always try .png first)
         icon_path = None
