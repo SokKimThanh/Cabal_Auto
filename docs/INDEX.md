@@ -135,6 +135,7 @@ docs/
 
 - [**Quick Fix: Tkinter Empty Window**](QUICK_FIX_TKINTER_EMPTY_WINDOW.md) - Common bug & solution
 - [**Detailed: Tkinter Bug Lessons**](bugfixes/TKINTER_EMPTY_WINDOW_BUG_LESSONS_LEARNED.md) - Complete analysis
+- [**Archived Script Patches**](archive/scripts/) - Historic refactor patches (`patch_*.py`) moved from root.
 
 ### Latest Sprint (Sprint 23) ✅ Phase 7 COMPLETE
 
