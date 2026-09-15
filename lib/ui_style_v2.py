@@ -258,6 +258,7 @@ class UIStyleV2:
         "tab_stats": "📊",
         "sidebar_support": "❓",
         "sidebar_quick_setup": "🔧",
+        "btn_language_manager": "🌐",
     }
 
     @classmethod

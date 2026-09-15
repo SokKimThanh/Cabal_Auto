@@ -20,7 +20,7 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
-from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, LanguageChangedEvent, GlobalApplyEvent, StartStopHuntEvent
+from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, LanguageChangedEvent, GlobalApplyEvent, StartStopHuntEvent, TranslationDataUpdatedEvent
 import tkinter as tk
 import sys
 from lib.ui.dialog_service import DialogService
@@ -138,6 +138,18 @@ class App:
             from ui.controllers.app_state_controller import AppStateController
             self.state_controller = AppStateController(self.root)
 
+            # Startup Protection: Ensure translations exist in DB before loading UI
+            from lib.db.services.translation_service import TranslationService
+            from lib.db.services.translation_sync_manager import TranslationSyncManager
+
+            db_record_count = TranslationService().get_total_count()
+            if db_record_count == 0:
+                TranslationSyncManager.seed_initial_data()
+
+            # Load from DB to memory
+            import lib.i18n
+            lib.i18n.load_from_db()
+
             # Load config and language
             self.cfg = load_config()
             self.state_controller.hunt_cfg = load_hunt_config()
@@ -207,6 +219,8 @@ class App:
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
         EventBus.bind(LanguageChangedEvent, self.on_language_change)
+        EventBus.bind(TranslationDataUpdatedEvent, self.on_translation_updated)
+
         from lib.ui.controllers.global_config_controller import GlobalConfigController
         self.global_config_controller = GlobalConfigController(self.state_controller, self.hotkey_controller, self._t, app_instance=self)
         EventBus.bind(GlobalApplyEvent, lambda e: self.global_config_controller.apply_all_configs())
@@ -363,6 +377,7 @@ class App:
         self.root.bind("<Control-b>", lambda e: self.navigation.navigate_to("build_manager"))
         self.root.bind("<Control-m>", lambda e: self.navigation.navigate_to("monster_manager"))
         self.root.bind("<Control-k>", lambda e: self.navigation.navigate_to("skill_manager"))
+        self.root.bind("<Control-l>", lambda e: self.navigation.navigate_to("language_manager"))
 
         self.root.bind("<Alt-Key-1>", lambda e: self.navigation.navigate_to("hunt"))  # Alt+1: Hunt tab
         self.root.bind(
@@ -681,6 +696,15 @@ class App:
                                 # It's a label
                                 widget.config(image='', text=f"{emoji_text}")
                             widget.image = None
+
+    def on_translation_updated(self, event=None):
+        """Handle TranslationDataUpdatedEvent from EventBus to refresh UI."""
+        # Load from DB to update in-memory dicts
+        import lib.i18n
+        lib.i18n.load_from_db()
+        # Trigger TranslationBinder refresh on main thread
+        if hasattr(self, "translation_binder"):
+            self.root.after(0, lambda: self.translation_binder.refresh_all(self._t))
 
     def refresh_translations(self):
         # Dynamically update text on widgets without rebuilding
