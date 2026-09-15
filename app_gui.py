@@ -393,7 +393,7 @@ class App:
         try:
             from lib.ui.components.main_menu_bar import MainMenuBar
             self.main_menu = MainMenuBar(
-                parent=self,
+                parent=self.root,
                 app=self,
                 state_controller=self.state_controller,
                 hotkey_controller=self.hotkey_controller,
