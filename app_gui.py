@@ -207,11 +207,17 @@ class App(tk.Tk):
         EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
-        EventBus.bind(MonsterRotationUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self._on_monster_rotation_updated))
         EventBus.bind(LanguageChangedEvent, self.on_language_change)
         from lib.ui.controllers.global_config_controller import GlobalConfigController
         self.global_config_controller = GlobalConfigController(self.state_controller, self.hotkey_controller, self._t, app_instance=self)
         EventBus.bind(GlobalApplyEvent, lambda e: self.global_config_controller.apply_all_configs())
+
+        from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
+        if di_container and hasattr(di_container, "monster_rotation_controller") and di_container.monster_rotation_controller:
+            self.monster_rotation_controller = di_container.monster_rotation_controller
+        else:
+            self.monster_rotation_controller = MonsterRotationController(self.state_controller)
+        self.monster_rotation_controller.bind_events()
         EventBus.bind(StartStopHuntEvent, lambda e: self.on_start_stop_clicked())
 
         # Instantiate the MenuVisionController to handle vision menu events
@@ -1138,6 +1144,8 @@ class App(tk.Tk):
     def destroy(self):
         self._is_destroyed = True
         self.lifecycle_controller.cleanup_before_destroy()
+        if hasattr(self, "monster_rotation_controller"):
+            self.monster_rotation_controller.unbind_events()
         if hasattr(self, "task_scheduler"):
             self.task_scheduler.cancel_all()
         super().destroy()
