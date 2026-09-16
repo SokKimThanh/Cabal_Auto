@@ -218,8 +218,8 @@ class App:
         # --- Event Bus Bindings ---
         EventBus.bind(HuntStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', e.status)))
         EventBus.bind(HuntStateChangedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self._on_orchestrator_state_change(e.state)))
-        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_hp_display(e.hp_percent) if hasattr(self, 'tab_hunt') else None))
-        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_status(e.status) if hasattr(self, 'tab_hunt') else None))
+        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_hp_display(e.hp_percent) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_hp_display') else None))
+        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_status(e.status) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_status') else None))
         EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))

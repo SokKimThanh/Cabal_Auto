@@ -381,7 +381,7 @@ class HuntOrchestrator:
                                         m_hp = monster.get("hp", "Unknown")
                                         fmt = f"[ID: #{m_id}] {m_name} (HP: {m_hp})"
 
-                                        EventBus.trigger(TargetInfoUpdatedEvent(fmt))
+                                        EventBus.trigger(TargetInfoUpdatedEvent(fmt, target_id=m_id, name=m_name, hp=str(m_hp)))
 
                             have_target = True
                             last_seen = now
