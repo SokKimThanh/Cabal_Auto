@@ -91,6 +91,17 @@ class IconService:
             self.conn.rollback()
             return False
 
+
+    def get_all_tooltip_keys(self) -> Dict[str, str]:
+        """Get a mapping of all icon keys to their tooltip translation keys."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT icon_key, tooltip_translation_key FROM icons WHERE tooltip_translation_key IS NOT NULL AND tooltip_translation_key != ''")
+            return {row[0]: row[1] for row in cursor.fetchall()}
+        except sqlite3.Error as e:
+            logger.error(f"Error in get_all_tooltip_keys: {e}")
+            return {}
+
     def get_icon_by_key(self, icon_key: str) -> Optional[Dict]:
         try:
             cursor = self.conn.cursor()
