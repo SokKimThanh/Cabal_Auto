@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 import threading
 from tkinter import ttk
@@ -504,9 +505,14 @@ class IconManagerFrame(ResponsiveGridBase):
                 selected_path = Path(file_path)
                 icons_dir = get_icons_directory()
 
+
                 # Check if file is outside assets
                 final_filename = selected_path.name
-                if not str(selected_path.resolve()).startswith(str(icons_dir.resolve())):
+
+                resolved_selected = os.path.normcase(os.path.abspath(str(selected_path.resolve())))
+                resolved_icons_dir = os.path.normcase(os.path.abspath(str(icons_dir.resolve())))
+
+                if not resolved_selected.startswith(resolved_icons_dir):
                     msg = self.i18n_t(
                         "msg_file_outside_assets",
                         default="File ảnh đang nằm ngoài thư mục hệ thống (assets). Nếu bạn xóa hoặc di chuyển file này, icon sẽ bị lỗi. Bạn có muốn tự động copy file này vào thư mục assets cho an toàn không?"

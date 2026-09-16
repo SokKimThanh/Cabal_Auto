@@ -47,6 +47,10 @@ def import_icon_file(source_path: str, target_filename: Optional[str] = None) ->
     icons_dir = get_icons_directory()
     target_path = icons_dir / target_filename
 
+    # Prevent self-copying
+    if target_path.exists() and os.path.normcase(os.path.abspath(str(source_p.resolve()))) == os.path.normcase(os.path.abspath(str(target_path.resolve()))):
+        return target_filename
+
     # Xử lý File Name Collision
     if target_path.exists():
         name = target_path.stem
