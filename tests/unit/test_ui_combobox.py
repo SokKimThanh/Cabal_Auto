@@ -35,7 +35,7 @@ class MockApp:
         if key == "btn_save": return "Save"
         if key == "btn_cancel": return "Cancel"
         return key
-    def bind_translation(self, widget, key, **kwargs):
+    def bind_text(self, widget, key, **kwargs):
         pass
 
 @patch('ui.components.base.responsive_grid_base.ResponsiveGridBase._on_enter')

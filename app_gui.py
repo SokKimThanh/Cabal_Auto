@@ -79,7 +79,24 @@ class App:
 
     def _t(self, key: str, **kwargs) -> str:
         kwargs.pop("ns", None)
-        return i18n_t(key, ns=I18N_GLOBAL, **kwargs)
+
+        # Extract supported i18n_t args
+        t_kwargs = {}
+        if "lang" in kwargs:
+            t_kwargs["lang"] = kwargs.pop("lang")
+        if "default" in kwargs:
+            t_kwargs["default"] = kwargs.pop("default")
+
+        translated = i18n_t(key, ns=I18N_GLOBAL, **t_kwargs)
+
+        # Apply formatting if there are extra kwargs left
+        if kwargs:
+            try:
+                translated = translated.format(**kwargs)
+            except Exception:
+                pass
+
+        return translated
 
     def bind_text(self, widget, key: str, **kwargs):
         """Binds a widget to a translation key and sets its initial text."""

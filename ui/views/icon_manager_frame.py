@@ -58,13 +58,30 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def i18n_t(self, key: str, **kwargs) -> str:
         """Helper to get translations dynamically based on current app language"""
-        if hasattr(self.app, 'i18n_t'):
-            return self.app.i18n_t(key, **kwargs)
+        if hasattr(self.app, '_t'):
+            return self.app._t(key, **kwargs)
 
         # Fallback to direct import if app doesn't have it
         from lib.i18n import t as fallback_t
         lang = getattr(self.app, 'lang', 'vi')
-        return fallback_t(key, lang=lang, **kwargs)
+
+        # Extract supported kwargs for fallback_t
+        t_kwargs = {"lang": lang}
+        if "default" in kwargs:
+            t_kwargs["default"] = kwargs.pop("default")
+        if "ns" in kwargs:
+            t_kwargs["ns"] = kwargs.pop("ns")
+
+        translated = fallback_t(key, **t_kwargs)
+
+        # Apply formatting if there are extra kwargs
+        if kwargs:
+            try:
+                translated = translated.format(**kwargs)
+            except Exception:
+                pass
+
+        return translated
 
     def _setup_ui(self):
         content_frame = self.get_content_frame()
@@ -544,18 +561,18 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add", default="Add"), command=self._on_add, **UIStyle.get_button_style("primary"))
         self.btn_add.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_translation'):
-            self.app.bind_translation(self.btn_add, "btn_add")
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_add, "btn_add")
 
         self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit", default="Edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
         self.btn_edit.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_translation'):
-            self.app.bind_translation(self.btn_edit, "btn_edit")
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_edit, "btn_edit")
 
         self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete", default="Delete"), command=self._on_delete, **UIStyle.get_button_style("danger"))
         self.btn_delete.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_translation'):
-            self.app.bind_translation(self.btn_delete, "btn_delete")
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_delete, "btn_delete")
 
         # Override danger if needed (Tkinter style compatibility)
         if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
@@ -563,25 +580,25 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.btn_refresh = tk.Button(right_frame, text=self.i18n_t("btn_refresh", default="Refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
         self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_translation'):
-            self.app.bind_translation(self.btn_refresh, "btn_refresh")
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_refresh, "btn_refresh")
         attach_i18n_tooltip(self.btn_refresh, "tooltip_icon_manager_refresh", ns=None, lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi')
 
         self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("info"))
         self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_translation'):
-            self.app.bind_translation(self.btn_sync, "btn_sync", default="Đồng bộ")
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_sync, "btn_sync", default="Đồng bộ")
         attach_i18n_tooltip(self.btn_sync, "tooltip_icon_manager_sync", ns=None, lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi')
 
         self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
         self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_translation'):
-            self.app.bind_translation(self.btn_save, "btn_save")
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_save, "btn_save")
 
         self.btn_cancel = tk.Button(right_frame, text=self.i18n_t("btn_cancel"), command=self._on_cancel, **UIStyle.get_button_style("secondary"))
         self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_translation'):
-            self.app.bind_translation(self.btn_cancel, "btn_cancel")
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_cancel, "btn_cancel")
 
         self.set_form_state("VIEW")
 
@@ -758,7 +775,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         cooldown_text = self.i18n_t("btn_sync_cooldown", default=f"Đã đồng bộ ({seconds_left}s)", s=seconds_left).replace("{s}", str(seconds_left))
         if hasattr(self.app, 'i18n_t'):
-            cooldown_text = self.app.i18n_t("btn_sync_cooldown", s=seconds_left)
+            cooldown_text = self.app._t("btn_sync_cooldown", s=seconds_left)
 
         self.btn_sync.config(text=cooldown_text)
         self.after(1000, lambda: self._start_sync_cooldown(seconds_left - 1))
