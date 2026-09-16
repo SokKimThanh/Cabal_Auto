@@ -326,20 +326,25 @@ class SkillManagerFrame(ResponsiveGridBase):
 
                 # Update Combo
                 values = ["All"] + [f"{t.get('skill_type_id')} - {t.get('name')}" for t in types]
-                self.type_combo['values'] = values
-                if values:
-                    self.type_combo.current(0)
+
+                # Check if type_combo has been initialized before configuring values
+                if hasattr(self, 'type_combo'):
+                    self.type_combo.config(values=values)
+                    if values and self.type_filter_var.get() not in values:
+                        self.type_combo.current(0)
 
                 # Update Tree
                 for t in types:
                     self.type_tree.insert("", "end", iid=str(t.get("skill_type_id")), values=(t.get("skill_type_id"), t.get("name")))
             else:
-                self.type_combo['values'] = ["All"]
-                self.type_combo.current(0)
+                if hasattr(self, 'type_combo'):
+                    self.type_combo.config(values=["All"])
+                    self.type_combo.current(0)
         except Exception as e:
             print(f"Error loading types: {e}")
-            self.type_combo['values'] = ["All"]
-            self.type_combo.current(0)
+            if hasattr(self, 'type_combo'):
+                self.type_combo.config(values=["All"])
+                self.type_combo.current(0)
 
     def _on_type_selected(self, event):
         selected = self.type_tree.selection()

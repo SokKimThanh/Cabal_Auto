@@ -64,9 +64,13 @@ class SkillEditDialog(tk.Toplevel):
         if hasattr(self.app, "db_skill_type_service"):
             try:
                 types = self.app.db_skill_type_service.get_all_skill_types()
-                type_values = [f"{t.get('skill_type_id')} - {t.get('name')}" for t in types]
+                if types:
+                    type_values = [f"{t.get('skill_type_id')} - {t.get('name')}" for t in types]
+                else:
+                    type_values = ["1 - attack"]
             except Exception as e:
                 print(f"[SkillEditDialog] Error loading types: {e}")
+                type_values = ["1 - attack"]
 
         type_combo = ttk.Combobox(type_frame, textvariable=self.var_type_str, values=type_values, state="readonly")
         type_combo.pack(side="left", fill="x", expand=True)

@@ -7273,3 +7273,11 @@ INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, sou
 INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, source_ref, is_recommended) VALUES (7, 467, 'default', 'universal_assign', 1);
 INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, source_ref, is_recommended) VALUES (8, 467, 'default', 'universal_assign', 1);
 INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, source_ref, is_recommended) VALUES (9, 467, 'default', 'universal_assign', 1);
+-- Seed default skill_types if they do not exist
+INSERT OR IGNORE INTO skill_types (skill_type_id, name) VALUES(1, 'attack');
+INSERT OR IGNORE INTO skill_types (skill_type_id, name) VALUES(2, 'buff');
+INSERT OR IGNORE INTO skill_types (skill_type_id, name) VALUES(3, 'passive');
+INSERT OR IGNORE INTO skill_types (skill_type_id, name) VALUES(4, 'dash');
+INSERT OR IGNORE INTO skill_types (skill_type_id, name) VALUES(5, 'blink');
+INSERT OR IGNORE INTO skill_types (skill_type_id, name) VALUES(6, 'bm2');
+INSERT OR IGNORE INTO skill_types (skill_type_id, name) VALUES(7, 'debuff');
