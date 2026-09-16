@@ -350,6 +350,19 @@ class IconHelper:
         self._cache[cache_key] = result
         return result
 
+    def clear_cache(self, icon_key: str = None):
+        """
+        Clears the icon cache. If icon_key is provided, clears only cache entries
+        starting with that key. Otherwise, clears the entire cache.
+        """
+        if not icon_key:
+            self._cache.clear()
+            return
+
+        keys_to_delete = [k for k in self._cache.keys() if k.startswith(f"{icon_key}_")]
+        for k in keys_to_delete:
+            del self._cache[k]
+
     def get_text(
         self, name: str, text: str = "", fallback: Optional[str] = None
     ) -> str:
@@ -442,12 +455,13 @@ class IconHelper:
 
         return (fallback_emoji, "text", False)
 
-    def evaluate_icon_status(self, icon_data: Dict) -> str:
+    def evaluate_icon_status(self, icon_data: Dict, existing_files_cache: set = None) -> str:
         """
         Evaluate the health status of an icon configuration.
 
         Args:
             icon_data: Dictionary containing 'filepath' and 'fallback_emoji'
+            existing_files_cache: Optional set of existing file names (for performance).
 
         Returns:
             "GREEN": filepath exists and physical file exists.
@@ -461,14 +475,23 @@ class IconHelper:
             # Check if physical file exists
             icon_stem = Path(filepath).stem
             file_exists = False
-            for ext in ['.png', '.ico']:
-                for d in self.icon_dirs:
-                    p = d / f"{icon_stem}{ext}"
-                    if p.exists():
+
+            # Use cache if provided
+            if existing_files_cache is not None:
+                for ext in ['.png', '.ico']:
+                    if f"{icon_stem}{ext}" in existing_files_cache:
                         file_exists = True
                         break
-                if file_exists:
-                    break
+            else:
+                # Fallback to I/O lookup
+                for ext in ['.png', '.ico']:
+                    for d in self.icon_dirs:
+                        p = d / f"{icon_stem}{ext}"
+                        if p.exists():
+                            file_exists = True
+                            break
+                    if file_exists:
+                        break
 
             if file_exists:
                 return "GREEN"

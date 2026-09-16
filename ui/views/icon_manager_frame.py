@@ -52,6 +52,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._current_state = None
         self._search_after_id = None
         self._categories_loaded = False
+        self._is_dirty = False
 
         self._setup_ui()
         self._check_and_auto_sync()
@@ -622,18 +623,23 @@ class IconManagerFrame(ResponsiveGridBase):
 
         icon_key = icon_data.get("icon_key", "")
         fallback_emoji = icon_data.get("fallback_emoji", "")
+        filepath = icon_data.get("filepath", "")
 
-        # We need a large icon. Let's try 128x128
-        giant_icon = self.icon_helper.get_icon(icon_key, fallback=fallback_emoji, size=128)
+        # Kiểm tra trạng thái tồn tại của file
+        status = self.icon_helper.evaluate_icon_status({"filepath": filepath, "fallback_emoji": fallback_emoji})
+
+        giant_icon = None
+        # Chỉ load ảnh nếu status là GREEN (ảnh tồn tại)
+        if status == "GREEN" and icon_key:
+            # We need a large icon. Let's try 128x128
+            giant_icon = self.icon_helper.get_icon(icon_key, fallback=fallback_emoji, size=128)
 
         if giant_icon and not isinstance(giant_icon, str):
             self.lbl_preview.config(image=giant_icon, text="")
             self.lbl_preview.image = giant_icon
         else:
-            # Fallback to emoji text
-            emoji_text = giant_icon if isinstance(giant_icon, str) and giant_icon != "❓" else fallback_emoji
-            if not emoji_text:
-                emoji_text = fallback_emoji or "❓"
+            # Nếu file không tồn tại hoặc lỗi, fallback sang emoji
+            emoji_text = fallback_emoji or "❓"
             self.lbl_preview.config(image='', text=emoji_text, font=(UIStyle.FONT_FAMILY_UI, 72))
             self.lbl_preview.image = None
 
@@ -674,80 +680,73 @@ class IconManagerFrame(ResponsiveGridBase):
                 selected_path = Path(file_path)
                 icons_dir = get_icons_directory()
 
-
-                # Check if file is outside assets
                 final_filename = selected_path.name
+                current_filename = self.var_filepath.get().strip()
 
                 resolved_selected = os.path.normcase(os.path.abspath(str(selected_path.resolve())))
                 resolved_icons_dir = os.path.normcase(os.path.abspath(str(icons_dir.resolve())))
 
+                # Luồng 1: Ảnh ngoài assets
                 if not resolved_selected.startswith(resolved_icons_dir):
-                    target_filename = selected_path.name
-                    target_path = icons_dir / target_filename
+                    target_path = icons_dir / final_filename
                     overwrite = False
 
                     if target_path.exists():
-                        # Ask user if they want to replace the existing file
+                        # Trường hợp 1.2: File đã tồn tại trong assets
                         msg_overwrite = self.i18n_t(
                             "msg_file_exists_overwrite",
-                            default=f"File ảnh '{target_filename}' đã tồn tại trong hệ thống.\nBạn có muốn thay thế file cũ bằng file mới này không?"
+                            default=f"File ảnh '{final_filename}' đã tồn tại trong hệ thống.\nBạn có muốn thay thế file cũ bằng file mới này không?"
                         )
-                        should_overwrite = messagebox.askyesno(
-                            self.i18n_t("warning", default="Cảnh báo ghi đè"),
-                            msg_overwrite
-                        )
-                        if should_overwrite:
-                            overwrite = True
-                        else:
-                            # User chose not to overwrite. Abort import to keep the existing file as is.
-                            return
+                        if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo ghi đè"), msg_overwrite):
+                            return # Huỷ thao tác
+                        overwrite = True
                     else:
-                        # File doesn't exist, ask normal copy warning
+                        # Trường hợp 1.1: File chưa tồn tại trong assets
                         msg = self.i18n_t(
                             "msg_file_outside_assets",
-                            default="File ảnh đang nằm ngoài thư mục hệ thống (assets). Nếu bạn xóa hoặc di chuyển file này, icon sẽ bị lỗi. Bạn có muốn tự động copy file này vào thư mục assets cho an toàn không?"
+                            default="Ảnh đang nằm ngoài thư mục assets. Bạn có muốn copy ảnh vào assets không?"
                         )
-                        should_copy = messagebox.askyesno(
-                            self.i18n_t("warning", default="Cảnh báo"),
-                            msg
-                        )
-                        if not should_copy:
-                            final_filename = file_path # Keep original absolute path
-                            overwrite = None # Signal that we don't import
+                        if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), msg):
+                            return # Huỷ thao tác
 
-                    if overwrite is not None:
-                        final_filename = import_icon_file(file_path, overwrite=overwrite)
+                    # Tiến hành copy/replace vào assets
+                    final_filename = import_icon_file(file_path, overwrite=overwrite)
                 else:
-                    final_filename = selected_path.name
+                    # Luồng 2: Ảnh trong assets
+                    # Trường hợp 2.1: Chọn lại đúng file đang sử dụng
+                    if final_filename == current_filename:
+                        return # Không làm gì cả
+                    # Trường hợp 2.2: Chọn file khác, không cần hỏi copy
 
-                # Check for duplication (only if we have an icon_key selected)
+                # 3. Kiểm tra sử dụng chung ảnh (Duplication Check)
                 current_icon_key = self.var_icon_key.get().strip()
-                if current_icon_key: # Form must be in ADD/EDIT mode and have key
-                    # Need to check filename against DB
-                    existing_usages = self.icon_service.get_icons_by_filepath(final_filename)
-                    # Filter out the current icon we are editing
-                    other_usages = [u for u in existing_usages if u.get("icon_key") != current_icon_key]
+                existing_usages = self.icon_service.get_icons_by_filepath(final_filename)
 
-                    if other_usages:
-                        usage_keys = ", ".join([u.get("icon_key", "") for u in other_usages])
-                        msg_dup = self.i18n_t(
-                            "msg_icon_duplicated",
-                            default=f"File ảnh '{final_filename}' đã được sử dụng cho Icon Key(s): {usage_keys}.\nBạn có chắc chắn muốn dùng chung file ảnh này không?",
-                            filename=final_filename,
-                            usage_keys=usage_keys
-                        )
-                        should_reuse = messagebox.askyesno(
-                            self.i18n_t("warning", default="Cảnh báo trùng lặp"),
-                            msg_dup
-                        )
-                        if not should_reuse:
-                            return # User aborted
+                # Filter out the current icon we are editing
+                other_usages = [u for u in existing_usages if u.get("icon_key") != current_icon_key]
+
+                if other_usages:
+                    usage_keys = ", ".join([u.get("icon_key", "") for u in other_usages])
+                    msg_dup = self.i18n_t(
+                        "msg_icon_duplicated",
+                        default=f"Ảnh này hiện đang được sử dụng bởi các Icon Key khác: {usage_keys}.\nBạn có muốn tiếp tục sử dụng chung ảnh này không?"
+                    )
+                    if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo trùng lặp"), msg_dup):
+                        return # Huỷ thao tác
 
                 # Update filepath entry
                 self.var_filepath.set(final_filename)
 
+                # Mark form as dirty
+                self._is_dirty = True
+
                 # Update Preview
-                self.icon_helper._icon_cache = getattr(self.icon_helper, "_icon_cache", {})
+                # Clear cache for the current icon to ensure fresh load
+                if hasattr(self.icon_helper, 'clear_cache'):
+                    self.icon_helper.clear_cache(current_icon_key)
+                else:
+                    self.icon_helper._icon_cache = getattr(self.icon_helper, "_icon_cache", {})
+
                 from PIL import Image, ImageTk
 
                 # Determine correct target path for preview
@@ -925,6 +924,8 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_edit(self):
         self.set_form_state("EDIT")
+        # Start typing/editing will set it dirty, but explicitly marking it is safer if they just click browse
+        self._is_dirty = True
 
     def _on_delete(self):
         icon_key = self.var_icon_key.get()
@@ -1041,12 +1042,22 @@ class IconManagerFrame(ResponsiveGridBase):
         self.btn_sync.config(text=cooldown_text)
         self.after(1000, lambda: self._start_sync_cooldown(seconds_left - 1))
 
-    def _on_save(self):
+    def _validate_form_data(self):
+        from tkinter import messagebox
         icon_key = self.var_icon_key.get().strip()
         if not icon_key:
-            from tkinter import messagebox
-            messagebox.showerror("Error", "Icon Key is required.")
+            messagebox.showerror("Validation Error", "Icon Key is required.")
+            return False
+
+        # Add more validations if needed
+        return True
+
+    def _on_save(self):
+        # 1. Validate dữ liệu
+        if not self._validate_form_data():
             return
+
+        icon_key = self.var_icon_key.get().strip()
 
         cat_name = self.var_category.get().strip() or "General"
         cat_id = 1
@@ -1071,8 +1082,17 @@ class IconManagerFrame(ResponsiveGridBase):
                 if item_id.startswith("new_icon_"):
                     self.tree.delete(item_id)
 
+        # 2. Lưu Database
         success = self.icon_service.upsert_icon(icon_data)
         if success:
+            # Xoá flag dirty
+            self._is_dirty = False
+
+            # Xoá cache trong IconHelper để bắt buộc load ảnh mới
+            if hasattr(self.icon_helper, 'clear_cache'):
+                self.icon_helper.clear_cache(icon_key)
+
+            # 3. Reload dữ liệu
             self.load_tree_data()
 
             # Mở lại thư mục vừa thêm vào
@@ -1080,7 +1100,7 @@ class IconManagerFrame(ResponsiveGridBase):
             if self.tree.exists(cat_node_id):
                 self.tree.item(cat_node_id, open=True)
 
-            # Re-select the saved item
+            # Re-select the saved item để refresh Preview từ dữ liệu thực tế
             for item in self.tree.get_children():
                 if item.startswith('cat_'):
                     for child in self.tree.get_children(item):
@@ -1091,6 +1111,10 @@ class IconManagerFrame(ResponsiveGridBase):
 
             self.set_form_state("VIEW")
             self.tree.focus_set()
+
+            # 4. Thông báo thành công
+            from tkinter import messagebox
+            messagebox.showinfo("Thành công", f"Đã lưu thành công icon {icon_key}.")
         else:
             from tkinter import messagebox
             messagebox.showerror("Error", "Failed to save icon data.")
@@ -1104,6 +1128,7 @@ class IconManagerFrame(ResponsiveGridBase):
                 if item_id.startswith("new_icon_"):
                     self.tree.delete(item_id)
 
+        self._is_dirty = False
         self._process_tree_selection()
         self.set_form_state("VIEW")
         self.tree.focus_set()
@@ -1152,11 +1177,23 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Dropdown population is now handled by _load_categories_tree
 
+        # Pre-cache existing files to speed up status evaluation
+        existing_files = set()
+        if hasattr(self.icon_helper, 'icon_dirs'):
+            for d in self.icon_helper.icon_dirs:
+                if d.exists():
+                    try:
+                        for f in d.iterdir():
+                            if f.is_file():
+                                existing_files.add(f.name)
+                    except Exception:
+                        pass
+
         # Group by category and filter by status
         grouped_data = {}
         for icon in all_icons:
-            # Check status logic
-            status = self.icon_helper.evaluate_icon_status(icon)
+            # Check status logic with cache for O(1) performance
+            status = self.icon_helper.evaluate_icon_status(icon, existing_files_cache=existing_files)
 
             # Apply status filter in Python
             if status_filter and status != status_filter:
@@ -1219,6 +1256,36 @@ class IconManagerFrame(ResponsiveGridBase):
             pass
 
     def _on_tree_select(self, event):
+        # Nếu form đang bị sửa (dirty), hỏi người dùng
+        if getattr(self, '_is_dirty', False):
+            from tkinter import messagebox
+            msg = self.i18n_t("msg_unsaved_changes", default="Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn bỏ qua các thay đổi này không?")
+            if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), msg):
+                # Chặn việc chuyển node, chọn lại node cũ
+                current_icon_key = self.var_icon_key.get().strip()
+                if current_icon_key:
+                    # Ngăn vòng lặp vô hạn bằng cách tạm thời unbind
+                    self.tree.unbind("<<TreeviewSelect>>")
+
+                    # Deselect tất cả rồi select lại cái cũ
+                    for item in self.tree.selection():
+                        self.tree.selection_remove(item)
+
+                    # Tìm và chọn lại node cũ trong tree (nó có thể nằm trong 1 category)
+                    for child in self.tree.get_children():
+                        if child.startswith('cat_'):
+                            for sub_child in self.tree.get_children(child):
+                                if sub_child == current_icon_key:
+                                    self.tree.selection_set(sub_child)
+                                    self.tree.see(sub_child)
+                                    break
+
+                    # Bind lại
+                    self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+                return
+            else:
+                self._is_dirty = False
+
         if hasattr(self, '_select_after_id') and self._select_after_id:
             self.after_cancel(self._select_after_id)
         self._select_after_id = self.after(50, self._process_tree_selection)
@@ -1238,16 +1305,18 @@ class IconManagerFrame(ResponsiveGridBase):
 
         icon_data = self.icon_service.get_icon_by_key(item_id)
         if icon_data:
-            self.var_name.set(icon_data.get('name', ''))
-            self.var_icon_key.set(icon_data.get('icon_key', ''))
+            self.var_name.set(icon_data.get('name') or '')
+            self.var_icon_key.set(icon_data.get('icon_key') or '')
 
             # Map category_id back to name
-            cat_name = icon_data.get("category_name", "General")
+            cat_name = icon_data.get("category_name") or "General"
             self.var_category.set(cat_name)
 
-            self.var_fallback_emoji.set(icon_data.get('fallback_emoji', ''))
-            self.var_tooltip_key.set(icon_data.get('tooltip_translation_key', ''))
-            self.var_filepath.set(icon_data.get('filepath', ''))
+            self.var_fallback_emoji.set(icon_data.get('fallback_emoji') or '')
+            self.var_tooltip_key.set(icon_data.get('tooltip_translation_key') or '')
+
+            # Sửa lỗi hiển thị None bằng cách ép chuỗi rỗng nếu giá trị là None
+            self.var_filepath.set(icon_data.get('filepath') or '')
 
             self._render_preview(icon_data)
 
