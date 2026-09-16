@@ -1,4 +1,16 @@
 from typing import Dict, Any, Callable
+from ui.views.hunt_workspace_frame import HuntWorkspaceFrame
+from ui.views.setup_content_frame import SetupContentFrame
+from ui.views.help_support_frame import HelpSupportFrame
+from ui.views.stats_content_frame import StatsContentFrame
+from ui.views.log_console_view import LogConsoleView
+from ui.views.monster_manager_frame import MonsterManagerFrame
+from ui.views.skill_manager_frame import SkillManagerFrame
+from ui.views.build_manager_frame import BuildManagerFrame
+from ui.views.class_manager_frame import ClassManagerFrame
+from ui.views.icon_manager_frame import IconManagerFrame
+from ui.views.scan_history_frame import ScanHistoryFrame
+from ui.views.language_manager_frame import LanguageManagerFrame
 
 class NavigationController:
     """
@@ -15,18 +27,6 @@ class NavigationController:
         """
         Instantiate and register all the major application views.
         """
-        from ui.views.hunt_workspace_frame import HuntWorkspaceFrame
-        from ui.views.setup_content_frame import SetupContentFrame
-        from ui.views.help_support_frame import HelpSupportFrame
-        from ui.views.stats_content_frame import StatsContentFrame
-        from ui.views.log_console_view import LogConsoleView
-        from ui.views.monster_manager_frame import MonsterManagerFrame
-        from ui.views.skill_manager_frame import SkillManagerFrame
-        from ui.views.build_manager_frame import BuildManagerFrame
-        from ui.views.class_manager_frame import ClassManagerFrame
-        from ui.views.icon_manager_frame import IconManagerFrame
-        from ui.views.scan_history_frame import ScanHistoryFrame
-        from ui.views.language_manager_frame import LanguageManagerFrame
 
         # Initialize all views. Pass `app_instance` as it acts as the global state context for now.
         self.views["hunt"] = HuntWorkspaceFrame(self.container, app=app_instance)
