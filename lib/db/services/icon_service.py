@@ -103,6 +103,17 @@ class IconService:
             logger.error(f"Error in get_icon_by_key: {e}")
             return None
 
+    def get_icons_by_filepath(self, filepath: str) -> List[Dict]:
+        """Lấy danh sách các icons đang dùng chung một filepath."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM icons WHERE filepath = ?", (filepath,))
+            rows = cursor.fetchall()
+            return [self._row_to_dict(cursor, row) for row in rows]
+        except sqlite3.Error as e:
+            logger.error(f"Error in get_icons_by_filepath: {e}")
+            return []
+
     def upsert_icon(self, icon_data: Dict) -> bool:
         try:
             cursor = self.conn.cursor()
