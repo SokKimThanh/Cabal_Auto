@@ -466,7 +466,7 @@ class IconHelper:
         Args:
             mapping: Dictionary mapping icon_name to tooltip_translation_key
         """
-        self._tooltip_keys_cache.update(mapping)
+        self._tooltip_keys_cache = dict(mapping)
 
     def get_icon_tooltip_key(self, icon_name: str) -> Optional[str]:
         """
