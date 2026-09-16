@@ -52,6 +52,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._categories_loaded = False
 
         self._setup_ui()
+        self._check_and_auto_sync()
         self.load_tree_data()
 
     def i18n_t(self, key: str, **kwargs) -> str:
@@ -207,8 +208,8 @@ class IconManagerFrame(ResponsiveGridBase):
         self.empty_preview = EmptyState(
             self.preview_frame,
             icon="🖼️",
-            message=self.i18n_t("msg_no_icon_selected", default="Chưa tìm thấy icon nào trong thư mục hệ thống"),
-            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết")
+            message=self.i18n_t("msg_no_icon_selected", default="Chưa chọn icon nào hoặc dữ liệu trống"),
+            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn icon từ danh sách hoặc nhấn Đồng bộ nếu danh sách trống")
         )
         self.empty_preview.grid(row=0, column=0, sticky="nsew")
 
@@ -270,13 +271,15 @@ class IconManagerFrame(ResponsiveGridBase):
         tooltip_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
         tooltip_frame.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
         tooltip_frame.grid_columnconfigure(0, weight=1)
-        tooltip_frame.grid_columnconfigure(1, weight=0)
 
         self.entry_tooltip = ttk.Combobox(tooltip_frame, textvariable=self.var_tooltip_key)
         self.entry_tooltip.grid(row=0, column=0, sticky="ew")
 
-        self.lbl_tooltip_warning = tk.Label(tooltip_frame, text="", bg=UIStyle.BG_SURFACE, fg="red", font=(UIStyle.FONT_FAMILY_UI, 12))
-        self.lbl_tooltip_warning.grid(row=0, column=1, padx=(5, 0))
+        self.lbl_tooltip_hint = tk.Label(tooltip_frame, text="Gợi ý: bắt đầu bằng icon_tooltip_...", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.lbl_tooltip_hint.grid(row=1, column=0, sticky="w", pady=(0, 2))
+
+        self.lbl_tooltip_warning = tk.Label(tooltip_frame, text="", bg=UIStyle.BG_SURFACE, fg="#ff9800", font=(UIStyle.FONT_FAMILY_UI, 9, "bold"))
+        self.lbl_tooltip_warning.grid(row=2, column=0, sticky="w")
 
         # Validation bindings
         if hasattr(self.var_tooltip_key, 'trace_add'):
@@ -336,21 +339,9 @@ class IconManagerFrame(ResponsiveGridBase):
             test_missing = "___MISSING___"
             val = t(key, default=test_missing, ns=None, lang=None)
             if val == test_missing:
-                self.lbl_tooltip_warning.config(text="⚠️")
-                import ui.helpers.tooltip as tt
-                # Tooltip báo lỗi cho icon cảnh báo
-                tt.attach_i18n_tooltip(
-                    self.lbl_tooltip_warning,
-                    key="msg_i18n_key_not_found",
-                    ns=None,
-                    lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi'
-                )
+                self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
             else:
-                self.lbl_tooltip_warning.config(text="")
-                if hasattr(self.lbl_tooltip_warning, "_i18n_tooltip"):
-                    self.lbl_tooltip_warning.unbind("<Enter>")
-                    self.lbl_tooltip_warning.unbind("<Leave>")
-                    self.lbl_tooltip_warning.unbind("<ButtonPress>")
+                self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
         except Exception:
             pass
 
@@ -612,7 +603,7 @@ class IconManagerFrame(ResponsiveGridBase):
     def _on_refresh(self):
         self.apply_filters()
 
-    def _on_sync(self):
+    def _on_sync(self, show_message=True):
         import tkinter.messagebox as messagebox
         try:
             # Lấy tất cả mapping từ icon_helper.icon_map (từ icons.json hoặc fallback)
@@ -636,10 +627,11 @@ class IconManagerFrame(ResponsiveGridBase):
                     count += 1
 
             self.load_tree_data()
-            messagebox.showinfo(
-                "Đồng bộ thành công",
-                f"Đã đồng bộ {count} icons mới từ hệ thống vào cơ sở dữ liệu."
-            )
+            if show_message:
+                messagebox.showinfo(
+                    "Đồng bộ thành công",
+                    f"Đã đồng bộ {count} icons mới từ hệ thống vào cơ sở dữ liệu."
+                )
         except Exception as e:
             messagebox.showerror("Lỗi đồng bộ", f"Có lỗi xảy ra: {e}")
 
@@ -688,6 +680,12 @@ class IconManagerFrame(ResponsiveGridBase):
             self.after_cancel(self._search_after_id)
         # Set new timer for debounce (500ms)
         self._search_after_id = self.after(500, self.apply_filters)
+    def _check_and_auto_sync(self):
+        # Auto-sync icons if the database is empty
+        all_icons = self.icon_service.get_all_icons()
+        if not all_icons:
+            self._on_sync(show_message=False)
+
 
     def apply_filters(self):
         self.load_tree_data()
