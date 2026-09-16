@@ -8,6 +8,7 @@ class AppContainer:
     monster_library_service: Any = None
     skill_service: Any = None
     db_skill_service: Any = None
+    db_skill_type_service: Any = None
     db_class_service: Any = None
     db_scan_service: Any = None
     overlay_controller: Any = None

@@ -24,8 +24,8 @@ class SkillService:
 
             cursor.execute(
                 """
-                INSERT INTO skills (name, alias, icon_x, icon_y, icon_w, icon_h, class_id, type)
-                VALUES (:name, :alias, :icon_x, :icon_y, :icon_w, :icon_h, :class_id, :type)
+                INSERT INTO skills (name, alias, icon_x, icon_y, icon_w, icon_h, class_id, skill_type_id)
+                VALUES (:name, :alias, :icon_x, :icon_y, :icon_w, :icon_h, :class_id, :skill_type_id)
                 """,
                 {
                     "name": data.get("name"),
@@ -35,7 +35,7 @@ class SkillService:
                     "icon_w": data.get("icon_w", 0),
                     "icon_h": data.get("icon_h", 0),
                     "class_id": class_id,
-                    "type": data.get("type"),
+                    "skill_type_id": data.get("skill_type_id"),
                 }
             )
             skill_id = cursor.lastrowid
@@ -43,10 +43,10 @@ class SkillService:
             if class_id is not None:
                 cursor.execute(
                     """
-                    INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, source_ref, is_recommended)
+                    INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, skill_type_id, source_ref, is_recommended)
                     VALUES (?, ?, ?, ?, ?)
                     """,
-                    (class_id, skill_id, data.get("type", "Attack"), "user_added", 0)
+                    (class_id, skill_id, data.get("skill_type_id", 1), "user_added", 0)
                 )
 
             conn.commit()
@@ -99,9 +99,9 @@ class SkillService:
             cursor = conn.cursor()
 
             if class_id is not None:
-                query = "SELECT skills.* FROM skills JOIN class_skill_assignments csa ON skills.skill_id = csa.skill_id WHERE 1=1"
+                query = "SELECT skills.*, st.name AS type FROM skills LEFT JOIN skill_types st ON skills.skill_type_id = st.skill_type_id JOIN class_skill_assignments csa ON skills.skill_id = csa.skill_id WHERE 1=1"
             else:
-                query = "SELECT * FROM skills WHERE 1=1"
+                query = "SELECT skills.*, st.name AS type FROM skills LEFT JOIN skill_types st ON skills.skill_type_id = st.skill_type_id WHERE 1=1"
 
             params = []
 
@@ -109,16 +109,10 @@ class SkillService:
                 query += " AND csa.class_id = ?"
                 params.append(class_id)
             if skill_type:
-                if class_id is not None:
-                    query += " AND skills.type = ?"
-                else:
-                    query += " AND type = ?"
+                query += " AND skills.skill_type_id = ?"
                 params.append(skill_type)
             if search_text:
-                if class_id is not None:
-                    query += " AND (skills.name LIKE ? OR skills.alias LIKE ?)"
-                else:
-                    query += " AND (name LIKE ? OR alias LIKE ?)"
+                query += " AND (skills.name LIKE ? OR skills.alias LIKE ?)"
                 params.extend([f"%{search_text}%", f"%{search_text}%"])
 
             if class_id is not None:
@@ -167,16 +161,10 @@ class SkillService:
                 query += " AND csa.class_id = ?"
                 params.append(class_id)
             if skill_type:
-                if class_id is not None:
-                    query += " AND skills.type = ?"
-                else:
-                    query += " AND type = ?"
+                query += " AND skills.skill_type_id = ?"
                 params.append(skill_type)
             if search_text:
-                if class_id is not None:
-                    query += " AND (skills.name LIKE ? OR skills.alias LIKE ?)"
-                else:
-                    query += " AND (name LIKE ? OR alias LIKE ?)"
+                query += " AND (skills.name LIKE ? OR skills.alias LIKE ?)"
                 params.extend([f"%{search_text}%", f"%{search_text}%"])
 
             cursor.execute(query, params)
@@ -219,7 +207,7 @@ class SkillService:
                         icon_w = COALESCE(:icon_w, icon_w),
                         icon_h = COALESCE(:icon_h, icon_h),
                         class_id = :class_id,
-                        type = COALESCE(:type, type)
+                        skill_type_id = COALESCE(:skill_type_id, skill_type_id)
                     WHERE skill_id = :skill_id
                     """,
                     {
@@ -231,7 +219,7 @@ class SkillService:
                         "icon_w": data.get("icon_w"),
                         "icon_h": data.get("icon_h"),
                         "class_id": class_id,
-                        "type": data.get("type"),
+                        "skill_type_id": data.get("skill_type_id"),
                     },
                 )
 
@@ -245,10 +233,10 @@ class SkillService:
                     # Insert or ignore the new class assignment so we don't wipe out other class assignments
                     cursor.execute(
                         """
-                        INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, category, source_ref, is_recommended)
+                        INSERT OR IGNORE INTO class_skill_assignments (class_id, skill_id, skill_type_id, source_ref, is_recommended)
                         VALUES (?, ?, ?, ?, ?)
                         """,
-                        (class_id, skill_id, data.get("type", "Attack"), "user_updated", 0)
+                        (class_id, skill_id, data.get("skill_type_id", 1), "user_updated", 0)
                     )
             else:
                 cursor.execute(
@@ -260,7 +248,7 @@ class SkillService:
                         icon_y = COALESCE(:icon_y, icon_y),
                         icon_w = COALESCE(:icon_w, icon_w),
                         icon_h = COALESCE(:icon_h, icon_h),
-                        type = COALESCE(:type, type)
+                        skill_type_id = COALESCE(:skill_type_id, skill_type_id)
                     WHERE skill_id = :skill_id
                     """,
                     {
@@ -271,7 +259,7 @@ class SkillService:
                         "icon_y": data.get("icon_y"),
                         "icon_w": data.get("icon_w"),
                         "icon_h": data.get("icon_h"),
-                        "type": data.get("type"),
+                        "skill_type_id": data.get("skill_type_id"),
                     },
                 )
             updated = cursor.rowcount > 0

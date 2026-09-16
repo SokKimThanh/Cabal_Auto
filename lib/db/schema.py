@@ -4,6 +4,14 @@ import sqlite3
 def setup_skills_schema(conn: sqlite3.Connection):
     cursor = conn.cursor()
 
+    # Bảng skill_types
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS skill_types (
+            skill_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    """)
+
     # Bảng classes
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS classes (
@@ -28,7 +36,7 @@ def setup_skills_schema(conn: sqlite3.Connection):
             icon_w INTEGER DEFAULT 0,
             icon_h INTEGER DEFAULT 0,
             class_id INTEGER,
-            type TEXT,
+            skill_type_id INTEGER,
             FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
         )
     """)
@@ -67,7 +75,7 @@ def setup_skills_schema(conn: sqlite3.Connection):
         CREATE TABLE IF NOT EXISTS class_skill_assignments (
             class_id INTEGER NOT NULL,
             skill_id INTEGER NOT NULL,
-            category TEXT NOT NULL,
+            skill_type_id INTEGER NOT NULL,
             source_ref TEXT NOT NULL,
             is_recommended INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY (class_id, skill_id),

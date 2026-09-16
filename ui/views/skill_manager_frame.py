@@ -11,6 +11,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app
         self.skills = []
+        self.skill_types = []
 
         # Pagination state
         self.current_page = 1
@@ -23,8 +24,15 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.class_filter_var = tk.StringVar(value="All")
         self.type_filter_var = tk.StringVar(value="All")
         self.classes_map = {}
+        self.types_map = {}
+
+        # Skill Type Editor State
+        self.editing_type_id = None
+        self.type_name_var = tk.StringVar()
 
         self._setup_ui()
+        self._load_classes()
+        self._load_types()
         self._load_skills()
 
     def _setup_ui(self):
@@ -38,11 +46,71 @@ class SkillManagerFrame(ResponsiveGridBase):
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY
         )
-        title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+        title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, anchor="w", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
 
+        # Main Container
+        self.main_container = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
+        self.main_container.pack(fill="both", expand=True)
+
+        self._create_collapsible_panel(
+            self.main_container,
+            "skills",
+            self.app._t("panel_skills_title", default="Danh sách Kỹ năng"),
+            self._build_skills_panel
+        )
+
+        self._create_collapsible_panel(
+            self.main_container,
+            "skill_types",
+            self.app._t("panel_types_title", default="Quản lý Loại Kỹ năng"),
+            self._build_types_panel
+        )
+
+    def _create_collapsible_panel(self, parent_frame, panel_id, title_text, build_func):
+        container = tk.Frame(parent_frame, bg=UIStyle.BG_BASE)
+        container.pack(fill="x", pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8), padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+
+        # Top bar with title and toggle button
+        top_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE)
+        top_bar.pack(fill="x")
+
+        # Content frame (visible by default)
+        content_frame = tk.Frame(container, bg=UIStyle.BG_BASE)
+
+        is_open = True
+
+        def toggle():
+            nonlocal is_open
+            if is_open:
+                content_frame.pack_forget()
+                title_btn.config(text=f"▶ {title_text}")
+                is_open = False
+            else:
+                content_frame.pack(fill="both", expand=True, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+                title_btn.config(text=f"▼ {title_text}")
+                is_open = True
+
+        # Let the entire top bar act as a button
+        font_header = getattr(UIStyle, "FONT_HEADER", ("IBM Plex Sans", 12, "bold"))
+        title_btn = tk.Button(
+            top_bar,
+            text=f"▼ {title_text}",
+            anchor="w",
+            padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8,
+            pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4,
+            command=toggle,
+            **{**UIStyle.get_button_style('secondary'), 'font': font_header}
+        )
+        title_btn.pack(fill="x")
+
+        # Build content inside
+        build_func(content_frame)
+        content_frame.pack(fill="both", expand=True, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+
+    def _build_skills_panel(self, container):
         # Filters Area
-        filter_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        filter_frame.pack(fill="x", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8))
+        filter_frame = tk.Frame(container, bg=UIStyle.BG_BASE)
+        filter_frame.pack(fill="x", pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8))
 
         # Search
         search_lbl = tk.Label(filter_frame, text=self.app._t("lbl_search", default="Tìm kiếm:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
@@ -58,14 +126,11 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.class_combo = ttk.Combobox(filter_frame, textvariable=self.class_filter_var, state="readonly", width=15)
         self.class_combo.pack(side="left", padx=(0, 15))
         self.class_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
-        self._load_classes()
 
         # Type Filter
         type_lbl = tk.Label(filter_frame, text=self.app._t("lbl_type", default="Loại:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY)
         type_lbl.pack(side="left", padx=(0, 5))
-        self.type_combo = ttk.Combobox(filter_frame, textvariable=self.type_filter_var, state="readonly", width=15,
-                                       values=["All", "Attack", "Buff", "Dash", "Blink", "Passive", "GM"])
-        self.type_combo.current(0)
+        self.type_combo = ttk.Combobox(filter_frame, textvariable=self.type_filter_var, state="readonly", width=15)
         self.type_combo.pack(side="left", padx=(0, 15))
         self.type_combo.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
 
@@ -78,8 +143,8 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.page_size_box.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
 
         # Treeview Area
-        table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+        table_frame = tk.Frame(container, bg=UIStyle.BG_BASE)
+        table_frame.pack(fill="both", expand=True)
 
         self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
         self.tree_scroll_y.pack(side="right", fill="y")
@@ -93,7 +158,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             columns=self.columns,
             show="headings",
             selectmode="browse",
-            height=20,
+            height=12,
             yscrollcommand=self.tree_scroll_y.set,
             xscrollcommand=self.tree_scroll_x.set
         )
@@ -120,7 +185,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.tree.pack(fill="both", expand=True)
 
         # Bottom Bar for Actions
-        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)
+        bottom_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE, height=50)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
         add_btn = tk.Button(
@@ -149,40 +214,88 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         ref_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_refresh", default="Làm mới"),
+            text=self.app._t("btn_refresh", default="Refresh"),
             command=self._load_skills,
             **UIStyle.get_button_style("secondary")
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
-        # Pagination controls in bottom bar
+        # Pagination controls
         self.next_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_next", default="Sau"),
+            text="Next",
             command=self._next_page,
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,
             relief="flat"
         )
-        self.next_btn.pack(side="right", padx=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+        self.next_btn.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
-        self.page_lbl = tk.Label(
-            bottom_bar,
-            text="1 / 1",
-            bg=UIStyle.BG_SURFACE,
-            fg=UIStyle.TEXT_PRIMARY
-        )
-        self.page_lbl.pack(side="right", padx=(0, 10))
+        self.page_lbl = tk.Label(bottom_bar, text="1 / 1", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_SECONDARY)
+        self.page_lbl.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
         self.prev_btn = tk.Button(
             bottom_bar,
-            text=self.app._t("btn_prev", default="Trước"),
+            text="Prev",
             command=self._prev_page,
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY,
             relief="flat"
         )
         self.prev_btn.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+
+    def _build_types_panel(self, container):
+        # 50/50 Layout
+        pane = ttk.PanedWindow(container, orient=tk.HORIZONTAL)
+        pane.pack(fill="both", expand=True)
+
+        # Left side: Treeview
+        left_frame = tk.Frame(pane, bg=UIStyle.BG_BASE)
+        pane.add(left_frame, weight=1)
+
+        # Right side: Form
+        right_frame = tk.Frame(pane, bg=UIStyle.BG_BASE, padx=UIStyle.SPACE_LG if hasattr(UIStyle, "SPACE_LG") else 16)
+        pane.add(right_frame, weight=1)
+
+        # Build Left Side
+        self.type_tree_scroll_y = ttk.Scrollbar(left_frame, orient=tk.VERTICAL)
+        self.type_tree_scroll_y.pack(side="right", fill="y")
+
+        self.type_tree = ttk.Treeview(
+            left_frame,
+            columns=("ID", "Name"),
+            show="headings",
+            selectmode="browse",
+            height=6,
+            yscrollcommand=self.type_tree_scroll_y.set
+        )
+        self.type_tree_scroll_y.config(command=self.type_tree.yview)
+
+        self.type_tree.heading("ID", text="ID")
+        self.type_tree.column("ID", width=50, anchor="center")
+        self.type_tree.heading("Name", text=self.app._t("col_skill_type_name", default="Tên Loại"))
+        self.type_tree.column("Name", width=200, anchor="w")
+        self.type_tree.pack(fill="both", expand=True)
+        self.type_tree.bind("<<TreeviewSelect>>", self._on_type_selected)
+
+        # Build Right Side
+        lbl = tk.Label(right_frame, text=self.app._t("lbl_type_details", default="Chi tiết Loại Kỹ năng"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY, font=("IBM Plex Sans", 10, "bold"))
+        lbl.pack(anchor="w", pady=(0, 10))
+
+        form_frame = tk.Frame(right_frame, bg=UIStyle.BG_BASE)
+        form_frame.pack(fill="x")
+
+        tk.Label(form_frame, text=self.app._t("lbl_type_name", default="Tên Loại:"), bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="w", pady=5)
+        self.type_entry = ttk.Entry(form_frame, textvariable=self.type_name_var, width=30)
+        self.type_entry.grid(row=0, column=1, sticky="w", pady=5, padx=5)
+
+        action_frame = tk.Frame(right_frame, bg=UIStyle.BG_BASE)
+        action_frame.pack(fill="x", pady=15)
+
+        tk.Button(action_frame, text=self.app._t("btn_save", default="Lưu"), command=self._save_type, **UIStyle.get_button_style("primary")).pack(side="left", padx=(0, 10))
+        tk.Button(action_frame, text=self.app._t("btn_cancel", default="Hủy"), command=self._clear_type_form, **UIStyle.get_button_style("secondary")).pack(side="left", padx=(0, 10))
+        self.del_type_btn = tk.Button(action_frame, text=self.app._t("btn_delete", default="Xóa"), command=self._delete_type, **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"})
+        self.del_type_btn.pack(side="left")
 
     def _load_classes(self):
         try:
@@ -202,6 +315,91 @@ class SkillManagerFrame(ResponsiveGridBase):
             self.class_combo['values'] = ["All"]
             self.class_combo.current(0)
 
+    def _load_types(self):
+        try:
+            self.type_tree.delete(*self.type_tree.get_children())
+            if hasattr(self.app, "db_skill_type_service"):
+                svc = self.app.db_skill_type_service
+                types = svc.get_all_skill_types()
+                self.skill_types = types
+                self.types_map = {str(t.get("skill_type_id")): t.get("name") for t in types}
+
+                # Update Combo
+                values = ["All"] + [f"{t.get('skill_type_id')} - {t.get('name')}" for t in types]
+                self.type_combo['values'] = values
+                if values:
+                    self.type_combo.current(0)
+
+                # Update Tree
+                for t in types:
+                    self.type_tree.insert("", "end", iid=str(t.get("skill_type_id")), values=(t.get("skill_type_id"), t.get("name")))
+            else:
+                self.type_combo['values'] = ["All"]
+                self.type_combo.current(0)
+        except Exception as e:
+            print(f"Error loading types: {e}")
+            self.type_combo['values'] = ["All"]
+            self.type_combo.current(0)
+
+    def _on_type_selected(self, event):
+        selected = self.type_tree.selection()
+        if not selected:
+            return
+        item_id = selected[0]
+        self.editing_type_id = int(item_id)
+
+        # Find type name
+        for t in self.skill_types:
+            if str(t.get("skill_type_id")) == item_id:
+                self.type_name_var.set(t.get("name", ""))
+                break
+
+    def _clear_type_form(self):
+        self.editing_type_id = None
+        self.type_name_var.set("")
+        self.type_tree.selection_remove(self.type_tree.selection())
+
+    def _save_type(self):
+        name = self.type_name_var.get().strip()
+        if not name:
+            messagebox.showwarning("Warning", "Tên loại không được để trống!")
+            return
+
+        if hasattr(self.app, "db_skill_type_service"):
+            svc = self.app.db_skill_type_service
+            if self.editing_type_id:
+                # Update
+                if svc.update_skill_type(self.editing_type_id, name):
+                    self._load_types()
+                    self._clear_type_form()
+                    self._load_skills() # Update display text
+                else:
+                    messagebox.showerror("Error", "Lỗi khi cập nhật!")
+            else:
+                # Create
+                new_id = svc.create_skill_type(name)
+                if new_id:
+                    self._load_types()
+                    self._clear_type_form()
+                else:
+                    messagebox.showerror("Error", "Lỗi khi thêm mới!")
+
+    def _delete_type(self):
+        if not self.editing_type_id:
+            messagebox.showwarning("Warning", "Chọn một loại để xóa!")
+            return
+
+        if messagebox.askyesno("Confirm", "Bạn có chắc muốn xóa loại kỹ năng này?"):
+            if hasattr(self.app, "db_skill_type_service"):
+                svc = self.app.db_skill_type_service
+                if svc.delete_skill_type(self.editing_type_id):
+                    self._load_types()
+                    self._clear_type_form()
+                    self._load_skills()
+                else:
+                    messagebox.showerror("Error", "Lỗi khi xóa! Có thể loại này đang được sử dụng.")
+
+
     def _on_search_changed(self, event=None):
         if hasattr(self, "_search_timer"):
             self.after_cancel(self._search_timer)
@@ -212,31 +410,25 @@ class SkillManagerFrame(ResponsiveGridBase):
         self._load_skills()
 
     def _on_clear_search(self, event=None):
-        self.search_entry.delete(0, tk.END)
-        self.current_page = 1
-        self._load_skills()
+        self.search_var.set("")
+        self._apply_search()
 
     def _on_filter_changed(self):
-        try:
-            self.items_per_page = int(self.page_size_var.get())
-        except ValueError:
-            self.items_per_page = 25
         self.current_page = 1
         self._load_skills()
-
-    def _prev_page(self):
-        if self.current_page > 1:
-            self.current_page -= 1
-            self._load_skills()
 
     def _next_page(self):
         if self.current_page < self.total_pages:
             self.current_page += 1
             self._load_skills()
 
+    def _prev_page(self):
+        if self.current_page > 1:
+            self.current_page -= 1
+            self._load_skills()
+
     def _update_pagination_ui(self):
         self.page_lbl.config(text=f"{self.current_page} / {max(1, self.total_pages)}")
-
         if self.current_page <= 1:
             self.prev_btn.config(state="disabled")
         else:
@@ -256,7 +448,12 @@ class SkillManagerFrame(ResponsiveGridBase):
                 search_text = self.search_var.get().strip() or None
 
                 type_val = self.type_filter_var.get()
-                skill_type = None if type_val == "All" or not type_val else type_val
+                skill_type = None
+                if type_val and type_val != "All":
+                    try:
+                        skill_type = int(type_val.split(" - ")[0])
+                    except:
+                        pass
 
                 class_val = self.class_filter_var.get()
                 class_id = None
@@ -266,6 +463,11 @@ class SkillManagerFrame(ResponsiveGridBase):
                     except:
                         pass
 
+                try:
+                    self.items_per_page = int(self.page_size_var.get())
+                except:
+                    self.items_per_page = 25
+
                 offset = (self.current_page - 1) * self.items_per_page
 
                 self.total_items = svc.get_total_skills_count(
@@ -273,7 +475,6 @@ class SkillManagerFrame(ResponsiveGridBase):
                     skill_type=skill_type,
                     search_text=search_text
                 )
-
                 self.total_pages = math.ceil(self.total_items / self.items_per_page) if self.total_items > 0 else 1
                 if self.current_page > self.total_pages:
                     self.current_page = self.total_pages
@@ -293,6 +494,7 @@ class SkillManagerFrame(ResponsiveGridBase):
 
             if not isinstance(self.skills, list):
                 self.skills = []
+
         except Exception as e:
             self.skills = []
             self.total_items = 0
@@ -300,9 +502,8 @@ class SkillManagerFrame(ResponsiveGridBase):
             print(f"Error loading skills: {e}")
 
         self._update_pagination_ui()
-        self._refresh_tree()
 
-    def _refresh_tree(self):
+        # Update treeview
         for item in self.tree.get_children():
             self.tree.delete(item)
 
@@ -311,7 +512,7 @@ class SkillManagerFrame(ResponsiveGridBase):
                 values = (
                     s.get("skill_id", ""),
                     s.get("name", "Unknown"),
-                    s.get("type", ""),
+                    s.get("type", str(s.get("skill_type_id", ""))),
                     s.get("class_id", ""),
                     s.get("alias", "")
                 )
@@ -320,30 +521,30 @@ class SkillManagerFrame(ResponsiveGridBase):
     def _add_skill(self):
         from ui.dialogs.skill_edit_dialog import SkillEditDialog
 
-        def _on_save(data: dict):
+        def on_save(data):
             if hasattr(self.app, "db_skill_service"):
                 svc = self.app.db_skill_service
                 success_id = svc.create_skill(data)
                 if success_id:
-                    messagebox.showinfo(
-                        self.app._t("success_title", default="Thành công"),
-                        self.app._t("msg_add_skill_success", default="Thêm kỹ năng thành công."),
-                        parent=self
-                    )
+                    if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                        self.app.notification_widget.show(
+                            self.app._t("msg_add_skill_success", default="Thêm kỹ năng thành công."),
+                            type="success"
+                        )
                     self._load_skills()
                 else:
-                    messagebox.showerror(
-                        self.app._t("error_title", default="Lỗi"),
-                        self.app._t("err_add_skill", default="Không thể thêm kỹ năng."),
-                        parent=self
-                    )
+                    if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                        self.app.notification_widget.show(
+                            self.app._t("err_add_skill", default="Không thể thêm kỹ năng."),
+                            type="error"
+                        )
 
-        SkillEditDialog(
+        dialog = SkillEditDialog(
             parent=self.winfo_toplevel(),
             app=self.app,
             title=self.app._t("title_add_skill", default="Thêm Kỹ năng"),
             skill_data=None,
-            on_save=_on_save
+            on_save=on_save
         )
 
     def _edit_skill(self):
@@ -351,11 +552,11 @@ class SkillManagerFrame(ResponsiveGridBase):
 
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning(
-                self.app._t("warn_title", default="Cảnh báo"),
-                self.app._t("warn_no_sel_skill", default="Vui lòng chọn kỹ năng để sửa"),
-                parent=self
-            )
+            if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                self.app.notification_widget.show(
+                    self.app._t("warn_no_sel_skill", default="Vui lòng chọn kỹ năng để sửa"),
+                    type="warning"
+                )
             return
 
         s_id = selected[0]
@@ -366,45 +567,44 @@ class SkillManagerFrame(ResponsiveGridBase):
                 break
 
         if target_skill:
-            def _on_save(data: dict):
+            def on_save(data):
                 if hasattr(self.app, "db_skill_service"):
                     svc = self.app.db_skill_service
                     skill_id = data.get("skill_id")
                     if skill_id is None:
-                        # Fallback for unexpected missing id
                         return
 
                     success = svc.update_skill(skill_id, data)
                     if success:
-                        messagebox.showinfo(
-                            self.app._t("success_title", default="Thành công"),
-                            self.app._t("msg_edit_skill_success", default="Cập nhật kỹ năng thành công."),
-                            parent=self
-                        )
+                        if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                            self.app.notification_widget.show(
+                                self.app._t("msg_edit_skill_success", default="Cập nhật kỹ năng thành công."),
+                                type="success"
+                            )
                         self._load_skills()
                     else:
-                        messagebox.showerror(
-                            self.app._t("error_title", default="Lỗi"),
-                            self.app._t("err_edit_skill", default="Không thể cập nhật kỹ năng."),
-                            parent=self
-                        )
+                        if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                            self.app.notification_widget.show(
+                                self.app._t("err_edit_skill", default="Không thể cập nhật kỹ năng."),
+                                type="error"
+                            )
 
-            SkillEditDialog(
+            dialog = SkillEditDialog(
                 parent=self.winfo_toplevel(),
                 app=self.app,
                 title=self.app._t("title_edit_skill", default="Sửa Kỹ năng"),
                 skill_data=target_skill,
-                on_save=_on_save
+                on_save=on_save
             )
 
     def _delete_skill(self):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning(
-                self.app._t("warn_title", default="Cảnh báo"),
-                self.app._t("warn_no_sel_skill", default="Vui lòng chọn kỹ năng để xóa"),
-                parent=self
-            )
+            if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                self.app.notification_widget.show(
+                    self.app._t("warn_no_sel_skill", default="Vui lòng chọn kỹ năng để xóa"),
+                    type="warning"
+                )
             return
 
         s_id = selected[0]
@@ -417,11 +617,10 @@ class SkillManagerFrame(ResponsiveGridBase):
         if target_skill:
             name = target_skill.get('name', 'Unknown')
             confirm = messagebox.askyesno(
-                self.app._t("confirm_del_title", default="Xác nhận xóa"),
-                self.app._t("confirm_del_msg", default=f"Bạn có chắc muốn xóa kỹ năng '{name}' không?"),
-                parent=self
+                self.app._t("title_confirm_del", default="Xác nhận xóa"),
+                self.app._t("msg_confirm_del_skill", default="Bạn có chắc chắn muốn xóa kỹ năng '{0}'?").format(name),
+                parent=self.winfo_toplevel()
             )
-
             if confirm:
                 if hasattr(self.app, "db_skill_service"):
                     svc = self.app.db_skill_service
@@ -429,18 +628,18 @@ class SkillManagerFrame(ResponsiveGridBase):
                     if skill_id is not None:
                         success = svc.delete_skill(skill_id)
                         if success:
-                            messagebox.showinfo(
-                                self.app._t("success_title", default="Thành công"),
-                                self.app._t("msg_del_skill_success", default="Xóa kỹ năng thành công."),
-                                parent=self
-                            )
+                            if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                                self.app.notification_widget.show(
+                                    self.app._t("msg_del_skill_success", default="Xóa kỹ năng thành công."),
+                                    type="success"
+                                )
                             self._load_skills()
                         else:
-                            messagebox.showerror(
-                                self.app._t("error_title", default="Lỗi"),
-                                self.app._t("err_del_skill", default="Không thể xóa kỹ năng."),
-                                parent=self
-                            )
+                            if hasattr(self.app, "notification_widget") and self.app.notification_widget:
+                                self.app.notification_widget.show(
+                                    self.app._t("err_del_skill", default="Không thể xóa kỹ năng."),
+                                    type="error"
+                                )
 
     def on_view_shown(self):
         self._load_skills()
