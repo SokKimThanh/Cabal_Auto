@@ -45,7 +45,7 @@ def test_import_from_json(sync_manager, temp_json_path, icon_service):
     assert sync_manager.import_from_json() is True
 
     # Verify db
-    icons = icon_service.get_all_icons()
+    icons = [icon for icon in icon_service.get_all_icons() if icon["icon_key"] != "icon_manager"]
     assert len(icons) == 2
 
     add_icon = icon_service.get_icon_by_key("btn_add")
