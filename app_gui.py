@@ -27,7 +27,6 @@ from lib.ui.dialog_service import DialogService
 from pathlib import Path
 
 # Add parent directory to path for lib imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 try:
