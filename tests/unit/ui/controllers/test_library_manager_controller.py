@@ -26,7 +26,7 @@ def test_duplicate_window_prevention(mock_window_class):
     app.library_manager_win = None
     app.hunt_cfg = {}
     app.monsters = []
-    app.skills = []
+    app.skill_service = type("obj", (object,), {"get_all_skills": lambda self=None: [], "save_skills": lambda self, x: None})()
     app.lang = "vi"
 
     controller = LibraryManagerController(app)

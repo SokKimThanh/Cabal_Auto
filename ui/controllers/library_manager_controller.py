@@ -51,12 +51,12 @@ class LibraryManagerController:
                     if hasattr(self.app, "skill_service") and hasattr(
                         self.app.skill_service, "_normalize_library_items"
                     ):
-                        self.app.skills = (
+                        self.app.skill_service.save_skills(
                             self.app.skill_service._normalize_library_items(skills)
                         )
                     else:
-                        self.app.skills = skills
-                    save_skill_library(self.app.skills)
+                        self.app.skill_service.save_skills(skills)
+                    save_skill_library(self.app.skill_service.get_all_skills())
                     if hasattr(self.app, "skill_config_view"):
                         self.app.skill_config_view._refresh_skill_slots_options()
 
@@ -77,7 +77,7 @@ class LibraryManagerController:
                 parent=self.app,
                 hunt_cfg=self.app.state_controller.hunt_cfg,
                 monsters=self.app.monsters,
-                skills=self.app.skills,
+                skills=self.app.skill_service.get_all_skills(),
                 lang=getattr(self.app, "lang", "vi"),
                 on_close_callback=on_close_callback,
             )
