@@ -977,7 +977,14 @@ CREATE TABLE icons (
             description TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-INSERT INTO icons VALUES('icon_manager','Icon Manager',NULL,'📁',NULL,'ui','Icon for the Icon Manager sidebar button','2026-09-15 13:20:48');
+INSERT INTO icons VALUES('icon_manager','Icon Manager',NULL,'📁','btn_icon_manager','ui','Icon for the Icon Manager sidebar button','2026-09-15 13:20:48');
+INSERT INTO icons VALUES('build_manager','Build Manager',NULL,'🛠️','btn_build_manager','ui','Icon for the Build Manager sidebar button','2026-09-16 18:55:54');
+INSERT INTO icons VALUES('class_manager','Class Manager',NULL,'🛡️','btn_class_manager','ui','Icon for the Class Manager sidebar button','2026-09-16 18:56:05');
+INSERT INTO icons VALUES('scan_history','Scan History',NULL,'🕒','btn_scan_history','ui',NULL,'2026-09-16 18:56:39');
+INSERT INTO icons VALUES('logs','Activity Logs',NULL,'📋','sidebar_activity_logs','ui',NULL,'2026-09-16 18:56:51');
+INSERT INTO icons VALUES('stats','Stats',NULL,'📊','tab_stats','ui',NULL,'2026-09-16 18:57:02');
+INSERT INTO icons VALUES('language_manager','Language Manager',NULL,'🌐','btn_language_manager','ui',NULL,'2026-09-16 18:57:13');
+INSERT INTO icons VALUES('help','Support',NULL,'❓','sidebar_support','ui',NULL,'2026-09-16 18:57:25');
 CREATE TABLE icon_usages (
             usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
             icon_key TEXT NOT NULL,
