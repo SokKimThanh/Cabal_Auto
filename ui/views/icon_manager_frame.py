@@ -53,6 +53,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._search_after_id = None
         self._categories_loaded = False
         self._is_dirty = False
+        self._last_selected_item_id = None
 
         self._setup_ui()
         self._check_and_auto_sync()
@@ -1262,8 +1263,7 @@ class IconManagerFrame(ResponsiveGridBase):
             msg = self.i18n_t("msg_unsaved_changes", default="Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn bỏ qua các thay đổi này không?")
             if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), msg):
                 # Chặn việc chuyển node, chọn lại node cũ
-                current_icon_key = self.var_icon_key.get().strip()
-                if current_icon_key:
+                if getattr(self, '_last_selected_item_id', None) and self.tree.exists(self._last_selected_item_id):
                     # Ngăn vòng lặp vô hạn bằng cách tạm thời unbind
                     self.tree.unbind("<<TreeviewSelect>>")
 
@@ -1271,14 +1271,8 @@ class IconManagerFrame(ResponsiveGridBase):
                     for item in self.tree.selection():
                         self.tree.selection_remove(item)
 
-                    # Tìm và chọn lại node cũ trong tree (nó có thể nằm trong 1 category)
-                    for child in self.tree.get_children():
-                        if child.startswith('cat_'):
-                            for sub_child in self.tree.get_children(child):
-                                if sub_child == current_icon_key:
-                                    self.tree.selection_set(sub_child)
-                                    self.tree.see(sub_child)
-                                    break
+                    self.tree.selection_set(self._last_selected_item_id)
+                    self.tree.see(self._last_selected_item_id)
 
                     # Bind lại
                     self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
@@ -1296,6 +1290,8 @@ class IconManagerFrame(ResponsiveGridBase):
             return
 
         item_id = selection[0]
+        self._last_selected_item_id = item_id
+
         if item_id.startswith('cat_'):
             return
 
