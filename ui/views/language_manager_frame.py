@@ -5,6 +5,8 @@ from lib.ui.controllers.language_manager_controller import LanguageManagerContro
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui.dialog_service import DialogService
 import threading
+from ui.helpers.tooltip import attach_i18n_tooltip
+
 
 class LanguageManagerFrame(tk.Frame):
     def __init__(self, parent, app, **kwargs):
@@ -84,7 +86,7 @@ class LanguageManagerFrame(tk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
     def _build_bottom_section(self):
-        bottom_frame = tk.LabelFrame(self, text=self._t("lang_mgr_edit_form", default="Edit Translation"), bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
+        bottom_frame = tk.LabelFrame(self, text=self._t("lang_mgr_edit_form", default="Add / Edit Translation"), bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
         bottom_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
 
         bottom_frame.grid_rowconfigure(2, weight=1)
@@ -92,10 +94,13 @@ class LanguageManagerFrame(tk.Frame):
         bottom_frame.grid_columnconfigure(3, weight=1)
 
         # Row 0: Namespace & Key
-        ttk.Label(bottom_frame, text=self._t("lang_mgr_namespace", default="Namespace:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ns_label = ttk.Label(bottom_frame, text=self._t("lang_mgr_namespace", default="Namespace:"))
+        ns_label.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        attach_i18n_tooltip(ns_label, key="tip_lang_mgr_namespace", ns="_global", lang_provider=lambda: getattr(self.app, "lang", "vi"))
         self.form_ns_var = tk.StringVar()
         self.form_ns_entry = ttk.Combobox(bottom_frame, textvariable=self.form_ns_var)
         self.form_ns_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        attach_i18n_tooltip(self.form_ns_entry, key="tip_lang_mgr_namespace", ns="_global", lang_provider=lambda: getattr(self.app, "lang", "vi"))
 
         ttk.Label(bottom_frame, text=self._t("lang_mgr_key", default="Key:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.form_key_var = tk.StringVar()
@@ -117,11 +122,12 @@ class LanguageManagerFrame(tk.Frame):
         btn_frame = tk.Frame(bottom_frame, bg=UIStyle.BG_ELEVATED)
         btn_frame.grid(row=3, column=0, columnspan=4, sticky="e", padx=5, pady=10)
 
-        ttk.Button(btn_frame, text=self._t("lang_mgr_clear", default="Clear"), command=self.clear_form).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=self._t("lang_mgr_add_new", default="Add New (Clear)"), command=self.clear_form).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=self._t("lang_mgr_delete", default="Delete Key"), command=self.delete_key).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=self._t("lang_mgr_save", default="Save"), command=self.save_translation).pack(side=tk.LEFT, padx=5)
 
         self.is_editing_existing = False
+        self.form_key_entry.focus_set()
 
     def refresh_data(self):
         """Reload data from DB and update UI."""
@@ -197,13 +203,22 @@ class LanguageManagerFrame(tk.Frame):
         self.is_editing_existing = True
 
     def clear_form(self):
-        self.form_ns_var.set("global")
+        self.form_ns_var.set("_global")
         self.form_key_var.set("")
         self.text_en.delete("1.0", tk.END)
         self.text_vi.delete("1.0", tk.END)
         self.form_key_entry.configure(state="normal")
         self.tree.selection_remove(self.tree.selection())
         self.is_editing_existing = False
+        self.form_key_entry.focus_set()
+
+        # Visual feedback for users to know they can start typing
+        original_bg = self.form_key_entry.cget('background')
+        self.form_key_entry.configure(background='#fff3cd') # Light yellow to highlight
+
+        # Reset background after 1 second
+        self.after(1000, lambda: self.form_key_entry.configure(background=original_bg))
+
 
     def save_translation(self):
         ns = self.form_ns_var.get().strip()
