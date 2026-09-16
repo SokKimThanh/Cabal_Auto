@@ -1,214 +1,34 @@
 {
-    "add": [
-        "add",
-        "➕"
-    ],
-    "accept": [
-        "accept",
-        "✔️"
-    ],
-    "locked": [
-        "locked",
-        "🔒"
-    ],
-    "edit": [
-        "edit",
-        "✏️"
-    ],
-    "delete": [
-        "delete",
-        "🗑️"
-    ],
-    "save": [
-        "save",
-        "💾"
-    ],
-    "cancel": [
-        "cancel",
-        "✖"
-    ],
-    "folder": [
-        "folder",
+    "icon_manager": [
+        "icon",
         "📁"
     ],
-    "capture": [
-        "capture",
-        "📸"
+    "build_manager": [
+        null,
+        "🛠️"
     ],
-    "search": [
-        "search",
-        "🔍"
-    ],
-    "refresh": [
-        "refresh",
-        "🔄"
-    ],
-    "start": [
-        "start",
-        "▶️"
-    ],
-    "stop": [
-        "stop",
-        "⏹️"
-    ],
-    "pause": [
-        "pause",
-        "⏸️"
-    ],
-    "minimize": [
-        "minimize",
-        "➖"
-    ],
-    "support": [
-        "support",
-        "🧙"
-    ],
-    "next": [
-        "next",
-        "→"
-    ],
-    "previous": [
-        "previous",
-        "←"
-    ],
-    "preview": [
-        "preview",
-        "👁️"
-    ],
-    "monster": [
-        "monster",
-        "👹"
-    ],
-    "skill": [
-        "skill",
-        "⚔️"
-    ],
-    "template": [
-        "template",
-        "🖼️"
-    ],
-    "list": [
-        "list",
-        "🗂️"
-    ],
-    "info": [
-        "info",
-        "📋"
-    ],
-    "time": [
-        "time",
-        "⏱️"
-    ],
-    "hp": [
-        "hp",
-        "❤️"
-    ],
-    "damage": [
-        "damage",
-        "⚔️"
-    ],
-    "priority": [
-        "priority",
-        "🎯"
-    ],
-    "question": [
-        "question_mark",
-        "❓"
-    ],
-    "up": [
-        "up",
-        "↑"
-    ],
-    "id": [
-        "id",
-        "🔑"
-    ],
-    "speed": [
-        "speed",
-        "⚡"
-    ],
-    "shield": [
-        "shield",
+    "class_manager": [
+        null,
         "🛡️"
     ],
-    "aim": [
-        "aim",
-        "🎯"
+    "scan_history": [
+        null,
+        "🕒"
     ],
-    "dungeon": [
-        "dungeon",
-        "🏰"
+    "logs": [
+        null,
+        "📋"
     ],
-    "boss": [
-        "boss",
-        "👑"
+    "stats": [
+        null,
+        "📊"
     ],
-    "down": [
-        "down",
-        "↓"
+    "language_manager": [
+        null,
+        "🌐"
     ],
-    "browse": [
-        "folder",
-        "📂"
-    ],
-    "clear": [
-        "delete",
-        "🗑️"
-    ],
-    "close": [
-        "cancel",
-        "✖"
-    ],
-    "new": [
-        "add",
-        "➕"
-    ],
-    "calculate": [
-        "info",
-        "🔢"
-    ],
-    "apply": [
-        "save",
-        "✔️"
-    ],
-    "test": [
-        "question_mark",
-        "🧪"
-    ],
-    "use": [
-        "start",
-        "📌"
-    ],
-    "library": [
-        "list",
-        "📚"
-    ],
-    "check": [
-        "check",
-        "✓"
-    ],
-    "warning": [
-        "warning",
-        "⚠️"
-    ],
-    "settings": [
-        "setting",
-        "⚙️"
-    ],
-    "hotkey": [
-        "hotkey",
-        "⌨️"
-    ],
-    "forbidden": [
-        "prohibition",
-        "🚫"
-    ],
-    "on-button": [
-        "on-button",
-        "🟢"
-    ],
-    "off-button": [
-        "off-button",
-        "🔴"
+    "help": [
+        null,
+        "❓"
     ]
 }

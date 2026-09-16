@@ -84,7 +84,10 @@ class IconSyncManager:
                 fallback_emoji = icon.get("fallback_emoji", "❓")
 
                 # Hàm ui/helpers/icon_helper.py chỉ dùng phần stem của filepath để nối .png/.ico
-                # Ví dụ filepath="btn_add" -> btn_add.png
+                # Ví dụ filepath="btn_add.png" -> btn_add
+                if filepath:
+                    filepath = Path(filepath).stem
+
                 export_data[icon_key] = [filepath, fallback_emoji]
 
             # Tạo thư mục cha nếu chưa có
@@ -92,6 +95,14 @@ class IconSyncManager:
 
             with open(self.json_path, "w", encoding="utf-8") as f:
                 json.dump(export_data, f, indent=4, ensure_ascii=False)
+
+            try:
+                from ui.helpers.icon_helper import get_icon_helper
+                helper = get_icon_helper()
+                if hasattr(helper, 'reload_icon_map'):
+                    helper.reload_icon_map()
+            except Exception as e:
+                logger.error(f"Failed to reload icon map: {e}")
 
             return True
         except Exception as e:

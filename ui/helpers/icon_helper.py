@@ -67,6 +67,10 @@ class IconHelper:
 
         # Load icon mappings from JSON or use fallback
         self.icon_map = {}
+        self.reload_icon_map()
+
+    def reload_icon_map(self):
+        """Reload icon mappings from icons.json file."""
         icons_json_path = Path(__file__).parent / "icons.json"
 
         try:
