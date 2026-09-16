@@ -4,6 +4,14 @@ import sqlite3
 def setup_skills_schema(conn: sqlite3.Connection):
     cursor = conn.cursor()
 
+    # Bảng skill_types
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS skill_types (
+            skill_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    """)
+
     # Bảng classes
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS classes (
@@ -28,7 +36,7 @@ def setup_skills_schema(conn: sqlite3.Connection):
             icon_w INTEGER DEFAULT 0,
             icon_h INTEGER DEFAULT 0,
             class_id INTEGER,
-            type TEXT,
+            skill_type_id INTEGER,
             FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
         )
     """)
@@ -67,7 +75,7 @@ def setup_skills_schema(conn: sqlite3.Connection):
         CREATE TABLE IF NOT EXISTS class_skill_assignments (
             class_id INTEGER NOT NULL,
             skill_id INTEGER NOT NULL,
-            category TEXT NOT NULL,
+            skill_type_id INTEGER NOT NULL,
             source_ref TEXT NOT NULL,
             is_recommended INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY (class_id, skill_id),
@@ -202,9 +210,27 @@ def setup_icons_schema(conn: sqlite3.Connection):
 
     # Seed data for icon_manager specifically to handle Self-Management Paradox
     cursor.execute("""
-        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, category, description)
-        VALUES ('icon_manager', 'Icon Manager', '📁', 'ui', 'Icon for the Icon Manager sidebar button')
+        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, tooltip_translation_key, category, description)
+        VALUES ('icon_manager', 'Icon Manager', '📁', 'btn_icon_manager', 'ui', 'Icon for the Icon Manager sidebar button')
     """)
+    cursor.execute("""
+        UPDATE icons SET tooltip_translation_key = 'btn_icon_manager' WHERE icon_key = 'icon_manager'
+    """)
+
+    # Seed data for other sidebar buttons
+    sidebar_icons = [
+        ('build_manager', 'Build Manager', '🛠️', 'btn_build_manager', 'ui', 'Icon for the Build Manager sidebar button'),
+        ('class_manager', 'Class Manager', '🛡️', 'btn_class_manager', 'ui', 'Icon for the Class Manager sidebar button'),
+        ('scan_history', 'Scan History', '🕒', 'btn_scan_history', 'ui', 'Icon for the Scan History sidebar button'),
+        ('logs', 'Activity Logs', '📋', 'sidebar_activity_logs', 'ui', 'Icon for the Activity Logs sidebar button'),
+        ('stats', 'Stats', '📊', 'tab_stats', 'ui', 'Icon for the Stats sidebar button'),
+        ('language_manager', 'Language Manager', '🌐', 'btn_language_manager', 'ui', 'Icon for the Language Manager sidebar button'),
+        ('help', 'Support', '❓', 'sidebar_support', 'ui', 'Icon for the Help sidebar button')
+    ]
+    cursor.executemany("""
+        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, tooltip_translation_key, category, description)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, sidebar_icons)
 
     # We shouldn't use INSERT OR IGNORE for usages if there's no unique constraint,
     # so we first check if it exists.

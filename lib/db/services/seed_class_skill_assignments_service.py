@@ -157,12 +157,14 @@ class SeedClassSkillAssignmentsService:
                     continue
 
                 category = row.get("category", "")
+                type_map = {'attack': 1, 'combo': 1, 'buff': 2, 'passive': 3, 'dash': 4, 'blink': 5, 'bm2': 6, 'debuff': 7}
+                skill_type_id = type_map.get(str(category).lower(), 1)
                 source_ref = row.get("evidence_location", "")
 
                 is_recommended = self._extract_recommendation(row, source_ref)
 
                 records_to_insert.append(
-                    (class_id, skill_id, category, source_ref, is_recommended)
+                    (class_id, skill_id, skill_type_id, source_ref, is_recommended)
                 )
 
             if records_to_insert:
@@ -170,7 +172,7 @@ class SeedClassSkillAssignmentsService:
                 cursor.executemany(
                     """
                     INSERT OR REPLACE INTO class_skill_assignments
-                    (class_id, skill_id, category, source_ref, is_recommended)
+                    (class_id, skill_id, skill_type_id, source_ref, is_recommended)
                     VALUES (?, ?, ?, ?, ?)
                     """,
                     records_to_insert,

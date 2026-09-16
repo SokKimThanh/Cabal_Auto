@@ -179,6 +179,8 @@ def create_icon_button(
     icon_name: str,
     command: Optional[Callable] = None,
     text: Optional[str] = None,
+    text_key: Optional[str] = None,
+    text_ns: Optional[str] = None,
     button_type: str = "green_light",
     icon_size: int = 16,
     button_size: Optional[int] = None,
@@ -257,6 +259,15 @@ def create_icon_button(
     """
     # Auto-detect state from button state and adjust icon accordingly
     # Priority: explicit state > tkinter state > normal
+
+    # Process text_key to text
+    if text_key:
+        text = i18n_t(text_key, ns=text_ns)
+
+    # Tooltip Priority Rule: Icon Tooltip > Button Tooltip
+    icon_tooltip_key = icon_helper.get_icon_tooltip_key(icon_name)
+    resolved_tooltip_key = icon_tooltip_key or tooltip_key
+
     actual_state = state
 
     # If state is 'disabled' or button will be disabled, show forbidden icon
@@ -482,13 +493,22 @@ def create_icon_button(
         button.bind("<Enter>", _auto_hover_enter, add="+")
         button.bind("<Leave>", _auto_hover_leave, add="+")
 
+
+    # Store metadata for future LocalizationBinder/PropertyResolver
+    if text_key:
+        button._text_key = text_key
+        button._text_ns = text_ns
+    if resolved_tooltip_key:
+        button._tooltip_key = resolved_tooltip_key
+        button._tooltip_ns = tooltip_ns
+
     # Attach tooltip
     if tooltip_text:
         # Direct tooltip text
         _attach_simple_tooltip(button, tooltip_text)
-    elif tooltip_key:
+    elif resolved_tooltip_key:
         # i18n tooltip
-        attach_i18n_tooltip(button, tooltip_key, ns=tooltip_ns, lang_provider=get_lang)
+        attach_i18n_tooltip(button, resolved_tooltip_key, ns=tooltip_ns, lang_provider=get_lang)
 
     # Override invoke to ensure programmatically invoking button in tests triggers command
     if command:
@@ -698,6 +718,8 @@ def create_icon_label(
     parent: Any,
     icon_name: str,
     text: str = "",
+    text_key: Optional[str] = None,
+    text_ns: Optional[str] = None,
     icon_fallback: str = "❓",
     icon_size: int = 16,
     tooltip_text: Optional[str] = None,
@@ -746,6 +768,15 @@ def create_icon_label(
             fg='#0D47A1'
         )
     """
+
+    # Process text_key to text
+    if text_key:
+        text = i18n_t(text_key, ns=text_ns)
+
+    # Tooltip Priority Rule: Icon Tooltip > Button Tooltip
+    icon_tooltip_key = icon_helper.get_icon_tooltip_key(icon_name)
+    resolved_tooltip_key = icon_tooltip_key or tooltip_key
+
     # Get default styles
     try:
         from lib.ui_style_v2 import UIStyleV2 as UI
@@ -805,13 +836,23 @@ def create_icon_label(
             label_text = icon
         label = tk.Label(parent, text=label_text, **label_config)
 
+
+    # Store metadata for future LocalizationBinder/PropertyResolver
+    if text_key:
+        label._text_key = text_key
+        label._text_ns = text_ns
+    if resolved_tooltip_key:
+        label._tooltip_key = resolved_tooltip_key
+        label._tooltip_ns = tooltip_ns
+
     # Attach tooltip
     if tooltip_text:
         # Direct tooltip text
         _attach_simple_tooltip(label, tooltip_text)
-    elif tooltip_key:
+    elif resolved_tooltip_key:
         # i18n tooltip
-        attach_i18n_tooltip(label, tooltip_key, ns=tooltip_ns, lang_provider=get_lang)
+        attach_i18n_tooltip(label, resolved_tooltip_key, ns=tooltip_ns, lang_provider=get_lang)
+
 
     return label
 

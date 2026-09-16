@@ -63,6 +63,7 @@ class IconHelper:
 
         # Icon cache
         self._cache = {}
+        self._tooltip_keys_cache = {}
 
         # Load icon mappings from JSON or use fallback
         self.icon_map = {}
@@ -477,6 +478,28 @@ class IconHelper:
         # Both are empty
         return "RED"
 
+
+
+    def update_tooltip_keys(self, mapping: Dict[str, str]) -> None:
+        """
+        Update the tooltip keys cache from the database/service layer.
+
+        Args:
+            mapping: Dictionary mapping icon_name to tooltip_translation_key
+        """
+        self._tooltip_keys_cache = dict(mapping)
+
+    def get_icon_tooltip_key(self, icon_name: str) -> Optional[str]:
+        """
+        Get the tooltip translation key for a specific icon.
+
+        Args:
+            icon_name: The name of the icon
+
+        Returns:
+            The tooltip translation key if available, otherwise None
+        """
+        return self._tooltip_keys_cache.get(icon_name)
 
 # Global instance
 _icon_helper = None

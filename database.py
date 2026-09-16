@@ -407,6 +407,33 @@ class MonsterDatabase:
         cursor.execute("SELECT value, label FROM monster_type ORDER BY value")
         return [{"value": row[0], "label": row[1]} for row in cursor.fetchall()]
 
+    def insert_or_update_monster_type(self, value: str, label: str) -> bool:
+        """Thêm mới hoặc cập nhật một loại quái vật."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "INSERT INTO monster_type (value, label) VALUES (?, ?) ON CONFLICT(value) DO UPDATE SET label=excluded.label",
+                (str(value).strip(), str(label).strip()),
+            )
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"[DB] Error inserting/updating monster_type: {e}")
+            self.conn.rollback()
+            return False
+
+    def delete_monster_type(self, value: str) -> bool:
+        """Xóa một loại quái vật theo ID (value)."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("DELETE FROM monster_type WHERE value = ?", (str(value).strip(),))
+            self.conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"[DB] Error deleting monster_type: {e}")
+            self.conn.rollback()
+            return False
+
     def get_dungeons(self) -> List[Any]:
         """Lấy danh sách dungeonId từ bảng dungeons."""
         cursor = self.conn.cursor()

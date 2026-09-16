@@ -54,6 +54,16 @@ class IconSyncManager:
                         "category": "General",
                     }
                 )
+
+            # Update cache in IconHelper
+            try:
+                from ui.helpers.icon_helper import get_icon_helper
+                helper = get_icon_helper()
+                tooltip_keys = self.icon_service.get_all_tooltip_keys()
+                helper.update_tooltip_keys(tooltip_keys)
+            except Exception as cache_error:
+                logger.error(f"Failed to update IconHelper tooltip cache: {cache_error}")
+
             return True
         except Exception as e:
             logger.error(f"Error importing from JSON: {e}")
@@ -87,3 +97,14 @@ class IconSyncManager:
         except Exception as e:
             logger.error(f"Error exporting to JSON: {e}")
             return False
+
+
+    def refresh_icon_tooltip_cache(self):
+        """Reload tooltip keys from DB and update IconHelper cache."""
+        try:
+            from ui.helpers.icon_helper import get_icon_helper
+            helper = get_icon_helper()
+            tooltip_keys = self.icon_service.get_all_tooltip_keys()
+            helper.update_tooltip_keys(tooltip_keys)
+        except Exception as e:
+            logger.error(f"Failed to refresh IconHelper tooltip cache: {e}")

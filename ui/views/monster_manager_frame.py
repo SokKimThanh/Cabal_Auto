@@ -146,6 +146,98 @@ class MonsterManagerFrame(ResponsiveGridBase):
         )
         self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
 
+        # -------------------------------------------------------------
+        # Monster Type Management Panel
+        # -------------------------------------------------------------
+        type_panel_container = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
+        type_panel_container.pack(fill="x", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        # Title for Type Panel
+        type_title_lbl = tk.Label(
+            type_panel_container,
+            text=self.app._t("panel_types_title", default="▼ Quản lý Loại Quái vật") if self.app else "▼ Quản lý Loại Quái vật",
+            font=(UIStyle.resolve_font_family("title"), 12, "bold"),
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        type_title_lbl.pack(anchor="w", pady=(0, UIStyle.SPACE_SM))
+
+        # Main frame for the Type Management UI (split into left list, right form)
+        type_content_frame = tk.Frame(type_panel_container, bg=UIStyle.BG_BASE)
+        type_content_frame.pack(fill="x", expand=True)
+
+        # Left: Treeview for Types
+        type_list_frame = tk.Frame(type_content_frame, bg=UIStyle.BG_BASE)
+        type_list_frame.pack(side="left", fill="y", expand=True)
+
+        self.type_tree_scroll_y = ttk.Scrollbar(type_list_frame, orient=tk.VERTICAL)
+        self.type_tree = ttk.Treeview(
+            type_list_frame,
+            columns=("ID", "Label"),
+            show="headings",
+            selectmode="browse",
+            height=5,
+            yscrollcommand=self.type_tree_scroll_y.set
+        )
+        self.type_tree_scroll_y.config(command=self.type_tree.yview)
+
+        self.type_tree.heading("ID", text="ID")
+        self.type_tree.column("ID", width=100, anchor="center")
+        self.type_tree.heading("Label", text=self.app._t("col_label", default="Tên Loại") if self.app else "Tên Loại")
+        self.type_tree.column("Label", width=250, anchor="w")
+
+        self.type_tree.pack(side="left", fill="both", expand=True)
+        self.type_tree_scroll_y.pack(side="left", fill="y")
+        self.type_tree.bind("<<TreeviewSelect>>", self._on_type_selected)
+
+        # Right: Form to Add/Edit Type
+        type_form_frame = tk.Frame(type_content_frame, bg=UIStyle.BG_BASE)
+        type_form_frame.pack(side="right", fill="both", expand=True, padx=(UIStyle.SPACE_MD, 0))
+
+        form_title = tk.Label(
+            type_form_frame,
+            text=self.app._t("lbl_type_details", default="Chi tiết Loại Quái vật") if self.app else "Chi tiết Loại Quái vật",
+            font=(UIStyle.resolve_font_family("title"), 10, "bold"),
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        form_title.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+
+        tk.Label(type_form_frame, text="ID:", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", pady=2, padx=5)
+        self.type_id_entry = ttk.Entry(type_form_frame, width=25)
+        self.type_id_entry.grid(row=1, column=1, sticky="w", pady=2)
+
+        tk.Label(type_form_frame, text=self.app._t("col_label", default="Tên Loại:") if self.app else "Tên Loại:", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).grid(row=2, column=0, sticky="e", pady=2, padx=5)
+        self.type_label_entry = ttk.Entry(type_form_frame, width=25)
+        self.type_label_entry.grid(row=2, column=1, sticky="w", pady=2)
+
+        type_btn_frame = tk.Frame(type_form_frame, bg=UIStyle.BG_BASE)
+        type_btn_frame.grid(row=3, column=0, columnspan=2, sticky="w", pady=10)
+
+        self.btn_save_type = tk.Button(
+            type_btn_frame,
+            text=self.app._t("btn_save", default="Save") if self.app else "Save",
+            command=self._on_save_type,
+            **UIStyle.get_button_style("primary")
+        )
+        self.btn_save_type.pack(side="left", padx=(5, 5))
+
+        self.btn_cancel_type = tk.Button(
+            type_btn_frame,
+            text=self.app._t("btn_cancel", default="Cancel") if self.app else "Cancel",
+            command=self._on_cancel_type,
+            **UIStyle.get_button_style("secondary")
+        )
+        self.btn_cancel_type.pack(side="left", padx=5)
+
+        self.btn_delete_type = tk.Button(
+            type_btn_frame,
+            text=self.app._t("btn_delete", default="Delete") if self.app else "Delete",
+            command=self._on_delete_type,
+            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
+        )
+        self.btn_delete_type.pack(side="left", padx=5)
+
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)
@@ -284,8 +376,105 @@ class MonsterManagerFrame(ResponsiveGridBase):
             if hasattr(self, "location_box"):
                 self.location_box.config(values=dungeon_values)
 
+            self._load_type_tree()
+
         except Exception as e:
             print(f"Error loading reference data: {e}")
+
+    def _load_type_tree(self):
+        for item in self.type_tree.get_children():
+            self.type_tree.delete(item)
+
+        if not hasattr(self.db, "get_monster_type_list"):
+            return
+
+        type_list = self.db.get_monster_type_list()
+        for t in type_list:
+            self.type_tree.insert("", "end", iid=str(t['value']), values=(t['value'], t['label']))
+
+    def _on_type_selected(self, event=None):
+        selected = self.type_tree.selection()
+        if not selected:
+            return
+
+        type_id = selected[0]
+        item = self.type_tree.item(type_id)
+        values = item.get("values", [])
+
+        self._on_cancel_type() # clear form first
+
+        if len(values) >= 2:
+            self.type_id_entry.insert(0, str(values[0]))
+            self.type_id_entry.config(state="readonly")
+            self.type_label_entry.insert(0, str(values[1]))
+
+    def _on_cancel_type(self, event=None):
+        self.type_id_entry.config(state="normal")
+        self.type_id_entry.delete(0, tk.END)
+        self.type_label_entry.delete(0, tk.END)
+        self.type_tree.selection_remove(self.type_tree.selection())
+
+    def _on_save_type(self, event=None):
+        t_id = self.type_id_entry.get().strip()
+        t_label = self.type_label_entry.get().strip()
+
+        if not t_id or not t_label:
+            messagebox.showwarning(
+                self.app._t("warn_title", default="Cảnh báo") if self.app else "Cảnh báo",
+                self.app._t("warn_type_empty", default="Vui lòng nhập cả ID và Tên Loại") if self.app else "Vui lòng nhập cả ID và Tên Loại",
+                parent=self
+            )
+            return
+
+        if hasattr(self.db, "insert_or_update_monster_type"):
+            success = self.db.insert_or_update_monster_type(t_id, t_label)
+            if success:
+                self._load_reference_data()
+                self._on_cancel_type()
+            else:
+                messagebox.showerror(
+                    self.app._t("err_title", default="Lỗi") if self.app else "Lỗi",
+                    self.app._t("err_save_type", default="Không thể lưu Loại Quái vật.") if self.app else "Không thể lưu Loại Quái vật.",
+                    parent=self
+                )
+        else:
+            messagebox.showerror("Error", "Missing DB method 'insert_or_update_monster_type'", parent=self)
+
+    def _on_delete_type(self, event=None):
+        selected = self.type_tree.selection()
+        if not selected:
+            messagebox.showwarning(
+                self.app._t("warn_title", default="Cảnh báo") if self.app else "Cảnh báo",
+                self.app._t("warn_no_sel_type", default="Vui lòng chọn Loại Quái vật để xóa") if self.app else "Vui lòng chọn Loại Quái vật để xóa",
+                parent=self
+            )
+            return
+
+        type_id = selected[0]
+        item = self.type_tree.item(type_id)
+        values = item.get("values", [])
+        type_name = values[1] if len(values) >= 2 else type_id
+
+        confirm = messagebox.askyesno(
+            self.app._t("confirm_del_title", default="Xác nhận xóa") if self.app else "Xác nhận xóa",
+            (self.app._t("confirm_del_type_msg", default="Bạn có chắc muốn xóa Loại Quái vật '{}' không?") if self.app else "Bạn có chắc muốn xóa Loại Quái vật '{}' không?").format(type_name),
+            parent=self
+        )
+
+        if confirm:
+            if hasattr(self.db, "delete_monster_type"):
+                success = self.db.delete_monster_type(type_id)
+                if success:
+                    self._load_reference_data()
+                    self._on_cancel_type()
+                else:
+                    messagebox.showerror(
+                        self.app._t("err_title", default="Lỗi") if self.app else "Lỗi",
+                        self.app._t("err_del_type", default="Không thể xóa Loại Quái vật.") if self.app else "Không thể xóa Loại Quái vật.",
+                        parent=self
+                    )
+            else:
+                 messagebox.showerror("Error", "Missing DB method 'delete_monster_type'", parent=self)
 
     def _load_monsters(self):
         try:

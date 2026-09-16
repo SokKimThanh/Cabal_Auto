@@ -27,7 +27,6 @@ from lib.ui.dialog_service import DialogService
 from pathlib import Path
 
 # Add parent directory to path for lib imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 try:
@@ -121,6 +120,7 @@ class App:
             self.monster_library_service = getattr(di_container, "monster_library_service", None)
             self.skill_service = getattr(di_container, "skill_service", None)
             self.db_skill_service = getattr(di_container, "db_skill_service", None)
+            self.db_skill_type_service = getattr(di_container, "db_skill_type_service", None)
             self.db_class_service = getattr(di_container, "db_class_service", None)
             self.db_scan_service = getattr(di_container, "db_scan_service", None)
             self.overlay_controller = getattr(di_container, "overlay_controller", None)
@@ -218,8 +218,8 @@ class App:
         # --- Event Bus Bindings ---
         EventBus.bind(HuntStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', e.status)))
         EventBus.bind(HuntStateChangedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self._on_orchestrator_state_change(e.state)))
-        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_hp_display(e.hp_percent) if hasattr(self, 'tab_hunt') else None))
-        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_status(e.status) if hasattr(self, 'tab_hunt') else None))
+        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_hp_display(e.hp_percent) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_hp_display') else None))
+        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_status(e.status) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_status') else None))
         EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
         EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
         EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
@@ -1118,7 +1118,9 @@ def main():
 
         container.monster_library_service = MonsterLibraryService()
         container.skill_service = SkillRuntimeService()
+        from lib.db.services.skill_type_service import SkillTypeService
         container.db_skill_service = DbSkillService()
+        container.db_skill_type_service = SkillTypeService()
         container.db_class_service = DbClassService()
         container.db_scan_service = ScanService()
         container.skill_caster_service = SkillCasterService()
