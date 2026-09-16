@@ -142,11 +142,18 @@ class SidebarComponent(tk.Frame):
                 btn.pack(fill="both", expand=True)
                 self._sidebar_widgets.append(SidebarWidgetDef(widget=btn, key=key, view_target=view_target, icon=icon))
 
+                                # Check if icon has a database tooltip key, otherwise use fallback
+                tooltip_key_to_use = key
+                if hasattr(self.icon_helper, "get_icon_tooltip_key"):
+                    db_tooltip_key = self.icon_helper.get_icon_tooltip_key(icon)
+                    if db_tooltip_key:
+                        tooltip_key_to_use = db_tooltip_key
+
                 # Add tooltip
                 attach_i18n_tooltip(
                     btn,
-                    key=key,
-                    ns="global",
+                    key=tooltip_key_to_use,
+                    ns="global" if tooltip_key_to_use == key else None, # DB keys don't use the 'global' namespace typically
                     lang_provider=lambda: getattr(self.app, "lang", "en"),
                 )
 

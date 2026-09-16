@@ -78,3 +78,22 @@ class TranslationBinder:
                     logger.debug(f"[TranslationBinder] Error updating var for key {key}: {e}")
                 alive_vars.append((ref, key, kwargs))
         self._tracked_vars = alive_vars
+
+        # Also refresh tooltips globally if possible, this is a bit hacky but effective.
+        try:
+            import tkinter as tk
+            root = tk._default_root
+            if root:
+                # Walk the widget tree to find cached tooltips
+                def traverse(w):
+                    try:
+                        tip = getattr(w, "_i18n_tooltip", None)
+                        if tip and hasattr(tip, "refresh"):
+                            tip.refresh()
+                    except Exception:
+                        pass
+                    for child in w.winfo_children():
+                        traverse(child)
+                traverse(root)
+        except Exception:
+            pass

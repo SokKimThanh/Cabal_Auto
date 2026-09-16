@@ -63,7 +63,15 @@ class I18nToolTip:
         self._cancel()
         self._hide()
 
+
+    def refresh(self):
+        """Refresh the tooltip if it is currently visible to apply language changes."""
+        if self._tip_win:
+            self._hide()
+            self._show()
+
     def _show(self):
+
         if self._tip_win:
             return
         try:
