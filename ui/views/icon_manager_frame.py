@@ -190,12 +190,12 @@ class IconManagerFrame(ResponsiveGridBase):
         self.right_detail_frame = tk.Frame(self.paned_window, bg=UIStyle.BG_SURFACE)
         self.paned_window.add(self.right_detail_frame, weight=1)
 
-        # Bind Configure to set 35:65 ratio on first render
+        # Bind Configure to set 60:40 ratio on first render
         self._sash_configured = False
         def on_configure(event):
             if not self._sash_configured and event.width > 10:
                 self._sash_configured = True
-                sash_pos = int(event.width * 0.35)
+                sash_pos = int(event.width * 0.60)
                 self.paned_window.sashpos(0, sash_pos)
 
         self.paned_window.bind('<Configure>', on_configure)

@@ -61,12 +61,12 @@ def test_i18n_validation(mock_icon_service, mock_get_db, m1, m2):
             frame.var_tooltip_key.set('valid_key')
             # Trigger trace manually for tests
             frame._validate_tooltip_key()
-            assert frame.lbl_tooltip_warning.cget('text') == ""
+            assert frame.lbl_tooltip_warning.cget('text') == "✓ Tooltip hợp lệ"
 
             # Test invalid key
             frame.var_tooltip_key.set('invalid_key')
             frame._validate_tooltip_key()
-            assert frame.lbl_tooltip_warning.cget('text') == "⚠️"
+            assert frame.lbl_tooltip_warning.cget('text') == "⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!"
 
             # Test autocomplete filter
             frame.entry_tooltip.get = MagicMock(return_value='val')
