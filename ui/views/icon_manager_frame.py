@@ -146,12 +146,36 @@ class IconManagerFrame(ResponsiveGridBase):
         self.left_master_frame.grid_columnconfigure(0, weight=1)
         self.left_master_frame.grid_columnconfigure(1, weight=0)
 
+        # Toolbar cho TreeView (Left Master Frame)
+        self.tree_toolbar = tk.Frame(self.left_master_frame, bg=UIStyle.BG_ELEVATED)
+        self.tree_toolbar.grid(row=0, column=0, columnspan=2, sticky="ew", padx=2, pady=2)
+
+        self.btn_collapse_all = tk.Button(
+            self.tree_toolbar,
+            text=self.i18n_t("btn_collapse_all", default="Thu gọn tất cả"),
+            command=self._on_collapse_all,
+            **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {})
+        )
+        self.btn_collapse_all.pack(side="right", padx=5)
+
+        self.btn_expand_all = tk.Button(
+            self.tree_toolbar,
+            text=self.i18n_t("btn_expand_all", default="Mở rộng tất cả"),
+            command=self._on_expand_all,
+            **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {})
+        )
+        self.btn_expand_all.pack(side="right", padx=5)
+
+        # Điều chỉnh lại row configuration cho left_master_frame
+        self.left_master_frame.grid_rowconfigure(0, weight=0) # Toolbar
+        self.left_master_frame.grid_rowconfigure(1, weight=1) # Treeview
+
         # Style Treeview để fix lỗi text clipping
         style = ttk.Style()
         style.configure("IconManager.Treeview", rowheight=28)
 
         # Create Treeview
-        columns = ("col_id", "col_key", "col_status")
+        columns = ("col_key", "col_status")
         self.tree = ttk.Treeview(
             self.left_master_frame,
             columns=columns,
@@ -162,14 +186,12 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Define headings
         self.tree.heading("#0", text=self.i18n_t("col_name_category", default="Tên / Danh mục"), anchor="w")
-        self.tree.heading("col_id", text="ID", anchor="w")
         self.tree.heading("col_key", text="Icon Key", anchor="w")
         self.tree.heading("col_status", text=self.i18n_t("col_status", default="Trạng Thái"), anchor="center")
 
         # Define columns (tăng minwidth của col_status để tránh cắt chữ)
         self.tree.column("#0", width=150, minwidth=100, stretch=tk.YES)
-        self.tree.column("col_id", width=50, minwidth=50, stretch=tk.NO)
-        self.tree.column("col_key", width=150, minwidth=100, stretch=tk.YES)
+        self.tree.column("col_key", width=180, minwidth=100, stretch=tk.YES)
         self.tree.column("col_status", width=95, minwidth=95, stretch=tk.NO, anchor="center")
 
         # Scrollbar
@@ -177,9 +199,9 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree.configure(yscrollcommand=self.tree_scroll_y.set)
 
         # Auto-hiding scrollbar implementation
-        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree.grid(row=1, column=0, sticky="nsew")
         # Scrollbar will be managed dynamically but we set it up here
-        self.tree_scroll_y.grid(row=0, column=1, sticky="ns")
+        self.tree_scroll_y.grid(row=1, column=1, sticky="ns")
 
         # Bind events
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
@@ -190,12 +212,12 @@ class IconManagerFrame(ResponsiveGridBase):
         self.right_detail_frame = tk.Frame(self.paned_window, bg=UIStyle.BG_SURFACE)
         self.paned_window.add(self.right_detail_frame, weight=1)
 
-        # Bind Configure to set 60:40 ratio on first render
+        # Bind Configure to set 50:50 ratio on first render
         self._sash_configured = False
         def on_configure(event):
             if not self._sash_configured and event.width > 10:
                 self._sash_configured = True
-                sash_pos = int(event.width * 0.60)
+                sash_pos = int(event.width * 0.50)
                 self.paned_window.sashpos(0, sash_pos)
 
         self.paned_window.bind('<Configure>', on_configure)
@@ -277,7 +299,6 @@ class IconManagerFrame(ResponsiveGridBase):
         self.form_frame.grid_columnconfigure(1, weight=1, minsize=400)
 
         # StringVars
-        self.var_id = tk.StringVar()
         self.var_name = tk.StringVar()
         self.var_icon_key = tk.StringVar()
         self.var_category = tk.StringVar()
@@ -285,36 +306,31 @@ class IconManagerFrame(ResponsiveGridBase):
         self.var_tooltip_key = tk.StringVar()
         self.var_filepath = tk.StringVar()
 
-        # 1. ID (Read-only)
-        tk.Label(self.form_frame, text="ID:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="e", padx=5, pady=2)
-        self.entry_id = ttk.Entry(self.form_frame, textvariable=self.var_id, state="disabled")
-        self.entry_id.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
-
-        # 2. Name
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_name", default="Name:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
+        # 1. Name
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_name", default="Name:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="e", padx=5, pady=2)
         self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name)
-        self.entry_name.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+        self.entry_name.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
 
-        # 3. Icon Key
-        tk.Label(self.form_frame, text="Icon Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=2, column=0, sticky="e", padx=5, pady=2)
+        # 2. Icon Key
+        tk.Label(self.form_frame, text="Icon Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
         self.entry_icon_key = ttk.Entry(self.form_frame, textvariable=self.var_icon_key)
-        self.entry_icon_key.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
+        self.entry_icon_key.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
 
-        # 4. Category
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_category", default="Category:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
+        # 3. Category
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_category", default="Category:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=2, column=0, sticky="e", padx=5, pady=2)
         self.combo_category = ttk.Combobox(self.form_frame, textvariable=self.var_category, state="readonly")
-        self.combo_category.grid(row=3, column=1, sticky="ew", padx=5, pady=2)
+        self.combo_category.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
 
-        # 5. Fallback Emoji
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_fallback_emoji", default="Fallback Emoji:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=4, column=0, sticky="e", padx=5, pady=2)
+        # 4. Fallback Emoji
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_fallback_emoji", default="Fallback Emoji:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
         self.entry_fallback = ttk.Entry(self.form_frame, textvariable=self.var_fallback_emoji)
-        self.entry_fallback.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
+        self.entry_fallback.grid(row=3, column=1, sticky="ew", padx=5, pady=2)
 
-        # 6. Tooltip Key
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_tooltip_key", default="Tooltip Key:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
+        # 5. Tooltip Key
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_tooltip_key", default="Tooltip Key:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=4, column=0, sticky="e", padx=5, pady=2)
 
         tooltip_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
-        tooltip_frame.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
+        tooltip_frame.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
         tooltip_frame.grid_columnconfigure(0, weight=1)
 
         self.entry_tooltip = ttk.Combobox(tooltip_frame, textvariable=self.var_tooltip_key)
@@ -334,11 +350,11 @@ class IconManagerFrame(ResponsiveGridBase):
         # Load keys
         self._load_i18n_keys()
 
-        # 7. Filepath (with Browse button)
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_filepath", default="Filepath:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=6, column=0, sticky="e", padx=5, pady=2)
+        # 6. Filepath (with Browse button)
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_filepath", default="Filepath:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
 
         filepath_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
-        filepath_frame.grid(row=6, column=1, sticky="ew", padx=5, pady=2)
+        filepath_frame.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
         filepath_frame.grid_columnconfigure(0, weight=1)
 
         self.entry_filepath = ttk.Entry(filepath_frame, textvariable=self.var_filepath, state="disabled")
@@ -589,9 +605,6 @@ class IconManagerFrame(ResponsiveGridBase):
         entry_state = "normal" if state in ("ADD", "EDIT") else "disabled"
         cb_state = "readonly" if state in ("ADD", "EDIT") else "disabled"
 
-        # Keep ID always readonly or disabled
-        self.entry_id.config(state="disabled")
-
         self.entry_name.config(state=entry_state)
         self.entry_icon_key.config(state=entry_state)
         self.combo_category.config(state=cb_state)
@@ -628,18 +641,76 @@ class IconManagerFrame(ResponsiveGridBase):
             self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
             self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
 
+    def _on_collapse_all(self):
+        for item in self.tree.get_children():
+            if item.startswith("cat_"):
+                self.tree.item(item, open=False)
+
+    def _on_expand_all(self):
+        for item in self.tree.get_children():
+            if item.startswith("cat_"):
+                self.tree.item(item, open=True)
+
     def _on_add(self):
-        # Clear form variables
-        self.var_id.set("")
-        self.var_name.set("")
-        self.var_icon_key.set("")
-        self.var_category.set("")
-        self.var_fallback_emoji.set("")
-        self.var_tooltip_key.set("")
+        import time
+
+        # Xác định category hiện tại đang chọn
+        selected_cat = "General"
+        selection = self.tree.selection()
+        if selection:
+            item_id = selection[0]
+            if item_id.startswith("cat_"):
+                selected_cat = item_id.replace("cat_", "", 1)
+            else:
+                # Nếu đang chọn 1 icon, lấy category của icon đó bằng cách tìm parent
+                parent_id = self.tree.parent(item_id)
+                if parent_id and parent_id.startswith("cat_"):
+                    selected_cat = parent_id.replace("cat_", "", 1)
+
+        # Đảm bảo category đó tồn tại trên tree
+        cat_node_id = f"cat_{selected_cat}"
+        if not self.tree.exists(cat_node_id):
+            # Fallback
+            selected_cat = "General"
+            cat_node_id = f"cat_{selected_cat}"
+            if not self.tree.exists(cat_node_id):
+                 self.tree.insert('', 'end', iid=cat_node_id, text=f"📁 {selected_cat}", open=True)
+
+        # Mở rộng folder category
+        self.tree.item(cat_node_id, open=True)
+
+        # Tạo dummy key
+        dummy_key = f"new_icon_{int(time.time())}"
+
+        # Thêm vào tree
+        self.tree.insert(
+            cat_node_id,
+            'end',
+            iid=dummy_key,
+            text="New Icon",
+            values=(dummy_key, "⚪")
+        )
+
+        # Focus và chọn dòng mới
+        self.tree.selection_set(dummy_key)
+        self.tree.see(dummy_key)
+
+        # Điền form
+        self.var_name.set("New Icon")
+        self.var_icon_key.set(dummy_key)
+        self.var_category.set(selected_cat)
+        self.var_fallback_emoji.set("❓")
+        self.var_tooltip_key.set(f"icon_tooltip_{dummy_key}")
         self.var_filepath.set("")
 
-        self._render_preview({})
+        self._render_preview({
+            "icon_key": dummy_key,
+            "fallback_emoji": "❓"
+        })
         self.set_form_state("ADD")
+
+        # Focus vào entry name
+        self.entry_name.focus_set()
 
     def _on_edit(self):
         self.set_form_state("EDIT")
@@ -661,7 +732,6 @@ class IconManagerFrame(ResponsiveGridBase):
                 success = self.icon_service.delete_icon(icon_key)
                 if success:
                     # Clear form
-                    self.var_id.set("")
                     self.var_name.set("")
                     self.var_icon_key.set("")
                     self.var_category.set("")
@@ -736,9 +806,22 @@ class IconManagerFrame(ResponsiveGridBase):
             "description": ""
         }
 
+        # Nếu đang ở trạng thái ADD, xóa dòng dummy khỏi tree trước khi reload
+        if self._current_state == "ADD":
+            selection = self.tree.selection()
+            if selection:
+                item_id = selection[0]
+                if item_id.startswith("new_icon_"):
+                    self.tree.delete(item_id)
+
         success = self.icon_service.upsert_icon(icon_data)
         if success:
             self.load_tree_data()
+
+            # Mở lại thư mục vừa thêm vào
+            cat_node_id = f"cat_{icon_data['category']}"
+            if self.tree.exists(cat_node_id):
+                self.tree.item(cat_node_id, open=True)
 
             # Re-select the saved item
             for item in self.tree.get_children():
@@ -756,6 +839,14 @@ class IconManagerFrame(ResponsiveGridBase):
             messagebox.showerror("Error", "Failed to save icon data.")
 
     def _on_cancel(self):
+        # Dọn dẹp dòng dummy nếu đang ở trạng thái ADD
+        if self._current_state == "ADD":
+            selection = self.tree.selection()
+            if selection:
+                item_id = selection[0]
+                if item_id.startswith("new_icon_"):
+                    self.tree.delete(item_id)
+
         self._process_tree_selection()
         self.set_form_state("VIEW")
         self.tree.focus_set()
@@ -831,7 +922,6 @@ class IconManagerFrame(ResponsiveGridBase):
             self.tree.insert('', 'end', iid=cat_id, text=f"📁 {cat_name}", open=True)
 
             for icon, status in sorted(items, key=lambda x: x[0].get("name", "").lower()):
-                icon_id = icon.get("id")
                 icon_key = icon.get("icon_key", "")
                 icon_name = icon.get("name", "")
 
@@ -849,7 +939,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     'end',
                     iid=icon_key,
                     text=icon_name,
-                    values=(icon_id, icon_key, status_color)
+                    values=(icon_key, status_color)
                 )
 
         # Recheck scrollbar
@@ -885,7 +975,6 @@ class IconManagerFrame(ResponsiveGridBase):
         selection = self.tree.selection()
         if not selection:
             # Clear form
-            self.var_id.set("")
             self.var_name.set("")
             self.var_icon_key.set("")
             self.var_category.set("")
@@ -906,7 +995,6 @@ class IconManagerFrame(ResponsiveGridBase):
         icon_data = self.icon_service.get_icon_by_key(icon_key)
 
         if icon_data:
-            self.var_id.set(str(icon_data.get("id", "")))
             self.var_name.set(icon_data.get("name", ""))
             self.var_icon_key.set(icon_data.get("icon_key", ""))
             self.var_category.set(icon_data.get("category", ""))
