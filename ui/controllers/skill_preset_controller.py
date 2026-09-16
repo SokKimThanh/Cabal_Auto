@@ -16,8 +16,7 @@ class SkillPresetController:
 
     def on_reset(self, class_id):
         """Reverts to default preset."""
-        if hasattr(self.app_state, "apply_default_preset"):
-            self.app_state.apply_default_preset(class_id)
+        self.apply_default_preset(class_id)
 
     def prepare_skill_summary(self, skill_slots):
         """Prepares a summary of skills by name for the save dialog."""
