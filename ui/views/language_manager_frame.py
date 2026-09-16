@@ -5,6 +5,8 @@ from lib.ui.controllers.language_manager_controller import LanguageManagerContro
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui.dialog_service import DialogService
 import threading
+from ui.helpers.tooltip import attach_i18n_tooltip
+
 
 class LanguageManagerFrame(tk.Frame):
     def __init__(self, parent, app, **kwargs):
@@ -92,10 +94,14 @@ class LanguageManagerFrame(tk.Frame):
         bottom_frame.grid_columnconfigure(3, weight=1)
 
         # Row 0: Namespace & Key
-        ttk.Label(bottom_frame, text=self._t("lang_mgr_namespace", default="Namespace:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ns_label = ttk.Label(bottom_frame, text=self._t("lang_mgr_namespace", default="Namespace:"))
+        ns_label.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        attach_i18n_tooltip(ns_label, key="tip_lang_mgr_namespace", ns="language_manager", lang_provider=lambda: getattr(self.app, "lang", "vi"))
         self.form_ns_var = tk.StringVar()
         self.form_ns_entry = ttk.Combobox(bottom_frame, textvariable=self.form_ns_var)
         self.form_ns_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        attach_i18n_tooltip(self.form_ns_entry, key="tip_lang_mgr_namespace", ns="language_manager", lang_provider=lambda: getattr(self.app, "lang", "vi"))
+        attach_i18n_tooltip(self.form_ns_entry, key="tip_lang_mgr_namespace", ns="language_manager", lang_provider=lambda: getattr(self.app, "lang", "vi"))
 
         ttk.Label(bottom_frame, text=self._t("lang_mgr_key", default="Key:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.form_key_var = tk.StringVar()
