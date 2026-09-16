@@ -51,7 +51,7 @@ def test_import_from_json(sync_manager, temp_json_path, icon_service):
     add_icon = icon_service.get_icon_by_key("btn_add")
     assert add_icon["filepath"] == "add"
     assert add_icon["fallback_emoji"] == "➕"
-    assert add_icon["category"] == "General"
+    assert add_icon["category_name"] == "General"
 
 
 def test_export_to_json(sync_manager, temp_json_path, icon_service):

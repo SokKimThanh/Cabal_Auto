@@ -967,24 +967,36 @@ CREATE TABLE user_preset_state (
             FOREIGN KEY(class_id) REFERENCES classes(class_id) ON DELETE CASCADE,
             FOREIGN KEY(active_preset_id) REFERENCES skill_presets(preset_id) ON DELETE SET NULL
         );
+CREATE TABLE icon_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            description TEXT
+        );
+INSERT INTO icon_categories (id, name, description) VALUES (1, 'General', 'Mặc định chung');
+INSERT INTO icon_categories (id, name, description) VALUES (2, 'UI', 'Giao diện hệ thống');
+INSERT INTO icon_categories (id, name, description) VALUES (3, 'Skills', 'Kỹ năng nhân vật');
+INSERT INTO icon_categories (id, name, description) VALUES (4, 'Monsters', 'Quái vật');
+INSERT INTO icon_categories (id, name, description) VALUES (5, 'Items', 'Vật phẩm');
+
 CREATE TABLE icons (
             icon_key TEXT PRIMARY KEY UNIQUE NOT NULL,
             name TEXT,
             filepath TEXT,
             fallback_emoji TEXT,
             tooltip_translation_key TEXT,
-            category TEXT NOT NULL DEFAULT 'General',
+            category_id INTEGER NOT NULL DEFAULT 1,
             description TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(category_id) REFERENCES icon_categories(id)
         );
-INSERT INTO icons VALUES('icon_manager','Icon Manager',NULL,'📁','btn_icon_manager','ui','Icon for the Icon Manager sidebar button','2026-09-15 13:20:48');
-INSERT INTO icons VALUES('build_manager','Build Manager',NULL,'🛠️','btn_build_manager','ui','Icon for the Build Manager sidebar button','2026-09-16 18:55:54');
-INSERT INTO icons VALUES('class_manager','Class Manager',NULL,'🛡️','btn_class_manager','ui','Icon for the Class Manager sidebar button','2026-09-16 18:56:05');
-INSERT INTO icons VALUES('scan_history','Scan History',NULL,'🕒','btn_scan_history','ui',NULL,'2026-09-16 18:56:39');
-INSERT INTO icons VALUES('logs','Activity Logs',NULL,'📋','sidebar_activity_logs','ui',NULL,'2026-09-16 18:56:51');
-INSERT INTO icons VALUES('stats','Stats',NULL,'📊','tab_stats','ui',NULL,'2026-09-16 18:57:02');
-INSERT INTO icons VALUES('language_manager','Language Manager',NULL,'🌐','btn_language_manager','ui',NULL,'2026-09-16 18:57:13');
-INSERT INTO icons VALUES('help','Support',NULL,'❓','sidebar_support','ui',NULL,'2026-09-16 18:57:25');
+INSERT INTO icons VALUES('icon_manager','Icon Manager',NULL,'📁','btn_icon_manager',2,'Icon for the Icon Manager sidebar button','2026-09-15 13:20:48');
+INSERT INTO icons VALUES('build_manager','Build Manager',NULL,'🛠️','btn_build_manager',2,'Icon for the Build Manager sidebar button','2026-09-16 18:55:54');
+INSERT INTO icons VALUES('class_manager','Class Manager',NULL,'🛡️','btn_class_manager',2,'Icon for the Class Manager sidebar button','2026-09-16 18:56:05');
+INSERT INTO icons VALUES('scan_history','Scan History',NULL,'🕒','btn_scan_history',2,NULL,'2026-09-16 18:56:39');
+INSERT INTO icons VALUES('logs','Activity Logs',NULL,'📋','sidebar_activity_logs',2,NULL,'2026-09-16 18:56:51');
+INSERT INTO icons VALUES('stats','Stats',NULL,'📊','tab_stats',2,NULL,'2026-09-16 18:57:02');
+INSERT INTO icons VALUES('language_manager','Language Manager',NULL,'🌐','btn_language_manager',2,NULL,'2026-09-16 18:57:13');
+INSERT INTO icons VALUES('help','Support',NULL,'❓','sidebar_support',2,NULL,'2026-09-16 18:57:25');
 CREATE TABLE icon_usages (
             usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
             icon_key TEXT NOT NULL,

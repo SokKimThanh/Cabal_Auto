@@ -1,7 +1,7 @@
 import os
 import tkinter as tk
 import threading
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 from ui.components.empty_state import EmptyState
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
@@ -84,11 +84,87 @@ class IconManagerFrame(ResponsiveGridBase):
 
         return translated
 
+
     def _setup_ui(self):
         content_frame = self.get_content_frame()
-        # Row 0: Top Filter Bar
-        # Row 1: Vùng Content chính
-        # Row 2: Bottom Bar
+
+        # Title Label
+        title_lbl = tk.Label(
+            content_frame,
+            text=self.i18n_t("icon_manager_title", default="Quản lý Icon"),
+            font=(UIStyle.resolve_font_family("title") if hasattr(UIStyle, "resolve_font_family") else "IBM Plex Sans", 16, "bold"),
+            bg=UIStyle.BG_BASE,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, anchor="w", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+
+        # Main Container for panels
+        self.main_container = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
+        self.main_container.pack(fill="both", expand=True)
+
+        self._create_collapsible_panel(
+            self.main_container,
+            "icons",
+            self.i18n_t("panel_icons_title", default="Danh sách Icon"),
+            self._build_icons_panel
+        )
+
+        self._create_collapsible_panel(
+            self.main_container,
+            "categories",
+            self.i18n_t("panel_categories_title", default="Quản lý Danh mục Icon"),
+            self._build_categories_panel
+        )
+
+    def _create_collapsible_panel(self, parent_frame, panel_id, title_text, build_func):
+        container = tk.Frame(parent_frame, bg=UIStyle.BG_BASE)
+        container.pack(fill="both", expand=True, pady=(0, UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8), padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+
+        # Top bar with title and toggle button
+        top_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE)
+        top_bar.pack(fill="x")
+
+        # Content frame (visible by default)
+        content_frame = tk.Frame(container, bg=UIStyle.BG_BASE)
+
+        is_open = True
+
+        def toggle():
+            nonlocal is_open
+            if is_open:
+                content_frame.pack_forget()
+                title_btn.config(text=f"▶ {title_text}")
+                is_open = False
+            else:
+                content_frame.pack(fill="both", expand=True, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+                title_btn.config(text=f"▼ {title_text}")
+                is_open = True
+
+        font_header = getattr(UIStyle, "FONT_HEADER", ("IBM Plex Sans", 12, "bold"))
+        title_btn = tk.Button(
+            top_bar,
+            text=f"▼ {title_text}",
+            anchor="w",
+            padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8,
+            pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4,
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_PRIMARY,
+            activebackground=UIStyle.BG_SUBTLE,
+            activeforeground=UIStyle.TEXT_PRIMARY,
+            bd=0,
+            font=font_header,
+            command=toggle
+        )
+        title_btn.pack(fill="x")
+
+        # Build content inside
+        build_func(content_frame)
+
+        # Show by default
+        content_frame.pack(fill="both", expand=True, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+
+    def _build_icons_panel(self, parent_frame):
+        content_frame = parent_frame
         content_frame.grid_rowconfigure(0, weight=0)
         content_frame.grid_rowconfigure(1, weight=1)
         content_frame.grid_rowconfigure(2, weight=0)
@@ -282,6 +358,99 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Build Action Buttons
         self._build_action_bar()
+
+
+
+    def _build_categories_panel(self, parent_frame):
+        # 1. Main PanedWindow (Split Tree vs Form 1:1)
+        self.cat_main_frame = tk.Frame(parent_frame, bg=UIStyle.BG_BASE)
+        self.cat_main_frame.pack(fill="both", expand=True, pady=UIStyle.SPACE_MD)
+        self.cat_main_frame.grid_rowconfigure(0, weight=1)
+        self.cat_main_frame.grid_columnconfigure(0, weight=1)
+
+        style = ttk.Style()
+        style.configure('IconManager.TPanedwindow', background=UIStyle.BG_BASE)
+
+        self.cat_paned_window = ttk.PanedWindow(self.cat_main_frame, orient=tk.HORIZONTAL, style='IconManager.TPanedwindow')
+        self.cat_paned_window.grid(row=0, column=0, sticky="nsew")
+
+        # 2. Left Frame (Treeview)
+        self.cat_left_frame = tk.Frame(self.cat_paned_window, bg=UIStyle.BG_ELEVATED)
+        self.cat_paned_window.add(self.cat_left_frame, weight=1)
+
+        self.cat_left_frame.grid_rowconfigure(0, weight=1)
+        self.cat_left_frame.grid_columnconfigure(0, weight=1)
+        self.cat_left_frame.grid_columnconfigure(1, weight=0)
+
+        # Treeview for categories
+        self.cat_tree = ttk.Treeview(
+            self.cat_left_frame,
+            columns=("ID", "Name"),
+            show="headings",
+            selectmode="browse"
+        )
+        self.cat_tree.heading("ID", text="ID")
+        self.cat_tree.heading("Name", text=self.i18n_t("lbl_name", default="Name"))
+
+        self.cat_tree.column("ID", width=50, anchor="center")
+        self.cat_tree.column("Name", width=200, anchor="w")
+
+        self.cat_tree.grid(row=0, column=0, sticky="nsew")
+
+        cat_scrollbar = ttk.Scrollbar(self.cat_left_frame, orient="vertical", command=self.cat_tree.yview)
+        self.cat_tree.configure(yscrollcommand=cat_scrollbar.set)
+        cat_scrollbar.grid(row=0, column=1, sticky="ns")
+
+        self.cat_tree.bind("<<TreeviewSelect>>", self._on_cat_tree_select)
+
+        # 3. Right Frame (Form)
+        self.cat_right_frame = tk.Frame(self.cat_paned_window, bg=UIStyle.BG_ELEVATED)
+        self.cat_paned_window.add(self.cat_right_frame, weight=1)
+
+        # Toolbar above form (Save, Cancel, Delete)
+        self.cat_form_toolbar = tk.Frame(self.cat_right_frame, bg=UIStyle.BG_ELEVATED)
+        self.cat_form_toolbar.pack(fill="x", padx=10, pady=(10, 5))
+
+        lbl_cat_detail = tk.Label(self.cat_form_toolbar, text="Chi tiết Loại Icon", font=("IBM Plex Sans", 10, "bold"), bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
+        lbl_cat_detail.pack(side="left")
+
+        # Form content
+        self.cat_form_content = tk.Frame(self.cat_right_frame, bg=UIStyle.BG_SURFACE)
+        self.cat_form_content.pack(fill="both", expand=True, padx=10, pady=5)
+
+        self.cat_form_content.grid_columnconfigure(0, weight=0, minsize=80)
+        self.cat_form_content.grid_columnconfigure(1, weight=1)
+
+        self.var_cat_id = tk.StringVar()
+        self.var_cat_name = tk.StringVar()
+
+        tk.Label(self.cat_form_content, text="Tên Loại:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="e", padx=5, pady=10)
+        self.entry_cat_name = ttk.Entry(self.cat_form_content, textvariable=self.var_cat_name)
+        self.entry_cat_name.grid(row=0, column=1, sticky="ew", padx=5, pady=10)
+
+        # Form Buttons
+        self.cat_btn_frame = tk.Frame(self.cat_right_frame, bg=UIStyle.BG_ELEVATED)
+        self.cat_btn_frame.pack(fill="x", padx=10, pady=10)
+
+        self.btn_cat_save = tk.Button(self.cat_btn_frame, text="Save", command=self._on_cat_save, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_cat_save.pack(side="left", padx=5)
+
+        self.btn_cat_cancel = tk.Button(self.cat_btn_frame, text="Cancel", command=self._on_cat_cancel, **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_cat_cancel.pack(side="left", padx=5)
+
+        self.btn_cat_delete = tk.Button(self.cat_btn_frame, text="Delete", command=self._on_cat_delete, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_cat_delete.pack(side="left", padx=5)
+
+        # Add a new category button in Treeview toolbar
+        self.cat_tree_toolbar = tk.Frame(self.cat_left_frame, bg=UIStyle.BG_ELEVATED)
+        self.cat_tree_toolbar.grid(row=1, column=0, columnspan=2, sticky="ew", padx=2, pady=2)
+
+        self.btn_cat_add = tk.Button(self.cat_tree_toolbar, text="Add", command=self._on_cat_add, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_cat_add.pack(side="left", padx=5)
+
+        # Initial data load
+        self._load_categories_tree()
+        self._set_cat_form_state("view")
 
     def _build_preview_zone(self):
         self.preview_frame = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
@@ -713,49 +882,40 @@ class IconManagerFrame(ResponsiveGridBase):
             if item_id.startswith("cat_"):
                 selected_cat = item_id.replace("cat_", "", 1)
             else:
-                # Nếu đang chọn 1 icon, lấy category của icon đó bằng cách tìm parent
                 parent_id = self.tree.parent(item_id)
                 if parent_id and parent_id.startswith("cat_"):
                     selected_cat = parent_id.replace("cat_", "", 1)
 
-        # Đảm bảo category đó tồn tại trên tree
-        cat_node_id = f"cat_{selected_cat}"
-        if not self.tree.exists(cat_node_id):
-            # Fallback
-            selected_cat = "General"
-            cat_node_id = f"cat_{selected_cat}"
-            if not self.tree.exists(cat_node_id):
-                 self.tree.insert('', 'end', iid=cat_node_id, text=f"📁 {selected_cat}", open=True)
-
-        # Mở rộng folder category
-        self.tree.item(cat_node_id, open=True)
-
-        # Tạo dummy key
-        dummy_key = f"new_icon_{int(time.time())}"
-
-        # Thêm vào tree
-        self.tree.insert(
-            cat_node_id,
-            'end',
-            iid=dummy_key,
-            text="New Icon",
-            values=(dummy_key, "⚪")
-        )
-
-        # Focus và chọn dòng mới
-        self.tree.selection_set(dummy_key)
-        self.tree.see(dummy_key)
-
-        # Điền form
+        # Set variables
+        self.var_icon_key.set("")
         self.var_name.set("New Icon")
-        self.var_icon_key.set(dummy_key)
         self.var_category.set(selected_cat)
         self.var_fallback_emoji.set("❓")
-        self.var_tooltip_key.set(f"icon_tooltip_{dummy_key}")
+        self.var_tooltip_key.set("")
         self.var_filepath.set("")
 
+        # Create dummy node in Treeview for visual feedback
+        dummy_id = f"new_icon_{int(time.time())}"
+        cat_node = f"cat_{selected_cat}"
+
+        # Đảm bảo category node tồn tại và mở ra
+        if not self.tree.exists(cat_node):
+            self.tree.insert("", "end", iid=cat_node, text=selected_cat, open=True)
+        else:
+            self.tree.item(cat_node, open=True)
+
+        # Insert temp dummy icon item
+        self.tree.insert(cat_node, "end", iid=dummy_id, text="  [New] New Icon", values=(selected_cat, "🟡"))
+
+        # Select and focus on the dummy item
+        self.tree.selection_set(dummy_id)
+        self.tree.see(dummy_id)
+
+        self.set_form_state("ADD")
+        self.entry_name.focus_set()
+
         self._render_preview({
-            "icon_key": dummy_key,
+            "icon_key": dummy_id,
             "fallback_emoji": "❓"
         })
         self.set_form_state("ADD")
@@ -888,13 +1048,18 @@ class IconManagerFrame(ResponsiveGridBase):
             messagebox.showerror("Error", "Icon Key is required.")
             return
 
+        cat_name = self.var_category.get().strip() or "General"
+        cat_id = 1
+        if hasattr(self, 'categories_map') and cat_name in self.categories_map:
+            cat_id = self.categories_map[cat_name]
+
         icon_data = {
             "icon_key": icon_key,
             "name": self.var_name.get().strip(),
             "filepath": self.var_filepath.get().strip(),
             "fallback_emoji": self.var_fallback_emoji.get().strip(),
             "tooltip_translation_key": self.var_tooltip_key.get().strip(),
-            "category": self.var_category.get().strip() or "General",
+            "category_id": cat_id,
             "description": ""
         }
 
@@ -911,7 +1076,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.load_tree_data()
 
             # Mở lại thư mục vừa thêm vào
-            cat_node_id = f"cat_{icon_data['category']}"
+            cat_node_id = f"cat_{cat_name}"
             if self.tree.exists(cat_node_id):
                 self.tree.item(cat_node_id, open=True)
 
@@ -966,9 +1131,11 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Get filter values
         search_term = (self.search_var.get() or '').strip().lower()
-        selected_category = self.category_var.get()
-        if selected_category == "All":
-            selected_category = ""
+        selected_category_name = self.category_var.get()
+        selected_category_id = ""
+        if selected_category_name and selected_category_name != "All":
+            if hasattr(self, 'categories_map'):
+                selected_category_id = self.categories_map.get(selected_category_name, "")
 
         selected_status_raw = self.status_var.get()
         # Parse status filter
@@ -981,16 +1148,9 @@ class IconManagerFrame(ResponsiveGridBase):
             status_filter = "RED"
 
         # Fetch all icons (using search and category from DB)
-        all_icons = self.icon_service.get_all_icons(search_term=search_term, category=selected_category)
+        all_icons = self.icon_service.get_all_icons(search_term=search_term, category=selected_category_id)
 
-        # Populate Category dropdown dynamically if it's the first time
-        if not hasattr(self, '_categories_loaded') or not self._categories_loaded:
-            # We fetch all without filters just to get unique categories
-            all_raw = self.icon_service.get_all_icons()
-            categories = set(icon.get("category", "General") for icon in all_raw if icon.get("category"))
-            sorted_cats = ["All"] + sorted(list(categories))
-            self.category_combo['values'] = sorted_cats
-            self._categories_loaded = True
+        # Dropdown population is now handled by _load_categories_tree
 
         # Group by category and filter by status
         grouped_data = {}
@@ -1002,7 +1162,7 @@ class IconManagerFrame(ResponsiveGridBase):
             if status_filter and status != status_filter:
                 continue
 
-            cat = icon.get("category", "General")
+            cat = icon.get("category_name", "General")
             if cat not in grouped_data:
                 grouped_data[cat] = []
             grouped_data[cat].append((icon, status))
@@ -1066,35 +1226,171 @@ class IconManagerFrame(ResponsiveGridBase):
     def _process_tree_selection(self):
         selection = self.tree.selection()
         if not selection:
-            # Clear form
-            self.var_name.set("")
-            self.var_icon_key.set("")
-            self.var_category.set("")
-            self.var_fallback_emoji.set("")
-            self.var_tooltip_key.set("")
-            self.var_filepath.set("")
-            self._render_preview({})
-            self.set_form_state("VIEW")
             return
 
         item_id = selection[0]
-        # Ignore category clicks (folders)
         if item_id.startswith('cat_'):
             return
 
-        # Handle icon selection
-        icon_key = item_id
-        icon_data = self.icon_service.get_icon_by_key(icon_key)
+        # It's an icon node
+        if item_id.startswith("new_icon_"):
+            return
 
+        icon_data = self.icon_service.get_icon_by_key(item_id)
         if icon_data:
-            self.var_name.set(icon_data.get("name", ""))
-            self.var_icon_key.set(icon_data.get("icon_key", ""))
-            self.var_category.set(icon_data.get("category", ""))
-            self.var_fallback_emoji.set(icon_data.get("fallback_emoji", ""))
-            self.var_tooltip_key.set(icon_data.get("tooltip_translation_key", ""))
-            self.var_filepath.set(icon_data.get("filepath", ""))
+            self.var_name.set(icon_data.get('name', ''))
+            self.var_icon_key.set(icon_data.get('icon_key', ''))
+
+            # Map category_id back to name
+            cat_name = icon_data.get("category_name", "General")
+            self.var_category.set(cat_name)
+
+            self.var_fallback_emoji.set(icon_data.get('fallback_emoji', ''))
+            self.var_tooltip_key.set(icon_data.get('tooltip_translation_key', ''))
+            self.var_filepath.set(icon_data.get('filepath', ''))
 
             self._render_preview(icon_data)
 
         self.set_form_state("VIEW")
 
+
+    def _load_categories_tree(self):
+        for item in self.cat_tree.get_children():
+            self.cat_tree.delete(item)
+
+        categories = self.icon_service.get_all_categories()
+        for cat in categories:
+            self.cat_tree.insert("", "end", values=(cat["id"], cat["name"]))
+
+        # Also update the icon filter combobox
+        cat_names = [c["name"] for c in categories]
+        sorted_cats = ["All"] + sorted(cat_names)
+        self.category_combo['values'] = sorted_cats
+        self.combo_category['values'] = cat_names
+
+        self.categories_map = {c["name"]: c["id"] for c in categories}
+        self.categories_id_map = {c["id"]: c["name"] for c in categories}
+
+    def _set_cat_form_state(self, state):
+        if state == "view":
+            self.entry_cat_name.config(state="disabled")
+            self.btn_cat_save.config(state="disabled")
+            self.btn_cat_cancel.config(state="disabled")
+            self.btn_cat_delete.config(state="normal" if self.var_cat_id.get() else "disabled")
+            self.btn_cat_add.config(state="normal")
+        else: # edit/add
+            self.entry_cat_name.config(state="normal")
+            self.btn_cat_save.config(state="normal")
+            self.btn_cat_cancel.config(state="normal")
+            self.btn_cat_delete.config(state="disabled")
+            self.btn_cat_add.config(state="disabled")
+
+    def _on_cat_tree_select(self, event):
+        selection = self.cat_tree.selection()
+        if not selection:
+            self._set_cat_form_state("view")
+            return
+
+        item = self.cat_tree.item(selection[0])
+        values = item["values"]
+        if values:
+            self.var_cat_id.set(str(values[0]))
+            self.var_cat_name.set(str(values[1]))
+
+            # Remove any temp item if exists
+            for child in self.cat_tree.get_children():
+                if "new_item" in str(child):
+                    if child != selection[0]:
+                        self.cat_tree.delete(child)
+
+            if "new_item" in str(selection[0]):
+                self._set_cat_form_state("add")
+            else:
+                self._set_cat_form_state("view")
+                # When selected, we can double click to edit, or just allow edit immediately. Let's make it editable on click.
+                self._set_cat_form_state("edit")
+
+    def _on_cat_add(self):
+        self.var_cat_id.set("")
+        self.var_cat_name.set("")
+        # Remove existing new_item if it's there
+        if self.cat_tree.exists("new_item"):
+            self.cat_tree.delete("new_item")
+        temp_id = self.cat_tree.insert("", "end", iid="new_item", values=("(New)", ""))
+        self.cat_tree.selection_set(temp_id)
+        self.cat_tree.see(temp_id)
+        self.entry_cat_name.focus_set()
+        self._set_cat_form_state("add")
+
+    def _on_cat_save(self):
+        cat_id = self.var_cat_id.get()
+        name = self.var_cat_name.get().strip()
+
+        if not name:
+            messagebox.showwarning("Warning", "Name cannot be empty.")
+            return
+
+        if not cat_id or cat_id == "(New)":
+            # Add
+            new_id = self.icon_service.add_category(name)
+            if new_id:
+                self._load_categories_tree()
+                # Select the new one
+                for child in self.cat_tree.get_children():
+                    if str(self.cat_tree.item(child)["values"][0]) == str(new_id):
+                        self.cat_tree.selection_set(child)
+                        break
+                self._set_cat_form_state("view")
+                # trigger sync for icon manager if needed
+                self.load_tree_data()
+            else:
+                messagebox.showerror("Error", "Could not add category (maybe duplicate name).")
+        else:
+            # Update
+            success = self.icon_service.update_category(int(cat_id), name)
+            if success:
+                self._load_categories_tree()
+                for child in self.cat_tree.get_children():
+                    if str(self.cat_tree.item(child)["values"][0]) == cat_id:
+                        self.cat_tree.selection_set(child)
+                        break
+                self._set_cat_form_state("view")
+                self.load_tree_data()
+            else:
+                messagebox.showerror("Error", "Could not update category.")
+
+    def _on_cat_cancel(self):
+        selection = self.cat_tree.selection()
+        if selection and "new_item" in str(selection[0]):
+            self.cat_tree.delete(selection[0])
+            self.var_cat_id.set("")
+            self.var_cat_name.set("")
+        else:
+            # Revert to selected values
+            if selection:
+                values = self.cat_tree.item(selection[0])["values"]
+                self.var_cat_id.set(str(values[0]))
+                self.var_cat_name.set(str(values[1]))
+
+        self._set_cat_form_state("view")
+
+    def _on_cat_delete(self):
+        cat_id = self.var_cat_id.get()
+        if not cat_id or cat_id == "(New)":
+            return
+
+        if messagebox.askyesno("Confirm", f"Delete category ID {cat_id}?"):
+            try:
+                success = self.icon_service.delete_category(int(cat_id))
+                if success:
+                    self.var_cat_id.set("")
+                    self.var_cat_name.set("")
+                    self._load_categories_tree()
+                    self._set_cat_form_state("view")
+                else:
+                    messagebox.showerror("Error", "Failed to delete category.")
+            except ValueError as e:
+                if str(e) == "category_in_use_error":
+                    messagebox.showerror("Error", "Cannot delete category because it is used by icons.")
+                else:
+                    messagebox.showerror("Error", f"An error occurred: {e}")
