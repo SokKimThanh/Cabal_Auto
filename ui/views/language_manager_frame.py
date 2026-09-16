@@ -84,7 +84,7 @@ class LanguageManagerFrame(tk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
     def _build_bottom_section(self):
-        bottom_frame = tk.LabelFrame(self, text=self._t("lang_mgr_edit_form", default="Edit Translation"), bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
+        bottom_frame = tk.LabelFrame(self, text=self._t("lang_mgr_edit_form", default="Add / Edit Translation"), bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
         bottom_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
 
         bottom_frame.grid_rowconfigure(2, weight=1)
@@ -117,11 +117,12 @@ class LanguageManagerFrame(tk.Frame):
         btn_frame = tk.Frame(bottom_frame, bg=UIStyle.BG_ELEVATED)
         btn_frame.grid(row=3, column=0, columnspan=4, sticky="e", padx=5, pady=10)
 
-        ttk.Button(btn_frame, text=self._t("lang_mgr_clear", default="Clear"), command=self.clear_form).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=self._t("lang_mgr_add_new", default="Add New (Clear)"), command=self.clear_form).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=self._t("lang_mgr_delete", default="Delete Key"), command=self.delete_key).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=self._t("lang_mgr_save", default="Save"), command=self.save_translation).pack(side=tk.LEFT, padx=5)
 
         self.is_editing_existing = False
+        self.form_key_entry.focus_set()
 
     def refresh_data(self):
         """Reload data from DB and update UI."""
@@ -197,13 +198,14 @@ class LanguageManagerFrame(tk.Frame):
         self.is_editing_existing = True
 
     def clear_form(self):
-        self.form_ns_var.set("global")
+        self.form_ns_var.set("_global")
         self.form_key_var.set("")
         self.text_en.delete("1.0", tk.END)
         self.text_vi.delete("1.0", tk.END)
         self.form_key_entry.configure(state="normal")
         self.tree.selection_remove(self.tree.selection())
         self.is_editing_existing = False
+        self.form_key_entry.focus_set()
 
     def save_translation(self):
         ns = self.form_ns_var.get().strip()
