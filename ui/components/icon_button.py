@@ -288,6 +288,13 @@ def create_icon_button(
     # Get icon
     icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
 
+    # Check for icon database tooltip priority (only if not disabled with forbidden icon)
+    if actual_state != "disabled" and hasattr(icon_helper, "get_icon_tooltip_key"):
+        db_tooltip_key = icon_helper.get_icon_tooltip_key(icon_name)
+        if db_tooltip_key:
+            tooltip_key = db_tooltip_key
+            tooltip_text = None  # DB key takes precedence over arbitrary string if it has one
+
     # Determine if icon is PhotoImage or emoji string
     is_photoimage = not isinstance(icon, str)
 
@@ -784,6 +791,13 @@ def create_icon_label(
 
     # Get icon
     icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
+
+    # Check for icon database tooltip priority
+    if hasattr(icon_helper, "get_icon_tooltip_key"):
+        db_tooltip_key = icon_helper.get_icon_tooltip_key(icon_name)
+        if db_tooltip_key:
+            tooltip_key = db_tooltip_key
+            tooltip_text = None
 
     # Determine if icon is PhotoImage or emoji string
     is_photoimage = not isinstance(icon, str)

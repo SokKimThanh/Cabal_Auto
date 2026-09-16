@@ -565,10 +565,6 @@ class App:
             i18n_set_lang(self.lang)
         except Exception:
             pass
-        try:
-            i18n_set_lang(self.lang)
-        except Exception:
-            pass
 
         # Trigger live update of all bound UI text tokens
         if hasattr(self, "translation_binder"):

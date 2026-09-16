@@ -143,6 +143,13 @@ class SidebarComponent(tk.Frame):
                 btn.pack(fill="both", expand=True)
                 self._sidebar_widgets.append(SidebarWidgetDef(widget=btn, key=key, view_target=view_target, icon=icon))
 
+                                # Check if icon has a database tooltip key, otherwise use fallback
+                tooltip_key_to_use = key
+                if hasattr(self.icon_helper, "get_icon_tooltip_key"):
+                    db_tooltip_key = self.icon_helper.get_icon_tooltip_key(icon)
+                    if db_tooltip_key:
+                        tooltip_key_to_use = db_tooltip_key
+
                 # Add tooltip
                 # Follow memory rule: Database-backed tooltip key takes precedence over widget key
                 tooltip_key = key

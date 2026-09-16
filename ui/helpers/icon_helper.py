@@ -389,6 +389,26 @@ class IconHelper:
                     return True
         return False
 
+    def get_icon_tooltip_key(self, name: str) -> str:
+        """
+        Retrieve the tooltip translation key for a given icon.
+        Queries the database directly using database.get_db() to avoid circular dependencies.
+        """
+        try:
+            from database import get_db
+            db = get_db()
+            if not db or not db.conn:
+                return ""
+            cursor = db.conn.cursor()
+            cursor.execute("SELECT tooltip_translation_key FROM icons WHERE icon_key = ?", (name,))
+            row = cursor.fetchone()
+            if row and row[0]:
+                return row[0]
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).debug(f"Failed to fetch tooltip for icon {name}: {e}")
+        return ""
+
     def resolve_icon_display(self, icon_data: Dict) -> Tuple[str, str, bool]:
         """
         Resolve the icon display path and resource type based on fallback priority.
