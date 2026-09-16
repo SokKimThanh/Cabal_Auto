@@ -18,7 +18,7 @@ def get_icons_directory() -> Path:
     return icons_dir
 
 
-def import_icon_file(source_path: str, target_filename: Optional[str] = None) -> str:
+def import_icon_file(source_path: str, target_filename: Optional[str] = None, overwrite: bool = False) -> str:
     """
     Import an icon file by copying it to the assets/images/icons/ directory.
     Handles filename collision and resizes large images (>128px) down to 128x128.
@@ -26,6 +26,7 @@ def import_icon_file(source_path: str, target_filename: Optional[str] = None) ->
     Args:
         source_path: The source file path.
         target_filename: Optional new filename. If None, uses the original filename.
+        overwrite: If True, overwrites an existing file with the same name instead of renaming.
 
     Returns:
         The new filename.
@@ -52,7 +53,7 @@ def import_icon_file(source_path: str, target_filename: Optional[str] = None) ->
         return target_filename
 
     # Xử lý File Name Collision
-    if target_path.exists():
+    if target_path.exists() and not overwrite:
         name = target_path.stem
         ext = target_path.suffix
         counter = 1

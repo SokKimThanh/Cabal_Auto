@@ -513,19 +513,41 @@ class IconManagerFrame(ResponsiveGridBase):
                 resolved_icons_dir = os.path.normcase(os.path.abspath(str(icons_dir.resolve())))
 
                 if not resolved_selected.startswith(resolved_icons_dir):
-                    msg = self.i18n_t(
-                        "msg_file_outside_assets",
-                        default="File ảnh đang nằm ngoài thư mục hệ thống (assets). Nếu bạn xóa hoặc di chuyển file này, icon sẽ bị lỗi. Bạn có muốn tự động copy file này vào thư mục assets cho an toàn không?"
-                    )
-                    should_copy = messagebox.askyesno(
-                        self.i18n_t("warning", default="Cảnh báo"),
-                        msg
-                    )
+                    target_filename = selected_path.name
+                    target_path = icons_dir / target_filename
+                    overwrite = False
 
-                    if should_copy:
-                        final_filename = import_icon_file(file_path)
+                    if target_path.exists():
+                        # Ask user if they want to replace the existing file
+                        msg_overwrite = self.i18n_t(
+                            "msg_file_exists_overwrite",
+                            default=f"File ảnh '{target_filename}' đã tồn tại trong hệ thống.\nBạn có muốn thay thế file cũ bằng file mới này không?"
+                        )
+                        should_overwrite = messagebox.askyesno(
+                            self.i18n_t("warning", default="Cảnh báo ghi đè"),
+                            msg_overwrite
+                        )
+                        if should_overwrite:
+                            overwrite = True
+                        else:
+                            # User chose not to overwrite. Abort import to keep the existing file as is.
+                            return
                     else:
-                        final_filename = file_path # Keep original absolute path
+                        # File doesn't exist, ask normal copy warning
+                        msg = self.i18n_t(
+                            "msg_file_outside_assets",
+                            default="File ảnh đang nằm ngoài thư mục hệ thống (assets). Nếu bạn xóa hoặc di chuyển file này, icon sẽ bị lỗi. Bạn có muốn tự động copy file này vào thư mục assets cho an toàn không?"
+                        )
+                        should_copy = messagebox.askyesno(
+                            self.i18n_t("warning", default="Cảnh báo"),
+                            msg
+                        )
+                        if not should_copy:
+                            final_filename = file_path # Keep original absolute path
+                            overwrite = None # Signal that we don't import
+
+                    if overwrite is not None:
+                        final_filename = import_icon_file(file_path, overwrite=overwrite)
                 else:
                     final_filename = selected_path.name
 
