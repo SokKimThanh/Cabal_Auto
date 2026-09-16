@@ -240,8 +240,8 @@ class IconService:
             # Kích hoạt sự kiện để đồng bộ hóa và làm mới giao diện
             icon_key = icon_data.get("icon_key")
             if icon_key:
-                EventBus.trigger(IconUpdatedEvent(icon_key=icon_key))
                 EventBus.trigger(IconManagerSyncEvent())
+                EventBus.trigger(IconUpdatedEvent(icon_key=icon_key))
 
             return True
         except sqlite3.Error as e:
