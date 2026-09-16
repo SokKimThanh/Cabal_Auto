@@ -1,21 +1,19 @@
-1.  **Refactor `ui.helpers.UIHelper`**:
-    *   I've already created the base `ui/helpers/ui_helper.py` and exported it in `ui/helpers/__init__.py`. I'll verify it has all the needed logic.
-    *   The `UIHelper` has `create_tooltip`, `destroy_widget_tooltip`, and `icon` methods.
-    *   It maintains the `_tooltips` and `_icon_cache` dictionaries to prevent garbage collection.
-2.  **Move `_poll_log_queue` and `_update_logs_metrics` to `ActivityLogsFrame`**:
-    *   Extract `_poll_log_queue` and `_update_logs_metrics` from `app_gui.py` and put them into `ui/views/activity_logs_frame.py`.
-    *   Make sure `ActivityLogsFrame` gets the `TaskScheduler` instance (e.g., via `app.task_scheduler`).
-    *   In `ActivityLogsFrame.__init__`, set up the scheduled recurring tasks using `self.app.task_scheduler.schedule_recurring_task`.
-    *   Ensure we use `lib.system.hunt_logger.get_hunt_logger` within the moved methods inside `ActivityLogsFrame`.
-3.  **Update `app_gui.py`**:
-    *   Remove `_poll_log_queue`, `_update_logs_metrics`, `_create_tooltip`, `_destroy_widget_tooltip`, and `_icon` from `App`.
-    *   Remove scheduling of `_poll_log_queue` and `_update_logs_metrics` from `App._build_ui`.
-    *   In `app_gui.py`, replace any remaining `self._t` or tooltip usages with the updated logic or leave as is if only used internally (though prompt says child views should be updated).
-    *   The UI helper should be available to other modules.
-4.  **Refactor child views**:
-    *   Child views in `ui/panels/monster_target_panel.py`, `ui/tabs/hunt_tab.py`, `ui/windows/library_manager.py`, and `app_gui.py` itself that call `app._create_tooltip`, `app._destroy_widget_tooltip`, or `app._icon` will be refactored to use `UIHelper.create_tooltip`, `UIHelper.destroy_widget_tooltip`, and `UIHelper.icon`.
-    *   Fix any tests that mock these methods on `app` (e.g., `tests/unit/ui/tabs/test_hunt_target_modes.py`).
-5.  **Pre-commit steps**:
-    *   Run `pre_commit_instructions` and make sure testing, verification, review, and reflection are done.
-    *   Run pylint on `app_gui.py` to ensure it is at 10.0.
-6.  **Submit the changes**.
+1. **Update `ui/views/icon_manager_frame.py`**
+   - Add background threading logic for the `_on_sync` method to prevent UI freezing during sync operations. Disable `self.btn_sync` while syncing and update its text/state. Provide visual feedback when completed.
+   - Implement a cooldown mechanism after syncing so `btn_sync` remains disabled for a certain duration (e.g., 60 seconds) to prevent spamming.
+   - Use `attach_i18n_tooltip` on `self.btn_refresh` and `self.btn_sync` with new translation keys (e.g., `tooltip_icon_manager_refresh`, `tooltip_icon_manager_sync`) to clarify their functionalities.
+   - Refactor `_on_sync` to perform a "smart check" or simple bulk processing via a background thread, and once finished, trigger `self.load_tree_data()` on the main thread via `.after()`.
+
+2. **Update `lib/i18n/translations.py`**
+   - Add new translation keys for tooltips under appropriate languages (`en`, `vi`):
+     - `tooltip_icon_manager_refresh`: 'Reload list from database (does not alter data)' / 'Tải lại danh sách từ cơ sở dữ liệu (không thay đổi dữ liệu gốc)'
+     - `tooltip_icon_manager_sync`: 'Scan and update icons from system to database. Takes time.' / 'Quét và cập nhật icon mới từ hệ thống vào cơ sở dữ liệu. Thao tác này có thể mất chút thời gian.'
+     - `btn_syncing`: 'Syncing...' / 'Đang đồng bộ...'
+     - `btn_sync_cooldown`: 'Synced ({s}s)' / 'Đã đồng bộ ({s}s)'
+     - `msg_sync_success_none`: 'Data is already up to date.' / 'Dữ liệu đã ở trạng thái mới nhất.'
+
+3. **Complete Pre-commit Steps**
+   - Ensure proper testing, verifications, reviews, and reflections are done.
+
+4. **Submit the change**
+   - Submit code via `submit` tool.

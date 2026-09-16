@@ -1,4 +1,5 @@
 import tkinter as tk
+import threading
 from tkinter import ttk
 
 from ui.components.empty_state import EmptyState
@@ -564,11 +565,13 @@ class IconManagerFrame(ResponsiveGridBase):
         self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_translation'):
             self.app.bind_translation(self.btn_refresh, "btn_refresh")
+        attach_i18n_tooltip(self.btn_refresh, "tooltip_icon_manager_refresh", ns=None, lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi')
 
         self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("info"))
         self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_translation'):
             self.app.bind_translation(self.btn_sync, "btn_sync", default="Đồng bộ")
+        attach_i18n_tooltip(self.btn_sync, "tooltip_icon_manager_sync", ns=None, lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi')
 
         self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
         self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
@@ -688,36 +691,77 @@ class IconManagerFrame(ResponsiveGridBase):
         self.apply_filters()
 
     def _on_sync(self, show_message=True):
+        if self.btn_sync['state'] == 'disabled':
+            return
+
+        self.btn_sync.config(state='disabled', text=self.i18n_t("btn_syncing", default="Đang đồng bộ..."))
+
+        def run_sync():
+            try:
+                import sqlite3
+                from lib.db.services.icon_service import IconService
+                from database import MonsterDatabase
+
+                thread_conn = sqlite3.connect(MonsterDatabase.DB_PATH)
+                thread_icon_service = IconService(thread_conn)
+
+                mappings = self.icon_helper.icon_map
+                count = 0
+                for icon_key, (icon_stem, emoji) in mappings.items():
+                    icon_data = {
+                        "icon_key": icon_key,
+                        "name": icon_key.capitalize(),
+                        "filepath": f"{icon_stem}.png",
+                        "fallback_emoji": emoji,
+                        "tooltip_translation_key": f"icon_tooltip_{icon_key}",
+                        "category": "System",
+                        "description": f"System icon for {icon_key}"
+                    }
+
+                    existing = thread_icon_service.get_icon_by_key(icon_key)
+                    if not existing:
+                        thread_icon_service.upsert_icon(icon_data)
+                        count += 1
+
+                self.after(0, lambda: self._on_sync_complete(count, show_message))
+            except Exception as e:
+                self.after(0, lambda: self._on_sync_error(str(e), show_message))
+
+        threading.Thread(target=run_sync, daemon=True).start()
+
+    def _on_sync_complete(self, count, show_message):
         import tkinter.messagebox as messagebox
-        try:
-            # Lấy tất cả mapping từ icon_helper.icon_map (từ icons.json hoặc fallback)
-            mappings = self.icon_helper.icon_map
-            count = 0
-            for icon_key, (icon_stem, emoji) in mappings.items():
-                icon_data = {
-                    "icon_key": icon_key,
-                    "name": icon_key.capitalize(),
-                    "filepath": f"{icon_stem}.png",
-                    "fallback_emoji": emoji,
-                    "tooltip_translation_key": f"icon_tooltip_{icon_key}",
-                    "category": "System",
-                    "description": f"System icon for {icon_key}"
-                }
+        self.load_tree_data()
 
-                # Check if it already exists to preserve custom data
-                existing = self.icon_service.get_icon_by_key(icon_key)
-                if not existing:
-                    self.icon_service.upsert_icon(icon_data)
-                    count += 1
+        if show_message:
+            if count > 0:
+                msg = self.i18n_t("msg_sync_success", default=f"Đã đồng bộ {count} icons mới từ hệ thống vào cơ sở dữ liệu.", count=count)
+                messagebox.showinfo(self.i18n_t("title_sync_success", default="Đồng bộ thành công"), msg)
+            else:
+                msg = self.i18n_t("msg_sync_success_none", default="Dữ liệu đã ở trạng thái mới nhất.")
+                messagebox.showinfo(self.i18n_t("title_sync_success", default="Đồng bộ thành công"), msg)
 
-            self.load_tree_data()
-            if show_message:
-                messagebox.showinfo(
-                    "Đồng bộ thành công",
-                    f"Đã đồng bộ {count} icons mới từ hệ thống vào cơ sở dữ liệu."
-                )
-        except Exception as e:
-            messagebox.showerror("Lỗi đồng bộ", f"Có lỗi xảy ra: {e}")
+        self._start_sync_cooldown(60)
+
+    def _on_sync_error(self, err_msg, show_message):
+        import tkinter.messagebox as messagebox
+        self.btn_sync.config(state='normal', text=self.i18n_t("btn_sync", default="Đồng bộ"))
+        if show_message:
+            messagebox.showerror(self.i18n_t("title_sync_error", default="Lỗi đồng bộ"), f"Có lỗi xảy ra: {err_msg}")
+
+    def _start_sync_cooldown(self, seconds_left):
+        if not self.winfo_exists():
+            return
+        if seconds_left <= 0:
+            self.btn_sync.config(state='normal', text=self.i18n_t("btn_sync", default="Đồng bộ"))
+            return
+
+        cooldown_text = self.i18n_t("btn_sync_cooldown", default=f"Đã đồng bộ ({seconds_left}s)", s=seconds_left).replace("{s}", str(seconds_left))
+        if hasattr(self.app, 'i18n_t'):
+            cooldown_text = self.app.i18n_t("btn_sync_cooldown", s=seconds_left)
+
+        self.btn_sync.config(text=cooldown_text)
+        self.after(1000, lambda: self._start_sync_cooldown(seconds_left - 1))
 
     def _on_save(self):
         icon_key = self.var_icon_key.get().strip()
