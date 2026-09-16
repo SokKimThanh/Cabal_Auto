@@ -96,12 +96,11 @@ class LanguageManagerFrame(tk.Frame):
         # Row 0: Namespace & Key
         ns_label = ttk.Label(bottom_frame, text=self._t("lang_mgr_namespace", default="Namespace:"))
         ns_label.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        attach_i18n_tooltip(ns_label, key="tip_lang_mgr_namespace", ns="language_manager", lang_provider=lambda: getattr(self.app, "lang", "vi"))
+        attach_i18n_tooltip(ns_label, key="tip_lang_mgr_namespace", ns="_global", lang_provider=lambda: getattr(self.app, "lang", "vi"))
         self.form_ns_var = tk.StringVar()
         self.form_ns_entry = ttk.Combobox(bottom_frame, textvariable=self.form_ns_var)
         self.form_ns_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
-        attach_i18n_tooltip(self.form_ns_entry, key="tip_lang_mgr_namespace", ns="language_manager", lang_provider=lambda: getattr(self.app, "lang", "vi"))
-        attach_i18n_tooltip(self.form_ns_entry, key="tip_lang_mgr_namespace", ns="language_manager", lang_provider=lambda: getattr(self.app, "lang", "vi"))
+        attach_i18n_tooltip(self.form_ns_entry, key="tip_lang_mgr_namespace", ns="_global", lang_provider=lambda: getattr(self.app, "lang", "vi"))
 
         ttk.Label(bottom_frame, text=self._t("lang_mgr_key", default="Key:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.form_key_var = tk.StringVar()
@@ -212,6 +211,14 @@ class LanguageManagerFrame(tk.Frame):
         self.tree.selection_remove(self.tree.selection())
         self.is_editing_existing = False
         self.form_key_entry.focus_set()
+
+        # Visual feedback for users to know they can start typing
+        original_bg = self.form_key_entry.cget('background')
+        self.form_key_entry.configure(background='#fff3cd') # Light yellow to highlight
+
+        # Reset background after 1 second
+        self.after(1000, lambda: self.form_key_entry.configure(background=original_bg))
+
 
     def save_translation(self):
         ns = self.form_ns_var.get().strip()
