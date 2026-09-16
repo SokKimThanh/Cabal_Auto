@@ -32,8 +32,11 @@ class TargetStatusUpdatedEvent(Event):
         self.status = status
 
 class TargetInfoUpdatedEvent(Event):
-    def __init__(self, info: str):
+    def __init__(self, info: str, target_id: int = 0, name: str = "", hp: str = ""):
         self.info = info
+        self.target_id = target_id
+        self.name = name
+        self.hp = hp
 
 class ClearTargetUIEvent(Event):
     pass

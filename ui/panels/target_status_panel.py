@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
 from lib.ui_style_v2 import UIStyleV2 as UI
+from lib.events.event_bus import EventBus, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent
 from ui.components.status_badge import StatusBadge
 
 @dataclass
@@ -30,6 +31,74 @@ class TargetStatusPanel(ttk.LabelFrame):
         self._setup_legacy_wrappers()
 
         self._build_ui()
+        self._bind_events()
+
+    def _bind_events(self):
+        EventBus.bind(TargetHpUpdatedEvent, self._on_target_hp_updated)
+        EventBus.bind(TargetStatusUpdatedEvent, self._on_target_status_updated)
+        EventBus.bind(TargetInfoUpdatedEvent, self._on_target_info_updated)
+        EventBus.bind(ClearTargetUIEvent, self._on_clear_target_ui)
+
+    def _on_target_hp_updated(self, event: TargetHpUpdatedEvent):
+        # Update HP explicitly on main thread
+        def do_update():
+            # Update internal model
+            self._current_info.hp = int(self._current_info.max_hp * event.hp_percent) if self._current_info.max_hp else 0
+            if event.hp_percent <= 0:
+                self._current_info.state = "waiting"
+            elif self._current_info.state != "hunting":
+                # Ensure it's active
+                self._current_info.state = "hunting"
+            self.update_target(self._current_info)
+        self.after(0, do_update)
+
+    def _on_target_status_updated(self, event: TargetStatusUpdatedEvent):
+        def do_update():
+            if event.status == "APPROACHING":
+                self._current_info.state = "ready"
+            elif event.status == "ATTACKING":
+                self._current_info.state = "hunting"
+            elif event.status == "TARGET_DEAD":
+                self._current_info.state = "waiting"
+                self._current_info.hp = 0
+            self.update_target(self._current_info)
+        self.after(0, do_update)
+
+    def _on_target_info_updated(self, event: TargetInfoUpdatedEvent):
+        def do_update():
+            self._current_info.name = event.name
+            try:
+                self._current_info.max_hp = int(event.hp)
+                # Ensure HP starts full if max_hp is updated initially
+                if self._current_info.hp == 0 and self._current_info.max_hp > 0:
+                    self._current_info.hp = self._current_info.max_hp
+            except (ValueError, TypeError):
+                pass
+
+            # Ensure Level/defense defaults logic or DB lookup here (optional)
+            self._current_info.level = event.target_id # Currently just maps ID to level for visualization, if you want.
+
+            if self._current_info.state == "waiting" and self._current_info.name:
+                self._current_info.state = "ready"
+
+            self.update_target(self._current_info)
+        self.after(0, do_update)
+
+    def _on_clear_target_ui(self, event: ClearTargetUIEvent):
+        def do_update():
+            self._current_info = TargetInfo()
+            self.update_target(self._current_info)
+        self.after(0, do_update)
+
+    def destroy(self):
+        EventBus.unbind(TargetHpUpdatedEvent, self._on_target_hp_updated)
+        EventBus.unbind(TargetStatusUpdatedEvent, self._on_target_status_updated)
+        EventBus.unbind(TargetInfoUpdatedEvent, self._on_target_info_updated)
+        EventBus.unbind(ClearTargetUIEvent, self._on_clear_target_ui)
+        try:
+            super().destroy()
+        except AttributeError:
+            pass
 
     def _setup_legacy_wrappers(self):
         """Creates dummy objects for legacy code that expects standard tkinter widgets"""

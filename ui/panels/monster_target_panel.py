@@ -409,12 +409,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
                 else:
                     self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
 
-        # Use a polling loop to check listbox size dynamically since we don't have direct bindings here
-        def _poll_configured_empty_state():
-            _update_configured_empty_state()
-            self.after(1000, _poll_configured_empty_state)
-
-        self.after(100, _poll_configured_empty_state)
+        # Replaced polling with a direct reference to be called in refresh
+        self._update_configured_empty_state_ref = _update_configured_empty_state
+        _update_configured_empty_state()
 
         EventBus.bind(SceneMonstersDetectedEvent, self._update_detected_monsters_list)
         EventBus.bind(MonsterRotationUpdatedEvent, self._refresh_monster_rotation_list)
@@ -572,6 +569,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         if event and hasattr(event, "selected_index") and event.selected_index is not None:
             self.monster_rotation_listbox.selection_set(event.selected_index)
+
+        if hasattr(self, "_update_configured_empty_state_ref"):
+            self._update_configured_empty_state_ref()
 
         if hasattr(self, "_last_snapshot"):
             # Mock an event
