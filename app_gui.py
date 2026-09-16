@@ -121,6 +121,7 @@ class App:
             self.monster_library_service = getattr(di_container, "monster_library_service", None)
             self.skill_service = getattr(di_container, "skill_service", None)
             self.db_skill_service = getattr(di_container, "db_skill_service", None)
+            self.db_skill_type_service = getattr(di_container, "db_skill_type_service", None)
             self.db_class_service = getattr(di_container, "db_class_service", None)
             self.db_scan_service = getattr(di_container, "db_scan_service", None)
             self.overlay_controller = getattr(di_container, "overlay_controller", None)
@@ -1122,7 +1123,9 @@ def main():
 
         container.monster_library_service = MonsterLibraryService()
         container.skill_service = SkillRuntimeService()
+        from lib.db.services.skill_type_service import SkillTypeService
         container.db_skill_service = DbSkillService()
+        container.db_skill_type_service = SkillTypeService()
         container.db_class_service = DbClassService()
         container.db_scan_service = ScanService()
         container.skill_caster_service = SkillCasterService()

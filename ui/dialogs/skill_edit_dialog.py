@@ -21,7 +21,7 @@ class SkillEditDialog(tk.Toplevel):
 
         # Keep references to input variables
         self.var_name = tk.StringVar(value=self.skill_data.get("name", ""))
-        self.var_type = tk.StringVar(value=self.skill_data.get("type", "Attack"))
+        self.var_type_str = tk.StringVar()
 
         # Need a string var for combobox selection
         self.var_class_id_str = tk.StringVar()
@@ -59,10 +59,30 @@ class SkillEditDialog(tk.Toplevel):
         type_frame = tk.Frame(primary_frame, bg=UIStyle.THEME_BG_APP)
         type_frame.pack(fill="x", padx=UIStyle.SPACE_SM, pady=UIStyle.SPACE_SM)
         tk.Label(type_frame, text="Type:", bg=UIStyle.THEME_BG_APP, fg=UIStyle.TEXT_PRIMARY, width=15, anchor="w").pack(side="left")
-        type_combo = ttk.Combobox(type_frame, textvariable=self.var_type, values=["Attack", "Buff", "Passive"], state="readonly")
+
+        type_values = ["1 - attack"]
+        if hasattr(self.app, "db_skill_type_service"):
+            try:
+                types = self.app.db_skill_type_service.get_all_skill_types()
+                type_values = [f"{t.get('skill_type_id')} - {t.get('name')}" for t in types]
+            except Exception as e:
+                print(f"[SkillEditDialog] Error loading types: {e}")
+
+        type_combo = ttk.Combobox(type_frame, textvariable=self.var_type_str, values=type_values, state="readonly")
         type_combo.pack(side="left", fill="x", expand=True)
-        if not self.var_type.get():
-            self.var_type.set("Attack")
+
+        current_type_id = self.skill_data.get("skill_type_id")
+        # Find string matching this id
+        initial_type_value = type_values[0] if type_values else ""
+        if current_type_id:
+            for val in type_values:
+                try:
+                    if int(val.split(" - ")[0]) == int(current_type_id):
+                        initial_type_value = val
+                        break
+                except ValueError:
+                    continue
+        self.var_type_str.set(initial_type_value)
 
         # Class ID
         class_frame = tk.Frame(primary_frame, bg=UIStyle.THEME_BG_APP)
@@ -156,9 +176,17 @@ class SkillEditDialog(tk.Toplevel):
                 # Safely fallback to None without crashing
                 class_id = None
 
+        type_id = 1
+        type_selection = self.var_type_str.get()
+        if type_selection:
+            try:
+                type_id = int(type_selection.split(" - ")[0])
+            except (ValueError, IndexError):
+                type_id = 1
+
         data = {
             "name": name,
-            "type": self.var_type.get(),
+            "skill_type_id": type_id,
             "class_id": class_id,
             "alias": self.var_alias.get().strip(),
             "icon_x": self.var_icon_x.get(),
