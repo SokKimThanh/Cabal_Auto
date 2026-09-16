@@ -359,6 +359,9 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.lbl_tooltip_warning = tk.Label(tooltip_frame, text="", bg=UIStyle.BG_SURFACE, fg="#ff9800", font=(UIStyle.FONT_FAMILY_UI, 9, "bold"))
         self.lbl_tooltip_warning.grid(row=2, column=0, sticky="w")
+        self.lbl_tooltip_priority_info = tk.Label(tooltip_frame, text="ⓘ Tooltip của Icon sẽ được ưu tiên hơn Tooltip của Button", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 8, "italic"))
+        self.lbl_tooltip_priority_info.grid(row=3, column=0, sticky="w")
+
 
         # Validation bindings
         if hasattr(self.var_tooltip_key, 'trace_add'):
