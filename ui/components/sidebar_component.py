@@ -133,7 +133,8 @@ class SidebarComponent(tk.Frame):
                     btn.image = icon_img
                     btn._icon_name = icon
                 else:
-                    btn.config(text=f" {icon} ")
+                    # Fix misalignment for certain emoji characters like 🛠️ by not adding spaces around them
+                    btn.config(text=f"{icon}")
 
                 apply_button_hover_effects(
                     btn, hover_color=UI.BG_SURFACE
@@ -143,9 +144,17 @@ class SidebarComponent(tk.Frame):
                 self._sidebar_widgets.append(SidebarWidgetDef(widget=btn, key=key, view_target=view_target, icon=icon))
 
                 # Add tooltip
+                # Follow memory rule: Database-backed tooltip key takes precedence over widget key
+                tooltip_key = key
+                if hasattr(icon_helper, "get_icon_tooltip_key"):
+                    # Use the raw icon string which acts as the icon name
+                    db_tooltip_key = icon_helper.get_icon_tooltip_key(icon)
+                    if db_tooltip_key:
+                        tooltip_key = db_tooltip_key
+
                 attach_i18n_tooltip(
                     btn,
-                    key=key,
+                    key=tooltip_key,
                     ns="global",
                     lang_provider=lambda: getattr(self.app, "lang", "en"),
                 )
@@ -165,7 +174,7 @@ class SidebarComponent(tk.Frame):
                         item.widget.config(image=new_icon)
                         item.widget.image = new_icon
                     elif not is_image:
-                        item.widget.config(text=f" {item.icon} ")
+                        item.widget.config(text=f"{item.icon}")
                 else:
                     item.widget._sidebar_active = False
                     item.widget.config(
@@ -176,7 +185,7 @@ class SidebarComponent(tk.Frame):
                         item.widget.config(image=new_icon)
                         item.widget.image = new_icon
                     elif not is_image:
-                        item.widget.config(text=f" {item.icon} ")
+                        item.widget.config(text=f"{item.icon}")
 
     def update_translations(self):
         """Update i18n text for sidebar elements."""
