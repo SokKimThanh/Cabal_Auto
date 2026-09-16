@@ -388,7 +388,9 @@ class IconManagerFrame(ResponsiveGridBase):
             self.lbl_preview.image = giant_icon
         else:
             # Fallback to emoji text
-            emoji_text = giant_icon if giant_icon else fallback_emoji
+            emoji_text = giant_icon if isinstance(giant_icon, str) and giant_icon != "❓" else fallback_emoji
+            if not emoji_text:
+                emoji_text = fallback_emoji or "❓"
             self.lbl_preview.config(image='', text=emoji_text, font=(UIStyle.FONT_FAMILY_UI, 72))
             self.lbl_preview.image = None
 
@@ -611,8 +613,35 @@ class IconManagerFrame(ResponsiveGridBase):
         self.apply_filters()
 
     def _on_sync(self):
-        # Stub for next prompts
-        pass
+        import tkinter.messagebox as messagebox
+        try:
+            # Lấy tất cả mapping từ icon_helper.icon_map (từ icons.json hoặc fallback)
+            mappings = self.icon_helper.icon_map
+            count = 0
+            for icon_key, (icon_stem, emoji) in mappings.items():
+                icon_data = {
+                    "icon_key": icon_key,
+                    "name": icon_key.capitalize(),
+                    "filepath": f"{icon_stem}.png",
+                    "fallback_emoji": emoji,
+                    "tooltip_translation_key": f"icon_tooltip_{icon_key}",
+                    "category": "System",
+                    "description": f"System icon for {icon_key}"
+                }
+
+                # Check if it already exists to preserve custom data
+                existing = self.icon_service.get_icon_by_key(icon_key)
+                if not existing:
+                    self.icon_service.upsert_icon(icon_data)
+                    count += 1
+
+            self.load_tree_data()
+            messagebox.showinfo(
+                "Đồng bộ thành công",
+                f"Đã đồng bộ {count} icons mới từ hệ thống vào cơ sở dữ liệu."
+            )
+        except Exception as e:
+            messagebox.showerror("Lỗi đồng bộ", f"Có lỗi xảy ra: {e}")
 
     def _on_save(self):
         icon_key = self.var_icon_key.get().strip()
