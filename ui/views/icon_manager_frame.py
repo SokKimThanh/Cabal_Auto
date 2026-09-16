@@ -453,8 +453,9 @@ class IconManagerFrame(ResponsiveGridBase):
             setattr(self.lbl_preview, "_i18n_tooltip", None)
 
     def _on_browse_clicked(self):
-        from tkinter import filedialog
-        from lib.managers.icon_file_manager import import_icon_file
+        from tkinter import filedialog, messagebox
+        from pathlib import Path
+        from lib.managers.icon_file_manager import get_icons_directory, import_icon_file
 
         file_path = filedialog.askopenfilename(
             title=self.i18n_t("select_icon_file", default="Select Icon File"),
@@ -463,24 +464,62 @@ class IconManagerFrame(ResponsiveGridBase):
 
         if file_path:
             try:
-                # Import icon into assets directory
-                filename = import_icon_file(file_path)
+                selected_path = Path(file_path)
+                icons_dir = get_icons_directory()
+
+                # Check if file is outside assets
+                final_filename = selected_path.name
+                if not str(selected_path.resolve()).startswith(str(icons_dir.resolve())):
+                    msg = self.i18n_t(
+                        "msg_file_outside_assets",
+                        default="File ảnh đang nằm ngoài thư mục hệ thống (assets). Nếu bạn xóa hoặc di chuyển file này, icon sẽ bị lỗi. Bạn có muốn tự động copy file này vào thư mục assets cho an toàn không?"
+                    )
+                    should_copy = messagebox.askyesno(
+                        self.i18n_t("warning", default="Cảnh báo"),
+                        msg
+                    )
+
+                    if should_copy:
+                        final_filename = import_icon_file(file_path)
+                    else:
+                        final_filename = file_path # Keep original absolute path
+                else:
+                    final_filename = selected_path.name
+
+                # Check for duplication (only if we have an icon_key selected)
+                current_icon_key = self.var_icon_key.get().strip()
+                if current_icon_key: # Form must be in ADD/EDIT mode and have key
+                    # Need to check filename against DB
+                    existing_usages = self.icon_service.get_icons_by_filepath(final_filename)
+                    # Filter out the current icon we are editing
+                    other_usages = [u for u in existing_usages if u.get("icon_key") != current_icon_key]
+
+                    if other_usages:
+                        usage_keys = ", ".join([u.get("icon_key", "") for u in other_usages])
+                        msg_dup = self.i18n_t(
+                            "msg_icon_duplicated",
+                            default=f"File ảnh '{final_filename}' đã được sử dụng cho Icon Key(s): {usage_keys}.\nBạn có chắc chắn muốn dùng chung file ảnh này không?",
+                            filename=final_filename,
+                            usage_keys=usage_keys
+                        )
+                        should_reuse = messagebox.askyesno(
+                            self.i18n_t("warning", default="Cảnh báo trùng lặp"),
+                            msg_dup
+                        )
+                        if not should_reuse:
+                            return # User aborted
+
                 # Update filepath entry
-                self.var_filepath.set(filename)
+                self.var_filepath.set(final_filename)
 
                 # Update Preview
-
-
-                # We need to temporarily add this to helper so it can find it without DB
                 self.icon_helper._icon_cache = getattr(self.icon_helper, "_icon_cache", {})
-
-                # Normally get_icon looks in DB or config.
-                # Let's bypass and just use evaluate_icon_status or we can just load the image directly.
                 from PIL import Image, ImageTk
-                from lib.managers.icon_file_manager import get_icons_directory
 
-                icons_dir = get_icons_directory()
-                target_path = icons_dir / filename
+                # Determine correct target path for preview
+                target_path = Path(final_filename)
+                if not target_path.is_absolute():
+                    target_path = icons_dir / final_filename
 
                 if target_path.exists():
                     try:
@@ -492,8 +531,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     except Exception as e:
                         print(f"Error loading preview image: {e}")
             except Exception as e:
-                from tkinter import messagebox
-                messagebox.showerror("Error", f"Could not import file:\n{str(e)}")
+                messagebox.showerror("Error", f"Could not process file:\n{str(e)}")
 
     def _build_action_bar(self):
         # We place Add, Edit, Delete on the left, and Refresh, Sync, Save, Cancel on the right.
