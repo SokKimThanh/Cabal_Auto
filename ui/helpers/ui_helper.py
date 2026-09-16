@@ -83,13 +83,30 @@ class UIHelper:
             except Exception:
                 pass
 
-        widget.bind("<Enter>", on_enter, add="+")
-        widget.bind("<Leave>", on_leave, add="+")
+
+        if hasattr(widget, "_tooltip_enter_id"):
+            widget.unbind("<Enter>", widget._tooltip_enter_id)
+        if hasattr(widget, "_tooltip_leave_id"):
+            widget.unbind("<Leave>", widget._tooltip_leave_id)
+
+        enter_id = widget.bind("<Enter>", on_enter, add="+")
+        leave_id = widget.bind("<Leave>", on_leave, add="+")
+
+        widget._tooltip_enter_id = enter_id
+        widget._tooltip_leave_id = leave_id
+
 
     @classmethod
     def destroy_widget_tooltip(cls, widget: tk.Widget):
         """Safely destroy a tooltip for a widget."""
         try:
+            if hasattr(widget, "_tooltip_enter_id"):
+                widget.unbind("<Enter>", widget._tooltip_enter_id)
+                delattr(widget, "_tooltip_enter_id")
+            if hasattr(widget, "_tooltip_leave_id"):
+                widget.unbind("<Leave>", widget._tooltip_leave_id)
+                delattr(widget, "_tooltip_leave_id")
+
             if id(widget) in cls._tooltips:
                 try:
                     cls._tooltips[id(widget)].destroy()
