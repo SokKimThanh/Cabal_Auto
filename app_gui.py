@@ -76,18 +76,6 @@ except ImportError:
 
 class App:
 
-    @property
-    def skills(self):
-        """Legacy compatibility property for views still expecting self.app.skills."""
-        if hasattr(self, "skill_service"):
-            return self.skill_service.get_all_skills()
-        return []
-
-    @skills.setter
-    def skills(self, value):
-        """Legacy setter trap to redirect to service."""
-        if hasattr(self, "skill_service"):
-            self.skill_service.save_skills(value)
 
     def _t(self, key: str, **kwargs) -> str:
         kwargs.pop("ns", None)
@@ -259,76 +247,8 @@ class App:
         if hasattr(self, 'monster_rotation_controller') and self.monster_rotation_controller:
             self.monster_rotation_controller.load_monster_rotation_list()
 
-        # If migration created anonymous skill_slots (blank names) from legacy attack_keys,
-        # try to map them to actual attack skills from the skill library for a better UX.
-        try:
-            slots = self.state_controller.hunt_cfg.get("skill_slots", [])
-            # find anonymous slots (name is empty but key present)
-            anon_indices = [
-                i
-                for i, s in enumerate(slots)
-                if isinstance(s, dict) and not s.get("name") and s.get("key")
-            ]
-            if anon_indices:
-                # Inform the user that a legacy migration occurred (attack_keys -> skill_slots)
-                try:
-                    # Show a gentle migration notice (one-time modal)
-                    DialogService.show_info(
-                        self._t("migration_legacy_attack_keys_title"),
-                        self._t("migration_legacy_attack_keys_message"),
-                    )
-                except Exception:
-                    pass
-
-            if anon_indices and self.skills:
-                # collect candidate attack skill names that are not already assigned
-                assigned = {
-                    s.get("name")
-                    for s in slots
-                    if isinstance(s, dict) and s.get("name")
-                }
-                attack_names = [
-                    sk.get("name", "Unknown")
-                    for sk in self.skills
-                    if sk.get("type", "attack") == "attack"
-                    and sk.get("name")
-                    and sk.get("name") not in assigned
-                ]
-                changed = False
-                for idx in anon_indices:
-                    if not attack_names:
-                        break
-                    name = attack_names.pop(0)
-                    slots[idx]["name"] = name
-                    changed = True
-                if changed:
-                    # persist mapping
-                    self.state_controller.hunt_cfg["skill_slots"] = slots
-                    try:
-                        save_hunt_config(self.state_controller.hunt_cfg)
-                        try:
-                            # show auto-mapped details if available
-                            mapped = ", ".join(
-                                [
-                                    slots[i].get("name", "")
-                                    for i in anon_indices
-                                    if slots[i].get("name")
-                                ]
-                            )
-                            info_msg = self._t(
-                                "migration_legacy_attack_keys_auto_mapped"
-                            ).format(mapped=mapped)
-                            DialogService.show_info(self._t("skill_section"), info_msg)
-                        except Exception:
-                            pass
-                        # also set a short hunt status message
-                        self.state_controller.set_ui_var('hunt_status', self._t("migration_mapped_slots_short"))
-                    except Exception:
-                        # non-fatal
-                        pass
-        except Exception:
-            pass
-        self.skill_selected_name = self.skills[0].get("name", "Unknown") if self.skills else None
+        skills = self.skill_service.get_all_skills() if hasattr(self, "skill_service") and self.skill_service else []
+        self.skill_selected_name = skills[0].get("name", "Unknown") if skills else None
         self.skill_slot_saved_names = [
             slot.get("name", "")
             for slot in self.state_controller.hunt_cfg.get("skill_slots", [])
@@ -1147,6 +1067,7 @@ class App:
 
 
 def main():
+    from lib.features.setup.config_migration_service import ConfigMigrationService
     from lib.system.instance_lock import SingleInstanceLock
 
     instance_lock = SingleInstanceLock("CabalAutoHunt_v1")
@@ -1190,6 +1111,7 @@ def main():
         container.skill_caster_service = SkillCasterService()
 
         app = App(root=root, di_container=container)
+        ConfigMigrationService.migrate_legacy_attack_keys(app.state_controller, getattr(container, 'skill_service', None), app._t)
 
         container.overlay_controller = AppOverlayController(app)
         app.overlay_controller = container.overlay_controller
