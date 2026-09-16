@@ -31,6 +31,27 @@ def test_import_icon_file(mock_icons_dir, tmp_path):
     assert imported_name2 == "new_name.ico"
     assert (mock_icons_dir / "new_name.ico").exists()
 
+def test_import_icon_file_overwrite(mock_icons_dir, tmp_path):
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "test_icon.png"
+    source_file.write_text("new data")
+
+    # Create existing file in assets
+    existing_file = mock_icons_dir / "test_icon.png"
+    existing_file.write_text("old data")
+
+    # 1. Import with overwrite=False (default behavior)
+    imported_name = import_icon_file(str(source_file))
+    assert imported_name == "test_icon_1.png"
+    assert (mock_icons_dir / "test_icon_1.png").read_text() == "new data"
+    assert (mock_icons_dir / "test_icon.png").read_text() == "old data"
+
+    # 2. Import with overwrite=True
+    imported_name_overwrite = import_icon_file(str(source_file), overwrite=True)
+    assert imported_name_overwrite == "test_icon.png"
+    assert (mock_icons_dir / "test_icon.png").read_text() == "new data"
+
 
 def test_delete_icon_file(mock_icons_dir):
     # Create a file in the target directory
