@@ -436,6 +436,9 @@ class SkillPanel(ttk.LabelFrame):
 
         if not success:
             self.widgets["cb_class"].set(last_selected)
+        else:
+            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
+                dd.config(values=skill_names)
 
     def on_start_combo(self):
         self.widgets["combo_indicator_dot"].config(text="🟢")
@@ -511,7 +514,7 @@ class SkillPanel(ttk.LabelFrame):
 
         # First, ensure combobox values are up to date
         for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-            dd.config(values=getattr(self, "skill_names", []))
+            dd.config(values=self.controller.skill_names)
 
         # Update dropdowns, hotkeys, and stats
         for lane_key, dropdown_list, hotkeys_list, stats_list in [
