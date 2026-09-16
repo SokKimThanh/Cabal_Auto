@@ -63,6 +63,7 @@ class IconHelper:
 
         # Icon cache
         self._cache = {}
+        self._tooltip_keys_cache = {}
 
         # Load icon mappings from JSON or use fallback
         self.icon_map = {}
