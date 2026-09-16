@@ -316,27 +316,56 @@ class UIStyleV2:
 
     @classmethod
     def get_button_style(cls, variant="primary"):
-        """Returns kwargs for tk.Button styling"""
-        if variant == "primary":
+        """Returns kwargs for tk.Button styling matching UIStyleV2 Design Tokens"""
+
+        base_font = cls.get_font(role="label", weight="bold")
+
+        if variant == "primary": # Nút Add / Thêm mới, Start
             return {
-                "bg": cls.ACCENT_GREEN,
-                "fg": "#000000",
-                "activebackground": "#86efac",  # Lighter green for hover/active
+                "bg": cls.ACCENT_GREEN,         # #4ade80
+                "fg": "#000000",                # Chữ đen tương phản cao
+                "activebackground": "#86efac",
                 "activeforeground": "#000000",
                 "relief": "flat",
                 "borderwidth": 0,
+                "font": base_font,
+                "cursor": "hand2"
             }
-        elif variant == "secondary":
+        elif variant == "secondary" or variant == "neutral": # Nút Edit, Refresh
             return {
-                "bg": cls.BG_ELEVATED,
-                "fg": cls.TEXT_PRIMARY,
+                "bg": cls.BG_ELEVATED,          # #131720
+                "fg": cls.TEXT_PRIMARY,         # #d1d5db (Chữ sáng rõ)
                 "activebackground": cls.BG_SURFACE,
-                "activeforeground": cls.TEXT_PRIMARY,
+                "activeforeground": "#FFFFFF",
                 "relief": "flat",
                 "borderwidth": 1,
-                "highlightbackground": cls.BORDER_PRIMARY,
+                "highlightbackground": cls.BORDER_PRIMARY, # #2a2a2a
+                "font": base_font,
+                "cursor": "hand2"
             }
-        elif variant == "icon":
+        elif variant == "danger": # Nút Delete / Xóa
+            return {
+                "bg": cls.DANGER,               # #dc2626
+                "fg": "#FFFFFF",                # Chữ TRẮNG TINH tương phản 100%
+                "activebackground": "#b91c1c",
+                "activeforeground": "#FFFFFF",
+                "relief": "flat",
+                "borderwidth": 0,
+                "font": base_font,
+                "cursor": "hand2"
+            }
+        elif variant == "info": # Nút Đồng bộ / Sync
+            return {
+                "bg": cls.ACCENT_BLUE,          # #38bdf8
+                "fg": "#000000",                # Chữ đen tương phản tốt
+                "activebackground": "#7dd3fc",
+                "activeforeground": "#000000",
+                "relief": "flat",
+                "borderwidth": 0,
+                "font": base_font,
+                "cursor": "hand2"
+            }
+        elif variant == "icon": # Nút Icon nhỏ
             return {
                 "bg": cls.BG_ELEVATED,
                 "fg": cls.TEXT_MUTED,
@@ -345,6 +374,8 @@ class UIStyleV2:
                 "relief": "flat",
                 "borderwidth": 1,
                 "highlightbackground": cls.BORDER_SUBTLE,
+                "font": base_font,
+                "cursor": "hand2"
             }
         return {}
 

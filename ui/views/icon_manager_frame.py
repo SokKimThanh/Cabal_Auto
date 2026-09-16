@@ -87,7 +87,7 @@ class IconManagerFrame(ResponsiveGridBase):
         search_frame = tk.Frame(self.top_filter_frame, bg=UIStyle.BG_SUBTLE)
         search_frame.grid(row=0, column=0, sticky="ew", padx=(10, 5), pady=15)
 
-        tk.Label(search_frame, text="Search:", bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        tk.Label(search_frame, text=self.i18n_t("lbl_search", default="Search:"), bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var)
         self.search_entry.pack(side="left", fill="x", expand=True, padx=(5, 0))
         self.search_entry.bind("<KeyRelease>", self._on_search_key_release)
@@ -97,7 +97,7 @@ class IconManagerFrame(ResponsiveGridBase):
         status_frame = tk.Frame(self.top_filter_frame, bg=UIStyle.BG_SUBTLE)
         status_frame.grid(row=0, column=1, sticky="w", padx=5, pady=15)
 
-        tk.Label(status_frame, text="Status:", bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        tk.Label(status_frame, text=self.i18n_t("lbl_status", default="Status:"), bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.status_combo = ttk.Combobox(
             status_frame,
             textvariable=self.status_var,
@@ -113,7 +113,7 @@ class IconManagerFrame(ResponsiveGridBase):
         category_frame = tk.Frame(self.top_filter_frame, bg=UIStyle.BG_SUBTLE)
         category_frame.grid(row=0, column=2, sticky="w", padx=(5, 10), pady=15)
 
-        tk.Label(category_frame, text="Category:", bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        tk.Label(category_frame, text=self.i18n_t("lbl_category", default="Category:"), bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.category_combo = ttk.Combobox(
             category_frame,
             textvariable=self.category_var,
@@ -123,23 +123,31 @@ class IconManagerFrame(ResponsiveGridBase):
         self.category_combo.pack(side="left", padx=(5, 0))
         self.category_combo.bind("<<ComboboxSelected>>", lambda e: self.apply_filters())
 
-        # 2. Main Content (Left - Right split)
+        # 2. Main Content (Left - Right split) using PanedWindow
         self.main_content_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
         self.main_content_frame.grid(row=1, column=0, sticky="nsew", pady=UIStyle.SPACE_MD)
-
-        # Configure columns for split
         self.main_content_frame.grid_rowconfigure(0, weight=1)
-        self.main_content_frame.grid_columnconfigure(0, weight=0, minsize=250)  # Left Sidebar (Master List)
-        self.main_content_frame.grid_columnconfigure(1, weight=1)              # Right Detail Zone
+        self.main_content_frame.grid_columnconfigure(0, weight=1)
+
+        # Style cho PanedWindow nếu cần
+        style = ttk.Style()
+        style.configure('IconManager.TPanedwindow', background=UIStyle.BG_BASE)
+
+        self.paned_window = ttk.PanedWindow(self.main_content_frame, orient=tk.HORIZONTAL, style='IconManager.TPanedwindow')
+        self.paned_window.grid(row=0, column=0, sticky="nsew")
 
         # Left Master List Frame
-        self.left_master_frame = tk.Frame(self.main_content_frame, bg=UIStyle.BG_ELEVATED)
-        self.left_master_frame.grid(row=0, column=0, sticky="nsew", padx=(0, UIStyle.SPACE_SM))
+        self.left_master_frame = tk.Frame(self.paned_window, bg=UIStyle.BG_ELEVATED)
+        self.paned_window.add(self.left_master_frame, weight=0) # Sẽ set width qua Configure
 
         # Configure grid for treeview and scrollbar
         self.left_master_frame.grid_rowconfigure(0, weight=1)
         self.left_master_frame.grid_columnconfigure(0, weight=1)
         self.left_master_frame.grid_columnconfigure(1, weight=0)
+
+        # Style Treeview để fix lỗi text clipping
+        style = ttk.Style()
+        style.configure("IconManager.Treeview", rowheight=28)
 
         # Create Treeview
         columns = ("col_id", "col_key", "col_status")
@@ -147,20 +155,21 @@ class IconManagerFrame(ResponsiveGridBase):
             self.left_master_frame,
             columns=columns,
             show="tree headings",
-            selectmode="browse"
+            selectmode="browse",
+            style="IconManager.Treeview"
         )
 
         # Define headings
-        self.tree.heading("#0", text="Tên / Danh mục", anchor="w")
+        self.tree.heading("#0", text=self.i18n_t("col_name_category", default="Tên / Danh mục"), anchor="w")
         self.tree.heading("col_id", text="ID", anchor="w")
         self.tree.heading("col_key", text="Icon Key", anchor="w")
-        self.tree.heading("col_status", text="Trạng Thái", anchor="center")
+        self.tree.heading("col_status", text=self.i18n_t("col_status", default="Trạng Thái"), anchor="center")
 
-        # Define columns
+        # Define columns (tăng minwidth của col_status để tránh cắt chữ)
         self.tree.column("#0", width=150, minwidth=100, stretch=tk.YES)
         self.tree.column("col_id", width=50, minwidth=50, stretch=tk.NO)
         self.tree.column("col_key", width=150, minwidth=100, stretch=tk.YES)
-        self.tree.column("col_status", width=80, minwidth=80, stretch=tk.NO, anchor="center")
+        self.tree.column("col_status", width=95, minwidth=95, stretch=tk.NO, anchor="center")
 
         # Scrollbar
         self.tree_scroll_y = ttk.Scrollbar(self.left_master_frame, orient="vertical", command=self.tree.yview)
@@ -177,15 +186,52 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree.bind("<Configure>", self._check_scrollbar)
 
         # Right Detail Frame
-        self.right_detail_frame = tk.Frame(self.main_content_frame, bg=UIStyle.BG_SURFACE)
-        self.right_detail_frame.grid(row=0, column=1, sticky="nsew", padx=(UIStyle.SPACE_SM, 0))
+        self.right_detail_frame = tk.Frame(self.paned_window, bg=UIStyle.BG_SURFACE)
+        self.paned_window.add(self.right_detail_frame, weight=1)
 
-        self.right_detail_frame.grid_rowconfigure(0, weight=1)  # Preview
-        self.right_detail_frame.grid_rowconfigure(1, weight=1)  # Form
+        # Bind Configure to set 35:65 ratio on first render
+        self._sash_configured = False
+        def on_configure(event):
+            if not self._sash_configured and event.width > 10:
+                self._sash_configured = True
+                sash_pos = int(event.width * 0.35)
+                self.paned_window.sashpos(0, sash_pos)
+
+        self.paned_window.bind('<Configure>', on_configure)
+
+        self.right_detail_frame.grid_rowconfigure(0, weight=1)
         self.right_detail_frame.grid_columnconfigure(0, weight=1)
+
+        # Trạng thái 1: Empty (chưa chọn icon)
+        self.empty_state_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
+        self.empty_state_frame.grid(row=0, column=0, sticky="nsew")
+        self.empty_state_frame.grid_rowconfigure(0, weight=1)
+        self.empty_state_frame.grid_columnconfigure(0, weight=1)
+
+        self.empty_preview = EmptyState(
+            self.empty_state_frame,
+            icon="🖼️",
+            message=self.i18n_t("msg_no_icon_selected", default="Chưa tìm thấy icon nào trong thư mục hệ thống"),
+            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết")
+        )
+        self.empty_preview.grid(row=0, column=0, sticky="nsew")
+
+        # Trạng thái 2: Content (đã chọn icon, có form & preview)
+        self.content_state_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
+        self.content_state_frame.grid(row=0, column=0, sticky="nsew")
+        self.content_state_frame.grid_rowconfigure(0, weight=1) # Preview
+        self.content_state_frame.grid_rowconfigure(1, weight=0) # Form ko co giãn quá mức
+        self.content_state_frame.grid_columnconfigure(0, weight=1)
+
+        # Bọc Form vào một container giới hạn max width
+        self.detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
+        self.detail_container.grid(row=1, column=0, sticky="nw", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
 
         self._build_preview_zone()
         self._build_detail_form()
+
+        # Mặc định hiện empty state
+        self.empty_state_frame.tkraise()
 
         # 3. Bottom Action Bar
         self.bottom_action_frame = tk.Frame(content_frame, bg=UIStyle.BG_SUBTLE, height=60)
@@ -196,23 +242,14 @@ class IconManagerFrame(ResponsiveGridBase):
         self._build_action_bar()
 
     def _build_preview_zone(self):
-        self.preview_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
+        self.preview_frame = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
         self.preview_frame.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
         self.preview_frame.grid_rowconfigure(0, weight=1)
         self.preview_frame.grid_columnconfigure(0, weight=1)
         self.preview_frame.grid_propagate(False) # Keep the height stable
         self.preview_frame.config(height=200)
 
-        # Empty State
-        self.empty_preview = EmptyState(
-            self.preview_frame,
-            icon="🖼️",
-            message=self.i18n_t("msg_no_icon_selected", default="Chưa tìm thấy icon nào trong thư mục hệ thống"),
-            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết")
-        )
-        self.empty_preview.grid(row=0, column=0, sticky="nsew")
-
-        # Preview Label (Hidden by default)
+        # Preview Label (Hidden by default, will be managed in _render_preview)
         self.lbl_preview = tk.Label(
             self.preview_frame,
             bg=UIStyle.BG_ELEVATED,
@@ -220,15 +257,14 @@ class IconManagerFrame(ResponsiveGridBase):
             font=UIStyle.get_font("body"),
             relief="groove"
         )
-        # We don't grid it initially, _render_preview will toggle them
 
     def _build_detail_form(self):
-        self.form_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
-        self.form_frame.grid(row=1, column=0, sticky="nsew")
+        self.form_frame = tk.Frame(self.detail_container, bg=UIStyle.BG_SURFACE)
+        self.form_frame.pack(fill="x", expand=False)
 
         # Configure columns for form labels and entries
-        self.form_frame.grid_columnconfigure(0, weight=0, minsize=100)
-        self.form_frame.grid_columnconfigure(1, weight=1)
+        self.form_frame.grid_columnconfigure(0, weight=0, minsize=120)
+        self.form_frame.grid_columnconfigure(1, weight=1, minsize=400)
 
         # StringVars
         self.var_id = tk.StringVar()
@@ -245,7 +281,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_id.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
 
         # 2. Name
-        tk.Label(self.form_frame, text="Name:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_name", default="Name:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
         self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name)
         self.entry_name.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
 
@@ -255,17 +291,17 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_icon_key.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
 
         # 4. Category
-        tk.Label(self.form_frame, text="Category:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_category", default="Category:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
         self.combo_category = ttk.Combobox(self.form_frame, textvariable=self.var_category, state="readonly")
         self.combo_category.grid(row=3, column=1, sticky="ew", padx=5, pady=2)
 
         # 5. Fallback Emoji
-        tk.Label(self.form_frame, text="Fallback Emoji:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=4, column=0, sticky="e", padx=5, pady=2)
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_fallback_emoji", default="Fallback Emoji:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=4, column=0, sticky="e", padx=5, pady=2)
         self.entry_fallback = ttk.Entry(self.form_frame, textvariable=self.var_fallback_emoji)
         self.entry_fallback.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
 
         # 6. Tooltip Key
-        tk.Label(self.form_frame, text="Tooltip Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_tooltip_key", default="Tooltip Key:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
 
         tooltip_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
         tooltip_frame.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
@@ -287,7 +323,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._load_i18n_keys()
 
         # 7. Filepath (with Browse button)
-        tk.Label(self.form_frame, text="Filepath:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=6, column=0, sticky="e", padx=5, pady=2)
+        tk.Label(self.form_frame, text=self.i18n_t("lbl_filepath", default="Filepath:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=6, column=0, sticky="e", padx=5, pady=2)
 
         filepath_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
         filepath_frame.grid(row=6, column=1, sticky="ew", padx=5, pady=2)
@@ -368,13 +404,13 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _render_preview(self, icon_data):
         if not icon_data:
+            self.empty_state_frame.tkraise()
             self.lbl_preview.grid_remove()
-            self.empty_preview.grid(row=0, column=0, sticky="nsew")
             self.lbl_preview.config(image='', text="")
             self.lbl_preview.image = None
             return
 
-        self.empty_preview.grid_remove()
+        self.content_state_frame.tkraise()
         self.lbl_preview.grid(row=0, column=0, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD, sticky="nsew")
 
         icon_key = icon_data.get("icon_key", "")
@@ -467,17 +503,17 @@ class IconManagerFrame(ResponsiveGridBase):
         right_frame = tk.Frame(self.bottom_action_frame, bg=UIStyle.BG_SUBTLE)
         right_frame.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add"), command=self._on_add, **UIStyle.get_button_style("primary"))
+        self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add", default="Add"), command=self._on_add, **UIStyle.get_button_style("primary"))
         self.btn_add.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_translation'):
             self.app.bind_translation(self.btn_add, "btn_add")
 
-        self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
+        self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit", default="Edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
         self.btn_edit.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_translation'):
             self.app.bind_translation(self.btn_edit, "btn_edit")
 
-        self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete"), command=self._on_delete, **UIStyle.get_button_style("danger" if hasattr(UIStyle, 'get_button_style') and 'danger' in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)] else "secondary"))
+        self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete", default="Delete"), command=self._on_delete, **UIStyle.get_button_style("danger"))
         self.btn_delete.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_translation'):
             self.app.bind_translation(self.btn_delete, "btn_delete")
@@ -486,12 +522,12 @@ class IconManagerFrame(ResponsiveGridBase):
         if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
             self.btn_delete.configure(bg=UIStyle.DANGER, fg="white")
 
-        self.btn_refresh = tk.Button(right_frame, text=self.i18n_t("btn_refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
+        self.btn_refresh = tk.Button(right_frame, text=self.i18n_t("btn_refresh", default="Refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
         self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_translation'):
             self.app.bind_translation(self.btn_refresh, "btn_refresh")
 
-        self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("secondary"))
+        self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("info"))
         self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_translation'):
             self.app.bind_translation(self.btn_sync, "btn_sync", default="Đồng bộ")
@@ -599,6 +635,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     # Reload tree
                     self.load_tree_data()
                     self.set_form_state("VIEW")
+                    self.tree.focus_set()
                 else:
                     messagebox.showerror("Error", f"Failed to delete icon '{icon_key}'.")
             except ValueError as e:
@@ -674,13 +711,15 @@ class IconManagerFrame(ResponsiveGridBase):
                             break
 
             self.set_form_state("VIEW")
+            self.tree.focus_set()
         else:
             from tkinter import messagebox
             messagebox.showerror("Error", "Failed to save icon data.")
 
     def _on_cancel(self):
-        self._on_tree_select(None)
+        self._process_tree_selection()
         self.set_form_state("VIEW")
+        self.tree.focus_set()
 
     def _on_search_key_release(self, event):
         # Cancel any previous timer
@@ -793,6 +832,11 @@ class IconManagerFrame(ResponsiveGridBase):
             pass
 
     def _on_tree_select(self, event):
+        if hasattr(self, '_select_after_id') and self._select_after_id:
+            self.after_cancel(self._select_after_id)
+        self._select_after_id = self.after(50, self._process_tree_selection)
+
+    def _process_tree_selection(self):
         selection = self.tree.selection()
         if not selection:
             # Clear form
