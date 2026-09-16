@@ -30,21 +30,95 @@ class IconService:
             logger.error(f"Error checking orphaned file {filepath}: {e}")
             return False
 
+
+    def get_all_categories(self) -> List[Dict]:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM icon_categories ORDER BY name")
+            rows = cursor.fetchall()
+            return [self._row_to_dict(cursor, row) for row in rows]
+        except sqlite3.Error as e:
+            logger.error(f"Error in get_all_categories: {e}")
+            return []
+
+    def get_category_by_id(self, category_id: int) -> Optional[Dict]:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM icon_categories WHERE id = ?", (category_id,))
+            row = cursor.fetchone()
+            if row:
+                return self._row_to_dict(cursor, row)
+            return None
+        except sqlite3.Error as e:
+            logger.error(f"Error in get_category_by_id: {e}")
+            return None
+
+    def add_category(self, name: str, description: str = "") -> Optional[int]:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "INSERT INTO icon_categories (name, description) VALUES (?, ?)",
+                (name, description)
+            )
+            self.conn.commit()
+
+            # Broadcast update if UI listens to categories
+            # EventBus.trigger(IconCategorySyncEvent()) # Optional
+
+            return cursor.lastrowid
+        except sqlite3.Error as e:
+            logger.error(f"Error in add_category: {e}")
+            self.conn.rollback()
+            return None
+
+    def update_category(self, category_id: int, name: str, description: str = "") -> bool:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "UPDATE icon_categories SET name = ?, description = ? WHERE id = ?",
+                (name, description, category_id)
+            )
+            self.conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            logger.error(f"Error in update_category: {e}")
+            self.conn.rollback()
+            return False
+
+    def delete_category(self, category_id: int) -> bool:
+        try:
+            cursor = self.conn.cursor()
+            # Prevent deleting if icons are using it
+            cursor.execute("SELECT COUNT(*) FROM icons WHERE category_id = ?", (category_id,))
+            if cursor.fetchone()[0] > 0:
+                raise ValueError("category_in_use_error")
+
+            cursor.execute("DELETE FROM icon_categories WHERE id = ?", (category_id,))
+            self.conn.commit()
+            return cursor.rowcount > 0
+        except ValueError as ve:
+            raise ve
+        except sqlite3.Error as e:
+            logger.error(f"Error in delete_category: {e}")
+            self.conn.rollback()
+            return False
+
+
     def get_all_icons(
-        self, search_term: str = "", category: str = "", status_filter: str = ""
+        self, search_term: str = "", category: str | int = "", status_filter: str = ""
     ) -> List[Dict]:
         try:
             cursor = self.conn.cursor()
-            query = "SELECT * FROM icons WHERE 1=1"
+            query = "SELECT i.*, c.name as category_name FROM icons i LEFT JOIN icon_categories c ON i.category_id = c.id WHERE 1=1"
             params = []
 
             if search_term:
-                query += " AND (icon_key LIKE ? OR name LIKE ?)"
+                query += " AND (i.icon_key LIKE ? OR i.name LIKE ?)"
                 search_like = f"%{search_term}%"
                 params.extend([search_like, search_like])
 
             if category:
-                query += " AND category = ?"
+                query += " AND i.category_id = ?"
                 params.append(category)
 
             cursor.execute(query, params)
@@ -62,7 +136,7 @@ class IconService:
                 """
                 INSERT INTO icons (
                     icon_key, name, filepath, fallback_emoji,
-                    tooltip_translation_key, category, description
+                    tooltip_translation_key, category_id, description
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(icon_key) DO NOTHING
             """,
@@ -72,7 +146,7 @@ class IconService:
                     icon_data.get("filepath"),
                     icon_data.get("fallback_emoji"),
                     icon_data.get("tooltip_translation_key"),
-                    icon_data.get("category", "General"),
+                    icon_data.get("category_id", 1),
                     icon_data.get("description"),
                 ),
             )
@@ -105,7 +179,7 @@ class IconService:
     def get_icon_by_key(self, icon_key: str) -> Optional[Dict]:
         try:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT * FROM icons WHERE icon_key = ?", (icon_key,))
+            cursor.execute("SELECT i.*, c.name as category_name FROM icons i LEFT JOIN icon_categories c ON i.category_id = c.id WHERE i.icon_key = ?", (icon_key,))
             row = cursor.fetchone()
             if row:
                 return self._row_to_dict(cursor, row)
@@ -118,7 +192,7 @@ class IconService:
         """Lấy danh sách các icons đang dùng chung một filepath."""
         try:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT * FROM icons WHERE filepath = ?", (filepath,))
+            cursor.execute("SELECT i.*, c.name as category_name FROM icons i LEFT JOIN icon_categories c ON i.category_id = c.id WHERE i.filepath = ?", (filepath,))
             rows = cursor.fetchall()
             return [self._row_to_dict(cursor, row) for row in rows]
         except sqlite3.Error as e:
@@ -137,14 +211,14 @@ class IconService:
                 """
                 INSERT INTO icons (
                     icon_key, name, filepath, fallback_emoji,
-                    tooltip_translation_key, category, description
+                    tooltip_translation_key, category_id, description
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(icon_key) DO UPDATE SET
                     name = excluded.name,
                     filepath = excluded.filepath,
                     fallback_emoji = excluded.fallback_emoji,
                     tooltip_translation_key = excluded.tooltip_translation_key,
-                    category = excluded.category,
+                    category_id = excluded.category_id,
                     description = excluded.description
             """,
                 (
@@ -153,7 +227,7 @@ class IconService:
                     icon_data.get("filepath"),
                     icon_data.get("fallback_emoji"),
                     icon_data.get("tooltip_translation_key"),
-                    icon_data.get("category", "General"),
+                    icon_data.get("category_id", 1),
                     icon_data.get("description"),
                 ),
             )

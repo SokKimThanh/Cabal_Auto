@@ -21,7 +21,7 @@ def test_upsert_and_get_icon(icon_service):
         'filepath': 'test.png',
         'fallback_emoji': '🔥',
         'tooltip_translation_key': 'tt_test',
-        'category': 'test_cat',
+        'category_id': 1,
         'description': 'A test icon'
     }
 
@@ -40,14 +40,14 @@ def test_update_icon(icon_service):
     icon_service.upsert_icon({
         'icon_key': 'update_test',
         'name': 'Old Name',
-        'category': 'ui'
+        'category_id': 2
     })
 
     # Cập nhật 1 icon
     icon_service.upsert_icon({
         'icon_key': 'update_test',
         'name': 'New Name',
-        'category': 'ui',
+        'category_id': 2,
         'filepath': 'new.png'
     })
 
@@ -102,8 +102,8 @@ def test_clear_usages(icon_service):
 
 
 def test_get_all_icons(icon_service):
-    icon_service.upsert_icon({'icon_key': 'icon1', 'name': 'First', 'category': 'ui'})
-    icon_service.upsert_icon({'icon_key': 'icon2', 'name': 'Second', 'category': 'skill'})
+    icon_service.upsert_icon({'icon_key': 'icon1', 'name': 'First', 'category_id': 2})
+    icon_service.upsert_icon({'icon_key': 'icon2', 'name': 'Second', 'category_id': 3})
 
     all_icons = icon_service.get_all_icons()
     assert 'icon1' in [icon['icon_key'] for icon in all_icons] and 'icon2' in [icon['icon_key'] for icon in all_icons]
@@ -112,6 +112,6 @@ def test_get_all_icons(icon_service):
     assert len(filtered_icons) == 1
     assert filtered_icons[0]['icon_key'] == 'icon1'
 
-    cat_icons = icon_service.get_all_icons(category='skill')
+    cat_icons = icon_service.get_all_icons(category=3)
     assert len(cat_icons) == 1
     assert cat_icons[0]['icon_key'] == 'icon2'

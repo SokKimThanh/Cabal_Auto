@@ -181,7 +181,20 @@ def setup_icons_schema(conn: sqlite3.Connection):
     """Thiết lập schema cho hệ thống quản lý Icon"""
     cursor = conn.cursor()
 
-    # Bảng icons - Lưu định nghĩa và thông tin của Icon
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS icon_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            description TEXT
+        )
+    """)
+
+    cursor.execute("INSERT OR IGNORE INTO icon_categories (id, name, description) VALUES (1, 'General', 'Mặc định chung')")
+    cursor.execute("INSERT OR IGNORE INTO icon_categories (id, name, description) VALUES (2, 'UI', 'Giao diện hệ thống')")
+    cursor.execute("INSERT OR IGNORE INTO icon_categories (id, name, description) VALUES (3, 'Skills', 'Kỹ năng nhân vật')")
+    cursor.execute("INSERT OR IGNORE INTO icon_categories (id, name, description) VALUES (4, 'Monsters', 'Quái vật')")
+    cursor.execute("INSERT OR IGNORE INTO icon_categories (id, name, description) VALUES (5, 'Items', 'Vật phẩm')")
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS icons (
             icon_key TEXT PRIMARY KEY UNIQUE NOT NULL,
@@ -189,13 +202,13 @@ def setup_icons_schema(conn: sqlite3.Connection):
             filepath TEXT,
             fallback_emoji TEXT,
             tooltip_translation_key TEXT,
-            category TEXT NOT NULL DEFAULT 'General',
+            category_id INTEGER NOT NULL DEFAULT 1,
             description TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(category_id) REFERENCES icon_categories(id)
         )
     """)
 
-    # Bảng icon_usages - Lưu lịch sử/vị trí sử dụng của Icon
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS icon_usages (
             usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -208,32 +221,28 @@ def setup_icons_schema(conn: sqlite3.Connection):
         )
     """)
 
-    # Seed data for icon_manager specifically to handle Self-Management Paradox
     cursor.execute("""
-        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, tooltip_translation_key, category, description)
-        VALUES ('icon_manager', 'Icon Manager', '📁', 'btn_icon_manager', 'ui', 'Icon for the Icon Manager sidebar button')
+        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, tooltip_translation_key, category_id, description)
+        VALUES ('icon_manager', 'Icon Manager', '📁', 'btn_icon_manager', 2, 'Icon for the Icon Manager sidebar button')
     """)
     cursor.execute("""
         UPDATE icons SET tooltip_translation_key = 'btn_icon_manager' WHERE icon_key = 'icon_manager'
     """)
 
-    # Seed data for other sidebar buttons
     sidebar_icons = [
-        ('build_manager', 'Build Manager', '🛠️', 'btn_build_manager', 'ui', 'Icon for the Build Manager sidebar button'),
-        ('class_manager', 'Class Manager', '🛡️', 'btn_class_manager', 'ui', 'Icon for the Class Manager sidebar button'),
-        ('scan_history', 'Scan History', '🕒', 'btn_scan_history', 'ui', 'Icon for the Scan History sidebar button'),
-        ('logs', 'Activity Logs', '📋', 'sidebar_activity_logs', 'ui', 'Icon for the Activity Logs sidebar button'),
-        ('stats', 'Stats', '📊', 'tab_stats', 'ui', 'Icon for the Stats sidebar button'),
-        ('language_manager', 'Language Manager', '🌐', 'btn_language_manager', 'ui', 'Icon for the Language Manager sidebar button'),
-        ('help', 'Support', '❓', 'sidebar_support', 'ui', 'Icon for the Help sidebar button')
+        ('build_manager', 'Build Manager', '🛠️', 'btn_build_manager', 2, 'Icon for the Build Manager sidebar button'),
+        ('class_manager', 'Class Manager', '🛡️', 'btn_class_manager', 2, 'Icon for the Class Manager sidebar button'),
+        ('scan_history', 'Scan History', '🕒', 'btn_scan_history', 2, 'Icon for the Scan History sidebar button'),
+        ('logs', 'Activity Logs', '📋', 'sidebar_activity_logs', 2, 'Icon for the Activity Logs sidebar button'),
+        ('stats', 'Stats', '📊', 'tab_stats', 2, 'Icon for the Stats sidebar button'),
+        ('language_manager', 'Language Manager', '🌐', 'btn_language_manager', 2, 'Icon for the Language Manager sidebar button'),
+        ('help', 'Support', '❓', 'sidebar_support', 2, 'Icon for the Help sidebar button')
     ]
     cursor.executemany("""
-        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, tooltip_translation_key, category, description)
+        INSERT OR IGNORE INTO icons (icon_key, name, fallback_emoji, tooltip_translation_key, category_id, description)
         VALUES (?, ?, ?, ?, ?, ?)
     """, sidebar_icons)
 
-    # We shouldn't use INSERT OR IGNORE for usages if there's no unique constraint,
-    # so we first check if it exists.
     cursor.execute("""
         SELECT COUNT(*) FROM icon_usages
         WHERE icon_key = 'icon_manager' AND ui_element_id = 'btn_icon_manager'

@@ -45,13 +45,13 @@ def test_import_from_json(sync_manager, temp_json_path, icon_service):
     assert sync_manager.import_from_json() is True
 
     # Verify db
-    icons = [icon for icon in icon_service.get_all_icons() if icon["icon_key"] != "icon_manager"]
+    icons = [icon for icon in icon_service.get_all_icons() if icon["icon_key"] in ["btn_add", "btn_delete"]]
     assert len(icons) == 2
 
     add_icon = icon_service.get_icon_by_key("btn_add")
     assert add_icon["filepath"] == "add"
     assert add_icon["fallback_emoji"] == "➕"
-    assert add_icon["category"] == "General"
+    assert add_icon["category_name"] == "General"
 
 
 def test_export_to_json(sync_manager, temp_json_path, icon_service):
