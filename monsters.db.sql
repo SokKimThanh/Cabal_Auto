@@ -1007,6 +1007,13 @@ CREATE TABLE icon_usages (
             FOREIGN KEY(icon_key) REFERENCES icons(icon_key) ON DELETE CASCADE
         );
 INSERT INTO icon_usages VALUES(1,'icon_manager','App','sidebar_button','btn_icon_manager','Sidebar tracking for self-management paradox');
+INSERT INTO icon_usages VALUES(2,'build_manager','App','sidebar_button','btn_build_manager','Sidebar tracking for build_manager');
+INSERT INTO icon_usages VALUES(3,'class_manager','App','sidebar_button','btn_class_manager','Sidebar tracking for class_manager');
+INSERT INTO icon_usages VALUES(4,'scan_history','App','sidebar_button','btn_scan_history','Sidebar tracking for scan_history');
+INSERT INTO icon_usages VALUES(5,'logs','App','sidebar_button','sidebar_activity_logs','Sidebar tracking for logs');
+INSERT INTO icon_usages VALUES(6,'stats','App','sidebar_button','tab_stats','Sidebar tracking for stats');
+INSERT INTO icon_usages VALUES(7,'language_manager','App','sidebar_button','btn_language_manager','Sidebar tracking for language_manager');
+INSERT INTO icon_usages VALUES(8,'help','App','sidebar_button','sidebar_support','Sidebar tracking for help');
 CREATE TABLE translations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 namespace TEXT NOT NULL,
@@ -6492,7 +6499,7 @@ INSERT INTO monsters VALUES('4365','Aizan',1,47,85,12,39,26,0,1,1,0,500,-5,0,1,0
 INSERT INTO monsters VALUES('4366','Elena',1,47,85,12,39,26,0,1,1,0,500,-5,0,1,0,1,0,0,0,0,0,0,0,0,0,0,'0',NULL);
 INSERT INTO monsters VALUES('4367','Arionell',1,47,85,12,39,26,0,1,1,0,500,-5,0,1,0,1,0,0,0,0,0,0,0,0,0,0,'0',NULL);
 INSERT INTO monsters VALUES('4368','Yuan',1,47,85,12,39,26,0,1,1,0,500,-5,0,1,0,1,0,0,0,0,0,0,0,0,0,0,'0',NULL);
-INSERT INTO sqlite_sequence VALUES('icon_usages',1);
+INSERT INTO sqlite_sequence VALUES('icon_usages',8);
 INSERT INTO sqlite_sequence VALUES('classes',9);
 INSERT INTO sqlite_sequence VALUES('skills',460);
 INSERT INTO sqlite_sequence VALUES('synergies',35);
