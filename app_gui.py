@@ -116,6 +116,209 @@ class App:
 
     def __init__(self, root, di_container=None):
         self.root = root
+        self.has_unsaved_changes = False
+        self._btn_scan_ref = None
+        self._action_locked = False
+        self.monster_selected_index = None
+        self.translation_binder = TranslationBinder()
+
+        try:
+            self._create_services(di_container)
+            self._create_controllers(di_container)
+            self._initialize_application_state()
+            self._build_ui()
+            self._register_events()
+        except Exception as e:
+            print(f"[App.__init__] Error in early init: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+
+    def _create_services(self, di_container):
+        if di_container:
+            self.monster_library_service = getattr(di_container, "monster_library_service", None)
+            self.skill_service = getattr(di_container, "skill_service", None)
+            self.db_skill_service = getattr(di_container, "db_skill_service", None)
+            self.db_skill_type_service = getattr(di_container, "db_skill_type_service", None)
+            self.db_class_service = getattr(di_container, "db_class_service", None)
+            self.db_scan_service = getattr(di_container, "db_scan_service", None)
+            self.skill_caster_service = getattr(di_container, "skill_caster_service", None)
+
+        self.pil_available = (
+            Image is not None and ImageTk is not None and ImageDraw is not None
+        )
+
+    def _create_controllers(self, di_container):
+        if di_container:
+            self.overlay_controller = getattr(di_container, "overlay_controller", None)
+            self.scan_controller = getattr(di_container, "scan_controller", None)
+            self.hunt_runner = getattr(di_container, "hunt_runner", None)
+            self.hunt_orchestrator = getattr(di_container, "hunt_orchestrator", None)
+        else:
+            self.hunt_runner = None
+            self.hunt_orchestrator = None
+
+        self.task_scheduler = TaskScheduler(self)
+
+        from ui.controllers.app_state_controller import AppStateController
+        self.state_controller = AppStateController(self.root)
+
+        # Load config and language early for hotkey controller
+        self.cfg = load_config()
+        self.state_controller.hunt_cfg = load_hunt_config()
+
+        self.hotkey_controller = HotkeyController(self, self.state_controller.hunt_cfg)
+
+        from ui.controllers.app_window_controller import AppWindowController
+        from ui.controllers.window_tracker_controller import WindowTrackerController
+        self.window_controller = AppWindowController(self)
+        self.window_tracker_controller = WindowTrackerController(self)
+
+        self.overlay_ctrl = None
+        self.hunt_controller = None
+
+        from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
+        if di_container and hasattr(di_container, "monster_rotation_controller") and di_container.monster_rotation_controller:
+            self.monster_rotation_controller = di_container.monster_rotation_controller
+        else:
+            self.monster_rotation_controller = MonsterRotationController(self.state_controller)
+
+        from lib.ui.controllers.menu_vision_controller import MenuVisionController
+        self.menu_vision_controller = MenuVisionController(app=self, window_controller=self.window_controller)
+
+        self.skill_config_view = SkillConfigView(self.state_controller)
+
+    def _initialize_application_state(self):
+        self._is_destroyed = False
+        DialogService.set_default_parent(self.root)
+        self._last_height_under_900 = False
+
+        from lib.db.services.translation_service import TranslationService
+        from lib.db.services.translation_sync_manager import TranslationSyncManager
+
+        db_record_count = TranslationService().get_total_count()
+        if db_record_count == 0:
+            TranslationSyncManager.seed_initial_data()
+
+        import lib.i18n
+        lib.i18n.load_from_db()
+
+        self.lang = str(self.cfg.get("ui", {}).get("language", "vi"))
+        try:
+            i18n_set_lang(self.lang)
+        except Exception:
+            pass
+
+        try:
+            from ui.helpers.icon_helper import get_icon_helper
+            from ui.icon_library import register_icons
+
+            self.icon_helper = get_icon_helper()
+            register_icons(self.icon_helper)
+        except Exception:
+            self.icon_helper = None
+
+        self.root.config_mgr = ConfigManager(self.cfg, self.state_controller.hunt_cfg)
+
+        self.state_controller._collect_skill_slots_func = getattr(self.skill_config_view, '_collect_skill_slots', None)
+        self.state_controller.ui_widgets['unsaved_indicator_func'] = getattr(self, '_update_unsaved_indicator', None)
+
+        self._detected_snapshot_items = []
+        self._last_snapshot = None
+        self.state_controller.hunt_selected = {}
+
+        if hasattr(self, "monster_library_service") and self.monster_library_service:
+            self.monsters = self.monster_library_service.load_monsters()
+        else:
+            self.monsters = []
+
+        if hasattr(self, "skill_service") and self.skill_service:
+            self.monsters = self.skill_service._normalize_library_items(self.monsters)
+
+        self.monster_selected_name = self.monsters[0].get("name", "Unknown") if self.monsters else None
+
+        self.state_controller.monster_rotation = []
+        if hasattr(self, 'monster_rotation_controller') and self.monster_rotation_controller:
+            self.monster_rotation_controller.load_monster_rotation_list()
+
+        skills = self.skill_service.get_all_skills() if hasattr(self, "skill_service") and self.skill_service else []
+        self.skill_selected_name = skills[0].get("name", "Unknown") if skills else None
+        self.skill_slot_saved_names = [
+            slot.get("name", "")
+            for slot in self.state_controller.hunt_cfg.get("skill_slots", [])
+            if isinstance(slot, dict) and slot.get("name")
+        ]
+        self.monster_template_working = []
+        self.monster_template_selected_index = None
+        self.state_controller.ui_widgets['monster_template_listbox'] = None
+        self.state_controller.monster_template_region_vars = {
+            "left": tk.StringVar(),
+            "top": tk.StringVar(),
+            "width": tk.StringVar(),
+            "height": tk.StringVar(),
+        }
+        self.state_controller.ui_widgets['monster_template_preview_label'] = None
+        self.state_controller.ui_widgets['monster_template_preview_image'] = None
+        self._monster_template_path_trace = None
+        self._thumbnail_cache = {}
+        self.state_controller.monster_bounds_vars = {
+            "left": tk.StringVar(),
+            "top": tk.StringVar(),
+            "width": tk.StringVar(),
+            "height": tk.StringVar(),
+        }
+
+        safe_area = get_valid_hunt_area(self.state_controller.hunt_cfg)
+        self.state_controller.hunt_cfg["hunt_area"] = safe_area
+        self.state_controller.current_window_bounds = safe_area.get("window_bounds")
+        WindowSelectionService.update_bounds(self.state_controller.hunt_cfg, self.state_controller.current_window_bounds)
+
+        if pyautogui is not None:
+            pyautogui.FAILSAFE = bool(self.cfg.get("safety", {}).get("failsafe", True))
+
+        self.state_controller.win_items = []
+        self.win_items_map = {}
+
+    def _register_events(self):
+        self._register_bus_events()
+        self._register_ui_events()
+        self._register_lifecycle_events()
+
+    def _register_bus_events(self):
+        EventBus.bind(IconUpdatedEvent, self.on_icon_updated)
+        EventBus.bind(HuntStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', e.status)))
+        EventBus.bind(HuntStateChangedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self._on_orchestrator_state_change(e.state)))
+        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_hp_display(e.hp_percent) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_hp_display') else None))
+        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_status(e.status) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_status') else None))
+        EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
+        EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
+        EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
+        EventBus.bind(LanguageChangedEvent, self.on_language_change)
+        EventBus.bind(TranslationDataUpdatedEvent, self.on_translation_updated)
+
+        from lib.ui.controllers.global_config_controller import GlobalConfigController
+        self.global_config_controller = GlobalConfigController(self.state_controller, self.hotkey_controller, self._t, app_instance=self)
+        EventBus.bind(GlobalApplyEvent, lambda e: self.global_config_controller.apply_all_configs())
+
+        self.monster_rotation_controller.bind_events()
+        EventBus.bind(StartStopHuntEvent, lambda e: self.hunt_controller.on_start_stop_clicked())
+
+    def _register_ui_events(self):
+        self.root.bind("<Control-b>", lambda e: self.navigation.navigate_to("build_manager"))
+        self.root.bind("<Control-m>", lambda e: self.navigation.navigate_to("monster_manager"))
+        self.root.bind("<Control-k>", lambda e: self.navigation.navigate_to("skill_manager"))
+        self.root.bind("<Control-l>", lambda e: self.navigation.navigate_to("language_manager"))
+        self.root.bind("<Alt-Key-1>", lambda e: self.navigation.navigate_to("hunt"))
+        self.root.bind("<Alt-Key-2>", lambda e: self.navigation.navigate_to("setup"))
+        self.root.bind("<Configure>", self._on_window_configure)
+
+    def _register_lifecycle_events(self):
+        from ui.theme.ttk_theme import configure_ttk_styles
+        configure_ttk_styles(self.root)
+        self.hotkey_controller.register_all()
+        self.lifecycle_controller = AppLifecycleController(self)
+        self.lifecycle_controller.start_lifecycle()
+        self.root = root
         if di_container:
             self.monster_library_service = getattr(di_container, "monster_library_service", None)
             self.skill_service = getattr(di_container, "skill_service", None)
@@ -338,10 +541,24 @@ class App:
 
 
     def _build_ui(self):
-        # We rebuild the shell layout first
+        self._build_shell_layout()
+        self._build_main_menu()
+        self._build_navigation_and_views()
+        self._build_action_bar()
+        self._build_status_bar()
+
+    def _build_shell_layout(self):
+        from ui.components.app_shell import AppShell
+        self.shell = AppShell(root=self.root, app=self)
         self.shell.build()
 
-        # --- Main Menu Construction ---
+        self.main_shell = self.shell.main_shell
+        self.shell_zone_a = self.shell.shell_zone_a
+        self.shell_zone_b = self.shell.shell_zone_b
+        self.shell_zone_c1 = self.shell.shell_zone_c1
+        self.status_bar_frame = self.shell.status_bar_frame
+
+    def _build_main_menu(self):
         try:
             from lib.ui.components.main_menu_bar import MainMenuBar
             self.main_menu = MainMenuBar(
@@ -355,19 +572,11 @@ class App:
             try:
                 self.root.config(menu=self.main_menu)
             except Exception:
-                # Some environments may not support menu on top-level; ignore
                 pass
         except Exception as e:
             print(f"[Menu] Error creating menubar: {e}")
 
-        self.main_shell = self.shell.main_shell
-        self.shell_zone_a = self.shell.shell_zone_a
-        self.shell_zone_b = self.shell.shell_zone_b
-        self.shell_zone_c1 = self.shell.shell_zone_c1
-        self.status_bar_frame = self.shell.status_bar_frame
-
-        # Move NavigationController initialization up so Sidebar can use it
-        # UX2: View Manager for Zone B
+    def _build_navigation_and_views(self):
         from ui.controllers.navigation_controller import NavigationController
         self.navigation = NavigationController(self.shell_zone_b, on_view_changed=self._update_sidebar_state)
         self.navigation.register_views(self)
@@ -378,7 +587,6 @@ class App:
             else None
         )
 
-        # Retain tab references for backward compatibility with orchestrators/runners
         self.tab_hunt = (
             self.navigation.views["hunt"].hunt_tab
             if "hunt" in getattr(self.navigation, "views", {}) and hasattr(self.navigation.views["hunt"], "hunt_tab")
@@ -401,7 +609,6 @@ class App:
         )
         self.notebook = None
 
-        # Get DPI scale factor for layout (100% = 1.0, 125% = 1.25, etc.)
         from ui.components.sidebar_component import SidebarComponent
         self.sidebar = SidebarComponent(
             parent=self.shell_zone_c1.get_content_frame(),
@@ -409,17 +616,13 @@ class App:
             on_navigate_callback=self.navigation.navigate_to
         )
         self.sidebar.pack(fill="both", expand=True)
-
-        # Display default view
         self.navigation.navigate_to("hunt")
 
-
-        # Vùng A: Quick Action Bar
+    def _build_action_bar(self):
         from ui.components.action_bar_view import ActionBarView
         self.action_bar = ActionBarView(self.shell_zone_a, state_controller=self.state_controller, window_controller=self.window_controller, scan_controller=self.scan_controller)
         self.action_bar.pack(fill="both", expand=True)
 
-        # Map references that other parts of App might need
         self.btn_manual_scan = self.action_bar.btn_manual_scan
         self.compact_window_selector = self.action_bar.compact_window_selector
         self.screen_state_panel = self.action_bar.screen_state_panel
@@ -428,25 +631,14 @@ class App:
         self.window_status_lbl = self.action_bar.window_status_lbl
         self.lang_cmb = self.action_bar.lang_cmb
         
-        # Global Apply Section (below tabs, right-aligned)
-        self._build_global_apply_section()
-
-        # DB Status Bar (bottom of window)
-        from ui.components.status_bar_view import StatusBarView
-        self.status_bar = StatusBarView(self.status_bar_frame, state_controller=self.state_controller)
-        self.status_bar.pack(fill="both", expand=True)
-
-        # Map variables for backward compatibility
-        self._db_status_bar = self.status_bar.db_status_label
-        self.right_status = self.status_bar.right_status_label
-
-        print("[App._build_ui] ✓ UI build complete, main_shell gridded via AppShell")
-
-    def _build_global_apply_section(self):
-        """Deprecated: Handled in Action Bar (shell_zone_a)."""
         self.has_unsaved_changes = False
         self._update_unsaved_indicator()
 
+    def _build_status_bar(self):
+        from ui.components.status_bar_view import StatusBarView
+        self.status_bar = StatusBarView(self.status_bar_frame, state_controller=self.state_controller)
+        self.status_bar.pack(fill="both", expand=True)
+        self._db_status_bar = self.status_bar.db_status_label
     def _on_window_configure(self, event):
         pass
 
@@ -932,10 +1124,20 @@ class App:
 
                 logging.debug(f"Failed to clear monster rotation listbox: {e}")
 
+    # ==========================================
+    # Lifecycle & Cleanup
+    # ==========================================
+
     def on_close(self):
+        self._shutdown_runtime()
+
+    def _shutdown_runtime(self):
         self.lifecycle_controller.on_close()
 
     def destroy(self):
+        self._cleanup_resources()
+
+    def _cleanup_resources(self):
         self._is_destroyed = True
         self.lifecycle_controller.cleanup_before_destroy()
         if hasattr(self, "monster_rotation_controller"):
@@ -943,7 +1145,6 @@ class App:
         if hasattr(self, "task_scheduler"):
             self.task_scheduler.cancel_all()
         self.root.destroy()
-
     def _create_icon_button(
         self,
         parent,
