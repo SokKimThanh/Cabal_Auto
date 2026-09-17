@@ -379,7 +379,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._build_detail_form()
 
         # Mặc định hiện empty state
-        self.empty_state_frame.tkraise()
+        self._render_preview({})
 
         # Bắt đầu scan library ngầm
         self.image_model.scan_async(self._on_image_library_scanned)
@@ -816,31 +816,31 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _validate_tooltip_key(self, *args):
         key = self.var_tooltip_key.get().strip()
+
+        # Validation visual state
         if not key:
             self.lbl_tooltip_warning.config(text="")
-            # Xoá tooltip của label preview
-            if hasattr(self, 'lbl_preview'):
-                if hasattr(self.lbl_preview, "_i18n_tooltip") and getattr(self.lbl_preview, "_i18n_tooltip"):
-                    old_tip = getattr(self.lbl_preview, "_i18n_tooltip")
-                    if hasattr(old_tip, "_hide"):
-                        old_tip._hide()
-                    self.lbl_preview.unbind("<Enter>")
-                    self.lbl_preview.unbind("<Leave>")
-                    self.lbl_preview.unbind("<ButtonPress>")
-                setattr(self.lbl_preview, "_i18n_tooltip", None)
-            return
+        else:
+            try:
+                from lib.i18n import t
+                test_missing = "___MISSING___"
+                val = t(key, default=test_missing, ns=None, lang=None)
+                if val == test_missing:
+                    self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
+                else:
+                    self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
+            except Exception:
+                pass
 
-        try:
-            from lib.i18n import t
-            # Tự đặt 1 chuỗi ngẫu nhiên không có khả năng bị trùng để test default
-            test_missing = "___MISSING___"
-            val = t(key, default=test_missing, ns=None, lang=None)
-            if val == test_missing:
-                self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
-            else:
-                self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
-        except Exception:
-            pass
+        # Trigger re-render of preview to update tooltip
+        current_icon_key = self.var_icon_key.get().strip()
+        dummy_data = {
+            "icon_key": current_icon_key,
+            "fallback_emoji": self.var_fallback_emoji.get(),
+            "filepath": self.var_filepath.get().strip(),
+            "tooltip_translation_key": key
+        }
+        self._render_preview(dummy_data)
 
     def _autocomplete_tooltip(self, event):
         # Only process printable characters and backspace
@@ -860,6 +860,15 @@ class IconManagerFrame(ResponsiveGridBase):
             self.lbl_preview.grid_remove()
             self.lbl_preview.config(image='', text="")
             self.lbl_preview.image = None
+            # Clear old tooltip by unbinding Enter/Leave if needed
+            if hasattr(self.lbl_preview, "_i18n_tooltip") and getattr(self.lbl_preview, "_i18n_tooltip"):
+                old_tip = getattr(self.lbl_preview, "_i18n_tooltip")
+                if hasattr(old_tip, "_hide"):
+                    old_tip._hide()
+                self.lbl_preview.unbind("<Enter>")
+                self.lbl_preview.unbind("<Leave>")
+                self.lbl_preview.unbind("<ButtonPress>")
+                setattr(self.lbl_preview, "_i18n_tooltip", None)
             return
 
         self.content_state_frame.tkraise()
