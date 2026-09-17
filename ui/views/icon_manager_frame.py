@@ -1694,11 +1694,6 @@ class IconManagerFrame(ResponsiveGridBase):
             return
 
         selection = self.tree.selection()
-        new_filepath = self.var_filepath.get().strip()
-
-        # Save previous filepath to check for rollback if db insert fails
-        icon_data_old = self.tree_model.get_icon(icon_key)
-        old_filepath = icon_data_old.get('filepath') if icon_data_old else None
         if not selection:
             return
 
