@@ -598,9 +598,10 @@ class App:
             return
 
         fallback = icon_data.get("fallback_emoji", "")
-        # Force a refresh in cache by passing something that bypasses it or clears it
-        if hasattr(self.icon_helper, "_icon_cache"):
-            # Clear cache for this icon key
+        # Clear cache for this icon key
+        if hasattr(self.icon_helper, "clear_cache"):
+            self.icon_helper.clear_cache(event.icon_key)
+        elif hasattr(self.icon_helper, "_cache"):
             keys_to_remove = [k for k in self.icon_helper._cache.keys() if k.startswith(f"{event.icon_key}_")]
             for k in keys_to_remove:
                 del self.icon_helper._cache[k]
