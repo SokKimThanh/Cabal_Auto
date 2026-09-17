@@ -789,7 +789,11 @@ class App:
             return
 
         fallback = icon_data.get("fallback_emoji", "")
-        # Clear cache for this icon key
+        # 1. Reload the in-memory map from JSON so new paths are recognized
+        if hasattr(self.icon_helper, "reload_icon_map"):
+            self.icon_helper.reload_icon_map()
+
+        # 2. Clear cache for this icon key so Tkinter PhotoImages are regenerated
         if hasattr(self.icon_helper, "clear_cache"):
             self.icon_helper.clear_cache(event.icon_key)
         elif hasattr(self.icon_helper, "_cache"):
@@ -797,30 +801,21 @@ class App:
             for k in keys_to_remove:
                 del self.icon_helper._cache[k]
 
-        # Resolve icon
-        giant_icon = self.icon_helper.get_icon(event.icon_key, fallback=fallback, size=24)
+        # 3. Handle specific consumers from icon_usages
+        requires_sidebar_refresh = False
 
         for usage in usages:
-            # Check module and element ID
-            # For now, we mainly support Sidebar updates
-            element_id = usage.get("ui_element_id")
+            component_type = usage.get("ui_component_type")
+            if component_type == "sidebar_button":
+                requires_sidebar_refresh = True
 
-            if element_id and hasattr(self, "sidebar") and hasattr(self.sidebar, "_sidebar_widgets"):
-                for item in self.sidebar._sidebar_widgets:
-                    if item.key == element_id:
-                        widget = item.widget
-                        if giant_icon and not isinstance(giant_icon, str):
-                            widget.config(image=giant_icon, text="")
-                            widget.image = giant_icon # Strong reference
-                        else:
-                            emoji_text = giant_icon if giant_icon else fallback
-                            if hasattr(widget, "_icon_name"):
-                                # It's a button
-                                widget.config(image='', text=f" {emoji_text} ")
-                            else:
-                                # It's a label
-                                widget.config(image='', text=f"{emoji_text}")
-                            widget.image = None
+        # Trigger natural refresh mechanisms for components that need it
+        if requires_sidebar_refresh and hasattr(self, "sidebar") and hasattr(self, "navigation"):
+            # Simply re-setting the active tab forces the Sidebar to naturally redraw
+            # all its icons utilizing the freshly reloaded icon_helper cache
+            current_view = getattr(self.navigation, "current_view", None)
+            if current_view:
+                self.sidebar.set_active_tab(current_view)
 
     def on_translation_updated(self, event=None):
         """Handle TranslationDataUpdatedEvent from EventBus to refresh UI."""
