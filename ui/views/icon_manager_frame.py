@@ -912,105 +912,78 @@ class IconManagerFrame(ResponsiveGridBase):
     def _on_browse_clicked(self):
         from tkinter import filedialog, messagebox
         from pathlib import Path
-        from lib.managers.icon_file_manager import get_icons_directory, import_icon_file
+        import logging
+        logger = logging.getLogger(__name__)
 
         file_path = filedialog.askopenfilename(
             title=self.i18n_t("select_icon_file", default="Select Icon File"),
             filetypes=[("Image files", "*.png *.ico")]
         )
 
-        if file_path:
-            try:
-                selected_path = Path(file_path)
-                icons_dir = get_icons_directory()
+        if not file_path:
+            return
 
-                final_filename = selected_path.name
-                current_filename = self.var_filepath.get().strip()
+        original_name = Path(file_path).name
+        target_name = original_name
+        overwrite = False
 
-                resolved_selected = os.path.normcase(os.path.abspath(str(selected_path.resolve())))
-                resolved_icons_dir = os.path.normcase(os.path.abspath(str(icons_dir.resolve())))
+        # Check collision via Model (same as _on_import_image_clicked)
+        if self.image_model.check_name_collision(original_name):
+            msg = self.i18n_t("msg_file_exists_collision", default="Ảnh '" + original_name + "' đã tồn tại.\n- Yes: Ghi đè (Replace)\n- No: Giữ cả hai (Đổi tên)\n- Cancel: Hủy bỏ")
+            res = messagebox.askyesnocancel("Trùng tên file", msg)
 
-                # Luồng 1: Ảnh ngoài assets
-                if not resolved_selected.startswith(resolved_icons_dir):
-                    target_path = icons_dir / final_filename
-                    overwrite = False
+            if res is None: # Cancel
+                return
+            elif res is True: # Replace
+                overwrite = True
+                logger.info(f"Browse: Người dùng chọn Ghi đè (Replace) file {target_name}")
+            else: # Keep both
+                target_name = self.image_model.generate_unique_filename(original_name)
+                overwrite = False
+                logger.info(f"Browse: Người dùng chọn Giữ cả hai, đổi tên {original_name} thành {target_name}")
+        else:
+            target_name = self.image_model.sanitize_filename(original_name)
 
-                    if target_path.exists():
-                        # Trường hợp 1.2: File đã tồn tại trong assets
-                        msg_overwrite = self.i18n_t(
-                            "msg_file_exists_overwrite",
-                            default=f"File ảnh '{final_filename}' đã tồn tại trong hệ thống.\nBạn có muốn thay thế file cũ bằng file mới này không?"
-                        )
-                        if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo ghi đè"), msg_overwrite):
-                            return # Huỷ thao tác
-                        overwrite = True
-                    else:
-                        # Trường hợp 1.1: File chưa tồn tại trong assets
-                        msg = self.i18n_t(
-                            "msg_file_outside_assets",
-                            default="Ảnh đang nằm ngoài thư mục assets. Bạn có muốn copy ảnh vào assets không?"
-                        )
-                        if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), msg):
-                            return # Huỷ thao tác
+        # Delegate import to model
+        success, final_filename, err_msg = self.image_model.import_image(file_path, target_name, overwrite)
 
-                    # Tiến hành copy/replace vào assets
-                    final_filename = import_icon_file(file_path, overwrite=overwrite)
-                else:
-                    # Luồng 2: Ảnh trong assets
-                    # Trường hợp 2.1: Chọn lại đúng file đang sử dụng
-                    if final_filename == current_filename:
-                        return # Không làm gì cả
-                    # Trường hợp 2.2: Chọn file khác, không cần hỏi copy
+        if not success:
+            logger.error(f"Import thất bại (Browse): {err_msg}")
+            messagebox.showerror("Import Error", err_msg)
+            return
 
-                # 3. Kiểm tra sử dụng chung ảnh (Duplication Check)
-                current_icon_key = self.var_icon_key.get().strip()
-                existing_usages = self.icon_service.get_icons_by_filepath(final_filename)
+        logger.info(f"Import thành công (Browse): {final_filename}")
 
-                # Filter out the current icon we are editing
-                other_usages = [u for u in existing_usages if u.get("icon_key") != current_icon_key]
+        # Check duplication usage (preserve old logic)
+        current_icon_key = self.var_icon_key.get().strip()
+        existing_usages = self.icon_service.get_icons_by_filepath(final_filename)
+        other_usages = [u for u in existing_usages if u.get("icon_key") != current_icon_key]
 
-                if other_usages:
-                    usage_keys = ", ".join([u.get("icon_key", "") for u in other_usages])
-                    msg_dup = self.i18n_t(
-                        "msg_icon_duplicated",
-                        default=f"Ảnh này hiện đang được sử dụng bởi các Icon Key khác: {usage_keys}.\nBạn có muốn tiếp tục sử dụng chung ảnh này không?"
-                    )
-                    if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo trùng lặp"), msg_dup):
-                        return # Huỷ thao tác
+        if other_usages:
+            usage_keys = ", ".join([u.get("icon_key", "") for u in other_usages])
+            msg_dup = self.i18n_t(
+                "msg_icon_duplicated",
+                default=f"Ảnh này hiện đang được sử dụng bởi các Icon Key khác: {usage_keys}.\nBạn có muốn tiếp tục sử dụng chung ảnh này không?"
+            )
+            if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo trùng lặp"), msg_dup):
+                return # Huỷ thao tác
 
-                # Update filepath entry
-                self.var_filepath.set(final_filename)
+        # Update filepath entry and mark form as dirty
+        self.var_filepath.set(final_filename)
+        self._is_dirty = True
 
-                # Mark form as dirty
-                self._is_dirty = True
+        # Update preview using the standard method
+        if hasattr(self.icon_helper, 'clear_cache'):
+            self.icon_helper.clear_cache(current_icon_key)
 
-                # Update Preview
-                # Clear cache for the current icon to ensure fresh load
-                if hasattr(self.icon_helper, 'clear_cache'):
-                    self.icon_helper.clear_cache(current_icon_key)
-                elif hasattr(self.icon_helper, '_cache'):
-                    keys_to_remove = [k for k in self.icon_helper._cache.keys() if k.startswith(f"{current_icon_key}_")]
-                    for k in keys_to_remove:
-                        del self.icon_helper._cache[k]
+        dummy_data = {
+            "icon_key": current_icon_key,
+            "fallback_emoji": self.var_fallback_emoji.get(),
+            "filepath": final_filename,
+            "tooltip_translation_key": self.var_tooltip_key.get()
+        }
+        self._render_preview(dummy_data)
 
-                from PIL import Image, ImageTk
-
-                # Determine correct target path for preview
-                target_path = Path(final_filename)
-                if not target_path.is_absolute():
-                    target_path = icons_dir / final_filename
-
-                if target_path.exists():
-                    try:
-                        img = Image.open(target_path)
-                        img = img.resize((128, 128), Image.Resampling.LANCZOS)
-                        photo_img = ImageTk.PhotoImage(img)
-                        self.lbl_preview.config(image=photo_img, text="")
-                        self.lbl_preview.image = photo_img
-                    except Exception as e:
-                        print(f"Error loading preview image: {e}")
-            except Exception as e:
-                messagebox.showerror("Error", f"Could not process file:\n{str(e)}")
 
     def _build_action_bar(self):
         # We place Add, Edit, Delete on the left, and Refresh, Sync, Save, Cancel on the right.
