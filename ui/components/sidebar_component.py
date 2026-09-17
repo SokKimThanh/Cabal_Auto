@@ -128,10 +128,10 @@ class SidebarComponent(tk.Frame):
                     cursor="hand2",
                 )
 
+                btn._icon_name = icon
                 if is_image_icon and icon_img and not isinstance(icon_img, str):
                     btn.config(image=icon_img)
                     btn.image = icon_img
-                    btn._icon_name = icon
                 else:
                     # Fix misalignment for certain emoji characters like 🛠️ by not adding spaces around them
                     btn.config(text=f"{icon}")
@@ -169,30 +169,27 @@ class SidebarComponent(tk.Frame):
     def set_active_tab(self, active_view: str):
         for item in self._sidebar_widgets:
             if isinstance(item.widget, tk.Button):
-                is_image = hasattr(item.widget, "image")
+                is_active = item.view_target == active_view or (item.view_target == "hunt" and active_view == "window_selector")
+                item.widget._sidebar_active = is_active
 
-                if item.view_target == active_view or (item.view_target == "hunt" and active_view == "window_selector"):
-                    item.widget._sidebar_active = True
-                    item.widget.config(
-                        bg=UI.BG_SURFACE, fg=UI.ACCENT_GREEN
-                    )
-                    if is_image and hasattr(item.widget, "_icon_name") and hasattr(self, "icon_helper"):
-                        new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=UI.ACCENT_GREEN)
-                        item.widget.config(image=new_icon)
+                target_bg = UI.BG_SURFACE if is_active else UI.BG_ELEVATED
+                target_fg = UI.ACCENT_GREEN if is_active else UI.TEXT_PRIMARY
+
+                item.widget.config(bg=target_bg, fg=target_fg)
+
+                # Fetch fresh icon (may be image or text/emoji)
+                if hasattr(self, "icon_helper") and hasattr(item.widget, "_icon_name"):
+                    new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=target_fg)
+
+                    if new_icon and not isinstance(new_icon, str):
+                        item.widget.config(image=new_icon, text="")
                         item.widget.image = new_icon
-                    elif not is_image:
-                        item.widget.config(text=f"{item.icon}")
+                    else:
+                        item.widget.config(image="", text=f"{new_icon if isinstance(new_icon, str) else item.icon}")
+                        item.widget.image = None
                 else:
-                    item.widget._sidebar_active = False
-                    item.widget.config(
-                        bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY
-                    )
-                    if is_image and hasattr(item.widget, "_icon_name") and hasattr(self, "icon_helper"):
-                        new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=UI.TEXT_PRIMARY)
-                        item.widget.config(image=new_icon)
-                        item.widget.image = new_icon
-                    elif not is_image:
-                        item.widget.config(text=f"{item.icon}")
+                    item.widget.config(image="", text=f"{item.icon}")
+                    item.widget.image = None
 
     def update_translations(self):
         """Update i18n text for sidebar elements."""
