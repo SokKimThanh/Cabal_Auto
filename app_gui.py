@@ -178,8 +178,8 @@ class App:
         self.hunt_controller = None
 
         from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
-        if di_container and hasattr(di_container, "monster_rotation_controller") and di_container.monster_rotation_controller:
-            self.monster_rotation_controller = di_container.monster_rotation_controller
+        if hasattr(self, 'di_container') and self.di_container and hasattr(self.di_container, "monster_rotation_controller") and self.di_container.monster_rotation_controller:
+            self.monster_rotation_controller = self.di_container.monster_rotation_controller
         else:
             self.monster_rotation_controller = MonsterRotationController(self.state_controller)
 
@@ -318,17 +318,16 @@ class App:
         self.hotkey_controller.register_all()
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
-        self.root = root
-        if di_container:
-            self.monster_library_service = getattr(di_container, "monster_library_service", None)
-            self.skill_service = getattr(di_container, "skill_service", None)
-            self.db_skill_service = getattr(di_container, "db_skill_service", None)
-            self.db_skill_type_service = getattr(di_container, "db_skill_type_service", None)
-            self.db_class_service = getattr(di_container, "db_class_service", None)
-            self.db_scan_service = getattr(di_container, "db_scan_service", None)
-            self.overlay_controller = getattr(di_container, "overlay_controller", None)
-            self.skill_caster_service = getattr(di_container, "skill_caster_service", None)
-            self.scan_controller = getattr(di_container, "scan_controller", None)
+        if hasattr(self, 'di_container') and self.di_container:
+            self.monster_library_service = getattr(self.di_container, "monster_library_service", None)
+            self.skill_service = getattr(self.di_container, "skill_service", None)
+            self.db_skill_service = getattr(self.di_container, "db_skill_service", None)
+            self.db_skill_type_service = getattr(self.di_container, "db_skill_type_service", None)
+            self.db_class_service = getattr(self.di_container, "db_class_service", None)
+            self.db_scan_service = getattr(self.di_container, "db_scan_service", None)
+            self.overlay_controller = getattr(self.di_container, "overlay_controller", None)
+            self.skill_caster_service = getattr(self.di_container, "skill_caster_service", None)
+            self.scan_controller = getattr(self.di_container, "scan_controller", None)
 
         self.has_unsaved_changes = False
         self._btn_scan_ref = None
@@ -434,8 +433,8 @@ class App:
         EventBus.bind(GlobalApplyEvent, lambda e: self.global_config_controller.apply_all_configs())
 
         from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
-        if di_container and hasattr(di_container, "monster_rotation_controller") and di_container.monster_rotation_controller:
-            self.monster_rotation_controller = di_container.monster_rotation_controller
+        if hasattr(self, 'di_container') and self.di_container and hasattr(self.di_container, "monster_rotation_controller") and self.di_container.monster_rotation_controller:
+            self.monster_rotation_controller = self.di_container.monster_rotation_controller
         else:
             self.monster_rotation_controller = MonsterRotationController(self.state_controller)
         self.monster_rotation_controller.bind_events()
@@ -509,9 +508,9 @@ class App:
         self.win_items_map = {}
 
         self._build_ui()
-        self.hunt_runner = di_container.hunt_runner if di_container else None
+        self.hunt_runner = self.di_container.hunt_runner if hasattr(self, 'di_container') and self.di_container else None
 
-        self.hunt_orchestrator = di_container.hunt_orchestrator if di_container else None
+        self.hunt_orchestrator = self.di_container.hunt_orchestrator if hasattr(self, 'di_container') and self.di_container else None
 
         # Keyboard shortcuts (Window-focused only)
         self.root.bind("<Control-b>", lambda e: self.navigation.navigate_to("build_manager"))
