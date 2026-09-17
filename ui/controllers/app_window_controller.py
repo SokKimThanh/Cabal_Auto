@@ -29,7 +29,10 @@ class AppWindowController:
         results: List[Dict[str, Any]] = []
         own_title = ""
         try:
-            own_title = self.root.title()
+            if hasattr(self.root, 'root') and hasattr(self.root.root, 'title'):
+                own_title = self.root.root.title()
+            elif hasattr(self.root, 'title'):
+                own_title = self.root.title()
         except Exception as e:
             logger.error(f"Failed to get own title: {e}")
             own_title = ""

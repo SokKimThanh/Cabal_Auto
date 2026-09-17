@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 import threading
+import sqlite3
 from tkinter import ttk, messagebox
 
 from ui.components.empty_state import EmptyState
@@ -645,13 +646,22 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_image_library_scanned(self, file_list, error_msg):
         def update_ui():
+            try:
+                if not self.winfo_exists():
+                    return
+            except Exception:
+                return
             if error_msg:
                 # Show error placeholder or toast
                 self.img_listbox.insert(tk.END, f"Error: {error_msg}")
                 self.img_listbox.config(state="disabled")
             else:
                 self._update_image_listbox(file_list)
-        self.after(0, update_ui)
+
+        try:
+            self.after(0, update_ui)
+        except RuntimeError:
+            pass # main thread not in main loop during early exit
 
     def _update_image_listbox(self, file_list):
         self.img_listbox.delete(0, tk.END)
@@ -1258,16 +1268,30 @@ class IconManagerFrame(ResponsiveGridBase):
                         thread_icon_service.upsert_icon(icon_data)
                         count += 1
 
-                self.after(0, lambda: self._on_sync_complete(count, show_message))
+                try:
+                    self.after(0, lambda: self._on_sync_complete(count, show_message))
+                except RuntimeError:
+                    pass
             except Exception as e:
-                self.after(0, lambda: self._on_sync_error(str(e), show_message))
+                try:
+                    self.after(0, lambda: self._on_sync_error(str(e), show_message))
+                except RuntimeError:
+                    pass
 
         threading.Thread(target=run_sync, daemon=True).start()
+
+    def _safe_after(self, delay, callback):
+        """Safely schedule a callback if the widget still exists"""
+        if self.winfo_exists():
+            try:
+                self.after(delay, callback)
+            except RuntimeError:
+                pass
 
     def _on_sync_complete(self, count, show_message):
         import tkinter.messagebox as messagebox
         if hasattr(self, 'tree_model'):
-            self.tree_model.load_base_data_async(lambda: self.after(0, self.load_tree_data))
+            self.tree_model.load_base_data_async(lambda: self._safe_after(0, self.load_tree_data))
         else:
             self.load_tree_data()
 
@@ -1453,9 +1477,14 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree_model.load_base_data_async(self._on_data_loaded)
 
     def _on_data_loaded(self):
-        # Update combo boxes based on categories
-        self.after(0, self._populate_category_combo)
-        self.after(0, self.load_tree_data)
+        try:
+            if not self.winfo_exists():
+                return
+            # Update combo boxes based on categories
+            self.after(0, self._populate_category_combo)
+            self.after(0, self.load_tree_data)
+        except RuntimeError:
+            pass # main thread not in main loop during early exit
 
     def _populate_category_combo(self):
         if not hasattr(self, 'tree_model'): return
@@ -1891,9 +1920,14 @@ class IconManagerFrame(ResponsiveGridBase):
         loading_id = f"loading_{icon_key}"
         self.tree.insert(item_id, "end", iid=loading_id, text="Loading usages...")
 
-        self.tree_model.load_usages_for_icon_async(icon_key, lambda key, usages: self.after(0, lambda: self._on_usages_loaded(key, usages)))
+        try:
+            self.tree_model.load_usages_for_icon_async(icon_key, lambda key, usages: self._safe_after(0, lambda: self._on_usages_loaded(key, usages)))
+        except RuntimeError:
+            pass
 
     def _on_usages_loaded(self, icon_key, usages):
+        if not self.winfo_exists():
+            return
         node_id = f"icon_{icon_key}"
         if not hasattr(self, 'tree') or not self.tree.exists(node_id):
             return
