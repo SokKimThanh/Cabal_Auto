@@ -622,7 +622,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.img_listbox = tk.Listbox(
             list_frame,
             bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY,
-            selectbackground=UIStyle.PRIMARY, selectforeground="white",
+            selectbackground=getattr(UIStyle, "COLOR_PRIMARY", getattr(UIStyle, "THEME_STATE_SELECTED", "#2196F3")), selectforeground="white",
             borderwidth=1, relief="solid", highlightthickness=0
         )
         self.img_listbox.grid(row=0, column=0, sticky="nsew")
