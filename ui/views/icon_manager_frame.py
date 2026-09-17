@@ -745,8 +745,10 @@ class IconManagerFrame(ResponsiveGridBase):
                 # Clear cache for the current icon to ensure fresh load
                 if hasattr(self.icon_helper, 'clear_cache'):
                     self.icon_helper.clear_cache(current_icon_key)
-                else:
-                    self.icon_helper._icon_cache = getattr(self.icon_helper, "_icon_cache", {})
+                elif hasattr(self.icon_helper, '_cache'):
+                    keys_to_remove = [k for k in self.icon_helper._cache.keys() if k.startswith(f"{current_icon_key}_")]
+                    for k in keys_to_remove:
+                        del self.icon_helper._cache[k]
 
                 from PIL import Image, ImageTk
 
@@ -1092,6 +1094,10 @@ class IconManagerFrame(ResponsiveGridBase):
             # Xoá cache trong IconHelper để bắt buộc load ảnh mới
             if hasattr(self.icon_helper, 'clear_cache'):
                 self.icon_helper.clear_cache(icon_key)
+            elif hasattr(self.icon_helper, '_cache'):
+                keys_to_remove = [k for k in self.icon_helper._cache.keys() if k.startswith(f"{icon_key}_")]
+                for k in keys_to_remove:
+                    del self.icon_helper._cache[k]
 
             # 3. Reload dữ liệu
             self.load_tree_data()
