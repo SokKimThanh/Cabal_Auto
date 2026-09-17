@@ -1482,7 +1482,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self._is_refreshing_tree = True
 
-        # Save state
+        # Save UI state
         expanded_nodes = []
         for item in self.tree.get_children(''):
             if self.tree.item(item, "open"):
@@ -1509,10 +1509,12 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree_model.set_filters(search=search_term, category_id=selected_category_id, status=status_filter)
         filtered_data = self.tree_model.get_filtered_tree_data()
 
-        # Batch Incremental Update logic to prevent UI flickering and freezing
+        self._render_tree(filtered_data, expanded_nodes, selected_nodes)
 
-        # Determine categories to insert
+    def _render_tree(self, filtered_data, expanded_nodes, selected_nodes):
+        # Batch Incremental Update logic to prevent UI flickering and freezing
         self._render_queue = []
+
         for cat_id, icons in filtered_data.items():
             cat = self.tree_model.get_category(cat_id)
             cat_name = cat.get('name', 'Unknown') if cat else 'General'
