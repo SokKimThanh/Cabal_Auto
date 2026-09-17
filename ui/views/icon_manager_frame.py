@@ -302,6 +302,9 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Bind events
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+        self.tree.bind("<Button-1>", self._on_tree_interaction)
+        self.tree.bind("<Up>", self._on_tree_interaction)
+        self.tree.bind("<Down>", self._on_tree_interaction)
         # Bind configure to handle auto-hiding scrollbar
         self.tree.bind("<Configure>", self._check_scrollbar)
 
@@ -404,6 +407,9 @@ class IconManagerFrame(ResponsiveGridBase):
         cat_scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.cat_tree.bind("<<TreeviewSelect>>", self._on_cat_tree_select)
+        self.cat_tree.bind("<Button-1>", self._on_cat_tree_interaction)
+        self.cat_tree.bind("<Up>", self._on_cat_tree_interaction)
+        self.cat_tree.bind("<Down>", self._on_cat_tree_interaction)
 
         # 3. Right Frame (Form)
         self.cat_right_frame = tk.Frame(self.cat_paned_window, bg=UIStyle.BG_ELEVATED)
@@ -1262,30 +1268,21 @@ class IconManagerFrame(ResponsiveGridBase):
         except tk.TclError:
             pass
 
-    def _on_tree_select(self, event):
-        # Nếu form đang bị sửa (dirty), hỏi người dùng
-        if getattr(self, '_is_dirty', False):
+    def _on_tree_interaction(self, event):
+        if self._current_state in ("ADD", "EDIT"):
             from tkinter import messagebox
-            msg = self.i18n_t("msg_unsaved_changes", default="Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn bỏ qua các thay đổi này không?")
-            if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), msg):
-                # Chặn việc chuyển node, chọn lại node cũ
-                if getattr(self, '_last_selected_item_id', None) and self.tree.exists(self._last_selected_item_id):
-                    # Ngăn vòng lặp vô hạn bằng cách tạm thời unbind
-                    self.tree.unbind("<<TreeviewSelect>>")
+            msg = self.i18n_t("msg_unsaved_changes_lock", default="Vui lòng nhấn Lưu hoặc Hủy trước khi chọn dòng khác.")
+            messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), msg)
+            return "break"
 
-                    # Deselect tất cả rồi select lại cái cũ
-                    for item in self.tree.selection():
-                        self.tree.selection_remove(item)
+    def _on_cat_tree_interaction(self, event):
+        if getattr(self, '_cat_current_state', 'view') in ("add", "edit"):
+            from tkinter import messagebox
+            msg = self.i18n_t("msg_unsaved_changes_lock", default="Vui lòng nhấn Lưu hoặc Hủy trước khi chọn dòng khác.")
+            messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), msg)
+            return "break"
 
-                    self.tree.selection_set(self._last_selected_item_id)
-                    self.tree.see(self._last_selected_item_id)
-
-                    # Bind lại
-                    self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
-                return
-            else:
-                self._is_dirty = False
-
+    def _on_tree_select(self, event):
         if hasattr(self, '_select_after_id') and self._select_after_id:
             self.after_cancel(self._select_after_id)
         self._select_after_id = self.after(50, self._process_tree_selection)
@@ -1343,6 +1340,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.categories_id_map = {c["id"]: c["name"] for c in categories}
 
     def _set_cat_form_state(self, state):
+        self._cat_current_state = state
         if state == "view":
             self.entry_cat_name.config(state="disabled")
             self.btn_cat_save.config(state="disabled")
