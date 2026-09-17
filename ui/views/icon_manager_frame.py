@@ -8,6 +8,7 @@ from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 from lib.db.services.icon_service import IconService
 from ui.helpers.icon_helper import get_icon_helper
+from ui.models.icon_tree_model import IconTreeModel
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
@@ -20,6 +21,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.db = get_db()
         self.icon_service = IconService(self.db.conn)
         self.icon_helper = get_icon_helper()
+        self.tree_model = IconTreeModel()
 
         self.preview_frame = None
         self.lbl_preview = None
@@ -54,10 +56,15 @@ class IconManagerFrame(ResponsiveGridBase):
         self._categories_loaded = False
         self._is_dirty = False
         self._last_selected_item_id = None
+        self._is_refreshing_tree = False
+        self._suppress_tree_events = False
+        self._debounce_after_id = None
+        self._render_queue = []
+        self._render_after_id = None
 
         self._setup_ui()
         self._check_and_auto_sync()
-        self.load_tree_data()
+        self._initial_load()
 
     def i18n_t(self, key: str, **kwargs) -> str:
         """Helper to get translations dynamically based on current app language"""
@@ -188,6 +195,7 @@ class IconManagerFrame(ResponsiveGridBase):
         tk.Label(search_frame, text=self.i18n_t("lbl_search", default="Search:"), bg=UIStyle.BG_SUBTLE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var)
         self.search_entry.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        self.search_var.trace_add("write", self.trigger_filter)
         self.search_entry.bind("<KeyRelease>", self._on_search_key_release)
 
         # 1.2 Status Filter
@@ -302,6 +310,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Bind events
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+        self.tree.bind("<<TreeviewOpen>>", self._on_tree_open)
         # Bind configure to handle auto-hiding scrollbar
         self.tree.bind("<Configure>", self._check_scrollbar)
 
@@ -936,6 +945,15 @@ class IconManagerFrame(ResponsiveGridBase):
             return
 
         from tkinter import messagebox
+
+        # Check safe delete with tree_model first
+        if hasattr(self, 'tree_model'):
+            is_safe, usages = self.tree_model.check_safe_delete(icon_key)
+            if not is_safe:
+                msg = self.i18n_t("msg_icon_in_use", default=f"Icon '{icon_key}' đang được sử dụng ở {len(usages)} nơi. Vui lòng gỡ bỏ trước khi xóa.", count=len(usages), icon_key=icon_key)
+                messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), msg, parent=self.winfo_toplevel())
+                return
+
         confirm = messagebox.askyesno(
             "Confirm Delete",
             f"Are you sure you want to delete the icon '{icon_key}'?",
@@ -954,6 +972,9 @@ class IconManagerFrame(ResponsiveGridBase):
                     self.var_tooltip_key.set("")
                     self.var_filepath.set("")
                     self._render_preview({})
+
+                    if hasattr(self, 'tree_model'):
+                        self.tree_model.invalidate_icon(icon_key)
 
                     # Reload tree
                     self.load_tree_data()
@@ -1013,7 +1034,10 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_sync_complete(self, count, show_message):
         import tkinter.messagebox as messagebox
-        self.load_tree_data()
+        if hasattr(self, 'tree_model'):
+            self.tree_model.load_base_data_async(lambda: self.after(0, self.load_tree_data))
+        else:
+            self.load_tree_data()
 
         if show_message:
             if count > 0:
@@ -1099,22 +1123,35 @@ class IconManagerFrame(ResponsiveGridBase):
                 for k in keys_to_remove:
                     del self.icon_helper._cache[k]
 
+            if hasattr(self, 'tree_model'):
+                 icon_data["category_name"] = cat_name
+                 # Re-evaluate status
+                 existing_files = set()
+                 if hasattr(self.icon_helper, 'icon_dirs'):
+                     for d in self.icon_helper.icon_dirs:
+                         if d.exists():
+                             try:
+                                 for file in d.iterdir():
+                                     if file.is_file():
+                                         existing_files.add(file.name)
+                             except Exception:
+                                 pass
+                 status = self.icon_helper.evaluate_icon_status(icon_data, existing_files_cache=existing_files)
+                 self.tree_model.update_icon_in_cache(icon_data, status)
+
             # 3. Reload dữ liệu
             self.load_tree_data()
 
             # Mở lại thư mục vừa thêm vào
-            cat_node_id = f"cat_{cat_name}"
+            cat_node_id = f"cat_{cat_id}"
             if self.tree.exists(cat_node_id):
                 self.tree.item(cat_node_id, open=True)
 
             # Re-select the saved item để refresh Preview từ dữ liệu thực tế
-            for item in self.tree.get_children():
-                if item.startswith('cat_'):
-                    for child in self.tree.get_children(item):
-                        if child == icon_key:
-                            self.tree.selection_set(child)
-                            self.tree.see(child)
-                            break
+            node_id = f"icon_{icon_key}"
+            if self.tree.exists(node_id):
+                 self.tree.selection_set(node_id)
+                 self.tree.see(node_id)
 
             self.set_form_state("VIEW")
             self.tree.focus_set()
@@ -1148,98 +1185,191 @@ class IconManagerFrame(ResponsiveGridBase):
         self._search_after_id = self.after(500, self.apply_filters)
     def _check_and_auto_sync(self):
         # Auto-sync icons if the database is empty
-        all_icons = self.icon_service.get_all_icons()
-        if not all_icons:
+        conn = sqlite3.connect(str(self.db.DB_PATH))
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM icons")
+        count = cursor.fetchone()[0]
+        conn.close()
+        if count == 0:
             self._on_sync(show_message=False)
 
 
     def apply_filters(self):
         self.load_tree_data()
 
-    def load_tree_data(self):
-        # Clear current tree
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+    def _initial_load(self):
+        # Indicate loading state
+        self.tree.delete(*self.tree.get_children())
+        self.tree.insert('', 'end', iid="loading", text="Loading data...")
+        self.tree_model.load_base_data_async(self._on_data_loaded)
 
-        # Get filter values
-        search_term = (self.search_var.get() or '').strip().lower()
+    def _on_data_loaded(self):
+        # Update combo boxes based on categories
+        self.after(0, self._populate_category_combo)
+        self.after(0, self.load_tree_data)
+
+    def _populate_category_combo(self):
+        if not hasattr(self, 'tree_model'): return
+        categories = list(self.tree_model.category_cache.values())
+        categories.sort(key=lambda x: x.get('name', '').lower())
+
+        self.categories_map = {c['name']: c['id'] for c in categories}
+        cat_names = ["All"] + [c['name'] for c in categories]
+
+        # Only update Comboboxes
+        if hasattr(self, 'category_var') and hasattr(self, 'combo_category_filter'):
+            current_val = self.category_var.get()
+            self.combo_category_filter.config(values=cat_names)
+            if current_val not in cat_names:
+                self.category_var.set("All")
+
+        if hasattr(self, 'combo_category'):
+            c_names = [c['name'] for c in categories]
+            self.combo_category.config(values=c_names)
+
+    def trigger_filter(self, *args):
+        if self._debounce_after_id:
+            self.after_cancel(self._debounce_after_id)
+        self._debounce_after_id = self.after(300, self.load_tree_data)
+
+    def load_tree_data(self):
+        if not hasattr(self, 'tree_model') or not self.tree_model.loaded:
+            return
+
+        self._is_refreshing_tree = True
+
+        # Save state
+        expanded_nodes = []
+        for item in self.tree.get_children(''):
+            if self.tree.item(item, "open"):
+                expanded_nodes.append(item)
+            for child in self.tree.get_children(item):
+                if self.tree.item(child, "open"):
+                    expanded_nodes.append(child)
+
+        selected_nodes = self.tree.selection()
+
+        # Build filter kwargs
+        search_term = (self.search_var.get() or '').strip()
         selected_category_name = self.category_var.get()
-        selected_category_id = ""
+        selected_category_id = None
         if selected_category_name and selected_category_name != "All":
-            if hasattr(self, 'categories_map'):
-                selected_category_id = self.categories_map.get(selected_category_name, "")
+             selected_category_id = self.categories_map.get(selected_category_name)
 
         selected_status_raw = self.status_var.get()
-        # Parse status filter
-        status_filter = ""
-        if "Xanh" in selected_status_raw:
-            status_filter = "GREEN"
-        elif "Vàng" in selected_status_raw:
-            status_filter = "YELLOW"
-        elif "Đỏ" in selected_status_raw:
-            status_filter = "RED"
+        status_filter = None
+        if "Xanh" in selected_status_raw: status_filter = "GREEN"
+        elif "Vàng" in selected_status_raw: status_filter = "YELLOW"
+        elif "Đỏ" in selected_status_raw: status_filter = "RED"
 
-        # Fetch all icons (using search and category from DB)
-        all_icons = self.icon_service.get_all_icons(search_term=search_term, category=selected_category_id)
+        self.tree_model.set_filters(search=search_term, category_id=selected_category_id, status=status_filter)
+        filtered_data = self.tree_model.get_filtered_tree_data()
 
-        # Dropdown population is now handled by _load_categories_tree
+        # Batch Incremental Update logic to prevent UI flickering and freezing
 
-        # Pre-cache existing files to speed up status evaluation
-        existing_files = set()
-        if hasattr(self.icon_helper, 'icon_dirs'):
-            for d in self.icon_helper.icon_dirs:
-                if d.exists():
-                    try:
-                        for f in d.iterdir():
-                            if f.is_file():
-                                existing_files.add(f.name)
-                    except Exception:
-                        pass
+        # Determine categories to insert
+        self._render_queue = []
+        for cat_id, icons in filtered_data.items():
+            cat = self.tree_model.get_category(cat_id)
+            cat_name = cat.get('name', 'Unknown') if cat else 'General'
+            node_iid = f"cat_{cat_id}"
 
-        # Group by category and filter by status
-        grouped_data = {}
-        for icon in all_icons:
-            # Check status logic with cache for O(1) performance
-            status = self.icon_helper.evaluate_icon_status(icon, existing_files_cache=existing_files)
+            self._render_queue.append(
+                ('category', '', node_iid, f"📁 {cat_name}", ("category",), True)
+            )
 
-            # Apply status filter in Python
-            if status_filter and status != status_filter:
-                continue
+            icons.sort(key=lambda x: x.get('name', '').lower())
 
-            cat = icon.get("category_name", "General")
-            if cat not in grouped_data:
-                grouped_data[cat] = []
-            grouped_data[cat].append((icon, status))
+            for idx, icon in enumerate(icons):
+                icon_key = icon.get('icon_key')
+                icon_name = icon.get('name', '')
+                status = self.tree_model.status_cache.get(icon_key, '⚪')
+                usage_count = self.tree_model.dependency_cache.get(icon_key, 0)
 
-        # Render Treeview
-        for cat_name, items in sorted(grouped_data.items()):
-            # Insert Category Node
-            cat_id = f"cat_{cat_name}"
-            self.tree.insert('', 'end', iid=cat_id, text=f"📁 {cat_name}", open=True)
+                if usage_count > 0:
+                    icon_name = f"{icon_name} (Usages: {usage_count})"
 
-            for icon, status in sorted(items, key=lambda x: x[0].get("name", "").lower()):
-                icon_key = icon.get("icon_key", "")
-                icon_name = icon.get("name", "")
+                status_color = "⚪"
+                if status == "GREEN": status_color = "🟢"
+                elif status == "YELLOW": status_color = "🟡"
+                elif status == "RED": status_color = "🔴"
 
-                # Format status column with emoji
-                status_color = "⚪"  # Default
-                if status == "GREEN":
-                    status_color = "🟢"
-                elif status == "YELLOW":
-                    status_color = "🟡"
-                elif status == "RED":
-                    status_color = "🔴"
+                icon_iid = f"icon_{icon_key}"
 
-                self.tree.insert(
-                    cat_id,
-                    'end',
-                    iid=icon_key,
-                    text=icon_name,
-                    values=(icon_key, status_color)
+                self._render_queue.append(
+                    ('icon', node_iid, idx, icon_iid, icon_name, (icon_key, status_color), usage_count)
                 )
 
-        # Recheck scrollbar
-        self._check_scrollbar()
+        self._desired_cats = {cmd[2] for cmd in self._render_queue if cmd[0] == 'category'}
+        self._desired_icons = {cmd[2]: set() for cmd in self._render_queue if cmd[0] == 'category'}
+        for cmd in self._render_queue:
+             if cmd[0] == 'icon':
+                  self._desired_icons[cmd[1]].add(cmd[3])
+
+        self._process_incremental_queue(expanded_nodes, selected_nodes)
+
+    def _process_incremental_queue(self, expanded_nodes, selected_nodes):
+        if not self._render_queue:
+            if self.tree.exists("loading"):
+                 self.tree.delete("loading")
+            # Finalize: Remove stale icons and categories
+            existing_cats = {item for item in self.tree.get_children('') if item.startswith("cat_")}
+            for cat_id in existing_cats:
+                 if cat_id in self._desired_icons:
+                      existing_icons = {item for item in self.tree.get_children(cat_id) if item.startswith("icon_")}
+                      for old_icon in existing_icons - self._desired_icons[cat_id]:
+                           self.tree.delete(old_icon)
+
+            for old_cat in existing_cats - self._desired_cats:
+                self.tree.delete(old_cat)
+
+            self._is_refreshing_tree = False
+
+            # Restore state
+            for item in expanded_nodes:
+                if self.tree.exists(item):
+                    self.tree.item(item, open=True)
+
+            if selected_nodes and self.tree.exists(selected_nodes[0]):
+                self.tree.selection_set(selected_nodes[0])
+                self.tree.see(selected_nodes[0])
+
+            self._check_scrollbar()
+            return
+
+        batch = self._render_queue[:100]
+        self._render_queue = self._render_queue[100:]
+
+        for cmd in batch:
+            if cmd[0] == 'category':
+                 node_iid, text, values, open_state = cmd[2], cmd[3], cmd[4], cmd[5]
+                 if not self.tree.exists(node_iid):
+                     self.tree.insert('', 'end', iid=node_iid, text=text, values=values, open=open_state)
+                 else:
+                     self.tree.item(node_iid, text=text)
+
+            elif cmd[0] == 'icon':
+                 node_iid, idx, icon_iid, text, values, usage_count = cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6]
+                 if not self.tree.exists(node_iid):
+                     continue # Should not happen if sorted properly, but fail gracefully
+
+                 if not self.tree.exists(icon_iid):
+                     self.tree.insert(node_iid, idx, iid=icon_iid, text=text, values=values)
+                     if usage_count > 0:
+                         self.tree.insert(icon_iid, 'end', iid=f"dummy_{values[0]}", text="dummy")
+                 else:
+                     self.tree.item(icon_iid, text=text, values=values)
+                     current_idx = self.tree.index(icon_iid)
+                     if current_idx != idx:
+                         self.tree.move(icon_iid, node_iid, idx)
+
+                     # Ensure it has a dummy child if it has usages but no children yet
+                     if usage_count > 0 and not self.tree.get_children(icon_iid):
+                         self.tree.insert(icon_iid, 'end', iid=f"dummy_{values[0]}", text="dummy")
+
+        self._render_after_id = self.after(5, lambda: self._process_incremental_queue(expanded_nodes, selected_nodes))
+
+
 
     def _check_scrollbar(self, event=None):
         """Auto-hide scrollbar when not needed"""
@@ -1291,6 +1421,9 @@ class IconManagerFrame(ResponsiveGridBase):
         self._select_after_id = self.after(50, self._process_tree_selection)
 
     def _process_tree_selection(self):
+        if self._is_refreshing_tree or self._suppress_tree_events:
+            return
+
         selection = self.tree.selection()
         if not selection:
             return
@@ -1301,17 +1434,26 @@ class IconManagerFrame(ResponsiveGridBase):
         if item_id.startswith('cat_'):
             return
 
+        if item_id.startswith('usage_'):
+            return
+
         # It's an icon node
         if item_id.startswith("new_icon_"):
             return
 
-        icon_data = self.icon_service.get_icon_by_key(item_id)
+        # Get actual ID from values instead of string replace
+        values = self.tree.item(item_id, 'values')
+        icon_key = values[0] if values else item_id
+
+        icon_data = self.tree_model.get_icon(icon_key)
         if icon_data:
             self.var_name.set(icon_data.get('name') or '')
             self.var_icon_key.set(icon_data.get('icon_key') or '')
 
             # Map category_id back to name
-            cat_name = icon_data.get("category_name") or "General"
+            cat_id = icon_data.get("category_id")
+            cat_data = self.tree_model.get_category(cat_id) if cat_id else None
+            cat_name = cat_data.get("name", "General") if cat_data else "General"
             self.var_category.set(cat_name)
 
             self.var_fallback_emoji.set(icon_data.get('fallback_emoji') or '')
@@ -1405,6 +1547,8 @@ class IconManagerFrame(ResponsiveGridBase):
             # Add
             new_id = self.icon_service.add_category(name)
             if new_id:
+                if hasattr(self, 'tree_model'):
+                    self.tree_model.category_cache[new_id] = {"id": new_id, "name": name}
                 self._load_categories_tree()
                 # Select the new one
                 for child in self.cat_tree.get_children():
@@ -1420,6 +1564,9 @@ class IconManagerFrame(ResponsiveGridBase):
             # Update
             success = self.icon_service.update_category(int(cat_id), name)
             if success:
+                if hasattr(self, 'tree_model'):
+                    if int(cat_id) in self.tree_model.category_cache:
+                        self.tree_model.category_cache[int(cat_id)]["name"] = name
                 self._load_categories_tree()
                 for child in self.cat_tree.get_children():
                     if str(self.cat_tree.item(child)["values"][0]) == cat_id:
@@ -1454,10 +1601,13 @@ class IconManagerFrame(ResponsiveGridBase):
             try:
                 success = self.icon_service.delete_category(int(cat_id))
                 if success:
+                    if hasattr(self, 'tree_model'):
+                        self.tree_model.invalidate_category(int(cat_id))
                     self.var_cat_id.set("")
                     self.var_cat_name.set("")
                     self._load_categories_tree()
                     self._set_cat_form_state("view")
+                    self.load_tree_data()
                 else:
                     messagebox.showerror("Error", "Failed to delete category.")
             except ValueError as e:
@@ -1465,3 +1615,58 @@ class IconManagerFrame(ResponsiveGridBase):
                     messagebox.showerror("Error", "Cannot delete category because it is used by icons.")
                 else:
                     messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def _on_tree_open(self, event):
+        """Lazy load usages when an icon node is opened"""
+        item_id = self.tree.focus()
+        if not item_id or not item_id.startswith("icon_"):
+            return
+
+        icon_key = item_id.replace("icon_", "")
+
+        # Check if already loaded by looking for a usage node
+        children = self.tree.get_children(item_id)
+        # If the only child is dummy, we need to load. Otherwise, if it's already a usage node, return.
+        if children and not children[0].startswith("loading_") and not children[0].startswith("dummy_"):
+            return
+
+        # Clean loading or dummy indicator if exists
+        for child in children:
+            if child.startswith("loading_") or child.startswith("dummy_"):
+                self.tree.delete(child)
+
+        # Insert loading node
+        loading_id = f"loading_{icon_key}"
+        self.tree.insert(item_id, "end", iid=loading_id, text="Loading usages...")
+
+        self.tree_model.load_usages_for_icon_async(icon_key, lambda key, usages: self.after(0, lambda: self._on_usages_loaded(key, usages)))
+
+    def _on_usages_loaded(self, icon_key, usages):
+        node_id = f"icon_{icon_key}"
+        if not hasattr(self, 'tree') or not self.tree.exists(node_id):
+            return
+
+        # Remove loading node
+        for child in self.tree.get_children(node_id):
+            if child.startswith("loading_"):
+                self.tree.delete(child)
+
+        # Update text to show usage count
+        current_text = self.tree.item(node_id, "text")
+        if " (Usages: " not in current_text:
+             self.tree.item(node_id, text=f"{current_text} (Usages: {len(usages)})")
+        else:
+             # Remove old count and append new
+             base_text = current_text.split(" (Usages: ")[0]
+             self.tree.item(node_id, text=f"{base_text} (Usages: {len(usages)})")
+
+        if not usages:
+             self.tree.insert(node_id, "end", text="No usages found", iid=f"no_usage_{icon_key}")
+             return
+
+        for usage in usages:
+            usage_id = usage.get('usage_id')
+            module_name = usage.get('module_name', 'Unknown')
+            component_type = usage.get('ui_component_type', 'Unknown')
+            usage_text = f"📍 {module_name} > {component_type}"
+            self.tree.insert(node_id, "end", iid=f"usage_{usage_id}", text=usage_text, values=("usage", ""))
