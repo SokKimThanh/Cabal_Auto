@@ -1360,17 +1360,10 @@ class IconManagerFrame(ResponsiveGridBase):
             if hasattr(self, 'tree_model'):
                  icon_data["category_name"] = cat_name
                  # Re-evaluate status
-                 existing_files = set()
-                 if hasattr(self.icon_helper, 'icon_dirs'):
-                     for d in self.icon_helper.icon_dirs:
-                         if d.exists():
-                             try:
-                                 for file in d.iterdir():
-                                     if file.is_file():
-                                         existing_files.add(file.name)
-                             except Exception:
-                                 pass
-                 status = self.icon_helper.evaluate_icon_status(icon_data, existing_files_cache=existing_files)
+                 # Note: evaluate_icon_status internally handles checking (or caching) the file system.
+                 # The tree model / icon helper should be responsible for evaluating status, not this frame.
+                 # Delegate the filesystem checking to evaluate_icon_status without manually traversing iterdir here.
+                 status = self.icon_helper.evaluate_icon_status(icon_data)
                  self.tree_model.update_icon_in_cache(icon_data, status)
 
             # 3. Reload dữ liệu
@@ -1500,7 +1493,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         selected_nodes = self.tree.selection()
 
-        # Build filter kwargs
+        # Delegate filtering purely to the model
         search_term = (self.search_var.get() or '').strip()
         selected_category_name = self.category_var.get()
         selected_category_id = None
