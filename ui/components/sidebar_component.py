@@ -40,16 +40,16 @@ class SidebarComponent(tk.Frame):
         sidebar_items = [
             ("tab_hunt", "hunt", UI.FONT_SECTION, "hunt", "🎯"),
             ("tab_setup", "setup", UI.FONT_SECTION, "setup", "⚙️"),
-            ("btn_build_manager", "build_manager", UI.FONT_SECTION, "build_manager", "🛠️"),
+            ("btn_build_manager", "build_manager", UI.FONT_SECTION, "build_manager", "build_manager"),
             ("btn_skill_manager", "skill_manager", UI.FONT_SECTION, "skill_manager", "⚔️"),
             ("btn_monster_manager", "monster_manager", UI.FONT_SECTION, "monster_manager", "🐉"),
-            ("btn_class_manager", "class_manager", UI.FONT_SECTION, "class_manager", "shield"),
+            ("btn_class_manager", "class_manager", UI.FONT_SECTION, "class_manager", "class_manager"),
             ("btn_icon_manager", "icon_manager", UI.FONT_SECTION, "icon_manager", "icon_manager"),
-            ("btn_scan_history", "scan_history", UI.FONT_SECTION, "scan_history", "🕒"),
-            ("sidebar_activity_logs", "logs", UI.FONT_SECTION, "logs", "📋"),
-            ("tab_stats", "stats", UI.FONT_SECTION, "stats", "📊"),
-            ("btn_language_manager", "language_manager", UI.FONT_SECTION, "language_manager", "🌐"),
-            ("sidebar_support", "help", UI.FONT_SECTION, "help", "❓"),
+            ("btn_scan_history", "scan_history", UI.FONT_SECTION, "scan_history", "scan_history"),
+            ("sidebar_activity_logs", "logs", UI.FONT_SECTION, "logs", "logs"),
+            ("tab_stats", "stats", UI.FONT_SECTION, "stats", "stats"),
+            ("btn_language_manager", "language_manager", UI.FONT_SECTION, "language_manager", "language_manager"),
+            ("sidebar_support", "help", UI.FONT_SECTION, "help", "help"),
         ]
 
         def apply_button_hover_effects(button, hover_color=None):
