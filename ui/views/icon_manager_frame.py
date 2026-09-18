@@ -734,13 +734,42 @@ class IconManagerFrame(ResponsiveGridBase):
 
         tk.Label(add_frame, text="ID:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.var_usage_element = tk.StringVar()
-        ttk.Entry(add_frame, textvariable=self.var_usage_element, width=20).pack(side="left", padx=(0,5))
+        self.combo_usage_element = ttk.Combobox(add_frame, textvariable=self.var_usage_element, width=20)
+        self.combo_usage_element.pack(side="left", padx=(0,5))
+
+        # Setup auto-complete bind
+        self.combo_usage_element.bind('<KeyRelease>', self._autocomplete_usage_element)
+        self._available_usage_ids = []
 
         self.btn_add_usage = tk.Button(add_frame, text="Gắn (Map)", command=self._on_add_usage, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
         self.btn_add_usage.pack(side="left", padx=2)
 
         self.btn_del_usage = tk.Button(add_frame, text="Gỡ (Unmap)", command=self._on_del_usage, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
         self.btn_del_usage.pack(side="left", padx=2)
+
+    def _load_all_usage_ids(self):
+        try:
+            # Query all distinct ui_element_id from db
+            cursor = self.icon_service.conn.cursor()
+            cursor.execute("SELECT DISTINCT ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
+            rows = cursor.fetchall()
+            self._available_usage_ids = sorted([r[0] for r in rows])
+            if hasattr(self, 'combo_usage_element'):
+                self.combo_usage_element['values'] = self._available_usage_ids
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to load usage IDs: {e}")
+
+    def _autocomplete_usage_element(self, event):
+        if event.keysym not in ['BackSpace', 'Delete', 'Return', 'Tab'] and not event.char:
+            return
+
+        typed = self.combo_usage_element.get()
+        if typed == '':
+            self.combo_usage_element['values'] = self._available_usage_ids
+        else:
+            hits = [item for item in self._available_usage_ids if typed.lower() in item.lower()]
+            self.combo_usage_element['values'] = hits
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
@@ -768,6 +797,10 @@ class IconManagerFrame(ResponsiveGridBase):
         if self.icon_service.register_usage(icon_key, mod, comp, elem):
             self.var_usage_element.set("")
             self._load_usages_for_selected(icon_key)
+            if elem not in self._available_usage_ids:
+                self._available_usage_ids.append(elem)
+                self._available_usage_ids.sort()
+                self.combo_usage_element['values'] = self._available_usage_ids
             # invalidate tree_model usage cache to update count
             if hasattr(self, 'tree_model'):
                 self.tree_model.usage_cache.pop(icon_key, None)
@@ -818,6 +851,14 @@ class IconManagerFrame(ResponsiveGridBase):
         self.img_search_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
         self.img_search_var.trace_add("write", self._on_img_search_change)
 
+        self.var_hide_used = tk.BooleanVar(value=True)
+        self.chk_hide_used = tk.Checkbutton(
+            toolbar, text=self.i18n_t("chk_hide_used", default="Ẩn ảnh đã dùng"),
+            variable=self.var_hide_used, bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY,
+            command=self._on_img_search_change, selectcolor=UIStyle.BG_BASE
+        )
+        self.chk_hide_used.pack(side="right", padx=(5, 10))
+
         self.btn_import_img = tk.Button(
             toolbar, text=self.i18n_t("btn_import_img", default="Import Image"),
             command=self._on_import_image_clicked,
@@ -856,6 +897,23 @@ class IconManagerFrame(ResponsiveGridBase):
     def _perform_img_search(self):
         query = self.img_search_var.get()
         results = self.image_model.search(query)
+
+        # Filter used images if checkbox is ticked
+        if getattr(self, 'var_hide_used', None) and self.var_hide_used.get():
+            try:
+                # Get all used filepaths
+                cursor = self.icon_service.conn.cursor()
+                cursor.execute("SELECT DISTINCT filepath FROM icons WHERE filepath IS NOT NULL AND filepath != ''")
+                used_files = {r[0] for r in cursor.fetchall()}
+
+                # Keep the currently selected file even if it's used
+                current_file = self.var_filepath.get().strip() if hasattr(self, 'var_filepath') else ""
+
+                results = [f for f in results if f not in used_files or f == current_file]
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Failed to filter used images: {e}")
+
         self._update_image_listbox(results)
 
     def _on_image_library_scanned(self, file_list, error_msg):
@@ -870,7 +928,8 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.img_listbox.insert(tk.END, f"Error: {error_msg}")
                 self.img_listbox.config(state="disabled")
             else:
-                self._update_image_listbox(file_list)
+                # Issue #3: Update listbox immediately, and apply search logic (including hiding used images)
+                self._perform_img_search()
 
         try:
             self.after(0, update_ui)
@@ -1785,6 +1844,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.load_tree_data()
 
     def _initial_load(self):
+        self._load_all_usage_ids()
         # Indicate loading state
         self.tree.delete(*self.tree.get_children())
         self.tree.insert('', 'end', iid="loading", text="Loading data...")
@@ -1981,7 +2041,7 @@ class IconManagerFrame(ResponsiveGridBase):
             pass
 
     def _on_tree_interaction(self, event):
-        if self._current_state in ("ADD", "EDIT") and getattr(self, '_is_dirty', False):
+        if self._current_state in ("ADD", "EDIT"):
             from tkinter import messagebox
             msg = self.i18n_t("msg_unsaved_changes_lock", default="Vui lòng nhấn Lưu hoặc Hủy trước khi chọn dòng khác.")
             messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), msg)
