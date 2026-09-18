@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 import threading
 import sqlite3
+from pathlib import Path
 from tkinter import ttk, messagebox
 
 from ui.components.empty_state import EmptyState
