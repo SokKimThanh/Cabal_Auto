@@ -875,9 +875,21 @@ class IconManagerFrame(ResponsiveGridBase):
 
         giant_icon = None
         # Chỉ load ảnh nếu status là GREEN (ảnh tồn tại)
-        if status == "GREEN" and icon_key:
-            # We need a large icon. Let's try 128x128
-            giant_icon = self.icon_helper.get_icon(icon_key, fallback=fallback_emoji, size=128)
+        if status == "GREEN" and filepath:
+            from PIL import Image, ImageTk
+            from lib.managers.icon_file_manager import get_icons_directory
+            try:
+                target_path = Path(filepath)
+                if not target_path.is_absolute():
+                    target_path = get_icons_directory() / filepath
+
+                if target_path.exists():
+                    img = Image.open(target_path)
+                    img = img.resize((128, 128), Image.Resampling.LANCZOS)
+                    giant_icon = ImageTk.PhotoImage(img)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Preview load failed: {e}")
 
         if giant_icon and not isinstance(giant_icon, str):
             self.lbl_preview.config(image=giant_icon, text="")
