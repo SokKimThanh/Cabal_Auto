@@ -87,3 +87,20 @@ Việc refactor `IconManagerFrame` là cực kỳ cấp thiết để đảm b�
 
 ## Kết luận sau Sub-task 2
 Cách tiếp cận sử dụng callback để nới lỏng sự phụ thuộc (Loose Coupling) giữa Model/Service và View Component đang cho thấy hiệu quả. Bằng cách để `IconManagerFrame` làm "Mediator" trung gian xử lý lỗi trùng lặp file và trạng thái rollback, Component mới cực kì sạch sẽ và tập trung hoàn toàn vào việc render hình ảnh.
+
+### Prompt 03 (Sub-task 5): Tách IconPreviewComponent
+- **Trạng thái**: Đã hoàn thành.
+- **Nội dung chi tiết**:
+  - Tạo mới component độc lập `IconPreviewComponent` tại `ui/components/icon_preview_component.py`.
+  - Thành công di dời UI của phần Preview Zone (hiển thị ảnh thu nhỏ, Empty State và các tooltip preview).
+  - Tách hàm render độc lập: Component nhận vào `icon_data` thông qua phương thức `render()`, hoàn toàn không truy cập trực tiếp biến nội bộ của `IconManagerFrame` (tuân thủ nguyên tắc encapsulation).
+  - Component tự chịu trách nhiệm về Empty State bên trong nội bộ vùng hiển thị của mình, trong khi `IconManagerFrame` chỉ lo điều phối logic chuyển đổi trạng thái View tổng thể (`content_state_frame` và `empty_state_frame`).
+  - Sửa đổi hệ thống tooltip tích hợp để sử dụng chung tiện ích `attach_i18n_tooltip` từ `ui.helpers.tooltip`.
+- **DoD (Điều kiện hoàn thành)**:
+  - Khi chọn icon trên danh sách, hình ảnh hoặc emoji hiển thị chính xác.
+  - Tooltip hiển thị và xử lý cảnh báo thiếu khóa dịch đúng logic.
+  - Khung empty state tự động hiển thị khi dữ liệu rỗng.
+  - Test case `test_icon_preview_component.py` hoạt động pass 100%.
+
+## Kết luận sau Sub-task 5
+Việc tách rời các widget mang tính chất hiển thị tĩnh/phụ (như ảnh preview, trạng thái empty) giúp file master (`IconManagerFrame`) giảm tải đáng kể dòng code. Module `IconPreviewComponent` bây giờ hoạt động như một Dumb Component đúng nghĩa - chỉ nhận data và render, giúp dễ dàng test và tái sử dụng cho các form khác trong tương lai nếu cần thiết.
