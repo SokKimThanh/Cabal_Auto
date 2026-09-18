@@ -121,3 +121,18 @@ Việc tách rời các widget mang tính chất hiển thị tĩnh/phụ (như 
   - Dịch ngôn ngữ cho tooltip và cảnh báo (validation) vẫn hoạt động đúng như trước.
   - Dữ liệu lưu và cập nhật hoàn toàn khớp, `IconManagerFrame` không còn biết đến chi tiết UI form.
   - Pass thành công các test hồi quy và test unit mới cho `test_icon_form_component.py`.
+
+### Prompt 05 (Sub-task 3): Tách IconTreeComponent và Hoàn thiện Controller
+- **Trạng thái**: Đã hoàn thành.
+- **Nội dung chi tiết**:
+  - Tạo file `ui/components/icon_tree_component.py` với class `IconTreeComponent(tk.Frame)`.
+  - Di dời toàn bộ phần UI liên quan đến cây danh sách bao gồm: `ttk.Treeview`, thanh công cụ thu/phóng (Collapse/Expand All), và thanh Filter (Search, Status, Category) vào component này.
+  - Bóc tách thành công thuật toán render phức tạp (Incremental Queue - `_process_incremental_queue`) và hàm nạp dữ liệu (`load_tree_data`) vào trong `IconTreeComponent`.
+  - Thiết lập giao tiếp qua Callback thay vì State dùng chung:
+    - Nhận vào instance của `IconTreeModel` qua constructor (Injection).
+    - Khi có sự kiện chọn node (`<<TreeviewSelect>>`), kích hoạt callback nội bộ `on_node_selected_callback(icon_key)` đẩy lên cho `IconManagerFrame` xử lý.
+  - Tại `IconManagerFrame`, class hiện tại đã giảm kích thước xuống chỉ còn mức tối giản, thuần túy làm Mediator điều phối dữ liệu từ Tree sang Form.
+- **DoD (Điều kiện hoàn thành)**:
+  - Cây hiển thị dữ liệu chính xác theo cấu trúc Danh mục -> Icon.
+  - Hàng đợi render chia đợt (batch rendering) không bị hỏng, giao diện mượt mà.
+  - Component độc lập, hoạt động dựa trên Callbacks chuẩn xác.
