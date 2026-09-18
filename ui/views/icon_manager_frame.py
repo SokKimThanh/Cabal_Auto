@@ -1791,7 +1791,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree_model.load_base_data_async(self._on_data_loaded)
 
         # Initial image library load
-        self.image_model.scan_directory_async(callback=self._on_image_library_scanned)
+        self.image_model.scan_async(callback=self._on_image_library_scanned)
 
     def _on_data_loaded(self):
         try:
