@@ -36,6 +36,25 @@ Tối ưu hóa và hoàn thiện trải nghiệm sử dụng (UX) trên giao di�
 - **Lỗi cuộn trang cha:** Cuộn chuột trên Listbox/Treeview vô tình kéo cả Canvas nền. Khắc phục bằng cách viết hàm `_prevent_scroll_propagation` bẫy sự kiện (`<MouseWheel>`, `<Button-4>`, `<Button-5>`), cuộn thủ công list con và trả về tín hiệu ngắt `"break"`.
 - **Lỗi biến mất thanh cuộn:** Treeview tự động xoá thanh cuộn vì hàm tính toán `bbox` bị rỗng khi danh sách dài bị che khuất. Khắc phục bằng cách đánh giá tỉ lệ hiển thị thực qua `tree.yview()`.
 
+### 7. Khóa danh sách (Chặn click ngoài luồng thao tác)
+- **Vấn đề:** Khi đang ở chế độ thêm (ADD) hoặc sửa (EDIT), việc vô tình bấm sang một dòng khác trên danh sách (Treeview) làm mất focus và dữ liệu đang nhập dở, gây mất tập trung.
+- **Giải pháp:** Cập nhật hàm `_on_tree_interaction` và `_on_cat_tree_interaction` để ngắt (break) thao tác click ngay lập tức nếu form đang ở trạng thái ADD/EDIT, bất kể người dùng đã gõ text hay chưa. Yêu cầu rõ ràng: Phải Save hoặc Cancel mới được đi tiếp.
+
+### 8. Tối ưu load danh sách ảnh (Image Library)
+- **Vấn đề:** Khi vừa vào Icon Manager, danh sách ảnh trống trơn, phải nhập tìm kiếm hoặc import mới chịu hiện ra.
+- **Giải pháp:** Chỉnh sửa hàm quét ảnh bất đồng bộ (`_on_image_library_scanned`). Sau khi quét xong, tự động gọi hàm render danh sách (`_perform_img_search`) để đổ dữ liệu ra listbox ngay lập tức mà không cần tương tác.
+
+### 9. Cải thiện UX phần Nơi Dùng (Usages ID)
+- **Vấn đề:** Khung khai báo Element ID là một ô nhập text (Entry) đơn thuần. Người dùng khó nhớ ID của các nút đã khai báo.
+- **Giải pháp:** Đổi ô Element ID thành `ttk.Combobox`. Hệ thống tự động truy vấn vào bảng `icon_usages` trong DB để lấy ra danh sách các ID đã từng được sử dụng (map). Thêm logic auto-complete giúp dễ dàng search ID có sẵn, đồng thời vẫn cho phép gõ một ID mới tinh vào. Nhờ vậy, ô nhập hoạt động như một "registry" (bộ nhớ đệm) lịch sử cực kỳ tiện lợi.
+
+### 10. Tự động ẩn ảnh đang được dùng (Hide used files)
+- **Vấn đề:** Danh sách thư viện ảnh hiện ra toàn bộ ảnh, kể cả những ảnh đã được gán cho Icon khác, dễ dẫn đến việc chọn nhầm và cảnh báo trùng lặp.
+- **Giải pháp:**
+  - Bổ sung một Checkbox `Ẩn ảnh đã dùng` (mặc định bật) trên Toolbar của danh sách ảnh.
+  - Khi render, tự động truy vấn DB, lấy ra danh sách các ảnh (`filepath`) đã bị sử dụng và loại chúng khỏi listbox.
+  - Đảm bảo ảnh của icon *hiện tại đang sửa* vẫn được giữ lại trong danh sách để không bị mất hiển thị.
+
 ## Tình trạng an toàn & Bảo mật
 Toàn bộ thao tác với Database (bao gồm Insert, Update, Delete ở cả `IconService` và `TranslationService`) đều đã được đánh giá và xác minh là sử dụng **Parameterized Query (`?` hoặc `:name`)** của SQLite3. Điều này ngăn chặn hoàn toàn nguy cơ **SQL Injection**. Không tồn tại chuỗi string concat SQL thuần.
 
