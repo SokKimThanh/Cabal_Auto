@@ -725,7 +725,12 @@ class IconManagerFrame(ResponsiveGridBase):
             self.btn_add.config(state="normal")
 
             # Edit/Delete depends on selection
-            has_selection = bool([])
+            has_selection = False
+            if hasattr(self, 'tree_component') and self.tree_component.tree.selection():
+                item_id = self.tree_component.tree.selection()[0]
+                if item_id.startswith("icon_"):
+                    has_selection = True
+
             self.btn_edit.config(state="normal" if has_selection else "disabled")
             self.btn_delete.config(state="normal" if has_selection else "disabled")
 
@@ -751,15 +756,16 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Xác định category hiện tại đang chọn
         selected_cat = "General"
-        selection = []
-        if selection:
-            item_id = selection[0]
-            if item_id.startswith("cat_"):
-                selected_cat = item_id.replace("cat_", "", 1)
-            else:
-                parent_id = self.tree.parent(item_id)
-                if parent_id and parent_id.startswith("cat_"):
-                    selected_cat = parent_id.replace("cat_", "", 1)
+        if hasattr(self, 'tree_component'):
+            selection = self.tree_component.tree.selection()
+            if selection:
+                item_id = selection[0]
+                if item_id.startswith("cat_"):
+                    selected_cat = item_id.replace("cat_", "", 1)
+                else:
+                    parent_id = self.tree_component.tree.parent(item_id)
+                    if parent_id and parent_id.startswith("cat_"):
+                        selected_cat = parent_id.replace("cat_", "", 1)
 
         # When creating a new icon node, we need to map the name to ID for the tree
         # but display the name in the combobox.
@@ -783,18 +789,19 @@ class IconManagerFrame(ResponsiveGridBase):
         dummy_id = f"new_icon_{int(time.time())}"
         cat_node = f"cat_{selected_cat}"
 
-        # Đảm bảo category node tồn tại và mở ra
-        if not self.tree.exists(cat_node):
-            self.tree.insert("", "end", iid=cat_node, text=selected_cat, open=True)
-        else:
-            self.tree.item(cat_node, open=True)
+        if hasattr(self, 'tree_component'):
+            # Đảm bảo category node tồn tại và mở ra
+            if not self.tree_component.tree.exists(cat_node):
+                self.tree_component.tree.insert("", "end", iid=cat_node, text=selected_cat, open=True)
+            else:
+                self.tree_component.tree.item(cat_node, open=True)
 
-        # Insert temp dummy icon item
-        self.tree.insert(cat_node, "end", iid=dummy_id, text="  [New] New Icon", values=(selected_cat, "🟡"))
+            # Insert temp dummy icon item
+            self.tree_component.tree.insert(cat_node, "end", iid=dummy_id, text="  [New] New Icon", values=(selected_cat, "🟡"))
 
-        # Select and focus on the dummy item
-        self.tree.selection_set(dummy_id)
-        self.tree.see(dummy_id)
+            # Select and focus on the dummy item
+            self.tree_component.tree.selection_set(dummy_id)
+            self.tree_component.tree.see(dummy_id)
 
         self.set_form_state("ADD")
         self.icon_form.entry_name.focus_set()
@@ -850,7 +857,8 @@ class IconManagerFrame(ResponsiveGridBase):
                     # Reload tree
                     self.tree_component.request_load_tree_data()
                     self.set_form_state("VIEW")
-                    self.tree.focus_set()
+                    if hasattr(self, 'tree_component'):
+                        self.tree_component.tree.focus_set()
                 else:
                     messagebox.showerror("Error", f"Failed to delete icon '{icon_key}'.")
             except ValueError as e:
@@ -993,11 +1001,12 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # Nếu đang ở trạng thái ADD, xóa dòng dummy khỏi tree trước khi reload
         if self._current_state == "ADD":
-            selection = []
-            if selection:
-                item_id = selection[0]
-                if item_id.startswith("new_icon_"):
-                    self.tree.delete(item_id)
+            if hasattr(self, 'tree_component'):
+                selection = self.tree_component.tree.selection()
+                if selection:
+                    item_id = selection[0]
+                    if item_id.startswith("new_icon_"):
+                        self.tree_component.tree.delete(item_id)
 
         # 2. Lưu Bản dịch Tooltip tự động tạo nếu chưa có
         t_key = self.icon_form.get_form_data()['tooltip_key'].strip()
@@ -1066,17 +1075,19 @@ class IconManagerFrame(ResponsiveGridBase):
 
             # Mở lại thư mục vừa thêm vào
             cat_node_id = f"cat_{cat_id}"
-            if self.tree.exists(cat_node_id):
-                self.tree.item(cat_node_id, open=True)
+            if hasattr(self, 'tree_component'):
+                if self.tree_component.tree.exists(cat_node_id):
+                    self.tree_component.tree.item(cat_node_id, open=True)
 
-            # Re-select the saved item để refresh Preview từ dữ liệu thực tế
-            node_id = f"icon_{icon_key}"
-            if self.tree.exists(node_id):
-                 self.tree.selection_set(node_id)
-                 self.tree.see(node_id)
+                # Re-select the saved item để refresh Preview từ dữ liệu thực tế
+                node_id = f"icon_{icon_key}"
+                if self.tree_component.tree.exists(node_id):
+                     self.tree_component.tree.selection_set(node_id)
+                     self.tree_component.tree.see(node_id)
 
             self.set_form_state("VIEW")
-            self.tree.focus_set()
+            if hasattr(self, 'tree_component'):
+                self.tree_component.tree.focus_set()
 
             # 4. Thông báo thành công
             from tkinter import messagebox
@@ -1101,16 +1112,19 @@ class IconManagerFrame(ResponsiveGridBase):
     def _on_cancel(self):
         # Dọn dẹp dòng dummy nếu đang ở trạng thái ADD
         if self._current_state == "ADD":
-            selection = []
-            if selection:
-                item_id = selection[0]
-                if item_id.startswith("new_icon_"):
-                    self.tree.delete(item_id)
+            if hasattr(self, 'tree_component'):
+                selection = self.tree_component.tree.selection()
+                if selection:
+                    item_id = selection[0]
+                    if item_id.startswith("new_icon_"):
+                        self.tree_component.tree.delete(item_id)
 
         self._is_dirty = False
-        self._process_tree_selection()
+        if hasattr(self, 'tree_component'):
+            self.tree_component._process_tree_selection()
         self.set_form_state("VIEW")
-        self.tree.focus_set()
+        if hasattr(self, 'tree_component'):
+            self.tree_component.tree.focus_set()
 
     def _check_and_auto_sync(self):
         # Auto-sync icons if the database is empty
@@ -1169,26 +1183,10 @@ class IconManagerFrame(ResponsiveGridBase):
         if self._is_refreshing_tree or self._suppress_tree_events:
             return
 
-        selection = []
-        if not selection:
+        if not icon_key:
             return
 
-        item_id = selection[0]
-        self._last_selected_item_id = item_id
-
-        if item_id.startswith('cat_'):
-            return
-
-        if item_id.startswith('usage_'):
-            return
-
-        # It's an icon node
-        if item_id.startswith("new_icon_"):
-            return
-
-        # Get actual ID from values instead of string replace
-        values = self.tree.item(item_id, 'values')
-        icon_key = values[0] if values else item_id
+        self._last_selected_item_id = f"icon_{icon_key}"
 
         icon_data = self.tree_model.get_icon(icon_key)
         if icon_data:
