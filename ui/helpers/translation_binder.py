@@ -97,3 +97,22 @@ class TranslationBinder:
                 traverse(root)
         except Exception:
             pass
+
+    def refresh_all_tooltips(self):
+        """Forces a refresh of all i18n tooltips across the application."""
+        try:
+            import tkinter as tk
+            root = tk._default_root
+            if root:
+                def traverse(w):
+                    try:
+                        tip = getattr(w, "_i18n_tooltip", None)
+                        if tip and hasattr(tip, "refresh"):
+                            tip.refresh()
+                    except Exception:
+                        pass
+                    for child in w.winfo_children():
+                        traverse(child)
+                traverse(root)
+        except Exception as e:
+            logger.debug(f"[TranslationBinder] Error refreshing tooltips: {e}")

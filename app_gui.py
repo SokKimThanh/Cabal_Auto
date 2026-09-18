@@ -793,6 +793,14 @@ class App:
         if hasattr(self.icon_helper, "reload_icon_map"):
             self.icon_helper.reload_icon_map()
 
+        # 1.1 Reload tooltip keys from database
+        all_tooltips = icon_service.get_all_tooltip_keys()
+        self.icon_helper.update_tooltip_keys(all_tooltips)
+
+        # 1.2 Force refresh all global tooltips via TranslationBinder
+        if hasattr(self, 'translation_binder') and hasattr(self.translation_binder, 'refresh_all_tooltips'):
+            self.translation_binder.refresh_all_tooltips()
+
         # 2. Clear cache for this icon key so Tkinter PhotoImages are regenerated
         if hasattr(self.icon_helper, "clear_cache"):
             self.icon_helper.clear_cache(event.icon_key)
