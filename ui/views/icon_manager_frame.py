@@ -1605,24 +1605,36 @@ class IconManagerFrame(ResponsiveGridBase):
                 if item_id.startswith("new_icon_"):
                     self.tree.delete(item_id)
 
-        # 2. Lưu Bản dịch Tooltip nếu có
+        # 2. Lưu Bản dịch Tooltip tự động tạo nếu chưa có
         t_key = self.var_tooltip_key.get().strip()
-        t_en = getattr(self, 'var_tooltip_en', None)
-        t_vi = getattr(self, 'var_tooltip_vi', None)
-        if t_key and t_en and t_vi:
-            val_en = t_en.get().strip()
-            val_vi = t_vi.get().strip()
-            if val_en or val_vi:
-                try:
-                    from lib.db.services.translation_service import TranslationService
-                    ts = TranslationService()
-                    if val_en:
-                        ts.upsert(namespace="", key=t_key, lang="en", text=val_en)
-                    if val_vi:
-                        ts.upsert(namespace="", key=t_key, lang="vi", text=val_vi)
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).warning(f"Lỗi lưu bản dịch: {e}")
+        if t_key:
+            t_en = getattr(self, 'var_tooltip_en', None)
+            t_vi = getattr(self, 'var_tooltip_vi', None)
+            val_en = t_en.get().strip() if t_en else t_key
+            val_vi = t_vi.get().strip() if t_vi else t_key
+
+            # Đảm bảo nếu để trống thì lấy luôn t_key làm default tránh lỗi mồ côi
+            if not val_en: val_en = t_key
+            if not val_vi: val_vi = t_key
+
+            try:
+                from lib.db.services.translation_service import TranslationService
+                from lib.events.event_bus import EventBus, TranslationDataUpdatedEvent
+                ts = TranslationService()
+                ts.upsert(namespace="", key=t_key, lang="en", text=val_en)
+                ts.upsert(namespace="", key=t_key, lang="vi", text=val_vi)
+
+                # Publish event để reload dropdown keys realtime
+                EventBus.publish(TranslationDataUpdatedEvent())
+
+                # Cập nhật danh sách local ngay lập tức
+                if t_key not in self._available_keys:
+                    self._available_keys.append(t_key)
+                    self._available_keys.sort()
+                    self.entry_tooltip['values'] = self._available_keys
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Lỗi lưu bản dịch: {e}")
 
         # 3. Lưu Database Icon
         success = self.icon_service.upsert_icon(icon_data)
