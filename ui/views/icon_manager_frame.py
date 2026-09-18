@@ -846,7 +846,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.img_listbox.bind('<Button-4>', self._prevent_scroll_propagation)
         self.img_listbox.bind('<Button-5>', self._prevent_scroll_propagation)
 
-        self.img_listbox.bind("<ButtonRelease-1>", self._on_image_selected)
+        self.img_listbox.bind("<<ListboxSelect>>", self._on_image_selected)
 
     def _on_img_search_change(self, *args):
         if self._img_search_after_id:
@@ -1414,10 +1414,18 @@ class IconManagerFrame(ResponsiveGridBase):
                 if parent_id and parent_id.startswith("cat_"):
                     selected_cat = parent_id.replace("cat_", "", 1)
 
-        # Set variables
+        # When creating a new icon node, we need to map the name to ID for the tree
+        # but display the name in the combobox.
+
+        # If selected_cat is an ID, find its name for the combobox
+        selected_cat_name = selected_cat
+        if hasattr(self, 'categories_id_map') and str(selected_cat).isdigit():
+            selected_cat_name = self.categories_id_map.get(int(selected_cat), selected_cat)
+
+        # Set variables using the string name
         self.var_icon_key.set("")
         self.var_name.set("New Icon")
-        self.var_category.set(selected_cat)
+        self.var_category.set(selected_cat_name)
         self.var_fallback_emoji.set("❓")
         self.var_tooltip_key.set("")
         self.var_filepath.set("")
@@ -1781,6 +1789,9 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree.delete(*self.tree.get_children())
         self.tree.insert('', 'end', iid="loading", text="Loading data...")
         self.tree_model.load_base_data_async(self._on_data_loaded)
+
+        # Initial image library load
+        self.image_model.scan_directory_async(callback=self._on_image_library_scanned)
 
     def _on_data_loaded(self):
         try:
