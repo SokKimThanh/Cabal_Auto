@@ -2,6 +2,8 @@ import tkinter as tk
 from typing import Any, Callable
 
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.utils.component_registry import get_component_registry
+
 from ui.helpers.icon_helper import get_icon_helper
 from ui.helpers.tooltip import attach_i18n_tooltip
 
@@ -76,6 +78,17 @@ class SidebarComponent(tk.Frame):
 
         for _item_idx, item in enumerate(sidebar_items):
             key, view_target, font, _unused_target, icon = item
+
+            # Auto-register sidebar buttons to the Component Registry
+            if isinstance(icon, str):
+                # Create a human readable name from the view_target, e.g., 'class_manager' -> 'Class Manager'
+                human_name = ' '.join(word.capitalize() for word in view_target.split('_'))
+                get_component_registry().register_component(
+                    name=f"Sidebar: {human_name}",
+                    mod="ui",
+                    comp="sidebar_button",
+                    element_id=icon
+                )
 
             # command needs a lambda capturing the current view_target
             # using default argument `t=view_target` prevents late binding issues
