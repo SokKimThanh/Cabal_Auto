@@ -1825,20 +1825,13 @@ class IconManagerFrame(ResponsiveGridBase):
         if not hasattr(self, 'tree') or not hasattr(self, 'tree_scroll_y'):
             return
 
-        # Get bounding box of the last item to determine if scrollbar is needed
-        children = self.tree.get_children()
-        if not children:
-            self.tree_scroll_y.grid_remove()
-            return
-
         try:
-            # Check if all items fit in the view
-            bbox = self.tree.bbox(children[-1])
-            if bbox and self.tree.winfo_height() > (bbox[1] + bbox[3]):
+            yview = self.tree.yview()
+            if yview[0] == 0.0 and yview[1] == 1.0:
                 self.tree_scroll_y.grid_remove()
             else:
                 self.tree_scroll_y.grid()
-        except tk.TclError:
+        except Exception:
             pass
 
     def _on_tree_interaction(self, event):
