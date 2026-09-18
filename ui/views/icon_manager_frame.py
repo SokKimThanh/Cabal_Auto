@@ -14,6 +14,7 @@ from lib.db.services.icon_service import IconService
 from ui.helpers.icon_helper import get_icon_helper
 from ui.models.icon_tree_model import IconTreeModel
 from ui.models.image_library_model import ImageLibraryModel
+from ui.components.image_library_component import ImageLibraryComponent
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
@@ -69,7 +70,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._render_after_id = None
 
         self.image_model = ImageLibraryModel()
-        self._img_search_after_id = None
+        self.image_library = None
 
         self._setup_ui()
         self._check_and_auto_sync()
@@ -404,14 +405,19 @@ class IconManagerFrame(ResponsiveGridBase):
         self.detail_container = tk.Frame(self.bottom_detail_container, bg=UIStyle.BG_SURFACE)
         self.detail_container.grid(row=0, column=1, sticky="nw")
 
-        self._build_image_library_panel(self.img_lib_container)
+        self.image_library = ImageLibraryComponent(
+            self.img_lib_container,
+            app=self.app,
+            image_model=self.image_model,
+            on_image_selected=self._handle_image_selected,
+            get_used_filepaths=self._get_used_filepaths
+        )
+        self.image_library.pack(fill="both", expand=True)
+
         self._build_detail_form()
 
         # Mặc định hiện empty state
         self.empty_state_frame.tkraise()
-
-        # Bắt đầu scan library ngầm
-        self.image_model.scan_async(self._on_image_library_scanned)
 
         # 3. Bottom Action Bar
         self.bottom_action_frame = tk.Frame(content_frame, bg=UIStyle.BG_SUBTLE, height=60)
@@ -750,138 +756,23 @@ class IconManagerFrame(ResponsiveGridBase):
             else:
                 messagebox.showerror("Error", "Gỡ usage thất bại.")
 
-
-    def _build_image_library_panel(self, parent_frame):
-        parent_frame.grid_rowconfigure(0, weight=0) # Toolbar
-        parent_frame.grid_rowconfigure(1, weight=1) # List
-        parent_frame.grid_columnconfigure(0, weight=1)
-
-        # Toolbar
-        toolbar = tk.Frame(parent_frame, bg=UIStyle.BG_ELEVATED)
-        toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 5))
-        toolbar.grid_columnconfigure(0, weight=1)
-
-        search_frame = tk.Frame(toolbar, bg=UIStyle.BG_ELEVATED)
-        search_frame.pack(side="left", fill="x", expand=True)
-        tk.Label(search_frame, text="🔍", bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_MUTED).pack(side="left", padx=(5,2))
-
-        self.img_search_var = tk.StringVar()
-        self.img_search_entry = ttk.Entry(search_frame, textvariable=self.img_search_var)
-        self.img_search_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
-        self.img_search_var.trace_add("write", self._on_img_search_change)
-
-        self.var_hide_used = tk.BooleanVar(value=True)
-        self.chk_hide_used = tk.Checkbutton(
-            toolbar, text=self.i18n_t("chk_hide_used", default="Ẩn ảnh đã dùng"),
-            variable=self.var_hide_used, bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY,
-            command=self._on_img_search_change, selectcolor=UIStyle.BG_BASE
-        )
-        self.chk_hide_used.pack(side="right", padx=(5, 10))
-
-        self.btn_import_img = tk.Button(
-            toolbar, text=self.i18n_t("btn_import_img", default="Import Image"),
-            command=self._on_import_image_clicked,
-            **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {})
-        )
-        self.btn_import_img.pack(side="right", padx=5)
-
-        # Listbox container
-        list_frame = tk.Frame(parent_frame, bg=UIStyle.BG_BASE)
-        list_frame.grid(row=1, column=0, sticky="nsew")
-        list_frame.grid_rowconfigure(0, weight=1)
-        list_frame.grid_columnconfigure(0, weight=1)
-
-        self.img_listbox = tk.Listbox(
-            list_frame,
-            bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY,
-            selectbackground=getattr(UIStyle, "COLOR_PRIMARY", getattr(UIStyle, "THEME_STATE_SELECTED", "#2196F3")), selectforeground="white",
-            borderwidth=1, relief="solid", highlightthickness=0
-        )
-        self.img_listbox.grid(row=0, column=0, sticky="nsew")
-
-        img_scroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.img_listbox.yview)
-        img_scroll.grid(row=0, column=1, sticky="ns")
-        self.img_listbox.configure(yscrollcommand=img_scroll.set)
-        self.img_listbox.bind('<MouseWheel>', self._prevent_scroll_propagation)
-        self.img_listbox.bind('<Button-4>', self._prevent_scroll_propagation)
-        self.img_listbox.bind('<Button-5>', self._prevent_scroll_propagation)
-
-        self.img_listbox.bind("<<ListboxSelect>>", self._on_image_selected)
-
-    def _on_img_search_change(self, *args):
-        if self._img_search_after_id:
-            self.after_cancel(self._img_search_after_id)
-        self._img_search_after_id = self.after(300, self._perform_img_search)
-
-    def _perform_img_search(self):
-        query = self.img_search_var.get()
-        results = self.image_model.search(query)
-
-        # Filter used images if checkbox is ticked
-        if getattr(self, 'var_hide_used', None) and self.var_hide_used.get():
-            try:
-                # Get all used filepaths
-                cursor = self.icon_service.conn.cursor()
-                cursor.execute("SELECT DISTINCT filepath FROM icons WHERE filepath IS NOT NULL AND filepath != ''")
-                used_files = {r[0] for r in cursor.fetchall()}
-
-                # Keep the currently selected file even if it's used
-                current_file = self.var_filepath.get().strip() if hasattr(self, 'var_filepath') else ""
-
-                results = [f for f in results if f not in used_files or f == current_file]
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Failed to filter used images: {e}")
-
-        self._update_image_listbox(results)
-
-    def _on_image_library_scanned(self, file_list, error_msg):
-        def update_ui():
-            try:
-                if not self.winfo_exists():
-                    return
-            except Exception:
-                return
-            if error_msg:
-                # Show error placeholder or toast
-                self.img_listbox.insert(tk.END, f"Error: {error_msg}")
-                self.img_listbox.config(state="disabled")
-            else:
-                # Issue #3: Update listbox immediately, and apply search logic (including hiding used images)
-                self._perform_img_search()
-
+    def _get_used_filepaths(self):
         try:
-            self.after(0, update_ui)
-        except RuntimeError:
-            pass # main thread not in main loop during early exit
+            cursor = self.icon_service.conn.cursor()
+            cursor.execute("SELECT DISTINCT filepath FROM icons WHERE filepath IS NOT NULL AND filepath != ''")
+            return {r[0] for r in cursor.fetchall()}
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to get used images: {e}")
+            return set()
 
-    def _update_image_listbox(self, file_list):
-        self.img_listbox.delete(0, tk.END)
-        for f in file_list:
-            self.img_listbox.insert(tk.END, f)
-
-        # Highlight current file if exists
-        current_file = self.var_filepath.get()
-        if current_file:
-            self._highlight_image_in_list(current_file)
-
-    def _highlight_image_in_list(self, filename):
-        items = self.img_listbox.get(0, tk.END)
-        if filename in items:
-            idx = items.index(filename)
-            self.img_listbox.selection_clear(0, tk.END)
-            self.img_listbox.selection_set(idx)
-            self.img_listbox.see(idx)
-
-    def _on_image_selected(self, event):
+    def _handle_image_selected(self, selected_file, is_new_import=False):
         if self._current_state not in ("ADD", "EDIT"):
             return # Only allow selection in edit mode
 
-        selection = self.img_listbox.curselection()
-        if not selection:
-            return
+        if is_new_import:
+            self._just_imported_file = selected_file
 
-        selected_file = self.img_listbox.get(selection[0])
         current_icon_key = self.var_icon_key.get().strip()
 
         # Check duplication
@@ -895,11 +786,15 @@ class IconManagerFrame(ResponsiveGridBase):
                 default=f"Ảnh này hiện đang được sử dụng bởi các Icon Key khác: {usage_keys}.\nBạn có muốn tiếp tục sử dụng chung ảnh này không?"
             )
             if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo trùng lặp"), msg_dup):
-                # Revert selection
-                self._highlight_image_in_list(self.var_filepath.get())
+                # Revert selection in the library component
+                if hasattr(self, 'image_library') and self.image_library:
+                    self.image_library.set_current_filepath(self.var_filepath.get())
                 return
 
         self.var_filepath.set(selected_file)
+        if hasattr(self, 'image_library') and self.image_library:
+            self.image_library.set_current_filepath(selected_file)
+
         self._is_dirty = True
 
         # Clear cache for the current icon to ensure fresh load
@@ -918,80 +813,6 @@ class IconManagerFrame(ResponsiveGridBase):
             "tooltip_translation_key": self.var_tooltip_key.get()
         }
         self._render_preview(dummy_data)
-
-    def _on_import_image_clicked(self):
-        from tkinter import filedialog
-        import logging
-        logger = logging.getLogger(__name__)
-
-        if self._current_state not in ("ADD", "EDIT"):
-            messagebox.showinfo("Info", "Vui lòng nhấn Add hoặc Edit trước khi Import ảnh mới.")
-            return
-
-        file_path = filedialog.askopenfilename(
-            title=self.i18n_t("select_icon_file", default="Select Icon File"),
-            filetypes=[("Image files", "*.png *.ico")]
-        )
-
-        if not file_path:
-            return
-
-        original_name = Path(file_path).name
-        target_name = original_name
-        overwrite = False
-
-        # Check collision via Model
-        if self.image_model.check_name_collision(original_name):
-            # Cần tạo 1 custom dialog thay vì dùng messagebox để có 3 nút
-            # Nhưng Tkinter mặc định không có 3-button dialog có sẵn tốt.
-            # Ta dùng trick: askyesnocancel: Yes=Replace, No=Keep Both, Cancel=Cancel
-            msg = f"Ảnh '{original_name}' đã tồn tại.\n- Yes: Ghi đè (Replace)\n- No: Giữ cả hai (Đổi tên)\n- Cancel: Hủy bỏ"
-            res = messagebox.askyesnocancel("Trùng tên file", msg)
-
-            if res is None: # Cancel
-                return
-            elif res is True: # Replace
-                overwrite = True
-                logger.info(f"Import: Người dùng chọn Ghi đè (Replace) file {target_name}")
-            else: # Keep both
-                target_name = self.image_model.generate_unique_filename(original_name)
-                overwrite = False
-                logger.info(f"Import: Người dùng chọn Giữ cả hai, đổi tên {original_name} thành {target_name}")
-        else:
-            target_name = self.image_model.sanitize_filename(original_name)
-
-        success, final_filename, err_msg = self.image_model.import_image(file_path, target_name, overwrite)
-
-        if not success:
-            logger.error(f"Import thất bại: {err_msg}")
-            messagebox.showerror("Import Error", err_msg)
-            return
-
-        logger.info(f"Import thành công: {final_filename}")
-        self._just_imported_file = final_filename
-
-        # Import thành công, reload lại list và chọn file mới
-        self._on_img_search_change() # Clear search and reload
-        self.img_search_var.set("") # Clear search box
-
-        # Tự động gán cho icon đang chọn
-        self.var_filepath.set(final_filename)
-        self._is_dirty = True
-
-        # Update preview
-        current_icon_key = self.var_icon_key.get().strip()
-        if hasattr(self.icon_helper, 'clear_cache'):
-            self.icon_helper.clear_cache(current_icon_key)
-
-        dummy_data = {
-            "icon_key": current_icon_key,
-            "fallback_emoji": self.var_fallback_emoji.get(),
-            "filepath": final_filename,
-            "tooltip_translation_key": self.var_tooltip_key.get()
-        }
-        self._render_preview(dummy_data)
-
-
 
     def _on_name_changed(self, *args):
         if self._current_state in ("ADD", "EDIT"):
@@ -1333,13 +1154,8 @@ class IconManagerFrame(ResponsiveGridBase):
             self.btn_del_usage.config(state=btn_state)
 
         # Handle Image Library state
-        if hasattr(self, 'img_listbox'):
-            if state in ("ADD", "EDIT"):
-                self.img_listbox.config(state="normal")
-                self.btn_import_img.config(state="normal")
-            else:
-                self.img_listbox.config(state="disabled")
-                self.btn_import_img.config(state="disabled")
+        if hasattr(self, 'image_library') and self.image_library:
+            self.image_library.set_state(state)
 
         # Handle buttons
         if state == "VIEW":
@@ -1726,7 +1542,8 @@ class IconManagerFrame(ResponsiveGridBase):
                  if not usages: # Only rollback/remove file if no other icons are using it
                       if getattr(self, '_just_imported_file', None) == new_filepath:
                           self.image_model.remove_file(new_filepath)
-                          self._on_img_search_change() # refresh list
+                          if hasattr(self, 'image_library') and self.image_library:
+                              self.image_library.reload() # refresh list
 
     def _on_cancel(self):
         # Dọn dẹp dòng dummy nếu đang ở trạng thái ADD
@@ -1768,9 +1585,6 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree.delete(*self.tree.get_children())
         self.tree.insert('', 'end', iid="loading", text="Loading data...")
         self.tree_model.load_base_data_async(self._on_data_loaded)
-
-        # Initial image library load
-        self.image_model.scan_async(callback=self._on_image_library_scanned)
 
     def _on_data_loaded(self):
         try:
@@ -2014,10 +1828,8 @@ class IconManagerFrame(ResponsiveGridBase):
             filepath = icon_data.get('filepath') or ''
             self.var_filepath.set(filepath)
 
-            if hasattr(self, 'img_listbox') and filepath:
-                self._highlight_image_in_list(filepath)
-            elif hasattr(self, 'img_listbox'):
-                self.img_listbox.selection_clear(0, tk.END)
+            if hasattr(self, 'image_library') and self.image_library:
+                self.image_library.set_current_filepath(filepath)
 
             self._render_preview(icon_data)
             if hasattr(self, 'usage_tree'):
