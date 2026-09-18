@@ -309,6 +309,17 @@ class IconService:
             logger.error(f"Error in get_usages: {e}")
             return []
 
+    def delete_usage(self, usage_id: int) -> bool:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("DELETE FROM icon_usages WHERE id = ?", (usage_id,))
+            self.conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            logger.error(f"Error in delete_usage: {e}")
+            self.conn.rollback()
+            return False
+
     def clear_usages(self, icon_key: str) -> bool:
         try:
             cursor = self.conn.cursor()

@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 import threading
 import sqlite3
+from pathlib import Path
 from tkinter import ttk, messagebox
 
 from ui.components.empty_state import EmptyState
@@ -14,6 +15,7 @@ from ui.models.image_library_model import ImageLibraryModel
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
+from lib.i18n import t
 
 
 class IconManagerFrame(ResponsiveGridBase):
@@ -98,6 +100,28 @@ class IconManagerFrame(ResponsiveGridBase):
 
         return translated
 
+
+
+    def _prevent_scroll_propagation(self, event):
+        """Prevent mouse wheel events from bubbling up to the main canvas."""
+        # The event.widget provides the widget that triggered the scroll.
+        # We process the scroll manually for this widget to keep it scrolling,
+        # and then return "break" to stop propagation.
+        widget = event.widget
+        try:
+            import sys
+            if sys.platform == "win32":
+                widget.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            elif sys.platform == "darwin":
+                widget.yview_scroll(int(-1 * event.delta), "units")
+            else:
+                if event.num == 4:
+                    widget.yview_scroll(-1, "units")
+                elif event.num == 5:
+                    widget.yview_scroll(1, "units")
+        except Exception:
+            pass
+        return "break"
 
     def _setup_ui(self):
         content_frame = self.get_content_frame()
@@ -307,6 +331,9 @@ class IconManagerFrame(ResponsiveGridBase):
         # Scrollbar
         self.tree_scroll_y = ttk.Scrollbar(self.left_master_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.tree_scroll_y.set)
+        self.tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.tree.bind('<Button-5>', self._prevent_scroll_propagation)
 
         # Auto-hiding scrollbar implementation
         self.tree.grid(row=1, column=0, sticky="nsew")
@@ -432,6 +459,9 @@ class IconManagerFrame(ResponsiveGridBase):
 
         cat_scrollbar = ttk.Scrollbar(self.cat_left_frame, orient="vertical", command=self.cat_tree.yview)
         self.cat_tree.configure(yscrollcommand=cat_scrollbar.set)
+        self.cat_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.cat_tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.cat_tree.bind('<Button-5>', self._prevent_scroll_propagation)
         cat_scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.cat_tree.bind("<<TreeviewSelect>>", self._on_cat_tree_select)
@@ -535,6 +565,10 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name)
         self.entry_name.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
 
+        # Add auto-fill trigger
+        if hasattr(self.var_name, 'trace_add'):
+            self.var_name.trace_add('write', self._on_name_changed)
+
         # 2. Icon Key
         tk.Label(self.form_frame, text="Icon Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
         self.entry_icon_key = ttk.Entry(self.form_frame, textvariable=self.var_icon_key)
@@ -565,8 +599,25 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.lbl_tooltip_warning = tk.Label(tooltip_frame, text="", bg=UIStyle.BG_SURFACE, fg="#ff9800", font=(UIStyle.FONT_FAMILY_UI, 9, "bold"))
         self.lbl_tooltip_warning.grid(row=2, column=0, sticky="w")
+
+        # English translation display
+        en_frame = tk.Frame(tooltip_frame, bg=UIStyle.BG_SURFACE)
+        en_frame.grid(row=3, column=0, sticky="ew", pady=(2,0))
+        tk.Label(en_frame, text="EN:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
+        self.var_tooltip_en = tk.StringVar()
+        self.entry_tooltip_en = ttk.Entry(en_frame, textvariable=self.var_tooltip_en, font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_en.pack(side="left", fill="x", expand=True)
+
+        # Vietnamese translation display
+        vi_frame = tk.Frame(tooltip_frame, bg=UIStyle.BG_SURFACE)
+        vi_frame.grid(row=4, column=0, sticky="ew", pady=(2,2))
+        tk.Label(vi_frame, text="VI:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
+        self.var_tooltip_vi = tk.StringVar()
+        self.entry_tooltip_vi = ttk.Entry(vi_frame, textvariable=self.var_tooltip_vi, font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_vi.pack(side="left", fill="x", expand=True)
+
         self.lbl_tooltip_priority_info = tk.Label(tooltip_frame, text="ⓘ Tooltip của Icon sẽ được ưu tiên hơn Tooltip của Button", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 8, "italic"))
-        self.lbl_tooltip_priority_info.grid(row=3, column=0, sticky="w")
+        self.lbl_tooltip_priority_info.grid(row=5, column=0, sticky="w")
 
 
         # Validation bindings
@@ -586,6 +637,124 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.entry_filepath = ttk.Entry(filepath_frame, textvariable=self.var_filepath, state="disabled")
         self.entry_filepath.grid(row=0, column=0, sticky="ew")
+
+        # 7. Usages Manager Panel
+        self._build_usages_panel(self.form_frame, row=6)
+
+
+
+    def _build_usages_panel(self, parent_frame, row):
+        usage_container = tk.LabelFrame(parent_frame, text=self.i18n_t("lbl_usage_manager", default="Quản lý Nơi Dùng (Usages)"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
+        usage_container.grid(row=row, column=0, columnspan=2, sticky="nsew", padx=5, pady=10)
+
+        usage_container.grid_columnconfigure(0, weight=1)
+        usage_container.grid_rowconfigure(0, weight=1) # Treeview
+        usage_container.grid_rowconfigure(1, weight=0) # Add form
+
+        # 7.1 Treeview for Usages
+        self.usage_tree = ttk.Treeview(
+            usage_container,
+            columns=("id", "module", "component", "element"),
+            show="headings",
+            selectmode="browse",
+            height=4
+        )
+        self.usage_tree.heading("id", text="ID")
+        self.usage_tree.heading("module", text="Module")
+        self.usage_tree.heading("component", text="Component")
+        self.usage_tree.heading("element", text="Element ID")
+
+        self.usage_tree.column("id", width=30, stretch=tk.NO, anchor="center")
+        self.usage_tree.column("module", width=80, stretch=tk.YES)
+        self.usage_tree.column("component", width=80, stretch=tk.YES)
+        self.usage_tree.column("element", width=120, stretch=tk.YES)
+
+        self.usage_tree.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        usage_scroll = ttk.Scrollbar(usage_container, orient="vertical", command=self.usage_tree.yview)
+        usage_scroll.grid(row=0, column=1, sticky="ns", pady=5)
+        self.usage_tree.configure(yscrollcommand=usage_scroll.set)
+        self.usage_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.usage_tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.usage_tree.bind('<Button-5>', self._prevent_scroll_propagation)
+
+        # 7.2 Add Form
+        add_frame = tk.Frame(usage_container, bg=UIStyle.BG_SURFACE)
+        add_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+
+        tk.Label(add_frame, text="Mod:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        self.var_usage_mod = tk.StringVar(value="ui")
+        ttk.Entry(add_frame, textvariable=self.var_usage_mod, width=10).pack(side="left", padx=(0,5))
+
+        tk.Label(add_frame, text="Comp:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        self.var_usage_comp = tk.StringVar(value="button")
+        ttk.Entry(add_frame, textvariable=self.var_usage_comp, width=10).pack(side="left", padx=(0,5))
+
+        tk.Label(add_frame, text="ID:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        self.var_usage_element = tk.StringVar()
+        ttk.Entry(add_frame, textvariable=self.var_usage_element, width=20).pack(side="left", padx=(0,5))
+
+        self.btn_add_usage = tk.Button(add_frame, text="Gắn (Map)", command=self._on_add_usage, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_add_usage.pack(side="left", padx=2)
+
+        self.btn_del_usage = tk.Button(add_frame, text="Gỡ (Unmap)", command=self._on_del_usage, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_del_usage.pack(side="left", padx=2)
+
+    def _load_usages_for_selected(self, icon_key):
+        self.usage_tree.delete(*self.usage_tree.get_children())
+        if not icon_key:
+            return
+
+        usages = self.icon_service.get_usages(icon_key)
+        for u in usages:
+            self.usage_tree.insert("", "end", values=(u.get("id"), u.get("module_name"), u.get("ui_component_type"), u.get("ui_element_id")))
+
+    def _on_add_usage(self):
+        icon_key = self.var_icon_key.get().strip()
+        if not icon_key or self._current_state == "ADD":
+            messagebox.showwarning("Warning", "Vui lòng Lưu icon trước khi gắn usages.")
+            return
+
+        mod = self.var_usage_mod.get().strip()
+        comp = self.var_usage_comp.get().strip()
+        elem = self.var_usage_element.get().strip()
+
+        if not mod or not comp or not elem:
+            messagebox.showwarning("Warning", "Vui lòng nhập đủ thông tin Mod, Comp, ID.")
+            return
+
+        if self.icon_service.register_usage(icon_key, mod, comp, elem):
+            self.var_usage_element.set("")
+            self._load_usages_for_selected(icon_key)
+            # invalidate tree_model usage cache to update count
+            if hasattr(self, 'tree_model'):
+                self.tree_model.usage_cache.pop(icon_key, None)
+                self.tree_model.load_usages_for_icon_async(icon_key, None)
+
+            from tkinter import messagebox
+            messagebox.showinfo("Thành công", f"Đã gán Element ID '{elem}' cho icon '{icon_key}'.")
+        else:
+            messagebox.showerror("Error", "Không thể gắn usage, có thể bị trùng lặp.")
+
+    def _on_del_usage(self):
+        selection = self.usage_tree.selection()
+        if not selection:
+            messagebox.showinfo("Info", "Vui lòng chọn 1 usage trong danh sách để gỡ.")
+            return
+
+        item = self.usage_tree.item(selection[0])
+        usage_id = item["values"][0]
+        elem_id = item["values"][3]
+
+        if messagebox.askyesno("Xác nhận", f"Bạn có chắc muốn gỡ Element '{elem_id}' khỏi icon này?"):
+            if hasattr(self.icon_service, "delete_usage") and self.icon_service.delete_usage(usage_id):
+                icon_key = self.var_icon_key.get().strip()
+                self._load_usages_for_selected(icon_key)
+                if hasattr(self, 'tree_model'):
+                    self.tree_model.usage_cache.pop(icon_key, None)
+                    self.tree_model.load_usages_for_icon_async(icon_key, None)
+            else:
+                messagebox.showerror("Error", "Gỡ usage thất bại.")
 
 
     def _build_image_library_panel(self, parent_frame):
@@ -631,6 +800,9 @@ class IconManagerFrame(ResponsiveGridBase):
         img_scroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.img_listbox.yview)
         img_scroll.grid(row=0, column=1, sticky="ns")
         self.img_listbox.configure(yscrollcommand=img_scroll.set)
+        self.img_listbox.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.img_listbox.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.img_listbox.bind('<Button-5>', self._prevent_scroll_propagation)
 
         self.img_listbox.bind("<ButtonRelease-1>", self._on_image_selected)
 
@@ -800,6 +972,26 @@ class IconManagerFrame(ResponsiveGridBase):
         self._render_preview(dummy_data)
 
 
+
+    def _on_name_changed(self, *args):
+        if self._current_state == "ADD":
+            name = self.var_name.get()
+            if name:
+                # slugify logic: lowercase, replace spaces and special chars with underscore
+                import re
+                slug = name.lower().strip()
+                slug = re.sub(r'[^a-z0-9]+', '_', slug)
+                slug = slug.strip('_')
+
+                # Auto-fill Icon Key if it's currently empty or follows the slug (basic check to allow manual override later, but for ADD it's safe to overwrite if they are just typing)
+                # To be less intrusive, only auto-fill if Icon Key is empty or matches the old slug. For simplicity, in ADD mode, just auto-fill
+                # Actually, to allow manual edit in ADD, we only auto-fill if icon_key is empty or matches the generated slug minus the last char
+                # For a seamless experience, we just overwrite in ADD mode if they haven't explicitly edited the icon_key.
+
+                # We'll just overwrite it in ADD mode for now as requested.
+                self.var_icon_key.set(slug)
+                self.var_tooltip_key.set(f"icon_tooltip_{slug}")
+
     def _load_i18n_keys(self):
         self._available_keys = []
         try:
@@ -816,6 +1008,13 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _validate_tooltip_key(self, *args):
         key = self.var_tooltip_key.get().strip()
+
+        # Reset translations
+        if hasattr(self, 'var_tooltip_en'):
+            self.var_tooltip_en.set("")
+        if hasattr(self, 'var_tooltip_vi'):
+            self.var_tooltip_vi.set("")
+
         if not key:
             self.lbl_tooltip_warning.config(text="")
             # Xoá tooltip của label preview
@@ -831,7 +1030,6 @@ class IconManagerFrame(ResponsiveGridBase):
             return
 
         try:
-            from lib.i18n import t
             # Tự đặt 1 chuỗi ngẫu nhiên không có khả năng bị trùng để test default
             test_missing = "___MISSING___"
             val = t(key, default=test_missing, ns=None, lang=None)
@@ -839,8 +1037,20 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
             else:
                 self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
-        except Exception:
-            pass
+
+            # Cập nhật nghĩa vào textbox (chỉ khi giá trị get được khác rỗng)
+            # Nếu ko có trong thư viện, giữ nguyên cái người dùng đang gõ
+            if hasattr(self, 'var_tooltip_en'):
+                val_en = t(key, default="___MISSING___", ns=None, lang="en")
+                if val_en != "___MISSING___":
+                    self.var_tooltip_en.set(val_en)
+            if hasattr(self, 'var_tooltip_vi'):
+                val_vi = t(key, default="___MISSING___", ns=None, lang="vi")
+                if val_vi != "___MISSING___":
+                    self.var_tooltip_vi.set(val_vi)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Error resolving tooltip key {key}: {e}")
 
     def _autocomplete_tooltip(self, event):
         # Only process printable characters and backspace
@@ -874,17 +1084,31 @@ class IconManagerFrame(ResponsiveGridBase):
 
         giant_icon = None
         # Chỉ load ảnh nếu status là GREEN (ảnh tồn tại)
-        if status == "GREEN" and icon_key:
-            # We need a large icon. Let's try 128x128
-            giant_icon = self.icon_helper.get_icon(icon_key, fallback=fallback_emoji, size=128)
+        if status == "GREEN" and filepath:
+            from PIL import Image, ImageTk
+            from lib.managers.icon_file_manager import get_icons_directory
+            try:
+                target_path = Path(filepath)
+                if not target_path.is_absolute():
+                    target_path = get_icons_directory() / filepath
+
+                if target_path.exists():
+                    img = Image.open(target_path)
+                    img = img.resize((128, 128), Image.Resampling.LANCZOS)
+                    giant_icon = ImageTk.PhotoImage(img)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Preview load failed: {e}")
+
+        if giant_icon is None:
+            giant_icon = fallback_emoji or "❓"
 
         if giant_icon and not isinstance(giant_icon, str):
             self.lbl_preview.config(image=giant_icon, text="")
             self.lbl_preview.image = giant_icon
         else:
             # Nếu file không tồn tại hoặc lỗi, fallback sang emoji
-            emoji_text = fallback_emoji or "❓"
-            self.lbl_preview.config(image='', text=emoji_text, font=(UIStyle.FONT_FAMILY_UI, 72))
+            self.lbl_preview.config(image='', text=giant_icon, font=(UIStyle.FONT_FAMILY_UI, 72))
             self.lbl_preview.image = None
 
         # Re-attach tooltip
@@ -1076,8 +1300,19 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_fallback.config(state=entry_state)
         if hasattr(self, 'entry_tooltip'):
             self.entry_tooltip.config(state='normal' if state in ('ADD', 'EDIT') else 'disabled')
+        if hasattr(self, 'entry_tooltip_en'):
+            self.entry_tooltip_en.config(state=entry_state)
+        if hasattr(self, 'entry_tooltip_vi'):
+            self.entry_tooltip_vi.config(state=entry_state)
         # Filepath is visually selected via button
         self.entry_filepath.config(state="disabled")
+
+        # Handle usages panel state
+        if hasattr(self, 'usage_tree'):
+            btn_state = "normal" if state == "EDIT" else "disabled"
+            # Cannot map to new unsaved icon
+            self.btn_add_usage.config(state=btn_state)
+            self.btn_del_usage.config(state=btn_state)
 
         # Handle Image Library state
         if hasattr(self, 'img_listbox'):
@@ -1370,7 +1605,26 @@ class IconManagerFrame(ResponsiveGridBase):
                 if item_id.startswith("new_icon_"):
                     self.tree.delete(item_id)
 
-        # 2. Lưu Database
+        # 2. Lưu Bản dịch Tooltip nếu có
+        t_key = self.var_tooltip_key.get().strip()
+        t_en = getattr(self, 'var_tooltip_en', None)
+        t_vi = getattr(self, 'var_tooltip_vi', None)
+        if t_key and t_en and t_vi:
+            val_en = t_en.get().strip()
+            val_vi = t_vi.get().strip()
+            if val_en or val_vi:
+                try:
+                    from lib.db.services.translation_service import TranslationService
+                    ts = TranslationService()
+                    if val_en:
+                        ts.upsert(namespace="", key=t_key, lang="en", text=val_en)
+                    if val_vi:
+                        ts.upsert(namespace="", key=t_key, lang="vi", text=val_vi)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Lỗi lưu bản dịch: {e}")
+
+        # 3. Lưu Database Icon
         success = self.icon_service.upsert_icon(icon_data)
         if success:
             # Xoá flag dirty
@@ -1654,20 +1908,13 @@ class IconManagerFrame(ResponsiveGridBase):
         if not hasattr(self, 'tree') or not hasattr(self, 'tree_scroll_y'):
             return
 
-        # Get bounding box of the last item to determine if scrollbar is needed
-        children = self.tree.get_children()
-        if not children:
-            self.tree_scroll_y.grid_remove()
-            return
-
         try:
-            # Check if all items fit in the view
-            bbox = self.tree.bbox(children[-1])
-            if bbox and self.tree.winfo_height() > (bbox[1] + bbox[3]):
+            yview = self.tree.yview()
+            if yview[0] == 0.0 and yview[1] == 1.0:
                 self.tree_scroll_y.grid_remove()
             else:
                 self.tree_scroll_y.grid()
-        except tk.TclError:
+        except Exception:
             pass
 
     def _on_tree_interaction(self, event):
@@ -1738,6 +1985,8 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.img_listbox.selection_clear(0, tk.END)
 
             self._render_preview(icon_data)
+            if hasattr(self, 'usage_tree'):
+                self._load_usages_for_selected(icon_key)
 
         self.set_form_state("VIEW")
 
