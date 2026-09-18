@@ -605,7 +605,7 @@ class IconManagerFrame(ResponsiveGridBase):
         en_frame.grid(row=3, column=0, sticky="ew", pady=(2,0))
         tk.Label(en_frame, text="EN:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
         self.var_tooltip_en = tk.StringVar()
-        self.entry_tooltip_en = ttk.Entry(en_frame, textvariable=self.var_tooltip_en, state="readonly", font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_en = ttk.Entry(en_frame, textvariable=self.var_tooltip_en, font=(UIStyle.FONT_FAMILY_UI, 9))
         self.entry_tooltip_en.pack(side="left", fill="x", expand=True)
 
         # Vietnamese translation display
@@ -613,7 +613,7 @@ class IconManagerFrame(ResponsiveGridBase):
         vi_frame.grid(row=4, column=0, sticky="ew", pady=(2,2))
         tk.Label(vi_frame, text="VI:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
         self.var_tooltip_vi = tk.StringVar()
-        self.entry_tooltip_vi = ttk.Entry(vi_frame, textvariable=self.var_tooltip_vi, state="readonly", font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_vi = ttk.Entry(vi_frame, textvariable=self.var_tooltip_vi, font=(UIStyle.FONT_FAMILY_UI, 9))
         self.entry_tooltip_vi.pack(side="left", fill="x", expand=True)
 
         self.lbl_tooltip_priority_info = tk.Label(tooltip_frame, text="ⓘ Tooltip của Icon sẽ được ưu tiên hơn Tooltip của Button", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 8, "italic"))
@@ -1038,13 +1038,16 @@ class IconManagerFrame(ResponsiveGridBase):
             else:
                 self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
 
-            # Cập nhật nghĩa vào textbox
+            # Cập nhật nghĩa vào textbox (chỉ khi giá trị get được khác rỗng)
+            # Nếu ko có trong thư viện, giữ nguyên cái người dùng đang gõ
             if hasattr(self, 'var_tooltip_en'):
-                val_en = t(key, default="", ns=None, lang="en")
-                self.var_tooltip_en.set(val_en)
+                val_en = t(key, default="___MISSING___", ns=None, lang="en")
+                if val_en != "___MISSING___":
+                    self.var_tooltip_en.set(val_en)
             if hasattr(self, 'var_tooltip_vi'):
-                val_vi = t(key, default="", ns=None, lang="vi")
-                self.var_tooltip_vi.set(val_vi)
+                val_vi = t(key, default="___MISSING___", ns=None, lang="vi")
+                if val_vi != "___MISSING___":
+                    self.var_tooltip_vi.set(val_vi)
         except Exception as e:
             import logging
             logging.getLogger(__name__).warning(f"Error resolving tooltip key {key}: {e}")
@@ -1297,6 +1300,10 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_fallback.config(state=entry_state)
         if hasattr(self, 'entry_tooltip'):
             self.entry_tooltip.config(state='normal' if state in ('ADD', 'EDIT') else 'disabled')
+        if hasattr(self, 'entry_tooltip_en'):
+            self.entry_tooltip_en.config(state=entry_state)
+        if hasattr(self, 'entry_tooltip_vi'):
+            self.entry_tooltip_vi.config(state=entry_state)
         # Filepath is visually selected via button
         self.entry_filepath.config(state="disabled")
 
@@ -1598,7 +1605,26 @@ class IconManagerFrame(ResponsiveGridBase):
                 if item_id.startswith("new_icon_"):
                     self.tree.delete(item_id)
 
-        # 2. Lưu Database
+        # 2. Lưu Bản dịch Tooltip nếu có
+        t_key = self.var_tooltip_key.get().strip()
+        t_en = getattr(self, 'var_tooltip_en', None)
+        t_vi = getattr(self, 'var_tooltip_vi', None)
+        if t_key and t_en and t_vi:
+            val_en = t_en.get().strip()
+            val_vi = t_vi.get().strip()
+            if val_en or val_vi:
+                try:
+                    from lib.db.services.translation_service import TranslationService
+                    ts = TranslationService()
+                    if val_en:
+                        ts.upsert(namespace="", key=t_key, lang="en", text=val_en)
+                    if val_vi:
+                        ts.upsert(namespace="", key=t_key, lang="vi", text=val_vi)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Lỗi lưu bản dịch: {e}")
+
+        # 3. Lưu Database Icon
         success = self.icon_service.upsert_icon(icon_data)
         if success:
             # Xoá flag dirty
