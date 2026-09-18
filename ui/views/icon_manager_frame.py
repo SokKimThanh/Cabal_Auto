@@ -15,6 +15,7 @@ from ui.models.image_library_model import ImageLibraryModel
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
+from lib.i18n import t
 
 
 class IconManagerFrame(ResponsiveGridBase):
@@ -564,6 +565,10 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name)
         self.entry_name.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
 
+        # Add auto-fill trigger
+        if hasattr(self.var_name, 'trace_add'):
+            self.var_name.trace_add('write', self._on_name_changed)
+
         # 2. Icon Key
         tk.Label(self.form_frame, text="Icon Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
         self.entry_icon_key = ttk.Entry(self.form_frame, textvariable=self.var_icon_key)
@@ -594,8 +599,25 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.lbl_tooltip_warning = tk.Label(tooltip_frame, text="", bg=UIStyle.BG_SURFACE, fg="#ff9800", font=(UIStyle.FONT_FAMILY_UI, 9, "bold"))
         self.lbl_tooltip_warning.grid(row=2, column=0, sticky="w")
+
+        # English translation display
+        en_frame = tk.Frame(tooltip_frame, bg=UIStyle.BG_SURFACE)
+        en_frame.grid(row=3, column=0, sticky="ew", pady=(2,0))
+        tk.Label(en_frame, text="EN:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
+        self.var_tooltip_en = tk.StringVar()
+        self.entry_tooltip_en = ttk.Entry(en_frame, textvariable=self.var_tooltip_en, state="readonly", font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_en.pack(side="left", fill="x", expand=True)
+
+        # Vietnamese translation display
+        vi_frame = tk.Frame(tooltip_frame, bg=UIStyle.BG_SURFACE)
+        vi_frame.grid(row=4, column=0, sticky="ew", pady=(2,2))
+        tk.Label(vi_frame, text="VI:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
+        self.var_tooltip_vi = tk.StringVar()
+        self.entry_tooltip_vi = ttk.Entry(vi_frame, textvariable=self.var_tooltip_vi, state="readonly", font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_vi.pack(side="left", fill="x", expand=True)
+
         self.lbl_tooltip_priority_info = tk.Label(tooltip_frame, text="ⓘ Tooltip của Icon sẽ được ưu tiên hơn Tooltip của Button", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 8, "italic"))
-        self.lbl_tooltip_priority_info.grid(row=3, column=0, sticky="w")
+        self.lbl_tooltip_priority_info.grid(row=5, column=0, sticky="w")
 
 
         # Validation bindings
@@ -950,6 +972,26 @@ class IconManagerFrame(ResponsiveGridBase):
         self._render_preview(dummy_data)
 
 
+
+    def _on_name_changed(self, *args):
+        if self._current_state == "ADD":
+            name = self.var_name.get()
+            if name:
+                # slugify logic: lowercase, replace spaces and special chars with underscore
+                import re
+                slug = name.lower().strip()
+                slug = re.sub(r'[^a-z0-9]+', '_', slug)
+                slug = slug.strip('_')
+
+                # Auto-fill Icon Key if it's currently empty or follows the slug (basic check to allow manual override later, but for ADD it's safe to overwrite if they are just typing)
+                # To be less intrusive, only auto-fill if Icon Key is empty or matches the old slug. For simplicity, in ADD mode, just auto-fill
+                # Actually, to allow manual edit in ADD, we only auto-fill if icon_key is empty or matches the generated slug minus the last char
+                # For a seamless experience, we just overwrite in ADD mode if they haven't explicitly edited the icon_key.
+
+                # We'll just overwrite it in ADD mode for now as requested.
+                self.var_icon_key.set(slug)
+                self.var_tooltip_key.set(f"icon_tooltip_{slug}")
+
     def _load_i18n_keys(self):
         self._available_keys = []
         try:
@@ -966,6 +1008,13 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _validate_tooltip_key(self, *args):
         key = self.var_tooltip_key.get().strip()
+
+        # Reset translations
+        if hasattr(self, 'var_tooltip_en'):
+            self.var_tooltip_en.set("")
+        if hasattr(self, 'var_tooltip_vi'):
+            self.var_tooltip_vi.set("")
+
         if not key:
             self.lbl_tooltip_warning.config(text="")
             # Xoá tooltip của label preview
@@ -981,7 +1030,6 @@ class IconManagerFrame(ResponsiveGridBase):
             return
 
         try:
-            from lib.i18n import t
             # Tự đặt 1 chuỗi ngẫu nhiên không có khả năng bị trùng để test default
             test_missing = "___MISSING___"
             val = t(key, default=test_missing, ns=None, lang=None)
@@ -989,8 +1037,17 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
             else:
                 self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
-        except Exception:
-            pass
+
+            # Cập nhật nghĩa vào textbox
+            if hasattr(self, 'var_tooltip_en'):
+                val_en = t(key, default="", ns=None, lang="en")
+                self.var_tooltip_en.set(val_en)
+            if hasattr(self, 'var_tooltip_vi'):
+                val_vi = t(key, default="", ns=None, lang="vi")
+                self.var_tooltip_vi.set(val_vi)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Error resolving tooltip key {key}: {e}")
 
     def _autocomplete_tooltip(self, event):
         # Only process printable characters and backspace
