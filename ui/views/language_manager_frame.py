@@ -256,6 +256,7 @@ class LanguageManagerFrame(tk.Frame):
 
         if DialogService.ask_yes_no("Confirm Delete", f"Are you sure you want to delete the key '{ns}.{key}'?"):
             if self.controller.delete_key(ns, key):
+                self.search_var.set("")
                 self.refresh_data()
                 DialogService.show_info("Success", "Translation deleted successfully.")
             else:
