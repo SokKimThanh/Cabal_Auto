@@ -24,3 +24,15 @@ The objective was to "reconnect the wires" in `IconManagerFrame` by updating tre
 ## Conclusion
 
 The UI components in `IconManagerFrame` are fully reconnected and communicating through the `IconManagerFrame` Mediator, adhering to the original extraction plan while restoring the original UI usability and logic.
+
+## Sub-task 6: Reconnect UI Callbacks in IconManagerFrame
+
+- **Trạng thái**: Đã hoàn thành.
+- **Nội dung chi tiết**:
+  - Đã chỉnh sửa hàm `_process_tree_selection_callback` để nhận đúng `icon_key` thay vì kiểm tra `selection = []` bị lỗi. Điều này giúp khi chọn một Icon bên danh sách trái, phần Detail form, Preview và Usages bên phải sẽ hiển thị lên (thoát khỏi màn hình `EmptyState`).
+  - Đã chỉnh sửa lại cơ chế bật/tắt các nút Sửa, Xóa trong `set_form_state` để kiểm tra đúng trạng thái chọn từ `self.tree_component.tree` thay vì mảng rỗng.
+  - Sửa lại các luồng logic của Thêm (`_on_add`), Xóa (`_on_delete`), Lưu (`_on_save`), Hủy (`_on_cancel`) để chúng gọi đúng vào widget `tree` nằm bên trong `IconTreeComponent`, qua đó xử lý chuẩn xác việc tạo dummy node và focus lại danh sách.
+- **DoD (Điều kiện hoàn thành)**:
+  - Khi click vào bất kỳ item nào bên Tree, form chi tiết cập nhật tương ứng.
+  - Các thao tác Add, Edit, Save, Cancel, Delete hoạt động đúng state và không sinh lỗi AttributeError.
+  - Hoàn tất nối lại toàn bộ 100% đường dây điện của God Class cũ với kiến trúc Mediator mới.
