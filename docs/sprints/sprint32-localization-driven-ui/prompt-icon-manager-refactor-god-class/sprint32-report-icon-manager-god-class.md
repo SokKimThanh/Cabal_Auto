@@ -1,3 +1,4 @@
+
 # Báo cáo Phân tích và Đề xuất Refactor "God Class" - IconManagerFrame
 
 ## 1. Tổng quan
@@ -104,3 +105,19 @@ Cách tiếp cận sử dụng callback để nới lỏng sự phụ thuộc (L
 
 ## Kết luận sau Sub-task 5
 Việc tách rời các widget mang tính chất hiển thị tĩnh/phụ (như ảnh preview, trạng thái empty) giúp file master (`IconManagerFrame`) giảm tải đáng kể dòng code. Module `IconPreviewComponent` bây giờ hoạt động như một Dumb Component đúng nghĩa - chỉ nhận data và render, giúp dễ dàng test và tái sử dụng cho các form khác trong tương lai nếu cần thiết.
+
+### Prompt 04 (Sub-task 4): Tách IconFormComponent
+- **Trạng thái**: Đã hoàn thành.
+- **Nội dung chi tiết**:
+  - Tạo file `ui/components/icon_form_component.py` với class `IconFormComponent(tk.Frame)`.
+  - Chuyển logic giao diện `_build_detail_form` (gồm các ô nhập liệu, tooltip) vào class này.
+  - Quản lý tập trung các `tk.StringVar` (như `var_name`, `var_icon_key`, ...) bên trong Component.
+  - Cung cấp API tương tác dữ liệu rõ ràng với `get_form_data() -> dict` và `set_form_data(dict)`.
+  - Di chuyển các hàm xác thực và Autocomplete Tooltip (`_validate_tooltip_key`, `_autocomplete_tooltip`, v.v.) vào đi kèm form.
+  - Đóng gói quản lý state (mở/khóa các ô nhập) thông qua các method `enter_view_mode()`, `enter_add_mode()`, `enter_edit_mode()`.
+  - Cập nhật `IconManagerFrame` thay thế trực tiếp các hàm `get()`/`set()` biến đơn lẻ bằng việc gọi qua `IconFormComponent`, giảm thiểu tính phụ thuộc (coupling).
+- **DoD (Điều kiện hoàn thành)**:
+  - Form nhập liệu tự bật/tắt đúng state view/add/edit.
+  - Dịch ngôn ngữ cho tooltip và cảnh báo (validation) vẫn hoạt động đúng như trước.
+  - Dữ liệu lưu và cập nhật hoàn toàn khớp, `IconManagerFrame` không còn biết đến chi tiết UI form.
+  - Pass thành công các test hồi quy và test unit mới cho `test_icon_form_component.py`.

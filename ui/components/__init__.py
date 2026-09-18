@@ -9,8 +9,10 @@ from .confirmation_widget import ConfirmationWidget
 from .notification_widget import NotificationWidget
 
 __all__ = [
+    "IconFormComponent",
     "create_icon_button",
     "create_icon_label",
     "ConfirmationWidget",
     "NotificationWidget",
 ]
+from .icon_form_component import IconFormComponent

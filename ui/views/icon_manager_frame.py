@@ -16,6 +16,7 @@ from ui.models.icon_tree_model import IconTreeModel
 from ui.models.image_library_model import ImageLibraryModel
 from ui.components.image_library_component import ImageLibraryComponent
 from ui.components.icon_preview_component import IconPreviewComponent
+from ui.components.icon_form_component import IconFormComponent
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
@@ -446,149 +447,22 @@ class IconManagerFrame(ResponsiveGridBase):
         self._populate_category_combo()
         self.load_tree_data()
 
-    def to_non_accent_vietnamese(self, s: str) -> str:
-        s = s.lower()
-        s = re.sub(r'[àáạảãâầấậẩẫăằắặẳẵ]', 'a', s)
-        s = re.sub(r'[èéẹẻẽêềếệểễ]', 'e', s)
-        s = re.sub(r'[ìíịỉĩ]', 'i', s)
-        s = re.sub(r'[òóọỏõôồốộổỗơờớợởỡ]', 'o', s)
-        s = re.sub(r'[ùúụủũưừứựửữ]', 'u', s)
-        s = re.sub(r'[ỳýỵỷỹ]', 'y', s)
-        s = re.sub(r'đ', 'd', s)
-        return s
-
-    def _validate_name_input(self, action, value_if_allowed):
-        if action == '1': # Insert
-            if len(value_if_allowed) > 50: return False
-            vi_chars = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ"
-            vi_chars += vi_chars.upper()
-            pattern = rf'^[a-zA-Z0-9_\-\s{vi_chars}]*$'
-            if not re.match(pattern, value_if_allowed): return False
-        return True
-
-    def _validate_key_input(self, action, value_if_allowed):
-        if action == '1':
-            if len(value_if_allowed) > 100: return False
-            if not re.match(r'^[a-zA-Z0-9_]*$', value_if_allowed): return False
-        return True
-
-    def _validate_emoji_input(self, action, value_if_allowed):
-        if action == '1' and len(value_if_allowed) > 5: return False
-        return True
-
-    def _validate_text_input(self, action, value_if_allowed):
-        if action == '1' and len(value_if_allowed) > 200: return False
-        return True
+    def _on_form_name_changed(self, new_name):
+        # Callback for when name changes to update dummy icon in tree and sync state if needed
+        pass
 
     def _build_detail_form(self):
-        self.form_frame = tk.Frame(self.detail_container, bg=UIStyle.BG_SURFACE)
-        self.form_frame.pack(fill="x", expand=False)
-
-        # Configure columns for form labels and entries
-        self.form_frame.grid_columnconfigure(0, weight=0, minsize=120)
-        self.form_frame.grid_columnconfigure(1, weight=1, minsize=400)
-
-        # StringVars
-        self.var_name = tk.StringVar()
-        self.var_icon_key = tk.StringVar()
-        self.var_category = tk.StringVar()
-        self.var_fallback_emoji = tk.StringVar()
-        self.var_tooltip_key = tk.StringVar()
-        self.var_filepath = tk.StringVar()
-
-        # Validations commands
-        vcmd_name = (self.register(self._validate_name_input), '%d', '%P')
-        vcmd_key = (self.register(self._validate_key_input), '%d', '%P')
-        vcmd_emoji = (self.register(self._validate_emoji_input), '%d', '%P')
-        vcmd_text = (self.register(self._validate_text_input), '%d', '%P')
-
-        # 1. Name
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_name", default="Name:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="e", padx=5, pady=2)
-        self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name, validate="key", validatecommand=vcmd_name)
-        self.entry_name.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
-
-        # Add auto-fill trigger
-        if hasattr(self.var_name, 'trace_add'):
-            self.var_name.trace_add('write', self._on_name_changed)
-
-        # 2. Icon Key
-        tk.Label(self.form_frame, text="Icon Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
-        self.entry_icon_key = ttk.Entry(self.form_frame, textvariable=self.var_icon_key, validate="key", validatecommand=vcmd_key)
-        self.entry_icon_key.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
-
-        # 3. Category
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_category", default="Category:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=2, column=0, sticky="e", padx=5, pady=2)
-        self.combo_category = ttk.Combobox(self.form_frame, textvariable=self.var_category, state="readonly")
-        self.combo_category.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
-
-        # 4. Fallback Emoji
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_fallback_emoji", default="Fallback Emoji:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
-        self.entry_fallback = ttk.Entry(self.form_frame, textvariable=self.var_fallback_emoji, validate="key", validatecommand=vcmd_emoji)
-        self.entry_fallback.grid(row=3, column=1, sticky="ew", padx=5, pady=2)
-
-        # 5. Tooltip Key
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_tooltip_key", default="Tooltip Key:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=4, column=0, sticky="e", padx=5, pady=2)
-
-        tooltip_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
-        tooltip_frame.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
-        tooltip_frame.grid_columnconfigure(0, weight=1)
-
-        # Bỏ validate 'key' trên combobox vì nó xung đột với autocomplete event khiến không gõ được phím
-        self.entry_tooltip = ttk.Combobox(tooltip_frame, textvariable=self.var_tooltip_key)
-        self.entry_tooltip.grid(row=0, column=0, sticky="ew")
-
-        self.lbl_tooltip_hint = tk.Label(tooltip_frame, text="Gợi ý: bắt đầu bằng icon_tooltip_...", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9))
-        self.lbl_tooltip_hint.grid(row=1, column=0, sticky="w", pady=(0, 2))
-
-        self.lbl_tooltip_warning = tk.Label(tooltip_frame, text="", bg=UIStyle.BG_SURFACE, fg="#ff9800", font=(UIStyle.FONT_FAMILY_UI, 9, "bold"))
-        self.lbl_tooltip_warning.grid(row=2, column=0, sticky="w")
-
-        # English translation display
-        en_frame = tk.Frame(tooltip_frame, bg=UIStyle.BG_SURFACE)
-        en_frame.grid(row=3, column=0, sticky="ew", pady=(2,0))
-        tk.Label(en_frame, text="EN:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
-        self.var_tooltip_en = tk.StringVar()
-        self.entry_tooltip_en = ttk.Entry(en_frame, textvariable=self.var_tooltip_en, font=(UIStyle.FONT_FAMILY_UI, 9), validate="key", validatecommand=vcmd_text)
-        self.entry_tooltip_en.pack(side="left", fill="x", expand=True)
-
-        # Vietnamese translation display
-        vi_frame = tk.Frame(tooltip_frame, bg=UIStyle.BG_SURFACE)
-        vi_frame.grid(row=4, column=0, sticky="ew", pady=(2,2))
-        tk.Label(vi_frame, text="VI:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
-        self.var_tooltip_vi = tk.StringVar()
-        self.entry_tooltip_vi = ttk.Entry(vi_frame, textvariable=self.var_tooltip_vi, font=(UIStyle.FONT_FAMILY_UI, 9), validate="key", validatecommand=vcmd_text)
-        self.entry_tooltip_vi.pack(side="left", fill="x", expand=True)
-
-        self.lbl_tooltip_priority_info = tk.Label(tooltip_frame, text="ⓘ Tooltip của Icon sẽ được ưu tiên hơn Tooltip của Button", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 8, "italic"))
-        self.lbl_tooltip_priority_info.grid(row=5, column=0, sticky="w")
-
-
-        # Validation bindings
-        if hasattr(self.var_tooltip_key, 'trace_add'):
-            self.var_tooltip_key.trace_add('write', self._validate_tooltip_key)
-        self.entry_tooltip.bind('<KeyRelease>', self._autocomplete_tooltip)
-
-        # Load keys
-        self._load_i18n_keys()
-
-        # 6. Filepath (Read-only now)
-        tk.Label(self.form_frame, text=self.i18n_t("lbl_filepath", default="Filepath:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
-
-        filepath_frame = tk.Frame(self.form_frame, bg=UIStyle.BG_SURFACE)
-        filepath_frame.grid(row=5, column=1, sticky="ew", padx=5, pady=2)
-        filepath_frame.grid_columnconfigure(0, weight=1)
-
-        self.entry_filepath = ttk.Entry(filepath_frame, textvariable=self.var_filepath, state="disabled")
-        self.entry_filepath.grid(row=0, column=0, sticky="ew")
+        self.icon_form = IconFormComponent(self.detail_container, app=self.app, on_name_changed_callback=self._on_form_name_changed)
+        self.icon_form.pack(fill="x", expand=False)
 
         # 7. Usages Manager Panel
-        self._build_usages_panel(self.form_frame, row=6)
+        self._build_usages_panel(self.detail_container)
 
 
 
-    def _build_usages_panel(self, parent_frame, row):
+    def _build_usages_panel(self, parent_frame):
         usage_container = tk.LabelFrame(parent_frame, text=self.i18n_t("lbl_usage_manager", default="Quản lý Nơi Dùng (Usages)"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
-        usage_container.grid(row=row, column=0, columnspan=2, sticky="nsew", padx=5, pady=10)
+        usage_container.pack(fill="x", expand=False, padx=5, pady=10)
 
         usage_container.grid_columnconfigure(0, weight=1)
         usage_container.grid_rowconfigure(0, weight=1) # Treeview
@@ -682,7 +556,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.usage_tree.insert("", "end", values=(u.get("id"), u.get("module_name"), u.get("ui_component_type"), u.get("ui_element_id")))
 
     def _on_add_usage(self):
-        icon_key = self.var_icon_key.get().strip()
+        icon_key = self.icon_form.get_form_data()['icon_key'].strip()
         if not icon_key or self._current_state == "ADD":
             messagebox.showwarning("Warning", "Vui lòng Lưu icon trước khi gắn usages.")
             return
@@ -724,7 +598,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         if messagebox.askyesno("Xác nhận", f"Bạn có chắc muốn gỡ Element '{elem_id}' khỏi icon này?"):
             if hasattr(self.icon_service, "delete_usage") and self.icon_service.delete_usage(usage_id):
-                icon_key = self.var_icon_key.get().strip()
+                icon_key = self.icon_form.get_form_data()['icon_key'].strip()
                 self._load_usages_for_selected(icon_key)
                 if hasattr(self, 'tree_model'):
                     self.tree_model.usage_cache.pop(icon_key, None)
@@ -749,7 +623,7 @@ class IconManagerFrame(ResponsiveGridBase):
         if is_new_import:
             self._just_imported_file = selected_file
 
-        current_icon_key = self.var_icon_key.get().strip()
+        current_icon_key = self.icon_form.get_form_data()['icon_key'].strip()
 
         # Check duplication
         existing_usages = self.icon_service.get_icons_by_filepath(selected_file)
@@ -764,10 +638,10 @@ class IconManagerFrame(ResponsiveGridBase):
             if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo trùng lặp"), msg_dup):
                 # Revert selection in the library component
                 if hasattr(self, 'image_library') and self.image_library:
-                    self.image_library.set_current_filepath(self.var_filepath.get())
+                    self.image_library.set_current_filepath(self.icon_form.get_form_data()['filepath'])
                 return
 
-        self.var_filepath.set(selected_file)
+        self.icon_form.var_filepath.set(selected_file)
         if hasattr(self, 'image_library') and self.image_library:
             self.image_library.set_current_filepath(selected_file)
 
@@ -784,99 +658,12 @@ class IconManagerFrame(ResponsiveGridBase):
         # Fake icon data and render
         dummy_data = {
             "icon_key": current_icon_key,
-            "fallback_emoji": self.var_fallback_emoji.get(),
+            "fallback_emoji": self.icon_form.get_form_data()['fallback_emoji'],
             "filepath": selected_file,
-            "tooltip_translation_key": self.var_tooltip_key.get()
+            "tooltip_translation_key": self.icon_form.get_form_data()['tooltip_key']
         }
         self.content_state_frame.tkraise()
         self.preview_component.render(dummy_data)
-
-    def _on_name_changed(self, *args):
-        if self._current_state in ("ADD", "EDIT"):
-            name = self.var_name.get()
-            if name:
-                slug = name.strip()
-                slug = self.to_non_accent_vietnamese(slug)
-                slug = re.sub(r'[^a-z0-9]+', '_', slug)
-                slug = slug.strip('_')
-
-                if not self.var_icon_key.get().strip():
-                    self.var_icon_key.set(slug)
-
-                if not self.var_tooltip_key.get().strip():
-                    self.var_tooltip_key.set(f"icon_tooltip_{slug}")
-
-    def _load_i18n_keys(self):
-        self._available_keys = []
-        try:
-            # Fallback to direct import if app doesn't have it
-            from lib.i18n import _REGISTRY
-            keys_set = set()
-            for _, langs in _REGISTRY.items():
-                for _, mapping in langs.items():
-                    keys_set.update(mapping.keys())
-            self._available_keys = sorted(list(keys_set))
-        except Exception:
-            pass
-        self.entry_tooltip['values'] = self._available_keys
-
-    def _validate_tooltip_key(self, *args):
-        key = self.var_tooltip_key.get().strip()
-
-        # Reset translations
-        if hasattr(self, 'var_tooltip_en'):
-            self.var_tooltip_en.set("")
-        if hasattr(self, 'var_tooltip_vi'):
-            self.var_tooltip_vi.set("")
-
-        if not key:
-            self.lbl_tooltip_warning.config(text="")
-            # Xoá tooltip của label preview
-            if hasattr(self, 'lbl_preview'):
-                if hasattr(self.lbl_preview, "_i18n_tooltip") and getattr(self.lbl_preview, "_i18n_tooltip"):
-                    old_tip = getattr(self.lbl_preview, "_i18n_tooltip")
-                    if hasattr(old_tip, "_hide"):
-                        old_tip._hide()
-                    self.lbl_preview.unbind("<Enter>")
-                    self.lbl_preview.unbind("<Leave>")
-                    self.lbl_preview.unbind("<ButtonPress>")
-                setattr(self.lbl_preview, "_i18n_tooltip", None)
-            return
-
-        try:
-            # Tự đặt 1 chuỗi ngẫu nhiên không có khả năng bị trùng để test default
-            test_missing = "___MISSING___"
-            val = t(key, default=test_missing, ns=None, lang=None)
-            if val == test_missing:
-                self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
-            else:
-                self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
-
-            # Cập nhật nghĩa vào textbox (chỉ khi giá trị get được khác rỗng)
-            # Nếu ko có trong thư viện, giữ nguyên cái người dùng đang gõ
-            if hasattr(self, 'var_tooltip_en'):
-                val_en = t(key, default="___MISSING___", ns=None, lang="en")
-                if val_en != "___MISSING___":
-                    self.var_tooltip_en.set(val_en)
-            if hasattr(self, 'var_tooltip_vi'):
-                val_vi = t(key, default="___MISSING___", ns=None, lang="vi")
-                if val_vi != "___MISSING___":
-                    self.var_tooltip_vi.set(val_vi)
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Error resolving tooltip key {key}: {e}")
-
-    def _autocomplete_tooltip(self, event):
-        # Only process printable characters and backspace
-        if event.keysym not in ['BackSpace', 'Delete', 'Return', 'Tab'] and not event.char:
-            return
-
-        typed = self.entry_tooltip.get()
-        if typed == '':
-            self.entry_tooltip['values'] = self._available_keys
-        else:
-            hits = [item for item in self._available_keys if typed.lower() in item.lower()]
-            self.entry_tooltip['values'] = hits
 
     def _on_browse_clicked(self):
         from tkinter import filedialog, messagebox
@@ -894,7 +681,7 @@ class IconManagerFrame(ResponsiveGridBase):
                 icons_dir = get_icons_directory()
 
                 final_filename = selected_path.name
-                current_filename = self.var_filepath.get().strip()
+                current_filename = self.icon_form.get_form_data()['filepath'].strip()
 
                 resolved_selected = os.path.normcase(os.path.abspath(str(selected_path.resolve())))
                 resolved_icons_dir = os.path.normcase(os.path.abspath(str(icons_dir.resolve())))
@@ -932,7 +719,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     # Trường hợp 2.2: Chọn file khác, không cần hỏi copy
 
                 # 3. Kiểm tra sử dụng chung ảnh (Duplication Check)
-                current_icon_key = self.var_icon_key.get().strip()
+                current_icon_key = self.icon_form.get_form_data()['icon_key'].strip()
                 existing_usages = self.icon_service.get_icons_by_filepath(final_filename)
 
                 # Filter out the current icon we are editing
@@ -948,7 +735,7 @@ class IconManagerFrame(ResponsiveGridBase):
                         return # Huỷ thao tác
 
                 # Update filepath entry
-                self.var_filepath.set(final_filename)
+                self.icon_form.var_filepath.set(final_filename)
 
                 # Mark form as dirty
                 self._is_dirty = True
@@ -1035,24 +822,13 @@ class IconManagerFrame(ResponsiveGridBase):
     def set_form_state(self, state):
         self._current_state = state
 
-        # Enable/Disable form entries
-        entry_state = "normal" if state in ("ADD", "EDIT") else "disabled"
-        cb_state = "readonly" if state in ("ADD", "EDIT") else "disabled"
-
-        icon_key_state = "normal" if state == "ADD" else "disabled"
-
-        self.entry_name.config(state=entry_state)
-        self.entry_icon_key.config(state=icon_key_state)
-        self.combo_category.config(state=cb_state)
-        self.entry_fallback.config(state=entry_state)
-        if hasattr(self, 'entry_tooltip'):
-            self.entry_tooltip.config(state='normal' if state in ('ADD', 'EDIT') else 'disabled')
-        if hasattr(self, 'entry_tooltip_en'):
-            self.entry_tooltip_en.config(state=entry_state)
-        if hasattr(self, 'entry_tooltip_vi'):
-            self.entry_tooltip_vi.config(state=entry_state)
-        # Filepath is visually selected via button
-        self.entry_filepath.config(state="disabled")
+        if hasattr(self, 'icon_form'):
+            if state == "VIEW":
+                self.icon_form.enter_view_mode()
+            elif state == "ADD":
+                self.icon_form.enter_add_mode()
+            elif state == "EDIT":
+                self.icon_form.enter_edit_mode()
 
         # Handle usages panel state
         if hasattr(self, 'usage_tree'):
@@ -1125,12 +901,14 @@ class IconManagerFrame(ResponsiveGridBase):
             selected_cat_name = self.categories_id_map.get(int(selected_cat), selected_cat)
 
         # Set variables using the string name
-        self.var_icon_key.set("")
-        self.var_name.set("New Icon")
-        self.var_category.set(selected_cat_name)
-        self.var_fallback_emoji.set("❓")
-        self.var_tooltip_key.set("")
-        self.var_filepath.set("")
+        self.icon_form.set_form_data({
+            "icon_key": "",
+            "name": "New Icon",
+            "category": selected_cat_name,
+            "fallback_emoji": "❓",
+            "tooltip_key": "",
+            "filepath": ""
+        })
 
         # Create dummy node in Treeview for visual feedback
         dummy_id = f"new_icon_{int(time.time())}"
@@ -1150,7 +928,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree.see(dummy_id)
 
         self.set_form_state("ADD")
-        self.entry_name.focus_set()
+        self.icon_form.entry_name.focus_set()
 
         self.content_state_frame.tkraise()
         self.preview_component.render({
@@ -1160,7 +938,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.set_form_state("ADD")
 
         # Focus vào entry name
-        self.entry_name.focus_set()
+        self.icon_form.entry_name.focus_set()
 
     def _on_edit(self):
         self.set_form_state("EDIT")
@@ -1168,7 +946,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._is_dirty = True
 
     def _on_delete(self):
-        icon_key = self.var_icon_key.get()
+        icon_key = self.icon_form.get_form_data()['icon_key']
         if not icon_key:
             return
 
@@ -1193,14 +971,9 @@ class IconManagerFrame(ResponsiveGridBase):
                 success = self.icon_service.delete_icon(icon_key)
                 if success:
                     # Clear form
-                    self.var_name.set("")
-                    self.var_icon_key.set("")
-                    self.var_category.set("")
-                    self.var_fallback_emoji.set("")
-                    self.var_tooltip_key.set("")
-                    self.var_filepath.set("")
+                    self.icon_form.set_form_data({})
                     self.content_state_frame.tkraise()
-        self.preview_component.render({})
+                    self.preview_component.render({})
 
                     if hasattr(self, 'tree_model'):
                         self.tree_model.invalidate_icon(icon_key)
@@ -1314,7 +1087,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _validate_form_data(self):
         from tkinter import messagebox
-        icon_key = self.var_icon_key.get().strip()
+        icon_key = self.icon_form.get_form_data()['icon_key'].strip()
         if not icon_key:
             messagebox.showerror("Validation Error", "Icon Key is required.")
             return False
@@ -1327,24 +1100,24 @@ class IconManagerFrame(ResponsiveGridBase):
         if not self._validate_form_data():
             return
 
-        icon_key = self.var_icon_key.get().strip()
-        new_filepath = self.var_filepath.get().strip()
+        icon_key = self.icon_form.get_form_data()['icon_key'].strip()
+        new_filepath = self.icon_form.get_form_data()['filepath'].strip()
 
         # Save previous filepath to check for rollback if db insert fails
         icon_data_old = self.tree_model.get_icon(icon_key)
         old_filepath = icon_data_old.get('filepath') if icon_data_old else None
 
-        cat_name = self.var_category.get().strip() or "General"
+        cat_name = self.icon_form.get_form_data()['category'].strip() or "General"
         cat_id = 1
         if hasattr(self, 'categories_map') and cat_name in self.categories_map:
             cat_id = self.categories_map[cat_name]
 
         icon_data = {
             "icon_key": icon_key,
-            "name": self.var_name.get().strip(),
-            "filepath": self.var_filepath.get().strip(),
-            "fallback_emoji": self.var_fallback_emoji.get().strip(),
-            "tooltip_translation_key": self.var_tooltip_key.get().strip(),
+            "name": self.icon_form.get_form_data()['name'].strip(),
+            "filepath": self.icon_form.get_form_data()['filepath'].strip(),
+            "fallback_emoji": self.icon_form.get_form_data()['fallback_emoji'].strip(),
+            "tooltip_translation_key": self.icon_form.get_form_data()['tooltip_key'].strip(),
             "category_id": cat_id,
             "description": ""
         }
@@ -1358,12 +1131,15 @@ class IconManagerFrame(ResponsiveGridBase):
                     self.tree.delete(item_id)
 
         # 2. Lưu Bản dịch Tooltip tự động tạo nếu chưa có
-        t_key = self.var_tooltip_key.get().strip()
+        t_key = self.icon_form.get_form_data()['tooltip_key'].strip()
         if t_key:
-            t_en = getattr(self, 'var_tooltip_en', None)
-            t_vi = getattr(self, 'var_tooltip_vi', None)
-            val_en = t_en.get().strip() if t_en else t_key
-            val_vi = t_vi.get().strip() if t_vi else t_key
+            form_data = self.icon_form.get_form_data()
+            val_en = form_data.get('tooltip_en', '').strip()
+            val_vi = form_data.get('tooltip_vi', '').strip()
+
+            # Đảm bảo nếu để trống thì lấy luôn t_key làm default tránh lỗi mồ côi
+            if not val_en: val_en = t_key
+            if not val_vi: val_vi = t_key
 
             # Đảm bảo nếu để trống thì lấy luôn t_key làm default tránh lỗi mồ côi
             if not val_en: val_en = t_key
@@ -1380,10 +1156,8 @@ class IconManagerFrame(ResponsiveGridBase):
                 EventBus.publish(TranslationDataUpdatedEvent())
 
                 # Cập nhật danh sách local ngay lập tức
-                if t_key not in self._available_keys:
-                    self._available_keys.append(t_key)
-                    self._available_keys.sort()
-                    self.entry_tooltip['values'] = self._available_keys
+                if hasattr(self, 'icon_form'):
+                    self.icon_form.add_tooltip_key_if_missing(t_key)
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).warning(f"Lỗi lưu bản dịch: {e}")
@@ -1521,9 +1295,9 @@ class IconManagerFrame(ResponsiveGridBase):
             if current_val not in cat_names:
                 self.category_var.set("All")
 
-        if hasattr(self, 'combo_category'):
+        if hasattr(self, 'icon_form'):
             c_names = [c['name'] for c in categories]
-            self.combo_category.config(values=c_names)
+            self.icon_form.update_category_values(c_names)
 
     def trigger_filter(self, *args):
         if self._debounce_after_id:
@@ -1722,21 +1496,20 @@ class IconManagerFrame(ResponsiveGridBase):
 
         icon_data = self.tree_model.get_icon(icon_key)
         if icon_data:
-            self.var_name.set(icon_data.get('name') or '')
-            self.var_icon_key.set(icon_data.get('icon_key') or '')
-
             # Map category_id back to name
             cat_id = icon_data.get("category_id")
             cat_data = self.tree_model.get_category(cat_id) if cat_id else None
             cat_name = cat_data.get("name", "General") if cat_data else "General"
-            self.var_category.set(cat_name)
-
-            self.var_fallback_emoji.set(icon_data.get('fallback_emoji') or '')
-            self.var_tooltip_key.set(icon_data.get('tooltip_translation_key') or '')
-
-            # Sửa lỗi hiển thị None bằng cách ép chuỗi rỗng nếu giá trị là None
             filepath = icon_data.get('filepath') or ''
-            self.var_filepath.set(filepath)
+
+            self.icon_form.set_form_data({
+                "name": icon_data.get('name') or '',
+                "icon_key": icon_data.get('icon_key') or '',
+                "category": cat_name,
+                "fallback_emoji": icon_data.get('fallback_emoji') or '',
+                "tooltip_key": icon_data.get('tooltip_translation_key') or '',
+                "filepath": filepath
+            })
 
             if hasattr(self, 'image_library') and self.image_library:
                 self.image_library.set_current_filepath(filepath)
