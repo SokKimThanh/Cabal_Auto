@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 import threading
 import sqlite3
+import re
 from pathlib import Path
 from tkinter import ttk, messagebox
 
@@ -544,6 +545,40 @@ class IconManagerFrame(ResponsiveGridBase):
             relief="groove"
         )
 
+    def to_non_accent_vietnamese(self, s: str) -> str:
+        s = s.lower()
+        s = re.sub(r'[àáạảãâầấậẩẫăằắặẳẵ]', 'a', s)
+        s = re.sub(r'[èéẹẻẽêềếệểễ]', 'e', s)
+        s = re.sub(r'[ìíịỉĩ]', 'i', s)
+        s = re.sub(r'[òóọỏõôồốộổỗơờớợởỡ]', 'o', s)
+        s = re.sub(r'[ùúụủũưừứựửữ]', 'u', s)
+        s = re.sub(r'[ỳýỵỷỹ]', 'y', s)
+        s = re.sub(r'đ', 'd', s)
+        return s
+
+    def _validate_name_input(self, action, value_if_allowed):
+        if action == '1': # Insert
+            if len(value_if_allowed) > 50: return False
+            vi_chars = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ"
+            vi_chars += vi_chars.upper()
+            pattern = rf'^[a-zA-Z0-9_\-\s{vi_chars}]*$'
+            if not re.match(pattern, value_if_allowed): return False
+        return True
+
+    def _validate_key_input(self, action, value_if_allowed):
+        if action == '1':
+            if len(value_if_allowed) > 100: return False
+            if not re.match(r'^[a-zA-Z0-9_]*$', value_if_allowed): return False
+        return True
+
+    def _validate_emoji_input(self, action, value_if_allowed):
+        if action == '1' and len(value_if_allowed) > 5: return False
+        return True
+
+    def _validate_text_input(self, action, value_if_allowed):
+        if action == '1' and len(value_if_allowed) > 200: return False
+        return True
+
     def _build_detail_form(self):
         self.form_frame = tk.Frame(self.detail_container, bg=UIStyle.BG_SURFACE)
         self.form_frame.pack(fill="x", expand=False)
@@ -560,9 +595,15 @@ class IconManagerFrame(ResponsiveGridBase):
         self.var_tooltip_key = tk.StringVar()
         self.var_filepath = tk.StringVar()
 
+        # Validations commands
+        vcmd_name = (self.register(self._validate_name_input), '%d', '%P')
+        vcmd_key = (self.register(self._validate_key_input), '%d', '%P')
+        vcmd_emoji = (self.register(self._validate_emoji_input), '%d', '%P')
+        vcmd_text = (self.register(self._validate_text_input), '%d', '%P')
+
         # 1. Name
         tk.Label(self.form_frame, text=self.i18n_t("lbl_name", default="Name:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="e", padx=5, pady=2)
-        self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name)
+        self.entry_name = ttk.Entry(self.form_frame, textvariable=self.var_name, validate="key", validatecommand=vcmd_name)
         self.entry_name.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
 
         # Add auto-fill trigger
@@ -571,7 +612,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # 2. Icon Key
         tk.Label(self.form_frame, text="Icon Key:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", padx=5, pady=2)
-        self.entry_icon_key = ttk.Entry(self.form_frame, textvariable=self.var_icon_key)
+        self.entry_icon_key = ttk.Entry(self.form_frame, textvariable=self.var_icon_key, validate="key", validatecommand=vcmd_key)
         self.entry_icon_key.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
 
         # 3. Category
@@ -581,7 +622,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # 4. Fallback Emoji
         tk.Label(self.form_frame, text=self.i18n_t("lbl_fallback_emoji", default="Fallback Emoji:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
-        self.entry_fallback = ttk.Entry(self.form_frame, textvariable=self.var_fallback_emoji)
+        self.entry_fallback = ttk.Entry(self.form_frame, textvariable=self.var_fallback_emoji, validate="key", validatecommand=vcmd_emoji)
         self.entry_fallback.grid(row=3, column=1, sticky="ew", padx=5, pady=2)
 
         # 5. Tooltip Key
@@ -591,6 +632,7 @@ class IconManagerFrame(ResponsiveGridBase):
         tooltip_frame.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
         tooltip_frame.grid_columnconfigure(0, weight=1)
 
+        # Bỏ validate 'key' trên combobox vì nó xung đột với autocomplete event khiến không gõ được phím
         self.entry_tooltip = ttk.Combobox(tooltip_frame, textvariable=self.var_tooltip_key)
         self.entry_tooltip.grid(row=0, column=0, sticky="ew")
 
@@ -605,7 +647,7 @@ class IconManagerFrame(ResponsiveGridBase):
         en_frame.grid(row=3, column=0, sticky="ew", pady=(2,0))
         tk.Label(en_frame, text="EN:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
         self.var_tooltip_en = tk.StringVar()
-        self.entry_tooltip_en = ttk.Entry(en_frame, textvariable=self.var_tooltip_en, font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_en = ttk.Entry(en_frame, textvariable=self.var_tooltip_en, font=(UIStyle.FONT_FAMILY_UI, 9), validate="key", validatecommand=vcmd_text)
         self.entry_tooltip_en.pack(side="left", fill="x", expand=True)
 
         # Vietnamese translation display
@@ -613,7 +655,7 @@ class IconManagerFrame(ResponsiveGridBase):
         vi_frame.grid(row=4, column=0, sticky="ew", pady=(2,2))
         tk.Label(vi_frame, text="VI:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9, "bold"), width=3).pack(side="left")
         self.var_tooltip_vi = tk.StringVar()
-        self.entry_tooltip_vi = ttk.Entry(vi_frame, textvariable=self.var_tooltip_vi, font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.entry_tooltip_vi = ttk.Entry(vi_frame, textvariable=self.var_tooltip_vi, font=(UIStyle.FONT_FAMILY_UI, 9), validate="key", validatecommand=vcmd_text)
         self.entry_tooltip_vi.pack(side="left", fill="x", expand=True)
 
         self.lbl_tooltip_priority_info = tk.Label(tooltip_frame, text="ⓘ Tooltip của Icon sẽ được ưu tiên hơn Tooltip của Button", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 8, "italic"))
@@ -804,7 +846,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.img_listbox.bind('<Button-4>', self._prevent_scroll_propagation)
         self.img_listbox.bind('<Button-5>', self._prevent_scroll_propagation)
 
-        self.img_listbox.bind("<ButtonRelease-1>", self._on_image_selected)
+        self.img_listbox.bind("<<ListboxSelect>>", self._on_image_selected)
 
     def _on_img_search_change(self, *args):
         if self._img_search_after_id:
@@ -974,23 +1016,19 @@ class IconManagerFrame(ResponsiveGridBase):
 
 
     def _on_name_changed(self, *args):
-        if self._current_state == "ADD":
+        if self._current_state in ("ADD", "EDIT"):
             name = self.var_name.get()
             if name:
-                # slugify logic: lowercase, replace spaces and special chars with underscore
-                import re
-                slug = name.lower().strip()
+                slug = name.strip()
+                slug = self.to_non_accent_vietnamese(slug)
                 slug = re.sub(r'[^a-z0-9]+', '_', slug)
                 slug = slug.strip('_')
 
-                # Auto-fill Icon Key if it's currently empty or follows the slug (basic check to allow manual override later, but for ADD it's safe to overwrite if they are just typing)
-                # To be less intrusive, only auto-fill if Icon Key is empty or matches the old slug. For simplicity, in ADD mode, just auto-fill
-                # Actually, to allow manual edit in ADD, we only auto-fill if icon_key is empty or matches the generated slug minus the last char
-                # For a seamless experience, we just overwrite in ADD mode if they haven't explicitly edited the icon_key.
+                if not self.var_icon_key.get().strip():
+                    self.var_icon_key.set(slug)
 
-                # We'll just overwrite it in ADD mode for now as requested.
-                self.var_icon_key.set(slug)
-                self.var_tooltip_key.set(f"icon_tooltip_{slug}")
+                if not self.var_tooltip_key.get().strip():
+                    self.var_tooltip_key.set(f"icon_tooltip_{slug}")
 
     def _load_i18n_keys(self):
         self._available_keys = []
@@ -1294,8 +1332,10 @@ class IconManagerFrame(ResponsiveGridBase):
         entry_state = "normal" if state in ("ADD", "EDIT") else "disabled"
         cb_state = "readonly" if state in ("ADD", "EDIT") else "disabled"
 
+        icon_key_state = "normal" if state == "ADD" else "disabled"
+
         self.entry_name.config(state=entry_state)
-        self.entry_icon_key.config(state=entry_state)
+        self.entry_icon_key.config(state=icon_key_state)
         self.combo_category.config(state=cb_state)
         self.entry_fallback.config(state=entry_state)
         if hasattr(self, 'entry_tooltip'):
@@ -1374,10 +1414,18 @@ class IconManagerFrame(ResponsiveGridBase):
                 if parent_id and parent_id.startswith("cat_"):
                     selected_cat = parent_id.replace("cat_", "", 1)
 
-        # Set variables
+        # When creating a new icon node, we need to map the name to ID for the tree
+        # but display the name in the combobox.
+
+        # If selected_cat is an ID, find its name for the combobox
+        selected_cat_name = selected_cat
+        if hasattr(self, 'categories_id_map') and str(selected_cat).isdigit():
+            selected_cat_name = self.categories_id_map.get(int(selected_cat), selected_cat)
+
+        # Set variables using the string name
         self.var_icon_key.set("")
         self.var_name.set("New Icon")
-        self.var_category.set(selected_cat)
+        self.var_category.set(selected_cat_name)
         self.var_fallback_emoji.set("❓")
         self.var_tooltip_key.set("")
         self.var_filepath.set("")
@@ -1741,6 +1789,9 @@ class IconManagerFrame(ResponsiveGridBase):
         self.tree.delete(*self.tree.get_children())
         self.tree.insert('', 'end', iid="loading", text="Loading data...")
         self.tree_model.load_base_data_async(self._on_data_loaded)
+
+        # Initial image library load
+        self.image_model.scan_directory_async(callback=self._on_image_library_scanned)
 
     def _on_data_loaded(self):
         try:
