@@ -588,6 +588,121 @@ class IconManagerFrame(ResponsiveGridBase):
         self.entry_filepath = ttk.Entry(filepath_frame, textvariable=self.var_filepath, state="disabled")
         self.entry_filepath.grid(row=0, column=0, sticky="ew")
 
+        # 7. Usages Manager Panel
+        self._build_usages_panel(self.form_frame, row=6)
+
+
+
+    def _build_usages_panel(self, parent_frame, row):
+        usage_container = tk.LabelFrame(parent_frame, text=self.i18n_t("lbl_usage_manager", default="Quản lý Nơi Dùng (Usages)"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
+        usage_container.grid(row=row, column=0, columnspan=2, sticky="nsew", padx=5, pady=10)
+
+        usage_container.grid_columnconfigure(0, weight=1)
+        usage_container.grid_rowconfigure(0, weight=1) # Treeview
+        usage_container.grid_rowconfigure(1, weight=0) # Add form
+
+        # 7.1 Treeview for Usages
+        self.usage_tree = ttk.Treeview(
+            usage_container,
+            columns=("id", "module", "component", "element"),
+            show="headings",
+            selectmode="browse",
+            height=4
+        )
+        self.usage_tree.heading("id", text="ID")
+        self.usage_tree.heading("module", text="Module")
+        self.usage_tree.heading("component", text="Component")
+        self.usage_tree.heading("element", text="Element ID")
+
+        self.usage_tree.column("id", width=30, stretch=tk.NO, anchor="center")
+        self.usage_tree.column("module", width=80, stretch=tk.YES)
+        self.usage_tree.column("component", width=80, stretch=tk.YES)
+        self.usage_tree.column("element", width=120, stretch=tk.YES)
+
+        self.usage_tree.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        usage_scroll = ttk.Scrollbar(usage_container, orient="vertical", command=self.usage_tree.yview)
+        usage_scroll.grid(row=0, column=1, sticky="ns", pady=5)
+        self.usage_tree.configure(yscrollcommand=usage_scroll.set)
+
+        # 7.2 Add Form
+        add_frame = tk.Frame(usage_container, bg=UIStyle.BG_SURFACE)
+        add_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+
+        tk.Label(add_frame, text="Mod:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        self.var_usage_mod = tk.StringVar(value="ui")
+        ttk.Entry(add_frame, textvariable=self.var_usage_mod, width=10).pack(side="left", padx=(0,5))
+
+        tk.Label(add_frame, text="Comp:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        self.var_usage_comp = tk.StringVar(value="button")
+        ttk.Entry(add_frame, textvariable=self.var_usage_comp, width=10).pack(side="left", padx=(0,5))
+
+        tk.Label(add_frame, text="ID:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        self.var_usage_element = tk.StringVar()
+        ttk.Entry(add_frame, textvariable=self.var_usage_element, width=20).pack(side="left", padx=(0,5))
+
+        self.btn_add_usage = tk.Button(add_frame, text="Gắn (Map)", command=self._on_add_usage, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_add_usage.pack(side="left", padx=2)
+
+        self.btn_del_usage = tk.Button(add_frame, text="Gỡ (Unmap)", command=self._on_del_usage, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_del_usage.pack(side="left", padx=2)
+
+    def _load_usages_for_selected(self, icon_key):
+        self.usage_tree.delete(*self.usage_tree.get_children())
+        if not icon_key:
+            return
+
+        usages = self.icon_service.get_usages(icon_key)
+        for u in usages:
+            self.usage_tree.insert("", "end", values=(u.get("id"), u.get("module_name"), u.get("ui_component_type"), u.get("ui_element_id")))
+
+    def _on_add_usage(self):
+        icon_key = self.var_icon_key.get().strip()
+        if not icon_key or self._current_state == "ADD":
+            messagebox.showwarning("Warning", "Vui lòng Lưu icon trước khi gắn usages.")
+            return
+
+        mod = self.var_usage_mod.get().strip()
+        comp = self.var_usage_comp.get().strip()
+        elem = self.var_usage_element.get().strip()
+
+        if not mod or not comp or not elem:
+            messagebox.showwarning("Warning", "Vui lòng nhập đủ thông tin Mod, Comp, ID.")
+            return
+
+        if self.icon_service.register_usage(icon_key, mod, comp, elem):
+            self.var_usage_element.set("")
+            self._load_usages_for_selected(icon_key)
+            # invalidate tree_model usage cache to update count
+            if hasattr(self, 'tree_model'):
+                self.tree_model.usage_cache.pop(icon_key, None)
+                self.tree_model.load_usages_for_icon_async(icon_key, None)
+
+            from tkinter import messagebox
+            messagebox.showinfo("Thành công", f"Đã gán Element ID '{elem}' cho icon '{icon_key}'.")
+        else:
+            messagebox.showerror("Error", "Không thể gắn usage, có thể bị trùng lặp.")
+
+    def _on_del_usage(self):
+        selection = self.usage_tree.selection()
+        if not selection:
+            messagebox.showinfo("Info", "Vui lòng chọn 1 usage trong danh sách để gỡ.")
+            return
+
+        item = self.usage_tree.item(selection[0])
+        usage_id = item["values"][0]
+        elem_id = item["values"][3]
+
+        if messagebox.askyesno("Xác nhận", f"Bạn có chắc muốn gỡ Element '{elem_id}' khỏi icon này?"):
+            if hasattr(self.icon_service, "delete_usage") and self.icon_service.delete_usage(usage_id):
+                icon_key = self.var_icon_key.get().strip()
+                self._load_usages_for_selected(icon_key)
+                if hasattr(self, 'tree_model'):
+                    self.tree_model.usage_cache.pop(icon_key, None)
+                    self.tree_model.load_usages_for_icon_async(icon_key, None)
+            else:
+                messagebox.showerror("Error", "Gỡ usage thất bại.")
+
 
     def _build_image_library_panel(self, parent_frame):
         parent_frame.grid_rowconfigure(0, weight=0) # Toolbar
@@ -1091,6 +1206,13 @@ class IconManagerFrame(ResponsiveGridBase):
             self.entry_tooltip.config(state='normal' if state in ('ADD', 'EDIT') else 'disabled')
         # Filepath is visually selected via button
         self.entry_filepath.config(state="disabled")
+
+        # Handle usages panel state
+        if hasattr(self, 'usage_tree'):
+            btn_state = "normal" if state == "EDIT" else "disabled"
+            # Cannot map to new unsaved icon
+            self.btn_add_usage.config(state=btn_state)
+            self.btn_del_usage.config(state=btn_state)
 
         # Handle Image Library state
         if hasattr(self, 'img_listbox'):
@@ -1751,6 +1873,8 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.img_listbox.selection_clear(0, tk.END)
 
             self._render_preview(icon_data)
+            if hasattr(self, 'usage_tree'):
+                self._load_usages_for_selected(icon_key)
 
         self.set_form_state("VIEW")
 
