@@ -1,138 +1,38 @@
+# Sprint 32: Icon Manager God Class - Component Reconnection
 
-# Báo cáo Phân tích và Đề xuất Refactor "God Class" - IconManagerFrame
+## Objective
 
-## 1. Tổng quan
-`IconManagerFrame` hiện tại trong file `ui/views/icon_manager_frame.py` đang có kích thước xấp xỉ **2000 dòng code** với hơn **60 phương thức (methods)**. Đây là một ví dụ điển hình của "God Class" (Anti-pattern).
-Class này đang ôm đồm quá nhiều trách nhiệm, vi phạm nghiêm trọng nguyên tắc **Single Responsibility Principle (SRP)**, khiến việc bảo trì, mở rộng và tìm lỗi (debug) trở nên rất khó khăn.
+Following the refactoring efforts to dismantle the "God Class" (`IconManagerFrame`), the child UI components (`IconTreeComponent`, `IconFormComponent`, `IconPreviewComponent`, `ImageLibraryComponent`, etc.) were disconnected from the main frame, leading to broken event propagation and UI states stuck on `EmptyState`.
 
-## 2. Triệu chứng của "God Class" trong IconManagerFrame
+The objective was to "reconnect the wires" in `IconManagerFrame` by updating tree callbacks, action button visibility, and form states to correctly interact with the extracted components without reverting to the monolithic architecture.
 
-1.  **Quá tải Trách nhiệm (Too Many Responsibilities):**
-    *   Quản lý danh sách Icon (Treeview, Lọc, Tìm kiếm, Sắp xếp).
-    *   Quản lý Form chi tiết Icon (Thêm, Sửa, Xóa, Validation).
-    *   Quản lý Danh mục (Categories Treeview, Form, CRUD logic).
-    *   Quản lý Thư viện Ảnh (Image Library Listbox, Search, File selection, Import).
-    *   Hiển thị hình thu nhỏ (Preview Zone, Tooltips).
-    *   Quản lý trạng thái giao diện (View, Add, Edit, Loading states).
-    *   Xử lý bất đồng bộ, hàng đợi render (Incremental Queue cho Treeview).
-    *   Xử lý logic Database cục bộ (Sync to DB, rollback).
+## Changes Made
 
-2.  **Kích thước khổng lồ (Size & Complexity):**
-    *   Gần 2000 dòng code. Các method UI building (`_build_icons_panel`, `_build_categories_panel`) rất dài và chứa nhiều widget lồng nhau phức tạp.
-    *   Chứa hàng chục thuộc tính trạng thái nội bộ (`_is_dirty`, `_current_state`, `_cat_current_state`, các biến `_after_id` cho debounce, timer).
+1. **Tree Selection Callback**:
+   - `_process_tree_selection_callback(self, icon_key)` was broken due to a stubbed `selection = []` and early return.
+   - Fixed the callback to utilize the `icon_key` directly provided by `IconTreeComponent`, fetching icon data via the `IconTreeModel`, mapping to the `IconFormComponent`, updating the `IconPreviewComponent`, and raising the `content_state_frame`.
 
-3.  **Mức độ kết dính thấp (Low Cohesion) và Phụ thuộc cao (High Coupling):**
-    *   Logic của phần Danh mục (Category) hoàn toàn độc lập với phần Hình ảnh (Image Library) nhưng lại bị nhồi nhét chung vào một class.
-    *   UI và Business Logic dính liền nhau (ví dụ: `_on_save`, `_on_sync`). Mặc dù trước đó đã có nỗ lực tách Model, Frame này vẫn tự xử lý form validation, kiểm tra sự tồn tại của file/node, và các quyết định rollback.
+2. **Form State Management (`set_form_state`)**:
+   - Previously, buttons (like Add, Edit, Delete) determined their `has_selection` state using `bool([])`.
+   - Refactored `set_form_state` to properly determine selection from `self.tree_component.tree` to toggle the action buttons correctly.
 
-## 3. Đề xuất Hướng Refactor (Giải pháp tháo gỡ)
+3. **Lifecycle Methods (Add, Edit, Save, Delete, Cancel)**:
+   - Updated `_on_add`, `_on_delete`, `_on_save`, and `_on_cancel` to interact with `self.tree_component.tree` rather than directly manipulating a non-existent `self.tree`.
+   - Correctly handled dummy node generation during the 'Add' flow, ensuring the UI stays consistent.
+   - Ensured `tkraise` correctly toggles `content_state_frame` to provide real-time visual feedback on user edits.
 
-Mục tiêu chính là phân rã `IconManagerFrame` thành các Component (hoặc Sub-frame) nhỏ hơn, chuyên biệt hơn. `IconManagerFrame` sẽ chỉ đóng vai trò là một "Container" điều phối các thành phần con.
+## Conclusion
 
-### Bước 1: Tách các Sub-Components (Giao diện)
-*   **`IconTreeComponent`**: Quản lý riêng phần Left Master List (Cây Icon, thanh tìm kiếm, filter, phân trang/hàng đợi render).
-*   **`IconFormComponent`**: Quản lý riêng phần nhập liệu chi tiết (Tên, Key, Tooltip, Nút Browse, Fallback).
-*   **`CategoryManagerComponent`**: Tách toàn bộ logic và giao diện của tab "Quản lý Danh mục Icon" ra thành một class/file riêng biệt.
-*   **`ImageLibraryComponent`**: Quản lý listbox hình ảnh, tìm kiếm ảnh và nút Import.
-*   **`IconPreviewComponent`**: Quản lý khung hiển thị ảnh thu nhỏ, tooltip warning và empty state.
-*   **`ActionToolBarComponent`**: (Tuỳ chọn) Quản lý dãy nút Add, Edit, Delete, Sync, Refresh.
+The UI components in `IconManagerFrame` are fully reconnected and communicating through the `IconManagerFrame` Mediator, adhering to the original extraction plan while restoring the original UI usability and logic.
 
-### Bước 2: Tách Controller / State Manager (Logic)
-*   Tạo một `IconManagerController` (nếu chưa có hoặc mở rộng từ Model hiện tại) để xử lý hoàn toàn các thao tác: Save, Delete, Sync, Validation.
-*   UI Form sẽ không gọi trực tiếp `IconService` nữa mà gọi qua `Controller`.
-*   Trạng thái của Form (`ADD`, `EDIT`, `VIEW`) nên được quản lý bởi một State Machine nhỏ, khi State thay đổi sẽ phát event (qua EventBus hoặc Callback) để các Component con tự bật/tắt (enable/disable) widget của mình, thay vì dùng hàm `set_form_state` khổng lồ đi chỉnh sửa từng ô text một.
+## Sub-task 6: Reconnect UI Callbacks in IconManagerFrame
 
-### Bước 3: Tối ưu hoá luồng dữ liệu (Data Flow)
-*   Sử dụng cơ chế Event-driven hoặc Pub/Sub giữa các component.
-    *   *Ví dụ:* Khi click vào `IconTreeComponent`, component này phát ra sự kiện `OnIconSelected(icon_id)`.
-    *   `IconManagerFrame` nhận sự kiện, ra lệnh cho Controller tải dữ liệu.
-    *   Controller tải xong, phát dữ liệu cho `IconFormComponent` và `IconPreviewComponent` tự cập nhật hiển thị.
-
-## 4. Lộ trình thực hiện (Gợi ý cho các Sprint tiếp theo)
-
-*   **Prompt 1 (Sub-task 1):** Tách `CategoryManagerComponent`. Vì phần Danh mục hoạt động khá độc lập, tách nó ra sẽ lập tức giảm tải ~300 dòng code.
-*   **Prompt 2 (Sub-task 2):** Tách `ImageLibraryComponent` và `IconPreviewComponent`.
-*   **Prompt 3 (Sub-task 3):** Tách `IconTreeComponent` và thuật toán Incremental Queue ra file riêng.
-*   **Prompt 4 (Sub-task 4):** Lắp ráp `IconFormComponent`, thiết lập Event/Callback để liên kết các component lại thông qua `IconManagerFrame` gọn nhẹ (Facade/Mediator).
-
-## Kết luận
-Việc refactor `IconManagerFrame` là cực kỳ cấp thiết để đảm bảo tính khả trì (maintainability). Quá trình này nên được chia nhỏ và test kỹ lưỡng từng component sau khi bóc tách để không làm gãy vỡ (break) luồng dữ liệu phức tạp hiện có.
-
-## 5. Tiến độ thực hiện (Cập nhật sau Prompt 02)
-
-### Prompt 01 (Sub-task 1): Tách CategoryManagerComponent
-- **Trạng thái**: Đã hoàn thành (Code đã tồn tại ở file `ui/components/category_manager_component.py`).
-- **Nội dung**: Đã tách được UI (Treeview, Toolbar, Form thao tác) và Logic (Add/Edit/Delete) của loại Icon (Category) ra file riêng.
-
-### Prompt 02 (Sub-task 2): Tách ImageLibraryComponent (Thư viện Ảnh)
 - **Trạng thái**: Đã hoàn thành.
 - **Nội dung chi tiết**:
-  - Tạo mới Component độc lập `ImageLibraryComponent` tại thư mục `ui/components/`.
-  - Thành công di dời UI của Image Library (Toolbar tìm kiếm, Listbox hình ảnh, checkbox).
-  - Tách các logic như tìm kiếm ảnh, quét thư mục bất đồng bộ bằng `ImageLibraryModel` ra khỏi `IconManagerFrame`.
-  - Thiết lập thành công mô hình **Event/Callback driven**:
-    - `on_image_selected`: Truyền ngược filepath và cờ `is_new_import` khi người dùng nhấn chọn ảnh hoặc import ảnh mới thành công về lại `IconManagerFrame`.
-    - `get_used_filepaths`: Cho phép Component gọi ngược lại `IconManagerFrame` để biết ảnh nào đã được dùng, tránh việc truyền Object cấp cao (Database/Service) vào UI.
-  - Sửa lỗi UX khi người dùng clear selection.
-  - `IconManagerFrame` giảm bớt được hơn 200 dòng code thừa.
+  - Đã chỉnh sửa hàm `_process_tree_selection_callback` để nhận đúng `icon_key` thay vì kiểm tra `selection = []` bị lỗi. Điều này giúp khi chọn một Icon bên danh sách trái, phần Detail form, Preview và Usages bên phải sẽ hiển thị lên (thoát khỏi màn hình `EmptyState`).
+  - Đã chỉnh sửa lại cơ chế bật/tắt các nút Sửa, Xóa trong `set_form_state` để kiểm tra đúng trạng thái chọn từ `self.tree_component.tree` thay vì mảng rỗng.
+  - Sửa lại các luồng logic của Thêm (`_on_add`), Xóa (`_on_delete`), Lưu (`_on_save`), Hủy (`_on_cancel`) để chúng gọi đúng vào widget `tree` nằm bên trong `IconTreeComponent`, qua đó xử lý chuẩn xác việc tạo dummy node và focus lại danh sách.
 - **DoD (Điều kiện hoàn thành)**:
-  - Giao diện hiển thị đúng.
-  - Chức năng tìm kiếm, highlight hoạt động tốt.
-  - Code `IconManagerFrame` gọn hơn.
-  - Đã pass các test hồi quy.
-
-### Các đề xuất (Các bước/Prompt tiếp theo)
-1. **Prompt 03 (Sub-task 3)**: Tách `IconTreeComponent` - Chuyển toàn bộ khung List/Tree bên trái (chứa luồng render bất đồng bộ `_process_incremental_queue`, tìm kiếm, filter theo loại/trạng thái) ra file riêng.
-2. **Prompt 04 (Sub-task 4)**: Tách `IconFormComponent` - Quản lý phần nhập liệu chi tiết.
-3. **Prompt 05 (Sub-task 5)**: Tách `IconPreviewComponent` - Quản lý phần view thu nhỏ, hiển thị `EmptyState`.
-
-## Kết luận sau Sub-task 2
-Cách tiếp cận sử dụng callback để nới lỏng sự phụ thuộc (Loose Coupling) giữa Model/Service và View Component đang cho thấy hiệu quả. Bằng cách để `IconManagerFrame` làm "Mediator" trung gian xử lý lỗi trùng lặp file và trạng thái rollback, Component mới cực kì sạch sẽ và tập trung hoàn toàn vào việc render hình ảnh.
-
-### Prompt 03 (Sub-task 5): Tách IconPreviewComponent
-- **Trạng thái**: Đã hoàn thành.
-- **Nội dung chi tiết**:
-  - Tạo mới component độc lập `IconPreviewComponent` tại `ui/components/icon_preview_component.py`.
-  - Thành công di dời UI của phần Preview Zone (hiển thị ảnh thu nhỏ, Empty State và các tooltip preview).
-  - Tách hàm render độc lập: Component nhận vào `icon_data` thông qua phương thức `render()`, hoàn toàn không truy cập trực tiếp biến nội bộ của `IconManagerFrame` (tuân thủ nguyên tắc encapsulation).
-  - Component tự chịu trách nhiệm về Empty State bên trong nội bộ vùng hiển thị của mình, trong khi `IconManagerFrame` chỉ lo điều phối logic chuyển đổi trạng thái View tổng thể (`content_state_frame` và `empty_state_frame`).
-  - Sửa đổi hệ thống tooltip tích hợp để sử dụng chung tiện ích `attach_i18n_tooltip` từ `ui.helpers.tooltip`.
-- **DoD (Điều kiện hoàn thành)**:
-  - Khi chọn icon trên danh sách, hình ảnh hoặc emoji hiển thị chính xác.
-  - Tooltip hiển thị và xử lý cảnh báo thiếu khóa dịch đúng logic.
-  - Khung empty state tự động hiển thị khi dữ liệu rỗng.
-  - Test case `test_icon_preview_component.py` hoạt động pass 100%.
-
-## Kết luận sau Sub-task 5
-Việc tách rời các widget mang tính chất hiển thị tĩnh/phụ (như ảnh preview, trạng thái empty) giúp file master (`IconManagerFrame`) giảm tải đáng kể dòng code. Module `IconPreviewComponent` bây giờ hoạt động như một Dumb Component đúng nghĩa - chỉ nhận data và render, giúp dễ dàng test và tái sử dụng cho các form khác trong tương lai nếu cần thiết.
-
-### Prompt 04 (Sub-task 4): Tách IconFormComponent
-- **Trạng thái**: Đã hoàn thành.
-- **Nội dung chi tiết**:
-  - Tạo file `ui/components/icon_form_component.py` với class `IconFormComponent(tk.Frame)`.
-  - Chuyển logic giao diện `_build_detail_form` (gồm các ô nhập liệu, tooltip) vào class này.
-  - Quản lý tập trung các `tk.StringVar` (như `var_name`, `var_icon_key`, ...) bên trong Component.
-  - Cung cấp API tương tác dữ liệu rõ ràng với `get_form_data() -> dict` và `set_form_data(dict)`.
-  - Di chuyển các hàm xác thực và Autocomplete Tooltip (`_validate_tooltip_key`, `_autocomplete_tooltip`, v.v.) vào đi kèm form.
-  - Đóng gói quản lý state (mở/khóa các ô nhập) thông qua các method `enter_view_mode()`, `enter_add_mode()`, `enter_edit_mode()`.
-  - Cập nhật `IconManagerFrame` thay thế trực tiếp các hàm `get()`/`set()` biến đơn lẻ bằng việc gọi qua `IconFormComponent`, giảm thiểu tính phụ thuộc (coupling).
-- **DoD (Điều kiện hoàn thành)**:
-  - Form nhập liệu tự bật/tắt đúng state view/add/edit.
-  - Dịch ngôn ngữ cho tooltip và cảnh báo (validation) vẫn hoạt động đúng như trước.
-  - Dữ liệu lưu và cập nhật hoàn toàn khớp, `IconManagerFrame` không còn biết đến chi tiết UI form.
-  - Pass thành công các test hồi quy và test unit mới cho `test_icon_form_component.py`.
-
-### Prompt 05 (Sub-task 3): Tách IconTreeComponent và Hoàn thiện Controller
-- **Trạng thái**: Đã hoàn thành.
-- **Nội dung chi tiết**:
-  - Tạo file `ui/components/icon_tree_component.py` với class `IconTreeComponent(tk.Frame)`.
-  - Di dời toàn bộ phần UI liên quan đến cây danh sách bao gồm: `ttk.Treeview`, thanh công cụ thu/phóng (Collapse/Expand All), và thanh Filter (Search, Status, Category) vào component này.
-  - Bóc tách thành công thuật toán render phức tạp (Incremental Queue - `_process_incremental_queue`) và hàm nạp dữ liệu (`load_tree_data`) vào trong `IconTreeComponent`.
-  - Thiết lập giao tiếp qua Callback thay vì State dùng chung:
-    - Nhận vào instance của `IconTreeModel` qua constructor (Injection).
-    - Khi có sự kiện chọn node (`<<TreeviewSelect>>`), kích hoạt callback nội bộ `on_node_selected_callback(icon_key)` đẩy lên cho `IconManagerFrame` xử lý.
-  - Tại `IconManagerFrame`, class hiện tại đã giảm kích thước xuống chỉ còn mức tối giản, thuần túy làm Mediator điều phối dữ liệu từ Tree sang Form.
-- **DoD (Điều kiện hoàn thành)**:
-  - Cây hiển thị dữ liệu chính xác theo cấu trúc Danh mục -> Icon.
-  - Hàng đợi render chia đợt (batch rendering) không bị hỏng, giao diện mượt mà.
-  - Component độc lập, hoạt động dựa trên Callbacks chuẩn xác.
+  - Khi click vào bất kỳ item nào bên Tree, form chi tiết cập nhật tương ứng.
+  - Các thao tác Add, Edit, Save, Cancel, Delete hoạt động đúng state và không sinh lỗi AttributeError.
+  - Hoàn tất nối lại toàn bộ 100% đường dây điện của God Class cũ với kiến trúc Mediator mới.
