@@ -21,6 +21,7 @@ from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
 from lib.i18n import t
+from ui.controllers.icon_manager_controller import IconManagerController
 
 
 class IconManagerFrame(ResponsiveGridBase):
@@ -31,6 +32,16 @@ class IconManagerFrame(ResponsiveGridBase):
         self.icon_service = IconService(self.db.conn)
         self.icon_helper = get_icon_helper()
         self.tree_model = IconTreeModel()
+        self.image_model = ImageLibraryModel()
+
+        self.controller = IconManagerController(
+            app=self.app,
+            icon_service=self.icon_service,
+            tree_model=self.tree_model,
+            image_model=self.image_model,
+            icon_helper=self.icon_helper,
+            categories_map={}
+        )
 
         self.preview_frame = None
         self.lbl_preview = None
@@ -71,7 +82,6 @@ class IconManagerFrame(ResponsiveGridBase):
         self._render_queue = []
         self._render_after_id = None
 
-        self.image_model = ImageLibraryModel()
         self.image_library = None
 
         self._setup_ui()
@@ -436,7 +446,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_add_usage(self):
         icon_key = self.icon_form.get_form_data()['icon_key'].strip()
-        if not icon_key or self._current_state == "ADD":
+        if self._current_state == "ADD":
             messagebox.showwarning("Warning", "Vui lòng Lưu icon trước khi gắn usages.")
             return
 
@@ -444,26 +454,20 @@ class IconManagerFrame(ResponsiveGridBase):
         comp = self.var_usage_comp.get().strip()
         elem = self.var_usage_element.get().strip()
 
-        if not mod or not comp or not elem:
-            messagebox.showwarning("Warning", "Vui lòng nhập đủ thông tin Mod, Comp, ID.")
-            return
+        result = self.controller.add_usage(icon_key, mod, comp, elem)
 
-        if self.icon_service.register_usage(icon_key, mod, comp, elem):
+        if result.success:
             self.var_usage_element.set("")
             self._load_usages_for_selected(icon_key)
             if elem not in self._available_usage_ids:
                 self._available_usage_ids.append(elem)
                 self._available_usage_ids.sort()
                 self.combo_usage_element['values'] = self._available_usage_ids
-            # invalidate tree_model usage cache to update count
-            if hasattr(self, 'tree_model'):
-                self.tree_model.usage_cache.pop(icon_key, None)
-                self.tree_model.load_usages_for_icon_async(icon_key, None)
 
             from tkinter import messagebox
             messagebox.showinfo("Thành công", f"Đã gán Element ID '{elem}' cho icon '{icon_key}'.")
         else:
-            messagebox.showerror("Error", "Không thể gắn usage, có thể bị trùng lặp.")
+            messagebox.showerror("Lỗi", result.message)
 
     def _on_del_usage(self):
         selection = self.usage_tree.selection()
@@ -476,14 +480,12 @@ class IconManagerFrame(ResponsiveGridBase):
         elem_id = item["values"][3]
 
         if messagebox.askyesno("Xác nhận", f"Bạn có chắc muốn gỡ Element '{elem_id}' khỏi icon này?"):
-            if hasattr(self.icon_service, "delete_usage") and self.icon_service.delete_usage(usage_id):
-                icon_key = self.icon_form.get_form_data()['icon_key'].strip()
+            icon_key = self.icon_form.get_form_data()['icon_key'].strip()
+            result = self.controller.delete_usage(icon_key, usage_id)
+            if result.success:
                 self._load_usages_for_selected(icon_key)
-                if hasattr(self, 'tree_model'):
-                    self.tree_model.usage_cache.pop(icon_key, None)
-                    self.tree_model.load_usages_for_icon_async(icon_key, None)
             else:
-                messagebox.showerror("Error", "Gỡ usage thất bại.")
+                messagebox.showerror("Error", result.message)
 
     def _get_used_filepaths(self):
         try:
@@ -828,14 +830,6 @@ class IconManagerFrame(ResponsiveGridBase):
 
         from tkinter import messagebox
 
-        # Check safe delete with tree_model first
-        if hasattr(self, 'tree_model'):
-            is_safe, usages = self.tree_model.check_safe_delete(icon_key)
-            if not is_safe:
-                msg = self.i18n_t("msg_icon_in_use", default=f"Icon '{icon_key}' đang được sử dụng ở {len(usages)} nơi. Vui lòng gỡ bỏ trước khi xóa.", count=len(usages), icon_key=icon_key)
-                messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), msg, parent=self.winfo_toplevel())
-                return
-
         confirm = messagebox.askyesno(
             "Confirm Delete",
             f"Are you sure you want to delete the icon '{icon_key}'?",
@@ -843,31 +837,23 @@ class IconManagerFrame(ResponsiveGridBase):
         )
 
         if confirm:
-            try:
-                success = self.icon_service.delete_icon(icon_key)
-                if success:
-                    # Clear form
-                    self.icon_form.set_form_data({})
-                    self.content_state_frame.tkraise()
-                    self.preview_component.render({})
+            result = self.controller.delete_icon(icon_key)
+            if result.success:
+                # Clear form
+                self.icon_form.set_form_data({})
+                self.content_state_frame.tkraise()
+                self.preview_component.render({})
 
-                    if hasattr(self, 'tree_model'):
-                        self.tree_model.invalidate_icon(icon_key)
-
-                    # Reload tree
-                    self.tree_component.request_load_tree_data()
-                    self.set_form_state("VIEW")
-                    if hasattr(self, 'tree_component'):
-                        self.tree_component.tree.focus_set()
+                # Reload tree
+                self.tree_component.request_load_tree_data()
+                self.set_form_state("VIEW")
+                if hasattr(self, 'tree_component'):
+                    self.tree_component.tree.focus_set()
+            else:
+                if result.data == "in_use":
+                    messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), result.message)
                 else:
-                    messagebox.showerror("Error", f"Failed to delete icon '{icon_key}'.")
-            except ValueError as e:
-                if str(e) == "icon_in_use_error":
-                    usages = self.icon_service.get_usages(icon_key)
-                    msg = self.i18n_t("msg_icon_in_use", default=f"Icon '{icon_key}' đang được sử dụng ở {len(usages)} nơi. Vui lòng gỡ bỏ trước khi xóa.", count=len(usages), icon_key=icon_key)
-                    messagebox.showwarning(self.i18n_t("warning", default="Cảnh báo"), msg)
-                else:
-                    messagebox.showerror("Error", str(e))
+                    messagebox.showerror("Error", result.message)
 
     def _on_refresh(self):
         self.apply_filters()
@@ -878,44 +864,21 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.btn_sync.config(state='disabled', text=self.i18n_t("btn_syncing", default="Đang đồng bộ..."))
 
-        def run_sync():
+        def on_complete(count):
+            if not self.winfo_exists(): return
             try:
-                import sqlite3
-                from lib.db.services.icon_service import IconService
-                from database import MonsterDatabase
+                self.after(0, lambda: self._on_sync_complete(count, show_message))
+            except RuntimeError:
+                pass
 
-                thread_conn = sqlite3.connect(MonsterDatabase.DB_PATH)
-                thread_icon_service = IconService(thread_conn)
+        def on_error(err_msg):
+            if not self.winfo_exists(): return
+            try:
+                self.after(0, lambda: self._on_sync_error(err_msg, show_message))
+            except RuntimeError:
+                pass
 
-                mappings = self.icon_helper.icon_map
-                count = 0
-                for icon_key, (icon_stem, emoji) in mappings.items():
-                    icon_data = {
-                        "icon_key": icon_key,
-                        "name": icon_key.capitalize(),
-                        "filepath": f"{icon_stem}.png",
-                        "fallback_emoji": emoji,
-                        "tooltip_translation_key": f"icon_tooltip_{icon_key}",
-                        "category": "System",
-                        "description": f"System icon for {icon_key}"
-                    }
-
-                    existing = thread_icon_service.get_icon_by_key(icon_key)
-                    if not existing:
-                        thread_icon_service.upsert_icon(icon_data)
-                        count += 1
-
-                try:
-                    self.after(0, lambda: self._on_sync_complete(count, show_message))
-                except RuntimeError:
-                    pass
-            except Exception as e:
-                try:
-                    self.after(0, lambda: self._on_sync_error(str(e), show_message))
-                except RuntimeError:
-                    pass
-
-        threading.Thread(target=run_sync, daemon=True).start()
+        self.controller.sync_system_icons_async(on_complete, on_error)
 
     def _safe_after(self, delay, callback):
         """Safely schedule a callback if the widget still exists"""
@@ -962,42 +925,28 @@ class IconManagerFrame(ResponsiveGridBase):
         self.btn_sync.config(text=cooldown_text)
         self.after(1000, lambda: self._start_sync_cooldown(seconds_left - 1))
 
-    def _validate_form_data(self):
-        from tkinter import messagebox
-        icon_key = self.icon_form.get_form_data()['icon_key'].strip()
-        if not icon_key:
-            messagebox.showerror("Validation Error", "Icon Key is required.")
-            return False
-
-        # Add more validations if needed
-        return True
-
     def _on_save(self):
-        # 1. Validate dữ liệu
-        if not self._validate_form_data():
-            return
-
-        icon_key = self.icon_form.get_form_data()['icon_key'].strip()
-        new_filepath = self.icon_form.get_form_data()['filepath'].strip()
+        form_data = self.icon_form.get_form_data()
+        icon_key = form_data.get('icon_key', '').strip()
 
         # Save previous filepath to check for rollback if db insert fails
         icon_data_old = self.tree_model.get_icon(icon_key)
         old_filepath = icon_data_old.get('filepath') if icon_data_old else None
 
-        cat_name = self.icon_form.get_form_data()['category'].strip() or "General"
-        cat_id = 1
-        if hasattr(self, 'categories_map') and cat_name in self.categories_map:
-            cat_id = self.categories_map[cat_name]
+        just_imported_file = getattr(self, '_just_imported_file', None)
 
-        icon_data = {
-            "icon_key": icon_key,
-            "name": self.icon_form.get_form_data()['name'].strip(),
-            "filepath": self.icon_form.get_form_data()['filepath'].strip(),
-            "fallback_emoji": self.icon_form.get_form_data()['fallback_emoji'].strip(),
-            "tooltip_translation_key": self.icon_form.get_form_data()['tooltip_key'].strip(),
-            "category_id": cat_id,
-            "description": ""
-        }
+        # Cập nhật categories_map mới nhất cho controller trước khi save
+        if hasattr(self, 'categories_map'):
+            self.controller.update_categories_map(self.categories_map)
+
+        result = self.controller.save_icon(form_data, old_filepath, just_imported_file)
+
+        from tkinter import messagebox
+        if not result.success:
+            messagebox.showerror("Lỗi", result.message)
+            if hasattr(self, 'image_library') and self.image_library:
+                self.image_library.reload() # refresh list if there was a rollback
+            return
 
         # Nếu đang ở trạng thái ADD, xóa dòng dummy khỏi tree trước khi reload
         if self._current_state == "ADD":
@@ -1008,106 +957,35 @@ class IconManagerFrame(ResponsiveGridBase):
                     if item_id.startswith("new_icon_"):
                         self.tree_component.tree.delete(item_id)
 
-        # 2. Lưu Bản dịch Tooltip tự động tạo nếu chưa có
-        t_key = self.icon_form.get_form_data()['tooltip_key'].strip()
-        if t_key:
-            form_data = self.icon_form.get_form_data()
-            val_en = form_data.get('tooltip_en', '').strip()
-            val_vi = form_data.get('tooltip_vi', '').strip()
+        # Xoá flag dirty
+        self._is_dirty = False
 
-            # Đảm bảo nếu để trống thì lấy luôn t_key làm default tránh lỗi mồ côi
-            if not val_en: val_en = t_key
-            if not val_vi: val_vi = t_key
+        # Reload dữ liệu
+        self.tree_component.request_load_tree_data()
 
-            # Đảm bảo nếu để trống thì lấy luôn t_key làm default tránh lỗi mồ côi
-            if not val_en: val_en = t_key
-            if not val_vi: val_vi = t_key
+        # Update local form tooltips
+        t_key = form_data.get('tooltip_key', '').strip()
+        if t_key and hasattr(self, 'icon_form'):
+            self.icon_form.add_tooltip_key_if_missing(t_key)
 
-            try:
-                from lib.db.services.translation_service import TranslationService
-                from lib.events.event_bus import EventBus, TranslationDataUpdatedEvent
-                ts = TranslationService()
-                ts.upsert(namespace="", key=t_key, lang="en", text=val_en)
-                ts.upsert(namespace="", key=t_key, lang="vi", text=val_vi)
+        # Mở lại thư mục vừa thêm vào
+        cat_node_id = f"cat_{result.category_id}"
+        if hasattr(self, 'tree_component'):
+            if self.tree_component.tree.exists(cat_node_id):
+                self.tree_component.tree.item(cat_node_id, open=True)
 
-                # Publish event để reload dropdown keys realtime
-                EventBus.publish(TranslationDataUpdatedEvent())
+            # Re-select the saved item để refresh Preview từ dữ liệu thực tế
+            node_id = f"icon_{icon_key}"
+            if self.tree_component.tree.exists(node_id):
+                 self.tree_component.tree.selection_set(node_id)
+                 self.tree_component.tree.see(node_id)
 
-                # Cập nhật danh sách local ngay lập tức
-                if hasattr(self, 'icon_form'):
-                    self.icon_form.add_tooltip_key_if_missing(t_key)
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Lỗi lưu bản dịch: {e}")
+        self.set_form_state("VIEW")
+        if hasattr(self, 'tree_component'):
+            self.tree_component.tree.focus_set()
 
-        # 3. Lưu Database Icon
-        success = self.icon_service.upsert_icon(icon_data)
-        if success:
-            # Xoá flag dirty
-            self._is_dirty = False
-
-            # Xoá cache trong IconHelper để bắt buộc load ảnh mới
-            if hasattr(self.icon_helper, 'clear_cache'):
-                self.icon_helper.clear_cache(icon_key)
-            elif hasattr(self.icon_helper, '_cache'):
-                keys_to_remove = [k for k in self.icon_helper._cache.keys() if k.startswith(f"{icon_key}_")]
-                for k in keys_to_remove:
-                    del self.icon_helper._cache[k]
-
-            if hasattr(self, 'tree_model'):
-                 icon_data["category_name"] = cat_name
-                 # Re-evaluate status
-                 existing_files = set()
-                 if hasattr(self.icon_helper, 'icon_dirs'):
-                     for d in self.icon_helper.icon_dirs:
-                         if d.exists():
-                             try:
-                                 for file in d.iterdir():
-                                     if file.is_file():
-                                         existing_files.add(file.name)
-                             except Exception:
-                                 pass
-                 status = self.icon_helper.evaluate_icon_status(icon_data, existing_files_cache=existing_files)
-                 self.tree_model.update_icon_in_cache(icon_data, status)
-
-            # 3. Reload dữ liệu
-            self.tree_component.request_load_tree_data()
-
-            # Mở lại thư mục vừa thêm vào
-            cat_node_id = f"cat_{cat_id}"
-            if hasattr(self, 'tree_component'):
-                if self.tree_component.tree.exists(cat_node_id):
-                    self.tree_component.tree.item(cat_node_id, open=True)
-
-                # Re-select the saved item để refresh Preview từ dữ liệu thực tế
-                node_id = f"icon_{icon_key}"
-                if self.tree_component.tree.exists(node_id):
-                     self.tree_component.tree.selection_set(node_id)
-                     self.tree_component.tree.see(node_id)
-
-            self.set_form_state("VIEW")
-            if hasattr(self, 'tree_component'):
-                self.tree_component.tree.focus_set()
-
-            # 4. Thông báo thành công
-            from tkinter import messagebox
-            messagebox.showinfo("Thành công", f"Đã lưu thành công icon {icon_key}.")
-        else:
-            from tkinter import messagebox
-            import logging
-            logger = logging.getLogger(__name__)
-            messagebox.showerror("Error", "Failed to save icon data.")
-            logger.error(f"Lỗi database: Ghi icon {icon_key} thất bại.")
-            # Rollback nếu đang có thao tác update DB thất bại
-            # Theo requirements: "Nếu update DB lỗi -> Rollback, Không để DB và file hệ thống lệch nhau"
-            if new_filepath and new_filepath != old_filepath:
-                 # Check if the new file is already used by other icons
-                 usages = self.icon_service.get_icons_by_filepath(new_filepath)
-                 if not usages: # Only rollback/remove file if no other icons are using it
-                      if getattr(self, '_just_imported_file', None) == new_filepath:
-                          self.image_model.remove_file(new_filepath)
-                          if hasattr(self, 'image_library') and self.image_library:
-                              self.image_library.reload() # refresh list
+        # 4. Thông báo thành công
+        messagebox.showinfo("Thành công", f"Đã lưu thành công icon {icon_key}.")
 
     def _on_cancel(self):
         # Dọn dẹp dòng dummy nếu đang ở trạng thái ADD
