@@ -15,6 +15,7 @@ from ui.helpers.icon_helper import get_icon_helper
 from ui.models.icon_tree_model import IconTreeModel
 from ui.models.image_library_model import ImageLibraryModel
 from ui.components.image_library_component import ImageLibraryComponent
+from ui.components.icon_preview_component import IconPreviewComponent
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
@@ -390,7 +391,8 @@ class IconManagerFrame(ResponsiveGridBase):
         self.content_state_frame.grid_rowconfigure(1, weight=1) # Panel + Form sẽ co giãn
         self.content_state_frame.grid_columnconfigure(0, weight=1)
 
-        self._build_preview_zone()
+        self.preview_component = IconPreviewComponent(self.content_state_frame, app=self.app, icon_helper=self.icon_helper)
+        self.preview_component.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
 
         # Bọc Library và Form vào một container chia 2 cột
         self.bottom_detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
@@ -443,32 +445,6 @@ class IconManagerFrame(ResponsiveGridBase):
     def _on_category_changed(self):
         self._populate_category_combo()
         self.load_tree_data()
-
-    def _build_preview_zone(self):
-        self.preview_frame = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
-        self.preview_frame.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
-        self.preview_frame.grid_rowconfigure(0, weight=1)
-        self.preview_frame.grid_columnconfigure(0, weight=1)
-        self.preview_frame.grid_propagate(False) # Keep the height stable
-        self.preview_frame.config(height=200)
-
-        # Empty State
-        self.empty_preview = EmptyState(
-            self.preview_frame,
-            icon="🖼️",
-            message=self.i18n_t("msg_no_icon_selected", default="Chưa chọn icon nào hoặc dữ liệu trống"),
-            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn icon từ danh sách hoặc nhấn Đồng bộ nếu danh sách trống")
-        )
-        self.empty_preview.grid(row=0, column=0, sticky="nsew")
-
-        # Preview Label (Hidden by default)
-        self.lbl_preview = tk.Label(
-            self.preview_frame,
-            bg=UIStyle.BG_ELEVATED,
-            text="",
-            font=UIStyle.get_font("body"),
-            relief="groove"
-        )
 
     def to_non_accent_vietnamese(self, s: str) -> str:
         s = s.lower()
@@ -812,7 +788,8 @@ class IconManagerFrame(ResponsiveGridBase):
             "filepath": selected_file,
             "tooltip_translation_key": self.var_tooltip_key.get()
         }
-        self._render_preview(dummy_data)
+        self.content_state_frame.tkraise()
+        self.preview_component.render(dummy_data)
 
     def _on_name_changed(self, *args):
         if self._current_state in ("ADD", "EDIT"):
@@ -900,75 +877,6 @@ class IconManagerFrame(ResponsiveGridBase):
         else:
             hits = [item for item in self._available_keys if typed.lower() in item.lower()]
             self.entry_tooltip['values'] = hits
-
-    def _render_preview(self, icon_data):
-        if not icon_data:
-            self.empty_state_frame.tkraise()
-            self.lbl_preview.grid_remove()
-            self.lbl_preview.config(image='', text="")
-            self.lbl_preview.image = None
-            return
-
-        self.content_state_frame.tkraise()
-        self.lbl_preview.grid(row=0, column=0, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD, sticky="nsew")
-
-        icon_key = icon_data.get("icon_key", "")
-        fallback_emoji = icon_data.get("fallback_emoji", "")
-        filepath = icon_data.get("filepath", "")
-
-        # Kiểm tra trạng thái tồn tại của file
-        status = self.icon_helper.evaluate_icon_status({"filepath": filepath, "fallback_emoji": fallback_emoji})
-
-        giant_icon = None
-        # Chỉ load ảnh nếu status là GREEN (ảnh tồn tại)
-        if status == "GREEN" and filepath:
-            from PIL import Image, ImageTk
-            from lib.managers.icon_file_manager import get_icons_directory
-            try:
-                target_path = Path(filepath)
-                if not target_path.is_absolute():
-                    target_path = get_icons_directory() / filepath
-
-                if target_path.exists():
-                    img = Image.open(target_path)
-                    img = img.resize((128, 128), Image.Resampling.LANCZOS)
-                    giant_icon = ImageTk.PhotoImage(img)
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Preview load failed: {e}")
-
-        if giant_icon is None:
-            giant_icon = fallback_emoji or "❓"
-
-        if giant_icon and not isinstance(giant_icon, str):
-            self.lbl_preview.config(image=giant_icon, text="")
-            self.lbl_preview.image = giant_icon
-        else:
-            # Nếu file không tồn tại hoặc lỗi, fallback sang emoji
-            self.lbl_preview.config(image='', text=giant_icon, font=(UIStyle.FONT_FAMILY_UI, 72))
-            self.lbl_preview.image = None
-
-        # Re-attach tooltip
-        tooltip_key = icon_data.get("tooltip_translation_key", "")
-
-        # Clear old tooltip by unbinding Enter/Leave if needed, or by redefining
-        if hasattr(self.lbl_preview, "_i18n_tooltip") and getattr(self.lbl_preview, "_i18n_tooltip"):
-            old_tip = getattr(self.lbl_preview, "_i18n_tooltip")
-            if hasattr(old_tip, "_hide"):
-                old_tip._hide()
-            self.lbl_preview.unbind("<Enter>")
-            self.lbl_preview.unbind("<Leave>")
-            self.lbl_preview.unbind("<ButtonPress>")
-
-        if tooltip_key:
-            attach_i18n_tooltip(
-                self.lbl_preview,
-                key=tooltip_key,
-                ns=None,  # Adjust if tooltip namespace is needed
-                lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi'
-            )
-        else:
-            setattr(self.lbl_preview, "_i18n_tooltip", None)
 
     def _on_browse_clicked(self):
         from tkinter import filedialog, messagebox
@@ -1244,7 +1152,8 @@ class IconManagerFrame(ResponsiveGridBase):
         self.set_form_state("ADD")
         self.entry_name.focus_set()
 
-        self._render_preview({
+        self.content_state_frame.tkraise()
+        self.preview_component.render({
             "icon_key": dummy_id,
             "fallback_emoji": "❓"
         })
@@ -1290,7 +1199,8 @@ class IconManagerFrame(ResponsiveGridBase):
                     self.var_fallback_emoji.set("")
                     self.var_tooltip_key.set("")
                     self.var_filepath.set("")
-                    self._render_preview({})
+                    self.content_state_frame.tkraise()
+        self.preview_component.render({})
 
                     if hasattr(self, 'tree_model'):
                         self.tree_model.invalidate_icon(icon_key)
@@ -1831,9 +1741,12 @@ class IconManagerFrame(ResponsiveGridBase):
             if hasattr(self, 'image_library') and self.image_library:
                 self.image_library.set_current_filepath(filepath)
 
-            self._render_preview(icon_data)
+            self.content_state_frame.tkraise()
+            self.preview_component.render(icon_data)
             if hasattr(self, 'usage_tree'):
                 self._load_usages_for_selected(icon_key)
+        else:
+            self.empty_state_frame.tkraise()
 
         self.set_form_state("VIEW")
 
