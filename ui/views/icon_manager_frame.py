@@ -1016,7 +1016,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
 
     def _on_name_changed(self, *args):
-        if self._current_state == "ADD":
+        if self._current_state in ("ADD", "EDIT"):
             name = self.var_name.get()
             if name:
                 slug = name.strip()
@@ -1024,14 +1024,11 @@ class IconManagerFrame(ResponsiveGridBase):
                 slug = re.sub(r'[^a-z0-9]+', '_', slug)
                 slug = slug.strip('_')
 
-                # Auto-fill Icon Key if it's currently empty or follows the slug (basic check to allow manual override later, but for ADD it's safe to overwrite if they are just typing)
-                # To be less intrusive, only auto-fill if Icon Key is empty or matches the old slug. For simplicity, in ADD mode, just auto-fill
-                # Actually, to allow manual edit in ADD, we only auto-fill if icon_key is empty or matches the generated slug minus the last char
-                # For a seamless experience, we just overwrite in ADD mode if they haven't explicitly edited the icon_key.
+                if not self.var_icon_key.get().strip():
+                    self.var_icon_key.set(slug)
 
-                # We'll just overwrite it in ADD mode for now as requested.
-                self.var_icon_key.set(slug)
-                self.var_tooltip_key.set(f"icon_tooltip_{slug}")
+                if not self.var_tooltip_key.get().strip():
+                    self.var_tooltip_key.set(f"icon_tooltip_{slug}")
 
     def _load_i18n_keys(self):
         self._available_keys = []
@@ -1335,8 +1332,10 @@ class IconManagerFrame(ResponsiveGridBase):
         entry_state = "normal" if state in ("ADD", "EDIT") else "disabled"
         cb_state = "readonly" if state in ("ADD", "EDIT") else "disabled"
 
+        icon_key_state = "normal" if state == "ADD" else "disabled"
+
         self.entry_name.config(state=entry_state)
-        self.entry_icon_key.config(state=entry_state)
+        self.entry_icon_key.config(state=icon_key_state)
         self.combo_category.config(state=cb_state)
         self.entry_fallback.config(state=entry_state)
         if hasattr(self, 'entry_tooltip'):
