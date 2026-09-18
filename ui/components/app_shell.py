@@ -73,7 +73,7 @@ class AppShell:
         self.main_shell.columnconfigure(0, minsize=sidebar_width, weight=0)  # Vùng C1 - Sidebar
         self.main_shell.columnconfigure(1, minsize=int(960 * scale_factor), weight=1)  # Vùng B - Workspace
 
-        self.main_shell.rowconfigure(0, minsize=int(96 * scale_factor), weight=0)  # Vùng A - Action Bar
+        self.main_shell.rowconfigure(0, weight=0)  # Vùng A - Action Bar
         self.main_shell.rowconfigure(1, minsize=int(540 * scale_factor), weight=1)  # Vùng B - Workspace
 
         # Ensure main_shell fills root window
@@ -84,9 +84,8 @@ class AppShell:
         self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
-        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE, height=int(96 * scale_factor))
+        self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE)
         self.shell_zone_a.grid(row=0, column=0, columnspan=2, sticky="nsew")
-        self.shell_zone_a.grid_propagate(False)
 
         # Vùng C1: Secondary Configuration Sidebar (Spans rows 1 and 2)
         self.shell_zone_c1 = ResponsiveGridBase(self.main_shell, bg=UI.BG_ELEVATED, width=sidebar_width)
