@@ -100,6 +100,28 @@ class IconManagerFrame(ResponsiveGridBase):
         return translated
 
 
+
+    def _prevent_scroll_propagation(self, event):
+        """Prevent mouse wheel events from bubbling up to the main canvas."""
+        # The event.widget provides the widget that triggered the scroll.
+        # We process the scroll manually for this widget to keep it scrolling,
+        # and then return "break" to stop propagation.
+        widget = event.widget
+        try:
+            import sys
+            if sys.platform == "win32":
+                widget.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            elif sys.platform == "darwin":
+                widget.yview_scroll(int(-1 * event.delta), "units")
+            else:
+                if event.num == 4:
+                    widget.yview_scroll(-1, "units")
+                elif event.num == 5:
+                    widget.yview_scroll(1, "units")
+        except Exception:
+            pass
+        return "break"
+
     def _setup_ui(self):
         content_frame = self.get_content_frame()
 
@@ -308,6 +330,9 @@ class IconManagerFrame(ResponsiveGridBase):
         # Scrollbar
         self.tree_scroll_y = ttk.Scrollbar(self.left_master_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.tree_scroll_y.set)
+        self.tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.tree.bind('<Button-5>', self._prevent_scroll_propagation)
 
         # Auto-hiding scrollbar implementation
         self.tree.grid(row=1, column=0, sticky="nsew")
@@ -433,6 +458,9 @@ class IconManagerFrame(ResponsiveGridBase):
 
         cat_scrollbar = ttk.Scrollbar(self.cat_left_frame, orient="vertical", command=self.cat_tree.yview)
         self.cat_tree.configure(yscrollcommand=cat_scrollbar.set)
+        self.cat_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.cat_tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.cat_tree.bind('<Button-5>', self._prevent_scroll_propagation)
         cat_scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.cat_tree.bind("<<TreeviewSelect>>", self._on_cat_tree_select)
@@ -624,6 +652,9 @@ class IconManagerFrame(ResponsiveGridBase):
         usage_scroll = ttk.Scrollbar(usage_container, orient="vertical", command=self.usage_tree.yview)
         usage_scroll.grid(row=0, column=1, sticky="ns", pady=5)
         self.usage_tree.configure(yscrollcommand=usage_scroll.set)
+        self.usage_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.usage_tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.usage_tree.bind('<Button-5>', self._prevent_scroll_propagation)
 
         # 7.2 Add Form
         add_frame = tk.Frame(usage_container, bg=UIStyle.BG_SURFACE)
@@ -747,6 +778,9 @@ class IconManagerFrame(ResponsiveGridBase):
         img_scroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.img_listbox.yview)
         img_scroll.grid(row=0, column=1, sticky="ns")
         self.img_listbox.configure(yscrollcommand=img_scroll.set)
+        self.img_listbox.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.img_listbox.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.img_listbox.bind('<Button-5>', self._prevent_scroll_propagation)
 
         self.img_listbox.bind("<ButtonRelease-1>", self._on_image_selected)
 
@@ -1006,13 +1040,15 @@ class IconManagerFrame(ResponsiveGridBase):
                 import logging
                 logging.getLogger(__name__).warning(f"Preview load failed: {e}")
 
+        if giant_icon is None:
+            giant_icon = fallback_emoji or "❓"
+
         if giant_icon and not isinstance(giant_icon, str):
             self.lbl_preview.config(image=giant_icon, text="")
             self.lbl_preview.image = giant_icon
         else:
             # Nếu file không tồn tại hoặc lỗi, fallback sang emoji
-            emoji_text = fallback_emoji or "❓"
-            self.lbl_preview.config(image='', text=emoji_text, font=(UIStyle.FONT_FAMILY_UI, 72))
+            self.lbl_preview.config(image='', text=giant_icon, font=(UIStyle.FONT_FAMILY_UI, 72))
             self.lbl_preview.image = None
 
         # Re-attach tooltip
