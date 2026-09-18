@@ -196,8 +196,6 @@ def create_icon_button(
     on_leave: Optional[Callable] = None,
     on_focus: Optional[Callable] = None,
     auto_hover_disabled: bool = True,
-    mappable_name: Optional[str] = None,
-    mappable_comp: str = 'button',
     **kwargs,
 ) -> tk.Button:
     """
@@ -259,19 +257,6 @@ def create_icon_button(
             tooltip_key='btn_delete'
         )
     """
-
-    if mappable_name:
-        try:
-            from ui.utils.component_registry import get_component_registry
-            get_component_registry().register_component(
-                name=mappable_name,
-                mod="ui",
-                comp=mappable_comp,
-                element_id=icon_name
-            )
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Failed to auto-register component {mappable_name}: {e}")
     # Auto-detect state from button state and adjust icon accordingly
     # Priority: explicit state > tkinter state > normal
 
