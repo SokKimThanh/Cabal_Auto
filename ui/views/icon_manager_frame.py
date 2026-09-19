@@ -247,12 +247,12 @@ class IconManagerFrame(ResponsiveGridBase):
         self.right_detail_frame = tk.Frame(self.paned_window, bg=UIStyle.BG_SURFACE)
         self.paned_window.add(self.right_detail_frame, weight=1)
 
-        # Bind Configure to set 50:50 ratio on first render
+        # Bind Configure to set 35:65 ratio on first render
         self._sash_configured = False
         def on_configure(event):
             if not self._sash_configured and event.width > 10:
                 self._sash_configured = True
-                sash_pos = int(event.width * 0.50)
+                sash_pos = int(event.width * 0.35)
                 self.paned_window.sashpos(0, sash_pos)
 
         self.paned_window.bind('<Configure>', on_configure)
@@ -277,30 +277,36 @@ class IconManagerFrame(ResponsiveGridBase):
         # Trạng thái 2: Content (đã chọn icon, có form & preview)
         self.content_state_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
         self.content_state_frame.grid(row=0, column=0, sticky="nsew")
-        self.content_state_frame.grid_rowconfigure(0, weight=0)  # Top container (Preview + Image Library)
-        self.content_state_frame.grid_rowconfigure(1, weight=1)  # Panel + Form sẽ co giãn
+        self.content_state_frame.grid_rowconfigure(0, weight=1)
         self.content_state_frame.grid_columnconfigure(0, weight=1)
 
-        self.top_detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
-        self.top_detail_container.grid(row=0, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_MD, 0))
+        # Initialize the Notebook
+        self.notebook = ttk.Notebook(self.content_state_frame)
+        self.notebook.grid(row=0, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        # Tab 1: Thông tin Icon (Details)
+        self.tab_details = tk.Frame(self.notebook, bg=UIStyle.BG_SURFACE)
+        self.notebook.add(self.tab_details, text=self.i18n_t("tab_icon_details", default="Thông tin Icon"))
+
+        # Setup Tab 1 layout
+        self.tab_details.grid_rowconfigure(0, weight=0)  # Form
+        self.tab_details.grid_rowconfigure(1, weight=1)  # Preview + Image Library
+        self.tab_details.grid_columnconfigure(0, weight=1)
+
+        self.detail_container = tk.Frame(self.tab_details, bg=UIStyle.BG_SURFACE)
+        self.detail_container.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_MD))
+
+        self.top_detail_container = tk.Frame(self.tab_details, bg=UIStyle.BG_SURFACE)
+        self.top_detail_container.grid(row=1, column=0, sticky="nsew")
         self.top_detail_container.grid_rowconfigure(0, weight=1)
         self.top_detail_container.grid_columnconfigure(0, weight=1)  # Preview
         self.top_detail_container.grid_columnconfigure(1, weight=1)  # Image Library
 
         self.preview_component = IconPreviewComponent(self.top_detail_container, app=self.app, icon_helper=self.icon_helper)
-        self.preview_component.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
+        self.preview_component.grid(row=0, column=0, sticky="nsew", padx=(0, UIStyle.SPACE_SM))
 
         self.img_lib_container = tk.Frame(self.top_detail_container, bg=UIStyle.BG_SURFACE)
-        self.img_lib_container.grid(row=0, column=1, sticky="nsew", padx=(UIStyle.SPACE_MD, 0))
-
-        # Bottom container for Detail Form and Usages
-        self.bottom_detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
-        self.bottom_detail_container.grid(row=1, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
-        self.bottom_detail_container.grid_rowconfigure(0, weight=1)
-        self.bottom_detail_container.grid_columnconfigure(0, weight=1)  # Detail Form
-
-        self.detail_container = tk.Frame(self.bottom_detail_container, bg=UIStyle.BG_SURFACE)
-        self.detail_container.grid(row=0, column=0, sticky="nsew")
+        self.img_lib_container.grid(row=0, column=1, sticky="nsew", padx=(UIStyle.SPACE_SM, 0))
 
         self.image_library = ImageLibraryComponent(
             self.img_lib_container,
@@ -311,7 +317,14 @@ class IconManagerFrame(ResponsiveGridBase):
         )
         self.image_library.pack(fill="both", expand=True)
 
+        # Tab 2: Nơi dùng (Usages)
+        self.tab_usages = tk.Frame(self.notebook, bg=UIStyle.BG_SURFACE)
+        self.notebook.add(self.tab_usages, text=self.i18n_t("tab_icon_usages", default="Nơi dùng"))
+
         self._build_detail_form()
+
+        # Build Usages Panel directly in the usages tab
+        self._build_usages_panel(self.tab_usages)
 
         # Mặc định hiện empty state
         self.empty_state_frame.tkraise()
@@ -349,18 +362,13 @@ class IconManagerFrame(ResponsiveGridBase):
         self.icon_form = IconFormComponent(self.detail_container, app=self.app, on_name_changed_callback=self._on_form_name_changed)
         self.icon_form.pack(fill="x", expand=False)
 
-        # 7. Usages Manager Panel
-        self._build_usages_panel(self.detail_container)
-
-
-
     def _build_usages_panel(self, parent_frame):
-        usage_container = tk.LabelFrame(parent_frame, text=self.i18n_t("lbl_usage_manager", default="Quản lý Nơi Dùng (Usages)"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY)
-        usage_container.pack(fill="x", expand=False, padx=5, pady=10)
+        usage_container = tk.Frame(parent_frame, bg=UIStyle.BG_SURFACE)
+        usage_container.pack(fill="both", expand=True, padx=5, pady=10)
 
         usage_container.grid_columnconfigure(0, weight=1)
         usage_container.grid_rowconfigure(0, weight=1)  # Treeview
-        usage_container.grid_rowconfigure(1, weight=0)  # Add form
+        usage_container.grid_rowconfigure(1, weight=1)  # Add form
 
         # 7.1 Treeview for Usages
         self.usage_tree = ttk.Treeview(
@@ -395,7 +403,33 @@ class IconManagerFrame(ResponsiveGridBase):
         add_frame.grid_rowconfigure(1, weight=1)
         add_frame.grid_columnconfigure(0, weight=1)
 
-        tk.Label(add_frame, text=self.i18n_t("lbl_available_elements", default="Chọn thành phần cần gắn (Available Elements):"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="w", pady=(0, 5))
+        header_frame = tk.Frame(add_frame, bg=UIStyle.BG_SURFACE)
+        header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 5))
+        header_frame.grid_columnconfigure(1, weight=1)
+
+        tk.Label(header_frame, text=self.i18n_t("lbl_available_elements", default="Chọn thành phần cần gắn (Available Elements):"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="w")
+
+        # Search box for Available Elements
+        self.var_element_search = tk.StringVar()
+        self.entry_element_search = ttk.Entry(header_frame, textvariable=self.var_element_search, width=30)
+        self.entry_element_search.grid(row=0, column=1, sticky="e", padx=(10, 0))
+        self.entry_element_search.insert(0, "Search Element ID...")
+
+        def on_search_focus_in(event):
+            if self.entry_element_search.get() == "Search Element ID...":
+                self.entry_element_search.delete(0, tk.END)
+
+        def on_search_focus_out(event):
+            if not self.entry_element_search.get():
+                self.entry_element_search.insert(0, "Search Element ID...")
+
+        self.entry_element_search.bind("<FocusIn>", on_search_focus_in)
+        self.entry_element_search.bind("<FocusOut>", on_search_focus_out)
+        self.var_element_search.trace_add("write", self._on_element_search_changed)
+
+        # In-memory cache for available elements tree
+        self._available_elements_cache = {}
+        self._element_search_debounce_after_id = None
 
         # Treeview for available elements
         self.available_elements_tree = ttk.Treeview(
@@ -443,77 +477,128 @@ class IconManagerFrame(ResponsiveGridBase):
         self.btn_del_usage = tk.Button(btn_frame, text="Gỡ (Unmap)", command=self._on_del_usage, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
         self.btn_del_usage.pack(side="left", padx=5)
 
-    def _load_all_usage_ids(self):
-        try:
-            if not hasattr(self, 'available_elements_tree'):
-                return
+    def _on_element_search_changed(self, *args):
+        if self._element_search_debounce_after_id:
+            self.after_cancel(self._element_search_debounce_after_id)
 
-            self.available_elements_tree.delete(*self.available_elements_tree.get_children())
+        # Keep searching responsive with debounce
+        self._element_search_debounce_after_id = self.after(300, self._apply_element_filter)
 
-            # 1. Query db_usages
-            cursor = self.icon_service.conn.cursor()
-            cursor.execute("SELECT DISTINCT module_name, ui_component_type, ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
-            db_rows = cursor.fetchall()
+    def _apply_element_filter(self):
+        if not hasattr(self, 'available_elements_tree') or not self._available_elements_cache:
+            return
 
-            # 2. Get descriptors from Registry + CommonUI enum
-            registry_items = []
-            try:
-                from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor, CommonUI
-                registry_items = UIElementRegistry().get_all()
+        search_term = self.var_element_search.get().lower().strip()
+        if search_term == "search element id...":
+            search_term = ""
 
-                # Pre-populate with CommonUI items
-                for ui_enum in CommonUI:
-                    val = ui_enum.value
-                    if not any(d.element_id == val for d in registry_items):
-                        registry_items.append(UIElementDescriptor(element_id=val, module="Common", screen="Global", element_type="button"))
-            except ImportError:
-                pass
+        # Clear current tree
+        self.available_elements_tree.delete(*self.available_elements_tree.get_children())
 
-            # Build hierarchical structure dict[module][screen] = list of dicts
-            tree_data = {}
-            seen_elements = set()
+        # Render from cache
+        for mod, screens in sorted(self._available_elements_cache.items()):
+            mod_matches = search_term in mod.lower()
+            mod_node = None
 
-            for desc in registry_items:
-                mod = desc.module or "Unknown"
-                screen = desc.screen or "Unknown"
-                if mod not in tree_data:
-                    tree_data[mod] = {}
-                if screen not in tree_data[mod]:
-                    tree_data[mod][screen] = []
+            for screen, elements in sorted(screens.items()):
+                screen_matches = search_term in screen.lower()
+                filtered_elements = []
 
-                el_dict = {"id": desc.element_id, "comp": desc.element_type, "mod": mod}
-                tree_data[mod][screen].append(el_dict)
-                seen_elements.add(desc.element_id)
+                for el in elements:
+                    if search_term in el['id'].lower() or mod_matches or screen_matches:
+                        filtered_elements.append(el)
 
-            # Merge DB rows
-            for r in db_rows:
-                mod = r[0] or "Unknown"
-                comp = r[1] or "widget"
-                el_id = r[2]
+                if filtered_elements:
+                    if not mod_node:
+                        # Insert module node only if there are matching children
+                        is_open = True if search_term else False
+                        mod_node = self.available_elements_tree.insert("", "end", text=f"📁 {mod}", open=is_open)
 
-                if el_id in seen_elements:
-                    continue
-
-                screen = "Database"
-                if mod not in tree_data:
-                    tree_data[mod] = {}
-                if screen not in tree_data[mod]:
-                    tree_data[mod][screen] = []
-
-                tree_data[mod][screen].append({"id": el_id, "comp": comp, "mod": mod})
-                seen_elements.add(el_id)
-
-            # Populate Tree
-            for mod, screens in sorted(tree_data.items()):
-                mod_node = self.available_elements_tree.insert("", "end", text=f"📁 {mod}", open=True)
-                for screen, elements in sorted(screens.items()):
-                    screen_node = self.available_elements_tree.insert(mod_node, "end", text=f"📄 {screen}", open=True)
-                    for el in sorted(elements, key=lambda x: x["id"]):
+                    is_open_screen = True if search_term else False
+                    screen_node = self.available_elements_tree.insert(mod_node, "end", text=f"📄 {screen}", open=is_open_screen)
+                    for el in sorted(filtered_elements, key=lambda x: x["id"]):
                         self.available_elements_tree.insert(screen_node, "end", text=f"  {el['id']}", values=(el['id'], el['mod'], el['comp'], el['id']))
 
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Failed to load usage IDs for tree: {e}")
+
+    def _load_all_usage_ids(self):
+        import threading
+        def fetch_data():
+            try:
+                # 1. Query db_usages
+                # Use a new connection for thread safety
+                import sqlite3
+                from database import get_db
+                conn = sqlite3.connect(str(get_db().DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute("SELECT DISTINCT module_name, ui_component_type, ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
+                db_rows = cursor.fetchall()
+                conn.close()
+
+                # 2. Get descriptors from Registry + CommonUI enum
+                registry_items = []
+                try:
+                    from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor, CommonUI
+                    registry_items = UIElementRegistry().get_all()
+
+                    # Pre-populate with CommonUI items
+                    for ui_enum in CommonUI:
+                        val = ui_enum.value
+                        if not any(d.element_id == val for d in registry_items):
+                            registry_items.append(UIElementDescriptor(element_id=val, module="Common", screen="Global", element_type="button"))
+                except ImportError:
+                    pass
+
+                # Build hierarchical structure dict[module][screen] = list of dicts
+                tree_data = {}
+                seen_elements = set()
+
+                for desc in registry_items:
+                    mod = desc.module or "Unknown"
+                    screen = desc.screen or "Unknown"
+                    if mod not in tree_data:
+                        tree_data[mod] = {}
+                    if screen not in tree_data[mod]:
+                        tree_data[mod][screen] = []
+
+                    el_dict = {"id": desc.element_id, "comp": desc.element_type, "mod": mod}
+                    tree_data[mod][screen].append(el_dict)
+                    seen_elements.add(desc.element_id)
+
+                # Merge DB rows
+                for r in db_rows:
+                    mod = r[0] or "Unknown"
+                    comp = r[1] or "widget"
+                    el_id = r[2]
+
+                    if el_id in seen_elements:
+                        continue
+
+                    screen = "Database"
+                    if mod not in tree_data:
+                        tree_data[mod] = {}
+                    if screen not in tree_data[mod]:
+                        tree_data[mod][screen] = []
+
+                    tree_data[mod][screen].append({"id": el_id, "comp": comp, "mod": mod})
+                    seen_elements.add(el_id)
+
+                # Update UI thread
+                if self.winfo_exists():
+                    self.after(0, lambda: self._update_usage_ids_ui(tree_data))
+
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Failed to load usage IDs for tree: {e}")
+
+        # Run fetch in background to prevent freezing
+        threading.Thread(target=fetch_data, daemon=True).start()
+
+    def _update_usage_ids_ui(self, tree_data):
+        if not self.winfo_exists() or not hasattr(self, 'available_elements_tree'):
+            return
+
+        self._available_elements_cache = tree_data
+        self._apply_element_filter()
 
     def _on_available_element_select(self, event=None):
         selection = self.available_elements_tree.selection()
