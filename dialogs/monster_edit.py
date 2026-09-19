@@ -13,6 +13,7 @@ import time
 import re
 from pathlib import Path
 from typing import Optional, Dict, Any, Callable, List, TYPE_CHECKING
+from lib.events.ui_element_registry import CommonUI
 
 if TYPE_CHECKING:
     from ui.windows.monster_manager_win import MonsterManagerWin
@@ -95,6 +96,8 @@ image_handler = ImageHandler()
 
 
 class MonsterEditDialog(tk.Toplevel):
+    MODULE_NAME = "monster_edit"
+    SCREEN_NAME = "main"
     """
     Modal dialog for creating or editing a monster's details and templates.
     Contains clean tabs for Monster Info, Template Manager, and Column Settings.
@@ -1021,6 +1024,7 @@ class MonsterEditDialog(tk.Toplevel):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_delete_template",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_DELETE
         )
         self.btn_delete_template.pack(side="left", padx=2)
 
@@ -1034,6 +1038,7 @@ class MonsterEditDialog(tk.Toplevel):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_edit_mode_template",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_EDIT
         )
         self.btn_edit_template.pack(side="left", padx=2)
 
@@ -1095,6 +1100,7 @@ class MonsterEditDialog(tk.Toplevel):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_capture",
             tooltip_ns="monster_editor",
+            element_id="capture_btn"
         )
         self.capture_button.pack(side="left", padx=2)
 
@@ -1105,6 +1111,7 @@ class MonsterEditDialog(tk.Toplevel):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_open_folder",
             tooltip_ns="monster_editor",
+            element_id="open_folder_btn"
         )
         self.open_folder_button.pack(side="left", padx=2)
 
@@ -1118,6 +1125,7 @@ class MonsterEditDialog(tk.Toplevel):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_test",
             tooltip_ns="monster_editor",
+            element_id="test_template_btn"
         )
         self.test_template_button.pack(side="left", padx=2)
 
@@ -1233,6 +1241,7 @@ class MonsterEditDialog(tk.Toplevel):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_save",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_SAVE
         )
         self.save_btn.pack(side="right", padx=5)
 
@@ -1243,6 +1252,7 @@ class MonsterEditDialog(tk.Toplevel):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_cancel",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_CANCEL
         )
         self.cancel_btn.pack(side="right", padx=5)
 
