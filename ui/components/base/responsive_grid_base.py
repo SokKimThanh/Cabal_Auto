@@ -84,7 +84,8 @@ class ResponsiveGridBase(tk.Frame):
             if event.height > req_height:
                 self.canvas.itemconfig(self.content_window, height=event.height)
             else:
-                self.canvas.itemconfig(self.content_window, height='')
+                # height=0 removes the constraint in Tkinter (it uses natural height)
+                self.canvas.itemconfig(self.content_window, height=0)
 
             if self._resize_timer:
                 self.after_cancel(self._resize_timer)
