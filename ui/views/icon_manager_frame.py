@@ -1,9 +1,7 @@
 import os
-import tkinter as tk
-import threading
-import sqlite3
-import re
 from pathlib import Path
+import tkinter as tk
+import sqlite3
 from tkinter import ttk, messagebox
 
 from ui.components.empty_state import EmptyState
@@ -20,7 +18,6 @@ from ui.components.icon_form_component import IconFormComponent
 from database import get_db
 
 from ui.helpers.tooltip import attach_i18n_tooltip
-from lib.i18n import t
 from ui.controllers.icon_manager_controller import IconManagerController
 
 
@@ -280,15 +277,15 @@ class IconManagerFrame(ResponsiveGridBase):
         # Trạng thái 2: Content (đã chọn icon, có form & preview)
         self.content_state_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
         self.content_state_frame.grid(row=0, column=0, sticky="nsew")
-        self.content_state_frame.grid_rowconfigure(0, weight=0) # Top container (Preview + Image Library)
-        self.content_state_frame.grid_rowconfigure(1, weight=1) # Panel + Form sẽ co giãn
+        self.content_state_frame.grid_rowconfigure(0, weight=0)  # Top container (Preview + Image Library)
+        self.content_state_frame.grid_rowconfigure(1, weight=1)  # Panel + Form sẽ co giãn
         self.content_state_frame.grid_columnconfigure(0, weight=1)
 
         self.top_detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
         self.top_detail_container.grid(row=0, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_MD, 0))
         self.top_detail_container.grid_rowconfigure(0, weight=1)
-        self.top_detail_container.grid_columnconfigure(0, weight=1) # Preview
-        self.top_detail_container.grid_columnconfigure(1, weight=1) # Image Library
+        self.top_detail_container.grid_columnconfigure(0, weight=1)  # Preview
+        self.top_detail_container.grid_columnconfigure(1, weight=1)  # Image Library
 
         self.preview_component = IconPreviewComponent(self.top_detail_container, app=self.app, icon_helper=self.icon_helper)
         self.preview_component.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
@@ -300,7 +297,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.bottom_detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
         self.bottom_detail_container.grid(row=1, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
         self.bottom_detail_container.grid_rowconfigure(0, weight=1)
-        self.bottom_detail_container.grid_columnconfigure(0, weight=1) # Detail Form
+        self.bottom_detail_container.grid_columnconfigure(0, weight=1)  # Detail Form
 
         self.detail_container = tk.Frame(self.bottom_detail_container, bg=UIStyle.BG_SURFACE)
         self.detail_container.grid(row=0, column=0, sticky="nsew")
@@ -362,8 +359,8 @@ class IconManagerFrame(ResponsiveGridBase):
         usage_container.pack(fill="x", expand=False, padx=5, pady=10)
 
         usage_container.grid_columnconfigure(0, weight=1)
-        usage_container.grid_rowconfigure(0, weight=1) # Treeview
-        usage_container.grid_rowconfigure(1, weight=0) # Add form
+        usage_container.grid_rowconfigure(0, weight=1)  # Treeview
+        usage_container.grid_rowconfigure(1, weight=0)  # Add form
 
         # 7.1 Treeview for Usages
         self.usage_tree = ttk.Treeview(
@@ -394,115 +391,147 @@ class IconManagerFrame(ResponsiveGridBase):
 
         # 7.2 Add Form
         add_frame = tk.Frame(usage_container, bg=UIStyle.BG_SURFACE)
-        add_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+        add_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+        add_frame.grid_rowconfigure(1, weight=1)
+        add_frame.grid_columnconfigure(0, weight=1)
 
-        # 1. Search Box
-        tk.Label(add_frame, text="Tìm kiếm / Search:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
-        self.var_usage_search = tk.StringVar()
-        self.combo_usage_search = ttk.Combobox(add_frame, textvariable=self.var_usage_search, width=25)
-        self.combo_usage_search.pack(side="left", padx=(0,10))
+        tk.Label(add_frame, text=self.i18n_t("lbl_available_elements", default="Chọn thành phần cần gắn (Available Elements):"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="w", pady=(0, 5))
 
-        # 2. Read-only Mod, Comp, ID
-        tk.Label(add_frame, text="Mod:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
-        self.var_usage_mod = tk.StringVar(value="ui")
-        self.entry_usage_mod = ttk.Entry(add_frame, textvariable=self.var_usage_mod, width=10, state="readonly")
-        self.entry_usage_mod.pack(side="left", padx=(0,5))
+        # Treeview for available elements
+        self.available_elements_tree = ttk.Treeview(
+            add_frame,
+            columns=("id", "module", "component", "element"),
+            show="tree headings",
+            selectmode="browse",
+            height=4
+        )
+        self.available_elements_tree.heading("  #0", text="Mục lục (Module/Screen)", anchor="w")
+        self.available_elements_tree.heading("id", text="")
+        self.available_elements_tree.heading("module", text="Module")
+        self.available_elements_tree.heading("component", text="Type")
+        self.available_elements_tree.heading("element", text="Element ID")
 
-        tk.Label(add_frame, text="Comp:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
-        self.var_usage_comp = tk.StringVar(value="button")
-        self.entry_usage_comp = ttk.Entry(add_frame, textvariable=self.var_usage_comp, width=10, state="readonly")
-        self.entry_usage_comp.pack(side="left", padx=(0,5))
+        self.available_elements_tree.column("  #0", width=150, stretch=tk.NO)
+        self.available_elements_tree.column("id", width=0, stretch=tk.NO)
+        self.available_elements_tree.column("module", width=80, stretch=tk.NO)
+        self.available_elements_tree.column("component", width=80, stretch=tk.NO)
+        self.available_elements_tree.column("element", width=120, stretch=tk.YES)
 
-        tk.Label(add_frame, text="ID:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
-        self.var_usage_element = tk.StringVar()
-        self.entry_usage_element = ttk.Entry(add_frame, textvariable=self.var_usage_element, width=20, state="readonly")
-        self.entry_usage_element.pack(side="left", padx=(0,10))
+        self.available_elements_tree.grid(row=1, column=0, sticky="nsew")
 
-        # Setup auto-complete and selection bindings for the search box
-        self.combo_usage_search.bind('<KeyRelease>', self._autocomplete_usage_search)
-        self.combo_usage_search.bind('<<ComboboxSelected>>', self._on_usage_search_select)
-        self.combo_usage_search.bind('<FocusOut>', self._on_usage_search_select)
-        self.combo_usage_search.bind('<Return>', self._on_usage_search_select)
-        self._available_usage_ids = []
+        av_scroll = ttk.Scrollbar(add_frame, orient="vertical", command=self.available_elements_tree.yview)
+        av_scroll.grid(row=1, column=1, sticky="ns")
+        self.available_elements_tree.configure(yscrollcommand=av_scroll.set)
 
-        self.btn_add_usage = tk.Button(add_frame, text="Gắn (Map)", command=self._on_add_usage, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
-        self.btn_add_usage.pack(side="left", padx=2)
+        self.available_elements_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.available_elements_tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.available_elements_tree.bind('<Button-5>', self._prevent_scroll_propagation)
+        self.available_elements_tree.bind('<<TreeviewSelect>>', self._on_available_element_select)
 
-        self.btn_del_usage = tk.Button(add_frame, text="Gỡ (Unmap)", command=self._on_del_usage, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
-        self.btn_del_usage.pack(side="left", padx=2)
+        # Action Buttons
+        btn_frame = tk.Frame(add_frame, bg=UIStyle.BG_SURFACE)
+        btn_frame.grid(row=2, column=0, columnspan=2, sticky="w", pady=(5, 0))
+
+        # Used for storing selection safely
+        self.var_usage_mod = tk.StringVar(value="")
+        self.var_usage_comp = tk.StringVar(value="")
+        self.var_usage_element = tk.StringVar(value="")
+
+        self.btn_add_usage = tk.Button(btn_frame, text="Gắn (Map)", command=self._on_add_usage, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_add_usage.pack(side="left", padx=(0, 5))
+
+        self.btn_del_usage = tk.Button(btn_frame, text="Gỡ (Unmap)", command=self._on_del_usage, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_del_usage.pack(side="left", padx=5)
 
     def _load_all_usage_ids(self):
         try:
-            # Query all distinct ui_element_id from db
+            if not hasattr(self, 'available_elements_tree'):
+                return
+
+            self.available_elements_tree.delete(*self.available_elements_tree.get_children())
+
+            # 1. Query db_usages
             cursor = self.icon_service.conn.cursor()
-            cursor.execute("SELECT DISTINCT ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
-            rows = cursor.fetchall()
-            db_ids = [r[0] for r in rows]
+            cursor.execute("SELECT DISTINCT module_name, ui_component_type, ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
+            db_rows = cursor.fetchall()
 
-            # Get descriptors from Registry
+            # 2. Get descriptors from Registry + CommonUI enum
+            registry_items = []
             try:
-                from lib.events.ui_element_registry import UIElementRegistry
+                from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor, CommonUI
                 registry_items = UIElementRegistry().get_all()
+
+                # Pre-populate with CommonUI items
+                for ui_enum in CommonUI:
+                    val = ui_enum.value
+                    if not any(d.element_id == val for d in registry_items):
+                        registry_items.append(UIElementDescriptor(element_id=val, module="Common", screen="Global", element_type="button"))
             except ImportError:
-                registry_items = []
-
-            registry_display_strings = []
-            registry_element_ids = set()
-
-            for desc in registry_items:
-                display_str = f"{desc.module}/{desc.screen}/{desc.element_id}"
-                registry_display_strings.append(display_str)
-                registry_element_ids.add(desc.element_id)
-
-            # Filter out db_ids that are already covered by Registry
-            filtered_db_ids = [db_id for db_id in db_ids if db_id not in registry_element_ids]
-
-            # Merge and sort
-            merged_ids = set(filtered_db_ids + registry_display_strings)
-            self._available_usage_ids = sorted(list(merged_ids))
-
-            if hasattr(self, 'combo_usage_search'):
-                self.combo_usage_search['values'] = self._available_usage_ids
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Failed to load usage IDs: {e}")
-
-    def _autocomplete_usage_search(self, event):
-        if event.keysym not in ['BackSpace', 'Delete', 'Return', 'Tab'] and not event.char:
-            return
-
-        typed = self.combo_usage_search.get()
-        if typed == '':
-            self.combo_usage_search['values'] = self._available_usage_ids
-        else:
-            hits = [item for item in self._available_usage_ids if typed.lower() in item.lower()]
-            self.combo_usage_search['values'] = hits
-
-        # Open dropdown list for autocomplete effect
-        if self.combo_usage_search['values']:
-            try:
-                # Open dropdown without selecting an item (which <Down> does and ruins text)
-                self.combo_usage_search.tk.call('ttk::combobox::Post', self.combo_usage_search)
-            except Exception:
                 pass
 
-    def _on_usage_search_select(self, event=None):
-        selected_text = self.var_usage_search.get().strip()
-        if not selected_text:
+            # Build hierarchical structure dict[module][screen] = list of dicts
+            tree_data = {}
+            seen_elements = set()
+
+            for desc in registry_items:
+                mod = desc.module or "Unknown"
+                screen = desc.screen or "Unknown"
+                if mod not in tree_data:
+                    tree_data[mod] = {}
+                if screen not in tree_data[mod]:
+                    tree_data[mod][screen] = []
+
+                el_dict = {"id": desc.element_id, "comp": desc.element_type, "mod": mod}
+                tree_data[mod][screen].append(el_dict)
+                seen_elements.add(desc.element_id)
+
+            # Merge DB rows
+            for r in db_rows:
+                mod = r[0] or "Unknown"
+                comp = r[1] or "widget"
+                el_id = r[2]
+
+                if el_id in seen_elements:
+                    continue
+
+                screen = "Database"
+                if mod not in tree_data:
+                    tree_data[mod] = {}
+                if screen not in tree_data[mod]:
+                    tree_data[mod][screen] = []
+
+                tree_data[mod][screen].append({"id": el_id, "comp": comp, "mod": mod})
+                seen_elements.add(el_id)
+
+            # Populate Tree
+            for mod, screens in sorted(tree_data.items()):
+                mod_node = self.available_elements_tree.insert("", "end", text=f"📁 {mod}", open=True)
+                for screen, elements in sorted(screens.items()):
+                    screen_node = self.available_elements_tree.insert(mod_node, "end", text=f"📄 {screen}", open=True)
+                    for el in sorted(elements, key=lambda x: x["id"]):
+                        self.available_elements_tree.insert(screen_node, "end", text=f"  {el['id']}", values=(el['id'], el['mod'], el['comp'], el['id']))
+
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to load usage IDs for tree: {e}")
+
+    def _on_available_element_select(self, event=None):
+        selection = self.available_elements_tree.selection()
+        if not selection:
             return
 
-        parts = selected_text.split("/")
+        item = self.available_elements_tree.item(selection[0])
+        values = item.get("values")
 
-        # Determine how to auto-fill based on parts (e.g., 'ui/settings/btn_save' or just 'btn_save')
-        if len(parts) >= 3:
-            self.var_usage_mod.set(parts[0])
-            self.var_usage_comp.set(parts[1])
-            self.var_usage_element.set(parts[2])
-        elif len(parts) == 2:
-            self.var_usage_mod.set(parts[0])
-            self.var_usage_element.set(parts[1])
+        # It's a leaf node if it has values
+        if values and len(values) >= 4:
+            self.var_usage_element.set(values[3])  # element_id
+            self.var_usage_mod.set(values[1])      # mod
+            self.var_usage_comp.set(values[2])     # comp
         else:
-            self.var_usage_element.set(selected_text)
+            self.var_usage_element.set("")
+            self.var_usage_mod.set("")
+            self.var_usage_comp.set("")
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
@@ -534,15 +563,14 @@ class IconManagerFrame(ResponsiveGridBase):
 
         if result.success:
             self.var_usage_element.set("")
-            self.var_usage_search.set("")
             self._load_usages_for_selected(icon_key)
 
-            search_text = f"{mod}/{comp}/{elem}" if mod and comp else elem
-            # If the user typed something completely new, add it to autocomplete list
-            if search_text not in self._available_usage_ids:
-                self._available_usage_ids.append(search_text)
-                self._available_usage_ids.sort()
-                self.combo_usage_search['values'] = self._available_usage_ids
+            # Refresh available elements just in case it's a new db entry
+            self._load_all_usage_ids()
+
+            # Update main tree usages count
+            if hasattr(self, 'tree_component'):
+                self.after(100, self.tree_component.request_load_tree_data)
 
             from tkinter import messagebox
             messagebox.showinfo("Thành công", f"Đã gán Element ID '{elem}' cho icon '{icon_key}'.")
@@ -564,6 +592,10 @@ class IconManagerFrame(ResponsiveGridBase):
             result = self.controller.delete_usage(icon_key, usage_id)
             if result.success:
                 self._load_usages_for_selected(icon_key)
+
+                # Update main tree usages count
+                if hasattr(self, 'tree_component'):
+                    self.after(100, self.tree_component.request_load_tree_data)
             else:
                 messagebox.showerror("Error", result.message)
 
@@ -623,7 +655,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _handle_image_selected(self, selected_file, is_new_import=False):
         if self._current_state not in ("ADD", "EDIT"):
-            return # Only allow selection in edit mode
+            return  # Only allow selection in edit mode
 
         if is_new_import:
             self._just_imported_file = selected_file
@@ -678,7 +710,6 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_browse_clicked(self):
         from tkinter import filedialog, messagebox
-        from pathlib import Path
         from lib.managers.icon_file_manager import get_icons_directory, import_icon_file
 
         file_path = filedialog.askopenfilename(
@@ -709,7 +740,7 @@ class IconManagerFrame(ResponsiveGridBase):
                             default=f"File ảnh '{final_filename}' đã tồn tại trong hệ thống.\nBạn có muốn thay thế file cũ bằng file mới này không?"
                         )
                         if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo ghi đè"), msg_overwrite):
-                            return # Huỷ thao tác
+                            return  # Huỷ thao tác
                         overwrite = True
                     else:
                         # Trường hợp 1.1: File chưa tồn tại trong assets
@@ -718,7 +749,7 @@ class IconManagerFrame(ResponsiveGridBase):
                             default="Ảnh đang nằm ngoài thư mục assets. Bạn có muốn copy ảnh vào assets không?"
                         )
                         if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), msg):
-                            return # Huỷ thao tác
+                            return  # Huỷ thao tác
 
                     # Tiến hành copy/replace vào assets
                     final_filename = import_icon_file(file_path, overwrite=overwrite)
@@ -726,7 +757,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     # Luồng 2: Ảnh trong assets
                     # Trường hợp 2.1: Chọn lại đúng file đang sử dụng
                     if final_filename == current_filename:
-                        return # Không làm gì cả
+                        return  # Không làm gì cả
                     # Trường hợp 2.2: Chọn file khác, không cần hỏi copy
 
                 # 3. Kiểm tra sử dụng chung ảnh (Duplication Check)
@@ -747,7 +778,7 @@ class IconManagerFrame(ResponsiveGridBase):
                         default=f"Ảnh này hiện đang được sử dụng bởi các Icon Key khác: {usage_keys}.\nBạn có muốn tiếp tục sử dụng chung ảnh này không?"
                     )
                     if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo trùng lặp"), msg_dup):
-                        return # Huỷ thao tác
+                        return  # Huỷ thao tác
 
                 # Update filepath entry
                 self.icon_form.var_filepath.set(final_filename)
@@ -999,14 +1030,16 @@ class IconManagerFrame(ResponsiveGridBase):
         self.btn_sync.config(state='disabled', text=self.i18n_t("btn_syncing", default="Đang đồng bộ..."))
 
         def on_complete(count):
-            if not self.winfo_exists(): return
+            if not self.winfo_exists():
+                return
             try:
                 self.after(0, lambda: self._on_sync_complete(count, show_message))
             except RuntimeError:
                 pass
 
         def on_error(err_msg):
-            if not self.winfo_exists(): return
+            if not self.winfo_exists():
+                return
             try:
                 self.after(0, lambda: self._on_sync_error(err_msg, show_message))
             except RuntimeError:
@@ -1079,7 +1112,7 @@ class IconManagerFrame(ResponsiveGridBase):
         if not result.success:
             messagebox.showerror("Lỗi", result.message)
             if hasattr(self, 'image_library') and self.image_library:
-                self.image_library.reload() # refresh list if there was a rollback
+                self.image_library.reload()  # refresh list if there was a rollback
             return
 
         # Nếu đang ở trạng thái ADD, xóa dòng dummy khỏi tree trước khi reload
@@ -1164,10 +1197,11 @@ class IconManagerFrame(ResponsiveGridBase):
             self.after(0, self._populate_category_combo)
             self.after(0, self.tree_component.request_load_tree_data)
         except RuntimeError:
-            pass # main thread not in main loop during early exit
+            pass  # main thread not in main loop during early exit
 
     def _populate_category_combo(self):
-        if not hasattr(self, "tree_model"): return
+        if not hasattr(self, "tree_model"):
+            return
         categories = list(self.tree_model.category_cache.values())
         categories.sort(key=lambda x: x.get("name", "").lower())
 
@@ -1228,5 +1262,4 @@ class IconManagerFrame(ResponsiveGridBase):
             self.empty_state_frame.tkraise()
 
         self.set_form_state("VIEW")
-
 
