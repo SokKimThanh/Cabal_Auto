@@ -142,50 +142,10 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.page_size_box.pack(side="left", padx=(0, 5))
         self.page_size_box.bind("<<ComboboxSelected>>", lambda e: self._on_filter_changed())
 
-        # Treeview Area
-        table_frame = tk.Frame(container, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True)
-
-        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
-        self.tree_scroll_y.pack(side="right", fill="y")
-
-        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
-        self.tree_scroll_x.pack(side="bottom", fill="x")
-
-        self.columns = ("ID", "Name", "Type", "Class", "Alias")
-        self.tree = ttk.Treeview(
-            table_frame,
-            columns=self.columns,
-            show="headings",
-            selectmode="browse",
-
-            yscrollcommand=self.tree_scroll_y.set,
-            xscrollcommand=self.tree_scroll_x.set
-        )
-
-        self.tree_scroll_y.config(command=self.tree.yview)
-        self.tree_scroll_x.config(command=self.tree.xview)
-
-        # 5 core columns for DB skills: ID, Name, Type, Class, Alias
-        self.tree.heading("ID", text=self.app._t("col_skill_id", default="ID"))
-        self.tree.column("ID", width=70, anchor="center")
-
-        self.tree.heading("Name", text=self.app._t("col_skill_name", default="Name"))
-        self.tree.column("Name", width=180, anchor="w")
-
-        self.tree.heading("Type", text=self.app._t("col_skill_type", default="Type"))
-        self.tree.column("Type", width=100, anchor="center")
-
-        self.tree.heading("Class", text=self.app._t("col_skill_class", default="Class ID"))
-        self.tree.column("Class", width=80, anchor="center")
-
-        self.tree.heading("Alias", text=self.app._t("col_skill_alias", default="Alias"))
-        self.tree.column("Alias", width=120, anchor="w")
-
-        self.tree.pack(fill="both", expand=True)
-
-        # Bottom Bar for Actions
-        bottom_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE, )
+        # -------------------------------------------------------------
+        # Bottom Bar for Actions (Packed FIRST from Bottom)
+        # -------------------------------------------------------------
+        bottom_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
         add_btn = tk.Button(
@@ -243,6 +203,50 @@ class SkillManagerFrame(ResponsiveGridBase):
             relief="flat"
         )
         self.prev_btn.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
+
+        # -------------------------------------------------------------
+        # Treeview Area (Packed LAST, expands in the middle)
+        # -------------------------------------------------------------
+        table_frame = tk.Frame(container, bg=UIStyle.BG_BASE)
+        table_frame.pack(side="top", fill="both", expand=True)
+
+        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
+        self.tree_scroll_y.pack(side="right", fill="y")
+
+        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
+        self.tree_scroll_x.pack(side="bottom", fill="x")
+
+        self.columns = ("ID", "Name", "Type", "Class", "Alias")
+        self.tree = ttk.Treeview(
+            table_frame,
+            columns=self.columns,
+            show="headings",
+            selectmode="browse",
+
+            yscrollcommand=self.tree_scroll_y.set,
+            xscrollcommand=self.tree_scroll_x.set
+        )
+
+        self.tree_scroll_y.config(command=self.tree.yview)
+        self.tree_scroll_x.config(command=self.tree.xview)
+
+        # 5 core columns for DB skills: ID, Name, Type, Class, Alias
+        self.tree.heading("ID", text=self.app._t("col_skill_id", default="ID"))
+        self.tree.column("ID", width=70, anchor="center")
+
+        self.tree.heading("Name", text=self.app._t("col_skill_name", default="Name"))
+        self.tree.column("Name", width=180, anchor="w")
+
+        self.tree.heading("Type", text=self.app._t("col_skill_type", default="Type"))
+        self.tree.column("Type", width=100, anchor="center")
+
+        self.tree.heading("Class", text=self.app._t("col_skill_class", default="Class ID"))
+        self.tree.column("Class", width=80, anchor="center")
+
+        self.tree.heading("Alias", text=self.app._t("col_skill_alias", default="Alias"))
+        self.tree.column("Alias", width=120, anchor="w")
+
+        self.tree.pack(fill="both", expand=True)
 
     def _build_types_panel(self, container):
         # 50/50 Layout

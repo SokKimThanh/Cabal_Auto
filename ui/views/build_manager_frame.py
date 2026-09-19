@@ -161,40 +161,9 @@ class BuildManagerFrame(ResponsiveGridBase):
 
         self._create_search_bar(content)
 
-        # Table
-        table_frame = tk.Frame(content, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
-
-        table_frame.grid_rowconfigure(0, weight=1)
-        table_frame.grid_columnconfigure(0, weight=1)
-
-        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
-        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
-
-        columns = ("ID", "Class Name", "Author", "Description", "Upvotes")
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", style="Custom.Treeview",
-                                 yscrollcommand=self._autoscroll_y, xscrollcommand=self._autoscroll_x)
-
-        self.tree_scroll_y.config(command=self.tree.yview)
-        self.tree_scroll_x.config(command=self.tree.xview)
-
-        self.tree.heading("ID", text="Build ID")
-        self.tree.heading("Class Name", text="Class Name")
-        self.tree.heading("Author", text="Author")
-        self.tree.heading("Description", text="Description")
-        self.tree.heading("Upvotes", text="Upvotes")
-
-        self.tree.column("ID", width=60, anchor="center", minwidth=50)
-        self.tree.column("Class Name", width=150, anchor="w", minwidth=100)
-        self.tree.column("Author", width=120, anchor="w", minwidth=80)
-        self.tree.column("Description", width=300, anchor="w", minwidth=150)
-        self.tree.column("Upvotes", width=80, anchor="center", minwidth=50)
-
-        self.tree.grid(row=0, column=0, sticky="nsew")
-
-        self.tree.bind("<Double-1>", lambda e: self._edit_build())
-
-        # Action Bar (Bottom)
+        # -------------------------------------------------------------
+        # Action Bar (Bottom) - Packed FIRST from Bottom
+        # -------------------------------------------------------------
         bottom_bar = tk.Frame(content, bg=UIStyle.BG_SURFACE, height=50)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
@@ -266,6 +235,41 @@ class BuildManagerFrame(ResponsiveGridBase):
             element_id="build_mgr_btn_prev_page"
         )
         self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
+
+        # -------------------------------------------------------------
+        # Table - Packed LAST to expand in the middle
+        # -------------------------------------------------------------
+        table_frame = tk.Frame(content, bg=UIStyle.BG_BASE)
+        table_frame.pack(side="top", fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
+        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
+
+        columns = ("ID", "Class Name", "Author", "Description", "Upvotes")
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", style="Custom.Treeview",
+                                 yscrollcommand=self._autoscroll_y, xscrollcommand=self._autoscroll_x)
+
+        self.tree_scroll_y.config(command=self.tree.yview)
+        self.tree_scroll_x.config(command=self.tree.xview)
+
+        self.tree.heading("ID", text="Build ID")
+        self.tree.heading("Class Name", text="Class Name")
+        self.tree.heading("Author", text="Author")
+        self.tree.heading("Description", text="Description")
+        self.tree.heading("Upvotes", text="Upvotes")
+
+        self.tree.column("ID", width=60, anchor="center", minwidth=50)
+        self.tree.column("Class Name", width=150, anchor="w", minwidth=100)
+        self.tree.column("Author", width=120, anchor="w", minwidth=80)
+        self.tree.column("Description", width=300, anchor="w", minwidth=150)
+        self.tree.column("Upvotes", width=80, anchor="center", minwidth=50)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+
+        self.tree.bind("<Double-1>", lambda e: self._edit_build())
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)

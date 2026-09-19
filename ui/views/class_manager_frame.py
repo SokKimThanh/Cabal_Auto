@@ -190,9 +190,44 @@ class ClassManagerFrame(ResponsiveGridBase):
 
         self._create_search_bar(content_frame)
 
-        # Treeview Area
+        # -------------------------------------------------------------
+        # Bottom Bar for Actions (Packed FIRST from Bottom)
+        # -------------------------------------------------------------
+        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE)
+        bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
+
+        add_btn = create_icon_button(parent=bottom_bar, icon_name="add", text=self.app._t("btn_add", default="Thêm"), command=self._add_class, button_type="green_light", element_id=CommonUI.BTN_ADD)
+        add_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        edit_btn = create_icon_button(parent=bottom_bar, icon_name="edit", text=self.app._t("btn_edit", default="Sửa"), command=self._edit_class, button_type="blue", element_id=CommonUI.BTN_EDIT)
+        edit_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        del_btn = create_icon_button(parent=bottom_bar, icon_name="delete", text=self.app._t("btn_delete", default="Xóa"), command=self._delete_class, button_type="red", element_id=CommonUI.BTN_DELETE)
+        del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        ref_btn = create_icon_button(parent=bottom_bar, icon_name="refresh", text=self.app._t("btn_refresh", default="Làm mới"), command=self._on_refresh, button_type="refresh", element_id=CommonUI.BTN_REFRESH)
+        ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+
+        # Pagination controls in bottom bar
+        self.btn_next_page = create_icon_button(parent=bottom_bar, icon_name="right", text=self.app._t("btn_next", default="Sau"), command=self._next_page, button_type="refresh", element_id="class_mgr_btn_next_page")
+        self.btn_next_page.pack(side="right", padx=(0, UIStyle.SPACE_MD), pady=UIStyle.SPACE_SM)
+
+        self.lbl_page_info = tk.Label(
+            bottom_bar,
+            text="1 / 1",
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_PRIMARY
+        )
+        self.lbl_page_info.pack(side="right", padx=(0, 10))
+
+        self.btn_prev_page = create_icon_button(parent=bottom_bar, icon_name="left", text=self.app._t("btn_prev", default="Trước"), command=self._prev_page, button_type="refresh", element_id="class_mgr_btn_prev_page")
+        self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
+
+        # -------------------------------------------------------------
+        # Treeview Area (Packed LAST, expands in the middle)
+        # -------------------------------------------------------------
         table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+        table_frame.pack(side="top", fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
 
         # Cấu hình grid cho table_frame để thanh cuộn tự động ẩn/hiện mượt mà
         table_frame.grid_rowconfigure(0, weight=1)
@@ -226,37 +261,6 @@ class ClassManagerFrame(ResponsiveGridBase):
         self.tree.grid(row=0, column=0, sticky="nsew")
 
         self.tree.bind("<Double-1>", lambda e: self._edit_class())
-
-        # Bottom Bar for Actions
-        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, )
-        bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
-
-        add_btn = create_icon_button(parent=bottom_bar, icon_name="add", text=self.app._t("btn_add", default="Thêm"), command=self._add_class, button_type="green_light", element_id=CommonUI.BTN_ADD)
-        add_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
-
-        edit_btn = create_icon_button(parent=bottom_bar, icon_name="edit", text=self.app._t("btn_edit", default="Sửa"), command=self._edit_class, button_type="blue", element_id=CommonUI.BTN_EDIT)
-        edit_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
-
-        del_btn = create_icon_button(parent=bottom_bar, icon_name="delete", text=self.app._t("btn_delete", default="Xóa"), command=self._delete_class, button_type="red", element_id=CommonUI.BTN_DELETE)
-        del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
-
-        ref_btn = create_icon_button(parent=bottom_bar, icon_name="refresh", text=self.app._t("btn_refresh", default="Làm mới"), command=self._on_refresh, button_type="refresh", element_id=CommonUI.BTN_REFRESH)
-        ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
-
-        # Pagination controls in bottom bar
-        self.btn_next_page = create_icon_button(parent=bottom_bar, icon_name="right", text=self.app._t("btn_next", default="Sau"), command=self._next_page, button_type="refresh", element_id="class_mgr_btn_next_page")
-        self.btn_next_page.pack(side="right", padx=(0, UIStyle.SPACE_MD), pady=UIStyle.SPACE_SM)
-
-        self.lbl_page_info = tk.Label(
-            bottom_bar,
-            text="1 / 1",
-            bg=UIStyle.BG_SURFACE,
-            fg=UIStyle.TEXT_PRIMARY
-        )
-        self.lbl_page_info.pack(side="right", padx=(0, 10))
-
-        self.btn_prev_page = create_icon_button(parent=bottom_bar, icon_name="left", text=self.app._t("btn_prev", default="Trước"), command=self._prev_page, button_type="refresh", element_id="class_mgr_btn_prev_page")
-        self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)

@@ -47,42 +47,10 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         self._create_search_bar(content_frame)
 
-        # Treeview Area
-        table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
-
-        table_frame.grid_rowconfigure(0, weight=1)
-        table_frame.grid_columnconfigure(0, weight=1)
-
-        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
-        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
-
-        self.columns = ("ID", "Name", "Level", "HP", "Defense", "Type", "Dungeon")
-        self.tree = ttk.Treeview(
-            table_frame,
-            columns=self.columns,
-            show="headings",
-            selectmode="browse",
-
-            yscrollcommand=self._autoscroll_y,
-            xscrollcommand=self._autoscroll_x
-        )
-
-        self.tree_scroll_y.config(command=self.tree.yview)
-        self.tree_scroll_x.config(command=self.tree.xview)
-
-        for col in self.columns:
-            self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col), command=lambda c=col: self._sort_treeview(c, False))
-            self.tree.column(col, width=100, minwidth=80)
-
-        self.tree.grid(row=0, column=0, sticky="nsew")
-
-        self.tree.bind("<Double-1>", lambda e: self._edit_monster())
-
-        # Pagination bar removed
-
-        # Bottom Bar for Actions
-        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, )
+        # -------------------------------------------------------------
+        # Bottom Bar for Actions (Packed FIRST from Bottom)
+        # -------------------------------------------------------------
+        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
         add_btn = tk.Button(
@@ -147,10 +115,44 @@ class MonsterManagerFrame(ResponsiveGridBase):
         self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
 
         # -------------------------------------------------------------
-        # Monster Type Management Panel
+        # Monster Type Management Panel (Packed SECOND from Bottom)
         # -------------------------------------------------------------
         type_panel_container = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        type_panel_container.pack(fill="x", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+        type_panel_container.pack(side="bottom", fill="x", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        # -------------------------------------------------------------
+        # Treeview Area (Packed LAST, expands in the middle)
+        # -------------------------------------------------------------
+        table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
+        table_frame.pack(side="top", fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
+        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
+
+        self.columns = ("ID", "Name", "Level", "HP", "Defense", "Type", "Dungeon")
+        self.tree = ttk.Treeview(
+            table_frame,
+            columns=self.columns,
+            show="headings",
+            selectmode="browse",
+
+            yscrollcommand=self._autoscroll_y,
+            xscrollcommand=self._autoscroll_x
+        )
+
+        self.tree_scroll_y.config(command=self.tree.yview)
+        self.tree_scroll_x.config(command=self.tree.xview)
+
+        for col in self.columns:
+            self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col), command=lambda c=col: self._sort_treeview(c, False))
+            self.tree.column(col, width=100, minwidth=80)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+
+        self.tree.bind("<Double-1>", lambda e: self._edit_monster())
 
         # Title for Type Panel
         self.type_panel_expanded = False
