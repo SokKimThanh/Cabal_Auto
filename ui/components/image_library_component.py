@@ -23,6 +23,7 @@ class ImageLibraryComponent(tk.Frame):
         self.chk_hide_used = None
         self.btn_import_img = None
         self.img_listbox = None
+        self._listbox_items = []
 
         self._setup_ui()
 
@@ -153,12 +154,13 @@ class ImageLibraryComponent(tk.Frame):
         results = self.image_model.search(query)
 
         # Filter used images if checkbox is ticked
+        used_files = self.get_used_filepaths()
+
         if self.var_hide_used.get():
-            used_files = self.get_used_filepaths()
             current_file = self._current_selected_filepath
             results = [f for f in results if f not in used_files or f == current_file]
 
-        self._update_image_listbox(results)
+        self._update_image_listbox(results, used_files)
 
     def _on_image_library_scanned(self, file_list, error_msg):
         def update_ui():
@@ -178,15 +180,25 @@ class ImageLibraryComponent(tk.Frame):
         except RuntimeError:
             pass
 
-    def _update_image_listbox(self, file_list):
+    def _update_image_listbox(self, file_list, used_files=None):
+        if used_files is None:
+            used_files = self.get_used_filepaths()
+
         # Temporarily enable listbox if disabled to allow inserting items
         current_state = self.img_listbox.cget('state')
         if current_state == 'disabled':
             self.img_listbox.config(state='normal')
 
         self.img_listbox.delete(0, tk.END)
+        self._listbox_items = []
         for f in file_list:
-            self.img_listbox.insert(tk.END, f)
+            display_text = f
+            if f in used_files and used_files[f]:
+                usages_str = ", ".join(sorted(list(used_files[f])))
+                display_text = f"{f} [{usages_str}]"
+
+            self.img_listbox.insert(tk.END, display_text)
+            self._listbox_items.append(f)
 
         if self._current_selected_filepath:
             self._highlight_image_in_list(self._current_selected_filepath)
@@ -195,9 +207,8 @@ class ImageLibraryComponent(tk.Frame):
             self.img_listbox.config(state='disabled')
 
     def _highlight_image_in_list(self, filename):
-        items = self.img_listbox.get(0, tk.END)
-        if filename in items:
-            idx = items.index(filename)
+        if filename in self._listbox_items:
+            idx = self._listbox_items.index(filename)
             self.img_listbox.selection_clear(0, tk.END)
             self.img_listbox.selection_set(idx)
             self.img_listbox.see(idx)
@@ -207,10 +218,12 @@ class ImageLibraryComponent(tk.Frame):
         if not selection:
             return
 
-        selected_file = self.img_listbox.get(selection[0])
-        # Allow parent component to validate and decide if selection is accepted
-        if self.on_image_selected:
-            self.on_image_selected(selected_file)
+        idx = selection[0]
+        if 0 <= idx < len(self._listbox_items):
+            selected_file = self._listbox_items[idx]
+            # Allow parent component to validate and decide if selection is accepted
+            if self.on_image_selected:
+                self.on_image_selected(selected_file)
 
     def _on_import_image_clicked(self):
         from tkinter import filedialog

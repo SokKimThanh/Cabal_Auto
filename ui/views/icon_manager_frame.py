@@ -570,12 +570,56 @@ class IconManagerFrame(ResponsiveGridBase):
     def _get_used_filepaths(self):
         try:
             cursor = self.icon_service.conn.cursor()
-            cursor.execute("SELECT DISTINCT filepath FROM icons WHERE filepath IS NOT NULL AND filepath != ''")
-            return {r[0] for r in cursor.fetchall()}
+            cursor.execute("""
+                SELECT i.filepath, u.ui_component_type
+                FROM icons i
+                LEFT JOIN icon_usages u ON i.icon_key = u.icon_key
+                WHERE i.filepath IS NOT NULL AND i.filepath != ''
+            """)
+            used_files = {}
+            for filepath, comp_type in cursor.fetchall():
+                if filepath not in used_files:
+                    used_files[filepath] = set()
+                if comp_type:
+                    used_files[filepath].add(comp_type)
+            return used_files
         except Exception as e:
             import logging
             logging.getLogger(__name__).warning(f"Failed to get used images: {e}")
-            return set()
+            return {}
+
+    def _check_image_sharing_restriction(self, selected_filepath: str, current_icon_key: str) -> bool:
+        """
+        Check if sharing the image is allowed based on sidebar_button constraints.
+        Returns True if allowed, False if blocked.
+        """
+        if not selected_filepath or not current_icon_key:
+            return True
+
+        # Get usages of the current icon key
+        current_usages = self.icon_service.get_usages(current_icon_key)
+        is_current_sidebar = any(u.get('ui_component_type') == 'sidebar_button' for u in current_usages)
+
+        # Get usages of the selected filepath by other icons
+        existing_icons = self.icon_service.get_icons_by_filepath(selected_filepath)
+        other_icons = [i for i in existing_icons if i.get("icon_key") != current_icon_key]
+
+        is_other_sidebar = False
+        for icon in other_icons:
+            usages = self.icon_service.get_usages(icon.get('icon_key'))
+            if any(u.get('ui_component_type') == 'sidebar_button' for u in usages):
+                is_other_sidebar = True
+                break
+
+        if other_icons and (is_current_sidebar or is_other_sidebar):
+            msg = self.i18n_t(
+                "msg_sidebar_icon_sharing_blocked",
+                default="Không thể dùng chung ảnh này vì một trong số các Icon đang sử dụng nó thuộc nhóm Sidebar (sidebar_button). Icon của Sidebar phải là duy nhất."
+            )
+            messagebox.showerror(self.i18n_t("error", default="Lỗi"), msg)
+            return False
+
+        return True
 
     def _handle_image_selected(self, selected_file, is_new_import=False):
         if self._current_state not in ("ADD", "EDIT"):
@@ -585,6 +629,12 @@ class IconManagerFrame(ResponsiveGridBase):
             self._just_imported_file = selected_file
 
         current_icon_key = self.icon_form.get_form_data()['icon_key'].strip()
+
+        if not self._check_image_sharing_restriction(selected_file, current_icon_key):
+            # Revert selection in the library component
+            if hasattr(self, 'image_library') and self.image_library:
+                self.image_library.set_current_filepath(self.icon_form.get_form_data()['filepath'])
+            return
 
         # Check duplication
         existing_usages = self.icon_service.get_icons_by_filepath(selected_file)
@@ -681,6 +731,10 @@ class IconManagerFrame(ResponsiveGridBase):
 
                 # 3. Kiểm tra sử dụng chung ảnh (Duplication Check)
                 current_icon_key = self.icon_form.get_form_data()['icon_key'].strip()
+
+                if not self._check_image_sharing_restriction(final_filename, current_icon_key):
+                    return # Huỷ thao tác
+
                 existing_usages = self.icon_service.get_icons_by_filepath(final_filename)
 
                 # Filter out the current icon we are editing
