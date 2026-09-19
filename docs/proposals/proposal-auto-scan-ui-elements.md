@@ -1,38 +1,51 @@
-# Proposal: Tự động Quét và Đăng ký UI Element ID (Auto-Scan UI Elements)
+# Proposal: Đăng ký UI Element ID Runtime (Runtime UI Element Registry)
 
 ## Bối cảnh và Vấn đề
-Hiện tại, trong Icon Manager, phần "Quản lý Nơi Dùng (Usages)" yêu cầu người dùng phải gõ tên (ID) của element (như button, label) để map một Icon vào element đó.
-Để giải quyết tạm thời UX, chúng ta đã dùng `Combobox` hiển thị các ID *đã từng được map* trong database. Tuy nhiên, nếu một button mới được code vào UI, người dùng vẫn phải xem code để nhớ chính xác ID, gõ tay vào lần đầu, tiềm ẩn rủi ro sai chính tả.
-Vì vậy, cần có một hệ thống tự động quét (scan) tất cả các UI Element có khả năng gắn Icon, đăng ký chúng vào một "Registry", và đổ ra Combobox ngay cả khi chúng chưa từng được gán Icon bao giờ.
+Hiện tại, trong form **Quản lý Nơi Dùng (Usages)** của Icon Manager, khi người dùng muốn Gắn (Map) một icon vào một button trên giao diện, họ cần nhập chính xác **Element ID** của component đó (VD: `btn_settings`, `btn_build_manager`).
+Để hỗ trợ UX, hệ thống hiện dùng Combobox hiển thị danh sách các ID **đã từng được map** trong cơ sở dữ liệu (`icon_usages` table).
+Tuy nhiên, nếu một button mới được thêm vào UI (chưa được map icon bao giờ), Element ID đó sẽ không xuất hiện trong Combobox. Người dùng sẽ phải tự mở code ra để đọc ID và gõ tay, rất dễ dẫn đến lỗi sai chính tả (typo), làm hỏng ánh xạ của icon.
 
 ## Mục tiêu
-- Tạo một bộ nhớ đệm (Registry) lưu trữ danh sách toàn bộ ID của các widget có hỗ trợ Icon (VD: các button, label) trên toàn bộ ứng dụng.
-- Icon Manager có thể đọc Registry này để đưa ra danh sách gợi ý chính xác và đầy đủ 100% trong chức năng Gắn (Map) Usages.
+- Cung cấp một cơ chế **Runtime Registry** để tự động thu thập các Element ID khi các thành phần giao diện (UI widget) được khởi tạo.
+- Tích hợp Registry này vào màn hình Icon Manager, giúp Combobox chứa được danh sách đầy đủ các UI Elements (bao gồm cả những element chưa lưu vào CSDL) để người dùng có thể chọn thay vì gõ tay.
 
-## Giải pháp Đề xuất
+## Giải pháp Đề xuất: Runtime Memory Registry
 
-### Giai đoạn 1: Chuẩn hóa tham số `id`
-1. Sửa đổi định nghĩa của các hàm UI Helpers: `create_icon_button`, `create_icon_label` (nằm rải rác ở `ui/components/icon_button.py` hoặc các file liên quan).
-2. Thêm tham số `element_id: str = None` (hoặc `widget_id`) vào các hàm này.
-3. Khi lập trình viên gọi `create_icon_button(..., element_id="btn_settings")`, hàm này sẽ lưu trữ ID đó vào widget: `button._element_id = element_id`.
+### 1. Sửa đổi các UI Helpers (Thêm tham số `element_id`)
+Các hàm tạo UI trong `ui/components/icon_button.py` (như `create_icon_button`, `create_add_button`, `create_icon_label`...) hiện tại chưa hỗ trợ tham số `element_id`.
+**Thực thi:**
+- Thêm tham số `element_id: Optional[str] = None` vào signature của các hàm này.
+- Khi tạo widget, lưu trữ ID đó vào một thuộc tính ẩn: `widget._element_id = element_id` (tương tự như cách ta đang lưu `text_key` và `tooltip_key`).
 
-### Giai đoạn 2: Tự động đăng ký (Runtime Registry)
-1. Tạo một Singleton tên là `UIElementRegistry` (có thể nằm ở `lib/events/ui_registry.py`).
-2. Registry này chứa tập hợp `set` các ID.
-3. Khi `create_icon_button` được gọi ở runtime, nếu có `element_id`, nó sẽ gọi `UIElementRegistry.register(element_id)`.
-4. Hạn chế: Cách này chỉ quét được các ID của những màn hình *đã được khởi tạo* (rendered). Một số tab bị ẩn có thể không quét được nếu chưa mở.
+### 2. Xây dựng Singleton Registry
+Tạo một lớp quản lý danh sách các Element ID in-memory:
+- **Vị trí:** `lib/events/ui_element_registry.py` (hoặc bên trong `ui/helpers/`).
+- **Chức năng:** Sử dụng `set` để lưu trữ các ID không trùng lặp.
+- **Phương thức:** `register(element_id: str)` và `get_all() -> list[str]`.
 
-### Giai đoạn 3: Quét tĩnh qua AST (Tùy chọn nâng cao)
-- Viết một script nhỏ `scripts/scan_ui_elements.py` sử dụng thư viện `ast` (Abstract Syntax Tree) của Python.
-- Script sẽ duyệt qua toàn bộ thư mục `ui/`, tìm các lệnh gọi `create_icon_button` hoặc `create_button`, trích xuất giá trị truyền vào tham số `element_id` và xuất ra một file JSON tĩnh: `config/ui_elements.json`.
-- Icon Manager sẽ đọc file JSON này thay vì đợi Runtime. Cách này đảm bảo có đủ 100% ID trước cả khi chạy ứng dụng.
+### 3. Đăng ký Element khi khởi tạo
+Bên trong hàm `create_icon_button` (và các helper liên quan), sau khi widget được tạo, nếu có truyền `element_id`, hệ thống sẽ tự động gọi:
+`UIElementRegistry.instance().register(element_id)`
 
-## Kế hoạch Thực thi (Sprint Tiếp Theo)
-1. Review tất cả các lời gọi hàm tạo nút (`create_icon_button`, `create_button`) và bổ sung định danh `element_id`.
-2. Quyết định chọn **Giai đoạn 2** (Dễ làm, Runtime) hoặc **Giai đoạn 3** (Triệt để, Tĩnh). Đề xuất ưu tiên Giai đoạn 3.
-3. Tích hợp danh sách ID thu được (từ Registry hoặc JSON) vào `self._available_usage_ids` của form "Usages" trong `IconManagerFrame`.
+### 4. Tích hợp vào Icon Manager
+Tại class `IconManagerFrame` (trong `ui/views/icon_manager_frame.py`):
+- Phương thức `_load_all_usage_ids()` hiện đang truy vấn trực tiếp từ CSDL (`SELECT DISTINCT ui_element_id FROM icon_usages...`).
+- Sửa đổi phương thức này: Lấy danh sách ID từ cơ sở dữ liệu, sau đó **merge (kết hợp)** với danh sách từ `UIElementRegistry.instance().get_all()`.
+- Loại bỏ các ID rỗng (`None` hoặc `""`).
+- Sắp xếp (sort) lại và nạp vào biến `self._available_usage_ids`.
 
-## Lợi ích
-- Đảm bảo tính toàn vẹn dữ liệu: Không bao giờ gõ sai ID.
-- Lập trình viên không cần nhảy qua lại giữa code và UI để tra cứu tên biến.
-- Tự động hóa hoàn toàn quy trình liên kết Icon-UI.
+## So sánh các phương pháp (Tại sao lại chọn Runtime Registry)
+
+| Tiêu chí | Runtime Registry (Đề xuất) | Quét tĩnh AST (Tùy chọn cũ bị loại bỏ) |
+| :--- | :--- | :--- |
+| **Độ phức tạp** | Rất thấp (chỉ là in-memory set). | Rất cao (cần viết script phân tích code Python). |
+| **Bảo trì** | Code Python đơn giản, gắn liền với UI Helpers. | Nếu cấu trúc code thay đổi, script AST dễ bị vỡ. |
+| **Khuyết điểm** | Chỉ đăng ký các màn hình đã được render (nghĩa là user phải mở màn hình đó rồi thì ID mới vào Registry). | Đòi hỏi phải chạy script build ra JSON thủ công trước khi commit, dễ quên. |
+
+*(Tuy Runtime Registry chỉ thu thập được các ID của các UI đã render lên màn hình, nhưng xét trên luồng sử dụng thông thường của Admin/Dev, họ thường nhìn thấy button trên UI rồi mới quay sang Icon Manager để cấu hình. Do đó, trade-off này là hoàn toàn hợp lý).*
+
+## Kế hoạch Thực thi Kỹ thuật (Cho các Sprint sau)
+1. Thêm class `UIElementRegistry` (Singleton).
+2. Sửa `create_icon_button` và các hàm helper liên quan (thêm `element_id`).
+3. Sửa `IconManagerFrame._load_all_usage_ids()` để merge dữ liệu từ Registry.
+4. (Tùy chọn) Rà soát lại một số màn hình quan trọng, truyền `element_id` cho các button chính để kiểm thử.
