@@ -19,11 +19,15 @@ class CommonUI(str, Enum):
 class UIElementRegistry:
     _instance = None
 
-    def __new__(cls):
+    @classmethod
+    def instance(cls):
         if cls._instance is None:
             cls._instance = super(UIElementRegistry, cls).__new__(cls)
             cls._instance._elements = {}
         return cls._instance
+
+    def __new__(cls):
+        return cls.instance()
 
     def register(self, descriptor: UIElementDescriptor) -> None:
         key = (descriptor.module, descriptor.screen, descriptor.element_id)
@@ -35,4 +39,5 @@ class UIElementRegistry:
         return list(self._elements.values())
 
     def clear(self) -> None:
-        self._elements.clear()
+        if hasattr(self, '_elements'):
+            self._elements.clear()
