@@ -109,8 +109,17 @@ class IconFormComponent(tk.Frame):
         tooltip_frame.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
         tooltip_frame.grid_columnconfigure(0, weight=1)
 
-        self.entry_tooltip = ttk.Combobox(tooltip_frame, textvariable=self.var_tooltip_key)
+        input_frame = tk.Frame(tooltip_frame, bg=UIStyle.BG_SURFACE)
+        input_frame.grid(row=0, column=0, sticky="ew")
+        input_frame.grid_columnconfigure(0, weight=1)
+
+        self.entry_tooltip = ttk.Entry(input_frame, textvariable=self.var_tooltip_key)
         self.entry_tooltip.grid(row=0, column=0, sticky="ew")
+
+        # Suggestions listbox (initially hidden, or just placed below)
+        self.listbox_tooltip_suggestions = tk.Listbox(input_frame, height=4, font=(UIStyle.FONT_FAMILY_UI, 9))
+        self.listbox_tooltip_suggestions.grid(row=1, column=0, sticky="ew", pady=(2, 0))
+        self.listbox_tooltip_suggestions.grid_remove() # Hide initially
 
         self.lbl_tooltip_hint = tk.Label(tooltip_frame, text="Gợi ý: bắt đầu bằng icon_tooltip_...", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 9))
         self.lbl_tooltip_hint.grid(row=1, column=0, sticky="w", pady=(0, 2))
@@ -139,6 +148,9 @@ class IconFormComponent(tk.Frame):
         if hasattr(self.var_tooltip_key, 'trace_add'):
             self.var_tooltip_key.trace_add('write', self._validate_tooltip_key)
         self.entry_tooltip.bind('<KeyRelease>', self._autocomplete_tooltip)
+        self.entry_tooltip.bind('<FocusOut>', self._hide_tooltip_suggestions)
+        self.listbox_tooltip_suggestions.bind('<<ListboxSelect>>', self._on_tooltip_suggestion_select)
+        self.listbox_tooltip_suggestions.bind('<FocusIn>', self._show_tooltip_suggestions) # Keep showing if focused
 
         # 6. Filepath (Read-only)
         tk.Label(self, text=self.i18n_t("lbl_filepath", default="Filepath:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=5, column=0, sticky="e", padx=5, pady=2)
@@ -189,7 +201,7 @@ class IconFormComponent(tk.Frame):
             self._available_keys = sorted(list(keys_set))
         except Exception:
             pass
-        self.entry_tooltip['values'] = self._available_keys
+        # entry_tooltip is no longer a combobox, so we don't set values here
 
     def _validate_tooltip_key(self, *args):
         key = self.var_tooltip_key.get().strip()
@@ -222,15 +234,48 @@ class IconFormComponent(tk.Frame):
             logging.getLogger(__name__).warning(f"Error resolving tooltip key {key}: {e}")
 
     def _autocomplete_tooltip(self, event):
-        if event.keysym not in ['BackSpace', 'Delete', 'Return', 'Tab'] and not event.char:
+        if event.keysym in ['Return', 'Tab']:
+            self._hide_tooltip_suggestions()
+            return
+        if event.keysym in ['Up', 'Down']:
+            # Could implement keyboard navigation here if needed
             return
 
-        typed = self.entry_tooltip.get()
+        typed = self.var_tooltip_key.get()
+        self.listbox_tooltip_suggestions.delete(0, tk.END)
+
         if typed == '':
-            self.entry_tooltip['values'] = self._available_keys
+            hits = self._available_keys[:20] # Show some defaults
         else:
-            hits = [item for item in self._available_keys if typed.lower() in item.lower()]
-            self.entry_tooltip['values'] = hits
+            hits = [item for item in self._available_keys if typed.lower() in item.lower()][:20]
+
+        if hits:
+            for item in hits:
+                self.listbox_tooltip_suggestions.insert(tk.END, item)
+            self.listbox_tooltip_suggestions.grid() # Show
+        else:
+            self.listbox_tooltip_suggestions.grid_remove() # Hide
+
+    def _show_tooltip_suggestions(self, event=None):
+        if self.listbox_tooltip_suggestions.size() > 0:
+            self.listbox_tooltip_suggestions.grid()
+
+    def _hide_tooltip_suggestions(self, event=None):
+        # We need a small delay because clicking on listbox fires FocusOut on entry first
+        self.after(200, self._check_hide_tooltip_suggestions)
+
+    def _check_hide_tooltip_suggestions(self):
+        focus_widget = self.focus_get()
+        if focus_widget != self.entry_tooltip and focus_widget != self.listbox_tooltip_suggestions:
+            self.listbox_tooltip_suggestions.grid_remove()
+
+    def _on_tooltip_suggestion_select(self, event):
+        selection = self.listbox_tooltip_suggestions.curselection()
+        if selection:
+            item = self.listbox_tooltip_suggestions.get(selection[0])
+            self.var_tooltip_key.set(item)
+            self.listbox_tooltip_suggestions.grid_remove()
+            self.entry_tooltip.focus_set()
 
     def update_category_values(self, values):
         self.combo_category.config(values=values)
@@ -239,7 +284,6 @@ class IconFormComponent(tk.Frame):
         if key and key not in self._available_keys:
             self._available_keys.append(key)
             self._available_keys.sort()
-            self.entry_tooltip['values'] = self._available_keys
 
     def get_form_data(self) -> dict:
         return {
