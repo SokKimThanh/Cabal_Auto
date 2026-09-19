@@ -15,3 +15,7 @@ Tạo một Singleton Registry in-memory để quản lý các Element ID (chủ
 
 **Ràng buộc (Memory):**
 - Tránh tạo các Global Singletons mới nếu có thể dùng bootstrapper, NHƯNG đối với UI Helper (static function), việc pass DI rất khó. Cân nhắc kỹ việc tạo instance. Tham khảo cách `IconHelper` đang dùng bộ nhớ đệm nội bộ (class attributes). Bạn có thể implement nó dưới dạng Class Methods trên `UIElementRegistry` (như một static class) thay vì Singleton instance.
+
+**Các rủi ro cần tránh (Risk Mitigation):**
+- **Memory Leak:** Đảm bảo `register()` chỉ nhận và lưu chuỗi `str`, tuyệt đối không lưu object Tkinter.
+- **Test Isolation:** Bắt buộc phải implement hàm `clear()` để reset bộ nhớ nội bộ, và viết test cho hàm `clear()` này.

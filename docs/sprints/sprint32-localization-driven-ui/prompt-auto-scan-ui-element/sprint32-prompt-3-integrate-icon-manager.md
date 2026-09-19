@@ -19,3 +19,6 @@
 **Ràng buộc (Memory):**
 - Theo memory: *UI components must not directly execute file system operations or direct DB queries*. Tuy nhiên `IconManagerFrame` hiện đang chứa một số query trực tiếp. Bạn chỉ cần điều chỉnh phần merge In-memory List, không cần thiết phải refactor toàn bộ class này trừ khi thật sự cần thiết.
 - Đảm bảo combobox auto-complete không bị set `validate="key"` làm hỏng gõ phím.
+
+**Các rủi ro cần tránh (Risk Mitigation):**
+- **Lazy-Load Limitation:** Ghi chú lại bằng comment trong code phần merge rằng danh sách này chỉ đại diện cho các màn hình đã được render (không đảm bảo có 100% ID nếu user chưa mở màn hình chứa nút đó).

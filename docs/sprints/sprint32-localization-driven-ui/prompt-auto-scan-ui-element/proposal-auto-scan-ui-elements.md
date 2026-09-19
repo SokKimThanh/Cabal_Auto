@@ -49,3 +49,21 @@ Tại class `IconManagerFrame` (trong `ui/views/icon_manager_frame.py`):
 2. Sửa `create_icon_button` và các hàm helper liên quan (thêm `element_id`).
 3. Sửa `IconManagerFrame._load_all_usage_ids()` để merge dữ liệu từ Registry.
 4. (Tùy chọn) Rà soát lại một số màn hình quan trọng, truyền `element_id` cho các button chính để kiểm thử.
+
+## Rủi ro và Điểm yếu cần chú ý
+
+Khi triển khai giải pháp Runtime Registry này, đội ngũ cần đặc biệt lưu ý các điểm sau:
+
+1. **Vấn đề rò rỉ bộ nhớ (Memory Leak):**
+   - Registry **tuyệt đối không được** lưu trữ tham chiếu (reference) đến đối tượng Widget thực tế. Nó chỉ được phép lưu chuỗi ký tự (`str`) của `element_id`. Nếu lưu widget, Garbage Collector của Python sẽ không thể giải phóng bộ nhớ khi các cửa sổ/tab UI bị đóng.
+
+2. **Xung đột định danh (ID Collision):**
+   - Vì danh sách được gộp chung thành một mảng phẳng (phục vụ Combobox), nếu hai module khác nhau vô tình gán cùng một ID (VD: `btn_save`), người dùng sẽ không phân biệt được ID nào thuộc màn hình nào.
+   - **Quy tắc:** Lập trình viên phải sử dụng tiền tố (prefix) theo namespace khi khai báo ID (VD: `icon_mgr_btn_save`, `build_mgr_btn_save`).
+
+3. **Vấn đề Isolated Testing:**
+   - Việc sử dụng Singleton (hoặc class attributes) lưu trạng thái toàn cục sẽ khiến các unit test bị rò rỉ state sang nhau.
+   - Bắt buộc phải xây dựng hàm `UIElementRegistry.clear()` và gọi nó trong quá trình `teardown` của các kịch bản test.
+
+4. **Hạn chế Lazy-Load:**
+   - Những widget nằm trong các module lười tải (lazy load) hoặc ở các màn hình chưa từng được mở ra sẽ không được đẩy vào Registry. Do đó, người dùng (Admin) cần phải "lướt qua" màn hình đó ít nhất một lần để khởi tạo widget trước khi vào Icon Manager để gán Icon. Đây là một trade-off có chủ đích và có thể chấp nhận được so với sự phức tạp của quét tĩnh AST.

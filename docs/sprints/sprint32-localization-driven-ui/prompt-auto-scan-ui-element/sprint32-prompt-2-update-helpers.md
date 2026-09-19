@@ -15,3 +15,6 @@ Sửa đổi các hàm tạo UI component để chấp nhận tham số `element
 **Ràng buộc (Memory):**
 - Đảm bảo tham số mới không phá vỡ (break) backward compatibility với các code cũ đang gọi `create_icon_button` (phải để default là `None`).
 - Tkinter UI components must strictly adhere to UI-only concerns. Việc gán thuộc tính ẩn (`_element_id`) là phù hợp để quản lý metadata.
+
+**Các rủi ro cần tránh (Risk Mitigation):**
+- **ID Collision:** Thêm comment/docstring vào tham số `element_id` khuyến nghị lập trình viên nên sử dụng namespace/prefix (VD: `module_name_btn_id`) thay vì đặt tên chung chung như `btn_save`.
