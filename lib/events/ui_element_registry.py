@@ -25,6 +25,13 @@ class UIElementRegistry:
     _instance = None
     _elements: Dict[Tuple[str, str, str], UIElementDescriptor]
 
+    @classmethod
+    def instance(cls):
+        if not cls._instance:
+            cls._instance = super(UIElementRegistry, cls).__new__(cls)
+            cls._instance._elements = {}
+        return cls._instance
+
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(UIElementRegistry, cls).__new__(cls, *args, **kwargs)
