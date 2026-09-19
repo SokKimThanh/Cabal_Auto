@@ -8,62 +8,61 @@ import threading
 from ui.helpers.tooltip import attach_i18n_tooltip
 
 
-class LanguageManagerFrame(tk.Frame):
+class LanguageManagerFrame(ResponsiveGridBase):
     def __init__(self, parent, app, **kwargs):
-        super().__init__(parent, bg=UIStyle.BG_ELEVATED, **kwargs)
+        super().__init__(parent, app=app, bg=UIStyle.BG_BASE, **kwargs)
         self.app = app
         self._t = app._t if hasattr(app, '_t') else lambda x, **kw: x
 
         self.controller = LanguageManagerController()
 
-        self.grid_rowconfigure(0, weight=6) # Top section (Treeview)
-        self.grid_rowconfigure(1, weight=4) # Bottom section (Inline Edit)
-        self.grid_columnconfigure(0, weight=1)
+        # Get the inner content frame from ResponsiveGridBase
+        self.content_container = self.get_content_frame()
 
-        self._build_top_section()
+        # Define layout parts
+        self._build_toolbar()
         self._build_bottom_section()
+        self._build_tree_section()
+
+        # Pack them following the "Top -> Bottom -> Fill Middle" approach
+        self.toolbar.pack(side=tk.TOP, fill=tk.X, padx=10, pady=(10, 10))
+        self.bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(0, 10))
+        self.tree_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Load initial data
         self.refresh_data()
 
-    def _build_top_section(self):
-        top_frame = tk.Frame(self, bg=UIStyle.BG_ELEVATED)
-        top_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-
-        top_frame.grid_rowconfigure(1, weight=1)
-        top_frame.grid_columnconfigure(0, weight=1)
-
+    def _build_toolbar(self):
         # Toolbar
-        toolbar = tk.Frame(top_frame, bg=UIStyle.BG_ELEVATED)
-        toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        self.toolbar = tk.Frame(self.content_container, bg=UIStyle.BG_BASE)
 
         # Namespace Filter
-        ttk.Label(toolbar, text=self._t("lang_mgr_namespace", default="Namespace:")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(self.toolbar, text=self._t("lang_mgr_namespace", default="Namespace:")).pack(side=tk.LEFT, padx=(0, 5))
         self.cb_namespace_var = tk.StringVar()
-        self.cb_namespace = ttk.Combobox(toolbar, textvariable=self.cb_namespace_var, state="readonly", width=15)
+        self.cb_namespace = ttk.Combobox(self.toolbar, textvariable=self.cb_namespace_var, state="readonly", width=15)
         self.cb_namespace.pack(side=tk.LEFT, padx=(0, 15))
         self.cb_namespace.bind("<<ComboboxSelected>>", lambda e: self.apply_filters())
 
         # Search
-        ttk.Label(toolbar, text=self._t("lang_mgr_search", default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(self.toolbar, text=self._t("lang_mgr_search", default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_var = tk.StringVar()
-        search_entry = ttk.Entry(toolbar, textvariable=self.search_var, width=30)
+        search_entry = ttk.Entry(self.toolbar, textvariable=self.search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=(0, 15))
         search_entry.bind("<KeyRelease>", lambda e: self.apply_filters())
 
         # Action Buttons
-        refresh_btn = ttk.Button(toolbar, text=self._t("lang_mgr_refresh", default="Refresh"), command=self.refresh_data)
+        refresh_btn = ttk.Button(self.toolbar, text=self._t("lang_mgr_refresh", default="Refresh"), command=self.refresh_data)
         refresh_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
-        sync_btn = ttk.Button(toolbar, text=self._t("lang_mgr_sync", default="Sync to JSON"), command=self.sync_to_json)
+        sync_btn = ttk.Button(self.toolbar, text=self._t("lang_mgr_sync", default="Sync to JSON"), command=self.sync_to_json)
         sync_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
+    def _build_tree_section(self):
         # Treeview
-        tree_frame = tk.Frame(top_frame, bg=UIStyle.BG_ELEVATED)
-        tree_frame.grid(row=1, column=0, sticky="nsew")
+        self.tree_frame = tk.Frame(self.content_container, bg=UIStyle.BG_BASE)
 
         columns = ("namespace", "key", "en", "vi", "updated_at")
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", selectmode="browse")
+        self.tree = ttk.Treeview(self.tree_frame, columns=columns, show="headings", selectmode="browse")
 
         self.tree.heading("namespace", text=self._t("lang_mgr_col_ns", default="Namespace"), command=lambda: self._sort_tree("namespace", False))
         self.tree.heading("key", text=self._t("lang_mgr_col_key", default="Key"), command=lambda: self._sort_tree("key", False))
@@ -77,7 +76,7 @@ class LanguageManagerFrame(tk.Frame):
         self.tree.column("vi", width=300, anchor=tk.W)
         self.tree.column("updated_at", width=150, anchor=tk.W)
 
-        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(self.tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -86,40 +85,39 @@ class LanguageManagerFrame(tk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
     def _build_bottom_section(self):
-        bottom_frame = tk.LabelFrame(self, text=self._t("lang_mgr_edit_form", default="Add / Edit Translation"), bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
-        bottom_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.bottom_frame = tk.LabelFrame(self.content_container, text=self._t("lang_mgr_edit_form", default="Add / Edit Translation"), bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_PRIMARY)
 
-        bottom_frame.grid_rowconfigure(2, weight=1)
-        bottom_frame.grid_columnconfigure(1, weight=1)
-        bottom_frame.grid_columnconfigure(3, weight=1)
+        self.bottom_frame.grid_rowconfigure(2, weight=1)
+        self.bottom_frame.grid_columnconfigure(1, weight=1)
+        self.bottom_frame.grid_columnconfigure(3, weight=1)
 
         # Row 0: Namespace & Key
-        ns_label = ttk.Label(bottom_frame, text=self._t("lang_mgr_namespace", default="Namespace:"))
+        ns_label = ttk.Label(self.bottom_frame, text=self._t("lang_mgr_namespace", default="Namespace:"))
         ns_label.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         attach_i18n_tooltip(ns_label, key="tip_lang_mgr_namespace", ns="_global", lang_provider=lambda: getattr(self.app, "lang", "vi"))
         self.form_ns_var = tk.StringVar()
-        self.form_ns_entry = ttk.Combobox(bottom_frame, textvariable=self.form_ns_var)
+        self.form_ns_entry = ttk.Combobox(self.bottom_frame, textvariable=self.form_ns_var)
         self.form_ns_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
         attach_i18n_tooltip(self.form_ns_entry, key="tip_lang_mgr_namespace", ns="_global", lang_provider=lambda: getattr(self.app, "lang", "vi"))
 
-        ttk.Label(bottom_frame, text=self._t("lang_mgr_key", default="Key:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(self.bottom_frame, text=self._t("lang_mgr_key", default="Key:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.form_key_var = tk.StringVar()
-        self.form_key_entry = ttk.Entry(bottom_frame, textvariable=self.form_key_var)
+        self.form_key_entry = ttk.Entry(self.bottom_frame, textvariable=self.form_key_var)
         self.form_key_entry.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
 
         # Row 1: Text EN & VI Labels
-        ttk.Label(bottom_frame, text=self._t("lang_mgr_text_en", default="Text (EN):")).grid(row=1, column=0, columnspan=2, sticky=tk.W, padx=5, pady=(5, 0))
-        ttk.Label(bottom_frame, text=self._t("lang_mgr_text_vi", default="Text (VI):")).grid(row=1, column=2, columnspan=2, sticky=tk.W, padx=5, pady=(5, 0))
+        ttk.Label(self.bottom_frame, text=self._t("lang_mgr_text_en", default="Text (EN):")).grid(row=1, column=0, columnspan=2, sticky=tk.W, padx=5, pady=(5, 0))
+        ttk.Label(self.bottom_frame, text=self._t("lang_mgr_text_vi", default="Text (VI):")).grid(row=1, column=2, columnspan=2, sticky=tk.W, padx=5, pady=(5, 0))
 
         # Row 2: Text Areas
-        self.text_en = tk.Text(bottom_frame, height=5, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY, insertbackground=UIStyle.TEXT_PRIMARY)
+        self.text_en = tk.Text(self.bottom_frame, height=5, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY, insertbackground=UIStyle.TEXT_PRIMARY)
         self.text_en.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
 
-        self.text_vi = tk.Text(bottom_frame, height=5, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY, insertbackground=UIStyle.TEXT_PRIMARY)
+        self.text_vi = tk.Text(self.bottom_frame, height=5, bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY, insertbackground=UIStyle.TEXT_PRIMARY)
         self.text_vi.grid(row=2, column=2, columnspan=2, sticky="nsew", padx=5, pady=5)
 
         # Row 3: Action Buttons
-        btn_frame = tk.Frame(bottom_frame, bg=UIStyle.BG_ELEVATED)
+        btn_frame = tk.Frame(self.bottom_frame, bg=UIStyle.BG_ELEVATED)
         btn_frame.grid(row=3, column=0, columnspan=4, sticky="e", padx=5, pady=10)
 
         ttk.Button(btn_frame, text=self._t("lang_mgr_add_new", default="Add New (Clear)"), command=self.clear_form).pack(side=tk.LEFT, padx=5)
