@@ -63,7 +63,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
             columns=self.columns,
             show="headings",
             selectmode="browse",
-            height=20,
+
             yscrollcommand=self._autoscroll_y,
             xscrollcommand=self._autoscroll_x
         )
@@ -82,7 +82,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
         # Pagination bar removed
 
         # Bottom Bar for Actions
-        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)
+        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, )
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
         add_btn = tk.Button(
@@ -153,21 +153,26 @@ class MonsterManagerFrame(ResponsiveGridBase):
         type_panel_container.pack(fill="x", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
 
         # Title for Type Panel
-        type_title_lbl = tk.Label(
+        self.type_panel_expanded = False
+
+        self.type_title_lbl = tk.Label(
             type_panel_container,
-            text=self.app._t("panel_types_title", default="▼ Quản lý Loại Quái vật") if self.app else "▼ Quản lý Loại Quái vật",
+            text=self.app._t("panel_types_title_collapsed", default="▶ Quản lý Loại Quái vật") if self.app else "▶ Quản lý Loại Quái vật",
             font=(UIStyle.resolve_font_family("title"), 12, "bold"),
             bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY
+            fg=UIStyle.TEXT_PRIMARY,
+            cursor="hand2"
         )
-        type_title_lbl.pack(anchor="w", pady=(0, UIStyle.SPACE_SM))
+        self.type_title_lbl.pack(anchor="w", pady=(0, UIStyle.SPACE_SM))
+        self.type_title_lbl.bind("<Button-1>", self._toggle_type_panel)
 
         # Main frame for the Type Management UI (split into left list, right form)
-        type_content_frame = tk.Frame(type_panel_container, bg=UIStyle.BG_BASE)
-        type_content_frame.pack(fill="x", expand=True)
+        self.type_content_frame = tk.Frame(type_panel_container, bg=UIStyle.BG_BASE)
+        # Initially hidden
+        # self.type_content_frame.pack(fill="x", expand=True)
 
         # Left: Treeview for Types
-        type_list_frame = tk.Frame(type_content_frame, bg=UIStyle.BG_BASE)
+        type_list_frame = tk.Frame(self.type_content_frame, bg=UIStyle.BG_BASE)
         type_list_frame.pack(side="left", fill="y", expand=True)
 
         self.type_tree_scroll_y = ttk.Scrollbar(type_list_frame, orient=tk.VERTICAL)
@@ -176,7 +181,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
             columns=("ID", "Label"),
             show="headings",
             selectmode="browse",
-            height=5,
+
             yscrollcommand=self.type_tree_scroll_y.set
         )
         self.type_tree_scroll_y.config(command=self.type_tree.yview)
@@ -191,7 +196,7 @@ class MonsterManagerFrame(ResponsiveGridBase):
         self.type_tree.bind("<<TreeviewSelect>>", self._on_type_selected)
 
         # Right: Form to Add/Edit Type
-        type_form_frame = tk.Frame(type_content_frame, bg=UIStyle.BG_BASE)
+        type_form_frame = tk.Frame(self.type_content_frame, bg=UIStyle.BG_BASE)
         type_form_frame.pack(side="right", fill="both", expand=True, padx=(UIStyle.SPACE_MD, 0))
 
         form_title = tk.Label(
@@ -238,6 +243,16 @@ class MonsterManagerFrame(ResponsiveGridBase):
         )
         self.btn_delete_type.pack(side="left", padx=5)
 
+
+    def _toggle_type_panel(self, event=None):
+        if self.type_panel_expanded:
+            self.type_content_frame.pack_forget()
+            self.type_title_lbl.config(text=self.app._t("panel_types_title_collapsed", default="▶ Quản lý Loại Quái vật") if self.app else "▶ Quản lý Loại Quái vật")
+            self.type_panel_expanded = False
+        else:
+            self.type_content_frame.pack(fill="x", expand=False)
+            self.type_title_lbl.config(text=self.app._t("panel_types_title_expanded", default="▼ Quản lý Loại Quái vật") if self.app else "▼ Quản lý Loại Quái vật")
+            self.type_panel_expanded = True
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)

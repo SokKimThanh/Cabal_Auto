@@ -2295,7 +2295,7 @@ if __name__ == "__main__":
         font=("Segoe UI", 12),
         command=test_open_wizard,
         width=20,
-        height=3,
+
     )
     btn.pack(expand=True)
 

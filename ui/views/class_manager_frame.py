@@ -199,7 +199,7 @@ class ClassManagerFrame(ResponsiveGridBase):
             columns=self.columns,
             show="headings",
             selectmode="browse",
-            height=20,
+
             yscrollcommand=self._autoscroll_y,
             xscrollcommand=self._autoscroll_x
         )
@@ -220,7 +220,7 @@ class ClassManagerFrame(ResponsiveGridBase):
         self.tree.bind("<Double-1>", lambda e: self._edit_class())
 
         # Bottom Bar for Actions
-        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, height=50)
+        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, )
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
         add_btn = tk.Button(
