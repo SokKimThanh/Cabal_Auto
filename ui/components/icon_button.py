@@ -196,6 +196,7 @@ def create_icon_button(
     on_leave: Optional[Callable] = None,
     on_focus: Optional[Callable] = None,
     auto_hover_disabled: bool = True,
+    element_id: Optional[str] = None,
     **kwargs,
 ) -> tk.Button:
     """
@@ -563,6 +564,30 @@ def create_icon_button(
     button.bind("<Return>", _on_keypress, add="+")
     button.bind("<space>", _on_keypress, add="+")
 
+    # Runtime Registration for UIElementRegistry
+    if element_id and parent:
+        module = getattr(parent, "MODULE_NAME", "unknown")
+        screen = getattr(parent, "SCREEN_NAME", "unknown")
+
+        if module != "unknown" and screen != "unknown":
+            try:
+                from lib.ui.registry import UIElementRegistry, UIElementDescriptor
+
+                desc = UIElementDescriptor(
+                    element_id=element_id,
+                    module=module,
+                    screen=screen,
+                    element_type="button"
+                )
+                UIElementRegistry().register(desc)
+
+                # Attach metadata to widget
+                button._element_id = element_id
+                button._module = module
+                button._screen = screen
+            except ImportError as e:
+                print(f"Warning: Runtime registration failed: {e}")
+
     return button
 
 
@@ -656,7 +681,7 @@ def _attach_simple_tooltip(widget: Any, text: str, delay: int = 400):
 
 
 # Convenience functions for common button types
-def create_add_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
+def create_add_button(parent: Any, command: Callable, element_id: Optional[str] = None, **kwargs) -> tk.Button:
     """Create an 'Add' button with icon."""
     return create_icon_button(
         parent=parent,
@@ -664,11 +689,12 @@ def create_add_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
         icon_fallback="➕",
         command=command,
         button_type="green_light",
+        element_id=element_id,
         **kwargs,
     )
 
 
-def create_delete_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
+def create_delete_button(parent: Any, command: Callable, element_id: Optional[str] = None, **kwargs) -> tk.Button:
     """Create a 'Delete' button with icon."""
     return create_icon_button(
         parent=parent,
@@ -676,11 +702,12 @@ def create_delete_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
         icon_fallback="🗑️",
         command=command,
         button_type="red",
+        element_id=element_id,
         **kwargs,
     )
 
 
-def create_save_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
+def create_save_button(parent: Any, command: Callable, element_id: Optional[str] = None, **kwargs) -> tk.Button:
     """Create a 'Save' button with icon."""
     return create_icon_button(
         parent=parent,
@@ -688,21 +715,22 @@ def create_save_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
         icon_fallback="💾",
         command=command,
         button_type="green_light",
+        element_id=element_id,
         **kwargs,
     )
 
 
-def create_cancel_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
+def create_cancel_button(parent: Any, command: Callable, element_id: Optional[str] = None, **kwargs) -> tk.Button:
     """Create a 'Cancel' button with icon."""
     # Default to neutral gray style
     if "button_type" not in kwargs:
         kwargs["button_type"] = "refresh"  # Use refresh for neutral gray
     return create_icon_button(
-        parent=parent, icon_name="cancel", icon_fallback="✖", command=command, **kwargs
+        parent=parent, icon_name="cancel", icon_fallback="✖", command=command, element_id=element_id, **kwargs
     )
 
 
-def create_refresh_button(parent: Any, command: Callable, **kwargs) -> tk.Button:
+def create_refresh_button(parent: Any, command: Callable, element_id: Optional[str] = None, **kwargs) -> tk.Button:
     """Create a 'Refresh' button with icon."""
     return create_icon_button(
         parent=parent,
@@ -710,6 +738,7 @@ def create_refresh_button(parent: Any, command: Callable, **kwargs) -> tk.Button
         icon_fallback="🔄",
         command=command,
         button_type="refresh",
+        element_id=element_id,
         **kwargs,
     )
 
@@ -728,6 +757,7 @@ def create_icon_label(
     font: Optional[tuple] = None,
     fg: Optional[str] = None,
     bg: Optional[str] = None,
+    element_id: Optional[str] = None,
     **kwargs,
 ) -> tk.Label:
     """
@@ -853,6 +883,29 @@ def create_icon_label(
         # i18n tooltip
         attach_i18n_tooltip(label, resolved_tooltip_key, ns=tooltip_ns, lang_provider=get_lang)
 
+    # Runtime Registration for UIElementRegistry
+    if element_id and parent:
+        module = getattr(parent, "MODULE_NAME", "unknown")
+        screen = getattr(parent, "SCREEN_NAME", "unknown")
+
+        if module != "unknown" and screen != "unknown":
+            try:
+                from lib.ui.registry import UIElementRegistry, UIElementDescriptor
+
+                desc = UIElementDescriptor(
+                    element_id=element_id,
+                    module=module,
+                    screen=screen,
+                    element_type="label"
+                )
+                UIElementRegistry().register(desc)
+
+                # Attach metadata to widget
+                label._element_id = element_id
+                label._module = module
+                label._screen = screen
+            except ImportError as e:
+                print(f"Warning: Runtime registration failed: {e}")
 
     return label
 
