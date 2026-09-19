@@ -620,7 +620,7 @@ class App:
     def _build_action_bar(self):
         from ui.components.action_bar_view import ActionBarView
         self.action_bar = ActionBarView(self.shell_zone_a, state_controller=self.state_controller, window_controller=self.window_controller, scan_controller=self.scan_controller)
-        self.action_bar.pack(fill="both", expand=True)
+        self.action_bar.pack(fill="x", expand=False)
 
         self.btn_manual_scan = self.action_bar.btn_manual_scan
         self.compact_window_selector = self.action_bar.compact_window_selector
