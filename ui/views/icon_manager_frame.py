@@ -421,7 +421,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
             # Get descriptors from Registry
             try:
-                from lib.ui.registry import UIElementRegistry
+                from lib.events.ui_element_registry import UIElementRegistry
                 registry_items = UIElementRegistry().get_all()
             except ImportError:
                 registry_items = []

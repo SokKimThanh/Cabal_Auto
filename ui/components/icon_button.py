@@ -566,12 +566,27 @@ def create_icon_button(
 
     # Runtime Registration for UIElementRegistry
     if element_id and parent:
-        module = getattr(parent, "MODULE_NAME", "unknown")
-        screen = getattr(parent, "SCREEN_NAME", "unknown")
+        # Walk up the widget tree to find MODULE_NAME and SCREEN_NAME
+        current = parent
+        module = "unknown"
+        screen = "unknown"
+        while current:
+            if hasattr(current, "MODULE_NAME") and hasattr(current, "SCREEN_NAME"):
+                module = getattr(current, "MODULE_NAME")
+                screen = getattr(current, "SCREEN_NAME")
+                break
+            # Use winfo_parent to get parent path, then nametowidget to get the actual widget object
+            try:
+                parent_path = current.winfo_parent()
+                if not parent_path:
+                    break
+                current = current._nametowidget(parent_path)
+            except Exception:
+                break
 
         if module != "unknown" and screen != "unknown":
             try:
-                from lib.ui.registry import UIElementRegistry, UIElementDescriptor
+                from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor
 
                 desc = UIElementDescriptor(
                     element_id=element_id,
@@ -890,7 +905,7 @@ def create_icon_label(
 
         if module != "unknown" and screen != "unknown":
             try:
-                from lib.ui.registry import UIElementRegistry, UIElementDescriptor
+                from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor
 
                 desc = UIElementDescriptor(
                     element_id=element_id,

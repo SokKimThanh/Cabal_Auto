@@ -1,6 +1,6 @@
 import pytest
 import logging
-from lib.ui.registry import UIElementRegistry, UIElementDescriptor, CommonUI
+from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor, CommonUI
 
 @pytest.fixture
 def registry():

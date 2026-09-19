@@ -1,4 +1,6 @@
 import tkinter as tk
+from ui.components import create_icon_button
+from lib.events.ui_element_registry import CommonUI
 from tkinter import ttk, messagebox, simpledialog
 from typing import Dict, Any, List, Optional
 import math
@@ -7,6 +9,9 @@ from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 class BuildEditDialog(tk.Toplevel):
+    MODULE_NAME = "build_manager"
+    SCREEN_NAME = "edit_dialog"
+
     def __init__(self, parent, app, title: str, build_data: Optional[Dict[str, Any]], classes: List[Dict[str, Any]], on_save):
         super().__init__(parent)
         self.app = app
@@ -70,8 +75,8 @@ class BuildEditDialog(tk.Toplevel):
         btn_frame = tk.Frame(main_frame, bg=UIStyle.BG_BASE)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
 
-        tk.Button(btn_frame, text="Save", command=self._on_save_click, **UIStyle.get_button_style("primary")).pack(side="left", padx=10)
-        tk.Button(btn_frame, text="Cancel", command=self.destroy, **UIStyle.get_button_style("secondary")).pack(side="left", padx=10)
+        create_icon_button(parent=btn_frame, icon_name="save", text="Save", command=self._on_save_click, button_type="green_light", element_id=CommonUI.BTN_SAVE).pack(side="left", padx=10)
+        create_icon_button(parent=btn_frame, icon_name="cancel", text="Cancel", command=self.destroy, button_type="refresh", element_id=CommonUI.BTN_CANCEL).pack(side="left", padx=10)
 
     def _populate_data(self):
         if not self.build_data:
@@ -121,6 +126,9 @@ class BuildEditDialog(tk.Toplevel):
 
 
 class BuildManagerFrame(ResponsiveGridBase):
+    MODULE_NAME = "build_manager"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE)
         self.app = app
@@ -190,46 +198,54 @@ class BuildManagerFrame(ResponsiveGridBase):
         bottom_bar = tk.Frame(content, bg=UIStyle.BG_SURFACE, height=50)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
-        add_btn = tk.Button(
-            bottom_bar,
+        add_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="add",
             text=self.app._t("btn_add", default="Thêm"),
             command=self._add_build,
-            **UIStyle.get_button_style("primary")
+            button_type="green_light",
+            element_id=CommonUI.BTN_ADD
         )
         add_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        edit_btn = tk.Button(
-            bottom_bar,
+        edit_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="edit",
             text=self.app._t("btn_edit", default="Sửa"),
             command=self._edit_build,
-            **UIStyle.get_button_style("primary")
+            button_type="blue",
+            element_id=CommonUI.BTN_EDIT
         )
         edit_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        del_btn = tk.Button(
-            bottom_bar,
+        del_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="delete",
             text=self.app._t("btn_delete", default="Xóa"),
             command=self._delete_build,
-            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
+            button_type="red",
+            element_id=CommonUI.BTN_DELETE
         )
         del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        ref_btn = tk.Button(
-            bottom_bar,
+        ref_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="refresh",
             text=self.app._t("btn_refresh", default="Làm mới"),
             command=self._on_refresh,
-            **UIStyle.get_button_style("secondary")
+            button_type="refresh",
+            element_id=CommonUI.BTN_REFRESH
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
         # Pagination controls in bottom bar
-        self.btn_next_page = tk.Button(
-            bottom_bar,
+        self.btn_next_page = create_icon_button(
+            parent=bottom_bar,
+            icon_name="right",
             text=self.app._t("btn_next", default="Sau"),
             command=self._next_page,
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            button_type="refresh",
+            element_id="build_mgr_btn_next_page"
         )
         self.btn_next_page.pack(side="right", padx=(0, UIStyle.SPACE_MD), pady=UIStyle.SPACE_SM)
 
@@ -241,13 +257,13 @@ class BuildManagerFrame(ResponsiveGridBase):
         )
         self.lbl_page_info.pack(side="right", padx=(0, 10))
 
-        self.btn_prev_page = tk.Button(
-            bottom_bar,
+        self.btn_prev_page = create_icon_button(
+            parent=bottom_bar,
+            icon_name="left",
             text=self.app._t("btn_prev", default="Trước"),
             command=self._prev_page,
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            button_type="refresh",
+            element_id="build_mgr_btn_prev_page"
         )
         self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
 
