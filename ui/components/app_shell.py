@@ -76,12 +76,12 @@ class AppShell:
         self.main_shell.rowconfigure(0, weight=0)  # Vùng A - Action Bar
         self.main_shell.rowconfigure(1, minsize=int(540 * scale_factor), weight=1)  # Vùng B - Workspace
 
+        self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)  # Vùng C2 - Logs, footer full-width
+
         # Ensure main_shell fills root window
         self.main_shell.grid_rowconfigure(1, weight=1)
         self.main_shell.grid_columnconfigure(0, minsize=sidebar_width, weight=0)
         self.main_shell.grid_columnconfigure(1, weight=1)
-
-        self.main_shell.rowconfigure(2, minsize=int(36 * scale_factor), weight=0)  # Vùng C2 - Logs, footer full-width
 
         # Vùng A: Quick Action Bar (Spans full width)
         self.shell_zone_a = tk.Frame(self.main_shell, bg=UI.BG_BASE)
@@ -109,4 +109,4 @@ class AppShell:
         self.status_bar_frame.grid(row=1, column=0, columnspan=7, sticky="ew")
         self.status_bar_frame.pack_propagate(False)
 
-        self.main_shell.grid(row=0, column=0, columnspan=7, sticky="nsew", pady=(10, 0))
+        self.main_shell.grid(row=0, column=0, columnspan=7, sticky="nsew", pady=0)

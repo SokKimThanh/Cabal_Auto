@@ -80,6 +80,18 @@ class MainMenuBar(tk.Menu):
         settings_menu.add_command(
             label="Retry global hotkeys", command=_retry_hotkeys
         )
+
+        settings_menu.add_separator()
+
+        def _toggle_top_bar():
+            if hasattr(self.app, "_toggle_action_bar"):
+                self.app._toggle_action_bar()
+
+        toggle_label = "Toggle Action Bar" if self.lang == "en" else "Ẩn/Hiện Thanh Công Cụ (Action Bar)"
+        settings_menu.add_command(
+            label=toggle_label,
+            command=_toggle_top_bar
+        )
         self.add_cascade(label="Settings", menu=settings_menu)
 
     def _build_vision_menu(self):

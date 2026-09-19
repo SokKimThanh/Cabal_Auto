@@ -1,6 +1,6 @@
 import tkinter as tk
 from lib.ui_style_v2 import UIStyleV2 as UI
-from ui.components.base.responsive_grid_base import ResponsiveGridBase
+
 from ui.components.compact_window_selector import CompactWindowSelector
 from ui.panels.screen_state_panel import ScreenStatePanel
 from ui.helpers.button_styles import get_button_config
@@ -15,15 +15,15 @@ from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 
 logger = logging.getLogger(__name__)
 
-class ActionBarView(ResponsiveGridBase):
+class ActionBarView(tk.Frame):
     def __init__(self, parent, state_controller, *args, window_controller=None, scan_controller=None, **kwargs):
         super().__init__(parent, bg=UI.BG_BASE, *args, **kwargs)
         self.state_controller = state_controller
         self.window_controller = window_controller
         self.scan_controller = scan_controller
 
-        self.action_bar_frame = self.get_content_frame()
-        self.action_bar_frame.configure(padx=32, pady=10)
+        self.action_bar_frame = self
+        self.configure(padx=32, pady=10)
 
         # Configure columns for action_bar_frame (2 columns as requested)
         self.action_bar_frame.columnconfigure(0, weight=1)  # Left (Window Status)

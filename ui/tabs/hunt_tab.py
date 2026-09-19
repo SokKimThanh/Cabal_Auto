@@ -346,17 +346,17 @@ class HuntTab(ttk.Frame):
         content_frame = self.scrollable_workspace.get_content_frame()
         content_frame.config(bg=UI.BG_BASE)
 
-        # Set up a 2-column grid layout inside the responsive area (60% / 40%)
-        content_frame.columnconfigure(0, weight=6)
-        content_frame.columnconfigure(1, weight=4)
+        # Set up a 12-column grid layout inside the responsive area (Bootstrap-like)
+        for i in range(12):
+            content_frame.columnconfigure(i, weight=1)
 
-        # Left Column Container (60%)
+        # Left Column Container (spans 7 columns: ~58%)
         self.left_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
-        self.left_col_frame.grid(row=0, column=0, sticky="nsew", padx=(0, UI.SPACE_MD))
+        self.left_col_frame.grid(row=0, column=0, columnspan=7, sticky="nsew", padx=(0, UI.SPACE_MD))
 
-        # Right Column Container (40%)
+        # Right Column Container (spans 5 columns: ~42%)
         self.right_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
-        self.right_col_frame.grid(row=0, column=1, sticky="nsew")
+        self.right_col_frame.grid(row=0, column=7, columnspan=5, sticky="nsew")
 
         # Stack panels inside the columns
         from ui.panels.monster_target_panel import MonsterTargetPanel
