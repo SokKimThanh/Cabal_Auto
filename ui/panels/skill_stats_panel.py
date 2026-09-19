@@ -35,7 +35,7 @@ class SkillStatsPanel(ResponsiveGridBase):
             tree_container,
             columns=stats_columns,
             show="headings",
-            height=3,
+
         )
         stats_headings = {
             "skill": ("skill_name_col", int(120 * self.scale_factor)),

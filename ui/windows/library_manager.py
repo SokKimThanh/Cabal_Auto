@@ -1687,7 +1687,7 @@ Track progress at:
             bg="#E3F2FD",
             font=self.ui_font_label,
         ).grid(row=3, column=0, sticky="w", pady=(8, 0))
-        self.mon_desc_text = tk.Text(body, height=4, font=self.ui_font_text)
+        self.mon_desc_text = tk.Text(body,  font=self.ui_font_text)
         self.mon_desc_text.grid(row=3, column=1, columnspan=3, sticky="ew")
         self.mon_desc_text.insert("1.0", self.current_monster.get("description", ""))
 
@@ -1995,7 +1995,7 @@ Track progress at:
             show="tree headings",
             yscrollcommand=vsb.set,
             selectmode="browse",
-            height=8,
+
             style="Template.Treeview",
         )
         vsb.config(command=self.template_tree.yview)
@@ -5226,7 +5226,7 @@ class MonsterDialog:
         self.desc_text = tk.Text(
             desc_frame,
             width=40,
-            height=4,
+
             font=(UIStyle.resolve_font_family("body"), 9),
         )
         self.desc_text.pack(side="left", fill="both", expand=True)

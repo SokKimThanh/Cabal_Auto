@@ -158,7 +158,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             columns=self.columns,
             show="headings",
             selectmode="browse",
-            height=12,
+
             yscrollcommand=self.tree_scroll_y.set,
             xscrollcommand=self.tree_scroll_x.set
         )
@@ -185,7 +185,7 @@ class SkillManagerFrame(ResponsiveGridBase):
         self.tree.pack(fill="both", expand=True)
 
         # Bottom Bar for Actions
-        bottom_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE, height=50)
+        bottom_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE, )
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
         add_btn = tk.Button(
@@ -266,7 +266,7 @@ class SkillManagerFrame(ResponsiveGridBase):
             columns=("ID", "Name"),
             show="headings",
             selectmode="browse",
-            height=6,
+
             yscrollcommand=self.type_tree_scroll_y.set
         )
         self.type_tree_scroll_y.config(command=self.type_tree.yview)

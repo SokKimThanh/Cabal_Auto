@@ -67,7 +67,7 @@ class IconTreeComponent(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
 
         # 1. Top Filter Bar
-        self.top_filter_frame = tk.Frame(self, bg=UIStyle.BG_SUBTLE, height=60)
+        self.top_filter_frame = tk.Frame(self, bg=UIStyle.BG_SUBTLE, )
         self.top_filter_frame.grid(row=0, column=0, sticky="ew")
         self.top_filter_frame.grid_columnconfigure(0, weight=1)
         self.top_filter_frame.grid_columnconfigure(1, weight=0)

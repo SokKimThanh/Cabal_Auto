@@ -196,7 +196,6 @@ def create_icon_button(
     on_leave: Optional[Callable] = None,
     on_focus: Optional[Callable] = None,
     auto_hover_disabled: bool = True,
-    element_id: Optional[str] = None,
     **kwargs,
 ) -> tk.Button:
     """
@@ -564,27 +563,6 @@ def create_icon_button(
     button.bind("<Return>", _on_keypress, add="+")
     button.bind("<space>", _on_keypress, add="+")
 
-
-    # Runtime Registration (Phase 2)
-    if element_id and parent:
-        button._element_id = element_id  # type: ignore[attr-defined]
-        module = getattr(parent, "MODULE_NAME", "unknown")
-        screen = getattr(parent, "SCREEN_NAME", "unknown")
-
-        if module != "unknown" and screen != "unknown":
-            try:
-                from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor
-                desc = UIElementDescriptor(
-                    element_id=element_id,
-                    module=module,
-                    screen=screen,
-                    element_type="button"
-                )
-                UIElementRegistry.instance().register(desc)
-            except ImportError as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Could not register UI element {element_id}: {e}")
-
     return button
 
 
@@ -750,7 +728,6 @@ def create_icon_label(
     font: Optional[tuple] = None,
     fg: Optional[str] = None,
     bg: Optional[str] = None,
-    element_id: Optional[str] = None,
     **kwargs,
 ) -> tk.Label:
     """
@@ -876,27 +853,6 @@ def create_icon_label(
         # i18n tooltip
         attach_i18n_tooltip(label, resolved_tooltip_key, ns=tooltip_ns, lang_provider=get_lang)
 
-
-
-    # Runtime Registration (Phase 2)
-    if element_id and parent:
-        label._element_id = element_id  # type: ignore[attr-defined]
-        module = getattr(parent, "MODULE_NAME", "unknown")
-        screen = getattr(parent, "SCREEN_NAME", "unknown")
-
-        if module != "unknown" and screen != "unknown":
-            try:
-                from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor
-                desc = UIElementDescriptor(
-                    element_id=element_id,
-                    module=module,
-                    screen=screen,
-                    element_type="label"
-                )
-                UIElementRegistry.instance().register(desc)
-            except ImportError as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Could not register UI element {element_id}: {e}")
 
     return label
 

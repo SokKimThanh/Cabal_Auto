@@ -363,7 +363,7 @@ class IconManagerFrame(ResponsiveGridBase):
             columns=("id", "module", "component", "element"),
             show="headings",
             selectmode="browse",
-            height=4
+
         )
         self.usage_tree.heading("id", text="ID")
         self.usage_tree.heading("module", text="Module")
@@ -417,7 +417,27 @@ class IconManagerFrame(ResponsiveGridBase):
             cursor = self.icon_service.conn.cursor()
             cursor.execute("SELECT DISTINCT ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
             rows = cursor.fetchall()
-            self._available_usage_ids = sorted([r[0] for r in rows])
+            db_ids = [r[0] for r in rows]
+
+            # Fetch from UIElementRegistry
+            try:
+                from lib.events.ui_element_registry import UIElementRegistry
+                registry_items = UIElementRegistry.instance().get_all()
+                registry_strings = [f"{desc.module}/{desc.screen}/{desc.element_id}" for desc in registry_items]
+                registry_raw_ids = {desc.element_id for desc in registry_items}
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Could not load from UIElementRegistry: {e}")
+                registry_strings = []
+                registry_raw_ids = set()
+
+            # Remove db_ids that already have a long-format version in the registry
+            filtered_db_ids = [db_id for db_id in db_ids if db_id not in registry_raw_ids]
+
+            # Merge and remove duplicates using set
+            merged = set(filtered_db_ids + registry_strings)
+            self._available_usage_ids = sorted(list(merged))
+
             if hasattr(self, 'combo_usage_element'):
                 self.combo_usage_element['values'] = self._available_usage_ids
         except Exception as e:
@@ -452,7 +472,8 @@ class IconManagerFrame(ResponsiveGridBase):
 
         mod = self.var_usage_mod.get().strip()
         comp = self.var_usage_comp.get().strip()
-        elem = self.var_usage_element.get().strip()
+        elem_raw = self.var_usage_element.get().strip()
+        elem = elem_raw.split("/")[-1] if "/" in elem_raw else elem_raw
 
         result = self.controller.add_usage(icon_key, mod, comp, elem)
 
