@@ -182,45 +182,10 @@ class ClassManagerFrame(ResponsiveGridBase):
 
         self._create_search_bar(content_frame)
 
-        # Treeview Area
-        table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
-        table_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
-
-        # Cấu hình grid cho table_frame để thanh cuộn tự động ẩn/hiện mượt mà
-        table_frame.grid_rowconfigure(0, weight=1)
-        table_frame.grid_columnconfigure(0, weight=1)
-
-        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
-        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
-
-        self.columns = ("ID", "Name", "Description", "STR", "INT", "DEX")
-        self.tree = ttk.Treeview(
-            table_frame,
-            columns=self.columns,
-            show="headings",
-            selectmode="browse",
-
-            yscrollcommand=self._autoscroll_y,
-            xscrollcommand=self._autoscroll_x
-        )
-
-        self.tree_scroll_y.config(command=self.tree.yview)
-        self.tree_scroll_x.config(command=self.tree.xview)
-
-        for col in self.columns:
-            self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col))
-            width = 50 if col in ("ID", "STR", "INT", "DEX") else 150
-            if col == "Description":
-                width = 250
-            self.tree.column(col, width=width, minwidth=50)
-
-        # Đặt treeview và scrollbars bằng grid
-        self.tree.grid(row=0, column=0, sticky="nsew")
-
-        self.tree.bind("<Double-1>", lambda e: self._edit_class())
-
-        # Bottom Bar for Actions
-        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE, )
+        # -------------------------------------------------------------
+        # Bottom Bar for Actions (Packed FIRST from Bottom)
+        # -------------------------------------------------------------
+        bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
         add_btn = tk.Button(
@@ -283,6 +248,45 @@ class ClassManagerFrame(ResponsiveGridBase):
             relief="flat"
         )
         self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
+
+        # -------------------------------------------------------------
+        # Treeview Area (Packed LAST, expands in the middle)
+        # -------------------------------------------------------------
+        table_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
+        table_frame.pack(side="top", fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
+
+        # Cấu hình grid cho table_frame để thanh cuộn tự động ẩn/hiện mượt mà
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        self.tree_scroll_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL)
+        self.tree_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
+
+        self.columns = ("ID", "Name", "Description", "STR", "INT", "DEX")
+        self.tree = ttk.Treeview(
+            table_frame,
+            columns=self.columns,
+            show="headings",
+            selectmode="browse",
+
+            yscrollcommand=self._autoscroll_y,
+            xscrollcommand=self._autoscroll_x
+        )
+
+        self.tree_scroll_y.config(command=self.tree.yview)
+        self.tree_scroll_x.config(command=self.tree.xview)
+
+        for col in self.columns:
+            self.tree.heading(col, text=self.app._t(f"col_{col.lower()}", default=col))
+            width = 50 if col in ("ID", "STR", "INT", "DEX") else 150
+            if col == "Description":
+                width = 250
+            self.tree.column(col, width=width, minwidth=50)
+
+        # Đặt treeview và scrollbars bằng grid
+        self.tree.grid(row=0, column=0, sticky="nsew")
+
+        self.tree.bind("<Double-1>", lambda e: self._edit_class())
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)

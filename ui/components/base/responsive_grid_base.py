@@ -76,9 +76,16 @@ class ResponsiveGridBase(tk.Frame):
         return self.content_frame
 
     def _on_canvas_configure(self, event):
-        """Update the inner frame's width to match the canvas."""
+        """Update the inner frame's width and height to match the canvas."""
         if self.canvas.winfo_width() > 0:
             self.canvas.itemconfig(self.content_window, width=event.width)
+
+            req_height = self.content_frame.winfo_reqheight()
+            if event.height > req_height:
+                self.canvas.itemconfig(self.content_window, height=event.height)
+            else:
+                self.canvas.itemconfig(self.content_window, height='')
+
             if self._resize_timer:
                 self.after_cancel(self._resize_timer)
             self._resize_timer = self.after(100, lambda: self._on_resize(event.width, event.height))
