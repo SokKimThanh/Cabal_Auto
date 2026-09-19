@@ -405,13 +405,13 @@ class IconManagerFrame(ResponsiveGridBase):
             selectmode="browse",
             height=4
         )
-        self.available_elements_tree.heading("  #0", text="Mục lục (Module/Screen)", anchor="w")
+        self.available_elements_tree.heading("#0", text="Mục lục (Module/Screen)", anchor="w")
         self.available_elements_tree.heading("id", text="")
         self.available_elements_tree.heading("module", text="Module")
         self.available_elements_tree.heading("component", text="Type")
         self.available_elements_tree.heading("element", text="Element ID")
 
-        self.available_elements_tree.column("  #0", width=150, stretch=tk.NO)
+        self.available_elements_tree.column("#0", width=150, stretch=tk.NO)
         self.available_elements_tree.column("id", width=0, stretch=tk.NO)
         self.available_elements_tree.column("module", width=80, stretch=tk.NO)
         self.available_elements_tree.column("component", width=80, stretch=tk.NO)
