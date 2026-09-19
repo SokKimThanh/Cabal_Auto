@@ -4,6 +4,9 @@ from ui.tabs.setup_tab import SetupTab
 
 
 class SetupContentFrame(ttk.Frame):
+    MODULE_NAME = "setup_content_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app

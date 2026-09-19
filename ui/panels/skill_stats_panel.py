@@ -4,6 +4,9 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 
 class SkillStatsPanel(ResponsiveGridBase):
+    MODULE_NAME = "skill_stats_panel"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         super().__init__(parent, bg=UI.BG_BASE)
         self.app = app

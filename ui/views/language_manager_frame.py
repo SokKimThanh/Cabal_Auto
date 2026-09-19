@@ -9,6 +9,9 @@ from ui.helpers.tooltip import attach_i18n_tooltip
 
 
 class LanguageManagerFrame(tk.Frame):
+    MODULE_NAME = "language_manager_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app, **kwargs):
         super().__init__(parent, bg=UIStyle.BG_ELEVATED, **kwargs)
         self.app = app

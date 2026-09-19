@@ -306,6 +306,9 @@ DATA_PATH = Path("lib/data/monsters.json")
 
 
 class CompatibleTreeview(ttk.Treeview):
+    MODULE_NAME = "monster_manager_win"
+    SCREEN_NAME = "main"
+
     """Treeview with backward compatibility for Listbox methods used in unit tests."""
 
     def size(self) -> int:

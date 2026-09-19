@@ -5,6 +5,9 @@ from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from ui.components.empty_state import EmptyState
 
 class ScanHistoryFrame(ResponsiveGridBase):
+    MODULE_NAME = "scan_history_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app):
         super().__init__(parent, bg=UI.BG_BASE)
         self.app = app

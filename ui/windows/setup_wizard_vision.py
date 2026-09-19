@@ -135,6 +135,9 @@ def create_or_show_vision_wizard(parent: tk.Widget, **kwargs) -> "VisionWizard":
 
 # ==================== MAIN CLASS ====================
 class VisionWizard(tk.Toplevel):
+    MODULE_NAME = "setup_wizard_vision"
+    SCREEN_NAME = "main"
+
     """
     Vision Wizard - Giao diện quản lý vision system.
 

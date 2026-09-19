@@ -17,6 +17,9 @@ class TargetInfo:
     state: str = "waiting" # "waiting" | "ready" | "hunting"
 
 class TargetStatusPanel(ttk.LabelFrame):
+    MODULE_NAME = "target_status_panel"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(8 * scale_factor), int(6 * scale_factor))
         super().__init__(parent, text="📊 Target Status", padding=padding)

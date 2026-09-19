@@ -5,6 +5,9 @@ from typing import Dict, Any, Callable, Optional
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 class SkillEditDialog(tk.Toplevel):
+    MODULE_NAME = "skill_edit_dialog"
+    SCREEN_NAME = "dialog"
+
     def __init__(self, parent, app, title: str, skill_data: Optional[Dict[str, Any]], on_save: Callable[[Dict[str, Any]], None]):
         super().__init__(parent)
         self.app = app
