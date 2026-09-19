@@ -28,7 +28,7 @@ class UIElementDescriptor:
 ```
 
 ### 2. Sửa đổi UI Helpers để thu thập Metadata (Lúc Runtime)
-Các hàm tạo UI (như `create_icon_button`) sẽ **bắt buộc** nhận các tham số `module`, `screen`, `element_id`. Các Frame sẽ cung cấp các thông tin này thông qua thuộc tính class để tránh việc lặp code (DRY):
+Các hàm tạo UI (như `create_icon_button`) sẽ nhận tham số `parent` và `element_id`. Helper sẽ tự động đọc `MODULE_NAME` và `SCREEN_NAME` từ `parent` để tránh việc lặp code (DRY), giúp code sạch hơn và ít typo hơn:
 
 ```python
 class SettingsFrame(ttk.Frame):
@@ -36,31 +36,44 @@ class SettingsFrame(ttk.Frame):
     SCREEN_NAME = "settings"
 
     def _create_ui(self):
-        # Hàm create_icon_button sẽ tự động đăng ký (register) khi widget thực sự được vẽ
+        # Hàm create_icon_button tự đọc parent.MODULE_NAME và parent.SCREEN_NAME
         self.btn_save = create_icon_button(
             parent=self,
-            module=self.MODULE_NAME,
-            screen=self.SCREEN_NAME,
             element_id="btn_save" # Xem phần 3 để tối ưu hardcode
         )
 ```
 
 ### 3. Chuẩn hóa ID (Strong Typing)
-Để tránh typo khi lập trình và hỗ trợ Automation sau này, các Element ID dùng chung nên được định nghĩa dạng Enum:
+Khuyến nghị **bắt buộc** đối với các shared/common IDs phải được định nghĩa dưới dạng Enum để tránh typo và hỗ trợ Automation:
 ```python
 class CommonUI(str, Enum):
     BTN_SAVE = "btn_save"
     BTN_CANCEL = "btn_cancel"
     # Lập trình viên sẽ gọi: element_id=CommonUI.BTN_SAVE
 ```
+Tuy nhiên, đối với các ID đặc thù (specific IDs) như `build_mgr_btn_generate_report`, vẫn có thể sử dụng string để tránh việc maintain một file Enum khổng lồ cho toàn bộ project (1000+ buttons).
 
 ### 4. Xây dựng Singleton Registry
 Tạo một lớp quản lý danh sách in-memory:
 - **Vị trí:** `lib/events/ui_element_registry.py`.
 - **Cấu trúc lưu trữ:** `dict[tuple[str, str, str], UIElementDescriptor]`. Key sẽ là Tuple `(module, screen, element_id)`.
-- **Hành vi Idempotent (An toàn với Lifecycle):** Khi hàm `register()` được gọi, nếu Tuple key đã tồn tại, nó sẽ chỉ đơn giản là **ghi đè (overwrite/ignore)** mà không quăng lỗi. Điều này giúp hệ thống chịu đựng tốt việc UI Tkinter bị destroy và render lại nhiều lần mà không bị crash (Fail-Fast) hay rò rỉ bộ nhớ (Memory leak).
+- **Hành vi Idempotent (An toàn với Lifecycle):** Khi hàm `register()` được gọi, nếu Tuple key đã tồn tại, hệ thống sẽ **log warning** thay vì im lặng ignore:
+  ```
+  [UIRegistry] Duplicate registration: build_manager/settings/btn_save
+  ```
+  Điều này giúp hệ thống không bị crash (Fail-Fast) hay rò rỉ bộ nhớ khi UI Tkinter render lại nhiều lần, đồng thời developer vẫn biết chuyện gì đang xảy ra.
 
-### 5. Tích hợp vào Icon Manager
+### 5. Architectural Decision: Metadata Registry (State Classification)
+**UIElementRegistry là Metadata Registry.**
+Nó chỉ lưu mô tả của UI Element. Nó **tuyệt đối không lưu**:
+- Widget references
+- Widget state
+- Runtime values
+- Visibility status
+
+Nếu lưu state tại đây (VD: `descriptor.widget = button` hoặc `descriptor.visible = True`), Registry sẽ biến thành nơi chứa state, và đó là con đường dẫn tới memory leak thật sự.
+
+### 6. Tích hợp vào Icon Manager
 Tại class `IconManagerFrame`:
 - Lấy danh sách từ Registry và hiển thị Combobox dưới dạng format có ngữ cảnh: `f"{desc.module}/{desc.screen}/{desc.element_id}"`.
 

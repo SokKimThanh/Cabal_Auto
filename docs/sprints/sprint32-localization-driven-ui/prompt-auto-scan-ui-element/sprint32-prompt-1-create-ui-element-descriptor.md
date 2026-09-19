@@ -18,11 +18,16 @@ Tạo file (hoặc đặt ở vị trí phù hợp trong `lib/events/`):
 - **Cấu trúc lưu trữ:** Sử dụng một dictionary: `_elements: dict[tuple[str, str, str], UIElementDescriptor]`. Khóa (Key) là tuple `(module, screen, element_id)`.
 - **Phương thức `register(descriptor: UIElementDescriptor)`:**
   - Lấy key từ descriptor.
-  - Gán vào dictionary `_elements[key] = descriptor`.
-  - **Lưu ý Idempotent:** Cố tình ghi đè nếu key đã tồn tại. Không sử dụng mảng (`list`) và không raise Exception để tránh lỗi crash khi UI bị render lại nhiều lần.
+  - Nếu key đã tồn tại, tiến hành **log warning** (VD: `[UIRegistry] Duplicate registration: ...`). Không raise Exception để tránh lỗi crash (Fail-Fast) khi UI bị render lại nhiều lần.
+  - Gán/ghi đè vào dictionary `_elements[key] = descriptor`.
 - **Phương thức `get_all() -> list[UIElementDescriptor]`:** Trả về toàn bộ values của dictionary.
 - **Phương thức `clear()`:** Xóa toàn bộ dictionary (dành cho Unit tests).
 
 ## Rủi ro tiềm ẩn (Cần tránh)
-- **Memory Leak:** Tuyệt đối không lưu trữ object `Widget` (như `ttk.Button`) vào Registry. Chỉ lưu `UIElementDescriptor` (dạng string/primitive).
+- **Vi phạm Kiến trúc (State Classification):** `UIElementRegistry` là **Metadata Registry**. Nó chỉ được lưu mô tả của UI Element (các trường dữ liệu nguyên thủy). Tuyệt đối **không** lưu trữ:
+  - Widget references (như `ttk.Button`)
+  - Widget state
+  - Runtime values
+  - Visibility status
+  Nếu lưu các thông tin này, Registry sẽ bị biến thành nơi chứa state, gây ra memory leak.
 - **Lỗi Singleton State:** Quên viết hàm `clear()` sẽ làm các test case phía sau bị rò rỉ trạng thái, dẫn đến false positives.
