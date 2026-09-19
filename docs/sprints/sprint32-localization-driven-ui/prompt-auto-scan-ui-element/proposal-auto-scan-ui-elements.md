@@ -5,18 +5,17 @@ Hiện tại, trong form **Quản lý Nơi Dùng (Usages)** của Icon Manager, 
 Để hỗ trợ UX, hệ thống hiện dùng Combobox hiển thị danh sách các ID **đã từng được map** trong cơ sở dữ liệu (`icon_usages` table).
 Tuy nhiên, nếu một button mới được thêm vào UI (chưa được map icon bao giờ), Element ID đó sẽ không xuất hiện trong Combobox. Người dùng sẽ phải tự mở code ra để đọc ID và gõ tay, rất dễ dẫn đến lỗi sai chính tả (typo), làm hỏng ánh xạ của icon.
 
-## Mục tiêu Kiến trúc (Tầm nhìn dài hạn)
-- Cung cấp một cơ chế **Registry** để thu thập tự động toàn bộ Element ID và Metadata của ứng dụng.
-- Đảm bảo Registry hoạt động ổn định bất chấp vòng đời của UI (UI Lifecycle - tạo ra và hủy đi nhiều lần).
-- Giải quyết triệt để sự phụ thuộc vào **User Journey** (không bắt buộc người dùng phải mở màn hình đó thì mới có dữ liệu).
-- Xây dựng **Source of Truth** (Nguồn chân lý) về UI Metadata tĩnh cho toàn bộ hệ thống (Localization, Permission, Analytics, Automation).
+## Mục tiêu (Runtime Discovery)
+- Giải quyết bài toán **Discovery**: "Hệ thống hiển thị đúng những gì đang thực sự tồn tại trên UI". Nếu một component ẩn do phân quyền, nó không nên xuất hiện.
+- Cung cấp cơ chế **Runtime Registry** để tự động thu thập Element ID và Metadata khi các thành phần giao diện (UI widget) thực sự được render.
+- Đặt nền móng dữ liệu đủ tốt (UIElementDescriptor) để mở đường cho các phân hệ tương lai (Localization, Permission, Audit) mà không over-engineering.
 
-## Giải pháp Đề xuất: Static Metadata Registry (Đăng ký tại thời điểm Load Module)
+## Giải pháp Đề xuất: Runtime Discovery + UIElementDescriptor
 
-Nếu chúng ta đăng ký ID vào Registry bên trong các hàm render UI (ví dụ lúc gọi `create_icon_button`), hệ thống sẽ dính **Technical Debt nghiêm trọng**: Mỗi khi UI bị destroy và render lại (ví dụ đổi tab), hệ thống sẽ đăng ký lại ID đó, gây rò rỉ bộ nhớ hoặc lỗi Fail-Fast vô cớ.
-Giải pháp triệt để là **tách bạch hoàn toàn Metadata (Tĩnh) khỏi Rendering (Động)** bằng cơ chế Static Registration (Decorators/Metaclasses) tại thời điểm Python nạp (load) module.
+Đây là giải pháp cân bằng nhất giữa giá trị và chi phí (Plan B) - giải quyết dứt điểm pain point hiện tại mà không biến thành một framework quá phức tạp.
 
 ### 1. Định nghĩa UIElementDescriptor
+Lưu trữ thông tin chi tiết thay vì chuỗi string phẳng để dễ dàng phân loại và tránh trùng lặp:
 ```python
 from dataclasses import dataclass
 
@@ -28,86 +27,73 @@ class UIElementDescriptor:
     element_type: str
 ```
 
-### 2. Sử dụng Decorator để khai báo Metadata tĩnh
-Thay vì ép UI Helpers thực hiện đăng ký lúc chạy, chúng ta định nghĩa UI Elements ngay trên cấu trúc Class (Declarative) bằng Decorator. Việc đăng ký diễn ra ngay khi Python đọc file code (Import time).
+### 2. Sửa đổi UI Helpers để thu thập Metadata (Lúc Runtime)
+Các hàm tạo UI (như `create_icon_button`) sẽ **bắt buộc** nhận các tham số `module`, `screen`, `element_id`. Các Frame sẽ cung cấp các thông tin này thông qua thuộc tính class để tránh việc lặp code (DRY):
 
 ```python
-from lib.events.ui_element_registry import ui_screen, ui_element
+class SettingsFrame(ttk.Frame):
+    MODULE_NAME = "build_manager"
+    SCREEN_NAME = "settings"
 
-@ui_screen(module="build_manager", screen="settings")
-class SettingsFrame(BaseFrame):
-
-    # Metadata được đăng ký tĩnh vào Registry ngay khi file này được import
-    @ui_element(element_id="btn_save", type="button")
-    def _create_save_btn(self):
-        # UI Helper chỉ lo việc vẽ (render), không cần làm nhiệm vụ đăng ký nữa
-        self.btn_save = create_icon_button(parent=self, element_id="btn_save")
+    def _create_ui(self):
+        # Hàm create_icon_button sẽ tự động đăng ký (register) khi widget thực sự được vẽ
+        self.btn_save = create_icon_button(
+            parent=self,
+            module=self.MODULE_NAME,
+            screen=self.SCREEN_NAME,
+            element_id="btn_save" # Xem phần 3 để tối ưu hardcode
+        )
 ```
-- **Lợi ích:** Giải quyết 100% bài toán "Phụ thuộc User Journey". Chỉ cần ứng dụng khởi động (bootstrapper import các class UI), toàn bộ Metadata của ứng dụng đã nằm gọn trong Registry mà không cần bất kỳ màn hình nào phải thực sự render lên màn hình!
 
-### 3. Chuẩn hóa ID bằng Enum (Chống Hardcode)
-Để đảm bảo an toàn cho các tác vụ Auto-test hoặc Refactor diện rộng trong tương lai, các ID dùng chung không nên là String hardcode dễ gãy:
+### 3. Chuẩn hóa ID (Strong Typing)
+Để tránh typo khi lập trình và hỗ trợ Automation sau này, các Element ID dùng chung nên được định nghĩa dạng Enum:
 ```python
 class CommonUI(str, Enum):
     BTN_SAVE = "btn_save"
     BTN_CANCEL = "btn_cancel"
-
-# Khai báo: @ui_element(element_id=CommonUI.BTN_SAVE, type="button")
+    # Lập trình viên sẽ gọi: element_id=CommonUI.BTN_SAVE
 ```
 
 ### 4. Xây dựng Singleton Registry
 Tạo một lớp quản lý danh sách in-memory:
 - **Vị trí:** `lib/events/ui_element_registry.py`.
-- **Cấu trúc lưu trữ:** `dict[tuple[str, str, str], UIElementDescriptor]`. Key sẽ là Tuple `(module, screen, element_id)` để đảm bảo tính duy nhất.
-- **Phương thức:** `get_all() -> list[UIElementDescriptor]`.
+- **Cấu trúc lưu trữ:** `dict[tuple[str, str, str], UIElementDescriptor]`. Key sẽ là Tuple `(module, screen, element_id)`.
+- **Hành vi Idempotent (An toàn với Lifecycle):** Khi hàm `register()` được gọi, nếu Tuple key đã tồn tại, nó sẽ chỉ đơn giản là **ghi đè (overwrite/ignore)** mà không quăng lỗi. Điều này giúp hệ thống chịu đựng tốt việc UI Tkinter bị destroy và render lại nhiều lần mà không bị crash (Fail-Fast) hay rò rỉ bộ nhớ (Memory leak).
 
 ### 5. Tích hợp vào Icon Manager
 Tại class `IconManagerFrame`:
-- Khi render dữ liệu cho Combobox, dữ liệu sẽ được lấy từ Singleton Registry và format: `f"{desc.module}/{desc.screen}/{desc.element_id}"`.
+- Lấy danh sách từ Registry và hiển thị Combobox dưới dạng format có ngữ cảnh: `f"{desc.module}/{desc.screen}/{desc.element_id}"`.
 
-## Rủi ro và Điểm yếu (Đã được khắc phục bởi Static Registration)
+## Rủi ro và Điểm yếu
 
-1. **Vấn đề rò rỉ bộ nhớ & Lifecycle UI (Đã giải quyết):**
-   - Bằng cách đăng ký qua Class Decorator (lúc load file code), việc tạo/hủy UI (destroy frame) hoàn toàn không ảnh hưởng đến Registry. Registry luôn sạch sẽ và ổn định.
+1. **Phụ thuộc vào User Journey:**
+   - Vì là "Runtime Discovery", một button chỉ được thu thập nếu User/Admin **đã mở màn hình đó ra**.
+   - *Đánh giá:* Đây là trade-off chấp nhận được. Trải nghiệm thực tế của Admin là họ luôn nhìn thấy nút bấm trên UI rồi mới quay sang Icon Manager để gán icon. Nếu dùng "Static Discovery" (quét toàn bộ file) thì sẽ thu thập cả những nút mà user hiện tại không có quyền truy cập, gây nhiễu loạn thông tin.
 
-2. **Xử lý Xung đột định danh (ID Collision) & Cơ chế Fail-Fast (Bảo vệ tuyệt đối):**
-   - Khóa lưu trữ là `(module, screen, element_id)`. Nếu Developer vô tình khai báo 2 hàm có cùng `@ui_element(element_id="btn_save")` trong cùng một Class, Decorator sẽ quăng lỗi `UIElementCollisionError` **ngay lúc ứng dụng vừa bật lên** (Crash at startup). Lỗi được phát hiện ngay lập tức mà không cần đợi người dùng bấm vào màn hình đó.
+2. **Vấn đề Kế thừa (Inheritance):**
+   - Nếu `AdvancedSettingsFrame` kế thừa `SettingsFrame` (có chung nút save), nút save có thể bị đăng ký 2 lần dưới 2 screen name khác nhau.
+   - *Khắc phục:* Trong cấu trúc `dict` của Registry, Tuple key khác nhau sẽ sinh ra 2 entry. Trong phạm vi Icon Manager, điều này vô hại. Sẽ cần xử lý ở Phase xây dựng Audit Tree sau này.
 
-3. **Sự phụ thuộc vào User Journey (Đã giải quyết):**
-   - Combobox của Icon Manager sẽ luôn chứa 100% dữ liệu ngay từ giây đầu tiên ứng dụng khởi động, vì toàn bộ Decorator đã chạy trong lúc Import các Module.
+## So sánh Combobox vs Tree Component (Khẳng định lại)
 
-## Nghiên cứu mở rộng: Tree Component vs Combobox cho UI Element ID
+- **Search vs Audit:** Thao tác map icon là "Tìm kiếm" (Tôi cần nút Save của Build Manager -> gõ Combobox). Nó không phải là "Khám phá" (Tìm xem hệ thống có bao nhiêu module/nút).
+- **Kết luận:** Giữ nguyên **Combobox + Auto-complete** cho màn hình nhập liệu. Nhường Tree Component cho màn hình "UI Explorer / Audit" trong tương lai.
 
-Hiện tại, việc chọn Element ID đang được thực hiện qua **Combobox kết hợp Search**. Câu hỏi đặt ra là: *Có nên chuyển sang dùng Tree Component (dạng danh mục phân cấp) không?*
+## Lộ trình Thực thi & Ước lượng (Roadmap & Estimates)
 
-### Phân tích
+Dự án được bóc tách thành các giai đoạn rõ ràng để kiểm soát khối lượng công việc và rủi ro over-engineering.
 
-**Phương án 1: Combobox (Hiện tại & Đề xuất)**
-- **Bài toán:** Đây là một thao tác **Tìm kiếm (Search)**. User thường nghĩ: "Tôi cần gán icon cho button save của Build Manager" rồi gõ `build save`.
-- **Ưu điểm:** Tốc độ chọn cực nhanh. Kết quả được lọc ngay lập tức sau vài giây gõ phím. Combobox chiến thắng tuyệt đối trong workflow nhập liệu (như Map Icon).
+### 🟢 Sprint Hiện tại: Runtime Registry + UIElementDescriptor (Plan B)
+- **Công việc:** Tạo `UIElementDescriptor`, class `UIElementRegistry` (dict), sửa các hàm helper truyền metadata, tích hợp Combobox Icon Manager và viết unit test.
+- **Giá trị:** Giải quyết ngay lập tức pain point Typo của Icon Manager và thiết lập metadata chuẩn mực.
+- **Ước lượng thời gian:** **~3 ngày làm việc** (± 1 ngày).
 
-**Phương án 2: Tree Component (Phân cấp)**
-- **Bài toán:** Đây là thao tác **Khám phá (Exploration) / Audit**. User nghĩ: "Hệ thống đang có những màn hình nào? Có bao nhiêu button? Button nào chưa được gán icon?".
-- **Đặc điểm:** Cho cái nhìn tổng quan toàn hệ thống theo phân cấp (Module -> Screen -> Element). Tuy nhiên, thao tác chậm do phải click mở rộng từng node và tìm kiếm thủ công, không phù hợp cho form nhập liệu nhanh.
+### 🟡 Sprint Tiếp theo: UI Audit Tree
+- **Công việc:** Xây dựng màn hình UI Explorer dạng Tree (Module -> Screen -> Element). Hỗ trợ audit Missing Icon, Missing Translation, Usage Count.
+- **Giá trị:** Cung cấp công cụ quản trị (Governance) mạnh mẽ cho Admin.
+- **Ước lượng thời gian:** **1 - 2 tuần**.
 
-### Kết luận
-- **Không nên thay Combobox bằng Tree** trong form Map Icon. Combobox + Search là công cụ phù hợp nhất cho bài toán tìm kiếm và nhập liệu.
-- Tree Component rất mạnh, nhưng nên được dùng cho một màn hình **Audit UI / UI Explorer** riêng biệt thay vì đưa vào luồng cấu hình.
-
-## Định hướng dài hạn: Sự tiến hóa thành Application UI Metadata Registry
-
-Việc áp dụng kiến trúc **Static Metadata Registry** thông qua Decorators đã xây dựng một nền tảng chuẩn mực cho 3 năm tới:
-
-- **Giai đoạn 1 (Hiện tại): UX Enhancement & Metadata Foundation**
-  - Cung cấp dữ liệu hoàn chỉnh 100% (không sót do User Journey) cho Combobox trong Icon Manager.
-
-- **Giai đoạn 2: Nâng cấp thành Source of Truth**
-  - Registry trở thành Nguồn chân lý tĩnh (Static Source of Truth) cho toàn bộ cấu trúc UI của ứng dụng.
-  - Các hệ thống cốt lõi sẽ tiêu thụ dữ liệu này cực kỳ an toàn:
-    - **Localization:** `lang_manager.translate(module, screen, id)`
-    - **Permission:** `permission_service.hide(module, screen, id)`
-    - **Automation:** Script test dựa vào ID tĩnh để thao tác (không sợ gãy cấu trúc).
-
-- **Giai đoạn 3: Xây dựng UI Explorer (Audit Tool)**
-  - Đọc dữ liệu tĩnh từ Registry để dựng màn hình Tree Component (Module -> Screen -> Element) độc lập.
-  - Cho phép Audit: màn hình nào đang thiếu localization, nút bấm nào đang chưa có icon, tất cả được báo cáo minh bạch ngay khi vừa mở app.
+### 🔴 Tương lai xa (6-12 tháng tới): Application UI Metadata Platform (Plan C)
+- **Công việc:** Khi nhu cầu Automation, Permission phức tạp tăng cao, tiến hành nghiên cứu Framework Reflection, Class Decorators (`@ui_screen`, `@ui_element`), Auto-discovery tĩnh lúc startup.
+- **Đánh giá:** Đây là một thay đổi kiến trúc lớn, mang tính chất "Governance Framework" chứ không còn là "Discovery". Không nên nhồi nhét vào giai đoạn hiện tại.
+- **Ước lượng thời gian:** **2 - 4 tuần**.
