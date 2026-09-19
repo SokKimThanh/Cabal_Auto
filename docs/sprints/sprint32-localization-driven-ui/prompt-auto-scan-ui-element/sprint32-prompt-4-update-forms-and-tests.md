@@ -11,8 +11,8 @@
 ### 1. Cập nhật các UI Frame mẫu
 Chọn 2-3 form quan trọng (Ví dụ: `SettingsFrame`, `BuildManagerFrame`).
 - Thêm Class Attributes: `MODULE_NAME = "..."`, `SCREEN_NAME = "..."`.
-- Sửa lại các lệnh gọi `create_icon_button` để truyền vào `module=self.MODULE_NAME, screen=self.SCREEN_NAME`.
-- Thay thế các chuỗi ID cứng (hardcode) bằng cách sử dụng Enum `CommonUI.BTN_SAVE` nếu có.
+- Đảm bảo các lệnh gọi `create_icon_button` đã được pass `parent=self` và `element_id=...` để helper tự động đọc 2 attribute trên.
+- **Áp dụng Strong Typing:** Thay thế các chuỗi ID cứng (hardcode) thuộc nhóm shared/common (ví dụ: Save, Cancel, Add) bằng cách sử dụng bắt buộc Enum như `CommonUI.BTN_SAVE`. Đối với các ID mang tính chất đặc thù riêng biệt của màn hình (VD: `build_mgr_btn_generate_report`), tiếp tục sử dụng chuỗi string để tránh làm file Enum bị quá tải.
 
 ### 2. Viết Unit Test cho Registry
 Tạo file `tests/events/test_ui_element_registry.py`:
