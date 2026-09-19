@@ -417,7 +417,30 @@ class IconManagerFrame(ResponsiveGridBase):
             cursor = self.icon_service.conn.cursor()
             cursor.execute("SELECT DISTINCT ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
             rows = cursor.fetchall()
-            self._available_usage_ids = sorted([r[0] for r in rows])
+            db_ids = [r[0] for r in rows]
+
+            # Get descriptors from Registry
+            try:
+                from lib.ui.registry import UIElementRegistry
+                registry_items = UIElementRegistry().get_all()
+            except ImportError:
+                registry_items = []
+
+            registry_display_strings = []
+            registry_element_ids = set()
+
+            for desc in registry_items:
+                display_str = f"{desc.module}/{desc.screen}/{desc.element_id}"
+                registry_display_strings.append(display_str)
+                registry_element_ids.add(desc.element_id)
+
+            # Filter out db_ids that are already covered by Registry
+            filtered_db_ids = [db_id for db_id in db_ids if db_id not in registry_element_ids]
+
+            # Merge and sort
+            merged_ids = set(filtered_db_ids + registry_display_strings)
+            self._available_usage_ids = sorted(list(merged_ids))
+
             if hasattr(self, 'combo_usage_element'):
                 self.combo_usage_element['values'] = self._available_usage_ids
         except Exception as e:
@@ -452,15 +475,24 @@ class IconManagerFrame(ResponsiveGridBase):
 
         mod = self.var_usage_mod.get().strip()
         comp = self.var_usage_comp.get().strip()
-        elem = self.var_usage_element.get().strip()
+
+        # Get raw string from combobox and extract just the element_id
+        selected_elem = self.var_usage_element.get().strip()
+        elem = selected_elem.split("/")[-1] if selected_elem else ""
+
+        if not elem:
+            messagebox.showwarning("Warning", "Element ID cannot be empty.")
+            return
 
         result = self.controller.add_usage(icon_key, mod, comp, elem)
 
         if result.success:
             self.var_usage_element.set("")
             self._load_usages_for_selected(icon_key)
-            if elem not in self._available_usage_ids:
-                self._available_usage_ids.append(elem)
+
+            # If the user typed something completely new, add it to autocomplete list
+            if selected_elem not in self._available_usage_ids:
+                self._available_usage_ids.append(selected_elem)
                 self._available_usage_ids.sort()
                 self.combo_usage_element['values'] = self._available_usage_ids
 
