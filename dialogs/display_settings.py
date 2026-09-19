@@ -32,6 +32,8 @@ except ImportError:
 
 
 class DisplaySettingsDialog(tk.Toplevel):
+    MODULE_NAME = "display_settings"
+    SCREEN_NAME = "main"
     """Standalone settings dialog for window modes and column visibility."""
 
     def __init__(self, parent: MonsterManagerWin):

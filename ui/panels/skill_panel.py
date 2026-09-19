@@ -8,6 +8,9 @@ from ui.controllers.skill_preset_controller import SkillPresetController
 
 
 class SkillPanel(ttk.LabelFrame):
+    MODULE_NAME = "skill_panel"
+    SCREEN_NAME = "main"
+
     """Full panel with both widgets AND logic"""
 
     def _t(self, key, **kwargs):

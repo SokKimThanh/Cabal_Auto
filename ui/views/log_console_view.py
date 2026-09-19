@@ -7,6 +7,9 @@ from lib.system.hunt_logger import get_hunt_logger
 
 
 class LogConsoleView(tk.Frame):
+    MODULE_NAME = "log_console_view"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app):
         super().__init__(parent, bg=UI.BG_BASE)
         self.app = app

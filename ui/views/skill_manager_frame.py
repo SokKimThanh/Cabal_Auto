@@ -7,6 +7,9 @@ from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
 class SkillManagerFrame(ResponsiveGridBase):
+    MODULE_NAME = "skill_manager_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app=None, *args, **kwargs):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app

@@ -4,6 +4,9 @@ from ui.tabs.hunt_tab import HuntTab
 
 
 class HuntWorkspaceFrame(ttk.Frame):
+    MODULE_NAME = "hunt_workspace_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app

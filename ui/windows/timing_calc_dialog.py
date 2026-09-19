@@ -3,6 +3,9 @@ from tkinter import ttk
 
 
 class TimingCalcDialog(tk.Toplevel):
+    MODULE_NAME = "timing_calc_dialog"
+    SCREEN_NAME = "dialog"
+
     def __init__(self, parent, app, on_apply=None):
         super().__init__(parent)
         self.app = app

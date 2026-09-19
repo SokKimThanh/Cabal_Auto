@@ -5,6 +5,9 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.i18n import t
 
 class ScreenStatePanel(tk.Frame):
+    MODULE_NAME = "screen_state_panel"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent: tk.Widget, *args, **kwargs):
         super().__init__(parent, bg=UI.BG_BASE, *args, **kwargs)
         self._build_ui()
