@@ -280,25 +280,30 @@ class IconManagerFrame(ResponsiveGridBase):
         # Trạng thái 2: Content (đã chọn icon, có form & preview)
         self.content_state_frame = tk.Frame(self.right_detail_frame, bg=UIStyle.BG_SURFACE)
         self.content_state_frame.grid(row=0, column=0, sticky="nsew")
-        self.content_state_frame.grid_rowconfigure(0, weight=0) # Preview - ko co gian max
+        self.content_state_frame.grid_rowconfigure(0, weight=0) # Top container (Preview + Image Library)
         self.content_state_frame.grid_rowconfigure(1, weight=1) # Panel + Form sẽ co giãn
         self.content_state_frame.grid_columnconfigure(0, weight=1)
 
-        self.preview_component = IconPreviewComponent(self.content_state_frame, app=self.app, icon_helper=self.icon_helper)
+        self.top_detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
+        self.top_detail_container.grid(row=0, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=(UIStyle.SPACE_MD, 0))
+        self.top_detail_container.grid_rowconfigure(0, weight=1)
+        self.top_detail_container.grid_columnconfigure(0, weight=1) # Preview
+        self.top_detail_container.grid_columnconfigure(1, weight=1) # Image Library
+
+        self.preview_component = IconPreviewComponent(self.top_detail_container, app=self.app, icon_helper=self.icon_helper)
         self.preview_component.grid(row=0, column=0, sticky="nsew", pady=(0, UIStyle.SPACE_SM))
 
-        # Bọc Library và Form vào một container chia 2 cột
+        self.img_lib_container = tk.Frame(self.top_detail_container, bg=UIStyle.BG_SURFACE)
+        self.img_lib_container.grid(row=0, column=1, sticky="nsew", padx=(UIStyle.SPACE_MD, 0))
+
+        # Bottom container for Detail Form and Usages
         self.bottom_detail_container = tk.Frame(self.content_state_frame, bg=UIStyle.BG_SURFACE)
         self.bottom_detail_container.grid(row=1, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
         self.bottom_detail_container.grid_rowconfigure(0, weight=1)
-        self.bottom_detail_container.grid_columnconfigure(0, weight=1) # Image Library
-        self.bottom_detail_container.grid_columnconfigure(1, weight=1) # Detail Form
-
-        self.img_lib_container = tk.Frame(self.bottom_detail_container, bg=UIStyle.BG_SURFACE)
-        self.img_lib_container.grid(row=0, column=0, sticky="nsew", padx=(0, UIStyle.SPACE_MD))
+        self.bottom_detail_container.grid_columnconfigure(0, weight=1) # Detail Form
 
         self.detail_container = tk.Frame(self.bottom_detail_container, bg=UIStyle.BG_SURFACE)
-        self.detail_container.grid(row=0, column=1, sticky="nw")
+        self.detail_container.grid(row=0, column=0, sticky="nsew")
 
         self.image_library = ImageLibraryComponent(
             self.img_lib_container,
@@ -472,6 +477,14 @@ class IconManagerFrame(ResponsiveGridBase):
         else:
             hits = [item for item in self._available_usage_ids if typed.lower() in item.lower()]
             self.combo_usage_search['values'] = hits
+
+        # Open dropdown list for autocomplete effect
+        if self.combo_usage_search['values']:
+            try:
+                # Open dropdown without selecting an item (which <Down> does and ruins text)
+                self.combo_usage_search.tk.call('ttk::combobox::Post', self.combo_usage_search)
+            except Exception:
+                pass
 
     def _on_usage_search_select(self, event=None):
         selected_text = self.var_usage_search.get().strip()
