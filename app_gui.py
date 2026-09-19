@@ -553,6 +553,7 @@ class App:
 
         self.main_shell = self.shell.main_shell
         self.shell_zone_a = self.shell.shell_zone_a
+        self.action_bar_visible = True
         self.shell_zone_b = self.shell.shell_zone_b
         self.shell_zone_c1 = self.shell.shell_zone_c1
         self.status_bar_frame = self.shell.status_bar_frame
@@ -651,6 +652,21 @@ class App:
                 self._toggle_bottom_logs()
         else:
             self._last_height_under_900 = False
+
+    def _toggle_action_bar(self, force_state=None):
+        """Toggles the visibility of the top action bar."""
+        if not hasattr(self, 'action_bar_visible'):
+            self.action_bar_visible = True
+
+        if force_state is not None:
+            self.action_bar_visible = force_state
+        else:
+            self.action_bar_visible = not self.action_bar_visible
+
+        if self.action_bar_visible:
+            self.shell_zone_a.grid()
+        else:
+            self.shell_zone_a.grid_remove()
 
     def _update_sidebar_state(self, view_key: str):
         # Update sidebar selected state
