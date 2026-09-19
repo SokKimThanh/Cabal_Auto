@@ -363,7 +363,7 @@ class IconManagerFrame(ResponsiveGridBase):
             columns=("id", "module", "component", "element"),
             show="headings",
             selectmode="browse",
-            height=4
+
         )
         self.usage_tree.heading("id", text="ID")
         self.usage_tree.heading("module", text="Module")
