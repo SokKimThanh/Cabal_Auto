@@ -26,6 +26,8 @@ import json
 
 from pathlib import Path
 
+from lib.events.ui_element_registry import CommonUI
+
 # Import dialog classes from subpackage
 try:
     from dialogs.display_settings import DisplaySettingsDialog
@@ -304,6 +306,9 @@ DATA_PATH = Path("lib/data/monsters.json")
 
 
 class CompatibleTreeview(ttk.Treeview):
+    MODULE_NAME = "monster_manager_win"
+    SCREEN_NAME = "main"
+
     """Treeview with backward compatibility for Listbox methods used in unit tests."""
 
     def size(self) -> int:
@@ -355,6 +360,8 @@ class CompatibleTreeview(ttk.Treeview):
 
 
 class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
+    MODULE_NAME = "monster_manager"
+    SCREEN_NAME = "main"
     """
     Main Monster Manager Window (Master View with Table Layout).
     """
@@ -556,6 +563,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_capture",
             tooltip_ns="monster_editor",
+            element_id="capture_btn"
         )
         self.browse_button = create_icon_button(
             self.templates_tab,
@@ -564,6 +572,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             padding={"padx": 12, "pady": 6},
             tooltip_key="btn_browse",
             tooltip_ns="monster_editor",
+            element_id="browse_btn"
         )
         self.delete_template_button = create_delete_button(
             self.templates_tab,
@@ -572,6 +581,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_delete_template",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_DELETE
         )
         self.test_template_button = create_icon_button(
             self.templates_tab,
@@ -580,6 +590,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_test",
             tooltip_ns="monster_editor",
+            element_id="test_template_btn"
         )
         self.threshold_scale = tk.Scale(
             self.templates_tab, from_=0.0, to=1.0, resolution=0.01, orient="horizontal"
@@ -878,6 +889,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             auto_hover_disabled=True,
             tooltip_key="tooltip_save",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_SAVE
         )
         self.save_button.pack(side="left", padx=3)
 
@@ -1215,6 +1227,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             text=i18n_t("btn_confirm", ns="monster_editor", default="✔ Đồng ý"),
             padding={"padx": 12, "pady": 6},
             tooltip_text=i18n_t("btn_confirm", ns="monster_editor", default="✔ Đồng ý"),
+            element_id="btn_confirm_delete"
         )
         self.btn_confirm_delete.pack(side="right", padx=3)
 
@@ -1292,6 +1305,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_add_monster",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_ADD
         )
         self.add_monster_button.pack(side="left", padx=10, pady=5)
 
@@ -1306,6 +1320,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_edit_monster",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_EDIT
         )
         self.edit_btn.pack(side="left", padx=5, pady=5)
 
@@ -1317,6 +1332,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             padding={"padx": 12, "pady": 6},
             tooltip_key="tooltip_delete_monster",
             tooltip_ns="monster_editor",
+            element_id=CommonUI.BTN_DELETE
         )
         self.delete_monster_button.pack(side="left", padx=5, pady=5)
 
@@ -1334,6 +1350,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             button_type="refresh",
             padding={"padx": 6, "pady": 4},
             tooltip_text="Trang trước",
+            element_id="btn_prev_page"
         )
         self.btn_prev_page.pack(side="left", padx=2)
 
@@ -1354,6 +1371,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             button_type="blue",
             padding={"padx": 8, "pady": 4},
             tooltip_text="Đến trang",
+            element_id="btn_go_page"
         )
         self.btn_go_page.pack(side="left", padx=2)
 
@@ -1367,6 +1385,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             button_type="refresh",
             padding={"padx": 6, "pady": 4},
             tooltip_text="Trang sau",
+            element_id="btn_next_page"
         )
         self.btn_next_page.pack(side="left", padx=2)
 

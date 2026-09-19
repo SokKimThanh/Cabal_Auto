@@ -25,6 +25,9 @@ from ui.controllers.icon_manager_controller import IconManagerController
 
 
 class IconManagerFrame(ResponsiveGridBase):
+    MODULE_NAME = "icon_manager_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app=None, *args, **kwargs):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)
         self.app = app

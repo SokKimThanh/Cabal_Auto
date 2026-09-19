@@ -89,6 +89,9 @@ except Exception:
 
 
 class LibraryManagerWindow(tk.Toplevel):
+    MODULE_NAME = "library_manager"
+    SCREEN_NAME = "main"
+
 
     # --- Small icon cache ---
 

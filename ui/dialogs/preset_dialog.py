@@ -5,6 +5,9 @@ from lib.features.skills.skill_preset_service import SkillPresetService
 
 
 class PresetDialog(tk.Toplevel):
+    MODULE_NAME = "preset_dialog"
+    SCREEN_NAME = "dialog"
+
     def __init__(self, parent, app, **kwargs):
         super().__init__(parent, **kwargs)
         self.app = app

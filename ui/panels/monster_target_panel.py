@@ -10,6 +10,9 @@ from ui.components.empty_state import EmptyState
 
 
 class MonsterTargetPanel(ttk.LabelFrame):
+    MODULE_NAME = "monster_target_panel"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(10 * scale_factor), int(8 * scale_factor))
         super().__init__(parent, text="🎯 Target Setup", padding=padding)

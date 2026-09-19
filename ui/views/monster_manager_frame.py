@@ -8,6 +8,9 @@ from database import get_db, get_all_monsters_api
 from dialogs.monster_edit import MonsterEditDialog
 
 class MonsterManagerFrame(ResponsiveGridBase):
+    MODULE_NAME = "monster_manager_frame"
+    SCREEN_NAME = "main"
+
 
     def __init__(self, parent, app=None, *args, **kwargs):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, *args, **kwargs)

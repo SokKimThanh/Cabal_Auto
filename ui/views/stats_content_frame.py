@@ -4,6 +4,9 @@ from ui.tabs.stats_tab import StatsTab
 
 
 class StatsContentFrame(ttk.Frame):
+    MODULE_NAME = "stats_content_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app

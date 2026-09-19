@@ -4,6 +4,9 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 
 
 class CreatePresetDialog(tk.Toplevel):
+    MODULE_NAME = "create_preset_dialog"
+    SCREEN_NAME = "dialog"
+
     """Dialog to create a new custom preset from current skill slots."""
 
     def __init__(self, parent, class_id: int, skill_summary: dict, on_save_callback):

@@ -9,6 +9,9 @@ from ui.helpers.tooltip import attach_i18n_tooltip
 
 
 class LanguageManagerFrame(ResponsiveGridBase):
+    MODULE_NAME = "language_manager_frame"
+    SCREEN_NAME = "main"
+
     def __init__(self, parent, app, **kwargs):
         super().__init__(parent, app=app, bg=UIStyle.BG_BASE, **kwargs)
         self.app = app
