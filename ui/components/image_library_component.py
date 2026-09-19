@@ -179,12 +179,20 @@ class ImageLibraryComponent(tk.Frame):
             pass
 
     def _update_image_listbox(self, file_list):
+        # Temporarily enable listbox if disabled to allow inserting items
+        current_state = self.img_listbox.cget('state')
+        if current_state == 'disabled':
+            self.img_listbox.config(state='normal')
+
         self.img_listbox.delete(0, tk.END)
         for f in file_list:
             self.img_listbox.insert(tk.END, f)
 
         if self._current_selected_filepath:
             self._highlight_image_in_list(self._current_selected_filepath)
+
+        if current_state == 'disabled':
+            self.img_listbox.config(state='disabled')
 
     def _highlight_image_in_list(self, filename):
         items = self.img_listbox.get(0, tk.END)
