@@ -391,21 +391,33 @@ class IconManagerFrame(ResponsiveGridBase):
         add_frame = tk.Frame(usage_container, bg=UIStyle.BG_SURFACE)
         add_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
 
+        # 1. Search Box
+        tk.Label(add_frame, text="Tìm kiếm / Search:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
+        self.var_usage_search = tk.StringVar()
+        self.combo_usage_search = ttk.Combobox(add_frame, textvariable=self.var_usage_search, width=25)
+        self.combo_usage_search.pack(side="left", padx=(0,10))
+
+        # 2. Read-only Mod, Comp, ID
         tk.Label(add_frame, text="Mod:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.var_usage_mod = tk.StringVar(value="ui")
-        ttk.Entry(add_frame, textvariable=self.var_usage_mod, width=10).pack(side="left", padx=(0,5))
+        self.entry_usage_mod = ttk.Entry(add_frame, textvariable=self.var_usage_mod, width=10, state="readonly")
+        self.entry_usage_mod.pack(side="left", padx=(0,5))
 
         tk.Label(add_frame, text="Comp:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.var_usage_comp = tk.StringVar(value="button")
-        ttk.Entry(add_frame, textvariable=self.var_usage_comp, width=10).pack(side="left", padx=(0,5))
+        self.entry_usage_comp = ttk.Entry(add_frame, textvariable=self.var_usage_comp, width=10, state="readonly")
+        self.entry_usage_comp.pack(side="left", padx=(0,5))
 
         tk.Label(add_frame, text="ID:", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).pack(side="left")
         self.var_usage_element = tk.StringVar()
-        self.combo_usage_element = ttk.Combobox(add_frame, textvariable=self.var_usage_element, width=20)
-        self.combo_usage_element.pack(side="left", padx=(0,5))
+        self.entry_usage_element = ttk.Entry(add_frame, textvariable=self.var_usage_element, width=20, state="readonly")
+        self.entry_usage_element.pack(side="left", padx=(0,10))
 
-        # Setup auto-complete bind
-        self.combo_usage_element.bind('<KeyRelease>', self._autocomplete_usage_element)
+        # Setup auto-complete and selection bindings for the search box
+        self.combo_usage_search.bind('<KeyRelease>', self._autocomplete_usage_search)
+        self.combo_usage_search.bind('<<ComboboxSelected>>', self._on_usage_search_select)
+        self.combo_usage_search.bind('<FocusOut>', self._on_usage_search_select)
+        self.combo_usage_search.bind('<Return>', self._on_usage_search_select)
         self._available_usage_ids = []
 
         self.btn_add_usage = tk.Button(add_frame, text="Gắn (Map)", command=self._on_add_usage, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
@@ -444,22 +456,40 @@ class IconManagerFrame(ResponsiveGridBase):
             merged_ids = set(filtered_db_ids + registry_display_strings)
             self._available_usage_ids = sorted(list(merged_ids))
 
-            if hasattr(self, 'combo_usage_element'):
-                self.combo_usage_element['values'] = self._available_usage_ids
+            if hasattr(self, 'combo_usage_search'):
+                self.combo_usage_search['values'] = self._available_usage_ids
         except Exception as e:
             import logging
             logging.getLogger(__name__).warning(f"Failed to load usage IDs: {e}")
 
-    def _autocomplete_usage_element(self, event):
+    def _autocomplete_usage_search(self, event):
         if event.keysym not in ['BackSpace', 'Delete', 'Return', 'Tab'] and not event.char:
             return
 
-        typed = self.combo_usage_element.get()
+        typed = self.combo_usage_search.get()
         if typed == '':
-            self.combo_usage_element['values'] = self._available_usage_ids
+            self.combo_usage_search['values'] = self._available_usage_ids
         else:
             hits = [item for item in self._available_usage_ids if typed.lower() in item.lower()]
-            self.combo_usage_element['values'] = hits
+            self.combo_usage_search['values'] = hits
+
+    def _on_usage_search_select(self, event=None):
+        selected_text = self.var_usage_search.get().strip()
+        if not selected_text:
+            return
+
+        parts = selected_text.split("/")
+
+        # Determine how to auto-fill based on parts (e.g., 'ui/settings/btn_save' or just 'btn_save')
+        if len(parts) >= 3:
+            self.var_usage_mod.set(parts[0])
+            self.var_usage_comp.set(parts[1])
+            self.var_usage_element.set(parts[2])
+        elif len(parts) == 2:
+            self.var_usage_mod.set(parts[0])
+            self.var_usage_element.set(parts[1])
+        else:
+            self.var_usage_element.set(selected_text)
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
@@ -479,25 +509,27 @@ class IconManagerFrame(ResponsiveGridBase):
         mod = self.var_usage_mod.get().strip()
         comp = self.var_usage_comp.get().strip()
 
-        # Get raw string from combobox and extract just the element_id
+        # Get raw string from entry and extract just the element_id
         selected_elem = self.var_usage_element.get().strip()
         elem = selected_elem.split("/")[-1] if selected_elem else ""
 
         if not elem:
-            messagebox.showwarning("Warning", "Element ID cannot be empty.")
+            messagebox.showwarning("Warning", "Element ID cannot be empty. Vui lòng chọn một Nơi dùng.")
             return
 
         result = self.controller.add_usage(icon_key, mod, comp, elem)
 
         if result.success:
             self.var_usage_element.set("")
+            self.var_usage_search.set("")
             self._load_usages_for_selected(icon_key)
 
+            search_text = f"{mod}/{comp}/{elem}" if mod and comp else elem
             # If the user typed something completely new, add it to autocomplete list
-            if selected_elem not in self._available_usage_ids:
-                self._available_usage_ids.append(selected_elem)
+            if search_text not in self._available_usage_ids:
+                self._available_usage_ids.append(search_text)
                 self._available_usage_ids.sort()
-                self.combo_usage_element['values'] = self._available_usage_ids
+                self.combo_usage_search['values'] = self._available_usage_ids
 
             from tkinter import messagebox
             messagebox.showinfo("Thành công", f"Đã gán Element ID '{elem}' cho icon '{icon_key}'.")
