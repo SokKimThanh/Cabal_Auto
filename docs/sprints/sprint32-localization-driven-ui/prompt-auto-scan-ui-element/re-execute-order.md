@@ -1,12 +1,8 @@
-# Fallback Strategies & Execution Order
+# Trình tự Khôi phục & Thực thi lại
 
-Thứ tự thực thi các prompt:
-1. `sprint32-prompt-1-create-registry.md`
-2. `sprint32-prompt-2-update-helpers.md`
-3. `sprint32-prompt-3-integrate-icon-manager.md`
+Nếu Sprint thất bại hoặc cần chạy lại, hãy thực thi các prompt theo đúng thứ tự sau để đảm bảo không bị lỗi dependency:
 
-## Fallback Strategies
-
-Nếu gặp lỗi trong quá trình thực thi:
-1. **Lỗi khi tích hợp Registry vào Helper:** Nếu việc tiêm Singleton (instance) gây ra lỗi do import vòng (circular import) hoặc khó thiết lập ở mức helper tĩnh, hãy thử fallback về việc sử dụng Class attributes (như `@classmethod` và biến `_cache` class-level) thay vì tạo instance độc lập.
-2. **Lỗi hiển thị Combobox trong Icon Manager:** Nếu việc merge danh sách giữa DB và Registry tạo ra danh sách quá lớn làm treo UI (ít khả năng xảy ra, nhưng nếu có), hãy fallback bằng cách giới hạn số lượng hiển thị trong Combobox hoặc chỉ render khi user gõ search.
+1. `sprint32-prompt-1-create-ui-element-descriptor.md` (Xây dựng nền tảng Data)
+2. `sprint32-prompt-2-update-ui-helpers.md` (Cập nhật các hàm tạo UI)
+3. `sprint32-prompt-3-integrate-icon-manager.md` (Tích hợp luồng dữ liệu)
+4. `sprint32-prompt-4-update-forms-and-tests.md` (Áp dụng và Kiểm thử)
