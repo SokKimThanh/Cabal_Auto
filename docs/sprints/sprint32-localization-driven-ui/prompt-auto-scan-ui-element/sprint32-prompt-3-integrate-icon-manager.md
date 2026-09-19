@@ -15,9 +15,9 @@ Trích xuất danh sách metadata từ Registry và hợp nhất (merge) với d
 - Hợp nhất (Merge) 2 danh sách lại với nhau. Sử dụng `set` để loại bỏ các phần tử trùng lặp (ví dụ một ID đã lưu trong DB và đồng thời cũng đang có mặt trên UI qua Registry).
 
 ### 2. Điều chỉnh UX của Combobox
-- Vì danh sách hiển thị giờ là `module/screen/element_id`, khi người dùng chọn một item và nhấn Save, đảm bảo rằng giá trị được lưu xuống CSDL chỉ là phần `element_id` (nếu đây là yêu cầu thiết kế hiện tại), hoặc lưu toàn bộ chuỗi phụ thuộc vào cấu trúc DB của `icon_usages`.
-- (Hãy đọc kỹ file `proposal-auto-scan-ui-elements.md` và mã nguồn hiện tại của DB để quyết định đúng: Nếu DB chỉ lưu `element_id`, bạn phải parse chuỗi Combobox để lấy ra ID gốc trước khi gọi `IconService.save()`).
+- Vì danh sách hiển thị giờ là `module/screen/element_id`, khi người dùng chọn một item và nhấn Save, đảm bảo rằng giá trị được lưu xuống CSDL **chỉ là phần `element_id`**.
+- Tại hàm `_on_add_usage()` của `IconManagerFrame`, bắt buộc phải có logic parse (VD: `element_id = selected_string.split("/")[-1]`) để trích xuất ID gốc trước khi gọi hàm controller lưu xuống DB.
 
 ## Rủi ro tiềm ẩn (Cần tránh)
-- **Race Condition / Format Mismatch:** Dữ liệu cũ trong DB đang là `btn_save`. Dữ liệu từ Registry đưa lên là `build_manager/settings/btn_save`. Nếu chỉ gộp đơn thuần bằng `set()`, danh sách sẽ chứa cả 2 (bị duplicate về mặt ý nghĩa). Hãy chuẩn hóa dữ liệu từ DB (hoặc ngược lại) trước khi gộp để đảm bảo tính duy nhất.
-- **Lưu rác vào Database:** Bắt sự kiện `<FocusOut>` hoặc quá trình Save để chắc chắn rằng ta không lưu nguyên cụm `module/screen/element_id` vào cột `element_id` của DB (trừ khi được chỉ định thiết kế lại DB).
+- **Database Format Mismatch (Lưu rác vào Database):** Nếu Combobox hiển thị `a/b/btn_save` mà lúc Save lại bê nguyên chuỗi đó xuống DB. Hệ thống EventBus lúc render sẽ đi tìm nút có tên `a/b/btn_save` thay vì `btn_save` dẫn đến chức năng map icon hỏng toàn tập. Việc split chuỗi lấy Element ID gốc là **bắt buộc**.
+- **Race Condition / Duplicate Display:** Dữ liệu cũ trong DB đang là `btn_save`. Dữ liệu từ Registry đưa lên là `build_manager/settings/btn_save`. Hãy cẩn thận khi merge hai danh sách này để tránh Combobox hiển thị trùng lặp về mặt ý nghĩa (nếu cần, chỉ hiển thị format dài cho những ID đến từ Registry, ID rác không hợp lệ trong DB có thể bỏ qua hoặc chuẩn hóa).

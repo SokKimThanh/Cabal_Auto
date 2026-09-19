@@ -15,7 +15,7 @@ Chọn 2-3 form quan trọng (Ví dụ: `SettingsFrame`, `BuildManagerFrame`).
 - **Áp dụng Strong Typing:** Thay thế các chuỗi ID cứng (hardcode) thuộc nhóm shared/common (ví dụ: Save, Cancel, Add) bằng cách sử dụng bắt buộc Enum như `CommonUI.BTN_SAVE`. Đối với các ID mang tính chất đặc thù riêng biệt của màn hình (VD: `build_mgr_btn_generate_report`), tiếp tục sử dụng chuỗi string để tránh làm file Enum bị quá tải.
 
 ### 2. Viết Unit Test cho Registry
-Tạo file `tests/events/test_ui_element_registry.py`:
+Tạo file `tests/unit/events/test_ui_element_registry.py`:
 - Viết test `test_registry_singleton`: Đảm bảo `instance()` luôn trả về cùng một object.
 - Viết test `test_registry_idempotent`: Gọi `register()` 2 lần với cùng một tham số (cùng tuple key), đảm bảo `len(get_all()) == 1` (Không bị duplicate, không bị crash).
 - Gọi `UIElementRegistry.instance().clear()` trong `setUp` và `tearDown` để chống rò rỉ state.
