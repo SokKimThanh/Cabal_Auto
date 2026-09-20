@@ -34,7 +34,8 @@ class IconPreviewComponent(tk.Frame):
             submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn icon từ danh sách hoặc nhấn Đồng bộ nếu danh sách trống"),
             wraplength=450
         )
-        self.empty_preview.grid(row=0, column=0, sticky="nsew")
+        # Use center sticky to ensure it centers in the layout
+        self.empty_preview.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
         # Preview Label (Hidden by default)
         self.lbl_preview = tk.Label(
@@ -42,7 +43,9 @@ class IconPreviewComponent(tk.Frame):
             bg=UIStyle.BG_ELEVATED,
             text="",
             font=UIStyle.get_font("body"),
-            relief="groove"
+            relief="groove",
+            justify="center",
+            anchor="center"
         )
 
     def render(self, icon_data):
