@@ -1,0 +1,10 @@
+{
+  "timestamp": "1789907675.3060913",
+  "status": "FAIL",
+  "issues": [
+    "Tests timed out (>5 minutes)",
+    "Could not parse mock count from analyze_mocks.py",
+    "Unexpected modifications: ['cleanup_report.json', 'ui/views/icon_manager_frame.py']"
+  ],
+  "metrics": {}
+}

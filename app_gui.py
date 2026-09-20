@@ -837,7 +837,7 @@ class App:
         if requires_sidebar_refresh and hasattr(self, "sidebar") and hasattr(self, "navigation"):
             # Simply re-setting the active tab forces the Sidebar to naturally redraw
             # all its icons utilizing the freshly reloaded icon_helper cache
-            current_view = getattr(self.navigation, "current_view", None)
+            current_view = getattr(self.navigation, "current_view_key", None)
             if current_view:
                 self.sidebar.set_active_tab(current_view)
 
