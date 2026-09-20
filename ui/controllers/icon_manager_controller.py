@@ -90,7 +90,7 @@ class IconManagerController:
                 ts = TranslationService()
                 ts.upsert(namespace="", key=t_key, lang="en", text=val_en)
                 ts.upsert(namespace="", key=t_key, lang="vi", text=val_vi)
-                EventBus.publish(TranslationDataUpdatedEvent())
+                EventBus.trigger(TranslationDataUpdatedEvent())
             except Exception as e:
                 logger.warning(f"Lỗi lưu bản dịch: {e}")
 
