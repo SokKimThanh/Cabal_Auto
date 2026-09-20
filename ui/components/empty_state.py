@@ -6,7 +6,7 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 class EmptyState(tk.Frame):
     """Display empty state with icon, message, and guidance"""
 
-    def __init__(self, parent, icon="•", message="No data", submessage="", **kwargs):
+    def __init__(self, parent, icon="•", message="No data", submessage="", wraplength=300, **kwargs):
         super().__init__(parent, bg=UI.BG_BASE, **kwargs)
 
         # Vertical padding
@@ -36,6 +36,6 @@ class EmptyState(tk.Frame):
                 font=UI.FONT_SMALL,
                 bg=UI.BG_BASE,
                 fg=UI.TEXT_MUTED,
-                wraplength=300,
+                wraplength=wraplength,
             )
             sub_label.pack(pady=10)
