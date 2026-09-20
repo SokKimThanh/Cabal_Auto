@@ -366,48 +366,35 @@ class IconManagerFrame(ResponsiveGridBase):
         usage_container = tk.Frame(parent_frame, bg=UIStyle.BG_SURFACE)
         usage_container.pack(fill="both", expand=True, padx=5, pady=10)
 
-        usage_container.grid_columnconfigure(0, weight=1)
-        usage_container.grid_rowconfigure(0, weight=1)  # Treeview
-        usage_container.grid_rowconfigure(1, weight=1)  # Add form
+        # 50/50 horizontal split layout
+        usage_container.grid_columnconfigure(0, weight=1, uniform="group1") # Left: Available Elements
+        usage_container.grid_columnconfigure(1, weight=1, uniform="group1") # Right: Usages
+        usage_container.grid_rowconfigure(0, weight=1)
 
-        # 7.1 Treeview for Usages
-        self.usage_tree = ttk.Treeview(
-            usage_container,
-            columns=("id", "module", "component", "element"),
-            show="headings",
-            selectmode="browse",
+        # Used for storing selection safely
+        self.var_usage_mod = tk.StringVar(value="")
+        self.var_usage_comp = tk.StringVar(value="")
+        self.var_usage_element = tk.StringVar(value="")
 
-        )
-        self.usage_tree.heading("id", text="ID")
-        self.usage_tree.heading("module", text="Module")
-        self.usage_tree.heading("component", text="Component")
-        self.usage_tree.heading("element", text="Element ID")
-
-        self.usage_tree.column("id", width=30, stretch=tk.NO, anchor="center")
-        self.usage_tree.column("module", width=80, stretch=tk.YES)
-        self.usage_tree.column("component", width=80, stretch=tk.YES)
-        self.usage_tree.column("element", width=120, stretch=tk.YES)
-
-        self.usage_tree.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-
-        usage_scroll = ttk.Scrollbar(usage_container, orient="vertical", command=self.usage_tree.yview)
-        usage_scroll.grid(row=0, column=1, sticky="ns", pady=5)
-        self.usage_tree.configure(yscrollcommand=usage_scroll.set)
-        self.usage_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
-        self.usage_tree.bind('<Button-4>', self._prevent_scroll_propagation)
-        self.usage_tree.bind('<Button-5>', self._prevent_scroll_propagation)
-
-        # 7.2 Add Form
+        # =========================================================================
+        # LEFT: Add Form (Available Elements)
+        # =========================================================================
         add_frame = tk.Frame(usage_container, bg=UIStyle.BG_SURFACE)
-        add_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
-        add_frame.grid_rowconfigure(1, weight=1)
+        add_frame.grid(row=0, column=0, sticky="nsew", padx=(5, 5), pady=5)
+        add_frame.grid_rowconfigure(1, weight=1) # Treeview row
         add_frame.grid_columnconfigure(0, weight=1)
 
         header_frame = tk.Frame(add_frame, bg=UIStyle.BG_SURFACE)
-        header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 5))
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5))
         header_frame.grid_columnconfigure(1, weight=1)
 
-        tk.Label(header_frame, text=self.i18n_t("lbl_available_elements", default="Chọn thành phần cần gắn (Available Elements):"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="w")
+        tk.Label(
+            header_frame,
+            text=self.i18n_t("lbl_available_elements", default="Chọn thành phần cần gắn (Available Elements):"),
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_PRIMARY,
+            font=("Segoe UI", 10, "bold")
+        ).grid(row=0, column=0, sticky="w")
 
         # Search box for Available Elements
         self.var_element_search = tk.StringVar()
@@ -462,27 +449,80 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.bind('<Button-5>', self._prevent_scroll_propagation)
         self.available_elements_tree.bind('<<TreeviewSelect>>', self._on_available_element_select)
 
-        # Action Buttons
-        btn_frame = tk.Frame(add_frame, bg=UIStyle.BG_SURFACE)
-        btn_frame.grid(row=2, column=0, columnspan=2, sticky="w", pady=(5, 0))
+        # Left Action Button (Map)
+        left_btn_frame = tk.Frame(add_frame, bg=UIStyle.BG_SURFACE)
+        left_btn_frame.grid(row=2, column=0, sticky="w", pady=(5, 0))
+        self.btn_add_usage = tk.Button(
+            left_btn_frame,
+            text="Gắn (Map)",
+            command=self._on_add_usage,
+            **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {})
+        )
+        self.btn_add_usage.pack(side="left")
 
-        # Used for storing selection safely
-        self.var_usage_mod = tk.StringVar(value="")
-        self.var_usage_comp = tk.StringVar(value="")
-        self.var_usage_element = tk.StringVar(value="")
+        # =========================================================================
+        # RIGHT: Treeview for Usages
+        # =========================================================================
+        right_frame = tk.Frame(usage_container, bg=UIStyle.BG_SURFACE)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 5), pady=5)
+        right_frame.grid_rowconfigure(1, weight=1) # Treeview row
+        right_frame.grid_columnconfigure(0, weight=1)
 
-        self.btn_add_usage = tk.Button(btn_frame, text="Gắn (Map)", command=self._on_add_usage, **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {}))
-        self.btn_add_usage.pack(side="left", padx=(0, 5))
+        right_header_frame = tk.Frame(right_frame, bg=UIStyle.BG_SURFACE)
+        right_header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5))
 
-        self.btn_del_usage = tk.Button(btn_frame, text="Gỡ (Unmap)", command=self._on_del_usage, **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {}))
-        self.btn_del_usage.pack(side="left", padx=5)
+        tk.Label(
+            right_header_frame,
+            text=self.i18n_t("lbl_mapped_usages", default="Các nơi đã gắn (Mapped Usages):"),
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_PRIMARY,
+            font=("Segoe UI", 10, "bold")
+        ).pack(side="left")
+
+        self.usage_tree = ttk.Treeview(
+            right_frame,
+            columns=("id", "module", "component", "element"),
+            show="headings",
+            selectmode="browse",
+            height=4
+        )
+        self.usage_tree.heading("id", text="ID")
+        self.usage_tree.heading("module", text="Module")
+        self.usage_tree.heading("component", text="Component")
+        self.usage_tree.heading("element", text="Element ID")
+
+        self.usage_tree.column("id", width=30, stretch=tk.NO, anchor="center")
+        self.usage_tree.column("module", width=80, stretch=tk.YES)
+        self.usage_tree.column("component", width=80, stretch=tk.YES)
+        self.usage_tree.column("element", width=120, stretch=tk.YES)
+
+        self.usage_tree.grid(row=1, column=0, sticky="nsew")
+
+        usage_scroll = ttk.Scrollbar(right_frame, orient="vertical", command=self.usage_tree.yview)
+        usage_scroll.grid(row=1, column=1, sticky="ns")
+        self.usage_tree.configure(yscrollcommand=usage_scroll.set)
+
+        self.usage_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
+        self.usage_tree.bind('<Button-4>', self._prevent_scroll_propagation)
+        self.usage_tree.bind('<Button-5>', self._prevent_scroll_propagation)
+
+        # Right Action Button (Unmap)
+        right_btn_frame = tk.Frame(right_frame, bg=UIStyle.BG_SURFACE)
+        right_btn_frame.grid(row=2, column=0, sticky="w", pady=(5, 0))
+        self.btn_del_usage = tk.Button(
+            right_btn_frame,
+            text="Gỡ (Unmap)",
+            command=self._on_del_usage,
+            **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {})
+        )
+        self.btn_del_usage.pack(side="left")
 
     def _on_element_search_changed(self, *args):
         if self._element_search_debounce_after_id:
             self.after_cancel(self._element_search_debounce_after_id)
 
-        # Keep searching responsive with debounce
-        self._element_search_debounce_after_id = self.after(300, self._apply_element_filter)
+        # Increase debounce time slightly to ensure user has stopped typing
+        self._element_search_debounce_after_id = self.after(400, self._apply_element_filter)
 
     def _apply_element_filter(self):
         if not hasattr(self, 'available_elements_tree') or not self._available_elements_cache:
@@ -492,13 +532,20 @@ class IconManagerFrame(ResponsiveGridBase):
         if search_term == "search element id...":
             search_term = ""
 
-        # Clear current tree
-        self.available_elements_tree.delete(*self.available_elements_tree.get_children())
+        # Prevent GUI lag/flicker by detaching nodes instead of raw deletion
+        children = self.available_elements_tree.get_children()
+        if children:
+            self.available_elements_tree.detach(*children)
+            self.available_elements_tree.delete(*children)
 
-        # Render from cache
+        # Build list of insert operations first to minimize GUI overhead
+        nodes_to_insert = []
+        is_open = True if search_term else False
+
         for mod, screens in sorted(self._available_elements_cache.items()):
             mod_matches = search_term in mod.lower()
-            mod_node = None
+            mod_has_children = False
+            mod_children_ops = []
 
             for screen, elements in sorted(screens.items()):
                 screen_matches = search_term in screen.lower()
@@ -509,15 +556,24 @@ class IconManagerFrame(ResponsiveGridBase):
                         filtered_elements.append(el)
 
                 if filtered_elements:
-                    if not mod_node:
-                        # Insert module node only if there are matching children
-                        is_open = True if search_term else False
-                        mod_node = self.available_elements_tree.insert("", "end", text=f"📁 {mod}", open=is_open)
-
-                    is_open_screen = True if search_term else False
-                    screen_node = self.available_elements_tree.insert(mod_node, "end", text=f"📄 {screen}", open=is_open_screen)
+                    mod_has_children = True
+                    screen_children_ops = []
                     for el in sorted(filtered_elements, key=lambda x: x["id"]):
-                        self.available_elements_tree.insert(screen_node, "end", text=f"  {el['id']}", values=(el['id'], el['mod'], el['comp'], el['id']))
+                        screen_children_ops.append(
+                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id']), False)
+                        )
+                    mod_children_ops.append((f"📄 {screen}", None, is_open, screen_children_ops))
+
+            if mod_has_children:
+                nodes_to_insert.append((f"📁 {mod}", None, is_open, mod_children_ops))
+
+        # Perform batched insertion
+        for mod_text, mod_vals, mod_open, screen_ops in nodes_to_insert:
+            mod_node = self.available_elements_tree.insert("", "end", text=mod_text, open=mod_open)
+            for screen_text, screen_vals, screen_open, el_ops in screen_ops:
+                screen_node = self.available_elements_tree.insert(mod_node, "end", text=screen_text, open=screen_open)
+                for el_text, el_vals, el_open in el_ops:
+                    self.available_elements_tree.insert(screen_node, "end", text=el_text, values=el_vals)
 
 
     def _load_all_usage_ids(self):
@@ -562,25 +618,33 @@ class IconManagerFrame(ResponsiveGridBase):
 
                     el_dict = {"id": desc.element_id, "comp": desc.element_type, "mod": mod}
                     tree_data[mod][screen].append(el_dict)
-                    seen_elements.add(desc.element_id)
+                    # Use composite key to prevent semantic duplicates across modules
+                    seen_elements.add((mod, screen, desc.element_id))
 
                 # Merge DB rows
                 for r in db_rows:
                     mod = r[0] or "Unknown"
                     comp = r[1] or "widget"
                     el_id = r[2]
+                    screen = "Database"
 
-                    if el_id in seen_elements:
+                    # Skip if already exists in registry (using a rough check if the ID is already mapped)
+                    # Note: We check if ANY screen in this module has this ID from the registry to avoid
+                    # duplicating an ID that is just missing its "Database" screen qualifier.
+                    is_duplicate = any(
+                        (mod, s, el_id) in seen_elements for s in tree_data.get(mod, {})
+                    )
+
+                    if is_duplicate:
                         continue
 
-                    screen = "Database"
                     if mod not in tree_data:
                         tree_data[mod] = {}
                     if screen not in tree_data[mod]:
                         tree_data[mod][screen] = []
 
                     tree_data[mod][screen].append({"id": el_id, "comp": comp, "mod": mod})
-                    seen_elements.add(el_id)
+                    seen_elements.add((mod, screen, el_id))
 
                 # Update UI thread
                 if self.winfo_exists():
