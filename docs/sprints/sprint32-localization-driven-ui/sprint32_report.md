@@ -25,3 +25,47 @@ Tuy nhiên, để đảm bảo mỗi phiên làm việc được tối ưu (mỗ
 3. **Refactor Form Labels (Manager Frames)**: Refactor Text trên các `class_manager_frame`, `monster_manager_frame`, `skill_manager_frame`, `build_manager_frame`.
 4. **Refactor Panels (Target, Skill, Stats)**: Refactor các text hiển thị động, các label nhỏ lẻ bên trong `ui/panels/`.
 5. **Refactor Nút Bấm & Metadata Input**: Sửa đổi cấu trúc truyền text vào các nút, đưa tham số `text_key` vào các helper sinh Component (nếu cần).
+
+## Task Summary
+Cập nhật các thành phần UI của Sidebar (tab_hunt, tab_setup, btn_skill_manager, btn_monster_manager) bằng cách loại bỏ hardcoded emoji, thay thế bằng icon key chuẩn và đăng ký chúng vào danh sách UI Element Registry cũng như cơ sở dữ liệu.
+
+## Work Completed
+- Cập nhật danh sách `sidebar_icons` trong `lib/db/schema.py` để bổ sung các icon còn thiếu của sidebar.
+- Viết vòng lặp để chèn các usage của sidebar button vào bảng `icon_usages` trong quá trình khởi tạo DB.
+- Sửa đổi `ui/components/sidebar_component.py`: Xoá bỏ emoji cứng trên các nút/label và đăng ký chúng vào `UIElementRegistry` thông qua `UIElementDescriptor` khi render.
+
+## Key Decisions
+- Sử dụng Local Import `from lib.events.ui_element_registry import UIElementRegistry` bên trong phương thức `_build()` của `SidebarComponent` để tránh các lỗi Circular Dependency hoặc Tkinter initialization.
+- Luôn kiểm tra sự tồn tại của row bằng `SELECT COUNT(*)` trong `icon_usages` trước khi `INSERT` vào để tránh lỗi duplicate ở lần chạy thứ hai trở đi của schema setup.
+
+## Changes Made
+- Đã chỉnh sửa: `lib/db/schema.py`
+- Đã chỉnh sửa: `ui/components/sidebar_component.py`
+- Refactor việc gán icon để sử dụng icon string identifier.
+
+## Issues / Risks
+- Phụ thuộc khá lớn vào việc rebuild database đối với người dùng cuối chưa chạy script migrate mới (có thể cần refresh database gốc trên môi trường local).
+
+## Next Steps
+- Cập nhật thêm tính năng cập nhật text_key chuẩn cho các button này (để tự động fetch translation tooltip/name).
+Sửa lỗi nút Refresh (Làm mới) trên màn hình Icon Manager làm mất ngữ cảnh layout, đồng thời khắc phục lỗi hiển thị của component EmptyState.
+
+## Work Completed
+- Cập nhật logic `_on_refresh` trong `ui/views/icon_manager_frame.py` để clear selection và form data mà không ép giao diện nhảy về lại trạng thái "chưa chọn icon" ban đầu.
+- Sửa lỗi text dài bị cắt cụt trong `ui/components/empty_state.py` và tăng chiều cao của component xem trước ảnh.
+- Ẩn EmptyState bằng `grid_remove` khi có ảnh được hiển thị để tránh hiện tượng chồng lấp.
+
+## Key Decisions
+- Thay vì hardcode kích thước hiển thị (wraplength) của text trong EmptyState, thay đổi thành tham số mặc định và cho phép tuỳ chỉnh (ví dụ `wraplength=450` cho phần preview) để duy trì tính đa dụng của component này.
+- Khi người dùng nhấn Làm mới, chỉ clear các trường dữ liệu và danh sách tìm kiếm, thay vì huỷ toàn bộ khung nhìn form và đưa giao diện về trạng thái hoàn toàn trống.
+
+## Changes Made
+- Sửa đổi `ui/views/icon_manager_frame.py`: bỏ `self.empty_state_frame.tkraise()` trong `_on_refresh`.
+- Cập nhật `ui/components/empty_state.py`: nhận tham số `wraplength`.
+- Cập nhật `ui/components/icon_preview_component.py`: tăng `height` lên 260, truyền `wraplength=450` vào `EmptyState`, thêm lệnh `grid_remove` cho `empty_preview` khi render ảnh thực.
+
+## Issues / Risks
+- Không ghi nhận rủi ro đáng kể nào do các unit test đã được cập nhật/xác nhận thành công.
+
+## Next Steps
+- Tiếp tục các task theo tiến độ của Sprint 32 (ví dụ: refactor Treeview Headings và Form Labels).

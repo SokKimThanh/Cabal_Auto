@@ -270,7 +270,8 @@ class IconManagerFrame(ResponsiveGridBase):
             self.empty_state_frame,
             icon="🖼️",
             message=self.i18n_t("msg_no_icon_selected", default="Chưa tìm thấy icon nào trong thư mục hệ thống"),
-            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết")
+            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết"),
+            wraplength=450
         )
         self.empty_preview.grid(row=0, column=0, sticky="nsew")
 
@@ -1287,10 +1288,6 @@ class IconManagerFrame(ResponsiveGridBase):
         if hasattr(self, 'image_library') and self.image_library:
             self.image_library.set_current_filepath("")
             self.image_library.clear_selection()
-
-        # Hide content state and show empty state
-        if hasattr(self, 'empty_state_frame'):
-            self.empty_state_frame.tkraise()
 
         self.set_form_state("VIEW")
 
