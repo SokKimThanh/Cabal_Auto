@@ -385,6 +385,17 @@ class IconManagerFrame(ResponsiveGridBase):
         )
         lbl_context.pack(fill="x", padx=10, pady=(10, 0))
 
+        # Additional Contextual Label for Element ID
+        self.var_current_mapping_element = tk.StringVar(value="UI Element ID đang chọn: (Chưa chọn)")
+        lbl_context_element = tk.Label(
+            parent_frame,
+            textvariable=self.var_current_mapping_element,
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_SECONDARY,
+            font=("Segoe UI", 10, "italic")
+        )
+        lbl_context_element.pack(fill="x", padx=10, pady=(0, 10))
+
         usage_container = tk.Frame(parent_frame, bg=UIStyle.BG_SURFACE)
         usage_container.pack(fill="both", expand=True, padx=5, pady=10)
 
@@ -747,6 +758,9 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_mod.set(values[1])      # mod
             self.var_usage_comp.set(values[2])     # comp
 
+            if hasattr(self, 'var_current_mapping_element'):
+                self.var_current_mapping_element.set(f"UI Element ID đang chọn: {values[3]} (Module: {values[1]}, Type: {values[2]})")
+
             mapped_icon = values[4] if len(values) > 4 and values[4] else ""
             if mapped_icon:
                 # Highlight and load this icon
@@ -766,6 +780,9 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_mod.set("")
             self.var_usage_comp.set("")
 
+            if hasattr(self, 'var_current_mapping_element'):
+                self.var_current_mapping_element.set("UI Element ID đang chọn: (Chưa chọn)")
+
     def _sync_available_elements_selection(self, icon_key):
         if not hasattr(self, 'available_elements_tree') or not icon_key:
             return
@@ -782,7 +799,8 @@ class IconManagerFrame(ResponsiveGridBase):
             # Check if it's a leaf node with mapped icon (idx 4)
             if values and len(values) >= 5:
                 mapped_icon = values[4]
-                if mapped_icon == icon_key:
+                # Compare string representation to be safe, sometimes it comes back from Tkinter tuple differently
+                if str(mapped_icon) == str(icon_key):
                     target_node = current_node
                     break
 
