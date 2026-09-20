@@ -759,26 +759,27 @@ class IconManagerFrame(ResponsiveGridBase):
         if not hasattr(self, 'available_elements_tree') or not icon_key:
             return
 
-        # Iterate through the tree to find the node mapped to this icon
-        def find_mapped_node(node_id):
-            children = self.available_elements_tree.get_children(node_id)
-            for child in children:
-                item = self.available_elements_tree.item(child)
-                values = item.get("values")
+        target_node = None
+        # Use iterative BFS to prevent recursion depth issues and improve performance
+        nodes_to_check = list(self.available_elements_tree.get_children(""))
 
-                # Check if it's a leaf node with mapped icon (idx 4)
-                if values and len(values) >= 5:
-                    mapped_icon = values[4]
-                    if mapped_icon == icon_key:
-                        return child
+        while nodes_to_check:
+            current_node = nodes_to_check.pop(0)
+            item = self.available_elements_tree.item(current_node)
+            values = item.get("values")
 
-                # Recurse
-                found = find_mapped_node(child)
-                if found:
-                    return found
-            return None
+            # Check if it's a leaf node with mapped icon (idx 4)
+            if values and len(values) >= 5:
+                mapped_icon = values[4]
+                if mapped_icon == icon_key:
+                    target_node = current_node
+                    break
 
-        target_node = find_mapped_node("")
+            # Add children to the queue
+            children = self.available_elements_tree.get_children(current_node)
+            if children:
+                nodes_to_check.extend(children)
+
         if target_node:
             self.available_elements_tree.selection_set(target_node)
             self.available_elements_tree.see(target_node)
