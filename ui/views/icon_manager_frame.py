@@ -740,7 +740,7 @@ class IconManagerFrame(ResponsiveGridBase):
                 # Highlight and load this icon
                 if hasattr(self, 'tree_component'):
                     self.tree_component.search_var.set(mapped_icon)
-                    self.tree_component.apply_filters()
+                    self.apply_filters()
                     self._process_tree_selection_callback(mapped_icon)
             else:
                 # Show message but do not clear left tree selection or form data
@@ -1241,13 +1241,17 @@ class IconManagerFrame(ResponsiveGridBase):
                 else:
                     messagebox.showerror("Error", result.message)
 
+    def apply_filters(self):
+        if hasattr(self, 'tree_component') and hasattr(self.tree_component, 'apply_filters'):
+            self.tree_component.apply_filters()
+
     def _on_refresh(self):
         # 1. Clear search and selection in left tree
         if hasattr(self, 'tree_component'):
             self.tree_component.search_var.set("")
             if self.tree_component.tree.selection():
                 self.tree_component.tree.selection_remove(self.tree_component.tree.selection())
-            self.tree_component.apply_filters()
+            self.apply_filters()
 
         # 2. Clear search and selection in available elements tree
         if hasattr(self, 'var_element_search'):
