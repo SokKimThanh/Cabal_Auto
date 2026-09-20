@@ -275,6 +275,12 @@ class ImageLibraryComponent(tk.Frame):
         if self.on_image_selected:
             self.on_image_selected(final_filename, is_new_import=True)
 
+    def clear_selection(self):
+        """Clears the current selection in the tree."""
+        if hasattr(self, 'tree_images') and self.tree_images.selection():
+            self.tree_images.selection_remove(*self.tree_images.selection())
+        self.current_filepath = ""
+
     def reload(self):
         """Method to trigger an explicit scan/reload from outside."""
         self.image_model.scan_async(self._on_image_library_scanned)
