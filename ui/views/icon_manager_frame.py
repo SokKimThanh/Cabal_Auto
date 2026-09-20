@@ -743,22 +743,12 @@ class IconManagerFrame(ResponsiveGridBase):
                     self.tree_component.apply_filters()
                     self._process_tree_selection_callback(mapped_icon)
             else:
-                # Clear left tree selection and show message
-                if hasattr(self, 'tree_component'):
-                    self.tree_component.search_var.set("")
-                    if self.tree_component.tree.selection():
-                        self.tree_component.tree.selection_remove(self.tree_component.tree.selection())
+                # Show message but do not clear left tree selection or form data
                 if hasattr(self, 'var_current_mapping_icon'):
-                    self.var_current_mapping_icon.set("Thành phần này chưa gắn Icon nào")
-                if hasattr(self, 'icon_form'):
-                    self.icon_form.set_form_data({})
-                if hasattr(self, 'usage_tree'):
-                    self.usage_tree.delete(*self.usage_tree.get_children())
-                if hasattr(self, 'preview_component'):
-                    self.preview_component.render({})
-                if hasattr(self, 'image_library') and self.image_library:
-                    self.image_library.set_current_filepath("")
-                    self.image_library.clear_selection()
+                    self.var_current_mapping_icon.set(f"⚠️ [Chưa gán Icon] Đang chọn Element: {values[3]}")
+                # Disable Edit button to prevent editing wrong icon
+                if hasattr(self, 'btn_edit'):
+                    self.btn_edit.config(state="disabled")
         else:
             self.var_usage_element.set("")
             self.var_usage_mod.set("")
@@ -1503,6 +1493,10 @@ class IconManagerFrame(ResponsiveGridBase):
 
         if hasattr(self, 'var_current_mapping_icon'):
             self.var_current_mapping_icon.set(f"Đang chọn Icon: {icon_key}")
+
+        # Ensure Edit button is re-enabled when an icon is selected
+        if hasattr(self, 'btn_edit'):
+            self.btn_edit.config(state="normal")
 
         icon_data = self.tree_model.get_icon(icon_key)
         if icon_data:
