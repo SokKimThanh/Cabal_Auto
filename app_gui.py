@@ -835,6 +835,10 @@ class App:
 
         # Trigger natural refresh mechanisms for components that need it
         if requires_sidebar_refresh and hasattr(self, "sidebar") and hasattr(self, "navigation"):
+            # Update all icons in the sidebar
+            if hasattr(self.sidebar, "update_sidebar_icons"):
+                self.sidebar.update_sidebar_icons()
+
             # Simply re-setting the active tab forces the Sidebar to naturally redraw
             # all its icons utilizing the freshly reloaded icon_helper cache
             current_view = getattr(self.navigation, "current_view_key", None)
