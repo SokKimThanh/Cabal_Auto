@@ -25,3 +25,26 @@ Tuy nhiên, để đảm bảo mỗi phiên làm việc được tối ưu (mỗ
 3. **Refactor Form Labels (Manager Frames)**: Refactor Text trên các `class_manager_frame`, `monster_manager_frame`, `skill_manager_frame`, `build_manager_frame`.
 4. **Refactor Panels (Target, Skill, Stats)**: Refactor các text hiển thị động, các label nhỏ lẻ bên trong `ui/panels/`.
 5. **Refactor Nút Bấm & Metadata Input**: Sửa đổi cấu trúc truyền text vào các nút, đưa tham số `text_key` vào các helper sinh Component (nếu cần).
+
+## Task Summary
+Sửa lỗi nút Refresh (Làm mới) trên màn hình Icon Manager làm mất ngữ cảnh layout, đồng thời khắc phục lỗi hiển thị của component EmptyState.
+
+## Work Completed
+- Cập nhật logic `_on_refresh` trong `ui/views/icon_manager_frame.py` để clear selection và form data mà không ép giao diện nhảy về lại trạng thái "chưa chọn icon" ban đầu.
+- Sửa lỗi text dài bị cắt cụt trong `ui/components/empty_state.py` và tăng chiều cao của component xem trước ảnh.
+- Ẩn EmptyState bằng `grid_remove` khi có ảnh được hiển thị để tránh hiện tượng chồng lấp.
+
+## Key Decisions
+- Thay vì hardcode kích thước hiển thị (wraplength) của text trong EmptyState, thay đổi thành tham số mặc định và cho phép tuỳ chỉnh (ví dụ `wraplength=450` cho phần preview) để duy trì tính đa dụng của component này.
+- Khi người dùng nhấn Làm mới, chỉ clear các trường dữ liệu và danh sách tìm kiếm, thay vì huỷ toàn bộ khung nhìn form và đưa giao diện về trạng thái hoàn toàn trống.
+
+## Changes Made
+- Sửa đổi `ui/views/icon_manager_frame.py`: bỏ `self.empty_state_frame.tkraise()` trong `_on_refresh`.
+- Cập nhật `ui/components/empty_state.py`: nhận tham số `wraplength`.
+- Cập nhật `ui/components/icon_preview_component.py`: tăng `height` lên 260, truyền `wraplength=450` vào `EmptyState`, thêm lệnh `grid_remove` cho `empty_preview` khi render ảnh thực.
+
+## Issues / Risks
+- Không ghi nhận rủi ro đáng kể nào do các unit test đã được cập nhật/xác nhận thành công.
+
+## Next Steps
+- Tiếp tục các task theo tiến độ của Sprint 32 (ví dụ: refactor Treeview Headings và Form Labels).
