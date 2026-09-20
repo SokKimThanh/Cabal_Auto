@@ -284,13 +284,21 @@ class IconManagerFrame(ResponsiveGridBase):
         self.notebook = ttk.Notebook(self.content_state_frame)
         self.notebook.grid(row=0, column=0, sticky="nsew", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
 
-        # Tab 1: Thông tin Icon (Details)
+        # Tab 1: Gắn Icon (Usages) - Mặc định
+        self.tab_usages = tk.Frame(self.notebook, bg=UIStyle.BG_SURFACE)
+        self.notebook.add(self.tab_usages, text=self.i18n_t("tab_icon_usages", default="Gắn Icon"))
+
+        # Build Usages Panel directly in the usages tab
+        self._build_usages_panel(self.tab_usages)
+
+        # Tab 2: Thông tin Icon (Details)
         self.tab_details = tk.Frame(self.notebook, bg=UIStyle.BG_SURFACE)
         self.notebook.add(self.tab_details, text=self.i18n_t("tab_icon_details", default="Thông tin Icon"))
 
-        # Setup Tab 1 layout
+        # Setup Tab 2 layout
         self.tab_details.grid_rowconfigure(0, weight=0)  # Form
-        self.tab_details.grid_rowconfigure(1, weight=1)  # Preview + Image Library
+        self.tab_details.grid_rowconfigure(1, weight=0)  # Top Detail
+        self.tab_details.grid_rowconfigure(2, weight=1)  # Preview + Image Library
         self.tab_details.grid_columnconfigure(0, weight=1)
 
         self.detail_container = tk.Frame(self.tab_details, bg=UIStyle.BG_SURFACE)
@@ -298,15 +306,23 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.top_detail_container = tk.Frame(self.tab_details, bg=UIStyle.BG_SURFACE)
         self.top_detail_container.grid(row=1, column=0, sticky="nsew")
-        self.top_detail_container.grid_rowconfigure(0, weight=1)
-        self.top_detail_container.grid_columnconfigure(0, weight=1)  # Preview
-        self.top_detail_container.grid_columnconfigure(1, weight=1)  # Image Library
 
-        self.preview_component = IconPreviewComponent(self.top_detail_container, app=self.app, icon_helper=self.icon_helper)
-        self.preview_component.grid(row=0, column=0, sticky="nsew", padx=(0, UIStyle.SPACE_SM))
+        self.bottom_detail_container = tk.Frame(self.tab_details, bg=UIStyle.BG_SURFACE)
+        self.bottom_detail_container.grid(row=2, column=0, sticky="nsew")
 
-        self.img_lib_container = tk.Frame(self.top_detail_container, bg=UIStyle.BG_SURFACE)
-        self.img_lib_container.grid(row=0, column=1, sticky="nsew", padx=(UIStyle.SPACE_SM, 0))
+        # Split bottom container into Preview (left) and Library (right)
+        self.bottom_detail_container.grid_rowconfigure(0, weight=1)
+        self.bottom_detail_container.grid_columnconfigure(0, weight=3) # Preview takes less space
+        self.bottom_detail_container.grid_columnconfigure(1, weight=7) # Library takes more space
+
+        self.preview_container = tk.Frame(self.bottom_detail_container, bg=UIStyle.BG_SURFACE)
+        self.preview_container.grid(row=0, column=0, sticky="nsew", padx=(0, UIStyle.SPACE_MD))
+
+        self.preview_component = IconPreviewComponent(self.preview_container, app=self.app, icon_helper=self.icon_helper)
+        self.preview_component.pack(fill="both", expand=True)
+
+        self.img_lib_container = tk.Frame(self.bottom_detail_container, bg=UIStyle.BG_SURFACE)
+        self.img_lib_container.grid(row=0, column=1, sticky="nsew")
 
         self.image_library = ImageLibraryComponent(
             self.img_lib_container,
@@ -317,14 +333,7 @@ class IconManagerFrame(ResponsiveGridBase):
         )
         self.image_library.pack(fill="both", expand=True)
 
-        # Tab 2: Nơi dùng (Usages)
-        self.tab_usages = tk.Frame(self.notebook, bg=UIStyle.BG_SURFACE)
-        self.notebook.add(self.tab_usages, text=self.i18n_t("tab_icon_usages", default="Nơi dùng"))
-
         self._build_detail_form()
-
-        # Build Usages Panel directly in the usages tab
-        self._build_usages_panel(self.tab_usages)
 
         # Mặc định hiện empty state
         self.empty_state_frame.tkraise()
@@ -363,6 +372,17 @@ class IconManagerFrame(ResponsiveGridBase):
         self.icon_form.pack(fill="x", expand=False)
 
     def _build_usages_panel(self, parent_frame):
+        # Contextual label for mapping
+        self.var_current_mapping_icon = tk.StringVar(value="Đang chọn Icon: (Chưa chọn)")
+        lbl_context = tk.Label(
+            parent_frame,
+            textvariable=self.var_current_mapping_icon,
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.COLOR_PRIMARY if hasattr(UIStyle, "COLOR_PRIMARY") else "#0078D7",
+            font=("Segoe UI", 11, "bold")
+        )
+        lbl_context.pack(fill="x", padx=10, pady=(10, 0))
+
         usage_container = tk.Frame(parent_frame, bg=UIStyle.BG_SURFACE)
         usage_container.pack(fill="both", expand=True, padx=5, pady=10)
 
@@ -417,11 +437,12 @@ class IconManagerFrame(ResponsiveGridBase):
         # In-memory cache for available elements tree
         self._available_elements_cache = {}
         self._element_search_debounce_after_id = None
+        self._last_search_term = None
 
         # Treeview for available elements
         self.available_elements_tree = ttk.Treeview(
             add_frame,
-            columns=("id", "module", "component", "element"),
+            columns=("id", "module", "component", "element", "mapped"),
             show="tree headings",
             selectmode="browse",
             height=4
@@ -431,12 +452,14 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.heading("module", text="Module")
         self.available_elements_tree.heading("component", text="Type")
         self.available_elements_tree.heading("element", text="Element ID")
+        self.available_elements_tree.heading("mapped", text="Mapped Icon")
 
         self.available_elements_tree.column("#0", width=150, stretch=tk.NO)
         self.available_elements_tree.column("id", width=0, stretch=tk.NO)
         self.available_elements_tree.column("module", width=80, stretch=tk.NO)
         self.available_elements_tree.column("component", width=80, stretch=tk.NO)
         self.available_elements_tree.column("element", width=120, stretch=tk.YES)
+        self.available_elements_tree.column("mapped", width=100, stretch=tk.NO)
 
         self.available_elements_tree.grid(row=1, column=0, sticky="nsew")
 
@@ -524,13 +547,25 @@ class IconManagerFrame(ResponsiveGridBase):
         # Increase debounce time slightly to ensure user has stopped typing
         self._element_search_debounce_after_id = self.after(400, self._apply_element_filter)
 
-    def _apply_element_filter(self):
+    def _apply_element_filter(self, force=False):
         if not hasattr(self, 'available_elements_tree') or not self._available_elements_cache:
             return
 
         search_term = self.var_element_search.get().lower().strip()
         if search_term == "search element id...":
             search_term = ""
+
+        if not force and hasattr(self, '_last_search_term') and self._last_search_term == search_term:
+            return
+
+        self._last_search_term = search_term
+
+        # Save selection
+        selected_item_values = None
+        selection = self.available_elements_tree.selection()
+        if selection:
+            item = self.available_elements_tree.item(selection[0])
+            selected_item_values = item.get("values")
 
         # Prevent GUI lag/flicker by detaching nodes instead of raw deletion
         children = self.available_elements_tree.get_children()
@@ -560,7 +595,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     screen_children_ops = []
                     for el in sorted(filtered_elements, key=lambda x: x["id"]):
                         screen_children_ops.append(
-                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id']), False)
+                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('mapped', '')), False)
                         )
                     mod_children_ops.append((f"📄 {screen}", None, is_open, screen_children_ops))
 
@@ -568,12 +603,19 @@ class IconManagerFrame(ResponsiveGridBase):
                 nodes_to_insert.append((f"📁 {mod}", None, is_open, mod_children_ops))
 
         # Perform batched insertion
+        item_to_select = None
         for mod_text, mod_vals, mod_open, screen_ops in nodes_to_insert:
             mod_node = self.available_elements_tree.insert("", "end", text=mod_text, open=mod_open)
             for screen_text, screen_vals, screen_open, el_ops in screen_ops:
                 screen_node = self.available_elements_tree.insert(mod_node, "end", text=screen_text, open=screen_open)
                 for el_text, el_vals, el_open in el_ops:
-                    self.available_elements_tree.insert(screen_node, "end", text=el_text, values=el_vals)
+                    node_id = self.available_elements_tree.insert(screen_node, "end", text=el_text, values=el_vals)
+                    if selected_item_values and el_vals and list(el_vals) == list(selected_item_values):
+                        item_to_select = node_id
+
+        if item_to_select:
+            self.available_elements_tree.selection_set(item_to_select)
+            self.available_elements_tree.see(item_to_select)
 
 
     def _load_all_usage_ids(self):
@@ -586,9 +628,22 @@ class IconManagerFrame(ResponsiveGridBase):
                 from database import get_db
                 conn = sqlite3.connect(str(get_db().DB_PATH))
                 cursor = conn.cursor()
-                cursor.execute("SELECT DISTINCT module_name, ui_component_type, ui_element_id FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
+                cursor.execute("SELECT module_name, ui_component_type, ui_element_id, icon_key FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
                 db_rows = cursor.fetchall()
                 conn.close()
+
+                # Build mapping dictionary from DB rows
+                db_mapping = {}
+                for r in db_rows:
+                    m_name = r[0] or ""
+                    c_type = r[1] or ""
+                    el_id = r[2] or ""
+                    icon_key = r[3] or ""
+                    if el_id:
+                        key = f"{m_name}:{c_type}:{el_id}"
+                        db_mapping[key] = icon_key
+                        # Also keep element ID only as fallback lookup
+                        db_mapping[el_id] = icon_key
 
                 # 2. Get descriptors from Registry + CommonUI enum
                 registry_items = []
@@ -604,7 +659,7 @@ class IconManagerFrame(ResponsiveGridBase):
                 except ImportError:
                     pass
 
-                # Build hierarchical structure dict[module][screen] = list of dicts
+                # 3. Merge data
                 tree_data = {}
                 seen_elements = set()
 
@@ -616,7 +671,8 @@ class IconManagerFrame(ResponsiveGridBase):
                     if screen not in tree_data[mod]:
                         tree_data[mod][screen] = []
 
-                    el_dict = {"id": desc.element_id, "comp": desc.element_type, "mod": mod}
+                    mapped_val = db_mapping.get(f"{mod}:{desc.element_type}:{desc.element_id}", db_mapping.get(desc.element_id, ""))
+                    el_dict = {"id": desc.element_id, "comp": desc.element_type, "mod": mod, "mapped": mapped_val}
                     tree_data[mod][screen].append(el_dict)
                     # Use composite key to prevent semantic duplicates across modules
                     seen_elements.add((mod, screen, desc.element_id))
@@ -626,6 +682,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     mod = r[0] or "Unknown"
                     comp = r[1] or "widget"
                     el_id = r[2]
+                    mapped_val = r[3] or ""
                     screen = "Database"
 
                     # Skip if already exists in registry (using a rough check if the ID is already mapped)
@@ -643,7 +700,7 @@ class IconManagerFrame(ResponsiveGridBase):
                     if screen not in tree_data[mod]:
                         tree_data[mod][screen] = []
 
-                    tree_data[mod][screen].append({"id": el_id, "comp": comp, "mod": mod})
+                    tree_data[mod][screen].append({"id": el_id, "comp": comp, "mod": mod, "mapped": mapped_val})
                     seen_elements.add((mod, screen, el_id))
 
                 # Update UI thread
@@ -662,7 +719,7 @@ class IconManagerFrame(ResponsiveGridBase):
             return
 
         self._available_elements_cache = tree_data
-        self._apply_element_filter()
+        self._apply_element_filter(force=True)
 
     def _on_available_element_select(self, event=None):
         selection = self.available_elements_tree.selection()
@@ -1382,6 +1439,9 @@ class IconManagerFrame(ResponsiveGridBase):
             return
 
         self._last_selected_item_id = f"icon_{icon_key}"
+
+        if hasattr(self, 'var_current_mapping_icon'):
+            self.var_current_mapping_icon.set(f"Đang chọn Icon: {icon_key}")
 
         icon_data = self.tree_model.get_icon(icon_key)
         if icon_data:
