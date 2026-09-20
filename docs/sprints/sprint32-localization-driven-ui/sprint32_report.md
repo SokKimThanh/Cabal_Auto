@@ -118,3 +118,23 @@ Sửa lỗi ứng dụng bị treo (freeze/Not Responding) khi vòng lặp vô h
 
 #### Issues / Risks
 - Không ghi nhận rủi ro thêm. Việc thay đổi sang vòng lặp BFS an toàn hơn và có hiệu suất ổn định đối với dữ liệu cây kích thước lớn. Lỗi freeze do vòng lặp sự kiện đã được khắc phục hoàn toàn.
+
+
+### Nhiệm vụ: Sửa lỗi vòng lặp sự kiện bất đồng bộ Tkinter (Fix Crash/Freeze 2)
+
+#### Summary
+Khắc phục triệt để lỗi "Not Responding" do cơ chế phát sinh sự kiện bất đồng bộ (asynchronous event loop) của Tkinter `<<TreeviewSelect>>`.
+
+#### Work Completed
+- Gỡ bỏ cơ chế cờ boolean tạm thời (`_suppress_available_elements_event`).
+- Triển khai cơ chế theo dõi trạng thái `_current_available_element_selection`.
+
+#### Key Decisions
+- Khi gọi `selection_set()` trong Tkinter, sự kiện `<<TreeviewSelect>>` không được gọi đồng bộ ngay lập tức mà bị đẩy vào hàng đợi (event loop queue) và xử lý sau. Do đó, việc bật/tắt cờ boolean tạm thời (try...finally) sẽ bị vô hiệu vì cờ đã bị tắt trước khi sự kiện thực sự được phát (fire).
+- Quyết định sử dụng biến trạng thái `_current_available_element_selection` để lưu trữ mã định danh (node ID) đang được chọn. Khi sự kiện bắt đầu, hàm callback sẽ so sánh node ID hiện tại với node ID trong biến. Nếu trùng khớp, chứng tỏ sự kiện này do lệnh gọi lập trình sinh ra (programmatic call) hoặc người dùng click lại vào cùng một node, từ đó tự động ngắt (return sớm) để tránh vòng lặp.
+
+#### Changes Made
+- **File sửa đổi:** `ui/views/icon_manager_frame.py`
+  - Thêm `self._current_available_element_selection` vào `__init__` và `_on_refresh`.
+  - Cập nhật hàm `_sync_available_elements_selection` để cập nhật biến trạng thái trước khi gọi `selection_set()`.
+  - Cập nhật hàm `_on_available_element_select` để kiểm tra so khớp trước khi xử lý logic form.

@@ -78,7 +78,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self._last_selected_item_id = None
         self._is_refreshing_tree = False
         self._suppress_tree_events = False
-        self._suppress_available_elements_event = False
+        self._current_available_element_selection = None
         self._debounce_after_id = None
         self._render_queue = []
         self._render_after_id = None
@@ -724,10 +724,16 @@ class IconManagerFrame(ResponsiveGridBase):
         self._apply_element_filter(force=True)
 
     def _on_available_element_select(self, event=None):
-        if getattr(self, '_suppress_available_elements_event', False):
+        selection = self.available_elements_tree.selection()
+        # Prevent infinite loop by checking if selection actually changed
+        if not selection:
+            self._current_available_element_selection = None
             return
 
-        selection = self.available_elements_tree.selection()
+        if self._current_available_element_selection == selection[0]:
+            return
+
+        self._current_available_element_selection = selection[0]
         if not selection:
             return
 
@@ -784,17 +790,14 @@ class IconManagerFrame(ResponsiveGridBase):
             if children:
                 nodes_to_check.extend(children)
 
-        self._suppress_available_elements_event = True
-        try:
-            if target_node:
-                self.available_elements_tree.selection_set(target_node)
-                self.available_elements_tree.see(target_node)
-            else:
-                # Clear selection if no mapped node found for this icon
-                if self.available_elements_tree.selection():
-                    self.available_elements_tree.selection_remove(*self.available_elements_tree.selection())
-        finally:
-            self._suppress_available_elements_event = False
+        if target_node:
+            self._current_available_element_selection = target_node
+            self.available_elements_tree.selection_set(target_node)
+            self.available_elements_tree.see(target_node)
+        else:
+            self._current_available_element_selection = None
+            if self.available_elements_tree.selection():
+                self.available_elements_tree.selection_remove(*self.available_elements_tree.selection())
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
@@ -1304,6 +1307,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_element_search.set("")
             self._apply_element_filter(force=True)
         if hasattr(self, 'available_elements_tree'):
+            self._current_available_element_selection = None
             if self.available_elements_tree.selection():
                 self.available_elements_tree.selection_remove(*self.available_elements_tree.selection())
             self.available_elements_tree.focus('')
