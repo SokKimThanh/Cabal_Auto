@@ -849,7 +849,8 @@ class IconManagerFrame(ResponsiveGridBase):
 
         usages = self.icon_service.get_usages(icon_key)
         for u in usages:
-            self.usage_tree.insert("", "end", values=(u.get("id"), u.get("module_name"), u.get("ui_component_type"), u.get("ui_element_id")))
+            usage_id = u.get("usage_id", u.get("id"))
+            self.usage_tree.insert("", "end", values=(usage_id, u.get("module_name"), u.get("ui_component_type"), u.get("ui_element_id")))
 
     def _on_add_usage(self):
         icon_key = self.icon_form.get_form_data()['icon_key'].strip()
