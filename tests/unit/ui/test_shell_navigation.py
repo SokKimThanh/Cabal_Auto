@@ -18,7 +18,7 @@ def test_switch_view_updates_current_key(monkeypatch, view_key):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
 
-    app = App()
+    import tkinter as tk; root = tk.Tk(); app = App(root)
     try:
         app.switch_view(view_key)
         assert app.current_view_key == view_key
@@ -30,7 +30,7 @@ def test_switch_view_invalid_key(monkeypatch):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
 
-    app = App()
+    import tkinter as tk; root = tk.Tk(); app = App(root)
     try:
         initial_view = app.current_view_key
         app.switch_view("non_existent_key_123")
@@ -43,7 +43,7 @@ def test_switch_view_rapid_consecutive_calls(monkeypatch):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
 
-    app = App()
+    import tkinter as tk; root = tk.Tk(); app = App(root)
     try:
         for _ in range(10):
             app.switch_view("setup")
@@ -57,7 +57,7 @@ def test_layout_conflict_between_pack_and_grid(monkeypatch):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
 
-    app = App()
+    import tkinter as tk; root = tk.Tk(); app = App(root)
     try:
 
         def walk(widget):
@@ -79,7 +79,7 @@ def test_hunt_continues_while_hidden(monkeypatch):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
 
-    app = App()
+    import tkinter as tk; root = tk.Tk(); app = App(root)
     try:
         app.hunt_orchestrator = Mock()
         app.hunt_orchestrator.hunt_running = True
@@ -93,7 +93,7 @@ def test_view_hidden_stops_self_polling(monkeypatch):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
 
-    app = App()
+    import tkinter as tk; root = tk.Tk(); app = App(root)
     try:
         hunt_view = app._views["hunt"]
         hunt_view.on_view_hidden = Mock()
@@ -116,7 +116,7 @@ def test_switch_view_updates_sidebar_visual_state(monkeypatch):
     monkeypatch.setitem(sys.modules, "lib.system.window_manager", Mock())
     from app_gui import App
     from lib.ui_style_v2 import UIStyleV2
-    app = App()
+    import tkinter as tk; root = tk.Tk(); app = App(root)
     try:
         app.switch_view("setup")
         # Find the setup button and check its color

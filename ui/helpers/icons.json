@@ -1,14 +1,30 @@
 {
     "icon_manager": [
-        "icon",
+        null,
         "📁"
+    ],
+    "hunt": [
+        null,
+        "🎯"
+    ],
+    "setup": [
+        null,
+        "⚙️"
     ],
     "build_manager": [
         null,
         "🛠️"
     ],
-    "class_manager": [
+    "skill_manager": [
         null,
+        "⚔️"
+    ],
+    "monster_manager": [
+        null,
+        "🐉"
+    ],
+    "class_manager": [
+        "shield",
         "🛡️"
     ],
     "scan_history": [
