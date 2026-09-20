@@ -69,3 +69,29 @@ Sửa lỗi nút Refresh (Làm mới) trên màn hình Icon Manager làm mất n
 
 ## Next Steps
 - Tiếp tục các task theo tiến độ của Sprint 32 (ví dụ: refactor Treeview Headings và Form Labels).
+
+
+### Nhiệm vụ: Tự động đồng bộ trạng thái chọn (Highlight) trong cây UI Element khi chọn Icon
+
+#### Summary
+Thêm logic để khi người dùng chọn một icon đã được liên kết bên danh sách Icon, hệ thống sẽ tự động tìm, mở rộng (expand), cuộn đến (scroll to) và chọn sáng (highlight) nút (node) UI Element tương ứng trong cây "Available Elements" (cây UI Element bên phải).
+
+#### Work Completed
+- Thêm phương thức hỗ trợ `_sync_available_elements_selection` vào `IconManagerFrame`.
+- Tích hợp phương thức trên vào callback `_process_tree_selection_callback` để thực thi mỗi khi một icon được chọn.
+
+#### Key Decisions
+- Sử dụng phương thức đệ quy (recursive method) để duyệt qua toàn bộ các nút trong `Treeview` của `available_elements_tree` nhằm tìm kiếm chính xác lá (leaf node) đang lưu trữ `icon_key` được ánh xạ (nằm ở vị trí thứ 5 trong list `values`).
+- Chỉ thực hiện "highlight" (chọn sáng qua `selection_set`) thay vì kích hoạt lại sự kiện `<<TreeviewSelect>>` để tránh việc vô tình ghi đè các ô nhập liệu (Module, Component, Element ID) trong form khi người dùng không mong muốn, đúng với yêu cầu "chỉ highlight".
+- Sử dụng hàm `see(target_node)` của `Treeview` để tự động mở rộng các thư mục cha và cuộn màn hình đến nút được chọn, giúp đảm bảo UX tốt nhất.
+
+#### Changes Made
+- **File sửa đổi:** `ui/views/icon_manager_frame.py`
+  - Thêm phương thức `_sync_available_elements_selection(self, icon_key)`.
+  - Cập nhật phương thức `_process_tree_selection_callback(self, icon_key)` để gọi hàm đồng bộ trên.
+
+#### Issues / Risks
+- Không ghi nhận rủi ro đáng kể. Tính năng đã được kiểm thử với dummy data và không làm ảnh hưởng đến các logic mapping hay refreshing hiện có.
+
+#### Next Steps
+- Cập nhật thêm tính năng này cho các thành phần UI khác nếu có yêu cầu tương tự.

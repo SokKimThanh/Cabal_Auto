@@ -755,6 +755,38 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_mod.set("")
             self.var_usage_comp.set("")
 
+    def _sync_available_elements_selection(self, icon_key):
+        if not hasattr(self, 'available_elements_tree') or not icon_key:
+            return
+
+        # Iterate through the tree to find the node mapped to this icon
+        def find_mapped_node(node_id):
+            children = self.available_elements_tree.get_children(node_id)
+            for child in children:
+                item = self.available_elements_tree.item(child)
+                values = item.get("values")
+
+                # Check if it's a leaf node with mapped icon (idx 4)
+                if values and len(values) >= 5:
+                    mapped_icon = values[4]
+                    if mapped_icon == icon_key:
+                        return child
+
+                # Recurse
+                found = find_mapped_node(child)
+                if found:
+                    return found
+            return None
+
+        target_node = find_mapped_node("")
+        if target_node:
+            self.available_elements_tree.selection_set(target_node)
+            self.available_elements_tree.see(target_node)
+        else:
+            # Clear selection if no mapped node found for this icon
+            if self.available_elements_tree.selection():
+                self.available_elements_tree.selection_remove(*self.available_elements_tree.selection())
+
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
         if not icon_key:
@@ -1540,6 +1572,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.preview_component.render(icon_data)
             if hasattr(self, 'usage_tree'):
                 self._load_usages_for_selected(icon_key)
+            self._sync_available_elements_selection(icon_key)
         else:
             self.empty_state_frame.tkraise()
 
