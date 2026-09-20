@@ -810,19 +810,24 @@ class IconManagerFrame(ResponsiveGridBase):
                 nodes_to_check.extend(children)
 
         if target_node:
-            # We must NOT set self._current_available_element_selection to target_node before selection_set.
-            # If we do, the `_on_available_element_select` event handler will return early and fail to update the labels.
-            # By setting it to None or bypassing the check, we force the UI labels to synchronize correctly.
-            self._current_available_element_selection = None
-            self.available_elements_tree.selection_set(target_node)
-            self.available_elements_tree.see(target_node)
+            # Set this first to prevent infinite loop recursion with _on_available_element_select
+            self._current_available_element_selection = target_node
 
-            # Extract element_id from node to update sub label correctly
+            # Explicitly update UI variables here instead of relying on the event handler
             target_item = self.available_elements_tree.item(target_node)
             target_values = target_item.get("values")
             if target_values and len(target_values) >= 4:
+                if hasattr(self, 'var_usage_element'):
+                    self.var_usage_element.set(target_values[3])
+                if hasattr(self, 'var_usage_mod'):
+                    self.var_usage_mod.set(target_values[1])
+                if hasattr(self, 'var_usage_comp'):
+                    self.var_usage_comp.set(target_values[2])
                 if hasattr(self, 'var_current_mapping_element'):
                     self.var_current_mapping_element.set(f"UI Element đang chọn: {target_values[3]}")
+
+            self.available_elements_tree.selection_set(target_node)
+            self.available_elements_tree.see(target_node)
         else:
             self._current_available_element_selection = None
             if self.available_elements_tree.selection():
