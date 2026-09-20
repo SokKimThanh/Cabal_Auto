@@ -166,3 +166,30 @@ Cải thiện cách hiển thị khu vực xem trước (preview) hình ảnh. C
 
 #### Next Steps
 - Tiếp tục kiểm tra lại toàn bộ trải nghiệm UI trên các máy màn hình tỷ lệ dpi/scale khác nhau.
+
+
+### Nhiệm vụ: Sửa lỗi không cập nhật Sidebar khi lưu Icon và nâng cấp thông tin UI Element
+
+#### Summary
+Khắc phục lỗi khi lưu thay đổi Icon nhưng giao diện thanh điều hướng bên trái (Sidebar) không tự động làm mới (refresh) để hiển thị Icon mới. Đồng thời, bổ sung nhãn hiển thị ngữ cảnh (contextual label) rõ ràng cho UI Element ID đang được chọn ở giao diện gắn Icon.
+
+#### Work Completed
+- Sửa lỗi tham chiếu sai tên biến trong luồng sự kiện (EventBus) của `app_gui.py` khi lắng nghe sự kiện cập nhật Icon (`IconUpdatedEvent`).
+- Thêm một nhãn văn bản (Label) trong giao diện `IconManagerFrame` để hiển thị rõ ràng thông tin "UI Element ID đang chọn" (bao gồm Element ID, Module, Component Type) khi người dùng click vào cây danh sách "Available Elements".
+
+#### Key Decisions
+- Biến cấu hình hiển thị trạng thái màn hình hiện hành của `NavigationController` là `current_view_key` (kiểu chuỗi), không phải `current_view` (bị None do nhầm tên). Bằng cách trỏ đúng biến, `app_gui.py` có thể nhận biết được màn hình hiện tại và gửi lệnh cho `SidebarComponent` tự động load lại bộ Icon.
+- Để tăng cường trải nghiệm UX, khi chọn một Element từ cây, ngoài việc điền tự động vào các ô nhập liệu ẩn, một dòng mô tả rõ ràng sẽ được cập nhật và hiển thị trực tiếp phía trên vùng dữ liệu.
+
+#### Changes Made
+- **File sửa đổi:** `app_gui.py`
+  - Sửa `getattr(self.navigation, "current_view", None)` thành `getattr(self.navigation, "current_view_key", None)` trong phương thức `on_icon_updated`.
+- **File sửa đổi:** `ui/views/icon_manager_frame.py`
+  - Bổ sung `lbl_context_element` và `self.var_current_mapping_element` vào vùng layout "Usages".
+  - Cập nhật giá trị chuỗi (text string) cho biến này trong phương thức `_on_available_element_select`.
+
+#### Issues / Risks
+- Chức năng đã được kiểm thử, thanh Sidebar làm mới bình thường không cần khởi động lại. UI Element context hiển thị tốt, giúp người dùng tránh nhầm lẫn khi thao tác gán usage.
+
+#### Next Steps
+- Tiếp tục theo dõi và làm sạch code nếu còn các reference nhầm lẫn tương tự do refactoring kiến trúc Controller.
