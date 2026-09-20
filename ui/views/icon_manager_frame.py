@@ -1303,9 +1303,6 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_edit(self):
         self.set_form_state("EDIT")
-        # Automatically switch to the details tab when editing
-        if hasattr(self, 'notebook') and hasattr(self, 'tab_details'):
-            self.notebook.select(self.tab_details)
         # Start typing/editing will set it dirty, but explicitly marking it is safer if they just click browse
         self._is_dirty = True
 
