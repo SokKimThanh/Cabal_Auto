@@ -16,7 +16,7 @@ class IconPreviewComponent(tk.Frame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_propagate(False)
-        self.config(height=200)
+        self.config(height=260)
 
         self._build_ui()
 
@@ -31,7 +31,8 @@ class IconPreviewComponent(tk.Frame):
             self,
             icon="🖼️",
             message=self.i18n_t("msg_no_icon_selected", default="Chưa chọn icon nào hoặc dữ liệu trống"),
-            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn icon từ danh sách hoặc nhấn Đồng bộ nếu danh sách trống")
+            submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn icon từ danh sách hoặc nhấn Đồng bộ nếu danh sách trống"),
+            wraplength=450
         )
         self.empty_preview.grid(row=0, column=0, sticky="nsew")
 
@@ -46,12 +47,14 @@ class IconPreviewComponent(tk.Frame):
 
     def render(self, icon_data):
         if not icon_data:
+            self.empty_preview.grid()
             self.empty_preview.tkraise()
             self.lbl_preview.grid_remove()
             self.lbl_preview.config(image='', text="")
             self.lbl_preview.image = None
             return
 
+        self.empty_preview.grid_remove()
         self.lbl_preview.tkraise()
         self.lbl_preview.grid(row=0, column=0, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD, sticky="nsew")
 
