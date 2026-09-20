@@ -1206,6 +1206,9 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_edit(self):
         self.set_form_state("EDIT")
+        # Automatically switch to the details tab when editing
+        if hasattr(self, 'notebook') and hasattr(self, 'tab_details'):
+            self.notebook.select(self.tab_details)
         # Start typing/editing will set it dirty, but explicitly marking it is safer if they just click browse
         self._is_dirty = True
 
@@ -1285,7 +1288,18 @@ class IconManagerFrame(ResponsiveGridBase):
             self.image_library.set_current_filepath("")
             self.image_library.clear_selection()
 
+        # Hide content state and show empty state
+        if hasattr(self, 'empty_state_frame'):
+            self.empty_state_frame.tkraise()
+
         self.set_form_state("VIEW")
+
+        # In VIEW state, the Edit/Delete buttons are updated based on tree selection.
+        # Since we just cleared the tree selection, explicitly update button states to disabled.
+        if hasattr(self, 'btn_edit'):
+            self.btn_edit.config(state="disabled")
+        if hasattr(self, 'btn_delete'):
+            self.btn_delete.config(state="disabled")
 
     def _on_sync(self, show_message=True):
         if self.btn_sync['state'] == 'disabled':
