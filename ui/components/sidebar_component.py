@@ -202,6 +202,26 @@ class SidebarComponent(tk.Frame):
                     item.widget.config(image="", text=f"{item.icon}")
                     item.widget.image = None
 
+    def update_sidebar_icons(self):
+        """Update icons for all sidebar elements."""
+        for item in self._sidebar_widgets:
+            if isinstance(item.widget, tk.Button):
+                is_active = getattr(item.widget, "_sidebar_active", False)
+                target_fg = UI.ACCENT_GREEN if is_active else UI.TEXT_PRIMARY
+
+                if hasattr(self, "icon_helper") and hasattr(item.widget, "_icon_name"):
+                    new_icon = self.icon_helper.get_icon(item.widget._icon_name, size=24, color=target_fg)
+
+                    if new_icon and not isinstance(new_icon, str):
+                        item.widget.config(image=new_icon, text="")
+                        item.widget.image = new_icon
+                    else:
+                        item.widget.config(image="", text=f"{new_icon if isinstance(new_icon, str) else item.icon}")
+                        item.widget.image = None
+                else:
+                    item.widget.config(image="", text=f"{item.icon}")
+                    item.widget.image = None
+
     def update_translations(self):
         """Update i18n text for sidebar elements."""
         for item in self._sidebar_widgets:
