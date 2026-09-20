@@ -27,6 +27,27 @@ Tuy nhiên, để đảm bảo mỗi phiên làm việc được tối ưu (mỗ
 5. **Refactor Nút Bấm & Metadata Input**: Sửa đổi cấu trúc truyền text vào các nút, đưa tham số `text_key` vào các helper sinh Component (nếu cần).
 
 ## Task Summary
+Cập nhật các thành phần UI của Sidebar (tab_hunt, tab_setup, btn_skill_manager, btn_monster_manager) bằng cách loại bỏ hardcoded emoji, thay thế bằng icon key chuẩn và đăng ký chúng vào danh sách UI Element Registry cũng như cơ sở dữ liệu.
+
+## Work Completed
+- Cập nhật danh sách `sidebar_icons` trong `lib/db/schema.py` để bổ sung các icon còn thiếu của sidebar.
+- Viết vòng lặp để chèn các usage của sidebar button vào bảng `icon_usages` trong quá trình khởi tạo DB.
+- Sửa đổi `ui/components/sidebar_component.py`: Xoá bỏ emoji cứng trên các nút/label và đăng ký chúng vào `UIElementRegistry` thông qua `UIElementDescriptor` khi render.
+
+## Key Decisions
+- Sử dụng Local Import `from lib.events.ui_element_registry import UIElementRegistry` bên trong phương thức `_build()` của `SidebarComponent` để tránh các lỗi Circular Dependency hoặc Tkinter initialization.
+- Luôn kiểm tra sự tồn tại của row bằng `SELECT COUNT(*)` trong `icon_usages` trước khi `INSERT` vào để tránh lỗi duplicate ở lần chạy thứ hai trở đi của schema setup.
+
+## Changes Made
+- Đã chỉnh sửa: `lib/db/schema.py`
+- Đã chỉnh sửa: `ui/components/sidebar_component.py`
+- Refactor việc gán icon để sử dụng icon string identifier.
+
+## Issues / Risks
+- Phụ thuộc khá lớn vào việc rebuild database đối với người dùng cuối chưa chạy script migrate mới (có thể cần refresh database gốc trên môi trường local).
+
+## Next Steps
+- Cập nhật thêm tính năng cập nhật text_key chuẩn cho các button này (để tự động fetch translation tooltip/name).
 Sửa lỗi nút Refresh (Làm mới) trên màn hình Icon Manager làm mất ngữ cảnh layout, đồng thời khắc phục lỗi hiển thị của component EmptyState.
 
 ## Work Completed

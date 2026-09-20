@@ -28,6 +28,8 @@ class SidebarComponent(tk.Frame):
         self._build()
 
     def _build(self):
+        from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor
+
         try:
             dpi_percent = self.tk.call("tk", "scaling") * 72
             scale_factor = dpi_percent / 100.0
@@ -38,11 +40,11 @@ class SidebarComponent(tk.Frame):
 
         # Build Sidebar Navigation
         sidebar_items = [
-            ("tab_hunt", "hunt", UI.FONT_SECTION, "hunt", "🎯"),
-            ("tab_setup", "setup", UI.FONT_SECTION, "setup", "⚙️"),
+            ("tab_hunt", "hunt", UI.FONT_SECTION, "hunt", "hunt"),
+            ("tab_setup", "setup", UI.FONT_SECTION, "setup", "setup"),
             ("btn_build_manager", "build_manager", UI.FONT_SECTION, "build_manager", "build_manager"),
-            ("btn_skill_manager", "skill_manager", UI.FONT_SECTION, "skill_manager", "⚔️"),
-            ("btn_monster_manager", "monster_manager", UI.FONT_SECTION, "monster_manager", "🐉"),
+            ("btn_skill_manager", "skill_manager", UI.FONT_SECTION, "skill_manager", "skill_manager"),
+            ("btn_monster_manager", "monster_manager", UI.FONT_SECTION, "monster_manager", "monster_manager"),
             ("btn_class_manager", "class_manager", UI.FONT_SECTION, "class_manager", "class_manager"),
             ("btn_icon_manager", "icon_manager", UI.FONT_SECTION, "icon_manager", "icon_manager"),
             ("btn_scan_history", "scan_history", UI.FONT_SECTION, "scan_history", "scan_history"),
@@ -76,6 +78,15 @@ class SidebarComponent(tk.Frame):
 
         for _item_idx, item in enumerate(sidebar_items):
             key, view_target, font, _unused_target, icon = item
+
+            # Register with UIElementRegistry
+            desc = UIElementDescriptor(
+                element_id=key,
+                module="App",
+                screen="Sidebar",
+                element_type="sidebar_button"
+            )
+            UIElementRegistry().register(desc)
 
             # command needs a lambda capturing the current view_target
             # using default argument `t=view_target` prevents late binding issues

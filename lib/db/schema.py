@@ -230,7 +230,11 @@ def setup_icons_schema(conn: sqlite3.Connection):
     """)
 
     sidebar_icons = [
+        ('hunt', 'Hunt', '🎯', 'tab_hunt', 2, 'Icon for the Hunt sidebar button'),
+        ('setup', 'Setup', '⚙️', 'tab_setup', 2, 'Icon for the Setup sidebar button'),
         ('build_manager', 'Build Manager', '🛠️', 'btn_build_manager', 2, 'Icon for the Build Manager sidebar button'),
+        ('skill_manager', 'Skill Manager', '⚔️', 'btn_skill_manager', 2, 'Icon for the Skill Manager sidebar button'),
+        ('monster_manager', 'Monster Manager', '🐉', 'btn_monster_manager', 2, 'Icon for the Monster Manager sidebar button'),
         ('class_manager', 'Class Manager', '🛡️', 'btn_class_manager', 2, 'Icon for the Class Manager sidebar button'),
         ('scan_history', 'Scan History', '🕒', 'btn_scan_history', 2, 'Icon for the Scan History sidebar button'),
         ('logs', 'Activity Logs', '📋', 'sidebar_activity_logs', 2, 'Icon for the Activity Logs sidebar button'),
@@ -252,5 +256,31 @@ def setup_icons_schema(conn: sqlite3.Connection):
             INSERT INTO icon_usages (icon_key, module_name, ui_component_type, ui_element_id, description)
             VALUES ('icon_manager', 'App', 'sidebar_button', 'btn_icon_manager', 'Sidebar tracking for self-management paradox')
         """)
+
+    sidebar_usages = [
+        ('hunt', 'App', 'sidebar_button', 'tab_hunt', 'Sidebar tracking for Hunt'),
+        ('setup', 'App', 'sidebar_button', 'tab_setup', 'Sidebar tracking for Setup'),
+        ('build_manager', 'App', 'sidebar_button', 'btn_build_manager', 'Sidebar tracking for Build Manager'),
+        ('skill_manager', 'App', 'sidebar_button', 'btn_skill_manager', 'Sidebar tracking for Skill Manager'),
+        ('monster_manager', 'App', 'sidebar_button', 'btn_monster_manager', 'Sidebar tracking for Monster Manager'),
+        ('class_manager', 'App', 'sidebar_button', 'btn_class_manager', 'Sidebar tracking for Class Manager'),
+        ('scan_history', 'App', 'sidebar_button', 'btn_scan_history', 'Sidebar tracking for Scan History'),
+        ('logs', 'App', 'sidebar_button', 'sidebar_activity_logs', 'Sidebar tracking for Activity Logs'),
+        ('stats', 'App', 'sidebar_button', 'tab_stats', 'Sidebar tracking for Stats'),
+        ('language_manager', 'App', 'sidebar_button', 'btn_language_manager', 'Sidebar tracking for Language Manager'),
+        ('help', 'App', 'sidebar_button', 'sidebar_support', 'Sidebar tracking for Support')
+    ]
+
+    for usage in sidebar_usages:
+        icon_key, mod_name, comp_type, el_id, desc = usage
+        cursor.execute("""
+            SELECT COUNT(*) FROM icon_usages
+            WHERE icon_key = ? AND ui_element_id = ?
+        """, (icon_key, el_id))
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("""
+                INSERT INTO icon_usages (icon_key, module_name, ui_component_type, ui_element_id, description)
+                VALUES (?, ?, ?, ?, ?)
+            """, usage)
 
     conn.commit()
