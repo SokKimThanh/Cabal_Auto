@@ -1246,7 +1246,8 @@ class IconManagerFrame(ResponsiveGridBase):
         if hasattr(self, 'tree_component'):
             self.tree_component.search_var.set("")
             if self.tree_component.tree.selection():
-                self.tree_component.tree.selection_remove(self.tree_component.tree.selection())
+                self.tree_component.tree.selection_remove(*self.tree_component.tree.selection())
+            self.tree_component.tree.focus('')
             self.tree_component.apply_filters()
 
         # 2. Clear search and selection in available elements tree
@@ -1255,9 +1256,11 @@ class IconManagerFrame(ResponsiveGridBase):
             self._apply_element_filter(force=True)
         if hasattr(self, 'available_elements_tree'):
             if self.available_elements_tree.selection():
-                self.available_elements_tree.selection_remove(self.available_elements_tree.selection())
+                self.available_elements_tree.selection_remove(*self.available_elements_tree.selection())
+            self.available_elements_tree.focus('')
 
         # 3. Reset state variables
+        self._last_selected_item_id = None
         if hasattr(self, 'var_current_mapping_icon'):
             self.var_current_mapping_icon.set("Đang chọn Icon: (Chưa chọn)")
         if hasattr(self, 'var_usage_element'):
