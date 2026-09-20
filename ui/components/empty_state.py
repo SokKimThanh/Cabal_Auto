@@ -9,29 +9,30 @@ class EmptyState(tk.Frame):
     def __init__(self, parent, icon="•", message="No data", submessage="", wraplength=300, **kwargs):
         super().__init__(parent, bg=UI.BG_BASE, **kwargs)
 
-        # Vertical padding
-        tk.Frame(self, bg=UI.BG_BASE, height=20).pack()
+        # Use expand to center contents vertically
+        container = tk.Frame(self, bg=UI.BG_BASE)
+        container.pack(expand=True)
 
         # Icon (large, muted)
         icon_label = tk.Label(
-            self,
+            container,
             text=icon,
             font=(UI.FONT_FAMILY_UI_FALLBACK, 48),
             bg=UI.BG_BASE,
             fg=UI.TEXT_MUTED,
         )
-        icon_label.pack(pady=(20, 10))
+        icon_label.pack(pady=(10, 10))
 
         # Main message
         msg_label = tk.Label(
-            self, text=message, font=UI.FONT_SECTION, bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY
+            container, text=message, font=UI.FONT_SECTION, bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY
         )
         msg_label.pack(pady=5)
 
         # Sub-message
         if submessage:
             sub_label = tk.Label(
-                self,
+                container,
                 text=submessage,
                 font=UI.FONT_SMALL,
                 bg=UI.BG_BASE,

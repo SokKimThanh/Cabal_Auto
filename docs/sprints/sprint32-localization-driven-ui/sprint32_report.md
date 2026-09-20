@@ -138,3 +138,31 @@ Khắc phục triệt để lỗi "Not Responding" do cơ chế phát sinh sự 
   - Thêm `self._current_available_element_selection` vào `__init__` và `_on_refresh`.
   - Cập nhật hàm `_sync_available_elements_selection` để cập nhật biến trạng thái trước khi gọi `selection_set()`.
   - Cập nhật hàm `_on_available_element_select` để kiểm tra so khớp trước khi xử lý logic form.
+
+
+### Nhiệm vụ: Tinh chỉnh Layout của EmptyState và Label UI Preview
+
+#### Summary
+Cải thiện cách hiển thị khu vực xem trước (preview) hình ảnh. Căn giữa toàn bộ giao diện placeholder của `EmptyState` và Label để tránh tình trạng chữ bị cắt, khoảng trắng lớn gây mất cân đối giao diện.
+
+#### Work Completed
+- Cấu hình lại `EmptyState` component để sử dụng một vùng chứa (`container`) phụ trợ nhằm ép nội dung căn giữa tuyệt đối theo chiều dọc (thông qua `expand=True`).
+- Sửa lỗi tham số chồng chéo trong quá trình khởi tạo `tk.Label` bên trong `EmptyState`.
+- Bổ sung cấu hình `justify="center"` và `anchor="center"` cho nhãn hình ảnh của `IconPreviewComponent`.
+
+#### Key Decisions
+- Thay vì thêm padding cố định, việc sử dụng frame trung gian (`container.pack(expand=True)`) giúp tự động căn giữa (vertical/horizontal centering) nội dung theo mọi kích thước cửa sổ của ứng dụng.
+- Khắc phục lỗi truyền tham số `master` cho `tk.Label` bên trong `EmptyState` (truyền nhầm cả `container` và `self` dẫn tới lỗi TclError `unknown option "-class"` do nhận diện lầm kiểu biến argument vị trí).
+
+#### Changes Made
+- **File sửa đổi:** `ui/components/empty_state.py`
+  - Đóng gói nội dung vào frame `container`.
+  - Cập nhật cách khởi tạo `tk.Label`.
+- **File sửa đổi:** `ui/components/icon_preview_component.py`
+  - Thêm thuộc tính căn giữa cho nhãn (Label) hiển thị trước (preview label).
+
+#### Issues / Risks
+- Không có rủi ro tiềm ẩn nào vì đây chỉ là thay đổi liên quan đến thẩm mỹ giao diện hiển thị (UI Layout). Unit tests vẫn đang duy trì ổn định.
+
+#### Next Steps
+- Tiếp tục kiểm tra lại toàn bộ trải nghiệm UI trên các máy màn hình tỷ lệ dpi/scale khác nhau.
