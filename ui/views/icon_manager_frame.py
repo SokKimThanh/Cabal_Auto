@@ -386,7 +386,7 @@ class IconManagerFrame(ResponsiveGridBase):
         lbl_context.pack(fill="x", padx=10, pady=(10, 0))
 
         # Additional Contextual Label for Element ID
-        self.var_current_mapping_element = tk.StringVar(value="UI Element ID đang chọn: (Chưa chọn)")
+        self.var_current_mapping_element = tk.StringVar(value="UI Element đang chọn: (Chưa chọn)")
         lbl_context_element = tk.Label(
             parent_frame,
             textvariable=self.var_current_mapping_element,
@@ -759,7 +759,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_comp.set(values[2])     # comp
 
             if hasattr(self, 'var_current_mapping_element'):
-                self.var_current_mapping_element.set(f"UI Element ID đang chọn: {values[3]}")
+                self.var_current_mapping_element.set(f"UI Element đang chọn: {values[3]}")
 
             mapped_icon = values[4] if len(values) > 4 and values[4] else ""
             if mapped_icon:
@@ -781,7 +781,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_comp.set("")
 
             if hasattr(self, 'var_current_mapping_element'):
-                self.var_current_mapping_element.set("UI Element ID đang chọn: (Chưa chọn)")
+                self.var_current_mapping_element.set("UI Element đang chọn: (Chưa chọn)")
 
     def _sync_available_elements_selection(self, icon_key):
         if not hasattr(self, 'available_elements_tree') or not icon_key:
@@ -816,6 +816,13 @@ class IconManagerFrame(ResponsiveGridBase):
             self._current_available_element_selection = None
             self.available_elements_tree.selection_set(target_node)
             self.available_elements_tree.see(target_node)
+
+            # Extract element_id from node to update sub label correctly
+            target_item = self.available_elements_tree.item(target_node)
+            target_values = target_item.get("values")
+            if target_values and len(target_values) >= 4:
+                if hasattr(self, 'var_current_mapping_element'):
+                    self.var_current_mapping_element.set(f"UI Element đang chọn: {target_values[3]}")
         else:
             self._current_available_element_selection = None
             if self.available_elements_tree.selection():
@@ -828,7 +835,7 @@ class IconManagerFrame(ResponsiveGridBase):
             if hasattr(self, 'var_usage_comp'):
                 self.var_usage_comp.set("")
             if hasattr(self, 'var_current_mapping_element'):
-                self.var_current_mapping_element.set("UI Element ID đang chọn: (Chưa chọn)")
+                self.var_current_mapping_element.set("UI Element đang chọn: (Chưa chọn)")
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
