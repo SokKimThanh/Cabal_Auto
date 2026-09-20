@@ -798,7 +798,8 @@ class IconManagerFrame(ResponsiveGridBase):
             # Check if it's a leaf node with mapped icon (idx 4)
             if values and len(values) >= 5:
                 mapped_icon = values[4]
-                if mapped_icon == icon_key:
+                # Compare string representation to be safe, sometimes it comes back from Tkinter tuple differently
+                if str(mapped_icon) == str(icon_key):
                     target_node = current_node
                     break
 

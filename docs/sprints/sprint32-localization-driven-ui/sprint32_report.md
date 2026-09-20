@@ -193,3 +193,25 @@ Khắc phục lỗi khi lưu thay đổi Icon nhưng giao diện thanh điều h
 
 #### Next Steps
 - Tiếp tục theo dõi và làm sạch code nếu còn các reference nhầm lẫn tương tự do refactoring kiến trúc Controller.
+
+
+### Nhiệm vụ: Khắc phục lỗi mất chức năng Highlight UI Element khi chọn Icon
+
+#### Summary
+Sửa lỗi tính năng tự động đồng bộ trạng thái (highlight) trên cây UI Element (Available Elements) không hoạt động khi người dùng nhấp chọn một Icon đã được liên kết ở giao diện bên trái. Lỗi xảy ra do kiểu dữ liệu không đồng nhất (khi Tkinter trả về các đối tượng Tcl).
+
+#### Work Completed
+- Điều chỉnh hàm `_sync_available_elements_selection` để ép kiểu (type casting) giá trị chuỗi (string) trước khi so sánh `mapped_icon == icon_key`.
+
+#### Key Decisions
+- Khi trích xuất dữ liệu từ các cột của `ttk.Treeview`, giá trị (values) được lưu dưới dạng một tuple. Đôi khi Tkinter có thể trả về các kiểu nội bộ (ví dụ: `_tkinter.Tcl_Obj`) thay vì chuỗi `str` thông thường của Python, dẫn đến việc phép so sánh bằng (`==`) bị sai kết quả. Việc bọc chúng qua hàm `str()` (ví dụ `str(mapped_icon) == str(icon_key)`) giúp đảm bảo tính nhất quán và phép so sánh hoạt động chính xác.
+
+#### Changes Made
+- **File sửa đổi:** `ui/views/icon_manager_frame.py`
+  - Cập nhật điều kiện so sánh trong hàm `_sync_available_elements_selection`.
+
+#### Issues / Risks
+- Không ghi nhận rủi ro thêm.
+
+#### Next Steps
+- Cập nhật các Test Case để mock giá trị `values` của Treeview khớp với định dạng Tcl tuple thực tế nhằm mô phỏng chính xác hơn môi trường chạy.
