@@ -392,7 +392,7 @@ class IconManagerFrame(ResponsiveGridBase):
             textvariable=self.var_current_mapping_element,
             bg=UIStyle.BG_SURFACE,
             fg=UIStyle.TEXT_SECONDARY,
-            font=("Segoe UI", 10, "italic")
+            font=("Segoe UI", 12, "bold")
         )
         lbl_context_element.pack(fill="x", padx=10, pady=(0, 10))
 
@@ -759,7 +759,7 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_comp.set(values[2])     # comp
 
             if hasattr(self, 'var_current_mapping_element'):
-                self.var_current_mapping_element.set(f"UI Element ID đang chọn: {values[3]} (Module: {values[1]}, Type: {values[2]})")
+                self.var_current_mapping_element.set(f"UI Element ID đang chọn: {values[3]}")
 
             mapped_icon = values[4] if len(values) > 4 and values[4] else ""
             if mapped_icon:
@@ -810,7 +810,10 @@ class IconManagerFrame(ResponsiveGridBase):
                 nodes_to_check.extend(children)
 
         if target_node:
-            self._current_available_element_selection = target_node
+            # We must NOT set self._current_available_element_selection to target_node before selection_set.
+            # If we do, the `_on_available_element_select` event handler will return early and fail to update the labels.
+            # By setting it to None or bypassing the check, we force the UI labels to synchronize correctly.
+            self._current_available_element_selection = None
             self.available_elements_tree.selection_set(target_node)
             self.available_elements_tree.see(target_node)
         else:
@@ -824,6 +827,8 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.var_usage_mod.set("")
             if hasattr(self, 'var_usage_comp'):
                 self.var_usage_comp.set("")
+            if hasattr(self, 'var_current_mapping_element'):
+                self.var_current_mapping_element.set("UI Element ID đang chọn: (Chưa chọn)")
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
