@@ -153,6 +153,18 @@ class IconManagerController:
         if not mod or not comp or not elem:
             return OperationResult(success=False, message="Vui lòng nhập đủ thông tin Mod, Comp, ID.")
 
+        if comp in ["Sidebar", "sidebar_button"] or mod == "App":
+            existing = self.icon_service.get_usage_by_element(mod, comp, elem)
+            if existing:
+                existing_icon = existing.get("icon_key")
+                if existing_icon != icon_key:
+                    usage_id = existing.get("usage_id") or existing.get("id")
+                    return OperationResult(
+                        success=False,
+                        message=f"Element '{elem}' đang sử dụng icon độc quyền '{existing_icon}'. Bạn có muốn thay thế bằng icon '{icon_key}' không?",
+                        data={"action": "confirm_replace", "usage_id": usage_id, "old_icon": existing_icon}
+                    )
+
         if self.icon_service.register_usage(icon_key, mod, comp, elem):
             self.tree_model.usage_cache.pop(icon_key, None)
             self.tree_model.load_usages_for_icon_async(icon_key, None)
@@ -167,6 +179,18 @@ class IconManagerController:
             return OperationResult(success=True)
         else:
             return OperationResult(success=False, message="Gỡ usage thất bại.")
+
+    def replace_usage(self, new_icon_key: str, old_icon_key: str, old_usage_id: int, mod: str, comp: str, elem: str) -> OperationResult:
+        if hasattr(self.icon_service, "delete_usage"):
+            self.icon_service.delete_usage(old_usage_id)
+            self.tree_model.usage_cache.pop(old_icon_key, None)
+            self.tree_model.load_usages_for_icon_async(old_icon_key, None)
+
+        if self.icon_service.register_usage(new_icon_key, mod, comp, elem):
+            self.tree_model.usage_cache.pop(new_icon_key, None)
+            self.tree_model.load_usages_for_icon_async(new_icon_key, None)
+            return OperationResult(success=True)
+        return OperationResult(success=False, message="Gắn usage thay thế thất bại.")
 
     def sync_system_icons_async(self, on_complete, on_error):
         def run_sync():
