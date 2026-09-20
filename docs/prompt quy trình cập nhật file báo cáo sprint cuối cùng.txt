@@ -1,0 +1,44 @@
+Dựa trên toàn bộ ngữ cảnh của cuộc hội thoại hiện tại, hãy cập nhật báo cáo Sprint cho nhiệm vụ vừa hoàn thành.
+
+Quy trình:
+
+1. Xác định thư mục Sprint có mã số lớn nhất hiện có trong dự án.
+2. Tìm file báo cáo chính của Sprint đó theo convention hiện hữu.
+3. Nếu file chưa tồn tại thì tạo mới.
+4. Nếu file đã tồn tại:
+   - Đọc toàn bộ nội dung hiện có.
+   - Không ghi đè nội dung cũ.
+   - Append nội dung mới vào đúng vị trí phù hợp trong báo cáo.
+
+Kiểm tra conflict trước khi cập nhật:
+
+- Nếu xuất hiện trạng thái:
+  - ahead > 0 và behind > 0
+  - hoặc phát hiện merge marker:
+    - <<<<<<<
+    - =======
+    - >>>>>>>
+
+=> Dừng cập nhật và báo cáo conflict cần được resolve trước.
+
+Nếu không có conflict:
+
+- Bổ sung báo cáo cho nhiệm vụ vừa hoàn thành.
+- Không tạo bản ghi trùng lặp nếu nhiệm vụ đã được ghi nhận.
+- Nếu nhiệm vụ đã tồn tại thì cập nhật section tương ứng thay vì tạo mới.
+
+Nội dung cập nhật gồm:
+
+- Summary
+- Work Completed
+- Key Decisions
+- Changes Made
+- Issues / Risks
+- Next Steps
+
+Yêu cầu:
+
+- Chỉ sử dụng thông tin trong ngữ cảnh hiện tại.
+- Không tự suy diễn hoặc bịa thêm dữ liệu.
+- Tập trung vào kết quả thực tế đã hoàn thành.
+- Xuất nội dung Markdown cuối cùng sẵn sàng để ghi vào file báo cáo Sprint.
