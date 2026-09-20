@@ -95,11 +95,15 @@ class SidebarComponent(tk.Frame):
             # Resolve icon: Use PhotoImage if it's a known non-emoji string, otherwise treat as emoji/text
             is_image_icon = False
             icon_img = None
-            if isinstance(icon, str) and len(icon) > 2 and hasattr(icon_helper, "has_icon_file") and icon_helper.has_icon_file(icon):
-                is_image_icon = True
-                icon_img = icon_helper.get_icon(icon, size=24, color=UI.TEXT_PRIMARY)
-                if icon_img:
+            resolved_icon_text = icon
+            if isinstance(icon, str) and hasattr(icon_helper, "get_icon"):
+                resolved_icon = icon_helper.get_icon(icon, size=24, color=UI.TEXT_PRIMARY)
+                if not isinstance(resolved_icon, str):
+                    is_image_icon = True
+                    icon_img = resolved_icon
                     self._image_refs.append(icon_img) # keep ref to avoid gc
+                else:
+                    resolved_icon_text = resolved_icon
 
             if command is None:
                 lbl = tk.Label(
@@ -113,7 +117,7 @@ class SidebarComponent(tk.Frame):
                     lbl.config(image=icon_img)
                     lbl.image = icon_img
                 else:
-                    lbl.config(text=f"{icon}")
+                    lbl.config(text=f"{resolved_icon_text}")
                 lbl.pack(fill="x", pady=(10, 4))
                 self._sidebar_widgets.append(SidebarWidgetDef(widget=lbl, key=key, view_target=view_target, icon=icon))
             else:
@@ -145,7 +149,7 @@ class SidebarComponent(tk.Frame):
                     btn.image = icon_img
                 else:
                     # Fix misalignment for certain emoji characters like 🛠️ by not adding spaces around them
-                    btn.config(text=f"{icon}")
+                    btn.config(text=f"{resolved_icon_text}")
 
                 apply_button_hover_effects(
                     btn, hover_color=UI.BG_SURFACE
