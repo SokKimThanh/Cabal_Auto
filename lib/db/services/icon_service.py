@@ -309,6 +309,21 @@ class IconService:
             logger.error(f"Error in get_usages: {e}")
             return []
 
+    def get_usage_by_element(self, module_name: str, component_type: str, element_id: str) -> Optional[Dict]:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "SELECT * FROM icon_usages WHERE module_name = ? AND ui_component_type = ? AND ui_element_id = ?",
+                (module_name, component_type, element_id)
+            )
+            row = cursor.fetchone()
+            if row:
+                return self._row_to_dict(cursor, row)
+            return None
+        except sqlite3.Error as e:
+            logger.error(f"Error in get_usage_by_element: {e}")
+            return None
+
     def delete_usage(self, usage_id: int) -> bool:
         try:
             cursor = self.conn.cursor()
@@ -316,9 +331,14 @@ class IconService:
             self.conn.commit()
             return cursor.rowcount > 0
         except sqlite3.Error as e:
-            logger.error(f"Error in delete_usage: {e}")
-            self.conn.rollback()
-            return False
+            try:
+                cursor.execute("DELETE FROM icon_usages WHERE usage_id = ?", (usage_id,))
+                self.conn.commit()
+                return cursor.rowcount > 0
+            except sqlite3.Error as e2:
+                logger.error(f"Error in delete_usage fallback: {e2}")
+                self.conn.rollback()
+                return False
 
     def clear_usages(self, icon_key: str) -> bool:
         try:

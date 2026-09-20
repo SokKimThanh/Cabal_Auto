@@ -870,6 +870,14 @@ class IconManagerFrame(ResponsiveGridBase):
 
         result = self.controller.add_usage(icon_key, mod, comp, elem)
 
+        if not result.success and getattr(result, "data", None) and result.data.get("action") == "confirm_replace":
+            if messagebox.askyesno("Xác nhận thay thế", result.message):
+                old_icon = result.data.get("old_icon")
+                usage_id = result.data.get("usage_id")
+                result = self.controller.replace_usage(icon_key, old_icon, usage_id, mod, comp, elem)
+            else:
+                return
+
         if result.success:
             self.var_usage_element.set("")
             self._load_usages_for_selected(icon_key)

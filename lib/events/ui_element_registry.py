@@ -41,7 +41,12 @@ class UIElementRegistry:
     def register(self, descriptor: UIElementDescriptor) -> None:
         key = (descriptor.module, descriptor.screen, descriptor.element_id)
         if key in self._elements:
-            logger.warning(f"[UIRegistry] Duplicate registration: {key}")
+            existing = self._elements[key]
+            if existing.element_type != descriptor.element_type:
+                logger.warning(
+                    f"[UIRegistry] Type mismatch on duplicate registration: {key}. "
+                    f"Existing type: {existing.element_type}, New type: {descriptor.element_type}"
+                )
         self._elements[key] = descriptor
 
     def get_all(self) -> List[UIElementDescriptor]:
