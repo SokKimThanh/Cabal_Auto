@@ -616,6 +616,7 @@ class IconManagerFrame(ResponsiveGridBase):
                         item_to_select = node_id
 
         if item_to_select:
+            self._current_available_element_selection = item_to_select
             self.available_elements_tree.selection_set(item_to_select)
             self.available_elements_tree.see(item_to_select)
 
@@ -798,6 +799,13 @@ class IconManagerFrame(ResponsiveGridBase):
             self._current_available_element_selection = None
             if self.available_elements_tree.selection():
                 self.available_elements_tree.selection_remove(*self.available_elements_tree.selection())
+            # Clear label variables if there is no mapping
+            if hasattr(self, 'var_usage_element'):
+                self.var_usage_element.set("")
+            if hasattr(self, 'var_usage_mod'):
+                self.var_usage_mod.set("")
+            if hasattr(self, 'var_usage_comp'):
+                self.var_usage_comp.set("")
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())

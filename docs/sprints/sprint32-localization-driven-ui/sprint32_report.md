@@ -138,3 +138,21 @@ Khắc phục triệt để lỗi "Not Responding" do cơ chế phát sinh sự 
   - Thêm `self._current_available_element_selection` vào `__init__` và `_on_refresh`.
   - Cập nhật hàm `_sync_available_elements_selection` để cập nhật biến trạng thái trước khi gọi `selection_set()`.
   - Cập nhật hàm `_on_available_element_select` để kiểm tra so khớp trước khi xử lý logic form.
+
+
+### Nhiệm vụ: Xử lý đồng bộ dữ liệu sau sự kiện Làm mới (Refresh state tracking)
+
+#### Summary
+Sửa lỗi mất khả năng highlight và nhãn UI Element không hiển thị đúng nếu người dùng gọi chức năng "Làm mới" (Refresh), sau đó click lại vào chính icon vừa thao tác (Out of sync state).
+
+#### Work Completed
+- Bổ sung việc khởi tạo và cập nhật biến trạng thái `_current_available_element_selection` vào quá trình lọc cây (filter tree) để tránh lệch dữ liệu.
+- Xóa trạng thái của các nhãn văn bản (var_usage_element, var_usage_mod, var_usage_comp) khi quá trình highlight không tìm thấy thành phần UI nào tương ứng với Icon.
+
+#### Key Decisions
+- Quá trình Refresh sẽ kích hoạt việc xóa và build lại cây thông qua `_apply_element_filter`. Trong lúc build lại, nếu Treeview tự động chọn lại node (thông qua cache), nó phải cập nhật lại biến `_current_available_element_selection` trước khi gọi lệnh `selection_set`. Nếu không làm thế, cây sẽ hiển thị là có chọn, nhưng bộ não của hệ thống (biến trạng thái) lại là rỗng (None), dẫn đến việc chặn sự kiện bị sai lệch nếu ta click vào icon cũ.
+
+#### Changes Made
+- **File sửa đổi:** `ui/views/icon_manager_frame.py`
+  - Thêm gán biến `_current_available_element_selection` tại `_apply_element_filter`.
+  - Cập nhật thêm logic set rỗng label tại `_sync_available_elements_selection`.
