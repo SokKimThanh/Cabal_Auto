@@ -8,9 +8,22 @@ class DummyApp:
     def _t(self, key, **kwargs):
         return key
 
+class DummyVar:
+    def __init__(self, value=""):
+        self.value = value
+    def get(self):
+        return self.value
+    def set(self, value):
+        self.value = value
+    def trace_add(self, *args, **kwargs):
+        pass
+
 class TestIconTreeComponent(unittest.TestCase):
     def setUp(self):
         self.root = tk.Tk()
+        # Mock tk.StringVar to return our DummyVar so tests pass
+        self._orig_string_var = tk.StringVar
+        tk.StringVar = lambda value="": DummyVar(value)
         self.app = DummyApp()
         self.mock_model = MagicMock()
         self.mock_model.loaded = True
@@ -35,6 +48,7 @@ class TestIconTreeComponent(unittest.TestCase):
         )
 
     def tearDown(self):
+        tk.StringVar = self._orig_string_var
         self.root.destroy()
 
     def test_initialization(self):

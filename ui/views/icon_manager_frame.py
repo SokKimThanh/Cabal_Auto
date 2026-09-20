@@ -730,10 +730,35 @@ class IconManagerFrame(ResponsiveGridBase):
         values = item.get("values")
 
         # It's a leaf node if it has values
-        if values and len(values) >= 4:
+        if values and len(values) >= 4:  # ID, Module, Type, Element ID, Mapped Icon
             self.var_usage_element.set(values[3])  # element_id
             self.var_usage_mod.set(values[1])      # mod
             self.var_usage_comp.set(values[2])     # comp
+
+            mapped_icon = values[4] if len(values) > 4 and values[4] else ""
+            if mapped_icon:
+                # Highlight and load this icon
+                if hasattr(self, 'tree_component'):
+                    self.tree_component.search_var.set(mapped_icon)
+                    self.tree_component.apply_filters()
+                    self._process_tree_selection_callback(mapped_icon)
+            else:
+                # Clear left tree selection and show message
+                if hasattr(self, 'tree_component'):
+                    self.tree_component.search_var.set("")
+                    if self.tree_component.tree.selection():
+                        self.tree_component.tree.selection_remove(self.tree_component.tree.selection())
+                if hasattr(self, 'var_current_mapping_icon'):
+                    self.var_current_mapping_icon.set("Thành phần này chưa gắn Icon nào")
+                if hasattr(self, 'icon_form'):
+                    self.icon_form.set_form_data({})
+                if hasattr(self, 'usage_tree'):
+                    self.usage_tree.delete(*self.usage_tree.get_children())
+                if hasattr(self, 'preview_component'):
+                    self.preview_component.render({})
+                if hasattr(self, 'image_library') and self.image_library:
+                    self.image_library.set_current_filepath("")
+                    self.image_library.clear_selection()
         else:
             self.var_usage_element.set("")
             self.var_usage_mod.set("")
@@ -1227,7 +1252,43 @@ class IconManagerFrame(ResponsiveGridBase):
                     messagebox.showerror("Error", result.message)
 
     def _on_refresh(self):
-        self.apply_filters()
+        # 1. Clear search and selection in left tree
+        if hasattr(self, 'tree_component'):
+            self.tree_component.search_var.set("")
+            if self.tree_component.tree.selection():
+                self.tree_component.tree.selection_remove(self.tree_component.tree.selection())
+            self.tree_component.apply_filters()
+
+        # 2. Clear search and selection in available elements tree
+        if hasattr(self, 'var_element_search'):
+            self.var_element_search.set("")
+            self._apply_element_filter(force=True)
+        if hasattr(self, 'available_elements_tree'):
+            if self.available_elements_tree.selection():
+                self.available_elements_tree.selection_remove(self.available_elements_tree.selection())
+
+        # 3. Reset state variables
+        if hasattr(self, 'var_current_mapping_icon'):
+            self.var_current_mapping_icon.set("Đang chọn Icon: (Chưa chọn)")
+        if hasattr(self, 'var_usage_element'):
+            self.var_usage_element.set("")
+        if hasattr(self, 'var_usage_mod'):
+            self.var_usage_mod.set("")
+        if hasattr(self, 'var_usage_comp'):
+            self.var_usage_comp.set("")
+
+        # 4. Clear form and usage tree, ensure detail form is visible
+        if hasattr(self, 'icon_form'):
+            self.icon_form.set_form_data({})
+        if hasattr(self, 'usage_tree'):
+            self.usage_tree.delete(*self.usage_tree.get_children())
+        if hasattr(self, 'preview_component'):
+            self.preview_component.render({})
+        if hasattr(self, 'image_library') and self.image_library:
+            self.image_library.set_current_filepath("")
+            self.image_library.clear_selection()
+
+        self.set_form_state("VIEW")
 
     def _on_sync(self, show_message=True):
         if self.btn_sync['state'] == 'disabled':
