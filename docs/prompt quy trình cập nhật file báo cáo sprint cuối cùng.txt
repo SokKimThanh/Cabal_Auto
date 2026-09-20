@@ -42,3 +42,20 @@ Yêu cầu:
 - Không tự suy diễn hoặc bịa thêm dữ liệu.
 - Tập trung vào kết quả thực tế đã hoàn thành.
 - Xuất nội dung Markdown cuối cùng sẵn sàng để ghi vào file báo cáo Sprint.
+
+## Quy tắc ngôn ngữ
+
+- Toàn bộ báo cáo phải được viết bằng tiếng Việt.
+- Tiêu đề, nội dung, nhận xét, phân tích và kết luận phải sử dụng tiếng Việt.
+- Chỉ giữ nguyên tiếng Anh đối với:
+  - Tên class
+  - Tên function
+  - Tên biến
+  - Tên file
+  - API
+  - Framework
+  - Thuật ngữ kỹ thuật phổ biến không nên dịch
+- Không được tạo báo cáo song ngữ.
+- Không trộn tiếng Anh vào các phần mô tả thông thường nếu có thể diễn đạt bằng tiếng Việt.
+- Giữ văn phong chuyên nghiệp, ngắn gọn, dễ đọc và phù hợp với tài liệu kỹ thuật của dự án.
+`
