@@ -4,6 +4,7 @@
 Lắp ráp các thành phần đã tạo ở Task 1, 2, 3 vào file UI chính của bảng Kỹ năng. Đồng thời cải thiện luồng Bật/Tắt chế độ Auto Combo.
 
 ## Yêu cầu (Requirements)
+6. ĐẢM BẢO giữ nguyên biến `self.widgets["auto_combo_var"] = tk.BooleanVar()` cũ vì nó có thể đang được Automation Test hoặc tab khác gọi tới. Toggle button mới chỉ map UI state vào biến này.
 1. Sửa file `ui/panels/skill_panel.py`.
 2. Xóa các hàm `_build_combo_section` và `_build_buff_section` cũ.
 3. Chèn `ComboRhythmBar` lên trên cùng.
@@ -23,5 +24,5 @@ Lắp ráp các thành phần đã tạo ở Task 1, 2, 3 vào file UI chính c�
 - BẠN PHẢI đảm bảo nút Toggle mới khi được click sẽ ghi trạng thái vào `hunt_cfg` (ví dụ `cfg["combo"]["enabled"] = True/False`) hoặc gọi API cập nhật cấu hình của StateController, để `HuntOrchestrator` có thể đọc được!
 
 ## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
-- **Sửa Lỗi Binding Vô Danh:** Lỗi kỹ thuật tồn tại từ lâu là nút "Start/Stop" chỉ đổi UI mà không update trạng thái thực sự xuống backend. Bạn phải trả khoản nợ này bằng cách: Đảm bảo Toggle Button mới cập nhật đúng vào config `combo.enabled` thông qua Controller, để Orchestrator có thể nhận biết được thao tác của người dùng.
+- **Sửa Lỗi Binding Vô Danh:** Lỗi kỹ thuật tồn tại từ lâu là nút "Start/Stop" chỉ đổi UI mà không update trạng thái thực sự xuống backend. Bạn phải trả khoản nợ này bằng cách: Đảm bảo Toggle Button mới cập nhật đúng vào config chính xác là `hunt_cfg["combo"]["enabled"]` thông qua Controller, để Orchestrator có thể nhận biết được thao tác của người dùng.
 - **i18n Hardcode:** Các trạng thái "Bật Auto Combo", "Đang chạy Combo" không được code cứng. Hãy dùng `self._t("...")` để đảm bảo hệ thống chuyển đổi ngôn ngữ hoạt động.

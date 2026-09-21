@@ -15,6 +15,6 @@ Hệ thống Hunt không chỉ nhận diện quái vật, mà còn phải đọc
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Khởi tạo Validation Layer bằng một file config cũ (`{"region": [0,0,10,10]}`). Đảm bảo Parser xuất ra đúng kiểu dict và không throw error.
 ## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
-- **Bảo hiểm Dữ liệu (Schema Validation):** File `hunt_config.json` từ lâu đã bị thiếu lớp bảo vệ. Bắt buộc bạn phải trả khoản nợ này bằng cách: Viết một hàm Data Migration an toàn, kiểm tra xem format cũ hay mới. Nếu format cũ, PHẢI tự động copy ra một file `.bak` (Backup) trước khi chuyển đổi nó sang định dạng Dictionary đa vùng (Multi-ROI).
+- **Bảo hiểm Dữ liệu (Schema Validation): File `hunt_config.json` phải được validate bằng thư viện `pydantic`. Nếu migration lỗi, BẮT BUỘC phải viết mã khôi phục tự động (Auto-restore) file `.bak` về lại file gốc!
 - **Lỗi 0 byte JSON (Atomic Write):** Khi lưu tọa độ vùng vẽ mới vào `hunt_config.json`, tuyệt đối không ghi đè trực tiếp. Bạn phải ghi ra file `hunt_config.tmp`, sau đó dùng `os.replace` để đổi tên nhằm tránh lỗi rỗng file khi luồng ngầm đang đọc đồng thời (Race condition file I/O).
 - **i18n Hardcode:** Các Text "Quản lý Vùng Quét", "Vẽ lại" phải được khai báo key đa ngôn ngữ, không dùng chữ tiếng Việt cứng trong code.

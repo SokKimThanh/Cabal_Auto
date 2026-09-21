@@ -1,5 +1,10 @@
 # QA Checklist: Improve UX Hunt Tab (Sprint 33)
 
+## Task 0: UIAnimationManager
+- [ ] Đã có chức năng tự động hủy/ghi đè (Cancel/Override) khi truyền một `target_id` đã tồn tại chưa?
+- [ ] Quá trình loop có kiểm tra `winfo_exists` để chống TclError không?
+# QA Checklist: Improve UX Hunt Tab (Sprint 33)
+
 ## Task 1: Refactor Controller
 - [ ] Hàm `get_combo_sequence` và `get_buff_sequence` trả về list chuẩn xác?
 - [ ] Migration logic (nếu có) không làm crash app khi đọc file config cũ?
@@ -24,14 +29,15 @@
 - [ ] Trạng thái khi mở lại tab có đồng bộ với State đang chạy ngầm của Bot không?
 
 ## Task 5: TargetStatus Animation & Fonts
+- [ ] Hàm Tweening Animation của HP bar có đăng ký qua `UIAnimationManager` để bù lại khoảng thời gian trống 200ms của Scanner không?
+- [ ] File `SkillStatsPanel` đã thực hiện gọi `EventBus.bind(SkillStatsUpdatedEvent)` và cập nhật được data động lên bảng chưa?
 - [ ] Bảng Stats vẫn giữ nguyên Treeview, tần suất làm mới <= 1s và số record <= 50 không?
 - [ ] HP Text có nhảy dữ liệu ngay lập tức mà không bị delay theo animation của thanh Canvas không?
 - [ ] Chữ số HP/MP có sử dụng Monospace Font (font_mono) chưa?
 - [ ] Khi mục tiêu mất máu cực nhanh, animation Tween có bị queue lùi (chạy chậm hơn thực tế) không? (Check: Cập nhật biến target_width tức thời).
 - [ ] Có crash `TclError` khi tắt panel lúc thanh máu đang animate không? (Check: `winfo_exists()`).
-## Phụ lục QA Cập nhật
-- [ ] Task 5: File `SkillStatsPanel` đã thực hiện gọi `EventBus.bind(SkillStatsUpdatedEvent)` và cập nhật được data động lên bảng chưa?
-- [ ] Task 5: Hàm Tweening Animation của HP bar có đăng ký qua `UIAnimationManager` để bù lại khoảng thời gian trống 200ms của Scanner không?
+
+
 
 ## Task 6: HuntStatusTicker Component
 - [ ] Component đã đăng ký `HuntStatusUpdatedEvent` và `HuntStateChangedEvent` chưa?

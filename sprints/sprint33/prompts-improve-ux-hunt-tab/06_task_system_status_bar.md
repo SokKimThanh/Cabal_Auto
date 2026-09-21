@@ -4,6 +4,7 @@
 Khi người dùng bấm "Bắt đầu săn", rất nhiều thao tác chạy ngầm (Validate cửa sổ, quét ảnh, tìm quái) sinh ra các log cảnh báo thông qua sự kiện `HuntStatusUpdatedEvent` và `HuntStateChangedEvent`. Tuy nhiên, hiện tại giao diện không hiển thị các thông báo này khiến người dùng không biết bot đang lỗi hay đang chạy bình thường.
 
 ## Yêu cầu (Requirements)
+5. Nhớ dùng hàm đa ngôn ngữ `self.app._t("...")` cho tất cả các text nội dung thay vì viết cứng tiếng Việt.
 1. Tạo file `ui/components/hunt_status_ticker.py` định nghĩa class `HuntStatusTicker` (kế thừa `tk.Frame`).
 2. Component này bao gồm một Icon trạng thái (Spinner hoặc Dấu chấm than tùy loại thông báo) và một `tk.Label` nằm ngang để hiển thị text thông báo mới nhất.
 3. Trong phương thức `__init__`, phải đăng ký lắng nghe sự kiện:

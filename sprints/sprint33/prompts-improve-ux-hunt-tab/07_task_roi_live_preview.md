@@ -11,7 +11,7 @@ Dù quá trình cấu hình ROI khá chi tiết ở Setup Tab, nhưng trong quá
 5. Nút bấm trong Popup có thể có tính năng "Refresh Snapshot" để chụp lại ảnh tĩnh mới. Cửa sổ đóng sẽ tự hủy Image Reference.
 
 ## Rủi ro (Risks & Pitfalls)
-- **EventBus Overload / Memory Thrashing:** Khái niệm "Live Stream" (phát video qua event bus ở 10fps) sẽ phá hủy luồng UI Thread của Tkinter và gây Memory Leak. Việc sử dụng "On-Demand Snapshot" bằng hàm hỏi/đáp (Polling khi click) giải quyết triệt để vấn đề này. TRÁNH DEADLOCK: Luồng UI gọi method trực tiếp vào VisionEngine phải đảm bảo Lock nội bộ không block quá lâu (Timeout).
+- **EventBus Overload / Memory Thrashing:** Khái niệm "Live Stream" (phát video qua event bus ở 10fps) sẽ phá hủy luồng UI Thread của Tkinter và gây Memory Leak. Việc sử dụng "On-Demand Snapshot" bằng hàm hỏi/đáp (Polling khi click) giải quyết triệt để vấn đề này. TRÁNH DEADLOCK: Luồng UI gọi method trực tiếp vào VisionEngine phải đảm bảo Lock nội bộ không block quá lâu (Set cứng Timeout = 500ms). Nếu Timeout, UI phải dùng lại ảnh Snapshot cũ.
 - **Garbage Collection:** Hủy biến ảnh cũ (set None) trước khi gán ảnh mới từ OpenCV!
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)

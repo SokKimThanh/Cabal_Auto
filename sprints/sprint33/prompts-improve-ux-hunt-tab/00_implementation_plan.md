@@ -27,7 +27,7 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 - **Phân mảnh Animation Loop:** Nếu mỗi component tự gọi `.after(16)`, Tkinter Main Loop sẽ bị tranh chấp dẫn đến giật lag. BẮT BUỘC dùng Centralized Animation Manager.
 - **EventBus Overload:** Không truyền raw image/numpy array qua `EventBus` để tránh rò rỉ bộ nhớ. Component Snapshot lấy ảnh bằng Method Call Thread-Safe (Mutex Locked) trực tiếp từ Vision Engine để chống Race Condition.
 - **Separation of Concerns (ROI Manager):** `Hunt Tab` chỉ cấu hình mục tiêu (Target). Mọi cấu hình liên quan đến hệ thống (System ROI: Minimap, Self Stats, Combo Bar) phải được tách sang `Setup Tab` hoặc Vision Manager.
-- **Data Migration Crash:** Khi load config cũ, có thể xảy ra KeyError. Bắt buộc tạo Schema Validation Layer và sinh file backup (.bak) trước khi tiến hành migration để bảo vệ dữ liệu người dùng.
+- **Data Migration Crash:** Khi load config cũ, có thể xảy ra KeyError. Bắt buộc dùng `pydantic` để tạo Schema Validation. Nếu quá trình Migration từ `region` sang `rois` bị lỗi, hệ thống phải tự động Restore lại file `.bak` vừa backup và log ra màn hình lỗi.
 
 ## 5. Tiêu chí Chấp nhận Hiệu năng (Performance Acceptance Criteria)
 1. FPS của luồng Orchestrator không sụt quá 2ms khi các tính năng UI mới được bật.
