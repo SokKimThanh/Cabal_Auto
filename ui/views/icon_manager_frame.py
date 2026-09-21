@@ -337,17 +337,16 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self._build_detail_form()
 
-        # Mặc định hiện empty state
-        self.empty_state_frame.tkraise()
-
-        # 3. Bottom Action Bar
-        self.bottom_action_frame = tk.Frame(content_frame, bg=UIStyle.BG_SUBTLE, height=60)
-        self.bottom_action_frame.grid(row=2, column=0, sticky="ew")
+        # Move Action Buttons here (inside detail form tab)
+        self.bottom_action_frame = tk.Frame(self.tab_details, bg=UIStyle.BG_SUBTLE, height=60)
+        self.bottom_action_frame.grid(row=3, column=0, sticky="ew", pady=(UIStyle.SPACE_MD, 0))
         self.bottom_action_frame.grid_propagate(False)
+        self.tab_details.grid_rowconfigure(3, weight=0)
 
-        # Build Action Buttons
         self._build_action_bar()
 
+        # Mặc định hiện empty state
+        self.empty_state_frame.tkraise()
 
 
     def _build_categories_panel(self, parent_frame):
@@ -541,6 +540,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.usage_tree.bind('<MouseWheel>', self._prevent_scroll_propagation)
         self.usage_tree.bind('<Button-4>', self._prevent_scroll_propagation)
         self.usage_tree.bind('<Button-5>', self._prevent_scroll_propagation)
+        self.usage_tree.bind('<<TreeviewSelect>>', self._on_usage_tree_select)
 
         # Right Action Button (Unmap)
         right_btn_frame = tk.Frame(right_frame, bg=UIStyle.BG_SURFACE)
@@ -740,14 +740,14 @@ class IconManagerFrame(ResponsiveGridBase):
         # Prevent infinite loop by checking if selection actually changed
         if not selection:
             self._current_available_element_selection = None
+            if hasattr(self, 'btn_add_usage'):
+                self.btn_add_usage.config(state="disabled")
             return
 
         if self._current_available_element_selection == selection[0]:
             return
 
         self._current_available_element_selection = selection[0]
-        if not selection:
-            return
 
         item = self.available_elements_tree.item(selection[0])
         values = item.get("values")
@@ -757,6 +757,8 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_element.set(values[3])  # element_id
             self.var_usage_mod.set(values[1])      # mod
             self.var_usage_comp.set(values[2])     # comp
+            if hasattr(self, 'btn_add_usage'):
+                self.btn_add_usage.config(state="normal")
 
             if hasattr(self, 'var_current_mapping_element'):
                 self.var_current_mapping_element.set(f"UI Element đang chọn: {values[3]}")
@@ -779,6 +781,8 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_element.set("")
             self.var_usage_mod.set("")
             self.var_usage_comp.set("")
+            if hasattr(self, 'btn_add_usage'):
+                self.btn_add_usage.config(state="disabled")
 
             if hasattr(self, 'var_current_mapping_element'):
                 self.var_current_mapping_element.set("UI Element đang chọn: (Chưa chọn)")
@@ -839,8 +843,18 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.var_usage_mod.set("")
             if hasattr(self, 'var_usage_comp'):
                 self.var_usage_comp.set("")
+            if hasattr(self, 'btn_add_usage'):
+                self.btn_add_usage.config(state="disabled")
             if hasattr(self, 'var_current_mapping_element'):
                 self.var_current_mapping_element.set("UI Element đang chọn: (Chưa chọn)")
+
+    def _on_usage_tree_select(self, event=None):
+        if self.usage_tree.selection():
+            if hasattr(self, 'btn_del_usage'):
+                self.btn_del_usage.config(state="normal")
+        else:
+            if hasattr(self, 'btn_del_usage'):
+                self.btn_del_usage.config(state="disabled")
 
     def _load_usages_for_selected(self, icon_key):
         self.usage_tree.delete(*self.usage_tree.get_children())
@@ -854,6 +868,10 @@ class IconManagerFrame(ResponsiveGridBase):
 
     def _on_add_usage(self):
         icon_key = self.icon_form.get_form_data()['icon_key'].strip()
+        if not icon_key:
+            messagebox.showwarning("Warning", "Vui lòng chọn một icon bên trái trước khi gắn.")
+            return
+
         if self._current_state == "ADD":
             messagebox.showwarning("Warning", "Vui lòng Lưu icon trước khi gắn usages.")
             return
@@ -1195,11 +1213,19 @@ class IconManagerFrame(ResponsiveGridBase):
                 self.icon_form.enter_edit_mode()
 
         # Handle usages panel state
+        # Buttons Map and Unmap are no longer locked by EDIT state. They are driven by selection.
         if hasattr(self, 'usage_tree'):
-            btn_state = "normal" if state == "EDIT" else "disabled"
-            # Cannot map to new unsaved icon
-            self.btn_add_usage.config(state=btn_state)
-            self.btn_del_usage.config(state=btn_state)
+            # Re-evaluate Map button based on current available elements selection
+            if getattr(self, '_current_available_element_selection', None):
+                self.btn_add_usage.config(state="normal")
+            else:
+                self.btn_add_usage.config(state="disabled")
+
+            # Re-evaluate Unmap button based on current usage tree selection
+            if self.usage_tree.selection():
+                self.btn_del_usage.config(state="normal")
+            else:
+                self.btn_del_usage.config(state="disabled")
 
         # Handle Image Library state
         if hasattr(self, 'image_library') and self.image_library:
@@ -1371,6 +1397,11 @@ class IconManagerFrame(ResponsiveGridBase):
             self.var_usage_mod.set("")
         if hasattr(self, 'var_usage_comp'):
             self.var_usage_comp.set("")
+
+        if hasattr(self, 'btn_add_usage'):
+            self.btn_add_usage.config(state="disabled")
+        if hasattr(self, 'btn_del_usage'):
+            self.btn_del_usage.config(state="disabled")
 
         # 4. Clear form and usage tree, ensure detail form is visible
         if hasattr(self, 'icon_form'):
