@@ -370,6 +370,21 @@ class HuntTab(ttk.Frame):
         if isinstance(self.skill_panel_controller, tk.Widget):
             self.skill_panel_controller.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
+        # Debug Vision Action Bar
+        self.debug_action_frame = tk.Frame(self.left_col_frame, bg=UI.BG_BASE)
+        self.debug_action_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(UI.SPACE_MD, 0))
+
+        from ui.components.vision_snapshot_debugger import VisionSnapshotDebugger
+        self.vision_debugger = VisionSnapshotDebugger(self.app)
+
+        self.btn_debug_vision = tk.Button(
+            self.debug_action_frame,
+            text=self.app._t("vision_debugger.button") if hasattr(self.app, "_t") else "Debug Vision",
+            command=self.vision_debugger.open_debugger,
+            **UI.get_button_style("neutral")
+        )
+        self.btn_debug_vision.pack(side=tk.RIGHT)
+
         from ui.panels.target_status_panel import TargetStatusPanel
         self.target_status_panel = TargetStatusPanel(self.right_col_frame, self.app, scale_factor, hunt_tab=self)
         self.target_status_panel.pack(side=tk.TOP, fill=tk.BOTH, pady=(0, UI.SPACE_MD))
