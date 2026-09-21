@@ -269,9 +269,12 @@ class TargetStatusPanel(ttk.LabelFrame):
         no_target_lbl.pack()
 
         from ui.components.empty_state import EmptyState
+
+        # We rely on the dashed circle drawn on empty_canvas above
+
         self.empty_state_comp = EmptyState(
             self.empty_identity_frame,
-            icon="ℹ️",
+            icon="", # Rely on dashed circle
             message=self.app._t("target_status.no_target"),
             submessage=self.app._t("target_status.no_target_submessage")
         )

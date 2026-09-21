@@ -175,7 +175,12 @@ class ScanHistoryFrame(ResponsiveGridBase):
 
     def _load_filters(self):
         # Load Classes
-        classes = self.app.db_class_service.get_all_classes()
+        if hasattr(self.app, "db_class_service"):
+            classes = self.app.db_class_service.get_all_classes()
+        else:
+            from lib.db.services.class_service import ClassService
+            classes = ClassService().get_all_classes()
+
         class_values = ["0 - None"]
         for c in classes:
             class_id = c.get('id') or c.get('class_id', '')
@@ -187,7 +192,12 @@ class ScanHistoryFrame(ResponsiveGridBase):
             self.class_var.set("0 - None")
 
         # Load Scanned Monsters
-        monsters = self.app.db_scan_service.get_distinct_scanned_monsters()
+        if hasattr(self.app, "db_scan_service"):
+            monsters = self.app.db_scan_service.get_distinct_scanned_monsters()
+        else:
+            from lib.db.services.scan_service import ScanService
+            monsters = ScanService().get_distinct_scanned_monsters()
+
         monster_values = [" - All"]
         for m in monsters:
             monster_values.append(f"{m['monster_id']} - {m['name']}")
@@ -221,7 +231,13 @@ class ScanHistoryFrame(ResponsiveGridBase):
         except IndexError:
             pass
 
-        records, self.total_records = self.app.db_scan_service.get_scans_with_details(
+        if hasattr(self.app, "db_scan_service"):
+            svc = self.app.db_scan_service
+        else:
+            from lib.db.services.scan_service import ScanService
+            svc = ScanService()
+
+        records, self.total_records = svc.get_scans_with_details(
             class_id=class_id,
             monster_id=monster_id,
             page=self.current_page,

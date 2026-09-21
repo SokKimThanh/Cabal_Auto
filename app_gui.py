@@ -170,6 +170,7 @@ class App:
         else:
             self.hunt_runner = None
             self.hunt_orchestrator = None
+            self.scan_controller = None
 
         self.task_scheduler = TaskScheduler(self)
 

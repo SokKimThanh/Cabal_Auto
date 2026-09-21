@@ -38,6 +38,7 @@ import tkinter as tk
 
 # Global imports
 import sys
+from ui.helpers.context_action_helper import ContextActionHelper
 from pathlib import Path
 
 # Add project root to path if not already there

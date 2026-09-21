@@ -335,6 +335,67 @@ class SetupTab(ResponsiveGridBase):
         self.app.bind_text(self.browse_btn, "browse")
         self.browse_btn.grid(row=0, column=3, padx=(4, 0), pady=4)
 
+    def _build_system_roi_content(self, frame):
+        import json
+        import os
+
+        tk.Label(
+            frame,
+            text=self.app._t("setup_roi.description") if hasattr(self.app, "_t") else "Quản lý Vùng Quét Hệ Thống (System ROIs)",
+            font=UIStyleV2.FONT_SMALL,
+            fg=UIStyleV2.TEXT_MUTED,
+            bg=UIStyleV2.THEME_BG_APP
+        ).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+
+        roi_keys = ["combo_bar", "self_stats", "minimap"]
+
+        for idx, key in enumerate(roi_keys):
+            row = idx + 1
+            lbl_text = self.app._t(f"setup_roi.{key}") if hasattr(self.app, "_t") else key.replace("_", " ").title()
+            tk.Label(frame, text=lbl_text, bg=UIStyleV2.THEME_BG_APP, fg=UIStyleV2.TEXT_PRIMARY).grid(row=row, column=0, sticky="w", pady=4)
+
+            val_var = tk.StringVar()
+            cfg = self.app.state_controller.hunt_cfg
+            rois = cfg.get("rois", {})
+            current = rois.get(key, [])
+            val_var.set(str(current) if current else "Not set")
+
+            tk.Entry(frame, textvariable=val_var, state="readonly", width=25, bg=UIStyleV2.BG_ELEVATED, fg=UIStyleV2.TEXT_MUTED, relief="flat").grid(row=row, column=1, sticky="ew", padx=10, pady=4)
+
+            def _make_on_draw(k=key, v=val_var):
+                def _draw():
+                    from ui.helpers.capture_helper import CaptureHelper
+                    def _on_drawn(region):
+                        if region:
+                            v.set(str(list(region)))
+
+                            if "rois" not in self.app.state_controller.hunt_cfg:
+                                self.app.state_controller.hunt_cfg["rois"] = {}
+                            self.app.state_controller.hunt_cfg["rois"][k] = list(region)
+
+                            # Atomic save
+                            cfg_path = getattr(self.app.state_controller, "config_file", "config/hunt_config.json")
+                            tmp_path = cfg_path + ".tmp"
+                            try:
+                                with open(tmp_path, "w", encoding="utf-8") as f:
+                                    json.dump(self.app.state_controller.hunt_cfg, f, indent=4)
+                                os.replace(tmp_path, cfg_path)
+                            except Exception as e:
+                                print(f"Failed atomic save: {e}")
+
+                    CaptureHelper.start_region_selection(self, _on_drawn)
+                return _draw
+
+            btn_draw = tk.Button(
+                frame,
+                text=self.app._t("setup_roi.draw") if hasattr(self.app, "_t") else "Vẽ lại",
+                command=_make_on_draw(),
+                bg=UIStyleV2.BG_ELEVATED,
+                fg=UIStyleV2.ACCENT_BLUE,
+                relief="flat"
+            )
+            btn_draw.grid(row=row, column=2, sticky="e", pady=4)
+
     def _build_ui(self):
         self.get_content_frame().grid_columnconfigure(0, weight=1)
         self.get_content_frame().grid_columnconfigure(1, weight=1)
@@ -357,6 +418,13 @@ class SetupTab(ResponsiveGridBase):
         self.window_group, self.window_visible, self.window_toggle = (
             self._build_collapsible_group(
                 3, "setup_window", "setup_window_desc", self._build_window_content
+            )
+        )
+
+        # Section 5: System ROI Manager (Task 8)
+        self.roi_group, self.roi_visible, self.roi_toggle = (
+            self._build_collapsible_group(
+                4, "setup_system_roi", "setup_system_roi_desc", self._build_system_roi_content
             )
         )
 
