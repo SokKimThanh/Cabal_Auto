@@ -139,3 +139,23 @@ class SkillPanelController:
     def get_skill(self, skill_id):
         """Gets a skill by its ID."""
         return self.skill_service.skill_repo.get_skill(skill_id)
+
+
+
+
+    def get_combo_sequence(self) -> list:
+        """Returns the list of attack/combo skills."""
+        if not hasattr(self.app_state, "hunt_cfg"):
+            return []
+        slots = self.app_state.hunt_cfg.get("skill_slots", [])
+        # Based on config_migrator, skill_slots contains only attack skills
+        # after migration.
+        return slots
+
+    def get_buff_sequence(self) -> list:
+        """Returns the list of buff skills."""
+        if not hasattr(self.app_state, "hunt_cfg"):
+            return []
+        # Based on config_migrator, buff slots are stored in "buff_slots"
+        slots = self.app_state.hunt_cfg.get("buff_slots", [])
+        return slots
