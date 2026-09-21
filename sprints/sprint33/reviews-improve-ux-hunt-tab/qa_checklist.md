@@ -6,21 +6,26 @@
 - [ ] Unit test cho SkillPanelController đã passing?
 
 ## Task 2: ComboRhythmBar Component
+- [ ] Nút Toggle Visibility có ẩn được Rhythm bar để giảm tải CPU khi bot đang auto không?
 - [ ] Component không throw lỗi `_tkinter.TclError` khi destroy lúc đang chạy animation?
 - [ ] Có kiểm tra `winfo_exists()` khi nhận tick từ `UIAnimationManager` không?
 - [ ] Tỷ lệ tọa độ Sweet Spot chính xác là 0.78?
 
 ## Task 3: SkillTimelineStrip Component
+- [ ] Timeline hỗ trợ cuộn (scroll), giới hạn tối đa 8 slot, có tính năng kéo thả (Reorder) và Undo không?
 - [ ] Icon ảnh có bị mất (Garbage collected) do không giữ reference không? (Check: Phải giữ `self._images`).
 - [ ] Sử dụng `tk.Canvas` cho từng ô để vẽ overlay cooldown đúng chưa?
 - [ ] Thay đổi biến tỷ lệ cooldown có chặn vượt ranh giới (clamp between 0.0 and 1.0) không?
 
 ## Task 4: Rebuild SkillPanel
+- [ ] Automation Test (hay các file gọi API cũ) có bị lỗi do đổi Checkbox thành Toggle Button không? (Check: Phải giữ nguyên cấu trúc BooleanVar).
 - [ ] Layout không bị vỡ chiều cao? (Check: Áp dụng rule pack top, pin bottom, fill middle).
 - [ ] Sự kiện Bật/Tắt Combo từ nút Toggle mới có truyền xuống đúng `EventBus` hoặc logic gốc thay vì bị kẹt lại ở UI không?
 - [ ] Trạng thái khi mở lại tab có đồng bộ với State đang chạy ngầm của Bot không?
 
 ## Task 5: TargetStatus Animation & Fonts
+- [ ] Bảng Stats vẫn giữ nguyên Treeview, tần suất làm mới <= 1s và số record <= 50 không?
+- [ ] HP Text có nhảy dữ liệu ngay lập tức mà không bị delay theo animation của thanh Canvas không?
 - [ ] Chữ số HP/MP có sử dụng Monospace Font (font_mono) chưa?
 - [ ] Khi mục tiêu mất máu cực nhanh, animation Tween có bị queue lùi (chạy chậm hơn thực tế) không? (Check: Cập nhật biến target_width tức thời).
 - [ ] Có crash `TclError` khi tắt panel lúc thanh máu đang animate không? (Check: `winfo_exists()`).
@@ -56,7 +61,8 @@
 - [ ] Các tiêu đề (Title) của Panel có to và rõ ràng hơn các Text nội dung (Hierarchy) nhờ sử dụng `UIStyleV2.get_font("title", weight="bold")` chưa?
 
 ## Kiến trúc và Hiệu năng (Performance Thresholds)
-- [ ] Tính năng Snapshot Debugger (Task 7) không làm tăng quá 5% CPU usage khi mở và không rò rỉ RAM khi refresh nhiều lần?
+- [ ] Tính năng Snapshot Debugger (Task 7) không làm tăng quá 5% CPU usage (Baseline Test: Core i5 Gen 8th, 8GB RAM) khi mở và không rò rỉ RAM khi refresh liên tục?
 - [ ] Có sử dụng `UIAnimationManager` duy nhất thay cho việc khởi tạo nhiều vòng lặp `.after` độc lập không?
-- [ ] Tốc độ loop của Orchestrator (Hunt Thread) có bị drop quá 2ms khi các tính năng UI mới đang chạy không?
-- [ ] Dữ liệu config cũ có được Validate và Migrate an toàn, chống crash `KeyError` không?
+- [ ] `UIAnimationManager` có logic ghi đè (override/cancel) tiến trình Tweening cũ nếu một Event mới đè lên để tránh thanh HP bị chạy thụt lùi không?
+- [ ] Tốc độ loop của Orchestrator (Hunt Thread) có bị drop quá 2ms (Baseline Test: Core i5 Gen 8th) khi các tính năng UI mới đang chạy không?
+- [ ] Dữ liệu config cũ có được Validate, TẠO FILE BACKUP (.bak) và Migrate an toàn, chống mất cấu hình do `KeyError` không?

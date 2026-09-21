@@ -8,7 +8,7 @@ Lắp ráp các thành phần đã tạo ở Task 1, 2, 3 vào file UI chính c�
 2. Xóa các hàm `_build_combo_section` và `_build_buff_section` cũ.
 3. Chèn `ComboRhythmBar` lên trên cùng.
 4. Chèn 2 `SkillTimelineStrip` (1 cho Combo, 1 cho Buff).
-5. Xóa Checkbox "Bật Auto Combo" ở Header. Xóa nút "Start/Stop Combo" cũ. Hợp nhất lại thành một Nút Toggle Button duy nhất (Nổi bật, lớn) đặt dưới cùng của Panel.
+5. Đổi UI Checkbox thành Nút Toggle Button duy nhất đặt dưới cùng. LƯU Ý: Phải sử dụng lại cấu trúc biến `BooleanVar` của Checkbox cũ, Nút Toggle chỉ đóng vai trò là Wrapper UI, tuyệt đối KHÔNG ĐỔI TÊN API hoặc cấu trúc dữ liệu để tránh làm gãy kịch bản Automation Test.
    - Trạng thái hoạt động: Xanh lá (`UI.ACCENT_GREEN_BG`).
    - Trạng thái chờ: Nền xám/mặc định (`UI.BG_SURFACE`).
 

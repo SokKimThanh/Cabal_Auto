@@ -5,7 +5,7 @@ Cần một phản hồi thị giác (visual feedback) để báo cho người d
 
 ## Yêu cầu (Requirements)
 1. Tạo file `ui/components/combo_rhythm_bar.py` định nghĩa class `ComboRhythmBar` kế thừa từ `tk.Canvas` hoặc `ttk.Frame`.
-2. Component cần vẽ một thanh ngang (Bar), có hiển thị vùng "Sweet Spot" (hit-zone) ở khoảng tọa độ ~0.78 (78% chiều dài).
+2. Component cần vẽ một thanh ngang (Bar), hiển thị vùng "Sweet Spot" (~0.78). Đi kèm là một nút "Hiển thị/Ẩn hiệu ứng" (Toggle Visibility) để người dùng tắt Rhythm bar khi bot tự đánh nhằm tiết kiệm CPU.
 3. Hỗ trợ phương thức `trigger_hit()` để làm lóe sáng (flash) khu vực Sweet Spot (đổi màu sang `UI.ACCENT_AMBER` rồi mờ dần về bình thường trong khoảng 200ms).
 
 ## Rủi ro (Risks & Pitfalls)

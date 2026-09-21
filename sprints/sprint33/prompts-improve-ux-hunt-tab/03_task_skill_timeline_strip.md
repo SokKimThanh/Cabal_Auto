@@ -5,7 +5,7 @@ Cần thay thế các khung Combobox bằng một dải thanh ngang hiển thị
 
 ## Yêu cầu (Requirements)
 1. Tạo file `ui/components/skill_timeline_strip.py` định nghĩa class `SkillTimelineStrip`.
-2. Component sẽ nhận vào một danh sách các skill (tên, icon_key, hotkey) và render chúng dàn hàng ngang (Horizontal Box).
+2. Component nhận danh sách skill (tên, icon_key, hotkey) và render ngang. BẮT BUỘC có cơ chế Scroll khi vượt quá 8 skill (Max slots), hỗ trợ thao tác kéo thả (Reorder) và Nút Undo để khôi phục vị trí cũ.
 3. Mỗi ô (slot) hiển thị: Icon (trung tâm), Hotkey (ở góc dưới nhỏ), và một viền sáng nếu đang trong thời gian hồi chiêu (Cooldown).
 4. Cung cấp API `update_cooldown(skill_name, ratio)` để vẽ một lớp phủ (overlay) xám mờ đè lên Icon tương ứng (mô phỏng đồng hồ hồi chiêu).
 

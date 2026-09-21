@@ -5,10 +5,11 @@ Làm cho hiển thị các con số mượt mà, chuyên nghiệp hơn, giảm h
 
 ## Yêu cầu (Requirements)
 1. Trong `ui/panels/target_status_panel.py`:
-   - Hàm `_on_target_hp_updated`: Không cập nhật tọa độ Canvas HP/MP ngay lập tức. Hãy viết một helper function (hoặc đăng ký với UIAnimationManager) để nội suy (interpolate) từ vị trí cũ tới vị trí mới trong ~200ms.
+   - Hàm `_on_target_hp_updated`: Không cập nhật tọa độ Canvas HP/MP ngay lập tức. Chỉ nội suy (tweening) THANH BAR đồ họa bằng `UIAnimationManager` (để mượt mắt). CON SỐ TEXT HP phải được cập nhật tức thời (instant) để đảm bảo không bị sai lệch dữ liệu với màn hình game.
    - Thay đổi font của Label hiển thị HP, MP, Defense sang dùng `UIStyleV2.resolve_font_family("mono")` để chữ có độ rộng bằng nhau (Monospaced).
-   - Thêm trạng thái nhấp nháy đỏ khi máu dưới 20%.
+
 2. Trong `ui/panels/skill_stats_panel.py`:
+   - GIỮ NGUYÊN cấu trúc `Treeview` (cấm đổi sang list frame) để đảm bảo hiệu năng. Giới hạn tần suất refresh dữ liệu (ví dụ 1s/lần) và giới hạn lưu trữ tối đa 50 bản ghi.
    - Nếu có thể, hãy vẽ một đoạn mã hex Unicode progress bar (ví dụ: `[██████░░░░]`) để đại diện cho cột `success_rate` thay vì chỉ để số `%`. Hoặc dùng Font Monospace để canh đều.
 
 ## Rủi ro (Risks & Pitfalls)

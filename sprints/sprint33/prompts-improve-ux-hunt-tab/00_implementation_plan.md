@@ -21,10 +21,13 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 - `ui/components/vision_snapshot_debugger.py` (`VisionSnapshotDebugger`): Component xem ảnh On-Demand của Camera thay vì bắt Live stream (gây memory thrashing).
 
 ## 4. Rủi ro Triển khai và Giải pháp (Rollout Risks)
+- **Sai lệch Dữ liệu HP:** Việc dùng Tween/Animation cho thanh máu có thể tạo độ trễ đồ họa, khiến người dùng nhìn thấy số lượng máu sai lệch với thực tế. Mặc định con số HP (Text) phải nhảy tức thời (instant update), chỉ được làm mượt thanh Canvas.
+- **Automation Test Breakdown:** Thay Checkbox bằng Toggle Button có thể làm vỡ toàn bộ các kịch bản Automation Test đang binding vào `BooleanVar` cũ. Phải giữ nguyên Data Structure.
+- **Rhythm Bar CPU Overhead:** Thanh Combo Rhythm chạy liên tục gây rối mắt và làm nặng CPU (khi bot đang tự đánh). Cần thiết kế để có thể ẩn/tắt.
 - **Phân mảnh Animation Loop:** Nếu mỗi component tự gọi `.after(16)`, Tkinter Main Loop sẽ bị tranh chấp dẫn đến giật lag. BẮT BUỘC dùng Centralized Animation Manager.
-- **EventBus Overload:** Không truyền raw image/numpy array qua `EventBus` để tránh rò rỉ bộ nhớ. Component Snapshot phải lấy ảnh bằng Method Call (Hỏi-Đáp).
+- **EventBus Overload:** Không truyền raw image/numpy array qua `EventBus` để tránh rò rỉ bộ nhớ. Component Snapshot lấy ảnh bằng Method Call Thread-Safe (Mutex Locked) trực tiếp từ Vision Engine để chống Race Condition.
 - **Separation of Concerns (ROI Manager):** `Hunt Tab` chỉ cấu hình mục tiêu (Target). Mọi cấu hình liên quan đến hệ thống (System ROI: Minimap, Self Stats, Combo Bar) phải được tách sang `Setup Tab` hoặc Vision Manager.
-- **Data Migration Crash:** Khi load config cũ, có thể xảy ra KeyError. Bắt buộc tạo Schema Validation Layer (hoặc logic kiểm tra dict) thay vì đọc thẳng.
+- **Data Migration Crash:** Khi load config cũ, có thể xảy ra KeyError. Bắt buộc tạo Schema Validation Layer và sinh file backup (.bak) trước khi tiến hành migration để bảo vệ dữ liệu người dùng.
 
 ## 5. Tiêu chí Chấp nhận Hiệu năng (Performance Acceptance Criteria)
 1. FPS của luồng Orchestrator không sụt quá 2ms khi các tính năng UI mới được bật.
