@@ -38,3 +38,9 @@
 - [ ] Ảnh raw frame nhận được có được resize trước khi nhét vào `Tk.PhotoImage` chưa?
 - [ ] Tham chiếu ảnh `self.current_image = ImageTk.PhotoImage(image)` có được giữ lại (keep reference) để chống lỗi nhấp nháy / đen màn hình do Garbage Collector không?
 - [ ] Bounding box và Confidence score (điểm tự tin) được vẽ có khớp tỷ lệ với ảnh đã resize không?
+
+## Task 8: Multi-ROI Manager
+- [ ] Giao diện (Panel/Popup) có hiển thị rõ ràng danh sách các loại ROI cần quét (Hunt Area, Combo, Minimap...) không?
+- [ ] Tính năng Migration có hoạt động không? (Check: Dùng config cũ chỉ có key `region`, khi save lại có tự động đổi sang cấu trúc `rois: { "hunt_area": [...] }` không?).
+- [ ] Trải nghiệm UX: Khi nhấn "Vẽ lại" 1 vùng cụ thể, màn hình có tự động thu nhỏ/làm mờ để hiển thị cửa sổ game (bằng `RegionSelector`) không?
+- [ ] Có ngăn chặn việc bấm vẽ ROI khi Bot đang ở trạng thái Running không?

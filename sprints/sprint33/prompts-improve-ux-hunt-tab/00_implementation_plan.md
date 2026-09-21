@@ -37,3 +37,8 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 - **Vấn đề:** Hiện tại người dùng chọn Target Policy và vẽ Region nhưng khi Bot chạy, quá trình quét hoàn toàn chạy ngầm ("Blackbox"). Người dùng không biết Bot có bắt đúng điểm ảnh không, hoặc `Confidence Score` là bao nhiêu nếu quét trật.
 - **Giải pháp:** Cần phát triển một tính năng "Live Preview" (Ảnh thu nhỏ màn hình game hiển thị bounding box của quái vật) để người dùng thấy rõ độ chính xác (Success rate của Scanner). Nó có thể là một nút nhấn "Debug Vision" bật lên một popup, hoặc tích hợp luôn vào góc của `HuntWorkspaceFrame`.
 - **Task bổ sung:** Task 7: Phát triển cơ chế `VisionLivePreview` (Window/Overlay).
+
+### 8. Bổ sung quan trọng (Multi-ROI Manager)
+- **Vấn đề:** Ban đầu, chúng ta nghĩ chỉ cần 1 nút "Vẽ vùng quét" cho toàn bộ Tab Hunt. Tuy nhiên, kiến trúc Bot phức tạp đòi hỏi thu thập dữ liệu từ nhiều khu vực khác nhau (ROI Quái vật, ROI Thanh Combo, ROI Máu/Mana nhân vật, ROI Bản đồ). Các thông số này còn có thể được Bot "học" và lưu lại. Việc thiết kế 1 nút bấm chung chung là hoàn toàn không đáp ứng được yêu cầu phân luồng kết xuất (telemetry).
+- **Giải pháp:** Xây dựng một "Multi-ROI Manager" (Trình quản lý Vùng quét đa năng). Đây sẽ là một danh sách hoặc các nút phân loại rõ ràng (Ví dụ: [Vẽ ROI Bãi Quái], [Vẽ ROI Combo], [Vẽ ROI Tọa Độ Bản Đồ]). Mỗi vùng được lưu trữ độc lập trong cấu hình để Bot sử dụng cho các luồng thuật toán tương ứng.
+- **Task bổ sung:** Task 8: Phát triển bảng `Multi-ROI Manager`.
