@@ -32,3 +32,8 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 - **Vấn đề:** Hiện tại `HuntOrchestrator` liên tục bắn các event cực kỳ quan trọng như `HuntStatusUpdatedEvent` (báo lỗi quét, timeout, mất cửa sổ, v.v) nhưng giao diện UI không hề có component nào lắng nghe (bind) và hiển thị. Điều này làm người dùng bị mù thông tin khi ấn "Bắt đầu săn" mà bot không hoạt động.
 - **Giải pháp:** Cần phát triển thêm một component `HuntStatusTicker` (hoặc `MiniLogPanel`) đặt ở dưới cùng của `HuntWorkspaceFrame`. Component này sẽ subscribe `HuntStatusUpdatedEvent` và hiển thị text chạy hoặc text log nhỏ để người dùng biết bot đang làm gì (VD: "Đang tìm cửa sổ...", "Không tìm thấy mục tiêu...", "Đang tấn công...").
 - **Task bổ sung:** Task 6: Phát triển `HuntStatusTicker`.
+
+### 7. Bổ sung quan trọng (Live Preview / Vision Debugger)
+- **Vấn đề:** Hiện tại người dùng chọn Target Policy và vẽ Region nhưng khi Bot chạy, quá trình quét hoàn toàn chạy ngầm ("Blackbox"). Người dùng không biết Bot có bắt đúng điểm ảnh không, hoặc `Confidence Score` là bao nhiêu nếu quét trật.
+- **Giải pháp:** Cần phát triển một tính năng "Live Preview" (Ảnh thu nhỏ màn hình game hiển thị bounding box của quái vật) để người dùng thấy rõ độ chính xác (Success rate của Scanner). Nó có thể là một nút nhấn "Debug Vision" bật lên một popup, hoặc tích hợp luôn vào góc của `HuntWorkspaceFrame`.
+- **Task bổ sung:** Task 7: Phát triển cơ chế `VisionLivePreview` (Window/Overlay).

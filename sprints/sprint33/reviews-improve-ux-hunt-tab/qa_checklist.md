@@ -32,3 +32,9 @@
 - [ ] Component đã đăng ký `HuntStatusUpdatedEvent` và `HuntStateChangedEvent` chưa?
 - [ ] Hàm update UI bên trong callback của EventBus có sử dụng `self.after(0, ...)` để đảm bảo Thread Safety chưa? (Cực kỳ quan trọng vì Orchestrator chạy ngầm).
 - [ ] Có bị crash hoặc vỡ layout ở tab Hunt khi chèn thanh Ticker vào đáy không?
+
+## Task 7: VisionLivePreview Component
+- [ ] Component popup đã thực hiện Unbind (`EventBus.unbind`) ngay khi đóng cửa sổ (Sự kiện `WM_DELETE_WINDOW`) chưa? (Tránh rò rỉ bộ nhớ).
+- [ ] Ảnh raw frame nhận được có được resize trước khi nhét vào `Tk.PhotoImage` chưa?
+- [ ] Tham chiếu ảnh `self.current_image = ImageTk.PhotoImage(image)` có được giữ lại (keep reference) để chống lỗi nhấp nháy / đen màn hình do Garbage Collector không?
+- [ ] Bounding box và Confidence score (điểm tự tin) được vẽ có khớp tỷ lệ với ảnh đã resize không?
