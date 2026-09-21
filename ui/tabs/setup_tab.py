@@ -373,17 +373,13 @@ class SetupTab(ResponsiveGridBase):
                                 self.app.state_controller.hunt_cfg["rois"] = {}
                             self.app.state_controller.hunt_cfg["rois"][k] = list(region)
 
-                            # Atomic save
-                            cfg_path = getattr(self.app.state_controller, "config_file", "config/hunt_config.json")
-                            tmp_path = cfg_path + ".tmp"
-                            try:
-                                with open(tmp_path, "w", encoding="utf-8") as f:
-                                    json.dump(self.app.state_controller.hunt_cfg, f, indent=4)
-                                os.replace(tmp_path, cfg_path)
-                            except Exception as e:
-                                print(f"Failed atomic save: {e}")
+                            from lib.features.hunt.hunt_config import save_hunt_config
+                            # Use centralized atomic save
+                            success = save_hunt_config(self.app.state_controller.hunt_cfg)
+                            if not success:
+                                print("Failed atomic save via save_hunt_config")
 
-                    CaptureHelper.start_region_selection(self, _on_drawn)
+                    CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
                 return _draw
 
             btn_draw = tk.Button(
