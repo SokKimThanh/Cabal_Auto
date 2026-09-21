@@ -42,3 +42,8 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 - **Vấn đề:** Ban đầu, chúng ta nghĩ chỉ cần 1 nút "Vẽ vùng quét" cho toàn bộ Tab Hunt. Tuy nhiên, kiến trúc Bot phức tạp đòi hỏi thu thập dữ liệu từ nhiều khu vực khác nhau (ROI Quái vật, ROI Thanh Combo, ROI Máu/Mana nhân vật, ROI Bản đồ). Các thông số này còn có thể được Bot "học" và lưu lại. Việc thiết kế 1 nút bấm chung chung là hoàn toàn không đáp ứng được yêu cầu phân luồng kết xuất (telemetry).
 - **Giải pháp:** Xây dựng một "Multi-ROI Manager" (Trình quản lý Vùng quét đa năng). Đây sẽ là một danh sách hoặc các nút phân loại rõ ràng (Ví dụ: [Vẽ ROI Bãi Quái], [Vẽ ROI Combo], [Vẽ ROI Tọa Độ Bản Đồ]). Mỗi vùng được lưu trữ độc lập trong cấu hình để Bot sử dụng cho các luồng thuật toán tương ứng.
 - **Task bổ sung:** Task 8: Phát triển bảng `Multi-ROI Manager`.
+
+### 9. Bổ sung quan trọng (Standardize Icon System)
+- **Vấn đề:** Các Panel bên trong Tab Hunt (đặc biệt là `MonsterTargetPanel`, `SkillPanel`, `TargetStatusPanel`) đang sử dụng rất nhiều Emoji tĩnh (hardcoded emojis như 🔴, 🟢, 🎯, ℹ️, ➕) và các Nút bấm (Button) thuần chữ (text-only) không đồng bộ với ngôn ngữ thiết kế chung của hệ thống.
+- **Giải pháp:** Cần tái cấu trúc toàn bộ nút bấm ở Tab Hunt để sử dụng hàm `create_icon_button` từ `ui.components`. Các nhãn (Label) chứa Emoji cũng cần được thay bằng `create_icon_label` hoặc thông qua `IconHelper`. Đảm bảo tất cả component mới phải đăng ký mã Element ID vào Registry.
+- **Task bổ sung:** Task 9: Chuẩn hóa hệ thống Icon cho Tab Hunt.

@@ -44,3 +44,9 @@
 - [ ] Tính năng Migration có hoạt động không? (Check: Dùng config cũ chỉ có key `region`, khi save lại có tự động đổi sang cấu trúc `rois: { "hunt_area": [...] }` không?).
 - [ ] Trải nghiệm UX: Khi nhấn "Vẽ lại" 1 vùng cụ thể, màn hình có tự động thu nhỏ/làm mờ để hiển thị cửa sổ game (bằng `RegionSelector`) không?
 - [ ] Có ngăn chặn việc bấm vẽ ROI khi Bot đang ở trạng thái Running không?
+
+## Task 9: Standardize Icon System
+- [ ] Không còn bất kỳ Emoji hardcoded (🔴, 🟢, 🎯, ➕) nào xuất hiện dạng raw text trong mã nguồn của Tab Hunt chưa?
+- [ ] Tất cả các Button có sử dụng đúng `create_icon_button` và truyền `element_id` để đăng ký Registry không?
+- [ ] Hình ảnh (Icons) có bị nhấp nháy hoặc biến mất (thành nền trắng/đen) khi hover chuột hoặc sau vài giây không? (Check: Phải giữ reference `.image = img`).
+- [ ] Các đoạn logic cũ sử dụng `.config(text="✓")` để cập nhật trạng thái đã được đổi thành việc thay đổi Icon key chưa?
