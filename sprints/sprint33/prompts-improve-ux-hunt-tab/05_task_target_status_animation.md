@@ -10,7 +10,7 @@ Làm cho hiển thị các con số mượt mà, chuyên nghiệp hơn, giảm h
 
 2. Trong `ui/panels/skill_stats_panel.py`:
    - GIỮ NGUYÊN cấu trúc `Treeview` (cấm đổi sang list frame) để đảm bảo hiệu năng. Giới hạn tần suất refresh dữ liệu (ví dụ 1s/lần) và giới hạn lưu trữ tối đa 50 bản ghi.
-   - Nếu có thể, hãy vẽ một đoạn mã hex Unicode progress bar (ví dụ: `[██████░░░░]`) để đại diện cho cột `success_rate` thay vì chỉ để số `%`. Hoặc dùng Font Monospace để canh đều.
+   - Cột `success_rate` hiển thị số `%` căn đều bằng font mono. KHÔNG dùng Unicode progress bar vì Treeview không hỗ trợ custom cell render và Unicode block render không nhất quán giữa các OS.
 
 ## Rủi ro (Risks & Pitfalls)
 - **Animation Queue:** Nếu quái vật mất máu liên tục (nhanh hơn tốc độ 200ms animation), hàm nội suy phải cập nhật điểm mục tiêu (target width) mới ngay lập tức chứ không xếp hàng (queue) sinh ra hiệu ứng chạy ngược hoặc chạy chậm trễ so với thực tế (ghosting).
@@ -19,7 +19,7 @@ Làm cho hiển thị các con số mượt mà, chuyên nghiệp hơn, giảm h
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - (Khó test tự động phần animation), nhưng cần test xem hàm helper update target value có ném lỗi khi object đã bị hủy hay không.
 ## Phụ lục (Important Note from Review):
-- **Đối với Skill Stats:** File `ui/panels/skill_stats_panel.py` hiện tại *chưa* có logic subscribe event `SkillStatsUpdatedEvent`! Bạn cần thêm phương thức `_bind_events` (như cách làm của TargetStatusPanel), nhận dữ liệu từ `EventBus` (Event `SkillStatsUpdatedEvent` được publish từ vòng lặp chính của `HuntOrchestrator`, payload `all_stats` bao gồm `cast_count`, `last_cast`, `success_rate`) rồi loop qua để `tree.insert()` hoặc `tree.item()` update cho Treeview, lúc đó mới dùng thanh Mini Progress Bar (Unicode bar) để vẽ giá trị `success_rate`.
+- **Đối với Skill Stats:** File `ui/panels/skill_stats_panel.py` hiện tại *chưa* có logic subscribe event `SkillStatsUpdatedEvent`! Bạn cần thêm phương thức `_bind_events` (như cách làm của TargetStatusPanel), nhận dữ liệu từ `EventBus` (Event `SkillStatsUpdatedEvent` được publish từ vòng lặp chính của `HuntOrchestrator`, payload `all_stats` bao gồm `cast_count`, `last_cast`, `success_rate`) rồi loop qua để `tree.insert()` hoặc `tree.item()` update cho Treeview, lúc đó mới dùng format text % với font mono để vẽ giá trị `success_rate`.
 - **Đối với Animation Tween:** Scanner bắn HP event bằng hàm `time.sleep` trung bình 100-200ms mỗi khung hình. Hãy đăng ký với `UIAnimationManager` để animate sự chênh lệch máu giữa 2 lần quét mà không gây lag.
 
 ## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)

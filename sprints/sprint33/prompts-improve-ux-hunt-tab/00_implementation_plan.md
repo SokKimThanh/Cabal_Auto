@@ -12,6 +12,7 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
   - `ui/panels/target_status_panel.py`: Áp dụng `font_mono`, gọi API từ AnimationManager để giảm giật thanh máu.
   - `ui/panels/skill_stats_panel.py`: Chuyển hiển thị Success Rate sang text bar, bắt buộc bind vào `SkillStatsUpdatedEvent`.
   - `ui/tabs/hunt_tab.py`: Đổi `ResponsiveGridBase` sang `ttk.PanedWindow`.
+  - `ui/tabs/setup_tab.py`: Chứa giao diện quản lý các System ROI.
 
 ## 3. Các Class/Component Cần tạo mới (Classes to Create)
 - `lib/ui/animation_manager.py` (`UIAnimationManager`): Quản lý vòng lặp nội suy duy nhất thay vì gọi `.after()` phân tán.
@@ -40,3 +41,29 @@ Trong quá trình triển khai Sprint 33, lập trình viên cần chú ý giả
 2. **Missing Schema Validation:** File `hunt_config.json` đang được đọc/ghi dưới dạng Dictionary thô (Raw Dict). Điều này gây rủi ro crash (KeyError) rất cao khi cấu trúc thay đổi (ví dụ chuyển `region` sang `rois`). Nợ kỹ thuật này cần được trả bằng cách áp dụng `Pydantic` hoặc `dataclasses` để map JSON thành Object an toàn ở các Sprint sau.
 3. **EventBus Payload Bloat:** EventBus chỉ nên dùng để truyền tín hiệu (Signal), KHÔNG dùng để truyền tải dữ liệu lớn/thay đổi liên tục (như raw image frames). Bất kỳ luồng Event nào đang làm điều này cần được refactor thành Method Call trực tiếp.
 4. **Phân mảnh Tkinter Event Loop:** Tất cả các lệnh `self.after()` phục vụ cho hoạt họa đồ họa rải rác ở các file cũ cần được thu gom lại và quản lý tập trung bởi `UIAnimationManager`.
+
+## 7. Trình tự Triển khai (Execution Phases)
+Để tránh tình trạng block chéo giữa các lập trình viên và quản trị rủi ro tích hợp, toàn bộ 11 Task của Sprint 33 PHẢI được thực hiện theo nhóm và thứ tự từ dưới lên trên (Bottom-Up) như sau:
+
+### Phase 1: Core Foundation & Data Layer (Nền móng & Dữ liệu)
+*Hoàn thành Phase này trước tiên vì các UI Component sẽ phụ thuộc vào các module này.*
+- **Task 0:** Xây dựng `UIAnimationManager` (`00_task_ui_animation_manager.md`).
+- **Task 1:** Refactor `SkillPanelController` để hỗ trợ mảng dữ liệu động (`01_task_refactor_controller.md`).
+
+### Phase 2: Independent UI Components (Các Component Độc lập)
+*Các lập trình viên có thể làm song song các Task này mà không đụng chạm file của nhau.*
+- **Task 2:** Phát triển Component `ComboRhythmBar` (`02_task_combo_rhythm_bar.md`).
+- **Task 3:** Phát triển Component `SkillTimelineStrip` (`03_task_skill_timeline_strip.md`).
+- **Task 6:** Phát triển Component `HuntStatusTicker` (`06_task_system_status_bar.md`).
+- **Task 7:** Phát triển Component `VisionSnapshotDebugger` (`07_task_roi_live_preview.md`).
+
+### Phase 3: Tab Layout & Integration (Tích hợp & Ráp nối UI)
+*Gắn các Component từ Phase 2 vào các Panel chính của Hunt Tab.*
+- **Task 4:** Cấu trúc lại `SkillPanel` & Nút Toggle Combo (`04_task_rebuild_skill_panel.md`).
+- **Task 5:** Áp dụng Animation & Event Bindings cho `TargetStatusPanel` và `SkillStatsPanel` (`05_task_target_status_animation.md`).
+
+### Phase 4: Advanced Configuration & Polish (Cấu hình Nâng cao & Đánh bóng)
+*Thực hiện các thay đổi vĩ mô về Layout và Migration Dữ liệu ở bước cuối cùng để tránh gây Crash trong quá trình dev.*
+- **Task 8:** Tích hợp `Hunt Area Manager` và Cấu trúc lại System ROIs (`08_task_roi_managers.md`).
+- **Task 9:** Chuẩn hóa Hệ thống Icon (Standardize Icon System) (`09_task_standardize_icons.md`).
+- **Task 10:** Tái cấu trúc Layout (PanedWindow) và Phân cấp Typography (`10_task_layout_and_typography_hierarchy.md`).
