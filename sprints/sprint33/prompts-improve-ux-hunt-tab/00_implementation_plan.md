@@ -28,3 +28,7 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 3. Thanh HP/MP của quái vật trên `TargetStatusPanel` chuyển động mượt mà (tweening) khi máu giảm, không giật cục.
 4. Các con số (HP, MP, Cooldown) hoàn toàn sử dụng `font_mono` của `UIStyleV2`, không bị rung rinh (jitter) chữ khi thay đổi giá trị.
 5. Toàn bộ các unit test hiện hữu liên quan đến Controller và UI phải passing (hoặc được cập nhật tương ứng).
+### 6. Bổ sung quan trọng (System/Hunt Status Bar)
+- **Vấn đề:** Hiện tại `HuntOrchestrator` liên tục bắn các event cực kỳ quan trọng như `HuntStatusUpdatedEvent` (báo lỗi quét, timeout, mất cửa sổ, v.v) nhưng giao diện UI không hề có component nào lắng nghe (bind) và hiển thị. Điều này làm người dùng bị mù thông tin khi ấn "Bắt đầu săn" mà bot không hoạt động.
+- **Giải pháp:** Cần phát triển thêm một component `HuntStatusTicker` (hoặc `MiniLogPanel`) đặt ở dưới cùng của `HuntWorkspaceFrame`. Component này sẽ subscribe `HuntStatusUpdatedEvent` và hiển thị text chạy hoặc text log nhỏ để người dùng biết bot đang làm gì (VD: "Đang tìm cửa sổ...", "Không tìm thấy mục tiêu...", "Đang tấn công...").
+- **Task bổ sung:** Task 6: Phát triển `HuntStatusTicker`.

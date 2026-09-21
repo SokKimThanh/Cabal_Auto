@@ -27,3 +27,8 @@
 ## Phụ lục QA Cập nhật
 - [ ] Task 5: File `SkillStatsPanel` đã thực hiện gọi `EventBus.bind(SkillStatsUpdatedEvent)` và cập nhật được data động lên bảng chưa?
 - [ ] Task 5: Hàm Tweening Animation của HP bar có chạy ở 60 FPS (~`after(16)`) để bù lại khoảng thời gian trống 200ms của Scanner không?
+
+## Task 6: HuntStatusTicker Component
+- [ ] Component đã đăng ký `HuntStatusUpdatedEvent` và `HuntStateChangedEvent` chưa?
+- [ ] Hàm update UI bên trong callback của EventBus có sử dụng `self.after(0, ...)` để đảm bảo Thread Safety chưa? (Cực kỳ quan trọng vì Orchestrator chạy ngầm).
+- [ ] Có bị crash hoặc vỡ layout ở tab Hunt khi chèn thanh Ticker vào đáy không?
