@@ -7,7 +7,7 @@
 
 ## Task 2: ComboRhythmBar Component
 - [ ] Component không throw lỗi `_tkinter.TclError` khi destroy lúc đang chạy animation?
-- [ ] Có kiểm tra `winfo_exists()` bên trong vòng lặp `.after()` không?
+- [ ] Có kiểm tra `winfo_exists()` khi nhận tick từ `UIAnimationManager` không?
 - [ ] Tỷ lệ tọa độ Sweet Spot chính xác là 0.78?
 
 ## Task 3: SkillTimelineStrip Component
@@ -26,15 +26,14 @@
 - [ ] Có crash `TclError` khi tắt panel lúc thanh máu đang animate không? (Check: `winfo_exists()`).
 ## Phụ lục QA Cập nhật
 - [ ] Task 5: File `SkillStatsPanel` đã thực hiện gọi `EventBus.bind(SkillStatsUpdatedEvent)` và cập nhật được data động lên bảng chưa?
-- [ ] Task 5: Hàm Tweening Animation của HP bar có chạy ở 60 FPS (~`after(16)`) để bù lại khoảng thời gian trống 200ms của Scanner không?
+- [ ] Task 5: Hàm Tweening Animation của HP bar có đăng ký qua `UIAnimationManager` để bù lại khoảng thời gian trống 200ms của Scanner không?
 
 ## Task 6: HuntStatusTicker Component
 - [ ] Component đã đăng ký `HuntStatusUpdatedEvent` và `HuntStateChangedEvent` chưa?
 - [ ] Hàm update UI bên trong callback của EventBus có sử dụng `self.after(0, ...)` để đảm bảo Thread Safety chưa? (Cực kỳ quan trọng vì Orchestrator chạy ngầm).
 - [ ] Có bị crash hoặc vỡ layout ở tab Hunt khi chèn thanh Ticker vào đáy không?
 
-## Task 7: VisionLivePreview Component
-- [ ] Component popup đã thực hiện Unbind (`EventBus.unbind`) ngay khi đóng cửa sổ (Sự kiện `WM_DELETE_WINDOW`) chưa? (Tránh rò rỉ bộ nhớ).
+## Task 7: VisionSnapshotDebugger Component
 - [ ] Ảnh raw frame nhận được có được resize trước khi nhét vào `Tk.PhotoImage` chưa?
 - [ ] Tham chiếu ảnh `self.current_image = ImageTk.PhotoImage(image)` có được giữ lại (keep reference) để chống lỗi nhấp nháy / đen màn hình do Garbage Collector không?
 - [ ] Bounding box và Confidence score (điểm tự tin) được vẽ có khớp tỷ lệ với ảnh đã resize không?
@@ -55,3 +54,9 @@
 - [ ] Màn hình HuntTab đã cho phép kéo thả ranh giới giữa bên Trái (Setup) và bên Phải (Monitor) chưa? (Bằng PanedWindow).
 - [ ] Khi thu hẹp tối đa một bên, layout có bị tràn ra ngoài màn hình không? (Check: Phải set `minsize` cho các Pane).
 - [ ] Các tiêu đề (Title) của Panel có to và rõ ràng hơn các Text nội dung (Hierarchy) nhờ sử dụng `UIStyleV2.get_font("title", weight="bold")` chưa?
+
+## Kiến trúc và Hiệu năng (Performance Thresholds)
+- [ ] Tính năng Snapshot Debugger (Task 7) không làm tăng quá 5% CPU usage khi mở và không rò rỉ RAM khi refresh nhiều lần?
+- [ ] Có sử dụng `UIAnimationManager` duy nhất thay cho việc khởi tạo nhiều vòng lặp `.after` độc lập không?
+- [ ] Tốc độ loop của Orchestrator (Hunt Thread) có bị drop quá 2ms khi các tính năng UI mới đang chạy không?
+- [ ] Dữ liệu config cũ có được Validate và Migrate an toàn, chống crash `KeyError` không?
