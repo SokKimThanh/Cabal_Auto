@@ -3,7 +3,6 @@
 ## Task 0: UIAnimationManager
 - [ ] Đã có chức năng tự động hủy/ghi đè (Cancel/Override) khi truyền một `target_id` đã tồn tại chưa?
 - [ ] Quá trình loop có kiểm tra `winfo_exists` để chống TclError không?
-# QA Checklist: Improve UX Hunt Tab (Sprint 33)
 
 ## Task 1: Refactor Controller
 - [ ] Hàm `get_combo_sequence` và `get_buff_sequence` trả về list chuẩn xác?

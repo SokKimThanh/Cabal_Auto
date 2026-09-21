@@ -12,6 +12,7 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
   - `ui/panels/target_status_panel.py`: Áp dụng `font_mono`, gọi API từ AnimationManager để giảm giật thanh máu.
   - `ui/panels/skill_stats_panel.py`: Chuyển hiển thị Success Rate sang text bar, bắt buộc bind vào `SkillStatsUpdatedEvent`.
   - `ui/tabs/hunt_tab.py`: Đổi `ResponsiveGridBase` sang `ttk.PanedWindow`.
+  - `ui/tabs/setup_tab.py`: Chứa giao diện quản lý các System ROI.
 
 ## 3. Các Class/Component Cần tạo mới (Classes to Create)
 - `lib/ui/animation_manager.py` (`UIAnimationManager`): Quản lý vòng lặp nội suy duy nhất thay vì gọi `.after()` phân tán.

@@ -57,7 +57,7 @@ Dựa trên việc phân tích mã nguồn (`ui/tabs/hunt_tab.py`, `ui/panels/sk
 
 ### 3.4. Cải tiến `SkillStatsPanel` (Performance)
 - **Thêm Cột Visual Success Rate:**
-  - Bỏ cột số Text "%", thay bằng một thanh tiến trình mini (Mini Bar) ngay trong cột của `Treeview` (GIỮ NGUYÊN cấu trúc `Treeview` để đảm bảo hiệu năng, sử dụng font mono và ký tự unicode block để vẽ).
+  - Bỏ cột số Text "%", thay bằng một thanh tiến trình mini (Mini Bar) ngay trong cột của `Treeview` (GIỮ NGUYÊN cấu trúc `Treeview` để đảm bảo hiệu năng, hiển thị số % và canh lề bằng font mono).
 - **Làm nổi bật Skill lỗi:**
   - Những skill có cooldown bị lỡ hoặc hụt combo nhiều sẽ được làm nổi bật với màu `UI.TEXT_DANGER` hoặc cảnh báo "⚠️" để người dùng biết cần phải tinh chỉnh lại phím tắt hoặc timing cho chiêu đó.
 
