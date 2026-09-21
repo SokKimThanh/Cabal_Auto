@@ -17,3 +17,6 @@ Hiện tại `SkillPanelController` và cấu hình quản lý kỹ năng đang 
 - Test khả năng thêm mới hoặc xóa một kỹ năng khỏi chuỗi (Sequence mutation).
 ## Phụ lục (Important Note from Review):
 - Hệ thống `SkillPresetController` (hàm `set_skill_slot`) bản chất đã là mảng mở rộng (`while len(...) <= position`). Do đó Task 1 này khá đơn giản, chủ yếu là bạn chỉ cần viết các hàm `get_combo_slots()` và `get_buff_slots()` ở `SkillPanelController` để Timeline Strip gọi và render ra vòng lặp thay vì fix cứng `range(4)`.
+
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Xóa Khớp Nối Cứng (Decoupling):** Tìm tất cả các file UI cũ đang gọi trực tiếp `self.app_state.hunt_cfg.get("skill_slots")`. Thay thế chúng bằng lời gọi tới hàm `get_combo_slots()` và `get_buff_slots()` của Controller bạn vừa tạo. Không để UI tự ý chạm vào raw config dictionary nữa.

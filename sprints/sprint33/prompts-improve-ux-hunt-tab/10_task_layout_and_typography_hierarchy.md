@@ -19,3 +19,5 @@ Tab Hunt đang được chia thành 2 cột với tỷ lệ cứng `58/42` sử 
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Kiểm tra thủ công: Mở Tab Hunt, dùng chuột kéo thanh chia (sash) ở giữa qua lại. Đảm bảo 2 cột tự động thay đổi kích thước mượt mà không văng lỗi hay biến dạng text.
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Phá vỡ Grid Cố Định:** Hãy xóa toàn bộ các dòng lệnh code tính toán vòng lặp chia 12 cột (Bootstrap-style `columnconfigure(i, weight=1)`) tĩnh ở Tab Hunt cũ. Khoản nợ thiết kế không linh hoạt này phải được thay thế hoàn toàn bằng `ttk.PanedWindow` để trả lại khả năng tùy biến màn hình (resizable) cho user.

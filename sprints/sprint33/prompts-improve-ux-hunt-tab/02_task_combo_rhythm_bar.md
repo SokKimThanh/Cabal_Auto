@@ -14,3 +14,5 @@ Cần một phản hồi thị giác (visual feedback) để báo cho người d
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Khởi tạo headless `ComboRhythmBar` và gọi `trigger_hit()`. Đảm bảo không ném ra exception và màu sắc thay đổi đúng.
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Gom nhóm Animation Loop:** Tuyệt đối không được dùng `time.sleep()` hoặc gọi `self.after()` độc lập bên trong component đồ họa này. Nếu bạn thấy code cũ nào ở UI đang làm vậy, hãy xóa bỏ và chuyển chúng sang đăng ký với `UIAnimationManager` (Centralized Loop) để chống phân mảnh luồng chạy của Tkinter.

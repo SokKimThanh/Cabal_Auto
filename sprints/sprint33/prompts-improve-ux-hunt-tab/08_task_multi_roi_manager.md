@@ -14,3 +14,5 @@ Hệ thống Hunt không chỉ nhận diện quái vật, mà còn phải đọc
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Khởi tạo Validation Layer bằng một file config cũ (`{"region": [0,0,10,10]}`). Đảm bảo Parser xuất ra đúng kiểu dict và không throw error.
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Bảo hiểm Dữ liệu (Schema Validation):** File `hunt_config.json` từ lâu đã bị thiếu lớp bảo vệ. Bắt buộc bạn phải trả khoản nợ này bằng cách: Viết một hàm Data Migration an toàn, kiểm tra xem format cũ hay mới. Nếu format cũ, PHẢI tự động copy ra một file `.bak` (Backup) trước khi chuyển đổi nó sang định dạng Dictionary đa vùng (Multi-ROI).

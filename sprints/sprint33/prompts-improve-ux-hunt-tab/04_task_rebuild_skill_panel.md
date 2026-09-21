@@ -21,3 +21,6 @@ Lắp ráp các thành phần đã tạo ở Task 1, 2, 3 vào file UI chính c�
 ## Phụ lục (Important Note from Review):
 - Chú ý: Hiện tại `btn_start_combo` và `btn_stop_combo` chỉ đang đổi Text UI mà KHÔNG đồng bộ với config ngầm. Checkbox cũ `auto_combo_var` cũng không được lưu!
 - BẠN PHẢI đảm bảo nút Toggle mới khi được click sẽ ghi trạng thái vào `hunt_cfg` (ví dụ `cfg["combo"]["enabled"] = True/False`) hoặc gọi API cập nhật cấu hình của StateController, để `HuntOrchestrator` có thể đọc được!
+
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Sửa Lỗi Binding Vô Danh:** Lỗi kỹ thuật tồn tại từ lâu là nút "Start/Stop" chỉ đổi UI mà không update trạng thái thực sự xuống backend. Bạn phải trả khoản nợ này bằng cách: Đảm bảo Toggle Button mới cập nhật đúng vào config `combo.enabled` thông qua Controller, để Orchestrator có thể nhận biết được thao tác của người dùng.

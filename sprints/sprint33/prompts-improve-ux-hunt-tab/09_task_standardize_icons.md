@@ -19,3 +19,5 @@ Dự án có quy định nghiêm ngặt về việc sử dụng hệ thống qu�
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Kiểm tra `UIElementRegistry` xem các nút trong Tab Hunt có xuất hiện trong danh sách đăng ký không.
 - Test thủ công đảm bảo Icon không bị mất đi sau khi di chuột (hover) hoặc sau khi đóng/mở lại tab.
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Quét Rạch Rác Mã Ngầm:** Bạn có trách nhiệm thực hiện tính năng "Ctrl+Shift+F" tìm kiếm toàn bộ chuỗi Emoji (như `🔴, 🟢, 🎯, ℹ️`) ở tất cả các file UI. Xóa tận gốc những thiết kế cũ kỹ này và bắt buộc các Component mới phải khai báo `element_id` để được ghi nhận vào cơ sở dữ liệu `UIElementRegistry`.

@@ -16,3 +16,5 @@ Dù quá trình cấu hình ROI khá chi tiết ở Setup Tab, nhưng trong quá
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Đảm bảo việc bấm "Refresh" liên tục 50 lần không làm tăng RAM (Memory Leak test). Đảm bảo CPU overhead khi mở chức năng này < 5%.
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Ngừng Lạm dụng EventBus cho Dữ liệu lớn:** Nếu mã nguồn cũ của Backend đang cố gắng gửi mảng Numpy (Raw frame) qua `SceneMonstersDetectedEvent`, hãy xóa/refactor luồng đó ngay lập tức! Bạn phải trả khoản nợ rò rỉ bộ nhớ (Memory Thrashing) này bằng cách chuyển qua kiến trúc "Method Call xin cấp ảnh (On-Demand)" kèm Mutex Lock thay vì phát tán ảnh lung tung qua Bus.

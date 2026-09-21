@@ -15,3 +15,5 @@ Cần thay thế các khung Combobox bằng một dải thanh ngang hiển thị
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Khởi tạo component với 3 kỹ năng mẫu. Gọi `update_cooldown` và đảm bảo tỷ lệ (ratio) được giới hạn trong khoảng 0.0 - 1.0.
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Quản lý Bộ nhớ Ảnh (Image Memory GC):** Khi gỡ bỏ các ô Combobox cũ, hãy đảm bảo rằng Component mới sử dụng cơ chế lưu trữ reference ảnh (như `self._images_ref`) một cách thống nhất. Tuyệt đối không để xảy ra tình trạng "load ảnh mỗi lần render" (gây giật) hoặc "quên giữ reference" (gây mất icon).

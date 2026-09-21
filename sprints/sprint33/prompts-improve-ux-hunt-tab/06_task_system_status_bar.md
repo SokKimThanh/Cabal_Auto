@@ -17,3 +17,5 @@ Khi người dùng bấm "Bắt đầu săn", rất nhiều thao tác chạy ng�
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Giả lập bắn `HuntStatusUpdatedEvent` và kiểm tra xem Label text có thay đổi đúng nội dung hay không (nhớ test thông qua `root.update()` để luồng `after` được xử lý).
+## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
+- **Tối ưu Hóa EventBus:** Rà soát lại tất cả các nơi đang bắn `HuntStatusUpdatedEvent`. Đảm bảo rằng payload truyền đi chỉ là String báo cáo (Signal/Text), không được phép kẹp theo các object nặng (như Dictionary sâu hoặc Raw frame) để tránh làm nghẽn cổ chai (bottleneck) của EventBus.
