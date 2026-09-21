@@ -7,6 +7,8 @@ Reusable UI components for Cabal Auto Manager application.
 from .icon_button import create_icon_button, create_icon_label
 from .confirmation_widget import ConfirmationWidget
 from .notification_widget import NotificationWidget
+from .icon_form_component import IconFormComponent
+from .combo_rhythm_bar import ComboRhythmBar
 
 __all__ = [
     "IconFormComponent",
@@ -14,5 +16,5 @@ __all__ = [
     "create_icon_label",
     "ConfirmationWidget",
     "NotificationWidget",
+    "ComboRhythmBar",
 ]
-from .icon_form_component import IconFormComponent
