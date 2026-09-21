@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.events.event_bus import EventBus, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent
 from ui.components.status_badge import StatusBadge
+from lib.ui.animation_manager import UIAnimationManager
 
 @dataclass
 class TargetInfo:
@@ -29,6 +30,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         self.font_ui = UI.resolve_font_family("ui")
         self.font_mono = UI.resolve_font_family("mono")
+        self.animation_manager = UIAnimationManager()
 
         # Legacy compatibility wrappers
         self._setup_legacy_wrappers()
@@ -386,7 +388,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         val_lbl = tk.Label(
             lbl_frame,
             text="— / —",
-            font=(self.font_mono, UI.SIZE_SMALL),
+            font=UI.get_font("mono", UI.SIZE_SMALL),
             fg=UI.TEXT_SUBTLE,
             bg=UI.BG_SURFACE,
             anchor="e"
@@ -445,7 +447,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         val_lbl = tk.Label(
             pill,
             text="—",
-            font=(self.font_mono, UI.SIZE_BODY, "bold"),
+            font=UI.get_font("mono", UI.SIZE_BODY, "bold"),
             fg=UI.TEXT_PRIMARY,
             bg=UI.BG_ELEVATED,
             anchor="w"
@@ -510,13 +512,44 @@ class TargetStatusPanel(ttk.LabelFrame):
             hp_ratio = info.hp / info.max_hp if info.max_hp > 0 else 0
             self.hp_bar_canvas.current_ratio = hp_ratio
             width = self.hp_bar_canvas.winfo_width()
-            self.hp_bar_canvas.coords(self.hp_fill_rect, 0, 0, width * hp_ratio, 16)
+            def update_hp_canvas(ratio):
+                if self.hp_bar_canvas.winfo_exists():
+                    self.hp_bar_canvas.current_ratio = ratio
+                    w = self.hp_bar_canvas.winfo_width()
+                    self.hp_bar_canvas.coords(self.hp_fill_rect, 0, 0, w * ratio, 16)
+
+            if getattr(self.hp_bar_canvas, "current_ratio", None) is None:
+                self.hp_bar_canvas.current_ratio = 0.0
+
+            self.animation_manager.register_tween(
+                target_id=f"hp_bar_{id(self)}",
+                widget=self.hp_bar_canvas,
+                start_val=self.hp_bar_canvas.current_ratio,
+                end_val=hp_ratio,
+                duration_ms=200,
+                update_func=update_hp_canvas
+            )
 
             self.mp_val_lbl.config(text=format_stat(info.mp, info.max_mp), fg=UI.TEXT_PRIMARY)
             mp_ratio = info.mp / info.max_mp if info.max_mp > 0 else 0
-            self.mp_bar_canvas.current_ratio = mp_ratio
-            width = self.mp_bar_canvas.winfo_width()
-            self.mp_bar_canvas.coords(self.mp_fill_rect, 0, 0, width * mp_ratio, 16)
+
+            def update_mp_canvas(ratio):
+                if self.mp_bar_canvas.winfo_exists():
+                    self.mp_bar_canvas.current_ratio = ratio
+                    w = self.mp_bar_canvas.winfo_width()
+                    self.mp_bar_canvas.coords(self.mp_fill_rect, 0, 0, w * ratio, 16)
+
+            if getattr(self.mp_bar_canvas, "current_ratio", None) is None:
+                self.mp_bar_canvas.current_ratio = 0.0
+
+            self.animation_manager.register_tween(
+                target_id=f"mp_bar_{id(self)}",
+                widget=self.mp_bar_canvas,
+                start_val=self.mp_bar_canvas.current_ratio,
+                end_val=mp_ratio,
+                duration_ms=200,
+                update_func=update_mp_canvas
+            )
 
             # 4. Cập nhật 3 stat pills
             self.def_val_lbl.config(text=f"{info.defense:,}")
