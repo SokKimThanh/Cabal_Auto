@@ -142,15 +142,34 @@ class IconManagerFrame(ResponsiveGridBase):
     def _setup_ui(self):
         content_frame = self.get_content_frame()
 
-        # Title Label
+
+        # Title and Top Action Bar container
+        top_header_frame = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
+        top_header_frame.pack(fill="x", pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+
         title_lbl = tk.Label(
-            content_frame,
+            top_header_frame,
             text=self.i18n_t("icon_manager_title", default="Quản lý Icon"),
             font=(UIStyle.resolve_font_family("title") if hasattr(UIStyle, "resolve_font_family") else "IBM Plex Sans", 16, "bold"),
             bg=UIStyle.BG_BASE,
             fg=UIStyle.TEXT_PRIMARY
         )
-        title_lbl.pack(pady=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, anchor="w", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8)
+        title_lbl.pack(side="left")
+
+        # Top Action Bar
+        top_action_bar = tk.Frame(top_header_frame, bg=UIStyle.BG_BASE)
+        top_action_bar.pack(side="right")
+
+        self.btn_refresh = tk.Button(top_action_bar, text=self.i18n_t("btn_refresh", default="Refresh"), command=self._on_refresh, **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS if hasattr(UIStyle, "SPACE_XS") else 4)
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_refresh, "btn_refresh")
+
+        self.btn_sync = tk.Button(top_action_bar, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **(UIStyle.get_button_style("info") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS if hasattr(UIStyle, "SPACE_XS") else 4)
+        if hasattr(self.app, 'bind_text'):
+            self.app.bind_text(self.btn_sync, "btn_sync", default="Đồng bộ")
+
 
         # Main Container for panels
         self.main_container = tk.Frame(content_frame, bg=UIStyle.BG_BASE)
@@ -454,7 +473,7 @@ class IconManagerFrame(ResponsiveGridBase):
         # Treeview for available elements
         self.available_elements_tree = ttk.Treeview(
             add_frame,
-            columns=("id", "module", "component", "element", "mapped"),
+            columns=("id", "module", "component", "element", "exclusive", "mapped"),
             show="tree headings",
             selectmode="browse",
             height=4
@@ -464,6 +483,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.heading("module", text="Module")
         self.available_elements_tree.heading("component", text="Type")
         self.available_elements_tree.heading("element", text="Element ID")
+        self.available_elements_tree.heading("exclusive", text="Type (Exclusive)")
         self.available_elements_tree.heading("mapped", text="Mapped Icon")
 
         self.available_elements_tree.column("#0", width=150, stretch=tk.NO)
@@ -471,6 +491,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.column("module", width=80, stretch=tk.NO)
         self.available_elements_tree.column("component", width=80, stretch=tk.NO)
         self.available_elements_tree.column("element", width=120, stretch=tk.YES)
+        self.available_elements_tree.column("exclusive", width=110, stretch=tk.NO, anchor="center")
         self.available_elements_tree.column("mapped", width=100, stretch=tk.NO)
 
         self.available_elements_tree.grid(row=1, column=0, sticky="nsew")
@@ -606,9 +627,8 @@ class IconManagerFrame(ResponsiveGridBase):
                 if filtered_elements:
                     mod_has_children = True
                     screen_children_ops = []
-                    for el in sorted(filtered_elements, key=lambda x: x["id"]):
-                        screen_children_ops.append(
-                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('mapped', '')), False)
+                    for el in sorted(filtered_elements, key=lambda x: x["id"]):                        screen_children_ops.append(
+                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('exclusive', '🌐'), el.get('mapped', '')), False)
                         )
                     mod_children_ops.append((f"📄 {screen}", None, is_open, screen_children_ops))
 
@@ -630,103 +650,96 @@ class IconManagerFrame(ResponsiveGridBase):
             self._current_available_element_selection = item_to_select
             self.available_elements_tree.selection_set(item_to_select)
             self.available_elements_tree.see(item_to_select)
-
-
     def _load_all_usage_ids(self):
         import threading
         def fetch_data():
             try:
-                # 1. Query db_usages
+                # 1. Query db_usages and ui_elements
                 # Use a new connection for thread safety
                 import sqlite3
                 from database import get_db
                 conn = sqlite3.connect(str(get_db().DB_PATH))
                 cursor = conn.cursor()
-                cursor.execute("SELECT module_name, ui_component_type, ui_element_id, icon_key FROM icon_usages WHERE ui_element_id IS NOT NULL AND ui_element_id != ''")
-                db_rows = cursor.fetchall()
+                cursor.execute("SELECT module_name, ui_component_type, ui_element_id, icon_key FROM icon_usages")
+                usages = cursor.fetchall()
+
+                # Get ui elements data for exclusive check
+                cursor.execute("SELECT module_name, screen_name, element_id, component_type, is_exclusive FROM ui_elements")
+                ui_elements = cursor.fetchall()
                 conn.close()
 
-                # Build mapping dictionary from DB rows
-                db_mapping = {}
-                for r in db_rows:
-                    m_name = r[0] or ""
-                    c_type = r[1] or ""
-                    el_id = r[2] or ""
-                    icon_key = r[3] or ""
-                    if el_id:
-                        key = f"{m_name}:{c_type}:{el_id}"
-                        db_mapping[key] = icon_key
-                        # Also keep element ID only as fallback lookup
-                        db_mapping[el_id] = icon_key
+                # Create mapping for ui_elements: (module, screen, element_id) -> is_exclusive
+                # Wait, screen_name might not perfectly match icon_usages. But we can match by element_id and module.
+                # Actually, (module, element_id) is usually unique enough for this UI.
+                ui_elements_map = { (r[0], r[2]): ("🔒" if r[4] else "🌐") for r in ui_elements }
 
-                # 2. Get descriptors from Registry + CommonUI enum
-                registry_items = []
-                try:
-                    from lib.events.ui_element_registry import UIElementRegistry, UIElementDescriptor, CommonUI
-                    registry_items = UIElementRegistry().get_all()
+                db_elements = set()
+                db_mapped = {}
+                for mod, comp, el, icon in usages:
+                    key = (mod, comp, el)
+                    db_elements.add(key)
+                    db_mapped[key] = icon
 
-                    # Pre-populate with CommonUI items
-                    for ui_enum in CommonUI:
-                        val = ui_enum.value
-                        if not any(d.element_id == val for d in registry_items):
-                            registry_items.append(UIElementDescriptor(element_id=val, module="Common", screen="Global", element_type="button"))
-                except ImportError:
-                    pass
+                from lib.events.ui_element_registry import UIElementRegistry
+                registry = UIElementRegistry.instance()
+                reg_elements = registry.get_all()
 
-                # 3. Merge data
-                tree_data = {}
-                seen_elements = set()
+                # Merge unique elements, track by (module, screen, element_id)
+                merged = {}
 
-                for desc in registry_items:
-                    mod = desc.module or "Unknown"
-                    screen = desc.screen or "Unknown"
-                    if mod not in tree_data:
-                        tree_data[mod] = {}
-                    if screen not in tree_data[mod]:
-                        tree_data[mod][screen] = []
+                # Add from DB usages
+                for (mod, comp, el) in db_elements:
+                    if mod not in merged:
+                        merged[mod] = {}
+                    # For db usage, we might not have 'screen', default to 'Unknown'
+                    # But we can try to guess or just use 'General'
+                    screen = 'General'
+                    if screen not in merged[mod]:
+                        merged[mod][screen] = []
 
-                    mapped_val = db_mapping.get(f"{mod}:{desc.element_type}:{desc.element_id}", db_mapping.get(desc.element_id, ""))
-                    el_dict = {"id": desc.element_id, "comp": desc.element_type, "mod": mod, "mapped": mapped_val}
-                    tree_data[mod][screen].append(el_dict)
-                    # Use composite key to prevent semantic duplicates across modules
-                    seen_elements.add((mod, screen, desc.element_id))
+                    exc = ui_elements_map.get((mod, el), "🌐")
 
-                # Merge DB rows
-                for r in db_rows:
-                    mod = r[0] or "Unknown"
-                    comp = r[1] or "widget"
-                    el_id = r[2]
-                    mapped_val = r[3] or ""
-                    screen = "Database"
+                    merged[mod][screen].append({
+                        "id": el,
+                        "mod": mod,
+                        "comp": comp,
+                        "mapped": db_mapped.get((mod, comp, el), ""),
+                        "exclusive": exc
+                    })
 
-                    # Skip if already exists in registry (using a rough check if the ID is already mapped)
-                    # Note: We check if ANY screen in this module has this ID from the registry to avoid
-                    # duplicating an ID that is just missing its "Database" screen qualifier.
-                    is_duplicate = any(
-                        (mod, s, el_id) in seen_elements for s in tree_data.get(mod, {})
-                    )
+                # Add from Registry
+                for desc in reg_elements:
+                    mod = desc.module
+                    screen = desc.screen
+                    el = desc.element_id
+                    comp = desc.element_type
+                    exc = "🔒" if desc.is_exclusive else "🌐"
 
-                    if is_duplicate:
-                        continue
+                    if mod not in merged:
+                        merged[mod] = {}
+                    if screen not in merged[mod]:
+                        merged[mod][screen] = []
 
-                    if mod not in tree_data:
-                        tree_data[mod] = {}
-                    if screen not in tree_data[mod]:
-                        tree_data[mod][screen] = []
+                    # Check if already added
+                    existing = [e for e in merged[mod][screen] if e['id'] == el]
+                    if not existing:
+                        # Try to find mapping
+                        mapped = db_mapped.get((mod, comp, el), "")
+                        merged[mod][screen].append({
+                            "id": el,
+                            "mod": mod,
+                            "comp": comp,
+                            "mapped": mapped,
+                            "exclusive": exc
+                        })
 
-                    tree_data[mod][screen].append({"id": el_id, "comp": comp, "mod": mod, "mapped": mapped_val})
-                    seen_elements.add((mod, screen, el_id))
-
-                # Update UI thread
-                if self.winfo_exists():
-                    self.after(0, lambda: self._update_usage_ids_ui(tree_data))
-
+                self.app.after(0, lambda: self._update_usage_ids_ui(merged))
             except Exception as e:
                 import logging
-                logging.getLogger(__name__).warning(f"Failed to load usage IDs for tree: {e}")
+                logging.getLogger(__name__).error(f"Error fetching usage ids: {e}")
 
-        # Run fetch in background to prevent freezing
         threading.Thread(target=fetch_data, daemon=True).start()
+
 
     def _update_usage_ids_ui(self, tree_data):
         if not self.winfo_exists() or not hasattr(self, 'available_elements_tree'):
@@ -751,9 +764,8 @@ class IconManagerFrame(ResponsiveGridBase):
 
         item = self.available_elements_tree.item(selection[0])
         values = item.get("values")
-
         # It's a leaf node if it has values
-        if values and len(values) >= 4:  # ID, Module, Type, Element ID, Mapped Icon
+        if values and len(values) >= 4:  # ID, Module, Type, Element ID, Exclusive, Mapped Icon
             self.var_usage_element.set(values[3])  # element_id
             self.var_usage_mod.set(values[1])      # mod
             self.var_usage_comp.set(values[2])     # comp
@@ -763,7 +775,8 @@ class IconManagerFrame(ResponsiveGridBase):
             if hasattr(self, 'var_current_mapping_element'):
                 self.var_current_mapping_element.set(f"UI Element đang chọn: {values[3]}")
 
-            mapped_icon = values[4] if len(values) > 4 and values[4] else ""
+            mapped_icon = values[5] if len(values) > 5 and values[5] else ""
+
             if mapped_icon:
                 # Highlight and load this icon
                 if hasattr(self, 'tree_component'):
@@ -1177,18 +1190,6 @@ class IconManagerFrame(ResponsiveGridBase):
         if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
             self.btn_delete.configure(bg=UIStyle.DANGER, fg="white")
 
-        self.btn_refresh = tk.Button(right_frame, text=self.i18n_t("btn_refresh", default="Refresh"), command=self._on_refresh, **UIStyle.get_button_style("secondary"))
-        self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_text'):
-            self.app.bind_text(self.btn_refresh, "btn_refresh")
-        attach_i18n_tooltip(self.btn_refresh, "tooltip_icon_manager_refresh", ns=None, lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi')
-
-        self.btn_sync = tk.Button(right_frame, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **UIStyle.get_button_style("info"))
-        self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
-        if hasattr(self.app, 'bind_text'):
-            self.app.bind_text(self.btn_sync, "btn_sync", default="Đồng bộ")
-        attach_i18n_tooltip(self.btn_sync, "tooltip_icon_manager_sync", ns=None, lang_provider=lambda: getattr(self.app, 'lang', 'vi') if self.app else 'vi')
-
         self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
         self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
@@ -1248,16 +1249,14 @@ class IconManagerFrame(ResponsiveGridBase):
             self.btn_save.pack_forget()
             self.btn_cancel.pack_forget()
 
-            self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS)
-            self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS)
+
 
         elif state in ("ADD", "EDIT"):
             self.btn_add.config(state="disabled")
             self.btn_edit.config(state="disabled")
             self.btn_delete.config(state="disabled")
 
-            self.btn_refresh.pack_forget()
-            self.btn_sync.pack_forget()
+
 
             self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
             self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)

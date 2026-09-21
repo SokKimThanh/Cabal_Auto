@@ -603,6 +603,19 @@ def create_icon_button(
             except ImportError as e:
                 print(f"Warning: Runtime registration failed: {e}")
 
+            # Fast-Mapping Context Menu
+
+            module = getattr(parent, "MODULE_NAME", "App")
+
+            screen = getattr(parent, "SCREEN_NAME", "General")
+
+            button.MODULE_NAME = module
+
+            button.SCREEN_NAME = screen
+
+            button.COMPONENT_TYPE = "button"
+
+            ContextActionHelper.bind_icon_picker_context_menu(button, element_id)
     return button
 
 
@@ -922,6 +935,19 @@ def create_icon_label(
             except ImportError as e:
                 print(f"Warning: Runtime registration failed: {e}")
 
+            # Fast-Mapping Context Menu
+
+            module = getattr(parent, "MODULE_NAME", "App")
+
+            screen = getattr(parent, "SCREEN_NAME", "General")
+
+            label.MODULE_NAME = module
+
+            label.SCREEN_NAME = screen
+
+            label.COMPONENT_TYPE = "label"
+
+            ContextActionHelper.bind_icon_picker_context_menu(label, element_id)
     return label
 
 

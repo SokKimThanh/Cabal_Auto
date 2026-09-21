@@ -2,6 +2,8 @@ import json
 import logging
 from pathlib import Path
 from lib.db.services.icon_service import IconService
+from lib.db.services.ui_element_service import UIElementService
+from lib.events.ui_element_registry import UIElementRegistry
 from lib.events.event_bus import EventBus, IconManagerSyncEvent
 
 logger = logging.getLogger(__name__)
@@ -121,3 +123,35 @@ class IconSyncManager:
             helper.update_tooltip_keys(tooltip_keys)
         except Exception as e:
             logger.error(f"Failed to refresh IconHelper tooltip cache: {e}")
+
+    def sync_registry_to_db(self, db_conn) -> bool:
+        """
+        Đọc metadata từ UIElementRegistry và đồng bộ xuống bảng ui_elements.
+        """
+        try:
+            ui_element_service = UIElementService(db_conn)
+            registry_elements = UIElementRegistry.instance().get_all()
+
+            elements_data = []
+            for desc in registry_elements:
+                is_exclusive = desc.is_exclusive
+                # Mặc định sidebar_button hoặc tab chính là exclusive nếu chưa được cấu hình
+                if getattr(desc, 'element_type', '') in ['sidebar_button', 'tab_main'] or desc.element_id.startswith('tab_') or desc.element_id.startswith('btn_'):
+                    is_exclusive = True
+
+                elements_data.append({
+                    "element_id": desc.element_id,
+                    "module_name": desc.module,
+                    "screen_name": desc.screen,
+                    "component_type": desc.element_type,
+                    "is_exclusive": is_exclusive,
+                    "description": f"Auto-registered from {desc.module}/{desc.screen}"
+                })
+
+            if elements_data:
+                ui_element_service.bulk_upsert_elements(elements_data)
+                logger.info(f"Đã đồng bộ {len(elements_data)} UI elements từ Registry xuống DB.")
+            return True
+        except Exception as e:
+            logger.error(f"Lỗi đồng bộ UIElementRegistry xuống DB: {e}")
+            return False

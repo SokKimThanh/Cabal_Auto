@@ -181,6 +181,20 @@ def setup_icons_schema(conn: sqlite3.Connection):
     """Thiết lập schema cho hệ thống quản lý Icon"""
     cursor = conn.cursor()
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ui_elements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            element_id TEXT NOT NULL,
+            module_name TEXT NOT NULL,
+            screen_name TEXT NOT NULL,
+            component_type TEXT NOT NULL,
+            is_exclusive BOOLEAN DEFAULT 0,
+            description TEXT,
+            UNIQUE(module_name, screen_name, element_id)
+        )
+    ''')
+
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS icon_categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

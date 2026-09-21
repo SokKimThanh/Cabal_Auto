@@ -185,12 +185,15 @@ def mock_tk_headless(monkeypatch):
             return None
         def destroy(self, *args, **kwargs):
             return None
-        def configure(self, **kwargs):
+        def configure(self, *args, **kwargs):
+            if args and isinstance(args[0], str):
+                pass
             self.kwargs.update(kwargs)
             self._config.update(kwargs)
             for key, value in kwargs.items():
                 setattr(self, key, value)
             return None
+
         def config(self, *args, **kwargs):
             if args and isinstance(args[0], dict):
                 self.kwargs.update(args[0])
