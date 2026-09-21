@@ -18,3 +18,6 @@ Lắp ráp các thành phần đã tạo ở Task 1, 2, 3 vào file UI chính c�
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Test UI headless: Mô phỏng click vào Toggle Button và kiểm tra biến trạng thái (state variable) có thực sự chuyển từ `False` sang `True` không.
+## Phụ lục (Important Note from Review):
+- Chú ý: Hiện tại `btn_start_combo` và `btn_stop_combo` chỉ đang đổi Text UI mà KHÔNG đồng bộ với config ngầm. Checkbox cũ `auto_combo_var` cũng không được lưu!
+- BẠN PHẢI đảm bảo nút Toggle mới khi được click sẽ ghi trạng thái vào `hunt_cfg` (ví dụ `cfg["combo"]["enabled"] = True/False`) hoặc gọi API cập nhật cấu hình của StateController, để `HuntOrchestrator` có thể đọc được!

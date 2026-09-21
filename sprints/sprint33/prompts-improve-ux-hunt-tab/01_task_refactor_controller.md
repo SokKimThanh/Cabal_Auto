@@ -15,3 +15,5 @@ Hiện tại `SkillPanelController` và cấu hình quản lý kỹ năng đang 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - Thêm test trong `tests/ui/controllers/test_skill_panel_controller.py` để verify việc trả về chuỗi sequence mảng.
 - Test khả năng thêm mới hoặc xóa một kỹ năng khỏi chuỗi (Sequence mutation).
+## Phụ lục (Important Note from Review):
+- Hệ thống `SkillPresetController` (hàm `set_skill_slot`) bản chất đã là mảng mở rộng (`while len(...) <= position`). Do đó Task 1 này khá đơn giản, chủ yếu là bạn chỉ cần viết các hàm `get_combo_slots()` và `get_buff_slots()` ở `SkillPanelController` để Timeline Strip gọi và render ra vòng lặp thay vì fix cứng `range(4)`.
