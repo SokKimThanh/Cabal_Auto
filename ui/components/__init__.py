@@ -9,6 +9,7 @@ from .confirmation_widget import ConfirmationWidget
 from .notification_widget import NotificationWidget
 from .icon_form_component import IconFormComponent
 from .combo_rhythm_bar import ComboRhythmBar
+from .skill_timeline_strip import SkillTimelineStrip
 
 __all__ = [
     "IconFormComponent",
@@ -17,4 +18,5 @@ __all__ = [
     "ConfirmationWidget",
     "NotificationWidget",
     "ComboRhythmBar",
+    "SkillTimelineStrip",
 ]
