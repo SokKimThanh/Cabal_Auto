@@ -87,6 +87,8 @@ class IconSyncManager:
                 # Ví dụ filepath="btn_add.png" -> btn_add
                 if filepath:
                     filepath = Path(filepath).stem
+                else:
+                    filepath = None
 
                 export_data[icon_key] = [filepath, fallback_emoji]
 
