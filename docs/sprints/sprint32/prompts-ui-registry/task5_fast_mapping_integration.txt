@@ -1,0 +1,13 @@
+Mục tiêu Task 5: Fast-Mapping & Context Menu Integration (30 phút)
+
+1. Xây dựng một trình hỗ trợ (Helper) gọi là `ContextActionHelper` hoặc các hàm tiện ích để gắn (bind) sự kiện Right-Click (Chuột phải) vào các Widget trên giao diện (các phần tử có element_id, đặc biệt là UI đại trà như `CommonUI`).
+2. Khi người dùng bấm chuột phải vào nút bấm/widget đó, hệ thống sẽ mở ra `IconPickerWindow`.
+3. Nhận giá trị trả về: Sau khi người dùng chọn một Icon từ Picker, hàm callback sẽ nhận được ID icon.
+4. Cập nhật tức thì:
+   - Gọi `IconService` để Insert hoặc Update (Upsert) bản ghi tương ứng vào bảng `icon_usages` (gắn kết Icon ID với element_id).
+   - Gọi phương thức cấu hình lại UI trên chính Widget đó (`widget.config(image=...)`) để cập nhật hiển thị Icon ngay lập tức mà không yêu cầu khởi động lại ứng dụng.
+
+Rủi ro & Điểm yếu tiềm ẩn (Rollout Risks/Pitfalls):
+- **Sự khác biệt Hệ điều hành cho Chuột Phải:** Hệ điều hành Windows bắt sự kiện chuột phải bằng ký hiệu `<Button-3>`, trong khi trên MacOS hoặc một số máy Linux cũ có thể là `<Button-2>` hoặc `<Button-3>`. Nên sử dụng Helper chung để bind cả 2 phòng trường hợp hoặc kiểm tra platform.
+- **Biến `StringVar` không cập nhật UI:** Nếu quá trình update Icon liên quan tới các Text Labels thay vì nút bấm, hãy đảm bảo các biến `tk.StringVar` bị ảnh hưởng cũng được kích hoạt đồng bộ (nếu áp dụng), thay vì chỉ ép event handler của widget hoạt động.
+- **Thay đổi trạng thái ngoài vòng lặp (Desync):** Việc cập nhật một Widget có thể làm thay đổi trạng thái chọn trong các Split-Pane phức tạp nếu mã nguồn cố tình bắn giả lập event chọn. Hãy đảm bảo chỉ dùng phương thức `.config()` trực tiếp lên widget để hiển thị Icon, tránh gây vòng lặp vô hạn `<<TreeviewSelect>>` trong hệ thống.

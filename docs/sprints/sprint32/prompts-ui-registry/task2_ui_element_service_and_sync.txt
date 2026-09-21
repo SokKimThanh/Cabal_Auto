@@ -1,0 +1,15 @@
+Mục tiêu Task 2: UI Element Service & Sync (30 phút)
+
+1. Xây dựng dịch vụ quản lý UI Element (ví dụ: `UIElementService` trong `lib/db/services/ui_element_service.py` hoặc thêm vào file services phù hợp).
+   - Thực hiện các phương thức CRUD chuẩn (Create, Read, Update, Delete) cho bảng `ui_elements`.
+   - Hàm lấy toàn bộ hoặc lọc danh sách element từ DB, bao gồm việc join với thông tin icon trong bảng `icon_usages` nếu cần hiển thị.
+2. Cập nhật `lib/db/services/icon_sync_manager.py` (hoặc tạo script/hàm đồng bộ):
+   - Khi ứng dụng khởi chạy, đọc toàn bộ dữ liệu metadata từ `UIElementRegistry`.
+   - Thực hiện đồng bộ (Sync) dữ liệu này xuống bảng `ui_elements`.
+   - Quy định mặc định tính độc quyền (ví dụ: loại `sidebar_button` hoặc tab chính sẽ có `is_exclusive = 1`).
+   - Cần bổ sung thêm trường thuộc tính `is_exclusive` cho class `UIElementDescriptor` trong `lib/events/ui_element_registry.py` để hỗ trợ việc phân loại này từ phía Registry.
+
+Rủi ro & Điểm yếu tiềm ẩn (Rollout Risks/Pitfalls):
+- **Hiệu năng Insert chậm chạp (Lag on Boot):** Tránh việc sử dụng vòng lặp (for loop) để thực hiện insert đơn lẻ (single row insert) đối với hàng trăm phần tử giao diện, điều này có thể gây giật lag và block UI thread lúc khởi động. Hãy sử dụng cơ chế Bulk Insert / Upsert bằng executemany().
+- **Xử lý duplicate registrations (Trùng lặp Registry):** Registry theo memory đôi khi có thể quét (scan) lại các view khi re-render. Việc sync cần phải thiết kế idempotent. Sử dụng lệnh `INSERT OR IGNORE` hoặc `INSERT OR REPLACE` để dựa vào Composite Key `(module, screen, element_id)` bỏ qua các bản ghi đã có sẵn, hoặc cập nhật nếu có thay đổi.
+- **Rò rỉ Widget trong Registry:** Đảm bảo `UIElementRegistry` chỉ lưu thuần metadata (chuỗi str), tuyệt đối không để lọt tham chiếu trực tiếp của đối tượng Tkinter Widget vào registry, nếu không quá trình Sync Service có thể lưu trữ rác hoặc gây memory leak.
