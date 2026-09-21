@@ -158,63 +158,49 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
-        self.btn_add = tk.Button(
-            btn_container,
-            text="➕",
+        from ui.components.icon_button import create_icon_button
+
+        self.btn_add = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_add",
+            icon_name="add",
+            text="➕", # fallback
             command=self._on_monster_add_smart,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default",
+            tooltip_key="monster_rotation_add"
         )
         self.btn_add.pack(pady=(0, 4))
-        UIHelper.create_tooltip(
-            self.btn_add, self.app._t("monster_rotation_add")
-        )
 
-        self.btn_move_up = tk.Button(
-            btn_container,
-            text="↑",
+        self.btn_move_up = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_up",
+            icon_name="up",
+            text="↑", # fallback
             command=self._on_monster_move_up,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default"
         )
         self.btn_move_up.pack(pady=(0, 4))
 
-        self.btn_move_down = tk.Button(
-            btn_container,
-            text="↓",
+        self.btn_move_down = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_down",
+            icon_name="down",
+            text="↓", # fallback
             command=self._on_monster_move_down,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default"
         )
         self.btn_move_down.pack(pady=(0, 12))
 
-        self.btn_remove_monster = self.app._create_icon_button(
-            btn_container,
-            icon_emoji="✖",
+        self.btn_remove_monster = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_remove",
+            icon_name="delete",
+            text="✖", # fallback
             command=self._on_monster_delete_from_list,
-            style="compact",
-            bg_color=UI.DANGER,
-            hover_color=UI.ACCENT_AMBER,
+            button_type="danger",
+            tooltip_key="monster_rotation_remove"
         )
         self.btn_remove_monster.pack()
-        UIHelper.create_tooltip(
-            self.btn_remove_monster, self.app._t("monster_rotation_remove")
-        )
 
 
         # 2. Detected UI (All Resolved view)
@@ -263,22 +249,17 @@ class MonsterTargetPanel(ttk.LabelFrame):
             if hasattr(self.app, "monster_rotation_controller"):
                 self.app.monster_rotation_controller.promote_detected_monster(runtime_item)
 
-        self.btn_promote_monster = tk.Button(
-            detected_btn_container,
-            text="➕",
+        from ui.components.icon_button import create_icon_button
+        self.btn_promote_monster = create_icon_button(
+            parent=detected_btn_container,
+            element_id="btn_target_promote",
+            icon_name="add",
+            text="➕", # fallback
             command=promote_current_selection,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default",
+            tooltip_key="monster_rotation_promote"
         )
         self.btn_promote_monster.pack(pady=(0, 4))
-        UIHelper.create_tooltip(
-            self.btn_promote_monster, self.app._t("monster_promote")
-        )
 
         self.detected_monsters_listbox.bind("<Double-1>", lambda e: promote_current_selection())
         self.detected_monsters_listbox.bind("<Return>", lambda e: promote_current_selection())

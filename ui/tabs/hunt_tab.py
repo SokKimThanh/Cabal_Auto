@@ -322,7 +322,7 @@ class HuntTab(ttk.Frame):
 
         self.app.state_controller.set_ui_var('bring_front', bool(self.app.state_controller.hunt_cfg.get("bring_to_front_each_cycle", False)))
 
-        # Layout: 4-Panel Workspace Redesign (ResponsiveGridBase Version)
+        # Layout: 4-Panel Workspace Redesign (PanedWindow Version Task 10)
 
         try:
             scale_factor = (
@@ -336,27 +336,22 @@ class HuntTab(ttk.Frame):
 
         # Main static container for the entire tab
         self.main_container = tk.Frame(self, bg=UI.BG_BASE)
-        self.main_container.pack(fill=tk.BOTH, expand=True)
+        self.main_container.pack(fill=tk.BOTH, expand=True, padx=UI.SPACE_MD, pady=UI.SPACE_MD)
 
-        # Responsive Scrollable Grid for ALL panels
-        from ui.components.base.responsive_grid_base import ResponsiveGridBase
-        self.scrollable_workspace = ResponsiveGridBase(self.main_container, bg=UI.BG_BASE)
-        self.scrollable_workspace.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=UI.SPACE_MD, pady=UI.SPACE_MD)
+        self.paned_window = ttk.PanedWindow(self.main_container, orient=tk.HORIZONTAL)
+        self.paned_window.pack(fill=tk.BOTH, expand=True)
 
-        content_frame = self.scrollable_workspace.get_content_frame()
-        content_frame.config(bg=UI.BG_BASE)
+        # We need a style for paned window to ensure background matches
+        style = ttk.Style()
+        style.configure('TPanedwindow', background=UI.BG_BASE)
 
-        # Set up a 12-column grid layout inside the responsive area (Bootstrap-like)
-        for i in range(12):
-            content_frame.columnconfigure(i, weight=1)
+        # Left Column Container (~58%)
+        self.left_col_frame = tk.Frame(self.paned_window, bg=UI.BG_BASE)
+        self.paned_window.add(self.left_col_frame, weight=58)
 
-        # Left Column Container (spans 7 columns: ~58%)
-        self.left_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
-        self.left_col_frame.grid(row=0, column=0, columnspan=7, sticky="nsew", padx=(0, UI.SPACE_MD))
-
-        # Right Column Container (spans 5 columns: ~42%)
-        self.right_col_frame = tk.Frame(content_frame, bg=UI.BG_BASE)
-        self.right_col_frame.grid(row=0, column=7, columnspan=5, sticky="nsew")
+        # Right Column Container (~42%)
+        self.right_col_frame = tk.Frame(self.paned_window, bg=UI.BG_BASE)
+        self.paned_window.add(self.right_col_frame, weight=42)
 
         # Stack panels inside the columns
         from ui.panels.monster_target_panel import MonsterTargetPanel
