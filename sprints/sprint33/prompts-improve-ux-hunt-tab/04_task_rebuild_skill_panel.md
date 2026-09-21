@@ -24,3 +24,4 @@ Lắp ráp các thành phần đã tạo ở Task 1, 2, 3 vào file UI chính c�
 
 ## Hướng dẫn trả Nợ Kỹ Thuật (Technical Debt Paydown)
 - **Sửa Lỗi Binding Vô Danh:** Lỗi kỹ thuật tồn tại từ lâu là nút "Start/Stop" chỉ đổi UI mà không update trạng thái thực sự xuống backend. Bạn phải trả khoản nợ này bằng cách: Đảm bảo Toggle Button mới cập nhật đúng vào config `combo.enabled` thông qua Controller, để Orchestrator có thể nhận biết được thao tác của người dùng.
+- **i18n Hardcode:** Các trạng thái "Bật Auto Combo", "Đang chạy Combo" không được code cứng. Hãy dùng `self._t("...")` để đảm bảo hệ thống chuyển đổi ngôn ngữ hoạt động.

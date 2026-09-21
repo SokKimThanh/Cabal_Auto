@@ -68,6 +68,9 @@
 - [ ] Dữ liệu config cũ có được Validate, TẠO FILE BACKUP (.bak) và Migrate an toàn, chống mất cấu hình do `KeyError` không?
 
 ## Quản trị Nợ Kỹ thuật (Technical Debt Check)
+- [ ] Bounding Box vẽ lên màn hình Live Preview có được scale toán học tỷ lệ thuận với độ thu nhỏ của khung ảnh không?
+- [ ] Ghi file `hunt_config.json` có sử dụng cơ chế Atomic Write (`.tmp` -> `os.replace`) để chống lỗi 0 byte do I/O Race Condition chưa?
+- [ ] Mọi string UI mới thêm vào (Nút, Label) có sử dụng hàm i18n (`_t()`) thay vì text thuần Việt chưa?
 - [ ] Code mới KHÔNG gọi trực tiếp `hunt_cfg.get()` trên lớp UI (View) mà thông qua Controller chưa?
 - [ ] Đã hoàn toàn loại bỏ việc truyền object quá lớn (như raw frame Numpy) qua EventBus chưa?
 - [ ] Không có bất kỳ vòng lặp đồ họa `self.after()` nào bị bỏ sót bên ngoài `UIAnimationManager` chứ?
