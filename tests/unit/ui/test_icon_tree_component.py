@@ -47,6 +47,16 @@ class TestIconTreeComponent(unittest.TestCase):
             on_interaction_callback=self.on_interaction_mock
         )
 
+        # Mock after to run immediately
+        # Mock after to run immediately
+        def dummy_after(ms, func, *args):
+            func(*args)
+            return "dummy_id"
+        self.component.after = dummy_after
+        self.component.after_cancel = lambda id: None
+
+
+
     def tearDown(self):
         tk.StringVar = self._orig_string_var
         self.root.destroy()

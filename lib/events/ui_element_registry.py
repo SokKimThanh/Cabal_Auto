@@ -20,6 +20,7 @@ class UIElementDescriptor:
     module: str
     screen: str
     element_type: str
+    is_exclusive: bool = False
 
 class UIElementRegistry:
     _instance = None

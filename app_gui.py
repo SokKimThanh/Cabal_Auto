@@ -153,6 +153,7 @@ class App:
             db = get_db()
             icon_service = IconService(db.conn)
             self.icon_sync_manager = IconSyncManager(icon_service)
+            self.icon_sync_manager.sync_registry_to_db(db.conn)
         except Exception as e:
             print(f"Error initializing IconSyncManager: {e}")
 

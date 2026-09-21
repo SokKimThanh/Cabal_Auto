@@ -23,8 +23,8 @@ def test_insert_icon_and_usage(db_conn):
 
     # Insert an icon
     cursor.execute("""
-        INSERT INTO icons (icon_key, name, fallback_emoji, category, description)
-        VALUES ('test_icon', 'Test Icon', '😎', 'Test Category', 'A test icon')
+        INSERT INTO icons (icon_key, name, fallback_emoji, category_id, description)
+        VALUES ('test_icon', 'Test Icon', '😎', 1, 'A test icon')
     """)
     db_conn.commit()
 
@@ -33,7 +33,7 @@ def test_insert_icon_and_usage(db_conn):
     icon_row = cursor.fetchone()
     assert icon_row is not None
     assert icon_row[0] == 'test_icon'
-    assert icon_row[5] == 'Test Category' # Category
+    assert icon_row[5] == 1 # Category
 
     # Insert an icon usage
     cursor.execute("""
@@ -55,17 +55,35 @@ def test_unique_icon_key_constraint(db_conn):
 
     # Insert first icon
     cursor.execute("""
-        INSERT INTO icons (icon_key, name, fallback_emoji, category)
-        VALUES ('duplicate_icon', 'First Icon', '😎', 'General')
+        INSERT INTO icons (icon_key, name, fallback_emoji, category_id)
+        VALUES ('duplicate_icon', 'First Icon', '😎', 1)
     """)
     db_conn.commit()
 
     # Attempt to insert second icon with the same key
     with pytest.raises(sqlite3.IntegrityError) as exc_info:
         cursor.execute("""
-            INSERT INTO icons (icon_key, name, fallback_emoji, category)
-            VALUES ('duplicate_icon', 'Second Icon', '🤓', 'General')
+            INSERT INTO icons (icon_key, name, fallback_emoji, category_id)
+            VALUES ('duplicate_icon', 'Second Icon', '🤓', 1)
         """)
         db_conn.commit()
 
     assert "UNIQUE constraint failed" in str(exc_info.value).lower() or "unique constraint failed" in str(exc_info.value).lower()
+
+def test_ui_element_unique_constraint(db_conn):
+    cursor = db_conn.cursor()
+
+    # Insert first ui element
+    cursor.execute("""
+        INSERT INTO ui_elements (element_id, module_name, screen_name, component_type, is_exclusive)
+        VALUES ('btn_test', 'test_module', 'test_screen', 'button', 0)
+    """)
+    db_conn.commit()
+
+    # Attempt to insert second with the same composite key
+    with pytest.raises(sqlite3.IntegrityError):
+        cursor.execute("""
+            INSERT INTO ui_elements (element_id, module_name, screen_name, component_type, is_exclusive)
+            VALUES ('btn_test', 'test_module', 'test_screen', 'button', 1)
+        """)
+        db_conn.commit()
