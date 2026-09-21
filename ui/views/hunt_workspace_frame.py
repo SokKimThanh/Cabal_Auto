@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from ui.tabs.hunt_tab import HuntTab
+from ui.components.hunt_status_ticker import HuntStatusTicker
 
 
 class HuntWorkspaceFrame(ttk.Frame):
@@ -10,8 +11,12 @@ class HuntWorkspaceFrame(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
+
+        self.status_ticker = HuntStatusTicker(self, app)
+        self.status_ticker.pack(side="bottom", fill="x")
+
         self.hunt_tab = HuntTab(self, app)
-        self.hunt_tab.pack(fill="both", expand=True)
+        self.hunt_tab.pack(side="top", fill="both", expand=True)
 
         # Temporary backward compatibility mappings for external references
         self.app.btn_move_up = getattr(self.app, "btn_move_up", None)
