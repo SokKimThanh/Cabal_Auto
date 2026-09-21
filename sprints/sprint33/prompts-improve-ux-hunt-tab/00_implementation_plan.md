@@ -47,3 +47,8 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 - **Vấn đề:** Các Panel bên trong Tab Hunt (đặc biệt là `MonsterTargetPanel`, `SkillPanel`, `TargetStatusPanel`) đang sử dụng rất nhiều Emoji tĩnh (hardcoded emojis như 🔴, 🟢, 🎯, ℹ️, ➕) và các Nút bấm (Button) thuần chữ (text-only) không đồng bộ với ngôn ngữ thiết kế chung của hệ thống.
 - **Giải pháp:** Cần tái cấu trúc toàn bộ nút bấm ở Tab Hunt để sử dụng hàm `create_icon_button` từ `ui.components`. Các nhãn (Label) chứa Emoji cũng cần được thay bằng `create_icon_label` hoặc thông qua `IconHelper`. Đảm bảo tất cả component mới phải đăng ký mã Element ID vào Registry.
 - **Task bổ sung:** Task 9: Chuẩn hóa hệ thống Icon cho Tab Hunt.
+
+### 10. Bổ sung quan trọng (Layout Re-architecture & Typography)
+- **Vấn đề:** Bố cục HuntTab hiện tại dùng `ResponsiveGridBase` cố định chia màn hình thành 2 nửa (58/42). Điều này cản trở người dùng có màn hình tỷ lệ khác nhau. Cùng với đó, các Text Header bên trong Panel không có sự phân cấp rõ rệt, nhìn giống text thông thường.
+- **Giải pháp:** Đổi Grid tĩnh thành `ttk.PanedWindow` (hướng ngang) để cho phép người dùng tự do kéo thả kích thước cột Setup (Trái) và Monitor (Phải). Chuẩn hóa các Title trong Panel bằng `UIStyleV2.get_font("title", weight="bold")`.
+- **Task bổ sung:** Task 10: Tái cấu trúc Layout và Phân cấp Typography.

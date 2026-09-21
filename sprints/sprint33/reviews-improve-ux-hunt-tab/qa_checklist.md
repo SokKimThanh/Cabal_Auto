@@ -50,3 +50,8 @@
 - [ ] Tất cả các Button có sử dụng đúng `create_icon_button` và truyền `element_id` để đăng ký Registry không?
 - [ ] Hình ảnh (Icons) có bị nhấp nháy hoặc biến mất (thành nền trắng/đen) khi hover chuột hoặc sau vài giây không? (Check: Phải giữ reference `.image = img`).
 - [ ] Các đoạn logic cũ sử dụng `.config(text="✓")` để cập nhật trạng thái đã được đổi thành việc thay đổi Icon key chưa?
+
+## Task 10: Layout and Typography Hierarchy
+- [ ] Màn hình HuntTab đã cho phép kéo thả ranh giới giữa bên Trái (Setup) và bên Phải (Monitor) chưa? (Bằng PanedWindow).
+- [ ] Khi thu hẹp tối đa một bên, layout có bị tràn ra ngoài màn hình không? (Check: Phải set `minsize` cho các Pane).
+- [ ] Các tiêu đề (Title) của Panel có to và rõ ràng hơn các Text nội dung (Hierarchy) nhờ sử dụng `UIStyleV2.get_font("title", weight="bold")` chưa?
