@@ -1,0 +1,14 @@
+Mục tiêu Task 4: Icon Picker Window Dialog (30 phút)
+
+1. Xây dựng một Popup Dialog mang tên `IconPickerWindow` kế thừa từ `tk.Toplevel`.
+2. Giao diện của Dialog bao gồm:
+   - Một ô tìm kiếm (Search bar) nằm trên cùng để lọc tên biểu tượng.
+   - Một vùng hiển thị lưới (Grid/Canvas kết hợp Frame cuộn) ở giữa để hiển thị các Thumbnail (biểu tượng thu nhỏ) của các thư viện Icon sẵn có.
+3. Chức năng chính:
+   - Khi khởi tạo dialog, load danh sách icon từ DB (bảng `icons`) hoặc file system.
+   - Khi nhấp chọn vào một Icon cụ thể trong lưới, Dialog sẽ trả về ID hoặc đường dẫn của Icon cho đối tượng gọi nó và tiến hành huỷ/đóng (destroy) Dialog.
+
+Rủi ro & Điểm yếu tiềm ẩn (Rollout Risks/Pitfalls):
+- **Memory Leak Hình Ảnh (Garbage Collection):** Trong Tkinter, nếu bạn không lưu trữ lại (giữ tham chiếu) của đối tượng ảnh `PhotoImage` (ví dụ: gán vào list `self._image_refs = []`), Python's Garbage Collector sẽ xóa mất đối tượng bộ nhớ và ảnh sẽ không hiển thị trên lưới.
+- **Giật lag UI (UI Lag/Freeze):** Nếu thư viện có hàng ngàn icon gốc độ phân giải cao, việc resize và nạp thẳng lên Tkinter Canvas bằng vòng lặp đồng bộ sẽ làm đơ UI. Cần phải thu nhỏ (thumbnail) và giới hạn số lượng nạp / sử dụng kỹ thuật Lazy Loading hoặc phân trang (Pagination) cho lưới nếu cần thiết.
+- **Không có Debounce ở ô Tìm kiếm:** Nếu gắn event trực tiếp bắt mọi phím gõ ở ô Search (KeyRelease) để filter lại danh sách Icon lớn, sẽ gây lag do re-render liên tục. Cần áp dụng hàm `after()` của Tkinter để debounce sự kiện tìm kiếm từ 300ms - 500ms trước khi thực hiện nạp lại lưới.

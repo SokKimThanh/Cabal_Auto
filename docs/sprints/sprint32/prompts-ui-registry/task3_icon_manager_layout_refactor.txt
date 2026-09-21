@@ -1,0 +1,13 @@
+Mục tiêu Task 3: Layout Refactoring Icon Manager (30 phút)
+
+1. Tái cấu trúc layout chính của màn hình Icon Manager:
+   - Tách các nút hành động toàn cục (như `btn_refresh` và `btn_sync`) khỏi cấu trúc bên trong của các tab chi tiết (VD: `tab_details`).
+   - Đưa các nút này lên thanh công cụ phía trên (Top Action Bar) trong vùng content frame gốc. Điều này giúp thao tác này luôn xuất hiện và có thể nhấp chuột bất kể người dùng đang chọn xem tab nào.
+2. Nâng cấp hiển thị `ttk.Treeview`:
+   - Thêm một cột mới vào bảng danh sách "Available Elements" (Thành phần cần gắn icon) để hiển thị cột `Type (Exclusive)`.
+   - Hiển thị các icon/ký hiệu trực quan (VD: `🔒` cho Độc quyền, `🌐` cho Đại trà) dựa vào trường `is_exclusive` được lấy từ cơ sở dữ liệu (`ui_elements`).
+
+Rủi ro & Điểm yếu tiềm ẩn (Rollout Risks/Pitfalls):
+- **Xung đột Geometry Manager:** Khi di chuyển các frame từ vùng này sang vùng khác, hãy tuyệt đối tránh việc sử dụng đồng thời `pack()` và `grid()` bên trong cùng một container cha. Điều này sẽ dẫn đến lỗi nghiêm trọng `_tkinter.TclError` và làm sập toàn bộ ứng dụng.
+- **Lỗi cột `_tkinter.TclError: Invalid column index`:** Khi cấu hình cột mới trong `ttk.Treeview`, không sử dụng các khoảng trắng (leading spaces) khi khai báo index nội bộ (VD: Dùng `#0` thay vì `" #0"`).
+- **Mất biến điều khiển:** Việc nhấc nút bấm khỏi tab lên level cha có thể làm đứt gãy kết nối với Controller (không gọi được các event handler liên kết cũ). Cần kiểm tra kỹ việc bind (gắn) event từ Top Action Bar sang phương thức của Controller.

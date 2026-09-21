@@ -1,0 +1,20 @@
+Mục tiêu Task 1: Database Migration & Schema (30 phút)
+
+1. Cập nhật schema cơ sở dữ liệu để thêm bảng `ui_elements`.
+   - Bảng này đóng vai trò là "Source of Truth" cho các thành phần giao diện.
+   - Các cột yêu cầu:
+     - `id`: INTEGER PRIMARY KEY.
+     - `element_id`: TEXT NOT NULL.
+     - `module_name`: TEXT NOT NULL.
+     - `screen_name`: TEXT NOT NULL.
+     - `component_type`: TEXT NOT NULL.
+     - `is_exclusive`: BOOLEAN DEFAULT 0 (1 = Exclusive, 0 = Common).
+     - `description`: TEXT.
+   - Thêm ràng buộc Composite Unique Key: `UNIQUE(module_name, screen_name, element_id)` để chống trùng lặp.
+2. Việc tạo bảng phải được thêm vào script setup cơ sở dữ liệu (`lib/db/database_setup.py` hoặc file khởi tạo schema tương tự).
+3. Đảm bảo tính tương thích ngược (Backward Compatibility) với bảng `icon_usages`.
+   - Hiện tại `icon_usages` sử dụng các cột rời rạc (module_name, ui_component_type, ui_element_id). Ở giai đoạn này, bạn vẫn giữ nguyên schema hiện tại của `icon_usages` (Cách 1 trong đề xuất) nhằm tránh gián đoạn hệ thống. Logic map icon sẽ được xử lý ở tầng Python (Service).
+
+Rủi ro & Điểm yếu tiềm ẩn (Rollout Risks/Pitfalls):
+- **Xung đột lock database (Database Lock):** Trong SQLite, nếu quá trình migration/setup cố gắng tạo bảng trong khi có kết nối đọc/ghi khác đang mở, có thể xảy ra lỗi `database is locked`. Hãy đảm bảo việc setup schema thực hiện đồng bộ ngay từ lúc khởi động (Boot phase) trước khi các UI thread khởi chạy.
+- **Thiếu cấu trúc Composite Key:** Cần đặc biệt chú ý khai báo khóa duy nhất kết hợp `UNIQUE(module_name, screen_name, element_id)` ở cuối cấu trúc tạo bảng để SQLite chấp nhận, tránh lỗi cú pháp.
