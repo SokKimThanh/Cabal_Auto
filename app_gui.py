@@ -144,6 +144,18 @@ class App:
             self.db_scan_service = getattr(di_container, "db_scan_service", None)
             self.skill_caster_service = getattr(di_container, "skill_caster_service", None)
 
+        # Initialize IconSyncManager so it binds to EventBus and responds to IconManagerSyncEvent
+        try:
+            from lib.db.services.icon_sync_manager import IconSyncManager
+            from lib.db.services.icon_service import IconService
+            from database import get_db
+
+            db = get_db()
+            icon_service = IconService(db.conn)
+            self.icon_sync_manager = IconSyncManager(icon_service)
+        except Exception as e:
+            print(f"Error initializing IconSyncManager: {e}")
+
         self.pil_available = (
             Image is not None and ImageTk is not None and ImageDraw is not None
         )
