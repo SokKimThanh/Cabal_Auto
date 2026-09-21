@@ -66,3 +66,8 @@
 - [ ] `UIAnimationManager` có logic ghi đè (override/cancel) tiến trình Tweening cũ nếu một Event mới đè lên để tránh thanh HP bị chạy thụt lùi không?
 - [ ] Tốc độ loop của Orchestrator (Hunt Thread) có bị drop quá 2ms (Baseline Test: Core i5 Gen 8th) khi các tính năng UI mới đang chạy không?
 - [ ] Dữ liệu config cũ có được Validate, TẠO FILE BACKUP (.bak) và Migrate an toàn, chống mất cấu hình do `KeyError` không?
+
+## Quản trị Nợ Kỹ thuật (Technical Debt Check)
+- [ ] Code mới KHÔNG gọi trực tiếp `hunt_cfg.get()` trên lớp UI (View) mà thông qua Controller chưa?
+- [ ] Đã hoàn toàn loại bỏ việc truyền object quá lớn (như raw frame Numpy) qua EventBus chưa?
+- [ ] Không có bất kỳ vòng lặp đồ họa `self.after()` nào bị bỏ sót bên ngoài `UIAnimationManager` chứ?

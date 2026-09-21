@@ -34,3 +34,9 @@ Triển khai các đề xuất cải tiến từ tài liệu `docs/proposals/UX_
 2. Overhead CPU của toàn hệ thống khi chạy tính năng Snapshot Debugger không vượt quá 5%.
 3. Không văng lỗi TclError khi tắt ứng dụng hoặc đóng popup.
 4. Giao diện mượt mà, phân cấp Typography chuẩn bằng `UIStyleV2`.
+## 6. Nợ kỹ thuật phải trả (Technical Debt)
+Trong quá trình triển khai Sprint 33, lập trình viên cần chú ý giải quyết (hoặc không làm trầm trọng thêm) các khoản nợ kỹ thuật sau:
+1. **Tight Coupling UI & Config (Khớp nối cứng):** Các Panel hiện tại đang chọc thẳng vào `app.state_controller.hunt_cfg.get(...)`. Cần refactor đưa các luồng đọc/ghi này vào bên trong Controller (ví dụ: `HuntConfigController`) để UI chỉ nhận dữ liệu sạch.
+2. **Missing Schema Validation:** File `hunt_config.json` đang được đọc/ghi dưới dạng Dictionary thô (Raw Dict). Điều này gây rủi ro crash (KeyError) rất cao khi cấu trúc thay đổi (ví dụ chuyển `region` sang `rois`). Nợ kỹ thuật này cần được trả bằng cách áp dụng `Pydantic` hoặc `dataclasses` để map JSON thành Object an toàn ở các Sprint sau.
+3. **EventBus Payload Bloat:** EventBus chỉ nên dùng để truyền tín hiệu (Signal), KHÔNG dùng để truyền tải dữ liệu lớn/thay đổi liên tục (như raw image frames). Bất kỳ luồng Event nào đang làm điều này cần được refactor thành Method Call trực tiếp.
+4. **Phân mảnh Tkinter Event Loop:** Tất cả các lệnh `self.after()` phục vụ cho hoạt họa đồ họa rải rác ở các file cũ cần được thu gom lại và quản lý tập trung bởi `UIAnimationManager`.
