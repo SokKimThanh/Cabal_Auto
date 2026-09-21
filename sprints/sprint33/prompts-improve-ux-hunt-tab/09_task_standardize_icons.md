@@ -4,7 +4,7 @@
 Dự án có quy định nghiêm ngặt về việc sử dụng hệ thống quản lý Icon (`IconHelper`, `UIElementRegistry`, database `icons`) để đảm bảo UI đồng nhất và có thể thay đổi icon theme mà không phải sửa code. Tuy nhiên, các Panel trong Tab Hunt (Target Setup, Active Skills, Target Status) đang bị lỗi "hardcode" rất nhiều emoji bằng text (như `🎯`, `➕`, `⏱`, `🔴`, `🟢`) và các nút bấm chưa tuân chuẩn thiết kế `create_icon_button`.
 
 ## Yêu cầu (Requirements)
-1. Rà soát file `ui/panels/monster_target_panel.py`:
+1. Rà soát file `ui/panels/monster_target_panel.py` (File này đã được thêm vào scope Task 9):
    - Thay thế toàn bộ `tk.Button` bằng hàm `create_icon_button(..., element_id="...")`.
    - Các icon như (Move Up, Move Down, Delete, Add) phải sử dụng các `button_type` chuẩn (như `red`, `blue`, `green_light`) hoặc fallback icon key tương ứng.
 2. Rà soát file `ui/panels/skill_panel.py` và `ui/panels/target_status_panel.py`:

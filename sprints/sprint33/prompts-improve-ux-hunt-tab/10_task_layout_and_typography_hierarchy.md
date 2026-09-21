@@ -5,7 +5,7 @@ Tab Hunt đang được chia thành 2 cột với tỷ lệ cứng `58/42` sử 
 
 ## Yêu cầu (Requirements)
 1. Trong file `ui/tabs/hunt_tab.py`:
-   - Thay thế việc phân chia `12-column grid` của `ResponsiveGridBase` bằng một component `ttk.PanedWindow(orient=tk.HORIZONTAL)`.
+   - Thay thế việc phân chia `12-column grid` của `ResponsiveGridBase` bằng một component `ttk.PanedWindow(orient=tk.HORIZONTAL)`. LƯU Ý: Chỉ thay thế component này ở trong file `HuntTab`, KHÔNG xóa class `ResponsiveGridBase` đi vì nó có thể đang được các tab khác dùng.
    - Đưa `left_col_frame` và `right_col_frame` vào làm 2 khung (pane) của `PanedWindow` này.
    - Thiết lập tỷ lệ (weight) khởi tạo sao cho 2 cột cân bằng theo tỷ lệ cũ nhưng cho phép người dùng kéo thanh chia (Sash).
 2. Chuẩn hóa Phân cấp Typography:
