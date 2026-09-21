@@ -24,3 +24,6 @@
 - [ ] Chữ số HP/MP có sử dụng Monospace Font (font_mono) chưa?
 - [ ] Khi mục tiêu mất máu cực nhanh, animation Tween có bị queue lùi (chạy chậm hơn thực tế) không? (Check: Cập nhật biến target_width tức thời).
 - [ ] Có crash `TclError` khi tắt panel lúc thanh máu đang animate không? (Check: `winfo_exists()`).
+## Phụ lục QA Cập nhật
+- [ ] Task 5: File `SkillStatsPanel` đã thực hiện gọi `EventBus.bind(SkillStatsUpdatedEvent)` và cập nhật được data động lên bảng chưa?
+- [ ] Task 5: Hàm Tweening Animation của HP bar có chạy ở 60 FPS (~`after(16)`) để bù lại khoảng thời gian trống 200ms của Scanner không?

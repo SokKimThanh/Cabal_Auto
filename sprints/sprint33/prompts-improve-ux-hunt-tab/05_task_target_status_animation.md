@@ -17,3 +17,6 @@ Làm cho hiển thị các con số mượt mà, chuyên nghiệp hơn, giảm h
 
 ## Unit Tests Cần Thêm (Unit Tests to Add)
 - (Khó test tự động phần animation), nhưng cần test xem hàm helper update target value có ném lỗi khi object đã bị hủy hay không.
+## Phụ lục (Important Note from Review):
+- **Đối với Skill Stats:** File `ui/panels/skill_stats_panel.py` hiện tại *chưa* có logic subscribe event `SkillStatsUpdatedEvent`! Bạn cần thêm phương thức `_bind_events` (như cách làm của TargetStatusPanel), nhận dữ liệu từ `EventBus` (dictionary `all_stats`) rồi loop qua để `tree.insert()` hoặc `tree.item()` update cho Treeview, lúc đó mới dùng thanh Mini Progress Bar (Unicode bar) để vẽ giá trị `success_rate`.
+- **Đối với Animation Tween:** Scanner bắn HP event bằng hàm `time.sleep` trung bình 100-200ms mỗi khung hình. Hãy dùng hàm nội suy `.after(16)` (tương đương 60fps) trong `TargetStatusPanel` để animate sự chênh lệch máu giữa 2 lần quét mà không gây lag.
