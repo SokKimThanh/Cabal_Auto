@@ -1,0 +1,14 @@
+Tiêu chí Review cho Task 4: Icon Picker Window Dialog
+
+**1. Kiểm tra Chức năng Dialog:**
+- [ ] Màn hình `IconPickerWindow` (Popup) có khởi tạo thành công dưới dạng `tk.Toplevel` và không bị nằm chìm dưới cửa sổ chính (phải dùng `grab_set()` hoặc `transient()`) không?
+- [ ] Popup có thanh tìm kiếm (Search bar) và thanh này có hoạt động đúng (lọc được các Icon dựa trên tên) không?
+- [ ] Vùng chứa Icon (Canvas/Grid) có thanh cuộn (Scrollbar) hoạt động trơn tru khi danh sách icon dài không?
+
+**2. Kiểm tra Hiệu năng & Rủi ro (Pitfalls):**
+- [ ] **Debounce:** Ô tìm kiếm có áp dụng Debounce (VD: gõ xong ngưng 300ms mới bắt đầu lọc lưới) không? Nếu gõ liên tục cực nhanh có làm đơ toàn bộ Tkinter App không?
+- [ ] **Memory Leak Hình Ảnh:** Hình ảnh Thumbnail trong lưới có hiển thị bình thường không? Đảm bảo code có biến lưu trữ tham chiếu ảnh (VD: `self._image_refs`) để Python Garbage Collector không xoá trắng hình (hiện ô vuông trống).
+- [ ] **Khả năng đóng tự động:** Khi người dùng click chọn 1 icon, dialog có lập tức tự đóng (destroy) và trả về kết quả cho hàm gọi nó không?
+
+**3. Unit Test/UI Test:**
+- [ ] Có Mock/Headless test kiểm tra `IconPickerWindow` không? Đảm bảo test được chức năng gõ phím vào SearchBar và kiểm tra số lượng widget kết quả trên lưới.

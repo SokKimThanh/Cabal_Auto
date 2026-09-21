@@ -1,0 +1,16 @@
+Tiêu chí Review cho Task 1: Database Migration & Schema
+
+**1. Kiểm tra Kiến trúc Database:**
+- [ ] Bảng `ui_elements` đã được thêm vào schema hợp lệ chưa (`lib/db/database_setup.py`)?
+- [ ] Bảng có đầy đủ các cột yêu cầu: `id`, `element_id`, `module_name`, `screen_name`, `component_type`, `is_exclusive`, `description` chưa?
+- [ ] Đã khai báo đúng chuẩn Composite Unique Key: `UNIQUE(module_name, screen_name, element_id)` ở cuối lệnh `CREATE TABLE` để chống trùng lặp dữ liệu chưa?
+
+**2. Kiểm tra Tương thích (Backward Compatibility):**
+- [ ] Bảng `icon_usages` có bị sửa đổi gây gãy đổ (breaking changes) đối với các logic cũ không? Đảm bảo chưa thay đổi schema gốc của bảng này (nếu đang đi theo hướng an toàn).
+
+**3. Kiểm tra Rủi ro (Pitfalls):**
+- [ ] Lệnh tạo bảng đã áp dụng cơ chế `IF NOT EXISTS` chưa, để không gây lỗi khi khởi chạy lại ứng dụng lần 2?
+- [ ] Test thử khởi động ứng dụng: Có bị hiện tượng `database is locked` không? Cần đảm bảo khởi tạo db nằm ngoài các luồng thread xung đột.
+
+**4. Unit Test:**
+- [ ] Code có kèm test case kiểm chứng việc vi phạm Composite Unique Key (cố tình chèn 2 bản ghi trùng module/screen/element) bị database từ chối không?
