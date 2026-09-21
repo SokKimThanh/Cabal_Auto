@@ -1,0 +1,17 @@
+Tiêu chí Review cho Task 3: Layout Refactoring Icon Manager
+
+**1. Kiểm tra Giao diện (Layout):**
+- [ ] Các nút `btn_refresh` và `btn_sync` đã hoàn toàn được di chuyển khỏi `tab_details` và hiển thị trên một thanh công cụ dùng chung (Top Action Bar) chưa?
+- [ ] Khi chuyển đổi qua lại giữa các tab, hai nút này có bị biến mất hay lỗi vị trí không?
+
+**2. Kiểm tra TreeView:**
+- [ ] Bảng "Available Elements" đã xuất hiện cột mới hiển thị trạng thái Độc Quyền (Exclusive/Common) chưa?
+- [ ] Cột này có render đúng ký hiệu (VD: 🔒/🌐) hoặc chữ giải thích rõ ràng dựa trên trường `is_exclusive` trong database không?
+
+**3. Kiểm tra Rủi ro (Pitfalls):**
+- [ ] Có xuất hiện lỗi đụng độ `_tkinter.TclError` (do mix `pack()` và `grid()` cùng level cha) khi khởi động UI không?
+- [ ] Các cột trong Treeview có bị crash do khai báo index `#0` sai cách (như thừa dấu cách `" #0"`) không?
+- [ ] Các tính năng cũ của `btn_refresh` và `btn_sync` (khi click vào) có còn hoạt động (trigger đúng hàm controller) không hay đã bị đứt gãy sau khi dời frame?
+
+**4. Unit Test/UI Test:**
+- [ ] Code có test hoặc script để khởi chạy UI thủ công kiểm chứng trạng thái click của các nút Top Action Bar không?

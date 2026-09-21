@@ -1,0 +1,17 @@
+Tiêu chí Review cho Task 2: UI Element Service & Sync
+
+**1. Kiểm tra Dịch vụ (Service):**
+- [ ] Lớp `UIElementService` (hoặc method trong service hiện tại) đã cung cấp đủ các phương thức CRUD chuẩn (đặc biệt là tạo/lấy danh sách) cho bảng `ui_elements` chưa?
+- [ ] Phương thức fetch dữ liệu có khả năng join với bảng `icon_usages` (nếu cần) để kiểm tra element nào đã được gắn icon chưa?
+
+**2. Kiểm tra Đồng bộ (Sync):**
+- [ ] Logic trong `icon_sync_manager.py` có đọc chính xác danh sách từ `UIElementRegistry` không?
+- [ ] Quá trình đồng bộ xuống DB có áp dụng cơ chế Bulk Insert (`executemany`) không? Đảm bảo không sử dụng vòng lặp for gọi `execute` đơn lẻ (Single row insert) gây tụt hiệu năng.
+- [ ] Quá trình đồng bộ có sử dụng `INSERT OR IGNORE` hoặc `INSERT OR REPLACE` an toàn để xử lý Idempotent (chạy nhiều lần không lỗi, tự bỏ qua dữ liệu trùng lặp) chưa?
+
+**3. Kiểm tra Rủi ro (Pitfalls):**
+- [ ] Mở file log khởi động, có xuất hiện lỗi lag (chậm chạp) do quá trình Sync tốn trên 1 giây không?
+- [ ] Kiểm tra memory/log: Lớp `UIElementDescriptor` đã có thuộc tính `is_exclusive` chưa? Các widget Độc quyền (như Sidebar Button) có được map đúng cờ `is_exclusive=1` xuống DB không?
+
+**4. Unit Test:**
+- [ ] Đã có test case kiểm tra việc đồng bộ một `UIElementDescriptor` giả lập xuống Mock Database và kiểm tra số row được tạo ra chưa?

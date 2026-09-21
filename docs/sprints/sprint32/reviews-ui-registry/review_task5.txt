@@ -1,0 +1,17 @@
+Tiêu chí Review cho Task 5: Fast-Mapping & Context Menu Integration
+
+**1. Kiểm tra Binding (Chuột phải):**
+- [ ] Tính năng Context Menu (Chuột phải) đã được gắn thành công lên các UI Element mục tiêu (VD: Các nút thuộc `CommonUI` như `btn_save`) chưa?
+- [ ] Popup `IconPickerWindow` có xuất hiện chính xác khi nhấp chuột phải không?
+- [ ] Code có xử lý đa hệ điều hành (bind cả `<Button-2>` và `<Button-3>`) để hoạt động trên cả Windows, Linux và Mac không?
+
+**2. Kiểm tra Cập nhật & Đồng bộ:**
+- [ ] Sau khi người dùng chọn một icon từ Popup, cơ sở dữ liệu (`icon_usages`) có được thực hiện lệnh Insert hoặc Update ngay lập tức (upsert) với Element_ID tương ứng chưa?
+- [ ] Icon trên Giao diện (Widget gốc) có tự động thay đổi (qua hàm `widget.config(image=...)`) ngay lập tức mà KHÔNG cần khởi động lại ứng dụng không?
+
+**3. Kiểm tra Rủi ro (Pitfalls):**
+- [ ] Quá trình update Icon có làm thay đổi các biến `tk.StringVar` liên quan (nếu là UI chứa label text kết hợp icon) không?
+- [ ] Có xảy ra hiện tượng đệ quy vô hạn (Infinite Loop) của sự kiện `<<TreeviewSelect>>` khi cố gắng force update trạng thái giao diện trong một Split-pane layout không? Đảm bảo code chỉ thay đổi hình ảnh nội bộ.
+
+**4. Unit Test/UI Test:**
+- [ ] Có test case kiểm thử việc gọi Context Menu và mô phỏng (mock) quá trình trả kết quả từ IconPickerWindow xem IconService có được gọi (assert_called) lưu DB thành công không?
