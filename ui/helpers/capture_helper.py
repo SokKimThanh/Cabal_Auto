@@ -108,6 +108,46 @@ class RegionSelector(tk.Toplevel):
         return self._bbox
 
 
+class CaptureHelper:
+    @staticmethod
+    def start_region_selection(parent: Any, callback: Callable[[Optional[Tuple[int, int, int, int]]], None]) -> None:
+        """Utility to securely hide the window, capture screen, run selector, and execute callback."""
+        if pyautogui is None or Image is None:
+            messagebox.showerror("Error", "Missing PyAutoGUI or Pillow dependencies.", parent=parent)
+            callback(None)
+            return
+
+        # Hide window briefly
+        try:
+            if hasattr(parent, "withdraw"):
+                parent.withdraw()
+                parent.update_idletasks()
+            time.sleep(0.5)
+        except Exception:
+            pass
+
+        try:
+            # Capture full screen
+            screenshot = pyautogui.screenshot()
+            selector = RegionSelector(parent, screenshot)
+            bbox = selector.show_modal()  # returns (left, top, w, h)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to capture screen: {e}", parent=parent)
+            bbox = None
+        finally:
+            # Restore window
+            try:
+                if hasattr(parent, "deiconify"):
+                    parent.deiconify()
+                    parent.lift()
+                    parent.focus_force()
+            except Exception:
+                pass
+
+        # Trigger callback with bounding box
+        callback(bbox)
+
+
 def capture_region_and_save(
     parent: Any,
     pil_available: bool,

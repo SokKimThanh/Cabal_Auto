@@ -99,6 +99,33 @@ class MonsterTargetPanel(ttk.LabelFrame):
             rb.pack(side="left", padx=2, pady=4)
             self.policy_radios.append(rb)
 
+        # Hunt Area Set Button
+        def _on_draw_hunt_area():
+            from ui.helpers.capture_helper import CaptureHelper
+            def _on_drawn(region):
+                if region:
+                    if "rois" not in self.app.state_controller.hunt_cfg:
+                        self.app.state_controller.hunt_cfg["rois"] = {}
+                    self.app.state_controller.hunt_cfg["rois"]["hunt_area"] = list(region)
+
+                    from lib.features.hunt.hunt_config import save_hunt_config
+                    success = save_hunt_config(self.app.state_controller.hunt_cfg)
+                    if not success:
+                        print("Failed to save hunt area via save_hunt_config")
+
+            CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
+
+        self.btn_set_hunt_area = tk.Button(
+            mode_bar,
+            text=self.app._t("hunt_area.set") if hasattr(self.app, "_t") else "Set Hunt Area",
+            command=_on_draw_hunt_area,
+            bg=UI.BG_ELEVATED,
+            fg=UI.ACCENT_BLUE,
+            relief="flat",
+            cursor="hand2"
+        )
+        self.btn_set_hunt_area.pack(side="right", padx=10, pady=4)
+
         self.policy_content_frame = tk.Frame(self.monster_frame, bg=UI.BG_SURFACE)
         self.policy_content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 

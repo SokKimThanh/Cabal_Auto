@@ -60,8 +60,16 @@ def save_hunt_config(cfg):
 
 
 import shutil
+from pydantic import BaseModel, Field, ValidationError
+from typing import Dict, Any, Optional, List
 from lib.features.hunt.config_migrator import migrate_hunt_config
 
+class HuntConfigSchema(BaseModel):
+    rois: Dict[str, Optional[List[int]]] = Field(default_factory=dict)
+
+    # We allow extra fields to pass through (it's a large legacy config)
+    class Config:
+        extra = "allow"
 
 def load_hunt_config():
     with _CONFIG_LOCK:
@@ -81,6 +89,27 @@ def load_hunt_config():
 
         # Always migrate (it will skip version changes if already current, but always runs _sanitize_v3)
         data = migrate_hunt_config(data)
+
+        # Validate through Pydantic to avoid dict/list confusion
+        try:
+            validated = HuntConfigSchema(**data)
+            data = validated.model_dump()
+        except ValidationError as e:
+            print(f"Schema Validation Error: {e}")
+            # Auto-restore from .bak if it exists
+            backup_path = HUNT_CONFIG_PATH.with_suffix(".json.bak")
+            if backup_path.exists():
+                print("Auto-restoring from .json.bak due to validation failure...")
+                try:
+                    with open(backup_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    data = migrate_hunt_config(data)
+                    data = HuntConfigSchema(**data).model_dump()
+                except Exception as restore_e:
+                    print(f"Restore failed: {restore_e}. Falling back to default.")
+                    data = HuntConfigSchema().model_dump()
+            else:
+                data = HuntConfigSchema().model_dump()
 
         new_version = data.get("schema_version")
 
