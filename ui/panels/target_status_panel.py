@@ -188,7 +188,7 @@ class TargetStatusPanel(ttk.LabelFrame):
                 if color == "#52525B": # dead
                     self._current_info.hp = 0
                     self._current_info.state = "waiting"
-                    self.update_target(self._current_info)
+                    self.update_target(self._current_info, animate=True)
                 elif color == UI.ACCENT_GREEN: # hunting / full
                     self._current_info.state = "hunting"
                     self.update_target(self._current_info)
@@ -205,7 +205,7 @@ class TargetStatusPanel(ttk.LabelFrame):
                 if total_width > 0:
                     ratio = width / total_width
                     self._current_info.hp = int(self._current_info.max_hp * ratio)
-                    self.update_target(self._current_info)
+                    self.update_target(self._current_info, animate=True)
             return orig_coords(tagOrId, *args)
         self.hp_canvas.coords = intercept_hp_canvas_coords
 
@@ -454,7 +454,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         return val_lbl
 
-    def update_target(self, info: TargetInfo) -> None:
+    def update_target(self, info: TargetInfo, animate=False) -> None:
         """Cập nhật toàn bộ UI từ TargetInfo mới."""
 
         # 1. Cập nhật badge state (header)
