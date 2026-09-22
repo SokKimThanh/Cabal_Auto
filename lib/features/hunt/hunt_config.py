@@ -60,7 +60,7 @@ def save_hunt_config(cfg):
 
 
 import shutil
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, ConfigDict
 from typing import Dict, Any, Optional, List
 from lib.features.hunt.config_migrator import migrate_hunt_config
 
@@ -68,8 +68,7 @@ class HuntConfigSchema(BaseModel):
     rois: Dict[str, Optional[List[int]]] = Field(default_factory=dict)
 
     # We allow extra fields to pass through (it's a large legacy config)
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 def load_hunt_config():
     with _CONFIG_LOCK:
