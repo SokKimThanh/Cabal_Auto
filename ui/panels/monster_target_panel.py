@@ -16,6 +16,10 @@ class MonsterTargetPanel(ttk.LabelFrame):
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(10 * scale_factor), int(8 * scale_factor))
         super().__init__(parent, text="🎯 Target Setup", padding=padding)
+        # Fix typography hierarchy per Task 10
+        self.configure(labelanchor="n")
+        lbl = tk.Label(self, text="🎯 Target Setup", font=UI.get_font("title", weight="bold"), bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY)
+        self.configure(labelwidget=lbl)
         self.app = app
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
