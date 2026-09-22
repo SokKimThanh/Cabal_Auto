@@ -79,7 +79,7 @@ class SkillStatsPanel(ResponsiveGridBase):
             text="📈 Skill Performance",
             bg=UI.BG_BASE,
             fg=UI.TEXT_PRIMARY,
-            font=UI.FONT_HEADER,
+            font=UI.get_font("title", weight="bold"),
             anchor="w"
         )
         header_label.pack(fill="x", padx=UI.SPACE_MD, pady=(UI.SPACE_MD, 0))
