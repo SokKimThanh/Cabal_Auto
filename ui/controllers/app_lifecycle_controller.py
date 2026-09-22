@@ -57,8 +57,8 @@ class AppLifecycleController:
         has_monster = has_monster_legacy or has_monster_list
 
         has_skills = (
-            bool(self.app.skill_panel_controller.get_combo_sequence())
-            and len(self.app.skill_panel_controller.get_combo_sequence()) > 0
+            bool(self.app.state_controller.hunt_cfg.get("skill_slots", []))
+            and len(self.app.state_controller.hunt_cfg.get("skill_slots", [])) > 0
         )
 
         is_new_user = not (has_window and has_monster and has_skills)
