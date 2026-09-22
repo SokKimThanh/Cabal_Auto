@@ -54,12 +54,12 @@ class MonsterTargetPanel(ttk.LabelFrame):
         mode_bar = tk.Frame(self.monster_frame, bg=UI.BG_SURFACE)
         mode_bar.pack(fill="x", padx=10, pady=(0, 8))
 
-        self.app.state_controller.set_ui_var('target_policy', self.app.state_controller.hunt_cfg.get("target_policy", "configured_only"))
+        self.app.state_controller.set_ui_var('target_policy', self.app.state_controller.get_hunt_config().get("target_policy", "configured_only"))
 
         def _on_policy_change(*args):
             if getattr(self.app, "click_running", False):
                 self.app.state_controller.set_ui_var('target_policy',
-                    self.app.state_controller.hunt_cfg.get("target_policy", "configured_only")
+                    self.app.state_controller.get_hunt_config().get("target_policy", "configured_only")
                 )
                 return
             new_policy = self.app.state_controller.get_ui_var('target_policy')
