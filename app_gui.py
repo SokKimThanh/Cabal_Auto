@@ -259,7 +259,7 @@ class App:
         self.skill_selected_name = skills[0].get("name", "Unknown") if skills else None
         self.skill_slot_saved_names = [
             slot.get("name", "")
-            for slot in self.skill_panel_controller.get_combo_sequence()
+            for slot in self.state_controller.hunt_cfg.get("skill_slots", [])
             if isinstance(slot, dict) and slot.get("name")
         ]
         self.monster_template_working = []
@@ -484,7 +484,7 @@ class App:
         self.skill_selected_name = skills[0].get("name", "Unknown") if skills else None
         self.skill_slot_saved_names = [
             slot.get("name", "")
-            for slot in self.skill_panel_controller.get_combo_sequence()
+            for slot in self.state_controller.hunt_cfg.get("skill_slots", [])
             if isinstance(slot, dict) and slot.get("name")
         ]
         self.monster_template_working = []
@@ -1112,7 +1112,7 @@ class App:
             pass
 
         # 3. Skill slots
-        skill_slots = self.skill_panel_controller.get_combo_sequence()
+        skill_slots = self.state_controller.hunt_cfg.get("skill_slots", [])
         if skill_slots:
             # Update skill UI (assuming skill slot UI variables exist)
             # This will populate skill comboboxes when skill UI is ready
