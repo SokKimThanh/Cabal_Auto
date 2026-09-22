@@ -38,12 +38,28 @@ class SkillSlotCanvas(tk.Canvas):
         # In a real app we'd load via ImageLibraryComponent,
         # but for this component, we simulate it with text/emoji if no image is available.
         # We will mock it here using text for simplicity unless an image is explicitly given in data.
+        from ui.helpers.icon_helper import IconHelper
+        icon_helper = IconHelper()
         if 'image_obj' in self.skill_data:
             img = self.skill_data['image_obj']
             self._images['icon'] = img
             self.create_image(self.SLOT_SIZE//2, self.SLOT_SIZE//2, image=img, tags="icon")
+        elif self.icon_key != 'unknown':
+            img = icon_helper.get_icon(self.icon_key, size=(24, 24))
+            if img:
+                self._images['icon'] = img
+                self.create_image(self.SLOT_SIZE//2, self.SLOT_SIZE//2 - 4, image=img, tags="icon")
+            else:
+                self.create_text(
+                    self.SLOT_SIZE//2,
+                    self.SLOT_SIZE//2 - 4,
+                    text=self.skill_name[:2].upper(),
+                    fill=UI.TEXT_PRIMARY,
+                    font=UI.get_font(role="header"),
+                    tags="icon"
+                )
         else:
-            # Fallback text/emoji icon
+            # Fallback text icon
             self.create_text(
                 self.SLOT_SIZE//2,
                 self.SLOT_SIZE//2 - 4,

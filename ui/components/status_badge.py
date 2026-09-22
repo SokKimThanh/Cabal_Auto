@@ -11,19 +11,19 @@ class StatusBadge(tk.Frame):
         "waiting": {
             "bg": "#292218",  # Dark brown
             "fg": UI.TEXT_PRIMARY,  # White text for high contrast
-            "icon": "●",
+            "icon": "record",
             "label": "Đang chờ",
         },
         "ready": {
             "bg": UI.ACCENT_GREEN_BG,  # Green bg
             "fg": UI.TEXT_PRIMARY,  # White text for high contrast
-            "icon": "●",
+            "icon": "record",
             "label": "Sẵn sàng",
         },
         "hunting": {
             "bg": "#1e2d3d",  # Dark blue
             "fg": UI.TEXT_PRIMARY,  # White text for high contrast
-            "icon": "●",
+            "icon": "record",
             "label": "Đang săn",
             "animate": True,
         },
@@ -40,10 +40,15 @@ class StatusBadge(tk.Frame):
         self.badge = tk.Frame(self, bg=style["bg"], highlightthickness=0)
         self.badge.pack(fill="both", expand=True, padx=2, pady=2)
 
+        from ui.components.icon_button import create_icon_label
+
         # Icon + text
-        self.icon_label = tk.Label(
-            self.badge,
-            text=f"{style['icon']} {style['label']}",
+        self.icon_label = create_icon_label(
+            parent=self.badge,
+            element_id=f"badge_{self.status}",
+            icon_name=style["icon"],
+            icon_fallback="●",
+            text=style["label"],
             font=UI.FONT_SMALL,
             bg=style["bg"],
             fg=style["fg"],
@@ -94,7 +99,7 @@ class StatusBadge(tk.Frame):
 
             if hasattr(self, "icon_label") and self.icon_label.winfo_exists():
                 self.icon_label.config(
-                    text=f"{style['icon']} {style['label']}",
+                    text=style["label"],
                     bg=style["bg"],
                     fg=style["fg"],
                 )
