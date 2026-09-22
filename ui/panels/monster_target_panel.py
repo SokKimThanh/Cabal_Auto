@@ -115,14 +115,15 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
             CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
 
-        self.btn_set_hunt_area = tk.Button(
-            mode_bar,
+        from ui.components.icon_button import create_icon_button
+
+        self.btn_set_hunt_area = create_icon_button(
+            parent=mode_bar,
+            element_id="btn_set_hunt_area",
+            icon_name="crop",
             text=self.app._t("hunt_area.set") if hasattr(self.app, "_t") else "Set Hunt Area",
             command=_on_draw_hunt_area,
-            bg=UI.BG_ELEVATED,
-            fg=UI.ACCENT_BLUE,
-            relief="flat",
-            cursor="hand2"
+            button_type="neutral"
         )
         self.btn_set_hunt_area.pack(side="right", padx=10, pady=4)
 
@@ -617,170 +618,60 @@ class MonsterTargetPanel(ttk.LabelFrame):
             m.get("training_mode", False) for m in self.app.state_controller.monster_rotation
         )
 
+        from ui.components.icon_button import update_button_state
+
         if is_training:
             # Training mode: Update add button
             if has_training_dummy:
                 # Dummy already set - show accept icon and disable
-                try:
-                    # Use size=16 to match compact button
-                    accept_icon = UIHelper.icon("accept", "✓", size=16)
-                    if isinstance(accept_icon, str):
-                        self.btn_add.config(text=accept_icon, state="disabled")
-                    else:
-                        self.btn_add.config(
-                            image=accept_icon, text="", state="disabled"
-                        )
-                except Exception:
-                    self.btn_add.config(text="✓", state="disabled")
-
-                # Update tooltip for locked state
-                tooltip_text = self.app._t("tooltip_add_monster_locked")
-                tooltip = getattr(self.btn_add, "_tooltip", None)
-                if tooltip is not None:
-                    try:
-                        tooltip.destroy()
-                    except Exception:
-                        pass
-                    try:
-                        delattr(self.btn_add, "_tooltip")
-                    except Exception:
-                        pass
-                UIHelper.create_tooltip(self.btn_add, tooltip_text)
+                update_button_state(
+                    self.btn_add,
+                    enabled=False,
+                    icon_name="accept",
+                    icon_fallback="✓",
+                    tooltip_text=self.app._t("tooltip_add_monster_locked")
+                )
             else:
                 # No dummy yet - show add icon and enable
-                try:
-                    # Use size=16 to match compact button
-                    add_icon = UIHelper.icon("add", "➕", size=16)
-                    if isinstance(add_icon, str):
-                        self.btn_add.config(text=add_icon, state="normal")
-                    else:
-                        self.btn_add.config(
-                            image=add_icon, text="", state="normal"
-                        )
-                except Exception:
-                    self.btn_add.config(text="➕", state="normal")
-
-                # Update tooltip for training helper
-                tooltip_text = self.app._t("tooltip_add_monster_training")
-                tooltip = getattr(self.btn_add, "_tooltip", None)
-                if tooltip is not None:
-                    try:
-                        tooltip.destroy()
-                    except Exception:
-                        pass
-                    try:
-                        delattr(self.btn_add, "_tooltip")
-                    except Exception:
-                        pass
-                UIHelper.create_tooltip(self.btn_add, tooltip_text)
-
-            # Disable priority reorder buttons with locked icon (white on gray)
-            # Use size=16 to match SMALL buttons (36px)
-            try:
-                locked_icon = UIHelper.icon("locked", "🔒", size=16, color="#FFFFFF")
-                for btn in [self.btn_move_up, self.btn_move_down]:
-                    # IMPORTANT: Keep original bg colors when disabled
-                    original_bg = UI.BG_ELEVATED
-                    btn.config(state="disabled", bg=original_bg)
-                    if isinstance(locked_icon, str):
-                        btn.config(text=locked_icon)
-                    else:
-                        btn.config(image=locked_icon, text="")
-            except Exception:
-                self.btn_move_up.config(state="disabled", text="🔒", bg=UI.BG_ELEVATED)
-                self.btn_move_down.config(
-                    state="disabled", text="🔒", bg=UI.BG_ELEVATED
+                update_button_state(
+                    self.btn_add,
+                    enabled=True,
+                    icon_name="add",
+                    icon_fallback="➕",
+                    tooltip_text=self.app._t("tooltip_add_monster_training")
                 )
 
-            # Update tooltips for disabled buttons
+            # Disable priority reorder buttons with locked icon
             for btn in [self.btn_move_up, self.btn_move_down]:
-                # Safely destroy any existing tooltip then create a new one
-                try:
-                    UIHelper.destroy_widget_tooltip(btn)
-                except Exception:
-                    pass
-                UIHelper.create_tooltip(btn, self.app._t("tooltip_reorder_locked"))
+                update_button_state(
+                    btn,
+                    enabled=False,
+                    icon_name="locked",
+                    icon_fallback="🔒",
+                    tooltip_text=self.app._t("tooltip_reorder_locked")
+                )
         else:
             # Normal mode: Restore defaults
-            try:
-                # Use size=16 to match compact button
-                add_icon = UIHelper.icon("add", "➕", size=16)
-                if isinstance(add_icon, str):
-                    self.btn_add.config(text=add_icon, state="normal")
-                else:
-                    self.btn_add.config(image=add_icon, text="", state="normal")
-            except Exception:
-                self.btn_add.config(text="➕", state="normal")
-
-            # Restore normal tooltip
-            try:
-                UIHelper.destroy_widget_tooltip(self.btn_add)
-            except Exception:
-                pass
-            UIHelper.create_tooltip(
-                self.btn_add, self.app._t("tooltip_add_monster_normal")
+            update_button_state(
+                self.btn_add,
+                enabled=True,
+                icon_name="add",
+                icon_fallback="➕",
+                tooltip_text=self.app._t("tooltip_add_monster_normal")
             )
 
-            # Enable priority reorder buttons with original icons and colors (both blue for consistency)
-            try:
-                # Use size=16 to match SMALL buttons
-                up_icon = UIHelper.icon("up", "↑", size=16)
-                down_icon = UIHelper.icon("down", "↓", size=16)
-
-                if isinstance(up_icon, str):
-                    self.btn_move_up.config(
-                        state="normal",
-                        text=up_icon,
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-                else:
-                    self.btn_move_up.config(
-                        state="normal",
-                        image=up_icon,
-                        text="",
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-
-                if isinstance(down_icon, str):
-                    self.btn_move_down.config(
-                        state="normal",
-                        text=down_icon,
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-                else:
-                    self.btn_move_down.config(
-                        state="normal",
-                        image=down_icon,
-                        text="",
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-            except Exception:
-                self.btn_move_up.config(
-                    state="normal",
-                    text="↑",
-                    bg=UI.ACCENT_BLUE,
-                    fg=UI.BG_BASE,
-                )
-                self.btn_move_down.config(
-                    state="normal",
-                    text="↓",
-                    bg=UI.ACCENT_BLUE,
-                    fg=UI.BG_BASE,
-                )
-
-            # Restore normal tooltips
-            try:
-                UIHelper.destroy_widget_tooltip(self.btn_move_up)
-            except Exception:
-                pass
-            UIHelper.create_tooltip(self.btn_move_up, self.app._t("tooltip_move_up"))
-
-            try:
-                UIHelper.destroy_widget_tooltip(self.btn_move_down)
-            except Exception:
-                pass
-            UIHelper.create_tooltip(self.btn_move_down, self.app._t("tooltip_move_down"))
+            # Enable priority reorder buttons
+            update_button_state(
+                self.btn_move_up,
+                enabled=True,
+                icon_name="up",
+                icon_fallback="↑",
+                tooltip_text=self.app._t("tooltip_move_up")
+            )
+            update_button_state(
+                self.btn_move_down,
+                enabled=True,
+                icon_name="down",
+                icon_fallback="↓",
+                tooltip_text=self.app._t("tooltip_move_down")
+            )

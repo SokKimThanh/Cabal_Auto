@@ -107,11 +107,14 @@ class SkillPanel(ttk.LabelFrame):
         if "auto_combo_var" not in self.widgets:
             self.widgets["auto_combo_var"] = tk.BooleanVar(value=True)
 
-        self.btn_toggle_combo = tk.Button(
-            controls_frame,
+        from ui.components.icon_button import create_icon_button
+
+        self.btn_toggle_combo = create_icon_button(
+            parent=controls_frame,
+            element_id="btn_skill_toggle_combo",
+            icon_name="play", # Initial icon, will be updated
             command=self.on_toggle_combo,
-            relief="flat",
-            font=UI.FONT_BUTTON,
+            button_type="neutral"
         )
         self.btn_toggle_combo.pack(fill="x", padx=10, pady=10)
         self._update_combo_toggle_ui()
@@ -138,19 +141,26 @@ class SkillPanel(ttk.LabelFrame):
         if not hasattr(self, "btn_toggle_combo"):
             return
 
+        from ui.components.icon_button import update_button_state
         is_enabled = self.widgets["auto_combo_var"].get()
         if is_enabled:
-            self.btn_toggle_combo.config(
-                text=self._t("skill_panel.combo_stop"),
-                bg=UI.ACCENT_GREEN_BG,
-                fg=UI.ACCENT_GREEN
+            update_button_state(
+                self.btn_toggle_combo,
+                enabled=True,
+                icon_name="stop",
+                icon_fallback="⏹",
+                tooltip_text=self._t("skill_panel.combo_stop")
             )
+            self.btn_toggle_combo.config(bg=UI.ACCENT_GREEN_BG, fg=UI.ACCENT_GREEN, text=self._t("skill_panel.combo_stop"))
         else:
-            self.btn_toggle_combo.config(
-                text=self._t("skill_panel.combo_start"),
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_MUTED
+            update_button_state(
+                self.btn_toggle_combo,
+                enabled=True,
+                icon_name="play",
+                icon_fallback="▶",
+                tooltip_text=self._t("skill_panel.combo_start")
             )
+            self.btn_toggle_combo.config(bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED, text=self._t("skill_panel.combo_start"))
 
     def _build_header(self):
         header_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
@@ -203,57 +213,55 @@ class SkillPanel(ttk.LabelFrame):
         btn_frame = tk.Frame(header_frame, bg=UI.BG_ELEVATED)
         btn_frame.pack(side="right", padx=12)
 
-        self.widgets["btn_toggle_skills"] = tk.Button(
-            btn_frame,
+        from ui.components.icon_button import create_icon_button
+
+        self.widgets["btn_toggle_skills"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_toggle_view",
+            icon_name="list",
             command=self._on_toggle_skills,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
-            cursor="hand2"
+            button_type="neutral"
         )
         self._update_toggle_button_visuals()
         self.widgets["btn_toggle_skills"].pack(side="left", padx=10)
 
-        self.widgets["btn_build"] = tk.Button(
-            btn_frame,
-            text="[⚙️ Build]",
+        self.widgets["btn_build"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_build",
+            icon_name="settings",
+            text="Build",
             command=self.on_build,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
+            button_type="neutral"
         )
         self.widgets["btn_build"].pack(side="left", padx=2)
-        self.widgets["btn_presets"] = tk.Button(
-            btn_frame,
-            text="[📋 Presets]",
+
+        self.widgets["btn_presets"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_presets",
+            icon_name="list",
+            text="Presets",
             command=self.on_presets,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
+            button_type="neutral"
         )
         self.widgets["btn_presets"].pack(side="left", padx=2)
-        self.widgets["btn_reset"] = tk.Button(
-            btn_frame,
-            text="[🔄 Reset]",
+
+        self.widgets["btn_reset"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_reset",
+            icon_name="refresh",
+            text="Reset",
             command=self.on_reset,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
+            button_type="neutral"
         )
         self.widgets["btn_reset"].pack(side="left", padx=2)
 
-        self.widgets["btn_save_preset"] = tk.Button(
-            btn_frame,
-            text="[💾 Save Preset]",
+        self.widgets["btn_save_preset"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_save_preset",
+            icon_name="save",
+            text="Save Preset",
             command=self._on_save_preset_click,
-            bg=UI.BG_ELEVATED,
-            fg=UI.ACCENT_BLUE,
-            relief="flat",
-            bd=0,
+            button_type="default"
         )
         self.widgets["btn_save_preset"].pack(side="left", padx=2)
 
@@ -313,16 +321,10 @@ class SkillPanel(ttk.LabelFrame):
         if not btn:
             return
 
-        icon_name = "off-button" if self.controller.show_all_skills else "on-button"
-        icon_img = self._icon_helper.get_icon(icon_name, size=(32, 16))
-
-        if icon_img and not isinstance(icon_img, str):
-            btn.config(image=icon_img, text="")
-            btn.image = icon_img
-        else:
-            # Fallback to text if image not found
-            text = "[🌐 All Skills]" if self.controller.show_all_skills else "[🎯 Class Skills]"
-            btn.config(text=text, image="")
+        from ui.components.icon_button import set_button_icon
+        icon_name = "list" if self.controller.show_all_skills else "target"
+        fallback = "🌐" if self.controller.show_all_skills else "🎯"
+        set_button_icon(btn, icon_name=icon_name, fallback=fallback)
 
     def _on_toggle_skills(self):
         show_all, skill_names = self.controller.toggle_skills()
@@ -398,31 +400,31 @@ class SkillPanel(ttk.LabelFrame):
                         # Update Stats
                         if runtime_info:
                             if cast_lbl:
-                                cast_lbl.config(text=f"⏱ {runtime_info.get('cast_time', 0)}s")
+                                cast_lbl.config(text=f"{runtime_info.get('cast_time', 0)}s")
                             if cd_lbl:
-                                cd_lbl.config(text=f"🔄 {runtime_info.get('cooldown', 0)}s")
+                                cd_lbl.config(text=f"{runtime_info.get('cooldown', 0)}s")
                         else:
                             if cast_lbl:
-                                cast_lbl.config(text="⏱ -")
+                                cast_lbl.config(text="-")
                             if cd_lbl:
-                                cd_lbl.config(text="🔄 -")
+                                cd_lbl.config(text="-")
 
                     else:
                         dd.set("")
                         if hk_entry:
                             hk_entry.delete(0, 'end')
                         if cast_lbl:
-                            cast_lbl.config(text="⏱ -")
+                            cast_lbl.config(text="-")
                         if cd_lbl:
-                            cd_lbl.config(text="🔄 -")
+                            cd_lbl.config(text="-")
                 else:
                     dd.set("")
                     if hk_entry:
                         hk_entry.delete(0, 'end')
                     if cast_lbl:
-                        cast_lbl.config(text="⏱ -")
+                        cast_lbl.config(text="-")
                     if cd_lbl:
-                        cd_lbl.config(text="🔄 -")
+                        cd_lbl.config(text="-")
 
         # Update preset indicator
         preset_mode = getattr(self.app_state, "_preset_mode", "default")
