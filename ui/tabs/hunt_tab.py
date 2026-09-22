@@ -347,11 +347,11 @@ class HuntTab(ttk.Frame):
 
         # Left Column Container (~58%)
         self.left_col_frame = tk.Frame(self.paned_window, bg=UI.BG_BASE)
-        self.paned_window.add(self.left_col_frame, weight=58)
+        self.paned_window.add(self.left_col_frame, weight=58, minsize=350)
 
         # Right Column Container (~42%)
         self.right_col_frame = tk.Frame(self.paned_window, bg=UI.BG_BASE)
-        self.paned_window.add(self.right_col_frame, weight=42)
+        self.paned_window.add(self.right_col_frame, weight=42, minsize=300)
 
         # Stack panels inside the columns
         from ui.panels.monster_target_panel import MonsterTargetPanel
