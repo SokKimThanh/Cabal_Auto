@@ -124,10 +124,12 @@ class CreatePresetDialog(tk.Toplevel):
 
         # Bind scrolling events
         def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            if canvas.winfo_exists():
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
         def _on_scroll_linux(event, dir):
-            canvas.yview_scroll(dir, "units")
+            if canvas.winfo_exists():
+                canvas.yview_scroll(dir, "units")
 
         canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
         canvas.bind("<Enter>", lambda e: canvas.bind_all("<Button-4>", lambda e: _on_scroll_linux(e, -1)), add="+")
@@ -202,3 +204,12 @@ class CreatePresetDialog(tk.Toplevel):
 
         self.on_save_callback(preset_name)
         self.destroy()
+
+    def destroy(self):
+        try:
+            self.unbind_all("<MouseWheel>")
+            self.unbind_all("<Button-4>")
+            self.unbind_all("<Button-5>")
+        except Exception:
+            pass
+        super().destroy()
