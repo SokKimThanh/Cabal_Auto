@@ -116,8 +116,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
             from ui.helpers.capture_helper import CaptureHelper
             def _on_drawn(region):
                 if region:
-                    if "rois" not in self.app.state_controller.hunt_cfg:
-                    rois = self.app.state_controller.get_hunt_config_value("rois", {}); rois["hunt_area"] = list(region); self.app.state_controller.set_hunt_config_value("rois", rois)
+                    rois = self.app.state_controller.get_hunt_config_value("rois", {})
+                    rois["hunt_area"] = list(region)
+                    self.app.state_controller.set_hunt_config_value("rois", rois)
 
                     success = self.app.state_controller.save_hunt_config()
                     if not success:
