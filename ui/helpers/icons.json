@@ -1,90 +1,90 @@
 {
     "icon_manager": [
         "icon",
-        "📁"
+        ""
     ],
     "hunt": [
         "hunting",
-        "🎯"
+        ""
     ],
     "setup": [
         "setting",
-        "⚙️"
+        ""
     ],
     "build_manager": [
         "build",
-        "🛠️"
+        ""
     ],
     "skill_manager": [
         "skill",
-        "⚔️"
+        ""
     ],
     "monster_manager": [
         "monster",
-        "🐉"
+        ""
     ],
     "class_manager": [
         "shield",
-        "🛡️"
+        ""
     ],
     "scan_history": [
         "monitor-scan",
-        "🕒"
+        ""
     ],
     "logs": [
         "logs",
-        "📋"
+        ""
     ],
     "stats": [
         "stats",
-        "📊"
+        ""
     ],
     "language_manager": [
         "language",
-        "🌐"
+        ""
     ],
     "help": [
         "support",
-        "❓"
+        ""
     ],
     "scan-failed": [
         "scan-failed",
-        "❌"
+        ""
     ],
     "scan-screen": [
         "search",
-        "🔍"
+        ""
     ],
     "scaning": [
         "scaning",
-        "⏳"
+        ""
     ],
     "scan-complete": [
         "scan-complete",
-        "✅"
+        ""
     ],
     "app": [
         "app",
-        "📱"
+        ""
     ],
     "settings": [
         "settings",
-        "⚙️"
+        ""
     ],
     "db-sync": [
         "db-sync",
-        "🔄"
+        ""
     ],
     "info": [
         "info",
-        "ℹ️"
+        ""
     ],
     "close": [
         "close",
-        "✖️"
+        ""
     ],
     "warning": [
         "warning",
-        "⚠️"
+        ""
     ]
 }

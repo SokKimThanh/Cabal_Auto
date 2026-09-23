@@ -89,7 +89,7 @@ class IconTreeComponent(tk.Frame):
         self.status_combo = ttk.Combobox(
             status_frame,
             textvariable=self.status_var,
-            values=["All", "🟢 Xanh (Tốt)", "🟡 Vàng (Fallback)", "🔴 Đỏ (Lỗi)"],
+            values=[self.i18n_t("filter.all", default="All"), self.i18n_t("filter.green", default="Xanh (Tốt)"), self.i18n_t("filter.yellow", default="Vàng (Fallback)"), self.i18n_t("filter.red", default="Đỏ (Lỗi)")],
             state="readonly",
             width=15
         )
@@ -351,9 +351,9 @@ class IconTreeComponent(tk.Frame):
                     icon_name = f"{icon_name} (Usages: {usage_count})"
 
                 status_color = "⚪"
-                if status == "GREEN": status_color = "🟢"
+                if status == "GREEN": status_color = "Green"
                 elif status == "YELLOW": status_color = "🟡"
-                elif status == "RED": status_color = "🔴"
+                elif status == "RED": status_color = "Red"
 
                 icon_iid = f"icon_{icon_key}"
 

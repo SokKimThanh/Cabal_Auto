@@ -5,8 +5,7 @@
 
 
 ## 🔄 Trạng thái hiện tại
-- 🔴 **Chưa hoàn thành**: Việc thay thế các emoji cứng (hardcode emoji) bằng `IconHelper` chưa được thực hiện triệt để. Codebase vẫn tồn tại rất nhiều file vi phạm (Ví dụ: `ui/helpers/icons.json`, `ui/windows/library_manager.py`).
-- **Hành động**: Bắt buộc quét lại toàn bộ và sửa lỗi theo yêu cầu ban đầu.
+- 🟢 **Đã hoàn thành**: Đã quét lại toàn bộ và loại bỏ sạch emoji cứng. Thay thế thành công bằng các cấu trúc đa ngôn ngữ `_t()` và nút icon chuẩn `create_icon_button`.
 
 ## 🎯 Scope
 - Finding: #2 | Priority: P1 | Estimate: 8h

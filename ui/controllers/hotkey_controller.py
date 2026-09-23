@@ -544,7 +544,7 @@ class HotkeyController:
                     if lang == "en"
                     else f"{failed_count} phím tắt đăng ký thất bại"
                 )
-                state_controller.set_ui_var('hotkey_status', f"⚠️ {warning_text}")
+                state_controller.set_ui_var('hotkey_status', f"{warning_text}")
 
                 # Show guidance
                 guidance = (
@@ -584,6 +584,6 @@ class HotkeyController:
             try:
                 state_controller = getattr(self.parent, "state_controller", None)
                 if state_controller:
-                    state_controller.set_ui_var('hotkey_status', f"⚠️ Error updating status: {e}")
+                    state_controller.set_ui_var('hotkey_status', f"Error updating status: {e}")
             except Exception:
                 pass

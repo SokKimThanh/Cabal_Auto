@@ -29,7 +29,7 @@ class IconPreviewComponent(tk.Frame):
         # Empty State
         self.empty_preview = EmptyState(
             self,
-            icon="🖼️",
+            icon="",
             message=self.i18n_t("msg_no_icon_selected", default="Chưa chọn icon nào hoặc dữ liệu trống"),
             submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn icon từ danh sách hoặc nhấn Đồng bộ nếu danh sách trống"),
             wraplength=450
