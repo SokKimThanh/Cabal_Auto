@@ -1,0 +1,11 @@
+[x] Đủ 10 file
+[x] 0 line number hardcode
+[x] Mỗi task có đủ 11 section
+[x] Mỗi task có ≥1 verify command
+[x] Mỗi task có ≥3 AC
+[x] Mỗi Requirement có Trace block
+[x] Mỗi task có File Ownership section
+[x] README có Dependency Rules + Ownership Matrix
+[x] 00_context ≤ 10KB
+[x] Không có "tự điền", "tự suy diễn"
+[x] Mọi nội dung trace về audit-summary.md
