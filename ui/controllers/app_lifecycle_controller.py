@@ -1,6 +1,5 @@
 from tkinter import messagebox
 
-from lib.features.hunt.hunt_config import save_hunt_config
 
 try:
     import keyboard  # type: ignore
@@ -37,13 +36,13 @@ class AppLifecycleController:
         """Check if this is first-time user and auto-launch wizard if needed."""
         # Check if user has completed basic setup
         # Must have ALL THREE to be considered configured
-        window_title = self.app.state_controller.hunt_cfg.get("window_title", "")
+        window_title = self.app.state_controller.get_hunt_config_value("window_title", "")
         has_window = bool(
             window_title.strip() if isinstance(window_title, str) else window_title
         )
 
         # Phase 3 compatibility: Check both legacy and new monster fields
-        monster_selected_name = self.app.state_controller.hunt_cfg.get("monster_selected_name", "")
+        monster_selected_name = self.app.state_controller.get_hunt_config_value("monster_selected_name", "")
         has_monster_legacy = bool(
             monster_selected_name.strip()
             if isinstance(monster_selected_name, str)
@@ -51,14 +50,14 @@ class AppLifecycleController:
         )
 
         has_monster_list = (
-            bool(self.app.state_controller.hunt_cfg.get("monster_list"))
-            and len(self.app.state_controller.hunt_cfg.get("monster_list", [])) > 0
+            bool(self.app.state_controller.get_hunt_config_value("monster_list"))
+            and len(self.app.state_controller.get_hunt_config_value("monster_list", [])) > 0
         )
         has_monster = has_monster_legacy or has_monster_list
 
         has_skills = (
-            bool(self.app.state_controller.hunt_cfg.get("skill_slots", []))
-            and len(self.app.state_controller.hunt_cfg.get("skill_slots", [])) > 0
+            bool(self.app.state_controller.get_hunt_config_value("skill_slots", []))
+            and len(self.app.state_controller.get_hunt_config_value("skill_slots", [])) > 0
         )
 
         is_new_user = not (has_window and has_monster and has_skills)
@@ -76,8 +75,8 @@ class AppLifecycleController:
                 self.app.window_controller._auto_detect_and_save_cabal_window()
 
             try:
-                self.app.state_controller.hunt_cfg["is_configured"] = True
-                save_hunt_config(self.app.state_controller.hunt_cfg)
+                self.app.state_controller.set_hunt_config_value("is_configured", True)
+                self.app.state_controller.save_hunt_config()
                 print(
                     "[First-time check] Saved is_configured=True"
                 )

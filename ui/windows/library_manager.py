@@ -487,12 +487,12 @@ Track progress at:
         # Bring game window to front before overlay
         try:
             pid = (
-                self.hunt_cfg.get("window_pid")
+                self._get_cfg_val("window_pid")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
             hwnd_cfg = (
-                self.hunt_cfg.get("window_hwnd")
+                self._get_cfg_val("window_hwnd")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
@@ -512,7 +512,7 @@ Track progress at:
         restrict = None
         try:
             wb = (
-                self.hunt_cfg.get("window_bounds")
+                self._get_cfg_val("window_bounds")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
@@ -588,8 +588,8 @@ Track progress at:
                 )
             except Exception:
                 region = None
-        elif isinstance(self.hunt_cfg, dict) and self.hunt_cfg.get("window_bounds"):
-            wb = self.hunt_cfg["window_bounds"]
+        elif isinstance(self.hunt_cfg, dict) and self._get_cfg_val("window_bounds"):
+            wb = self._get_cfg_val("window_bounds")
             region = (
                 int(wb.get("left", 0)),
                 int(wb.get("top", 0)),
@@ -614,12 +614,12 @@ Track progress at:
         # Bring to front and minimize
         try:
             pid = (
-                self.hunt_cfg.get("window_pid")
+                self._get_cfg_val("window_pid")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
             hwnd_cfg = (
-                self.hunt_cfg.get("window_hwnd")
+                self._get_cfg_val("window_hwnd")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
@@ -690,9 +690,9 @@ Track progress at:
         if (
             region is None
             and isinstance(self.hunt_cfg, dict)
-            and self.hunt_cfg.get("window_bounds")
+            and self._get_cfg_val("window_bounds")
         ):
-            wb = self.hunt_cfg["window_bounds"]
+            wb = self._get_cfg_val("window_bounds")
             region = (
                 int(wb.get("left", 0)),
                 int(wb.get("top", 0)),
@@ -702,12 +702,12 @@ Track progress at:
         # Bring game up and minimize
         try:
             pid = (
-                self.hunt_cfg.get("window_pid")
+                self._get_cfg_val("window_pid")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
             hwnd_cfg = (
-                self.hunt_cfg.get("window_hwnd")
+                self._get_cfg_val("window_hwnd")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
@@ -2820,12 +2820,12 @@ Track progress at:
         def _pre_wait_bring():
             try:
                 pid = (
-                    self.hunt_cfg.get("window_pid")
+                    self._get_cfg_val("window_pid")
                     if isinstance(self.hunt_cfg, dict)
                     else None
                 )
                 hwnd_cfg = (
-                    self.hunt_cfg.get("window_hwnd")
+                    self._get_cfg_val("window_hwnd")
                     if isinstance(self.hunt_cfg, dict)
                     else None
                 )
@@ -3444,7 +3444,7 @@ Track progress at:
     def _get_game_hwnd(self) -> Optional[int]:
         # Prefer hwnd saved in hunt config if present
         try:
-            hwnd = self.hunt_cfg.get("window_hwnd")
+            hwnd = self._get_cfg_val("window_hwnd")
             if hwnd:
                 return int(hwnd)
         except Exception:
@@ -4166,12 +4166,12 @@ Track progress at:
         # Bring game window to front
         try:
             pid = (
-                self.hunt_cfg.get("window_pid")
+                self._get_cfg_val("window_pid")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
             hwnd_cfg = (
-                self.hunt_cfg.get("window_hwnd")
+                self._get_cfg_val("window_hwnd")
                 if isinstance(self.hunt_cfg, dict)
                 else None
             )
@@ -4189,12 +4189,12 @@ Track progress at:
                 def _pre_wait_bring():
                     try:
                         pid = (
-                            self.hunt_cfg.get("window_pid")
+                            self._get_cfg_val("window_pid")
                             if isinstance(self.hunt_cfg, dict)
                             else None
                         )
                         hwnd_cfg = (
-                            self.hunt_cfg.get("window_hwnd")
+                            self._get_cfg_val("window_hwnd")
                             if isinstance(self.hunt_cfg, dict)
                             else None
                         )
@@ -4496,7 +4496,7 @@ Track progress at:
             skill_rotation = []
             if hasattr(self, "hunt_cfg") and "skill_slots" in self.hunt_cfg:
                 skill_rotation = [
-                    s for s in self.hunt_cfg["skill_slots"] if s.get("type") == "attack"
+                    s for s in self._get_cfg_val("skill_slots", []) if s.get("type") == "attack"
                 ]
 
             # Calculate with skill rotation if available
@@ -4767,12 +4767,12 @@ Track progress at:
 
         # Store old values for comparison
         old_values = {
-            "attack_press_ms": self.hunt_cfg.get("attack_press_ms", 0),
-            "target_cycle_delay": self.hunt_cfg.get("target_cycle_delay", 0),
-            "search_interval": self.hunt_cfg.get("search_interval", 0),
-            "attack_interval": self.hunt_cfg.get("attack_interval", 0),
-            "lost_timeout_sec": self.hunt_cfg.get("lost_timeout_sec", 0),
-            "attack_min_duration_sec": self.hunt_cfg.get("attack_min_duration_sec", 0),
+            "attack_press_ms": self._get_cfg_val("attack_press_ms", 0),
+            "target_cycle_delay": self._get_cfg_val("target_cycle_delay", 0),
+            "search_interval": self._get_cfg_val("search_interval", 0),
+            "attack_interval": self._get_cfg_val("attack_interval", 0),
+            "lost_timeout_sec": self._get_cfg_val("lost_timeout_sec", 0),
+            "attack_min_duration_sec": self._get_cfg_val("attack_min_duration_sec", 0),
         }
 
         # Update hunt config with ALL timing values

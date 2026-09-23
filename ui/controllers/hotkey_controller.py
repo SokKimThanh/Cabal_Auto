@@ -32,7 +32,7 @@ class HotkeyController:
     def register_all(self) -> None:
         """Registers all global hotkeys from config. Fallbacks to Tkinter bindings if keyboard module missing."""
         if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
-            hotkey_cfg = self.parent.state_controller.hunt_cfg.get("global_hotkeys", {})
+            hotkey_cfg = self.parent.state_controller.get_hunt_config_value("global_hotkeys", {})
         else:
             hotkey_cfg = getattr(self.parent, "hunt_cfg", {}).get("global_hotkeys", {})
 
@@ -358,7 +358,7 @@ class HotkeyController:
         try:
             print("[Hotkeys] Setup Wizard hotkey pressed")
             if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
-                current_mode = self.parent.state_controller.hunt_cfg.get("ui_mode", "beginner")
+                current_mode = self.parent.state_controller.get_hunt_config_value("ui_mode", "beginner")
             else:
                 current_mode = getattr(self.parent, "hunt_cfg", {}).get("ui_mode", "beginner")
 

@@ -5,7 +5,8 @@ from ui.controllers.skill_panel_controller import SkillPanelController
 @pytest.fixture
 def app_state():
     mock_state = MagicMock()
-    mock_state.hunt_cfg = {
+    # In tests, simulate the new getter helper instead of a direct dict attribute
+    mock_cfg = {
         "skill_slots": [
             {"type": "attack", "name": "Fireball"},
             {"type": "attack", "name": "Ice Lance"},
@@ -14,6 +15,17 @@ def app_state():
             {"type": "buff", "name": "Shield"},
         ]
     }
+
+    def mock_get_hunt_config_value(key, default=None):
+        return mock_cfg.get(key, default)
+
+    mock_state.get_hunt_config_value = mock_get_hunt_config_value
+
+    def mock_set_hunt_config_value(key, value):
+        mock_cfg[key] = value
+
+    mock_state.set_hunt_config_value = mock_set_hunt_config_value
+
     return mock_state
 
 def test_get_combo_sequence(app_state):
