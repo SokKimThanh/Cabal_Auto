@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
@@ -56,6 +57,7 @@ class HuntStatusTicker(tk.Frame):
 
     def _update_status_ui(self, status: str):
         self.msg_label.config(text=status)
+        self._last_status_time = time.time()
         # Briefly flash text slightly brighter, or just keep the current state color
         # In this implementation we will rely on _update_state_ui for color
         # but we can also set it to a default color if we want.
@@ -76,7 +78,8 @@ class HuntStatusTicker(tk.Frame):
         elif state == "error":
             self._set_icon("warning", UI.COLOR_DANGER)
             self.msg_label.config(fg=UI.COLOR_DANGER)
-            self.msg_label.config(text=self.app._t("hunt_status_ticker.error"))
+            if time.time() - getattr(self, "_last_status_time", 0) > 0.5:
+                self.msg_label.config(text=self.app._t("hunt_status_ticker.error"))
         elif state == "searching":
             self._set_icon("search", UI.ACCENT_AMBER)
             self.msg_label.config(fg=UI.ACCENT_AMBER)
