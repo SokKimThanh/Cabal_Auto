@@ -19,7 +19,6 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional, Dict, Any, Callable, List, Union
-from unittest.mock import MagicMock
 
 import queue
 import json
@@ -1886,19 +1885,6 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             return
 
         name = target_monster.get("name", "Unnamed")
-
-        # Check if messagebox.askyesno is mocked in unit tests
-        if (
-            isinstance(messagebox.askyesno, MagicMock)
-            or getattr(messagebox.askyesno, "__mock__", None) is not None
-        ):
-            if messagebox.askyesno(
-                "Xác Nhận Xóa",
-                f"Bạn có chắc muốn xóa quái vật '{name}' không?",
-                parent=self,
-            ):
-                self._execute_delete_monster_by_id(str(m_id))
-            return
 
         self._show_confirmation_banner(name, str(m_id))
 

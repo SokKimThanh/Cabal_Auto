@@ -181,9 +181,8 @@ class TestMonsterEditorLeftPanel:
                 editor.destroy()
             root.destroy()
 
-    @patch("tkinter.messagebox.askyesno", return_value=True)
     def test_delete_monster_with_confirmation(
-        self, mock_askyesno, sample_monsters: list, patched_monster_editor
+        self, sample_monsters: list, patched_monster_editor
     ) -> None:
         """Test deleting a monster with confirmation."""
         temp_data_file = patched_monster_editor["temp_data_file"]
@@ -205,8 +204,10 @@ class TestMonsterEditorLeftPanel:
             editor.monster_listbox.selection_set(0)
             editor.current_monster_id = "test-id-1"
 
-            # Mock messagebox.askyesno to return True (confirm)
             editor._on_delete_monster()
+            root.update_idletasks()
+
+            editor.btn_confirm_delete.invoke()
             root.update_idletasks()
 
             # Verify monster deleted
@@ -225,9 +226,8 @@ class TestMonsterEditorLeftPanel:
                 editor.destroy()
             root.destroy()
 
-    @patch("tkinter.messagebox.askyesno", return_value=False)
     def test_delete_monster_cancelled(
-        self, mock_askyesno, sample_monsters: list, patched_monster_editor
+        self, sample_monsters: list, patched_monster_editor
     ) -> None:
         """Test cancelling monster deletion."""
         temp_data_file = patched_monster_editor["temp_data_file"]
@@ -249,8 +249,10 @@ class TestMonsterEditorLeftPanel:
             editor.monster_listbox.selection_set(0)
             editor.current_monster_id = "test-id-1"
 
-            # Mock messagebox.askyesno to return False (cancel)
             editor._on_delete_monster()
+            root.update_idletasks()
+
+            editor.btn_cancel_delete.invoke()
             root.update_idletasks()
 
             # Verify monster NOT deleted
