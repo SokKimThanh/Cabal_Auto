@@ -72,3 +72,20 @@ Tài liệu này cung cấp bối cảnh từ đợt kiểm toán Sprint 33 (Imp
 | `ui/components/status_badge.py` | Task 07 | Task 03 |
 | `lib/features/hunt/monster_manager_win.py` | Task 08 | Task 03 |
 | `lib/features/hunt/hunt_orchestrator.py` | Task 08 | Task 03 |
+
+
+## 7. Trạng thái Thực tế (Cập nhật sau Audit Codebase)
+
+Dựa trên báo cáo `audit_report.md` và kiểm tra source code thực tế, các Task đang có tình trạng như sau:
+
+- **🟢 Đã hoàn thành sẵn (Cần cập nhật plan):**
+  - **Task 01:** `get_combo_sequence` và `get_buff_sequence` đã được gọi đúng.
+  - **Task 02:** `SkillTimelineStrip` đã có logic xử lý `isinstance(img, str)` fallback dùng `create_text`.
+  - **Task 04:** `HuntStatusTicker` đã được tích hợp vào `HuntWorkspaceFrame`.
+- **🟡 Hoàn thành một phần:**
+  - **Task 07:** `_pulse_step` đã bị loại bỏ khỏi `status_badge.py`, nhưng hardcode string (D6) vẫn còn.
+  - **Task 08:** Đã loại bỏ `MagicMock` khỏi production, nhưng cần sửa các message hardcode qua EventBus.
+- **🔴 Chưa hoàn thành (Cần ưu tiên):**
+  - **Task 03:** Vẫn còn lượng lớn emoji hardcode cần dọn dẹp.
+  - **Task 05:** Lỗi `delete("all")` trong `VisionSnapshotDebugger` vẫn còn tồn tại.
+  - **Task 06:** Tight coupling `hunt_cfg.get(...)` ở UI vẫn xuất hiện ở nhiều file.
