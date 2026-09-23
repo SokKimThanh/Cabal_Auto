@@ -50,6 +50,22 @@ class SkillPanel(ttk.LabelFrame):
                 "on_bot_state_changed", self.on_bot_state_changed
             )
 
+    def _map_skills_to_timeline_format(self, slots):
+        """Helper to map raw slot data to what SkillTimelineStrip expects"""
+        mapped = []
+        for slot in slots:
+            if not slot:
+                continue
+            skill_id = slot.get("skill_id") if isinstance(slot, dict) else slot
+            skill_info = self.controller.get_skill(skill_id)
+            if skill_info:
+                mapped.append({
+                    "name": skill_info.get("name", "Unknown"),
+                    "icon_key": skill_info.get("icon_key", "unknown"),
+                    "hotkey": slot.get("user_hotkey", "") if isinstance(slot, dict) else ""
+                })
+        return mapped
+
     def _build(self):
         """Build all widgets for skill panel"""
         self._build_header()
@@ -86,7 +102,8 @@ class SkillPanel(ttk.LabelFrame):
             anchor="w"
         ).pack(fill="x", pady=(0, 5))
 
-        self.attack_timeline = SkillTimelineStrip(self.content_frame)
+        combo_seq = self._map_skills_to_timeline_format(self.controller.get_combo_sequence())
+        self.attack_timeline = SkillTimelineStrip(self.content_frame, skills=combo_seq)
         self.attack_timeline.pack(fill="x", pady=(0, 10))
 
         # Title for buff lane
@@ -99,7 +116,8 @@ class SkillPanel(ttk.LabelFrame):
             anchor="w"
         ).pack(fill="x", pady=(10, 5))
 
-        self.buff_timeline = SkillTimelineStrip(self.content_frame)
+        buff_seq = self._map_skills_to_timeline_format(self.controller.get_buff_sequence())
+        self.buff_timeline = SkillTimelineStrip(self.content_frame, skills=buff_seq)
         self.buff_timeline.pack(fill="x", pady=(0, 10))
 
     def _build_toggle_section(self):
@@ -429,6 +447,12 @@ class SkillPanel(ttk.LabelFrame):
                         cast_lbl.config(text="-")
                     if cd_lbl:
                         cd_lbl.config(text="-")
+
+        # Also sync SkillTimelineStrips
+        if hasattr(self, "attack_timeline") and self.attack_timeline.winfo_exists():
+            self.attack_timeline.update_skills(self._map_skills_to_timeline_format(self.controller.get_combo_sequence()))
+        if hasattr(self, "buff_timeline") and self.buff_timeline.winfo_exists():
+            self.buff_timeline.update_skills(self._map_skills_to_timeline_format(self.controller.get_buff_sequence()))
 
         # Update preset indicator
         preset_mode = getattr(self.app_state, "_preset_mode", "default")

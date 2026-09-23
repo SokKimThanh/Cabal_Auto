@@ -182,6 +182,11 @@ class SkillTimelineStrip(ttk.Frame):
         """Reset the scroll region to encompass the inner frame"""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+    def update_skills(self, skills: List[Dict[str, Any]]):
+        """Update the list of skills and re-render."""
+        self.skills = skills
+        self.render_skills()
+
     def render_skills(self):
         """Render the list of skills into slots."""
         # Clear existing
