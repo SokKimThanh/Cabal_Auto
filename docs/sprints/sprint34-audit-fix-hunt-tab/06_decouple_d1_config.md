@@ -3,6 +3,11 @@
 ## 📖 Context
 Đọc `00_context_audit_summary.md` trước. Task này fix Tech Debt D1.
 
+
+## 🔄 Trạng thái hiện tại
+- 🔴 **Chưa hoàn thành**: `hunt_cfg` vẫn được gọi trực tiếp (`.get(...)`) ở khắp các layer giao diện thay vì qua controller.
+- **Hành động**: Tiến hành tách rời luồng đọc/ghi config ra khỏi các file UI.
+
 ## 🎯 Scope
 - Finding: D1 | Priority: P1 | Estimate: 6h
 - Dependency: Task 01 đến 05 hoàn thiện

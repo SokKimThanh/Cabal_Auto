@@ -3,6 +3,11 @@
 ## 📖 Context
 Đọc `00_context_audit_summary.md` trước. Task này fix Tech Debt D4 và D6.
 
+
+## 🔄 Trạng thái hiện tại
+- 🟡 **Hoàn thành 1 phần**: Không còn tìm thấy `_pulse_step` gây phân mảnh event loop trong `status_badge.py` (D4 đã ổn). Tuy nhiên, các chuỗi text hardcode (D6) vẫn chưa được wrap bằng hàm đa ngôn ngữ `_t()`.
+- **Hành động**: Tiếp tục quét các file UI để thay thế hardcode string sang i18n key.
+
 ## 🎯 Scope
 - Finding: D4, D6 | Priority: P1 | Estimate: 4h
 - Dependency: Task 03 hoàn thiện (Đã xử lý emoji cứng)
