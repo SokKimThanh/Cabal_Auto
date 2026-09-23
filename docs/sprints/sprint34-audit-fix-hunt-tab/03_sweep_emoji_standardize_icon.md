@@ -3,6 +3,11 @@
 ## 📖 Context
 Đọc `00_context_audit_summary.md` trước. Task này fix Finding #2.
 
+
+## 🔄 Trạng thái hiện tại
+- 🔴 **Chưa hoàn thành**: Việc thay thế các emoji cứng (hardcode emoji) bằng `IconHelper` chưa được thực hiện triệt để. Codebase vẫn tồn tại rất nhiều file vi phạm (Ví dụ: `ui/helpers/icons.json`, `ui/windows/library_manager.py`).
+- **Hành động**: Bắt buộc quét lại toàn bộ và sửa lỗi theo yêu cầu ban đầu.
+
 ## 🎯 Scope
 - Finding: #2 | Priority: P1 | Estimate: 8h
 - Dependency: Independent (Thực hiện trọn 1 ngày)

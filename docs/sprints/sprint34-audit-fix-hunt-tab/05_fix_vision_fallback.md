@@ -3,6 +3,11 @@
 ## 📖 Context
 Đọc `00_context_audit_summary.md` trước. Task này fix Finding #6.
 
+
+## 🔄 Trạng thái hiện tại
+- 🔴 **Chưa hoàn thành**: Mặc dù một số vấn đề đã được kiểm tra, luồng xử lý timeout trong `VisionSnapshotDebugger` vẫn đang gọi lệnh xóa canvas (`self.canvas.delete("all")`), vi phạm requirement.
+- **Hành động**: Xóa các lệnh delete("all") để giữ lại ảnh cũ trên canvas khi gặp timeout.
+
 ## 🎯 Scope
 - Finding: #6 | Priority: P2 | Estimate: 0.5h
 - Dependency: Independent
