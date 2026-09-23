@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from lib.ui_style_v2 import UIStyleV2 as UI
+from lib.ui.animation_manager import UIAnimationManager
 
 
 class StatusBadge(tk.Frame):
@@ -12,29 +13,28 @@ class StatusBadge(tk.Frame):
             "bg": "#292218",  # Dark brown
             "fg": UI.TEXT_PRIMARY,  # White text for high contrast
             "icon": "record",
-            "label": "Đang chờ",
         },
         "ready": {
             "bg": UI.ACCENT_GREEN_BG,  # Green bg
             "fg": UI.TEXT_PRIMARY,  # White text for high contrast
             "icon": "record",
-            "label": "Sẵn sàng",
         },
         "hunting": {
             "bg": "#1e2d3d",  # Dark blue
             "fg": UI.TEXT_PRIMARY,  # White text for high contrast
             "icon": "record",
-            "label": "Đang săn",
             "animate": True,
         },
     }
 
-    def __init__(self, parent, status="waiting", **kwargs):
+    def __init__(self, parent, app=None, status="waiting", **kwargs):
         super().__init__(parent, **kwargs)
+        self.app = app
         self.status = status
+        self.animation_manager = UIAnimationManager()
         self.config(bg=UI.BG_BASE, highlightthickness=0)
 
-        style = self.STATUS_STYLES.get(status, self.STATUS_STYLES["waiting"])
+        style = self._get_style(status)
 
         # Badge background
         self.badge = tk.Frame(self, bg=style["bg"], highlightthickness=0)
@@ -61,37 +61,59 @@ class StatusBadge(tk.Frame):
         if style.get("animate"):
             self._animate_pulse()
 
+    def _get_style(self, status):
+        """Retrieve style with dynamic i18n label."""
+        style = dict(self.STATUS_STYLES.get(status, self.STATUS_STYLES["waiting"]))
+
+        defaults = {
+            "waiting": "Waiting",
+            "ready": "Ready",
+            "hunting": "Hunting",
+        }
+
+        if self.app and hasattr(self.app, "_t"):
+            style["label"] = self.app._t(f"target_status.badge_{status}", default=defaults.get(status, status))
+        else:
+            style["label"] = defaults.get(status, status)
+
+        return style
+
     def _animate_pulse(self):
         """Pulse animation for hunting state"""
-        self.pulse_step = 0
-        if hasattr(self, "_pulse_id") and self._pulse_id:
-            self.after_cancel(self._pulse_id)
-        self._pulse_step()
+        if hasattr(self, 'animation_manager'):
+            self.animation_manager.cancel_tween(f"badge_pulse_{id(self)}")
 
-    def _pulse_step(self):
-        """Single pulse step"""
-        # Simplified pulse - just change opacity by swapping colors
-        # Real implementation would need more complex rendering
-        if hasattr(self, "icon_label") and self.icon_label.winfo_exists():
-            current_fg = self.icon_label.cget("fg")
-            style = self.STATUS_STYLES.get(self.status, self.STATUS_STYLES["waiting"])
+        def update_func(val):
+            if hasattr(self, "icon_label") and self.icon_label.winfo_exists():
+                if val >= 1:
+                    current_fg = self.icon_label.cget("fg")
+                    style = self._get_style(self.status)
 
-            if current_fg == style["fg"]:
-                self.icon_label.config(fg="#5a9fd4")  # slightly dimmed
-            else:
-                self.icon_label.config(fg=style["fg"])
+                    if current_fg == style["fg"]:
+                        self.icon_label.config(fg="#5a9fd4")  # slightly dimmed
+                    else:
+                        self.icon_label.config(fg=style["fg"])
 
-            self._pulse_id = self.after(500, self._pulse_step)
+                    # Loop animation
+                    self._animate_pulse()
+
+        self.animation_manager.register_tween(
+            target_id=f"badge_pulse_{id(self)}",
+            widget=self,
+            start_val=0,
+            end_val=1,
+            duration_ms=500,
+            update_func=update_func
+        )
 
     def set_status(self, status):
         """Update badge status"""
         if status in self.STATUS_STYLES:
             self.status = status
-            style = self.STATUS_STYLES[status]
+            style = self._get_style(status)
 
-            if hasattr(self, "_pulse_id") and self._pulse_id:
-                self.after_cancel(self._pulse_id)
-                self._pulse_id = None
+            if hasattr(self, 'animation_manager'):
+                self.animation_manager.cancel_tween(f"badge_pulse_{id(self)}")
 
             # Reconfigure existing widgets instead of recreating
             if hasattr(self, "badge") and self.badge.winfo_exists():

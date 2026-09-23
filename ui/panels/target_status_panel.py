@@ -132,7 +132,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         self.hp_fill = self.hp_canvas.create_rectangle(0,0,1,1)
         self.hp_text = self.hp_canvas.create_text(0,0)
 
-        self.hunt_status_badge = StatusBadge(self, status="waiting")
+        self.hunt_status_badge = StatusBadge(self, app=self.app, status="waiting")
         self.hunt_status_label = self.hunt_status_badge
         self.hunt_target_info = self.app.state_controller.ui_vars.get("hunt_target_info", tk.StringVar(value=""))
         self.hunt_target_info_label = tk.Label(self, textvariable=self.hunt_target_info)
