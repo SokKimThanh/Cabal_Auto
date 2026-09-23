@@ -323,8 +323,9 @@ class AppWindowController:
         try:
             from ui.windows.setup_wizard_vision import create_or_show_vision_wizard
 
+            tk_root = getattr(self.root, 'root', self.root)
             wizard = create_or_show_vision_wizard(
-                self.root,
+                tk_root,
                 config_path=str(CONFIG_PATH),
                 on_close=getattr(self.root, "_on_vision_wizard_closed", lambda: None),
             )
@@ -343,7 +344,8 @@ class AppWindowController:
         def _apply_time(t):
             self.root.state_controller.set_ui_var('setup_lost_timeout', str(t))
 
-        TimingCalcDialog(self.root, self.root, on_apply=_apply_time)
+        tk_root = getattr(self.root, 'root', self.root)
+        TimingCalcDialog(tk_root, self.root, on_apply=_apply_time)
 
 
     def update_window_bounds_display(self) -> None:
