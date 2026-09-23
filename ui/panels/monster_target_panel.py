@@ -420,7 +420,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         def _update_configured_empty_state(*args):
             if hasattr(self, "monster_rotation_listbox") and self.monster_rotation_listbox:
-                if self.monster_rotation_listbox.size() > 0:
+                if (self.monster_rotation_listbox.size() or 0) > 0:
                     self.configured_empty.pack_forget()
                 else:
                     self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
