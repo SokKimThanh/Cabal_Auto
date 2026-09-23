@@ -67,7 +67,7 @@ class HuntTab(ttk.Frame):
         if not hasattr(self, "app") or not hasattr(self.app, "hunt_cfg"):
             return
 
-        hwnd = self.app.state_controller.hunt_cfg.get("window_hwnd")
+        hwnd = self.app.state_controller.get_hunt_config_value("window_hwnd")
         if not hwnd:
             return
 
@@ -301,26 +301,26 @@ class HuntTab(ttk.Frame):
         """
 
         # Initialize mode var for compatibility (actual mode selector is in Setup tab)
-        self.app.state_controller.set_ui_var('hunt_mode', self.app.state_controller.hunt_cfg.get("ui_mode", "beginner"))
+        self.app.state_controller.set_ui_var('hunt_mode', self.app.state_controller.get_hunt_config_value("ui_mode", "beginner"))
 
         # Initialize vars for compatibility with hunt loop (values read from hunt_cfg)
-        self.app.state_controller.set_ui_var('target_key', str(self.app.state_controller.hunt_cfg.get("target_key", "TAB")))
+        self.app.state_controller.set_ui_var('target_key', str(self.app.state_controller.get_hunt_config_value("target_key", "TAB")))
         # attack_keys removed: per-skill keys from skill_slots are used instead
-        self.app.state_controller.set_ui_var('attack_press', str(self.app.state_controller.hunt_cfg.get("attack_press_ms", 60)))
-        self.app.state_controller.set_ui_var('target_cycle', str(self.app.state_controller.hunt_cfg.get("target_cycle_delay", 0.2)))
-        self.app.state_controller.set_ui_var('search_interval', str(self.app.state_controller.hunt_cfg.get("search_interval", 0.25)))
-        self.app.state_controller.set_ui_var('attack_interval', str(self.app.state_controller.hunt_cfg.get("attack_interval", 0.15)))
-        self.app.state_controller.set_ui_var('lost_timeout', str(self.app.state_controller.hunt_cfg.get("lost_timeout_sec", 1.2)))
-        self.app.state_controller.set_ui_var('attack_duration', str(self.app.state_controller.hunt_cfg.get("attack_min_duration_sec", 1.5)))
-        self.app.state_controller.set_ui_var('template', str(self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")))
+        self.app.state_controller.set_ui_var('attack_press', str(self.app.state_controller.get_hunt_config_value("attack_press_ms", 60)))
+        self.app.state_controller.set_ui_var('target_cycle', str(self.app.state_controller.get_hunt_config_value("target_cycle_delay", 0.2)))
+        self.app.state_controller.set_ui_var('search_interval', str(self.app.state_controller.get_hunt_config_value("search_interval", 0.25)))
+        self.app.state_controller.set_ui_var('attack_interval', str(self.app.state_controller.get_hunt_config_value("attack_interval", 0.15)))
+        self.app.state_controller.set_ui_var('lost_timeout', str(self.app.state_controller.get_hunt_config_value("lost_timeout_sec", 1.2)))
+        self.app.state_controller.set_ui_var('attack_duration', str(self.app.state_controller.get_hunt_config_value("attack_min_duration_sec", 1.5)))
+        self.app.state_controller.set_ui_var('template', str(self.app.state_controller.get_hunt_config_value("template_path", "assets/images/target_frame.png")))
 
-        region = self.app.state_controller.hunt_cfg.get("region") or ["", "", "", ""]
+        region = self.app.state_controller.get_hunt_config_value("region") or ["", "", "", ""]
         self.app.state_controller.ui_vars['reg_l'].set(str(region[0]) if region[0] != "" else "")
         self.app.state_controller.ui_vars['reg_t'].set(str(region[1]) if region[1] != "" else "")
         self.app.state_controller.ui_vars['reg_w'].set(str(region[2]) if region[2] != "" else "")
         self.app.state_controller.ui_vars['reg_h'].set(str(region[3]) if region[3] != "" else "")
 
-        self.app.state_controller.set_ui_var('bring_front', bool(self.app.state_controller.hunt_cfg.get("bring_to_front_each_cycle", False)))
+        self.app.state_controller.set_ui_var('bring_front', bool(self.app.state_controller.get_hunt_config_value("bring_to_front_each_cycle", False)))
 
         # Layout: 4-Panel Workspace Redesign (PanedWindow Version Task 10)
 

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 import tkinter as tk
 from tkinter import messagebox
 import logging
-from lib.features.hunt.hunt_config import save_hunt_config, CONFIG_PATH
+from lib.features.hunt.hunt_config import CONFIG_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -243,17 +243,17 @@ class AppWindowController:
         self.root.state_controller.current_window_bounds = bounds
         logger.debug(f"  hunt_selected set: {self.root.state_controller.hunt_selected}")
 
-        self.root.state_controller.hunt_cfg["window_title"] = selected["title"]
-        self.root.state_controller.hunt_cfg["window_pid"] = selected["pid"]
-        self.root.state_controller.hunt_cfg["window_hwnd"] = selected["hwnd"]
+        self.root.state_controller.set_hunt_config_value("window_title", selected["title"])
+        self.root.state_controller.set_hunt_config_value("window_pid", selected["pid"])
+        self.root.state_controller.set_hunt_config_value("window_hwnd", selected["hwnd"])
 
-        WindowSelectionService.update_bounds(self.root.state_controller.hunt_cfg, bounds)
+        WindowSelectionService.update_bounds(self.root.state_controller.get_all_hunt_config(), bounds)
 
-        hunt_area = self.root.state_controller.hunt_cfg.get("hunt_area")
+        hunt_area = self.root.state_controller.get_hunt_config_value("hunt_area")
         if isinstance(hunt_area, dict):
             hunt_area["window_title"] = selected["title"]
         self.update_window_bounds_display()
-        save_hunt_config(self.root.state_controller.hunt_cfg)
+        self.root.state_controller.save_hunt_config()
         self.root.state_controller.set_ui_var('hunt_status', f"Window selected: {selected['title']}")
         logger.debug("  on_window_combo_selected() completed successfully")
 

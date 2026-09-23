@@ -3,7 +3,6 @@ import time
 from tkinter import messagebox
 from typing import Any, Dict
 
-from lib.features.hunt.hunt_config import save_hunt_config
 from lib.system.bot_manager import BotManager
 from ui.utils.overlay_controller import OverlayController as UtilsOverlayController
 
@@ -24,11 +23,11 @@ class OverlayController:
         from ui.utils.overlay_settings import OverlaySettingsDialog
 
         hunt_cfg = getattr(self.parent, "hunt_cfg", {})
-        overlay_cfg = copy.deepcopy(hunt_cfg.get("overlay", {}))
+        overlay_cfg = copy.deepcopy(self.get_hunt_config_value("overlay", {}))
 
         def on_apply(new_config: Dict[str, Any]) -> None:
-            self.parent.hunt_cfg["overlay"] = new_config
-            save_hunt_config(self.parent.hunt_cfg)
+            self.parent.state_controller.set_hunt_config_value("overlay", new_config)
+            self.parent.state_controller.save_hunt_config()
 
         dialog = OverlaySettingsDialog(
             parent=self.parent,
@@ -84,7 +83,7 @@ class OverlayController:
                 # ========================================
                 # STEP 1: ALWAYS REFRESH LIVE POSITION FIRST
                 # ========================================
-                target_hwnd = self.parent.hunt_cfg.get("window_hwnd")
+                target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
                 window_bounds = None
 
                 # Get CURRENT window position from LIVE game window (not from config cache)
@@ -134,7 +133,7 @@ class OverlayController:
                                 WindowSelectionService.update_bounds(
                                     self.parent.hunt_cfg, window_bounds
                                 )
-                                save_hunt_config(self.parent.hunt_cfg)
+                                self.parent.state_controller.save_hunt_config()
                                 print(
                                     f"[Overlay] ✅ Refreshed LIVE position: {window_bounds}"
                                 )
@@ -231,11 +230,11 @@ class OverlayController:
                             WindowSelectionService.update_bounds(
                                 self.parent.hunt_cfg, window_bounds
                             )
-                            self.parent.hunt_cfg["window_hwnd"] = target_hwnd
-                            self.parent.hunt_cfg["window_title"] = cabal_window.title
+                            self.parent.state_controller.set_hunt_config_value("window_hwnd", target_hwnd)
+                            self.parent.state_controller.set_hunt_config_value("window_title", cabal_window.title)
 
                             # save_hunt_config is already defined at module level (line 566)
-                            save_hunt_config(self.parent.hunt_cfg)
+                            self.parent.state_controller.save_hunt_config()
 
                             print(
                                 f"[Overlay] Auto-configured window: {cabal_window.title}"
@@ -279,7 +278,7 @@ class OverlayController:
                 # STEP 4: CREATE OR UPDATE OVERLAY
                 # ========================================
                 # Get overlay config from hunt_cfg (or use defaults)
-                overlay_cfg = self.parent.hunt_cfg.get("overlay", {})
+                overlay_cfg = self.parent.state_controller.get_hunt_config_value("overlay", {})
                 alpha = float(
                     overlay_cfg.get("alpha", 0.7)
                 )  # Default 70% for testing (more visible)
@@ -341,7 +340,7 @@ class OverlayController:
                     # Initialize BotManager if needed
                     if self.parent._bot_manager is None:
                         # Get configuration from hunt_cfg
-                        tracking_cfg = self.parent.hunt_cfg.get("monster_tracking", {})
+                        tracking_cfg = self.parent.state_controller.get_hunt_config_value("monster_tracking", {})
                         stable_frames = int(tracking_cfg.get("stable_frames", 3))
                         lost_timeout = float(tracking_cfg.get("lost_timeout", 3.0))
                         auto_start = bool(
@@ -361,7 +360,7 @@ class OverlayController:
 
                     # Start detection to create detector instance
                     if not self.parent._bot_manager.is_detection_running():
-                        tracking_cfg = self.parent.hunt_cfg.get("monster_tracking", {})
+                        tracking_cfg = self.parent.state_controller.get_hunt_config_value("monster_tracking", {})
                         confidence = float(
                             tracking_cfg.get("confidence_threshold", 0.7)
                         )
@@ -383,7 +382,7 @@ class OverlayController:
                         and self.parent._bot_manager._detector is not None
                     ):
                         # Get configuration
-                        tracking_cfg = self.parent.hunt_cfg.get("monster_tracking", {})
+                        tracking_cfg = self.parent.state_controller.get_hunt_config_value("monster_tracking", {})
                         max_boxes = int(tracking_cfg.get("max_detections_display", 20))
                         show_stats = bool(tracking_cfg.get("show_stats", True))
                         stats_interval = float(
@@ -445,7 +444,7 @@ class OverlayController:
 
                 # Update menu/config
                 self.parent.hunt_cfg.setdefault("overlay", {})["enabled"] = True
-                save_hunt_config(self.parent.hunt_cfg)
+                self.parent.state_controller.save_hunt_config()
 
                 print(f"[Overlay] {self._t('overlay_enabled')}")
 
@@ -477,7 +476,7 @@ class OverlayController:
 
                 # Update config
                 self.parent.hunt_cfg.setdefault("overlay", {})["enabled"] = False
-                save_hunt_config(self.parent.hunt_cfg)
+                self.parent.state_controller.save_hunt_config()
 
                 print(f"[Overlay] {self._t('overlay_disabled')}")
 

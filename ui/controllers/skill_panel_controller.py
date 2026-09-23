@@ -147,15 +147,32 @@ class SkillPanelController:
         """Returns the list of attack/combo skills."""
         if not hasattr(self.app_state, "hunt_cfg"):
             return []
-        slots = self.app_state.hunt_cfg.get("skill_slots", [])
+        slots = self.app_state.get_hunt_config_value("skill_slots", [])
         # Based on config_migrator, skill_slots contains only attack skills
         # after migration.
         return slots
 
     def get_buff_sequence(self) -> list:
         """Returns the list of buff skills."""
-        if not hasattr(self.app_state, "hunt_cfg"):
+        if not hasattr(self.app_state, "get_hunt_config_value"):
             return []
         # Based on config_migrator, buff slots are stored in "buff_slots"
-        slots = self.app_state.hunt_cfg.get("buff_slots", [])
+        slots = self.app_state.get_hunt_config_value("buff_slots", [])
         return slots
+
+    def is_combo_enabled(self) -> bool:
+        """Returns True if combo mode is enabled."""
+        if not hasattr(self.app_state, "get_hunt_config_value"):
+            return False
+        combo_cfg = self.app_state.get_hunt_config_value("combo", {})
+        return combo_cfg.get("enabled", False)
+
+    def set_combo_enabled(self, state: bool) -> None:
+        """Sets the combo mode enabled state."""
+        if not hasattr(self.app_state, "get_hunt_config_value"):
+            return
+        combo_cfg = self.app_state.get_hunt_config_value("combo", {})
+        combo_cfg["enabled"] = state
+        self.app_state.set_hunt_config_value("combo", combo_cfg)
+        if hasattr(self.app_state, "save_hunt_config"):
+            self.app_state.save_hunt_config()

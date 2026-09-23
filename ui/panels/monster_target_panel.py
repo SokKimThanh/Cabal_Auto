@@ -62,19 +62,19 @@ class MonsterTargetPanel(ttk.LabelFrame):
         mode_bar = tk.Frame(self.monster_frame, bg=UI.BG_SURFACE)
         mode_bar.pack(fill="x", padx=10, pady=(0, 8))
 
-        self.app.state_controller.set_ui_var('target_policy', self.app.state_controller.hunt_cfg.get("target_policy", "configured_only"))
+        self.app.state_controller.set_ui_var('target_policy', self.app.state_controller.get_hunt_config_value("target_policy", "configured_only"))
 
         def _on_policy_change(*args):
             if getattr(self.app, "click_running", False):
                 self.app.state_controller.set_ui_var('target_policy',
-                    self.app.state_controller.hunt_cfg.get("target_policy", "configured_only")
+                    self.app.state_controller.get_hunt_config_value("target_policy", "configured_only")
                 )
                 return
             new_policy = self.app.state_controller.get_ui_var('target_policy')
             if new_policy not in ["configured_only", "all_resolved", "any_target"]:
                 new_policy = "configured_only"
                 self.app.state_controller.set_ui_var('target_policy', new_policy)
-            self.app.state_controller.hunt_cfg["target_policy"] = new_policy
+            self.app.state_controller.set_hunt_config_value("target_policy", new_policy)
             self.app.state_controller.has_unsaved_changes = True
             if hasattr(self.app, "_update_unsaved_indicator"):
                 self.app._update_unsaved_indicator()
@@ -117,11 +117,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
             def _on_drawn(region):
                 if region:
                     if "rois" not in self.app.state_controller.hunt_cfg:
-                        self.app.state_controller.hunt_cfg["rois"] = {}
-                    self.app.state_controller.hunt_cfg["rois"]["hunt_area"] = list(region)
+                    rois = self.app.state_controller.get_hunt_config_value("rois", {}); rois["hunt_area"] = list(region); self.app.state_controller.set_hunt_config_value("rois", rois)
 
-                    from lib.features.hunt.hunt_config import save_hunt_config
-                    success = save_hunt_config(self.app.state_controller.hunt_cfg)
+                    success = self.app.state_controller.save_hunt_config()
                     if not success:
                         print("Failed to save hunt area via save_hunt_config")
 

@@ -8,7 +8,6 @@ from ui.helpers.button_styles import get_button_config
 from ui.icon_library import Icons
 from ui.components import create_icon_button as _create_icon_btn_component
 import logging
-from lib.features.hunt.hunt_config import save_hunt_config
 from lib.events.event_bus import EventBus, GlobalApplyEvent, StartStopHuntEvent, LanguageChangedEvent
 from lib.i18n import t as i18n_t
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
@@ -63,10 +62,10 @@ class ActionBarView(tk.Frame):
                     "bounds": window_dict.get("bounds"),
                 }
                 # Save to config
-                self.state_controller.hunt_cfg["window_pid"] = window_dict.get("pid")
-                self.state_controller.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
-                self.state_controller.hunt_cfg["window_title"] = window_dict.get("title")
-                save_hunt_config(self.state_controller.hunt_cfg)
+                self.state_controller.set_hunt_config_value("window_pid", window_dict.get("pid"))
+                self.state_controller.set_hunt_config_value("window_hwnd", window_dict.get("hwnd"))
+                self.state_controller.set_hunt_config_value("window_title", window_dict.get("title"))
+                self.state_controller.save_hunt_config()
                 # Update bounds display
                 if self.window_controller:
                     self.window_controller.update_window_bounds_display()
