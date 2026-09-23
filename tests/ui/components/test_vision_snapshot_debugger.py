@@ -37,9 +37,17 @@ def test_vision_snapshot_debugger_memory_leak(root, app_mock):
         debugger = VisionSnapshotDebugger(app_mock)
         debugger.open_debugger()
 
+        # Override mock Canvas width/height if it returns 0 (from dummy widget)
+        if hasattr(debugger.canvas, 'winfo_width'):
+            debugger.canvas.winfo_width = MagicMock(return_value=800)
+            debugger.canvas.winfo_height = MagicMock(return_value=600)
+
+        root.update()
+
         # Test RAM leak conceptually by running 50 times
         for _ in range(50):
             debugger._refresh_snapshot()
+            root.update()
 
         # The reference should only hold one image at the end
         assert debugger.current_image is not None
