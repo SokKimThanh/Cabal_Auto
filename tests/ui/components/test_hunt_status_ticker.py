@@ -63,3 +63,20 @@ def test_hunt_status_ticker_state_changed_event(root, app_mock):
     assert ticker.msg_label.cget("fg") == UI.TEXT_MUTED
 
     ticker.destroy()
+
+def test_hunt_status_ticker_priority(root, app_mock):
+    ticker = HuntStatusTicker(root, app_mock)
+    ticker.pack()
+
+    # Trigger custom status update followed immediately by state changed to error
+    EventBus.trigger(HuntStatusUpdatedEvent("Detailed custom error context"))
+    EventBus.trigger(HuntStateChangedEvent("error"))
+
+    root.update()
+
+    # Should retain the detailed error message since they fired concurrently
+    assert ticker.msg_label.cget("text") == "Detailed custom error context"
+    # Should still have updated the color for the error state
+    assert ticker.msg_label.cget("fg") == UI.COLOR_DANGER
+
+    ticker.destroy()

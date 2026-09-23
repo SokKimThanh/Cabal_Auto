@@ -11,11 +11,11 @@ class HuntWorkspaceFrame(ttk.Frame):
         super().__init__(parent)
         self.app = app
 
-        self.hunt_tab = HuntTab(self, app)
-        self.hunt_tab.pack(side=tk.TOP, fill="both", expand=True)
-
         self.status_ticker = HuntStatusTicker(self, app)
         self.status_ticker.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.hunt_tab = HuntTab(self, app)
+        self.hunt_tab.pack(side=tk.TOP, fill="both", expand=True)
 
         # Temporary backward compatibility mappings for external references
         self.app.btn_move_up = getattr(self.app, "btn_move_up", None)
