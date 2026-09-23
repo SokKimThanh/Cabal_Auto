@@ -130,7 +130,7 @@ class SetupTab(ResponsiveGridBase):
         return group_frame, is_visible_var, toggle
 
     def _build_hotkeys_content(self, frame):
-        hotkey_cfg = self.app.state_controller.hunt_cfg.get("global_hotkeys", {})
+        hotkey_cfg = self.app.state_controller.get_hunt_config().get("global_hotkeys", {})
         self.app.state_controller.set_ui_var('global_hotkey_enabled', hotkey_cfg.get("enabled", True))
         self.app.state_controller.ui_vars['global_hotkey_enabled'].trace_add("write", self._on_setting_changed)
 
@@ -255,25 +255,25 @@ class SetupTab(ResponsiveGridBase):
         check_warning() # Initial check
 
     def _build_advanced_content(self, frame):
-        self.app.state_controller.set_ui_var('setup_target_key', str(self.app.state_controller.hunt_cfg.get("target_key", "TAB")))
+        self.app.state_controller.set_ui_var('setup_target_key', str(self.app.state_controller.get_hunt_config().get("target_key", "TAB")))
         self.app.state_controller.ui_vars['setup_target_key'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_press_ms', str(self.app.state_controller.hunt_cfg.get("attack_press_ms", 60)))
+        self.app.state_controller.set_ui_var('setup_press_ms', str(self.app.state_controller.get_hunt_config().get("attack_press_ms", 60)))
         self.app.state_controller.ui_vars['setup_press_ms'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_target_cycle', str(self.app.state_controller.hunt_cfg.get("target_cycle_delay", 0.2)))
+        self.app.state_controller.set_ui_var('setup_target_cycle', str(self.app.state_controller.get_hunt_config().get("target_cycle_delay", 0.2)))
         self.app.state_controller.ui_vars['setup_target_cycle'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_search_interval', str(self.app.state_controller.hunt_cfg.get("search_interval", 0.25)))
+        self.app.state_controller.set_ui_var('setup_search_interval', str(self.app.state_controller.get_hunt_config().get("search_interval", 0.25)))
         self.app.state_controller.ui_vars['setup_search_interval'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_attack_interval', str(self.app.state_controller.hunt_cfg.get("attack_interval", 0.15)))
+        self.app.state_controller.set_ui_var('setup_attack_interval', str(self.app.state_controller.get_hunt_config().get("attack_interval", 0.15)))
         self.app.state_controller.ui_vars['setup_attack_interval'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_lost_timeout', str(self.app.state_controller.hunt_cfg.get("lost_timeout_sec", 1.2)))
+        self.app.state_controller.set_ui_var('setup_lost_timeout', str(self.app.state_controller.get_hunt_config().get("lost_timeout_sec", 1.2)))
         self.app.state_controller.ui_vars['setup_lost_timeout'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_attack_duration', str(self.app.state_controller.hunt_cfg.get("attack_min_duration_sec", 1.5)))
+        self.app.state_controller.set_ui_var('setup_attack_duration', str(self.app.state_controller.get_hunt_config().get("attack_min_duration_sec", 1.5)))
         self.app.state_controller.ui_vars['setup_attack_duration'].trace_add("write", self._on_setting_changed)
 
         self._add_entry_row(frame, 0, "target_key", self.app.state_controller.ui_vars['setup_target_key'])
@@ -326,7 +326,7 @@ class SetupTab(ResponsiveGridBase):
         self.app.bind_text(ttk.Label(frame), "template").grid(
             row=0, column=0, sticky="e", pady=4
         )
-        self.app.state_controller.set_ui_var('setup_template', str(self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")))
+        self.app.state_controller.set_ui_var('setup_template', str(self.app.state_controller.get_hunt_config().get("template_path", "assets/images/target_frame.png")))
         self.app.state_controller.ui_vars['setup_template'].trace_add("write", self._on_setting_changed)
         ttk.Entry(frame, textvariable=self.app.state_controller.ui_vars['setup_template'], width=30).grid(
             row=0, column=1, columnspan=2, sticky="ew", pady=4
