@@ -28,6 +28,7 @@ from lib.system.input_backend import (
 from lib.system.input_capability import InputCapabilityManager, InputCapabilityState
 from lib.vision.target_name_reader import TargetNameReader
 from database import find_monster_by_name_api
+from lib.i18n import t
 
 
 class HuntOrchestrator:
@@ -85,7 +86,7 @@ class HuntOrchestrator:
                         "input_capability",
                         "Background mode requested but no HWND found. Stopped.",
                     )
-                    EventBus.trigger(HuntStatusUpdatedEvent('Error: Background input unsupported (no HWND). Stopped.'))
+                    EventBus.trigger(HuntStatusUpdatedEvent(t('hunt_status.error_bg_unsupported', default='Error: Background input unsupported (no HWND). Stopped.')))
                     EventBus.trigger(HuntStateChangedEvent("error"))
                     return
                 else:
@@ -109,7 +110,7 @@ class HuntOrchestrator:
                             f"Background input capability is {state.value}. Fallback disabled. Hunt aborted.",
                         )
                         EventBus.trigger(HuntStatusUpdatedEvent(
-                                f"Error: Background input {state.value}. Stopped."
+                                t('hunt_status.error_bg_state', default=f"Error: Background input {state.value}. Stopped.", state=state.value)
                             ))
                         EventBus.trigger(HuntStateChangedEvent("error"))
                         return
@@ -182,7 +183,7 @@ class HuntOrchestrator:
                     "hunt_loop", "Invalid rotation or empty rotation for policy."
                 )
                 EventBus.trigger(HuntStatusUpdatedEvent(
-                        "Error: Invalid rotation or empty rotation for policy."
+                        t('hunt_status.error_invalid_rotation', default="Error: Invalid rotation or empty rotation for policy.")
                     ))
                 self.hunt_running = False
                 EventBus.trigger(HuntStateChangedEvent("error"))
@@ -444,7 +445,7 @@ class HuntOrchestrator:
                                 f"Target acquire timeout ({target_acquire_timeout_sec}s). Backing off.",
                             )
                             EventBus.trigger(HuntStatusUpdatedEvent(
-                                    f"Target acquire timeout. Retrying..."
+                                    t('hunt_status.target_acquire_timeout', default="Target acquire timeout. Retrying...")
                                 ))
                             search_started = now
                             backoff_wait = 1.0
@@ -487,7 +488,7 @@ class HuntOrchestrator:
                                             "hunt_loop",
                                             f"Max cycle attempts reached ({target_cycle_max_attempts}). Backing off.",
                                         )
-                                        EventBus.trigger(HuntStatusUpdatedEvent(f'Max cycle attempts ({target_cycle_max_attempts}). Retrying...'))
+                                        EventBus.trigger(HuntStatusUpdatedEvent(t('hunt_status.max_cycle_attempts', default=f"Max cycle attempts ({target_cycle_max_attempts}). Retrying...", max_attempts=target_cycle_max_attempts)))
                                         backoff_wait = 1.0
                                         while backoff_wait > 0 and self.hunt_running:
                                             time.sleep(0.1)

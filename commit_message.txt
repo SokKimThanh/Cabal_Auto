@@ -1,0 +1,5 @@
+refactor: remove MagicMock from production code and fix hardcoded i18n strings
+
+- Removed `isinstance(messagebox.askyesno, MagicMock)` anti-pattern from `monster_manager_win.py`
+- Updated integration tests in `test_monster_editor_left_panel.py` to test the actual inline confirmation banner instead of a mocked messagebox
+- Wrapped hardcoded English event payloads in `hunt_orchestrator.py` with the i18n translation function `t()` to ensure proper localization
