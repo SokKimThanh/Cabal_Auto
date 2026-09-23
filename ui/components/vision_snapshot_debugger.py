@@ -72,12 +72,13 @@ class VisionSnapshotDebugger:
         frame, detections = self.vision_engine.get_latest_snapshot(timeout=0.5)
 
         if frame is None:
-            self.canvas.delete("all")
+            self.canvas.delete("timeout_text")
             self.canvas.create_text(
                 400, 300,
                 text=self.app._t("vision_debugger.no_frame") if hasattr(self.app, "_t") else "No active frame or engine is busy.",
                 fill=UI.TEXT_MUTED,
-                font=UI.get_font(role="header")
+                font=UI.get_font(role="header"),
+                tags="timeout_text"
             )
             return
 
