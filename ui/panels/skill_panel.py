@@ -20,14 +20,22 @@ class SkillPanel(ttk.LabelFrame):
         return i18n_t(key, **kwargs)
 
     def __init__(self, parent, app_state, scale_factor=1.0, hunt_tab=None):
+        self.app_state = app_state
         padding = (int(10 * scale_factor), int(8 * scale_factor))
-        super().__init__(parent, text="⚔️ Active Skills", padding=padding)
+        super().__init__(parent, text=self._t("skill_panel.title", default="Active Skills"), padding=padding)
         # Fix typography hierarchy per Task 10
         self.configure(labelanchor="n")
-        lbl = tk.Label(self, text="⚔️ Active Skills", font=UI.get_font("title", weight="bold"), bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY)
+        from ui.components.icon_button import create_icon_label
+        lbl = create_icon_label(
+            self,
+            icon_name="skill",
+            text=self._t("skill_panel.title", default="Active Skills"),
+            font=UI.get_font("title", weight="bold"),
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY
+        )
         self.configure(labelwidget=lbl)
         self.pack(fill="both", expand=True)
-        self.app_state = app_state
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
         self.controller = SkillPanelController(self.app_state)
@@ -170,7 +178,6 @@ class SkillPanel(ttk.LabelFrame):
                 self.btn_toggle_combo,
                 enabled=True,
                 icon_name="stop",
-                icon_fallback="⏹",
                 tooltip_text=self._t("skill_panel.combo_stop")
             )
             self.btn_toggle_combo.config(bg=UI.ACCENT_GREEN_BG, fg=UI.ACCENT_GREEN, text=self._t("skill_panel.combo_stop"))
@@ -179,7 +186,6 @@ class SkillPanel(ttk.LabelFrame):
                 self.btn_toggle_combo,
                 enabled=True,
                 icon_name="play",
-                icon_fallback="▶",
                 tooltip_text=self._t("skill_panel.combo_start")
             )
             self.btn_toggle_combo.config(bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED, text=self._t("skill_panel.combo_start"))
@@ -345,8 +351,7 @@ class SkillPanel(ttk.LabelFrame):
 
         from ui.components.icon_button import set_button_icon
         icon_name = "list" if self.controller.show_all_skills else "target"
-        fallback = "🌐" if self.controller.show_all_skills else "🎯"
-        set_button_icon(btn, icon_name=icon_name, fallback=fallback)
+        set_button_icon(btn, icon_name=icon_name)
 
     def _on_toggle_skills(self):
         show_all, skill_names = self.controller.toggle_skills()

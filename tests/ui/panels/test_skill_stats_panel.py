@@ -15,7 +15,7 @@ def root():
 @pytest.fixture
 def app_mock():
     app = MagicMock()
-    app._t.side_effect = lambda key: f"translated_{key}"
+    app._t.side_effect = lambda key, **kwargs: f"translated_{key}"
     return app
 
 def test_skill_stats_panel_event_binding(root, app_mock, mocker):

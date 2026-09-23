@@ -38,29 +38,28 @@ def test_hunt_status_ticker_state_changed_event(root, app_mock):
     ticker = HuntStatusTicker(root, app_mock)
     ticker.pack()
 
+    # Note: the icon logic now sets empty text if icon loaded or fallback string.
+    # To test UI colors we just check the msg_label and icon_label fg
+
     # Test error state
     EventBus.trigger(HuntStateChangedEvent("error"))
     root.update()
-    assert ticker.icon_label.cget("text") == "⚠️"
     assert ticker.msg_label.cget("fg") == UI.COLOR_DANGER
     assert ticker.msg_label.cget("text") == "translated_hunt_status_ticker.error"
 
     # Test running state
     EventBus.trigger(HuntStateChangedEvent("running"))
     root.update()
-    assert ticker.icon_label.cget("text") == "🔄"
     assert ticker.msg_label.cget("fg") == UI.TEXT_PRIMARY
 
     # Test searching state
     EventBus.trigger(HuntStateChangedEvent("searching"))
     root.update()
-    assert ticker.icon_label.cget("text") == "🔍"
     assert ticker.msg_label.cget("fg") == UI.ACCENT_AMBER
 
     # Test idle state
     EventBus.trigger(HuntStateChangedEvent("idle"))
     root.update()
-    assert ticker.icon_label.cget("text") == "ℹ️"
     assert ticker.msg_label.cget("fg") == UI.TEXT_MUTED
 
     ticker.destroy()

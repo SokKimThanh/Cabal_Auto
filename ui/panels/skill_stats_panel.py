@@ -74,13 +74,14 @@ class SkillStatsPanel(ResponsiveGridBase):
 
     def _build_ui(self):
         # We need a Label/Header for the Panel since we removed ttk.LabelFrame
-        header_label = tk.Label(
+        from ui.components.icon_button import create_icon_label
+        header_label = create_icon_label(
             self.get_content_frame(),
-            text="📈 Skill Performance",
+            icon_name="chart",
+            text=self.app._t("skill_stats_panel.title", default="Skill Performance"),
             bg=UI.BG_BASE,
             fg=UI.TEXT_PRIMARY,
-            font=UI.get_font("title", weight="bold"),
-            anchor="w"
+            font=UI.get_font("title", weight="bold")
         )
         header_label.pack(fill="x", padx=UI.SPACE_MD, pady=(UI.SPACE_MD, 0))
 

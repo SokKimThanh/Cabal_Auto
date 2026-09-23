@@ -332,7 +332,7 @@ class CompatibleTreeview(ttk.Treeview):
                         ):
                             level = v
                             break
-                return f"👹 {raw_name} (Lv.{level})"
+                return f"{raw_name} (Lv.{level})"
         return ""
 
     def curselection(self) -> tuple:
@@ -856,7 +856,6 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             text=i18n_t(
                 "quick_editor_title", ns="monster_editor", default="Quản Lý Quái Vật"
             ),
-            icon_fallback="👹",
             font=UIStyle.FONT_TITLE,
             fg=UIStyle.THEME_TEXT_PRIMARY,
             bg=UIStyle.THEME_BG_PANEL,
@@ -901,7 +900,6 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             search_frame,
             icon_name="search",
             text=i18n_t("search_label", ns="monster_editor", default="Tìm kiếm:"),
-            icon_fallback="🔍",
             font=UIStyle.FONT_LABEL,
             bg=UIStyle.THEME_BG_PANEL,
         ).grid(row=0, column=0, padx=(5, 5), pady=5, sticky="w")
@@ -1082,7 +1080,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
     def _apply_search(self) -> None:
         # Show loading status
         if hasattr(self, "stats_label") and self.stats_label:
-            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+            self.stats_label.config(text=i18n_t("loading_data", ns="monster_editor", default="Đang tải dữ liệu..."))
 
         self.search_term = (
             self.search_entry.get().strip() if hasattr(self, "search_entry") else ""
@@ -1092,7 +1090,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
 
     def _on_filter_changed(self, event: Any = None) -> None:
         if hasattr(self, "stats_label") and self.stats_label:
-            self.stats_label.config(text="⌛ Đang tải dữ liệu...")
+            self.stats_label.config(text=i18n_t("loading_data", ns="monster_editor", default="Đang tải dữ liệu..."))
 
         self.current_page = 1
         self.page_size = (
@@ -1309,12 +1307,11 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         )
         self.add_monster_button.pack(side="left", padx=10, pady=5)
 
-        # "✏️ Sửa" Button
+        # "Sửa" Button
         self.edit_btn = create_icon_button(
             self.bottom_bar_frame,
             icon_name="edit",
             text=i18n_t("btn_edit", ns="monster_editor", default="Sửa"),
-            icon_fallback="✏️",
             command=self._on_edit_monster_selected,
             button_type="blue",
             padding={"padx": 12, "pady": 6},
@@ -1392,7 +1389,7 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         # Label hiển thị thông tin trang (vẫn giữ)
         self.stats_label = tk.Label(
             status_frame,
-            text="📊 Hiển thị 0 / 0 quái vật (Trang 1/1)",
+            text=i18n_t("stats_default", ns="monster_editor", default="Hiển thị 0 / 0 quái vật (Trang 1/1)"),
             font=UIStyle.FONT_SMALL,
             fg=UIStyle.THEME_TEXT_PRIMARY,
             bg=UIStyle.THEME_BG_PANEL,
@@ -1404,7 +1401,6 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             status_frame,
             icon_name="info",
             text="",
-            icon_fallback="ℹ️",
             font=UIStyle.FONT_TEXT,
             fg=UIStyle.THEME_TEXT_PRIMARY,
             bg=UIStyle.THEME_BG_PANEL,
@@ -1677,7 +1673,12 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
                 len(self.filtered_monsters) if hasattr(self, "filtered_monsters") else 0
             )
 
-            stats_text = f"📊 Hiển thị {displayed_records} / {total_records} quái vật (Trang {self.current_page}/{total_pages})"
+            stats_text = i18n_t("stats_display", ns="monster_editor", default="Hiển thị {displayed} / {total} quái vật (Trang {page}/{total_pages})").format(
+                displayed=displayed_records,
+                total=total_records,
+                page=self.current_page,
+                total_pages=total_pages
+            )
             self.stats_label.config(text=stats_text)
 
             # Cập nhật trạng thái nút điều hướng
@@ -1700,10 +1701,13 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
             ):
                 if hasattr(self, "filtered_monsters") and hasattr(self, "monsters"):
                     self.stats_label.config(
-                        text=f"📊 Hiển thị {len(self.filtered_monsters)} / {len(self.monsters)} quái vật"
+                            text=i18n_t("stats_display_short", ns="monster_editor", default="Hiển thị {displayed} / {total} quái vật").format(
+                                displayed=len(self.filtered_monsters),
+                                total=len(self.monsters)
+                            )
                     )
                 else:
-                    self.stats_label.config(text="📊 Đang tải...")
+                        self.stats_label.config(text=i18n_t("loading_data", ns="monster_editor", default="Đang tải dữ liệu..."))
 
     def _on_row_double_click(self, event: Any) -> None:
         selection = self.monster_table.selection()
