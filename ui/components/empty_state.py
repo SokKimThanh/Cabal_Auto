@@ -2,11 +2,12 @@
 
 import tkinter as tk
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.components.icon_button import create_icon_label
 
 class EmptyState(tk.Frame):
     """Display empty state with icon, message, and guidance"""
 
-    def __init__(self, parent, icon="•", message="No data", submessage="", wraplength=300, **kwargs):
+    def __init__(self, parent, icon="info", message="No data", submessage="", wraplength=300, **kwargs):
         super().__init__(parent, bg=UI.BG_BASE, **kwargs)
 
         # Use expand to center contents vertically
@@ -14,9 +15,10 @@ class EmptyState(tk.Frame):
         container.pack(expand=True)
 
         # Icon (large, muted)
-        icon_label = tk.Label(
+        icon_label = create_icon_label(
             container,
-            text=icon,
+            icon_name=icon,
+            icon_size=48,
             font=(UI.FONT_FAMILY_UI_FALLBACK, 48),
             bg=UI.BG_BASE,
             fg=UI.TEXT_MUTED,

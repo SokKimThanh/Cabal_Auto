@@ -15,10 +15,18 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(10 * scale_factor), int(8 * scale_factor))
-        super().__init__(parent, text="🎯 Target Setup", padding=padding)
+        super().__init__(parent, text=app._t("monster_target_panel.title", default="Target Setup"), padding=padding)
         # Fix typography hierarchy per Task 10
         self.configure(labelanchor="n")
-        lbl = tk.Label(self, text="🎯 Target Setup", font=UI.get_font("title", weight="bold"), bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY)
+        from ui.components.icon_button import create_icon_label
+        lbl = create_icon_label(
+            self,
+            icon_name="target",
+            text=app._t("monster_target_panel.title", default="Target Setup"),
+            font=UI.get_font("title", weight="bold"),
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY
+        )
         self.configure(labelwidget=lbl)
         self.app = app
         self.scale_factor = scale_factor
@@ -196,7 +204,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
             parent=btn_container,
             element_id="btn_target_add",
             icon_name="add",
-            text="➕", # fallback
             command=self._on_monster_add_smart,
             button_type="default",
             tooltip_key="monster_rotation_add"
@@ -286,7 +293,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
             parent=detected_btn_container,
             element_id="btn_target_promote",
             icon_name="add",
-            text="➕", # fallback
             command=promote_current_selection,
             button_type="default",
             tooltip_key="monster_rotation_promote"
@@ -354,7 +360,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
         # 3. Any Target view
         self.any_target_empty = EmptyState(
             self.any_target_container,
-            icon="🎯",
+            icon="target",
             message=self.app._t("any_target_warning"),
             submessage=self.app._t(
                 "any_target_warning_submessage",
@@ -412,7 +418,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         self.configured_empty = EmptyState(
             self.configured_container,
-            icon="🎯",
+            icon="target",
             message=self.app._t("monster_target.empty_list"),
             submessage=self.app._t("monster_target.empty_list_submessage"),
         )
@@ -524,7 +530,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
             monster_id = item.get("monster_id")
 
             if resolution_state == "db_match":
-                status = "✓ "
+                status = "[✓] "
                 if (monster_id, item.get("dungeon_id")) in configured_keys:
                     status += f"[{self.app._t('monster_promoted')}] "
                 elif item.get("confidence", 0) > 0:
@@ -533,9 +539,9 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     f"{status}{name} #{monster_id} - {self.app._t('monster_db_match')}"
                 )
             elif resolution_state == "db_miss":
-                display_text = f"⚠ {name} - {self.app._t('monster_db_missing')}"
+                display_text = f"[!] {name} - {self.app._t('monster_db_missing')}"
             else:
-                display_text = f"❓ {self.app._t('monster_unidentified')} ({item.get('template_label', '')})"
+                display_text = f"[?] {self.app._t('monster_unidentified')} ({item.get('template_label', '')})"
 
             self.detected_monsters_listbox.insert(tk.END, display_text)
 
@@ -632,7 +638,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     self.btn_add,
                     enabled=False,
                     icon_name="accept",
-                    icon_fallback="✓",
                     tooltip_text=self.app._t("tooltip_add_monster_locked")
                 )
             else:
@@ -641,7 +646,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     self.btn_add,
                     enabled=True,
                     icon_name="add",
-                    icon_fallback="➕",
                     tooltip_text=self.app._t("tooltip_add_monster_training")
                 )
 
@@ -660,7 +664,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
                 self.btn_add,
                 enabled=True,
                 icon_name="add",
-                icon_fallback="➕",
                 tooltip_text=self.app._t("tooltip_add_monster_normal")
             )
 

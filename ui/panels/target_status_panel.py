@@ -23,10 +23,18 @@ class TargetStatusPanel(ttk.LabelFrame):
 
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(8 * scale_factor), int(6 * scale_factor))
-        super().__init__(parent, text="📊 Target Status", padding=padding)
+        super().__init__(parent, text=app._t("target_status_panel.title", default="Target Status"), padding=padding)
         # Fix typography hierarchy per Task 10
         self.configure(labelanchor="n")
-        lbl = tk.Label(self, text="📊 Target Status", font=UI.get_font("title", weight="bold"), bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY)
+        from ui.components.icon_button import create_icon_label
+        lbl = create_icon_label(
+            self,
+            icon_name="chart",
+            text=app._t("target_status_panel.title", default="Target Status"),
+            font=UI.get_font("title", weight="bold"),
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY
+        )
         self.configure(labelwidget=lbl)
         self.app = app
         self.scale_factor = scale_factor
@@ -230,7 +238,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         title_label = tk.Label(
             header_inner,
-            text="⊕ TARGET STATUS",
+            text=self.app._t("target_status_panel.target_status_header", default="TARGET STATUS").upper(),
             font=(self.font_mono, UI.SIZE_TINY, "bold"),
             fg=UI.TEXT_MUTED,
             bg=UI.BG_ELEVATED,

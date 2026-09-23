@@ -377,11 +377,13 @@ class HuntTab(ttk.Frame):
         from ui.components.vision_snapshot_debugger import VisionSnapshotDebugger
         self.vision_debugger = VisionSnapshotDebugger(self.app)
 
-        self.btn_debug_vision = tk.Button(
+        from ui.components.icon_button import create_icon_button
+        self.btn_debug_vision = create_icon_button(
             self.debug_action_frame,
+            icon_name="search",
             text=self.app._t("vision_debugger.button") if hasattr(self.app, "_t") else "Debug Vision",
             command=self.vision_debugger.open_debugger,
-            **UI.get_button_style("neutral")
+            button_type="neutral"
         )
         self.btn_debug_vision.pack(side=tk.RIGHT)
 
