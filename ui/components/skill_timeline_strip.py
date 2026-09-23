@@ -47,8 +47,18 @@ class SkillSlotCanvas(tk.Canvas):
         elif self.icon_key != 'unknown':
             img = icon_helper.get_icon(self.icon_key, size=(24, 24))
             if img:
-                self._images['icon'] = img
-                self.create_image(self.SLOT_SIZE//2, self.SLOT_SIZE//2 - 4, image=img, tags="icon")
+                if isinstance(img, str):
+                    self.create_text(
+                        self.SLOT_SIZE//2,
+                        self.SLOT_SIZE//2 - 4,
+                        text=img,
+                        fill=UI.TEXT_PRIMARY,
+                        font=UI.get_font(role="header"),
+                        tags="icon"
+                    )
+                else:
+                    self._images['icon'] = img
+                    self.create_image(self.SLOT_SIZE//2, self.SLOT_SIZE//2 - 4, image=img, tags="icon")
             else:
                 self.create_text(
                     self.SLOT_SIZE//2,
