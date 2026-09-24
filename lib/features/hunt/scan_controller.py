@@ -18,12 +18,14 @@ class ScanController:
         set_status_icon: Callable[[str], None],
         show_results: Callable[[Dict[str, Any]], None],
         icons: Any,
+        get_hwnd: Optional[Callable[[], Optional[int]]] = None,  # FIX BUG #5
     ):
         self.vision_engine_getter = vision_engine_getter
         self.set_status_text = set_status_text
         self.set_status_icon = set_status_icon
         self.show_results = show_results
         self.icons = icons
+        self.get_hwnd = get_hwnd  # FIX BUG #5
         self.logger = logging.getLogger(__name__)
 
     def run_scan(self, manual: bool = False):
@@ -46,8 +48,26 @@ class ScanController:
 
                 scanner = AutoScanner(vision_engine)
 
-                # Boundary check: window
-                window_info = scanner.detect_window()
+                # FIX BUG #5: Ưu tiên HWND đã chọn từ UI
+                window_info = None
+                if self.get_hwnd:
+                    try:
+                        hwnd = self.get_hwnd()
+                        if hwnd:
+                            from lib.system.window_manager import WindowManager
+                            info = WindowManager().get_window_info(hwnd)
+                            if info and not info.is_minimized:
+                                window_info = {"hwnd": hwnd, "rect": info.rect}
+                                self.logger.info(f"[Scan] Dùng HWND từ UI: {hwnd}")
+                            else:
+                                self.logger.warning(f"[Scan] HWND {hwnd} invalid or minimized")
+                    except Exception as e:
+                        self.logger.warning(f"[Scan] Lỗi lấy window từ UI: {e}")
+
+                # Fallback: tự tìm window
+                if not window_info:
+                    window_info = scanner.detect_window()
+
                 if not window_info:
                     self.logger.warning(
                         "[AutoScan] Warning: Game window not connected. Skipping scan."

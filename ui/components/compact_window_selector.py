@@ -95,6 +95,18 @@ class CompactWindowSelector:
         )
         self.refresh_btn.pack(side="left")
 
+        # FIX BUG #2: Bắt đầu auto-refresh window list
+        self._schedule_auto_refresh()
+
+    def _schedule_auto_refresh(self):
+        """FIX BUG #2: Tự refresh window list mỗi 2 giây nếu chưa chọn được window."""
+        if not self.selected_window:
+            try:
+                self._on_refresh()
+            except Exception as e:
+                logger.debug(f"Auto refresh failed: {e}")
+        self.parent.after(2000, self._schedule_auto_refresh)
+
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
         return self.frame

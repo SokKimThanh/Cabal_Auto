@@ -111,7 +111,14 @@ class SkillPanel(ttk.LabelFrame):
         ).pack(fill="x", pady=(0, 5))
 
         combo_seq = self._map_skills_to_timeline_format(self.controller.get_combo_sequence())
-        self.attack_timeline = SkillTimelineStrip(self.content_frame, skills=combo_seq)
+        self.attack_timeline = SkillTimelineStrip(
+            self.content_frame,
+            skills=combo_seq,
+            lane_name="attack_combo",       # FIX BUG #6
+            on_add_skill=self._open_skill_picker,
+            on_skills_changed=self._on_lane_changed,
+            app_state=self.app_state,
+        )
         self.attack_timeline.pack(fill="x", pady=(0, 10))
 
         # Title for buff lane
@@ -125,7 +132,14 @@ class SkillPanel(ttk.LabelFrame):
         ).pack(fill="x", pady=(10, 5))
 
         buff_seq = self._map_skills_to_timeline_format(self.controller.get_buff_sequence())
-        self.buff_timeline = SkillTimelineStrip(self.content_frame, skills=buff_seq)
+        self.buff_timeline = SkillTimelineStrip(
+            self.content_frame,
+            skills=buff_seq,
+            lane_name="buff_lane",          # FIX BUG #6
+            on_add_skill=self._open_skill_picker,
+            on_skills_changed=self._on_lane_changed,
+            app_state=self.app_state,
+        )
         self.buff_timeline.pack(fill="x", pady=(0, 10))
 
     def _build_toggle_section(self):
@@ -488,6 +502,67 @@ class SkillPanel(ttk.LabelFrame):
         """Revert to default preset"""
         class_id = getattr(self.app_state, "_current_class_id", 1)
         self.preset_controller.on_reset(class_id)
+
+    def _open_skill_picker(self, lane_name: str, excluded_ids: set):
+        """FIX BUG #6: Mở SkillPicker cho lane."""
+        from dialogs.skill_picker import SkillPickerDialog
+        from lib.db.repositories.skill_repository import SkillRepository
+
+        show_all = getattr(self.controller, "show_all_skills", False)
+        class_id = getattr(self.app_state, "_current_class_id", 1)
+
+        repo = SkillRepository()
+        skills = repo.list_skills(class_id=class_id, include_all=show_all)
+
+        if not skills:
+            from ui.dialog_service import DialogService
+            DialogService.show_info(
+                "Không có skill",
+                f"Class {class_id} chưa có skill nào trong DB."
+            )
+            return
+
+        def on_skill_selected(record):
+            timeline = self.attack_timeline if lane_name == "attack_combo" else self.buff_timeline
+            new_skill = {
+                "name": record.get("name", "Unknown"),
+                "icon_key": record.get("icon_key", "unknown"),
+                "hotkey": record.get("key", ""),
+                "skill_id": record.get("skill_id"),
+            }
+            timeline.skills.append(new_skill)
+            timeline.render_skills()
+            timeline.on_skills_changed(lane_name, timeline.skills)
+
+        SkillPickerDialog(
+            parent=self.winfo_toplevel(),
+            skills=skills,
+            on_select=on_skill_selected,
+            t_func=self._t,
+            excluded_skill_ids=excluded_ids,
+        )
+
+    def _on_lane_changed(self, lane_name: str, skills: list):
+        """FIX BUG #6: Sync lane changes to app_state.skill_slots."""
+        if not hasattr(self.app_state, "skill_slots"):
+            self.app_state.skill_slots = {"attack_combo": [], "buff_lane": []}
+
+        self.app_state.skill_slots[lane_name] = [
+            {
+                "position": idx,
+                "lane_type": lane_name,
+                "skill_id": s.get("skill_id"),
+                "skill_name": s.get("name", ""),
+                "user_hotkey": s.get("hotkey", ""),
+                "assigned": s.get("skill_id") is not None,
+                "is_ready": True,
+                "cooldown_remaining": 0.0,
+            }
+            for idx, s in enumerate(skills)
+        ]
+
+        if getattr(self.app_state, "_preset_mode", "default") == "default":
+            self.preset_controller.set_custom_mode()
 
     def _on_save_preset_click(self):
         class_id = getattr(self.app_state, "_current_class_id", 1)
