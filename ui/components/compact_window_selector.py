@@ -149,7 +149,8 @@ class CompactWindowSelector:
     def _set_loading_state(self, loading: bool):
         """Prevent duplicate scans while window detection is running."""
         state = "disabled" if loading else "normal"
-        self.refresh_btn.config(state=state, text=self.app._t("ui.loading") if loading and hasattr(self.app, "_t") else ("Loading..." if loading else ""))
+        _t = getattr(self.root, '_t', lambda x, **kwargs: x)
+        self.refresh_btn.config(state=state, text=_t("ui.loading") if loading else "")
         self.dropdown_btn.config(state=state, text="⟳" if loading else "▼")
 
     def _on_refresh_clicked(self):
