@@ -12,11 +12,11 @@ Các prompt được thiết kế theo nguyên tắc Self-Contained, không cầ
 |---------|----------|-----------|-----------|---------|
 | 01 | Fix cascade Task 1 ↔ 4 | Bug Tích Hợp | 2h | P0 |
 | 02 | Fix TclError fallback | Crash Risk | 1h | P0 |
-| 03 | Sweep emoji standardize icon | Tech Debt | 8h | P1 |
+| 03 | Sweep emoji standardize icon | Tech Debt | 1h | P1 |
 | 04 | Verify integrate Task 6 | Integration | 1h | P1 |
 | 05 | Fix vision fallback | Spec Bug | 0.5h | P2 |
-| 06 | Decouple D1 config | Tech Debt | 6h | P1 |
-| 07 | Cleanup D4 D6 | Tech Debt | 4h | P1 |
+| 06 | Decouple D1 config | Tech Debt | 2h | P1 |
+| 07 | Cleanup D4 D6 | Tech Debt | 2h | P1 |
 | 08 | Fix MagicMock & backend i18n | Code Hygiene | 2h | P2 |
 
 ## 🔗 Dependency Rules & Thứ tự thực thi (5 Ngày)

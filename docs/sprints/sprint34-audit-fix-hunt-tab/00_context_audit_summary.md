@@ -45,11 +45,11 @@ Tài liệu này cung cấp bối cảnh từ đợt kiểm toán Sprint 33 (Imp
 |------|----------|-----------|-------|
 | 01 | P0 | 2h | Fix cascade Task 1 ↔ 4 (Truyền đúng dữ liệu vào Timeline). |
 | 02 | P0 | 1h | Fix TclError fallback (Sử dụng widget hợp lệ khi thiếu PNG). |
-| 03 | P1 | 8h | Sweep emoji & chuẩn hóa icon với `IconHelper`. |
+| 03 | P1 | 1h | Sweep emoji & chuẩn hóa icon với `IconHelper`. |
 | 04 | P1 | 1h | Verify và fix integration của `HuntStatusTicker`. |
 | 05 | P2 | 0.5h | Fix spec fallback của `VisionSnapshotDebugger`. |
-| 06 | P1 | 6h | Trả nợ D1: Tách rời cấu hình UI (Decouple config read/write). |
-| 07 | P1 | 4h | Trả nợ D4, D6: Gộp event loop vào UIAnimationManager & i18n hóa. |
+| 06 | P1 | 2h | Trả nợ D1: Tách rời cấu hình UI (Decouple config read/write). |
+| 07 | P1 | 2h | Trả nợ D4, D6: Gộp event loop vào UIAnimationManager & i18n hóa. |
 | 08 | P2 | 2h | Xóa code detect Test trong production và sửa hardcode backend. |
 
 ## 5. Conventions Bắt Buộc (Rules of Engagement)

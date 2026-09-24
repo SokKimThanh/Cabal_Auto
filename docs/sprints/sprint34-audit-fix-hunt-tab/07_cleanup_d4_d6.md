@@ -9,7 +9,7 @@
 - **Hành động**: Tiếp tục quét các file UI để thay thế hardcode string sang i18n key.
 
 ## 🎯 Scope
-- Finding: D4, D6 | Priority: P1 | Estimate: 4h
+- Finding: D4, D6 | Priority: P1 | Estimate: 2h
 - Dependency: Task 03 hoàn thiện (Đã xử lý emoji cứng)
 - Dependency Check: `grep -rn "_pulse_step" ui/components/status_badge.py`
 

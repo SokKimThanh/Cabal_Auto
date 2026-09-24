@@ -9,7 +9,7 @@
 - **Hành động**: Tiến hành tách rời luồng đọc/ghi config ra khỏi các file UI.
 
 ## 🎯 Scope
-- Finding: D1 | Priority: P1 | Estimate: 6h
+- Finding: D1 | Priority: P1 | Estimate: 2h
 - Dependency: Task 01 đến 05 hoàn thiện
 - Dependency Check: `grep -rn "hunt_cfg.get" ui/`
 
