@@ -218,7 +218,7 @@ class IconFormComponent(tk.Frame):
             test_missing = "___MISSING___"
             val = t(key, default=test_missing, ns=None, lang=None)
             if val == test_missing:
-                self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
+                self.lbl_tooltip_warning.config(text="Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
             else:
                 self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
 

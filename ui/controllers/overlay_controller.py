@@ -100,7 +100,7 @@ class OverlayController:
 
                             # Handle minimized window
                             if current_window.is_minimized:
-                                print("[Overlay] ⚠️ Game is minimized, restoring...")
+                                print("[Overlay] Game is minimized, restoring...")
                                 wm.restore(target_hwnd)
                                 time.sleep(0.3)
 
@@ -120,7 +120,7 @@ class OverlayController:
                                 window_bounds
                             ):
                                 print(
-                                    f"[Overlay] ⚠️ Detected minimized or invalid rect, clearing: {window_bounds}"
+                                    f"[Overlay] Detected minimized or invalid rect, clearing: {window_bounds}"
                                 )
                                 window_bounds = None
 
@@ -139,7 +139,7 @@ class OverlayController:
                                 )
                         else:
                             print(
-                                f"[Overlay] ⚠️ Could not get current window info for HWND:{target_hwnd}"
+                                f"[Overlay] Could not get current window info for HWND:{target_hwnd}"
                             )
                     except Exception as e:
                         print(f"[Overlay] ❌ Error refreshing position: {e}")
@@ -189,7 +189,7 @@ class OverlayController:
                                         )
                                     else:
                                         print(
-                                            "[Overlay] ⚠️ Could not get window info after restore"
+                                            "[Overlay] Could not get window info after restore"
                                         )
 
                                 if not cabal_window.is_foreground:

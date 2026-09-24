@@ -43,7 +43,7 @@ NOTIFICATION_STYLES = {
     "info": {
         "bg": "#E3F2FD",  # Light blue
         "fg": "#1976D2",  # Dark blue
-        "icon": "ℹ️",
+        "icon": "",
         "border": "#2196F3",  # Blue
     },
     "success": {
@@ -55,7 +55,7 @@ NOTIFICATION_STYLES = {
     "warning": {
         "bg": "#FFF3CD",  # Light yellow
         "fg": "#856404",  # Dark yellow
-        "icon": "⚠",
+        "icon": "",
         "border": "#FFC107",  # Yellow
     },
     "error": {
