@@ -346,18 +346,18 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     0 <= target_y <= target.winfo_height()
                     and 0 <= target_x <= target.winfo_width()
                 ):
-                    idx = event.widget.drag_data["source_idx"]
-                    if hasattr(self.app, "_detected_snapshot_items") and idx < len(self.app._detected_snapshot_items):
-                        runtime_item = self.app._detected_snapshot_items[idx]
+                    item_id = event.widget.drag_data["source_id"]
+                    if hasattr(self.app, "_detected_snapshot_items_map") and item_id in self.app._detected_snapshot_items_map:
+                        runtime_item = self.app._detected_snapshot_items_map[item_id]
                         if hasattr(self.app, "monster_rotation_controller"):
                             self.app.monster_rotation_controller.promote_detected_monster(runtime_item)
                 target.selection_clear(0, tk.END)
             del event.widget.drag_data
 
         # Apply drag bindings
-        self.detected_monsters_listbox.bind("<ButtonPress-1>", on_drag_start)
-        self.detected_monsters_listbox.bind("<B1-Motion>", on_drag_motion)
-        self.detected_monsters_listbox.bind("<ButtonRelease-1>", on_drop)
+        self.detected_monsters_treeview.bind("<ButtonPress-1>", on_drag_start)
+        self.detected_monsters_treeview.bind("<B1-Motion>", on_drag_motion)
+        self.detected_monsters_treeview.bind("<ButtonRelease-1>", on_drop)
 
         # 3. Any Target view
         self.any_target_empty = EmptyState(
