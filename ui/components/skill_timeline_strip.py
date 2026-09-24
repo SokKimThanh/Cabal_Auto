@@ -3,7 +3,7 @@ from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.events.event_bus import EventBus
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 
 class SkillSlotCanvas(tk.Canvas):
     SLOT_SIZE = 48
@@ -129,9 +129,22 @@ class SkillSlotCanvas(tk.Canvas):
 class SkillTimelineStrip(ttk.Frame):
     MAX_SLOTS = 8
 
-    def __init__(self, parent, skills: List[Dict[str, Any]] = None, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        skills: List[Dict[str, Any]] = None,
+        lane_name: str = "",
+        on_add_skill: Optional[Callable] = None,   # FIX BUG #6
+        on_skills_changed: Optional[Callable] = None,  # FIX BUG #6
+        app_state: Any = None,                      # FIX BUG #6
+        *args, **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
         self.skills = skills or []
+        self.lane_name = lane_name
+        self.on_add_skill = on_add_skill
+        self.on_skills_changed = on_skills_changed
+        self.app_state = app_state
 
         # State tracking for Undo
         self._history: List[List[Dict[str, Any]]] = []
@@ -155,6 +168,16 @@ class SkillTimelineStrip(ttk.Frame):
             bg=UI.BG_SURFACE, fg=UI.TEXT_PRIMARY
         )
         self.title_label.pack(side="left")
+
+        # FIX BUG #6: nút "+" thêm skill
+        if self.on_add_skill:
+            self.add_btn = tk.Button(
+                self.header_frame,
+                text="+",
+                command=self._on_add_click,
+                **UI.get_button_style("neutral")
+            )
+            self.add_btn.pack(side="left", padx=(8, 0))
 
         self.undo_btn = tk.Button(
             self.header_frame,
@@ -192,10 +215,19 @@ class SkillTimelineStrip(ttk.Frame):
         """Reset the scroll region to encompass the inner frame"""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+    def _on_add_click(self):
+        """FIX BUG #6: Gọi callback để mở SkillPicker."""
+        if self.on_add_skill:
+            current_ids = {s.get("skill_id") for s in self.skills if s.get("skill_id")}
+            self.on_add_skill(self.lane_name, current_ids)
+
     def update_skills(self, skills: List[Dict[str, Any]]):
         """Update the list of skills and re-render."""
         self.skills = skills
         self.render_skills()
+        # FIX BUG #6: notify parent khi skills thay đổi
+        if self.on_skills_changed:
+            self.on_skills_changed(self.lane_name, self.skills)
 
     def render_skills(self):
         """Render the list of skills into slots."""

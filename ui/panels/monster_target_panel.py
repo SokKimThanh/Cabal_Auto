@@ -462,9 +462,10 @@ class MonsterTargetPanel(ttk.LabelFrame):
         # Initial call to set correct state
         self.update_training_mode_buttons()
 
-        # Legacy wiring to HuntTab is applied after refreshing the rotation list below.
-        if hasattr(self.app, "_refresh_monster_rotation_list"):
-            self.app._refresh_monster_rotation_list()
+        # FIX BUG #3: Refresh rotation list từ config khi khởi động
+        # (Trước đây gọi self.app._refresh_monster_rotation_list() nhưng method này
+        #  thuộc chính class MonsterTargetPanel, không phải App → hasattr trả False)
+        self._refresh_monster_rotation_list()
 
         if getattr(self, "hunt_tab", None):
             for prop in ["target_image_label", "target_name_label", "status_label",

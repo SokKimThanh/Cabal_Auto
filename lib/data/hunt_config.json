@@ -18,7 +18,20 @@
         1119
     ],
     "ui_mode": "beginner",
-    "monster_rotation": [],
+    "monster_rotation": [
+        {
+            "monster_id": "31",
+            "name": "assault",
+            "priority": 1,
+            "dungeon_id": null
+        },
+        {
+            "monster_id": "211",
+            "name": "grappler",
+            "priority": 2,
+            "dungeon_id": null
+        }
+    ],
     "skill_slots": [],
     "schema_version": 3,
     "buff_slots": [],

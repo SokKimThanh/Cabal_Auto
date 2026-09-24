@@ -479,6 +479,15 @@ class ScreenCapture:
             # Convert BGRA to BGR
             frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
+            # FIX BUG #4: Phát hiện frame đen (game fullscreen exclusive
+            # không capture được bằng BitBlt/PrintWindow)
+            if frame.size == 0 or float(frame.mean()) < 1.0:
+                logger.warning(
+                    "[Capture] Frame is black - game có thể đang fullscreen exclusive. "
+                    "Chuyển game sang Borderless/Windowed để scan hoạt động."
+                )
+                return None
+
             with self._frame_lock:
                 self._latest_frame = frame.copy()
 
