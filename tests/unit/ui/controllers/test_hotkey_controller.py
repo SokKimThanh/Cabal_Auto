@@ -29,11 +29,12 @@ def test_hotkey_controller_register_all(mock_keyboard):
     parent.hunt_cfg = hunt_cfg
     parent.state_controller = MagicMock()
     parent.state_controller.hunt_cfg = hunt_cfg
+    parent.state_controller.get_hunt_config_value.side_effect = lambda k, d=None: hunt_cfg.get("global_hotkeys", {})
 
     controller = HotkeyController(parent, hunt_cfg)
     controller.register_all()
 
-    assert mock_keyboard.add_hotkey.call_count == 6
+    assert mock_keyboard.add_hotkey.call_count == 7
     mock_keyboard.add_hotkey.assert_any_call(
         "f5", controller.on_hunt_start, suppress=False
     )
@@ -82,6 +83,7 @@ def test_hotkey_controller_on_setup_wizard():
     parent.hunt_cfg = hunt_cfg
     parent.state_controller = MagicMock()
     parent.state_controller.hunt_cfg = hunt_cfg
+    parent.state_controller.get_hunt_config_value.return_value = "beginner"
     parent._setup_wizard_win = None
     parent.setup_wizard_win = None
     parent._setup_wizard = None

@@ -138,6 +138,7 @@ class HotkeyController:
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
             monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
             build_key = hotkey_cfg.get("build_manager_key", "ctrl+b")
+            add_template_key = hotkey_cfg.get("add_template_key", "ctrl+t")
 
             # Unregister old hotkeys first (in case of re-registration)
             self.unregister_all()
@@ -220,6 +221,21 @@ class HotkeyController:
                 print(f"Failed to register build manager hotkey '{build_key}': {e}")
                 self._failed_hotkeys[build_key] = repr(e)
                 self._global_build_hotkey = None
+
+            try:
+                self._global_add_template_hotkey = keyboard.add_hotkey(
+                    add_template_key,
+                    self.on_add_template,
+                    suppress=False,
+                )
+                self._registered_hotkey_handlers[add_template_key] = (
+                    self._global_add_template_hotkey
+                )
+            except Exception as e:
+                print(f"Failed to register add template hotkey '{add_template_key}': {e}")
+                self._failed_hotkeys[add_template_key] = repr(e)
+                self._global_add_template_hotkey = None
+
             self._hotkeys_registered_ok = len(self._failed_hotkeys) == 0
 
             # Log successful registration
@@ -481,6 +497,9 @@ class HotkeyController:
             else:
                 self.parent.switch_view("build_manager")
 
+    def on_add_template(self, *_args) -> None:
+        from lib.events.event_bus import EventBus, VisionAddTemplateEvent
+        EventBus.trigger(VisionAddTemplateEvent())
 
     def update_diagnostics_ui_state(self) -> None:
         """Update the hotkey status UI variables based on registration state."""
