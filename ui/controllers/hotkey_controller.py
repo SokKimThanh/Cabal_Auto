@@ -508,24 +508,17 @@ class HotkeyController:
             info = wm.get_window_info(fg_hwnd)
             if info:
                 app_pid = os.getpid()
+                # DO NOT capture if the foreground window is the bot's own UI
                 if info.pid == app_pid:
-                    EventBus.trigger(VisionAddTemplateEvent())
+                    print(f"[Hotkeys] Add Template blocked: Active window is the bot tool (PID: {info.pid}).")
                     return
 
-                # Check if it matches configured cabal window
-                hunt_cfg = {}
-                if hasattr(self.parent, "state_controller"):
-                    hunt_cfg = getattr(self.parent.state_controller, "hunt_cfg", {})
-
-                target_hwnd = hunt_cfg.get("window_hwnd")
-                if target_hwnd and info.hwnd == target_hwnd:
-                    EventBus.trigger(VisionAddTemplateEvent())
-                    return
-
-                # If neither the bot app nor the target game, ignore the hotkey
-                print(f"[Hotkeys] Add Template blocked: Active window (PID: {info.pid}, HWND: {info.hwnd}) is not the tool or game.")
+                # Trigger capture if it's the game window or any other window except the bot itself
+                print(f"[Hotkeys] Add Template triggered for window PID: {info.pid}, HWND: {info.hwnd}")
+                EventBus.trigger(VisionAddTemplateEvent())
                 return
 
+        # Fallback if window info couldn't be retrieved
         EventBus.trigger(VisionAddTemplateEvent())
 
     def update_diagnostics_ui_state(self) -> None:
