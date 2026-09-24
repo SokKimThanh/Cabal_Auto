@@ -8,7 +8,7 @@
 - 🟢 **Đã hoàn thành**: Đã quét lại toàn bộ và loại bỏ sạch emoji cứng. Thay thế thành công bằng các cấu trúc đa ngôn ngữ `_t()` và nút icon chuẩn `create_icon_button`.
 
 ## 🎯 Scope
-- Finding: #2 | Priority: P1 | Estimate: 8h
+- Finding: #2 | Priority: P1 | Estimate: 1h
 - Dependency: Independent (Thực hiện trọn 1 ngày)
 - Dependency Check: `grep -rn -P "[🔴🟢🎯➕⏱🔄ℹ️⚠️🔍⚔️📊📈⊕👹✏️⌛]" ui/ lib/features/hunt/`
 

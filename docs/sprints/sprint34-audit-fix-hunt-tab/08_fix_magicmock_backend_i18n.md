@@ -5,8 +5,8 @@
 
 
 ## 🔄 Trạng thái hiện tại
-- 🟡 **Hoàn thành 1 phần**: Không còn thấy sử dụng `MagicMock` trong production code (`lib/features/hunt/`) như Finding #5 báo cáo. Nhưng việc truyền các text tiếng Anh/Việt tĩnh qua EventBus vẫn chưa được chuyển thành i18n key.
-- **Hành động**: Review lại `hunt_orchestrator.py` và backend để đảm bảo sử dụng hàm `_t()` cho các payload gửi tới UI.
+- 🟡 **Hoàn thành 1 phần**: Lỗi MagicMock ở Finding #5 đã không còn xuất hiện trong code backend. Tuy nhiên, các chuỗi gửi qua EventBus ở `hunt_orchestrator.py` vẫn là hardcode text tĩnh (D6).
+- **Hành động**: Wrap các chuỗi EventBus bằng hàm đa ngôn ngữ `_t()`.
 
 ## 🎯 Scope
 - Finding: #5, D6 | Priority: P2 | Estimate: 2h

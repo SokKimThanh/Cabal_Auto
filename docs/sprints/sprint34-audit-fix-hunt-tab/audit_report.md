@@ -17,9 +17,9 @@ Dựa trên kết quả phân tích mã nguồn hiện tại so với kế hoạ
 
 ## ⚠️ Nhận xét chung & Rủi ro
 
-1. **Khối lượng nợ kỹ thuật lớn nhất chưa được xử lý:** Các task tốn thời gian như Task 03 (Sweep emoji) và Task 06 (Decouple config) gần như chưa được bắt đầu hoặc mới xử lý được một phần rất nhỏ.
-2. **Lỗi UX/Spec:** Task 05 (Vision fallback) chưa xử lý, lệnh xóa canvas (`delete("all")`) vẫn còn, làm mất đi tính năng lưu ảnh lỗi theo yêu cầu gốc.
+1. **Khối lượng nợ kỹ thuật:** Các task lớn (Task 03, Task 06) đã hoàn thành phần lớn khối lượng công việc, chỉ còn một số chỉnh sửa nhỏ ở các component chia sẻ. Khối lượng thời gian ước lượng đã được điều chỉnh giảm phù hợp.
+2. **Lỗi UX/Spec:** Task 05 (Vision fallback) đã được xử lý xong, lệnh `delete("all")` đã được thay thế an toàn.
 
 ## 📝 Đề xuất Hành động Tiếp theo
 
-- **Dành thời gian tập trung:** Bắt đầu Task 03 và Task 06 (hai task nặng nhất) vì số lượng file bị ảnh hưởng là rất lớn, đặc biệt là `ui/windows/library_manager.py` và luồng truyền biến `hunt_cfg`.
+- **Hoàn thiện các phần còn lại:** Tập trung giải quyết phần việc còn lại của Task 06 (Decouple config) và Task 07 (i18n hardcode) để đảm bảo sạch nợ kỹ thuật.

@@ -5,11 +5,11 @@
 
 
 ## 🔄 Trạng thái hiện tại
-- 🟡 **Hoàn thành 1 phần**: Không còn tìm thấy `_pulse_step` gây phân mảnh event loop trong `status_badge.py` (D4 đã ổn). Tuy nhiên, các chuỗi text hardcode (D6) vẫn chưa được wrap bằng hàm đa ngôn ngữ `_t()`.
-- **Hành động**: Tiếp tục quét các file UI để thay thế hardcode string sang i18n key.
+- 🟡 **Hoàn thành 1 phần**: `_pulse_step` đã bị loại bỏ ở một số widget (giảm D4), nhưng việc sử dụng hardcode text bằng tiếng Việt và tiếng Anh vẫn diễn ra rải rác.
+- **Hành động**: Cập nhật hàm gọi tĩnh bằng `_t()` cho toàn bộ các text.
 
 ## 🎯 Scope
-- Finding: D4, D6 | Priority: P1 | Estimate: 4h
+- Finding: D4, D6 | Priority: P1 | Estimate: 2h
 - Dependency: Task 03 hoàn thiện (Đã xử lý emoji cứng)
 - Dependency Check: `grep -rn "_pulse_step" ui/components/status_badge.py`
 
