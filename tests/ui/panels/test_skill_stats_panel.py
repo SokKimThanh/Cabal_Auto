@@ -19,7 +19,6 @@ def app_mock():
     return app
 
 def test_skill_stats_panel_event_binding(root, app_mock, mocker):
-    mocker.patch("ui.components.base.responsive_grid_base.ResponsiveGridBase.bind")
     panel = SkillStatsPanel(root, app_mock)
     panel.pack()
 
@@ -54,7 +53,6 @@ def test_skill_stats_panel_event_binding(root, app_mock, mocker):
 
 def test_skill_stats_panel_destroyed_safe(root, app_mock, mocker):
     """Test that event callbacks do not crash if the widget is destroyed."""
-    mocker.patch("ui.components.base.responsive_grid_base.ResponsiveGridBase.bind")
     panel = SkillStatsPanel(root, app_mock)
 
     # Destroy the widget intentionally

@@ -104,25 +104,39 @@ class LibraryManagerWindow(tk.Toplevel):
         command: Optional[Callable[[], Any] | str] = None,
         **kwargs,
     ):
-        """Create an icon-only button with hand cursor and localized tooltip."""
+        """Create an icon-only button with hand cursor and localized tooltip.
 
-        # Strip unsupported kwargs that are meant for raw tk.Button
-        invalid_kwargs = ['bg', 'fg', 'relief', 'padx', 'pady', 'font', 'cursor', 'activebackground', 'activeforeground']
-        btn_kwargs = {k: v for k, v in kwargs.items() if k not in invalid_kwargs}
-
-        # Ensure command is not None
+        If icon image is unavailable, falls back to emoji/text label while keeping cursor and tooltip.
+        """
+        img = None
+        try:
+            img = UIHelper.icon(icon_name, fallback_text)
+        except Exception:
+            img = None
+        # Do not pass emoji to image param; use text only when image missing
+        btn_kwargs = dict(kwargs)
+        # Ensure command is not None (Tk requires a callable or string)
         cmd = command if command is not None else (lambda: None)
-
-        from ui.components.icon_button import create_icon_button
-
-        btn = create_icon_button(
-            parent,
-            icon_name=icon_name,
-            text=fallback_text if fallback_text else None,
-            command=cmd,
-            button_type="neutral",
-            **btn_kwargs
-        )
+        if img:
+            btn = tk.Button(
+                parent, image=img, command=cmd, cursor="hand2", **btn_kwargs
+            )
+            try:
+                # Keep a reference on the window to avoid GC
+                if not hasattr(self, "_image_refs"):
+                    self._image_refs = []
+                self._image_refs.append(img)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+        else:
+            # Emoji/text fallback if icon image missing
+            try:
+                text_fb = self._icon_text(icon_name, fallback_text)
+            except Exception:
+                text_fb = fallback_text
+            btn = tk.Button(
+                parent, text=text_fb, command=cmd, cursor="hand2", **btn_kwargs
+            )
         try:
             attach_i18n_tooltip(
                 btn,
@@ -212,7 +226,7 @@ class LibraryManagerWindow(tk.Toplevel):
         if self.lang == "vi":
             title_text = "📋 Các Tính Năng Sắp Được Nâng Cấp"
             content_text = """
-TỔNG QUAN
+🎯 TỔNG QUAN
 
 Chúng tôi đang phát triển hệ thống Setup Wizard Vision hoàn toàn mới để thay thế
 các công cụ cũ (Chọn vùng, Kiểm tra nhận diện, Tự động dò vùng).
@@ -226,7 +240,7 @@ các công cụ cũ (Chọn vùng, Kiểm tra nhận diện, Tự động dò v�
    • Không còn bị "mù" với overlay đen đục
    • Hiển thị kích thước real-time khi kéo
 
-2. Auto-Numbering & Visual Feedback
+2. 🎯 Auto-Numbering & Visual Feedback
    • Tự động đánh số các đối tượng phát hiện được (#1, #2, #3...)
    • Hiển thị bounding box với màu sắc rõ ràng
    • Hiển thị confidence score cho mỗi detection
@@ -236,7 +250,7 @@ các công cụ cũ (Chọn vùng, Kiểm tra nhận diện, Tự động dò v�
    • Hybrid tracking: OpenCV Tracker + Template Matching
    • Re-verify định kỳ để tránh lost track
 
-4. Scale-Invariant Detection
+4. 🔍 Scale-Invariant Detection
    • Tự động handle camera zoom in/out
    • Multi-scale template matching
    • Feature-based matching (SIFT/ORB) cho robust detection
@@ -307,7 +321,7 @@ Theo dõi tiến độ tại:
         else:
             title_text = "📋 Upcoming Feature Upgrades"
             content_text = """
-OVERVIEW
+🎯 OVERVIEW
 
 We are developing a completely new Setup Wizard Vision system to replace the
 old tools (Pick Region, Test Recognition, Auto-Detect Region).
@@ -321,7 +335,7 @@ old tools (Pick Region, Test Recognition, Auto-Detect Region).
    • No more "blind" with opaque black overlay
    • Real-time dimension display while dragging
 
-2. Auto-Numbering & Visual Feedback
+2. 🎯 Auto-Numbering & Visual Feedback
    • Automatically number detected objects (#1, #2, #3...)
    • Display bounding boxes with clear colors
    • Show confidence score for each detection
@@ -331,7 +345,7 @@ old tools (Pick Region, Test Recognition, Auto-Detect Region).
    • Hybrid tracking: OpenCV Tracker + Template Matching
    • Periodic re-verify to avoid lost track
 
-4. Scale-Invariant Detection
+4. 🔍 Scale-Invariant Detection
    • Automatically handle camera zoom in/out
    • Multi-scale template matching
    • Feature-based matching (SIFT/ORB) for robust detection
@@ -439,14 +453,17 @@ Track progress at:
         btn_frame = tk.Frame(dialog, bg="white")
         btn_frame.pack(fill="x", padx=20, pady=(0, 20))
 
-        from ui.components.icon_button import create_icon_button
-
-        close_btn = create_icon_button(
+        close_btn = tk.Button(
             btn_frame,
-            icon_name="close",
             text="Close" if self.lang == "en" else "Đóng",
             command=dialog.destroy,
-            button_type="neutral"
+            bg="#757575",
+            fg="white",
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
+            padx=20,
+            pady=8,
+            relief="flat",
+            cursor="hand2",
         )
         close_btn.pack(side="right")
 
@@ -1281,7 +1298,7 @@ Track progress at:
         self._make_icon_button(
             top_bar,
             "cancel",
-            "",
+            "✖",
             "tip_close_manager",
             command=self._on_window_close,
             bg=UI.THEME_BG_PANEL,
@@ -1308,7 +1325,7 @@ Track progress at:
         self.save_btn = self._make_icon_button(
             top_bar,
             "save",
-            "",
+            "💾",
             "tip_apply_all",
             command=self._apply_all_changes,
             bg=UI.THEME_STATE_HUNTING,
@@ -1369,7 +1386,7 @@ Track progress at:
         self._make_icon_button(
             header,
             "add",
-            "+",
+            "➕",
             "tip_add_monster",
             command=self._add_monster,
             bg="#4CAF50",
@@ -1390,8 +1407,8 @@ Track progress at:
             highlightthickness=1,
         )
         search_container.pack(fill="x")
-        search_img = UIHelper.icon("search", "")
-        search_txt = self._icon_text("search", "")
+        search_img = UIHelper.icon("search", "🔍")
+        search_txt = self._icon_text("search", "🔍")
         if search_img:
             try:
                 tk.Label(
@@ -1611,7 +1628,7 @@ Track progress at:
         title.pack_propagate(False)
         tk.Label(
             title,
-            text="Edit Monster" if self.lang == "en" else "Sửa Quái",
+            text="✏️ " + ("Edit Monster" if self.lang == "en" else "Sửa Quái"),
             bg="#2196F3",
             fg="white",
             font=self.ui_font_section,
@@ -2103,7 +2120,7 @@ Track progress at:
         self._make_icon_button(
             edit_toolbar,
             "delete",
-            "",
+            "🗑️",
             "tip_template_delete",
             command=self._delete_template_inline,
             bg=UI.THEME_STATE_DANGER,
@@ -2117,7 +2134,7 @@ Track progress at:
         self.template_toggle_btn = self._make_icon_button(
             edit_toolbar,
             "edit",
-            "",
+            "✏️",
             "tip_template_edit",
             command=self._toggle_template_edit,
             bg=UI.THEME_STATE_INFO,
@@ -2131,7 +2148,7 @@ Track progress at:
         self._make_icon_button(
             edit_toolbar,
             "add",
-            "+",
+            "➕",
             "tip_template_add",
             command=self._add_template_inline,
             bg=UI.COLOR_ACCENT,
@@ -2313,8 +2330,8 @@ Track progress at:
 
         # HIDDEN: Legacy action buttons - preserved for migration
         # region_btns = tk.Frame(region_frame, bg='#E3F2FD'); region_btns.pack(fill='x')
-        # self._make_icon_button(region_btns, 'template', '', 'tip_pick_region', command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=(UIStyle.resolve_font_family('body'), 9, 'bold')).pack(side='left')
-        # self._make_icon_button(region_btns, 'search', '', 'tip_test_recognition', command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=(UIStyle.resolve_font_family('body'), 9, 'bold')).pack(side='left', padx=(8,0))
+        # self._make_icon_button(region_btns, 'template', '🖼️', 'tip_pick_region', command=self._pick_template_region, bg='#1976D2', fg='white', relief='flat', padx=10, pady=6, font=(UIStyle.resolve_font_family('body'), 9, 'bold')).pack(side='left')
+        # self._make_icon_button(region_btns, 'search', '🔍', 'tip_test_recognition', command=self._test_template_recognition, bg='#455A64', fg='white', relief='flat', padx=10, pady=6, font=(UIStyle.resolve_font_family('body'), 9, 'bold')).pack(side='left', padx=(8,0))
         # self._make_icon_button(region_btns, 'info', '📋', 'tip_auto_detect', command=self._auto_detect_template_region, bg='#00897B', fg='white', relief='flat', padx=10, pady=6, font=(UIStyle.resolve_font_family('body'), 9, 'bold')).pack(side='left', padx=(8,0))
 
         # ============================================================================
@@ -2345,17 +2362,21 @@ Track progress at:
         wizard_btn_frame.pack(fill="x", padx=10, pady=(0, 8))
 
         wizard_btn_text = (
-            "Setup Wizard Vision"
+            "🔮 Setup Wizard Vision"
             if self.lang == "en"
-            else "Thiết Lập Vision Nâng Cao"
+            else "🔮 Thiết Lập Vision Nâng Cao"
         )
-        from ui.components.icon_button import create_icon_button
-        wizard_btn = create_icon_button(
+        wizard_btn = tk.Button(
             wizard_btn_frame,
-            icon_name="settings",
             text=wizard_btn_text,
             command=self._open_setup_wizard_vision,
-            button_type="green_light"
+            bg="#66BB6A",
+            fg="white",
+            relief="flat",
+            padx=15,
+            pady=8,
+            font=(UIStyle.resolve_font_family("body"), 10, "bold"),
+            cursor="hand2",
         )
         wizard_btn.pack(side="left")
 
@@ -2416,7 +2437,7 @@ Track progress at:
         # Immediately populate inline edit form
         self.template_form_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
         self.form_title_label.config(
-            text="Edit Template" if self.lang == "en" else "Sửa Template"
+            text="✏️ " + ("Edit Template" if self.lang == "en" else "Sửa Template")
         )
         # Suspend traces while populating fields
         self._suspend_template_var_traces = True
@@ -2504,7 +2525,7 @@ Track progress at:
             # Unlock for editing
             self._unlock_template_fields()
             # Update button icon to save.ico
-            self._update_toggle_button_icon("save", "", "tip_template_save_temp")
+            self._update_toggle_button_icon("save", "💾", "tip_template_save_temp")
         else:
             # Save mode - save immediately
             self._save_template_immediately()
@@ -2594,7 +2615,7 @@ Track progress at:
 
             # Lock fields again and switch back to edit icon
             self._lock_template_fields()
-            self._update_toggle_button_icon("edit", "", "tip_template_edit")
+            self._update_toggle_button_icon("edit", "✏️", "tip_template_edit")
 
             # Show "Đã lưu" badge (green) - will auto-hide after 3s
             self._show_saved_badge()
@@ -3098,7 +3119,7 @@ Track progress at:
         # Show form (if not visible) and let selection handler populate; traces will auto-apply changes
         self.template_form_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
         self.form_title_label.config(
-            text="Edit Template" if self.lang == "en" else "Sửa Template"
+            text="✏️ " + ("Edit Template" if self.lang == "en" else "Sửa Template")
         )
 
     def _delete_template_inline(self):
@@ -3586,7 +3607,7 @@ Track progress at:
         self._make_icon_button(
             header,
             "add",
-            "+",
+            "➕",
             "tip_add_skill",
             command=self._add_skill,
             bg="#4CAF50",
@@ -3607,8 +3628,8 @@ Track progress at:
             highlightthickness=1,
         )
         search_container.pack(fill="x")
-        search_img = UIHelper.icon("search", "")
-        search_txt = self._icon_text("search", "")
+        search_img = UIHelper.icon("search", "🔍")
+        search_txt = self._icon_text("search", "🔍")
         if search_img:
             try:
                 tk.Label(
@@ -3804,7 +3825,7 @@ Track progress at:
         skill_type = skill.get("type", "attack")
 
         # Type display
-        type_display = ""
+        type_display = "⚔️" if skill_type == "attack" else "🛡️"
         if self.lang == "en":
             type_text = skill_type.capitalize()
         else:
@@ -3903,7 +3924,7 @@ Track progress at:
         title.pack_propagate(False)
         tk.Label(
             title,
-            text="Edit Skill" if self.lang == "en" else "Sửa Kỹ Năng",
+            text="✏️ " + ("Edit Skill" if self.lang == "en" else "Sửa Kỹ Năng"),
             bg="#2196F3",
             fg="white",
             font=self.ui_font_section,
@@ -4077,7 +4098,7 @@ Track progress at:
                 self._make_icon_button(
                     btn_frame,
                     "delete",
-                    "",
+                    "🗑️",
                     "tip_delete_skill_image",
                     command=self._delete_skill_image,
                     bg="#f44336",
@@ -4335,7 +4356,7 @@ Track progress at:
 
             tk.Label(
                 error_frame,
-                text=f"Skill Rotation module not available\n\n{str(e)}",
+                text=f"⚠️ Skill Rotation module not available\n\n{str(e)}",
                 font=(UIStyle.resolve_font_family("body"), 12),
                 fg="#F44336",
                 bg="white",
@@ -4515,38 +4536,38 @@ Track progress at:
         if self.lang == "vi":
             text = (
                 f"{'='*50}\n"
-                f"[{self._t('timing_analysis')}]\n"
+                f"📊 {self._t('timing_analysis')}\n"
                 f"{'='*50}\n\n"
                 f"• {self._t('timing_hits_to_kill')}: {result.hits_to_kill} đòn\n"
                 f"• {self._t('timing_time_per_hit')}: {1.0/result.attacks_per_second:.2f}s\n"
                 f"• {self._t('timing_kill_time')}: {result.estimated_kill_time_sec:.2f}s\n\n"
                 f"{'='*50}\n"
-                f"[{self._t('timing_recommendations')}]\n"
+                f"⚙️ {self._t('timing_recommendations')}\n"
                 f"{'='*50}\n\n"
                 f"• {self._t('timing_lost_timeout')}: {result.lost_timeout_sec:.2f}s\n"
                 f"  (Thời gian chờ giữa các đòn + {result.lost_timeout_margin*100:.0f}% an toàn)\n\n"
                 f"• {self._t('timing_attack_duration')}: {result.attack_min_duration_sec:.2f}s\n"
                 f"  (Thời gian hạ gục + {result.attack_duration_margin*100:.0f}% an toàn)\n\n"
                 f"{'='*50}\n"
-                f"[{self._t('timing_confidence')}]: "
+                f"🎯 {self._t('timing_confidence')}: "
             )
         else:
             text = (
                 f"{'='*50}\n"
-                f"[{self._t('timing_analysis')}]\n"
+                f"📊 {self._t('timing_analysis')}\n"
                 f"{'='*50}\n\n"
                 f"• {self._t('timing_hits_to_kill')}: {result.hits_to_kill} hits\n"
                 f"• {self._t('timing_time_per_hit')}: {1.0/result.attacks_per_second:.2f}s\n"
                 f"• {self._t('timing_kill_time')}: {result.estimated_kill_time_sec:.2f}s\n\n"
                 f"{'='*50}\n"
-                f"[{self._t('timing_recommendations')}]\n"
+                f"⚙️ {self._t('timing_recommendations')}\n"
                 f"{'='*50}\n\n"
                 f"• {self._t('timing_lost_timeout')}: {result.lost_timeout_sec:.2f}s\n"
                 f"  (Time between hits + {result.lost_timeout_margin*100:.0f}% safety margin)\n\n"
                 f"• {self._t('timing_attack_duration')}: {result.attack_min_duration_sec:.2f}s\n"
                 f"  (Kill time + {result.attack_duration_margin*100:.0f}% safety margin)\n\n"
                 f"{'='*50}\n"
-                f"[{self._t('timing_confidence')}]: "
+                f"🎯 {self._t('timing_confidence')}: "
             )
 
         # Add confidence
@@ -4568,54 +4589,54 @@ Track progress at:
             preview_text = (
                 f"📋 CÁC CON SỐ SẼ ĐƯỢC LƯU VÀO MÁY:\n"
                 f"{'─'*60}\n"
-                f"[THÔNG TIN QUÁI VẬT]:\n"
+                f"📊 THÔNG TIN QUÁI VẬT:\n"
                 f"  • Máu quái: {result.monster_hp:,.0f} HP\n"
                 f"  • Sát thương 1 đòn: {result.damage_per_hit:,.0f}\n"
                 f"  • Tốc độ đánh: {result.attacks_per_second:.2f} đòn/giây\n"
                 f"  • Thời gian 1 đòn: {time_per_hit:.2f} giây\n"
                 f"  • Cần đánh: {result.hits_to_kill} đòn\n"
                 f"  • Tổng thời gian: {result.estimated_kill_time_sec:.2f} giây\n\n"
-                f"[CÁC SỐ QUAN TRỌNG]:\n\n"
-                f"Nhấn phím giữ bao lâu?\n"
+                f"⏱️  CÁC SỐ QUAN TRỌNG:\n\n"
+                f"1️⃣ Nhấn phím giữ bao lâu?\n"
                 f"   → {result.attack_press_ms} mili-giây (0.{result.attack_press_ms} giây)\n"
                 f"   � Giống như bấm nút giữ rồi thả ra\n\n"
-                f"Đổi quái sau bao lâu?\n"
+                f"2️⃣ Đổi quái sau bao lâu?\n"
                 f"   → {result.target_cycle_delay:.2f} giây\n"
                 f"   � Đợi lâu hơn 1 đòn đánh, tránh đổi lung tung\n\n"
-                f"Tìm quái sau bao lâu?\n"
+                f"3️⃣ Tìm quái sau bao lâu?\n"
                 f"   → {result.search_interval:.2f} giây\n"
                 f"   � Tìm nhanh để phát hiện quái kịp thời\n\n"
-                f"Đánh sau bao lâu?\n"
+                f"4️⃣ Đánh sau bao lâu?\n"
                 f"   → {result.attack_interval:.2f} giây\n"
                 f"   💡 Đánh nhanh hơn bình thường một chút\n\n"
-                f"Quái mất bao lâu thì dừng?\n"
+                f"5️⃣ Quái mất bao lâu thì dừng?\n"
                 f"   → {result.lost_timeout_sec:.2f} giây\n"
                 f"   � Nếu không thấy quái quá lâu, nghĩa là chết rồi\n\n"
-                f"Đánh tối thiểu bao lâu?\n"
+                f"6️⃣ Đánh tối thiểu bao lâu?\n"
                 f"   → {result.attack_min_duration_sec:.2f} giây\n"
                 f"   💡 Đánh đủ lâu, dù có lúc không thấy quái\n\n"
                 f"{'─'*60}\n"
                 f"🤖 AUTO SẼ LÀM GÌ KHI CHẠY?\n"
                 f"{'─'*60}\n"
-                f"TÌM QUÁI (cứ {result.search_interval:.2f} giây tìm 1 lần):\n"
+                f"1️⃣ TÌM QUÁI (cứ {result.search_interval:.2f} giây tìm 1 lần):\n"
                 f"   • Nhìn màn hình tìm hình quái vật\n"
                 f"   • Thấy quái → chuyển sang bước 2\n\n"
-                f"CHỌN QUÁI:\n"
+                f"2️⃣ CHỌN QUÁI:\n"
                 f"   • Bấm phím Z để chọn quái\n"
                 f"   • Đợi {result.target_cycle_delay:.2f} giây\n"
                 f"   • Không chọn quái khác khi đang đánh\n\n"
-                f"BẮT ĐẦU ĐÁNH (đánh {result.hits_to_kill} đòn):\n"
+                f"3️⃣ BẮT ĐẦU ĐÁNH (đánh {result.hits_to_kill} đòn):\n"
                 f"   • Bấm phím tấn công giữ {result.attack_press_ms} mili-giây\n"
                 f"   • Thả phím ra\n"
                 f"   • Đợi {result.attack_interval:.2f} giây\n"
                 f"   • Lặp lại: Đánh → Chờ → Đánh → Chờ...\n"
                 f"   • Dự kiến hết ~{result.estimated_kill_time_sec:.1f} giây\n\n"
-                f"KIỂM TRA QUÁI:\n"
+                f"4️⃣ KIỂM TRA QUÁI:\n"
                 f"   • Nếu không thấy quái quá {result.lost_timeout_sec:.2f} giây:\n"
                 f"     ❌ Dừng đánh (quái chết hoặc mất rồi)\n"
                 f"   • Nếu còn thấy quái:\n"
                 f"     ✅ Đánh tiếp tối thiểu {result.attack_min_duration_sec:.2f} giây\n\n"
-                f"QUÁI CHẾT RỒI:\n"
+                f"5️⃣ QUÁI CHẾT RỒI:\n"
                 f"   • Quay lại bước 1 (tìm quái mới)\n"
                 f"   • Cứ thế lặp lại mãi mãi\n"
                 f"{'─'*60}\n"
@@ -4625,14 +4646,14 @@ Track progress at:
             preview_text = (
                 f"📋 SETTINGS TO BE APPLIED:\n"
                 f"{'─'*60}\n"
-                f"[INPUT DATA]:\n"
+                f"📊 INPUT DATA:\n"
                 f"  • Monster HP: {result.monster_hp:,.0f}\n"
                 f"  • Damage/hit: {result.damage_per_hit:,.0f}\n"
                 f"  • Attack Speed: {result.attacks_per_second:.2f} hits/s\n"
                 f"  • Time/hit: {time_per_hit:.2f}s (= 1 / {result.attacks_per_second:.2f})\n"
                 f"  • Hits to kill: {result.hits_to_kill} hits (= HP / Damage)\n"
                 f"  • Kill time: {result.estimated_kill_time_sec:.2f}s (= {result.hits_to_kill} / {result.attacks_per_second:.2f})\n\n"
-                f"[BASIC TIMING]:\n"
+                f"⏱️  BASIC TIMING:\n"
                 f"  • attack_press_ms: {result.attack_press_ms} ms\n"
                 f"    📐 Formula: max(50, min(100, 500/APS))\n"
                 f"    💡 Higher APS → shorter press\n\n"
@@ -4645,7 +4666,7 @@ Track progress at:
                 f"  • attack_interval: {result.attack_interval:.2f}s\n"
                 f"    📐 Formula: max(0.1, time_per_hit × 0.8)\n"
                 f"    💡 Attack slightly faster than natural rhythm\n\n"
-                f"[TIMEOUT & DURATION]:\n"
+                f"🎯 TIMEOUT & DURATION:\n"
                 f"  • lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
                 f"    📐 Formula: time_per_hit × (1 + {result.lost_timeout_margin:.0%} margin)\n"
                 f"    💡 Allow detection lag between hits\n\n"
@@ -4655,25 +4676,25 @@ Track progress at:
                 f"{'─'*60}\n"
                 f"🤖 AUTO BEHAVIOR EXPLANATION:\n"
                 f"{'─'*60}\n"
-                f"SEARCH PHASE (Every {result.search_interval:.2f}s):\n"
+                f"1️⃣ SEARCH PHASE (Every {result.search_interval:.2f}s):\n"
                 f"   → Scan screen to find monster template\n"
                 f"   → Fast search = Quick response when monster appears\n\n"
-                f"TARGET LOCK:\n"
+                f"2️⃣ TARGET LOCK:\n"
                 f"   → Press 'Z' key to target monster\n"
                 f"   → Wait {result.target_cycle_delay:.2f}s before next target attempt\n"
                 f"   → This prevents target switching during combat\n\n"
-                f"ATTACK CYCLE (Every {result.attack_interval:.2f}s):\n"
+                f"3️⃣ ATTACK CYCLE (Every {result.attack_interval:.2f}s):\n"
                 f"   → Press attack key for {result.attack_press_ms}ms\n"
                 f"   → Release and wait {result.attack_interval:.2f}s\n"
                 f"   → Repeat rhythm: Attack → Wait → Attack → Wait\n"
                 f"   → Expected: {result.hits_to_kill} hits in ~{result.estimated_kill_time_sec:.1f}s to kill\n\n"
-                f"TEMPLATE MONITORING:\n"
+                f"4️⃣ TEMPLATE MONITORING:\n"
                 f"   → If monster disappears for > {result.lost_timeout_sec:.2f}s:\n"
                 f"      ❌ Stop attacking (target lost/dead)\n"
                 f"   → If monster visible:\n"
                 f"      ✅ Keep attacking for at least {result.attack_min_duration_sec:.2f}s\n"
                 f"      (Even if template flickers, continue attacking)\n\n"
-                f"KILL CONFIRMATION:\n"
+                f"5️⃣ KILL CONFIRMATION:\n"
                 f"   → After {result.attack_min_duration_sec:.2f}s OR target lost:\n"
                 f"   → Return to SEARCH PHASE (step 1)\n"
                 f"   → Loop continues automatically\n"
@@ -4718,24 +4739,24 @@ Track progress at:
         confirm_msg = (
             (
                 f"Apply ALL timing settings to Hunt Config?\n\n"
-                f"[Basic Timing]:\n"
+                f"⏱️  Basic Timing:\n"
                 f"• attack_press_ms: {result.attack_press_ms} ms\n"
                 f"• target_cycle_delay: {result.target_cycle_delay:.2f}s\n"
                 f"• search_interval: {result.search_interval:.2f}s\n"
                 f"• attack_interval: {result.attack_interval:.2f}s\n\n"
-                f"[Timeout & Duration]:\n"
+                f"🎯 Timeout & Duration:\n"
                 f"• lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
                 f"• attack_min_duration_sec: {result.attack_min_duration_sec:.2f}s"
             )
             if self.lang == "en"
             else (
                 f"Áp dụng TẤT CẢ cài đặt timing vào Hunt Config?\n\n"
-                f"[Timing Cơ Bản]:\n"
+                f"⏱️  Timing Cơ Bản:\n"
                 f"• attack_press_ms: {result.attack_press_ms} ms\n"
                 f"• target_cycle_delay: {result.target_cycle_delay:.2f}s\n"
                 f"• search_interval: {result.search_interval:.2f}s\n"
                 f"• attack_interval: {result.attack_interval:.2f}s\n\n"
-                f"[Timeout & Duration]:\n"
+                f"🎯 Timeout & Duration:\n"
                 f"• lost_timeout_sec: {result.lost_timeout_sec:.2f}s\n"
                 f"• attack_min_duration_sec: {result.attack_min_duration_sec:.2f}s"
             )
@@ -4770,12 +4791,12 @@ Track progress at:
         success_msg = (
             (
                 f"✅ All timing settings applied successfully!\n\n"
-                f"[Basic Timing]:\n"
+                f"⏱️  Basic Timing:\n"
                 f"• attack_press_ms: {old_values['attack_press_ms']} → {result.attack_press_ms} ms\n"
                 f"• target_cycle_delay: {old_values['target_cycle_delay']:.2f}s → {result.target_cycle_delay:.2f}s\n"
                 f"• search_interval: {old_values['search_interval']:.2f}s → {result.search_interval:.2f}s\n"
                 f"• attack_interval: {old_values['attack_interval']:.2f}s → {result.attack_interval:.2f}s\n\n"
-                f"[Timeout & Duration]:\n"
+                f"🎯 Timeout & Duration:\n"
                 f"• lost_timeout_sec: {old_values['lost_timeout_sec']:.2f}s → {result.lost_timeout_sec:.2f}s\n"
                 f"• attack_min_duration_sec: {old_values['attack_min_duration_sec']:.2f}s → {result.attack_min_duration_sec:.2f}s\n\n"
                 f"💾 Remember to save changes!"
@@ -4783,12 +4804,12 @@ Track progress at:
             if self.lang == "en"
             else (
                 f"✅ Đã áp dụng tất cả cài đặt timing thành công!\n\n"
-                f"[Timing Cơ Bản]:\n"
+                f"⏱️  Timing Cơ Bản:\n"
                 f"• attack_press_ms: {old_values['attack_press_ms']} → {result.attack_press_ms} ms\n"
                 f"• target_cycle_delay: {old_values['target_cycle_delay']:.2f}s → {result.target_cycle_delay:.2f}s\n"
                 f"• search_interval: {old_values['search_interval']:.2f}s → {result.search_interval:.2f}s\n"
                 f"• attack_interval: {old_values['attack_interval']:.2f}s → {result.attack_interval:.2f}s\n\n"
-                f"[Timeout & Duration]:\n"
+                f"🎯 Timeout & Duration:\n"
                 f"• lost_timeout_sec: {old_values['lost_timeout_sec']:.2f}s → {result.lost_timeout_sec:.2f}s\n"
                 f"• attack_min_duration_sec: {old_values['attack_min_duration_sec']:.2f}s → {result.attack_min_duration_sec:.2f}s\n\n"
                 f"💾 Nhớ lưu thay đổi!"
@@ -4910,11 +4931,11 @@ Track progress at:
                 f"{'─'*60}\n\n"
                 f"  lib/system/win_input.py:\n"
                 f"    def tap(key, press_ms):\n"
-                f"        key_down(key)                    # PRESS\n"
-                f"        time.sleep(press_ms/1000.0)      # HOLD\n"
-                f"        key_up(key)                      # RELEASE\n\n"
+                f"        key_down(key)                    # ⬇️ PRESS\n"
+                f"        time.sleep(press_ms/1000.0)      # ⏱️ HOLD\n"
+                f"        key_up(key)                      # ⬆️ RELEASE\n\n"
                 f"  Windows API:\n"
-                f"    user32.SendInput(...)                # WINDOWS\n"
+                f"    user32.SendInput(...)                # 🪟 WINDOWS\n"
                 f"    → CABAL Game receives input         # 🎮 GAME\n\n"
                 f"{'='*60}\n"
                 f"✅ CONFIRMED: AUTO WILL PRESS REAL KEYS!\n"
@@ -5244,25 +5265,74 @@ class MonsterDialog:
         button_frame = tk.Frame(container)
         button_frame.pack(pady=(15, 0))
 
-        from ui.components.icon_button import create_icon_button
+        # Save button - Use icon if icon_helper available
+        if self.icon_helper:
+            save_icon = self.icon_helper.get_icon("save", fallback="💾")
+            # If icon is a string (emoji fallback), use as text; otherwise use as image
+            if isinstance(save_icon, str):
+                save_btn = tk.Button(
+                    button_frame,
+                    text=f"{save_icon} {'Save' if self.lang == 'en' else 'Lưu'}",
+                    command=self._save,
+                    bg="#4CAF50",
+                    fg="white",
+                    font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+                    padx=20,
+                    pady=5,
+                    cursor="hand2",
+                )
+            else:
+                save_btn = tk.Button(
+                    button_frame,
+                    image=save_icon,
+                    command=self._save,
+                    bg="#4CAF50",
+                    fg="white",
+                    font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+                    padx=20,
+                    pady=5,
+                    cursor="hand2",
+                )
+                try:
+                    if not hasattr(self, "_image_refs"):
+                        self._image_refs = []
+                    self._image_refs.append(save_icon)
+                except Exception:
+                    pass
 
-        # Save button with icon
-        save_btn = create_icon_button(
-            button_frame,
-            icon_name="save",
-            text="Save" if self.lang == "en" else "Lưu",
-            command=self._save,
-            button_type="green_light"
-        )
+            # Add i18n tooltip if registry available
+            if self.i18n_registry:
+                from ui.helpers.tooltip import attach_i18n_tooltip
+
+                attach_i18n_tooltip(
+                    save_btn, "tip_save_monster", "library_manager", lambda: self.lang
+                )
+        else:
+            # Fallback to text-only button
+            save_btn = tk.Button(
+                button_frame,
+                text="💾 Save" if self.lang == "en" else "💾 Lưu",
+                command=self._save,
+                bg="#4CAF50",
+                fg="white",
+                font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+                padx=20,
+                pady=5,
+                cursor="hand2",
+            )
         save_btn.pack(side="left", padx=5)
 
         # Cancel button
-        cancel_btn = create_icon_button(
+        cancel_btn = tk.Button(
             button_frame,
-            icon_name="cancel",
-            text="Cancel" if self.lang == "en" else "Hủy",
+            text="❌ Cancel" if self.lang == "en" else "❌ Hủy",
             command=self._cancel,
-            button_type="red"
+            bg="#f44336",
+            fg="white",
+            font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+            padx=20,
+            pady=5,
+            cursor="hand2",
         )
         cancel_btn.pack(side="left", padx=5)
 
@@ -5448,7 +5518,7 @@ class SkillDialog:
         title = tk.Label(
             container,
             text=(
-                "Skill Information" if self.lang == "en" else "Thông Tin Kỹ Năng"
+                "⚔️ Skill Information" if self.lang == "en" else "⚔️ Thông Tin Kỹ Năng"
             ),
             font=(UIStyle.resolve_font_family("body"), 12, "bold"),
         )
@@ -5547,25 +5617,74 @@ class SkillDialog:
         button_frame = tk.Frame(container)
         button_frame.pack(side="bottom", pady=(20, 0))
 
-        from ui.components.icon_button import create_icon_button
+        # Save button - Use icon if icon_helper available
+        if self.icon_helper:
+            save_icon = self.icon_helper.get_icon("save", fallback="💾")
+            # If icon is a string (emoji fallback), use as text; otherwise use as image
+            if isinstance(save_icon, str):
+                save_btn = tk.Button(
+                    button_frame,
+                    text=f"{save_icon} {'Save' if self.lang == 'en' else 'Lưu'}",
+                    command=self._save,
+                    bg="#4CAF50",
+                    fg="white",
+                    font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+                    padx=20,
+                    pady=5,
+                    cursor="hand2",
+                )
+            else:
+                save_btn = tk.Button(
+                    button_frame,
+                    image=save_icon,
+                    command=self._save,
+                    bg="#4CAF50",
+                    fg="white",
+                    font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+                    padx=20,
+                    pady=5,
+                    cursor="hand2",
+                )
+                try:
+                    if not hasattr(self, "_image_refs"):
+                        self._image_refs = []
+                    self._image_refs.append(save_icon)
+                except Exception:
+                    pass
 
-        # Save button with icon
-        save_btn = create_icon_button(
-            button_frame,
-            icon_name="save",
-            text="Save" if self.lang == "en" else "Lưu",
-            command=self._save,
-            button_type="green_light"
-        )
+            # Add i18n tooltip if registry available
+            if self.i18n_registry:
+                from ui.helpers.tooltip import attach_i18n_tooltip
+
+                attach_i18n_tooltip(
+                    save_btn, "tip_save_skill", "library_manager", lambda: self.lang
+                )
+        else:
+            # Fallback to text-only button
+            save_btn = tk.Button(
+                button_frame,
+                text="💾 Save" if self.lang == "en" else "💾 Lưu",
+                command=self._save,
+                bg="#4CAF50",
+                fg="white",
+                font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+                padx=20,
+                pady=5,
+                cursor="hand2",
+            )
         save_btn.pack(side="left", padx=5)
 
         # Cancel button
-        cancel_btn = create_icon_button(
+        cancel_btn = tk.Button(
             button_frame,
-            icon_name="cancel",
-            text="Cancel" if self.lang == "en" else "Hủy",
+            text="❌ Cancel" if self.lang == "en" else "❌ Hủy",
             command=self._cancel,
-            button_type="red"
+            bg="#f44336",
+            fg="white",
+            font=(UIStyle.resolve_font_family("body"), 9, "bold"),
+            padx=20,
+            pady=5,
+            cursor="hand2",
         )
         cancel_btn.pack(side="left", padx=5)
 
@@ -5711,7 +5830,7 @@ if __name__ == "__main__":
 
     tk.Button(
         root,
-        text="Open Library Manager",
+        text="📚 Open Library Manager",
         command=open_library_manager,
         font=(UIStyle.resolve_font_family("body"), 12, "bold"),
         bg="#2196F3",

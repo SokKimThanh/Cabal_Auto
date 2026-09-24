@@ -138,12 +138,11 @@ class VisionSnapshotDebugger:
         try:
             pil_img = Image.fromarray(rgb_frame)
             self.current_image = ImageTk.PhotoImage(pil_img)
-            self.canvas.delete("image")
-            self.canvas.delete("timeout_text")
+            self.canvas.delete("all")
             # Center the image
             x_offset = (canvas_width - new_w) // 2
             y_offset = (canvas_height - new_h) // 2
-            self.canvas.create_image(x_offset, y_offset, anchor="nw", image=self.current_image, tags="image")
+            self.canvas.create_image(x_offset, y_offset, anchor="nw", image=self.current_image)
         except Exception as e:
             print(f"Error rendering image: {e}")
 

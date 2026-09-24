@@ -95,7 +95,7 @@ class ImageLibraryComponent(tk.Frame):
 
         search_frame = tk.Frame(toolbar, bg=UIStyle.BG_ELEVATED)
         search_frame.pack(side="left", fill="x", expand=True)
-        tk.Label(search_frame, text="", bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_MUTED).pack(side="left", padx=(5,2))
+        tk.Label(search_frame, text="🔍", bg=UIStyle.BG_ELEVATED, fg=UIStyle.TEXT_MUTED).pack(side="left", padx=(5,2))
 
         self.img_search_entry = ttk.Entry(search_frame, textvariable=self.img_search_var)
         self.img_search_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))

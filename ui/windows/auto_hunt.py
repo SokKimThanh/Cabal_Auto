@@ -323,7 +323,7 @@ def main():
                 else " "
             )
             dummy_mark = (
-                " [Training Dummy]" if monster.get("training_mode", False) else ""
+                " 🎯 [Training Dummy]" if monster.get("training_mode", False) else ""
             )
             print(
                 f'  {prefix} [{idx+1}] {monster["name"]} (P{monster["priority"]}) - {len(monster["templates"])} templates{dummy_mark}'

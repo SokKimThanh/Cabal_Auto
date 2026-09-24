@@ -24,7 +24,7 @@ class ScreenStatePanel(tk.Frame):
         self.lbl_location = self._create_label(self.container, t("screen_state.location_unknown", default="📍 Unknown"))
         self.lbl_location.pack(side="left", padx=(0, 12))
 
-        self.lbl_monster = self._create_label(self.container, t("setup.monster_not_found", default="Ready"))
+        self.lbl_monster = self._create_label(self.container, "🟢 Ready")
         self.lbl_monster.pack(side="left", padx=(0, 12))
 
         self.lbl_skills = self._create_label(self.container, t("setup.skills_found", default="✅ {count} skills valid").format(count=0))
@@ -62,13 +62,13 @@ class ScreenStatePanel(tk.Frame):
 
         has_monster = state.get("has_monster", False)
         if has_monster:
-            self.lbl_monster.config(text=t("setup.monster_found", default="Found"))
+            self.lbl_monster.config(text=t("setup.monster_found", default="👹 Found"))
         else:
-            self.lbl_monster.config(text=t("setup.monster_not_found", default="Ready"))
+            self.lbl_monster.config(text=t("setup.monster_not_found", default="🟢 Ready"))
 
         mismatches = state.get("skill_mismatches", [])
         if mismatches:
-            self.lbl_skills.config(text=t("setup.skills_invalid", default="{n} invalid").format(n=len(mismatches)))
+            self.lbl_skills.config(text=t("setup.skills_invalid", default="⚠️ {n} invalid").format(n=len(mismatches)))
         else:
             self.lbl_skills.config(
                 text=t("setup.skills_found", default="✅ {count} skills valid").format(

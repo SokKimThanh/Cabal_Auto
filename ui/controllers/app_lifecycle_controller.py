@@ -197,7 +197,7 @@ class AppLifecycleController:
             else:
                 missing = result.get("missing_tables", [])
                 missing_str = ", ".join(missing)
-                bar_msg = fself.root._t("db_warning_missing_tables").format(missing_str=missing_str) if hasattr(self.root, "_t") else self.root._t("db_warning_missing_tables").format(missing_str=missing_str) if hasattr(self.root, "_t") else "CSDL chưa hoàn chỉnh: Thiếu bảng {missing_str}"
+                bar_msg = f"⚠️ CSDL chưa hoàn chỉnh: Thiếu bảng {missing_str}"
                 if result.get("error"):
                     bar_msg = f"❌ {result['error']}"
                 if hasattr(self.app, "_set_db_status"):
@@ -210,10 +210,10 @@ class AppLifecycleController:
                 )
                 if result.get("error"):
                     detail = f"Lỗi kết nối CSDL:\n{result['error']}"
-                messagebox.showwarning(self.root._t("db_warning_title") if hasattr(self.root, "_t") else self.root._t("db_warning_title") if hasattr(self.root, "_t") else "Cảnh báo CSDL", detail)
+                messagebox.showwarning("⚠️ Cảnh báo CSDL", detail)
 
         except ImportError:
-            msg = self.root._t("db_import_error") if hasattr(self.root, "_t") else self.root._t("db_import_error") if hasattr(self.root, "_t") else "Không thể import module database"
+            msg = "⚠️ Không thể import module database"
             if hasattr(self.app, "_set_db_status"):
                 self.app._set_db_status(msg, ok=False)
             print(f"[DB] {msg}")

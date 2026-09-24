@@ -61,13 +61,13 @@ class WindowPositionSelector:
         "topmost": {"icon": "📌", "label": "Topmost"},
         "minimized": {"icon": "➖", "label": "Minimized"},
         "maximized": {"icon": "⬜", "label": "Maximized"},
-        "below": {"icon": "", "label": "Below"},
-        "above": {"icon": "", "label": "Above"},
-        "left": {"icon": "", "label": "Left"},
-        "right": {"icon": "", "label": "Right"},
-        "center": {"icon": "", "label": "Center"},
-        "fullscreen": {"icon": "", "label": "Fullscreen"},
-        "hidden": {"icon": "", "label": "Hidden"},
+        "below": {"icon": "⬇️", "label": "Below"},
+        "above": {"icon": "⬆️", "label": "Above"},
+        "left": {"icon": "⬅️", "label": "Left"},
+        "right": {"icon": "➡️", "label": "Right"},
+        "center": {"icon": "🎯", "label": "Center"},
+        "fullscreen": {"icon": "🖥️", "label": "Fullscreen"},
+        "hidden": {"icon": "👁️‍🗨️", "label": "Hidden"},
     }
 
     def __init__(

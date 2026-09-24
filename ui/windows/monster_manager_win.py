@@ -5,7 +5,7 @@ Features:
 - Main Master View: Full-width Treeview/Data Table listing monsters (Icon, Name, Level, HP, Damage, Templates)
 - Real-time Search/Filter Bar above main table
 - Top Toolbar: Header "Quản Lý Quái Vật" with monster.ico, Settings button (setting.ico), Primary Save button (save.ico)
-- Bottom Bar: "+ Thêm Quái", "Sửa", "❌ Xóa" buttons and non-blocking inline Status Bar with auto-clear
+- Bottom Bar: "+ Thêm Quái", "✏️ Sửa", "❌ Xóa" buttons and non-blocking inline Status Bar with auto-clear
 - Inline Delete Confirmation Banner (No popup messageboxes)
 - Edit / Add Modal Dialog (`MonsterEditDialog`): Tabs for Monster Info Form, Template Manager, and Column Settings
 - Standalone Display Settings Dialog (`DisplaySettingsDialog`)
@@ -934,25 +934,27 @@ class MonsterManagerWin(tk.Toplevel, ActionNotificationMixin):
         self.page_size_box.grid(row=0, column=4, sticky="ew", padx=(0, 5), pady=5)
         self.page_size_box.bind("<<ComboboxSelected>>", self._on_filter_changed)
 
-        from ui.components.icon_button import create_icon_button
-        self.column_visibility_button = create_icon_button(
+        self.column_visibility_button = tk.Button(
             search_frame,
-            icon_name="settings",
             text="Column Visibility",
             command=self._open_column_visibility_menu,
-            button_type="neutral"
+            bg=UIStyle.THEME_BG_APP,
+            fg=UIStyle.THEME_TEXT_PRIMARY,
+            font=UIStyle.FONT_LABEL,
         )
         self.column_visibility_button.grid(
             row=0, column=5, sticky="ew", padx=(0, 5), pady=5
         )
 
-        from ui.components.icon_button import create_icon_button
-        self.clear_filters_button = create_icon_button(
+        self.clear_filters_button = tk.Button(
             search_frame,
-            icon_name="clear",
             text="Clear All Filters",
             command=self._clear_all_filters,
-            button_type="red"
+            bg="#FDECEC",
+            fg="#B42318",
+            font=UIStyle.FONT_LABEL,
+            borderwidth=1,
+            relief="solid",
         )
         self.clear_filters_button.grid(row=0, column=6, sticky="ew", pady=5)
 

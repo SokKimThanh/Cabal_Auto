@@ -5,7 +5,6 @@ from ui.dialogs.skill_edit_dialog import SkillEditDialog
 
 def test_skill_edit_dialog_extracts_class_id_safely():
     root = tk.Tk()
-    root.master = None
 
     app_mock = MagicMock()
     app_mock.db_class_service.get_all_classes.return_value = [{"class_id": 1, "name": "Warrior"}]

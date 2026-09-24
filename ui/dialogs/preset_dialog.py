@@ -66,7 +66,7 @@ class PresetDialog(tk.Toplevel):
         active_preset_id = self.service.state_manager.get_active_preset(self.class_id)
         self.listbox.delete(0, tk.END)
         for preset in self.presets:
-            icon = "* " if preset["is_default"] else ""
+            icon = "⭐" if preset["is_default"] else "✏️"
             name = preset['name']
             if preset["preset_id"] == active_preset_id:
                 name = f"{name} [Active]"

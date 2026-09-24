@@ -93,7 +93,7 @@ class ActionBarView(tk.Frame):
         self.btn_manual_scan = _create_icon_btn_component(
             parent=status_header,
             icon_name=self.scan_btn_icon_name,
-            icon_fallback="",
+            icon_fallback="🔍",
             icon_size=16,
             button_size=32,
             command=on_scan_clicked,
@@ -161,7 +161,7 @@ class ActionBarView(tk.Frame):
         self.start_stop_btn = _create_icon_btn_component(
             parent=col2_frame,
             icon_name="start",
-            icon_fallback="",
+            icon_fallback="▶️",
             text=self._t("start_hunt"),
             icon_size=20,
             button_size=44,

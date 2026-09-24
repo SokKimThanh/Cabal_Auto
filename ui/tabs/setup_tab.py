@@ -243,9 +243,9 @@ class SetupTab(ResponsiveGridBase):
             try:
                 val = float(var_obj.get())
                 if is_float and val < 0.2 and label_key in ("search_interval", "attack_interval"):
-                    warning_label.config(text="!", foreground=UIStyleV2.THEME_STATE_DANGER)
+                    warning_label.config(text="⚠️", foreground=UIStyleV2.THEME_STATE_DANGER)
                 elif val > to or val < from_:
-                    warning_label.config(text="!", foreground=UIStyleV2.THEME_STATE_DANGER)
+                    warning_label.config(text="⚠️", foreground=UIStyleV2.THEME_STATE_DANGER)
                 else:
                     warning_label.config(text="")
             except ValueError:
@@ -331,15 +331,8 @@ class SetupTab(ResponsiveGridBase):
         ttk.Entry(frame, textvariable=self.app.state_controller.ui_vars['setup_template'], width=30).grid(
             row=0, column=1, columnspan=2, sticky="ew", pady=4
         )
-        from ui.components.icon_button import create_icon_button
-        self.browse_btn = create_icon_button(
-            frame,
-            icon_name="search",
-            text="...",
-            command=self._browse_template,
-            button_type="neutral"
-        )
-        self.app.bind_text(self.browse_btn, "browse", is_icon_button=True)
+        self.browse_btn = ttk.Button(frame, command=self._browse_template)
+        self.app.bind_text(self.browse_btn, "browse")
         self.browse_btn.grid(row=0, column=3, padx=(4, 0), pady=4)
 
     def _build_system_roi_content(self, frame):
@@ -389,13 +382,13 @@ class SetupTab(ResponsiveGridBase):
                     CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
                 return _draw
 
-            from ui.components.icon_button import create_icon_button
-            btn_draw = create_icon_button(
+            btn_draw = tk.Button(
                 frame,
-                icon_name="edit",
                 text=self.app._t("setup_roi.draw") if hasattr(self.app, "_t") else "Vẽ lại",
                 command=_make_on_draw(),
-                button_type="neutral"
+                bg=UIStyleV2.BG_ELEVATED,
+                fg=UIStyleV2.ACCENT_BLUE,
+                relief="flat"
             )
             btn_draw.grid(row=row, column=2, sticky="e", pady=4)
 

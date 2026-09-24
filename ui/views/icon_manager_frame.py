@@ -288,7 +288,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.empty_preview = EmptyState(
             self.empty_state_frame,
-            icon="",
+            icon="🖼️",
             message=self.i18n_t("msg_no_icon_selected", default="Chưa tìm thấy icon nào trong thư mục hệ thống"),
             submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết"),
             wraplength=450
@@ -786,7 +786,7 @@ class IconManagerFrame(ResponsiveGridBase):
             else:
                 # Show message but do not clear left tree selection or form data
                 if hasattr(self, 'var_current_mapping_icon'):
-                    self.var_current_mapping_icon.set(f"[Chưa gán Icon] Đang chọn Element: {values[3]}")
+                    self.var_current_mapping_icon.set(f"⚠️ [Chưa gán Icon] Đang chọn Element: {values[3]}")
                 # Disable Edit button to prevent editing wrong icon
                 if hasattr(self, 'btn_edit'):
                     self.btn_edit.config(state="disabled")

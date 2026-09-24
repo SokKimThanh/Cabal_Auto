@@ -300,7 +300,7 @@ class LogConsoleView(tk.Frame):
 
             if hasattr(self.app, "logs_metrics_label") and self.app.logs_metrics_label:
                 self.app.logs_metrics_label.config(
-                    text=f"FPS: {fps:.1f} | Quét: {scans} | Chạy: {running_time}"
+                    text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}"
                 )
 
         except Exception:
