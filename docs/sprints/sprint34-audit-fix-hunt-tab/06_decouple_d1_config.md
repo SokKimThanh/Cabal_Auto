@@ -5,8 +5,8 @@
 
 
 ## 🔄 Trạng thái hiện tại
-- 🟢 **Hoàn thành**: `hunt_cfg` đã được tách rời trong `skill_panel.py`, `hunt_tab.py` và `setup_tab.py`.
-- **Hành động**: Tiến hành tách rời luồng đọc/ghi config ra khỏi các file UI.
+- 🟡 **Hoàn thành 1 phần**: Đã tách rời cấu hình UI khỏi `hunt_cfg` ở một số panel chính (SetupTab, SkillPanel, HuntTab). Nhưng vẫn còn file lớn như `library_manager.py` và các widget khác đang sử dụng trực tiếp.
+- **Hành động**: Tiếp tục rà soát `library_manager.py` và các component còn lại để đưa luồng đọc/ghi config về Controller.
 
 ## 🎯 Scope
 - Finding: D1 | Priority: P1 | Estimate: 2h
