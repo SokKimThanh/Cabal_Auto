@@ -35,12 +35,31 @@ Hệ thống hiện tại sử dụng `VisionEngine` kết hợp với `AutoScan
 
 ---
 
-## 4. Kết Luận & Đề Xuất (Next Steps)
+## 4. Kết Luận & Đề Xuất Khắc Phục Chi Tiết (Remediation Plan)
 
-Hệ thống Quét (Scan) và Vision cơ bản **đã hoàn thành khung sườn (skeleton)** và hoạt động tốt đối với tính năng Auto Detect Template và phát hiện Quái vật (Monster Detection). Tuy nhiên, để hoàn thiện toàn bộ và đáp ứng kỳ vọng liên kết hiển thị kết quả trên màn hình:
+Hệ thống Quét (Scan) và Vision cơ bản **đã hoàn thành khung sườn (skeleton)** và hoạt động tốt đối với tính năng Auto Detect Template và phát hiện Quái vật (Monster Detection). Tuy nhiên, để hoàn thiện toàn bộ và đáp ứng kỳ vọng liên kết hiển thị kết quả trên màn hình, dưới đây là mô tả khắc phục chi tiết cho từng phần:
 
-1. **Về Quái Vật:** Đã liên kết ổn. Cần đảm bảo UI nhận được danh sách ưu tiên từ `RuntimeMonsterQueue` (thông qua `get_attack_queue`) và render nó mượt mà (có thể dùng Treeview theo quy tắc chống lag UI).
-2. **Về Skill & Cooldown:** Cần bổ sung pipeline nhận diện icon skill và trạng thái cooldown vào quá trình `run_scan()`.
-3. **Về Combo:** Cần tách một luồng (thread) xử lý Vision độc lập với tần số cao hơn (khoảng 30-60 FPS) chỉ dành riêng cho việc crop và đọc màu của thanh Combo Bar. Luồng này nên bắn Event trực tiếp thay vì xếp hàng đợi như quái vật.
+### 4.1. Khắc Phục Liên Kết Hệ Thống Quái Vật (Monster)
+- **Vấn đề:** Dữ liệu quái vật đã được đưa vào `RuntimeMonsterQueue` nhưng cần được hiển thị mượt mà trên giao diện (UI) mà không gây tắc nghẽn main thread của Tkinter.
+- **Giải pháp:**
+  1. Thay vì sử dụng vòng lặp `while` hoặc `time.sleep` trên UI, tạo một phương thức `update_monster_list()` trong file controller của UI.
+  2. Sử dụng `EventBus` để lắng nghe sự kiện `MonsterQueueSnapshotEvent`. Tuy nhiên, chỉ truyền các ID và tọa độ cơ bản.
+  3. Trên UI (Tkinter), sử dụng `ttk.Treeview` để render danh sách quái vật. Chỉ gọi lệnh `item(..., values=...)` để cập nhật các cột (Tên, Máu, Khoảng cách) thay vì xóa và tạo lại toàn bộ row để tránh giật lag (flicker).
 
-*Báo cáo được tạo bởi Jules trong Sprint 24.*
+### 4.2. Khắc Phục Hệ Thống Kỹ Năng (Skills & Cooldown)
+- **Vấn đề:** Kết quả quét (scan) chưa bao gồm dữ liệu skill và cooldown để trả về `ScanController`.
+- **Giải pháp:**
+  1. Trong `VisionEngine`, tạo thêm phương thức `detect_skills_pipeline(frame)`. Phương thức này sẽ cắt nhỏ (crop) các vùng tĩnh (ROI - Region of Interest) đã được cấu hình sẵn cho thanh kỹ năng ở dưới đáy màn hình.
+  2. Sử dụng OpenCV (`cv2.matchTemplate` hoặc dò tìm màu xám `grayscale`) để nhận diện trạng thái hồi chiêu (skill đang sáng hay đang bị mờ/đen).
+  3. Trong `ScanController.run_scan()`, gọi `detect_skills_pipeline(frame)` ngay sau khi quét quái vật, và gộp kết quả vào biến `results` (ví dụ: `results['skills_ready'] = [1, 2, 4]`).
+  4. Trả kết quả này về UI thông qua hàm `show_results(results)` để UI có thể sáng/tối các nút kỹ năng tương ứng.
+
+### 4.3. Khắc Phục Hệ Thống Chuỗi Combo (Combo Trips)
+- **Vấn đề:** Tần số quét 5 FPS của `RuntimeMonsterQueue` quá chậm để bắt đúng nhịp (timing) của thanh Combo (thường yêu cầu độ trễ dưới 50ms).
+- **Giải pháp:**
+  1. **Tách Luồng Độc Lập:** Tạo một Worker Thread riêng biệt có tên `ComboVisionThread`. Luồng này không chạy chung với luồng tìm quái vật.
+  2. **Crop Cực Nhỏ:** `ComboVisionThread` chỉ yêu cầu hệ thống chụp (capture) một vùng ảnh cực kỳ nhỏ (ví dụ 200x20 pixels) ngay tại vị trí thanh Combo. Kích thước ảnh nhỏ giúp đẩy tốc độ xử lý lên 60 FPS mà không ngốn CPU.
+  3. **Nhận Diện Pixel/Màu Sắc:** Thay vì dùng Template Matching nặng nề, chỉ cần dò tìm một dải màu (Ví dụ: màu vàng sáng/đỏ rực) chạy ngang qua thanh Combo. Khi dải màu chạm đến tọa độ điểm "Perfect" hoặc "Excellent", lập tức kích hoạt sự kiện.
+  4. **Bắn Sự Kiện Khẩn Cấp:** Sử dụng `EventBus.trigger(ComboTimingEvent(status="PERFECT"))`. Hệ thống điều khiển bàn phím (Keyboard/Mouse Controller) sẽ lắng nghe event này và lập tức gửi phím nhấn skill tiếp theo mà không cần thông qua UI.
+
+*Báo cáo được cập nhật bởi Jules trong Sprint 24.*
