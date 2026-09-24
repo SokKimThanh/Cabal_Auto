@@ -80,17 +80,10 @@ class ScanController:
                     pass
 
                 # Boundary check: template lists (if empty)
-                if not getattr(vision_engine, "templates", None) and not hasattr(
-                    vision_engine, "add_template"
-                ):
-                    self.logger.warning(
-                        "[AutoScan] Warning: Template list empty. Skipping scan."
-                    )
-                    if manual:
-                        self.set_status_text("❌ Lỗi khi quét: Không có templates.")
-                        self.set_status_icon(self.icons.SCAN_FAILED)
-                        self.logger.info("[UI] Scan status: failed")
-                    return
+                # When using manual scan or auto detect, it's fine to scan without pre-existing templates
+                # because the scan process might save patches as new templates or we just want frame info.
+                if not getattr(vision_engine, "templates", None) and not hasattr(vision_engine, "add_template"):
+                    self.logger.info("[AutoScan] Template list is empty, but continuing scan to capture patches.")
 
                 # Get frame and check
                 self.logger.info("[AutoScan] Capturing frame...")

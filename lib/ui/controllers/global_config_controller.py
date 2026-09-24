@@ -15,11 +15,11 @@ class GlobalConfigController:
         """Global apply handler - saves all settings across all tabs."""
         try:
             # Ensure canonical schemas
-            if not isinstance(self.state_controller.hunt_cfg.get("monster_rotation"), list):
+            if not isinstance(self.state_controller.get_hunt_config_value("monster_rotation"), list):
                 self.state_controller.hunt_cfg["monster_rotation"] = getattr(
                     self.app_instance, "monster_rotation", getattr(self.state_controller, "monster_rotation", [])
                 )
-            if not isinstance(self.state_controller.hunt_cfg.get("skill_slots", []), list):
+            if not isinstance(self.state_controller.get_hunt_config_value("skill_slots", []), list):
                 self.state_controller.hunt_cfg["skill_slots"] = []
 
             apply_setup_settings = getattr(self.app_instance, "_apply_setup_settings", None)

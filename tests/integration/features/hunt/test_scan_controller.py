@@ -48,5 +48,5 @@ def test_scan_controller_run_scan(mock_thread):
 
     controller.run_scan(manual=True)
 
-    mock_set_text.assert_any_call("🔍 Đang quét…")
+    mock_set_text.assert_any_call("Đang quét…")
     mock_set_icon.assert_any_call("scaning")
