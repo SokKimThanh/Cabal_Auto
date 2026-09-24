@@ -192,6 +192,7 @@ class AppStateController:
             "hunt_target_info": tk.StringVar(master=root, value=i18n_t("target_card.target_none")),
             "target_policy": tk.StringVar(master=root),
             "setup_template": tk.StringVar(master=root),
+            "setup_auto_start_with_hunt": tk.StringVar(master=root),
             "setup_target_key": tk.StringVar(master=root),
             "setup_target_cycle": tk.StringVar(master=root),
             "setup_search_interval": tk.StringVar(master=root),
