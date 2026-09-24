@@ -123,7 +123,7 @@ class TimingCalcDialog(tk.Toplevel):
                     if getattr(self.app, "lang", "en") == "en"
                     else "Lỗi tính toán. Vui lòng kiểm tra lại thông số quái và kỹ năng."
                 )
-                self.res_label.config(text=f"⚠️ {err_msg}", foreground="#d32f2f")
+                self.res_label.config(text=err_msg, foreground="#d32f2f")
 
         # Buttons
         btn_frm = ttk.Frame(frm)

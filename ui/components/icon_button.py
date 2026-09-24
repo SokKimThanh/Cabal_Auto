@@ -715,7 +715,7 @@ def create_add_button(parent: Any, command: Callable, element_id: Optional[str] 
     return create_icon_button(
         parent=parent,
         icon_name="add",
-        icon_fallback="➕",
+        icon_fallback="",
         command=command,
         button_type="green_light",
         element_id=element_id,
@@ -728,7 +728,7 @@ def create_delete_button(parent: Any, command: Callable, element_id: Optional[st
     return create_icon_button(
         parent=parent,
         icon_name="delete",
-        icon_fallback="🗑️",
+        icon_fallback="",
         command=command,
         button_type="red",
         element_id=element_id,
@@ -764,7 +764,7 @@ def create_refresh_button(parent: Any, command: Callable, element_id: Optional[s
     return create_icon_button(
         parent=parent,
         icon_name="refresh",
-        icon_fallback="🔄",
+        icon_fallback="",
         command=command,
         button_type="refresh",
         element_id=element_id,

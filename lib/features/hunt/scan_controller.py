@@ -29,7 +29,7 @@ class ScanController:
     def run_scan(self, manual: bool = False):
         if manual:
             self.logger.info("[UI] Manual scan triggered.")
-            self.set_status_text("🔍 Đang quét…")
+            self.set_status_text("Đang quét…")
             self.set_status_icon(self.icons.SCANNING)
             self.logger.info("[UI] Scan status: scanning")
 
