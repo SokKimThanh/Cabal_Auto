@@ -432,7 +432,7 @@ class SetupTab(ResponsiveGridBase):
         )
 
     def _browse_template(self):
-        self.browse_btn.state(["disabled"])
+        self.browse_btn.config(state="disabled")
 
         def open_dialog():
             path = filedialog.askopenfilename(
@@ -441,7 +441,7 @@ class SetupTab(ResponsiveGridBase):
             )
             if path:
                 self.app.state_controller.ui_vars['setup_template'].set(path)
-            self.browse_btn.state(["!disabled"])
+            self.browse_btn.config(state="normal")
 
         self.after(50, open_dialog)
 
