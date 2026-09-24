@@ -398,6 +398,19 @@ class WindowManager:
                 "height": 0,
             }
 
+    def get_foreground_window(self) -> Optional[int]:
+        """
+        Get the handle of the foreground window.
+
+        Returns:
+            Window handle or None if not found
+        """
+        try:
+            return win32gui.GetForegroundWindow()
+        except Exception as e:
+            logger.error(f"get_foreground_window failed: {e}")
+            return None
+
     def set_foreground(self, hwnd: int) -> bool:
         """
         Bring window to foreground
