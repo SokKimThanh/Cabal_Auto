@@ -11,7 +11,7 @@ Dựa trên kết quả phân tích mã nguồn hiện tại so với kế hoạ
 | 03 | Sweep emoji standardize icon | 🟢 Hoàn thành | Đã loại bỏ hoàn toàn các emoji cứng trên toàn hệ thống UI. Các nút bấm đã được chuẩn hóa sử dụng `create_icon_button`. Toàn bộ văn bản cứng đã được hỗ trợ đa ngôn ngữ bằng hàm `_t()`. (Finding #2 / Debt D6). |
 | 04 | Verify integrate Task 6 | 🟢 Hoàn thành | `HuntStatusTicker` đã được import và tích hợp (Finding #3). |
 | 05 | Fix vision fallback | 🟢 Hoàn thành | Đã xóa lệnh `self.canvas.delete("all")` trong `ui/components/vision_snapshot_debugger.py`, thay thế bằng tagged deletion để giữ nguyên ảnh cũ khi có timeout (Finding #6). |
-| 06 | Decouple D1 config | 🔴 Chưa hoàn thành | `hunt_cfg` vẫn được truy cập và thiết lập trực tiếp rải rác khắp nơi ở các layer giao diện: `ui/controllers/overlay_controller.py`, `ui/windows/library_manager.py`, `ui/panels/skill_panel.py`, `ui/tabs/setup_tab.py` (Debt D1). |
+| 06 | Decouple D1 config | 🟢 Hoàn thành 1 phần | Đã tách rời `hunt_cfg` ở SetupTab, SkillPanel và HuntTab thông qua controller. Các UI component khác đang được xử lý (Debt D1). |
 | 07 | Cleanup D4 D6 | 🟢 Hoàn thành 1 phần | Không tìm thấy `_pulse_step` trong `ui/components/status_badge.py` (Tốt - Debt D4 có thể đã được giải quyết một phần). Tuy nhiên, hardcode tiếng Việt/Anh vẫn còn nhiều (Debt D6). |
 | 08 | Fix MagicMock & backend i18n | 🟢 Hoàn thành 1 phần | Không tìm thấy `MagicMock` trong `lib/features/hunt/` (Tốt - Finding #5 có thể đã được sửa). Cần kiểm tra EventBus messages để xóa bỏ hoàn toàn hardcode text. |
 

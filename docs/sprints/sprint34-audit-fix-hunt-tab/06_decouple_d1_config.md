@@ -5,7 +5,7 @@
 
 
 ## 🔄 Trạng thái hiện tại
-- 🔴 **Chưa hoàn thành**: `hunt_cfg` vẫn được gọi trực tiếp (`.get(...)`) ở khắp các layer giao diện thay vì qua controller.
+- 🟢 **Hoàn thành**: `hunt_cfg` đã được tách rời trong `skill_panel.py`, `hunt_tab.py` và `setup_tab.py`.
 - **Hành động**: Tiến hành tách rời luồng đọc/ghi config ra khỏi các file UI.
 
 ## 🎯 Scope
@@ -43,10 +43,10 @@ Việc các file UI sử dụng trực tiếp `hunt_cfg.get(...)` tạo ra sự 
 - Cấu trúc lại toàn bộ hệ thống schema Pydantic.
 
 ## 🧪 Acceptance Criteria
-- [ ] AC1: `grep -rn "hunt_cfg\.get" ui/` → Trả về rỗng.
-- [ ] AC2: `grep -rn "save_hunt_config" ui/` → Trả về rỗng (tất cả phải nằm ở Controller/Service).
-- [ ] AC3: Giao diện (Toggle Combo, Set ROI) vẫn lưu trữ và load đúng trạng thái khi restart.
-- [ ] AC4: Không phá vỡ Unit test hiện tại của Controller.
+- [x] AC1: `grep -rn "hunt_cfg\.get" ui/` → Trả về rỗng.
+- [x] AC2: `grep -rn "save_hunt_config" ui/` → Trả về rỗng (tất cả phải nằm ở Controller/Service).
+- [x] AC3: Giao diện (Toggle Combo, Set ROI) vẫn lưu trữ và load đúng trạng thái khi restart.
+- [x] AC4: Không phá vỡ Unit test hiện tại của Controller.
 
 ## 🧪 Verification
 **Grep:** `grep -rn "hunt_cfg" ui/` → Expected: Không còn truy xuất trực tiếp ngoại trừ việc truyền obj vào controller.
