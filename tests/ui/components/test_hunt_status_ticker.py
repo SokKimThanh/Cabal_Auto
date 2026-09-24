@@ -22,7 +22,8 @@ def test_hunt_status_ticker_initialization(root, app_mock):
     assert ticker.msg_label.cget("text") == "translated_hunt_status_ticker.idle"
     ticker.destroy()
 
-def test_hunt_status_ticker_status_updated_event(root, app_mock):
+def test_hunt_status_ticker_status_updated_event(root, app_mock, mocker):
+    mocker.patch.object(HuntStatusTicker, "after", side_effect=lambda ms, func=None, *args: func(*args) if func else None)
     ticker = HuntStatusTicker(root, app_mock)
     ticker.pack()
 
@@ -34,7 +35,8 @@ def test_hunt_status_ticker_status_updated_event(root, app_mock):
     assert ticker.msg_label.cget("text") == "Custom warning message"
     ticker.destroy()
 
-def test_hunt_status_ticker_state_changed_event(root, app_mock):
+def test_hunt_status_ticker_state_changed_event(root, app_mock, mocker):
+    mocker.patch.object(HuntStatusTicker, "after", side_effect=lambda ms, func=None, *args: func(*args) if func else None)
     ticker = HuntStatusTicker(root, app_mock)
     ticker.pack()
 
@@ -64,7 +66,8 @@ def test_hunt_status_ticker_state_changed_event(root, app_mock):
 
     ticker.destroy()
 
-def test_hunt_status_ticker_priority(root, app_mock):
+def test_hunt_status_ticker_priority(root, app_mock, mocker):
+    mocker.patch.object(HuntStatusTicker, "after", side_effect=lambda ms, func=None, *args: func(*args) if func else None)
     ticker = HuntStatusTicker(root, app_mock)
     ticker.pack()
 

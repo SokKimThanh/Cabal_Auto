@@ -86,6 +86,6 @@ Dựa trên báo cáo `audit_report.md` và kiểm tra source code thực tế, 
   - **Task 07:** `_pulse_step` đã bị loại bỏ khỏi `status_badge.py`, nhưng hardcode string (D6) vẫn còn.
   - **Task 08:** Đã loại bỏ `MagicMock` khỏi production, nhưng cần sửa các message hardcode qua EventBus.
 - **🔴 Chưa hoàn thành (Cần ưu tiên):**
-  - **Task 03:** Vẫn còn lượng lớn emoji hardcode cần dọn dẹp.
+  - **Task 03:** Đã dọn dẹp sạch toàn bộ emoji cứng, chuẩn hóa sang IconHelper và đa ngôn ngữ.
   - **Task 05:** Lỗi `delete("all")` trong `VisionSnapshotDebugger` vẫn còn tồn tại.
   - **Task 06:** Tight coupling `hunt_cfg.get(...)` ở UI vẫn xuất hiện ở nhiều file.

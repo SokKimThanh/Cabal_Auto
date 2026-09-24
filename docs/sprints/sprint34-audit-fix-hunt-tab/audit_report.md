@@ -8,7 +8,7 @@ Dựa trên kết quả phân tích mã nguồn hiện tại so với kế hoạ
 |---------|----------|---------------------|---------|
 | 01 | Fix cascade Task 1 ↔ 4 | 🟢 Hoàn thành | `get_combo_sequence` và `get_buff_sequence` ĐÃ được sử dụng đúng cách trong `ui/panels/skill_panel.py` để lấy danh sách từ controller rồi truyền vào `SkillTimelineStrip` (Finding #1). |
 | 02 | Fix TclError fallback | 🟢 Hoàn thành | `SkillTimelineStrip` ĐÃ kiểm tra `isinstance(img, str)` để dùng `create_text` như một fallback cho icon, loại bỏ hoàn toàn lỗi crash TclError (Finding #4). |
-| 03 | Sweep emoji standardize icon | 🔴 Chưa hoàn thành | Vẫn còn tồn tại **rất nhiều** emoji cứng trong hệ thống: `ui/helpers/icons.json`, `ui/windows/library_manager.py`, `ui/panels/screen_state_panel.py`, `ui/icon_library.py`, v.v. (Finding #2 / Debt D6). |
+| 03 | Sweep emoji standardize icon | 🟢 Hoàn thành | Đã loại bỏ hoàn toàn các emoji cứng trên toàn hệ thống UI. Các nút bấm đã được chuẩn hóa sử dụng `create_icon_button`. Toàn bộ văn bản cứng đã được hỗ trợ đa ngôn ngữ bằng hàm `_t()`. (Finding #2 / Debt D6). |
 | 04 | Verify integrate Task 6 | 🟢 Hoàn thành | `HuntStatusTicker` đã được import và tích hợp (Finding #3). |
 | 05 | Fix vision fallback | 🔴 Chưa hoàn thành | Lệnh `self.canvas.delete("all")` và `self.canvas.delete("timeout_text")` vẫn còn tồn tại trong `ui/components/vision_snapshot_debugger.py`. Timeout vẫn đang xóa ảnh cũ thay vì giữ lại (Finding #6). |
 | 06 | Decouple D1 config | 🔴 Chưa hoàn thành | `hunt_cfg` vẫn được truy cập và thiết lập trực tiếp rải rác khắp nơi ở các layer giao diện: `ui/controllers/overlay_controller.py`, `ui/windows/library_manager.py`, `ui/panels/skill_panel.py`, `ui/tabs/setup_tab.py` (Debt D1). |
