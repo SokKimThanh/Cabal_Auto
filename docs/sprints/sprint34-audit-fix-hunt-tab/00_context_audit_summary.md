@@ -88,4 +88,4 @@ Dựa trên báo cáo `audit_report.md` và kiểm tra source code thực tế, 
 - **🔴 Chưa hoàn thành (Cần ưu tiên):**
   - **Task 03:** Vẫn còn lượng lớn emoji hardcode cần dọn dẹp.
   - **Task 05:** Lỗi `delete("all")` trong `VisionSnapshotDebugger` vẫn còn tồn tại.
-  - **Task 06:** Tight coupling `hunt_cfg.get(...)` ở UI vẫn xuất hiện ở nhiều file.
+  - **Task 06:** Đã tách rời thành công cấu hình UI khỏi `hunt_cfg` ở các panel/tab chính (SetupTab, SkillPanel, HuntTab).
