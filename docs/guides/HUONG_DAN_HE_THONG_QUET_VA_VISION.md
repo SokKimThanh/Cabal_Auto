@@ -11,6 +11,12 @@ Hệ thống **Auto Scanner (Quét tự động)** là quá trình phần mềm 
 ---
 
 ## 2. Cách Hệ Thống Nhận Diện (Vision) Hoạt Động
+
+**Lưu ý về Thư Viện Hình Mẫu (Templates / Monster Editor)**
+Để phần mềm biết cần phải tìm cái gì, bạn cần cung cấp cho nó các "bức ảnh gốc".
+*   Nếu bạn muốn săn một con quái vật tên "Goblin", bạn dùng tính năng **Monster Manager (Quản lý quái)** để chụp và lưu lại hình dáng của con quái vật đó vào thư viện.
+*   Trong quá trình chạy, phần mềm sẽ liên tục lấy bức ảnh "Goblin" trong thư viện ra và dò tìm trên màn hình. Nếu thấy khớp, nó sẽ nhận ra: *"À, đây chính là mục tiêu!"*
+
 Cách thức phần mềm nhận ra các đối tượng trên màn hình rất đơn giản:
 1. **Chụp ảnh:** Phần mềm chụp lại hình ảnh cửa sổ game đang chạy.
 2. **So sánh:** Nó đem bức ảnh vừa chụp so sánh với các hình mẫu đã được lưu từ trước (ví dụ: hình dáng của một con quái vật, biểu tượng của một kỹ năng).
@@ -29,6 +35,18 @@ Hệ thống quản lý ROI được chia làm 2 phần để dễ sử dụng:
 *   **Vùng hệ thống (System ROI):**
     *   **Nơi cấu hình:** Tab **Setup**.
     *   **Cách hoạt động:** Dùng để cấu hình các khu vực cố định trên giao diện game như: Thanh Combo, Thanh Máu (HP) của bản thân, hoặc Bản đồ nhỏ (Minimap). Bên cạnh mỗi mục sẽ có nút "Vẽ lại" để bạn khoanh vùng tương tự như trên.
+
+**Lưu ý quan trọng về Tác dụng của việc khoanh vùng:**
+Nhiều người lầm tưởng việc khoanh vùng nhỏ lại sẽ giúp phần mềm "nhìn" quái vật rõ hơn, nhưng thực tế không phải vậy. Việc khoanh vùng mang lại 2 lợi ích chính:
+*   **Tránh nhận diện nhầm (Giảm nhiễu):** Giúp phần mềm không bị nhầm lẫn với các biểu tượng, khung chat hay kỹ năng có màu sắc/hình dáng giống với quái vật ở các khu vực khác trên màn hình.
+*   **Tăng tốc độ xử lý:** Tìm kiếm trong một ô nhỏ chắc chắn sẽ nhanh hơn rất nhiều so với việc quét toàn bộ màn hình.
+*   Tuy nhiên, **khoanh vùng KHÔNG làm tăng độ chính xác (độ giống nhau) của thuật toán**. Để phần mềm nhận diện đúng quái vật, điều quan trọng nhất là bạn phải chụp **hình mẫu (template) trong thư viện** thật rõ nét và chuẩn xác.
+
+**Làm thế nào để có ROI Tự Động?**
+Ngoài việc vẽ tay thủ công, phần mềm có khả năng tự động thiết lập một số vùng quét thông qua **Auto Scanner**:
+*   Khi bạn chạy tính năng Quét toàn màn hình, phần mềm sẽ dùng bộ nhận diện để quét qua toàn bộ cửa sổ game một lần.
+*   Nếu nó nhận diện được các đặc điểm cố định (như hình dáng thanh máu chung của quái vật, hình dạng ô kỹ năng), nó sẽ ghi nhận lại tọa độ [X, Y, Rộng, Cao] của những vị trí đó.
+*   Từ dữ liệu này, phần mềm có thể gợi ý hoặc tự động điền các Vùng Quét (ROI) vào cấu hình mà không cần bạn phải tự tay khoanh vùng.
 
 ---
 
