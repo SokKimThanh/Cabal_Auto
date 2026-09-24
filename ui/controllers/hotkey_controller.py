@@ -513,11 +513,10 @@ class HotkeyController:
                     return
 
                 # Check if it matches configured cabal window
-                hunt_cfg = {}
+                target_hwnd = None
                 if hasattr(self.parent, "state_controller"):
-                    hunt_cfg = getattr(self.parent.state_controller, "hunt_cfg", {})
+                    target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
 
-                target_hwnd = hunt_cfg.get("window_hwnd")
                 if target_hwnd and info.hwnd == target_hwnd:
                     EventBus.trigger(VisionAddTemplateEvent())
                     return
