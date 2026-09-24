@@ -82,6 +82,7 @@ Dựa trên báo cáo `audit_report.md` và kiểm tra source code thực tế, 
   - **Task 01:** `get_combo_sequence` và `get_buff_sequence` đã được gọi đúng.
   - **Task 02:** `SkillTimelineStrip` đã có logic xử lý `isinstance(img, str)` fallback dùng `create_text`.
   - **Task 04:** `HuntStatusTicker` đã được tích hợp vào `HuntWorkspaceFrame`.
+  - **Task 05:** Lỗi `delete("all")` trong `VisionSnapshotDebugger` đã được xử lý bằng tagged deletions.
 - **🟡 Hoàn thành một phần:**
   - **Task 07:** `_pulse_step` đã bị loại bỏ khỏi `status_badge.py`, nhưng hardcode string (D6) vẫn còn.
   - **Task 08:** Đã loại bỏ `MagicMock` khỏi production, nhưng cần sửa các message hardcode qua EventBus.

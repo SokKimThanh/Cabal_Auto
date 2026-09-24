@@ -5,8 +5,8 @@
 
 
 ## 🔄 Trạng thái hiện tại
-- 🔴 **Chưa hoàn thành**: Mặc dù một số vấn đề đã được kiểm tra, luồng xử lý timeout trong `VisionSnapshotDebugger` vẫn đang gọi lệnh xóa canvas (`self.canvas.delete("all")`), vi phạm requirement.
-- **Hành động**: Xóa các lệnh delete("all") để giữ lại ảnh cũ trên canvas khi gặp timeout.
+- 🟢 **Đã hoàn thành**: Luồng xử lý timeout trong `VisionSnapshotDebugger` đã loại bỏ lệnh `self.canvas.delete("all")`. Khi frame mới được tạo, ảnh cũ được xóa bằng tag `delete("image")` thay vì xóa toàn bộ canvas.
+- **Hành động**: Đã thay thế `delete("all")` bằng `delete("image")` và `delete("timeout_text")`.
 
 ## 🎯 Scope
 - Finding: #6 | Priority: P2 | Estimate: 0.5h
@@ -35,10 +35,10 @@ Trong `VisionSnapshotDebugger`, đoạn code hiện tại thực hiện `self.ca
 - Thay đổi logic timeout của `VisionEngine` backend.
 
 ## 🧪 Acceptance Criteria
-- [ ] AC1: Lệnh `self.canvas.delete("all")` không được thực thi trong nhánh `frame is None`.
-- [ ] AC2: Hình ảnh cũ được giữ lại và không gây crash hay rò rỉ bộ nhớ.
-- [ ] AC3: Pass unit test `test_vision_snapshot_debugger.py`.
-- [ ] AC4: Tuân thủ quy định i18n cho text "Timeout".
+- [x] AC1: Lệnh `self.canvas.delete("all")` không được thực thi trong nhánh `frame is None`.
+- [x] AC2: Hình ảnh cũ được giữ lại và không gây crash hay rò rỉ bộ nhớ.
+- [x] AC3: Pass unit test `test_vision_snapshot_debugger.py`.
+- [x] AC4: Tuân thủ quy định i18n cho text "Timeout".
 
 ## 🧪 Verification
 **Grep:** `grep -A 5 -n "frame is None" ui/components/vision_snapshot_debugger.py` → Expected: Không chứa lệnh `delete("all")`.
