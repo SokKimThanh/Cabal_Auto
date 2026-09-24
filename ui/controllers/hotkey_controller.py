@@ -138,7 +138,7 @@ class HotkeyController:
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
             monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
             build_key = hotkey_cfg.get("build_manager_key", "ctrl+b")
-            add_template_key = hotkey_cfg.get("add_template_key", "ctrl+t")
+            add_template_key = hotkey_cfg.get("add_template_key", "ctrl+shift+t")
 
             # Unregister old hotkeys first (in case of re-registration)
             self.unregister_all()
@@ -498,7 +498,34 @@ class HotkeyController:
                 self.parent.switch_view("build_manager")
 
     def on_add_template(self, *_args) -> None:
+        import os
+        from lib.system.window_manager import WindowManager
         from lib.events.event_bus import EventBus, VisionAddTemplateEvent
+
+        wm = WindowManager()
+        fg_hwnd = wm.get_foreground_window()
+        if fg_hwnd:
+            info = wm.get_window_info(fg_hwnd)
+            if info:
+                app_pid = os.getpid()
+                if info.pid == app_pid:
+                    EventBus.trigger(VisionAddTemplateEvent())
+                    return
+
+                # Check if it matches configured cabal window
+                hunt_cfg = {}
+                if hasattr(self.parent, "state_controller"):
+                    hunt_cfg = getattr(self.parent.state_controller, "hunt_cfg", {})
+
+                target_hwnd = hunt_cfg.get("window_hwnd")
+                if target_hwnd and info.hwnd == target_hwnd:
+                    EventBus.trigger(VisionAddTemplateEvent())
+                    return
+
+                # If neither the bot app nor the target game, ignore the hotkey
+                print(f"[Hotkeys] Add Template blocked: Active window (PID: {info.pid}, HWND: {info.hwnd}) is not the tool or game.")
+                return
+
         EventBus.trigger(VisionAddTemplateEvent())
 
     def update_diagnostics_ui_state(self) -> None:

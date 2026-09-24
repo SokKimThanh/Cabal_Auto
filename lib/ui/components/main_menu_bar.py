@@ -115,19 +115,19 @@ class MainMenuBar(tk.Menu):
             label=scan_label, accelerator="Ctrl+Alt+S", command=self._scan_region
         )
 
-        # Add Template (Ctrl+T)
+        # Add Template (Ctrl+Shift+T)
         add_tmpl_label = "Add Template" if self.lang == "en" else "Thêm Template"
         vision_menu.add_command(
-            label=add_tmpl_label, accelerator="Ctrl+T", command=self._add_template
+            label=add_tmpl_label, accelerator="Ctrl+Shift+T", command=self._add_template
         )
 
-        # Manage Templates (Ctrl+Shift+T)
+        # Manage Templates (Ctrl+Alt+T)
         manage_tmpl_label = (
             "Manage Templates" if self.lang == "en" else "Quản lý Templates"
         )
         vision_menu.add_command(
             label=manage_tmpl_label,
-            accelerator="Ctrl+Shift+T",
+            accelerator="Ctrl+Alt+T",
             command=self._manage_templates,
         )
 

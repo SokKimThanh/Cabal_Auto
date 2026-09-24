@@ -21,6 +21,7 @@ def test_hotkey_controller_register_all(mock_keyboard):
             "library_manager_key": "f8",
             "vision_wizard_key": "f9",
             "monster_editor_key": "f10",
+            "add_template_key": "f11",
         },
         "ui_mode": "beginner",
     }
@@ -40,6 +41,9 @@ def test_hotkey_controller_register_all(mock_keyboard):
     )
     mock_keyboard.add_hotkey.assert_any_call(
         "f10", controller.on_monster_editor, suppress=False
+    )
+    mock_keyboard.add_hotkey.assert_any_call(
+        "f11", controller.on_add_template, suppress=False
     )
 
 
