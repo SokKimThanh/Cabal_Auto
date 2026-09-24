@@ -513,9 +513,17 @@ class HotkeyController:
                     print(f"[Hotkeys] Add Template blocked: Active window is the bot tool (PID: {info.pid}).")
                     return
 
-                # Trigger capture if it's the game window or any other window except the bot itself
-                print(f"[Hotkeys] Add Template triggered for window PID: {info.pid}, HWND: {info.hwnd}")
-                EventBus.trigger(VisionAddTemplateEvent())
+                # Check if it matches configured cabal window
+                target_hwnd = None
+                if hasattr(self.parent, "state_controller"):
+                    target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
+
+                if target_hwnd and info.hwnd == target_hwnd:
+                    EventBus.trigger(VisionAddTemplateEvent())
+                    return
+
+                # If neither the bot app nor the target game, ignore the hotkey
+                print(f"[Hotkeys] Add Template blocked: Active window (PID: {info.pid}, HWND: {info.hwnd}) is not the tool or game.")
                 return
 
         # Fallback if window info couldn't be retrieved

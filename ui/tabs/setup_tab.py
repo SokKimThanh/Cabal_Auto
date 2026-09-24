@@ -255,6 +255,25 @@ class SetupTab(ResponsiveGridBase):
         check_warning() # Initial check
 
     def _build_advanced_content(self, frame):
+        # Auto Start Settings
+        self.app.state_controller.set_ui_var('setup_auto_start_with_hunt', str(self.app.state_controller.get_hunt_config_value("auto_start_with_hunt", False)))
+        self.app.state_controller.ui_vars['setup_auto_start_with_hunt'].trace_add("write", self._on_setting_changed)
+
+        lbl_auto_start = self.app._t("setup_advanced.auto_start_with_hunt") if hasattr(self.app, "_t") else "Tự động bắt quái khi mở game (Auto Start)"
+        cb = tk.Checkbutton(
+            frame,
+            text=lbl_auto_start,
+            variable=self.app.state_controller.ui_vars['setup_auto_start_with_hunt'],
+            onvalue="True",
+            offvalue="False",
+            bg=UIStyleV2.THEME_BG_APP,
+            fg=UIStyleV2.TEXT_PRIMARY,
+            selectcolor=UIStyleV2.BG_ELEVATED,
+            activebackground=UIStyleV2.THEME_BG_APP,
+            activeforeground=UIStyleV2.TEXT_PRIMARY
+        )
+        cb.grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 10))
+
         self.app.state_controller.set_ui_var('setup_target_key', str(self.app.state_controller.get_hunt_config_value("target_key", "TAB")))
         self.app.state_controller.ui_vars['setup_target_key'].trace_add("write", self._on_setting_changed)
 
@@ -276,15 +295,15 @@ class SetupTab(ResponsiveGridBase):
         self.app.state_controller.set_ui_var('setup_attack_duration', str(self.app.state_controller.get_hunt_config_value("attack_min_duration_sec", 1.5)))
         self.app.state_controller.ui_vars['setup_attack_duration'].trace_add("write", self._on_setting_changed)
 
-        self._add_entry_row(frame, 0, "target_key", self.app.state_controller.ui_vars['setup_target_key'])
+        self._add_entry_row(frame, 1, "target_key", self.app.state_controller.ui_vars['setup_target_key'])
 
         self._add_entry_row(
-            frame, 1, "press_ms", self.app.state_controller.ui_vars['setup_press_ms'], validate=True,
+            frame, 2, "press_ms", self.app.state_controller.ui_vars['setup_press_ms'], validate=True,
             from_=10, to=1000, increment=10, is_float=False, col_offset=0
         )
         self._add_entry_row(
             frame,
-            1,
+            2,
             "target_cycle",
             self.app.state_controller.ui_vars['setup_target_cycle'],
             col_offset=3,
@@ -293,7 +312,7 @@ class SetupTab(ResponsiveGridBase):
         )
         self._add_entry_row(
             frame,
-            2,
+            3,
             "search_interval",
             self.app.state_controller.ui_vars['setup_search_interval'],
             validate=True,
@@ -301,7 +320,7 @@ class SetupTab(ResponsiveGridBase):
         )
         self._add_entry_row(
             frame,
-            2,
+            3,
             "attack_interval",
             self.app.state_controller.ui_vars['setup_attack_interval'],
             col_offset=3,
@@ -309,12 +328,12 @@ class SetupTab(ResponsiveGridBase):
             from_=0.1, to=5.0, increment=0.1, is_float=True
         )
         self._add_entry_row(
-            frame, 3, "lost_timeout", self.app.state_controller.ui_vars['setup_lost_timeout'], validate=True,
+            frame, 4, "lost_timeout", self.app.state_controller.ui_vars['setup_lost_timeout'], validate=True,
             from_=0.5, to=10.0, increment=0.1, is_float=True, col_offset=0
         )
         self._add_entry_row(
             frame,
-            3,
+            4,
             "attack_duration",
             self.app.state_controller.ui_vars['setup_attack_duration'],
             col_offset=3,
