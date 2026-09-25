@@ -58,6 +58,28 @@ class SkillPanel(ttk.LabelFrame):
                 "on_bot_state_changed", self.on_bot_state_changed
             )
 
+
+    def on_skill_slots_changed(self, skill_slots: dict = None):
+        """
+        Handles changes to configured skills in the application state.
+        Now synchronizes the visual representation on the `SkillTimelineStrip`.
+        """
+        if not hasattr(self, "attack_timeline") or not hasattr(self, "buff_timeline"):
+            return
+
+        if skill_slots is None:
+            skill_slots = {}
+
+        # REFACTOR(#3): Sync chỉ SkillTimelineStrip
+        combo_slots = skill_slots.get("attack_combo", [])
+        buff_slots = skill_slots.get("buff_lane", [])
+
+        combo_seq = self._map_skills_to_timeline_format(combo_slots)
+        self.attack_timeline.update_skills(combo_seq)
+
+        buff_seq = self._map_skills_to_timeline_format(buff_slots)
+        self.buff_timeline.update_skills(buff_seq)
+
     def _map_skills_to_timeline_format(self, slots):
         """Helper to map raw slot data to what SkillTimelineStrip expects"""
         mapped = []
@@ -92,13 +114,7 @@ class SkillPanel(ttk.LabelFrame):
         self.content_frame = tk.Frame(self.frame, bg=UI.BG_BASE)
         self.content_frame.pack(fill="both", expand=True, padx=10, pady=(10, 0))
 
-        # We keep these initialized to prevent breaking Automation Tests
-        self.widgets["combo_dropdowns"] = []
-        self.widgets["combo_hotkeys"] = []
-        self.widgets["combo_stats"] = []
-        self.widgets["buff_dropdowns"] = []
-        self.widgets["buff_hotkeys"] = []
-        self.widgets["buff_stats"] = []
+        # REFACTOR(#3): Các list dropdown đã xóa — UI dùng SkillTimelineStrip từ Bug #6.
 
         # Title for attack combo
         tk.Label(
@@ -325,8 +341,7 @@ class SkillPanel(ttk.LabelFrame):
             if class_label:
                 self.widgets["cb_class"].set(class_label)
 
-            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-                dd.config(values=skill_names)
+
         else:
             self._update_toggle_button_visuals()
             if self.controller.show_all_skills:
@@ -337,8 +352,7 @@ class SkillPanel(ttk.LabelFrame):
                 if class_label:
                     self.widgets["cb_class"].set(class_label)
 
-            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-                dd.config(values=skill_names)
+
 
     def _load_classes(self):
         values, default_val = self.controller.load_classes()
@@ -355,8 +369,7 @@ class SkillPanel(ttk.LabelFrame):
         if not success:
             self.widgets["cb_class"].set(last_selected)
         else:
-            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-                dd.config(values=skill_names)
+            pass
 
     def _update_toggle_button_visuals(self):
         btn = self.widgets.get("btn_toggle_skills")
@@ -381,114 +394,10 @@ class SkillPanel(ttk.LabelFrame):
             self.widgets["cb_class"].set(self.controller.last_selected_class)
 
         # Update comboboxes
-        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-            dd.config(values=skill_names)
+        for timeline in [self.attack_timeline, self.buff_timeline]:
+            if hasattr(timeline, "render_skills"):
+                timeline.render_skills()
 
-    def _on_hotkey_changed(self, event, lane, position_idx):
-        entry = event.widget
-        new_hotkey = entry.get().strip()
-        if hasattr(self.app_state, "set_skill_hotkey"):
-            self.app_state.set_skill_hotkey(lane, position_idx, new_hotkey)
-        # Prevent FocusOut / Return from causing UI weirdness
-        if event.keysym == 'Return':
-            self.focus_set()
-
-    def on_skill_slots_changed(self, skill_slots=None):
-        """Logic moved from HuntTab"""
-        if not skill_slots:
-            skill_slots = getattr(
-                self.app_state, "skill_slots", {"attack_combo": [], "buff_lane": []}
-            )
-
-        runtime_srv = SkillRuntimeService()
-        all_runtime_skills = runtime_srv.get_all_skills()
-
-        # First, ensure combobox values are up to date
-        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-            dd.config(values=self.controller.skill_names)
-
-        # Update dropdowns, hotkeys, and stats
-        for lane_key, dropdown_list, hotkeys_list, stats_list in [
-            ("attack_combo", self.widgets.get("combo_dropdowns", []), self.widgets.get("combo_hotkeys", []), self.widgets.get("combo_stats", [])),
-            ("buff_lane", self.widgets.get("buff_dropdowns", []), self.widgets.get("buff_hotkeys", []), self.widgets.get("buff_stats", [])),
-        ]:
-            lane_skills = skill_slots.get(lane_key, [])
-            for i, dd in enumerate(dropdown_list):
-                hk_entry = hotkeys_list[i] if i < len(hotkeys_list) else None
-                cast_lbl, cd_lbl = stats_list[i] if i < len(stats_list) else (None, None)
-
-                if i < len(lane_skills) and lane_skills[i]:
-                    # We might have dict (if from app_state.skill_slots) or int (if from old structure)
-                    slot_data = lane_skills[i]
-                    skill_id = slot_data.get("skill_id") if isinstance(slot_data, dict) else slot_data
-
-                    skill = self.controller.get_skill(skill_id)
-                    if skill:
-                        dd.set(skill.get("name", ""))
-
-                        # Find runtime stats
-                        runtime_info = next((s for s in all_runtime_skills if s.get("name") == skill.get("name")), None)
-
-                        # Update Hotkey
-                        user_hk = slot_data.get("user_hotkey", "") if isinstance(slot_data, dict) else ""
-                        if not user_hk and runtime_info:
-                            user_hk = runtime_info.get("key", "")
-
-                        if hk_entry:
-                            hk_entry.delete(0, 'end')
-                            hk_entry.insert(0, user_hk)
-
-                        # Update Stats
-                        if runtime_info:
-                            if cast_lbl:
-                                cast_lbl.config(text=f"{runtime_info.get('cast_time', 0)}s")
-                            if cd_lbl:
-                                cd_lbl.config(text=f"{runtime_info.get('cooldown', 0)}s")
-                        else:
-                            if cast_lbl:
-                                cast_lbl.config(text="-")
-                            if cd_lbl:
-                                cd_lbl.config(text="-")
-
-                    else:
-                        dd.set("")
-                        if hk_entry:
-                            hk_entry.delete(0, 'end')
-                        if cast_lbl:
-                            cast_lbl.config(text="-")
-                        if cd_lbl:
-                            cd_lbl.config(text="-")
-                else:
-                    dd.set("")
-                    if hk_entry:
-                        hk_entry.delete(0, 'end')
-                    if cast_lbl:
-                        cast_lbl.config(text="-")
-                    if cd_lbl:
-                        cd_lbl.config(text="-")
-
-        # Also sync SkillTimelineStrips
-        if hasattr(self, "attack_timeline") and self.attack_timeline.winfo_exists():
-            self.attack_timeline.update_skills(self._map_skills_to_timeline_format(self.controller.get_combo_sequence()))
-        if hasattr(self, "buff_timeline") and self.buff_timeline.winfo_exists():
-            self.buff_timeline.update_skills(self._map_skills_to_timeline_format(self.controller.get_buff_sequence()))
-
-        # Update preset indicator
-        preset_mode = getattr(self.app_state, "_preset_mode", "default")
-        if preset_mode == "default":
-            self.widgets["preset_indicator"].config(text=self._t("skill_panel.preset_default"))
-        else:
-            self.widgets["preset_indicator"].config(text=self._t("skill_panel.preset_custom"))
-
-    def _on_skill_changed(self, event, lane, position_idx):
-        """Logic extracted from HuntTab"""
-        dropdown = event.widget
-        skill_name = dropdown.get()
-
-        skill_id = self.controller.get_skill_id_by_name(skill_name)
-
-        if skill_id is not None and hasattr(self.controller.preset_controller, "set_skill_slot"):
-            self.controller.preset_controller.set_skill_slot(lane, position_idx, skill_id)
 
     def on_build(self):
         """Open skill build tab"""

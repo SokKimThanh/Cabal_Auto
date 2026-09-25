@@ -27,6 +27,14 @@ import sys
 import threading
 import queue
 import time
+try:
+    import dxcam
+    _DXCAM_AVAILABLE = True
+except ImportError:
+    dxcam = None
+    _DXCAM_AVAILABLE = False
+    logger.info("[Capture] dxcam không có sẵn, dùng BitBlt backend")
+
 import logging
 from typing import Optional, Tuple
 from dataclasses import dataclass
@@ -87,6 +95,7 @@ class ScreenCapture:
         target_fps: int = 15,
         downsample: Optional[Tuple[int, int]] = None,
         on_capture_lost: Optional[callable] = None,
+        backend: str = "auto",
     ):
         """
         Initialize screen capture
@@ -123,6 +132,20 @@ class ScreenCapture:
         self._mfcDC = None
         self._saveDC = None
         self._saveBitMap = None
+
+        self.backend = backend
+        self._dxcam_camera = None
+
+        if backend == "auto":
+            self._use_dxcam = _DXCAM_AVAILABLE
+        elif backend == "dxcam":
+            if not _DXCAM_AVAILABLE:
+                raise RuntimeError("backend='dxcam' nhưng dxcam chưa cài. pip install dxcam")
+            self._use_dxcam = True
+        else:
+            self._use_dxcam = False
+
+        logger.info(f"[Capture] Backend: {'dxcam' if self._use_dxcam else 'bitblt'}")
 
         logger.info(
             f"ScreenCapture initialized: {target_fps} FPS, "
@@ -204,6 +227,15 @@ class ScreenCapture:
             return False
 
         # Start capture thread
+        if self._use_dxcam:
+            try:
+                self._dxcam_camera = dxcam.create(output_color="BGR")
+                logger.info("[Capture] dxcam camera created")
+            except Exception as e:
+                logger.warning(f"[Capture] dxcam init failed: {e}, fallback BitBlt")
+                self._use_dxcam = False
+                self._dxcam_camera = None
+
         self.running = True
         self.thread = threading.Thread(target=self._capture_loop, daemon=True)
         self.thread.start()
@@ -219,6 +251,13 @@ class ScreenCapture:
         self.running = False
         if self.thread:
             self.thread.join(timeout=2.0)
+
+        if self._dxcam_camera is not None:
+            try:
+                self._dxcam_camera.release()
+            except Exception:
+                pass
+            self._dxcam_camera = None
 
         # Clear queue
         while not self.frame_queue.empty():
@@ -267,100 +306,74 @@ class ScreenCapture:
             return CaptureStats(**self.stats.__dict__)
 
     def _capture_loop(self):
-        """
-        Main capture loop (runs in separate thread)
-
-        Continuously captures frames and puts them in queue.
-        Drops frames if queue is full to maintain real-time.
-        """
         try:
-            # Setup Windows GDI
-            self._setup_gdi()
+            if not self._use_dxcam:
+                self._setup_gdi()
 
-            next_capture_time = time.time()
-            last_stats_update = time.time()
+            frame_time = 1.0 / self.target_fps
 
-            while self.running:
-                # Check window validity
+            while self.running and self.hwnd:
+                loop_start = time.time()
+
+                # Check window valid
                 if not win32gui.IsWindow(self.hwnd):
-                    logger.warning("Capture target lost (window closed).")
-                    self.running = False
-                    self.capture_lost_event.set()
+                    logger.warning("[Capture] Window closed")
                     if self.on_capture_lost:
                         self.on_capture_lost()
                     break
 
-                current_time = time.time()
+                # Update window coordinates
+                client_rect = win32gui.GetClientRect(self.hwnd)
+                client_point = win32gui.ClientToScreen(self.hwnd, (0, 0))
 
-                # Capture at target FPS
-                if current_time >= next_capture_time:
-                    # Refresh rect and check if minimized
+                w = client_rect[2] - client_rect[0]
+                h = client_rect[3] - client_rect[1]
+
+                # Check for minimized or invalid size
+                if win32gui.IsIconic(self.hwnd) or w <= 0 or h <= 0:
+                    time.sleep(frame_time)
+                    continue
+
+                # Check for resize
+                if self.window_rect:
+                    if w != self.window_rect["width"] or h != self.window_rect["height"]:
+                        if not self._use_dxcam:
+                            self._reallocate_buffer(w, h)
+
+                self.window_rect = {
+                    "left": client_point[0],
+                    "top": client_point[1],
+                    "right": client_point[0] + (client_rect[2] - client_rect[0]),
+                    "bottom": client_point[1] + (client_rect[3] - client_rect[1]),
+                    "width": client_rect[2] - client_rect[0],
+                    "height": client_rect[3] - client_rect[1]
+                }
+                frame = self._capture_frame()
+                if frame is not None:
                     try:
-                        client_rect = win32gui.GetClientRect(self.hwnd)
-                        width = max(0, client_rect[2] - client_rect[0])
-                        height = max(0, client_rect[3] - client_rect[1])
-                        is_minimized = (
-                            win32gui.IsIconic(self.hwnd) or width == 0 or height == 0
-                        )
-                    except Exception as e:
-                        logger.error(f"Failed to get client rect: {e}")
-                        is_minimized = True
-
-                    if is_minimized:
-                        with self._frame_lock:
-                            frame = (
-                                None
-                                if self._latest_frame is None
-                                else self._latest_frame.copy()
-                            )
-                    else:
-                        if self.window_rect is not None and (
-                            width != self.window_rect["width"]
-                            or height != self.window_rect["height"]
-                        ):
-                            # Ensure we update window_rect correctly from the fresh client_rect variables above
-                            try:
-                                win_rect_updated = win32gui.GetWindowRect(self.hwnd)
-                            except Exception:
-                                win_rect_updated = [0, 0, width, height]
-
-                            self.window_rect = {
-                                "left": win_rect_updated[0],
-                                "top": win_rect_updated[1],
-                                "right": win_rect_updated[2],
-                                "bottom": win_rect_updated[3],
-                                "width": width,
-                                "height": height,
-                            }
-                            self._reallocate_buffer(width, height)
-
-                        frame = self._capture_frame()
-
-                    if frame is not None:
-                        # Try to put in queue (non-blocking)
+                        self.frame_queue.put_nowait(frame)
+                    except queue.Full:
+                        # Drop oldest
                         try:
+                            self.frame_queue.get_nowait()
                             self.frame_queue.put_nowait(frame)
-                            with self._stats_lock:
-                                self.stats.frames_captured += 1
-                        except queue.Full:
-                            # Drop frame if queue full
-                            with self._stats_lock:
-                                self.stats.frames_dropped += 1
+                        except:
+                            pass
 
-                    next_capture_time = current_time + self.frame_interval
+                    with self._stats_lock:
+                        self.stats.frames_captured += 1
 
-                # Update stats every second
-                if current_time - last_stats_update >= 1.0:
-                    self._update_stats()
-                    last_stats_update = current_time
+                self._update_stats()
 
-                # Small sleep to prevent CPU spinning
-                time.sleep(0.001)
+                # FPS sleep
+                elapsed = time.time() - loop_start
+                sleep_time = frame_time - elapsed
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
 
-        except Exception as e:
-            logger.error(f"Capture loop error: {e}", exc_info=True)
         finally:
-            self._cleanup_gdi()
+            if not self._use_dxcam:
+                self._cleanup_gdi()
 
     def _setup_gdi(self):
         """Setup Windows GDI objects for BitBlt"""
@@ -424,13 +437,36 @@ class ScreenCapture:
             logger.error(f"GDI cleanup error: {e}")
 
     def _capture_frame(self) -> Optional[np.ndarray]:
-        """
-        Capture single frame using BitBlt
-
-        Returns:
-            Frame as numpy array (BGR) or None on error
-        """
         capture_start = time.time()
+
+        if self._use_dxcam and self._dxcam_camera is not None:
+            try:
+                region = (
+                    self.window_rect["left"],
+                    self.window_rect["top"],
+                    self.window_rect["right"],
+                    self.window_rect["bottom"],
+                )
+                frame = self._dxcam_camera.grab(region=region)
+                if frame is None:
+                    return None
+
+                if self.downsample:
+                    frame = cv2.resize(frame, self.downsample, interpolation=cv2.INTER_AREA)
+
+                with self._frame_lock:
+                    self._latest_frame = frame.copy()
+
+                capture_time = (time.time() - capture_start) * 1000
+                self._capture_times.append(capture_time)
+                if len(self._capture_times) > 30:
+                    self._capture_times.pop(0)
+
+                return frame
+            except Exception as e:
+                logger.error(f"[Capture] dxcam error: {e}, fallback BitBlt for this frame")
+                self._use_dxcam = False
+                self._setup_gdi()
 
         try:
             # Validate GDI objects are initialized

@@ -742,19 +742,10 @@ class App:
             if "class" in results and results["class"] != "Unknown":
                 state["character_class"] = results["class"]
 
-            # FIX BUG #8: Fallback dùng class_id đã chọn trong UI
-            # (vì ScreenStateAnalyzer là stub, luôn trả "Unknown")
+            # REFACTOR(#6): Không cần fallback nữa — analyzer giờ detect thật.
+            # Nếu vẫn "Unknown" → log warning để debug.
             if state.get("character_class") == "Unknown":
-                current_class_id = getattr(self.state_controller.root, "_current_class_id", 1)
-                try:
-                    from lib.db.services.class_service import ClassService
-                    for c in ClassService().get_all_classes():
-                        if c["id"] == current_class_id:
-                            state["character_class"] = c.get("name", "Unknown")
-                            break
-                except Exception as e:
-                    if hasattr(self, "logger"):
-                        self.logger.warning(f"[Scan] Không lấy được class name: {e}")
+                logger.warning("[Scan] Không detect được class từ screen — kiểm tra class_icons asset")
 
                 scanned_class_name = results.get("class", "Unknown") if "class" in results else state.get("character_class", "Unknown")
                 scanned_class_id = None
@@ -1398,10 +1389,6 @@ def main():
         )
         app.scan_controller = container.scan_controller
 
-        # FIX BUG #1: ActionBarView đã được build trong App.__init__ với scan_controller=None.
-        # Cần gán lại reference để nút Scan có thể gọi được.
-        if hasattr(app, "action_bar") and app.action_bar:
-            app.action_bar.scan_controller = container.scan_controller
 
         container.hunt_runner = HuntRunner(
             hunt_cfg=app.state_controller.hunt_cfg,
