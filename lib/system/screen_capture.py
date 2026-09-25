@@ -24,6 +24,8 @@ Note:
 """
 
 import sys
+import logging
+logger = logging.getLogger(__name__)
 import threading
 import queue
 import time
@@ -35,7 +37,6 @@ except ImportError:
     _DXCAM_AVAILABLE = False
     logger.info("[Capture] dxcam không có sẵn, dùng BitBlt backend")
 
-import logging
 from typing import Optional, Tuple
 from dataclasses import dataclass
 
@@ -59,7 +60,6 @@ except ImportError as e:
         "Install: pip install opencv-python numpy"
     ) from e
 
-logger = logging.getLogger(__name__)
 
 
 @dataclass
