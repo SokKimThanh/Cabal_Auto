@@ -19,7 +19,7 @@ class ActionBarView(tk.Frame):
         super().__init__(parent, bg=UI.BG_BASE, *args, **kwargs)
         self.state_controller = state_controller
         self.window_controller = window_controller
-        self.scan_controller = scan_controller
+        self._legacy_scan_controller = scan_controller
 
         self.action_bar_frame = self
         self.configure(padx=32, pady=10)
@@ -87,8 +87,11 @@ class ActionBarView(tk.Frame):
         self.scan_btn_icon_name = Icons.SCAN_SCREEN
 
         def on_scan_clicked():
-            if self.scan_controller:
-                self.scan_controller.run_scan(manual=True)
+            ctrl = getattr(self.winfo_toplevel(), "scan_controller", None)
+            if ctrl:
+                ctrl.run_scan(manual=True)
+            else:
+                logger.warning("[ActionBar] scan_controller chưa sẵn sàng")
 
         self.btn_manual_scan = _create_icon_btn_component(
             parent=status_header,

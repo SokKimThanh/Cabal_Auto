@@ -7,9 +7,7 @@ from lib.db.services.schema_migration_service import SchemaMigrationService
 from lib.db.services.seed_classes_service import SeedClassesService
 from lib.db.services.seed_skill_sprite_service import SeedSkillSpriteService
 from lib.db.services.seed_bm3_synergies_service import SeedBM3SynergiesService
-from lib.db.services.seed_class_skill_assignments_service import (
-    SeedClassSkillAssignmentsService,
-)
+from lib.db.services.seed_from_crawl_service import SeedFromCrawlService
 
 pytestmark = pytest.mark.integration
 
@@ -35,7 +33,7 @@ def mock_db_connection():
         "lib.db.services.seed_bm3_synergies_service.get_connection",
         return_value=(conn, False),
     ), patch(
-        "lib.db.services.seed_class_skill_assignments_service.get_connection",
+        "lib.db.services.seed_from_crawl_service.get_connection",
         return_value=(conn, False),
     ):
         yield conn
@@ -83,7 +81,7 @@ class TestDB8Integrity:
         SeedClassesService().seed_classes()
         SeedSkillSpriteService().seed_skill_sprites()
         SeedBM3SynergiesService().seed()
-        SeedClassSkillAssignmentsService().seed_assignments()
+        SeedFromCrawlService().seed()
 
         counts_run_1 = {
             "classes": len(q(mock_db_connection, "SELECT * FROM classes")),
@@ -101,7 +99,7 @@ class TestDB8Integrity:
         SeedClassesService().seed_classes()
         SeedSkillSpriteService().seed_skill_sprites()
         SeedBM3SynergiesService().seed()
-        SeedClassSkillAssignmentsService().seed_assignments()
+        SeedFromCrawlService().seed()
 
         counts_run_2 = {
             "classes": len(q(mock_db_connection, "SELECT * FROM classes")),
@@ -118,12 +116,12 @@ class TestDB8Integrity:
         assert counts_run_1 == counts_run_2
 
         # Parity check:
-        # Expected from current manifest sizes: classes: 9, skills: 460, synergies: 35, synergy_effects: 120, assignments: 32 (based on previous run)
+        # Expected from current manifest sizes: classes: 9, skills: 460, synergies: 35, synergy_effects: 120, assignments: 248 (based on new crawl service)
         assert counts_run_2["classes"] == 9
         assert counts_run_2["skills"] == 460
         assert counts_run_2["synergies"] == 35
         assert counts_run_2["synergy_effects"] == 120
-        assert counts_run_2["class_skill_assignments"] == 32
+        assert counts_run_2["class_skill_assignments"] == 248
 
     def test_constraint_and_relationship_integrity(self, mock_db_connection):
         # Setup schema and data
@@ -131,7 +129,7 @@ class TestDB8Integrity:
         SeedClassesService().seed_classes()
         SeedSkillSpriteService().seed_skill_sprites()
         SeedBM3SynergiesService().seed()
-        SeedClassSkillAssignmentsService().seed_assignments()
+        SeedFromCrawlService().seed()
 
         # Enforce unique constraints on class_code, skill_code, and composite mapping key (class_id, skill_id).
         duplicates_classes = q(
@@ -181,7 +179,7 @@ class TestDB8Integrity:
         SeedClassesService().seed_classes()
         SeedSkillSpriteService().seed_skill_sprites()
         SeedBM3SynergiesService().seed()
-        SeedClassSkillAssignmentsService().seed_assignments()
+        SeedFromCrawlService().seed()
 
         # 2. class_skill_assignments CASCADE from skills
         skill_with_assignments = q(
@@ -203,7 +201,7 @@ class TestDB8Integrity:
         SeedClassesService().seed_classes()
         SeedSkillSpriteService().seed_skill_sprites()
         SeedBM3SynergiesService().seed()
-        SeedClassSkillAssignmentsService().seed_assignments()
+        SeedFromCrawlService().seed()
 
         # Orphan Checks: Query for orphan mappings, orphan synergy effects, and unlinked parent entities.
         orphan_assignments = q(
