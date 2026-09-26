@@ -163,8 +163,19 @@ class ScanController:
                     except Exception as e:
                         self.logger.error(f"[AutoScan] Failed to create thumbnail: {e}")
 
+                # Attempt to retrieve current hunt config to inject ROIs
+                hunt_cfg = {}
+                try:
+                    import tkinter as tk
+                    root = tk._default_root
+                    if root and hasattr(root, "app_state"):
+                        hunt_cfg = root.app_state.get_hunt_config_value("rois", {})
+                        hunt_cfg = {"rois": hunt_cfg}
+                except Exception:
+                    pass
+
                 # Run scan logic
-                results = scanner.run_scan()
+                results = scanner.run_scan(hunt_cfg)
                 if thumbnail_pil:
                     results["thumbnail"] = thumbnail_pil
                 self.logger.info("[AutoScan] Scan completed successfully.")
