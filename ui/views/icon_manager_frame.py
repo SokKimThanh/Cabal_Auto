@@ -426,6 +426,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.var_usage_mod = tk.StringVar(value="")
         self.var_usage_comp = tk.StringVar(value="")
         self.var_usage_element = tk.StringVar(value="")
+        self.var_filter_errors_only = tk.BooleanVar(value=False)
 
         # =========================================================================
         # LEFT: Add Form (Available Elements)
@@ -446,6 +447,19 @@ class IconManagerFrame(ResponsiveGridBase):
             fg=UIStyle.TEXT_PRIMARY,
             font=("Segoe UI", 10, "bold")
         ).grid(row=0, column=0, sticky="w")
+
+        # Checkbox filter errors
+        chk_filter = tk.Checkbutton(
+            header_frame,
+            text=self.i18n_t("lbl_filter_errors", default="Chỉ hiện các UI Button bị lỗi Icon"),
+            variable=self.var_filter_errors_only,
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_SECONDARY,
+            selectcolor=UIStyle.BG_SURFACE,
+            activebackground=UIStyle.BG_SURFACE,
+            command=lambda: self._apply_element_filter(force=True)
+        )
+        chk_filter.grid(row=1, column=0, sticky="w", pady=(2, 0))
 
         # Search box for Available Elements
         self.var_element_search = tk.StringVar()
@@ -493,6 +507,9 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.column("element", width=120, stretch=tk.YES)
         self.available_elements_tree.column("exclusive", width=110, stretch=tk.NO, anchor="center")
         self.available_elements_tree.column("mapped", width=100, stretch=tk.NO)
+
+        # Configure tag for errors (status RED or YELLOW)
+        self.available_elements_tree.tag_configure("error", foreground="red")
 
         self.available_elements_tree.grid(row=1, column=0, sticky="nsew")
 
@@ -621,14 +638,29 @@ class IconManagerFrame(ResponsiveGridBase):
                 filtered_elements = []
 
                 for el in elements:
+                    el_status = el.get('status', 'GREEN')
+
+                    # Filter for only errors
+                    if getattr(self, 'var_filter_errors_only', None) and self.var_filter_errors_only.get():
+                        # Lỗi icon (mapped nhưng ko có hình thật, hoặc fallback) = YELLOW / RED
+                        if not el.get('mapped', ''):
+                            continue # Bỏ qua cái chưa gắn
+                        if el_status == 'GREEN':
+                            continue # Bỏ qua cái xanh
+
                     if search_term in el['id'].lower() or mod_matches or screen_matches:
                         filtered_elements.append(el)
 
                 if filtered_elements:
                     mod_has_children = True
                     screen_children_ops = []
-                    for el in sorted(filtered_elements, key=lambda x: x["id"]):                        screen_children_ops.append(
-                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('exclusive', '🌐'), el.get('mapped', '')), False)
+                    for el in sorted(filtered_elements, key=lambda x: x["id"]):
+                        tag = []
+                        if el.get('mapped', '') and el.get('status', 'GREEN') != 'GREEN':
+                            tag.append("error")
+
+                        screen_children_ops.append(
+                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('exclusive', '🌐'), el.get('mapped', '')), False, tag)
                         )
                     mod_children_ops.append((f"📄 {screen}", None, is_open, screen_children_ops))
 
@@ -641,8 +673,8 @@ class IconManagerFrame(ResponsiveGridBase):
             mod_node = self.available_elements_tree.insert("", "end", text=mod_text, open=mod_open)
             for screen_text, screen_vals, screen_open, el_ops in screen_ops:
                 screen_node = self.available_elements_tree.insert(mod_node, "end", text=screen_text, open=screen_open)
-                for el_text, el_vals, el_open in el_ops:
-                    node_id = self.available_elements_tree.insert(screen_node, "end", text=el_text, values=el_vals)
+                for el_text, el_vals, el_open, el_tags in el_ops:
+                    node_id = self.available_elements_tree.insert(screen_node, "end", text=el_text, values=el_vals, tags=el_tags)
                     if selected_item_values and el_vals and list(el_vals) == list(selected_item_values):
                         item_to_select = node_id
 
@@ -687,6 +719,36 @@ class IconManagerFrame(ResponsiveGridBase):
                 # Merge unique elements, track by (module, screen, element_id)
                 merged = {}
 
+                # We need icon evaluation status
+                from ui.helpers.icon_helper import get_icon_helper
+                icon_helper = get_icon_helper()
+
+                icon_cache_data = {}
+                import sqlite3
+                from database import get_db
+                try:
+                    conn2 = sqlite3.connect(str(get_db().DB_PATH))
+                    conn2.row_factory = sqlite3.Row
+                    cur2 = conn2.cursor()
+                    cur2.execute("SELECT icon_key, filepath, fallback_emoji FROM icons")
+                    for row in cur2.fetchall():
+                        icon_cache_data[row['icon_key']] = {
+                            "filepath": row['filepath'],
+                            "fallback_emoji": row['fallback_emoji']
+                        }
+                    conn2.close()
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Failed to fetch icons for status check: {e}")
+
+                def get_status(ik):
+                    if not ik:
+                        return "GREEN"
+                    if ik not in icon_cache_data:
+                        # Dangling mapping (icon deleted) but still mapped
+                        return "RED"
+                    return icon_helper.evaluate_icon_status(icon_cache_data[ik])
+
                 # Add from DB usages
                 for (mod, comp, el) in db_elements:
                     if mod not in merged:
@@ -699,12 +761,14 @@ class IconManagerFrame(ResponsiveGridBase):
 
                     exc = ui_elements_map.get((mod, el), "🌐")
 
+                    mapped_ik = db_mapped.get((mod, comp, el), "")
                     merged[mod][screen].append({
                         "id": el,
                         "mod": mod,
                         "comp": comp,
-                        "mapped": db_mapped.get((mod, comp, el), ""),
-                        "exclusive": exc
+                        "mapped": mapped_ik,
+                        "exclusive": exc,
+                        "status": get_status(mapped_ik)
                     })
 
                 # Add from Registry
@@ -730,7 +794,34 @@ class IconManagerFrame(ResponsiveGridBase):
                             "mod": mod,
                             "comp": comp,
                             "mapped": mapped,
-                            "exclusive": exc
+                            "exclusive": exc,
+                            "status": get_status(mapped)
+                        })
+
+                # Add all remaining unmapped elements from DB
+                for ui_el in ui_elements:
+                    mod = ui_el[0]
+                    screen = ui_el[1]
+                    el = ui_el[2]
+                    comp = ui_el[3]
+                    exc = "🔒" if ui_el[4] else "🌐"
+
+                    if mod not in merged:
+                        merged[mod] = {}
+                    if screen not in merged[mod]:
+                        merged[mod][screen] = []
+
+                    # Check if already added by usages or registry
+                    existing = [e for e in merged[mod][screen] if e['id'] == el]
+                    if not existing:
+                        mapped = db_mapped.get((mod, comp, el), "")
+                        merged[mod][screen].append({
+                            "id": el,
+                            "mod": mod,
+                            "comp": comp,
+                            "mapped": mapped,
+                            "exclusive": exc,
+                            "status": get_status(mapped)
                         })
 
                 self.winfo_toplevel().after(0, lambda: self._update_usage_ids_ui(merged))
