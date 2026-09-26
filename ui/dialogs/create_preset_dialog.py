@@ -89,6 +89,26 @@ class CreatePresetDialog(tk.Toplevel):
         name_entry.grid(row=1, column=1, sticky="w", padx=10, pady=10)
         name_entry.focus_set()
 
+        # --- Bottom Actions ---
+        action_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
+        action_frame.pack(side="bottom", fill="x", pady=(20, 0))
+
+        btn_cancel = tk.Button(
+            action_frame,
+            text="Hủy",
+            command=self.destroy,
+            **UI.get_button_style("secondary")
+        )
+        btn_cancel.pack(side="right", padx=(10, 0))
+
+        btn_save = tk.Button(
+            action_frame,
+            text="💾 Save",
+            command=self._on_save,
+            **UI.get_button_style("primary")
+        )
+        btn_save.pack(side="right")
+
         # --- Summary Area ---
         summary_lbl = tk.Label(
             main_frame,
@@ -97,7 +117,7 @@ class CreatePresetDialog(tk.Toplevel):
             bg=UI.BG_BASE,
             fg=UI.TEXT_PRIMARY
         )
-        summary_lbl.pack(anchor="w", pady=(15, 5))
+        summary_lbl.pack(side="top", anchor="w", pady=(15, 5))
 
         summary_frame = tk.Frame(
             main_frame,
@@ -175,26 +195,6 @@ class CreatePresetDialog(tk.Toplevel):
                             fg=UI.TEXT_PRIMARY,
                             font=UI.FONT_SMALL
                         ).pack(anchor="w", padx=20, pady=2)
-
-        # --- Bottom Actions ---
-        action_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
-        action_frame.pack(fill="x", pady=(20, 0))
-
-        btn_cancel = tk.Button(
-            action_frame,
-            text="Hủy",
-            command=self.destroy,
-            **UI.get_button_style("secondary")
-        )
-        btn_cancel.pack(side="right", padx=(10, 0))
-
-        btn_save = tk.Button(
-            action_frame,
-            text="💾 Save",
-            command=self._on_save,
-            **UI.get_button_style("primary")
-        )
-        btn_save.pack(side="right")
 
     def _on_save(self):
         preset_name = self.name_var.get().strip()
