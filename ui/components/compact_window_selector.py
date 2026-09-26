@@ -1,5 +1,7 @@
 """Compact window selector for hunt tab header bar."""
 
+import sys
+import threading
 import tkinter as tk
 from typing import List, Dict, Any, Callable, Optional
 import logging

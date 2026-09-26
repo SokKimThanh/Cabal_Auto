@@ -733,7 +733,7 @@ class IconManagerFrame(ResponsiveGridBase):
                             "exclusive": exc
                         })
 
-                self.app.after(0, lambda: self._update_usage_ids_ui(merged))
+                self.winfo_toplevel().after(0, lambda: self._update_usage_ids_ui(merged))
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(f"Error fetching usage ids: {e}")

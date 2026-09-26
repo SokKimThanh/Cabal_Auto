@@ -264,8 +264,8 @@ class WindowManager:
                 ctypes.windll.user32.EnumWindows(EnumWindowsProc(callback), 0)
             else:
                 win32gui.EnumWindows(callback, None)
-        except Exception as e:
-            logger.error(f"EnumWindows failed: {e}")
+        except Exception as local_err:
+            logger.error(f"EnumWindows failed: {local_err}")
 
 
         logger.debug(f"Found {len(results)} windows (enumerated={window_count[0]}, skipped={skipped_count[0]})")
