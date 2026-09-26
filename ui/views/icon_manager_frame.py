@@ -798,6 +798,32 @@ class IconManagerFrame(ResponsiveGridBase):
                             "status": get_status(mapped)
                         })
 
+                # Add all remaining unmapped elements from DB
+                for ui_el in ui_elements:
+                    mod = ui_el[0]
+                    screen = ui_el[1]
+                    el = ui_el[2]
+                    comp = ui_el[3]
+                    exc = "🔒" if ui_el[4] else "🌐"
+
+                    if mod not in merged:
+                        merged[mod] = {}
+                    if screen not in merged[mod]:
+                        merged[mod][screen] = []
+
+                    # Check if already added by usages or registry
+                    existing = [e for e in merged[mod][screen] if e['id'] == el]
+                    if not existing:
+                        mapped = db_mapped.get((mod, comp, el), "")
+                        merged[mod][screen].append({
+                            "id": el,
+                            "mod": mod,
+                            "comp": comp,
+                            "mapped": mapped,
+                            "exclusive": exc,
+                            "status": get_status(mapped)
+                        })
+
                 self.winfo_toplevel().after(0, lambda: self._update_usage_ids_ui(merged))
             except Exception as e:
                 import logging
