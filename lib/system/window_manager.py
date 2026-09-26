@@ -43,16 +43,18 @@ try:
     import win32con  # type: ignore
     import win32api  # type: ignore
     import win32process  # type: ignore
-except ImportError as e:
+except ImportError as _imp_err:
     # Allow importing this module without pywin32 (e.g., non-Windows or mocked tests),
     # but fail fast with a clear error if any Win32 API is actually used.
     class _MissingWin32:
+        def __init__(self, err):
+            self.err = err
         def __getattr__(self, _attr):
             raise ImportError(
                 "window_manager requires Windows + pywin32; install with `pip install pywin32`."
-            ) from e
+            ) from self.err
 
-    win32gui = win32con = win32api = win32process = _MissingWin32()  # type: ignore
+    win32gui = win32con = win32api = win32process = _MissingWin32(_imp_err)  # type: ignore
 
 # Optional: psutil (recommended for process info)
 try:
