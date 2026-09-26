@@ -118,6 +118,7 @@ class WindowManager:
         class_name: Optional[str] = None,
         process_name: Optional[str] = None,
         visible_only: bool = True,
+        exclude_own: bool = True,
     ) -> Optional[int]:
         """
         Find window by various criteria
@@ -136,6 +137,7 @@ class WindowManager:
             class_name=class_name,
             process_name=process_name,
             visible_only=visible_only,
+            exclude_own=exclude_own,
         )
 
         if windows:
@@ -172,6 +174,7 @@ class WindowManager:
         class_name: Optional[str] = None,
         process_name: Optional[str] = None,
         visible_only: bool = True,
+        exclude_own: bool = True,
     ) -> List[WindowInfo]:
         """
         List all windows with detailed info
@@ -191,6 +194,9 @@ class WindowManager:
 
         import ctypes
         import sys
+        import os
+
+        current_pid = os.getpid()
 
         if sys.platform == "win32":
             EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
@@ -249,6 +255,10 @@ class WindowManager:
                     process_name
                     and process_name.lower() not in info.process_name.lower()
                 ):
+                    skipped_count[0] += 1
+                    return True
+
+                if exclude_own and info.pid == current_pid:
                     skipped_count[0] += 1
                     return True
 

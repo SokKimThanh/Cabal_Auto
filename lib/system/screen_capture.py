@@ -48,7 +48,9 @@ if sys.platform != "win32":
 import win32gui  # type: ignore
 import win32ui  # type: ignore
 import win32con  # type: ignore
+import win32process  # type: ignore
 from ctypes import windll
+import os
 
 # Optional: OpenCV and NumPy (required for operation)
 try:
@@ -163,10 +165,18 @@ class ScreenCapture:
             Window handle (HWND) or None if not found
         """
 
+        current_pid = os.getpid()
+
         def callback(hwnd, results):
             if win32gui.IsWindowVisible(hwnd):
                 title = win32gui.GetWindowText(hwnd)
                 if title_contains.lower() in title.lower():
+                    try:
+                        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                        if pid == current_pid:
+                            return
+                    except Exception:
+                        pass
                     results.append(hwnd)
 
         windows = []
