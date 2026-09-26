@@ -3,6 +3,8 @@
 
 GLOBAL_TRANSLATIONS = {
     'en': {
+        'icon_btn.disabled_action': 'Cannot {action} at this time',
+        'icon_btn.not_available': 'Not available',
         'help_hunt_title': '1. Hunt Screen Reminders',
         'help_hunt_desc': '• Select Window: Remember to select the correct game window from the Top Bar before starting.\n• Target Check: Ensure the target template is correct. If detection is slow or inaccurate, reduce the search region.\n• Start Hunt: Check skill configurations and timings before clicking Start Hunt.',
         'help_setup_title': '2. Setup Screen Reminders',
@@ -690,6 +692,8 @@ GLOBAL_TRANSLATIONS = {
         'btn_next': 'Next',
     },
     'vi': {
+        'icon_btn.disabled_action': 'Không thể {action} lúc này',
+        'icon_btn.not_available': 'Không khả dụng',
         'help_hunt_title': '1. Nhắc nhở Màn hình Hunt',
         'help_hunt_desc': '• Chọn Cửa sổ: Nhớ chọn đúng cửa sổ game ở thanh trên cùng (Top Bar) trước khi bắt đầu.\n• Kiểm tra Mục tiêu: Đảm bảo ảnh mẫu mục tiêu (target template) chính xác. Nếu nhận diện chậm/sai, hãy thu hẹp vùng chọn.\n• Bắt đầu: Kiểm tra cấu hình kĩ năng và thời gian trước khi nhấn Bắt đầu (Start Hunt).',
         'help_setup_title': '2. Nhắc nhở Màn hình Thiết lập',

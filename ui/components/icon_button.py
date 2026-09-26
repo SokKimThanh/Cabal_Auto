@@ -281,11 +281,7 @@ def create_icon_button(
         icon_fallback = "🚫"
         # Set default tooltip if none provided
         if not tooltip_text and not tooltip_key:
-            lang = get_lang()
-            if lang == "vi":
-                tooltip_text = f"Không thể {original_icon_name} lúc này"
-            else:
-                tooltip_text = f"Cannot {original_icon_name} at this time"
+            tooltip_text = i18n_t("icon_btn.disabled_action", default=f"Cannot {original_icon_name} at this time").replace("{action}", original_icon_name)
 
     # Get icon
     icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
@@ -1000,11 +996,7 @@ def update_button_state(
         # Disabled: use forbidden icon
         icon = icon_helper.get_icon("forbidden", fallback="🚫", size=icon_size)
         if not tooltip_text:
-            lang = get_lang()
-            if lang == "vi":
-                tooltip_text = "Không khả dụng"
-            else:
-                tooltip_text = "Not available"
+            tooltip_text = i18n_t("icon_btn.not_available", default="Not available")
 
     # Update button state
     button.config(state="normal" if enabled else "disabled")
