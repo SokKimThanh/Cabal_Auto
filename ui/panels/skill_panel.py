@@ -401,7 +401,15 @@ class SkillPanel(ttk.LabelFrame):
 
     def on_build(self):
         """Open skill build tab"""
-        pass
+        # Batch 2: Fix useless Build button, navigate to build_manager
+        if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "app"):
+            app = self.hunt_tab.app
+            if hasattr(app, "navigation") and hasattr(app.navigation, "navigate_to"):
+                app.navigation.navigate_to("build_manager")
+        else:
+            # Fallback if hunt_tab is not properly set
+            import logging
+            logging.getLogger(__name__).warning("Cannot navigate to build_manager: hunt_tab or app reference missing.")
 
     def on_presets(self):
         """Open preset dialog"""
