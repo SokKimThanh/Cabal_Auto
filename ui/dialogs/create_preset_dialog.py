@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.components.icon_button import create_icon_button
 
 
 class CreatePresetDialog(tk.Toplevel):
@@ -93,19 +94,23 @@ class CreatePresetDialog(tk.Toplevel):
         action_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
         action_frame.pack(side="bottom", fill="x", pady=(20, 0))
 
-        btn_cancel = tk.Button(
-            action_frame,
+        btn_cancel = create_icon_button(
+            parent=action_frame,
+            icon_name="cancel",
+            icon_fallback="",
             text="Hủy",
             command=self.destroy,
-            **UI.get_button_style("secondary")
+            button_type="secondary"
         )
         btn_cancel.pack(side="right", padx=(10, 0))
 
-        btn_save = tk.Button(
-            action_frame,
-            text="💾 Save",
+        btn_save = create_icon_button(
+            parent=action_frame,
+            icon_name="save",
+            icon_fallback="",
+            text="Save",
             command=self._on_save,
-            **UI.get_button_style("primary")
+            button_type="primary"
         )
         btn_save.pack(side="right")
 
