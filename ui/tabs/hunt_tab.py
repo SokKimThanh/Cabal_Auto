@@ -3,6 +3,7 @@ from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.helpers import UIHelper
 
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.features.monsters.monster_repo import get_target_monster_info
 from ui.panels.skill_panel import SkillPanel
 import os
@@ -346,12 +347,14 @@ class HuntTab(ttk.Frame):
         style.configure('TPanedwindow', background=UI.BG_BASE)
 
         # Left Column Container (~58%)
-        self.left_col_frame = tk.Frame(self.paned_window, bg=UI.BG_BASE)
-        self.paned_window.add(self.left_col_frame, weight=58)
+        self.left_scroll_container = ResponsiveGridBase(self.paned_window, bg=UI.BG_BASE)
+        self.left_col_frame = self.left_scroll_container.get_content_frame()
+        self.paned_window.add(self.left_scroll_container, weight=58)
 
         # Right Column Container (~42%)
-        self.right_col_frame = tk.Frame(self.paned_window, bg=UI.BG_BASE)
-        self.paned_window.add(self.right_col_frame, weight=42)
+        self.right_scroll_container = ResponsiveGridBase(self.paned_window, bg=UI.BG_BASE)
+        self.right_col_frame = self.right_scroll_container.get_content_frame()
+        self.paned_window.add(self.right_scroll_container, weight=42)
 
         # Stack panels inside the columns
         from ui.panels.monster_target_panel import MonsterTargetPanel
