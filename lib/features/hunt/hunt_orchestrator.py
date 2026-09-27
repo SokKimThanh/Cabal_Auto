@@ -151,12 +151,16 @@ class HuntOrchestrator:
             # We need vision_engine. It's stored in self.bot_manager if available.
             # In a real app we'd pass this in clearly, but we'll try to extract it from bot_manager.
             def safe_publish(snapshot):
-                # Remove raw frame to prevent Memory Thrashing over EventBus
-                clean_snapshot = snapshot.copy() if isinstance(snapshot, dict) else snapshot
-                if isinstance(clean_snapshot, dict) and "frame" in clean_snapshot:
-                    del clean_snapshot["frame"]
-                EventBus.trigger(SceneMonstersDetectedEvent(clean_snapshot))
-
+                lightweight_snapshot = []
+                for item in snapshot:
+                    lightweight_snapshot.append({
+                        "id": item.get("monster_id", 0),
+                        "name": item.get("name", "Unknown"),
+                        "confidence": item.get("confidence", 0),
+                        "distance": 0,
+                        "hp": ""
+                    })
+                EventBus.trigger(SceneMonstersDetectedEvent(lightweight_snapshot))
             runtime_queue = RuntimeMonsterQueue(
                 publish_callback=safe_publish
             )
