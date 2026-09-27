@@ -87,6 +87,8 @@ class MonsterDatabase:
 
             setup_skills_schema(self.conn)
             setup_icons_schema(self.conn)
+            from lib.db.migrations import m001_add_skill_ids_to_builds
+            m001_add_skill_ids_to_builds.up(self.conn)
         except ImportError as e:
             print(f"[DB] Could not import schema modules: {e}")
         except sqlite3.Error as e:

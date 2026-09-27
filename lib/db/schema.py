@@ -114,6 +114,8 @@ def setup_skills_schema(conn: sqlite3.Connection):
             author TEXT,
             description TEXT,
             upvote_count INTEGER DEFAULT 0,
+            attack_skill_ids TEXT DEFAULT '[]',
+            buff_skill_ids TEXT DEFAULT '[]',
             FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE RESTRICT
         )
     """)
