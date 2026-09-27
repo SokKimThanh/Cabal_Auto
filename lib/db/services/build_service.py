@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from typing import List, Dict, Any, Optional
 from lib.db.connection import get_connection
@@ -22,6 +23,9 @@ class BuildService:
                 if not cursor.fetchone():
                     raise ValueError(f"class_id {class_id} does not exist.")
 
+            attack_skills = data.get("attack_skill_ids", [])
+            buff_skills = data.get("buff_skill_ids", [])
+
             cursor.execute(
                 """
                 INSERT INTO builds (class_id, author, description, upvote_count, attack_skill_ids, buff_skill_ids)
@@ -32,8 +36,8 @@ class BuildService:
                     "author": data.get("author"),
                     "description": data.get("description"),
                     "upvote_count": data.get("upvote_count", 0),
-                    "attack_skill_ids": data.get("attack_skill_ids", "[]"),
-                    "buff_skill_ids": data.get("buff_skill_ids", "[]"),
+                    "attack_skill_ids": json.dumps(attack_skills),
+                    "buff_skill_ids": json.dumps(buff_skills),
                 },
             )
             build_id = cursor.lastrowid
@@ -57,10 +61,19 @@ class BuildService:
         if not row:
             return {}
         build_dict = dict(row)
-        if "attack_skill_ids" not in build_dict:
-            build_dict["attack_skill_ids"] = "[]"
-        if "buff_skill_ids" not in build_dict:
-            build_dict["buff_skill_ids"] = "[]"
+
+        attack_skills_raw = build_dict.get("attack_skill_ids")
+        if attack_skills_raw is not None:
+            build_dict["attack_skill_ids"] = json.loads(attack_skills_raw)
+        else:
+            build_dict["attack_skill_ids"] = []
+
+        buff_skills_raw = build_dict.get("buff_skill_ids")
+        if buff_skills_raw is not None:
+            build_dict["buff_skill_ids"] = json.loads(buff_skills_raw)
+        else:
+            build_dict["buff_skill_ids"] = []
+
         return build_dict
 
     def get_build_by_id(self, build_id: int) -> Optional[Dict[str, Any]]:
@@ -115,6 +128,21 @@ class BuildService:
                 if not cursor.fetchone():
                     raise ValueError(f"class_id {class_id} does not exist.")
 
+            update_params = {
+                "build_id": build_id,
+                "class_id": class_id,
+                "author": data.get("author"),
+                "description": data.get("description"),
+                "upvote_count": data.get("upvote_count"),
+                "attack_skill_ids": None,
+                "buff_skill_ids": None,
+            }
+
+            if "attack_skill_ids" in data:
+                update_params["attack_skill_ids"] = json.dumps(data["attack_skill_ids"])
+            if "buff_skill_ids" in data:
+                update_params["buff_skill_ids"] = json.dumps(data["buff_skill_ids"])
+
             cursor.execute(
                 """
                 UPDATE builds
@@ -126,15 +154,7 @@ class BuildService:
                     buff_skill_ids = COALESCE(:buff_skill_ids, buff_skill_ids)
                 WHERE build_id = :build_id
                 """,
-                {
-                    "build_id": build_id,
-                    "class_id": class_id,
-                    "author": data.get("author"),
-                    "description": data.get("description"),
-                    "upvote_count": data.get("upvote_count"),
-                    "attack_skill_ids": data.get("attack_skill_ids"),
-                    "buff_skill_ids": data.get("buff_skill_ids"),
-                },
+                update_params,
             )
             updated = cursor.rowcount > 0
             conn.commit()

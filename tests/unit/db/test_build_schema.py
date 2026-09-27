@@ -60,8 +60,8 @@ def test_legacy_build_parsing(test_db, monkeypatch):
     build = svc.get_build_by_id(build_id)
     assert build is not None
     assert build["author"] == "Legacy"
-    assert build["attack_skill_ids"] == '[]'
-    assert build["buff_skill_ids"] == '[]'
+    assert build["attack_skill_ids"] == []
+    assert build["buff_skill_ids"] == []
 
 def test_create_and_update_build(test_db, monkeypatch):
     m001_add_skill_ids_to_builds.up(test_db.conn)
@@ -80,22 +80,22 @@ def test_create_and_update_build(test_db, monkeypatch):
         "class_id": 1,
         "author": "NewAuthor",
         "description": "NewDesc",
-        "attack_skill_ids": json.dumps([1,2,3]),
-        "buff_skill_ids": json.dumps([4])
+        "attack_skill_ids": [1, 2, 3],
+        "buff_skill_ids": [4]
     })
 
     assert build_id is not None
 
     build = svc.get_build_by_id(build_id)
-    assert build["attack_skill_ids"] == '[1, 2, 3]'
-    assert build["buff_skill_ids"] == '[4]'
+    assert build["attack_skill_ids"] == [1, 2, 3]
+    assert build["buff_skill_ids"] == [4]
 
     updated = svc.update_build(build_id, {
-        "attack_skill_ids": json.dumps([1,2])
+        "attack_skill_ids": [1, 2]
     })
 
     assert updated is True
 
     build2 = svc.get_build_by_id(build_id)
-    assert build2["attack_skill_ids"] == '[1, 2]'
-    assert build2["buff_skill_ids"] == '[4]'
+    assert build2["attack_skill_ids"] == [1, 2]
+    assert build2["buff_skill_ids"] == [4]
