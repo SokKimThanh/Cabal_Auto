@@ -80,7 +80,11 @@ class HuntLogger:
         # Add handlers
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
-        self.logger.addHandler(queue_handler)
+        # We DO NOT add queue_handler to self.logger directly because
+        # it will cause duplicate logs (propagate to root).
+
+        # Attach the queue handler to the root logger so the UI sees all app logs
+        logging.getLogger().addHandler(queue_handler)
 
         # Session start
         self.session_start = datetime.now()

@@ -33,11 +33,14 @@ def test_logger_queue_cap():
 @pytest.fixture
 def app():
     with patch("app_gui.pyautogui", MagicMock(), create=True), patch("app_gui.keyboard", MagicMock(), create=True), patch("app_gui.App._build_ui", MagicMock()):
-        app = Application()
+
         # Mock the required properties for test
         from ui.views.log_console_view import LogConsoleView
         import tkinter as tk
-        app._views = {'logs': LogConsoleView(app, app)}
+
+        root = tk.Tk()
+        app = Application(root=root, di_container=MagicMock())
+        app._views = {'logs': LogConsoleView(root, app=app)}
         app.current_view_key = 'logs'
         app.switch_view = lambda k: setattr(app, 'current_view_key', k)
         yield app
@@ -81,8 +84,8 @@ def test_batch_insert_rate_limit(app):
         logger.logger.info(f"Test log {i}")
 
     app._views['logs']._poll_log_queue()
-    app.update_idletasks()
-    app.update()
+    app.root.update_idletasks()
+    app.root.update()
     # It should have processed exactly 50 lines this tick
     # 50 lines + 1 empty line
     lines = int(app._views['logs'].text_widget.index("end-1c").split(".")[0])
@@ -125,7 +128,7 @@ def test_log_format_duplication(app):
 
     # Process queue
     app._views['logs']._poll_log_queue()
-    app.update()
+    app.root.update()
 
     # Check content of text widget
     content = app._views['logs'].text_widget.get("1.0", "end-1c").strip()
@@ -149,7 +152,7 @@ def test_log_format_duplication(app):
 def test_view_navigation(app):
     # Test app.switch_view("logs") and clear behavior
     app.switch_view("logs")
-    app.update_idletasks()
+    app.root.update_idletasks()
 
     assert app.current_view_key == "logs"
 
