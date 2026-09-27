@@ -1,4 +1,12 @@
 {
+    "rois": {
+        "hunt_area": [
+            907,
+            441,
+            1007,
+            627
+        ]
+    },
     "hunt_area": {
         "window_title": "CABAL",
         "window_bounds": [
