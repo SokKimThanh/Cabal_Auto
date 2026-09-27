@@ -1,5 +1,6 @@
 import tkinter as tk
 from ui.components import create_icon_button
+from ui.dialogs.build_edit_dialog import BuildEditDialog
 from lib.events.ui_element_registry import CommonUI
 from tkinter import ttk, messagebox, simpledialog
 from typing import Dict, Any, List, Optional
@@ -8,121 +9,6 @@ import math
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
 
-class BuildEditDialog(tk.Toplevel):
-    MODULE_NAME = "build_manager"
-    SCREEN_NAME = "edit_dialog"
-
-    def __init__(self, parent, app, title: str, build_data: Optional[Dict[str, Any]], classes: List[Dict[str, Any]], on_save):
-        super().__init__(parent)
-        self.app = app
-        self.title(title)
-        self.build_data = build_data or {}
-        self.classes = classes
-        self.on_save = on_save
-
-        self.transient(parent)
-        self.grab_set()
-
-        self.config(bg=UIStyle.BG_BASE)
-        self.geometry("450x350")
-        self.resizable(False, False)
-
-        self._setup_ui()
-        self._center_window()
-        self._populate_data()
-        self.focus_set()
-
-    def _center_window(self):
-        self.update_idletasks()
-        width = self.winfo_width()
-        height = self.winfo_height()
-        x = (self.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.winfo_screenheight() // 2) - (height // 2)
-        self.geometry(f'{width}x{height}+{x}+{y}')
-
-    def _setup_ui(self):
-        main_frame = tk.Frame(self, bg=UIStyle.BG_BASE)
-        main_frame.pack(fill="both", expand=True, padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_MD)
-
-        # Class Combobox
-        tk.Label(main_frame, text="Class (*):", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).grid(row=0, column=0, sticky="e", pady=5, padx=5)
-        self.class_var = tk.StringVar()
-        self.class_cb = ttk.Combobox(main_frame, textvariable=self.class_var, state="readonly", width=30)
-
-        self.class_options = [f"{c.get('id', c.get('class_id', ''))} - {c.get('name', 'Unknown')}" for c in self.classes]
-        if not self.class_options:
-            self.class_options = ["0 - None"]
-
-        self.class_cb['values'] = self.class_options
-        self.class_cb.grid(row=0, column=1, sticky="w", pady=5, padx=5)
-
-        # Author
-        tk.Label(main_frame, text="Author:", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).grid(row=1, column=0, sticky="e", pady=5, padx=5)
-        self.author_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.author_var, width=33).grid(row=1, column=1, sticky="w", pady=5, padx=5)
-
-        # Description
-        tk.Label(main_frame, text="Description:", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).grid(row=2, column=0, sticky="ne", pady=5, padx=5)
-        self.desc_text = tk.Text(main_frame, width=33, height=4, bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY, insertbackground=UIStyle.TEXT_PRIMARY)
-        self.desc_text.grid(row=2, column=1, sticky="w", pady=5, padx=5)
-
-        # Upvote Count (readonly but we can set initial)
-        tk.Label(main_frame, text="Upvotes:", bg=UIStyle.BG_BASE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", pady=5, padx=5)
-        self.upvote_var = tk.IntVar(value=0)
-        upvote_spin = ttk.Spinbox(main_frame, from_=0, to=999999, increment=1, textvariable=self.upvote_var, width=10)
-        upvote_spin.grid(row=3, column=1, sticky="w", pady=5, padx=5)
-
-        btn_frame = tk.Frame(main_frame, bg=UIStyle.BG_BASE)
-        btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-
-        create_icon_button(parent=btn_frame, icon_name="save", text="Save", command=self._on_save_click, button_type="green_light", element_id=CommonUI.BTN_SAVE).pack(side="left", padx=10)
-        create_icon_button(parent=btn_frame, icon_name="cancel", text="Cancel", command=self.destroy, button_type="refresh", element_id=CommonUI.BTN_CANCEL).pack(side="left", padx=10)
-
-    def _populate_data(self):
-        if not self.build_data:
-            if self.class_options:
-                self.class_cb.set(self.class_options[0])
-            return
-
-        cid = self.build_data.get("class_id")
-        if cid is not None:
-            for opt in self.class_options:
-                if opt.startswith(f"{cid} -"):
-                    self.class_cb.set(opt)
-                    break
-        else:
-            if self.class_options:
-                self.class_cb.set(self.class_options[0])
-
-        self.author_var.set(self.build_data.get("author", ""))
-        self.desc_text.insert("1.0", self.build_data.get("description", ""))
-        self.upvote_var.set(self.build_data.get("upvote_count", 0))
-
-    def _on_save_click(self):
-        class_str = self.class_var.get()
-        class_id = None
-        try:
-            class_id = int(class_str.split(" - ")[0])
-        except (ValueError, IndexError):
-            messagebox.showerror("Lỗi", "Vui lòng chọn Class hợp lệ.", parent=self)
-            return
-
-        if class_id == 0:
-            messagebox.showerror("Lỗi", "Khóa ngoại class_id không được để trống/None.", parent=self)
-            return
-
-        data = {
-            "class_id": class_id,
-            "author": self.author_var.get().strip(),
-            "description": self.desc_text.get("1.0", tk.END).strip(),
-            "upvote_count": self.upvote_var.get(),
-        }
-
-        if "build_id" in self.build_data:
-            data["build_id"] = self.build_data["build_id"]
-
-        self.on_save(data)
-        self.destroy()
 
 
 class BuildManagerFrame(ResponsiveGridBase):
@@ -197,6 +83,17 @@ class BuildManagerFrame(ResponsiveGridBase):
         )
         del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
+        self.btn_apply_build = create_icon_button(
+            parent=bottom_bar,
+            icon_name="play",
+            text=self.app._t("btn_apply_build", default="Apply Build"),
+            command=self._apply_build,
+            button_type="green",
+            element_id="btn_apply_build"
+        )
+        self.btn_apply_build.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
+        self.btn_apply_build.config(state="disabled")
+
         ref_btn = create_icon_button(
             parent=bottom_bar,
             icon_name="refresh",
@@ -270,6 +167,51 @@ class BuildManagerFrame(ResponsiveGridBase):
         self.tree.grid(row=0, column=0, sticky="nsew")
 
         self.tree.bind("<Double-1>", lambda e: self._edit_build())
+        self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+
+        # -------------------------------------------------------------
+        # Details/Preview Area
+        # -------------------------------------------------------------
+        self.details_frame = tk.Frame(table_frame, bg=UIStyle.BG_SURFACE, height=100)
+        self.details_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(UIStyle.SPACE_MD, 0))
+        self.details_frame.grid_propagate(False)
+
+        # Labels for selected skills
+        lbl_atk = tk.Label(self.details_frame, text=self.app._t("lbl_attack_skills", default="Attack Skills:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY, font=("", 10, "bold"))
+        lbl_atk.grid(row=0, column=0, sticky="w", padx=UIStyle.SPACE_SM, pady=(UIStyle.SPACE_SM, 0))
+        self.lbl_atk_val = tk.Label(self.details_frame, text="-", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_SECONDARY)
+        self.lbl_atk_val.grid(row=0, column=1, sticky="w", padx=UIStyle.SPACE_SM, pady=(UIStyle.SPACE_SM, 0))
+
+        lbl_buff = tk.Label(self.details_frame, text=self.app._t("lbl_buff_skills", default="Buff Skills:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY, font=("", 10, "bold"))
+        lbl_buff.grid(row=1, column=0, sticky="w", padx=UIStyle.SPACE_SM, pady=UIStyle.SPACE_SM)
+        self.lbl_buff_val = tk.Label(self.details_frame, text="-", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_SECONDARY)
+        self.lbl_buff_val.grid(row=1, column=1, sticky="w", padx=UIStyle.SPACE_SM, pady=UIStyle.SPACE_SM)
+
+
+
+    def _on_tree_select(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            self.lbl_atk_val.config(text="-")
+            self.lbl_buff_val.config(text="-")
+            if hasattr(self, 'btn_apply_build'):
+                self.btn_apply_build.config(state="disabled")
+            return
+
+        build_id = selected[0]
+        build_data = next((b for b in self.builds if str(b.get("build_id")) == build_id), None)
+        if build_data:
+            atk_ids = build_data.get("attack_skill_ids", [])
+            buff_ids = build_data.get("buff_skill_ids", [])
+            self.lbl_atk_val.config(text=str(atk_ids) if atk_ids else self.app._t("lbl_none", default="None"))
+            self.lbl_buff_val.config(text=str(buff_ids) if buff_ids else self.app._t("lbl_none", default="None"))
+            if hasattr(self, 'btn_apply_build'):
+                self.btn_apply_build.config(state="normal")
+        else:
+            self.lbl_atk_val.config(text="-")
+            self.lbl_buff_val.config(text="-")
+            if hasattr(self, 'btn_apply_build'):
+                self.btn_apply_build.config(state="disabled")
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)
@@ -448,6 +390,14 @@ class BuildManagerFrame(ResponsiveGridBase):
             self.current_page += 1
             self._refresh_tree()
             self._update_page_ui()
+
+    def _apply_build(self):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        build_id = selected[0]
+        print(f"Apply build clicked for build_id: {build_id}")
+        # Event or business logic will be handled in future batches
 
     def _add_build(self):
         if not hasattr(self.app, 'db_class_service'):

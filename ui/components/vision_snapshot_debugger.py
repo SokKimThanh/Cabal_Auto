@@ -210,7 +210,7 @@ class VisionSnapshotDebugger:
 
         rois_data = []
         if hasattr(self.app, "state_controller") and getattr(self.app, "state_controller", None) and hasattr(self.app.state_controller, "hunt_cfg"):
-            rois_config = self.app.state_controller.hunt_cfg.get("rois", {})
+            rois_config = self.app.state_controller.get_hunt_config_value("rois", {})
         else:
             rois_config = {}
 
