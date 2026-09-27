@@ -467,14 +467,6 @@ class MonsterTargetPanel(ttk.LabelFrame):
         #  thuộc chính class MonsterTargetPanel, không phải App → hasattr trả False)
         self._refresh_monster_rotation_list()
 
-        if getattr(self, "hunt_tab", None):
-            for prop in ["target_image_label", "target_name_label", "status_label",
-                         "target_level_label", "target_hp_label", "target_def_label",
-                         "hp_canvas", "hp_percent_label", "recovery_frame", "hp_bg", "hp_fill", "hp_text",
-                         "hunt_status_badge", "hunt_status_label", "skill_stats_tree"]:
-                if hasattr(self.app, prop):
-                    setattr(self.hunt_tab, prop, getattr(self.app, prop))
-
 
 
     def _on_monster_add_smart(self, _evt=None):
