@@ -219,6 +219,14 @@ class CategoryManagerComponent(tk.Frame):
                 self._set_cat_form_state("edit")
 
     def _on_cat_add(self):
+        import tkinter.messagebox as messagebox
+        warning_msg = self.i18n_t(
+            "msg_category_add_warning",
+            default="Tạo loại Icon mới nên được hạn chế để tránh làm rác dữ liệu. \nBạn có chắc chắn muốn tiếp tục không?"
+        )
+        if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), warning_msg):
+            return
+
         self.var_cat_id.set("")
         self.var_cat_name.set("")
         # Remove existing new_item if it's there
