@@ -139,7 +139,7 @@ class HuntTab(ttk.Frame):
         self.btn_debug_vision = create_icon_button(
             self.debug_action_frame,
             icon_name="search",
-            text=self.app._t("vision_debugger.button") if hasattr(self.app, "_t") else "Debug Vision",
+            text=self.app._t("vision_debugger.button", default="Debug Vision"),
             command=self.vision_debugger.open_debugger,
             button_type="neutral"
         )
