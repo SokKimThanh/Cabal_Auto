@@ -126,6 +126,7 @@ class CompactWindowSelector:
 
         try:
             import ctypes
+            import win32con
             from ctypes import wintypes
 
             WINEVENTPROC = ctypes.WINFUNCTYPE(

@@ -850,7 +850,7 @@ class IconManagerFrame(ResponsiveGridBase):
                             f"Unmapped: {stats['unmapped_elements']}, "
                             f"Unregistered/Dangling: {stats['unregistered_mappings']}")
 
-                self.winfo_toplevel().after(0, lambda: self._update_usage_ids_ui(merged))
+                self.after(0, lambda: self._update_usage_ids_ui(merged))
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(f"Error fetching usage ids: {e}")
