@@ -714,7 +714,12 @@ class IconManagerFrame(ResponsiveGridBase):
                 ui_elements = cursor.fetchall()
                 conn.close()
 
-                # Build dictionary mappings for faster lookup
+                # Create mapping for ui_elements: (module, screen, element_id) -> is_exclusive
+                # Wait, screen_name might not perfectly match icon_usages. But we can match by element_id and module.
+                # Actually, (module, element_id) is usually unique enough for this UI.
+                ui_elements_map = { (r[0], r[2]): ("🔒" if r[4] else "🌐") for r in ui_elements }
+
+                db_elements = set()
                 db_mapped = {}
                 for mod, comp, el, icon in usages:
                     db_mapped[(mod, el)] = {"icon": icon, "comp": comp} # Treat module+element as unique key for mapping
