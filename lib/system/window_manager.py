@@ -101,6 +101,7 @@ class WindowInfo:
 
 
 class WindowManager:
+    _locked_hwnd: Optional[int] = None
     """
     Windows window management utilities
 
@@ -113,6 +114,23 @@ class WindowManager:
         self._cached_windows = {}
         self._cache_timeout = 2.0  # seconds
         logger.info("WindowManager initialized")
+
+
+    def lock_selection(self, hwnd: int) -> None:
+        """Lock window context to a specific hwnd for all subsequent operations."""
+        self.__class__._locked_hwnd = hwnd
+        logger.info(f"Locked window selection to hwnd: {hwnd}")
+
+    def unlock_selection(self) -> None:
+        """Unlock window context."""
+        self.__class__._locked_hwnd = None
+        logger.info("Unlocked window selection")
+
+    def get_selected_window(self) -> Optional[WindowInfo]:
+        """Get the currently locked window context, if any."""
+        if self.__class__._locked_hwnd is not None:
+            return self.get_window_info(self.__class__._locked_hwnd)
+        return None
 
     def find_window(
         self,

@@ -2,6 +2,8 @@ from typing import Callable, Optional, Dict, Any
 import threading
 import traceback
 import logging
+from lib.events.event_bus import EventBus
+from lib.events.event_bus import Event
 
 from lib.utils.template_storage import TemplateStorageManager
 import cv2
@@ -9,6 +11,10 @@ import numpy as np
 from PIL import Image
 
 
+
+
+class ScanCompletedEvent(Event):
+    pass
 
 class ScanController:
     def __init__(
@@ -64,9 +70,15 @@ class ScanController:
                     except Exception as e:
                         self.logger.warning(f"[Scan] Lỗi lấy window từ UI: {e}")
 
-                # Fallback: tự tìm window
+                # Fallback: sử dụng WindowManager().get_selected_window()
                 if not window_info:
-                    window_info = scanner.detect_window()
+                    from lib.system.window_manager import WindowManager
+                    win_info = WindowManager().get_selected_window()
+                    if win_info and not win_info.is_minimized:
+                        window_info = {"hwnd": win_info.hwnd, "rect": win_info.rect}
+                    else:
+                        self.logger.error("Không có cửa sổ nào được chọn (selected_window is None) hoặc cửa sổ đã bị ẩn.")
+                        window_info = None
 
                 if not window_info:
                     self.logger.warning(
@@ -217,4 +229,9 @@ class ScanController:
 
                     threading.Thread(target=restore_icon, daemon=True).start()
 
-        threading.Thread(target=worker, daemon=True).start()
+        def worker_wrapper():
+            try:
+                worker()
+            finally:
+                EventBus.trigger(ScanCompletedEvent())
+        threading.Thread(target=worker_wrapper, daemon=True).start()
