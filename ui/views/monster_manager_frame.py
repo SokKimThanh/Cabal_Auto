@@ -1,3 +1,4 @@
+from ui.components.base.expanded_panel import ExpandedPanel
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Dict, Any, List
@@ -157,24 +158,14 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         self.tree.bind("<Double-1>", lambda e: self._edit_monster())
 
-        # Title for Type Panel
-        self.type_panel_expanded = False
-
-        self.type_title_lbl = tk.Label(
-            type_panel_container,
-            text=self.app._t("panel_types_title_collapsed", default="▶ Quản lý Loại Quái vật") if self.app else "▶ Quản lý Loại Quái vật",
-            font=(UIStyle.resolve_font_family("title"), 12, "bold"),
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            cursor="hand2"
-        )
-        self.type_title_lbl.pack(anchor="w", pady=(0, UIStyle.SPACE_SM))
-        self.type_title_lbl.bind("<Button-1>", self._toggle_type_panel)
+        # Title and Container for Type Panel via ExpandedPanel component
+        panel_title = self.app._t("panel_types_title", default="Quản lý Loại Quái vật") if self.app else "Quản lý Loại Quái vật"
+        self.type_panel = ExpandedPanel(type_panel_container, title=panel_title, expanded=False)
+        self.type_panel.pack(fill="x", pady=(0, UIStyle.SPACE_SM))
 
         # Main frame for the Type Management UI (split into left list, right form)
-        self.type_content_frame = tk.Frame(type_panel_container, bg=UIStyle.BG_BASE)
-        # Initially hidden
-        # self.type_content_frame.pack(fill="x", expand=True)
+        self.type_content_frame = self.type_panel.get_content_frame()
+        # ResponsiveGridBase requires its content frame to have layout managed by pack/grid, but ExpandedPanel already packs it.
 
         # Left: Treeview for Types
         type_list_frame = tk.Frame(self.type_content_frame, bg=UIStyle.BG_BASE)
@@ -248,16 +239,6 @@ class MonsterManagerFrame(ResponsiveGridBase):
         )
         self.btn_delete_type.pack(side="left", padx=5)
 
-
-    def _toggle_type_panel(self, event=None):
-        if self.type_panel_expanded:
-            self.type_content_frame.pack_forget()
-            self.type_title_lbl.config(text=self.app._t("panel_types_title_collapsed", default="▶ Quản lý Loại Quái vật") if self.app else "▶ Quản lý Loại Quái vật")
-            self.type_panel_expanded = False
-        else:
-            self.type_content_frame.pack(fill="x", expand=False)
-            self.type_title_lbl.config(text=self.app._t("panel_types_title_expanded", default="▼ Quản lý Loại Quái vật") if self.app else "▼ Quản lý Loại Quái vật")
-            self.type_panel_expanded = True
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)

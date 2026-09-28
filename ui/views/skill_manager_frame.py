@@ -262,9 +262,10 @@ class SkillManagerFrame(ResponsiveGridBase):
         left_frame = tk.Frame(pane, bg=UIStyle.BG_BASE)
         pane.add(left_frame, weight=1)
 
-        # Right side: Form
-        right_frame = tk.Frame(pane, bg=UIStyle.BG_BASE, padx=UIStyle.SPACE_LG if hasattr(UIStyle, "SPACE_LG") else 16)
-        pane.add(right_frame, weight=1)
+        # Right side: Form (Wrapped in ResponsiveGridBase to ensure zero occlusion for long forms)
+        self.right_frame_container = ResponsiveGridBase(pane, bg=UIStyle.BG_BASE, padx=UIStyle.SPACE_LG if hasattr(UIStyle, "SPACE_LG") else 16)
+        right_frame = self.right_frame_container.get_content_frame()
+        pane.add(self.right_frame_container, weight=1)
 
         # Build Left Side
         self.type_tree_scroll_y = ttk.Scrollbar(left_frame, orient=tk.VERTICAL)
