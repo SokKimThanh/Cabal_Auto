@@ -277,8 +277,9 @@ class IconManagerFrame(ResponsiveGridBase):
         self.paned_window.add(self.tree_component, weight=0)
 
         # Right Detail Frame
-        self.right_detail_frame = tk.Frame(self.paned_window, bg=UIStyle.BG_SURFACE)
-        self.paned_window.add(self.right_detail_frame, weight=1)
+        self.right_detail_frame_container = ResponsiveGridBase(self.paned_window, bg=UIStyle.BG_SURFACE)
+        self.right_detail_frame = self.right_detail_frame_container.get_content_frame()
+        self.paned_window.add(self.right_detail_frame_container, weight=1)
 
         # Bind Configure to set 35:65 ratio on first render
         self._sash_configured = False

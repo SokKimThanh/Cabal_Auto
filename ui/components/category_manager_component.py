@@ -1,3 +1,4 @@
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 import tkinter as tk
 from tkinter import ttk, messagebox
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
@@ -110,8 +111,9 @@ class CategoryManagerComponent(tk.Frame):
         self.cat_tree.bind("<Down>", self._on_cat_tree_interaction)
 
         # 3. Right Frame (Form)
-        self.cat_right_frame = tk.Frame(self.cat_paned_window, bg=UIStyle.BG_ELEVATED)
-        self.cat_paned_window.add(self.cat_right_frame, weight=1)
+        self.cat_right_frame_container = ResponsiveGridBase(self.cat_paned_window, bg=UIStyle.BG_ELEVATED)
+        self.cat_right_frame = self.cat_right_frame_container.get_content_frame()
+        self.cat_paned_window.add(self.cat_right_frame_container, weight=1)
 
         # Toolbar above form (Save, Cancel, Delete)
         self.cat_form_toolbar = tk.Frame(self.cat_right_frame, bg=UIStyle.BG_ELEVATED)

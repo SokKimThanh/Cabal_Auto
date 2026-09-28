@@ -1,3 +1,4 @@
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 import tkinter as tk
 from tkinter import ttk
 from ui.components.icon_button import create_icon_button
@@ -48,8 +49,9 @@ class VisionSnapshotDebugger:
         self.paned_window.pack(fill=tk.BOTH, expand=True, padx=UI.SPACE_MD, pady=UI.SPACE_MD)
 
         # LEFT PANE: Canvas and Header
-        self.left_frame = tk.Frame(self.paned_window, bg=UI.BG_BASE)
-        self.paned_window.add(self.left_frame, weight=3) # 75% width
+        self.left_frame_container = ResponsiveGridBase(self.paned_window, bg=UI.BG_BASE)
+        self.left_frame = self.left_frame_container.get_content_frame()
+        self.paned_window.add(self.left_frame_container, weight=3) # 75% width
 
         # Header controls
         header_frame = tk.Frame(self.left_frame, bg=UI.BG_BASE)
@@ -83,27 +85,10 @@ class VisionSnapshotDebugger:
         )
         roi_header_label.pack(side=tk.TOP, fill=tk.X, padx=UI.SPACE_MD, pady=UI.SPACE_MD)
 
-        # Scrollable area for ROI cards
-        self.roi_canvas = tk.Canvas(self.right_frame, bg=UI.BG_SURFACE, highlightthickness=0)
-        self.roi_scrollbar = ttk.Scrollbar(self.right_frame, orient="vertical", command=self.roi_canvas.yview)
-
-        self.roi_scrollable_frame = tk.Frame(self.roi_canvas, bg=UI.BG_SURFACE)
-        self.roi_scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.roi_canvas.configure(scrollregion=self.roi_canvas.bbox("all"))
-        )
-
-        self.roi_canvas_window_id = self.roi_canvas.create_window((0, 0), window=self.roi_scrollable_frame, anchor="nw")
-
-        # Ensure scrollable frame resizes to canvas width
-        self.roi_canvas.bind(
-            "<Configure>",
-            lambda e: self.roi_canvas.itemconfig(self.roi_canvas_window_id, width=e.width)
-        )
-
-        self.roi_canvas.configure(yscrollcommand=self.roi_scrollbar.set)
-        self.roi_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.roi_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Scrollable area for ROI cards using ResponsiveGridBase
+        self.roi_responsive_grid = ResponsiveGridBase(self.right_frame, bg=UI.BG_SURFACE)
+        self.roi_responsive_grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.roi_scrollable_frame = self.roi_responsive_grid.get_content_frame()
 
         # Handle window close to clear image reference
         self.toplevel.protocol("WM_DELETE_WINDOW", self._on_close)

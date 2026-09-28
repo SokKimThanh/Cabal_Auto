@@ -1,3 +1,4 @@
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 import tkinter as tk
 from tkinter import ttk
 import logging
@@ -53,28 +54,15 @@ class IconPickerWindow(tk.Toplevel):
         grid_container.grid_rowconfigure(0, weight=1)
         grid_container.grid_columnconfigure(0, weight=1)
 
-        self.canvas = tk.Canvas(grid_container, bg=self["bg"], highlightthickness=0)
-        self.scrollbar = ttk.Scrollbar(grid_container, orient="vertical", command=self.canvas.yview)
-
-        self.scrollable_frame = tk.Frame(self.canvas, bg=self["bg"])
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        )
-
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw", width=self.canvas.winfo_width())
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-
-        self.canvas.grid(row=0, column=0, sticky="nsew")
-        self.scrollbar.grid(row=0, column=1, sticky="ns")
-
-        # Bind resize to adjust wrap width
-        self.canvas.bind("<Configure>", self._on_canvas_configure)
+        self.responsive_grid = ResponsiveGridBase(grid_container, bg=self["bg"])
+        self.responsive_grid.grid(row=0, column=0, sticky="nsew")
+        self.scrollable_frame = self.responsive_grid.get_content_frame()
+        self.canvas = self.responsive_grid.canvas
+        self.canvas.bind("<Configure>", self._on_canvas_configure, add="+")
 
     def _on_canvas_configure(self, event):
         self.canvas.itemconfig(1, width=event.width)
         # Optional: Re-layout grid based on width
-        # self._render_grid()
 
     def _on_search_changed(self, *args):
         if self._search_after_id:
