@@ -686,46 +686,33 @@ class IconManagerFrame(ResponsiveGridBase):
         import threading
         def fetch_data():
             try:
-                # 1. Query db_usages and ui_elements
-                # Use a new connection for thread safety
                 import sqlite3
                 from database import get_db
+                from lib.events.ui_element_registry import UIElementRegistry
+                from ui.helpers.icon_helper import get_icon_helper
+                import logging
+
+                logger = logging.getLogger(__name__)
+
                 conn = sqlite3.connect(str(get_db().DB_PATH))
                 cursor = conn.cursor()
+
+                # 1. Fetch metadata mappings (usages)
                 cursor.execute("SELECT module_name, ui_component_type, ui_element_id, icon_key FROM icon_usages")
                 usages = cursor.fetchall()
 
-                # Get ui elements data for exclusive check
+                # 2. Fetch Skeleton (ui_elements db)
                 cursor.execute("SELECT module_name, screen_name, element_id, component_type, is_exclusive FROM ui_elements")
                 ui_elements = cursor.fetchall()
                 conn.close()
 
-                # Create mapping for ui_elements: (module, screen, element_id) -> is_exclusive
-                # Wait, screen_name might not perfectly match icon_usages. But we can match by element_id and module.
-                # Actually, (module, element_id) is usually unique enough for this UI.
-                ui_elements_map = { (r[0], r[2]): ("🔒" if r[4] else "🌐") for r in ui_elements }
-
-                db_elements = set()
+                # Build dictionary mappings for faster lookup
                 db_mapped = {}
                 for mod, comp, el, icon in usages:
-                    key = (mod, comp, el)
-                    db_elements.add(key)
-                    db_mapped[key] = icon
+                    db_mapped[(mod, el)] = {"icon": icon, "comp": comp} # Treat module+element as unique key for mapping
 
-                from lib.events.ui_element_registry import UIElementRegistry
-                registry = UIElementRegistry.instance()
-                reg_elements = registry.get_all()
-
-                # Merge unique elements, track by (module, screen, element_id)
-                merged = {}
-
-                # We need icon evaluation status
-                from ui.helpers.icon_helper import get_icon_helper
                 icon_helper = get_icon_helper()
-
                 icon_cache_data = {}
-                import sqlite3
-                from database import get_db
                 try:
                     conn2 = sqlite3.connect(str(get_db().DB_PATH))
                     conn2.row_factory = sqlite3.Row
@@ -738,30 +725,53 @@ class IconManagerFrame(ResponsiveGridBase):
                         }
                     conn2.close()
                 except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).error(f"Failed to fetch icons for status check: {e}")
+                    logger.error(f"Failed to fetch icons for status check: {e}")
 
                 def get_status(ik):
                     if not ik:
                         return "GREEN"
                     if ik not in icon_cache_data:
-                        # Dangling mapping (icon deleted) but still mapped
-                        return "RED"
+                        return "RED" # Dangling mapping
                     return icon_helper.evaluate_icon_status(icon_cache_data[ik])
 
-                # Add from DB usages
-                for (mod, comp, el) in db_elements:
+                # 3. Build Skeleton from Registry + DB
+                merged = {}
+                registry = UIElementRegistry.instance()
+                reg_elements = registry.get_all()
+
+                skeleton_keys = set()
+
+                UNREGISTERED_GROUP = "[Unregistered]"
+
+                # Diagnostics stats
+                stats = {
+                    "registered_elements": 0,
+                    "mapped_elements": 0,
+                    "unmapped_elements": 0,
+                    "unregistered_mappings": 0
+                }
+
+                def _build_element_key(module_name, element_id):
+                    return (module_name, element_id)
+
+                # Decorate Function
+                def decorate_skeleton(mod, screen, el, comp, exc):
                     if mod not in merged:
                         merged[mod] = {}
-                    # For db usage, we might not have 'screen', default to 'Unknown'
-                    # But we can try to guess or just use 'General'
-                    screen = 'General'
                     if screen not in merged[mod]:
                         merged[mod][screen] = []
 
-                    exc = ui_elements_map.get((mod, el), "🌐")
+                    el_key = _build_element_key(mod, el)
+                    skeleton_keys.add(el_key)
+                    mapped_info = db_mapped.get(el_key, {})
+                    mapped_ik = mapped_info.get("icon", "")
 
-                    mapped_ik = db_mapped.get((mod, comp, el), "")
+                    stats["registered_elements"] += 1
+                    if mapped_ik:
+                        stats["mapped_elements"] += 1
+                    else:
+                        stats["unmapped_elements"] += 1
+
                     merged[mod][screen].append({
                         "id": el,
                         "mod": mod,
@@ -773,56 +783,43 @@ class IconManagerFrame(ResponsiveGridBase):
 
                 # Add from Registry
                 for desc in reg_elements:
-                    mod = desc.module
-                    screen = desc.screen
-                    el = desc.element_id
-                    comp = desc.element_type
-                    exc = "🔒" if desc.is_exclusive else "🌐"
+                    decorate_skeleton(desc.module, desc.screen, desc.element_id, desc.element_type, "🔒" if desc.is_exclusive else "🌐")
 
-                    if mod not in merged:
-                        merged[mod] = {}
-                    if screen not in merged[mod]:
-                        merged[mod][screen] = []
+                # Add from DB
+                for mod, screen, el, comp, is_exclusive in ui_elements:
+                    el_key = _build_element_key(mod, el)
+                    if el_key not in skeleton_keys: # Only add if not already from registry
+                        decorate_skeleton(mod, screen, el, comp, "🔒" if is_exclusive else "🌐")
 
-                    # Check if already added
-                    existing = [e for e in merged[mod][screen] if e['id'] == el]
-                    if not existing:
-                        # Try to find mapping
-                        mapped = db_mapped.get((mod, comp, el), "")
-                        merged[mod][screen].append({
+                # 4. Handle Unregistered / Dangling mappings
+                for (mod, el), mapped_info in db_mapped.items():
+                    el_key = _build_element_key(mod, el)
+                    if el_key not in skeleton_keys:
+                        mapped_ik = mapped_info.get("icon", "")
+                        comp = mapped_info.get("comp", "Unknown")
+
+                        if mod not in merged:
+                            merged[mod] = {}
+                        if UNREGISTERED_GROUP not in merged[mod]:
+                            merged[mod][UNREGISTERED_GROUP] = []
+
+                        stats["unregistered_mappings"] += 1
+
+                        merged[mod][UNREGISTERED_GROUP].append({
                             "id": el,
                             "mod": mod,
                             "comp": comp,
-                            "mapped": mapped,
-                            "exclusive": exc,
-                            "status": get_status(mapped)
+                            "mapped": mapped_ik,
+                            "exclusive": "🌐", # Default to global if not registered
+                            "status": get_status(mapped_ik)
                         })
 
-                # Add all remaining unmapped elements from DB
-                for ui_el in ui_elements:
-                    mod = ui_el[0]
-                    screen = ui_el[1]
-                    el = ui_el[2]
-                    comp = ui_el[3]
-                    exc = "🔒" if ui_el[4] else "🌐"
-
-                    if mod not in merged:
-                        merged[mod] = {}
-                    if screen not in merged[mod]:
-                        merged[mod][screen] = []
-
-                    # Check if already added by usages or registry
-                    existing = [e for e in merged[mod][screen] if e['id'] == el]
-                    if not existing:
-                        mapped = db_mapped.get((mod, comp, el), "")
-                        merged[mod][screen].append({
-                            "id": el,
-                            "mod": mod,
-                            "comp": comp,
-                            "mapped": mapped,
-                            "exclusive": exc,
-                            "status": get_status(mapped)
-                        })
+                # Log diagnostics
+                logger.info(f"UI Tree Build Diagnostics: "
+                            f"Registered: {stats['registered_elements']}, "
+                            f"Mapped: {stats['mapped_elements']}, "
+                            f"Unmapped: {stats['unmapped_elements']}, "
+                            f"Unregistered/Dangling: {stats['unregistered_mappings']}")
 
                 self.winfo_toplevel().after(0, lambda: self._update_usage_ids_ui(merged))
             except Exception as e:
@@ -830,7 +827,6 @@ class IconManagerFrame(ResponsiveGridBase):
                 logging.getLogger(__name__).error(f"Error fetching usage ids: {e}")
 
         threading.Thread(target=fetch_data, daemon=True).start()
-
 
     def _update_usage_ids_ui(self, tree_data):
         if not self.winfo_exists() or not hasattr(self, 'available_elements_tree'):
@@ -906,7 +902,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
             # Check if it's a leaf node with mapped icon (idx 4)
             if values and len(values) >= 5:
-                mapped_icon = values[4]
+                mapped_icon = values[5]
                 # Compare string representation to be safe, sometimes it comes back from Tkinter tuple differently
                 if str(mapped_icon) == str(icon_key):
                     target_node = current_node
