@@ -712,7 +712,6 @@ class IconManagerFrame(ResponsiveGridBase):
                 # Wait, screen_name might not perfectly match icon_usages. But we can match by element_id and module.
                 # Actually, (module, element_id) is usually unique enough for this UI.
                 ui_elements_map = { (r[0], r[2]): ("🔒" if r[4] else "🌐") for r in ui_elements }
-                ui_elements_screen_map = { (r[0], r[2]): r[1] for r in ui_elements }
 
                 db_elements = set()
                 db_mapped = {}
