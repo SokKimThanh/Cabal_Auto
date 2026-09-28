@@ -130,7 +130,7 @@ class ScanController:
                     import win32gui
 
                     title = win32gui.GetWindowText(window_info["hwnd"])
-                    if not scanner.screen_capture.start(title):
+                    if not scanner.screen_capture.start(title, hwnd=window_info["hwnd"]):
                         raise Exception("Failed to start screen capture.")
 
                 frame = scanner.screen_capture.get_frame(timeout=1.0)
