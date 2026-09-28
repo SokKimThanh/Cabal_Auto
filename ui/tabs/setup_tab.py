@@ -391,6 +391,16 @@ class SetupTab(ResponsiveGridBase):
             def _make_on_draw(k=key, v=val_var):
                 def _draw():
                     from ui.helpers.capture_helper import CaptureHelper
+                    from lib.system.window_manager import WindowManager
+
+                    def _bring_to_front():
+                        selected = self.app.state_controller.hunt_selected
+                        if isinstance(selected, dict) and selected.get("hwnd"):
+                            hwnd = selected.get("hwnd")
+                            wm = WindowManager()
+                            wm.restore(hwnd)
+                            wm.set_foreground(hwnd)
+
                     def _on_drawn(region):
                         if region:
                             v.set(str(list(region)))
@@ -405,7 +415,7 @@ class SetupTab(ResponsiveGridBase):
                             if not success:
                                 print("Failed atomic save via save_hunt_config")
 
-                    CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
+                    CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn, pre_wait_hook=_bring_to_front)
                 return _draw
 
             from ui.components.icon_button import create_icon_button

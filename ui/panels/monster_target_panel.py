@@ -114,6 +114,16 @@ class MonsterTargetPanel(ttk.LabelFrame):
         # Hunt Area Set Button
         def _on_draw_hunt_area():
             from ui.helpers.capture_helper import CaptureHelper
+            from lib.system.window_manager import WindowManager
+
+            def _bring_to_front():
+                selected = self.app.state_controller.hunt_selected
+                if isinstance(selected, dict) and selected.get("hwnd"):
+                    hwnd = selected.get("hwnd")
+                    wm = WindowManager()
+                    wm.restore(hwnd)
+                    wm.set_foreground(hwnd)
+
             def _on_drawn(region):
                 if region:
                     rois = self.app.state_controller.get_hunt_config_value("rois", {})
@@ -124,7 +134,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     if not success:
                         print("Failed to save hunt area via save_hunt_config")
 
-            CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
+            CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn, pre_wait_hook=_bring_to_front)
 
         from ui.components.icon_button import create_icon_button
 
