@@ -144,7 +144,8 @@ class MonsterTargetPanel(ttk.LabelFrame):
             icon_name="crop",
             text=self.app._t("hunt_area.set") if hasattr(self.app, "_t") else "Set Hunt Area",
             command=_on_draw_hunt_area,
-            button_type="neutral"
+            button_type="neutral",
+            tooltip_text=self.app._t("tooltip.hunt_area.set") if hasattr(self.app, "_t") else None
         )
         self.btn_set_hunt_area.pack(side="right", padx=10, pady=4)
 
