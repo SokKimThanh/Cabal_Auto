@@ -102,7 +102,8 @@ class IconTreeModel:
 
                 # Notify UI
                 if callback:
-                    callback()
+                    from lib.events.ui_dispatcher import UIDispatcher
+                    UIDispatcher.post(lambda: callback())
 
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
@@ -132,7 +133,8 @@ class IconTreeModel:
                     conn.close()
 
                 if callback:
-                    callback(icon_key, usages)
+                    from lib.events.ui_dispatcher import UIDispatcher
+                    UIDispatcher.post(lambda: callback(icon_key, usages))
 
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()

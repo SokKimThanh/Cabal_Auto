@@ -20,6 +20,7 @@ from lib.i18n import set_default_lang as i18n_set_lang
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
 from lib.features.hunt.config_validator import get_valid_hunt_area
 from lib.system.task_scheduler import TaskScheduler
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import EventBus, IconUpdatedEvent, HuntStatusUpdatedEvent, HuntStateChangedEvent, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent, SkillStatsUpdatedEvent, LanguageChangedEvent, GlobalApplyEvent, StartStopHuntEvent, TranslationDataUpdatedEvent
 import tkinter as tk
 import sys
@@ -173,6 +174,7 @@ class App:
             self.scan_controller = None
 
         self.task_scheduler = TaskScheduler(self)
+        self.ui_dispatcher = UIDispatcher(self.root)
 
         from ui.controllers.app_state_controller import AppStateController
         self.state_controller = AppStateController(self.root)
@@ -1188,6 +1190,8 @@ class App:
             self.monster_rotation_controller.unbind_events()
         if hasattr(self, "task_scheduler"):
             self.task_scheduler.cancel_all()
+        if hasattr(self, 'ui_dispatcher'):
+            self.ui_dispatcher.shutdown()
         self.root.destroy()
     def _create_icon_button(
         self,

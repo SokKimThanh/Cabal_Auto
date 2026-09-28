@@ -175,10 +175,7 @@ class ImageLibraryComponent(tk.Frame):
             else:
                 self._perform_img_search()
 
-        try:
-            self.after(0, update_ui)
-        except RuntimeError:
-            pass
+        update_ui()
 
     def _update_image_listbox(self, file_list, used_files=None):
         if used_files is None:
