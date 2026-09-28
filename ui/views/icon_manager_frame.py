@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import tkinter as tk
+from ui.components import create_icon_button
 import sqlite3
 from tkinter import ttk, messagebox
 
@@ -160,12 +161,24 @@ class IconManagerFrame(ResponsiveGridBase):
         top_action_bar = tk.Frame(top_header_frame, bg=UIStyle.BG_BASE)
         top_action_bar.pack(side="right")
 
-        self.btn_refresh = tk.Button(top_action_bar, text=self.i18n_t("btn_refresh", default="Refresh"), command=self._on_refresh, **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_refresh = create_icon_button(
+            parent=top_action_bar,
+            icon_name="refresh",
+            text=self.i18n_t("btn_refresh", default="Refresh"),
+            command=self._on_refresh,
+            button_type="secondary"
+        )
         self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS if hasattr(UIStyle, "SPACE_XS") else 4)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_refresh, "btn_refresh")
 
-        self.btn_sync = tk.Button(top_action_bar, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **(UIStyle.get_button_style("info") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_sync = create_icon_button(
+            parent=top_action_bar,
+            icon_name="info",
+            text=self.i18n_t("btn_sync", default="Đồng bộ"),
+            command=self._on_sync,
+            button_type="info"
+        )
         self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS if hasattr(UIStyle, "SPACE_XS") else 4)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_sync, "btn_sync", default="Đồng bộ")
@@ -525,11 +538,12 @@ class IconManagerFrame(ResponsiveGridBase):
         # Left Action Button (Map)
         left_btn_frame = tk.Frame(add_frame, bg=UIStyle.BG_SURFACE)
         left_btn_frame.grid(row=2, column=0, sticky="w", pady=(5, 0))
-        self.btn_add_usage = tk.Button(
-            left_btn_frame,
-            text="Gắn (Map)",
+        self.btn_add_usage = create_icon_button(
+            parent=left_btn_frame,
+            icon_name="add",
+            text=self.i18n_t("btn_map_usage", default="Gắn (Map)"),
             command=self._on_add_usage,
-            **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {})
+            button_type="primary"
         )
         self.btn_add_usage.pack(side="left")
 
@@ -583,11 +597,12 @@ class IconManagerFrame(ResponsiveGridBase):
         # Right Action Button (Unmap)
         right_btn_frame = tk.Frame(right_frame, bg=UIStyle.BG_SURFACE)
         right_btn_frame.grid(row=2, column=0, sticky="w", pady=(5, 0))
-        self.btn_del_usage = tk.Button(
-            right_btn_frame,
-            text="Gỡ (Unmap)",
+        self.btn_del_usage = create_icon_button(
+            parent=right_btn_frame,
+            icon_name="delete",
+            text=self.i18n_t("btn_unmap_usage", default="Gỡ (Unmap)"),
             command=self._on_del_usage,
-            **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {})
+            button_type="danger"
         )
         self.btn_del_usage.pack(side="left")
 
@@ -1262,17 +1277,35 @@ class IconManagerFrame(ResponsiveGridBase):
         right_frame = tk.Frame(self.bottom_action_frame, bg=UIStyle.BG_SUBTLE)
         right_frame.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add", default="Add"), command=self._on_add, **UIStyle.get_button_style("primary"))
+        self.btn_add = create_icon_button(
+            parent=left_frame,
+            icon_name="add",
+            text=self.i18n_t("btn_add", default="Add"),
+            command=self._on_add,
+            button_type="primary"
+        )
         self.btn_add.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_add, "btn_add")
 
-        self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit", default="Edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
+        self.btn_edit = create_icon_button(
+            parent=left_frame,
+            icon_name="edit",
+            text=self.i18n_t("btn_edit", default="Edit"),
+            command=self._on_edit,
+            button_type="secondary"
+        )
         self.btn_edit.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_edit, "btn_edit")
 
-        self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete", default="Delete"), command=self._on_delete, **UIStyle.get_button_style("danger"))
+        self.btn_delete = create_icon_button(
+            parent=left_frame,
+            icon_name="delete",
+            text=self.i18n_t("btn_delete", default="Delete"),
+            command=self._on_delete,
+            button_type="danger"
+        )
         self.btn_delete.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_delete, "btn_delete")
@@ -1281,12 +1314,24 @@ class IconManagerFrame(ResponsiveGridBase):
         if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
             self.btn_delete.configure(bg=UIStyle.DANGER, fg="white")
 
-        self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
+        self.btn_save = create_icon_button(
+            parent=right_frame,
+            icon_name="save",
+            text=self.i18n_t("btn_save"),
+            command=self._on_save,
+            button_type="primary"
+        )
         self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_save, "btn_save")
 
-        self.btn_cancel = tk.Button(right_frame, text=self.i18n_t("btn_cancel"), command=self._on_cancel, **UIStyle.get_button_style("secondary"))
+        self.btn_cancel = create_icon_button(
+            parent=right_frame,
+            icon_name="cancel",
+            text=self.i18n_t("btn_cancel"),
+            command=self._on_cancel,
+            button_type="secondary"
+        )
         self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_cancel, "btn_cancel")

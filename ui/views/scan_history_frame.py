@@ -1,4 +1,5 @@
 import tkinter as tk
+from ui.components import create_icon_button
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
@@ -71,13 +72,12 @@ class ScanHistoryFrame(ResponsiveGridBase):
         self.monster_cb.bind("<<ComboboxSelected>>", lambda e: self.on_filter_change())
 
         # Refresh Button
-        self.btn_refresh = tk.Button(
-            self.top_bar,
+        self.btn_refresh = create_icon_button(
+            parent=self.top_bar,
+            icon_name="refresh",
             text="Refresh" if not hasattr(self.app, "_t") else self.app._t("btn_refresh"),
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
             command=self.refresh_filters_and_data,
-            relief="flat"
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.btn_refresh, "btn_refresh")
@@ -139,26 +139,24 @@ class ScanHistoryFrame(ResponsiveGridBase):
         # grid footer later depending on empty state
         self.footer.grid(row=2, column=0, sticky="ew", pady=(10, 0))
 
-        self.btn_prev = tk.Button(
-            self.footer,
+        self.btn_prev = create_icon_button(
+            parent=self.footer,
+            icon_name="left",
             text="Prev" if not hasattr(self.app, "_t") else self.app._t("btn_prev"),
             command=self.prev_page,
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat"
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.btn_prev, "btn_prev")
 
         self.page_lbl = tk.Label(self.footer, text="Page 1", bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY, font=UI.FONT_BODY)
 
-        self.btn_next = tk.Button(
-            self.footer,
+        self.btn_next = create_icon_button(
+            parent=self.footer,
+            icon_name="right",
             text="Next" if not hasattr(self.app, "_t") else self.app._t("btn_next"),
             command=self.next_page,
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat"
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.btn_next, "btn_next")
