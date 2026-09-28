@@ -47,7 +47,8 @@ class ImageLibraryModel:
                 error_msg = f"Error scanning directory: {str(e)}"
             finally:
                 self._is_scanning = False
-                callback(new_list, error_msg)
+                from lib.events.ui_dispatcher import UIDispatcher
+                UIDispatcher.post(lambda: callback(new_list, error_msg))
 
         threading.Thread(target=_scan_thread, daemon=True).start()
 

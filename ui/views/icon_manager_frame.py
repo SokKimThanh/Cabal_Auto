@@ -850,7 +850,8 @@ class IconManagerFrame(ResponsiveGridBase):
                             f"Unmapped: {stats['unmapped_elements']}, "
                             f"Unregistered/Dangling: {stats['unregistered_mappings']}")
 
-                self.after(0, lambda: self._update_usage_ids_ui(merged))
+                from lib.events.ui_dispatcher import UIDispatcher
+                UIDispatcher.post(lambda: self._update_usage_ids_ui(merged))
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(f"Error fetching usage ids: {e}")
@@ -1575,20 +1576,18 @@ class IconManagerFrame(ResponsiveGridBase):
         self.btn_sync.config(state='disabled', text=self.i18n_t("btn_syncing", default="Đang đồng bộ..."))
 
         def on_complete(count):
-            if not self.winfo_exists():
-                return
-            try:
-                self.after(0, lambda: self._on_sync_complete(count, show_message))
-            except RuntimeError:
-                pass
+            from lib.events.ui_dispatcher import UIDispatcher
+            def _complete():
+                if self.winfo_exists():
+                    self._on_sync_complete(count, show_message)
+            UIDispatcher.post(_complete)
 
         def on_error(err_msg):
-            if not self.winfo_exists():
-                return
-            try:
-                self.after(0, lambda: self._on_sync_error(err_msg, show_message))
-            except RuntimeError:
-                pass
+            from lib.events.ui_dispatcher import UIDispatcher
+            def _error():
+                if self.winfo_exists():
+                    self._on_sync_error(err_msg, show_message)
+            UIDispatcher.post(_error)
 
         self.controller.sync_system_icons_async(on_complete, on_error)
 
@@ -1739,8 +1738,8 @@ class IconManagerFrame(ResponsiveGridBase):
             if not self.winfo_exists():
                 return
             # Update combo boxes based on categories
-            self.after(0, self._populate_category_combo)
-            self.after(0, self.tree_component.request_load_tree_data)
+            self._populate_category_combo()
+            self.tree_component.request_load_tree_data()
         except RuntimeError:
             pass  # main thread not in main loop during early exit
 

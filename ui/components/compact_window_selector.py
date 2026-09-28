@@ -228,13 +228,12 @@ class CompactWindowSelector:
         self._set_loading_state(True)
 
         def fetch_windows_task():
+            from lib.events.ui_dispatcher import UIDispatcher
             try:
                 windows = self.window_controller._list_windows()
-                self.root.after(
-                    0, self._update_ui_with_windows, windows, select_first
-                )
+                UIDispatcher.post(lambda: self._update_ui_with_windows(windows, select_first))
             except Exception as error:
-                self.root.after(0, self._handle_refresh_error, error)
+                UIDispatcher.post(lambda: self._handle_refresh_error(error))
 
         import threading
 

@@ -297,10 +297,11 @@ class LanguageManagerFrame(ResponsiveGridBase):
 
     def sync_to_json(self):
         def _sync_thread():
+            from lib.events.ui_dispatcher import UIDispatcher
             if self.controller.sync_to_json():
-                self.after(0, lambda: DialogService.show_info("Success", "Successfully exported translations to JSON."))
+                UIDispatcher.post(lambda: DialogService.show_info("Success", "Successfully exported translations to JSON."))
             else:
-                self.after(0, lambda: DialogService.show_error("Error", "Failed to export translations."))
+                UIDispatcher.post(lambda: DialogService.show_error("Error", "Failed to export translations."))
 
         threading.Thread(target=_sync_thread, daemon=True).start()
 
