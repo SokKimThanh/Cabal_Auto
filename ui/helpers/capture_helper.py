@@ -110,12 +110,19 @@ class RegionSelector(tk.Toplevel):
 
 class CaptureHelper:
     @staticmethod
-    def start_region_selection(parent: Any, callback: Callable[[Optional[Tuple[int, int, int, int]]], None]) -> None:
+    def start_region_selection(parent: Any, callback: Callable[[Optional[Tuple[int, int, int, int]]], None], pre_wait_hook: Optional[Callable[[], None]] = None) -> None:
         """Utility to securely hide the window, capture screen, run selector, and execute callback."""
         if pyautogui is None or Image is None:
             messagebox.showerror("Error", "Missing PyAutoGUI or Pillow dependencies.", parent=parent)
             callback(None)
             return
+
+        # Allow caller to bring target window to front now
+        try:
+            if callable(pre_wait_hook):
+                pre_wait_hook()
+        except Exception:
+            pass
 
         # Hide window briefly
         try:
