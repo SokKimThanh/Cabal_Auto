@@ -508,8 +508,10 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.column("exclusive", width=110, stretch=tk.NO, anchor="center")
         self.available_elements_tree.column("mapped", width=100, stretch=tk.NO)
 
-        # Configure tag for errors (status RED or YELLOW)
+        # Configure tag for errors (status RED or YELLOW) and mapped
         self.available_elements_tree.tag_configure("error", foreground="red")
+        self.available_elements_tree.tag_configure("mapped", foreground=UIStyle.COLOR_PRIMARY if hasattr(UIStyle, "COLOR_PRIMARY") else "#2196F3")
+        self.available_elements_tree.tag_configure("unmapped", foreground=UIStyle.TEXT_MUTED if hasattr(UIStyle, "TEXT_MUTED") else "gray")
 
         self.available_elements_tree.grid(row=1, column=0, sticky="nsew")
 
@@ -656,8 +658,14 @@ class IconManagerFrame(ResponsiveGridBase):
                     screen_children_ops = []
                     for el in sorted(filtered_elements, key=lambda x: x["id"]):
                         tag = []
-                        if el.get('mapped', '') and el.get('status', 'GREEN') != 'GREEN':
-                            tag.append("error")
+                        is_mapped = bool(el.get('mapped', ''))
+                        if is_mapped:
+                            if el.get('status', 'GREEN') != 'GREEN':
+                                tag.append("error")
+                            else:
+                                tag.append("mapped")
+                        else:
+                            tag.append("unmapped")
 
                         screen_children_ops.append(
                             (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('exclusive', '🌐'), el.get('mapped', '')), False, tag)
@@ -704,6 +712,7 @@ class IconManagerFrame(ResponsiveGridBase):
                 # Wait, screen_name might not perfectly match icon_usages. But we can match by element_id and module.
                 # Actually, (module, element_id) is usually unique enough for this UI.
                 ui_elements_map = { (r[0], r[2]): ("🔒" if r[4] else "🌐") for r in ui_elements }
+                ui_elements_screen_map = { (r[0], r[2]): r[1] for r in ui_elements }
 
                 db_elements = set()
                 db_mapped = {}
@@ -749,29 +758,7 @@ class IconManagerFrame(ResponsiveGridBase):
                         return "RED"
                     return icon_helper.evaluate_icon_status(icon_cache_data[ik])
 
-                # Add from DB usages
-                for (mod, comp, el) in db_elements:
-                    if mod not in merged:
-                        merged[mod] = {}
-                    # For db usage, we might not have 'screen', default to 'Unknown'
-                    # But we can try to guess or just use 'General'
-                    screen = 'General'
-                    if screen not in merged[mod]:
-                        merged[mod][screen] = []
-
-                    exc = ui_elements_map.get((mod, el), "🌐")
-
-                    mapped_ik = db_mapped.get((mod, comp, el), "")
-                    merged[mod][screen].append({
-                        "id": el,
-                        "mod": mod,
-                        "comp": comp,
-                        "mapped": mapped_ik,
-                        "exclusive": exc,
-                        "status": get_status(mapped_ik)
-                    })
-
-                # Add from Registry
+                # 1. Add from Registry (Source of Truth for active elements)
                 for desc in reg_elements:
                     mod = desc.module
                     screen = desc.screen
@@ -784,21 +771,17 @@ class IconManagerFrame(ResponsiveGridBase):
                     if screen not in merged[mod]:
                         merged[mod][screen] = []
 
-                    # Check if already added
-                    existing = [e for e in merged[mod][screen] if e['id'] == el]
-                    if not existing:
-                        # Try to find mapping
-                        mapped = db_mapped.get((mod, comp, el), "")
-                        merged[mod][screen].append({
-                            "id": el,
-                            "mod": mod,
-                            "comp": comp,
-                            "mapped": mapped,
-                            "exclusive": exc,
-                            "status": get_status(mapped)
-                        })
+                    mapped = db_mapped.get((mod, comp, el), "")
+                    merged[mod][screen].append({
+                        "id": el,
+                        "mod": mod,
+                        "comp": comp,
+                        "mapped": mapped,
+                        "exclusive": exc,
+                        "status": get_status(mapped)
+                    })
 
-                # Add all remaining unmapped elements from DB
+                # 2. Add remaining from ui_elements DB (elements registered in past but maybe not in current tab)
                 for ui_el in ui_elements:
                     mod = ui_el[0]
                     screen = ui_el[1]
@@ -811,7 +794,6 @@ class IconManagerFrame(ResponsiveGridBase):
                     if screen not in merged[mod]:
                         merged[mod][screen] = []
 
-                    # Check if already added by usages or registry
                     existing = [e for e in merged[mod][screen] if e['id'] == el]
                     if not existing:
                         mapped = db_mapped.get((mod, comp, el), "")
@@ -822,6 +804,31 @@ class IconManagerFrame(ResponsiveGridBase):
                             "mapped": mapped,
                             "exclusive": exc,
                             "status": get_status(mapped)
+                        })
+
+                # 3. Detect Unregistered Mappings
+                unregistered_mod = "[Unregistered]"
+                for (mod, comp, el), mapped_ik in db_mapped.items():
+                    # Check if this element exists in merged
+                    found = False
+                    if mod in merged:
+                        for screen, elements in merged[mod].items():
+                            if any(e['id'] == el for e in elements):
+                                found = True
+                                break
+                    if not found:
+                        if unregistered_mod not in merged:
+                            merged[unregistered_mod] = {}
+                        if mod not in merged[unregistered_mod]:
+                            merged[unregistered_mod][mod] = []
+
+                        merged[unregistered_mod][mod].append({
+                            "id": el,
+                            "mod": mod,
+                            "comp": comp,
+                            "mapped": mapped_ik,
+                            "exclusive": "⚠️",
+                            "status": get_status(mapped_ik)
                         })
 
                 self.winfo_toplevel().after(0, lambda: self._update_usage_ids_ui(merged))
@@ -1705,8 +1712,9 @@ class IconManagerFrame(ResponsiveGridBase):
             self.combo_category.config(values=[c["name"] for c in categories])
 
         if hasattr(self, 'icon_form'):
-            c_names = [c['name'] for c in categories]
-            self.icon_form.update_category_values(c_names)
+            # Pass dictionary to show descriptions in form
+            cat_dict_for_form = {c['name']: c for c in categories}
+            self.icon_form.update_category_values(cat_dict_for_form)
 
     def _on_tree_interaction(self, event):
         if self._current_state in ("ADD", "EDIT"):

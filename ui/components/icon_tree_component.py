@@ -335,8 +335,11 @@ class IconTreeComponent(tk.Frame):
             cat_name = cat.get('name', 'Unknown') if cat else 'General'
             node_iid = f"cat_{cat_id}"
 
+            icon_count = len(icons)
+            display_name = f"📁 {cat_name} ({icon_count})"
+
             self._render_queue.append(
-                ('category', '', node_iid, f"📁 {cat_name}", ("category",), True)
+                ('category', '', node_iid, display_name, ("category",), True)
             )
 
             icons.sort(key=lambda x: x.get('name', '').lower())
