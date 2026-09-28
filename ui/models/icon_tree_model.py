@@ -179,7 +179,7 @@ class IconTreeModel:
                 grouped_data[1].append(icon)
 
         # Clean up empty categories if filtering is active, unless it's the only one
-        if search_term or filter_status or filter_cat_id:
+        if search_term or filter_status or (filter_cat_id is not None and filter_cat_id != ""):
              grouped_data = {k: v for k, v in grouped_data.items() if v}
 
         return grouped_data

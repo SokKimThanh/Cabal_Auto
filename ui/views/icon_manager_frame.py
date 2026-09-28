@@ -508,8 +508,10 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.column("exclusive", width=110, stretch=tk.NO, anchor="center")
         self.available_elements_tree.column("mapped", width=100, stretch=tk.NO)
 
-        # Configure tag for errors (status RED or YELLOW)
+        # Configure tag for errors (status RED or YELLOW) and mapped
         self.available_elements_tree.tag_configure("error", foreground="red")
+        self.available_elements_tree.tag_configure("mapped", foreground=UIStyle.COLOR_PRIMARY if hasattr(UIStyle, "COLOR_PRIMARY") else "#2196F3")
+        self.available_elements_tree.tag_configure("unmapped", foreground=UIStyle.TEXT_MUTED if hasattr(UIStyle, "TEXT_MUTED") else "gray")
 
         self.available_elements_tree.grid(row=1, column=0, sticky="nsew")
 
@@ -656,8 +658,14 @@ class IconManagerFrame(ResponsiveGridBase):
                     screen_children_ops = []
                     for el in sorted(filtered_elements, key=lambda x: x["id"]):
                         tag = []
-                        if el.get('mapped', '') and el.get('status', 'GREEN') != 'GREEN':
-                            tag.append("error")
+                        is_mapped = bool(el.get('mapped', ''))
+                        if is_mapped:
+                            if el.get('status', 'GREEN') != 'GREEN':
+                                tag.append("error")
+                            else:
+                                tag.append("mapped")
+                        else:
+                            tag.append("unmapped")
 
                         screen_children_ops.append(
                             (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('exclusive', '🌐'), el.get('mapped', '')), False, tag)
@@ -1701,8 +1709,9 @@ class IconManagerFrame(ResponsiveGridBase):
             self.combo_category.config(values=[c["name"] for c in categories])
 
         if hasattr(self, 'icon_form'):
-            c_names = [c['name'] for c in categories]
-            self.icon_form.update_category_values(c_names)
+            # Pass dictionary to show descriptions in form
+            cat_dict_for_form = {c['name']: c for c in categories}
+            self.icon_form.update_category_values(cat_dict_for_form)
 
     def _on_tree_interaction(self, event):
         if self._current_state in ("ADD", "EDIT"):
