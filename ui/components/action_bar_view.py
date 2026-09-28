@@ -54,6 +54,11 @@ class ActionBarView(tk.Frame):
         def on_window_selected_from_compact(window_dict):
             """Callback when user selects window from compact selector."""
             try:
+                from lib.system.window_manager import WindowManager
+                hwnd = window_dict.get("hwnd")
+                if hwnd is not None:
+                    WindowManager().lock_selection(int(hwnd))
+
                 # Set hunt_selected with window info
                 self.state_controller.hunt_selected = {
                     "hwnd": window_dict.get("hwnd"),
@@ -89,6 +94,14 @@ class ActionBarView(tk.Frame):
         def on_scan_clicked():
             ctrl = getattr(self.winfo_toplevel(), "scan_controller", None)
             if ctrl:
+                self.compact_window_selector._set_loading_state(True)
+
+                from lib.features.hunt.scan_controller import ScanCompletedEvent
+                def on_scan_done(e):
+                    self.after(0, lambda: self.compact_window_selector._set_loading_state(False))
+                    EventBus.unsubscribe(ScanCompletedEvent, on_scan_done)
+                EventBus.subscribe(ScanCompletedEvent, on_scan_done)
+
                 ctrl.run_scan(manual=True)
             else:
                 logger.warning("[ActionBar] scan_controller chưa sẵn sàng")
