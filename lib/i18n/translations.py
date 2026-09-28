@@ -42,6 +42,9 @@ GLOBAL_TRANSLATIONS = {
         'bring_to_front': 'Bring to front',
         'browse': 'Browse',
                                 'btn_apply': 'Apply',
+        'msg_unsaved_changes_lock': 'Please Save or Cancel before selecting another row.',
+        'msg_category_add_warning': 'Creating new Icon Categories should be restricted to avoid data clutter.\nAre you sure you want to proceed?',
+
         'btn_apply_to_hunt_config': 'Apply to Hunt Config',
         'btn_calculate': 'Calculate',
                         'btn_close': 'Close',
@@ -746,6 +749,9 @@ GLOBAL_TRANSLATIONS = {
         'bring_to_front': 'Đưa lên trước',
         'browse': 'Chọn ảnh',
                                 'btn_apply': 'Áp dụng',
+        'msg_unsaved_changes_lock': 'Vui lòng nhấn Lưu hoặc Hủy trước khi chọn dòng khác.',
+        'msg_category_add_warning': 'Tạo loại Icon mới nên được hạn chế để tránh làm rác dữ liệu.\nBạn có chắc chắn muốn tiếp tục không?',
+
         'btn_apply_to_hunt_config': 'Áp dụng vào Hunt',
         'btn_calculate': 'Tính toán',
                         'btn_close': 'Đóng',
