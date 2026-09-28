@@ -1,5 +1,6 @@
 import math
 import tkinter as tk
+from ui.components import create_icon_button
 from tkinter import ttk, messagebox, simpledialog
 from typing import Dict, Any
 
@@ -151,59 +152,60 @@ class SkillManagerFrame(ResponsiveGridBase):
         bottom_bar = tk.Frame(container, bg=UIStyle.BG_SURFACE)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
-        add_btn = tk.Button(
-            bottom_bar,
+        add_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="add",
             text=self.app._t("btn_add", default="Thêm"),
             command=self._add_skill,
-            **UIStyle.get_button_style("primary")
+            button_type="green_light"
         )
         add_btn.pack(side="left", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
-        edit_btn = tk.Button(
-            bottom_bar,
+        edit_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="edit",
             text=self.app._t("btn_edit", default="Sửa"),
             command=self._edit_skill,
-            **UIStyle.get_button_style("primary")
+            button_type="blue"
         )
         edit_btn.pack(side="left", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
-        del_btn = tk.Button(
-            bottom_bar,
+        del_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="delete",
             text=self.app._t("btn_delete", default="Xóa"),
             command=self._delete_skill,
-            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
+            button_type="red"
         )
         del_btn.pack(side="left", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
-        ref_btn = tk.Button(
-            bottom_bar,
-            text=self.app._t("btn_refresh", default="Refresh"),
+        ref_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="refresh",
+            text=self.app._t("btn_refresh", default="Làm mới"),
             command=self._load_skills,
-            **UIStyle.get_button_style("secondary")
+            button_type="refresh"
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD if hasattr(UIStyle, "SPACE_MD") else 8, pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
         # Pagination controls
-        self.next_btn = tk.Button(
-            bottom_bar,
-            text="Next",
+        self.next_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="right",
+            text=self.app._t("btn_next", default="Sau"),
             command=self._next_page,
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            button_type="refresh"
         )
         self.next_btn.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
         self.page_lbl = tk.Label(bottom_bar, text="1 / 1", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_SECONDARY)
         self.page_lbl.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
-
-        self.prev_btn = tk.Button(
-            bottom_bar,
-            text="Prev",
+        self.prev_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="left",
+            text=self.app._t("btn_prev", default="Trước"),
             command=self._prev_page,
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            button_type="refresh"
         )
         self.prev_btn.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM if hasattr(UIStyle, "SPACE_SM") else 4)
 
@@ -299,9 +301,9 @@ class SkillManagerFrame(ResponsiveGridBase):
         action_frame = tk.Frame(right_frame, bg=UIStyle.BG_BASE)
         action_frame.pack(fill="x", pady=15)
 
-        tk.Button(action_frame, text=self.app._t("btn_save", default="Lưu"), command=self._save_type, **UIStyle.get_button_style("primary")).pack(side="left", padx=(0, 10))
-        tk.Button(action_frame, text=self.app._t("btn_cancel", default="Hủy"), command=self._clear_type_form, **UIStyle.get_button_style("secondary")).pack(side="left", padx=(0, 10))
-        self.del_type_btn = tk.Button(action_frame, text=self.app._t("btn_delete", default="Xóa"), command=self._delete_type, **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"})
+        create_icon_button(parent=action_frame, icon_name="save", text=self.app._t("btn_save", default="Lưu"), command=self._save_type, button_type="green_light").pack(side="left", padx=(0, 10))
+        create_icon_button(parent=action_frame, icon_name="cancel", text=self.app._t("btn_cancel", default="Hủy"), command=self._clear_type_form, button_type="refresh").pack(side="left", padx=(0, 10))
+        self.del_type_btn = create_icon_button(parent=action_frame, icon_name="delete", text=self.app._t("btn_delete", default="Xóa"), command=self._delete_type, button_type="red")
         self.del_type_btn.pack(side="left")
 
     def _load_classes(self):
