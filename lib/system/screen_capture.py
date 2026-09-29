@@ -189,12 +189,13 @@ class ScreenCapture:
         logger.warning(f"Window containing '{title_contains}' not found")
         return None
 
-    def start(self, window_title: str) -> bool:
+    def start(self, window_title: str = "", hwnd: Optional[int] = None) -> bool:
         """
         Start capturing from window
 
         Args:
             window_title: Window title substring to capture
+            hwnd: Optional window handle to capture directly from
 
         Returns:
             True if started successfully
@@ -203,8 +204,13 @@ class ScreenCapture:
             logger.warning("Already running")
             return False
 
-        # Find window
-        self.hwnd = self.find_window(window_title)
+        # Use provided HWND or find window
+        if hwnd is not None:
+            self.hwnd = hwnd
+            logger.debug(f"Using provided HWND: {hwnd}")
+        else:
+            self.hwnd = self.find_window(window_title)
+
         if not self.hwnd:
             return False
 
@@ -448,6 +454,7 @@ class ScreenCapture:
 
     def _capture_frame(self) -> Optional[np.ndarray]:
         capture_start = time.time()
+        logger.debug(f"[Capture Source] HWND: {self.hwnd}, Backend: {'dxcam' if self._use_dxcam else 'BitBlt'}")
 
         if self._use_dxcam and self._dxcam_camera is not None:
             try:
