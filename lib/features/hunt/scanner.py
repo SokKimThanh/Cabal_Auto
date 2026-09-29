@@ -79,7 +79,7 @@ class AutoScanner:
                 return hwnd
         return None
 
-    def scan_screen(self, window_info: Dict[str, Any]) -> Dict[str, Any]:
+    def scan_screen(self, window_info: Dict[str, Any], hunt_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Quét màn hình để nhận diện quái và skills."""
         if not self.screen_capture:
             return {"monsters": [], "skills": []}
@@ -99,7 +99,16 @@ class AutoScanner:
                 logger.warning("Failed to capture frame.")
                 return {"monsters": [], "skills": []}
 
-            monsters = self.vision_engine.detect_monster_pipeline(frame)
+            # If user has defined a specific ROI for hunting, use it
+            hunt_roi = None
+            if hunt_config and "rois" in hunt_config:
+                rois = hunt_config["rois"]
+                # Assuming "hunt_area" or "combo_bar" can be defined,
+                # but currently we default to None (full screen) if no specific target area is set for monsters
+                if "hunt_area" in rois and len(rois["hunt_area"]) == 4:
+                    hunt_roi = tuple(rois["hunt_area"])
+
+            monsters = self.vision_engine.detect_monster_pipeline(frame, roi=hunt_roi)
 
             # Real skill detection using user's skill data
             skill_detections = []
@@ -123,8 +132,15 @@ class AutoScanner:
                             templates_added.append(tmpl.id)
                 if templates_added:
                     # Match skills against screen
+                    # Use combo_bar ROI if configured, otherwise full screen
+                    combo_bar_roi = None
+                    if hunt_config and "rois" in hunt_config:
+                        rois = hunt_config["rois"]
+                        if "combo_bar" in rois and len(rois["combo_bar"]) == 4:
+                            combo_bar_roi = tuple(rois["combo_bar"])
+
                     skill_detections = self.vision_engine.match_templates(
-                        frame, templates=templates_added, max_results=20
+                        frame, templates=templates_added, roi=combo_bar_roi, max_results=20
                     )
 
                     # Clean up templates after scan so we don't pollute vision engine for general use
@@ -144,13 +160,13 @@ class AutoScanner:
         """Gợi ý bộ skill dựa trên class."""
         return ["Basic Combo"]
 
-    def run_scan(self) -> Dict[str, Any]:
+    def run_scan(self, hunt_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Luồng chạy chính của AutoScanner."""
         window_info = self.detect_window()
         if not window_info:
             return {"status": "error", "message": "Không tìm thấy cửa sổ hợp lệ."}
 
-        scan_data = self.scan_screen(window_info)
+        scan_data = self.scan_screen(window_info, hunt_config)
         detected_class = self.normalize_and_detect_class(scan_data["skills"])
         recommended_skills = self.recommend_skills(detected_class)
 

@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import tkinter as tk
+from ui.components import create_icon_button
 import sqlite3
 from tkinter import ttk, messagebox
 
@@ -160,12 +161,24 @@ class IconManagerFrame(ResponsiveGridBase):
         top_action_bar = tk.Frame(top_header_frame, bg=UIStyle.BG_BASE)
         top_action_bar.pack(side="right")
 
-        self.btn_refresh = tk.Button(top_action_bar, text=self.i18n_t("btn_refresh", default="Refresh"), command=self._on_refresh, **(UIStyle.get_button_style("secondary") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_refresh = create_icon_button(
+            parent=top_action_bar,
+            icon_name="refresh",
+            text=self.i18n_t("btn_refresh", default="Refresh"),
+            command=self._on_refresh,
+            button_type="secondary"
+        )
         self.btn_refresh.pack(side="left", padx=UIStyle.SPACE_XS if hasattr(UIStyle, "SPACE_XS") else 4)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_refresh, "btn_refresh")
 
-        self.btn_sync = tk.Button(top_action_bar, text=self.i18n_t("btn_sync", default="Đồng bộ"), command=self._on_sync, **(UIStyle.get_button_style("info") if hasattr(UIStyle, "get_button_style") else {}))
+        self.btn_sync = create_icon_button(
+            parent=top_action_bar,
+            icon_name="info",
+            text=self.i18n_t("btn_sync", default="Đồng bộ"),
+            command=self._on_sync,
+            button_type="info"
+        )
         self.btn_sync.pack(side="left", padx=UIStyle.SPACE_XS if hasattr(UIStyle, "SPACE_XS") else 4)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_sync, "btn_sync", default="Đồng bộ")
@@ -264,8 +277,9 @@ class IconManagerFrame(ResponsiveGridBase):
         self.paned_window.add(self.tree_component, weight=0)
 
         # Right Detail Frame
-        self.right_detail_frame = tk.Frame(self.paned_window, bg=UIStyle.BG_SURFACE)
-        self.paned_window.add(self.right_detail_frame, weight=1)
+        self.right_detail_frame_container = ResponsiveGridBase(self.paned_window, bg=UIStyle.BG_SURFACE)
+        self.right_detail_frame = self.right_detail_frame_container.get_content_frame()
+        self.paned_window.add(self.right_detail_frame_container, weight=1)
 
         # Bind Configure to set 35:65 ratio on first render
         self._sash_configured = False
@@ -288,7 +302,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
         self.empty_preview = EmptyState(
             self.empty_state_frame,
-            icon="🖼️",
+            icon="",
             message=self.i18n_t("msg_no_icon_selected", default="Chưa tìm thấy icon nào trong thư mục hệ thống"),
             submessage=self.i18n_t("msg_no_icon_sub", default="Vui lòng chọn một icon từ danh sách để xem chi tiết"),
             wraplength=450
@@ -426,6 +440,7 @@ class IconManagerFrame(ResponsiveGridBase):
         self.var_usage_mod = tk.StringVar(value="")
         self.var_usage_comp = tk.StringVar(value="")
         self.var_usage_element = tk.StringVar(value="")
+        self.var_filter_errors_only = tk.BooleanVar(value=False)
 
         # =========================================================================
         # LEFT: Add Form (Available Elements)
@@ -446,6 +461,19 @@ class IconManagerFrame(ResponsiveGridBase):
             fg=UIStyle.TEXT_PRIMARY,
             font=("Segoe UI", 10, "bold")
         ).grid(row=0, column=0, sticky="w")
+
+        # Checkbox filter errors
+        chk_filter = tk.Checkbutton(
+            header_frame,
+            text=self.i18n_t("lbl_filter_errors", default="Chỉ hiện các UI Button bị lỗi Icon"),
+            variable=self.var_filter_errors_only,
+            bg=UIStyle.BG_SURFACE,
+            fg=UIStyle.TEXT_SECONDARY,
+            selectcolor=UIStyle.BG_SURFACE,
+            activebackground=UIStyle.BG_SURFACE,
+            command=lambda: self._apply_element_filter(force=True)
+        )
+        chk_filter.grid(row=1, column=0, sticky="w", pady=(2, 0))
 
         # Search box for Available Elements
         self.var_element_search = tk.StringVar()
@@ -494,6 +522,11 @@ class IconManagerFrame(ResponsiveGridBase):
         self.available_elements_tree.column("exclusive", width=110, stretch=tk.NO, anchor="center")
         self.available_elements_tree.column("mapped", width=100, stretch=tk.NO)
 
+        # Configure tag for errors (status RED or YELLOW) and mapped
+        self.available_elements_tree.tag_configure("error", foreground="red")
+        self.available_elements_tree.tag_configure("mapped", foreground=UIStyle.COLOR_PRIMARY if hasattr(UIStyle, "COLOR_PRIMARY") else "#2196F3")
+        self.available_elements_tree.tag_configure("unmapped", foreground=UIStyle.TEXT_MUTED if hasattr(UIStyle, "TEXT_MUTED") else "gray")
+
         self.available_elements_tree.grid(row=1, column=0, sticky="nsew")
 
         av_scroll = ttk.Scrollbar(add_frame, orient="vertical", command=self.available_elements_tree.yview)
@@ -508,11 +541,12 @@ class IconManagerFrame(ResponsiveGridBase):
         # Left Action Button (Map)
         left_btn_frame = tk.Frame(add_frame, bg=UIStyle.BG_SURFACE)
         left_btn_frame.grid(row=2, column=0, sticky="w", pady=(5, 0))
-        self.btn_add_usage = tk.Button(
-            left_btn_frame,
-            text="Gắn (Map)",
+        self.btn_add_usage = create_icon_button(
+            parent=left_btn_frame,
+            icon_name="add",
+            text=self.i18n_t("btn_map_usage", default="Gắn (Map)"),
             command=self._on_add_usage,
-            **(UIStyle.get_button_style("primary") if hasattr(UIStyle, "get_button_style") else {})
+            button_type="primary"
         )
         self.btn_add_usage.pack(side="left")
 
@@ -566,11 +600,12 @@ class IconManagerFrame(ResponsiveGridBase):
         # Right Action Button (Unmap)
         right_btn_frame = tk.Frame(right_frame, bg=UIStyle.BG_SURFACE)
         right_btn_frame.grid(row=2, column=0, sticky="w", pady=(5, 0))
-        self.btn_del_usage = tk.Button(
-            right_btn_frame,
-            text="Gỡ (Unmap)",
+        self.btn_del_usage = create_icon_button(
+            parent=right_btn_frame,
+            icon_name="delete",
+            text=self.i18n_t("btn_unmap_usage", default="Gỡ (Unmap)"),
             command=self._on_del_usage,
-            **(UIStyle.get_button_style("danger") if hasattr(UIStyle, "get_button_style") else {})
+            button_type="danger"
         )
         self.btn_del_usage.pack(side="left")
 
@@ -621,14 +656,35 @@ class IconManagerFrame(ResponsiveGridBase):
                 filtered_elements = []
 
                 for el in elements:
+                    el_status = el.get('status', 'GREEN')
+
+                    # Filter for only errors
+                    if getattr(self, 'var_filter_errors_only', None) and self.var_filter_errors_only.get():
+                        # Lỗi icon (mapped nhưng ko có hình thật, hoặc fallback) = YELLOW / RED
+                        if not el.get('mapped', ''):
+                            continue # Bỏ qua cái chưa gắn
+                        if el_status == 'GREEN':
+                            continue # Bỏ qua cái xanh
+
                     if search_term in el['id'].lower() or mod_matches or screen_matches:
                         filtered_elements.append(el)
 
                 if filtered_elements:
                     mod_has_children = True
                     screen_children_ops = []
-                    for el in sorted(filtered_elements, key=lambda x: x["id"]):                        screen_children_ops.append(
-                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('exclusive', '🌐'), el.get('mapped', '')), False)
+                    for el in sorted(filtered_elements, key=lambda x: x["id"]):
+                        tag = []
+                        is_mapped = bool(el.get('mapped', ''))
+                        if is_mapped:
+                            if el.get('status', 'GREEN') != 'GREEN':
+                                tag.append("error")
+                            else:
+                                tag.append("mapped")
+                        else:
+                            tag.append("unmapped")
+
+                        screen_children_ops.append(
+                            (f"  {el['id']}", (el['id'], el['mod'], el['comp'], el['id'], el.get('exclusive', '🌐'), el.get('mapped', '')), False, tag)
                         )
                     mod_children_ops.append((f"📄 {screen}", None, is_open, screen_children_ops))
 
@@ -641,8 +697,8 @@ class IconManagerFrame(ResponsiveGridBase):
             mod_node = self.available_elements_tree.insert("", "end", text=mod_text, open=mod_open)
             for screen_text, screen_vals, screen_open, el_ops in screen_ops:
                 screen_node = self.available_elements_tree.insert(mod_node, "end", text=screen_text, open=screen_open)
-                for el_text, el_vals, el_open in el_ops:
-                    node_id = self.available_elements_tree.insert(screen_node, "end", text=el_text, values=el_vals)
+                for el_text, el_vals, el_open, el_tags in el_ops:
+                    node_id = self.available_elements_tree.insert(screen_node, "end", text=el_text, values=el_vals, tags=el_tags)
                     if selected_item_values and el_vals and list(el_vals) == list(selected_item_values):
                         item_to_select = node_id
 
@@ -654,16 +710,22 @@ class IconManagerFrame(ResponsiveGridBase):
         import threading
         def fetch_data():
             try:
-                # 1. Query db_usages and ui_elements
-                # Use a new connection for thread safety
                 import sqlite3
                 from database import get_db
+                from lib.events.ui_element_registry import UIElementRegistry
+                from ui.helpers.icon_helper import get_icon_helper
+                import logging
+
+                logger = logging.getLogger(__name__)
+
                 conn = sqlite3.connect(str(get_db().DB_PATH))
                 cursor = conn.cursor()
+
+                # 1. Fetch metadata mappings (usages)
                 cursor.execute("SELECT module_name, ui_component_type, ui_element_id, icon_key FROM icon_usages")
                 usages = cursor.fetchall()
 
-                # Get ui elements data for exclusive check
+                # 2. Fetch Skeleton (ui_elements db)
                 cursor.execute("SELECT module_name, screen_name, element_id, component_type, is_exclusive FROM ui_elements")
                 ui_elements = cursor.fetchall()
                 conn.close()
@@ -676,70 +738,124 @@ class IconManagerFrame(ResponsiveGridBase):
                 db_elements = set()
                 db_mapped = {}
                 for mod, comp, el, icon in usages:
-                    key = (mod, comp, el)
-                    db_elements.add(key)
-                    db_mapped[key] = icon
+                    db_mapped[(mod, el)] = {"icon": icon, "comp": comp} # Treat module+element as unique key for mapping
 
-                from lib.events.ui_element_registry import UIElementRegistry
+                icon_helper = get_icon_helper()
+                icon_cache_data = {}
+                try:
+                    conn2 = sqlite3.connect(str(get_db().DB_PATH))
+                    conn2.row_factory = sqlite3.Row
+                    cur2 = conn2.cursor()
+                    cur2.execute("SELECT icon_key, filepath, fallback_emoji FROM icons")
+                    for row in cur2.fetchall():
+                        icon_cache_data[row['icon_key']] = {
+                            "filepath": row['filepath'],
+                            "fallback_emoji": row['fallback_emoji']
+                        }
+                    conn2.close()
+                except Exception as e:
+                    logger.error(f"Failed to fetch icons for status check: {e}")
+
+                def get_status(ik):
+                    if not ik:
+                        return "GREEN"
+                    if ik not in icon_cache_data:
+                        return "RED" # Dangling mapping
+                    return icon_helper.evaluate_icon_status(icon_cache_data[ik])
+
+                # 3. Build Skeleton from Registry + DB
+                merged = {}
                 registry = UIElementRegistry.instance()
                 reg_elements = registry.get_all()
 
-                # Merge unique elements, track by (module, screen, element_id)
-                merged = {}
+                skeleton_keys = set()
 
-                # Add from DB usages
-                for (mod, comp, el) in db_elements:
+                UNREGISTERED_GROUP = "[Unregistered]"
+
+                # Diagnostics stats
+                stats = {
+                    "registered_elements": 0,
+                    "mapped_elements": 0,
+                    "unmapped_elements": 0,
+                    "unregistered_mappings": 0
+                }
+
+                def _build_element_key(module_name, element_id):
+                    return (module_name, element_id)
+
+                # Decorate Function
+                def decorate_skeleton(mod, screen, el, comp, exc):
                     if mod not in merged:
                         merged[mod] = {}
-                    # For db usage, we might not have 'screen', default to 'Unknown'
-                    # But we can try to guess or just use 'General'
-                    screen = 'General'
                     if screen not in merged[mod]:
                         merged[mod][screen] = []
 
-                    exc = ui_elements_map.get((mod, el), "🌐")
+                    el_key = _build_element_key(mod, el)
+                    skeleton_keys.add(el_key)
+                    mapped_info = db_mapped.get(el_key, {})
+                    mapped_ik = mapped_info.get("icon", "")
+
+                    stats["registered_elements"] += 1
+                    if mapped_ik:
+                        stats["mapped_elements"] += 1
+                    else:
+                        stats["unmapped_elements"] += 1
 
                     merged[mod][screen].append({
                         "id": el,
                         "mod": mod,
                         "comp": comp,
-                        "mapped": db_mapped.get((mod, comp, el), ""),
-                        "exclusive": exc
+                        "mapped": mapped_ik,
+                        "exclusive": exc,
+                        "status": get_status(mapped_ik)
                     })
 
                 # Add from Registry
                 for desc in reg_elements:
-                    mod = desc.module
-                    screen = desc.screen
-                    el = desc.element_id
-                    comp = desc.element_type
-                    exc = "🔒" if desc.is_exclusive else "🌐"
+                    decorate_skeleton(desc.module, desc.screen, desc.element_id, desc.element_type, "🔒" if desc.is_exclusive else "🌐")
 
-                    if mod not in merged:
-                        merged[mod] = {}
-                    if screen not in merged[mod]:
-                        merged[mod][screen] = []
+                # Add from DB
+                for mod, screen, el, comp, is_exclusive in ui_elements:
+                    el_key = _build_element_key(mod, el)
+                    if el_key not in skeleton_keys: # Only add if not already from registry
+                        decorate_skeleton(mod, screen, el, comp, "🔒" if is_exclusive else "🌐")
 
-                    # Check if already added
-                    existing = [e for e in merged[mod][screen] if e['id'] == el]
-                    if not existing:
-                        # Try to find mapping
-                        mapped = db_mapped.get((mod, comp, el), "")
-                        merged[mod][screen].append({
+                # 4. Handle Unregistered / Dangling mappings
+                for (mod, el), mapped_info in db_mapped.items():
+                    el_key = _build_element_key(mod, el)
+                    if el_key not in skeleton_keys:
+                        mapped_ik = mapped_info.get("icon", "")
+                        comp = mapped_info.get("comp", "Unknown")
+
+                        if mod not in merged:
+                            merged[mod] = {}
+                        if UNREGISTERED_GROUP not in merged[mod]:
+                            merged[mod][UNREGISTERED_GROUP] = []
+
+                        stats["unregistered_mappings"] += 1
+
+                        merged[mod][UNREGISTERED_GROUP].append({
                             "id": el,
                             "mod": mod,
                             "comp": comp,
-                            "mapped": mapped,
-                            "exclusive": exc
+                            "mapped": mapped_ik,
+                            "exclusive": "🌐", # Default to global if not registered
+                            "status": get_status(mapped_ik)
                         })
 
-                self.app.after(0, lambda: self._update_usage_ids_ui(merged))
+                # Log diagnostics
+                logger.info(f"UI Tree Build Diagnostics: "
+                            f"Registered: {stats['registered_elements']}, "
+                            f"Mapped: {stats['mapped_elements']}, "
+                            f"Unmapped: {stats['unmapped_elements']}, "
+                            f"Unregistered/Dangling: {stats['unregistered_mappings']}")
+
+                self.after(0, lambda: self._update_usage_ids_ui(merged))
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(f"Error fetching usage ids: {e}")
 
         threading.Thread(target=fetch_data, daemon=True).start()
-
 
     def _update_usage_ids_ui(self, tree_data):
         if not self.winfo_exists() or not hasattr(self, 'available_elements_tree'):
@@ -786,7 +902,7 @@ class IconManagerFrame(ResponsiveGridBase):
             else:
                 # Show message but do not clear left tree selection or form data
                 if hasattr(self, 'var_current_mapping_icon'):
-                    self.var_current_mapping_icon.set(f"⚠️ [Chưa gán Icon] Đang chọn Element: {values[3]}")
+                    self.var_current_mapping_icon.set(f"[Chưa gán Icon] Đang chọn Element: {values[3]}")
                 # Disable Edit button to prevent editing wrong icon
                 if hasattr(self, 'btn_edit'):
                     self.btn_edit.config(state="disabled")
@@ -815,7 +931,7 @@ class IconManagerFrame(ResponsiveGridBase):
 
             # Check if it's a leaf node with mapped icon (idx 4)
             if values and len(values) >= 5:
-                mapped_icon = values[4]
+                mapped_icon = values[5]
                 # Compare string representation to be safe, sometimes it comes back from Tkinter tuple differently
                 if str(mapped_icon) == str(icon_key):
                     target_node = current_node
@@ -1171,17 +1287,35 @@ class IconManagerFrame(ResponsiveGridBase):
         right_frame = tk.Frame(self.bottom_action_frame, bg=UIStyle.BG_SUBTLE)
         right_frame.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        self.btn_add = tk.Button(left_frame, text=self.i18n_t("btn_add", default="Add"), command=self._on_add, **UIStyle.get_button_style("primary"))
+        self.btn_add = create_icon_button(
+            parent=left_frame,
+            icon_name="add",
+            text=self.i18n_t("btn_add", default="Add"),
+            command=self._on_add,
+            button_type="primary"
+        )
         self.btn_add.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_add, "btn_add")
 
-        self.btn_edit = tk.Button(left_frame, text=self.i18n_t("btn_edit", default="Edit"), command=self._on_edit, **UIStyle.get_button_style("secondary"))
+        self.btn_edit = create_icon_button(
+            parent=left_frame,
+            icon_name="edit",
+            text=self.i18n_t("btn_edit", default="Edit"),
+            command=self._on_edit,
+            button_type="secondary"
+        )
         self.btn_edit.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_edit, "btn_edit")
 
-        self.btn_delete = tk.Button(left_frame, text=self.i18n_t("btn_delete", default="Delete"), command=self._on_delete, **UIStyle.get_button_style("danger"))
+        self.btn_delete = create_icon_button(
+            parent=left_frame,
+            icon_name="delete",
+            text=self.i18n_t("btn_delete", default="Delete"),
+            command=self._on_delete,
+            button_type="danger"
+        )
         self.btn_delete.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_delete, "btn_delete")
@@ -1190,12 +1324,24 @@ class IconManagerFrame(ResponsiveGridBase):
         if not hasattr(UIStyle, 'get_button_style') or 'danger' not in [v for v in UIStyle.get_button_style.__code__.co_consts if isinstance(v, str)]:
             self.btn_delete.configure(bg=UIStyle.DANGER, fg="white")
 
-        self.btn_save = tk.Button(right_frame, text=self.i18n_t("btn_save"), command=self._on_save, **UIStyle.get_button_style("primary"))
+        self.btn_save = create_icon_button(
+            parent=right_frame,
+            icon_name="save",
+            text=self.i18n_t("btn_save"),
+            command=self._on_save,
+            button_type="primary"
+        )
         self.btn_save.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_save, "btn_save")
 
-        self.btn_cancel = tk.Button(right_frame, text=self.i18n_t("btn_cancel"), command=self._on_cancel, **UIStyle.get_button_style("secondary"))
+        self.btn_cancel = create_icon_button(
+            parent=right_frame,
+            icon_name="cancel",
+            text=self.i18n_t("btn_cancel"),
+            command=self._on_cancel,
+            button_type="secondary"
+        )
         self.btn_cancel.pack(side="left", padx=UIStyle.SPACE_XS)
         if hasattr(self.app, 'bind_text'):
             self.app.bind_text(self.btn_cancel, "btn_cancel")
@@ -1614,8 +1760,9 @@ class IconManagerFrame(ResponsiveGridBase):
             self.combo_category.config(values=[c["name"] for c in categories])
 
         if hasattr(self, 'icon_form'):
-            c_names = [c['name'] for c in categories]
-            self.icon_form.update_category_values(c_names)
+            # Pass dictionary to show descriptions in form
+            cat_dict_for_form = {c['name']: c for c in categories}
+            self.icon_form.update_category_values(cat_dict_for_form)
 
     def _on_tree_interaction(self, event):
         if self._current_state in ("ADD", "EDIT"):

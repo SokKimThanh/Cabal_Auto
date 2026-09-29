@@ -106,9 +106,8 @@ class SkillPresetController:
 
         # Save to hunt_cfg
         if hasattr(self.app_state.root, "hunt_cfg"):
-            self.app_state.hunt_cfg["last_active_class_id"] = class_id
-            from lib.features.hunt.hunt_config import save_hunt_config
-            save_hunt_config(self.app_state.hunt_cfg)
+            self.app_state.set_hunt_config_value("last_active_class_id", class_id)
+            self.app_state.save_hunt_config()
 
         # Clear unsaved changes since we are loading a fresh preset from DB
         self.app_state._clear_unsaved_changes()

@@ -9,7 +9,7 @@ class MockApp:
         self.skill_slots = {'attack_combo': [], 'buff_lane': []}
         self._current_class_id = 1
 
-    def _t(self, x):
+    def _t(self, x, **kwargs):
         return x
 
     def register_callback(self, *args, **kwargs):

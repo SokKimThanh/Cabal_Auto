@@ -1,4 +1,6 @@
+from ui.components.base.expanded_panel import ExpandedPanel
 import tkinter as tk
+from ui.components import create_icon_button
 from tkinter import ttk, messagebox
 from typing import Dict, Any, List
 
@@ -56,46 +58,49 @@ class MonsterManagerFrame(ResponsiveGridBase):
         bottom_bar = tk.Frame(content_frame, bg=UIStyle.BG_SURFACE)
         bottom_bar.pack(side="bottom", fill="x", pady=UIStyle.SPACE_SM)
 
-        add_btn = tk.Button(
-            bottom_bar,
+        add_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="add",
             text=self.app._t("btn_add", default="Thêm"),
             command=self._add_monster,
-            **UIStyle.get_button_style("primary")
+            button_type="primary"
         )
         add_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        edit_btn = tk.Button(
-            bottom_bar,
+        edit_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="edit",
             text=self.app._t("btn_edit", default="Sửa"),
             command=self._edit_monster,
-            **UIStyle.get_button_style("primary")
+            button_type="secondary"
         )
         edit_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        del_btn = tk.Button(
-            bottom_bar,
+        del_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="delete",
             text=self.app._t("btn_delete", default="Xóa"),
             command=self._delete_monster,
-            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
+            button_type="danger"
         )
         del_btn.pack(side="left", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
-        ref_btn = tk.Button(
-            bottom_bar,
+        ref_btn = create_icon_button(
+            parent=bottom_bar,
+            icon_name="refresh",
             text=self.app._t("btn_refresh", default="Làm mới"),
             command=self._on_refresh,
-            **UIStyle.get_button_style("secondary")
+            button_type="secondary"
         )
         ref_btn.pack(side="right", padx=UIStyle.SPACE_MD, pady=UIStyle.SPACE_SM)
 
         # Pagination controls in bottom bar
-        self.btn_next_page = tk.Button(
-            bottom_bar,
+        self.btn_next_page = create_icon_button(
+            parent=bottom_bar,
+            icon_name="right",
             text=self.app._t("btn_next", default="Sau"),
             command=self._on_next_page,
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            button_type="secondary"
         )
         self.btn_next_page.pack(side="right", padx=(0, UIStyle.SPACE_MD), pady=UIStyle.SPACE_SM)
 
@@ -107,13 +112,12 @@ class MonsterManagerFrame(ResponsiveGridBase):
         )
         self.stats_label.pack(side="right", padx=(0, 10))
 
-        self.btn_prev_page = tk.Button(
-            bottom_bar,
+        self.btn_prev_page = create_icon_button(
+            parent=bottom_bar,
+            icon_name="left",
             text=self.app._t("btn_prev", default="Trước"),
             command=self._on_prev_page,
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            relief="flat"
+            button_type="secondary"
         )
         self.btn_prev_page.pack(side="right", padx=(0, 10), pady=UIStyle.SPACE_SM)
 
@@ -157,24 +161,14 @@ class MonsterManagerFrame(ResponsiveGridBase):
 
         self.tree.bind("<Double-1>", lambda e: self._edit_monster())
 
-        # Title for Type Panel
-        self.type_panel_expanded = False
-
-        self.type_title_lbl = tk.Label(
-            type_panel_container,
-            text=self.app._t("panel_types_title_collapsed", default="▶ Quản lý Loại Quái vật") if self.app else "▶ Quản lý Loại Quái vật",
-            font=(UIStyle.resolve_font_family("title"), 12, "bold"),
-            bg=UIStyle.BG_BASE,
-            fg=UIStyle.TEXT_PRIMARY,
-            cursor="hand2"
-        )
-        self.type_title_lbl.pack(anchor="w", pady=(0, UIStyle.SPACE_SM))
-        self.type_title_lbl.bind("<Button-1>", self._toggle_type_panel)
+        # Title and Container for Type Panel via ExpandedPanel component
+        panel_title = self.app._t("panel_types_title", default="Quản lý Loại Quái vật") if self.app else "Quản lý Loại Quái vật"
+        self.type_panel = ExpandedPanel(type_panel_container, title=panel_title, expanded=False)
+        self.type_panel.pack(fill="x", pady=(0, UIStyle.SPACE_SM))
 
         # Main frame for the Type Management UI (split into left list, right form)
-        self.type_content_frame = tk.Frame(type_panel_container, bg=UIStyle.BG_BASE)
-        # Initially hidden
-        # self.type_content_frame.pack(fill="x", expand=True)
+        self.type_content_frame = self.type_panel.get_content_frame()
+        # ResponsiveGridBase requires its content frame to have layout managed by pack/grid, but ExpandedPanel already packs it.
 
         # Left: Treeview for Types
         type_list_frame = tk.Frame(self.type_content_frame, bg=UIStyle.BG_BASE)
@@ -224,40 +218,33 @@ class MonsterManagerFrame(ResponsiveGridBase):
         type_btn_frame = tk.Frame(type_form_frame, bg=UIStyle.BG_BASE)
         type_btn_frame.grid(row=3, column=0, columnspan=2, sticky="w", pady=10)
 
-        self.btn_save_type = tk.Button(
-            type_btn_frame,
+        self.btn_save_type = create_icon_button(
+            parent=type_btn_frame,
+            icon_name="save",
             text=self.app._t("btn_save", default="Save") if self.app else "Save",
             command=self._on_save_type,
-            **UIStyle.get_button_style("primary")
+            button_type="primary"
         )
         self.btn_save_type.pack(side="left", padx=(5, 5))
 
-        self.btn_cancel_type = tk.Button(
-            type_btn_frame,
+        self.btn_cancel_type = create_icon_button(
+            parent=type_btn_frame,
+            icon_name="cancel",
             text=self.app._t("btn_cancel", default="Cancel") if self.app else "Cancel",
             command=self._on_cancel_type,
-            **UIStyle.get_button_style("secondary")
+            button_type="secondary"
         )
         self.btn_cancel_type.pack(side="left", padx=5)
 
-        self.btn_delete_type = tk.Button(
-            type_btn_frame,
+        self.btn_delete_type = create_icon_button(
+            parent=type_btn_frame,
+            icon_name="delete",
             text=self.app._t("btn_delete", default="Delete") if self.app else "Delete",
             command=self._on_delete_type,
-            **{**UIStyle.get_button_style("primary"), "bg": UIStyle.DANGER, "activebackground": "#ef4444", "fg": "#ffffff", "activeforeground": "#ffffff"}
+            button_type="danger"
         )
         self.btn_delete_type.pack(side="left", padx=5)
 
-
-    def _toggle_type_panel(self, event=None):
-        if self.type_panel_expanded:
-            self.type_content_frame.pack_forget()
-            self.type_title_lbl.config(text=self.app._t("panel_types_title_collapsed", default="▶ Quản lý Loại Quái vật") if self.app else "▶ Quản lý Loại Quái vật")
-            self.type_panel_expanded = False
-        else:
-            self.type_content_frame.pack(fill="x", expand=False)
-            self.type_title_lbl.config(text=self.app._t("panel_types_title_expanded", default="▼ Quản lý Loại Quái vật") if self.app else "▼ Quản lý Loại Quái vật")
-            self.type_panel_expanded = True
 
     def _autoscroll_y(self, first, last):
         self.tree_scroll_y.set(first, last)

@@ -112,6 +112,11 @@ class VisionEngine:
         self.trackers: Dict[str, Dict[str, Any]] = {}
         self.next_tracker_id = 1
 
+        # Snapshot for debugging
+        self.snapshot_lock = threading.Lock()
+        self.latest_frame = None
+        self.latest_detections = []
+
         # Parameters
         self.params = {
             "nms_iou_threshold": 0.3,
@@ -947,9 +952,17 @@ class VisionEngine:
                     (0, 255, 0),
                     1,
                 )
+
+            det_data = [d.to_dict() for d in detections]
+
+            with self.snapshot_lock:
+                # Copy the frame so the debug view has an isolated image
+                self.latest_frame = rendered_frame.copy() if rendered_frame is not None else None
+                self.latest_detections = det_data
+
             return {
                 "type": "detections",
-                "data": [d.to_dict() for d in detections],
+                "data": det_data,
                 "frame": rendered_frame,
                 "timestamp": time.time(),
             }
@@ -968,12 +981,29 @@ class VisionEngine:
                     (255, 0, 0),
                     1,
                 )
+
+            track_data = [t.to_dict() for t in tracks]
+
+            with self.snapshot_lock:
+                self.latest_frame = rendered_frame.copy() if rendered_frame is not None else None
+                self.latest_detections = track_data
+
             return {
                 "type": "tracks",
-                "data": [t.to_dict() for t in tracks],
+                "data": track_data,
                 "frame": rendered_frame,
                 "timestamp": time.time(),
             }
+
+    def get_latest_snapshot(self, timeout=0.5) -> Tuple[Optional[np.ndarray], List[Dict[str, Any]]]:
+        if self.snapshot_lock.acquire(timeout=timeout):
+            try:
+                frame_copy = self.latest_frame.copy() if self.latest_frame is not None else None
+                detections_copy = list(self.latest_detections)
+                return frame_copy, detections_copy
+            finally:
+                self.snapshot_lock.release()
+        return None, []
 
     def reset(self):
         """Reset engine state"""

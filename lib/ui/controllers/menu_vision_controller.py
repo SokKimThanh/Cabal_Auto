@@ -26,31 +26,21 @@ class MenuVisionController:
         )
 
     def _add_template(self):
-        print("[Vision] Add template")
+        print("[Vision] Auto Detect / Add Template triggered via Hotkey (Ctrl+T)")
         try:
-            filetypes = [
-                ("Image files", "*.png *.jpg *.jpeg *.bmp"),
-                ("PNG files", "*.png"),
-                ("JPEG files", "*.jpg *.jpeg"),
-                ("All files", "*.*"),
-            ]
-            file_path = filedialog.askopenfilename(
-                title=self._t("vision_add_template"),
-                filetypes=filetypes,
-            )
-            if file_path:
-                print(f"[Vision] Selected template: {file_path}")
+            # We want to perform a manual scan for now to capture the screen patches
+            if hasattr(self.app, "scan_controller") and self.app.scan_controller:
+                self.app.scan_controller.run_scan(manual=True)
+            else:
                 DialogService.show_info(
-                    "Vision - Add Template",
-                    f"Template selected:\n{file_path}\n\n"
-                    "Full integration will be available in Phase 2.\n"
-                    "Use Vision Wizard (Ctrl+Shift+V) to manage templates.",
+                    "Vision - Auto Scan",
+                    "Please ensure the application is initialized to use this feature.",
                 )
         except Exception as e:
-            print(f"[Vision] Error adding template: {e}")
+            print(f"[Vision] Error running auto detect via hotkey: {e}")
             DialogService.show_error(
                 self._t("error"),
-                f"Cannot add template:\n{e}",
+                f"Cannot perform scan:\n{e}",
             )
 
     def _manage_templates(self):

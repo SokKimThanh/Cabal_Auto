@@ -1,4 +1,5 @@
 import tkinter as tk
+from ui.components import create_icon_button
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
@@ -71,13 +72,12 @@ class ScanHistoryFrame(ResponsiveGridBase):
         self.monster_cb.bind("<<ComboboxSelected>>", lambda e: self.on_filter_change())
 
         # Refresh Button
-        self.btn_refresh = tk.Button(
-            self.top_bar,
+        self.btn_refresh = create_icon_button(
+            parent=self.top_bar,
+            icon_name="refresh",
             text="Refresh" if not hasattr(self.app, "_t") else self.app._t("btn_refresh"),
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
             command=self.refresh_filters_and_data,
-            relief="flat"
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.btn_refresh, "btn_refresh")
@@ -139,26 +139,24 @@ class ScanHistoryFrame(ResponsiveGridBase):
         # grid footer later depending on empty state
         self.footer.grid(row=2, column=0, sticky="ew", pady=(10, 0))
 
-        self.btn_prev = tk.Button(
-            self.footer,
+        self.btn_prev = create_icon_button(
+            parent=self.footer,
+            icon_name="left",
             text="Prev" if not hasattr(self.app, "_t") else self.app._t("btn_prev"),
             command=self.prev_page,
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat"
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.btn_prev, "btn_prev")
 
         self.page_lbl = tk.Label(self.footer, text="Page 1", bg=UI.BG_BASE, fg=UI.TEXT_PRIMARY, font=UI.FONT_BODY)
 
-        self.btn_next = tk.Button(
-            self.footer,
+        self.btn_next = create_icon_button(
+            parent=self.footer,
+            icon_name="right",
             text="Next" if not hasattr(self.app, "_t") else self.app._t("btn_next"),
             command=self.next_page,
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat"
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.btn_next, "btn_next")
@@ -175,7 +173,12 @@ class ScanHistoryFrame(ResponsiveGridBase):
 
     def _load_filters(self):
         # Load Classes
-        classes = self.app.db_class_service.get_all_classes()
+        if hasattr(self.app, "db_class_service"):
+            classes = self.app.db_class_service.get_all_classes()
+        else:
+            from lib.db.services.class_service import ClassService
+            classes = ClassService().get_all_classes()
+
         class_values = ["0 - None"]
         for c in classes:
             class_id = c.get('id') or c.get('class_id', '')
@@ -187,7 +190,12 @@ class ScanHistoryFrame(ResponsiveGridBase):
             self.class_var.set("0 - None")
 
         # Load Scanned Monsters
-        monsters = self.app.db_scan_service.get_distinct_scanned_monsters()
+        if hasattr(self.app, "db_scan_service"):
+            monsters = self.app.db_scan_service.get_distinct_scanned_monsters()
+        else:
+            from lib.db.services.scan_service import ScanService
+            monsters = ScanService().get_distinct_scanned_monsters()
+
         monster_values = [" - All"]
         for m in monsters:
             monster_values.append(f"{m['monster_id']} - {m['name']}")
@@ -221,7 +229,13 @@ class ScanHistoryFrame(ResponsiveGridBase):
         except IndexError:
             pass
 
-        records, self.total_records = self.app.db_scan_service.get_scans_with_details(
+        if hasattr(self.app, "db_scan_service"):
+            svc = self.app.db_scan_service
+        else:
+            from lib.db.services.scan_service import ScanService
+            svc = ScanService()
+
+        records, self.total_records = svc.get_scans_with_details(
             class_id=class_id,
             monster_id=monster_id,
             page=self.current_page,

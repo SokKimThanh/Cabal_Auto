@@ -123,8 +123,18 @@ class ResponsiveGridBase(tk.Frame):
         except tk.TclError:
             pass
 
+    def _is_scrollable_widget(self, widget):
+        if not widget:
+            return False
+        # Các widget có khả năng cuộn tự nhiên hoặc chứa dropdown
+        scrollable_classes = ('Treeview', 'Text', 'Canvas', 'Listbox', 'Combobox', 'TCombobox')
+        if widget.winfo_class() in scrollable_classes:
+            return True
+        return False
+
     def _on_enter(self, event=None):
         """Bind mouse wheel scrolling cross-platform when mouse enters the widget."""
+        # Bind_all has been removed. We now rely on explicit binding or filtering event propagation
         if sys.platform == "win32" or sys.platform == "darwin":
             self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         else:
@@ -133,10 +143,8 @@ class ResponsiveGridBase(tk.Frame):
 
     def _on_leave(self, event=None):
         """Unbind mouse wheel scrolling when mouse leaves the actual component."""
-        # Avoid unbinding if hovering over child widgets inside the grid
         if event is not None:
             widget_under_mouse = self.winfo_containing(event.x_root, event.y_root)
-            # If the widget under the mouse is a descendant of self, don't unbind
             if widget_under_mouse and (widget_under_mouse == self or str(widget_under_mouse).startswith(str(self) + ".")):
                 return
 
@@ -147,16 +155,20 @@ class ResponsiveGridBase(tk.Frame):
             self.canvas.unbind_all("<Button-5>")
 
     def _on_mousewheel(self, event):
-        """Handle mouse wheel scrolling safely."""
+        """Handle mouse wheel scrolling safely, ignoring events intended for scrollable children."""
         try:
+            # Prevent scrolling parent if hovering over a scrollable child widget
+            widget_under_mouse = self.winfo_containing(event.x_root, event.y_root)
+            if self._is_scrollable_widget(widget_under_mouse) and widget_under_mouse != self.canvas:
+                return
+
             if sys.platform == "win32":
                 self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
             elif sys.platform == "darwin":
-                # macOS usually sends delta as actual units to scroll
                 self.canvas.yview_scroll(int(-1 * event.delta), "units")
             elif event.num == 4:
                 self.canvas.yview_scroll(-1, "units")
             elif event.num == 5:
                 self.canvas.yview_scroll(1, "units")
         except Exception:
-            pass # Ignore errors if widget is destroyed during event processing
+            pass

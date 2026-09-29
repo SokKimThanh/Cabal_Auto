@@ -32,7 +32,7 @@ class HotkeyController:
     def register_all(self) -> None:
         """Registers all global hotkeys from config. Fallbacks to Tkinter bindings if keyboard module missing."""
         if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
-            hotkey_cfg = self.parent.state_controller.hunt_cfg.get("global_hotkeys", {})
+            hotkey_cfg = self.parent.state_controller.get_hunt_config_value("global_hotkeys", {})
         else:
             hotkey_cfg = getattr(self.parent, "hunt_cfg", {}).get("global_hotkeys", {})
 
@@ -138,6 +138,7 @@ class HotkeyController:
             vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
             monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
             build_key = hotkey_cfg.get("build_manager_key", "ctrl+b")
+            add_template_key = hotkey_cfg.get("add_template_key", "ctrl+shift+t")
 
             # Unregister old hotkeys first (in case of re-registration)
             self.unregister_all()
@@ -220,6 +221,21 @@ class HotkeyController:
                 print(f"Failed to register build manager hotkey '{build_key}': {e}")
                 self._failed_hotkeys[build_key] = repr(e)
                 self._global_build_hotkey = None
+
+            try:
+                self._global_add_template_hotkey = keyboard.add_hotkey(
+                    add_template_key,
+                    self.on_add_template,
+                    suppress=False,
+                )
+                self._registered_hotkey_handlers[add_template_key] = (
+                    self._global_add_template_hotkey
+                )
+            except Exception as e:
+                print(f"Failed to register add template hotkey '{add_template_key}': {e}")
+                self._failed_hotkeys[add_template_key] = repr(e)
+                self._global_add_template_hotkey = None
+
             self._hotkeys_registered_ok = len(self._failed_hotkeys) == 0
 
             # Log successful registration
@@ -358,7 +374,7 @@ class HotkeyController:
         try:
             print("[Hotkeys] Setup Wizard hotkey pressed")
             if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
-                current_mode = self.parent.state_controller.hunt_cfg.get("ui_mode", "beginner")
+                current_mode = self.parent.state_controller.get_hunt_config_value("ui_mode", "beginner")
             else:
                 current_mode = getattr(self.parent, "hunt_cfg", {}).get("ui_mode", "beginner")
 
@@ -481,6 +497,35 @@ class HotkeyController:
             else:
                 self.parent.switch_view("build_manager")
 
+    def on_add_template(self, *_args) -> None:
+        import os
+        from lib.system.window_manager import WindowManager
+        from lib.events.event_bus import EventBus, VisionAddTemplateEvent
+
+        wm = WindowManager()
+        fg_hwnd = wm.get_foreground_window()
+        if fg_hwnd:
+            info = wm.get_window_info(fg_hwnd)
+            if info:
+                app_pid = os.getpid()
+                if info.pid == app_pid:
+                    EventBus.trigger(VisionAddTemplateEvent())
+                    return
+
+                # Check if it matches configured cabal window
+                target_hwnd = None
+                if hasattr(self.parent, "state_controller"):
+                    target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
+
+                if target_hwnd and info.hwnd == target_hwnd:
+                    EventBus.trigger(VisionAddTemplateEvent())
+                    return
+
+                # If neither the bot app nor the target game, ignore the hotkey
+                print(f"[Hotkeys] Add Template blocked: Active window (PID: {info.pid}, HWND: {info.hwnd}) is not the tool or game.")
+                return
+
+        EventBus.trigger(VisionAddTemplateEvent())
 
     def update_diagnostics_ui_state(self) -> None:
         """Update the hotkey status UI variables based on registration state."""
@@ -544,7 +589,7 @@ class HotkeyController:
                     if lang == "en"
                     else f"{failed_count} phím tắt đăng ký thất bại"
                 )
-                state_controller.set_ui_var('hotkey_status', f"⚠️ {warning_text}")
+                state_controller.set_ui_var('hotkey_status', f"{warning_text}")
 
                 # Show guidance
                 guidance = (
@@ -584,6 +629,6 @@ class HotkeyController:
             try:
                 state_controller = getattr(self.parent, "state_controller", None)
                 if state_controller:
-                    state_controller.set_ui_var('hotkey_status', f"⚠️ Error updating status: {e}")
+                    state_controller.set_ui_var('hotkey_status', f"Error updating status: {e}")
             except Exception:
                 pass

@@ -123,3 +123,7 @@ class GlobalApplyEvent(Event):
 
 class StartStopHuntEvent(Event):
     pass
+
+class UIElementRegisteredEvent(Event):
+    def __init__(self, descriptor):
+        self.descriptor = descriptor

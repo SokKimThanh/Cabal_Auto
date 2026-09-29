@@ -20,10 +20,22 @@ class SkillPanel(ttk.LabelFrame):
         return i18n_t(key, **kwargs)
 
     def __init__(self, parent, app_state, scale_factor=1.0, hunt_tab=None):
-        padding = (int(10 * scale_factor), int(8 * scale_factor))
-        super().__init__(parent, text="⚔️ Active Skills", padding=padding)
-        self.pack(fill="both", expand=True)
         self.app_state = app_state
+        padding = (int(10 * scale_factor), int(8 * scale_factor))
+        super().__init__(parent, text=self._t("skill_panel.title", default="Active Skills"), padding=padding)
+        # Fix typography hierarchy per Task 10
+        self.configure(labelanchor="n")
+        from ui.components.icon_button import create_icon_label
+        lbl = create_icon_label(
+            self,
+            icon_name="skill",
+            text=self._t("skill_panel.title", default="Active Skills"),
+            font=UI.get_font("title", weight="bold"),
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY
+        )
+        self.configure(labelwidget=lbl)
+        self.pack(fill="both", expand=True)
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
         self.controller = SkillPanelController(self.app_state)
@@ -46,17 +58,167 @@ class SkillPanel(ttk.LabelFrame):
                 "on_bot_state_changed", self.on_bot_state_changed
             )
 
+
+    def on_skill_slots_changed(self, skill_slots: dict = None):
+        """
+        Handles changes to configured skills in the application state.
+        Now synchronizes the visual representation on the `SkillTimelineStrip`.
+        """
+        if not hasattr(self, "attack_timeline") or not hasattr(self, "buff_timeline"):
+            return
+
+        if skill_slots is None:
+            skill_slots = {}
+
+        # REFACTOR(#3): Sync chỉ SkillTimelineStrip
+        combo_slots = skill_slots.get("attack_combo", [])
+        buff_slots = skill_slots.get("buff_lane", [])
+
+        combo_seq = self._map_skills_to_timeline_format(combo_slots)
+        self.attack_timeline.update_skills(combo_seq)
+
+        buff_seq = self._map_skills_to_timeline_format(buff_slots)
+        self.buff_timeline.update_skills(buff_seq)
+
+    def _map_skills_to_timeline_format(self, slots):
+        """Helper to map raw slot data to what SkillTimelineStrip expects"""
+        mapped = []
+        for slot in slots:
+            if not slot:
+                continue
+            skill_id = slot.get("skill_id") if isinstance(slot, dict) else slot
+            skill_info = self.controller.get_skill(skill_id)
+            if skill_info:
+                mapped.append({
+                    "name": skill_info.get("name", "Unknown"),
+                    "icon_key": skill_info.get("icon_key", "unknown"),
+                    "hotkey": slot.get("user_hotkey", "") if isinstance(slot, dict) else ""
+                })
+        return mapped
+
     def _build(self):
         """Build all widgets for skill panel"""
         self._build_header()
 
-        self.content_frame = tk.Frame(self.frame, bg=UI.BG_BASE)
-        self.content_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        from ui.components.combo_rhythm_bar import ComboRhythmBar
+        from ui.components.skill_timeline_strip import SkillTimelineStrip
 
-        self._build_combo_section()
-        self._build_divider()
-        self._build_buff_section()
-        self._build_control_section()
+        # Top Element: Combo Rhythm Bar
+        self.combo_rhythm_bar = ComboRhythmBar(self.frame)
+        self.combo_rhythm_bar.pack(fill="x", padx=10, pady=(10, 0))
+
+        # Bottom Element: Toggle Button Section
+        self._build_toggle_section()
+
+        # Middle Content: SkillTimelineStrips
+        self.content_frame = tk.Frame(self.frame, bg=UI.BG_BASE)
+        self.content_frame.pack(fill="both", expand=True, padx=10, pady=(10, 0))
+
+        # REFACTOR(#3): Các list dropdown đã xóa — UI dùng SkillTimelineStrip từ Bug #6.
+
+        # Title for attack combo
+        tk.Label(
+            self.content_frame,
+            text=self._t('skill_strip.combo_lane'),
+            font=UI.FONT_SMALL,
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_MUTED,
+            anchor="w"
+        ).pack(fill="x", pady=(0, 5))
+
+        combo_seq = self._map_skills_to_timeline_format(self.controller.get_combo_sequence())
+        self.attack_timeline = SkillTimelineStrip(
+            self.content_frame,
+            skills=combo_seq,
+            lane_name="attack_combo",       # FIX BUG #6
+            on_add_skill=self._open_skill_picker,
+            on_skills_changed=self._on_lane_changed,
+            app_state=self.app_state,
+        )
+        self.attack_timeline.pack(fill="x", pady=(0, 10))
+
+        # Title for buff lane
+        tk.Label(
+            self.content_frame,
+            text=self._t('skill_strip.buff_lane'),
+            font=UI.FONT_SMALL,
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_MUTED,
+            anchor="w"
+        ).pack(fill="x", pady=(10, 5))
+
+        buff_seq = self._map_skills_to_timeline_format(self.controller.get_buff_sequence())
+        self.buff_timeline = SkillTimelineStrip(
+            self.content_frame,
+            skills=buff_seq,
+            lane_name="buff_lane",          # FIX BUG #6
+            on_add_skill=self._open_skill_picker,
+            on_skills_changed=self._on_lane_changed,
+            app_state=self.app_state,
+        )
+        self.buff_timeline.pack(fill="x", pady=(0, 10))
+
+    def _build_toggle_section(self):
+        # Combo Mode Controls pinned to bottom
+        controls_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
+        controls_frame.pack(side="bottom", fill="x", padx=10, pady=10)
+
+        # Ensure auto_combo_var exists for backward compat and Automation
+        if "auto_combo_var" not in self.widgets:
+            self.widgets["auto_combo_var"] = tk.BooleanVar(value=True)
+
+        from ui.components.icon_button import create_icon_button
+
+        self.btn_toggle_combo = create_icon_button(
+            parent=controls_frame,
+            element_id="btn_skill_toggle_combo",
+            icon_name="play", # Initial icon, will be updated
+            command=self.on_toggle_combo,
+            button_type="neutral"
+        )
+        self.btn_toggle_combo.pack(fill="x", padx=10, pady=10)
+        self._update_combo_toggle_ui()
+
+    def on_toggle_combo(self):
+        current_state = self.widgets["auto_combo_var"].get()
+        new_state = not current_state
+        self.widgets["auto_combo_var"].set(new_state)
+
+        # Save to backend config
+        if hasattr(self.app_state, "hunt_cfg"):
+            if "combo" not in self.app_state.hunt_cfg:
+                self.app_state.hunt_cfg["combo"] = {}
+            self.app_state.hunt_cfg["combo"]["enabled"] = new_state
+
+            # Optional: Call save config if state controller has one
+            # Relying on controllers to pick this up, but marking as unsaved if possible
+            if hasattr(self.app_state, "_mark_unsaved"):
+                self.app_state._mark_unsaved()
+
+        self._update_combo_toggle_ui()
+
+    def _update_combo_toggle_ui(self):
+        if not hasattr(self, "btn_toggle_combo"):
+            return
+
+        from ui.components.icon_button import update_button_state
+        is_enabled = self.widgets["auto_combo_var"].get()
+        if is_enabled:
+            update_button_state(
+                self.btn_toggle_combo,
+                enabled=True,
+                icon_name="stop",
+                tooltip_text=self._t("skill_panel.combo_stop")
+            )
+            self.btn_toggle_combo.config(bg=UI.ACCENT_GREEN_BG, fg=UI.ACCENT_GREEN, text=self._t("skill_panel.combo_stop"))
+        else:
+            update_button_state(
+                self.btn_toggle_combo,
+                enabled=True,
+                icon_name="play",
+                tooltip_text=self._t("skill_panel.combo_start")
+            )
+            self.btn_toggle_combo.config(bg=UI.BG_SURFACE, fg=UI.TEXT_MUTED, text=self._t("skill_panel.combo_start"))
 
     def _build_header(self):
         header_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
@@ -84,24 +246,10 @@ class SkillPanel(ttk.LabelFrame):
 
         self._load_classes()
 
-        # Combo header with custom checkbox
-        cb_var = tk.BooleanVar(value=True)
-        self.widgets["auto_combo_var"] = cb_var
-        cb = tk.Checkbutton(
-            header_frame,
-            text="Bật Auto Combo",
-            variable=cb_var,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            selectcolor=UI.BG_BASE,
-            activebackground=UI.BG_ELEVATED,
-            activeforeground=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            highlightthickness=0
-        )
-        self.widgets["auto_combo_cb"] = cb
-        cb.pack(side="left", padx=12, pady=10)
+        # Ensure auto_combo_var exists, but we removed the Checkbutton
+        # It's now driven entirely by the _build_toggle_section button
+        if "auto_combo_var" not in self.widgets:
+            self.widgets["auto_combo_var"] = tk.BooleanVar(value=True)
 
         tk.Label(
             header_frame,
@@ -123,276 +271,59 @@ class SkillPanel(ttk.LabelFrame):
         btn_frame = tk.Frame(header_frame, bg=UI.BG_ELEVATED)
         btn_frame.pack(side="right", padx=12)
 
-        self.widgets["btn_toggle_skills"] = tk.Button(
-            btn_frame,
+        from ui.components.icon_button import create_icon_button
+
+        self.widgets["btn_toggle_skills"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_toggle_view",
+            icon_name="list",
             command=self._on_toggle_skills,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
-            cursor="hand2"
+            button_type="neutral"
         )
         self._update_toggle_button_visuals()
         self.widgets["btn_toggle_skills"].pack(side="left", padx=10)
 
-        self.widgets["btn_build"] = tk.Button(
-            btn_frame,
-            text="[⚙️ Build]",
+        self.widgets["btn_build"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_build",
+            icon_name="settings",
+            text="Build",
             command=self.on_build,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
+            button_type="neutral"
         )
         self.widgets["btn_build"].pack(side="left", padx=2)
-        self.widgets["btn_presets"] = tk.Button(
-            btn_frame,
-            text="[📋 Presets]",
+
+        self.widgets["btn_presets"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_presets",
+            icon_name="list",
+            text="Presets",
             command=self.on_presets,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
+            button_type="neutral"
         )
         self.widgets["btn_presets"].pack(side="left", padx=2)
-        self.widgets["btn_reset"] = tk.Button(
-            btn_frame,
-            text="[🔄 Reset]",
+
+        self.widgets["btn_reset"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_reset",
+            icon_name="refresh",
+            text="Reset",
             command=self.on_reset,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_MUTED,
-            relief="flat",
-            bd=0,
+            button_type="neutral"
         )
         self.widgets["btn_reset"].pack(side="left", padx=2)
 
-        self.widgets["btn_save_preset"] = tk.Button(
-            btn_frame,
-            text="[💾 Save Preset]",
+        self.widgets["btn_save_preset"] = create_icon_button(
+            parent=btn_frame,
+            element_id="btn_skill_save_preset",
+            icon_name="save",
+            text="Save Preset",
             command=self._on_save_preset_click,
-            bg=UI.BG_ELEVATED,
-            fg=UI.ACCENT_BLUE,
-            relief="flat",
-            bd=0,
+            button_type="default"
         )
         self.widgets["btn_save_preset"].pack(side="left", padx=2)
 
         # Initial load from controller is handled in __init__
-
-    def _build_combo_section(self):
-        # Combo lane section (4 cards grid)
-        combo_frame = tk.Frame(self.content_frame, bg=UI.BG_BASE)
-        combo_frame.pack(fill="x")
-        combo_frame.columnconfigure(0, weight=1)
-        combo_frame.columnconfigure(1, weight=1)
-        combo_frame.columnconfigure(2, weight=1)
-        combo_frame.columnconfigure(3, weight=1)
-
-        self.widgets["combo_dropdowns"] = []
-        self.widgets["combo_hotkeys"] = []
-        self.widgets["combo_stats"] = []
-
-        for i in range(4):
-            card = tk.Frame(
-                combo_frame,
-                bg=UI.BG_SURFACE,
-                highlightbackground=UI.BORDER_PRIMARY,
-                highlightthickness=1,
-            )
-            card.grid(row=0, column=i, sticky="nsew", padx=3, pady=3)
-
-            # Header with title and hotkey entry
-            header = tk.Frame(card, bg=UI.BG_SURFACE)
-            header.pack(fill="x", padx=8, pady=(8, 2))
-            tk.Label(
-                header,
-                text=f"{self._t('skill_strip.combo_lane')} {i + 1}",
-                font=UI.FONT_SMALL,
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_MUTED,
-            ).pack(side="left")
-
-            hk_entry = tk.Entry(
-                header,
-                width=5,
-                bg=UI.BG_BASE,
-                fg=UI.TEXT_PRIMARY,
-                insertbackground=UI.TEXT_PRIMARY,
-                relief="flat",
-                justify="center"
-            )
-            hk_entry.pack(side="right")
-            hk_entry.bind("<FocusOut>", lambda e, idx=i: self._on_hotkey_changed(e, "attack_combo", idx))
-            hk_entry.bind("<Return>", lambda e, idx=i: self._on_hotkey_changed(e, "attack_combo", idx))
-            self.widgets["combo_hotkeys"].append(hk_entry)
-
-            dd_var = tk.StringVar()
-            dd = ttk.Combobox(
-                card, textvariable=dd_var, state="readonly", values=self.controller.skill_names
-            )
-            dd.pack(fill="x", padx=8, pady=8)
-            dd.bind(
-                "<<ComboboxSelected>>",
-                lambda e, idx=i: self._on_skill_changed(e, "attack_combo", idx),
-            )
-            self.widgets["combo_dropdowns"].append(dd)
-
-            stats = tk.Frame(card, bg=UI.BG_SURFACE)
-            stats.pack(fill="x", padx=8, pady=(2, 8))
-            cast_lbl = tk.Label(
-                stats,
-                text="⏱ -",
-                font=UI.FONT_SMALL,
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_MUTED,
-            )
-            cast_lbl.pack(side="left")
-            cd_lbl = tk.Label(
-                stats,
-                text="🔄 -",
-                font=UI.FONT_SMALL,
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_MUTED,
-            )
-            cd_lbl.pack(side="right")
-            self.widgets["combo_stats"].append((cast_lbl, cd_lbl))
-
-    def _build_divider(self):
-        # Divider
-        divider = tk.Frame(self.content_frame, bg=UI.BG_BASE)
-        divider.pack(fill="x", pady=16)
-
-        # Use explicit frames to avoid border intersection
-        left_line = tk.Frame(divider, height=1, bg=UI.BORDER_PRIMARY)
-        left_line.pack(side="left", fill="x", expand=True)
-
-        lbl_container = tk.Frame(divider, bg=UI.BG_BASE, padx=12, pady=4)
-        lbl_container.pack(side="left")
-        tk.Label(
-            lbl_container,
-            text=getattr(self.app_state, "_t", lambda x: x)("skill_strip.buff_lane"),
-            font=UI.FONT_SMALL,
-            bg=UI.BG_BASE,
-            fg=UI.TEXT_MUTED,
-        ).pack(side="left")
-
-        right_line = tk.Frame(divider, height=1, bg=UI.BORDER_PRIMARY)
-        right_line.pack(side="left", fill="x", expand=True)
-
-    def _build_buff_section(self):
-        # Buff lane section (2 cards grid)
-        buff_frame = tk.Frame(self.content_frame, bg=UI.BG_BASE)
-        buff_frame.pack(fill="x")
-        buff_frame.columnconfigure(0, weight=1)
-        buff_frame.columnconfigure(1, weight=1)
-
-        self.widgets["buff_dropdowns"] = []
-        self.widgets["buff_hotkeys"] = []
-        self.widgets["buff_stats"] = []
-
-        for i in range(2):
-            card = tk.Frame(
-                buff_frame,
-                bg=UI.BG_SURFACE,
-                highlightbackground=UI.BORDER_PRIMARY,
-                highlightthickness=1,
-            )
-            card.grid(row=0, column=i, sticky="nsew", padx=3, pady=3)
-
-            header = tk.Frame(card, bg=UI.BG_SURFACE)
-            header.pack(fill="x", padx=8, pady=(8, 2))
-            tk.Label(
-                header,
-                text=f"{self._t('skill_strip.buff_lane')} {i + 1}",
-                font=UI.FONT_SMALL,
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_MUTED,
-            ).pack(side="left")
-
-            hk_entry = tk.Entry(
-                header,
-                width=5,
-                bg=UI.BG_BASE,
-                fg=UI.TEXT_PRIMARY,
-                insertbackground=UI.TEXT_PRIMARY,
-                relief="flat",
-                justify="center"
-            )
-            hk_entry.pack(side="right")
-            hk_entry.bind("<FocusOut>", lambda e, idx=i: self._on_hotkey_changed(e, "buff_lane", idx))
-            hk_entry.bind("<Return>", lambda e, idx=i: self._on_hotkey_changed(e, "buff_lane", idx))
-            self.widgets["buff_hotkeys"].append(hk_entry)
-
-            dd_var = tk.StringVar()
-            dd = ttk.Combobox(
-                card, textvariable=dd_var, state="readonly", values=self.controller.skill_names
-            )
-            dd.pack(fill="x", padx=8, pady=8)
-            dd.bind(
-                "<<ComboboxSelected>>",
-                lambda e, idx=i: self._on_skill_changed(e, "buff_lane", idx),
-            )
-            self.widgets["buff_dropdowns"].append(dd)
-
-            stats = tk.Frame(card, bg=UI.BG_SURFACE)
-            stats.pack(fill="x", padx=8, pady=(2, 8))
-            cast_lbl = tk.Label(
-                stats,
-                text="⏱ -",
-                font=UI.FONT_SMALL,
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_MUTED,
-            )
-            cast_lbl.pack(side="left")
-            cd_lbl = tk.Label(
-                stats,
-                text="🔄 -",
-                font=UI.FONT_SMALL,
-                bg=UI.BG_SURFACE,
-                fg=UI.TEXT_MUTED,
-            )
-            cd_lbl.pack(side="right")
-            self.widgets["buff_stats"].append((cast_lbl, cd_lbl))
-
-    def _build_control_section(self):
-        # Combo Mode Indicator and Controls
-        controls_frame = tk.Frame(self.frame, bg=UI.BG_ELEVATED)
-        controls_frame.pack(fill="x", padx=10, pady=(0, 10))
-
-        self.widgets["combo_indicator_dot"] = tk.Label(
-            controls_frame, text="🔴", bg=UI.BG_ELEVATED, fg=UI.TEXT_PRIMARY
-        )
-        self.widgets["combo_indicator_dot"].pack(side="left", padx=(10, 5), pady=10)
-
-        self.widgets["combo_indicator_text"] = tk.Label(
-            controls_frame, bg=UI.BG_ELEVATED, fg=UI.TEXT_MUTED
-        )
-        if hasattr(self.app_state, "bind_text"):
-            self.app_state.bind_text(self.widgets["combo_indicator_text"], "skill_panel.combo_inactive")
-        else:
-            self.widgets["combo_indicator_text"].config(text=self._t("skill_panel.combo_inactive"))
-        self.widgets["combo_indicator_text"].pack(side="left", pady=10)
-
-        self.widgets["btn_start_combo"] = tk.Button(
-            controls_frame,
-            text=self._t("skill_panel.combo_start"),
-            command=self.on_start_combo,
-            bg=UI.ACCENT_GREEN_BG,
-            fg=UI.ACCENT_GREEN,
-            relief="flat",
-            font=UI.FONT_BUTTON,
-        )
-        self.widgets["btn_start_combo"].pack(side="right", padx=10, pady=10)
-
-        self.widgets["btn_stop_combo"] = tk.Button(
-            controls_frame,
-            text=self._t("skill_panel.combo_stop"),
-            command=self.on_stop_combo,
-            bg=UI.DANGER,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            font=UI.FONT_BUTTON,
-        )
 
     def on_bot_state_changed(self, state: str):
         if not hasattr(self, "widgets") or "cb_class" not in self.widgets:
@@ -410,8 +341,7 @@ class SkillPanel(ttk.LabelFrame):
             if class_label:
                 self.widgets["cb_class"].set(class_label)
 
-            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-                dd.config(values=skill_names)
+
         else:
             self._update_toggle_button_visuals()
             if self.controller.show_all_skills:
@@ -422,8 +352,7 @@ class SkillPanel(ttk.LabelFrame):
                 if class_label:
                     self.widgets["cb_class"].set(class_label)
 
-            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-                dd.config(values=skill_names)
+
 
     def _load_classes(self):
         values, default_val = self.controller.load_classes()
@@ -440,34 +369,16 @@ class SkillPanel(ttk.LabelFrame):
         if not success:
             self.widgets["cb_class"].set(last_selected)
         else:
-            for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-                dd.config(values=skill_names)
-
-    def on_start_combo(self):
-        self.widgets["combo_indicator_dot"].config(text="🟢")
-        self.widgets["combo_indicator_text"].config(text=self._t("skill_panel.combo_active"), fg=UI.ACCENT_GREEN)
-        self.widgets["btn_start_combo"].pack_forget()
-        self.widgets["btn_stop_combo"].pack(side="right", padx=10, pady=10)
-
-        # Lock dropdowns
-        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-            dd.config(state="disabled")
+            pass
 
     def _update_toggle_button_visuals(self):
         btn = self.widgets.get("btn_toggle_skills")
         if not btn:
             return
 
-        icon_name = "off-button" if self.controller.show_all_skills else "on-button"
-        icon_img = self._icon_helper.get_icon(icon_name, size=(32, 16))
-
-        if icon_img and not isinstance(icon_img, str):
-            btn.config(image=icon_img, text="")
-            btn.image = icon_img
-        else:
-            # Fallback to text if image not found
-            text = "[🌐 All Skills]" if self.controller.show_all_skills else "[🎯 Class Skills]"
-            btn.config(text=text, image="")
+        from ui.components.icon_button import set_button_icon
+        icon_name = "list" if self.controller.show_all_skills else "target"
+        set_button_icon(btn, icon_name=icon_name)
 
     def _on_toggle_skills(self):
         show_all, skill_names = self.controller.toggle_skills()
@@ -483,122 +394,22 @@ class SkillPanel(ttk.LabelFrame):
             self.widgets["cb_class"].set(self.controller.last_selected_class)
 
         # Update comboboxes
-        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-            dd.config(values=skill_names)
+        for timeline in [self.attack_timeline, self.buff_timeline]:
+            if hasattr(timeline, "render_skills"):
+                timeline.render_skills()
 
-    def on_stop_combo(self):
-        self.widgets["combo_indicator_dot"].config(text="🔴")
-        self.widgets["combo_indicator_text"].config(text=self._t("skill_panel.combo_inactive"), fg=UI.TEXT_MUTED)
-        self.widgets["btn_stop_combo"].pack_forget()
-        self.widgets["btn_start_combo"].pack(side="right", padx=10, pady=10)
-
-        # Unlock dropdowns
-        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-            dd.config(state="readonly")
-
-    def _on_hotkey_changed(self, event, lane, position_idx):
-        entry = event.widget
-        new_hotkey = entry.get().strip()
-        if hasattr(self.app_state, "set_skill_hotkey"):
-            self.app_state.set_skill_hotkey(lane, position_idx, new_hotkey)
-        # Prevent FocusOut / Return from causing UI weirdness
-        if event.keysym == 'Return':
-            self.focus_set()
-
-    def on_skill_slots_changed(self, skill_slots=None):
-        """Logic moved from HuntTab"""
-        if not skill_slots:
-            skill_slots = getattr(
-                self.app_state, "skill_slots", {"attack_combo": [], "buff_lane": []}
-            )
-
-        runtime_srv = SkillRuntimeService()
-        all_runtime_skills = runtime_srv.get_all_skills()
-
-        # First, ensure combobox values are up to date
-        for dd in self.widgets.get("combo_dropdowns", []) + self.widgets.get("buff_dropdowns", []):
-            dd.config(values=self.controller.skill_names)
-
-        # Update dropdowns, hotkeys, and stats
-        for lane_key, dropdown_list, hotkeys_list, stats_list in [
-            ("attack_combo", self.widgets.get("combo_dropdowns", []), self.widgets.get("combo_hotkeys", []), self.widgets.get("combo_stats", [])),
-            ("buff_lane", self.widgets.get("buff_dropdowns", []), self.widgets.get("buff_hotkeys", []), self.widgets.get("buff_stats", [])),
-        ]:
-            lane_skills = skill_slots.get(lane_key, [])
-            for i, dd in enumerate(dropdown_list):
-                hk_entry = hotkeys_list[i] if i < len(hotkeys_list) else None
-                cast_lbl, cd_lbl = stats_list[i] if i < len(stats_list) else (None, None)
-
-                if i < len(lane_skills) and lane_skills[i]:
-                    # We might have dict (if from app_state.skill_slots) or int (if from old structure)
-                    slot_data = lane_skills[i]
-                    skill_id = slot_data.get("skill_id") if isinstance(slot_data, dict) else slot_data
-
-                    skill = self.controller.get_skill(skill_id)
-                    if skill:
-                        dd.set(skill.get("name", ""))
-
-                        # Find runtime stats
-                        runtime_info = next((s for s in all_runtime_skills if s.get("name") == skill.get("name")), None)
-
-                        # Update Hotkey
-                        user_hk = slot_data.get("user_hotkey", "") if isinstance(slot_data, dict) else ""
-                        if not user_hk and runtime_info:
-                            user_hk = runtime_info.get("key", "")
-
-                        if hk_entry:
-                            hk_entry.delete(0, 'end')
-                            hk_entry.insert(0, user_hk)
-
-                        # Update Stats
-                        if runtime_info:
-                            if cast_lbl:
-                                cast_lbl.config(text=f"⏱ {runtime_info.get('cast_time', 0)}s")
-                            if cd_lbl:
-                                cd_lbl.config(text=f"🔄 {runtime_info.get('cooldown', 0)}s")
-                        else:
-                            if cast_lbl:
-                                cast_lbl.config(text="⏱ -")
-                            if cd_lbl:
-                                cd_lbl.config(text="🔄 -")
-
-                    else:
-                        dd.set("")
-                        if hk_entry:
-                            hk_entry.delete(0, 'end')
-                        if cast_lbl:
-                            cast_lbl.config(text="⏱ -")
-                        if cd_lbl:
-                            cd_lbl.config(text="🔄 -")
-                else:
-                    dd.set("")
-                    if hk_entry:
-                        hk_entry.delete(0, 'end')
-                    if cast_lbl:
-                        cast_lbl.config(text="⏱ -")
-                    if cd_lbl:
-                        cd_lbl.config(text="🔄 -")
-
-        # Update preset indicator
-        preset_mode = getattr(self.app_state, "_preset_mode", "default")
-        if preset_mode == "default":
-            self.widgets["preset_indicator"].config(text=self._t("skill_panel.preset_default"))
-        else:
-            self.widgets["preset_indicator"].config(text=self._t("skill_panel.preset_custom"))
-
-    def _on_skill_changed(self, event, lane, position_idx):
-        """Logic extracted from HuntTab"""
-        dropdown = event.widget
-        skill_name = dropdown.get()
-
-        skill_id = self.controller.get_skill_id_by_name(skill_name)
-
-        if skill_id is not None and hasattr(self.controller.preset_controller, "set_skill_slot"):
-            self.controller.preset_controller.set_skill_slot(lane, position_idx, skill_id)
 
     def on_build(self):
         """Open skill build tab"""
-        pass
+        # Batch 2: Fix useless Build button, navigate to build_manager
+        if hasattr(self, "hunt_tab") and hasattr(self.hunt_tab, "app"):
+            app = self.hunt_tab.app
+            if hasattr(app, "navigation") and hasattr(app.navigation, "navigate_to"):
+                app.navigation.navigate_to("build_manager")
+        else:
+            # Fallback if hunt_tab is not properly set
+            import logging
+            logging.getLogger(__name__).warning("Cannot navigate to build_manager: hunt_tab or app reference missing.")
 
     def on_presets(self):
         """Open preset dialog"""
@@ -608,6 +419,67 @@ class SkillPanel(ttk.LabelFrame):
         """Revert to default preset"""
         class_id = getattr(self.app_state, "_current_class_id", 1)
         self.preset_controller.on_reset(class_id)
+
+    def _open_skill_picker(self, lane_name: str, excluded_ids: set):
+        """FIX BUG #6: Mở SkillPicker cho lane."""
+        from dialogs.skill_picker import SkillPickerDialog
+        from lib.db.repositories.skill_repository import SkillRepository
+
+        show_all = getattr(self.controller, "show_all_skills", False)
+        class_id = getattr(self.app_state, "_current_class_id", 1)
+
+        repo = SkillRepository()
+        skills = repo.list_skills(class_id=class_id, include_all=show_all)
+
+        if not skills:
+            from ui.dialog_service import DialogService
+            DialogService.show_info(
+                "Không có skill",
+                f"Class {class_id} chưa có skill nào trong DB."
+            )
+            return
+
+        def on_skill_selected(record):
+            timeline = self.attack_timeline if lane_name == "attack_combo" else self.buff_timeline
+            new_skill = {
+                "name": record.get("name", "Unknown"),
+                "icon_key": record.get("icon_key", "unknown"),
+                "hotkey": record.get("key", ""),
+                "skill_id": record.get("skill_id"),
+            }
+            timeline.skills.append(new_skill)
+            timeline.render_skills()
+            timeline.on_skills_changed(lane_name, timeline.skills)
+
+        SkillPickerDialog(
+            parent=self.winfo_toplevel(),
+            skills=skills,
+            on_select=on_skill_selected,
+            t_func=self._t,
+            excluded_skill_ids=excluded_ids,
+        )
+
+    def _on_lane_changed(self, lane_name: str, skills: list):
+        """FIX BUG #6: Sync lane changes to app_state.skill_slots."""
+        if not hasattr(self.app_state, "skill_slots"):
+            self.app_state.skill_slots = {"attack_combo": [], "buff_lane": []}
+
+        self.app_state.skill_slots[lane_name] = [
+            {
+                "position": idx,
+                "lane_type": lane_name,
+                "skill_id": s.get("skill_id"),
+                "skill_name": s.get("name", ""),
+                "user_hotkey": s.get("hotkey", ""),
+                "assigned": s.get("skill_id") is not None,
+                "is_ready": True,
+                "cooldown_remaining": 0.0,
+            }
+            for idx, s in enumerate(skills)
+        ]
+
+        if getattr(self.app_state, "_preset_mode", "default") == "default":
+            self.preset_controller.set_custom_mode()
 
     def _on_save_preset_click(self):
         class_id = getattr(self.app_state, "_current_class_id", 1)

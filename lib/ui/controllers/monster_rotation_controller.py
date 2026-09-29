@@ -173,7 +173,7 @@ class MonsterRotationController:
         EventBus.trigger(MonsterRotationUpdatedEvent())
 
     def load_monster_rotation_list(self):
-        saved_list = self.state_controller.hunt_cfg.get("monster_rotation", [])
+        saved_list = self.state_controller.get_hunt_config_value("monster_rotation", [])
         self.state_controller.monster_rotation = []
         for item in saved_list:
             if isinstance(item, dict):

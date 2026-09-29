@@ -43,16 +43,18 @@ try:
     import win32con  # type: ignore
     import win32api  # type: ignore
     import win32process  # type: ignore
-except ImportError as e:
+except ImportError as _imp_err:
     # Allow importing this module without pywin32 (e.g., non-Windows or mocked tests),
     # but fail fast with a clear error if any Win32 API is actually used.
     class _MissingWin32:
+        def __init__(self, err):
+            self.err = err
         def __getattr__(self, _attr):
             raise ImportError(
                 "window_manager requires Windows + pywin32; install with `pip install pywin32`."
-            ) from e
+            ) from self.err
 
-    win32gui = win32con = win32api = win32process = _MissingWin32()  # type: ignore
+    win32gui = win32con = win32api = win32process = _MissingWin32(_imp_err)  # type: ignore
 
 # Optional: psutil (recommended for process info)
 try:
@@ -118,6 +120,7 @@ class WindowManager:
         class_name: Optional[str] = None,
         process_name: Optional[str] = None,
         visible_only: bool = True,
+        exclude_own: bool = True,
     ) -> Optional[int]:
         """
         Find window by various criteria
@@ -136,6 +139,7 @@ class WindowManager:
             class_name=class_name,
             process_name=process_name,
             visible_only=visible_only,
+            exclude_own=exclude_own,
         )
 
         if windows:
@@ -172,6 +176,7 @@ class WindowManager:
         class_name: Optional[str] = None,
         process_name: Optional[str] = None,
         visible_only: bool = True,
+        exclude_own: bool = True,
     ) -> List[WindowInfo]:
         """
         List all windows with detailed info
@@ -191,6 +196,9 @@ class WindowManager:
 
         import ctypes
         import sys
+        import os
+
+        current_pid = os.getpid()
 
         if sys.platform == "win32":
             EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
@@ -252,6 +260,10 @@ class WindowManager:
                     skipped_count[0] += 1
                     return True
 
+                if exclude_own and info.pid == current_pid:
+                    skipped_count[0] += 1
+                    return True
+
                 results.append(info)
 
             except Exception as e:
@@ -264,8 +276,8 @@ class WindowManager:
                 ctypes.windll.user32.EnumWindows(EnumWindowsProc(callback), 0)
             else:
                 win32gui.EnumWindows(callback, None)
-        except Exception as e:
-            logger.error(f"EnumWindows failed: {e}")
+        except Exception as local_err:
+            logger.error(f"EnumWindows failed: {local_err}")
 
 
         logger.debug(f"Found {len(results)} windows (enumerated={window_count[0]}, skipped={skipped_count[0]})")

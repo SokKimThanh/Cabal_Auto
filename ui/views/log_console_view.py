@@ -1,4 +1,5 @@
 import tkinter as tk
+from ui.components import create_icon_button
 from tkinter import ttk
 from lib.ui_style_v2 import UIStyleV2 as UI
 import queue
@@ -36,16 +37,12 @@ class LogConsoleView(tk.Frame):
             self.title_label.config(text=self.app._t("logs_title"))
         self.title_label.pack(side="left", padx=12)
 
-        self.clear_btn = tk.Button(
-            self.header_frame,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            font=UI.FONT_BODY,
-            relief="flat",
-            activebackground=UI.BG_SURFACE,
-            activeforeground=UI.TEXT_PRIMARY,
-            cursor="hand2",
+        self.clear_btn = create_icon_button(
+            parent=self.header_frame,
+            icon_name="delete",
+            text=self.app._t("logs_clear_btn", default="Xóa log") if hasattr(self.app, "_t") else "Xóa log",
             command=self.clear,
+            button_type="danger"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.clear_btn, "logs_clear")
@@ -99,38 +96,35 @@ class LogConsoleView(tk.Frame):
         self.search_entry.pack(side="left", padx=(0, 5))
         self.search_entry.bind("<Return>", lambda e: self.do_search())
 
-        self.search_btn = tk.Button(
-            self.toolbar_frame,
-            text=self.app._t("logs_search"),
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
+        self.search_btn = create_icon_button(
+            parent=self.toolbar_frame,
+            icon_name="search",
+            text=self.app._t("logs_search_btn", default="Tìm") if hasattr(self.app, "_t") else "Tìm",
             command=self.do_search,
+            button_type="primary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.search_btn, "logs_search")
         self.search_btn.pack(side="left")
 
         # Utility Buttons (Folder & Copy) will be on the right
-        self.copy_btn = tk.Button(
-            self.toolbar_frame,
-            text=self.app._t("logs_copy"),
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
+        self.copy_btn = create_icon_button(
+            parent=self.toolbar_frame,
+            icon_name="copy",
+            text=self.app._t("logs_copy_btn", default="Copy Logs") if hasattr(self.app, "_t") else "Copy Logs",
             command=self.copy_logs,
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.copy_btn, "logs_copy")
         self.copy_btn.pack(side="right", padx=(5, 0))
 
-        self.folder_btn = tk.Button(
-            self.toolbar_frame,
-            text=self.app._t("logs_folder"),
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
+        self.folder_btn = create_icon_button(
+            parent=self.toolbar_frame,
+            icon_name="folder",
+            text=self.app._t("logs_folder_btn", default="Mở thư mục Log") if hasattr(self.app, "_t") else "Mở thư mục Log",
             command=self.open_log_folder,
+            button_type="secondary"
         )
         if hasattr(self.app, "bind_text"):
             self.app.bind_text(self.folder_btn, "logs_folder")
@@ -300,7 +294,7 @@ class LogConsoleView(tk.Frame):
 
             if hasattr(self.app, "logs_metrics_label") and self.app.logs_metrics_label:
                 self.app.logs_metrics_label.config(
-                    text=f"⚡ FPS: {fps:.1f} | 🎯 Quét: {scans} | ⏱ Chạy: {running_time}"
+                    text=f"FPS: {fps:.1f} | Quét: {scans} | Chạy: {running_time}"
                 )
 
         except Exception:

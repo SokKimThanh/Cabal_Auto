@@ -4,7 +4,7 @@ from pathlib import Path
 from lib.db.services.icon_service import IconService
 from lib.db.services.ui_element_service import UIElementService
 from lib.events.ui_element_registry import UIElementRegistry
-from lib.events.event_bus import EventBus, IconManagerSyncEvent
+from lib.events.event_bus import EventBus, IconManagerSyncEvent, UIElementRegisteredEvent
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +20,39 @@ class IconSyncManager:
     def _bind_events(self):
         """Đăng ký lắng nghe sự kiện đồng bộ từ EventBus."""
         EventBus.bind(IconManagerSyncEvent, self._handle_sync_event)
+        EventBus.bind(UIElementRegisteredEvent, self._handle_element_registered)
 
     def _handle_sync_event(self, event: IconManagerSyncEvent):
         """Tự động xuất ra file JSON khi nhận được sự kiện."""
         self.export_to_json()
+
+    def _handle_element_registered(self, event: UIElementRegisteredEvent):
+        """Sync a newly registered UI element directly to the database to fix lazy load tech debt."""
+        try:
+            from database import get_db
+            db = get_db()
+            if not db or not db.conn:
+                return
+
+            ui_element_service = UIElementService(db.conn)
+            desc = event.descriptor
+
+            is_exclusive = desc.is_exclusive
+            if getattr(desc, 'element_type', '') in ['sidebar_button', 'tab_main'] or desc.element_id.startswith('tab_') or desc.element_id.startswith('btn_'):
+                is_exclusive = True
+
+            element_data = {
+                "element_id": desc.element_id,
+                "module_name": desc.module,
+                "screen_name": desc.screen,
+                "component_type": desc.element_type,
+                "is_exclusive": is_exclusive,
+                "description": f"Auto-registered live from {desc.module}/{desc.screen}"
+            }
+
+            ui_element_service.bulk_upsert_elements([element_data])
+        except Exception as e:
+            logger.error(f"Lỗi đồng bộ live UIElement xuống DB: {e}")
 
     def import_from_json(self) -> bool:
         """

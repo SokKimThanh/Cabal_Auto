@@ -1,6 +1,8 @@
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 import tkinter as tk
 from tkinter import ttk, messagebox
 from lib.ui_style_v2 import UIStyleV2 as UI
+from ui.components.icon_button import create_icon_button
 
 
 class CreatePresetDialog(tk.Toplevel):
@@ -89,6 +91,30 @@ class CreatePresetDialog(tk.Toplevel):
         name_entry.grid(row=1, column=1, sticky="w", padx=10, pady=10)
         name_entry.focus_set()
 
+        # --- Bottom Actions ---
+        action_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
+        action_frame.pack(side="bottom", fill="x", pady=(20, 0))
+
+        btn_cancel = create_icon_button(
+            parent=action_frame,
+            icon_name="cancel",
+            icon_fallback="",
+            text="Hủy",
+            command=self.destroy,
+            button_type="secondary"
+        )
+        btn_cancel.pack(side="right", padx=(10, 0))
+
+        btn_save = create_icon_button(
+            parent=action_frame,
+            icon_name="save",
+            icon_fallback="",
+            text="Save",
+            command=self._on_save,
+            button_type="primary"
+        )
+        btn_save.pack(side="right")
+
         # --- Summary Area ---
         summary_lbl = tk.Label(
             main_frame,
@@ -97,7 +123,7 @@ class CreatePresetDialog(tk.Toplevel):
             bg=UI.BG_BASE,
             fg=UI.TEXT_PRIMARY
         )
-        summary_lbl.pack(anchor="w", pady=(15, 5))
+        summary_lbl.pack(side="top", anchor="w", pady=(15, 5))
 
         summary_frame = tk.Frame(
             main_frame,
@@ -107,34 +133,9 @@ class CreatePresetDialog(tk.Toplevel):
         )
         summary_frame.pack(fill="both", expand=True, pady=5)
 
-        canvas = tk.Canvas(summary_frame, bg=UI.BG_SURFACE, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(summary_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg=UI.BG_SURFACE)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True, padx=5, pady=5)
-        scrollbar.pack(side="right", fill="y")
-
-        # Bind scrolling events
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        def _on_scroll_linux(event, dir):
-            canvas.yview_scroll(dir, "units")
-
-        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
-        canvas.bind("<Enter>", lambda e: canvas.bind_all("<Button-4>", lambda e: _on_scroll_linux(e, -1)), add="+")
-        canvas.bind("<Enter>", lambda e: canvas.bind_all("<Button-5>", lambda e: _on_scroll_linux(e, 1)), add="+")
-        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
-        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<Button-4>"))
-        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<Button-5>"))
+        self.responsive_grid = ResponsiveGridBase(summary_frame, bg=UI.BG_SURFACE)
+        self.responsive_grid.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+        scrollable_frame = self.responsive_grid.get_content_frame()
 
         # Populate summary content
         if not self.skill_summary:
@@ -174,26 +175,6 @@ class CreatePresetDialog(tk.Toplevel):
                             font=UI.FONT_SMALL
                         ).pack(anchor="w", padx=20, pady=2)
 
-        # --- Bottom Actions ---
-        action_frame = tk.Frame(main_frame, bg=UI.BG_BASE)
-        action_frame.pack(fill="x", pady=(20, 0))
-
-        btn_cancel = tk.Button(
-            action_frame,
-            text="Hủy",
-            command=self.destroy,
-            **UI.get_button_style("secondary")
-        )
-        btn_cancel.pack(side="right", padx=(10, 0))
-
-        btn_save = tk.Button(
-            action_frame,
-            text="💾 Save",
-            command=self._on_save,
-            **UI.get_button_style("primary")
-        )
-        btn_save.pack(side="right")
-
     def _on_save(self):
         preset_name = self.name_var.get().strip()
         if not preset_name:
@@ -202,3 +183,6 @@ class CreatePresetDialog(tk.Toplevel):
 
         self.on_save_callback(preset_name)
         self.destroy()
+
+    def destroy(self):
+        super().destroy()

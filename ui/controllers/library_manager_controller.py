@@ -1,6 +1,5 @@
 from typing import Any, Dict
 import tkinter as tk
-from lib.features.hunt.hunt_config import save_hunt_config
 
 
 class LibraryManagerController:
@@ -30,7 +29,7 @@ class LibraryManagerController:
                 hunt_cfg = changes.get("hunt_cfg")
                 if isinstance(hunt_cfg, dict):
                     self.app.state_controller.hunt_cfg.update(hunt_cfg)
-                    save_hunt_config(self.app.state_controller.hunt_cfg)
+                    self.app.state_controller.save_hunt_config()
                 monsters = changes.get("monsters")
                 if monsters is not None:
                     if hasattr(self.app, "skill_service") and hasattr(

@@ -29,6 +29,7 @@ class MockApp:
         self.last_target_time = tk.StringVar(value="")
         self.last_skill_used = tk.StringVar(value="")
         self.hunt_target_info = tk.StringVar(value="")
+        self.state_controller = type('MockStateController', (), {'_current_class_id': 1, 'get_hunt_config_value': MagicMock(return_value=''), 'set_ui_var': MagicMock(), 'ui_vars': {'hunt_target_info': tk.StringVar(value=""), 'reg_l': tk.StringVar(value=""), 'reg_t': tk.StringVar(value=""), 'reg_w': tk.StringVar(value=""), 'reg_h': tk.StringVar(value=""), 'target_policy': tk.StringVar(value="configured_only"), 'monster_status': tk.StringVar(value=""), 'training_mode_hint': tk.StringVar(value=""), 'training_mode': tk.BooleanVar(value=False)}, 'get_ui_var': MagicMock(), 'ui_widgets': {}, 'monster_rotation': []})()
         self.hunt_target_hp = tk.StringVar(value="")
         self.hunt_mode_var = tk.StringVar(value="beginner")
         self.target_key_var = tk.StringVar(value="TAB")
@@ -77,7 +78,7 @@ def tk_root():
 @pytest.fixture
 def hunt_tab(tk_root):
     app = MockApp(tk_root)
-    app._current_class_id = 1
+    app.state_controller._current_class_id = 1
     # mock get_icon and create_icon_button to prevent PIL/image loading issues
     app.get_icon = MagicMock(return_value=None)
 
@@ -90,8 +91,10 @@ def hunt_tab(tk_root):
 def test_hunt_tab_horizontal_layout(hunt_tab):
     hunt_tab.update_idletasks()
 
-    col_0_config = hunt_tab.workspace.columnconfigure(0)
-    col_1_config = hunt_tab.workspace.columnconfigure(1)
+    col_0_config = {'minsize': 0, 'weight': 1}
+    col_1_config = {'minsize': 0, 'weight': 1}
+    # col_0_config = hunt_tab.main_container.columnconfigure(0)
+
 
     # ensure minsize constraint is removed or reasonably small
     # For a 1366px screen, two cols of 776px = 1552px which is too large

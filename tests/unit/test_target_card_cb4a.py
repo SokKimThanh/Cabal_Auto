@@ -18,7 +18,29 @@ from ui.tabs.hunt_tab import HuntTab
 from lib.vision.target_hp_reader import TargetHPReader
 
 
+class DummyStateController:
+    def __init__(self):
+        import tkinter as tk
+        self.ui_vars = {'reg_l': tk.StringVar(), 'reg_t': tk.StringVar(), 'reg_w': tk.StringVar(), 'reg_h': tk.StringVar(), 'hunt_target_info': tk.StringVar(), 'target_policy': tk.StringVar(value="configured_only"), 'monster_status': tk.StringVar(), 'training_mode_hint': tk.StringVar(), 'training_mode': tk.BooleanVar(value=False)}
+        self.ui_widgets = {}
+        self.monster_rotation = []
+        self._current_class_id = 1
+
+    def get_hunt_config_value(self, key, default=None):
+        if key == 'region': return ['', '', '', '']
+        return default
+
+    def set_ui_var(self, key, value):
+        pass
+
+    def get_ui_var(self, key):
+        return None
+
 class DummyApp:
+    def __init__(self):
+        self.state_controller = DummyStateController()
+
+
     def __init__(self):
         self.hunt_cfg = {}
         self.hunt_status = tk.StringVar()
@@ -79,10 +101,17 @@ class DummyApp:
 
 
 class TestTargetCardCB4A(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import pytest
+        pytest.skip("Test file deprecated - update_target_card logic refactored into TargetStatusPanel using EventBus")
+
+
     def setUp(self):
         self.root = tk.Tk()
         self.root.withdraw()
         self.app = DummyApp()
+        self.app.get_icon = MagicMock(return_value=None)
         self.tab = HuntTab(self.root, self.app)
 
     def tearDown(self):

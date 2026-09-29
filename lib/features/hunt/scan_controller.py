@@ -18,18 +18,20 @@ class ScanController:
         set_status_icon: Callable[[str], None],
         show_results: Callable[[Dict[str, Any]], None],
         icons: Any,
+        get_hwnd: Optional[Callable[[], Optional[int]]] = None,  # FIX BUG #5
     ):
         self.vision_engine_getter = vision_engine_getter
         self.set_status_text = set_status_text
         self.set_status_icon = set_status_icon
         self.show_results = show_results
         self.icons = icons
+        self.get_hwnd = get_hwnd  # FIX BUG #5
         self.logger = logging.getLogger(__name__)
 
     def run_scan(self, manual: bool = False):
         if manual:
             self.logger.info("[UI] Manual scan triggered.")
-            self.set_status_text("🔍 Đang quét…")
+            self.set_status_text("Đang quét…")
             self.set_status_icon(self.icons.SCANNING)
             self.logger.info("[UI] Scan status: scanning")
 
@@ -46,8 +48,26 @@ class ScanController:
 
                 scanner = AutoScanner(vision_engine)
 
-                # Boundary check: window
-                window_info = scanner.detect_window()
+                # FIX BUG #5: Ưu tiên HWND đã chọn từ UI
+                window_info = None
+                if self.get_hwnd:
+                    try:
+                        hwnd = self.get_hwnd()
+                        if hwnd:
+                            from lib.system.window_manager import WindowManager
+                            info = WindowManager().get_window_info(hwnd)
+                            if info and not info.is_minimized:
+                                window_info = {"hwnd": hwnd, "rect": info.rect}
+                                self.logger.info(f"[Scan] Dùng HWND từ UI: {hwnd}")
+                            else:
+                                self.logger.warning(f"[Scan] HWND {hwnd} invalid or minimized")
+                    except Exception as e:
+                        self.logger.warning(f"[Scan] Lỗi lấy window từ UI: {e}")
+
+                # Fallback: tự tìm window
+                if not window_info:
+                    window_info = scanner.detect_window()
+
                 if not window_info:
                     self.logger.warning(
                         "[AutoScan] Warning: Game window not connected. Skipping scan."
@@ -80,17 +100,10 @@ class ScanController:
                     pass
 
                 # Boundary check: template lists (if empty)
-                if not getattr(vision_engine, "templates", None) and not hasattr(
-                    vision_engine, "add_template"
-                ):
-                    self.logger.warning(
-                        "[AutoScan] Warning: Template list empty. Skipping scan."
-                    )
-                    if manual:
-                        self.set_status_text("❌ Lỗi khi quét: Không có templates.")
-                        self.set_status_icon(self.icons.SCAN_FAILED)
-                        self.logger.info("[UI] Scan status: failed")
-                    return
+                # When using manual scan or auto detect, it's fine to scan without pre-existing templates
+                # because the scan process might save patches as new templates or we just want frame info.
+                if not getattr(vision_engine, "templates", None) and not hasattr(vision_engine, "add_template"):
+                    self.logger.info("[AutoScan] Template list is empty, but continuing scan to capture patches.")
 
                 # Get frame and check
                 self.logger.info("[AutoScan] Capturing frame...")
@@ -150,8 +163,19 @@ class ScanController:
                     except Exception as e:
                         self.logger.error(f"[AutoScan] Failed to create thumbnail: {e}")
 
+                # Attempt to retrieve current hunt config to inject ROIs
+                hunt_cfg = {}
+                try:
+                    import tkinter as tk
+                    root = tk._default_root
+                    if root and hasattr(root, "app_state"):
+                        hunt_cfg = root.app_state.get_hunt_config_value("rois", {})
+                        hunt_cfg = {"rois": hunt_cfg}
+                except Exception:
+                    pass
+
                 # Run scan logic
-                results = scanner.run_scan()
+                results = scanner.run_scan(hunt_cfg)
                 if thumbnail_pil:
                     results["thumbnail"] = thumbnail_pil
                 self.logger.info("[AutoScan] Scan completed successfully.")

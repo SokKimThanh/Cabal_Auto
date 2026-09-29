@@ -170,6 +170,7 @@ class App:
         else:
             self.hunt_runner = None
             self.hunt_orchestrator = None
+            self.scan_controller = None
 
         self.task_scheduler = TaskScheduler(self)
 
@@ -741,7 +742,12 @@ class App:
             if "class" in results and results["class"] != "Unknown":
                 state["character_class"] = results["class"]
 
-                scanned_class_name = results["class"]
+            # REFACTOR(#6): Không cần fallback nữa — analyzer giờ detect thật.
+            # Nếu vẫn "Unknown" → log warning để debug.
+            if state.get("character_class") == "Unknown":
+                logger.warning("[Scan] Không detect được class từ screen — kiểm tra class_icons asset")
+
+                scanned_class_name = results.get("class", "Unknown") if "class" in results else state.get("character_class", "Unknown")
                 scanned_class_id = None
 
                 from lib.db.services.class_service import ClassService
@@ -1130,6 +1136,9 @@ class App:
         if not hasattr(self, "global_apply_btn"):
             return
 
+        if getattr(self, "global_apply_btn", None) is None or not self.global_apply_btn.winfo_exists():
+            return
+
         if self.has_unsaved_changes:
             # Enable button, show prominent color and text
             self.global_apply_btn.config(
@@ -1374,8 +1383,12 @@ def main():
             set_status_icon=app._update_scan_status_icon,
             show_results=app._show_scan_results,
             icons=Icons,
+            # FIX BUG #5: truyền HWND đã chọn từ UI vào ScanController
+            get_hwnd=lambda: (app.state_controller.hunt_selected or {}).get("hwnd")
+                if app.state_controller.hunt_selected else None,
         )
         app.scan_controller = container.scan_controller
+
 
         container.hunt_runner = HuntRunner(
             hunt_cfg=app.state_controller.hunt_cfg,

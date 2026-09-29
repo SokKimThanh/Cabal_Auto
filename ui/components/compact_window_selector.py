@@ -1,5 +1,7 @@
 """Compact window selector for hunt tab header bar."""
 
+import sys
+import threading
 import tkinter as tk
 from typing import List, Dict, Any, Callable, Optional
 import logging
@@ -24,6 +26,12 @@ class CompactWindowSelector:
     ):
         self.state_controller = getattr(root, 'state_controller', root) # Fallback to support both App and App.root
         self.parent = parent
+
+        # REFACTOR(#5): Win event hook
+        self._hook = None
+        self._hook_thread = None
+        self._hook_stop_event = threading.Event()
+
         self.on_window_selected = on_window_selected
         self.window_controller = window_controller
         self.root = root
@@ -84,7 +92,7 @@ class CompactWindowSelector:
         # Refresh button (icon only)
         self.refresh_btn = tk.Button(
             self.search_frame,
-            text="🔄",
+            text="",
             width=2,
             height=1,
             bg=UI.BG_SURFACE,
@@ -94,6 +102,60 @@ class CompactWindowSelector:
             cursor="hand2",
         )
         self.refresh_btn.pack(side="left")
+
+        # FIX BUG #2: Bắt đầu auto-refresh window list
+        self._schedule_auto_refresh()
+
+    def _schedule_auto_refresh(self):
+        """REFACTOR(#5): Đăng ký Win event hook thay vì polling."""
+        if sys.platform != "win32":
+            # Fallback polling cho non-Windows (dev env)
+            self._schedule_polling_refresh()
+            return
+
+        def _hook_callback(hWinEventHook, event, hwnd, idObject, idChild,
+                           dwEventThread, dwmsEventTime):
+            # Lọc chỉ bắt window (OBJID_WINDOW = 0)
+            if idObject != 0:
+                return
+            # Chạy trên hook thread → marshal về main thread
+            try:
+                self.parent.after(0, self._on_refresh)
+            except Exception:
+                pass
+
+        try:
+            import ctypes
+            import win32con
+            from ctypes import wintypes
+
+            WINEVENTPROC = ctypes.WINFUNCTYPE(
+                None, wintypes.HANDLE, wintypes.DWORD, wintypes.HWND,
+                wintypes.LONG, wintypes.LONG, wintypes.DWORD, wintypes.DWORD
+            )
+            self._hook_callback_func = WINEVENTPROC(_hook_callback)
+
+            self._hook = ctypes.windll.user32.SetWinEventHook(
+                win32con.EVENT_OBJECT_CREATE,
+                win32con.EVENT_OBJECT_SHOW,
+                0,                     # hmodWinEventProc
+                self._hook_callback_func,
+                0, 0,                     # idProcess, idThread = all
+                win32con.WINEVENT_OUTOFCONTEXT,
+            )
+            logger.info("[WindowSelector] Win event hook registered")
+        except Exception as e:
+            logger.warning(f"[WindowSelector] Hook failed: {e}, fallback to polling")
+            self._schedule_polling_refresh()
+
+    def _schedule_polling_refresh(self):
+        """Fallback: polling 5s cho non-Windows."""
+        if not self.selected_window:
+            try:
+                self._on_refresh()
+            except Exception:
+                pass
+            self.parent.after(5000, self._schedule_polling_refresh)
 
     def get_frame(self) -> tk.Frame:
         """Return the main frame for grid/pack."""
@@ -149,7 +211,8 @@ class CompactWindowSelector:
     def _set_loading_state(self, loading: bool):
         """Prevent duplicate scans while window detection is running."""
         state = "disabled" if loading else "normal"
-        self.refresh_btn.config(state=state, text="⟳" if loading else "🔄")
+        _t = getattr(self.root, '_t', lambda x, **kwargs: x)
+        self.refresh_btn.config(state=state, text=_t("ui.loading") if loading else "")
         self.dropdown_btn.config(state=state, text="⟳" if loading else "▼")
 
     def _on_refresh_clicked(self):
@@ -188,3 +251,16 @@ class CompactWindowSelector:
     def get_selected_window(self) -> Optional[Dict[str, Any]]:
         """Return the automatically selected Cabal window, if any."""
         return self.selected_window
+
+    def destroy(self):
+        # REFACTOR(#5): Unhook
+        if self._hook is not None:
+            try:
+                if sys.platform == "win32":
+                    import ctypes
+                    ctypes.windll.user32.UnhookWinEvent(self._hook)
+            except Exception:
+                pass
+            self._hook = None
+        if hasattr(self, 'frame') and hasattr(self.frame, 'destroy'):
+            self.frame.destroy()

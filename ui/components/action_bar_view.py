@@ -8,7 +8,6 @@ from ui.helpers.button_styles import get_button_config
 from ui.icon_library import Icons
 from ui.components import create_icon_button as _create_icon_btn_component
 import logging
-from lib.features.hunt.hunt_config import save_hunt_config
 from lib.events.event_bus import EventBus, GlobalApplyEvent, StartStopHuntEvent, LanguageChangedEvent
 from lib.i18n import t as i18n_t
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
@@ -20,7 +19,7 @@ class ActionBarView(tk.Frame):
         super().__init__(parent, bg=UI.BG_BASE, *args, **kwargs)
         self.state_controller = state_controller
         self.window_controller = window_controller
-        self.scan_controller = scan_controller
+        self._legacy_scan_controller = scan_controller
 
         self.action_bar_frame = self
         self.configure(padx=32, pady=10)
@@ -63,10 +62,10 @@ class ActionBarView(tk.Frame):
                     "bounds": window_dict.get("bounds"),
                 }
                 # Save to config
-                self.state_controller.hunt_cfg["window_pid"] = window_dict.get("pid")
-                self.state_controller.hunt_cfg["window_hwnd"] = window_dict.get("hwnd")
-                self.state_controller.hunt_cfg["window_title"] = window_dict.get("title")
-                save_hunt_config(self.state_controller.hunt_cfg)
+                self.state_controller.set_hunt_config_value("window_pid", window_dict.get("pid"))
+                self.state_controller.set_hunt_config_value("window_hwnd", window_dict.get("hwnd"))
+                self.state_controller.set_hunt_config_value("window_title", window_dict.get("title"))
+                self.state_controller.save_hunt_config()
                 # Update bounds display
                 if self.window_controller:
                     self.window_controller.update_window_bounds_display()
@@ -88,13 +87,16 @@ class ActionBarView(tk.Frame):
         self.scan_btn_icon_name = Icons.SCAN_SCREEN
 
         def on_scan_clicked():
-            if self.scan_controller:
-                self.scan_controller.run_scan(manual=True)
+            ctrl = getattr(self.winfo_toplevel(), "scan_controller", None)
+            if ctrl:
+                ctrl.run_scan(manual=True)
+            else:
+                logger.warning("[ActionBar] scan_controller chưa sẵn sàng")
 
         self.btn_manual_scan = _create_icon_btn_component(
             parent=status_header,
             icon_name=self.scan_btn_icon_name,
-            icon_fallback="🔍",
+            icon_fallback="",
             icon_size=16,
             button_size=32,
             command=on_scan_clicked,
@@ -162,7 +164,7 @@ class ActionBarView(tk.Frame):
         self.start_stop_btn = _create_icon_btn_component(
             parent=col2_frame,
             icon_name="start",
-            icon_fallback="▶️",
+            icon_fallback="",
             text=self._t("start_hunt"),
             icon_size=20,
             button_size=44,

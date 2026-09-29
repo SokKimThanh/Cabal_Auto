@@ -130,7 +130,7 @@ class SetupTab(ResponsiveGridBase):
         return group_frame, is_visible_var, toggle
 
     def _build_hotkeys_content(self, frame):
-        hotkey_cfg = self.app.state_controller.hunt_cfg.get("global_hotkeys", {})
+        hotkey_cfg = self.app.state_controller.get_hunt_config_value("global_hotkeys", {})
         self.app.state_controller.set_ui_var('global_hotkey_enabled', hotkey_cfg.get("enabled", True))
         self.app.state_controller.ui_vars['global_hotkey_enabled'].trace_add("write", self._on_setting_changed)
 
@@ -243,9 +243,9 @@ class SetupTab(ResponsiveGridBase):
             try:
                 val = float(var_obj.get())
                 if is_float and val < 0.2 and label_key in ("search_interval", "attack_interval"):
-                    warning_label.config(text="⚠️", foreground=UIStyleV2.THEME_STATE_DANGER)
+                    warning_label.config(text="!", foreground=UIStyleV2.THEME_STATE_DANGER)
                 elif val > to or val < from_:
-                    warning_label.config(text="⚠️", foreground=UIStyleV2.THEME_STATE_DANGER)
+                    warning_label.config(text="!", foreground=UIStyleV2.THEME_STATE_DANGER)
                 else:
                     warning_label.config(text="")
             except ValueError:
@@ -255,36 +255,55 @@ class SetupTab(ResponsiveGridBase):
         check_warning() # Initial check
 
     def _build_advanced_content(self, frame):
-        self.app.state_controller.set_ui_var('setup_target_key', str(self.app.state_controller.hunt_cfg.get("target_key", "TAB")))
+        # Auto Start Settings
+        self.app.state_controller.set_ui_var('setup_auto_start_with_hunt', str(self.app.state_controller.get_hunt_config_value("auto_start_with_hunt", False)))
+        self.app.state_controller.ui_vars['setup_auto_start_with_hunt'].trace_add("write", self._on_setting_changed)
+
+        lbl_auto_start = self.app._t("setup_advanced.auto_start_with_hunt") if hasattr(self.app, "_t") else "Tự động bắt quái khi mở game (Auto Start)"
+        cb = tk.Checkbutton(
+            frame,
+            text=lbl_auto_start,
+            variable=self.app.state_controller.ui_vars['setup_auto_start_with_hunt'],
+            onvalue="True",
+            offvalue="False",
+            bg=UIStyleV2.THEME_BG_APP,
+            fg=UIStyleV2.TEXT_PRIMARY,
+            selectcolor=UIStyleV2.BG_ELEVATED,
+            activebackground=UIStyleV2.THEME_BG_APP,
+            activeforeground=UIStyleV2.TEXT_PRIMARY
+        )
+        cb.grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 10))
+
+        self.app.state_controller.set_ui_var('setup_target_key', str(self.app.state_controller.get_hunt_config_value("target_key", "TAB")))
         self.app.state_controller.ui_vars['setup_target_key'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_press_ms', str(self.app.state_controller.hunt_cfg.get("attack_press_ms", 60)))
+        self.app.state_controller.set_ui_var('setup_press_ms', str(self.app.state_controller.get_hunt_config_value("attack_press_ms", 60)))
         self.app.state_controller.ui_vars['setup_press_ms'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_target_cycle', str(self.app.state_controller.hunt_cfg.get("target_cycle_delay", 0.2)))
+        self.app.state_controller.set_ui_var('setup_target_cycle', str(self.app.state_controller.get_hunt_config_value("target_cycle_delay", 0.2)))
         self.app.state_controller.ui_vars['setup_target_cycle'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_search_interval', str(self.app.state_controller.hunt_cfg.get("search_interval", 0.25)))
+        self.app.state_controller.set_ui_var('setup_search_interval', str(self.app.state_controller.get_hunt_config_value("search_interval", 0.25)))
         self.app.state_controller.ui_vars['setup_search_interval'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_attack_interval', str(self.app.state_controller.hunt_cfg.get("attack_interval", 0.15)))
+        self.app.state_controller.set_ui_var('setup_attack_interval', str(self.app.state_controller.get_hunt_config_value("attack_interval", 0.15)))
         self.app.state_controller.ui_vars['setup_attack_interval'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_lost_timeout', str(self.app.state_controller.hunt_cfg.get("lost_timeout_sec", 1.2)))
+        self.app.state_controller.set_ui_var('setup_lost_timeout', str(self.app.state_controller.get_hunt_config_value("lost_timeout_sec", 1.2)))
         self.app.state_controller.ui_vars['setup_lost_timeout'].trace_add("write", self._on_setting_changed)
 
-        self.app.state_controller.set_ui_var('setup_attack_duration', str(self.app.state_controller.hunt_cfg.get("attack_min_duration_sec", 1.5)))
+        self.app.state_controller.set_ui_var('setup_attack_duration', str(self.app.state_controller.get_hunt_config_value("attack_min_duration_sec", 1.5)))
         self.app.state_controller.ui_vars['setup_attack_duration'].trace_add("write", self._on_setting_changed)
 
-        self._add_entry_row(frame, 0, "target_key", self.app.state_controller.ui_vars['setup_target_key'])
+        self._add_entry_row(frame, 1, "target_key", self.app.state_controller.ui_vars['setup_target_key'])
 
         self._add_entry_row(
-            frame, 1, "press_ms", self.app.state_controller.ui_vars['setup_press_ms'], validate=True,
+            frame, 2, "press_ms", self.app.state_controller.ui_vars['setup_press_ms'], validate=True,
             from_=10, to=1000, increment=10, is_float=False, col_offset=0
         )
         self._add_entry_row(
             frame,
-            1,
+            2,
             "target_cycle",
             self.app.state_controller.ui_vars['setup_target_cycle'],
             col_offset=3,
@@ -293,7 +312,7 @@ class SetupTab(ResponsiveGridBase):
         )
         self._add_entry_row(
             frame,
-            2,
+            3,
             "search_interval",
             self.app.state_controller.ui_vars['setup_search_interval'],
             validate=True,
@@ -301,7 +320,7 @@ class SetupTab(ResponsiveGridBase):
         )
         self._add_entry_row(
             frame,
-            2,
+            3,
             "attack_interval",
             self.app.state_controller.ui_vars['setup_attack_interval'],
             col_offset=3,
@@ -309,12 +328,12 @@ class SetupTab(ResponsiveGridBase):
             from_=0.1, to=5.0, increment=0.1, is_float=True
         )
         self._add_entry_row(
-            frame, 3, "lost_timeout", self.app.state_controller.ui_vars['setup_lost_timeout'], validate=True,
+            frame, 4, "lost_timeout", self.app.state_controller.ui_vars['setup_lost_timeout'], validate=True,
             from_=0.5, to=10.0, increment=0.1, is_float=True, col_offset=0
         )
         self._add_entry_row(
             frame,
-            3,
+            4,
             "attack_duration",
             self.app.state_controller.ui_vars['setup_attack_duration'],
             col_offset=3,
@@ -326,14 +345,78 @@ class SetupTab(ResponsiveGridBase):
         self.app.bind_text(ttk.Label(frame), "template").grid(
             row=0, column=0, sticky="e", pady=4
         )
-        self.app.state_controller.set_ui_var('setup_template', str(self.app.state_controller.hunt_cfg.get("template_path", "assets/images/target_frame.png")))
+        self.app.state_controller.set_ui_var('setup_template', str(self.app.state_controller.get_hunt_config_value("template_path", "assets/images/target_frame.png")))
         self.app.state_controller.ui_vars['setup_template'].trace_add("write", self._on_setting_changed)
         ttk.Entry(frame, textvariable=self.app.state_controller.ui_vars['setup_template'], width=30).grid(
             row=0, column=1, columnspan=2, sticky="ew", pady=4
         )
-        self.browse_btn = ttk.Button(frame, command=self._browse_template)
-        self.app.bind_text(self.browse_btn, "browse")
+        from ui.components.icon_button import create_icon_button
+        self.browse_btn = create_icon_button(
+            frame,
+            icon_name="search",
+            text="...",
+            command=self._browse_template,
+            button_type="neutral"
+        )
+        self.app.bind_text(self.browse_btn, "browse", is_icon_button=True)
         self.browse_btn.grid(row=0, column=3, padx=(4, 0), pady=4)
+
+    def _build_system_roi_content(self, frame):
+        import json
+        import os
+
+        tk.Label(
+            frame,
+            text=self.app._t("setup_roi.description") if hasattr(self.app, "_t") else "Quản lý Vùng Quét Hệ Thống (System ROIs)",
+            font=UIStyleV2.FONT_SMALL,
+            fg=UIStyleV2.TEXT_MUTED,
+            bg=UIStyleV2.THEME_BG_APP
+        ).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+
+        roi_keys = ["combo_bar", "self_stats", "minimap"]
+
+        for idx, key in enumerate(roi_keys):
+            row = idx + 1
+            lbl_text = self.app._t(f"setup_roi.{key}") if hasattr(self.app, "_t") else key.replace("_", " ").title()
+            tk.Label(frame, text=lbl_text, bg=UIStyleV2.THEME_BG_APP, fg=UIStyleV2.TEXT_PRIMARY).grid(row=row, column=0, sticky="w", pady=4)
+
+            val_var = tk.StringVar()
+            cfg = self.app.state_controller.hunt_cfg
+            rois = cfg.get("rois", {})
+            current = rois.get(key, [])
+            val_var.set(str(current) if current else "Not set")
+
+            tk.Entry(frame, textvariable=val_var, state="readonly", width=25, bg=UIStyleV2.BG_ELEVATED, fg=UIStyleV2.TEXT_MUTED, relief="flat").grid(row=row, column=1, sticky="ew", padx=10, pady=4)
+
+            def _make_on_draw(k=key, v=val_var):
+                def _draw():
+                    from ui.helpers.capture_helper import CaptureHelper
+                    def _on_drawn(region):
+                        if region:
+                            v.set(str(list(region)))
+
+                            if "rois" not in self.app.state_controller.hunt_cfg:
+                                self.app.state_controller.hunt_cfg["rois"] = {}
+                            self.app.state_controller.hunt_cfg["rois"][k] = list(region)
+
+                            from lib.features.hunt.hunt_config import save_hunt_config
+                            # Use centralized atomic save
+                            success = save_hunt_config(self.app.state_controller.hunt_cfg)
+                            if not success:
+                                print("Failed atomic save via save_hunt_config")
+
+                    CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
+                return _draw
+
+            from ui.components.icon_button import create_icon_button
+            btn_draw = create_icon_button(
+                frame,
+                icon_name="edit",
+                text=self.app._t("setup_roi.draw") if hasattr(self.app, "_t") else "Vẽ lại",
+                command=_make_on_draw(),
+                button_type="neutral"
+            )
+            btn_draw.grid(row=row, column=2, sticky="e", pady=4)
 
     def _build_ui(self):
         self.get_content_frame().grid_columnconfigure(0, weight=1)
@@ -360,8 +443,15 @@ class SetupTab(ResponsiveGridBase):
             )
         )
 
+        # Section 5: System ROI Manager (Task 8)
+        self.roi_group, self.roi_visible, self.roi_toggle = (
+            self._build_collapsible_group(
+                4, "setup_system_roi", "setup_system_roi_desc", self._build_system_roi_content
+            )
+        )
+
     def _browse_template(self):
-        self.browse_btn.state(["disabled"])
+        self.browse_btn.config(state="disabled")
 
         def open_dialog():
             path = filedialog.askopenfilename(
@@ -370,7 +460,7 @@ class SetupTab(ResponsiveGridBase):
             )
             if path:
                 self.app.state_controller.ui_vars['setup_template'].set(path)
-            self.browse_btn.state(["!disabled"])
+            self.browse_btn.config(state="normal")
 
         self.after(50, open_dialog)
 

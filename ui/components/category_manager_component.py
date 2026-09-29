@@ -1,3 +1,4 @@
+from ui.components.base.responsive_grid_base import ResponsiveGridBase
 import tkinter as tk
 from tkinter import ttk, messagebox
 from lib.ui_style_v2 import UIStyleV2 as UIStyle
@@ -110,8 +111,9 @@ class CategoryManagerComponent(tk.Frame):
         self.cat_tree.bind("<Down>", self._on_cat_tree_interaction)
 
         # 3. Right Frame (Form)
-        self.cat_right_frame = tk.Frame(self.cat_paned_window, bg=UIStyle.BG_ELEVATED)
-        self.cat_paned_window.add(self.cat_right_frame, weight=1)
+        self.cat_right_frame_container = ResponsiveGridBase(self.cat_paned_window, bg=UIStyle.BG_ELEVATED)
+        self.cat_right_frame = self.cat_right_frame_container.get_content_frame()
+        self.cat_paned_window.add(self.cat_right_frame_container, weight=1)
 
         # Toolbar above form (Save, Cancel, Delete)
         self.cat_form_toolbar = tk.Frame(self.cat_right_frame, bg=UIStyle.BG_ELEVATED)
@@ -219,6 +221,14 @@ class CategoryManagerComponent(tk.Frame):
                 self._set_cat_form_state("edit")
 
     def _on_cat_add(self):
+        import tkinter.messagebox as messagebox
+        warning_msg = self.i18n_t(
+            "msg_category_add_warning",
+            default="Tạo loại Icon mới nên được hạn chế để tránh làm rác dữ liệu. \nBạn có chắc chắn muốn tiếp tục không?"
+        )
+        if not messagebox.askyesno(self.i18n_t("warning", default="Cảnh báo"), warning_msg):
+            return
+
         self.var_cat_id.set("")
         self.var_cat_name.set("")
         # Remove existing new_item if it's there

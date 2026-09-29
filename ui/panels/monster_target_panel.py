@@ -15,7 +15,19 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(10 * scale_factor), int(8 * scale_factor))
-        super().__init__(parent, text="🎯 Target Setup", padding=padding)
+        super().__init__(parent, text=app._t("monster_target_panel.title", default="Target Setup"), padding=padding)
+        # Fix typography hierarchy per Task 10
+        self.configure(labelanchor="n")
+        from ui.components.icon_button import create_icon_label
+        lbl = create_icon_label(
+            self,
+            icon_name="target",
+            text=app._t("monster_target_panel.title", default="Target Setup"),
+            font=UI.get_font("title", weight="bold"),
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY
+        )
+        self.configure(labelwidget=lbl)
         self.app = app
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
@@ -50,19 +62,19 @@ class MonsterTargetPanel(ttk.LabelFrame):
         mode_bar = tk.Frame(self.monster_frame, bg=UI.BG_SURFACE)
         mode_bar.pack(fill="x", padx=10, pady=(0, 8))
 
-        self.app.state_controller.set_ui_var('target_policy', self.app.state_controller.hunt_cfg.get("target_policy", "configured_only"))
+        self.app.state_controller.set_ui_var('target_policy', self.app.state_controller.get_hunt_config_value("target_policy", "configured_only"))
 
         def _on_policy_change(*args):
             if getattr(self.app, "click_running", False):
                 self.app.state_controller.set_ui_var('target_policy',
-                    self.app.state_controller.hunt_cfg.get("target_policy", "configured_only")
+                    self.app.state_controller.get_hunt_config_value("target_policy", "configured_only")
                 )
                 return
             new_policy = self.app.state_controller.get_ui_var('target_policy')
             if new_policy not in ["configured_only", "all_resolved", "any_target"]:
                 new_policy = "configured_only"
                 self.app.state_controller.set_ui_var('target_policy', new_policy)
-            self.app.state_controller.hunt_cfg["target_policy"] = new_policy
+            self.app.state_controller.set_hunt_config_value("target_policy", new_policy)
             self.app.state_controller.has_unsaved_changes = True
             if hasattr(self.app, "_update_unsaved_indicator"):
                 self.app._update_unsaved_indicator()
@@ -98,6 +110,33 @@ class MonsterTargetPanel(ttk.LabelFrame):
             )
             rb.pack(side="left", padx=2, pady=4)
             self.policy_radios.append(rb)
+
+        # Hunt Area Set Button
+        def _on_draw_hunt_area():
+            from ui.helpers.capture_helper import CaptureHelper
+            def _on_drawn(region):
+                if region:
+                    rois = self.app.state_controller.get_hunt_config_value("rois", {})
+                    rois["hunt_area"] = list(region)
+                    self.app.state_controller.set_hunt_config_value("rois", rois)
+
+                    success = self.app.state_controller.save_hunt_config()
+                    if not success:
+                        print("Failed to save hunt area via save_hunt_config")
+
+            CaptureHelper.start_region_selection(self.winfo_toplevel(), _on_drawn)
+
+        from ui.components.icon_button import create_icon_button
+
+        self.btn_set_hunt_area = create_icon_button(
+            parent=mode_bar,
+            element_id="btn_set_hunt_area",
+            icon_name="crop",
+            text=self.app._t("hunt_area.set") if hasattr(self.app, "_t") else "Set Hunt Area",
+            command=_on_draw_hunt_area,
+            button_type="neutral"
+        )
+        self.btn_set_hunt_area.pack(side="right", padx=10, pady=4)
 
         self.policy_content_frame = tk.Frame(self.monster_frame, bg=UI.BG_SURFACE)
         self.policy_content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -158,63 +197,48 @@ class MonsterTargetPanel(ttk.LabelFrame):
         )
         btn_container.pack(side="right", fill="y", padx=(8, 0))
 
-        self.btn_add = tk.Button(
-            btn_container,
-            text="➕",
+        from ui.components.icon_button import create_icon_button
+
+        self.btn_add = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_add",
+            icon_name="add",
             command=self._on_monster_add_smart,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default",
+            tooltip_key="monster_rotation_add"
         )
         self.btn_add.pack(pady=(0, 4))
-        UIHelper.create_tooltip(
-            self.btn_add, self.app._t("monster_rotation_add")
-        )
 
-        self.btn_move_up = tk.Button(
-            btn_container,
-            text="↑",
+        self.btn_move_up = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_up",
+            icon_name="up",
+            text="↑", # fallback
             command=self._on_monster_move_up,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default"
         )
         self.btn_move_up.pack(pady=(0, 4))
 
-        self.btn_move_down = tk.Button(
-            btn_container,
-            text="↓",
+        self.btn_move_down = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_down",
+            icon_name="down",
+            text="↓", # fallback
             command=self._on_monster_move_down,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default"
         )
         self.btn_move_down.pack(pady=(0, 12))
 
-        self.btn_remove_monster = self.app._create_icon_button(
-            btn_container,
-            icon_emoji="✖",
+        self.btn_remove_monster = create_icon_button(
+            parent=btn_container,
+            element_id="btn_target_remove",
+            icon_name="delete",
+            text="✖", # fallback
             command=self._on_monster_delete_from_list,
-            style="compact",
-            bg_color=UI.DANGER,
-            hover_color=UI.ACCENT_AMBER,
+            button_type="danger",
+            tooltip_key="monster_rotation_remove"
         )
         self.btn_remove_monster.pack()
-        UIHelper.create_tooltip(
-            self.btn_remove_monster, self.app._t("monster_rotation_remove")
-        )
 
 
         # 2. Detected UI (All Resolved view)
@@ -228,77 +252,74 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         detected_listbox_frame = tk.Frame(self.detected_container, bg=UI.BG_SURFACE)
         detected_listbox_frame.pack(fill="both", expand=True)
-        self.detected_monsters_listbox = tk.Listbox(
+
+        self.detected_monsters_treeview = ttk.Treeview(
             detected_listbox_frame,
-            height=5,
-            exportselection=False,
-            selectmode="single",
-            font=UI.FONT_TEXT,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            selectbackground=UI.ACCENT_GREEN_BG,
-            selectforeground=UI.ACCENT_GREEN,
-            highlightthickness=0,
-            relief="flat",
+            columns=("name", "hp", "distance", "confidence"),
+            show="headings",
+            height=5
         )
-        self.detected_monsters_listbox.pack(side="left", fill="both", expand=True)
-        self.app.state_controller.ui_widgets["detected_monsters_listbox"] = self.detected_monsters_listbox
+
+        self.detected_monsters_treeview.heading("name", text=self.app._t("monster_name", default="Name"))
+        self.detected_monsters_treeview.heading("hp", text="HP")
+        self.detected_monsters_treeview.heading("distance", text=self.app._t("distance", default="Dist."))
+        self.detected_monsters_treeview.heading("confidence", text="Conf.")
+
+        self.detected_monsters_treeview.column("name", width=120, anchor="w")
+        self.detected_monsters_treeview.column("hp", width=50, anchor="center")
+        self.detected_monsters_treeview.column("distance", width=50, anchor="center")
+        self.detected_monsters_treeview.column("confidence", width=50, anchor="center")
+
+        self.detected_monsters_treeview.pack(side="left", fill="both", expand=True)
+        self.app.state_controller.ui_widgets["detected_monsters_treeview"] = self.detected_monsters_treeview
 
         detected_scroll = ttk.Scrollbar(
-            detected_listbox_frame, command=self.detected_monsters_listbox.yview
+            detected_listbox_frame, command=self.detected_monsters_treeview.yview
         )
         detected_scroll.pack(side="right", fill="y")
-        self.detected_monsters_listbox.config(yscrollcommand=detected_scroll.set)
+        self.detected_monsters_treeview.config(yscrollcommand=detected_scroll.set)
 
         detected_btn_container = tk.Frame(self.detected_container, bg=UI.BG_SURFACE)
         detected_btn_container.pack(side="right", fill="y", padx=(8, 0))
         def promote_current_selection():
-            selection = self.detected_monsters_listbox.curselection()
+            selection = self.detected_monsters_treeview.selection()
             if not selection:
                 return
-            idx = selection[0]
-            if not hasattr(self.app, "_detected_snapshot_items") or idx >= len(self.app._detected_snapshot_items):
+            item_id = selection[0]
+            if not hasattr(self.app, "_detected_snapshot_items_map") or item_id not in self.app._detected_snapshot_items_map:
                 return
-            runtime_item = self.app._detected_snapshot_items[idx]
+            runtime_item = self.app._detected_snapshot_items_map[item_id]
             if hasattr(self.app, "monster_rotation_controller"):
                 self.app.monster_rotation_controller.promote_detected_monster(runtime_item)
 
-        self.btn_promote_monster = tk.Button(
-            detected_btn_container,
-            text="➕",
+        from ui.components.icon_button import create_icon_button
+        self.btn_promote_monster = create_icon_button(
+            parent=detected_btn_container,
+            element_id="btn_target_promote",
+            icon_name="add",
             command=promote_current_selection,
-            bg=UI.BG_ELEVATED,
-            fg=UI.TEXT_PRIMARY,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2"
+            button_type="default",
+            tooltip_key="monster_rotation_promote"
         )
         self.btn_promote_monster.pack(pady=(0, 4))
-        UIHelper.create_tooltip(
-            self.btn_promote_monster, self.app._t("monster_promote")
-        )
 
-        self.detected_monsters_listbox.bind("<Double-1>", lambda e: promote_current_selection())
-        self.detected_monsters_listbox.bind("<Return>", lambda e: promote_current_selection())
+        self.detected_monsters_treeview.bind("<Double-1>", lambda e: promote_current_selection())
+        self.detected_monsters_treeview.bind("<Return>", lambda e: promote_current_selection())
 
         def on_drag_start(event):
-            listbox = event.widget
-            if listbox.size() == 0:
+            tree = event.widget
+            item = tree.identify_row(event.y)
+            if not item:
                 return
-            idx = listbox.nearest(event.y)
-            if idx < 0 or idx >= listbox.size():
-                return
-            listbox.selection_clear(0, tk.END)
-            listbox.selection_set(idx)
+            tree.selection_set(item)
             # Find the active rotation listbox based on visibility
             target = getattr(self.app, "monster_rotation_listbox", None)
             if not target:
                 return
-            item_text = listbox.get(idx)
-            # Optional: Visual drag indicator code could go here
-            event.widget.drag_data = {"item": item_text, "source_idx": idx}
+            # Instead of text, get item dict
+            if not hasattr(self.app, "_detected_snapshot_items_map") or item not in self.app._detected_snapshot_items_map:
+                return
+            event.widget.drag_data = {"item_id": item, "source_id": item}
 
         def on_drag_motion(event):
             if not hasattr(event.widget, "drag_data"):
@@ -325,23 +346,23 @@ class MonsterTargetPanel(ttk.LabelFrame):
                     0 <= target_y <= target.winfo_height()
                     and 0 <= target_x <= target.winfo_width()
                 ):
-                    idx = event.widget.drag_data["source_idx"]
-                    if hasattr(self.app, "_detected_snapshot_items") and idx < len(self.app._detected_snapshot_items):
-                        runtime_item = self.app._detected_snapshot_items[idx]
+                    item_id = event.widget.drag_data["source_id"]
+                    if hasattr(self.app, "_detected_snapshot_items_map") and item_id in self.app._detected_snapshot_items_map:
+                        runtime_item = self.app._detected_snapshot_items_map[item_id]
                         if hasattr(self.app, "monster_rotation_controller"):
                             self.app.monster_rotation_controller.promote_detected_monster(runtime_item)
                 target.selection_clear(0, tk.END)
             del event.widget.drag_data
 
         # Apply drag bindings
-        self.detected_monsters_listbox.bind("<ButtonPress-1>", on_drag_start)
-        self.detected_monsters_listbox.bind("<B1-Motion>", on_drag_motion)
-        self.detected_monsters_listbox.bind("<ButtonRelease-1>", on_drop)
+        self.detected_monsters_treeview.bind("<ButtonPress-1>", on_drag_start)
+        self.detected_monsters_treeview.bind("<B1-Motion>", on_drag_motion)
+        self.detected_monsters_treeview.bind("<ButtonRelease-1>", on_drop)
 
         # 3. Any Target view
         self.any_target_empty = EmptyState(
             self.any_target_container,
-            icon="🎯",
+            icon="target",
             message=self.app._t("any_target_warning"),
             submessage=self.app._t(
                 "any_target_warning_submessage",
@@ -399,7 +420,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         self.configured_empty = EmptyState(
             self.configured_container,
-            icon="🎯",
+            icon="target",
             message=self.app._t("monster_target.empty_list"),
             submessage=self.app._t("monster_target.empty_list_submessage"),
         )
@@ -407,7 +428,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
         def _update_configured_empty_state(*args):
             if hasattr(self, "monster_rotation_listbox") and self.monster_rotation_listbox:
-                if self.monster_rotation_listbox.size() > 0:
+                if (self.monster_rotation_listbox.size() or 0) > 0:
                     self.configured_empty.pack_forget()
                 else:
                     self.configured_empty.pack(fill="both", expand=True, pady=(4, 0))
@@ -441,17 +462,10 @@ class MonsterTargetPanel(ttk.LabelFrame):
         # Initial call to set correct state
         self.update_training_mode_buttons()
 
-        # Legacy wiring to HuntTab is applied after refreshing the rotation list below.
-        if hasattr(self.app, "_refresh_monster_rotation_list"):
-            self.app._refresh_monster_rotation_list()
-
-        if getattr(self, "hunt_tab", None):
-            for prop in ["target_image_label", "target_name_label", "status_label",
-                         "target_level_label", "target_hp_label", "target_def_label",
-                         "hp_canvas", "hp_percent_label", "recovery_frame", "hp_bg", "hp_fill", "hp_text",
-                         "hunt_status_badge", "hunt_status_label", "skill_stats_tree"]:
-                if hasattr(self.app, prop):
-                    setattr(self.hunt_tab, prop, getattr(self.app, prop))
+        # FIX BUG #3: Refresh rotation list từ config khi khởi động
+        # (Trước đây gọi self.app._refresh_monster_rotation_list() nhưng method này
+        #  thuộc chính class MonsterTargetPanel, không phải App → hasattr trả False)
+        self._refresh_monster_rotation_list()
 
 
 
@@ -484,19 +498,18 @@ class MonsterTargetPanel(ttk.LabelFrame):
         snapshot = event.snapshot
         self._last_snapshot = snapshot
 
-        if getattr(self.app.state_controller, "hunt_cfg", {}).get("target_policy", "configured_only") != "all_resolved":
+        target_policy = self.app.state_controller.get_hunt_config_value("target_policy", "configured_only") if hasattr(self.app.state_controller, "get_hunt_config_value") else getattr(self.app.state_controller, "hunt_cfg", {}).get("target_policy", "configured_only")
+        if target_policy != "all_resolved":
             return
 
-        if not hasattr(self, "detected_monsters_listbox"):
+        if not hasattr(self, "detected_monsters_treeview"):
             return
 
+        current_selection = self.detected_monsters_treeview.selection()
+        selected_id = current_selection[0] if current_selection else None
 
-        current_selection = self.detected_monsters_listbox.curselection()
-        selected_idx = current_selection[0] if current_selection else None
-
-        yview = self.detected_monsters_listbox.yview()
-        self.detected_monsters_listbox.delete(0, tk.END)
-        self._detected_snapshot_items = []
+        if not hasattr(self.app, "_detected_snapshot_items_map"):
+            self.app._detected_snapshot_items_map = {}
 
         configured_keys = {
             (m.get("monster_id"), m.get("dungeon_id"))
@@ -504,31 +517,43 @@ class MonsterTargetPanel(ttk.LabelFrame):
             if m.get("monster_id")
         }
 
-        for _idx, item in enumerate(snapshot):
-            self._detected_snapshot_items.append(item)
-            name = item.get("name", "Unknown")
-            resolution_state = item.get("resolution_state", "unmapped_visual")
-            monster_id = item.get("monster_id")
-
-            if resolution_state == "db_match":
-                status = "✓ "
-                if (monster_id, item.get("dungeon_id")) in configured_keys:
-                    status += f"[{self.app._t('monster_promoted')}] "
-                elif item.get("confidence", 0) > 0:
-                    status += f"({item['confidence']:.2f}) "
-                display_text = (
-                    f"{status}{name} #{monster_id} - {self.app._t('monster_db_match')}"
-                )
-            elif resolution_state == "db_miss":
-                display_text = f"⚠ {name} - {self.app._t('monster_db_missing')}"
+        new_ids = set()
+        for item in snapshot:
+            # For new schema or old fallback
+            runtime_id = str(item.get("id", item.get("monster_id", "0")))
+            if "id" in item:
+                # Adapt to runtime item format if needed by rotation controller
+                runtime_item = {"monster_id": item.get("id"), "name": item.get("name")}
             else:
-                display_text = f"❓ {self.app._t('monster_unidentified')} ({item.get('template_label', '')})"
+                runtime_item = item
 
-            self.detected_monsters_listbox.insert(tk.END, display_text)
+            self.app._detected_snapshot_items_map[runtime_id] = runtime_item
+            new_ids.add(runtime_id)
 
-        if selected_idx is not None and selected_idx < self.detected_monsters_listbox.size():
-            self.detected_monsters_listbox.selection_set(selected_idx)
-        self.detected_monsters_listbox.yview_moveto(yview[0])
+            name = item.get("name", "Unknown")
+            monster_id = item.get("monster_id", item.get("id"))
+
+            # Depending on schema, it might be flat or nested
+            confidence = item.get("confidence", 0)
+            distance = item.get("distance", 0)
+            hp = item.get("hp", "")
+
+            values = (name, hp, distance, f"{confidence:.2f}")
+
+            if self.detected_monsters_treeview.exists(runtime_id):
+                self.detected_monsters_treeview.item(runtime_id, values=values)
+            else:
+                self.detected_monsters_treeview.insert("", "end", iid=runtime_id, values=values)
+
+        # Remove old items
+        for child_id in self.detected_monsters_treeview.get_children():
+            if child_id not in new_ids:
+                self.detected_monsters_treeview.delete(child_id)
+                if child_id in self.app._detected_snapshot_items_map:
+                    del self.app._detected_snapshot_items_map[child_id]
+
+        if selected_id and self.detected_monsters_treeview.exists(selected_id):
+            self.detected_monsters_treeview.selection_set(selected_id)
 
 
 
@@ -609,170 +634,57 @@ class MonsterTargetPanel(ttk.LabelFrame):
             m.get("training_mode", False) for m in self.app.state_controller.monster_rotation
         )
 
+        from ui.components.icon_button import update_button_state
+
         if is_training:
             # Training mode: Update add button
             if has_training_dummy:
                 # Dummy already set - show accept icon and disable
-                try:
-                    # Use size=16 to match compact button
-                    accept_icon = UIHelper.icon("accept", "✓", size=16)
-                    if isinstance(accept_icon, str):
-                        self.btn_add.config(text=accept_icon, state="disabled")
-                    else:
-                        self.btn_add.config(
-                            image=accept_icon, text="", state="disabled"
-                        )
-                except Exception:
-                    self.btn_add.config(text="✓", state="disabled")
-
-                # Update tooltip for locked state
-                tooltip_text = self.app._t("tooltip_add_monster_locked")
-                tooltip = getattr(self.btn_add, "_tooltip", None)
-                if tooltip is not None:
-                    try:
-                        tooltip.destroy()
-                    except Exception:
-                        pass
-                    try:
-                        delattr(self.btn_add, "_tooltip")
-                    except Exception:
-                        pass
-                UIHelper.create_tooltip(self.btn_add, tooltip_text)
+                update_button_state(
+                    self.btn_add,
+                    enabled=False,
+                    icon_name="accept",
+                    tooltip_text=self.app._t("tooltip_add_monster_locked")
+                )
             else:
                 # No dummy yet - show add icon and enable
-                try:
-                    # Use size=16 to match compact button
-                    add_icon = UIHelper.icon("add", "➕", size=16)
-                    if isinstance(add_icon, str):
-                        self.btn_add.config(text=add_icon, state="normal")
-                    else:
-                        self.btn_add.config(
-                            image=add_icon, text="", state="normal"
-                        )
-                except Exception:
-                    self.btn_add.config(text="➕", state="normal")
-
-                # Update tooltip for training helper
-                tooltip_text = self.app._t("tooltip_add_monster_training")
-                tooltip = getattr(self.btn_add, "_tooltip", None)
-                if tooltip is not None:
-                    try:
-                        tooltip.destroy()
-                    except Exception:
-                        pass
-                    try:
-                        delattr(self.btn_add, "_tooltip")
-                    except Exception:
-                        pass
-                UIHelper.create_tooltip(self.btn_add, tooltip_text)
-
-            # Disable priority reorder buttons with locked icon (white on gray)
-            # Use size=16 to match SMALL buttons (36px)
-            try:
-                locked_icon = UIHelper.icon("locked", "🔒", size=16, color="#FFFFFF")
-                for btn in [self.btn_move_up, self.btn_move_down]:
-                    # IMPORTANT: Keep original bg colors when disabled
-                    original_bg = UI.BG_ELEVATED
-                    btn.config(state="disabled", bg=original_bg)
-                    if isinstance(locked_icon, str):
-                        btn.config(text=locked_icon)
-                    else:
-                        btn.config(image=locked_icon, text="")
-            except Exception:
-                self.btn_move_up.config(state="disabled", text="🔒", bg=UI.BG_ELEVATED)
-                self.btn_move_down.config(
-                    state="disabled", text="🔒", bg=UI.BG_ELEVATED
+                update_button_state(
+                    self.btn_add,
+                    enabled=True,
+                    icon_name="add",
+                    tooltip_text=self.app._t("tooltip_add_monster_training")
                 )
 
-            # Update tooltips for disabled buttons
+            # Disable priority reorder buttons with locked icon
             for btn in [self.btn_move_up, self.btn_move_down]:
-                # Safely destroy any existing tooltip then create a new one
-                try:
-                    UIHelper.destroy_widget_tooltip(btn)
-                except Exception:
-                    pass
-                UIHelper.create_tooltip(btn, self.app._t("tooltip_reorder_locked"))
+                update_button_state(
+                    btn,
+                    enabled=False,
+                    icon_name="locked",
+                    icon_fallback="🔒",
+                    tooltip_text=self.app._t("tooltip_reorder_locked")
+                )
         else:
             # Normal mode: Restore defaults
-            try:
-                # Use size=16 to match compact button
-                add_icon = UIHelper.icon("add", "➕", size=16)
-                if isinstance(add_icon, str):
-                    self.btn_add.config(text=add_icon, state="normal")
-                else:
-                    self.btn_add.config(image=add_icon, text="", state="normal")
-            except Exception:
-                self.btn_add.config(text="➕", state="normal")
-
-            # Restore normal tooltip
-            try:
-                UIHelper.destroy_widget_tooltip(self.btn_add)
-            except Exception:
-                pass
-            UIHelper.create_tooltip(
-                self.btn_add, self.app._t("tooltip_add_monster_normal")
+            update_button_state(
+                self.btn_add,
+                enabled=True,
+                icon_name="add",
+                tooltip_text=self.app._t("tooltip_add_monster_normal")
             )
 
-            # Enable priority reorder buttons with original icons and colors (both blue for consistency)
-            try:
-                # Use size=16 to match SMALL buttons
-                up_icon = UIHelper.icon("up", "↑", size=16)
-                down_icon = UIHelper.icon("down", "↓", size=16)
-
-                if isinstance(up_icon, str):
-                    self.btn_move_up.config(
-                        state="normal",
-                        text=up_icon,
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-                else:
-                    self.btn_move_up.config(
-                        state="normal",
-                        image=up_icon,
-                        text="",
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-
-                if isinstance(down_icon, str):
-                    self.btn_move_down.config(
-                        state="normal",
-                        text=down_icon,
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-                else:
-                    self.btn_move_down.config(
-                        state="normal",
-                        image=down_icon,
-                        text="",
-                        bg=UI.ACCENT_BLUE,
-                        fg=UI.BG_BASE,
-                    )
-            except Exception:
-                self.btn_move_up.config(
-                    state="normal",
-                    text="↑",
-                    bg=UI.ACCENT_BLUE,
-                    fg=UI.BG_BASE,
-                )
-                self.btn_move_down.config(
-                    state="normal",
-                    text="↓",
-                    bg=UI.ACCENT_BLUE,
-                    fg=UI.BG_BASE,
-                )
-
-            # Restore normal tooltips
-            try:
-                UIHelper.destroy_widget_tooltip(self.btn_move_up)
-            except Exception:
-                pass
-            UIHelper.create_tooltip(self.btn_move_up, self.app._t("tooltip_move_up"))
-
-            try:
-                UIHelper.destroy_widget_tooltip(self.btn_move_down)
-            except Exception:
-                pass
-            UIHelper.create_tooltip(self.btn_move_down, self.app._t("tooltip_move_down"))
+            # Enable priority reorder buttons
+            update_button_state(
+                self.btn_move_up,
+                enabled=True,
+                icon_name="up",
+                icon_fallback="↑",
+                tooltip_text=self.app._t("tooltip_move_up")
+            )
+            update_button_state(
+                self.btn_move_down,
+                enabled=True,
+                icon_name="down",
+                icon_fallback="↓",
+                tooltip_text=self.app._t("tooltip_move_down")
+            )

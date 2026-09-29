@@ -38,6 +38,7 @@ import tkinter as tk
 
 # Global imports
 import sys
+from ui.helpers.context_action_helper import ContextActionHelper
 from pathlib import Path
 
 # Add project root to path if not already there
@@ -280,11 +281,7 @@ def create_icon_button(
         icon_fallback = "🚫"
         # Set default tooltip if none provided
         if not tooltip_text and not tooltip_key:
-            lang = get_lang()
-            if lang == "vi":
-                tooltip_text = f"Không thể {original_icon_name} lúc này"
-            else:
-                tooltip_text = f"Cannot {original_icon_name} at this time"
+            tooltip_text = i18n_t("icon_btn.disabled_action", default=f"Cannot {original_icon_name} at this time").replace("{action}", original_icon_name)
 
     # Get icon
     icon = icon_helper.get_icon(icon_name, fallback=icon_fallback, size=icon_size)
@@ -714,7 +711,7 @@ def create_add_button(parent: Any, command: Callable, element_id: Optional[str] 
     return create_icon_button(
         parent=parent,
         icon_name="add",
-        icon_fallback="➕",
+        icon_fallback="",
         command=command,
         button_type="green_light",
         element_id=element_id,
@@ -727,7 +724,7 @@ def create_delete_button(parent: Any, command: Callable, element_id: Optional[st
     return create_icon_button(
         parent=parent,
         icon_name="delete",
-        icon_fallback="🗑️",
+        icon_fallback="",
         command=command,
         button_type="red",
         element_id=element_id,
@@ -763,7 +760,7 @@ def create_refresh_button(parent: Any, command: Callable, element_id: Optional[s
     return create_icon_button(
         parent=parent,
         icon_name="refresh",
-        icon_fallback="🔄",
+        icon_fallback="",
         command=command,
         button_type="refresh",
         element_id=element_id,
@@ -999,11 +996,7 @@ def update_button_state(
         # Disabled: use forbidden icon
         icon = icon_helper.get_icon("forbidden", fallback="🚫", size=icon_size)
         if not tooltip_text:
-            lang = get_lang()
-            if lang == "vi":
-                tooltip_text = "Không khả dụng"
-            else:
-                tooltip_text = "Not available"
+            tooltip_text = i18n_t("icon_btn.not_available", default="Not available")
 
     # Update button state
     button.config(state="normal" if enabled else "disabled")

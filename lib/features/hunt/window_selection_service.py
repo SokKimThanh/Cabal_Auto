@@ -188,6 +188,11 @@ class WindowSelectionService:
             logger.warning("Validation failed: window_unavailable")
             return i18n_t("error_window_unavailable", ns=I18N_GLOBAL)
 
+        # Check target_policy, if it's all_resolved or any_target, we skip template validation
+        target_policy = hunt_cfg.get("target_policy", "configured_only")
+        if target_policy in ["all_resolved", "any_target"]:
+            return None
+
         templates = hunt_cfg.get("templates") or []
         template_path = str(hunt_cfg.get("template_path", "") or "").strip()
         if not templates and not template_path:

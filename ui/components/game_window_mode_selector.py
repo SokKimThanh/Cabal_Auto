@@ -150,8 +150,8 @@ class GameWindowModeSelector:
         """
         icons = {
             "none": "🚫",  # Screen off
-            "below": "⬇️",  # Below app
-            "above": "⬆️",  # Above/topmost
+            "below": "",  # Below app
+            "above": "",  # Above/topmost
         }
         return icons.get(mode, "❓")
 

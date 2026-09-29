@@ -87,6 +87,8 @@ class MonsterDatabase:
 
             setup_skills_schema(self.conn)
             setup_icons_schema(self.conn)
+            from lib.db.migrations import m001_add_skill_ids_to_builds
+            m001_add_skill_ids_to_builds.up(self.conn)
         except ImportError as e:
             print(f"[DB] Could not import schema modules: {e}")
         except sqlite3.Error as e:
@@ -252,9 +254,11 @@ class MonsterDatabase:
         try:
             cursor.execute("SELECT COUNT(*) FROM class_skill_assignments")
             if cursor.fetchone()[0] == 0:
-                from lib.db.services.seed_class_skill_assignments_service import SeedClassSkillAssignmentsService
-                print("[DB] Seeding class_skill_assignments table...")
-                SeedClassSkillAssignmentsService().seed_assignments()
+                # FIX BUG #7: Dùng crawl data (248 mapping) thay vì manifest (32 mapping)
+                from lib.db.services.seed_from_crawl_service import SeedFromCrawlService
+                print("[DB] Seeding class_skill_assignments from crawl data...")
+                result = SeedFromCrawlService().seed()
+                print(f"[DB] Seed result: {result.get('status')}, imported={result.get('imported')}")
         except Exception as e:
             print(f"[DB] Lỗi khi seed class_skill_assignments: {e}")
 

@@ -94,8 +94,18 @@ class IconFormComponent(tk.Frame):
 
         # 3. Category
         tk.Label(self, text=self.i18n_t("lbl_category", default="Category:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=2, column=0, sticky="e", padx=5, pady=2)
-        self.combo_category = ttk.Combobox(self, textvariable=self.var_category, state="readonly")
-        self.combo_category.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
+
+        category_frame = tk.Frame(self, bg=UIStyle.BG_SURFACE)
+        category_frame.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
+        category_frame.grid_columnconfigure(0, weight=1)
+
+        self.combo_category = ttk.Combobox(category_frame, textvariable=self.var_category, state="readonly")
+        self.combo_category.grid(row=0, column=0, sticky="ew")
+
+        self.lbl_category_desc = tk.Label(category_frame, text="", bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_MUTED, font=(UIStyle.FONT_FAMILY_UI, 8, "italic"), justify="left", wraplength=300)
+        self.lbl_category_desc.grid(row=1, column=0, sticky="w", pady=(2, 0))
+
+        self.combo_category.bind("<<ComboboxSelected>>", self._on_category_selected)
 
         # 4. Fallback Emoji
         tk.Label(self, text=self.i18n_t("lbl_fallback_emoji", default="Fallback Emoji:"), bg=UIStyle.BG_SURFACE, fg=UIStyle.TEXT_PRIMARY).grid(row=3, column=0, sticky="e", padx=5, pady=2)
@@ -218,7 +228,7 @@ class IconFormComponent(tk.Frame):
             test_missing = "___MISSING___"
             val = t(key, default=test_missing, ns=None, lang=None)
             if val == test_missing:
-                self.lbl_tooltip_warning.config(text="⚠️ Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
+                self.lbl_tooltip_warning.config(text="Tooltip chưa được khai báo trong thư viện ngôn ngữ!", fg="#ff9800")
             else:
                 self.lbl_tooltip_warning.config(text="✓ Tooltip hợp lệ", fg="green")
 
@@ -277,8 +287,30 @@ class IconFormComponent(tk.Frame):
             self.listbox_tooltip_suggestions.grid_remove()
             self.entry_tooltip.focus_set()
 
-    def update_category_values(self, values):
-        self.combo_category.config(values=values)
+    def update_category_values(self, categories):
+        # Allow passing full dict instead of just names for descriptions
+        self._categories_data = categories
+        if isinstance(categories, dict):
+            names = list(categories.keys())
+        else:
+            names = categories
+        self.combo_category.config(values=names)
+        self._on_category_selected()
+
+    def _on_category_selected(self, event=None):
+        if not hasattr(self, '_categories_data') or not isinstance(self._categories_data, dict):
+            return
+
+        selected_cat = self.var_category.get()
+        if selected_cat in self._categories_data:
+            cat_info = self._categories_data[selected_cat]
+            desc = cat_info.get("description", "") if isinstance(cat_info, dict) else ""
+            if desc:
+                self.lbl_category_desc.config(text=desc)
+            else:
+                self.lbl_category_desc.config(text="Không có mô tả")
+        else:
+            self.lbl_category_desc.config(text="")
 
     def add_tooltip_key_if_missing(self, key):
         if key and key not in self._available_keys:

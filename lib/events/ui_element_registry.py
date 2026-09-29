@@ -41,7 +41,8 @@ class UIElementRegistry:
 
     def register(self, descriptor: UIElementDescriptor) -> None:
         key = (descriptor.module, descriptor.screen, descriptor.element_id)
-        if key in self._elements:
+        is_new = key not in self._elements
+        if not is_new:
             existing = self._elements[key]
             if existing.element_type != descriptor.element_type:
                 logger.warning(
@@ -49,6 +50,10 @@ class UIElementRegistry:
                     f"Existing type: {existing.element_type}, New type: {descriptor.element_type}"
                 )
         self._elements[key] = descriptor
+
+        if is_new:
+            from lib.events.event_bus import EventBus, UIElementRegisteredEvent
+            EventBus.trigger(UIElementRegisteredEvent(descriptor))
 
     def get_all(self) -> List[UIElementDescriptor]:
         return list(self._elements.values())

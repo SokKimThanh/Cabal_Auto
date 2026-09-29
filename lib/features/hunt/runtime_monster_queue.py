@@ -4,6 +4,9 @@ import uuid
 from typing import Dict, List, Any, Optional
 
 
+from lib.events.event_bus import EventBus, SceneMonstersDetectedEvent
+
+
 class RuntimeMonsterQueue:
     def __init__(
         self,
@@ -140,12 +143,28 @@ class RuntimeMonsterQueue:
         attack_queue.sort(key=lambda x: x["confidence"], reverse=True)
         return tuple(attack_queue)
 
-    def maybe_publish(self, schedule_ui_task_fn: Any) -> None:
-        if not self.publish_callback or not schedule_ui_task_fn:
-            return
-
+    def maybe_publish(self, schedule_ui_task_fn: Any = None) -> None:
         now = time.time()
         if now - self.last_publish_time >= self.publish_interval:
             snapshot = self.get_snapshot()
-            schedule_ui_task_fn(lambda: self.publish_callback(snapshot))
+
+            # Format payload to be lightweight primitive types
+            lightweight_snapshot = []
+            for item in snapshot:
+                lightweight_snapshot.append({
+                    "id": item["monster_id"],
+                    "name": item["name"],
+                    "x": item["center"][0],
+                    "y": item["center"][1],
+                    "confidence": item["confidence"],
+                    "distance": 0, # Placeholder if no player pos is given, can be extended later
+                    "timestamp": item["last_seen"]
+                })
+
+            EventBus.trigger(SceneMonstersDetectedEvent(lightweight_snapshot))
+
+            # Keep legacy callback for compatibility if needed, but EventBus is preferred
+            if self.publish_callback and schedule_ui_task_fn:
+                schedule_ui_task_fn(lambda: self.publish_callback(snapshot))
+
             self.last_publish_time = now

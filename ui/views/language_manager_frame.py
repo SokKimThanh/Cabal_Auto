@@ -6,6 +6,7 @@ from ui.components.base.responsive_grid_base import ResponsiveGridBase
 from lib.ui.dialog_service import DialogService
 import threading
 from ui.helpers.tooltip import attach_i18n_tooltip
+from ui.components import create_icon_button
 
 
 class LanguageManagerFrame(ResponsiveGridBase):
@@ -54,10 +55,22 @@ class LanguageManagerFrame(ResponsiveGridBase):
         search_entry.bind("<KeyRelease>", lambda e: self.apply_filters())
 
         # Action Buttons
-        refresh_btn = ttk.Button(self.toolbar, text=self._t("lang_mgr_refresh", default="Refresh"), command=self.refresh_data)
+        refresh_btn = create_icon_button(
+            parent=self.toolbar,
+            icon_name="refresh",
+            text=self._t("lang_mgr_refresh", default="Refresh"),
+            command=self.refresh_data,
+            button_type="refresh"
+        )
         refresh_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
-        sync_btn = ttk.Button(self.toolbar, text=self._t("lang_mgr_sync", default="Sync to JSON"), command=self.sync_to_json)
+        sync_btn = create_icon_button(
+            parent=self.toolbar,
+            icon_name="sync",
+            text=self._t("lang_mgr_sync", default="Sync to JSON"),
+            command=self.sync_to_json,
+            button_type="info"
+        )
         sync_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
     def _build_tree_section(self):
@@ -123,9 +136,29 @@ class LanguageManagerFrame(ResponsiveGridBase):
         btn_frame = tk.Frame(self.bottom_frame, bg=UIStyle.BG_ELEVATED)
         btn_frame.grid(row=3, column=0, columnspan=4, sticky="e", padx=5, pady=10)
 
-        ttk.Button(btn_frame, text=self._t("lang_mgr_add_new", default="Add New (Clear)"), command=self.clear_form).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text=self._t("lang_mgr_delete", default="Delete Key"), command=self.delete_key).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text=self._t("lang_mgr_save", default="Save"), command=self.save_translation).pack(side=tk.LEFT, padx=5)
+        create_icon_button(
+            parent=btn_frame,
+            icon_name="add",
+            text=self._t("lang_mgr_add_new", default="Add New (Clear)"),
+            command=self.clear_form,
+            button_type="green_light"
+        ).pack(side=tk.LEFT, padx=5)
+
+        create_icon_button(
+            parent=btn_frame,
+            icon_name="delete",
+            text=self._t("lang_mgr_delete", default="Delete Key"),
+            command=self.delete_key,
+            button_type="red"
+        ).pack(side=tk.LEFT, padx=5)
+
+        create_icon_button(
+            parent=btn_frame,
+            icon_name="save",
+            text=self._t("lang_mgr_save", default="Save"),
+            command=self.save_translation,
+            button_type="primary"
+        ).pack(side=tk.LEFT, padx=5)
 
         self.is_editing_existing = False
         self.form_key_entry.focus_set()

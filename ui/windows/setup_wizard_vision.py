@@ -1067,7 +1067,7 @@ class VisionWizard(tk.Toplevel):
             if self.status_label is not None:
                 self.status_label.config(
                     text=i18n_t(
-                        "status_unsaved", ns="vision_wizard", default="⚠️ Chưa lưu"
+                        "status_unsaved", ns="vision_wizard", default="Chưa lưu"
                     ),
                     fg=UI.COLOR_WARNING,
                 )

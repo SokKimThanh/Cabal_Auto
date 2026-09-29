@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from lib.ui_style_v2 import UIStyleV2 as UI
 from lib.events.event_bus import EventBus, TargetHpUpdatedEvent, TargetStatusUpdatedEvent, TargetInfoUpdatedEvent, ClearTargetUIEvent
 from ui.components.status_badge import StatusBadge
+from lib.ui.animation_manager import UIAnimationManager
 
 @dataclass
 class TargetInfo:
@@ -22,13 +23,26 @@ class TargetStatusPanel(ttk.LabelFrame):
 
     def __init__(self, parent, app, scale_factor=1.0, hunt_tab=None):
         padding = (int(8 * scale_factor), int(6 * scale_factor))
-        super().__init__(parent, text="📊 Target Status", padding=padding)
+        super().__init__(parent, text=app._t("target_status_panel.title", default="Target Status"), padding=padding)
+        # Fix typography hierarchy per Task 10
+        self.configure(labelanchor="n")
+        from ui.components.icon_button import create_icon_label
+        lbl = create_icon_label(
+            self,
+            icon_name="chart",
+            text=app._t("target_status_panel.title", default="Target Status"),
+            font=UI.get_font("title", weight="bold"),
+            bg=UI.BG_BASE,
+            fg=UI.TEXT_PRIMARY
+        )
+        self.configure(labelwidget=lbl)
         self.app = app
         self.scale_factor = scale_factor
         self.hunt_tab = hunt_tab
 
         self.font_ui = UI.resolve_font_family("ui")
         self.font_mono = UI.resolve_font_family("mono")
+        self.animation_manager = UIAnimationManager()
 
         # Legacy compatibility wrappers
         self._setup_legacy_wrappers()
@@ -104,111 +118,7 @@ class TargetStatusPanel(ttk.LabelFrame):
             pass
 
     def _setup_legacy_wrappers(self):
-        """Creates dummy objects for legacy code that expects standard tkinter widgets"""
-        self.hp_canvas = tk.Canvas(self)
-        self.hp_percent_label = tk.Label(self)
-        self.target_image_label = tk.Label(self)
-        self.target_name_label = tk.Label(self)
-        self.status_label = tk.Label(self)
-        self.target_level_label = tk.Label(self)
-        self.target_hp_label = tk.Label(self)
-        self.target_def_label = tk.Label(self)
-        self.recovery_frame = tk.Frame(self)
-        self.hp_bg = self.hp_canvas.create_rectangle(0,0,1,1)
-        self.hp_fill = self.hp_canvas.create_rectangle(0,0,1,1)
-        self.hp_text = self.hp_canvas.create_text(0,0)
-
-        self.hunt_status_badge = StatusBadge(self, status="waiting")
-        self.hunt_status_label = self.hunt_status_badge
-        self.hunt_target_info = self.app.state_controller.ui_vars.get("hunt_target_info", tk.StringVar(value=""))
-        self.hunt_target_info_label = tk.Label(self, textvariable=self.hunt_target_info)
-
         self._current_info = TargetInfo()
-
-        if getattr(self, "hunt_tab", None):
-            for prop in ["target_image_label", "target_name_label", "status_label",
-                         "target_level_label", "target_hp_label", "target_def_label",
-                         "hp_canvas", "hp_percent_label", "recovery_frame", "hp_bg", "hp_fill", "hp_text",
-                         "hunt_status_badge", "hunt_status_label"]:
-                if hasattr(self.app, prop):
-                    setattr(self.hunt_tab, prop, getattr(self.app, prop))
-
-        def intercept_name(*args, **kwargs):
-            if "text" in kwargs:
-                self._current_info.name = kwargs["text"]
-                if self._current_info.state == "waiting" and self._current_info.name and self._current_info.name != "UnknownMob":
-                    self._current_info.state = "ready"
-                elif not self._current_info.name or self._current_info.name == "UnknownMob":
-                    self._current_info.state = "waiting"
-                self.update_target(self._current_info)
-            return tk.Label.config(self.target_name_label, *args, **kwargs)
-        self.target_name_label.config = intercept_name
-
-        def intercept_level(*args, **kwargs):
-            if "text" in kwargs:
-                try: self._current_info.level = int(kwargs["text"])
-                except: pass
-                self.update_target(self._current_info)
-            return tk.Label.config(self.target_level_label, *args, **kwargs)
-        self.target_level_label.config = intercept_level
-
-        def intercept_max_hp(*args, **kwargs):
-            if "text" in kwargs:
-                try:
-                    self._current_info.max_hp = int(kwargs["text"])
-                    if self._current_info.hp == 0:
-                        self._current_info.hp = self._current_info.max_hp # initialize full
-                except: pass
-                self.update_target(self._current_info)
-            return tk.Label.config(self.target_hp_label, *args, **kwargs)
-        self.target_hp_label.config = intercept_max_hp
-
-        def intercept_def(*args, **kwargs):
-            if "text" in kwargs:
-                try: self._current_info.defense = int(kwargs["text"])
-                except: pass
-                self.update_target(self._current_info)
-            return tk.Label.config(self.target_def_label, *args, **kwargs)
-        self.target_def_label.config = intercept_def
-
-        def intercept_status(*args, **kwargs):
-            if "status" in kwargs:
-                if kwargs["status"] == "hunting": self._current_info.state = "hunting"
-                elif kwargs["status"] == "waiting": self._current_info.state = "waiting"
-                else: self._current_info.state = "ready"
-                self.update_target(self._current_info)
-            return tk.Label.config(self.status_label, *args, **kwargs)
-        self.status_label.config = intercept_status
-
-        # Intercept hp_canvas itemconfig for HP updates
-        orig_itemconfig = self.hp_canvas.itemconfig
-        def intercept_hp_canvas_itemconfig(tagOrId, **kwargs):
-            if tagOrId == self.hp_fill and "fill" in kwargs:
-                color = kwargs["fill"]
-                if color == "#52525B": # dead
-                    self._current_info.hp = 0
-                    self._current_info.state = "waiting"
-                    self.update_target(self._current_info)
-                elif color == UI.ACCENT_GREEN: # hunting / full
-                    self._current_info.state = "hunting"
-                    self.update_target(self._current_info)
-            return orig_itemconfig(tagOrId, **kwargs)
-        self.hp_canvas.itemconfig = intercept_hp_canvas_itemconfig
-
-        # Intercept coords to update HP ratio
-        orig_coords = self.hp_canvas.coords
-        def intercept_hp_canvas_coords(tagOrId, *args):
-            if tagOrId == self.hp_fill and len(args) == 4:
-                # args are x1, y1, x2, y2
-                width = args[2] - args[0]
-                total_width = self.hp_canvas.winfo_width()
-                if total_width > 0:
-                    ratio = width / total_width
-                    self._current_info.hp = int(self._current_info.max_hp * ratio)
-                    self.update_target(self._current_info)
-            return orig_coords(tagOrId, *args)
-        self.hp_canvas.coords = intercept_hp_canvas_coords
-
 
     def _build_ui(self):
         # --- SECTION 1: Header bar ---
@@ -224,7 +134,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         title_label = tk.Label(
             header_inner,
-            text="⊕ TARGET STATUS",
+            text=self.app._t("target_status_panel.target_status_header", default="TARGET STATUS").upper(),
             font=(self.font_mono, UI.SIZE_TINY, "bold"),
             fg=UI.TEXT_MUTED,
             bg=UI.BG_ELEVATED,
@@ -269,9 +179,12 @@ class TargetStatusPanel(ttk.LabelFrame):
         no_target_lbl.pack()
 
         from ui.components.empty_state import EmptyState
+
+        # We rely on the dashed circle drawn on empty_canvas above
+
         self.empty_state_comp = EmptyState(
             self.empty_identity_frame,
-            icon="ℹ️",
+            icon="", # Rely on dashed circle
             message=self.app._t("target_status.no_target"),
             submessage=self.app._t("target_status.no_target_submessage")
         )
@@ -383,7 +296,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         val_lbl = tk.Label(
             lbl_frame,
             text="— / —",
-            font=(self.font_mono, UI.SIZE_SMALL),
+            font=UI.get_font("mono", UI.SIZE_SMALL),
             fg=UI.TEXT_SUBTLE,
             bg=UI.BG_SURFACE,
             anchor="e"
@@ -442,7 +355,7 @@ class TargetStatusPanel(ttk.LabelFrame):
         val_lbl = tk.Label(
             pill,
             text="—",
-            font=(self.font_mono, UI.SIZE_BODY, "bold"),
+            font=UI.get_font("mono", UI.SIZE_BODY, "bold"),
             fg=UI.TEXT_PRIMARY,
             bg=UI.BG_ELEVATED,
             anchor="w"
@@ -451,7 +364,7 @@ class TargetStatusPanel(ttk.LabelFrame):
 
         return val_lbl
 
-    def update_target(self, info: TargetInfo) -> None:
+    def update_target(self, info: TargetInfo, animate=False) -> None:
         """Cập nhật toàn bộ UI từ TargetInfo mới."""
 
         # 1. Cập nhật badge state (header)
@@ -507,13 +420,44 @@ class TargetStatusPanel(ttk.LabelFrame):
             hp_ratio = info.hp / info.max_hp if info.max_hp > 0 else 0
             self.hp_bar_canvas.current_ratio = hp_ratio
             width = self.hp_bar_canvas.winfo_width()
-            self.hp_bar_canvas.coords(self.hp_fill_rect, 0, 0, width * hp_ratio, 16)
+            def update_hp_canvas(ratio):
+                if self.hp_bar_canvas.winfo_exists():
+                    self.hp_bar_canvas.current_ratio = ratio
+                    w = self.hp_bar_canvas.winfo_width()
+                    self.hp_bar_canvas.coords(self.hp_fill_rect, 0, 0, w * ratio, 16)
+
+            if getattr(self.hp_bar_canvas, "current_ratio", None) is None:
+                self.hp_bar_canvas.current_ratio = 0.0
+
+            self.animation_manager.register_tween(
+                target_id=f"hp_bar_{id(self)}",
+                widget=self.hp_bar_canvas,
+                start_val=self.hp_bar_canvas.current_ratio,
+                end_val=hp_ratio,
+                duration_ms=200,
+                update_func=update_hp_canvas
+            )
 
             self.mp_val_lbl.config(text=format_stat(info.mp, info.max_mp), fg=UI.TEXT_PRIMARY)
             mp_ratio = info.mp / info.max_mp if info.max_mp > 0 else 0
-            self.mp_bar_canvas.current_ratio = mp_ratio
-            width = self.mp_bar_canvas.winfo_width()
-            self.mp_bar_canvas.coords(self.mp_fill_rect, 0, 0, width * mp_ratio, 16)
+
+            def update_mp_canvas(ratio):
+                if self.mp_bar_canvas.winfo_exists():
+                    self.mp_bar_canvas.current_ratio = ratio
+                    w = self.mp_bar_canvas.winfo_width()
+                    self.mp_bar_canvas.coords(self.mp_fill_rect, 0, 0, w * ratio, 16)
+
+            if getattr(self.mp_bar_canvas, "current_ratio", None) is None:
+                self.mp_bar_canvas.current_ratio = 0.0
+
+            self.animation_manager.register_tween(
+                target_id=f"mp_bar_{id(self)}",
+                widget=self.mp_bar_canvas,
+                start_val=self.mp_bar_canvas.current_ratio,
+                end_val=mp_ratio,
+                duration_ms=200,
+                update_func=update_mp_canvas
+            )
 
             # 4. Cập nhật 3 stat pills
             self.def_val_lbl.config(text=f"{info.defense:,}")

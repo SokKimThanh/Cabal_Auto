@@ -26,6 +26,18 @@ class AppStateController:
     def hunt_cfg(self, value: Dict[str, Any]) -> None:
         self.config_repository.set_config(value)
 
+    def get_all_hunt_config(self) -> Dict[str, Any]:
+        return self.config_repository.get_config()
+
+    def get_hunt_config_value(self, key: str, default: Any = None) -> Any:
+        return self.config_repository.get(key, default)
+
+    def set_hunt_config_value(self, key: str, value: Any) -> None:
+        self.config_repository.set(key, value)
+
+    def save_hunt_config(self) -> bool:
+        return self.config_repository.save()
+
     @property
     def has_unsaved_changes(self) -> bool:
         return self._has_unsaved_changes
@@ -180,6 +192,7 @@ class AppStateController:
             "hunt_target_info": tk.StringVar(master=root, value=i18n_t("target_card.target_none")),
             "target_policy": tk.StringVar(master=root),
             "setup_template": tk.StringVar(master=root),
+            "setup_auto_start_with_hunt": tk.StringVar(master=root),
             "setup_target_key": tk.StringVar(master=root),
             "setup_target_cycle": tk.StringVar(master=root),
             "setup_search_interval": tk.StringVar(master=root),
