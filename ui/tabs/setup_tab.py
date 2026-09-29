@@ -422,9 +422,10 @@ class SetupTab(ResponsiveGridBase):
             btn_draw = create_icon_button(
                 frame,
                 icon_name="edit",
-                text=self.app._t("setup_roi.draw") if hasattr(self.app, "_t") else "Vẽ lại",
+                text=self.app._t(f"setup_roi.{key}") if hasattr(self.app, "_t") else key.replace("_", " ").title(),
                 command=_make_on_draw(),
-                button_type="neutral"
+                button_type="neutral",
+                tooltip_text=self.app._t(f"tooltip.setup_roi.{key}") if hasattr(self.app, "_t") else None
             )
             btn_draw.grid(row=row, column=2, sticky="e", pady=4)
 

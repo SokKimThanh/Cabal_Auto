@@ -3,6 +3,15 @@
 
 GLOBAL_TRANSLATIONS = {
     'en': {
+        'setup_roi.combo_bar': 'Setup Combo Bar',
+        'setup_roi.self_stats': 'Setup Character Stats',
+        'setup_roi.minimap': 'Setup Minimap',
+        'hunt_area.set': 'Setup Hunt Area',
+        'tooltip.setup_roi.combo_bar': 'Purpose: Scan skill bar\nData read: Skill icon templates\nExpected result: Coordinates [x, y, w, h]',
+        'tooltip.setup_roi.self_stats': 'Purpose: Scan player HP/MP\nData read: Not specified (TODO)\nExpected result: Coordinates [x, y, w, h]',
+        'tooltip.setup_roi.minimap': 'Purpose: Scan minimap\nData read: Not specified (TODO)\nExpected result: Coordinates [x, y, w, h]',
+        'tooltip.hunt_area.set': 'Purpose: Scan monster spawn area\nData read: Monster templates, Monster HP bars\nExpected result: Coordinates [x, y, w, h]',
+
         'icon_btn.disabled_action': 'Cannot {action} at this time',
         'icon_btn.not_available': 'Not available',
         'help_hunt_title': '1. Hunt Screen Reminders',
@@ -696,6 +705,15 @@ GLOBAL_TRANSLATIONS = {
         'btn_next': 'Next',
     },
     'vi': {
+        'setup_roi.combo_bar': 'Thiết lập thanh Combo',
+        'setup_roi.self_stats': 'Thiết lập chỉ số nhân vật',
+        'setup_roi.minimap': 'Thiết lập Minimap',
+        'hunt_area.set': 'Thiết lập vùng săn',
+        'tooltip.setup_roi.combo_bar': 'Mục đích: Quét thanh kỹ năng\nDữ liệu đọc: Các template icon của skill\nKết quả kỳ vọng: Tọa độ [x, y, w, h]',
+        'tooltip.setup_roi.self_stats': 'Mục đích: Quét chỉ số sinh tồn của nhân vật (HP/MP)\nDữ liệu đọc: Chưa có đặc tả (TODO)\nKết quả kỳ vọng: Tọa độ [x, y, w, h]',
+        'tooltip.setup_roi.minimap': 'Mục đích: Quét bản đồ nhỏ\nDữ liệu đọc: Chưa có đặc tả (TODO)\nKết quả kỳ vọng: Tọa độ [x, y, w, h]',
+        'tooltip.hunt_area.set': 'Mục đích: Quét vùng xuất hiện của quái vật\nDữ liệu đọc: Monster templates, Monster HP bars\nKết quả kỳ vọng: Tọa độ [x, y, w, h]',
+
         'icon_btn.disabled_action': 'Không thể {action} lúc này',
         'icon_btn.not_available': 'Không khả dụng',
         'help_hunt_title': '1. Nhắc nhở Màn hình Hunt',
