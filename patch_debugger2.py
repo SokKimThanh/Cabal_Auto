@@ -1,100 +1,101 @@
-from ui.components.base.responsive_grid_base import ResponsiveGridBase
-import tkinter as tk
-from tkinter import ttk
-from ui.components.icon_button import create_icon_button
-from lib.ui_style_v2 import UIStyleV2 as UI
-from lib.vision.vision_engine import get_vision_engine
-import numpy as np
+import re
 
-try:
-    import cv2
-    from PIL import Image, ImageTk
-except ImportError:
-    cv2 = None
-    Image = None
-    ImageTk = None
+with open("ui/components/vision_snapshot_debugger.py", "r") as f:
+    content = f.read()
 
-class VisionSnapshotDebugger(tk.Frame):
-    def __init__(self, parent, app, **kwargs):
-        super().__init__(parent, bg=UI.BG_BASE, **kwargs)
-        self.app = app
+# Make sure to bind event and refactor refresh_snapshot
+search = """    def _refresh_snapshot(self):
+        if not cv2 or not Image or not ImageTk:
+            # Fallback if libraries are missing
+            self.canvas.create_text(
+                400, 300,
+                text="Missing OpenCV or Pillow",
+                fill=UI.TEXT_PRIMARY,
+                font=UI.get_font(role="header")
+            )
+            return
 
-        # Memory management for images to prevent leaks
-        self._tab_images = {
-            "roi": None,
-            "processed": None,
-            "output": None
-        }
-        self._raw_frames = {
-            "roi": None,
-            "processed": None,
-            "output": None
-        }
-        self.expanded_toplevel = None
-        self.expanded_image = None
+        frame, detections = self.vision_engine.get_latest_snapshot(timeout=0.5)
 
-        if hasattr(self.app, "_vision_engine") and self.app._vision_engine is not None:
-            self.vision_engine = self.app._vision_engine
+        if frame is None:
+            self.canvas.delete("timeout_text")
+            self.canvas.create_text(
+                400, 300,
+                text=self._get_translation("vision_debugger.no_frame", "No active frame or engine is busy."),
+                fill=UI.TEXT_MUTED,
+                font=UI.get_font(role="header"),
+                tags="timeout_text"
+            )
+            return
+
+        self._extract_and_render_rois(frame, detections)
+
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+
+        if canvas_width <= 1 or canvas_height <= 1:
+            # Not fully rendered yet, pick a default size
+            canvas_width = 800
+            canvas_height = 500
+
+        img_h, img_w = frame.shape[:2]
+
+        scale = min(canvas_width / max(1, img_w), canvas_height / max(1, img_h))
+        new_w = int(img_w * scale)
+        new_h = int(img_h * scale)
+
+        if new_w > 0 and new_h > 0:
+            resized_frame = cv2.resize(frame, (new_w, new_h))
         else:
-            self.vision_engine = get_vision_engine()
+            resized_frame = frame
 
-        self._build_ui()
+        # Draw bounding boxes based on scaling
+        for det in detections:
+            # We scale bounding boxes to match the resized_frame dimensions
+            dx = int(det.get("x", 0) * scale)
+            dy = int(det.get("y", 0) * scale)
+            dw = int(det.get("w", 0) * scale)
+            dh = int(det.get("h", 0) * scale)
 
-    def _get_translation(self, key: str, default: str) -> str:
-        _t = getattr(self.app, "_t", None)
-        if _t:
-            return _t(key)
-        return default
+            # Use provided score or confidence key
+            score = det.get("score", det.get("confidence", 0.0))
 
-    def _build_ui(self):
-        # Notebook for 4 tabs
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=UI.SPACE_MD, pady=UI.SPACE_MD)
+            # Draw green bounding box
+            cv2.rectangle(resized_frame, (dx, dy), (dx + dw, dy + dh), (0, 255, 0), 2)
 
-        # Tab 1: Ảnh ROI gốc
-        self.tab_roi = tk.Frame(self.notebook, bg=UI.BG_SURFACE)
-        self.notebook.add(self.tab_roi, text=self._get_translation("vision_debugger.tab_roi", "1. Original ROI"))
-        self.canvas_roi = tk.Canvas(self.tab_roi, bg=UI.BG_SURFACE, highlightthickness=0)
-        self.canvas_roi.pack(fill=tk.BOTH, expand=True)
-        self.canvas_roi.bind("<Button-1>", lambda e: self._expand_image("roi"))
+            # Format text: "Mục tiêu [0.85]" or translated text
+            target_str = self.app._t("vision_debugger.target") if hasattr(self.app, "_t") else "Target"
+            label = f"{target_str} [{score:.2f}]"
 
-        # Tab 2: Ảnh đã tiền xử lý
-        self.tab_processed = tk.Frame(self.notebook, bg=UI.BG_SURFACE)
-        self.notebook.add(self.tab_processed, text=self._get_translation("vision_debugger.tab_processed", "2. Preprocessed"))
-        self.canvas_processed = tk.Canvas(self.tab_processed, bg=UI.BG_SURFACE, highlightthickness=0)
-        self.canvas_processed.pack(fill=tk.BOTH, expand=True)
-        self.canvas_processed.bind("<Button-1>", lambda e: self._expand_image("processed"))
+            cv2.putText(
+                resized_frame,
+                label,
+                (dx, dy - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1,
+            )
 
-        # Tab 3: Kết quả OCR/Vision
-        self.tab_output = tk.Frame(self.notebook, bg=UI.BG_SURFACE)
-        self.notebook.add(self.tab_output, text=self._get_translation("vision_debugger.tab_output", "3. Vision Output"))
-        self.canvas_output = tk.Canvas(self.tab_output, bg=UI.BG_SURFACE, highlightthickness=0)
-        self.canvas_output.pack(fill=tk.BOTH, expand=True)
-        self.canvas_output.bind("<Button-1>", lambda e: self._expand_image("output"))
+        # Convert colorspace BGR -> RGB for Pillow
+        rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
 
-        # Tab 4: Trạng thái Pass/Fail
-        self.tab_status = tk.Frame(self.notebook, bg=UI.BG_SURFACE)
-        self.notebook.add(self.tab_status, text=self._get_translation("vision_debugger.tab_status", "4. Status"))
+        # Explicitly clear old image reference for GC
+        self.current_image = None
 
-        self.status_label = tk.Label(
-            self.tab_status,
-            text=self._get_translation("vision_debugger.status_waiting", "Waiting for scan..."),
-            font=UI.get_font(role="header", weight="bold"),
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_MUTED
-        )
-        self.status_label.pack(pady=UI.SPACE_LG)
+        try:
+            pil_img = Image.fromarray(rgb_frame)
+            self.current_image = ImageTk.PhotoImage(pil_img)
+            self.canvas.delete("image")
+            self.canvas.delete("timeout_text")
+            # Center the image
+            x_offset = (canvas_width - new_w) // 2
+            y_offset = (canvas_height - new_h) // 2
+            self.canvas.create_image(x_offset, y_offset, anchor="nw", image=self.current_image, tags="image")
+        except Exception as e:
+            print(f"Error rendering image: {e}")"""
 
-        self.reason_label = tk.Label(
-            self.tab_status,
-            text="",
-            font=UI.get_font(role="body"),
-            bg=UI.BG_SURFACE,
-            fg=UI.TEXT_PRIMARY
-        )
-        self.reason_label.pack(pady=UI.SPACE_MD)
-
-    def start_listening(self):
+replace = """    def start_listening(self):
         from lib.events.event_bus import EventBus
         from lib.features.hunt.scan_controller import ScanCompletedEvent
         EventBus.bind(ScanCompletedEvent, self._on_scan_completed)
@@ -273,7 +274,8 @@ class VisionSnapshotDebugger(tk.Frame):
         self._tab_images.clear()
         self._raw_frames.clear()
         self.expanded_image = None
-        super().destroy()
+        super().destroy()"""
 
-
-
+new_content = content.replace(search, replace)
+with open("ui/components/vision_snapshot_debugger.py", "w") as f:
+    f.write(new_content)
