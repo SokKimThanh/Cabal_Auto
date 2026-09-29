@@ -90,7 +90,7 @@ class AutoScanner:
                 import win32gui
 
                 title = win32gui.GetWindowText(hwnd)
-                if not self.screen_capture.start(title):
+                if not self.screen_capture.start(title, hwnd=hwnd):
                     logger.warning("Failed to start screen capture.")
                     return {"monsters": [], "skills": []}
 
@@ -99,6 +99,11 @@ class AutoScanner:
                 logger.warning("Failed to capture frame.")
                 return {"monsters": [], "skills": []}
 
+            # Get screen capture window offsets to convert absolute screen coords to client coords
+            window_rect = getattr(self.screen_capture, "window_rect", None)
+            offset_x = window_rect["left"] if window_rect else 0
+            offset_y = window_rect["top"] if window_rect else 0
+
             # If user has defined a specific ROI for hunting, use it
             hunt_roi = None
             if hunt_config and "rois" in hunt_config:
@@ -106,7 +111,14 @@ class AutoScanner:
                 # Assuming "hunt_area" or "combo_bar" can be defined,
                 # but currently we default to None (full screen) if no specific target area is set for monsters
                 if "hunt_area" in rois and len(rois["hunt_area"]) == 4:
-                    hunt_roi = tuple(rois["hunt_area"])
+                    h_roi = rois["hunt_area"]
+                    # Convert absolute screen coords to client coords
+                    hunt_roi = (
+                        max(0, h_roi[0] - offset_x),
+                        max(0, h_roi[1] - offset_y),
+                        h_roi[2],
+                        h_roi[3]
+                    )
 
             monsters = self.vision_engine.detect_monster_pipeline(frame, roi=hunt_roi)
 
@@ -137,7 +149,14 @@ class AutoScanner:
                     if hunt_config and "rois" in hunt_config:
                         rois = hunt_config["rois"]
                         if "combo_bar" in rois and len(rois["combo_bar"]) == 4:
-                            combo_bar_roi = tuple(rois["combo_bar"])
+                            c_roi = rois["combo_bar"]
+                            # Convert absolute screen coords to client coords
+                            combo_bar_roi = (
+                                max(0, c_roi[0] - offset_x),
+                                max(0, c_roi[1] - offset_y),
+                                c_roi[2],
+                                c_roi[3]
+                            )
 
                     skill_detections = self.vision_engine.match_templates(
                         frame, templates=templates_added, roi=combo_bar_roi, max_results=20
