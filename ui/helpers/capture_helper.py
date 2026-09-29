@@ -38,8 +38,10 @@ def _slugify(name: str) -> str:
 
 
 class RegionSelector(tk.Toplevel):
-    def __init__(self, parent: tk.Misc, screenshot_image):
+    def __init__(self, parent: tk.Misc, screenshot_image, guidance_title: Optional[str] = None, guidance_desc: Optional[str] = None):
         super().__init__(parent)
+        self.guidance_title = guidance_title
+        self.guidance_desc = guidance_desc
         self.parent = parent
         self.overrideredirect(True)
         self.attributes("-topmost", True)
@@ -55,6 +57,52 @@ class RegionSelector(tk.Toplevel):
             self, bg="black", highlightthickness=0, cursor="crosshair"
         )
         self.canvas.pack(fill="both", expand=True)
+
+        # Guidance UI
+        if self.guidance_title or self.guidance_desc:
+            # Create a semi-transparent frame using canvas window
+            from lib.ui_style_v2 import UIStyleV2 as UI
+
+            gui_frame = tk.Frame(self.canvas, bg="#1E1E2E", padx=20, pady=15, relief="solid", borderwidth=1)
+
+            if self.guidance_title:
+                lbl_title = tk.Label(gui_frame, text=self.guidance_title, bg="#1E1E2E", fg="#FFFFFF", font=UI.FONT_HEADER)
+                lbl_title.pack(pady=(0, 5))
+
+            if self.guidance_desc:
+                lbl_desc = tk.Label(gui_frame, text=self.guidance_desc, bg="#1E1E2E", fg="#CCCCCC", font=UI.FONT_BODY, justify="center")
+                lbl_desc.pack(pady=(0, 10))
+
+            # Instructions
+            lbl_inst = tk.Label(gui_frame, text="Click and drag to select. Press Esc to cancel.", bg="#1E1E2E", fg="#A0A0A0", font=UI.FONT_SMALL)
+            lbl_inst.pack()
+
+            # Center it at the top of the screen
+            screen_width = self.winfo_screenwidth()
+            self.canvas.create_window(screen_width // 2, 50, window=gui_frame, anchor="n")
+
+        # Guidance UI
+        if self.guidance_title or self.guidance_desc:
+            # Create a semi-transparent frame using canvas window
+            from lib.ui_style_v2 import UIStyleV2 as UI
+
+            gui_frame = tk.Frame(self.canvas, bg="#1E1E2E", padx=20, pady=15, relief="solid", borderwidth=1)
+
+            if self.guidance_title:
+                lbl_title = tk.Label(gui_frame, text=self.guidance_title, bg="#1E1E2E", fg="#FFFFFF", font=UI.FONT_HEADER)
+                lbl_title.pack(pady=(0, 5))
+
+            if self.guidance_desc:
+                lbl_desc = tk.Label(gui_frame, text=self.guidance_desc, bg="#1E1E2E", fg="#CCCCCC", font=UI.FONT_BODY, justify="center")
+                lbl_desc.pack(pady=(0, 10))
+
+            # Instructions
+            lbl_inst = tk.Label(gui_frame, text="Click and drag to select. Press Esc to cancel.", bg="#1E1E2E", fg="#A0A0A0", font=UI.FONT_SMALL)
+            lbl_inst.pack()
+
+            # Center it at the top of the screen
+            screen_width = self.winfo_screenwidth()
+            self.canvas.create_window(screen_width // 2, 50, window=gui_frame, anchor="n")
         self._start = None
         self._rect = None
         self._bbox = None
@@ -110,7 +158,7 @@ class RegionSelector(tk.Toplevel):
 
 class CaptureHelper:
     @staticmethod
-    def start_region_selection(parent: Any, callback: Callable[[Optional[Tuple[int, int, int, int]]], None], pre_wait_hook: Optional[Callable[[], None]] = None) -> None:
+    def start_region_selection(parent: Any, callback: Callable[[Optional[Tuple[int, int, int, int]]], None], pre_wait_hook: Optional[Callable[[], None]] = None, guidance_title: Optional[str] = None, guidance_desc: Optional[str] = None) -> None:
         """Utility to securely hide the window, capture screen, run selector, and execute callback."""
         if pyautogui is None or Image is None:
             messagebox.showerror("Error", "Missing PyAutoGUI or Pillow dependencies.", parent=parent)
@@ -136,7 +184,7 @@ class CaptureHelper:
         try:
             # Capture full screen
             screenshot = pyautogui.screenshot()
-            selector = RegionSelector(parent, screenshot)
+            selector = RegionSelector(parent, screenshot, guidance_title=guidance_title, guidance_desc=guidance_desc)
             bbox = selector.show_modal()  # returns (left, top, w, h)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to capture screen: {e}", parent=parent)
@@ -162,6 +210,8 @@ def capture_region_and_save(
     lang: str = "vi",
     pre_wait_hook: Optional[Callable[[], None]] = None,
     capture_type: str = "monster",
+    guidance_title: Optional[str] = None,
+    guidance_desc: Optional[str] = None,
 ) -> Optional[Tuple[str, Tuple[int, int, int, int]]]:
     """Implements the shared capture flow: wait 3s, screenshot, region select, crop and save.
 
@@ -238,7 +288,7 @@ def capture_region_and_save(
         return None
 
     # Region selection overlay
-    selector = RegionSelector(parent, screenshot)
+    selector = RegionSelector(parent, screenshot, guidance_title=guidance_title, guidance_desc=guidance_desc)
     bbox = selector.show_modal()  # (left, top, width, height) or None
     if not bbox:
         try:
