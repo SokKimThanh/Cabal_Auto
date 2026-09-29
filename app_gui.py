@@ -523,7 +523,6 @@ class App:
         self.state_controller.win_items = []
         self.win_items_map = {}
 
-        self._build_ui()
         self.hunt_runner = self.di_container.hunt_runner if hasattr(self, 'di_container') and self.di_container else None
 
         self.hunt_orchestrator = self.di_container.hunt_orchestrator if hasattr(self, 'di_container') and self.di_container else None
